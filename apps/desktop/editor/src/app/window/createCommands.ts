@@ -9,7 +9,6 @@ import {
   createCommandPalette,
   useSearch,
   PALETTE_WORDS,
-  type ResultChoice,
   type SearchMenuDeps,
   type NoteLookup,
   type PaletteLists,
@@ -25,6 +24,7 @@ import {
 import { createCommandDeps } from '../tabs/commandDeps'
 import { createKeyHandler } from './createKeyHandler'
 import {
+  createChoiceRunner,
   createCommandRunner,
   getValues,
   runInvocationToEnd,
@@ -76,16 +76,6 @@ export interface CommandsDepsOptions {
 
 const createSearchMenu = (slots: SlotHost | undefined): SearchMenuDeps => ({
   getEntries: (target) => slots?.getEntries(SLOT.paletteSearchResult, target) ?? [],
-})
-
-const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
-  tab: '',
-  kind: null,
-  path: place.path,
-  file: place.file,
-  title: place.title,
-  ...(place.line === undefined ? {} : { line: place.line }),
-  ...(place.selector === undefined ? {} : { selector: place.selector }),
 })
 
 const listExtraCommands = (
@@ -207,15 +197,6 @@ export function createCommands(options: CommandsDepsOptions) {
     writeMessage,
   })
 
-  /** Runs the command of a chosen action over what it was chosen on, with the text typed for it. */
-  const runChoice = (choice: ResultChoice): void =>
-    runCommand(
-      choice.command,
-      choice.over ? { ...getTarget(), ...toResultTarget(choice.over) } : getTarget(),
-      choice.input || undefined,
-      choice.values,
-    )
-
   const onKeyDown = createKeyHandler({
     windowTabs,
     pluginHost,
@@ -236,7 +217,7 @@ export function createCommands(options: CommandsDepsOptions) {
     commandDeps,
     pluginRuns: { items, runCommandToEnd },
     runCommand,
-    runChoice,
+    runChoice: createChoiceRunner(runCommand, getTarget),
     onKeyDown,
     pluginWays,
   }

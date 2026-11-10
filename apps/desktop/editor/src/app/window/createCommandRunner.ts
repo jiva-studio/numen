@@ -4,8 +4,9 @@
  */
 import type { PluginHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import { createCommandPalette, runInvocation } from '@/features/command-palette'
+import { runInvocation, type createCommandPalette } from '@/features/command-palette'
 import type { createCommandNoteReader } from '@/features/plugin-commands'
+import type { ResultChoice } from '@/features/command-palette'
 import type { CommandDeps, CommandInvocation, CommandTarget } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -110,3 +111,27 @@ export function createCommandRunner(parts: CommandRunnerParts) {
     },
   }
 }
+
+const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
+  tab: '',
+  kind: null,
+  path: place.path,
+  file: place.file,
+  title: place.title,
+  ...(place.line === undefined ? {} : { line: place.line }),
+  ...(place.selector === undefined ? {} : { selector: place.selector }),
+})
+
+/** Runs the command of a chosen action over what it was chosen on, with the text typed for it. */
+export const createChoiceRunner =
+  (
+    runCommand: (id: string, target: CommandTarget, input?: string, values?: Values) => void,
+    getTarget: () => CommandTarget,
+  ) =>
+  (choice: ResultChoice): void =>
+    runCommand(
+      choice.command,
+      choice.over ? { ...getTarget(), ...toResultTarget(choice.over) } : getTarget(),
+      choice.input || undefined,
+      choice.values,
+    )

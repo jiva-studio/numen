@@ -6,9 +6,9 @@ import type { PluginHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import type { Ref } from 'vue'
 import {
-  createCommandPalette,
   createInvocation,
   runInvocation,
+  type createCommandPalette,
   type useSearch,
 } from '@/features/command-palette'
 import { syncKeybindings } from '@/features/hotkeys'

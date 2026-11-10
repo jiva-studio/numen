@@ -76,7 +76,7 @@ function createInstallationSettings(deps: SettingsTabConfigDeps) {
   }
 }
 
-function createInstallationPluginData() {
+function createInstallationPluginFiles() {
   return {
     getPluginData: (pluginId: string) => getPluginData(pluginId),
     deletePluginData: async (pluginId: string): Promise<string> => {
@@ -87,6 +87,7 @@ function createInstallationPluginData() {
         return formatError(caughtError)
       }
     },
+    getReadme: readPluginReadme,
   }
 }
 
@@ -106,11 +107,10 @@ function createInstallationPlugin(deps: SettingsTabConfigDeps) {
         return formatError(caughtError)
       }
     },
-    ...createInstallationPluginData(),
+    files: createInstallationPluginFiles(),
     plugins: rest.state.plugins,
     app: rest.state.app,
     getSettingsViews,
-    getReadme: readPluginReadme,
   }
 }
 

@@ -74,7 +74,7 @@ function onRetry(): void {
 
 async function onDeleteData(): Promise<void> {
   const pluginId = props.plugin.id
-  const problem = await installation.value.plugin.deletePluginData(pluginId)
+  const problem = await installation.value.plugin.files.deletePluginData(pluginId)
   if (props.plugin.id !== pluginId) return
   deleteProblem.value = problem
   await readFileCount(pluginId)
@@ -85,7 +85,7 @@ async function readFileCount(pluginId: string): Promise<void> {
   const request = countReads.acquireRequest()
   let count: number
   try {
-    count = await installation.value.plugin.getPluginData(pluginId)
+    count = await installation.value.plugin.files.getPluginData(pluginId)
   } catch {
     count = 0
   }
@@ -94,7 +94,7 @@ async function readFileCount(pluginId: string): Promise<void> {
 
 async function readReadme(pluginId: string): Promise<void> {
   const request = readmeReads.acquireRequest()
-  const text = await installation.value.plugin.getReadme(pluginId)
+  const text = await installation.value.plugin.files.getReadme(pluginId)
   if (request.isCurrent) readmeText.value = text
 }
 

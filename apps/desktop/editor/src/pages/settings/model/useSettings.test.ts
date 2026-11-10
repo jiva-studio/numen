@@ -458,16 +458,16 @@ describe('the settings tab', () => {
       'Numen is not responding; retrying',
     )
 
-    expect(await installation.plugin.getPluginData?.('plugin.ocr')).toBe(5)
+    expect(await installation.plugin.files.getPluginData.('plugin.ocr')).toBe(5)
     expect(core.getPluginData).toHaveBeenCalledWith('plugin.ocr')
 
-    expect(await installation.plugin.deletePluginData?.('plugin.ocr')).toBe('')
+    expect(await installation.plugin.files.deletePluginData.('plugin.ocr')).toBe('')
     expect(core.deletePluginData).toHaveBeenCalledWith('plugin.ocr')
 
     vi.mocked(core.deletePluginData).mockRejectedValueOnce(
       createLostConnection('permission denied'),
     )
-    expect(await installation.plugin.deletePluginData?.('plugin.ocr')).toBe(
+    expect(await installation.plugin.files.deletePluginData.('plugin.ocr')).toBe(
       'Numen is not responding; retrying',
     )
 

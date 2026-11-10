@@ -64,17 +64,19 @@ export interface InstallationPlugin {
    * was chosen.
    */
   choosePath(pluginId: string, key: string): Promise<string>
-  /**
-   * How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. A window
-   * that cannot delete plugin data has neither call.
-   */
+  getSettingsViews(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
+  readonly files: InstallationPluginFiles
+}
+
+/** What a plugin keeps and serves as files. */
+export interface InstallationPluginFiles {
+  /** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */
   getPluginData(pluginId: string): Promise<number>
   /**
    * That folder deleted, with the text versions the plugin made there. The answer is why it was not
    * deleted, and empty where it was.
    */
   deletePluginData(pluginId: string): Promise<string>
-  getSettingsViews(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
   /** The README.md the plugin serves, and an empty text where it has none. */
   getReadme(pluginId: string): Promise<string>
 }

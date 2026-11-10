@@ -28,11 +28,9 @@ const PLUGIN_KEYS = [
   'catalog',
   'retryPlugin',
   'choosePath',
-  'getPluginData',
-  'deletePluginData',
   'getSettingsViews',
-  'getReadme',
 ]
+const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const SECRETS_KEYS = ['sections', 'menus', 'states', 'loadStates', 'credentialsPath']
 const EDIT_KEYS = [
   'createSecret',
@@ -67,10 +65,13 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     plugins: ref([]),
     app: ref([]),
     catalog: ref([]),
-    getPluginData: () => Promise.resolve(0),
-    deletePluginData: () => Promise.resolve(''),
     getSettingsViews: () => new Map(),
-    getReadme: readPluginReadme,
+    files: {
+      getPluginData: () => Promise.resolve(0),
+      deletePluginData: () => Promise.resolve(''),
+      getReadme: readPluginReadme,
+      ...pickOf(overrides, FILES_KEYS),
+    },
     ...pickOf(overrides, PLUGIN_KEYS),
   },
   secrets: {
