@@ -17,6 +17,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
+// NoteReader reads the type and the frontmatter of a note from its current file.
+type NoteReader interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
+}
+
 // Versions is the text versions of vault files: what plugins report and what is
 // live.
 type Versions struct {
@@ -24,6 +29,7 @@ type Versions struct {
 	files   textport.TextFileStores
 	plugins textport.TextPlugins
 	readers vaultport.VaultReaders
+	notes   NoteReader
 	clock   machineport.Clock
 
 	mu       sync.Mutex
@@ -33,20 +39,21 @@ type Versions struct {
 
 // NewVersions returns the versions use case. It takes the version repositories,
 // the file stores, the enabled plugins that may record versions, the vault
-// readers that read a note's type, and the clock that dates new versions. No
+// readers, the reader of a note's properties, and the clock that dates new versions. No
 // listener is notified of changes until SetListener is called.
 func NewVersions(
 	repos textport.VersionRepositories,
 	files textport.TextFileStores,
 	plugins textport.TextPlugins,
 	readers vaultport.VaultReaders,
+	notes NoteReader,
 	clock machineport.Clock,
 ) (*Versions, error) {
-	if repos == nil || files == nil || plugins == nil || readers == nil || clock == nil {
-		return nil, errors.New("text versions need a repository, files, plugins, vault readers and a clock")
+	if repos == nil || files == nil || plugins == nil || readers == nil || notes == nil || clock == nil {
+		return nil, errors.New("text versions need a repository, files, plugins, vault readers, a note reader and a clock")
 	}
 	return &Versions{
-		repos: repos, files: files, plugins: plugins, readers: readers, clock: clock,
+		repos: repos, files: files, plugins: plugins, readers: readers, notes: notes, clock: clock,
 		listener: noListener{}, lives: map[liveKey]domain.TextVersionID{},
 	}, nil
 }
@@ -257,7 +264,7 @@ func (u *Versions) readSourceProperties(
 	if !slices.ContainsFunc(versions, domain.TextVersion.IsFromProperty) {
 		return nil, nil
 	}
-	_, properties, err := vaultport.ReadNote(ctx, u.readers, v, path)
+	_, properties, err := u.notes.Execute(ctx, v, path)
 	if err != nil {
 		return nil, fmt.Errorf("read the properties of %s: %w", path, err)
 	}

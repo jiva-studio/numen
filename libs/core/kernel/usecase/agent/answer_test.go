@@ -56,7 +56,7 @@ func TestAnswer_EqualsAgentOutput(t *testing.T) {
 		agentdomain.Step{Kind: domain.StepModelStart}, say("The "), say("answer."), stop(""),
 	)}
 
-	got, err := agent.Answer(t.Context(), target, agentdomain.Task{Question: "why?"})
+	got, err := agent.NewAnswer(target).Execute(t.Context(), agentdomain.Task{Question: "why?"})
 
 	if err != nil || got != "The answer." {
 		t.Fatalf("got %q, %v", got, err)
@@ -72,7 +72,7 @@ func TestAnswer_CompletedAgentHasAnswer(t *testing.T) {
 		"done":    {say("yes"), stop("done")},
 		"no stop": {say("yes")},
 	} {
-		got, err := agent.Answer(t.Context(), &starter{run: newRun(steps...)}, agentdomain.Task{})
+		got, err := agent.NewAnswer(&starter{run: newRun(steps...)}).Execute(t.Context(), agentdomain.Task{})
 		if err != nil || got != "yes" {
 			t.Errorf("%s: got %q, %v", name, got, err)
 		}
@@ -93,7 +93,7 @@ func TestTheTaskIsSentWithNoToolAndNoConversation(t *testing.T) {
 		Endpoint:         agentdomain.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "secret"},
 	}
 
-	if _, err := agent.Answer(t.Context(), target, task); err != nil {
+	if _, err := agent.NewAnswer(target).Execute(t.Context(), task); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,13 +111,13 @@ func TestOnlyWhatTheAgentReturnsIsTheAnswer(t *testing.T) {
 		agentdomain.Step{Kind: domain.StepToolCall, Tool: "note_read", Text: "no"}, say("yes"), stop(""),
 	)}
 
-	if got, err := agent.Answer(t.Context(), target, agentdomain.Task{}); err != nil || got != "yes" {
+	if got, err := agent.NewAnswer(target).Execute(t.Context(), agentdomain.Task{}); err != nil || got != "yes" {
 		t.Errorf("got %q, %v", got, err)
 	}
 }
 
 func TestAnAgentThatCannotBeStartedIsUnavailable(t *testing.T) {
-	_, err := agent.Answer(t.Context(), &starter{err: errors.New("no plugin runs it")}, agentdomain.Task{})
+	_, err := agent.NewAnswer(&starter{err: errors.New("no plugin runs it")}).Execute(t.Context(), agentdomain.Task{})
 
 	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("got %v, want port.ErrUnavailable", err)
@@ -127,7 +127,7 @@ func TestAnAgentThatCannotBeStartedIsUnavailable(t *testing.T) {
 func TestAnAgentThatStopsForAReasonIsUnavailableWithThatReason(t *testing.T) {
 	target := &starter{run: newRun(say("partial"), stop("not signed in"))}
 
-	_, err := agent.Answer(t.Context(), target, agentdomain.Task{})
+	_, err := agent.NewAnswer(target).Execute(t.Context(), agentdomain.Task{})
 
 	if !errors.Is(err, domain.ErrUnavailable) || !strings.Contains(err.Error(), "not signed in") {
 		t.Errorf("got %v, want port.ErrUnavailable naming the reason", err)
@@ -140,7 +140,7 @@ func TestAnAgentThatReturnsNothingIsUnavailable(t *testing.T) {
 		"blank":       {say(" \n"), stop("")},
 		"no steps":    {},
 	} {
-		_, err := agent.Answer(t.Context(), &starter{run: newRun(steps...)}, agentdomain.Task{})
+		_, err := agent.NewAnswer(&starter{run: newRun(steps...)}).Execute(t.Context(), agentdomain.Task{})
 		if !errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("%s: got %v, want port.ErrUnavailable", name, err)
 		}
@@ -157,7 +157,7 @@ func TestTheEndOfTheContextIsNotAnUnavailability(t *testing.T) {
 		"no answer":   {run: newRun()},
 		"stopped":     {run: newRun(stop("canceled"))},
 	} {
-		_, err := agent.Answer(ctx, target, agentdomain.Task{})
+		_, err := agent.NewAnswer(target).Execute(ctx, agentdomain.Task{})
 		if !errors.Is(err, context.Canceled) || errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("%s: got %v, want context.Canceled alone", name, err)
 		}
@@ -170,7 +170,7 @@ func TestTheEndOfTheContextEndsTheWaitForSteps(t *testing.T) {
 	target := &starter{run: &run{steps: make(chan agentdomain.Step)}}
 	isDone := make(chan error, 1)
 	go func() {
-		_, err := agent.Answer(ctx, target, agentdomain.Task{})
+		_, err := agent.NewAnswer(target).Execute(ctx, agentdomain.Task{})
 		isDone <- err
 	}()
 

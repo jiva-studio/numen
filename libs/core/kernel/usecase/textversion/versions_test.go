@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -66,7 +67,8 @@ func newScene(t *testing.T) *scene {
 			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "thw", "the")}}
 		}}
 	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
-	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, readCounter{fileReaders: s.files, reads: &s.reads}, steppingClock())
+	readers := readCounter{fileReaders: s.files, reads: &s.reads}
+	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, readers, note.NewReadFrontmatter(readers), steppingClock())
 	if err != nil {
 		t.Fatal(err)
 	}

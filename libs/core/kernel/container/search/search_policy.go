@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
 // NewFloorPolicy is the floor a search by meaning applies under the model of an embedder: the floor
@@ -25,6 +26,7 @@ func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder
 	var host pluginport.PluginSearchHost = c.PluginHost
 	host.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
+		Queries:  NewEmbedQueries(embedder),
 		Samples:  db.SearchSamples(),
 		Nearest:  db.Nearest(),
 		Progress: db.Progress(),
@@ -32,6 +34,16 @@ func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder
 		Policy:   c.NewFloorPolicy(db, embedder, errorHandler),
 		Passages: searchusecase.NewSearchPassages(c.NewSearch(db, embedder, errorHandler)),
 	})
+}
+
+// NewEmbedQueries makes the vectors of queries with the embedder, as queries where its model tells a
+// query from a document.
+func NewEmbedQueries(embedder embeddingport.Embedder) *vectorscase.EmbedQueries {
+	queries, ok := embedder.(embeddingport.QueryEmbedder)
+	if !ok {
+		return vectorscase.NewEmbedQueries(embedder, nil)
+	}
+	return vectorscase.NewEmbedQueries(embedder, queries)
 }
 
 // GetFloorHint returns the similarity floor hint reported by embedder.

@@ -70,6 +70,11 @@ func (p Parameters) fill() Parameters {
 	return p
 }
 
+// QueryEmbedder returns one vector per query, made for searching with the query as the question.
+type QueryEmbedder interface {
+	Execute(ctx context.Context, queries []string) ([][]float32, error)
+}
+
 // Search answers a query within one vault, over everything the vault holds.
 //
 // One database holds every vault, so the vault is an argument of the search.
@@ -79,6 +84,7 @@ type Search struct {
 	passages     sourceport.PassageQueries
 	readers      vaultport.VaultReaders
 	embedder     embeddingport.Embedder
+	queries      QueryEmbedder
 	texts        textport.TextReaders
 	floorSource  FloorSource
 	errorHandler window.ErrorHandler
@@ -89,9 +95,9 @@ type Search struct {
 // New returns a search over one vault's index.
 // A nil embedder means the installation has no model: the meaning search does
 // not run and the word search answers alone, since the vector index is optional.
-// A nil `texts` means only notes return their text. `errorHandler` receives the
-// error of a search mode that could not answer; nil ignores such errors.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, errorHandler window.ErrorHandler) Search {
+// A nil `texts` means only notes return their text. `queries` embeds the queries.
+// `errorHandler` receives the error of a search mode that could not answer; nil ignores such errors.
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, queries QueryEmbedder, errorHandler window.ErrorHandler) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
@@ -99,6 +105,7 @@ func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, tex
 		passages:     passages,
 		readers:      readers,
 		embedder:     embedder,
+		queries:      queries,
 		texts:        texts,
 		errorHandler: errorHandler,
 		cache:        NewQueryCache(defaultCacheCapacity),
@@ -256,7 +263,7 @@ func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]flo
 			return cached, nil
 		}
 	}
-	vectors, err := embeddingport.EmbedQueries(ctx, u.embedder, []string{query})
+	vectors, err := u.queries.Execute(ctx, []string{query})
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errNoVector, err)
 	}

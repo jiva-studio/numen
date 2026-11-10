@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
 func getVault() domain.Vault { return domain.Vault{ID: "01VAULT"} }
@@ -148,6 +149,7 @@ func newFixture() *fixture {
 	}
 	f.search = Search{
 		Embedder: f.embedder,
+		Queries:  vectorscase.NewEmbedQueries(f.embedder, f.embedder),
 		Samples:  f.samples,
 		Nearest:  f.nearest,
 		Progress: stubProgress{total: 10, embedded: 10},

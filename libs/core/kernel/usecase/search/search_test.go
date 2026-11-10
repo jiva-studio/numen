@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -136,7 +137,11 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder embeddingport.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, nil)
+	queries, ok := embedder.(embeddingport.QueryEmbedder)
+	if !ok {
+		return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
+	}
+	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
 }
 
 func getModel() embedding.Model {
@@ -297,8 +302,9 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 	c := newCorpus(t)
 
 	var errs []error
+	unreachable := outOfReach{why: errors.New("dial tcp: network is unreachable")}
 	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil,
-		outOfReach{why: errors.New("dial tcp: network is unreachable")},
+		unreachable, vectorscase.NewEmbedQueries(unreachable, nil),
 		func(err error) { errs = append(errs, err) })
 
 	found, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{})
@@ -319,8 +325,9 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
+	canceled := outOfReach{why: context.Canceled}
 	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil,
-		outOfReach{why: context.Canceled}, func(error) {})
+		canceled, vectorscase.NewEmbedQueries(canceled, nil), func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)

@@ -2,10 +2,8 @@
 package vaultcontract
 
 import (
-	"context"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 type (
@@ -32,9 +30,3 @@ var (
 )
 
 func IsNoNote(err error) bool { return vaultport.IsNoNote(err) }
-
-func IsNote(path string) bool { return vaultport.IsNote(path) }
-
-func ReadNoteType(ctx context.Context, readers vaultport.VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
-	return vaultport.ReadNoteType(ctx, readers, v, path)
-}

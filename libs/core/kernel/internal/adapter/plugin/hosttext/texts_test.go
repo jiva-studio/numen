@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
@@ -162,7 +163,7 @@ func (c fixedClock) Now() time.Time { return c.now }
 
 func newTexts(t *testing.T, readers vaultport.VaultReaders, repo *mapsVersions) hosttext.Texts {
 	t.Helper()
-	versions, err := textversion.NewVersions(repo, textFiles{}, noPlugins{}, readers, fixedClock{now: getMapsTime().Add(time.Hour)})
+	versions, err := textversion.NewVersions(repo, textFiles{}, noPlugins{}, readers, note.NewReadFrontmatter(readers), fixedClock{now: getMapsTime().Add(time.Hour)})
 	if err != nil {
 		t.Fatal(err)
 	}
