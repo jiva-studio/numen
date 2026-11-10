@@ -33,16 +33,16 @@ export interface InstallationSettings {
    */
   getSetting(at: readonly string[]): unknown
   /** A setting as the vault last answered it, never a value asked for and not yet answered. */
-  getConfirmedSetting?(at: readonly string[]): unknown
+  getConfirmedSetting(at: readonly string[]): unknown
   /** Whether the write of a setting is in flight. */
-  isPending?(at: readonly string[]): boolean
+  isPending(at: readonly string[]): boolean
   /**
    * Whether the value requested at a path is not yet in the declaration the window holds: from the
    * request until the read that carries it is taken.
    */
-  isRequested?(at: readonly string[]): boolean
+  isRequested(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
-  readonly getPlatform?: (() => string) | undefined
+  getPlatform(): string
   write(content: readonly SettingEdit[]): void
   readonly file: Readonly<Ref<string>>
 }
@@ -53,9 +53,9 @@ export interface InstallationSettings {
  * views, by view id; a view the plugin declares and has not registered is absent.
  */
 export interface InstallationPlugin {
-  readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
-  readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
-  readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
+  readonly plugins: Readonly<Ref<readonly PluginInfo[]>>
+  readonly app: Readonly<Ref<readonly PluginSettingInfo[]>>
+  readonly catalog: Readonly<Ref<readonly CatalogEntry[]>>
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**
@@ -68,14 +68,15 @@ export interface InstallationPlugin {
    * How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. A window
    * that cannot delete plugin data has neither call.
    */
-  getPluginData?(pluginId: string): Promise<number>
+  getPluginData(pluginId: string): Promise<number>
   /**
    * That folder deleted, with the text versions the plugin made there. The answer is why it was not
    * deleted, and empty where it was.
    */
-  deletePluginData?(pluginId: string): Promise<string>
-  readonly getSettingsViews?:
-    ((pluginId: string) => ReadonlyMap<string, { readonly component: unknown }>) | undefined
+  deletePluginData(pluginId: string): Promise<string>
+  getSettingsViews(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
+  /** The README.md the plugin serves, and an empty text where it has none. */
+  getReadme(pluginId: string): Promise<string>
 }
 
 /**
@@ -83,12 +84,12 @@ export interface InstallationPlugin {
  * is entered once and is never read back. Each call reads the settings again.
  */
 export interface InstallationSecrets {
-  readonly sections?: Readonly<Ref<readonly SecretSection[]>>
-  readonly menus?: Readonly<Ref<readonly SecretMenu[]>>
-  readonly states?: Readonly<Ref<ReadonlyMap<string, boolean>>>
+  readonly sections: Readonly<Ref<readonly SecretSection[]>>
+  readonly menus: Readonly<Ref<readonly SecretMenu[]>>
+  readonly states: Readonly<Ref<ReadonlyMap<string, boolean>>>
   /** Reads which secrets have a value. Only the page of secrets calls it. */
-  loadStates?(): Promise<void>
-  readonly credentialsPath?: Readonly<Ref<string>>
+  loadStates(): Promise<void>
+  readonly credentialsPath: Readonly<Ref<string>>
   readonly edit: {
     createSecret(group: string, name: string, value: string): Promise<string>
     renameSecret(id: string, name: string): void
@@ -118,6 +119,6 @@ export interface SelectChoice {
 /** What the settings tab holds. */
 export interface SettingsTabState {
   readonly installation: Installation
-  readonly initialPluginId?: Ref<string | null>
-  readonly initialSearchQuery?: Ref<string>
+  readonly initialPluginId: Ref<string | null>
+  readonly initialSearchQuery: Ref<string>
 }

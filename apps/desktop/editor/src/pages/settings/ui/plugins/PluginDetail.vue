@@ -13,9 +13,9 @@ import { createManagedFromEntries } from '../../lib/pluginListing'
 import { createRequestGuard, runInBackground } from '@numen/ui'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
-import { createSettingFields, type PluginInfo } from '@/entities/settings'
+import type { PluginInfo } from '@/entities/settings'
+import { createPluginSettings } from '../../model/createPluginSettings'
 import { hasPluginSettings } from '../../lib/pluginSettings'
-import { fetchPluginReadme } from '../../lib/readme'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -29,26 +29,26 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation.settings)
+const settings = createPluginSettings(
+  () => props.state.installation.settings,
+  () => props.plugin.id,
+)
 
 const read = (key: string) => installation.value.settings.getSetting([props.plugin.id, key])
 
 const managed = computed(
-  () => createManagedFromEntries([props.plugin], installation.value.plugin.catalog?.value ?? [])[0],
+  () => createManagedFromEntries([props.plugin], installation.value.plugin.catalog.value)[0],
 )
 
 const readEnabled = (): unknown =>
-  (installation.value.settings.getConfirmedSetting ?? installation.value.settings.getSetting)([
-    props.plugin.id,
-    'enabled',
-  ])
+  installation.value.settings.getConfirmedSetting([props.plugin.id, 'enabled'])
 const isEnabled = computed<boolean>(() => {
   const value = readEnabled()
   return typeof value === 'boolean' ? value : true
 })
 
 const isPending = computed<boolean>(
-  () => installation.value.settings.isPending?.([props.plugin.id, 'enabled']) ?? false,
+  () => installation.value.settings.isPending([props.plugin.id, 'enabled']),
 )
 
 const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
@@ -65,7 +65,7 @@ function onBack(): void {
 }
 
 function onToggleEnabled(isOn: boolean): void {
-  fields.setValue([props.plugin.id, 'enabled'], isOn)
+  settings.set('enabled', isOn)
 }
 
 function onRetry(): void {
@@ -74,7 +74,7 @@ function onRetry(): void {
 
 async function onDeleteData(): Promise<void> {
   const pluginId = props.plugin.id
-  const problem = (await installation.value.plugin.deletePluginData?.(pluginId)) ?? ''
+  const problem = await installation.value.plugin.deletePluginData(pluginId)
   if (props.plugin.id !== pluginId) return
   deleteProblem.value = problem
   await readFileCount(pluginId)
@@ -85,7 +85,7 @@ async function readFileCount(pluginId: string): Promise<void> {
   const request = countReads.acquireRequest()
   let count: number
   try {
-    count = (await installation.value.plugin.getPluginData?.(pluginId)) ?? 0
+    count = (await installation.value.plugin.getPluginData(pluginId))
   } catch {
     count = 0
   }
@@ -94,7 +94,7 @@ async function readFileCount(pluginId: string): Promise<void> {
 
 async function readReadme(pluginId: string): Promise<void> {
   const request = readmeReads.acquireRequest()
-  const text = await fetchPluginReadme(pluginId)
+  const text = await installation.value.plugin.getReadme(pluginId)
   if (request.isCurrent) readmeText.value = text
 }
 

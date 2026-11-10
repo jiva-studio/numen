@@ -1,7 +1,5 @@
-/** Reads the README.md of a plugin from the server that serves its files. */
-
 /** The README.md a plugin serves, and an empty text where none can be fetched or the server answers a page. */
-export async function fetchPluginReadme(pluginId: string): Promise<string> {
+export async function readPluginReadme(pluginId: string): Promise<string> {
   try {
     const response = await fetch(`/plugin/${pluginId}/README.md`)
     if (!response.ok) return ''

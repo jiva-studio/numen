@@ -9,7 +9,7 @@ import { getServiceInfo } from '@numen/core-client'
 import { mount } from '@vue/test-utils'
 import PluginDetail from './PluginDetail.vue'
 import SettingsTab from '../SettingsTab.vue'
-import { createInstallation, createPluginInfo, createSecretAnswer } from '@/testing/installation'
+import { createInstallation, createPluginInfo, createSecretAnswer, createSettingsState } from '@/testing/installation'
 import {
   click,
   dispose,
@@ -59,7 +59,7 @@ const mountDetail = (secrets = [WORK, HOME, CHAT, SPARE, MINE]) => {
   })
   const wrapper = mount(SettingsTab, {
     attachTo: document.body,
-    props: { state: { installation, initialPluginId } },
+    props: { state: createSettingsState(installation, { initialPluginId }) },
   })
   return { installation, initialPluginId, wrapper }
 }
@@ -239,7 +239,7 @@ describe('the page of a plugin', () => {
     })
     const wrapper = mount(PluginDetail, {
       attachTo: document.body,
-      props: { state: { installation }, plugin },
+      props: { state: createSettingsState(installation), plugin },
     })
     expect(root().querySelectorAll(SELECT)).toHaveLength(3)
     dispose(wrapper)

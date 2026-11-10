@@ -20,7 +20,7 @@ import {
   watchSettings,
   type SettingEdit,
 } from '@/entities/settings'
-import { useCatalogEntries } from '@/entities/plugin'
+import { readPluginReadme, useCatalogEntries } from '@/entities/plugin'
 import { createFollower, runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import { useSettingsTab } from '@/pages/settings'
@@ -34,8 +34,8 @@ export interface SettingsDeps {
   log: MessageLog
   windowTabs: WindowTabs
   onSizeChanged: () => void
-  getSettingsViews?: InstallationPlugin['getSettingsViews']
-  getPlatform?: InstallationSettings['getPlatform']
+  getSettingsViews: InstallationPlugin['getSettingsViews']
+  getPlatform: InstallationSettings['getPlatform']
 }
 
 interface SettingsTabConfigDeps {
@@ -43,8 +43,8 @@ interface SettingsTabConfigDeps {
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
-  getSettingsViews?: InstallationPlugin['getSettingsViews']
-  getPlatform?: InstallationSettings['getPlatform']
+  getSettingsViews: InstallationPlugin['getSettingsViews']
+  getPlatform: InstallationSettings['getPlatform']
   catalogEntries: NonNullable<InstallationPlugin['catalog']>
   reportError: (error: unknown) => void
 }
@@ -104,6 +104,7 @@ function createInstallationPlugin(deps: SettingsTabConfigDeps) {
     plugins: rest.state.plugins,
     app: rest.state.app,
     getSettingsViews,
+    getReadme: readPluginReadme,
   }
 }
 
@@ -205,8 +206,8 @@ export function useSettings({
       rest,
       secrets,
       retry,
-      ...(getSettingsViews ? { getSettingsViews } : {}),
-      ...(getPlatform ? { getPlatform } : {}),
+      getSettingsViews,
+      getPlatform,
       catalogEntries,
       reportError,
     }),

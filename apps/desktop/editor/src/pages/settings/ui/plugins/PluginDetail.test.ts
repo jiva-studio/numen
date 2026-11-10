@@ -5,8 +5,8 @@ import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { SecretField } from '../secret-field'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
-import type { Installation, SettingsTabState } from '../../types'
+import { createInstallation, createPluginInfo, createSettingsState } from '@/testing/installation'
+import type { Installation } from '../../types'
 import {
   getSettingAt as at,
   type PluginInfo,
@@ -51,7 +51,7 @@ const createDetail = (
     plugins: ref([plugin]),
     ...(platform ? { getPlatform: () => platform } : {}),
   })
-  const state: SettingsTabState = { installation }
+  const state = createSettingsState(installation)
   const wrapper = mount(PluginDetail, {
     props: { state, plugin },
     ...(attachTo ? { attachTo } : {}),

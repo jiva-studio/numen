@@ -175,9 +175,11 @@ const create = (timing: Timing) => {
     log,
     windowTabs: createTestTabs(),
     onSizeChanged: vi.fn(),
+    getSettingsViews: () => new Map(),
+    getPlatform: () => 'linux',
   })
   const page = mount(SettingsTab, {
-    props: { state: { ...settings.configured.state, initialPluginId: ref('system') } },
+    props: { state: { ...settings.configured.state, initialPluginId: ref<string | null>('system') } },
     attachTo: document.body,
   })
   return { settings, page }

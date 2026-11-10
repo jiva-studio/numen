@@ -2,8 +2,8 @@ import { fn } from 'storybook/test'
 import { ref } from 'vue'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Model, PluginInfo, Secret, SecretMenu, SecretSection } from '@/entities/settings'
-import type { Installation } from '@/pages/settings/types'
-import type { CatalogEntry } from '@/entities/plugin'
+import type { Installation, SettingsTabState } from '@/pages/settings/types'
+import { readPluginReadme, type CatalogEntry } from '@/entities/plugin'
 
 /** What a test puts over the defaults of an installation, named without the group it belongs to. */
 export type InstallationOverrides = Partial<Installation['settings']> &
@@ -31,6 +31,7 @@ const PLUGIN_KEYS = [
   'getPluginData',
   'deletePluginData',
   'getSettingsViews',
+  'getReadme',
 ]
 const SECRETS_KEYS = ['sections', 'menus', 'states', 'loadStates', 'credentialsPath']
 const EDIT_KEYS = [
@@ -51,6 +52,10 @@ const pickOf = (source: object, keys: readonly string[]): object =>
 export const createInstallation = (overrides: InstallationOverrides = {}): Installation => ({
   settings: {
     getSetting: () => undefined,
+    getConfirmedSetting: () => undefined,
+    isPending: () => false,
+    isRequested: () => false,
+    getPlatform: () => '',
     getModels: () => [],
     write: fn(),
     file: ref('/numen.json'),
@@ -60,6 +65,12 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     retryPlugin: fn(),
     choosePath: fn(() => Promise.resolve('')),
     plugins: ref([]),
+    app: ref([]),
+    catalog: ref([]),
+    getPluginData: () => Promise.resolve(0),
+    deletePluginData: () => Promise.resolve(''),
+    getSettingsViews: () => new Map(),
+    getReadme: readPluginReadme,
     ...pickOf(overrides, PLUGIN_KEYS),
   },
   secrets: {
@@ -195,3 +206,14 @@ export const createProgramModels =
       ...(program.models ?? []).map((one) => createModel(settingPath, one)),
     ]
   }
+
+/** The state of the settings tab over an installation, with the page and the query a test chooses. */
+export const createSettingsState = (
+  installation: Installation,
+  overrides: Partial<Omit<SettingsTabState, 'installation'>> = {},
+): SettingsTabState => ({
+  installation,
+  initialPluginId: ref<string | null>(null),
+  initialSearchQuery: ref(''),
+  ...overrides,
+})

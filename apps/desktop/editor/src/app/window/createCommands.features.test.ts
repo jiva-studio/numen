@@ -48,8 +48,6 @@ describe('the commands of the features', () => {
       'app:file.open',
       'app:file.open#beside',
       'app:file.reveal',
-      'app:file.reveal#plex',
-      'app:file.reveal#files',
       'app:note.createChild',
       'app:note.createParent',
       'app:note.createJump',

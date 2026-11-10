@@ -12,6 +12,7 @@ import { ref, type Component } from 'vue'
 import { SettingsTab, type Installation } from '@/pages/settings'
 import type { Model, PluginInfo } from '@/entities/settings'
 import { findTabKindIcon, SETTINGS } from '@/entities/tab'
+import { createInstallation, createSettingsState } from '@/testing/installation'
 
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [{ id: SETTINGS, title: 'Settings' }]
@@ -125,8 +126,11 @@ const PLUGINS: readonly PluginInfo[] = [
 /** The actions the settings requested; a screenshot requests none. */
 const DONE: string[] = []
 
+const DEFAULTS = createInstallation()
+
 const INSTALLATION: Installation = {
   settings: {
+    ...DEFAULTS.settings,
     getSetting: () => undefined,
     getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
     write: (edits) => {
@@ -135,6 +139,7 @@ const INSTALLATION: Installation = {
     file: ref('/numen.json'),
   },
   plugin: {
+    ...DEFAULTS.plugin,
     app: ref([
       {
         key: 'appearance.theme',
@@ -176,6 +181,7 @@ const INSTALLATION: Installation = {
     plugins: ref(PLUGINS),
   },
   secrets: {
+    ...DEFAULTS.secrets,
     edit: {
       createSecret: async () => {
         DONE.push('secret created')
@@ -213,5 +219,5 @@ const INSTALLATION: Installation = {
 
 /** The settings of the window and of every plugin installed, each reached from its row. */
 export const Settings: Story = {
-  render: () => window(SETTINGS, SettingsTab, { installation: INSTALLATION }),
+  render: () => window(SETTINGS, SettingsTab, createSettingsState(INSTALLATION)),
 }

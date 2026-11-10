@@ -74,6 +74,8 @@ const create = () => {
     log,
     windowTabs,
     onSizeChanged: vi.fn(),
+    getSettingsViews: () => new Map(),
+    getPlatform: () => 'linux',
   })
   return { settings, core, feed, windowTabs }
 }

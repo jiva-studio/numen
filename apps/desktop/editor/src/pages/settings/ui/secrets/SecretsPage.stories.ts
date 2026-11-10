@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
-import { createSecretAnswer } from '@/testing/installation'
+import { createSecretAnswer, createSettingsState } from '@/testing/installation'
 import type { Installation } from '../../types'
 import SecretsPage from './SecretsPage.vue'
 
@@ -66,7 +66,7 @@ const meta: Meta<typeof SecretsPage> = {
   parameters: { layout: 'fullscreen' },
   render: () => ({
     components: { SecretsPage },
-    setup: () => ({ state: { installation: createInstallation() } }),
+    setup: () => ({ state: createSettingsState(createInstallation()) }),
     template: `
       <div class="numen" style="container-type:inline-size;inline-size:36rem;padding:1rem;background:var(--numen-surface);--settings-measure:54rem;--settings-apart:1.75rem;--settings-choice:16rem">
         <SecretsPage :state="state" />
@@ -134,7 +134,7 @@ const emptyInstallation = (): Installation => {
 
 const renderEmpty = () => ({
   components: { SecretsPage },
-  setup: () => ({ state: { installation: emptyInstallation() } }),
+  setup: () => ({ state: createSettingsState(emptyInstallation()) }),
   template: `
     <div class="numen" style="container-type:inline-size;inline-size:36rem;padding:1rem;background:var(--numen-surface);--settings-measure:54rem;--settings-apart:1.75rem;--settings-choice:16rem">
       <SecretsPage :state="state" />

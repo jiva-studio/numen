@@ -160,6 +160,8 @@ describe('useSettings step groups', () => {
       log,
       windowTabs,
       onSizeChanged: vi.fn(),
+      getSettingsViews: () => new Map(),
+      getPlatform: () => 'linux',
     })
 
     const unknownGroups = settings.paletteLists.getStepGroups('unknown', '')

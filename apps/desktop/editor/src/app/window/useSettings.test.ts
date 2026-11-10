@@ -67,6 +67,8 @@ const createSettings = (
     log,
     windowTabs,
     onSizeChanged,
+    getSettingsViews: () => new Map(),
+    getPlatform: () => 'linux',
     ...overrides,
   })
   return { settings, writers, writerFns, handle, core, onSizeChanged }

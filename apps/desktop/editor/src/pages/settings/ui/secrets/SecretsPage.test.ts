@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref, type Ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
-import { createInstallation, createPluginInfo, createSecretAnswer } from '@/testing/installation'
+import { createInstallation, createPluginInfo, createSecretAnswer, createSettingsState } from '@/testing/installation'
 import {
   addSecret,
   chooseGroupAction,
@@ -102,7 +102,7 @@ const mountPage = (
   })
   const wrapper = mount(SettingsTab, {
     attachTo: document.body,
-    props: { state: { installation, initialPluginId: ref('secrets') } },
+    props: { state: createSettingsState(installation, { initialPluginId: ref('secrets') }) },
   })
   return { installation, wrapper }
 }

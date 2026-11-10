@@ -136,8 +136,6 @@ describe('the commands over a note', () => {
       'app:file.open': undefined,
       'app:file.open#beside': undefined,
       'app:file.reveal': undefined,
-      'app:file.reveal#plex': undefined,
-      'app:file.reveal#files': undefined,
       'app:note.createChild': 'name',
       'app:note.createParent': 'name',
       'app:note.createJump': 'name',
@@ -229,12 +227,11 @@ describe('a note put in front of the person', () => {
 })
 
 describe('a note shown in a place', () => {
-  it('moves the tab of the kind to the note, and does nothing for a kind the window has none of', async () => {
+  it('shows the note in the tab kind the command names, and does nothing without one', async () => {
     const one = createWindow()
 
     await one.carry({ ...invoke('app:file.reveal', front()), values: { kind: 'plex' } })
     await one.carry({ ...invoke('app:file.reveal', front()), values: { kind: 'files' } })
-    await one.carry({ ...invoke('app:file.reveal', front()), values: { kind: 'x' } })
     await one.carry(invoke('app:file.reveal', front()))
 
     expect(one.actions).toStrictEqual([
