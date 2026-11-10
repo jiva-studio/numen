@@ -39,8 +39,11 @@ export function usePlexHeadings(
   watch(paths, () => readHeadings(), { immediate: true })
   watch(deps.notes.isNesting, () => readHeadings())
 
+  const getType = (node: string): NoteType =>
+    types.value.get(nodeIdMap.getNodePath(node)) ?? NOTE_TYPE
+
   const getHeadings = (node: string): readonly PlexHeading[] =>
     deps.notes.isNesting.value ? (headings.value.get(nodeIdMap.getNodePath(node)) ?? []) : []
 
-  return { headings, readHeadings, getHeadings }
+  return { headings, maxHeadings: deps.notes.headings, getType, readHeadings, getHeadings }
 }

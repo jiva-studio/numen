@@ -187,7 +187,6 @@ export interface PlexHeadingsState {
   getType(node: string): NoteType
   getHeadings(node: string): readonly PlexHeading[]
   readHeadings(): Promise<void>
-  openHeading(node: string, heading: string): void
 }
 
 /** Shows the failure of an operation that runs in the background. */
@@ -201,6 +200,7 @@ export interface PlexNodeActions {
   joinNodes(from: string, to: string, relation: PlexRelation): Promise<void>
   dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
+  openHeading(node: string, heading: string): void
   followMoves(renamed: readonly PathRename[]): void
   getName(path: string): string
 }
