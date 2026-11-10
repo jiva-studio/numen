@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
