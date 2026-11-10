@@ -10,6 +10,7 @@ describe('notes plugin lifecycle', () => {
     const registerTabKind = vi.fn()
     const context = {
       register: { reader: registerReader, tabKind: registerTabKind },
+      vault: {},
     } as unknown as PluginContext
 
     activate(context)
@@ -33,6 +34,7 @@ describe('notes plugin lifecycle', () => {
     const registerCommand = vi.fn()
     const context = {
       register: { reader: vi.fn(), tabKind: vi.fn(), command: registerCommand },
+      vault: {},
     } as unknown as PluginContext
 
     activate(context)
@@ -67,6 +69,7 @@ describe('notes plugin lifecycle', () => {
     const listeners = new Map<string, (value: unknown) => void>()
     const context = {
       register: { reader: vi.fn(), tabKind: vi.fn() },
+      vault: {},
       settings: {
         get: (key: string) => settings[key],
         onChange: (key: string, handler: (value: unknown) => void) => {
