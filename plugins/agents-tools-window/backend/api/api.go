@@ -1,7 +1,5 @@
-// Package service implements the Window Interaction & Edit Preview Tools plugin backend.
-package service
-
-import "time"
+// Package api holds the arguments and results of the window tools.
+package api
 
 // Place is a place in a file: a page of a PDF, a position in a recording, or a position in an EPUB.
 type Place struct {
@@ -56,18 +54,6 @@ type NoteEditPreviewOutput struct {
 	Diff      string `json:"diff" jsonschema:"unified diff representation of the proposed changes"`
 	Additions int    `json:"additions" jsonschema:"number of lines added"`
 	Deletions int    `json:"deletions" jsonschema:"number of lines removed"`
-}
-
-// NoteEditPreview stores a pending or proposed edit preview.
-type NoteEditPreview struct {
-	ID           string
-	Path         string
-	ProposedText string
-	OriginalText string
-	Diff         string
-	Additions    int
-	Deletions    int
-	CreatedAt    time.Time
 }
 
 // NoteFocusInput represents the arguments for note_focus.
