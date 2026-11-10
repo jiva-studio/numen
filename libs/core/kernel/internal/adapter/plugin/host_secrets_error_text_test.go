@@ -106,7 +106,7 @@ func newErrorTextHost(t *testing.T, values []string) (*Host, *configured) {
 		})
 	}
 	host, probe := newSecretHost(t, newKeys(items))
-	host.SetSecretSource(plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) { return secrets, nil }})
+	host.Config.SetSecretSource(plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) { return secrets, nil }})
 	return host, probe
 }
 
@@ -115,8 +115,8 @@ func TestConfigureErrorExcludesPluginText(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			host, probe := newErrorTextHost(t, c.values)
 			reported, failed, logs := &collectErrors{}, &collectFailures{}, captureLogs(t)
-			host.SetErrorHandler(reported.add)
-			host.SetOnPluginFailed(failed.add)
+			host.Failures.SetErrorHandler(reported.add)
+			host.Failures.SetOnPluginFailed(failed.add)
 			probe.setFailure(connect.NewError(connect.CodeInternal, errors.New(c.say(c.values))))
 
 			err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
@@ -144,7 +144,7 @@ func TestActivationConfigureReportExcludesPluginText(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			host, probe := newErrorTextHost(t, c.values)
 			reported, logs := &collectErrors{}, captureLogs(t)
-			host.SetErrorHandler(reported.add)
+			host.Failures.SetErrorHandler(reported.add)
 			probe.setFailure(connect.NewError(connect.CodeInternal, errors.New(c.say(c.values))))
 
 			if err := prepareActivation(t, host, false)(); err != nil {

@@ -21,7 +21,7 @@ func newDiscoveredHost(t *testing.T) *Host {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	return host
@@ -31,7 +31,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	host := newDiscoveredHost(t)
 	policy := lifecycle.DefaultActivationPolicy()
 	policy.Timeout = 50 * time.Millisecond
-	host.SetActivationPolicy(policy)
+	host.Processes.SetActivationPolicy(policy)
 
 	cmd := plugintest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
@@ -44,11 +44,11 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 			t.Errorf("close pipe: %v", err)
 		}
 	})
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, silent, nil
 	})
 
-	_, err := host.EnsureActive(t.Context(), "org.example.sample")
+	_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
 	if !errors.Is(err, transport.ErrHandshakeTimeout) {
 		t.Fatalf("expected a handshake timeout, got %v", err)
 	}
@@ -56,7 +56,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	if err := cmd.Process.Signal(os.Kill); !errors.Is(err, os.ErrProcessDone) {
 		t.Fatalf("expected the silent process to be killed and reaped, got %v", err)
 	}
-	if state := host.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
+	if state := host.Registry.t.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -71,10 +71,10 @@ func failLaunching(launches *int) Launcher {
 func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 	host := newDiscoveredHost(t)
 	launches := 0
-	host.SetLauncher(failLaunching(&launches))
+	host.Processes.SetLauncher(failLaunching(&launches))
 
 	for range 3 {
-		if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
@@ -87,12 +87,12 @@ func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 func TestAFailedStartIsReportedEachTimeAndShownWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var notified []string
-	host.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure.PluginID) })
+	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure.PluginID) })
 	launches := 0
-	host.SetLauncher(failLaunching(&launches))
+	host.Processes.SetLauncher(failLaunching(&launches))
 
 	for range 2 {
-		if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
@@ -100,7 +100,7 @@ func TestAFailedStartIsReportedEachTimeAndShownWithItsReason(t *testing.T) {
 	if len(notified) != 2 {
 		t.Fatalf("expected a failure notification for each start, got %v", notified)
 	}
-	status, ok := host.GetPluginStatus("org.example.sample")
+	status, ok := host.Registry.GetPluginStatus("org.example.sample")
 	if !ok || !status.Failed || status.FailureReason == "" {
 		t.Fatalf("expected a failed status with a reason, got %+v", status)
 	}
@@ -108,15 +108,15 @@ func TestAFailedStartIsReportedEachTimeAndShownWithItsReason(t *testing.T) {
 
 func TestACanceledCallerDoesNotRecordAFailedStart(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("canceled")
 	})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := host.EnsureActive(ctx, "org.example.sample"); err == nil {
+	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
-	if host.supervisors["org.example.sample"].IsActivationFailed() {
+	if host.Registry.t.supervisors["org.example.sample"].IsActivationFailed() {
 		t.Fatal("a canceled caller recorded a failed start")
 	}
 }

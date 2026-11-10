@@ -28,6 +28,7 @@ Each test verifies adherence to structural rules.
 | No plugin, no plugin SDK and no plugin catalog package imports a package of the core, a domain package included | `TestNoPluginImportsAnotherPluginOrTheCore`, `TestNoSDKOrCatalogPackageImportsTheCore` |
 | The depguard rule `domain` denies `port` as well as adapters, use cases and the composition root | `.golangci.yml` |
 | No struct holds more than five use cases | `TestTheTypeCheckedWorkspaceObeysItsRules/NoStructHoldsMoreThanFiveUseCases` |
+| No struct of the plugin adapter has more than 24 methods or 16 fields: the host is the roles that do its work, not one object that does all | `TestTheTypeCheckedWorkspaceObeysItsRules/ThePluginAdapterHasNoGodStruct` |
 | No package outside `container`, `apps/*/cmd` and `apps/*/app` imports a use case package and a driven adapter package (one with a type that implements a `port/` interface) | `TestTheTypeCheckedWorkspaceObeysItsRules/NoWiringPackageExistsOutsideTheContainer` |
 
 ## What the core may not do

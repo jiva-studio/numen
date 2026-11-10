@@ -33,7 +33,7 @@ func newLinkedHost(t *testing.T) *Host {
 		t.Fatal(err)
 	}
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
@@ -44,24 +44,24 @@ func newLinkedHost(t *testing.T) *Host {
 func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	host := newLinkedHost(t)
 	getIDs := func() []string {
-		host.mu.RLock()
-		defer host.mu.RUnlock()
-		return host.getRequirementIDsLocked("md.numen.sample")
+		host.Registry.t.mu.RLock()
+		defer host.Registry.t.mu.RUnlock()
+		return host.Registry.t.getRequirementIDsLocked("md.numen.sample")
 	}
 	if got := getIDs(); !slices.Equal(got, []string{"large-weights"}) {
 		t.Errorf("requirements = %v, want the large weights", got)
 	}
-	if _, ok := host.GetPluginSettings("md.numen.sample")["url"]; ok {
+	if _, ok := host.Settings.GetPluginSettings("md.numen.sample")["url"]; ok {
 		t.Error("the url is passed while its condition fails")
 	}
 
-	if err := host.UpdatePluginSetting(t.Context(), "md.numen.sample", "model", "small"); err != nil {
+	if err := updateSetting(t.Context(), host, "md.numen.sample", "model", "small"); err != nil {
 		t.Fatal(err)
 	}
 	if got := getIDs(); !slices.Equal(got, []string{"small-weights"}) {
 		t.Errorf("requirements = %v, want the small weights", got)
 	}
-	if got := host.GetPluginSettings("md.numen.sample")["url"]; got != "https://example.org" {
+	if got := host.Settings.GetPluginSettings("md.numen.sample")["url"]; got != "https://example.org" {
 		t.Errorf("url = %v, want its default", got)
 	}
 }
@@ -90,7 +90,7 @@ func TestCheckPluginSettingAcceptsPathsOfItsType(t *testing.T) {
 		{"dictionary", 3.0, errPathNotFound},
 		{"model", "anything", nil},
 	} {
-		err := host.CheckPluginSetting("md.numen.sample", tc.key, tc.value)
+		err := host.Settings.CheckPluginSetting("md.numen.sample", tc.key, tc.value)
 		if !errors.Is(err, tc.want) || (tc.want == nil && err != nil) {
 			t.Errorf("%s = %v: err = %v, want %v", tc.key, tc.value, err, tc.want)
 		}

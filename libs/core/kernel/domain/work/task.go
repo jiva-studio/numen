@@ -3,6 +3,16 @@ package work
 
 import "context"
 
+// What each pass behind a window is called in the list of what is being done. One name each, so a
+// pass that reports itself again replaces itself.
+const (
+	WalkingNotes  = "walking the notes"
+	IndexingTexts = "indexing the file texts"
+	MakingVectors = "making the vectors"
+	// WordsAlone is the task ID for a search that runs without semantic retrieval.
+	WordsAlone = "search by words only"
+)
+
 // A Task is one unit of work as presented to the user.
 type Task struct {
 	ID string

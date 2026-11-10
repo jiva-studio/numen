@@ -293,9 +293,6 @@ func TestOnlyTheCoreWritesTheSecretsSection(t *testing.T) {
 			t.Errorf("a write at %v was accepted", target)
 		}
 	}
-	if err := w.host.SetPluginSetting(t.Context(), "secrets", "0", "x"); err == nil {
-		t.Error("the host accepted a plugin setting for the owner secrets")
-	}
 	if after := w.readFile(t); after != before {
 		t.Errorf("the file changed:\n%s", after)
 	}

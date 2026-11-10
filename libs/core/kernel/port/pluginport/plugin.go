@@ -30,14 +30,22 @@ type PluginActivator interface {
 	Release(pluginID string)
 }
 
-// PluginDiscoverer scans for available plugins and returns their metadata in the order of their ids.
+// PluginRetrier starts a plugin once, as any use of it does.
+type PluginRetrier interface {
+	// RetryPlugin answers why the start failed where it did.
+	RetryPlugin(ctx context.Context, pluginID string) (*plugin.Failure, error)
+}
+
+// PluginDiscoverer scans for available plugins.
 type PluginDiscoverer interface {
 	Discover() error
+}
+
+// PluginLister returns the metadata of the plugins in the order of their ids.
+type PluginLister interface {
 	GetPluginInfos() []plugin.Info
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 	IsPluginEnabled(pluginID string) bool
-	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
-	IsPluginSuspended(pluginID string) bool
 }
 
 // PluginSettingDeclarer returns the settings a plugin declares.
@@ -61,12 +69,15 @@ type SecretConfigurator interface {
 type SettingsPush interface {
 	SetSettings(all map[string]map[string]any)
 	SetPerformanceProfile(ctx context.Context, profile string)
+}
+
+// ConfigWatcher tells when a plugin has been given its configuration.
+type ConfigWatcher interface {
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
-// SettingUpdater changes and checks one setting of a plugin.
-type SettingUpdater interface {
-	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
+// SettingChecker checks the value of one setting of a plugin.
+type SettingChecker interface {
 	CheckPluginSetting(pluginID, key string, value any) error
 }
 
@@ -80,11 +91,16 @@ type PluginEventEmitter interface {
 	EmitEvent(event string)
 }
 
-// PluginFailures reports the plugins whose start failed and restarts them.
+// PluginFailures reports the plugins whose start failed.
 type PluginFailures interface {
 	SetOnPluginFailed(fn func(plugin.Failure))
 	SetOnFailureCleared(fn func(pluginID string))
-	RetryPlugin(ctx context.Context, pluginID string) (*plugin.Failure, error)
+	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
+	IsPluginSuspended(pluginID string) bool
+}
+
+// PluginShutdown stops the plugins when the host shuts down.
+type PluginShutdown interface {
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 }
 

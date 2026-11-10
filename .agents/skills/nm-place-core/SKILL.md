@@ -103,6 +103,21 @@ An adapter is driving or driven, never both. A package that would be both is spl
 - A driving adapter holds parsing, mapping and routing. The window adapter is cut by wire service: one adapter type per RPC service (notes, files, vaults, settings, and so on), each built by the container from the use cases it calls, and no type holds them all. It calls use cases through the values `container` hands it, references no type declared under `port/` and constructs no use case.
 - A platform difference (`_linux.go`, `_windows.go`) stays in the driven adapter that needs it.
 
+## Size and role
+
+A structure is judged by what one object does, not by the interfaces it is cut into. [`architecture.md`](../../rules/architecture.md) §8 gives the bounds; the placement follows from them.
+
+- An adapter or container struct has at most 20 methods and 15 fields, a use case at most 12 and 12. A struct that needs more is cut by responsibility into objects with their own state, each built by the container.
+- A file has at most 500 lines and a package in the core at most 3000. A package that grows toward the limit is cut by what it computes.
+- An adapter owns one technology and holds no business rule; a scenario is a use case. A window or CLI handler decodes, calls one use case and encodes.
+- Code that several adapters or use cases share is a domain, a port, a use case or a named helper in `internal/adapterlib` or a package named after what it computes, with the reason in the package comment. It is never a folder that collects reuse.
+- Driving adapters live under `adapter/`: `cli`, `window/<service>` and `plugin/<host endpoint>`.
+- A permission guard in the plugin host is a table with a row per method and a deny for a method without a row.
+- An unknown type (`any`, `interface{}`, raw JSON) appears only in the function that parses it at the boundary and returns a named type.
+- One host concern has one runtime port: a clock, a filesystem or a process reaches the core through one interface.
+- A `recover` or an error branch handles the failure: it returns, wraps or reports it.
+- Production code does not carry a field, a hook or an interface that only a test substitutes; the test uses the real object.
+
 ## What the checks enforce
 
 The structural checks live in `libs/core/kernel/container/*_test.go`, `libs/note/*_test.go` and `tools/lint-layers`. Each walks the type-checked tree and fails when it reads nothing. They forbid:

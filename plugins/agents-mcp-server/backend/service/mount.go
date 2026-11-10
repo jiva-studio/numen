@@ -7,11 +7,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/exposetools"
 )
 
 // Mount registers the plugin's services and handlers on the plugin server.
 func Mount(s *server.Server) error {
-	var client ToolClient
+	var client exposetools.Host
 	if endpoint, err := hostcall.FromEnv(); err == nil {
 		client = tools.NewClient(endpoint)
 	}
@@ -28,11 +29,11 @@ func Mount(s *server.Server) error {
 	})
 
 	s.SetConfigure(func(ctx context.Context, values map[string]string, _ server.Secrets) error {
-		if srv.aggregator.client == nil {
+		if !srv.aggregator.HasClient() {
 			if endpoint, err := hostcall.FromVars(values); err == nil {
-				srv.aggregator.client = tools.NewClient(endpoint)
+				srv.aggregator.SetClient(tools.NewClient(endpoint))
 			} else if endpoint, err := hostcall.FromEnv(); err == nil {
-				srv.aggregator.client = tools.NewClient(endpoint)
+				srv.aggregator.SetClient(tools.NewClient(endpoint))
 			}
 		}
 

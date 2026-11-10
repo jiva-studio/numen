@@ -16,22 +16,18 @@ const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const initialPluginId = props.state.initialPluginId
-const selectedPluginId = ref<string | null>(initialPluginId?.value ?? null)
+const selectedPluginId = ref<string | null>(initialPluginId.value)
 
 watch(
-  () => initialPluginId?.value,
+  () => initialPluginId.value,
   (newId) => {
-    if (newId !== undefined) {
-      selectedPluginId.value = newId
-    }
+    selectedPluginId.value = newId
   },
 )
 
-const plugins = computed<readonly PluginInfo[]>(
-  () => props.state.installation.plugin.plugins?.value ?? [],
-)
+const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugin.plugins.value)
 const uninstalled = computed(() =>
-  createManagedFromEntries([], props.state.installation.plugin.catalog?.value ?? []).find(
+  createManagedFromEntries([], props.state.installation.plugin.catalog.value).find(
     (one) => one.id === selectedPluginId.value,
   ),
 )
@@ -49,16 +45,12 @@ const selectedPlugin = computed<PluginInfo | undefined>(() => {
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {
   selectedPluginId.value = pluginId
-  if (initialPluginId) {
-    initialPluginId.value = pluginId
-  }
+  initialPluginId.value = pluginId
 }
 
 function onBack(): void {
   selectedPluginId.value = null
-  if (initialPluginId) {
-    initialPluginId.value = null
-  }
+  initialPluginId.value = null
 }
 </script>
 

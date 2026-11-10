@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -136,13 +137,13 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
 			host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
-			if err := host.Discover(); err != nil {
+			if err := host.Discovery.Discover(); err != nil {
 				t.Fatal(err)
 			}
 			launcher := &restartingLauncher{t: t}
-			host.SetLauncher(launcher.launch)
+			host.Processes.SetLauncher(launcher.launch)
 
-			bridge, call, err := tc.open(t.Context(), host)
+			bridge, call, err := tc.open(t.Context(), pluginhost.Join(host))
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
@@ -154,7 +155,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			first, _, firstServer := launcher.get(0)
 			plugintest.KillProcess(t, first)
 			plugintest.WaitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
-				return !host.HasEndpoint(contractPluginID)
+				return !host.Activation.HasEndpoint(contractPluginID)
 			})
 			firstServer.Close()
 
@@ -167,7 +168,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			if _, again, _ := launcher.get(1); again.requested.Load() != 1 {
 				t.Errorf("the plugin started again was asked %d times, want 1", again.requested.Load())
 			}
-			if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+			if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 				t.Errorf("TeardownAll: %v", err)
 			}
 		})

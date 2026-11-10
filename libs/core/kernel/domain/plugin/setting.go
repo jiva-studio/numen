@@ -1,6 +1,11 @@
 package plugin
 
-import "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
 
 // Setting declares one configuration field managed by the core host.
 type Setting struct {
@@ -48,4 +53,50 @@ func NewSetting(declared manifest.Setting, defaultJSON string, options manifest.
 		Preview:     declared.Preview,
 		OptionsFrom: declared.OptionsFrom,
 	}
+}
+
+// ListSettings returns the settings the manifest declares as a window draws them, in the order of
+// the declaration. The options in force, whether the setting is shown and the stored value are
+// resolved under values, the values the plugin has now.
+func ListSettings(declared manifest.Manifest, values map[string]any) []Setting {
+	settings := make([]Setting, 0, len(declared.Settings))
+	for _, one := range declared.Settings {
+		defaultJSON := ""
+		if one.Default != nil {
+			if encoded, err := json.Marshal(one.Default); err == nil {
+				defaultJSON = string(encoded)
+			}
+		}
+		setting := NewSetting(one, defaultJSON, one.Options)
+		setting.ActiveOptions = declared.GetSettingOptions(one, values)
+		if len(setting.ActiveOptions) == 0 {
+			setting.ActiveOptions = setting.Options
+		}
+		setting.IsShown = declared.IsSettingShown(one, values)
+		if value, ok := values[one.Key]; ok {
+			if encoded, err := json.Marshal(value); err == nil {
+				setting.ValueJSON = string(encoded)
+			}
+		}
+		settings = append(settings, setting)
+	}
+	return settings
+}
+
+// FormatSettingValues returns the values as text: a string stays as it is and any other value is
+// its JSON.
+func FormatSettingValues(values map[string]any) map[string]string {
+	formatted := make(map[string]string, len(values))
+	for key, value := range values {
+		if text, ok := value.(string); ok {
+			formatted[key] = text
+			continue
+		}
+		if encoded, err := json.Marshal(value); err == nil {
+			formatted[key] = string(encoded)
+		} else {
+			formatted[key] = fmt.Sprint(value)
+		}
+	}
+	return formatted
 }
