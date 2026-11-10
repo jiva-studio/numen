@@ -68,13 +68,13 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 	hosts := &settings.HostSubscriptions{}
 	var mu sync.Mutex
 	subscriptions := 0
-	done := make(chan struct{})
+	stopCalls := make(chan struct{})
 	feed := make(chan []settingsdomain.Setting, 1)
 	subscribe := func() (<-chan []settingsdomain.Setting, func()) {
 		mu.Lock()
 		subscriptions++
 		mu.Unlock()
-		return feed, func() { close(feed); close(done) }
+		return feed, func() { close(feed); close(stopCalls) }
 	}
 	file := &memoryFile{}
 	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
@@ -86,7 +86,7 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 	feed <- []settingsdomain.Setting{setting(`4`, "org.example.scans", "depth")}
 	hosts.Unsubscribe(host)
 
-	<-done
+	<-stopCalls
 	if subscriptions != 1 || setups != 2 {
 		t.Errorf("subscriptions = %d, setups = %d", subscriptions, setups)
 	}
