@@ -135,7 +135,7 @@ func (c Config) Vaults(registry vaultregistry.Ports, db *vaultusecase.Index, not
 		Unregister:  unregister,
 		Erase:       erase,
 		Move: vaultusecase.NewMove(
-			c.writers(), db.Links(), db.SourcesKnown(), db.Sources(), notes),
+			c.writers(), db.Links(), db.SourcesUnder(), db.Sources(), notes),
 		Import: vaultusecase.NewImport(c.writers(), c.GetImportedFiles()),
 	}
 }

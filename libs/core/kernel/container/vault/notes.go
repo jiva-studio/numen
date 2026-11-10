@@ -16,7 +16,7 @@ import (
 // that writes a note and immediately searches for it finds it.
 func (c Config) Notes(db *vaultusecase.Index, index note.IndexUpdater) note.Scenarios {
 	names, refs, links := db.NamedPaths(), db.NoteRefs(), db.Links()
-	sources, indexed := db.Sources(), db.SourcesKnown()
+	sources, indexed := db.Sources(), db.SourcesUnder()
 	readers := c.VaultReaders()
 	writers := c.writers()
 	now := c.Clock

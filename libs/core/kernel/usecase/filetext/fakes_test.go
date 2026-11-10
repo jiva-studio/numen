@@ -2,15 +2,14 @@ package filetext
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
-func newIndex(shelves indexfake.Vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) Index {
-	extract, _ := newIndexWithTexts(shelves, sources, queries)
+func newIndex(shelves indexfake.Vaults, index *indexfake.Store) Index {
+	extract, _ := newIndexWithTexts(shelves, index)
 	return extract
 }
 
-func newIndexWithTexts(shelves indexfake.Vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) (Index, *libraryTexts) {
+func newIndexWithTexts(shelves indexfake.Vaults, index *indexfake.Store) (Index, *libraryTexts) {
 	texts := newLibraryTexts(shelves)
-	return NewIndex(shelves, sources, queries, texts), texts
+	return NewIndex(shelves, index, index, index, index, texts), texts
 }

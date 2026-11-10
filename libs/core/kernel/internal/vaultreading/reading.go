@@ -199,7 +199,7 @@ func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string)
 // under the paths, with the content hash each was read with. A source never
 // read has no hash and matches nothing.
 func FindRemovedSources(
-	ctx context.Context, queries sourceport.SourceQueries, vaultID domain.VaultID, paths []string,
+	ctx context.Context, queries sourceport.RemovalLookup, vaultID domain.VaultID, paths []string,
 ) ([]source.Text, error) {
 	var out []source.Text
 	for _, path := range paths {

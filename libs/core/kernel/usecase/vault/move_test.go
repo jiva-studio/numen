@@ -39,7 +39,7 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.RemovalLookup(), db.Sources(), testsupport.NewClock())
 	return filing{
 		db:      db,
 		vault:   v,
@@ -68,7 +68,7 @@ func (f filing) newMove(preserved query.SyncTitleAndFilename) vaults.Move {
 	}
 	return vaults.NewMove(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		f.db.Links(), f.db.SourcesKnown(), f.db.Sources(), notes,
+		f.db.Links(), f.db.SourcesUnder(), f.db.Sources(), notes,
 	)
 }
 
@@ -137,7 +137,7 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 
 func (f filing) sources(t *testing.T, path string) []string {
 	t.Helper()
-	found, err := f.db.SourcesKnown().GetSourcesUnder(t.Context(), f.vault.ID, path)
+	found, err := f.db.SourcesUnder().GetSourcesUnder(t.Context(), f.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}

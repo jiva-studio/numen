@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
@@ -60,7 +59,7 @@ func (c Config) SetNoteCut(scan *vault.Scan, db *vault.Index) {
 	scan.ShouldRecut = c.Chunks.Get() > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
 		recipes := []string{recipe, filetext.Index{Sizes: scan.Cut.Sizes}.Recipe()}
-		return db.SourcesKnown().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
+		return db.SourceBacklog().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
 	}
 }
 
@@ -90,7 +89,7 @@ func (c Config) ReadWholeVault(
 	if err := c.FitIndex(db).Execute(ctx, embedder); err != nil {
 		return vault.ReadWholeVault{}, err
 	}
-	texts, err := c.IndexTexts(db.Sources(), db.SourcesKnown(), v)
+	texts, err := c.IndexTexts(db, v)
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
@@ -142,11 +141,11 @@ func (c Config) Embed(db *vault.Index, embedder embeddingport.Embedder, v domain
 
 // IndexTexts cuts the text versions of a vault's files into chunks. Every entry
 // point takes it from here, so what a chunk is kept under is one answer.
-func (c Config) IndexTexts(sources sourceport.SourceRepository, queries sourceport.SourceQueries, v domain.Vault) (filetext.Index, error) {
+func (c Config) IndexTexts(db *vault.Index, v domain.Vault) (filetext.Index, error) {
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewIndex(c.VaultReaders, sources, queries, c.TextReaders)
+	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), c.TextReaders)
 	index.ErrorHandler = c.ErrorHandler
 	cutter := c.CutNotes()
 	index.Sizes = cutter.Sizes

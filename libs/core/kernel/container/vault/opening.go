@@ -35,7 +35,7 @@ func (c Config) VaultOpenerWith(
 
 // MakeRefresh builds a vault refresh use case over db and notes.
 func (c Config) MakeRefresh(db *vaultusecase.Index, notes noteport.NoteRepository) vaultusecase.Refresh {
-	refresh := vaultusecase.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources(), c.Clock)
+	refresh := vaultusecase.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.RemovalLookup(), db.Sources(), c.Clock)
 	refresh.Cut = c.CutNotes
 	refresh.Ledger = db.Ledger()
 	return refresh

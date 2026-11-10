@@ -56,7 +56,7 @@ func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
 	if _, err := cfg.Scan(db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := cfg.IndexTexts(db.Sources(), db.SourcesKnown(), v)
+	extract, err := cfg.IndexTexts(db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, cfg, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(cfg.FileMovers(), db.Links(), db.SourcesKnown(), db.Sources(), note.Move{})
+	move := vault.NewMove(cfg.FileMovers(), db.Links(), db.SourcesUnder(), db.Sources(), note.Move{})
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
@@ -310,7 +310,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err := repo.SaveVersion(t.Context(), subtitles); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := cfg.IndexTexts(db.Sources(), db.SourcesKnown(), v)
+	extract, err := cfg.IndexTexts(db, v)
 	if err != nil {
 		t.Fatal(err)
 	}

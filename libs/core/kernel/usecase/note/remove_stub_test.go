@@ -19,7 +19,7 @@ import (
 
 // trashSources is the index saying which sources sit under a path.
 type trashSources struct {
-	sourceport.SourceQueries
+	sourceport.SourcesUnder
 	underCtx []domain.FileStat
 	err      error
 }

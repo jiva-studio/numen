@@ -141,7 +141,7 @@ func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
 	_, db, _ := openVault(t, getNote())
 
-	if db.Vectors() == nil || db.VectorQueries() == nil || db.Sources() == nil || db.SourcesKnown() == nil {
+	if db.Vectors() == nil || db.VectorQueries() == nil || db.Sources() == nil || db.RemovalLookup() == nil {
 		t.Error("a port of the index answers nothing")
 	}
 }

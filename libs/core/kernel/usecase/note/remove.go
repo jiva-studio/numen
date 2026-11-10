@@ -28,7 +28,7 @@ const TrashDir = ".trash"
 type Remove struct {
 	writers vaultport.FileMovers
 	links   noteport.LinkQueries
-	queries sourceport.SourceQueries
+	queries sourceport.SourcesUnder
 	index   IndexUpdater
 }
 
@@ -36,7 +36,7 @@ type Remove struct {
 // within, the links that pointed at it, what the index holds about the files
 // under it, and what updates the index for the path it left.
 func NewRemove(
-	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourceQueries, index IndexUpdater,
+	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index IndexUpdater,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, index: index}
 }

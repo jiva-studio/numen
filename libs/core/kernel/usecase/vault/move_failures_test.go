@@ -49,7 +49,7 @@ func (w *watchedLinks) GetLinks(ctx context.Context, id domain.VaultID, from str
 
 // unknowing is an index that cannot say what the vault holds under a path.
 type unknowing struct {
-	sourceport.SourceQueries
+	sourceport.SourcesUnder
 	err error
 }
 
@@ -68,7 +68,7 @@ func (u unfiling) MoveSources(context.Context, domain.VaultID, string, string) e
 // wiring is everything a Move relies on that a test may replace.
 type wiring struct {
 	links   noteport.LinkQueries
-	queries sourceport.SourceQueries
+	queries sourceport.SourcesUnder
 	sources sourceport.SourceRepository
 	writers vaultport.FileMovers
 	index   func(context.Context, domain.Vault, []string) error
@@ -77,7 +77,7 @@ type wiring struct {
 func (f filing) wiring() wiring {
 	return wiring{
 		links:   f.db.Links(),
-		queries: f.db.SourcesKnown(),
+		queries: f.db.SourcesUnder(),
 		sources: f.db.Sources(),
 		writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		index:   f.index,
@@ -99,7 +99,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.SourcesKnown(), testsupport.Texts{Readers: vaultreader.Readers{}})
+	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.SourceRecords(), f.db.SourceBacklog(), f.db.RemovalLookup(), testsupport.Texts{Readers: vaultreader.Readers{}})
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the index cannot be read")
 	w := f.wiring()
-	w.queries = unknowing{SourceQueries: w.queries, err: cannot}
+	w.queries = unknowing{SourcesUnder: w.queries, err: cannot}
 
 	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {
