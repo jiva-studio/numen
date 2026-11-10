@@ -2,27 +2,20 @@
  * Editor preferences read from the notes plugin settings and kept reactive while active.
  */
 import { reactive } from 'vue'
-import type { PluginContext } from '@numen/plugin-sdk'
+import type { JsonValue, PluginContext } from '@numen/plugin-sdk'
 
 export interface MarkdownEditorPreferences {
   softWrap?: boolean
   lineNumbers?: boolean
 }
 
-export type SettingLookup = ((key: string) => unknown) | ((path: readonly string[]) => unknown)
-
-function readSetting(getSetting: SettingLookup | undefined, key: string): unknown {
-  if (!getSetting) return undefined
-  const byKey = (getSetting as (arg: string) => unknown)(key)
-  if (byKey !== undefined) return byKey
-  return (getSetting as (arg: readonly string[]) => unknown)([key])
-}
+export type SettingLookup = (key: string) => JsonValue | undefined
 
 export function readMarkdownEditorPreferences(
   getSetting?: SettingLookup,
 ): Required<MarkdownEditorPreferences> {
-  const softWrap = readSetting(getSetting, 'softWrap')
-  const lineNumbers = readSetting(getSetting, 'lineNumbers')
+  const softWrap = getSetting?.('softWrap')
+  const lineNumbers = getSetting?.('lineNumbers')
   return {
     softWrap: typeof softWrap === 'boolean' ? softWrap : true,
     lineNumbers: typeof lineNumbers === 'boolean' ? lineNumbers : false,

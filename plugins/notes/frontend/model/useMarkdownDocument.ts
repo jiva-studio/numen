@@ -1,5 +1,5 @@
 import { computed, onMounted, ref, watch, type Ref } from 'vue'
-import type { EditorHandle, NoteTabState } from '@numen/plugin-sdk'
+import type { EditorHandle, NoteTabState, Caught } from '@numen/plugin-sdk'
 import { readTextAsset } from '../api/readTextAsset'
 import { parseFrontmatter, type FrontmatterResult } from '../lib/frontmatter'
 import { getFrontmatterError } from '../lib/frontmatterError'
@@ -76,7 +76,7 @@ export function useMarkdownDocument(
           initialContent.value = read.value
         }
       },
-      (error: unknown) => {
+      (error: Caught) => {
         loadError.value = error instanceof Error ? error.message : String(error)
       },
     )

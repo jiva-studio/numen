@@ -2,11 +2,11 @@
  * One note of the vault as the note editor view holds it: read once, and written after each edit.
  */
 import { ref } from 'vue'
-import type { VaultNotes } from '@numen/plugin-sdk'
+import type { VaultNotes, Caught } from '@numen/plugin-sdk'
 
 export type NoteFileState = ReturnType<typeof useNoteFile>
 
-const getErrorMessage = (error: unknown): string =>
+const getErrorMessage = (error: Caught): string =>
   error instanceof Error ? error.message : String(error)
 
 /**
@@ -26,7 +26,7 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
       () => {
         if (turn === writes) errorMessage.value = ''
       },
-      (error: unknown) => {
+      (error: Caught) => {
         if (turn === writes) errorMessage.value = getErrorMessage(error)
       },
     )
@@ -38,7 +38,7 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
       if (!hasEdited) body.value = result.body
       if (result.error) errorMessage.value = result.error
     },
-    (error: unknown) => {
+    (error: Caught) => {
       isLoading.value = false
       errorMessage.value = getErrorMessage(error)
     },

@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginContext } from '@numen/plugin-sdk'
+import type { JsonValue, PluginContext } from '@numen/plugin-sdk'
 import { bindMarkdownEditorPreferences, readMarkdownEditorPreferences } from './preferences'
 
 describe('the keys of the notes plugin settings', () => {
   it('reads the wrap and the line numbers from the camelCase keys', () => {
-    const settings: Record<string, unknown> = { softWrap: false, lineNumbers: true }
+    const settings: Record<string, JsonValue> = { softWrap: false, lineNumbers: true }
 
     expect(readMarkdownEditorPreferences((key: string) => settings[key])).toMatchObject({
       softWrap: false,
@@ -13,7 +13,7 @@ describe('the keys of the notes plugin settings', () => {
   })
 
   it('ignores the snake_case keys of the same settings', () => {
-    const settings: Record<string, unknown> = { soft_wrap: false, line_numbers: true }
+    const settings: Record<string, JsonValue> = { soft_wrap: false, line_numbers: true }
 
     expect(readMarkdownEditorPreferences((key: string) => settings[key])).toMatchObject({
       softWrap: true,
