@@ -70,17 +70,19 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
 
 <style scoped>
 .section-heading {
+  --section-heading-gap: 0.125rem;
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--section-heading-gap);
   inline-size: 100%;
   min-inline-size: 0;
 }
 
 /* What is wrong is placed under the rule it is wrong about. */
 .section-heading__objections {
+  --objections-padding-inline: 0.375rem;
   margin: 0;
-  padding-inline: 0.375rem;
+  padding-inline: var(--objections-padding-inline);
   overflow-wrap: anywhere;
 }
 </style>

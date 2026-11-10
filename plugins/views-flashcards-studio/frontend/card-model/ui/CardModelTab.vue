@@ -127,8 +127,9 @@ function onWriteTemplate(id: string, half: Half, text: string) {
 }
 
 .wrong {
+  --wrong-padding-inline-start: 1.1rem;
   margin: 0;
-  padding-inline-start: 1.1rem;
+  padding-inline-start: var(--wrong-padding-inline-start);
   list-style: disc;
 }
 </style>

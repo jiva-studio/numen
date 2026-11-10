@@ -61,7 +61,8 @@ const tiles = computed(() => getTiles(props.presets, props.today))
 }
 
 .presets__tile {
+  --tile-flex-basis: 12rem;
   display: flex;
-  flex: 1 1 12rem;
+  flex: 1 1 var(--tile-flex-basis);
 }
 </style>

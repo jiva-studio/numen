@@ -58,7 +58,7 @@ const onKey = (event: KeyboardEvent) => {
 .plex__handle-at {
   --radius: 0.5625rem;
   --arm: 0.25rem;
-  --bar: 1.5px;
+  --bar: 0.09375rem;
 }
 
 /* The hue is the one thing it inherits: it belongs to whatever it hangs off. */

@@ -125,10 +125,11 @@ function onGripKey(event: KeyboardEvent): void {
 @import '../../caret.css';
 
 .card-model__field {
+  --field-gap: 0.125rem;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--field-gap);
 }
 
 .card-model__field[data-dragged] {

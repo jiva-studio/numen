@@ -30,10 +30,12 @@ const emit = defineEmits<{ (event: 'press'): void }>()
 
 <style scoped>
 .remove-button {
+  --remove-button-inline-size: 1.5rem;
+  --remove-button-block-size: 1.5rem;
   display: grid;
   place-items: center;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: var(--remove-button-inline-size);
+  block-size: var(--remove-button-block-size);
   border: 0;
   background: transparent;
   color: var(--numen-edge-label);
@@ -47,8 +49,9 @@ const emit = defineEmits<{ (event: 'press'): void }>()
 }
 
 .remove-button:focus-visible {
+  --remove-button-focus-visible-outline-offset: 0.0625rem;
   outline: none;
-  outline-offset: 1px;
+  outline-offset: var(--remove-button-focus-visible-outline-offset);
 }
 
 @media (prefers-reduced-motion: reduce) {

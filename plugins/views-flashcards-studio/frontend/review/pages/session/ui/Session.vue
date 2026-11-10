@@ -146,7 +146,9 @@ const chord = (letter: string) => keyChord(letter, nav.userAgent)
 /* A pill in the same row as the one that counts what is waiting, so it is the
    same shape as that one. */
 .session__new {
-  padding: 0.0625rem 0.4rem;
+  --new-padding-block: 0.0625rem;
+  --new-padding-inline: 0.4rem;
+  padding: var(--new-padding-block) var(--new-padding-inline);
   border-radius: var(--numen-radius-pill);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);

@@ -72,8 +72,9 @@ const onClick = (press: MouseEvent) => {
 
 /* A slot naming no field is read at its current position. */
 .prose :deep(mark) {
+  --prose-padding-inline: 0.25em;
   border-radius: var(--numen-radius);
-  padding-inline: 0.25em;
+  padding-inline: var(--prose-padding-inline);
   background: var(--numen-alarm-bg);
   color: var(--numen-alarm);
 }

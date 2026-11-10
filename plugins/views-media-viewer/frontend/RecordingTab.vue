@@ -150,10 +150,11 @@ function onSeek(ms: number) {
 }
 
 .recording__page {
+  --page-max-block-size: 24rem;
   flex: none;
   inline-size: 100%;
   aspect-ratio: 16 / 9;
-  max-block-size: 24rem;
+  max-block-size: var(--page-max-block-size);
   border: 0;
 }
 

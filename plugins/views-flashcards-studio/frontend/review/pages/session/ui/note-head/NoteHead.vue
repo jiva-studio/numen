@@ -39,7 +39,8 @@ const getNoteName = (one: Neighbour) => one.title || one.written
 }
 
 .reading__quiet {
-  margin: 0.25rem 0 0;
+  --quiet-margin: 0.25rem;
+  margin: var(--quiet-margin) 0 0;
   overflow-wrap: anywhere;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);

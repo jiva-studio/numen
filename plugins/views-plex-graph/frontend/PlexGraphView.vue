@@ -200,8 +200,10 @@ function onDismissLinkInspector() {
 }
 
 .plex__icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  --icon-inline-size: 0.875rem;
+  --icon-block-size: 0.875rem;
+  inline-size: var(--icon-inline-size);
+  block-size: var(--icon-block-size);
   stroke-width: 1.875;
 }
 </style>

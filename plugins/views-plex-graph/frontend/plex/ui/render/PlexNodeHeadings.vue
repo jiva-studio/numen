@@ -112,7 +112,8 @@ const arrowLine = (arrow: Arrow) =>
 /* The backdrop behind the headings: dense enough to group them, and thin
    enough to read the picture through. */
 .plex__backdrop {
-  rx: 0.25rem;
+  --backdrop-rx: 0.25rem;
+  rx: var(--backdrop-rx);
   fill: color-mix(in oklab, var(--numen-raised), transparent 25%);
   stroke: color-mix(in oklab, var(--numen-rule), transparent 55%);
   stroke-width: var(--numen-stroke);

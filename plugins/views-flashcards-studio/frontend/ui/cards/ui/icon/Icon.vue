@@ -19,10 +19,12 @@ defineProps<{ name: Icon }>()
 
 <style scoped>
 .icon {
+  --icon-inline-size: 0.875em;
+  --icon-block-size: 0.875em;
   flex: none;
   pointer-events: none;
-  inline-size: 0.875em;
-  block-size: 0.875em;
+  inline-size: var(--icon-inline-size);
+  block-size: var(--icon-block-size);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
