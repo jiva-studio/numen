@@ -27,6 +27,10 @@ var (
 	// changes. The window keeps its vault.
 	ErrUnsavedChanges = errors.New("the window has unsaved changes and is prompting the user; retry after the prompt closes")
 
+	// ErrNotAttempted is the error of the links of a note that were not written because the call was
+	// canceled first.
+	ErrNotAttempted = errors.New("not attempted")
+
 	// ErrNoVault is returned by a vault call while the host shows no vault.
 	ErrNoVault = errors.New("the host is showing no vault")
 

@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
 var errTooManyLinks = fmt.Errorf("too many links: at most %d per call", batchLimit)
@@ -58,7 +57,7 @@ func (e *vaultEndpoint) AddLinks(
 	// The results already hold the cancellation of ctx: the links not written are ErrNotAttempted.
 	resultCtx := context.WithoutCancel(ctx)
 	for i, one := range added {
-		if errors.Is(one.Err, note.ErrNotAttempted) {
+		if errors.Is(one.Err, plugin.ErrNotAttempted) {
 			out.Results[i] = &v1.HostLinkAdded{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
 			continue
 		}

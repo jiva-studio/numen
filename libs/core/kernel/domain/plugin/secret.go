@@ -54,3 +54,7 @@ func IsValidSecretID(id string) bool {
 	}
 	return true
 }
+
+// GetSecretEntryName returns the name the value of a secret is stored under in the key store, which the
+// host reads it by when it sends the value to a plugin.
+func GetSecretEntryName(id string) string { return "secret/" + id }

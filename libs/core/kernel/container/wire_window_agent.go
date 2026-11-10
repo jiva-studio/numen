@@ -28,3 +28,14 @@ func mountAgent(w *windowWiring) {
 	path, served := windowagent.NewRoute(handler, state.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
+
+// GetSettingsAgentHandler is the window handler of the agent tasks, over the agent of the settings; it
+// has no use case where no agent is configured.
+func (c Config) GetSettingsAgentHandler() *windowagent.Handler {
+	handler := &windowagent.Handler{}
+	if taking := c.GetSettingsAgent(); taking != nil {
+		handler.Start = agent.NewStartTask(taking)
+		handler.End = agent.NewEndConversation(taking)
+	}
+	return handler
+}

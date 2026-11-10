@@ -11,24 +11,16 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ErrRuntimeUnavailable indicates that a plugin declares a dependency the host cannot provision.
 var ErrRuntimeUnavailable = errors.New("runtime unavailable")
 
-// Dependencies provisions the dependencies the plugins declare and reports on them.
-type Dependencies interface {
-	CanProvision(req manifest.DependencyRequirement) bool
-	Provision(ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugindomain.DependencyStatus)) (plugindomain.ResolvedDependency, error)
-	GetStatus(ctx context.Context, id string) (plugindomain.DependencyStatus, error)
-	List(ctx context.Context) ([]plugindomain.DependencyStatus, error)
-	SetObserver(observer func(manifest.DependencyRequirement, plugindomain.DependencyStatus))
-}
-
 // SetDependencies sets what provisions the dependencies the plugins declare and
 // what the plugins ask about over the host endpoint.
-func (h *Host) SetDependencies(catalog Dependencies) {
+func (h *Host) SetDependencies(catalog pluginport.DependencyRegistry) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.dependencies = catalog

@@ -10,6 +10,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 )
 
+func idsOf(list []plugin.Secret) []string {
+	var ids []string
+	for _, one := range list {
+		ids = append(ids, one.ID)
+	}
+	return ids
+}
+
 // forbiddenStore fails the test on every read of a value.
 type forbiddenStore struct {
 	keys

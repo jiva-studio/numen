@@ -6,6 +6,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -19,24 +20,27 @@ const module = "github.com/jiva-studio/numen/libs/core/kernel/"
 
 func getDriving() map[string]bool {
 	return map[string]bool{
-		"adapter/cli":                       true,
-		"adapter/window/agent":              true,
-		"adapter/window/catalog":            true,
-		"adapter/window/command":            true,
-		"adapter/window/editor":             true,
-		"adapter/window/plugin":             true,
-		"adapter/window/search":             true,
-		"adapter/window/settings":           true,
-		"adapter/window/shell":              true,
-		"adapter/window/text":               true,
-		"adapter/window/vault":              true,
-		"adapter/window/vaults":             true,
-		"adapter/window/windowstate":        true,
-		"adapter/window/workspace":          true,
-		"internal/adapter/plugin":           true,
-		"internal/adapter/theme":            true,
-		"internal/adapterlib/triggerpasses": true,
-		"internal/adapterlib/wire":          true,
+		"adapter/cli":                          true,
+		"adapter/window/agent":                 true,
+		"adapter/window/catalog":               true,
+		"adapter/window/command":               true,
+		"adapter/window/editor":                true,
+		"adapter/window/plugin":                true,
+		"adapter/window/search":                true,
+		"adapter/window/settings":              true,
+		"adapter/window/shell":                 true,
+		"adapter/window/text":                  true,
+		"adapter/window/vault":                 true,
+		"adapter/window/vaults":                true,
+		"adapter/window/windowstate":           true,
+		"adapter/window/workspace":             true,
+		"internal/adapter/plugin/hostendpoint": true,
+		"internal/adapter/plugin/hostsearch":   true,
+		"internal/adapter/plugin/hosttext":     true,
+		"internal/adapter/plugin/hostvault":    true,
+		"internal/adapter/theme":               true,
+		"internal/adapterlib/triggerpasses":    true,
+		"internal/adapterlib/wire":             true,
 	}
 }
 
@@ -650,7 +654,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 				continue
 			}
 			found++
-			if !getDriving()[family(pkg)] {
+			if !isDriving(pkg) && !isPluginClient(pkg) {
 				wrong = append(wrong, family(pkg)+" serves the schema and is named driven")
 			}
 		}
@@ -970,6 +974,7 @@ func TestLayerAliasRule_RejectsLayerNamedAliases(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "alias.go", `package p
 
 import (
+	"maps"
 	usecase "`+module+`usecase/note"
 	adapter "`+module+`adapter/index"
 	vaults "`+module+`usecase/vault"
@@ -1013,10 +1018,10 @@ func getRefusal(from, to string) string {
 		if isAdapter(to) && !sibling(from, to) {
 			return "an adapter is given what it needs and takes no other adapter"
 		}
-		if strings.HasPrefix(to, "usecase/") && !getDriving()[family(from)] {
+		if strings.HasPrefix(to, "usecase/") && !isDriving(from) {
 			return "a driven adapter is behind a port and runs no scenario"
 		}
-		if isUnder(to, "port") && getDriving()[family(from)] {
+		if isUnder(to, "port") && isDriving(from) {
 			return "a driving adapter calls the use case layer and imports no port directly"
 		}
 	case isUnder(from, "container"):
@@ -1651,4 +1656,12 @@ func parseSourceFiles(t *testing.T, dir string) []*ast.File {
 		files = append(files, file)
 	}
 	return files
+}
+
+func isDriving(pkg string) bool {
+	return isAmong(slices.Collect(maps.Keys(getDriving())), pkg)
+}
+
+func isPluginClient(pkg string) bool {
+	return isAmong([]string{"internal/adapter/plugin"}, pkg) && !isDriving(pkg)
 }

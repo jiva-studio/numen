@@ -1,6 +1,10 @@
 package secret
 
-import "context"
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+)
 
 // State reports whether the value of one secret is on this machine.
 type State struct {
@@ -33,6 +37,6 @@ func (u *ListStates) hasValue(ctx context.Context, id string) bool {
 	if u.keys == nil {
 		return false
 	}
-	value, err := u.keys.GetKey(ctx, GetEntryName(id))
+	value, err := u.keys.GetKey(ctx, plugin.GetSecretEntryName(id))
 	return err == nil && value != ""
 }

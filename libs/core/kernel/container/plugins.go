@@ -32,7 +32,7 @@ func NewPluginHost(target string, dirs ...string) *pluginswiring.Host {
 	return pluginswiring.NewPluginHost(target, dirs...)
 }
 
-func newDependencies(defaultDir string) plugin.Dependencies {
+func newDependencies(defaultDir string) pluginport.DependencyRegistry {
 	return pluginswiring.NewDependenciesIn(defaultDir)
 }
 

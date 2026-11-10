@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -38,7 +39,7 @@ func newFolders(t *testing.T, current shownVault) (*Handler, *textversion.Versio
 	if _, err := folders.WriteTextFile(t.Context(), transcription, "k.jsonl", segments); err != nil {
 		t.Fatal(err)
 	}
-	report := textversion.VersionPut{
+	report := plugin.TextPut{
 		Path: "talk.mp3", Key: "k", Kind: "transcript", File: "k.jsonl", InputHash: domain.HashContent(files["talk.mp3"]),
 	}
 	if _, err := versions.PutVersion(t.Context(), domain.Vault(current), transcription, report); err != nil {

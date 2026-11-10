@@ -17,11 +17,6 @@ import (
 // without its stat changing.
 const racyWindow = 2 * time.Second
 
-// ErrFileUnreadable wraps the failure to stat, open or read the file whose
-// hash is requested. A failure of the vault, of the index or of the context is
-// returned without it.
-var ErrFileUnreadable = errors.New("the file cannot be read")
-
 // GetContentHash returns domain.HashContent of the file at the path as it is now.
 // A recorded hash whose stat equals the file's is returned without opening the
 // file; otherwise the file is hashed from a stream and recorded with the stat.
@@ -67,7 +62,7 @@ func markFileFailure(ctx context.Context, err error) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	return fmt.Errorf("%w: %w", ErrFileUnreadable, err)
+	return fmt.Errorf("%w: %w", text.ErrFileUnreadable, err)
 }
 
 func isRecordCurrent(record text.ContentHash, stat domain.FileStat) bool {

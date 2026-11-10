@@ -69,10 +69,6 @@ func (o operation) apply(ctx context.Context, change func() (readers []string, e
 	return o.plugins.Refresh(ctx, readers...)
 }
 
-// GetEntryName returns the name the value of a secret is stored under in the key store, which the
-// host reads it by when it sends the value to a plugin.
-func GetEntryName(id string) string { return "secret/" + id }
-
 func newInvalidError(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrInvalid, fmt.Sprintf(format, args...))
 }
@@ -83,7 +79,7 @@ func (o operation) setValue(ctx context.Context, id, value string) error {
 	if o.keys == nil {
 		return fmt.Errorf("%w: %w", ErrKeyStore, plugin.ErrNoKeyStore)
 	}
-	if err := o.keys.SetKey(ctx, GetEntryName(id), value); err != nil {
+	if err := o.keys.SetKey(ctx, plugin.GetSecretEntryName(id), value); err != nil {
 		return fmt.Errorf("%w: store the value of %s: %w", ErrKeyStore, id, err)
 	}
 	return nil
@@ -93,7 +89,7 @@ func (o operation) deleteValue(ctx context.Context, id string) error {
 	if o.keys == nil {
 		return nil
 	}
-	if err := o.keys.DeleteKey(ctx, GetEntryName(id)); err != nil && !errors.Is(err, plugin.ErrNoKey) {
+	if err := o.keys.DeleteKey(ctx, plugin.GetSecretEntryName(id)); err != nil && !errors.Is(err, plugin.ErrNoKey) {
 		return fmt.Errorf("%w: delete the value of %s: %w", ErrKeyStore, id, err)
 	}
 	return nil

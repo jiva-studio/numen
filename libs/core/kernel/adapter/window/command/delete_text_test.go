@@ -95,7 +95,7 @@ func (namingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListCommandItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(namingPlugins{}, fileTypes{}, nil, nil), &namedVersions{})
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(namingPlugins{}, namingPlugins{}, fileTypes{}, nil, nil), &namedVersions{})
 
 	list := listItemsOfOne(t, handler, "", "app:version.delete", "talks/a.mp3")
 

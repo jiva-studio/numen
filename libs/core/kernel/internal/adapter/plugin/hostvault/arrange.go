@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
@@ -31,7 +30,7 @@ type Arranger struct {
 	Notes       NoteChanges
 	Window      NoteChanges
 	WindowVault func() (domain.Vault, bool)
-	Checks      *vaults.GetProblems
+	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
 }
 
 func (a Arranger) getChanges(v domain.Vault) NoteChanges {
@@ -106,11 +105,7 @@ func (a Vault) GetProblems(ctx context.Context, checks []domain.Check) ([]domain
 	if a.Arranger.Checks == nil {
 		return nil, nil, fmt.Errorf("the checks of %s cannot run: %w", v.Name, domain.ErrUnavailable)
 	}
-	report, err := a.Arranger.Checks.Execute(ctx, v, checks...)
-	if err != nil {
-		return nil, nil, err
-	}
-	return report.Ran, report.Found, nil
+	return a.Arranger.Checks(ctx, v, checks...)
 }
 func (a Vault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
 	v, err := a.open()
