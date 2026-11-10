@@ -15,7 +15,7 @@ type Model struct {
 
 // New creates a model from the effort names a program reports. A name that is empty or listed twice
 // is dropped.
-func New(name, title string, isDefault bool, efforts []string, byDefault string) Model {
+func New(id, label string, isPreferred bool, efforts []string, byDefault string) Model {
 	var levels []reasoning.Level
 	for _, effort := range efforts {
 		if level := reasoning.NewLevel(effort); level.Name != "" && !reasoning.Contains(levels, level.Name) {
@@ -24,7 +24,7 @@ func New(name, title string, isDefault bool, efforts []string, byDefault string)
 	}
 	reasoning.Sort(levels)
 	return Model{
-		Name: name, Title: title, IsDefault: isDefault,
+		Name: id, Title: label, IsDefault: isPreferred,
 		Reasoning: levels, DefaultReasoning: reasoning.Pick(levels, byDefault),
 	}
 }

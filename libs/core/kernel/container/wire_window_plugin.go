@@ -24,7 +24,7 @@ func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installati
 	focusPassages := file.NewFocusPassages(c.VaultReaders(), view)
 	c.SetPluginWindow(windowsession.NewPluginWindow(
 		&opened.State.Runtime,
-		c.FocusNote(db.NoteRefs(), view),
+		c.FocusNote(db.NoteQueries.NoteRefs, view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),

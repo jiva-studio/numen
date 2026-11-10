@@ -49,7 +49,7 @@ func (c Config) Scan(db *vault.Index) vault.Scan {
 func (c Config) ReadWholeVault(
 	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	return readWholeVault(c.search(), ctx, db, embedder, v, makeRefresh(c, db, db.Notes()))
+	return readWholeVault(c.search(), ctx, db, embedder, v, makeRefresh(c, db, db.Stores.Notes))
 }
 
 // FitIndex sets the vector index to the model of the embedding provider.
@@ -138,17 +138,17 @@ func setNoteCut(c searchWiring, scan *vault.Scan, db *vault.Index) {
 	scan.ShouldRecut = c.Chunks.Get() > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
 		recipes := []string{recipe, filetext.Index{Sizes: scan.Cut.Sizes}.Recipe()}
-		return db.SourceBacklog().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
+		return db.Source.SourceBacklog.GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
 	}
 }
 
 func searchScan(c searchWiring, db *vault.Index) vault.Scan {
 	scan := vault.NewScan(
 		c.VaultReaders,
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 	setNoteCut(c, &scan, db)
 	scan.Walks = db.Walks()
@@ -202,7 +202,7 @@ func searchEmbed(c searchWiring, db *vault.Index, embedder embeddingport.Embedde
 	if err != nil {
 		return vectorscase.Embed{}, err
 	}
-	embed := vectorscase.NewEmbed(c.VaultReaders, db.VectorQueries(), db.Vectors())
+	embed := vectorscase.NewEmbed(c.VaultReaders, db.Chunks.VectorQueries, db.Chunks.Vectors)
 	embed.Claim = store.NewIndexClaim(coreFolder + "/indexing")
 	embed.Texts = c.TextReaders
 	embed.Embedder = embedder
@@ -213,7 +213,7 @@ func indexTexts(c searchWiring, db *vault.Index, v domain.Vault) (filetext.Index
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), c.TextReaders)
+	index := filetext.NewIndex(c.VaultReaders, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, c.TextReaders)
 	index.ErrorHandler = c.ErrorHandler
 	cutter := cutNotes(c)
 	index.Sizes = cutter.Sizes
@@ -224,18 +224,23 @@ func indexTexts(c searchWiring, db *vault.Index, v domain.Vault) (filetext.Index
 
 func newSearch(c searchWiring, db *vault.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
 	policy := newFloorPolicy(c, db, asking, c.ErrorHandler)
-	return newSearchOver(c, db.Passages(), asking, errorHandler).WithFloorSource(policy.GetFloor)
+	searching := newSearchOver(c, db.Chunks.Passages, asking, errorHandler)
+	searching.Floor = policy.GetFloor
+	return searching
 }
 
 func newSearchOver(c searchWiring, passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
 	policy := searchusecase.NewFloorPolicy(nil, getFloorHint(asking), nil)
-	return searchusecase.New(passages, c.VaultReaders, c.TextReaders, asking, newEmbedQueries(asking), errorHandler).
-		WithExtractors(c.ResolvedCompute.Workers).
-		WithFloorSource(policy.GetFloor)
+	searching := searchusecase.New(passages, c.VaultReaders, c.TextReaders, asking, newEmbedQueries(asking), errorHandler)
+	if workers := c.ResolvedCompute.Workers; workers > 0 {
+		searching.Extractors = workers
+	}
+	searching.Floor = policy.GetFloor
+	return searching
 }
 
 func newFloorPolicy(_ searchWiring, db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) searchusecase.FloorPolicy {
-	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(embedder), errorHandler)
+	return searchusecase.NewFloorPolicy(db.Search.SearchFloors, getFloorHint(embedder), errorHandler)
 }
 
 func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) {
@@ -245,10 +250,10 @@ func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Emb
 	c.PluginHost.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
-		Samples:  db.SearchSamples(),
-		Nearest:  db.Nearest(),
-		Progress: db.Progress(),
-		Stats:    hostsearch.NewStats(db.Stats(), c.Clock),
+		Samples:  db.Search.SearchSamples,
+		Nearest:  db.Search.Nearest,
+		Progress: db.Chunks.Progress,
+		Stats:    hostsearch.NewStats(db.Chunks.Stats, c.Clock),
 		Policy:   newFloorPolicy(c, db, embedder, errorHandler),
 		Passages: searchusecase.NewSearchPassages(newSearch(c, db, embedder, errorHandler)),
 	}.Access())

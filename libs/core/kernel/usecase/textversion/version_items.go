@@ -45,11 +45,11 @@ func (u *VersionItems) findLiveVersion(ctx context.Context, v domain.Vault, path
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
 	}
-	contentHash, err := u.versions.GetContentHash(ctx, v, path)
+	contentHash, err := u.versions.Texts.GetContentHash(ctx, v, path)
 	if err != nil {
 		return domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
 	}
-	return u.versions.findLive(ctx, v, path, versions, contentHash)
+	return u.versions.Texts.live.find(ctx, v, path, versions, contentHash)
 }
 
 // VersionItem is a text version of a file that a command with items offers to run over.
@@ -82,7 +82,7 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 	if err != nil || !condition.HasItems() {
 		return nil, err
 	}
-	versions, err := u.versions.getVersions(ctx, v, path)
+	versions, err := getVersions(ctx, u.versions.stores, v, path)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 // ListEveryVersion lists every text version of the file at the path, as the items of the application
 // command DeleteCommand.
 func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]VersionItem, error) {
-	versions, err := u.versions.getVersions(ctx, v, path)
+	versions, err := getVersions(ctx, u.versions.stores, v, path)
 	if err != nil {
 		return nil, err
 	}

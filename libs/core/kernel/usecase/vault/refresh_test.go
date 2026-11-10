@@ -31,16 +31,16 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *vaults.
 	}
 	return vaults.NewRefresh(
 		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.RemovalLookup(),
-		db.Sources(), testsupport.GetMachine(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.Source.RemovalLookup,
+		db.Source.Sources, testsupport.GetMachine(),
 	), db, v
 }
 
 func passages(t *testing.T, db *vaults.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
-	found, err := db.Passages().FindLexical(
+	found, err := db.Chunks.Passages.FindLexical(
 		t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func passages(t *testing.T, db *vaults.Index, v domain.Vault, query string) []do
 func titles(t *testing.T, db *vaults.Index, v domain.Vault, query string) []string {
 	t.Helper()
 	paths := searchNotes(t, db, v, query)
-	named, err := db.NoteRefs().GetNotes(t.Context(), v.ID, paths)
+	named, err := db.NoteQueries.NoteRefs.GetNotes(t.Context(), v.ID, paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestANoteIsIndexedInAVaultNothingHasWalked(t *testing.T) {
 	})
 	db := openIndex(t)
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.RemovalLookup(), db.Sources(), testsupport.GetMachine())
+		vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.GetMachine())
 
 	if _, err := refresh.Execute(t.Context(), v, []string{"Note.md"}); err != nil {
 		t.Fatal(err)
@@ -172,7 +172,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	})
 	const book = "library/A Book.epub"
 	testsupport.WriteBook(t, v.Path, book)
-	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
+	if err := db.Source.Sources.SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
 		Source: domain.Source{
 			FileStat:    domain.FileStat{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
 			ContentHash: "a-hash",
@@ -196,7 +196,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	if found := passages(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
-	target, err := db.SourcesUnder().GetSourcesUnder(t.Context(), v.ID, "library")
+	target, err := db.Source.SourcesUnder.GetSourcesUnder(t.Context(), v.ID, "library")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,10 +270,10 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 
 	refresh := vaults.NewRefresh(
 		unreadableReaders{VaultReaders: vaultreader.Readers{}, unreadablePath: "Locked.md"},
-		db.Vaults(),
-		db.Notes(),
-		db.RemovalLookup(),
-		db.Sources(), testsupport.GetMachine(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.Source.RemovalLookup,
+		db.Source.Sources, testsupport.GetMachine(),
 	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
 	if err != nil {
@@ -307,7 +307,7 @@ func TestARefreshWritesInGroups(t *testing.T) {
 	db := openIndex(t)
 	content := &countingNotes{}
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, &indexRows{}, content, db.RemovalLookup(), db.Sources(), testsupport.GetMachine(),
+		vaultreader.Readers{}, &indexRows{}, content, db.Source.RemovalLookup, db.Source.Sources, testsupport.GetMachine(),
 	)
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
@@ -354,10 +354,10 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 
 	refresh := vaults.NewRefresh(
 		vanishingReaders{VaultReaders: vaultreader.Readers{}, vanishedVal: "Note.md"},
-		db.Vaults(),
-		db.Notes(),
-		db.RemovalLookup(),
-		db.Sources(), testsupport.GetMachine(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.Source.RemovalLookup,
+		db.Source.Sources, testsupport.GetMachine(),
 	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Note.md"})
 	if err != nil {
@@ -394,11 +394,11 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	saves := &savesCounted{NoteRepository: db.Notes()}
+	saves := &savesCounted{NoteRepository: db.Stores.Notes}
 	// The clock stops once the files are settled, so a file a test writes afterwards stays recent
 	// however long the test takes.
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), saves, db.RemovalLookup(), db.Sources(), clock.NewFake(testsupport.GetMachine().Now()),
+		vaultreader.Readers{}, db.Stores.Vaults, saves, db.Source.RemovalLookup, db.Source.Sources, clock.NewFake(testsupport.GetMachine().Now()),
 	)
 	return refresh, saves, db, v
 }
@@ -502,9 +502,9 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	saves := &savesCounted{NoteRepository: db.Notes()}
+	saves := &savesCounted{NoteRepository: db.Stores.Notes}
 	// The clock is set to the modification time, so the note is recent however long the scan took.
-	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.RemovalLookup(), db.Sources(), clock.NewFake(stat.ModTime()))
+	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Stores.Vaults, saves, db.Source.RemovalLookup, db.Source.Sources, clock.NewFake(stat.ModTime()))
 
 	refreshOne(t, refresh, v, "Note.md")
 
@@ -597,7 +597,7 @@ func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 	start := testsupport.GetEpoch()
 	ticking := tickingClock{start: start, tick: &tick}
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.RemovalLookup(), db.Sources(), ticking)
+		vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, ticking)
 
 	const perWindow = 4
 	step := vaults.TimestampGranularity / perWindow
@@ -615,7 +615,7 @@ func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 	}
 	tick.Add(int64(2 * vaults.TimestampGranularity))
 	other := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.RemovalLookup(), db.Sources(), ticking)
+		vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, ticking)
 	other.Ledger = refresh.Ledger
 	refreshOne(t, other, v, "Note.md")
 	if n := refresh.Ledger.Len(); n != 0 {

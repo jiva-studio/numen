@@ -107,3 +107,14 @@ func TestAnAgentThatCannotCloseItsSessionIsListedWithNoModels(t *testing.T) {
 		t.Errorf("listed %v", programs)
 	}
 }
+
+func TestReadingTheModelsOfAnAgentFailsWhenItRejectsTheClose(t *testing.T) {
+	agent, _ := fakeACPAgent(t, "fake", "fail-close")
+	svc := serveAgents(t, agent)
+
+	_, err := svc.lister.ReadListing(t.Context(), svc.registry.List()[0])
+
+	if err == nil || !strings.Contains(err.Error(), "close rejected") {
+		t.Errorf("ReadListing with a rejected close = %v", err)
+	}
+}
