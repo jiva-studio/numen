@@ -28,7 +28,6 @@ const createHost = () => {
   return { host, createPlugin }
 }
 
-/** A view that writes what it is handed, so a test sees which plugin's view received a context. */
 const createView = (owner: string, received: string[]): Component =>
   defineComponent({
     props: { context: { type: Object, required: true } },

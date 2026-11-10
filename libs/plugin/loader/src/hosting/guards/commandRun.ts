@@ -13,7 +13,6 @@ const RUNNABLE_APP_COMMANDS: ReadonlySet<string> = new Set([
 /** What decides whether a plugin runs a command it does not own. */
 export interface CommandRunPolicy {
   readonly pluginId: string
-  /** Whether some manifest places the command in a slot, which shows the user a row for it. */
   readonly isListed: (command: string) => boolean
 }
 

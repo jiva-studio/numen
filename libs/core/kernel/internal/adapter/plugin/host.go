@@ -86,7 +86,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	}
 
 	return &Host{
-		Registry:     registry,
+		Registry: registry,
 		Discovery: &Discovery{
 			registry: registry, mode: mode, sups: sups, stopper: stopper, listeners: listeners,
 			storage: files, scans: config, report: errs.Report, dirs: dirs, target: target,
