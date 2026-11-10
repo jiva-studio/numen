@@ -25,7 +25,9 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return NewConfig(Config{SettingsPath: path}), path
+	return NewConfig(Config{
+		Paths: Paths{SettingsPath: path},
+	}), path
 }
 
 // What the window is given is every setting, so a setting the file leaves out

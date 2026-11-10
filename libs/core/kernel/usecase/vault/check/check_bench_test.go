@@ -61,7 +61,7 @@ func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain
 	b.Helper()
 	v := testsupport.NewVault(b, notes)
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
-		IndexPath: filepath.Join(b.TempDir(), "index.db"),
+		Paths: container.Paths{IndexPath: filepath.Join(b.TempDir(), "index.db")},
 	}), b.Context())
 	if err != nil {
 		b.Fatal(err)

@@ -92,8 +92,7 @@ func makeOpenVaults(t *testing.T) (*vault.OpenVaults[*vault.Index], []domain.Vau
 
 	state := t.TempDir()
 	cfg := NewConfig(Config{
-		IndexPath:    filepath.Join(state, "index.db"),
-		RegistryPath: filepath.Join(state, "vaults.json"),
+		Paths: Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
 	})
 	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {

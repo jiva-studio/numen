@@ -35,7 +35,9 @@ func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 
 func openIndex(t *testing.T) *vaults.Index {
 	t.Helper()
-	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: indexfile.Path(t)}), t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: indexfile.Path(t)},
+	}), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

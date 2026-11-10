@@ -19,7 +19,9 @@ import (
 // installation it found.
 func TestError_MessageContainsFound(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.NewConfig(container.Config{IndexPath: pos})
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: pos},
+	})
 
 	page, err := fatalReport{}.page(cfg, settings.GetTextScaleBounds().Check("appearance.textScale", 4))
 	if err != nil {
@@ -42,7 +44,9 @@ func TestError_MessageContainsFound(t *testing.T) {
 
 // An error this build has no further information about is still reported.
 func TestError_AdditionalDetails(t *testing.T) {
-	page, err := fatalReport{}.page(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")}),
+	page, err := fatalReport{}.page(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	}),
 		errors.New("the settings could not be read"))
 	if err != nil {
 		t.Fatal(err)
@@ -54,7 +58,9 @@ func TestError_AdditionalDetails(t *testing.T) {
 
 // A message shown to the user must not render markup the user did not write.
 func TestError_StripsMarkup(t *testing.T) {
-	page, err := fatalReport{}.page(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")}),
+	page, err := fatalReport{}.page(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	}),
 		errors.New(`<script>alert("x")</script>`))
 	if err != nil {
 		t.Fatal(err)
@@ -104,28 +110,38 @@ func getStoppings(t *testing.T) []stopping {
 	return []stopping{
 		{
 			name: "an index that is not a database",
-			cfg:  container.NewConfig(container.Config{IndexPath: corrupt}),
-			why:  openIndex(t, corrupt),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{IndexPath: corrupt},
+			}),
+			why: openIndex(t, corrupt),
 		},
 		{
 			name: "an index path that is a folder",
-			cfg:  container.NewConfig(container.Config{IndexPath: folder}),
-			why:  openIndex(t, folder),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{IndexPath: folder},
+			}),
+			why: openIndex(t, folder),
 		},
 		{
 			name: "an index folder nobody may write in",
-			cfg:  container.NewConfig(container.Config{IndexPath: filepath.Join(noWrite, "index.db")}),
-			why:  openIndex(t, filepath.Join(noWrite, "index.db")),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{IndexPath: filepath.Join(noWrite, "index.db")},
+			}),
+			why: openIndex(t, filepath.Join(noWrite, "index.db")),
 		},
 		{
 			name: "a settings file that is not JSON",
-			cfg:  container.NewConfig(container.Config{SettingsPath: unreadable}),
-			why:  read(t, unreadable),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{SettingsPath: unreadable},
+			}),
+			why: read(t, unreadable),
 		},
 		{
 			name: "a size the settings file does not take",
-			cfg:  container.NewConfig(container.Config{SettingsPath: unreadable}),
-			why:  settings.GetTextScaleBounds().Check("appearance.textScale", 4),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{SettingsPath: unreadable},
+			}),
+			why: settings.GetTextScaleBounds().Check("appearance.textScale", 4),
 		},
 		{
 			name: "a size the command line does not take",
@@ -245,17 +261,23 @@ func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 		t.Errorf("corrupt sentence = %q", corrupt.Sentence)
 	}
 
-	otherOnFolder := getIndexFatalReport(container.Config{IndexPath: t.TempDir()}, 1, errors.New("other sqlite error"))
+	otherOnFolder := getIndexFatalReport(container.Config{
+		Paths: container.Paths{IndexPath: t.TempDir()},
+	}, 1, errors.New("other sqlite error"))
 	if otherOnFolder.Sentence != "The index can't be opened." || otherOnFolder.Remedy == "" || otherOnFolder.Error != "other sqlite error" {
 		t.Errorf("otherOnFolder = %+v", otherOnFolder)
 	}
 }
 
 func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
-	if got := getSettingsPath(container.Config{SettingsPath: "/custom/settings.json", RegistryPath: "/reg/vaults.json"}); got != "/custom/settings.json" {
+	if got := getSettingsPath(container.Config{
+		Paths: container.Paths{SettingsPath: "/custom/settings.json", RegistryPath: "/reg/vaults.json"},
+	}); got != "/custom/settings.json" {
 		t.Errorf("got %q, want /custom/settings.json", got)
 	}
-	if got := getSettingsPath(container.Config{RegistryPath: "/reg/vaults.json"}); got != filepath.Join("/reg", "numen.json") {
+	if got := getSettingsPath(container.Config{
+		Paths: container.Paths{RegistryPath: "/reg/vaults.json"},
+	}); got != filepath.Join("/reg", "numen.json") {
 		t.Errorf("got %q, want /reg/numen.json", got)
 	}
 	t.Setenv("XDG_CONFIG_HOME", "/cfg")

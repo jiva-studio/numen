@@ -44,7 +44,10 @@ func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost
 	lent := container.AdaptPluginHost(pluginHost)
 	host := &recordingHost{apply: lent.ApplySetting, SettingsPush: lent.SettingsPush}
 	lent.ApplySetting, lent.SettingsPush = host.applySetting, host
-	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
+	cfg := container.NewConfig(container.Config{
+		PluginHost: lent,
+		Paths:      container.Paths{SettingsPath: path},
+	})
 	selected, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)

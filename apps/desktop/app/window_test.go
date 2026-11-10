@@ -15,8 +15,7 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
 	registry, err := cfg.Registry()
 	if err != nil {

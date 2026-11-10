@@ -60,9 +60,8 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	}
 
 	settings := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-		TextReaders:  testsupport.Texts{Readers: vaultreader.Readers{}},
+		TextReaders: testsupport.Texts{Readers: vaultreader.Readers{}},
+		Paths:       container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
 	registry, err := settings.Registry()
 	if err != nil {
@@ -302,9 +301,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	}
 
 	cfg := container.NewConfig(container.Config{
-		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
-		PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
 	})
 	writeNamingSettings(t, cfg.RegistryPath, sync)
 	registry, err := cfg.Registry()

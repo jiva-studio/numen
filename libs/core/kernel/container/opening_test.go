@@ -313,7 +313,9 @@ func (refusing) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 func openVault(t *testing.T, notes map[string]string) (container.Config, *vault.Index, domain.Vault) {
 	t.Helper()
 
-	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t)})
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: indexfile.Path(t)},
+	})
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)

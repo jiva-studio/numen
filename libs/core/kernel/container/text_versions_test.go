@@ -78,7 +78,9 @@ func newTalkVault(t *testing.T) domain.Vault {
 
 func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	v := newTalkVault(t)
-	cfg := NewConfig(Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
+	cfg := NewConfig(Config{
+		Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
+	})
 	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -104,7 +106,9 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	v := newTalkVault(t)
 	path := filepath.Join(t.TempDir(), "index.db")
-	cfg := NewConfig(Config{IndexPath: path})
+	cfg := NewConfig(Config{
+		Paths: Paths{IndexPath: path},
+	})
 	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -148,7 +152,9 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 
 func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	v := newTalkVault(t)
-	cfg := NewConfig(Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
+	cfg := NewConfig(Config{
+		Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
+	})
 	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -187,7 +193,9 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 func newTalkIndex(t *testing.T) (Config, *vault.Index, domain.Vault, domain.TextVersion) {
 	t.Helper()
 	v := newTalkVault(t)
-	cfg := NewConfig(Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
+	cfg := NewConfig(Config{
+		Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
+	})
 	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -349,7 +357,9 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	v := newTalkVault(t)
 	path := filepath.Join(t.TempDir(), "index.db")
-	cfg := NewConfig(Config{IndexPath: path})
+	cfg := NewConfig(Config{
+		Paths: Paths{IndexPath: path},
+	})
 	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)

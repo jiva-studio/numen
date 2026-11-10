@@ -34,21 +34,33 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
-// Config is what the user may point somewhere else. Empty fields mean the
-// platform's own locations.
-type Config struct {
+// Paths are the files and folders the user may point somewhere else. An empty path means the platform's
+// own location.
+type Paths struct {
 	IndexPath       string
 	RegistryPath    string
 	ServiceDir      string
 	SettingsPath    string
 	ThemesPath      string
 	PluginCachePath string
+}
 
+// Scales are the sizes of the interface and of the text; zero means the settings decide.
+type Scales struct {
 	InterfaceScale, TextScale float64
+}
 
+// Machine is what the hardware allows the installation to use.
+type Machine struct {
 	ResolvedCompute hardware.ResolvedCompute
+	Hardware        hardware.Specs
+}
 
-	Hardware hardware.Specs
+// Config is what the user may point somewhere else. Empty fields mean the platform's own locations.
+type Config struct {
+	Paths
+	Scales
+	Machine
 
 	Chunks *note.ChunkTokens
 

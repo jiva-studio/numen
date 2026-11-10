@@ -14,7 +14,10 @@ import (
 
 func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func() (domain.Vault, bool), windowVaults) {
 	t.Helper()
-	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), PluginHost: container.NewPluginHost("md.numen.test", t.TempDir()), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
+	cfg := container.NewConfig(container.Config{
+		PluginHost: container.NewPluginHost("md.numen.test", t.TempDir()),
+		Paths:      container.Paths{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)

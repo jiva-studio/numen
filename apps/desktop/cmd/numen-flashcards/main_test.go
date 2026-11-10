@@ -32,8 +32,7 @@ func makeWindow(
 
 	state := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(state, "index.db"),
-		RegistryPath: filepath.Join(state, "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
 	})
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
