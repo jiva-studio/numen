@@ -12,10 +12,6 @@ import (
 // apps/<name>/app, and what lies below them.
 var compositionRoot = regexp.MustCompile(`^` + regexp.QuoteMeta(numenRoot) + `apps/[^/]+/(cmd|app)(/|$)`)
 
-// getWiringPackages returns each package, at its first file, that imports a use case package and a driven
-// adapter package: one with a type that implements an interface declared under root/port. Such a package
-// builds the objects of the program and hands them to each other. A package accepted by isExempt is
-// not returned; the second result counts the exempt packages that have that shape.
 func getWiringPackages(pkgs []*packages.Package, root string, isExempt func(path string) bool) ([]finding, int) {
 	ports := listPortInterfaces(pkgs, root)
 	driven := map[string]bool{}

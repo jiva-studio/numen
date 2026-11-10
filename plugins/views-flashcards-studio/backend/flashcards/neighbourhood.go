@@ -36,7 +36,7 @@ type Neighbor struct {
 	Outcome     note.ReadOutcome
 }
 
-// neighbourNotes is what the neighbourhood asks the index of the notes it found.
+// neighbourNotes is what the neighborhood asks the index of the notes it found.
 type neighbourNotes interface {
 	ports.NoteRefQueries
 	ports.NoteTypeQueries

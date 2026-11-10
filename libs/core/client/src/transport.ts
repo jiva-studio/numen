@@ -11,7 +11,6 @@ const getOrigin = (): string => (typeof window === 'undefined' ? '' : window.loc
 
 let replacement: Transport | undefined
 
-/** Sends each request over the replacement while one is installed, over `wire` otherwise. */
 const createReplaceableTransport = (wire: Transport): Transport => ({
   unary: (...request) => (replacement ?? wire).unary(...request),
   stream: (...request) => (replacement ?? wire).stream(...request),

@@ -9,11 +9,10 @@ type StoreFile struct {
 }
 
 // StoreReader reads the files of the plugin's own folder in a vault's store, `.numen/<plugin id>/`.
-// A plugin cannot access another plugin's folder.
-// A name is a file directly in the folder; one containing a slash or beginning
-// with a dot yields ErrOutside. A missing file yields ErrNotExist, and a call
-// while the host shows no vault yields ErrNoVault. A plugin that works another vault than the shown
-// one calls With on StoreClient and keeps the narrow interface of the calls it needs on the result.
+// A name is a file directly in the folder; one containing a slash or beginning with a dot yields
+// ErrOutside. A missing file yields ErrNotExist, and a call while the host shows no vault yields
+// ErrNoVault. A plugin that works another vault than the shown one calls With on StoreClient and
+// keeps the narrow interface of the calls it needs on the result.
 type StoreReader interface {
 	// Read returns the whole file.
 	Read(ctx context.Context, name string) ([]byte, error)

@@ -32,7 +32,6 @@ func Mount(s *server.Server) error {
 	return mountClients(s, files, texts, store, queue)
 }
 
-// mountClients mounts the services over the clients of the host.
 func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) error {
 	workers := newWorkers()
 	readers := func(id domain.VaultID) host.FileReader { return files.With(id) }

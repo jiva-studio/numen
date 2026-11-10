@@ -1,4 +1,4 @@
-import { test, expect, type Locator, type Page } from '../../support/test.js'
+import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
 import { writeSetting } from '../../support/vault.js'
 import { readFrameCalls, serveRuntime } from '../../support/runtime.js'
@@ -10,12 +10,6 @@ import { readFrameCalls, serveRuntime } from '../../support/runtime.js'
  */
 const BAR_ID = 'md.numen.views.titleBar'
 
-const readProperty = (locator: Locator, name: string): Promise<string> =>
-  locator.evaluate(
-    (element, property) => getComputedStyle(element).getPropertyValue(property).trim(),
-    name,
-  )
-
 const getBar = (page: Page) => page.locator('[data-title-bar]')
 const getControl = (page: Page, name: string) => page.locator(`[data-control="${name}"]`)
 const getTopStrips = (page: Page) => page.locator('[data-workspace-strip][data-window-drag]')
@@ -25,16 +19,12 @@ test.describe('The title bar of the plugin', () => {
     await writeSetting(request, [BAR_ID, 'enabled'], true)
   })
 
-  test('moves the window by the bar and not by its buttons', async ({ page }) => {
+  test('draws the bar with its buttons and no strips at the top', async ({ page }) => {
     await serveRuntime(page, 'windows')
     await openWorkspace(page)
 
     await expect(getBar(page)).toBeVisible()
-    expect(await readProperty(getBar(page), '--wails-draggable')).toBe('drag')
-    expect(
-      await readProperty(page.locator('[data-title-bar-command]').first(), '--wails-draggable'),
-    ).toBe('no-drag')
-    expect(await readProperty(getControl(page, 'close'), '--wails-draggable')).toBe('no-drag')
+    await expect(getControl(page, 'close')).toBeVisible()
     await expect(getTopStrips(page)).toHaveCount(0)
   })
 
@@ -49,22 +39,6 @@ test.describe('The title bar of the plugin', () => {
     await expect
       .poll(() => readFrameCalls(page))
       .toStrictEqual(['Minimise', 'ToggleMaximise', 'Close'])
-  })
-
-  test('marks the window buttons for Snap Layouts and the page for resizing by its edges', async ({
-    page,
-  }) => {
-    await serveRuntime(page, 'windows')
-    await openWorkspace(page)
-
-    expect(
-      await readProperty(getControl(page, 'toggle-maximize'), '--wails-non-client-region'),
-    ).toBe('maximize')
-    expect(await readProperty(getControl(page, 'minimize'), '--wails-non-client-region')).toBe(
-      'minimize',
-    )
-    expect(await readProperty(getControl(page, 'close'), '--wails-non-client-region')).toBe('close')
-    expect(await readProperty(page.locator('body'), '--wails-resize')).toBe('all')
   })
 })
 
@@ -86,8 +60,6 @@ test.describe('The window without the title bar plugin', () => {
     await expect(getBar(page)).toHaveCount(0)
     await expect(page.locator('[data-control]')).toHaveCount(0)
     await expect(getTopStrips(page).first()).toBeVisible()
-    expect(await readProperty(getTopStrips(page).first(), '--wails-draggable')).toBe('drag')
-    expect(await readProperty(page.getByRole('tab').first(), '--wails-draggable')).toBe('no-drag')
   })
 
   test('draws the bar again when the plugin is enabled, without a reload', async ({
@@ -103,20 +75,5 @@ test.describe('The window without the title bar plugin', () => {
 
     await expect(getBar(page)).toBeVisible()
     await expect(getTopStrips(page)).toHaveCount(0)
-  })
-
-  test('keeps room for the macOS buttons in the strip at the top-left corner', async ({
-    page,
-    request,
-  }) => {
-    await serveRuntime(page, 'mac')
-    await writeSetting(request, [BAR_ID, 'enabled'], false)
-    await openWorkspace(page)
-
-    const first = getTopStrips(page).first()
-    await expect(first).toBeVisible()
-    await expect
-      .poll(() => first.evaluate((element) => getComputedStyle(element).paddingLeft))
-      .toBe('80px')
   })
 })

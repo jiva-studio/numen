@@ -659,7 +659,10 @@ func TestMountAndAllEndpoints(t *testing.T) {
 	const tok = "test-mount-token"
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
 		cards, presets, review := &cardsHandler{Backend: b}, &presetsHandler{Backend: b}, &reviewHandler{Backend: b}
-		return mountAPI(s.NewAPI(""), cards, cards, presets, presets, review, review, review)
+		return mountAPI(s.NewAPI(""), apiHandlers{
+			Models: cards, Decks: cards, PresetReads: presets, PresetWrites: presets,
+			Sessions: review, Watches: review, Stats: review,
+		})
 	}); err == nil {
 		t.Fatal("expected mountAPI with invalid service name to return error")
 	}
@@ -742,7 +745,6 @@ func TestMountAndAllEndpoints(t *testing.T) {
 	}
 }
 
-// vaults gives the ports' calls on the vault with an identity; the empty identity is f itself.
 func (f *faultyVault) vaults() func(domain.VaultID) hostports.Vault {
 	return func(id domain.VaultID) hostports.Vault {
 		on := f

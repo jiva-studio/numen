@@ -25,7 +25,6 @@ export interface RowRestoreSources {
 
 export interface RowRestore {
   readonly measure: () => void
-  /** Whether a put of the row back waits for a frame. */
   readonly isPutting: () => boolean
 }
 

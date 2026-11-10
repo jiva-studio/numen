@@ -12,8 +12,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
 // everyFieldManifest sets every field of the schema at least once, and every kind of option.

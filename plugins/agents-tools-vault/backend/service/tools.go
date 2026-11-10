@@ -36,10 +36,18 @@ type Vault struct {
 	Selector host.VaultSelector
 }
 
+func noVault() Vault {
+	return Vault{Files: nil, Writer: nil, Index: nil, Notes: nil, Links: nil, Arranger: nil, Editor: nil, Selector: nil}
+}
+
+func noLibrary() Library {
+	return Library{Versions: nil, Texts: nil, Search: nil}
+}
+
 // New creates a Tools instance. vaults gives the calls on the vault with an identity, and on the vault
 // the host shows for the empty identity.
 func New(vaults func(domain.VaultID) Vault) *Tools {
-	return &Tools{vaults: vaults, vault: Vault{}, library: nil, lib: Library{}, list: nil}
+	return &Tools{vaults: vaults, vault: noVault(), library: nil, lib: noLibrary(), list: nil}
 }
 
 // WithVaultList sets the installation's list of vaults, which vault_list reads and the
@@ -56,7 +64,7 @@ func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, 
 			var none Out
 			return none, errNoVault
 		}
-		call := &Tools{vaults: t.vaults, vault: t.vaults(domain.VaultID(id)), library: t.library, lib: Library{}, list: t.list}
+		call := &Tools{vaults: t.vaults, vault: t.vaults(domain.VaultID(id)), library: t.library, lib: noLibrary(), list: t.list}
 		if t.library != nil {
 			call.lib = t.library(domain.VaultID(id))
 		}
