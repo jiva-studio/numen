@@ -177,13 +177,10 @@ func forgetEndpointLocked(s *Supervisors, pluginID string) {
 
 // Claim is what Begin found.
 type Claim struct {
-	// Endpoint is the endpoint of the running plugin, with a hold taken, where Running is set.
 	Endpoint plugindomain.Endpoint
 	Running  bool
-	// State is the state of a supervisor that is not dormant.
-	State lifecycle.ProcessState
-	// Started is set where this call set the supervisor to activating, which makes the caller start it.
-	Started bool
+	State    lifecycle.ProcessState
+	Started  bool
 }
 
 // Begin takes a hold on the running plugin, or reports the state of the supervisor, or sets a dormant

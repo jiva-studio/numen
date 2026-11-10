@@ -170,8 +170,6 @@ func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]a
 	return active
 }
 
-// listDeclarations lists the secret declarations of the installed plugins, then of the plugins the host
-// knows that are not among them.
 func (c *ConfigPush) listDeclarations(installed []manifest.Discovered) []plugindomain.DeclarationKey {
 	v, release := c.registry.set.view()
 	defer release()
@@ -198,7 +196,6 @@ func appendDeclarations(declarations []plugindomain.DeclarationKey, p manifest.D
 	return declarations
 }
 
-// recordScan keeps the plugins a scan of the folders found, whether or not they target this host.
 func (c *ConfigPush) recordScan(installed []manifest.Discovered) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

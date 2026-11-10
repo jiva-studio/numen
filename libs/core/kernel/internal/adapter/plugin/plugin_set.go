@@ -101,7 +101,6 @@ func (v setView) requirements(p manifest.Discovered) []manifest.DependencyRequir
 	return p.Manifest.GetDependencyRequirements(p.Dir, v.settings(p.Manifest.ID))
 }
 
-// enabled lists the plugins the host has enabled, in the order of their ids. In safe mode it has none.
 func (v setView) enabled() []manifest.Discovered {
 	if v.set.mode.IsSafeMode() {
 		return nil
@@ -178,7 +177,6 @@ func (s *pluginSet) isOnDisk(pluginID string) bool {
 	return s.onDisk[pluginID]
 }
 
-// getLaunch returns what a start of the plugin needs to know of it.
 func (s *pluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
 	v, release := s.view()
 	defer release()
@@ -189,8 +187,6 @@ func (s *pluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
 	return launch
 }
 
-// replaceDiscovered registers the plugins a scan found and forgets the ones that left the disk. It
-// returns the ids of the plugins that changed or left.
 func (s *pluginSet) replaceDiscovered(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -236,7 +232,6 @@ func (s *pluginSet) isCoveredByProblemLocked(pluginID string) bool {
 	return false
 }
 
-// put adds a plugin with the supervisor that tracks it, as discovery does for a plugin found on disk.
 func (s *pluginSet) put(p manifest.Discovered, sup *lifecycle.Supervisor) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -244,7 +239,6 @@ func (s *pluginSet) put(p manifest.Discovered, sup *lifecycle.Supervisor) {
 	s.sups.Put(p.Manifest.ID, sup)
 }
 
-// addBuiltIn registers a plugin linked into this binary, unless one of its id is registered.
 func (s *pluginSet) addBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

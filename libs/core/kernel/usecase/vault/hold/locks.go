@@ -1,4 +1,4 @@
-package vault
+package hold
 
 import (
 	"context"
@@ -16,8 +16,8 @@ import (
 // them must not stop the vault being written.
 const LockHold = 2 * time.Minute
 
-// HoldVault holds the writers of a vault for a plugin until the plugin releases them or the hold ends.
-type HoldVault struct {
+// Locks holds the writers of a vault for a plugin until the plugin releases them or the hold ends.
+type Locks struct {
 	locks vaultport.VaultLocks
 	clock machineport.Clock
 	hold  time.Duration
@@ -32,20 +32,20 @@ type hold struct {
 	until   time.Time
 }
 
-// NewHoldVault returns the use case over the locks of the vaults. A hold ends LockHold after it began.
-func NewHoldVault(locks vaultport.VaultLocks, clock machineport.Clock) *HoldVault {
-	return &HoldVault{locks: locks, clock: clock, hold: LockHold, leases: map[string]hold{}}
+// NewLocks returns the use case over the locks of the vaults. A hold ends LockHold after it began.
+func NewLocks(locks vaultport.VaultLocks, clock machineport.Clock) *Locks {
+	return &Locks{locks: locks, clock: clock, hold: LockHold, leases: map[string]hold{}}
 }
 
 // WithHold returns the use case with holds that end after d.
-func (u *HoldVault) WithHold(d time.Duration) *HoldVault {
+func (u *Locks) WithHold(d time.Duration) *Locks {
 	u.hold = d
 	return u
 }
 
 // Execute waits while another holder has the writers of the vault, holds them, and returns the id of
 // the hold.
-func (u *HoldVault) Execute(ctx context.Context, v domain.Vault) (string, error) {
+func (u *Locks) Execute(ctx context.Context, v domain.Vault) (string, error) {
 	release, err := u.locks.Lock(ctx, v)
 	if err != nil {
 		return "", err
@@ -60,7 +60,7 @@ func (u *HoldVault) Execute(ctx context.Context, v domain.Vault) (string, error)
 }
 
 // Release gives the writers back. A hold that has ended already is released and changes nothing.
-func (u *HoldVault) Release(id string) {
+func (u *Locks) Release(id string) {
 	u.mu.Lock()
 	one, ok := u.leases[id]
 	delete(u.leases, id)
@@ -71,7 +71,7 @@ func (u *HoldVault) Release(id string) {
 }
 
 // ReleaseExpired gives back the writers whose hold has ended.
-func (u *HoldVault) ReleaseExpired() {
+func (u *Locks) ReleaseExpired() {
 	u.mu.Lock()
 	var ended []func()
 	now := u.clock.Now()

@@ -1,4 +1,4 @@
-package vault_test
+package hold_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
 )
 
 type fakeLocks struct {
@@ -54,7 +54,7 @@ func (c *steppedClock) advance(d time.Duration) {
 
 func TestAHoldIsReleasedByItsID(t *testing.T) {
 	locks := &fakeLocks{}
-	hold := vault.NewHoldVault(locks, &steppedClock{now: time.Unix(1000, 0)})
+	hold := hold.NewLocks(locks, &steppedClock{now: time.Unix(1000, 0)})
 
 	id, err := hold.Execute(t.Context(), domain.Vault{})
 	if err != nil {
@@ -73,7 +73,7 @@ func TestAHoldIsReleasedByItsID(t *testing.T) {
 func TestAHoldThatEndedIsReleasedWithoutTheHolder(t *testing.T) {
 	locks := &fakeLocks{}
 	clock := &steppedClock{now: time.Unix(1000, 0)}
-	hold := vault.NewHoldVault(locks, clock).WithHold(time.Hour)
+	hold := hold.NewLocks(locks, clock).WithHold(time.Hour)
 
 	if _, err := hold.Execute(t.Context(), domain.Vault{}); err != nil {
 		t.Fatal(err)

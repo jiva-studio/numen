@@ -54,7 +54,6 @@ func (v *settingValues) restore(pluginID, key string, previous any, hadPrevious 
 	}
 }
 
-// fill stores the value of a setting that holds none, and reports whether it did.
 func (v *settingValues) fill(pluginID, key, value string) bool {
 	v.mu.Lock()
 	defer v.mu.Unlock()
@@ -68,7 +67,6 @@ func (v *settingValues) fill(pluginID, key, value string) bool {
 	return true
 }
 
-// forget removes the value of a setting if it is still the given one.
 func (v *settingValues) forget(pluginID, key, value string) {
 	v.mu.Lock()
 	defer v.mu.Unlock()

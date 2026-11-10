@@ -34,12 +34,10 @@ type BuiltIn struct {
 
 // Launch is what a start of a plugin needs to know of it.
 type Launch struct {
-	Plugin manifest.Discovered
-	// BuiltIn is set where the plugin is served inside this process.
+	Plugin       manifest.Discovered
 	BuiltIn      *BuiltIn
 	Requirements []manifest.DependencyRequirement
-	// VaultPath is the vault the paths of the plugin are inside.
-	VaultPath string
+	VaultPath    string
 }
 
 type stdinKey struct {

@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
 )
 
 // channelWatcher is the watch of the filesystem: the paths it reports and the loss of the watch are
@@ -120,7 +121,7 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 			},
 		},
 		Stores: hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
-		Locks:  vaults.NewHoldVault(writers, testsupport.GetMachine()),
+		Locks:  hold.NewLocks(writers, testsupport.GetMachine()),
 	}
 }
 

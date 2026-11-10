@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -86,7 +87,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	arranger := newArranger(scenarios, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	vaults := hostvault.Vault{
-		Locks: vault.NewHoldVault(c.VaultLocks, clock.System{}),
+		Locks: hold.NewLocks(c.VaultLocks, clock.System{}),
 		Session: hostvault.Session{
 			Current:    current,
 			Vaults:     registry.Vaults.List,

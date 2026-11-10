@@ -57,8 +57,6 @@ type listenerBinding struct {
 	proxy *portproxy.Proxy
 }
 
-// getBindable returns the plugin and its settings where its listeners may bind a port: the host runs,
-// is not in safe mode and has the plugin enabled.
 func (l *Listeners) getBindable(pluginID string) (manifest.Discovered, map[string]any, bool) {
 	v, release := l.registry.set.view()
 	defer release()
