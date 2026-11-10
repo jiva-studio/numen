@@ -9,7 +9,9 @@ import (
 
 // Host is the plugin host as the capabilities the wiring and the use cases consume. NewHost builds
 // every capability from one plugin host, and a Config holds the one *Host the container made: the
-// settings subscription is keyed by that pointer.
+// settings subscription is keyed by that pointer. SetStorage sets the folders
+// the plugins store files in and keeps the dependencies in the models folder the host names;
+// RefreshDependencies provisions them as the environment names them now.
 type Host struct {
 	pluginport.PluginActivator
 	pluginport.PluginDiscoverer
@@ -29,10 +31,7 @@ type Host struct {
 	pluginport.DependencyReporter
 	completionport.CompleterHost
 	contenttypeport.ContentTypeTable
-	// SetStorage sets the folders the plugins store files in, and keeps the dependencies in the models
-	// folder the host names, where it names one.
-	SetStorage func(cacheRoot, dataRoot string)
-	// RefreshDependencies provisions the dependencies as the environment names them now.
+	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 }
 

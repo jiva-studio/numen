@@ -57,7 +57,6 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	return &downEmbeddingHost{endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
-// lend is the plugin host the container holds, made of the capabilities the fake answers.
 func (h *downEmbeddingHost) lend() *pluginswiring.Host {
 	return &pluginswiring.Host{PluginResolver: h, PluginActivator: h}
 }

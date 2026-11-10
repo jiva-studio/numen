@@ -12,7 +12,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
@@ -185,14 +184,6 @@ func (s *State) Close() {
 
 func (s *State) isClosed() bool { return s.closed.Load() }
 
-func (s *State) getCurrentVault() (domain.Vault, error) {
-	v := s.GetCurrentVault()
-	if v.ID == "" {
-		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
-	}
-	return v, nil
-}
-
 func text(v *atomic.Value) string {
 	s, isString := v.Load().(string)
 	if !isString {
@@ -238,8 +229,6 @@ func (w *inflight) begin() bool           { return w.Inflight.Begin() }
 func (w *inflight) finish()               { w.Inflight.Finish() }
 func (w *inflight) seal() <-chan struct{} { return w.Inflight.Seal() }
 func (w *inflight) open()                 { w.Inflight.Open() }
-
-var errClosing = broadcast.ErrClosing
 
 func newChangeBroadcaster() broadcaster[window.Change] {
 	return broadcaster[window.Change]{
