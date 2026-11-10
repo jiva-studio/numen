@@ -109,7 +109,6 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
 
 type ReportedTabs = Pick<WindowTabs, 'tabs' | 'groups'>
 
-/** Returns the tabs whose kind supports navigate, in tab order. */
 function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsReport['tabs'] {
   return windowTabs.tabs.tabs.value.flatMap((tab) => {
     const kind = windowTabs.tabs.getTab(tab.id)?.kind

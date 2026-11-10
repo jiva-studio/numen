@@ -54,10 +54,6 @@ const getPluginCommandId = (pluginId: string, commandId: string): string =>
 export const getPaletteId = (command: DeclaredCommand): string =>
   getPluginCommandId(command.pluginId, command.id)
 
-/**
- * The palette's commands for the declared ones, each offered where its when condition holds over
- * what is in front, while the vault accepts operations, and grouped by what the condition reads.
- */
 function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
   context: WindowWhenContext = createEmptyWhenContext(),
