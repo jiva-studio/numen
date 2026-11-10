@@ -192,7 +192,7 @@ export default [
         { type: 'slice-model', pattern: 'frontend/*/model', capture: ['slice'] },
         { type: 'slice-api', pattern: 'frontend/*/api', capture: ['slice'] },
         { type: 'slice-lib', pattern: 'frontend/*/lib', capture: ['slice'] },
-        { type: 'slice', pattern: 'frontend/*', capture: ['slice'] },
+        { type: 'slice', pattern: 'frontend/*', capture: ['slice'], partialMatch: false },
       ],
       'boundaries/files': [
         { category: 'root-index', pattern: 'frontend/index.ts' },
