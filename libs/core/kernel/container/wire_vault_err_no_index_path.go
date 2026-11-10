@@ -92,7 +92,6 @@ func updateIndex(c vaultWiring, db *vault.Index) edit.IndexUpdater {
 		db.Source.Sources,
 		c.Clock,
 	)
-	refresh.FollowRenames = filetext.NewFollowRenames(db.Source.RemovalLookup, db.Source.Sources)
 	refresh.Cut = c.CutNotes
 	refresh.Ledger = db.Ledger()
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -160,7 +159,7 @@ func vaultNotes(c vaultWiring, db *vault.Index, index edit.IndexUpdater) note.Sc
 		},
 		Browse: note.Browsing{
 			Connection:     query.NewGetConnection(links),
-			Neighborhood:   query.NewShowNeighbourhood(links, refs),
+			Neighborhood:   query.NewShowNeighborhood(links, refs),
 			GetTitles:      query.NewGetTitles(refs),
 			GetTitle:       query.NewGetTitle(refs),
 			IsVaultIndexed: query.NewIsVaultIndexed(db.NoteQueries.VaultHolds),
@@ -205,7 +204,6 @@ func vaultOpenerWith(c vaultWiring,
 
 func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(vaultReaders(c), db.Stores.Vaults, notes, db.Source.RemovalLookup, db.Source.Sources, c.Clock)
-	refresh.FollowRenames = filetext.NewFollowRenames(db.Source.RemovalLookup, db.Source.Sources)
 	refresh.Cut = c.CutNotes
 	refresh.Ledger = db.Ledger()
 	return refresh

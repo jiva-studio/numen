@@ -63,7 +63,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_TOO_LARGE, true,
 		},
 		"a title no note can be given": {
-			fmt.Errorf("%w: nothing to name it", query.ErrInvalidName),
+			fmt.Errorf("%w: nothing to name it", domain.ErrInvalidName),
 			v1.ErrorCode_ERROR_CODE_INVALID_NAME, true,
 		},
 		"a frontmatter written on one line": {

@@ -31,7 +31,7 @@ func (o staleNoteWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, 
 type staleNoteWriter struct{ vaultport.NoteWriter }
 
 func (staleNoteWriter) Write(context.Context, string, []byte, domain.FileStat) (domain.FileStat, error) {
-	return domain.FileStat{}, vaultport.ErrStale
+	return domain.FileStat{}, edit.ErrStale
 }
 
 type openSession struct{ vault domain.Vault }
