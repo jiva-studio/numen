@@ -3,6 +3,7 @@ package process
 import (
 	"errors"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -49,7 +50,7 @@ func TestTheLinesSentAreTheLinesReceivedUntilTheOutputEnds(t *testing.T) {
 	if _, err := child.Receive(); !errors.Is(err, io.EOF) {
 		t.Errorf("received after the end: %v, want %v", err, io.EOF)
 	}
-	if err := child.Close(); err != nil {
+	if err := child.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
 		t.Errorf("close: %v", err)
 	}
 }
