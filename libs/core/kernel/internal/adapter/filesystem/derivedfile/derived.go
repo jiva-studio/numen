@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 )
@@ -422,7 +423,7 @@ func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	name, err := filepath.Rel(d.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
-		return nil, "", fmt.Errorf("%s: %w", target, vaultconfig.ErrOutside)
+		return nil, "", fmt.Errorf("%s: %w", target, vault.ErrOutside)
 	}
 	root, err := os.OpenRoot(d.root)
 	if err != nil {
@@ -458,7 +459,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	// A name belongs to one area, and the store handles only its own areas.
 	area, targetVal := d.findArea(clean)
 	if !targetVal {
-		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), vaultconfig.ErrOutside)
+		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), vault.ErrOutside)
 	}
 	target := filepath.Join(d.root, filepath.FromSlash(clean))
 
@@ -471,7 +472,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 		return "", err
 	}
 	if !enclosed {
-		return "", fmt.Errorf("%s: %w", name, vaultconfig.ErrOutside)
+		return "", fmt.Errorf("%s: %w", name, vault.ErrOutside)
 	}
 	return target, nil
 }

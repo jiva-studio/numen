@@ -85,10 +85,10 @@ func TestRunPassesTheVersionArgumentToACommandWithItems(t *testing.T) {
 
 	_, err := run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "org.example.proofs", Command: "proofread", Path: "talks/a.mp3",
-		Arguments: map[string]string{plugincommand.ArgumentVersion: "org.example.ears/ears"},
+		Arguments: map[string]string{manifest.CommandArgumentVersion: "org.example.ears/ears"},
 	})
 
-	if err != nil || len(declared.calls) != 1 || declared.calls[0].Arguments[plugincommand.ArgumentVersion] != "org.example.ears/ears" {
+	if err != nil || len(declared.calls) != 1 || declared.calls[0].Arguments[manifest.CommandArgumentVersion] != "org.example.ears/ears" {
 		t.Errorf("got %v, ran %+v", err, declared.calls)
 	}
 }

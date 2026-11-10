@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -126,7 +125,7 @@ type searchWiring struct {
 }
 
 func cutNotes(c searchWiring) chunking.CutNotes {
-	cutter := query.NewCutNotes(c.Chunks.Get())
+	cutter := chunking.NewCutNotes(c.Chunks.Get())
 	if c.PluginHost != nil {
 		cutter.Profiles = c.PluginHost.ResolveNoteProfile
 	}

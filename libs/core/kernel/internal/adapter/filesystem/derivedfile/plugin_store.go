@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -40,7 +41,7 @@ func (p PluginStores) DeleteFolder(ctx context.Context, v domain.Vault, pluginID
 
 func (p PluginStores) openFolder(v domain.Vault, pluginID string) (PluginFolder, error) {
 	if !strings.Contains(pluginID, ".") || strings.HasPrefix(pluginID, ".") || strings.ContainsAny(pluginID, `/\`) {
-		return PluginFolder{}, fmt.Errorf("%q is not the identity of a plugin: %w", pluginID, vaultconfig.ErrOutside)
+		return PluginFolder{}, fmt.Errorf("%q is not the identity of a plugin: %w", pluginID, vault.ErrOutside)
 	}
 	store, err := OpenDerived(v.Path, p.Options, pluginID)
 	if err != nil {
@@ -57,7 +58,7 @@ type PluginFolder struct {
 
 func (f PluginFolder) getKey(name string) (string, error) {
 	if name == "" || strings.ContainsAny(name, `/\`) || strings.HasPrefix(name, ".") {
-		return "", fmt.Errorf("%q is not a file of the folder: %w", name, vaultconfig.ErrOutside)
+		return "", fmt.Errorf("%q is not a file of the folder: %w", name, vault.ErrOutside)
 	}
 	return f.folder + "/" + name, nil
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
@@ -69,7 +70,7 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 	}
 	// folder let back in is somewhere a program's own file lands.
 	err = writer.Import(t.Context(), ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh\n"))
-	if !errors.Is(err, vaultconfig.ErrNotANote) {
+	if !errors.Is(err, edit.ErrNotANote) {
 		t.Errorf("bringing a file into .git answered %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root, ".git", "hooks", "pre-commit")); !errors.Is(err, os.ErrNotExist) {

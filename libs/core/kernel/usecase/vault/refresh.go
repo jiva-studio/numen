@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -255,7 +256,7 @@ func (u Refresh) refreshPath(ctx context.Context, run *refreshRun, path string) 
 func readListedFile(ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case errors.Is(err, vaultport.ErrNotExist):
+	case errors.Is(err, edit.ErrNotExist):
 	case err != nil:
 		res.Unreadable = append(res.Unreadable, path)
 	default:
@@ -269,11 +270,11 @@ func (u Refresh) statNote(
 ) (domain.FileStat, bool) {
 	ref, err := reader.StatFile(ctx, path)
 	switch {
-	case errors.Is(err, vaultport.ErrNotANote):
+	case errors.Is(err, edit.ErrNotANote):
 		// An attachment, an export or a note renamed out of the vault's sight is
 		// not a note that vanished, and the index holds nothing at its path.
 		res.LeftAlone = append(res.LeftAlone, path)
-	case errors.Is(err, vaultport.ErrNotExist):
+	case errors.Is(err, edit.ErrNotExist):
 		res.Removed = append(res.Removed, path)
 	case err != nil:
 		res.Unreadable = append(res.Unreadable, path)

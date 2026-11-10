@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -128,7 +129,7 @@ func TestRemoveTargetLinksOfANoteThatChangedSinceItWasReadIsStale(t *testing.T) 
 
 	_, err := c.newEditLinks().RemoveTargetLinks(t.Context(), c.vault, "Heat.md", getEntropyAddress(), "", read)
 
-	if !errors.Is(err, vaultport.ErrStale) {
+	if !errors.Is(err, edit.ErrStale) {
 		t.Errorf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Heat.md"); body != theirs {

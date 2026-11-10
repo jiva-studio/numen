@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	domainsettings "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 func readFileWith(t *testing.T, body string) settings.File {
@@ -33,7 +34,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"performance.profile":         "eco",
 	}
 	for _, declared := range settings.GetAppDeclaration() {
-		path := append([]string{settings.OwnerApp}, strings.Split(declared.Key, ".")...)
+		path := append([]string{domainsettings.AppOwner}, strings.Split(declared.Key, ".")...)
 		if got, _ := file.GetValue(path...); got != want[declared.Key] {
 			t.Errorf("%s in force is %v, the file has %v", declared.Key, got, want[declared.Key])
 		}

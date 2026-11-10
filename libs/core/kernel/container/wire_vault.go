@@ -43,6 +43,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // Registry opens the vault registry for this installation.
@@ -131,7 +132,7 @@ func (c Config) OpenIndex(ctx context.Context) (*vault.Index, error) {
 }
 
 // UpdateIndex updates the notes at the paths given up to date in the index.
-func (c Config) UpdateIndex(db *vault.Index) note.IndexUpdater {
+func (c Config) UpdateIndex(db *vault.Index) edit.IndexUpdater {
 	return updateIndex(c.vault(), db)
 }
 
@@ -142,7 +143,7 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 
 // Notes builds everything that acts on the notes of a vault, against this
 // installation's vault readers and writers.
-func (c Config) Notes(db *vault.Index, index note.IndexUpdater) note.Scenarios {
+func (c Config) Notes(db *vault.Index, index edit.IndexUpdater) note.Scenarios {
 	return vaultNotes(c.vault(), db, index)
 }
 
@@ -384,7 +385,7 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 	}), nil
 }
 
-func updateIndex(c vaultWiring, db *vault.Index) note.IndexUpdater {
+func updateIndex(c vaultWiring, db *vault.Index) edit.IndexUpdater {
 	refresh := vault.NewRefresh(
 		vaultReaders(c),
 		db.Vaults(),
@@ -410,7 +411,7 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}.File(ctx, path)
 }
 
-func vaultNotes(c vaultWiring, db *vault.Index, index note.IndexUpdater) note.Scenarios {
+func vaultNotes(c vaultWiring, db *vault.Index, index edit.IndexUpdater) note.Scenarios {
 	names, refs, links := db.NamedPaths(), db.NoteRefs(), db.Links()
 	sources, indexed := db.Sources(), db.SourcesUnder()
 	readers := vaultReaders(c)
@@ -594,7 +595,7 @@ func (c Config) OpenVaults(db *vault.Index, out io.Writer, label string) *vault.
 
 // SetShellNotes gives a shell the notes it answers about: whether a vault is indexed and what a link
 // resolves to. A write updates the index through updateIndex.
-func (c Config) SetShellNotes(api *shell.API, db *vault.Index, updateIndex note.IndexUpdater) {
+func (c Config) SetShellNotes(api *shell.API, db *vault.Index, updateIndex edit.IndexUpdater) {
 	notes := c.Notes(db, updateIndex)
 	api.IsVaultIndexed, api.ResolveLinks = notes.Browse.IsVaultIndexed, notes.Refer.ResolveLinks
 }

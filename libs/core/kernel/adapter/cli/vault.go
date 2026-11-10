@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -196,7 +196,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 	defer closeInto(&err, erasing.Close)
 
 	res, err := erasing.Erase.Execute(ctx, v)
-	if errors.Is(err, picker.ErrNoTrash) {
+	if errors.Is(err, machine.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, v.Name)
 	}
 	if err != nil {

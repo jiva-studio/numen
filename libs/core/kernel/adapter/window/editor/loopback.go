@@ -14,9 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // FileServer answers with one file of one vault, as it is read.
@@ -235,9 +237,9 @@ func instant(nanos int64) time.Time {
 
 func refuse(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, file.ErrChanged), file.IsNoNote(err):
+	case errors.Is(err, file.ErrChanged), edit.IsNoNote(err):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, file.ErrOutside):
+	case errors.Is(err, vault.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)

@@ -24,6 +24,7 @@ import (
 	adapterSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
@@ -694,7 +695,7 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err := adapterSettings.NewFiles().OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
-	if response.Appearance.Theme != "mine:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
+	if response.Appearance.Theme != "mine:nord" || response.Appearance.Mode != theme.SchemeDark {
 		t.Errorf("the file says %+v", response.Appearance)
 	}
 	// The stored API key is preserved.

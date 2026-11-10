@@ -239,7 +239,7 @@ func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvide
 		if c.GetAgentPrograms != nil {
 			programs = c.GetAgentPrograms(provider, target.Agent)
 		}
-		return prefixModels(settingsadapter.OwnerApp, settingsadapter.AgentModels(agentAt, target.Agent, programs))
+		return prefixModels(settingsdomain.AppOwner, settingsadapter.AgentModels(agentAt, target.Agent, programs))
 	}
 }
 
@@ -255,7 +255,7 @@ func prefixModels(owner string, models []settingsdomain.Model) []settingsdomain.
 
 func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
-		if owner == settingsadapter.OwnerApp {
+		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
 		}
 		if c.PluginHost == nil {

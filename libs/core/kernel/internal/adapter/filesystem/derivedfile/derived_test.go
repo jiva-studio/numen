@@ -369,7 +369,7 @@ func TestAClaimCannotLeaveTheStore(t *testing.T) {
 		"config.json",
 		"/etc/passwd",
 	} {
-		if _, err := derived.ClaimName(t.Context(), name); !errors.Is(err, vaultconfig.ErrOutside) {
+		if _, err := derived.ClaimName(t.Context(), name); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("claiming %q gave %v, want ErrOutside", name, err)
 		}
 	}

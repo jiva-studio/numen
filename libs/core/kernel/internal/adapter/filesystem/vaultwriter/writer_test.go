@@ -18,9 +18,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func openWriter(t *testing.T) (*vaultwriter.VaultWriter, string) {
@@ -213,7 +213,7 @@ func TestAFolderIsMade(t *testing.T) {
 	if err := w.MakeFolder(ctx, "science/Entropy.md"); !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("a folder over a file: want ErrAlreadyExists, got %v", err)
 	}
-	if err := w.MakeFolder(ctx, "../outside"); !errors.Is(err, vaultconfig.ErrOutside) {
+	if err := w.MakeFolder(ctx, "../outside"); !errors.Is(err, vault.ErrOutside) {
 		t.Errorf("a folder outside the vault: want ErrOutside, got %v", err)
 	}
 }
@@ -283,7 +283,7 @@ func TestStatingAFileOpensNothing(t *testing.T) {
 	switch _, err := reader.StatFile(t.Context(), "Entropy.md"); {
 	case !errors.Is(err, fs.ErrNotExist):
 		t.Errorf("want fs.ErrNotExist, got %v", err)
-	case errors.Is(err, vaultport.ErrNotANote):
+	case errors.Is(err, edit.ErrNotANote):
 		t.Errorf("a path with nothing at it was called a file: %v", err)
 	}
 }
@@ -328,8 +328,8 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 		sentinel error
 	}{
 		{"the service folder", ".numen/vault.yml", nil},
-		{"another tool's folder", ".obsidian/workspace.json", vaultport.ErrNotANote},
-		{"a file that is not a note", "attachments/paper.pdf", vaultport.ErrNotANote},
+		{"another tool's folder", ".obsidian/workspace.json", edit.ErrNotANote},
+		{"a file that is not a note", "attachments/paper.pdf", edit.ErrNotANote},
 	} {
 		t.Run(item.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -409,7 +409,7 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("a file over a file: want ErrAlreadyExists, got %v", err)
 	}
-	if err := w.Import(ctx, "../outside.png", strings.NewReader("PNG")); !errors.Is(err, vaultconfig.ErrOutside) {
+	if err := w.Import(ctx, "../outside.png", strings.NewReader("PNG")); !errors.Is(err, vault.ErrOutside) {
 		t.Errorf("a file outside the vault: want ErrOutside, got %v", err)
 	}
 	if err := w.Import(ctx, ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh")); err == nil {

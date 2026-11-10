@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -98,9 +99,9 @@ func (c changing) overwrite(t *testing.T, path, content string) {
 func TestAnEditNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	edit := note.NewEdit(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock())
+	editing := note.NewEdit(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock())
 
-	content, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
+	content, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 	if err != nil {
 		t.Fatalf("an edit with no index to level failed: %v", err)
 	}
@@ -169,18 +170,18 @@ func TestEdit_ReadsFileOnlyWhenFingerprintRequired(t *testing.T) {
 			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 			current := c.openNote(t, "Heat.md")
 			request := 0
-			edit := note.NewEdit(
+			editing := note.NewEdit(
 				watchedReaders{inner: vaultreader.Readers{}, stat: func(string) { request++ }},
 				vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 			if tc.existing {
-				edit.FileStat = current.FileStat
+				editing.FileStat = current.FileStat
 			}
-			edit.ShouldOverwrite = tc.overwrite
+			editing.ShouldOverwrite = tc.overwrite
 			if tc.baseline {
-				edit.Baseline = current
+				editing.Baseline = current
 			}
 
-			if _, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat); err != nil {
+			if _, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat); err != nil {
 				t.Fatal(err)
 			}
 
@@ -196,13 +197,13 @@ func TestEdit_NoFingerprintChecksAgainstLatestRead(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	theirs := "# Heat\n\nSaved in the meantime, and longer.\n"
-	edit := note.NewEdit(
+	editing := note.NewEdit(
 		watchedReaders{inner: vaultreader.Readers{}, read: func(string) { c.overwrite(t, "Heat.md", theirs) }},
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 
-	_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
+	_, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
-	if !errors.Is(err, vaultport.ErrStale) {
+	if !errors.Is(err, edit.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Heat.md"); body != theirs {
@@ -218,14 +219,14 @@ func TestAnEditOfANoteThatCannotBeLookedAtIsRefused(t *testing.T) {
 		want error
 	}{
 		{"the vault will not answer", errDiskGone, errDiskGone},
-		{"the vault holds no note there", fs.ErrNotExist, note.ErrNoNote},
+		{"the vault holds no note there", fs.ErrNotExist, edit.ErrNoNote},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-			edit := note.NewEdit(brokenReaders{stat: tc.stat}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
+			editing := note.NewEdit(brokenReaders{stat: tc.stat}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 
-			_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
+			_, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
 			if !errors.Is(err, tc.want) {
 				t.Errorf("want %v, got %v", tc.want, err)
@@ -243,12 +244,12 @@ func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	elsewhere := c.openNote(t, "Entropy.md").FileStat
 
 	for _, target := range []domain.FileStat{{}, elsewhere} {
-		edit := c.editWith(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
-		edit.FileStat = target
+		editing := c.editWith(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
+		editing.FileStat = target
 
-		_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
+		_, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
-		if !errors.Is(err, note.ErrNoNote) {
+		if !errors.Is(err, edit.ErrNoNote) {
 			t.Errorf("want ErrNoNote, got %v", err)
 		}
 		if c.exists("Heat.md") {
@@ -266,10 +267,10 @@ func (c changing) editWith(readers vaultport.VaultReaders, writers note.NoteWrit
 func TestAnOverwriteStopsAtAReadThatFailsForAnotherReason(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	edit := c.editWith(brokenReaders{read: errDiskGone}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
-	edit.ShouldOverwrite = true
+	editing := c.editWith(brokenReaders{read: errDiskGone}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
+	editing.ShouldOverwrite = true
 
-	_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
+	_, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
 	if !errors.Is(err, errDiskGone) {
 		t.Errorf("want the error the vault gave, got %v", err)
@@ -338,10 +339,10 @@ func (staleBytesReader) Read(context.Context, string) ([]byte, error) {
 func TestAnOverwriteOfAMissingNoteContainsOnlyTheNewText(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
-	edit := c.editWith(bytesWithNoNote{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
-	edit.ShouldOverwrite = true
+	editing := c.editWith(bytesWithNoNote{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
+	editing.ShouldOverwrite = true
 
-	if _, err := edit.Apply(t.Context(), c.vault, "Heat.md", func(d *markdown.Document) error {
+	if _, err := editing.Apply(t.Context(), c.vault, "Heat.md", func(d *markdown.Document) error {
 		return d.SetBody("Mine.\n")
 	}); err != nil {
 		t.Fatal(err)

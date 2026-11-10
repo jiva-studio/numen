@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -617,7 +618,7 @@ type staleWriter struct{ vaultport.NoteWriter }
 func (staleWriter) Write(
 	context.Context, string, []byte, domain.FileStat,
 ) (domain.FileStat, error) {
-	return domain.FileStat{}, vaultport.ErrStale
+	return domain.FileStat{}, edit.ErrStale
 }
 
 // TestRenamingANoteWrittenElsewhereIsAQuestion. A note containing unread prose

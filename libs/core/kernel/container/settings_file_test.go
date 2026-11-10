@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
 // A file without a size uses the desktop's scale; unsetting GDK_DPI_SCALE keeps
@@ -47,7 +48,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	if len(cfg.Notices) != 0 {
 		t.Errorf("a file nobody wrote says %q", cfg.Notices)
 	}
-	if cfg.Appearance.Mode != settings.ModeSystem {
+	if cfg.Appearance.Mode != theme.SchemeSystem {
 		t.Errorf("the colors are read as %q", cfg.Appearance.Mode)
 	}
 	if cfg.Appearance.Theme != settings.DefaultTheme {
@@ -65,7 +66,7 @@ func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
 	if cfg.Appearance.TextScale != 1.5 || cfg.Appearance.InterfaceScale != 1 {
 		t.Errorf("drawn at %+v", cfg.Appearance)
 	}
-	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.Theme != settings.DefaultTheme {
+	if cfg.Appearance.Mode != theme.SchemeSystem || cfg.Appearance.Theme != settings.DefaultTheme {
 		t.Errorf("drawn as %+v", cfg.Appearance)
 	}
 }
@@ -151,7 +152,7 @@ func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Appearance.Mode != settings.ModeDark || cfg.Appearance.Theme != "mine:dracula" {
+	if cfg.Appearance.Mode != theme.SchemeDark || cfg.Appearance.Theme != "mine:dracula" {
 		t.Errorf("drawn as %+v", cfg.Appearance)
 	}
 }

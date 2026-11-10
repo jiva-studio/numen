@@ -85,7 +85,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 	}
 	// Only the core reports a path as holding nothing: the writer returns the same
 	// error for a vault it cannot reach at all.
-	if err := mover.Move(ctx, from, to); errors.Is(err, vaultport.ErrNotExist) {
+	if err := mover.Move(ctx, from, to); errors.Is(err, edit.ErrNotExist) {
 		return res, edit.ErrNoNote
 	} else if err != nil {
 		return res, err

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -81,7 +82,7 @@ func (r statReader) StatFile(_ context.Context, path string) (domain.FileStat, e
 		return domain.FileStat{}, err
 	}
 	if file.isIgnored {
-		return domain.FileStat{}, vaultport.ErrNotANote
+		return domain.FileStat{}, edit.ErrNotANote
 	}
 	return domain.FileStat{Path: path, Kind: domain.KindFile, Size: int64(len(file.raw)), ModTime: file.modTime, FileID: file.id}, nil
 }

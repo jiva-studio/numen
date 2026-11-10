@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // editorServices is what the editor window is given of a configuration: its agent and the use cases
@@ -41,7 +42,7 @@ type windowVaults struct {
 
 func (w windowVaults) GetRefresh() vault.Refresh { return w.cfg.GetRefresh(w.db) }
 
-func (w windowVaults) OpenNotes(index note.IndexUpdater) note.Scenarios {
+func (w windowVaults) OpenNotes(index edit.IndexUpdater) note.Scenarios {
 	return w.cfg.Notes(w.db, index)
 }
 

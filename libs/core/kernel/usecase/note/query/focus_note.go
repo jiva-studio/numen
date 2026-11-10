@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
@@ -38,7 +38,7 @@ func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (d
 	}
 	ref, recognized := found[path]
 	if !recognized {
-		return domain.NoteRef{}, fmt.Errorf("no note at %s: %w", path, vaultport.ErrNotExist)
+		return domain.NoteRef{}, fmt.Errorf("no note at %s: %w", path, edit.ErrNotExist)
 	}
 	if err := u.view.FocusPlace(ctx, domain.Place{Path: path}); err != nil {
 		return domain.NoteRef{}, err

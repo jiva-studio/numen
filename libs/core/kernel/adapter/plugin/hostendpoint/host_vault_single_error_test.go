@@ -18,10 +18,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
 // failingFileVault is a vault whose Write and Create fail with err.
@@ -72,9 +72,9 @@ func TestCreateFileOverAFileInThePathReturnsNotADirectory(t *testing.T) {
 
 func TestWriteFileWithANoteErrorReturnsInternalWithTheErrorText(t *testing.T) {
 	for name, cause := range map[string]error{
-		"too large":       note.ErrTooLarge,
-		"unreadable":      note.ErrUnreadable,
-		"body unwritable": note.ErrBodyUnwritable,
+		"too large":       edit.ErrTooLarge,
+		"unreadable":      edit.ErrUnreadable,
+		"body unwritable": edit.ErrBodyUnwritable,
 	} {
 		t.Run(name, func(t *testing.T) {
 			failure := fmt.Errorf("write Ganges.md: %w", cause)
@@ -112,7 +112,7 @@ type tooLargeMoveVault struct{ *fakeNoteVault }
 
 func (v tooLargeMoveVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
 	if from == tooLargePath {
-		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, note.ErrTooLarge)
+		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, edit.ErrTooLarge)
 	}
 	return v.fakeNoteVault.MoveNote(ctx, from, to)
 }

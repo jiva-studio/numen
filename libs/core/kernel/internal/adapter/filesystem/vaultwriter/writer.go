@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/atomicfile"
@@ -209,7 +210,7 @@ func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 		return "", err
 	}
 	if !w.isWritableNote(path) {
-		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
+		return "", fmt.Errorf("%s: %w", path, edit.ErrNotANote)
 	}
 	return target, nil
 }
@@ -220,7 +221,7 @@ func (w *VaultWriter) resolvePath(path string) (string, error) {
 		return "", err
 	}
 	if !w.isReachable(path) {
-		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
+		return "", fmt.Errorf("%s: %w", path, edit.ErrNotANote)
 	}
 	return target, nil
 }
@@ -231,16 +232,16 @@ func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 		return "", err
 	}
 	if !w.isWritableNote(path) {
-		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
+		return "", fmt.Errorf("%s: %w", path, edit.ErrNotANote)
 	}
 	// The note rules apply to the resolved path as well as to the requested name:
 	// a link is a name for another location, and a rename replaces that location.
 	inside, err := filepath.Rel(w.root, resolved)
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrOutside)
+		return "", fmt.Errorf("%s: %w", path, vault.ErrOutside)
 	}
 	if !w.isWritableNote(inside) {
-		return "", fmt.Errorf("%s: %w", inside, vaultconfig.ErrNotANote)
+		return "", fmt.Errorf("%s: %w", inside, edit.ErrNotANote)
 	}
 	return resolved, nil
 }
@@ -264,7 +265,7 @@ func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
 func (w *VaultWriter) getRelativeName(target string) (string, error) {
 	name, err := filepath.Rel(w.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
-		return "", fmt.Errorf("%s: %w", target, vaultconfig.ErrOutside)
+		return "", fmt.Errorf("%s: %w", target, vault.ErrOutside)
 	}
 	return name, nil
 }
@@ -470,14 +471,14 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 		}
 		if !stat.IsZero() &&
 			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
-			return 0, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+			return 0, fmt.Errorf("write %s: %w", path, edit.ErrStale)
 		}
 		return info.Mode().Perm(), nil
 	case errors.Is(err, fs.ErrNotExist):
 		// A missing note cannot have changed, so a caller holding a stat for it gets
 		// ErrStale.
 		if !stat.IsZero() {
-			return 0, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+			return 0, fmt.Errorf("write %s: %w", path, edit.ErrStale)
 		}
 		return newFileMode, nil
 	default:

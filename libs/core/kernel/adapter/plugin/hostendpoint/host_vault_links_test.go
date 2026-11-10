@@ -17,10 +17,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // linkUpdate is one UpdateLinks call the linking vault received.
@@ -63,7 +63,7 @@ func (l *linkingVault) checkNote(from string, baseline domain.FileStat) error {
 		return fmt.Errorf("read %s: %w", from, err)
 	}
 	if now.Size != baseline.Size || !now.ModTime.Equal(baseline.ModTime) {
-		return fmt.Errorf("write %s: %w", from, vaultport.ErrStale)
+		return fmt.Errorf("write %s: %w", from, edit.ErrStale)
 	}
 	return nil
 }

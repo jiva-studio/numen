@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -84,7 +85,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance, f.AI}},
+		{settings.AppOwner, appObject{f.Appearance, f.Agent, f.Titles, f.Performance, f.AI}},
 	}
 	if len(f.Secrets) > 0 {
 		members = append(members, struct {
@@ -133,7 +134,7 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 			if err := json.Unmarshal(root[key], &f.Version); err != nil {
 				return err
 			}
-		case OwnerApp:
+		case settings.AppOwner:
 			has, err := f.readApp(root[key])
 			if err != nil {
 				return err
@@ -154,7 +155,7 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) {
 	app, isObject := decodeObject(raw)
 	if !isObject {
-		f.AddNotice(fmt.Sprintf("numen.json: %s is not a JSON object; its settings are ignored", OwnerApp))
+		f.AddNotice(fmt.Sprintf("numen.json: %s is not a JSON object; its settings are ignored", settings.AppOwner))
 		return false, nil
 	}
 	valid := map[string]any{}
@@ -165,14 +166,14 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 			continue
 		}
 		if err := checkValue(declared, nil, value); err != nil {
-			f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", OwnerApp+"."+declared.Key, err))
+			f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", settings.AppOwner+"."+declared.Key, err))
 			continue
 		}
 		storePath(valid, path, value)
 		hasInterfaceScale = hasInterfaceScale || declared.Key == keyInterfaceScale
 	}
 	for _, path := range listUndeclared(app) {
-		f.AddNotice(fmt.Sprintf("numen.json: %q: no such setting; the value is ignored", OwnerApp+"."+path))
+		f.AddNotice(fmt.Sprintf("numen.json: %q: no such setting; the value is ignored", settings.AppOwner+"."+path))
 	}
 	for section := range app {
 		if isOutsideDeclaration(section) {
