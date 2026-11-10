@@ -1,0 +1,109 @@
+/**
+ * The paths the window follows: a note the core asks to show opens in a tab, and a note renamed
+ * is followed by the tabs and the palette step standing on it.
+ */
+import { describe, expect, it, vi } from 'vitest'
+import { COMMAND } from '@/entities/command'
+import {
+  changed,
+  getWindowParts,
+  mountWindowWithPalette,
+  outside,
+  requests,
+  settle,
+} from '@/testing/window'
+
+type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
+
+const ENTROPY = 'physics/Entropy.md'
+const HEAT = 'physics/Heat.md'
+
+/** The paths of the tabs as the core last kept them. */
+const readSavedPaths = (): readonly string[] =>
+  requests.openTabs.at(-1)?.tabs.map((one) => one.path) ?? []
+
+/** The core asks the window to show a note with no text marked, which opens it. */
+const showNote = async (path: string): Promise<void> => {
+  outside.ask({ path, start: 0, length: 0 })
+  await vi.waitFor(() => expect(readSavedPaths()).toContain(path))
+}
+
+const renameNote = async (from: string, to: string): Promise<void> => {
+  changed.report({ paths: [to], renamed: [{ from, to }] })
+  await settle()
+  await settle()
+}
+
+describe('a note the core asks the window to show', () => {
+  it('opens in a tab, which the open tabs record', async () => {
+    await mountWindowWithPalette()
+
+    await showNote(ENTROPY)
+
+    expect(readSavedPaths()).toContain(ENTROPY)
+  })
+})
+
+describe('a note created by a command of the window', () => {
+  it('opens in a tab, which the open tabs record', async () => {
+    const window = await mountWindowWithPalette()
+    const { palette } = getWindowParts(window)
+
+    palette.runCommand(COMMAND.createNote, palette.getTarget(), 'Entropy')
+
+    await vi.waitFor(() => expect(readSavedPaths()).toContain('Entropy.md'))
+    expect(requests.made).toStrictEqual(['Entropy'])
+  })
+})
+
+describe('a note renamed', () => {
+  it('is followed by the tab that stands on it', async () => {
+    await mountWindowWithPalette()
+    await showNote(ENTROPY)
+
+    await renameNote(ENTROPY, HEAT)
+
+    await vi.waitFor(() => expect(readSavedPaths()).toContain(HEAT))
+    expect(readSavedPaths()).not.toContain(ENTROPY)
+  })
+
+  describe('under a step of the palette that waits for its name', () => {
+    const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+
+    const typeName = async (text: string) => {
+      const into = field()
+      if (!into) return
+      into.value = text
+      into.dispatchEvent(new Event('input'))
+      await settle()
+    }
+
+    const submit = async () => {
+      field()?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+      )
+      await settle()
+    }
+
+    const askForNewName = (window: Window) => {
+      const { palette } = getWindowParts(window)
+      palette.runCommand(COMMAND.renameNote, {
+        ...palette.getTarget(),
+        path: ENTROPY,
+        title: 'Entropy',
+      })
+    }
+
+    it('is carried out over the new path of the note', async () => {
+      const window = await mountWindowWithPalette()
+      askForNewName(window)
+      await settle()
+
+      await renameNote(ENTROPY, HEAT)
+      await typeName('Kelvin')
+      await submit()
+
+      expect(requests.renamed).toStrictEqual([`${HEAT} Kelvin`])
+    })
+  })
+})

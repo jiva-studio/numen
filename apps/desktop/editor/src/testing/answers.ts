@@ -22,6 +22,8 @@ interface MockVaultState {
   types: Record<string, string>
   embedded: number
   listable: boolean
+  /** Whether the core refuses to open another vault. */
+  isOpenRefused: boolean
   writeError: string
   app: readonly PluginSettingInfo[]
   applied: string
@@ -51,6 +53,7 @@ export const mockVaultState: MockVaultState = {
   embedded: 0,
   /** Whether the list of vaults answers at all. */
   listable: true,
+  isOpenRefused: false,
   /** Why the settings were not written, which is a size outside its bounds. */
   writeError: '',
   app: [],
@@ -119,6 +122,33 @@ export const outside = (() => {
         ranges: [{ start: target.start, end: target.start + target.length }],
         tabId: '',
       })
+      wake?.()
+      wake = null
+    },
+    forget: () => queue.splice(0),
+    stream,
+  }
+})()
+
+/** The changes to the files of the vault that the core reports, and the stream the window receives them on. */
+export const changed = (() => {
+  interface Change {
+    paths: string[]
+    renamed: { from: string; to: string }[]
+  }
+  const queue: Change[] = []
+  let wake: (() => void) | null = null
+  async function* stream() {
+    for (;;) {
+      while (queue.length > 0) yield { reload: false, versionPaths: [], ...queue.shift()! }
+      await new Promise<void>((woken) => {
+        wake = woken
+      })
+    }
+  }
+  return {
+    report: (change: Change) => {
+      queue.push(change)
       wake?.()
       wake = null
     },
@@ -198,6 +228,7 @@ export const forgetAnswers = () => {
   mockVaultState.types = {}
   mockVaultState.embedded = 0
   mockVaultState.listable = true
+  mockVaultState.isOpenRefused = false
   mockVaultState.writeError = ''
   mockVaultState.app = []
   mockVaultState.detachError = ''
@@ -206,6 +237,7 @@ export const forgetAnswers = () => {
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
   maker.forget()
   outside.forget()
+  changed.forget()
   mockVaultList.vaults = [
     { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false },
   ]

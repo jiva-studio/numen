@@ -19,6 +19,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { getPanes, WorkspaceLayout, type Workspace } from '@numen/workbench'
 import { requests, forgetRequests } from './requests'
 import {
+  changed,
   folders,
   forgetAnswers,
   mockVaultList,
@@ -30,6 +31,7 @@ import {
   sourceAnswer,
 } from './answers'
 import { book, editor, reader } from './stubs'
+import type { createWindow } from '@/app/window/createWindow'
 
 const App = (await import('@/app/App.vue')).default
 
@@ -120,6 +122,10 @@ const nodeInPlex = (window: VueWrapper): string => {
   return state.picture.value?.nodes[0]?.id ?? ''
 }
 
+/** The window the mounted app composed: its palette, tabs and plugins. */
+const getWindowParts = (window: VueWrapper): ReturnType<typeof createWindow> =>
+  (window.vm as unknown as { parts: ReturnType<typeof createWindow> }).parts
+
 const getLayout = (window: VueWrapper): Workspace =>
   window.findComponent(WorkspaceLayout).props('modelValue')
 
@@ -132,6 +138,8 @@ const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =
 export {
   requests,
   cards,
+  changed,
+  getWindowParts,
   maker,
   DEBOUNCE,
   mountWindow,

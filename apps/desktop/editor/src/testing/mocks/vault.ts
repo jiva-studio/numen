@@ -3,9 +3,10 @@
  * `mockVaultList`. The answers go through the router transport, so the window runs its real
  * calls against them.
  */
+import { VAULTS_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
-import { mockVaultList, mockVaultState, pendingStream } from '../answers'
+import { changed, mockVaultList, mockVaultState } from '../answers'
 
 export const vaultAnswers = {
   vault: {
@@ -20,7 +21,7 @@ export const vaultAnswers = {
         isEmbedding: false,
       },
     }),
-    watchVaultChanges: pendingStream,
+    watchVaultChanges: changed.stream,
   },
   agentService: { getAgentState: () => ({ unreachable: '' }) },
   vaultsService: {
@@ -37,7 +38,8 @@ export const vaultAnswers = {
     removeVault: () => ({}),
     openVault: (request) => {
       requests.opened.push(request.id)
-      return {}
+      requests.tabsWhenOpened.push(requests.openTabs.at(-1)?.tabs.length ?? 0)
+      return mockVaultState.isOpenRefused ? { error: VAULTS_ERROR_CODE.NOT_FOUND } : {}
     },
   },
 } satisfies CoreAnswers
