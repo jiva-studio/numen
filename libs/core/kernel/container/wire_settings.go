@@ -183,7 +183,7 @@ func unsubscribeHost(c settingsWiring) {
 	if c.SubscribedHosts == nil || c.PluginHost == nil {
 		return
 	}
-	c.SubscribedHosts.Unsubscribe(c.PluginHost)
+	c.SubscribedHosts.Unsubscribe(c.PluginHost.Configuration)
 }
 
 func notifyHost(c settingsWiring, batch []settingsdomain.Setting) {

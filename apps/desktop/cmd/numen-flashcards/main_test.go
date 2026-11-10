@@ -174,7 +174,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	if err := container.InstallPluginVault(cfg, registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		t.Fatal(err)
 	}
-	lent := cfg.PluginHost.GetPluginVault()
+	lent := cfg.PluginHost.Endpoint.GetPluginVault()
 
 	recognized, listErr := lent.Switch.GetVaults()
 	linked, withErr := lent.Switch.With(target[1].ID)
