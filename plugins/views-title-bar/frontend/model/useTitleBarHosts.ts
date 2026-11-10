@@ -25,7 +25,7 @@ export function useTitleBarHosts(context: PluginContext) {
   const commandIds = shallowRef<readonly string[]>([])
 
   const watches: Disposable[] = []
-  const { slots } = context
+  const { slots } = context.ui
   if (slots) {
     watches.push(slots.watchEntries(SLOT.titleBarCommands, (next) => (commands.value = next)))
     watches.push(slots.watchEntries(SLOT.titleBarStatus, (next) => (status.value = next)))

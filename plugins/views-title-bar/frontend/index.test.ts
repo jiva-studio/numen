@@ -554,8 +554,15 @@ describe('the window buttons on Linux', () => {
 describe('the bar in a window that offers no slots, vaults or window', () => {
   it('draws the title of the application and no entry', () => {
     const registerSlotView = vi.fn(() => ({ dispose: () => undefined }))
-    const context: PluginContext = { ...createMockPluginContext(), registerSlotView }
-    for (const key of ['slots', 'vaults', 'window']) Reflect.deleteProperty(context, key)
+    const mock = createMockPluginContext()
+    const { slots: _slots, window: _window, ...ui } = mock.ui
+    const { vaults: _vaults, ...vault } = mock.vault
+    const context: PluginContext = {
+      ...mock,
+      register: { ...mock.register, slotView: registerSlotView },
+      ui,
+      vault,
+    }
     activate(context)
     const [[registration]] = registerSlotView.mock.calls as unknown as [[SlotViewRegistration]]
     const bar = mount(registration.component as Component)
@@ -577,7 +584,8 @@ describe('removing the bar', () => {
         one.dispose()
       },
     })
-    const { slots, vaults, window } = context
+    const { slots, window } = context.ui
+    const { vaults } = context.vault
     const watchEntries = slots.watchEntries
     const watchVaults = vaults.watch
     const watchWindow = window.watch

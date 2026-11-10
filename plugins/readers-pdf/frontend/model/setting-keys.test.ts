@@ -17,10 +17,12 @@ describe('the keys of the PDF reader settings', () => {
   it('follows a change of the camelCase key and listens to no snake_case key', () => {
     const watchedKeys: string[] = []
     bindPDFReaderPreferences({
-      getSetting: <T>() => undefined as T,
-      onSettingChange: <T>(key: string, _handler: (value: T) => void) => {
-        watchedKeys.push(key)
-        return { dispose: vi.fn() }
+      settings: {
+        get: <T>() => undefined as T,
+        onChange: <T>(key: string, _handler: (value: T) => void) => {
+          watchedKeys.push(key)
+          return { dispose: vi.fn() }
+        },
       },
     })
 

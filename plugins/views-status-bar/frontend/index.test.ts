@@ -128,7 +128,7 @@ describe('the bar', () => {
 
   it('draws an empty bar where the window offers no slots', () => {
     const context = createMockPluginContext({ pluginId: manifest.id })
-    const { slots: _slots, ...bare } = context
+    const { ui.slots: _slots, ...bare } = context
     activate(bare)
     const [registration] = context.getRegisteredSlotViews()
 
