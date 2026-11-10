@@ -19,6 +19,8 @@ export const requests = {
   pressed: [] as string[],
   /** The vaults the window requested to show, in request order. */
   opened: [] as string[],
+  /** How many tabs the last write of the open tabs held, as each vault was requested to open. */
+  tabsWhenOpened: [] as number[],
   /** How often a folder was requested, which corresponds to a vault being added. */
   chose: 0,
   /** What the window reported as currently open, most recent last. */
@@ -36,6 +38,7 @@ export const forgetRequests = () => {
   requests.measured = 0
   requests.pressed = []
   requests.opened = []
+  requests.tabsWhenOpened = []
   requests.chose = 0
   requests.openTabs = []
 }
