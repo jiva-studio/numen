@@ -14,7 +14,7 @@ const FILE = { path: 'Kept.md', size: '10', mtime: '7' }
 function answerWith(answer: object) {
   const sent: unknown[] = []
   vi.stubGlobal('fetch', async (_input: unknown, init?: RequestInit) => {
-    sent.push(JSON.parse(String(init?.body)))
+    sent.push(JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)))
     return new Response(JSON.stringify(answer), {
       headers: { 'content-type': 'application/json' },
     })

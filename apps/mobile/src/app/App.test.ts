@@ -34,7 +34,7 @@ describe('a core that answers', () => {
     await flushPromises()
 
     expect(app.getComponent(NoteSheet).props('path')).toBe('Physics.md')
-    expect(app.get('textarea').element.value).toBe('# Physics\n')
+    expect(document.querySelector('textarea')?.value).toBe('# Physics\n')
 
     app.getComponent(NoteSheet).vm.$emit('close')
     await flushPromises()
