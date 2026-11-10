@@ -133,15 +133,17 @@ function onSetPageHandle(reader: unknown) {
 }
 
 .fallback-panel {
+  --panel-pad: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 32px;
+  padding: var(--panel-pad);
 }
 
 .fallback-message {
-  font-size: 14px;
+  --message-text: 0.875rem;
+  font-size: var(--message-text);
   color: var(--text-secondary);
 }
 </style>

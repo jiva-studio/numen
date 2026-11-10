@@ -138,6 +138,6 @@ const getBoxStyle = (one: Rect) => ({
 
 .reader__spinner {
   --spinner-size: 1.4rem;
-  --spinner-thickness: 2px;
+  --spinner-thickness: 0.125rem;
 }
 </style>

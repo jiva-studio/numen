@@ -1,5 +1,6 @@
 .book {
   --book-head: 4rem;
+  --book-foot: 3rem;
 }
 
 /* The clearance the text keeps from the pane, and the room the controls stand
@@ -8,7 +9,7 @@
 .book__margin {
   box-sizing: border-box;
   padding-block-start: var(--book-head);
-  padding-block-end: 3rem;
+  padding-block-end: var(--book-foot);
 }
 
 /* The page a person is reading carries nothing drawn around it. */

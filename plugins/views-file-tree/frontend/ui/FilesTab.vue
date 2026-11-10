@@ -180,8 +180,9 @@ function getItemIcon(id: string): Component | null {
 }
 
 .files__icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  --icon-size: 0.875rem;
+  inline-size: var(--icon-size);
+  block-size: var(--icon-size);
   stroke-width: 1.875;
   opacity: 0.75;
 }

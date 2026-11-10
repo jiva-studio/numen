@@ -16,10 +16,12 @@ defineProps<{
 /* What the book calls the place in front, standing in the margin over the text
    it names, midway between the top of the window and the top of that text. */
 .book__head {
+  --inset-min: 1rem;
+  --inset-max: 2.5rem;
   position: absolute;
   inset-block-start: 0;
   block-size: var(--book-head);
-  inset-inline: clamp(1rem, 3%, 2.5rem);
+  inset-inline: clamp(var(--inset-min), 3%, var(--inset-max));
   display: grid;
   place-items: center;
   overflow: hidden;

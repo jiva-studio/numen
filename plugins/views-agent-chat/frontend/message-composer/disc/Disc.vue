@@ -38,9 +38,10 @@ const named = computed(() => (props.action === 'stop' ? props.stopLabel : props.
 
 <style scoped>
 .disc {
+  --disc-size: 1.75rem;
   display: flex;
-  block-size: 1.75rem;
-  inline-size: 1.75rem;
+  block-size: var(--disc-size);
+  inline-size: var(--disc-size);
   align-items: center;
   justify-content: center;
 }
