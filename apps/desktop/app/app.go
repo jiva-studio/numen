@@ -122,7 +122,7 @@ func parseFlags() (*Options, error) {
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfig()
 	cfg.ErrorHandler = func(err error) {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 			return
 		}
@@ -177,7 +177,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	themes.Report(cfg.SetThemes(installation, installation.RecordThemeWarning), os.Stdout)
+	themes.Report(container.SetThemes(cfg, installation, installation.RecordThemeWarning), os.Stdout)
 
 	installation.Report(notices)
 
@@ -237,26 +237,26 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	db, err := cfg.OpenIndex(ctx)
+	db, err := container.OpenIndex(cfg, ctx)
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	versions, err := cfg.NewTextVersions(db)
+	versions, err := container.NewTextVersions(cfg, db)
 	if err != nil {
 		return shownInstallation{}, errors.Join(err, db.Close())
 	}
 	cfg.TextVersions = versions
 
-	opened, err := cfg.OpenWindowOver(ctx, registry, db, vault, os.Stdout)
+	opened, err := container.OpenWindowOver(cfg, ctx, registry, db, vault, os.Stdout)
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	cfg.SetPluginVaultPath(opened.GetCurrentVault().Path)
+	container.SetPluginVaultPath(cfg, opened.State.GetCurrentVault().Path)
 	getShownVault := func() (domain.Vault, bool) {
-		current := opened.GetCurrentVault()
+		current := opened.State.GetCurrentVault()
 		return current, current.Path != ""
 	}
-	err = cfg.InstallPluginVault(registry, db, getShownVault, container.PluginVaultHooks{
+	err = container.InstallPluginVault(cfg, registry, db, getShownVault, container.PluginVaultHooks{
 		Written: func() {
 			if wake := opened.State.Writes.NotifyNoteWritten; wake != nil {
 				wake()
@@ -267,9 +267,9 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	cfg.SetEditorPluginVaultList(opened)
-	cfg.SetPluginTexts()
-	cfg.SetEditorPluginWindow(db, opened)
+	container.SetEditorPluginVaultList(cfg, opened)
+	container.SetPluginTexts(cfg)
+	container.SetEditorPluginWindow(cfg, db, opened)
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
@@ -298,7 +298,7 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 
 func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            "/",
@@ -328,7 +328,7 @@ const (
 
 func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
@@ -359,7 +359,7 @@ func connectWindow(
 ) {
 	opened.SetFolderDialog(folderdialog.New(window))
 
-	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
+	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.State.GetCurrentVault(), open)) }
 	opened.State.NotifyOpenTabs = naming
 
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
@@ -369,7 +369,7 @@ func connectWindow(
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
 		err := opened.Show(ctx, v, open)
 		if err == nil {
-			hooks.cfg.SetPluginVaultPath(v.Path)
+			container.SetPluginVaultPath(hooks.cfg, v.Path)
 		}
 		naming(opened.State.Runtime.GetOpenTabs())
 		return err

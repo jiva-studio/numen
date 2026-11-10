@@ -5,16 +5,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// ErrOutside is a path that does not stay in the vault.
-var ErrOutside = vault.ErrOutside
-
-// IsNoNote reports whether an error means there is no note at the path.
-func IsNoNote(err error) bool { return vaultport.IsNoNote(err) }
 
 // GetMediaType finds the content type a file of the vault is served and played as, by its name.
 type GetMediaType struct {

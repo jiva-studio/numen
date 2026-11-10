@@ -128,8 +128,10 @@ func TestPluginIsolationRuleDeniesEverySiblingAdapter(t *testing.T) {
 	if !found {
 		t.Fatal("the plugin-adapter-isolation rule is missing from .golangci.yml")
 	}
-	if !hasDenied(rule, coreImportPath+"/adapter") {
-		t.Errorf("the rule does not deny %s/adapter", coreImportPath)
+	for _, name := range getDirNames(t, "../adapter") {
+		if name != "plugin" && !hasDenied(rule, coreImportPath+"/adapter/"+name) {
+			t.Errorf("adapter/%s is an adapter and the plugin-adapter-isolation rule does not deny it", name)
+		}
 	}
 	for _, name := range getDirNames(t, "../internal/adapter") {
 		if name != "plugin" && !hasDenied(rule, coreImportPath+"/internal/adapter/"+name) {
@@ -141,12 +143,10 @@ func TestPluginIsolationRuleDeniesEverySiblingAdapter(t *testing.T) {
 // Every bridge and every host package is on the rule of its side, and each side denies every package of the other.
 func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 	rules := getDepguardRules(t)
-	var bridges, hosts []string
+	hosts := getDirNames(t, "../adapter/plugin")
+	var bridges []string
 	for _, name := range getDirNames(t, "../internal/adapter/plugin") {
-		switch {
-		case strings.HasPrefix(name, "host"):
-			hosts = append(hosts, name)
-		case strings.HasSuffix(name, "bridge") && name != "bridge":
+		if strings.HasSuffix(name, "bridge") && name != "bridge" {
 			bridges = append(bridges, name)
 		}
 	}
@@ -155,7 +155,11 @@ func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 	}
 	denied := func(rule depguardRule, rest []string, ruleName string) {
 		for _, name := range rest {
-			if !hasDenied(rule, pluginRootImportPath+"/"+name) {
+			importPath := pluginRootImportPath + "/" + name
+			if slices.Contains(hosts, name) {
+				importPath = coreImportPath + "/adapter/plugin/" + name
+			}
+			if !hasDenied(rule, importPath) {
 				t.Errorf("rule %s does not deny %s", ruleName, name)
 			}
 		}
@@ -178,7 +182,7 @@ func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 		t.Fatal("the plugin-host-side rule is missing from .golangci.yml")
 	}
 	for _, name := range hosts {
-		if !slices.Contains(hostRule.Files, "**/internal/adapter/plugin/"+name+"/**") {
+		if !slices.Contains(hostRule.Files, "**/adapter/plugin/"+name+"/**") {
 			t.Errorf("rule plugin-host-side does not list the files of %s", name)
 		}
 	}

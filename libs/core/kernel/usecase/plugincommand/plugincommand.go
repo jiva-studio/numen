@@ -219,7 +219,7 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Co
 
 func checkArguments(declared manifest.Command, call plugin.CommandCall, hasItems bool) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
-		if name == ArgumentVersion && hasItems {
+		if name == manifest.CommandArgumentVersion && hasItems {
 			continue
 		}
 		argument, isDeclared := declared.GetArgument(name)

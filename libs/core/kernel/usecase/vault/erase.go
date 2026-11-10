@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -41,7 +42,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 	}
 
 	err := u.identity.CheckReadable(v.Path)
-	if errors.Is(err, vaultport.ErrNotExist) {
+	if errors.Is(err, edit.ErrNotExist) {
 		// Nothing is at the path any more. What is left of the vault is its
 		// entry and its rows.
 		return EraseResult{}, u.unregister.Execute(ctx, v)

@@ -9,6 +9,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 
 	"time"
@@ -19,9 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/ulid"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func walkPaths(t *testing.T, root string) []string {
@@ -172,7 +172,7 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.StatFile(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, vaultport.ErrNotANote) {
+	if _, err := src.StatFile(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, edit.ErrNotANote) {
 		t.Errorf("stat gave %v, want ErrNotANote", err)
 	}
 }
@@ -314,7 +314,7 @@ func TestAListingOfWhatTheVaultHasNotIsRefused(t *testing.T) {
 	}
 
 	for _, folder := range []string{"../", "notes/../../elsewhere"} {
-		if _, err := src.List(t.Context(), folder); !errors.Is(err, vaultconfig.ErrOutside) {
+		if _, err := src.List(t.Context(), folder); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("list %q: want ErrOutside, got %v", folder, err)
 		}
 	}
@@ -375,7 +375,7 @@ func TestANoteOverTheBoundIsNotRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.Read(t.Context(), "huge.md"); !errors.Is(err, vaultport.ErrNotANote) {
+	if _, err := src.Read(t.Context(), "huge.md"); !errors.Is(err, edit.ErrNotANote) {
 		t.Errorf("read huge.md: %v, want ErrNotANote", err)
 	}
 	if _, err := src.Read(t.Context(), "small.md"); err != nil {
@@ -574,7 +574,7 @@ func TestAPathThatPreservesTheVaultIsRefused(t *testing.T) {
 		"notes/../../secret.md",
 		"./notes/../../secret.md",
 	} {
-		if _, err := reader.Read(t.Context(), path); !errors.Is(err, vaultconfig.ErrOutside) {
+		if _, err := reader.Read(t.Context(), path); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
 		if _, err := reader.StatFile(t.Context(), path); err == nil {
@@ -601,7 +601,7 @@ func TestOnlyANoteIsSavedTo(t *testing.T) {
 	}
 
 	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub"} {
-		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrNotANote) {
+		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileStat{}); !errors.Is(err, edit.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
 		}
 		retained, retainedErr := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
@@ -634,7 +634,7 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrOutside) {
+	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileStat{}); !errors.Is(err, vault.ErrOutside) {
 		t.Errorf("want ErrOutside, got %v", err)
 	}
 	retained, retainedErr := os.ReadFile(filepath.Join(outside, "secret.md"))

@@ -5,28 +5,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 )
-
-// ErrNotANote is what a path gets when there is a file at it and the vault does
-// not hold that file as a note: an attachment, an export, a folder some tool
-// keeps its state in, whatever the vault's own rules leave alone.
-// It is not ErrNotExist: a file that is there and a path with nothing at it are
-// different facts, and a caller acts on them differently.
-var ErrNotANote = edit.ErrNotANote
-
-// ErrNotExist is what a path with nothing at it gets.
-var ErrNotExist = edit.ErrNotExist
-
-// ErrExist is what a path that already holds a file gets when a write requires an unoccupied path.
-var ErrExist = edit.ErrExist
-
-// IsNoNote reports whether an error means there is no note at the path: nothing
-// exists there, or the file there is one the vault ignores.
-// A caller that must tell the two cases apart checks the two sentinel errors.
-func IsNoNote(err error) bool {
-	return edit.IsNoNote(err)
-}
 
 // VaultReader is one vault as seen from outside: something that can be walked
 // and read. The filesystem is one implementation; a fixture in memory is

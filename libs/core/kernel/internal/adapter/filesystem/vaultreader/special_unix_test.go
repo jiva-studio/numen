@@ -14,9 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func fifo(t *testing.T, root, name string) {
@@ -50,13 +50,13 @@ func TestSpecialFileIsNotANote(t *testing.T) {
 		if err == nil && !slices.Equal(walked, []string{"note.md"}) {
 			t.Errorf("walk found %v, want [note.md]", walked)
 		}
-		if _, err := src.StatFile(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
+		if _, err := src.StatFile(t.Context(), "pipe.md"); !errors.Is(err, edit.ErrNotANote) {
 			t.Errorf("stat pipe.md: %v, want ErrNotANote", err)
 		}
-		if _, err := src.Read(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
+		if _, err := src.Read(t.Context(), "pipe.md"); !errors.Is(err, edit.ErrNotANote) {
 			t.Errorf("read pipe.md: %v, want ErrNotANote", err)
 		}
-		if f, err := src.Open(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
+		if f, err := src.Open(t.Context(), "pipe.md"); !errors.Is(err, edit.ErrNotANote) {
 			if err == nil {
 				testsupport.Close(t, f)
 			}

@@ -12,8 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // moveRecordingWindow is a window that records the note moves it is shown.
@@ -21,8 +19,6 @@ type moveRecordingWindow struct {
 	mu    sync.Mutex
 	moves []domain.Move
 }
-
-var _ windowport.Window = (*moveRecordingWindow)(nil)
 
 func (w *moveRecordingWindow) FocusPlace(context.Context, domain.Place) error { return nil }
 
@@ -80,7 +76,7 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +144,7 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

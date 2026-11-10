@@ -67,7 +67,7 @@ func TestATypeWithoutChunksContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, getFirst(), "samples/mammals.md"); got != 0 {
 		t.Errorf("a sample holds %d chunks, want none", got)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", chunk.Cursor{}, 1000)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestATypeKeepingNoHeadingsContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, getFirst(), "forms/term.md"); got != 0 {
 		t.Errorf("a form holds %d chunks, want none", got)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", chunk.Cursor{}, 1000)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

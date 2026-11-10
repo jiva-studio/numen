@@ -63,7 +63,7 @@ func (t *Transfers) Move(sourceWindowID, targetWindowID string, tab tablink.Save
 	s := t.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if targetWindowID == sourceWindowID || !s.presence.hasWatch(targetWindowID) {
+	if targetWindowID == sourceWindowID || !s.roster.presence.hasWatch(targetWindowID) {
 		result <- tablink.MoveErrorWindowClosed
 		return result
 	}

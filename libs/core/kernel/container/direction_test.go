@@ -54,7 +54,7 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	}{
 		// The core is compiled from none of the three, at any remove.
 		{"usecase/note", module + "adapter/window/editor", true},
-		{"usecase/note", module + "internal/adapter/theme", true},
+		{"usecase/note", module + "adapter/window/theme", true},
 		{"usecase/note", module + "container", true},
 		{"usecase/note", wire + "/gen/numen/v1", true},
 		{"text", module + "internal/adapter/filesystem", true},
@@ -63,7 +63,7 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		// it names. The schema is the one thing it may not name.
 		{"container", wire + "/gen/numen/v1", true},
 		{"container", module + "adapter/index", false},
-		{"container", module + "internal/adapter/theme", false},
+		{"container", module + "adapter/window/theme", false},
 
 		// does not.
 		{"internal/adapterlib/wire", wire + "/gen/numen/v1", false},
@@ -72,7 +72,7 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 
 		// An adapter, and what only a test builds, answer for nothing.
 		{"adapter/window/editor", wire + "/gen/numen/v1", false},
-		{"internal/adapter/theme", wire + "/gen/numen/v1", false},
+		{"adapter/window/theme", wire + "/gen/numen/v1", false},
 		{"internal/testsupport", module + "adapter/index", false},
 	} {
 		if got := isEdgeRefused(one.pkg, one.dep); got != one.isRefused {

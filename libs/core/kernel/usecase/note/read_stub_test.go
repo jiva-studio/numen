@@ -135,7 +135,7 @@ func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
 func TestRead_PathRejectedByVaultIsNotNote(t *testing.T) {
 	t.Parallel()
 
-	got, err := readStated(t, statedReader{statErr: vaultport.ErrNotANote, raw: []byte("# Entropy\n")})
+	got, err := readStated(t, statedReader{statErr: edit.ErrNotANote, raw: []byte("# Entropy\n")})
 	if err != nil {
 		t.Fatal(err)
 	}

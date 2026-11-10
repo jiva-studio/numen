@@ -11,18 +11,18 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/bufferednotes"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -31,7 +31,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -79,10 +78,10 @@ func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
 		NoteQueries: vault.IndexNoteQueries{
 			FileStats: queries, NameMatches: queries, Headings: queries, Summaries: queries, NoteTypes: queries,
 			TypedPaths: queries, VaultHolds: queries, NoteRefs: queries, OpeningNote: queries, NamedPaths: queries,
-			Links: queries, Problems: queries,
+			Links: queries, Problems: db.NoteProblems(),
 		},
 		Chunks: vault.IndexChunks{
-			Passages: db.ChunkQueries(), Progress: db.ChunkQueries(), Stats: db.ChunkQueries(),
+			Passages: db.ChunkSearch(), Progress: db.ChunkVectors(), Stats: db.ChunkVectors(),
 			Index:   db,
 			Vectors: db.Sources(), VectorQueries: db.Sources(),
 		},
@@ -91,7 +90,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
 			SourceRecords: db.Sources(), SourceBacklog: db.Sources(),
 		},
 		Search: vault.IndexSearch{
-			Nearest: db.ChunkQueries(), SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
+			Nearest: db.ChunkSearch(), SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
 		},
 		TextVersions: version.NewIndexVersions(db.TextVersions()),
 	}), nil
@@ -106,7 +105,7 @@ func (w readingParts) GetVaultWatcher() vaultport.VaultWatcher {
 }
 
 func (w readingParts) cutNotes() chunking.CutNotes {
-	return query.NewCutNotes(w.chunks.Get())
+	return chunking.NewCutNotes(w.chunks.Get())
 }
 
 func (w readingParts) setNoteCut(scan *vault.Scan, db *vault.Index) {
@@ -145,7 +144,7 @@ func (w readingParts) OpenVaultWith(
 	scan := vault.NewScan(walking, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance)
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
-	buffered := &bufferednotes.Repository{NoteRepository: db.Stores.Notes}
+	buffered := &indexnote.Buffered{NoteRepository: db.Stores.Notes}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
 }
 
@@ -197,7 +196,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 	getPath := func() (string, error) { return filepath.Join(folder, "numen.json"), nil }
 
 	declarations := func(owner string) ([]manifest.Setting, bool) {
-		if owner == settingsadapter.OwnerApp {
+		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
 		}
 		return nil, false

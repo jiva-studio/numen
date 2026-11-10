@@ -4,13 +4,13 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func saveChunkedAt(t *testing.T, db *DB, vault domain.Vault, tokens int, notes ...domain.Note) string {
 	t.Helper()
-	splitter := query.NewCutNotes(tokens)
+	splitter := chunking.NewCutNotes(tokens)
 	if err := db.Notes().Save(t.Context(), vault.ID, splitter.Execute(notes)); err != nil {
 		t.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func saveChunkedAt(t *testing.T, db *DB, vault domain.Vault, tokens int, notes .
 
 func getNotesWithOtherRecipe(t *testing.T, db *DB, vault domain.Vault, recipe string) []string {
 	t.Helper()
-	paths, err := db.ChunkQueries().GetSourcesWithOtherRecipe(t.Context(), vault.ID, string(domain.KindNote), []string{recipe}, 100)
+	paths, err := db.ChunkFiles().GetSourcesWithOtherRecipe(t.Context(), vault.ID, string(domain.KindNote), []string{recipe}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestOnlyNotesWithAnotherChunkingRecipeAreReportedAndAFileTextKeepsItsOwn(t 
 	if got := getNotesWithOtherRecipe(t, db, getFirst(), current); !slices.Equal(got, []string{"notes/Old.md"}) {
 		t.Errorf("notes cut by another recipe = %v, want only notes/Old.md", got)
 	}
-	books, err := db.ChunkQueries().GetSourcesWithOtherRecipe(t.Context(), getFirst().ID, "book", []string{"epub"}, 100)
+	books, err := db.ChunkFiles().GetSourcesWithOtherRecipe(t.Context(), getFirst().ID, "book", []string{"epub"}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}

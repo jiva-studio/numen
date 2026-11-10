@@ -1,7 +1,5 @@
 package query
 
-import "github.com/jiva-studio/numen/libs/note/domain"
-
 // NameSource is which of the two a note is shown by, and so which one naming it
 // writes.
 type NameSource string
@@ -40,6 +38,3 @@ func (ask SyncSetting) GetSetting() SyncTitleAndFilename {
 	}
 	return ask()
 }
-
-// ErrInvalidName is a title no note can be given. Nothing is written.
-var ErrInvalidName = domain.ErrInvalidName

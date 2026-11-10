@@ -19,7 +19,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

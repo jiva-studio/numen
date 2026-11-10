@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // maxPassages is the maximum number of passages of one file a focus highlights at once.
@@ -29,10 +29,15 @@ type FocusPassagesInput struct {
 // FocusPassages opens a file of the vault in the window at its passages and highlights them.
 type FocusPassages struct {
 	readers vaultport.VaultReaders
-	view    windowport.Window
+	view    PlaceFocus
 }
 
-func NewFocusPassages(readers vaultport.VaultReaders, view windowport.Window) *FocusPassages {
+// PlaceFocus asks the window to show a place.
+type PlaceFocus interface {
+	FocusPlace(ctx context.Context, pos domain.Place) error
+}
+
+func NewFocusPassages(readers vaultport.VaultReaders, view PlaceFocus) *FocusPassages {
 	return &FocusPassages{readers: readers, view: view}
 }
 
@@ -46,8 +51,8 @@ func (u *FocusPassages) Execute(ctx context.Context, v domain.Vault, in FocusPas
 		return err
 	}
 	_, err = reader.StatFile(ctx, in.Path)
-	if vaultport.IsNoNote(err) {
-		return fmt.Errorf("no file at %s: %w", in.Path, vaultport.ErrNotExist)
+	if edit.IsNoNote(err) {
+		return fmt.Errorf("no file at %s: %w", in.Path, edit.ErrNotExist)
 	}
 	if err != nil {
 		return err

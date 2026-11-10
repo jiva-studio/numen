@@ -47,7 +47,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			); err != nil {
 				t.Fatal(err)
 			}
-			v := opened.GetCurrentVault()
+			v := opened.State.GetCurrentVault()
 			raw := "---\ntitle: Entropy\n---\nA measure.\n"
 			if err := os.WriteFile(
 				filepath.Join(v.Path, "Entropy.md"), []byte(raw), 0o644,

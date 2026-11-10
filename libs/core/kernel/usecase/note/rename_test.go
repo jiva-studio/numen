@@ -370,7 +370,7 @@ func TestRename_RejectsInvalidTitle(t *testing.T) {
 			c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
-			if !errors.Is(err, query.ErrInvalidName) {
+			if !errors.Is(err, domain.ErrInvalidName) {
 				t.Fatalf("want ErrInvalidName, got %v", err)
 			}
 			if renamed.Path != "" {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 // Setting is one field of the file and its position in it, the first element being the owner:
@@ -66,13 +67,13 @@ func readBack(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, &root); err != nil {
 		return err
 	}
-	app, isObject := root[OwnerApp].(map[string]any)
+	app, isObject := root[settingsdomain.AppOwner].(map[string]any)
 	if !isObject {
 		return nil
 	}
 	for _, declared := range readAppDeclaration() {
 		steps := strings.Split(declared.Key, ".")
-		label := OwnerApp + "." + declared.Key
+		label := settingsdomain.AppOwner + "." + declared.Key
 		value, found := lookupPath(app, steps)
 		if !found || !slices.ContainsFunc(wrote, func(one Setting) bool { return isFieldCovered(one.At, label) }) {
 			continue

@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
@@ -219,7 +220,7 @@ func (u Scan) indexChanged(
 func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *vaultreading.ScanResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case errors.Is(err, vaultport.ErrNotExist):
+	case errors.Is(err, edit.ErrNotExist):
 		// A note saved, moved or deleted during a scan does not end the scan; the
 		// next one sees whatever it became. A file briefly absent is what an
 		// editor saving through a temporary file looks like.

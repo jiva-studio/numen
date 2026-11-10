@@ -20,26 +20,26 @@ const module = "github.com/jiva-studio/numen/libs/core/kernel/"
 
 func getDriving() map[string]bool {
 	return map[string]bool{
-		"adapter/cli":                          true,
-		"adapter/window/agent":                 true,
-		"adapter/window/catalog":               true,
-		"adapter/window/command":               true,
-		"adapter/window/editor":                true,
-		"adapter/window/plugin":                true,
-		"adapter/window/search":                true,
-		"adapter/window/settings":              true,
-		"adapter/window/shell":                 true,
-		"adapter/window/text":                  true,
-		"adapter/window/vault":                 true,
-		"adapter/window/vaults":                true,
-		"adapter/window/windowstate":           true,
-		"adapter/window/workspace":             true,
-		"internal/adapter/plugin/hostendpoint": true,
-		"internal/adapter/plugin/hostsearch":   true,
-		"internal/adapter/plugin/hosttext":     true,
-		"internal/adapter/plugin/hostvault":    true,
-		"internal/adapter/theme":               true,
-		"internal/adapterlib/wire":             true,
+		"adapter/cli":                 true,
+		"adapter/window/agent":        true,
+		"adapter/window/catalog":      true,
+		"adapter/window/command":      true,
+		"adapter/window/editor":       true,
+		"adapter/window/plugin":       true,
+		"adapter/window/search":       true,
+		"adapter/window/settings":     true,
+		"adapter/window/shell":        true,
+		"adapter/window/text":         true,
+		"adapter/window/vault":        true,
+		"adapter/window/vaults":       true,
+		"adapter/window/windowstate":  true,
+		"adapter/window/workspace":    true,
+		"adapter/plugin/hostendpoint": true,
+		"adapter/plugin/hostsearch":   true,
+		"adapter/plugin/hosttext":     true,
+		"adapter/plugin/hostvault":    true,
+		"adapter/window/theme":        true,
+		"internal/adapterlib/wire":    true,
 	}
 }
 
@@ -1083,6 +1083,11 @@ func listGrouping() []string {
 }
 
 func family(pkg string) string {
+	// The endpoints that serve plugin calls sit under adapter/plugin and the driven clients under
+	// internal/adapter/plugin; the plugin host and both are one family.
+	if isWithin(pkg, "adapter/plugin") {
+		pkg = "internal/" + pkg
+	}
 	depth := 2
 	for _, one := range listGrouping() {
 		if strings.HasPrefix(pkg, one+"/") {
@@ -1120,11 +1125,11 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		// folder here also serves the schema.
 		{"adapter/index", "usecase/note", true},
 		{"internal/adapter/filesystem", "usecase/note", true},
-		{"internal/adapter/theme", "usecase/note", false},
-		{"internal/adapter/theme", "internal/adapter/filesystem", true},
+		{"adapter/window/theme", "usecase/note", false},
+		{"adapter/window/theme", "internal/adapter/filesystem", true},
 		{"internal/adapter/themefiles", "usecase/note", true},
-		{"internal/adapter/themefiles", "internal/adapter/theme", true},
-		{"internal/adapter/theme", "internal/adapter/themefiles", true},
+		{"internal/adapter/themefiles", "adapter/window/theme", true},
+		{"adapter/window/theme", "internal/adapter/themefiles", true},
 		{"usecase/theme", "internal/adapter/themefiles", true},
 		{"adapter/index/chunk", "adapter/index", false},
 

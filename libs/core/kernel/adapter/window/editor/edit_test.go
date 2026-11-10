@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
@@ -42,7 +41,7 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	response := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := state.Notices.ShowEdit(t.Context(), response); err != nil {
+	if err := ViewOf(state).ShowEdit(t.Context(), response); err != nil {
 		t.Fatal(err)
 	}
 
@@ -128,7 +127,7 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 			err: fmt.Errorf("stat /vault: %w", fs.ErrNotExist),
 		},
 		"a title no note can be given": {
-			err:  fmt.Errorf("%w: nothing to name it", query.ErrInvalidName),
+			err:  fmt.Errorf("%w: nothing to name it", domain.ErrInvalidName),
 			want: v1.ErrorCode_ERROR_CODE_INVALID_NAME,
 			is:   true,
 		},

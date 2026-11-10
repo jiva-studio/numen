@@ -203,7 +203,7 @@ func TestEdit_NoFingerprintChecksAgainstLatestRead(t *testing.T) {
 
 	_, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
-	if !errors.Is(err, vaultport.ErrStale) {
+	if !errors.Is(err, edit.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Heat.md"); body != theirs {

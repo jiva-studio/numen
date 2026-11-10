@@ -9,6 +9,7 @@ import (
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
@@ -16,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -32,77 +31,33 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// CutNotes is how a source's text and a note are cut into the chunks the index
-// keeps: at this installation's sizes, keeping what reads as text.
-func (c Config) CutNotes() chunking.CutNotes {
-	return cutNotes(c.search())
-}
-
 // Scan is the walk that reads a vault's notes into the index, cut at this
 // installation's sizes. Every application that reads a vault takes it from here.
-func (c Config) Scan(db *vault.Index) vault.Scan {
-	return searchScan(c.search(), db)
+func Scan(c Config, db *vault.Index) vault.Scan {
+	return searchScan(searchOf(c), db)
 }
 
 // ReadWholeVault is what makes a vault answer, put together the one way: the
 // notes read, the file texts cut, and the vectors made.
-func (c Config) ReadWholeVault(
+func ReadWholeVault(c Config,
 	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	return readWholeVault(c.search(), ctx, db, embedder, v, makeRefresh(c, db, db.Stores.Notes))
-}
-
-// FitIndex sets the vector index to the model of the embedding provider.
-func (c Config) FitIndex(db *vault.Index) vectorscase.FitIndex {
-	return fitIndex(c.search(), db)
+	return readWholeVault(searchOf(c), ctx, db, embedder, v, makeRefresh(c, db, db.Stores.Notes))
 }
 
 // Embed gives a vault's chunks the vectors they need.
-func (c Config) Embed(db *vault.Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
-	return searchEmbed(c.search(), db, embedder, v)
+func Embed(c Config, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
+	return searchEmbed(searchOf(c), db, embedder, v)
 }
 
 // IndexTexts cuts the text versions of a vault's files into chunks.
-func (c Config) IndexTexts(db *vault.Index, v domain.Vault) (filetext.Index, error) {
-	return indexTexts(c.search(), db, v)
+func IndexTexts(c Config, db *vault.Index, v domain.Vault) (filetext.Index, error) {
+	return indexTexts(searchOf(c), db, v)
 }
 
 // NewSearch is the search a question is answered by, put together the one way.
-func (c Config) NewSearch(db *vault.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	return newSearch(c.search(), db, asking, errorHandler)
-}
-
-// NewSearchOver is that search over the passages given, for a run that holds
-// the index open for asking alone.
-func (c Config) NewSearchOver(passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(c.search(), passages, asking, errorHandler)
-}
-
-// NewFloorPolicy is the floor a search by meaning applies under the model of an embedder.
-func (c Config) NewFloorPolicy(db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) searchusecase.FloorPolicy {
-	return newFloorPolicy(c.search(), db, embedder, errorHandler)
-}
-
-// SetPluginSearch lends the plugins the search index, the model that fills it and the floors of the
-// vaults.
-func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) {
-	setPluginSearch(c.search(), db, embedder, errorHandler)
-}
-
-// EmbedderReady reports whether an embedding plugin is enabled.
-func (c Config) EmbedderReady() bool {
-	return embedderReady(c.search())
-}
-
-// Embedders returns the embedder that produces the vectors a vault is searched
-// by and the embedder that produces the vector for a question.
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
-	return searchEmbedders(c.search(), ctx, tasks)
-}
-
-// Embedder is the embedding plugin that produces the vectors of a vault.
-func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
-	return searchEmbedder(c.search(), ctx)
+func NewSearch(c Config, db *vault.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
+	return newSearch(searchOf(c), db, asking, errorHandler)
 }
 
 // coreFolder is the folder of a vault's store that holds the core's own files.
@@ -126,7 +81,7 @@ type searchWiring struct {
 }
 
 func cutNotes(c searchWiring) chunking.CutNotes {
-	cutter := query.NewCutNotes(c.Chunks.Get())
+	cutter := chunking.NewCutNotes(c.Chunks.Get())
 	if c.PluginHost != nil {
 		cutter.Profiles = c.PluginHost.ResolveNoteProfile
 	}

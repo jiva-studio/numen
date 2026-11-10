@@ -10,10 +10,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func getRivers() map[string]string {
@@ -156,7 +156,7 @@ func TestAPluginRemovalOfAFolderReturnsNotANote(t *testing.T) {
 
 	_, _, err := shared.RemoveNote(t.Context(), "Rivers")
 
-	if !errors.Is(err, vaultport.ErrNotANote) {
+	if !errors.Is(err, edit.ErrNotANote) {
 		t.Errorf("removing a folder returned %v, want ErrNotANote", err)
 	}
 	for _, path := range []string{"Rivers/Danube.md", "Rivers/Rhine.md"} {

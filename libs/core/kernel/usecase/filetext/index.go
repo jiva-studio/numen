@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -435,7 +436,7 @@ func (u outdated) statIfOutdated(
 		return domain.FileStat{}, false, fmt.Errorf("find the live version of %s: %w", source.Path, err)
 	}
 	ref, err := on.files.StatFile(ctx, source.Path)
-	if vaultport.IsNoNote(err) {
+	if edit.IsNoNote(err) {
 		return domain.FileStat{}, false, nil
 	}
 	if err != nil {
@@ -568,7 +569,7 @@ func (u cutter) source(
 	u.progress(*res)
 
 	ref, err := on.files.StatFile(ctx, path)
-	if vaultport.IsNoNote(err) {
+	if edit.IsNoNote(err) {
 		res.Vanished++
 		return nil
 	}
@@ -576,7 +577,7 @@ func (u cutter) source(
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
 	hash, err := on.texts.GetContentHash(ctx, path)
-	if errors.Is(err, vaultport.ErrNotExist) {
+	if errors.Is(err, edit.ErrNotExist) {
 		res.Vanished++
 		return nil
 	}

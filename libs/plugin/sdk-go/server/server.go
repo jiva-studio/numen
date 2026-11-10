@@ -45,7 +45,7 @@ func readFlagPort() int {
 		return 0
 	}
 	port, err := strconv.Atoi(f.Value.String())
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return 0
 	}
@@ -54,7 +54,7 @@ func readFlagPort() int {
 
 func readEnvPort() int {
 	port, err := strconv.Atoi(os.Getenv("NUMEN_PLUGIN_PORT"))
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return 0
 	}
@@ -308,7 +308,7 @@ func (s *Server) listen(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("listen on 127.0.0.1:%d: %w", s.port, err)
 	}
 	addr, isTCP := ln.Addr().(*net.TCPAddr)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="a listener opened on a TCP address always reports a TCP address, so the other branch cannot be reached"
 	if !isTCP {
 		return 0, errors.Join(fmt.Errorf("listener address %s is not a TCP address", ln.Addr()), ln.Close())
 	}
@@ -350,7 +350,7 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 
 	httpSrv := s.newHTTPServer()
 
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the capacity of the made value does not change what the function returns"
 	serveErrCh := make(chan error, 1)
 	go serveHTTP(httpSrv, s.listener, serveErrCh)
 
@@ -388,9 +388,9 @@ func (s *Server) newHTTPServer() *http.Server {
 }
 
 func (s *Server) notifySignals() (<-chan os.Signal, func()) {
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the capacity of the made value does not change what the function returns"
 	sigCh := make(chan os.Signal, 1)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="a server given no signals installs none, and the test of the shutdown has to send one to prove the opposite"
 	if len(s.signals) == 0 {
 		return sigCh, func() {}
 	}
@@ -416,7 +416,7 @@ func waitForStop(
 }
 
 func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		errs <- err
 	}
