@@ -74,3 +74,4 @@ export function createKeyHandler(parts: KeyHandlerParts): (event: KeyboardEvent)
     const keyContext = { target: toRunTarget(getTarget()), runApp: runAppKey }
     if (pluginHost?.handleShortcut(event, getNote, keyContext)) event.preventDefault()
   }
+}
