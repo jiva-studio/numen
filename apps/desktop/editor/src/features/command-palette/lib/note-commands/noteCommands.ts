@@ -4,7 +4,7 @@
 import { ARGUMENT, COMMAND, ROW } from '@/shared/commandIds'
 import { createRowKeys } from '../keys/keys'
 import { withWhen } from '../commands/availability'
-import type { Command } from '../../types'
+import type { Command } from '@/entities/command'
 import type { Words } from '../../words'
 
 const createNoteOpenCommands = (words: Words): readonly Command[] => [

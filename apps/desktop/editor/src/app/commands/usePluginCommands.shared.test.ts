@@ -4,14 +4,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
-import {
-  commands,
-  type AnswerWords,
-  type CommandDeps,
-  type CommandInvocation,
-  type CommandTarget,
-  type RunSupport,
-} from '@/features/command-palette'
+import { commands, type AnswerWords, type CommandDeps } from '@/features/command-palette'
+import type { CommandInvocation, CommandTarget, RunSupport } from '@/entities/command'
 import type { VaultCore } from '../vault'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 

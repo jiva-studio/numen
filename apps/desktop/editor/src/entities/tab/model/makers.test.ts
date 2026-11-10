@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
-import type { ErrorCode } from '@/shared/errors'
+import type { ErrorCode } from '@/shared/api/errors'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import { writer } from '@/testing/writer'
 import { ERRORS } from '@/shared/words'

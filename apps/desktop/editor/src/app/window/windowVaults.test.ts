@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { VaultsState } from '@numen/plugin-loader'
-import type { VaultRef } from '@/features/command-palette'
+import type { VaultRef } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
 import { COMMAND } from '@/shared/commandIds'
 import { createWindowVaults } from './windowVaults'

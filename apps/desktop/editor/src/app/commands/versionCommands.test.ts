@@ -1,6 +1,7 @@
 /** Delete text, the command of the window the core serves over the text versions of a file. Every path is invented. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { commands, createInvocation, type CommandTarget } from '@/features/command-palette'
+import { commands, createInvocation } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import { createVersionCommands } from './versionCommands'
 
 const DELETE_TEXT = 'app:version.delete'

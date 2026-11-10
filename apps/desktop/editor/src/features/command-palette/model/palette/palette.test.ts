@@ -7,14 +7,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import { runSupport } from './runSupport'
-import type {
-  Command,
-  CommandTarget,
-  NoteLookup,
-  PaletteLists,
-  RunSupport,
-  StepGroup,
-} from '../../types'
+import type { NoteLookup, PaletteLists, StepGroup } from '../../types'
+import type { Command, CommandTarget, RunSupport } from '@/entities/command'
 import { useCommandPalette, type Commands } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from '../search/search'

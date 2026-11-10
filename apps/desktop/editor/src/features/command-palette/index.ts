@@ -18,17 +18,4 @@ export type { NameMatch, ResultChoice, SearchMenuDeps } from './model/search/loo
 export type { CommandDeps, VaultWriter } from './model/handlers/deps'
 export { ANSWER_WORDS } from './words'
 export type { AnswerWords } from './words'
-export type {
-  Command,
-  CommandInvocation,
-  CommandPrompt,
-  CommandPlace,
-  CommandsDeps,
-  CommandTarget,
-  NoteLookup,
-  Notes,
-  PaletteLists,
-  RunSupport,
-  Store,
-  VaultRef,
-} from './types'
+export type { CommandsDeps, NoteLookup, Notes, PaletteLists, Store } from './types'

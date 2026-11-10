@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
-import type { TabLinksEvent } from '../ports/vault'
+import type { TabLinksEvent } from '@/entities/tab'
 import {
   createTabLinkSession,
   getLinkableTabs,

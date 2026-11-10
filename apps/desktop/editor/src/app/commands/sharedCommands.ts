@@ -8,7 +8,7 @@ import {
   type HandlerDeclaration,
   type PluginPaletteCommand,
 } from '@numen/plugin-loader'
-import type { Command, CommandPrompt, CommandTarget } from '@/features/command-palette'
+import type { Command, CommandPrompt, CommandTarget } from '@/entities/command'
 
 const isOverFile = (target: CommandTarget): boolean =>
   target.isReady && (target.file || target.path) !== ''

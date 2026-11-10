@@ -9,10 +9,9 @@ import {
   type Result,
   type TabMoveErrorCodeValue,
 } from '@numen/core-client'
-import { keepaliveWorkspace, workspace } from '@/shared/clients'
-import type { TabMoveError, VaultPort } from '@/app/ports/vault'
-import type { Tab } from '@/entities/tab'
-import type { TabLinksSnapshot } from '@/features/tab-linking'
+import { keepaliveWorkspace, workspace } from '@/shared/api/clients'
+import type { VaultPort } from '@/app/ports/vault'
+import type { Tab, TabMoveError, TabLinksSnapshot } from '@/entities/tab'
 
 export type TabLinksCore = Pick<
   VaultPort,

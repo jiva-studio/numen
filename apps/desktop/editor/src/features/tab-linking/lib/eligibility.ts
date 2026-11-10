@@ -1,7 +1,8 @@
 /**
  * Which tabs can be linked, and which of them a given tab can be linked to.
  */
-import type { EligibleLinkTab, LinkableTab, TabId, TabLinkGroup } from '../types'
+import type { EligibleLinkTab } from '../types'
+import type { LinkableTab, TabId, TabLinkGroup } from '@/entities/tab'
 
 /** What the eligibility is read from. */
 export interface EligibilityInput {

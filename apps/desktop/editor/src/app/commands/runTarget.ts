@@ -4,7 +4,7 @@
  * bar, is over the tab in front.
  */
 import type { CommandTarget as RunTarget } from '@numen/plugin-loader'
-import type { CommandTarget } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 
 /** The target of the tab in front, replaced by what the run names, if it names a target. */
 export function getNamedTarget(front: CommandTarget, target: RunTarget | undefined): CommandTarget {

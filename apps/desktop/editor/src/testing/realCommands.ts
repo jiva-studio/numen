@@ -12,7 +12,8 @@ import {
   type DeclaredSlotEntry,
   type PluginHost,
 } from '@numen/plugin-loader'
-import { createCommands, runSupport, type CommandTarget } from '@/features/command-palette'
+import { createCommands, runSupport } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import { createSlotCommandFinder } from '@/app/commands/pluginSlots'
 import { useCommands, type CommandsDepsOptions } from '@/app/commands/useCommands'
 import { WORDS } from '@/shared/words'

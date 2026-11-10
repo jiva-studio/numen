@@ -1,8 +1,15 @@
 import type { PathRename } from '@/shared/paths'
 import type { Task } from '@/shared/notices/task'
-import type { Result } from '@numen/core-client'
-import type { OpenTabs, Tab } from '@/entities/tab'
-import type { TabLinksChange, TabLinksSnapshot, TabWindow } from '@/features/tab-linking'
+import type { Result } from '@/shared/lib/result'
+import type {
+  MovedTab,
+  OpenTabs,
+  Tab,
+  TabLinksEvent,
+  TabMoveError,
+  WindowTabsReport,
+} from '@/entities/tab'
+import type { TabLinksChange } from '@/features/tab-linking'
 
 export interface VaultPort {
   getInitialOpenPath(): Promise<{ path: string } | null>
@@ -102,35 +109,4 @@ export interface VaultPort {
   writeTabLinks(windowId: string, change: TabLinksChange | WindowTabsReport): Promise<void>
   /** Sends the new path of a linked tab to all windows, which navigate their linked tabs to it. */
   syncTabPath(sync: { sourceTabId: string; path: string; title: string }): Promise<void>
-}
-
-/** Why a move of a tab to another window did not complete. */
-export type TabMoveError = 'window-closed' | 'timeout' | 'not-owner' | 'cancelled'
-
-/** A tab sent to this window, and the id of the move that AcceptTabMove names. */
-export interface MovedTab {
-  readonly tab: Tab
-  readonly moveId: string
-}
-
-/** Linkable tabs open in a window, and the window summary shown in the menus of other windows. */
-export interface WindowTabsReport {
-  readonly tabs: readonly { readonly id: string; readonly kind: string; readonly title: string }[]
-  readonly window: Omit<TabWindow, 'id'>
-}
-
-/** New path of a linked tab. */
-export interface TabPathSync {
-  readonly groupId: string
-  readonly sourceTabId: string
-  readonly path: string
-  readonly title: string
-}
-
-/** Tab links stream message. A keepalive sets none of the fields. */
-export interface TabLinksEvent {
-  readonly links?: TabLinksSnapshot
-  readonly sync?: TabPathSync
-  readonly movedTab?: MovedTab
-  readonly isHighlighted?: boolean
 }

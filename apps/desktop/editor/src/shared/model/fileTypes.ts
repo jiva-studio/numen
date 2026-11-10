@@ -2,8 +2,8 @@
  * The files of the vault: which of them a file is, what a listing of one folder
  * reports, and what making one or moving one returns.
  */
-import type { Result } from '@numen/core-client'
-import type { ErrorCode } from '@/shared/errors'
+import type { Result } from '@/shared/lib/result'
+import type { ErrorCode } from '@/shared/api/errors'
 
 /**
  * The note type from the `type` key of its frontmatter: `note`, or a type a plugin declares.

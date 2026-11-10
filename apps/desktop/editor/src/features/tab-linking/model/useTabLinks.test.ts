@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useTabLinks } from './useTabLinks'
-import type { TabLinksSnapshot } from '../types'
+import type { TabLinksSnapshot } from '@/entities/tab'
 
 const SNAPSHOT: TabLinksSnapshot = {
   groups: [

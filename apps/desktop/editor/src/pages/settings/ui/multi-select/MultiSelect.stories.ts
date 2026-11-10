@@ -15,7 +15,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Controls/MultiSelect',
+  title: 'Window/Multi select',
   component: MultiSelect,
   parameters: { layout: 'centered' },
   argTypes: { chosen: { control: 'text' } },

@@ -3,7 +3,7 @@
  */
 import { findErrorCode, isStaleAnswer, asFailure, asValue } from '@numen/core-client'
 import { resolveTextLinks } from '@numen/plugin-loader'
-import { notes } from '@/shared/clients'
+import { notes } from '@/shared/api/clients'
 import {
   mapBaseline,
   mapMoveResult,

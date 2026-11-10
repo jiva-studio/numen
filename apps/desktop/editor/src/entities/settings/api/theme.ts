@@ -12,7 +12,7 @@ import {
   type ThemeModeCode,
   type ThemeOriginCode,
 } from '@numen/core-client'
-import { theme } from '@/shared/clients'
+import { theme } from '@/shared/api/clients'
 
 import type { Bounds, Mode, Scales, Theme } from '../lib/appearance'
 export type { Bounds, Mode, Scales, Theme }

@@ -85,6 +85,15 @@ export interface Installation {
   readonly file: Readonly<Ref<string>>
 }
 
+/** One of the choices a select offers. */
+export interface SelectChoice {
+  readonly id: string
+  readonly text: string
+  readonly detail?: string
+  readonly group?: string
+  readonly isDisabled?: boolean
+}
+
 /** What the settings tab holds. */
 export interface SettingsTabState {
   readonly installation: Installation

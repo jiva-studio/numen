@@ -3,7 +3,7 @@
  * in force, their select choices with detail subtitles, the active value, and
  * the placement of secrets alongside the settings they belong to.
  */
-import type { SelectChoice } from '@numen/ui'
+import type { SelectChoice } from '../types'
 import { createWhenReader } from '@numen/plugin-loader'
 import type {
   PluginInfo,

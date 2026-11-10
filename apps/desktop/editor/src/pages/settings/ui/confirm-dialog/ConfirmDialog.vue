@@ -5,7 +5,7 @@
  * Tab stays between the two buttons.
  */
 import { onMounted, useId, useTemplateRef } from 'vue'
-import Button from '../button/Button.vue'
+import { Button } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(
@@ -54,7 +54,7 @@ function onKeepFocus(event: KeyboardEvent): void {
 <template>
   <div
     data-slot="confirm-dialog-backdrop"
-    class="fixed inset-0 z-[var(--numen-lift-menu)] flex items-center justify-center bg-[color-mix(in_oklab,var(--numen-surface),transparent_30%)] p-[var(--numen-gutter)]"
+    class="confirm-dialog-backdrop"
     @click.self="emit('cancel')"
     @keydown.esc="emit('cancel')"
     @keydown.tab="onKeepFocus"
@@ -66,14 +66,11 @@ function onKeepFocus(event: KeyboardEvent): void {
       aria-modal="true"
       :aria-label="label"
       :aria-describedby="textId"
-      :class="[
-        'bg-raised text-ink rounded-node font-sans text-base',
-        'flex max-w-md flex-col gap-3 border p-4',
-        tone === 'danger' ? 'border-alarm' : 'border-field-rule',
-      ]"
+      :data-tone="tone"
+      class="confirm-dialog"
     >
-      <p :id="textId" class="m-0">{{ text }}</p>
-      <div class="flex justify-end gap-1.5">
+      <p :id="textId" class="confirm-dialog__text">{{ text }}</p>
+      <div class="confirm-dialog__actions">
         <Button :variant="tone === 'danger' ? 'danger' : 'solid'" @click="emit('confirm')">
           {{ confirmText }}
         </Button>
@@ -84,3 +81,45 @@ function onKeepFocus(event: KeyboardEvent): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--numen-lift-menu);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--numen-gutter);
+  background: color-mix(in oklab, var(--numen-surface), transparent 30%);
+}
+
+.confirm-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-inline-size: 28rem;
+  padding: 1rem;
+  border: 1px solid var(--numen-field-border);
+  border-radius: var(--numen-radius);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
+}
+
+.confirm-dialog[data-tone='danger'] {
+  border-color: var(--numen-alarm);
+}
+
+.confirm-dialog__text {
+  margin: 0;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+</style>

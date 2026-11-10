@@ -10,9 +10,8 @@ import {
   createInvocation,
   runInvocation,
   type CommandDeps,
-  type CommandTarget,
-  type VaultRef,
 } from '@/features/command-palette'
+import type { CommandTarget, VaultRef } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
 import { COMMAND } from '@/shared/commandIds'
 

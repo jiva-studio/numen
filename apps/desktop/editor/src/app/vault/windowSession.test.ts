@@ -1,22 +1,17 @@
 /**
- * The vault state response mapped to window values: a field omitted from the
- * response maps to an empty or zero value.
+ * The requests and streams of the window to the core, sent for this window.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FLUSH_RESULT, TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { createLostConnection, installCoreHandlers } from '@numen/core-client/testing'
-import { sessionCore } from './session'
+import { windowSessionCore } from './windowSession'
 
 const request = {
-  getVaultState: vi.fn(),
-  writeOpenTabs: vi.fn(),
   reportFlush: vi.fn(),
-  watchVaultChanges: vi.fn(),
   watchFocus: vi.fn(),
   watchTasks: vi.fn(),
   cancelTask: vi.fn(),
   watchQuit: vi.fn(),
-  detachTab: vi.fn(),
 }
 
 let restore: () => void
@@ -30,52 +25,9 @@ afterEach(() => {
   restore()
 })
 
-describe('the state of the vault', () => {
-  it('is a scan not begun and nothing indexed where the answer carries neither', async () => {
-    request.getVaultState.mockResolvedValue({ id: 'v1', name: 'Zoo', path: '/zoo' })
-
-    expect(await sessionCore.state()).toStrictEqual({
-      id: 'v1',
-      name: 'Zoo',
-      path: '/zoo',
-      scan: { isReady: false, error: '', unwatchedPath: '' },
-      coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
-    })
-  })
-
-  it('carries how far the scan got and how much the index holds', async () => {
-    request.getVaultState.mockResolvedValue({
-      id: 'v1',
-      name: 'Zoo',
-      path: '/zoo',
-      scan: { isReady: true, error: 'permission denied', watchError: '/zoo/deep' },
-      coverage: { chunkCount: 12n, embeddedCount: 5n, isEmbedding: true },
-    })
-
-    const state = await sessionCore.state()
-
-    expect(state.scan).toStrictEqual({
-      isReady: true,
-      error: 'permission denied',
-      unwatchedPath: '/zoo/deep',
-    })
-    expect(state.coverage).toStrictEqual({ chunkCount: 12n, embeddedCount: 5n, isEmbedding: true })
-  })
-})
-
-describe('the tabs a window holds open', () => {
-  it('are written as they stand, with the one in front', async () => {
-    const tab = { id: 't1', kind: 'note', path: 'Llama.md' }
-
-    await sessionCore.writeOpenTabs({ tabs: [tab], activeId: 't1' } as never)
-
-    expect(request.writeOpenTabs.mock.lastCall?.[0]).toMatchObject({ tabs: [tab], activeId: 't1' })
-  })
-})
-
 describe('a flush reported', () => {
   it('says nothing was left where the window had nothing unsaved', async () => {
-    await sessionCore.reportFlush('token-1')
+    await windowSessionCore.reportFlush('token-1')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -85,7 +37,7 @@ describe('a flush reported', () => {
   })
 
   it('says what the window wrote', async () => {
-    await sessionCore.reportFlush('token-1', 'written')
+    await windowSessionCore.reportFlush('token-1', 'written')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -104,32 +56,12 @@ const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
 describe('the streams a window follows', () => {
   const signal = new AbortController().signal
 
-  it('notifies each change of the vault, where every note named went, and the files whose text versions changed', async () => {
-    request.watchVaultChanges.mockImplementation(async function* () {
-      yield {
-        paths: ['Llama.md'],
-        reload: true,
-        renamed: [{ from: 'A.md', to: 'B.md' }],
-        versionPaths: ['talks/a.mp3'],
-      }
-    })
-
-    expect(await readAll(sessionCore.watchVaultChanges(signal))).toStrictEqual([
-      {
-        paths: ['Llama.md'],
-        shouldReload: true,
-        renamed: [{ from: 'A.md', to: 'B.md' }],
-        versionPaths: ['talks/a.mp3'],
-      },
-    ])
-  })
-
   it('follows the focus', async () => {
     request.watchFocus.mockImplementation(async function* () {
       yield {}
     })
 
-    expect(await readAll(sessionCore.watchFocus(signal))).toHaveLength(1)
+    expect(await readAll(windowSessionCore.watchFocus(signal))).toHaveLength(1)
   })
 
   it('releases the focus on the signal', async () => {
@@ -141,7 +73,7 @@ describe('the streams a window follows', () => {
     })
     const controller = new AbortController()
 
-    const readTask = readAll(sessionCore.watchFocus(controller.signal))
+    const readTask = readAll(windowSessionCore.watchFocus(controller.signal))
     await vi.waitFor(() => expect(requestSignal).toBeDefined())
     controller.abort()
 
@@ -154,7 +86,7 @@ describe('the streams a window follows', () => {
       yield {}
     })
 
-    expect(await readAll(sessionCore.watchQuit(signal))).toHaveLength(1)
+    expect(await readAll(windowSessionCore.watchQuit(signal))).toHaveLength(1)
     expect(request.watchQuit.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
@@ -194,7 +126,7 @@ describe('the streams a window follows', () => {
       }
     })
 
-    expect(await readAll(sessionCore.watchTasks(signal))).toStrictEqual([
+    expect(await readAll(windowSessionCore.watchTasks(signal))).toStrictEqual([
       [
         {
           id: 'scan',
@@ -232,7 +164,7 @@ describe('the streams a window follows', () => {
   it('asks the core of this window to cancel a task by its id', async () => {
     request.cancelTask.mockResolvedValue({})
 
-    await sessionCore.cancelTask('making the vectors')
+    await windowSessionCore.cancelTask('making the vectors')
 
     expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -243,38 +175,7 @@ describe('the streams a window follows', () => {
   it('rejects when the core does not cancel the task', async () => {
     request.cancelTask.mockRejectedValue(createLostConnection('not found'))
 
-    await expect(sessionCore.cancelTask('gone')).rejects.toThrow('not found')
+    await expect(windowSessionCore.cancelTask('gone')).rejects.toThrow('not found')
   })
 })
 
-describe('detaching a tab', () => {
-  it('sends DetachTab with the tab, its saved state and the rounded position and size', async () => {
-    request.detachTab.mockResolvedValueOnce({ error: 0 })
-    request.detachTab.mockResolvedValueOnce({ error: 2 })
-    const tab = {
-      id: 'plex:3b9d',
-      kind: 'plex',
-      path: 'Physics.md',
-      title: 'Physics',
-      state: '{"focus":"Kepler"}',
-    }
-    expect(
-      await sessionCore.detachTab(tab, { x: 100.6, y: 200.4, width: 640.5, height: 479.6 }),
-    ).toStrictEqual({
-      ok: true,
-      value: undefined,
-    })
-    expect(await sessionCore.detachTab(tab, { x: 0, y: 0, width: 0, height: 0 })).toStrictEqual({
-      ok: false,
-      error: 'timeout',
-    })
-
-    expect(request.detachTab.mock.calls[0]?.[0]).toMatchObject({
-      tab,
-      x: 101,
-      y: 200,
-      width: 641,
-      height: 480,
-    })
-  })
-})

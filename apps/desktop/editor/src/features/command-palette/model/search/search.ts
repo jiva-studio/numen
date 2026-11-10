@@ -20,7 +20,7 @@ import {
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
 import { getCreateNoteActions } from '../../lib/entries/entries'
-import type { CommandTarget } from '../../types'
+import type { CommandTarget } from '@/entities/command'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
 export type {

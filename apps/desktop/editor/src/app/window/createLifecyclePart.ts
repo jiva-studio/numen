@@ -2,17 +2,17 @@
  * How the window starts and stops: the order its parts start in, the tabs it opens with, and when a
  * window made for a detach closes.
  */
+import { formatError } from '@/shared/api/errors'
 import type { Ref } from 'vue'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import type { useWindowTabs } from '@/entities/tab'
+import type { useWindowTabs, MovedTab } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { core } from '../vault'
-import type { MovedTab } from '../ports/vault'
 import { getFrontendPluginIds } from '../plugins/useWindowPlugins'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import { parseSavedTabs } from '../tabs/useOpenTabs'
-import { formatError, type WindowCore } from './createDisplayPart'
+import type { WindowCore } from './createDisplayPart'
 import type { useSettings } from './useSettings'
 import { useAppBootstrap } from './useAppBootstrap'
 import type { useVaults } from './useVaults'

@@ -10,7 +10,7 @@ import {
   type HandlerDeclaration,
   type WhenReader,
 } from '@numen/plugin-loader'
-import { pluginCommands } from '@/shared/clients'
+import { pluginCommands } from '@/shared/api/clients'
 
 interface WireCommand {
   readonly pluginId: string

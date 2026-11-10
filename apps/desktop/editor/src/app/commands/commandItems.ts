@@ -8,7 +8,7 @@ import {
   type CommandTarget as RunTarget,
   type PluginHost,
 } from '@numen/plugin-loader'
-import type { Command, CommandTarget } from '@/features/command-palette'
+import type { Command, CommandTarget } from '@/entities/command'
 import { getNamedTarget } from './runTarget'
 
 type Values = Readonly<Record<string, string>>

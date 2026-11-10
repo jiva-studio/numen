@@ -8,7 +8,7 @@ import {
   createWindowNavigationCommands,
   createWindowSettingsCommands,
 } from '../window-commands/windowCommands'
-import type { Command } from '../../types'
+import type { Command } from '@/entities/command'
 import type { Words } from '../../words'
 
 /**

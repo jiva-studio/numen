@@ -5,7 +5,7 @@
  * received from the recorded log, and mounts the window with `mountWindow`.
  */
 import './vaultMock'
-import { readWindowTasks } from './moduleMocks'
+import { readWindowTasks } from './mocks/window'
 import { afterEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { getPanes, WorkspaceLayout, type Workspace } from '@numen/workbench'

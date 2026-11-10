@@ -2,13 +2,8 @@ import { formatErrorMessage } from '@numen/core-client'
 import { openAfterSavingTabs, type TabsHold } from './leaveVault'
 import { runInBackground } from '@numen/ui'
 import { vaults, type VaultCore } from '../vault'
-import type {
-  CommandDeps,
-  Notes,
-  RunSupport,
-  VaultRef,
-  VaultWriter,
-} from '@/features/command-palette'
+import type { CommandDeps, Notes, VaultWriter } from '@/features/command-palette'
+import type { RunSupport, VaultRef } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'

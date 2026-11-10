@@ -159,7 +159,7 @@ npx vitest run --project 'stories (webkit)'
 
 Each follows the target.
 
-- A dialog whose first story asserts focus by role and name: `libs/ui/components/src/shared/ui/confirm-dialog/ConfirmDialog.stories.ts:34-41`. The state stories below it (`:44-54`) are a question that is far too long and a question in another script, with no `play`.
+- A dialog whose first story asserts focus by role and name: `apps/desktop/editor/src/pages/settings/ui/confirm-dialog/ConfirmDialog.stories.ts:34-41`. The state stories below it (`:44-54`) are a question that is far too long and a question in another script, with no `play`.
 - Choosing emits the identifier the caller gave, asserted through an `fn()` arg, and the menu closes: `libs/ui/components/src/shared/ui/menu/Menu.stories.ts:146-158`. The `args` that carry `fn()` are `:133-134`.
 - Keyboard focus lands on the first item and returns to the opener on Escape, asserted by role: `Menu.stories.ts:186-205` (read the body; the export name is not a model).
 - A tree driven with real pointer events and the keyboard, over invented rows: `libs/ui/components/src/features/tree/ui/Tree.stories.ts:305-356` (`dragTo`, `WalksWithTheKeyboard`, `DragsIntoARow`), rows in `libs/ui/components/src/features/tree/fixtures/rows.ts:1-18`, renaming typed in another script at `Tree.stories.ts:466-480`.

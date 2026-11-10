@@ -10,7 +10,7 @@ import {
   type PaneRect,
   type TabMoverDeps,
 } from './tabMove'
-import type { TabMoveError } from '../ports/vault'
+import type { TabMoveError } from '@/entities/tab'
 
 const ORBITS_ID = 'plex:7c1e'
 

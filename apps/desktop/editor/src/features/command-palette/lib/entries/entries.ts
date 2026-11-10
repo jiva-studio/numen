@@ -6,7 +6,7 @@
  * that makes the note.
  */
 import { COMMAND } from '@/shared/commandIds'
-import type { CommandTarget } from '../../types'
+import type { CommandTarget } from '@/entities/command'
 import type { Words } from '../../words'
 
 /** The words of the actions that create a note. */

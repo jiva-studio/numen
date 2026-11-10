@@ -7,7 +7,8 @@
 import type { Ref } from 'vue'
 import type { Vault } from '@/entities/vault'
 import type { PendingStep } from '../../lib/step/step'
-import type { Command, PaletteLists, RunSupport } from '../../types'
+import type { PaletteLists } from '../../types'
+import type { Command, RunSupport } from '@/entities/command'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 

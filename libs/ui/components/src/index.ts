@@ -4,13 +4,10 @@
 import './shared/tokens/theme.css'
 import './shared/tokens/window.css'
 
-export { Menu, groupItems, useOutsidePress } from './shared/ui/menu'
+export { Menu, useOutsidePress } from './shared/ui/menu'
 export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
-
-/** A question over the window answered with a confirm or a cancel button. */
-export { ConfirmDialog } from './shared/ui/confirm-dialog'
 
 /** A single line of digits typed by the user and clamped to its bounds. */
 export { NumberField } from './shared/ui/number-field'
@@ -26,8 +23,7 @@ export { Slider } from './shared/ui/slider'
 export { SegmentedControl } from './shared/ui/segmented'
 
 /** One choice out of a list, taken from a menu the machine draws. */
-export { Select, MultiSelect } from './shared/ui/select'
-export type { SelectChoice } from './shared/ui/select'
+export { Select } from './shared/ui/select'
 
 /** One search line over a list of rows in one frame, drawn in the window or as a popup. */
 export { SearchableList, SearchableListPopup } from './shared/ui/searchable-list'
@@ -50,12 +46,8 @@ export {
   type RequestGuard,
 } from './shared/lib/async/requestGuard'
 
-/** A value of another process shown by a control from the request until the write settles. */
-export {
-  createRemoteValues,
-  createWriteOrder,
-  type WriteOrder,
-} from './shared/lib/async/remoteValues'
+/** The order of the reads and writes of a store held by another process. */
+export { createWriteOrder, type WriteOrder } from './shared/lib/async/remoteValues'
 
 /** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
@@ -66,7 +58,7 @@ export { reportFailure } from './shared/lib/async/report'
 export { Spinner } from './shared/ui/spinner'
 
 /** A Lucide icon drawn by the name a manifest gives it. */
-export { NamedIcon, createNamedIcon } from './shared/ui/named-icon'
+export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
 

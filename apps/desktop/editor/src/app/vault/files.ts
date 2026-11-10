@@ -2,7 +2,7 @@
  * File tree and filesystem domain methods for the window core.
  */
 import { findErrorCode, asFailure, asValue } from '@numen/core-client'
-import { files } from '@/shared/clients'
+import { files } from '@/shared/api/clients'
 import { mapEntry, mapMoveResult, mapNoteType } from './words'
 import type { FilePort } from '@/app/ports/files'
 import type { NotePort } from '@/app/ports/notes'

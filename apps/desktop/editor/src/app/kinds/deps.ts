@@ -1,4 +1,5 @@
-import type { CommandDeps, CommandTarget, SearchDeps } from '@/features/command-palette'
+import type { CommandDeps, SearchDeps } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { NotePort } from '@/app/ports/notes'

@@ -23,15 +23,8 @@ import type { Vault } from '@/entities/vault'
 import { createCommands } from '../../lib/commands/commands'
 import { getPaletteView } from '../view/view'
 import { createInvocation } from '../../lib/entries/invocation'
-import type {
-  Command,
-  CommandsDeps,
-  CommandTarget,
-  CommandInvocation,
-  NoteLookup,
-  PaletteLists,
-  RunSupport,
-} from '../../types'
+import type { CommandsDeps, NoteLookup, PaletteLists } from '../../types'
+import type { Command, CommandTarget, CommandInvocation, RunSupport } from '@/entities/command'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 import { createPaletteSteps, findUnsuppliedPrompt } from './navigation'

@@ -8,7 +8,8 @@ import { WORDS as words } from '@/shared/words'
 import * as stepModule from '../lib/step/step'
 import { runSupport } from './palette/runSupport'
 import { useCommandPalette } from './palette/palette'
-import type { CommandTarget, StepGroup } from '../types'
+import type { StepGroup } from '../types'
+import type { CommandTarget } from '@/entities/command'
 
 const NAMED_ANSWERS = ['NAME', 'PICK', 'OPEN', 'CHOSEN', 'YES', 'NO', 'EXACT']
 const NAMED_IDS = ['name', 'pick', 'open', 'chosen', 'yes', 'no', 'exactly']

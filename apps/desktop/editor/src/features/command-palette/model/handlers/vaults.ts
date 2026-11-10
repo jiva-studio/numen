@@ -6,7 +6,7 @@
  * moves the window to a different location than it was at.
  */
 import type { VaultContext, Voice } from './deps'
-import type { CommandInvocation } from '../../types'
+import type { CommandInvocation } from '@/entities/command'
 import type { AnswerWords } from '../../words'
 
 /**

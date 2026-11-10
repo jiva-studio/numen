@@ -10,7 +10,8 @@ import {
   type PluginHostDeps,
   type WhenValues,
 } from '@numen/plugin-loader'
-import { createCommands, type Command } from '@/features/command-palette'
+import { createCommands } from '@/features/command-palette'
+import type { Command } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
 import type { DeclaredCommands } from '../commands/declaredCommands'
 import { createSlotCommandFinder, readSlotEntries } from '../commands/pluginSlots'
