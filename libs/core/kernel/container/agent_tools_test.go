@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"io"
 	"maps"
 	"net"
@@ -484,7 +485,7 @@ func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
 
 // shownVault is a host that exposes one vault and nothing else.
 type shownVault struct {
-	hostendpoint.VaultSwitch
+	vaultapi.Switch
 	vault domain.Vault
 }
 
@@ -511,7 +512,7 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	container.LendPluginHost(host).SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	container.LendPluginHost(host).SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)

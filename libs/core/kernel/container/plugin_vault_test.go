@@ -38,14 +38,14 @@ func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := shared.CreateFile(t.Context(), "Made.md", []byte("---\ntitle: Made\n---\n\n# Made\n")); err != nil {
+	if err := shared.Writer.CreateFile(t.Context(), "Made.md", []byte("---\ntitle: Made\n---\n\n# Made\n")); err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Scan(t.Context(), []string{"Made.md"}); err != nil {
+	if err := shared.Writer.Scan(t.Context(), []string{"Made.md"}); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := shared.GetNotes(t.Context(), []string{"Made.md"})
+	got, err := shared.Notes.GetNotes(t.Context(), []string{"Made.md"})
 	if err != nil || got["Made.md"].Title != "Made" {
 		t.Errorf("got %+v (%v) in %s", got, err, v.Name)
 	}
@@ -57,11 +57,11 @@ func TestAPluginKeepsItsFolderAndItsCacheApart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := shared.OpenStore("org.example.sample")
+	data, err := shared.Stores.OpenStore("org.example.sample")
 	if err != nil {
 		t.Fatal(err)
 	}
-	writer, err := shared.OpenStoreWriter("org.example.sample")
+	writer, err := shared.Stores.OpenStoreWriter("org.example.sample")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,12 +69,12 @@ func TestAPluginKeepsItsFolderAndItsCacheApart(t *testing.T) {
 	if err := writer.Append(t.Context(), "log", []byte("a")); err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.WriteCache(t.Context(), "org.example.sample", "due", []byte("3")); err != nil {
+	if err := shared.Cache.WriteCache(t.Context(), "org.example.sample", "due", []byte("3")); err != nil {
 		t.Fatal(err)
 	}
 
 	got, err := data.Read(t.Context(), "log")
-	cached, found, cacheErr := shared.ReadCache(t.Context(), "org.example.sample", "due")
+	cached, found, cacheErr := shared.Cache.ReadCache(t.Context(), "org.example.sample", "due")
 	_, missing := data.Read(t.Context(), "due")
 	if err != nil || string(got) != "a" || cacheErr != nil || !found || string(cached) != "3" || !errors.Is(missing, fs.ErrNotExist) {
 		t.Errorf("data %q (%v), cache %q %v (%v), missing %v", got, err, cached, found, cacheErr, missing)
@@ -89,9 +89,9 @@ func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	recognized, listErr := shared.GetVaults()
-	linked, withErr := shared.With(v.ID)
-	_, unknown := shared.With("nobody")
+	recognized, listErr := shared.Switch.GetVaults()
+	linked, withErr := shared.Switch.With(v.ID)
+	_, unknown := shared.Switch.With("nobody")
 
 	if listErr != nil || len(recognized) != 1 || recognized[0].ID != v.ID {
 		t.Errorf("the vaults were %v (%v)", recognized, listErr)
@@ -99,7 +99,7 @@ func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
 	if withErr != nil {
 		t.Fatal(withErr)
 	}
-	if got, showing := linked.GetVault(); !showing || got.ID != v.ID {
+	if got, showing := linked.Switch.GetVault(); !showing || got.ID != v.ID {
 		t.Errorf("the bound vault was %v", got)
 	}
 	if !errors.Is(unknown, fs.ErrNotExist) {
@@ -115,7 +115,7 @@ func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := shared.CreateFile(t.Context(), "Made.md", []byte("# Made\n")); err != nil {
+	if err := shared.Writer.CreateFile(t.Context(), "Made.md", []byte("# Made\n")); err != nil {
 		t.Fatal(err)
 	}
 

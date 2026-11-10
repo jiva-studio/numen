@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -48,7 +49,7 @@ func (w windowVaults) OpenNotes(index edit.IndexUpdater) note.Scenarios {
 
 func (w windowVaults) OpenPluginVault(
 	current func() (domain.Vault, bool), hooks container.PluginVaultHooks,
-) (*hostendpoint.VaultAccess, error) {
+) (*vaultapi.Access, error) {
 	if err := w.cfg.InstallPluginVault(w.registry, w.db, current, hooks); err != nil {
 		return nil, err
 	}

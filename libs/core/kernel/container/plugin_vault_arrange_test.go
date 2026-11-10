@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"errors"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"os"
 	"path/filepath"
 	"slices"
@@ -24,7 +25,7 @@ func getRivers() map[string]string {
 	}
 }
 
-func openScannedPluginVault(t *testing.T, notes map[string]string, hooks container.PluginVaultHooks) (domain.Vault, *hostendpoint.VaultAccess) {
+func openScannedPluginVault(t *testing.T, notes map[string]string, hooks container.PluginVaultHooks) (domain.Vault, *vaultapi.Access) {
 	t.Helper()
 	v, current, assembly := openPluginVault(t, notes)
 	shared, err := assembly.OpenPluginVault(current, hooks)
@@ -36,7 +37,7 @@ func openScannedPluginVault(t *testing.T, notes map[string]string, hooks contain
 		paths = append(paths, path)
 	}
 	slices.Sort(paths)
-	if err := shared.Scan(t.Context(), paths); err != nil {
+	if err := shared.Writer.Scan(t.Context(), paths); err != nil {
 		t.Fatal(err)
 	}
 	return v, shared
@@ -54,9 +55,9 @@ func readVaultFile(t *testing.T, v domain.Vault, path string) (string, bool) {
 	return string(content), true
 }
 
-func getLinkTargets(t *testing.T, shared *hostendpoint.VaultAccess, from string) []string {
+func getLinkTargets(t *testing.T, shared *vaultapi.Access, from string) []string {
 	t.Helper()
-	links, err := shared.GetLinks(t.Context(), from)
+	links, err := shared.Links.GetLinks(t.Context(), from)
 	if err != nil {
 		t.Fatalf("links of %s: %v", from, err)
 	}
@@ -70,7 +71,7 @@ func getLinkTargets(t *testing.T, shared *hostendpoint.VaultAccess, from string)
 func TestAPluginRenameMovesTheFileAndRepairsTheLinksByName(t *testing.T) {
 	v, shared := openScannedPluginVault(t, getRivers(), container.PluginVaultHooks{})
 
-	to, isFilenamed, moved, err := shared.RenameNote(t.Context(), "Danube.md", "Donau")
+	to, isFilenamed, moved, err := shared.Arranger.RenameNote(t.Context(), "Danube.md", "Donau")
 	if err != nil {
 		t.Fatalf("the rename failed: %v", err)
 	}
@@ -104,7 +105,7 @@ func TestAPluginRenameMovesTheFileAndRepairsTheLinksByName(t *testing.T) {
 func TestPluginMovePlacesNoteInFolderAndKeepsLinksByName(t *testing.T) {
 	v, shared := openScannedPluginVault(t, getRivers(), container.PluginVaultHooks{})
 
-	moved, err := shared.MoveNote(t.Context(), "Danube.md", "Rivers/Danube.md")
+	moved, err := shared.Arranger.MoveNote(t.Context(), "Danube.md", "Rivers/Danube.md")
 	if err != nil {
 		t.Fatalf("the move failed: %v", err)
 	}
@@ -129,7 +130,7 @@ func TestPluginMovePlacesNoteInFolderAndKeepsLinksByName(t *testing.T) {
 func TestPluginRemovalMovesNoteToTrashAndReportsDangling(t *testing.T) {
 	v, shared := openScannedPluginVault(t, getRivers(), container.PluginVaultHooks{})
 
-	trashed, dangling, err := shared.RemoveNote(t.Context(), "Danube.md")
+	trashed, dangling, err := shared.Arranger.RemoveNote(t.Context(), "Danube.md")
 	if err != nil {
 		t.Fatalf("the removal failed: %v", err)
 	}
@@ -154,7 +155,7 @@ func TestAPluginRemovalOfAFolderReturnsNotANote(t *testing.T) {
 		"Rivers/Rhine.md":  "# Rhine\n",
 	}, container.PluginVaultHooks{})
 
-	_, _, err := shared.RemoveNote(t.Context(), "Rivers")
+	_, _, err := shared.Arranger.RemoveNote(t.Context(), "Rivers")
 
 	if !errors.Is(err, edit.ErrNotANote) {
 		t.Errorf("removing a folder returned %v, want ErrNotANote", err)
@@ -174,7 +175,7 @@ func TestAPluginRunsTheChecksOfTheVault(t *testing.T) {
 		"Lakes.md":         "---\nlinks:\n  - to: Baikal\n    role: parent\n---\n# Lakes\n",
 	}, container.PluginVaultHooks{})
 
-	ran, found, err := shared.GetProblems(t.Context(), nil)
+	ran, found, err := shared.Arranger.GetProblems(t.Context(), nil)
 	if err != nil {
 		t.Fatalf("the checks failed: %v", err)
 	}
@@ -195,7 +196,7 @@ func TestAPluginRunsTheChecksOfTheVault(t *testing.T) {
 		t.Errorf("the ambiguous problems were %+v, want one against Deltas.md with both Danube notes", ambiguous)
 	}
 
-	ran, found, err = shared.GetProblems(t.Context(), []domain.Check{domain.CheckDangling})
+	ran, found, err = shared.Arranger.GetProblems(t.Context(), []domain.Check{domain.CheckDangling})
 	if err != nil {
 		t.Fatalf("the dangling check failed: %v", err)
 	}
@@ -214,7 +215,7 @@ func TestPluginRenameToExistingFilenameKeepsNoteUnchanged(t *testing.T) {
 		"Rivers/Deltas.md": "# Deltas\n",
 	}, container.PluginVaultHooks{})
 
-	_, _, _, err := shared.RenameNote(t.Context(), "Rivers/Danube.md", "Deltas")
+	_, _, _, err := shared.Arranger.RenameNote(t.Context(), "Rivers/Danube.md", "Deltas")
 
 	if !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("the rename onto Rivers/Deltas.md returned %v, want ErrAlreadyExists", err)

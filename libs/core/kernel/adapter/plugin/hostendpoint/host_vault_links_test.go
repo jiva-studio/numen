@@ -1,6 +1,7 @@
 package hostendpoint
 
 import (
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"context"
 	"fmt"
 	"net/http"

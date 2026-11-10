@@ -134,7 +134,7 @@ func requireRemoved(t *testing.T, entry *v1.HostNoteRemoval, target string) {
 }
 
 func TestMoveCancelledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
-	endpoint, vault, ctx := newCancellingEndpoint(t, 2, changeThenCancel)
+	endpoint, vault, _ := newCancellingEndpoint(t, 2, changeThenCancel)
 
 	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: getCancelledBatch(), Folder: "Archive",
@@ -159,7 +159,7 @@ func TestMoveCancelledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
 }
 
 func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
-	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
+	endpoint, vault, _ := newCancellingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: getCancelledBatch(), Folder: "Archive",
@@ -202,7 +202,7 @@ func TestMoveBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
 }
 
 func TestMoveCancelledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
-	endpoint, vault, ctx := newCancellingEndpoint(t, 0, changeThenCancel)
+	endpoint, vault, _ := newCancellingEndpoint(t, 0, changeThenCancel)
 	vault.cancel()
 
 	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
@@ -225,7 +225,7 @@ func TestMoveCancelledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
 }
 
 func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
-	endpoint, vault, ctx := newCancellingEndpoint(t, 1, changeThenCancel)
+	endpoint, vault, _ := newCancellingEndpoint(t, 1, changeThenCancel)
 
 	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: getCancelledBatch(),
@@ -247,7 +247,7 @@ func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
 }
 
 func TestRemovalFailingOnCancelReturnsErrorAndRestNotAttempted(t *testing.T) {
-	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
+	endpoint, vault, _ := newCancellingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: getCancelledBatch(),
