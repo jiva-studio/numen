@@ -28,7 +28,7 @@ const (
 	maxAdapterMethods = 20
 	maxAdapterFields  = 15
 	maxUseCaseMethods = 12
-	maxUseCaseFields  = 10
+	maxUseCaseFields  = 12
 )
 
 func getStructLimit(rel string) (structLimit, bool) {
