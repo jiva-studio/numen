@@ -128,8 +128,7 @@ const DONE: string[] = []
 
 const DEFAULTS = createInstallation()
 
-const INSTALLATION: Installation = {
-  settings: {
+const SETTINGS: Installation['settings'] = {
     ...DEFAULTS.settings,
     getSetting: () => undefined,
     getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
@@ -137,7 +136,10 @@ const INSTALLATION: Installation = {
       DONE.push(`write ${edits.length}`)
     },
     file: ref('/numen.json'),
-  },
+}
+
+const INSTALLATION: Installation = {
+  settings: SETTINGS,
   plugin: {
     ...DEFAULTS.plugin,
     app: ref([
