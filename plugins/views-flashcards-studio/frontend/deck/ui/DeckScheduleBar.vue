@@ -94,7 +94,8 @@ function onDismissScheduleMenu() {
   align-items: center;
   gap: var(--scheduled-gap);
   margin: 0;
-  padding: var(--scheduled-padding-block-start) var(--scheduled-padding-inline) var(--scheduled-padding-block-end);
+  padding: var(--scheduled-padding-block-start) var(--scheduled-padding-inline)
+    var(--scheduled-padding-block-end);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
 }

@@ -58,7 +58,10 @@ defineExpose({
 .autosize {
   --autosize-font-unit: 1em;
   display: grid;
-  min-block-size: calc(var(--autosize-lines) * var(--numen-line-height) * var(--autosize-font-unit) + 2 * var(--box-air));
+  min-block-size: calc(
+    var(--autosize-lines) * var(--numen-line-height) * var(--autosize-font-unit) + 2 *
+      var(--box-air)
+  );
 }
 
 /* The space at the end keeps a line for text ending in a newline, and for no

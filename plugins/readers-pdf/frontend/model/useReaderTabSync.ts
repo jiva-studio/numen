@@ -23,7 +23,9 @@ export function useReaderTabSync(
           maxX,
           maxY,
         }))
-        tab.document.highlights.applyHighlights([[{ page, rects }]]).catch(tab.document.reportFailure)
+        tab.document.highlights
+          .applyHighlights([[{ page, rects }]])
+          .catch(tab.document.reportFailure)
         return
       }
       tab.document.actions.goToPage(page).catch(tab.document.reportFailure)
@@ -46,7 +48,11 @@ export function useReaderTabSync(
     () => getDocument()?.document.state.pageNumber.value,
     (page) => {
       const pageCount = getDocument()?.document.state.pages.value.length ?? 0
-      if (typeof page === 'number' && pageCount > 0 && !getDocument()?.document.state.isLoading.value) {
+      if (
+        typeof page === 'number' &&
+        pageCount > 0 &&
+        !getDocument()?.document.state.isLoading.value
+      ) {
         getReaderTab()?.savePlace?.({ page: page + 1, pageCount })
       }
     },

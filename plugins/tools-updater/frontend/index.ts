@@ -44,7 +44,10 @@ export function createStatusView(context: PluginContext, updates: Updates) {
   })
 }
 
-function showFailure(context: PluginContext, opening: ReturnType<Updates['announcement']['openDownload']>): void {
+function showFailure(
+  context: PluginContext,
+  opening: ReturnType<Updates['announcement']['openDownload']>,
+): void {
   opening.then(
     (result) => {
       if (!result.ok) context.ui.notices?.show(result.error, 'error')

@@ -131,7 +131,9 @@ describe('a turn drawn with the notes that reach nothing', () => {
 
     one.turns.value = [turn('a', 'See [[Entropy]] and more')]
 
-    expect(one.state.addresses.turns.value[0]?.links?.map((link) => link.raw)).toEqual(['[[Entropy]]'])
+    expect(one.state.addresses.turns.value[0]?.links?.map((link) => link.raw)).toEqual([
+      '[[Entropy]]',
+    ])
   })
 
   it('names the notes again once they change while the turn stays', async () => {
@@ -142,18 +144,27 @@ describe('a turn drawn with the notes that reach nothing', () => {
     rewrite(one.turns.value[0]!, 'See [[Entropy]] and [[Order]].')
     await settle()
 
-    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual(['name://Entropy', 'name://Order'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([
+      'name://Entropy',
+      'name://Order',
+    ])
   })
 
   it('names the notes again when as many are named but not the same', async () => {
     const one = open([turn('a', 'See [[Entropy]] and [[Order]].')])
     await settle()
-    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual(['name://Entropy', 'name://Order'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([
+      'name://Entropy',
+      'name://Order',
+    ])
 
     rewrite(one.turns.value[0]!, 'See [[Entropy]] and [[Chaos]].')
     await settle()
 
-    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual(['name://Entropy', 'name://Chaos'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([
+      'name://Entropy',
+      'name://Chaos',
+    ])
   })
 })
 
@@ -163,7 +174,11 @@ describe('a link inside an answer', () => {
     const text =
       '[a](numen:Source.pdf?start=10&length=4) [b](numen:Other.pdf?start=5&length=2) [c](numen:Source.pdf?start=90&length=2)'
 
-    one.state.addresses.followLink(turn('a', text), 'numen:Source.pdf?start=10&length=4', createPress().press)
+    one.state.addresses.followLink(
+      turn('a', text),
+      'numen:Source.pdf?start=10&length=4',
+      createPress().press,
+    )
 
     expect(one.opened).toEqual([
       [

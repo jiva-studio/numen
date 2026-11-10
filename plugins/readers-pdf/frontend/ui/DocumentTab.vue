@@ -29,12 +29,7 @@ const props = defineProps<Props>()
 const rootElement = useTemplateRef<HTMLElement>('rootElement')
 
 function isDocumentTabState(val: unknown): val is DocumentTabState {
-  return (
-    typeof val === 'object' &&
-    val !== null &&
-    'document' in val &&
-    'setPageHandle' in val
-  )
+  return typeof val === 'object' && val !== null && 'document' in val && 'setPageHandle' in val
 }
 
 const targetPath = computed(() => {
@@ -58,7 +53,8 @@ onMounted(() => {
   if (props.state && typeof props.state === 'object' && !isDocumentTabState(props.state)) {
     const s = props.state as Record<string, unknown>
     s.focusTab = () => rootElement.value?.focus()
-    s.focusSpans = (...spans: readonly TextRange[]) => activeState.value?.document.actions.focusSpans(...spans)
+    s.focusSpans = (...spans: readonly TextRange[]) =>
+      activeState.value?.document.actions.focusSpans(...spans)
   }
 })
 
@@ -76,7 +72,10 @@ onUnmounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGoToPage(page: number) {
-  if (activeState.value) activeState.value.document.actions.goToPage(page).catch(activeState.value.document.reportFailure)
+  if (activeState.value)
+    activeState.value.document.actions
+      .goToPage(page)
+      .catch(activeState.value.document.reportFailure)
 }
 
 function onWiden(width: number) {
@@ -108,8 +107,14 @@ function onSetPageHandle(reader: unknown) {
       @measure="onWiden"
     >
       <template #silence>
-        <LoadingIndicator v-if="activeState.document.state.isLoading.value" :label="words.loading" />
-        <p v-else-if="activeState.document.state.error.value" class="fallback-panel fallback-message">
+        <LoadingIndicator
+          v-if="activeState.document.state.isLoading.value"
+          :label="words.loading"
+        />
+        <p
+          v-else-if="activeState.document.state.error.value"
+          class="fallback-panel fallback-message"
+        >
           {{ activeState.document.state.error.value }}
         </p>
         <p v-else class="fallback-panel fallback-message">PDF reader unavailable or no pages</p>

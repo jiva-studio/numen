@@ -55,7 +55,13 @@ const createRecordings = (cues: readonly Cue[], canCreateText: boolean): Recordi
 })
 
 const createPlayer = (isPlaying: boolean): Player => ({
-  state: { url: ref(MEDIA), position: ref(NOW), duration: ref(RUNS), isPlaying: ref(isPlaying), error: ref('') },
+  state: {
+    url: ref(MEDIA),
+    position: ref(NOW),
+    duration: ref(RUNS),
+    isPlaying: ref(isPlaying),
+    error: ref(''),
+  },
   load: () => undefined,
   play: () => undefined,
   pause: () => undefined,

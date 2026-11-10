@@ -24,7 +24,9 @@ describe('what a book tab holds', () => {
   })
 
   it('remains at the path the book is filed at', () => {
-    expect(useBookTab(readItem('library/Mahabharata.epub')).book.path).toBe('library/Mahabharata.epub')
+    expect(useBookTab(readItem('library/Mahabharata.epub')).book.path).toBe(
+      'library/Mahabharata.epub',
+    )
   })
 
   it('delegates focus and keypresses to the retained elements', () => {

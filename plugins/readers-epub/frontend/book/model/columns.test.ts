@@ -158,7 +158,12 @@ describe('the flow the marks were read in', () => {
 
     columns.state.viewport.value = { width: 700, height: 600 }
 
-    expect(columns.laid.flow.value).toEqual({ contentWidth: 4800, width: 1200, gap: GAP, columns: 2 })
+    expect(columns.laid.flow.value).toEqual({
+      contentWidth: 4800,
+      width: 1200,
+      gap: GAP,
+      columns: 2,
+    })
     expect(columns.laid.spreadCount.value).toBe(4)
     expect(columns.state.setting.value['--book-run']).toBe('200%')
   })
@@ -170,7 +175,12 @@ describe('the flow the marks were read in', () => {
 
     columns.actions.readColumns(createArea(700, 600), createLaidText(5600))
 
-    expect(columns.laid.flow.value).toEqual({ contentWidth: 5600, width: 700, gap: GAP, columns: 1 })
+    expect(columns.laid.flow.value).toEqual({
+      contentWidth: 5600,
+      width: 700,
+      gap: GAP,
+      columns: 1,
+    })
     expect(columns.laid.spreadCount.value).toBe(8)
   })
 })

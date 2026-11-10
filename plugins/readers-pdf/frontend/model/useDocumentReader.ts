@@ -96,7 +96,11 @@ export function useDocumentReader(documentsOrPath: Documents | string, maybePath
     reportFailure,
     close,
     state: { pages, pageNumber: navigation.pageNumber, error, isLoading },
-    view: { picture: viewport.picture, getPageImageUrl: viewport.getPageImageUrl, widen: viewport.widen },
+    view: {
+      picture: viewport.picture,
+      getPageImageUrl: viewport.getPageImageUrl,
+      widen: viewport.widen,
+    },
     highlights: {
       highlighted: highlights.highlighted,
       getHighlightsOn: highlights.getHighlightsOn,

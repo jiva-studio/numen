@@ -32,7 +32,10 @@ const createTab = (turn: readonly Turn[]) =>
           stop: () => undefined,
           finish: () => undefined,
         }
-        return useAgentConversation(conversation, { ...deps, settings: { ...deps.settings, getModelsAt: getStoryModels } })
+        return useAgentConversation(conversation, {
+          ...deps,
+          settings: { ...deps.settings, getModelsAt: getStoryModels },
+        })
       })
       const state = kind.open!('', 'agent:story')
       return () =>

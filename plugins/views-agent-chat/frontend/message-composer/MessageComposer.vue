@@ -191,7 +191,9 @@ function onSelectReasoning(id: string) {
   --line-unit: 1em;
   visibility: hidden;
   overflow: hidden;
-  max-block-size: calc((var(--lines) - 1) * var(--numen-line-height) * var(--line-unit) + var(--mirror-pad));
+  max-block-size: calc(
+    (var(--lines) - 1) * var(--numen-line-height) * var(--line-unit) + var(--mirror-pad)
+  );
 }
 
 .composer__placeholder {

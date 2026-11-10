@@ -87,7 +87,10 @@ describe('the model an agent tab starts on', () => {
   it('is empty where nothing is listed', () => {
     const state = open([], { 'app/agent/use': 'zeta' })
 
-    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual(['', ''])
+    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
+      '',
+      '',
+    ])
   })
 })
 
@@ -166,6 +169,9 @@ describe('an agent that reports no models', () => {
 
     state.models.selectModel(state.models.modelOptions.value[1]!)
 
-    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual(['omega', ''])
+    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
+      'omega',
+      '',
+    ])
   })
 })

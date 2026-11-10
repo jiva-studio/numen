@@ -40,7 +40,8 @@ export function createAgentKind(
       state.draft.restore(parseSavedConversation(saved))
       return state
     },
-    getState: (state) => createSavedConversation(state.draft.userQuestion.value, state.addresses.turns.value),
+    getState: (state) =>
+      createSavedConversation(state.draft.userQuestion.value, state.addresses.turns.value),
     getTitle: getAgentTitle,
     onClose: (state) => {
       state.conversation.finish()

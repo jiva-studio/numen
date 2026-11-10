@@ -105,7 +105,11 @@ describe('a link inside an answer', () => {
       'see [here](numen:Source.pdf?start=10&length=4) and [there](numen:Source.pdf?start=90&length=2)'
     const press = createPress()
 
-    one.state.addresses.followLink(turn('turn-1', text), 'numen:Source.pdf?start=10&length=4', press.press)
+    one.state.addresses.followLink(
+      turn('turn-1', text),
+      'numen:Source.pdf?start=10&length=4',
+      press.press,
+    )
 
     expect(press.was()).toBe(true)
     expect(one.opened).toEqual([
@@ -250,7 +254,11 @@ describe('agent model selection and settings', () => {
     ]
     await nextTick()
 
-    const optionsList = state.models.modelOptions.value.map((o) => [o.agentTitle, o.modelId, o.modelTitle])
+    const optionsList = state.models.modelOptions.value.map((o) => [
+      o.agentTitle,
+      o.modelId,
+      o.modelTitle,
+    ])
     expect(optionsList).toEqual([
       ['Zeta Agent', 'zeta-small', 'Zeta Small'],
       ['Zeta Agent', 'zeta-large', 'Zeta Large'],
@@ -290,6 +298,9 @@ describe('turns drawn again', () => {
     await nextTick()
 
     expect(one.state.addresses.turns.value[0]).not.toBe(first)
-    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual(['name://Nowhere', 'name://Elsewhere'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([
+      'name://Nowhere',
+      'name://Elsewhere',
+    ])
   })
 })
