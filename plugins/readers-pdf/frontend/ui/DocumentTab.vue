@@ -9,9 +9,7 @@ import { Reader } from '../reader'
 import { WORDS as words } from '../words'
 import type { ReaderTabState } from '@numen/plugin-sdk'
 import type { Documents } from '../types'
-import { documents as servedDocuments } from '../api/wire'
-import { useDocumentTab } from '../model/useDocumentTab'
-import { useDocumentReader } from '../model/useDocumentReader'
+import { useOpenDocument } from '../model/useOpenDocument'
 import { useReaderTabSync } from '../model/useReaderTabSync'
 import { readerPreferences } from '../model/preferences'
 
@@ -21,12 +19,12 @@ interface Props {
   readonly documents?: Documents
 }
 
-const props = withDefaults(defineProps<Props>(), { documents: () => servedDocuments })
+const props = defineProps<Props>()
 
 /* --------------------------------- State ---------------------------------- */
 const rootElement = useTemplateRef<HTMLElement>('rootElement')
 
-const activeState = useDocumentTab(useDocumentReader(props.documents, props.state.path))
+const activeState = useOpenDocument(props.state.path, props.documents)
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {

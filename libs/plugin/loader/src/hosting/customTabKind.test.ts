@@ -1109,7 +1109,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
     expect(
       renderPaneContent({
         pluginId: 'p',
-        component: STUB_COMPONENT,
+        component: null,
         state: {},
         shadowRoot: null,
         containerClass: 'c',

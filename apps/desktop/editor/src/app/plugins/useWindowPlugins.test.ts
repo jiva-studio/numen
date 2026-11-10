@@ -387,10 +387,10 @@ describe('the settings and notices a plugin is given', () => {
     expect(notices.notices.value).toStrictEqual([])
   })
 
-  it('gives a plugin no notices where the window keeps no list', () => {
+  it('drops what a plugin reports where the window keeps no list', () => {
     const { pluginHost } = createWith({})
 
-    expect(pluginHost.createContext('md.numen.a').ui.notices).toBeUndefined()
+    expect(() => pluginHost.createContext('md.numen.a').ui.notices.show('Saved.')).not.toThrow()
   })
 })
 

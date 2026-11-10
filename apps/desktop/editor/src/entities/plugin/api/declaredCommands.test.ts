@@ -4,7 +4,6 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { createWhenReader } from '@numen/plugin-loader'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import {
   listDeclaredCommands,
@@ -25,12 +24,19 @@ beforeEach(() => {
   restore = installCoreAnswers({
     pluginCommands: {
       ...request,
-      listCommands: async (...asked: unknown[]) => ({
-        contentTypeByExtension: {},
-        handlers: [],
-        keybindings: [],
-        ...((await request.listCommands(...asked)) as object),
-      }),
+      listCommands: async (...asked: unknown[]) => {
+        const answer = (await request.listCommands(...asked)) as { slots?: { entry?: object }[] }
+        // A message from the core always carries its maps and lists, empty where it has none.
+        return {
+          contentTypeByExtension: {},
+          handlers: [],
+          keybindings: [],
+          ...answer,
+          slots: (answer.slots ?? []).map((one) =>
+            one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
+          ),
+        }
+      },
     },
   })
 })

@@ -6,6 +6,10 @@ export const STUB_COMPONENT = defineComponent({ name: 'StubComponent', render: (
 
 /** An agent that answers nothing, for a view that needs one to be mounted. */
 export const STUB_AGENT: AgentPort = {
-  ask: async function* () {},
-  finish: async () => undefined,
+  ask: () => ({
+    [Symbol.asyncIterator]: () => ({
+      next: () => Promise.resolve({ done: true, value: undefined }),
+    }),
+  }),
+  finish: () => Promise.resolve(),
 }

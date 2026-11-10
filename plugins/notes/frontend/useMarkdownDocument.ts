@@ -66,20 +66,20 @@ export function useMarkdownDocument(
     }
   })
 
-  async function loadContentFromPath(filePath: string): Promise<void> {
-    try {
-      const read = await readTextAsset(filePath)
-      if (!read.ok) {
-        loadError.value = read.error
-        return
-      }
-      if (!docContent.value) {
-        docContent.value = read.value
-        initialContent.value = read.value
-      }
-    } catch (error: unknown) {
-      loadError.value = error instanceof Error ? error.message : String(error)
-    }
+  function loadContentFromPath(filePath: string): void {
+    readTextAsset(filePath).then(
+      (read) => {
+        if (!read.ok) {
+          loadError.value = read.error
+        } else if (!docContent.value) {
+          docContent.value = read.value
+          initialContent.value = read.value
+        }
+      },
+      (error: unknown) => {
+        loadError.value = error instanceof Error ? error.message : String(error)
+      },
+    )
   }
 
   watch(editorRef, (editor) => props.state?.attachEditor?.(editor), { immediate: true })
@@ -87,7 +87,7 @@ export function useMarkdownDocument(
   onMounted(() => {
     props.state?.attachEditor?.(editorRef.value)
     if (!docContent.value && activePath.value && !isHostOwned()) {
-      void loadContentFromPath(activePath.value)
+      loadContentFromPath(activePath.value)
     }
   })
 
@@ -98,7 +98,7 @@ export function useMarkdownDocument(
       initialContent.value = nextBody
     }
     if (newPath && !docContent.value && !isHostOwned()) {
-      void loadContentFromPath(newPath)
+      loadContentFromPath(newPath)
     }
   })
 

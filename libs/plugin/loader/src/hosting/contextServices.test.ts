@@ -13,9 +13,19 @@ import {
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
+import {
+  createMockCommandsHost,
+  createMockNoticeHost,
+  createMockSlotHost,
+} from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
+
+const createEmptyHost = (): PluginContextHost =>
+  ({
+    getNotices: () => createMockNoticeHost(),
+    getSlots: () => createMockSlotHost(),
+  }) as unknown as PluginContextHost
 
 const createServices = () => {
   const workspace = {
@@ -69,6 +79,8 @@ const createServices = () => {
     getRelations: () => relations,
     getFiles: () => files,
     getCommands: () => commands,
+    getNotices: () => createMockNoticeHost(),
+    getSlots: () => createMockSlotHost(),
   } as unknown as PluginContextHost
   return { host, workspace, notes, relations, files, agent, buffers, commands }
 }
@@ -273,7 +285,7 @@ describe('the open files a plugin passes the window', () => {
 
     expect(buffers.track).toHaveBeenCalledOnce()
     expect(
-      createPluginContext('md.numen.sample', {} as unknown as PluginContextHost, {
+      createPluginContext('md.numen.sample', createEmptyHost(), {
         permissions: ['vault:write'],
       }),
     ).not.toHaveProperty('buffers')

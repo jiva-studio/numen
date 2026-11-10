@@ -114,7 +114,7 @@ const readArrangement = (entry: PluginSlotEntry['entry']) => ({
   ...(entry?.group ? { group: entry.group } : {}),
   ...(entry?.order === undefined ? {} : { order: entry.order }),
   ...(entry?.when ? { when: entry.when } : {}),
-  ...(entry && entry.values && Object.keys(entry.values).length > 0
+  ...(entry && Object.keys(entry.values).length > 0
     ? { values: { ...entry.values } }
     : {}),
 })

@@ -52,7 +52,7 @@ export interface WindowTab {
   readonly id: string
   readonly vault: string
   readonly view: PluginView
-  readonly state: object
+  readonly state: object | undefined
   readonly scope: EffectScope
 }
 
@@ -68,7 +68,7 @@ function createWindowTab(front: () => PluginView | null) {
     const one = tab.value
     if (!one || (id !== undefined && one.id !== id)) return
     tab.value = null
-    one.view.registration.onDestroy?.(one.state, one.id)
+    if (one.state) one.view.registration.onDestroy?.(one.state, one.id)
     one.scope.stop()
   }
 
@@ -82,10 +82,6 @@ function createWindowTab(front: () => PluginView | null) {
     const scope = effectScope(true)
     try {
       const state = scope.run(() => view.registration.open?.(vault, id))
-      if (!state) {
-        scope.stop()
-        return
-      }
       tab.value = { id, vault, view, state, scope }
     } catch (error) {
       scope.stop()

@@ -2,8 +2,7 @@
  * The commands of the window: which ones it runs now, the items a command offers, and the one way
  * a plugin runs a command, its own or another's, from a button, a menu row or its code.
  */
-import type { JsonValue } from '../json'
-import type { Disposable } from '../types'
+import type { JsonValue, Disposable } from '../types'
 import { SHARED_COMMANDS } from './sharedCommands'
 
 // isSharedCommand reports whether the full id is a shared command of the application.

@@ -16,6 +16,7 @@ import type {
   SlotViewRegistration,
   TabKindRegistration,
   FileSelectEvent,
+  JsonValue,
   VaultChangeEvent,
 } from '../types'
 import type { AgentHost } from '../agent'
@@ -25,7 +26,6 @@ import type { VaultTexts } from '../texts'
 import type { VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from '../workspace'
 import { asFailure, asValue, type Result } from '../result'
 import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from '../views'
-import type { JsonValue } from '../json'
 import type { Caught } from '../errors/error'
 import type { DropRegistration } from '../drops'
 import { createMockNoticeHost } from './mockNotices'

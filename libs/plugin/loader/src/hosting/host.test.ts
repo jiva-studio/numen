@@ -274,11 +274,11 @@ describe('createPluginHost', () => {
     expect(clearNotices).toHaveBeenCalledWith('test.plugin')
   })
 
-  it('gives a plugin no notices where the window offers none', () => {
+  it('drops what a plugin reports where the window offers no notices', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
 
-    expect(host.createContext('test.plugin').ui.notices).toBeUndefined()
+    expect(() => host.createContext('test.plugin').ui.notices.show('Saved.')).not.toThrow()
   })
 
   it('gives each plugin the task host for its own id', () => {

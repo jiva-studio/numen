@@ -10,7 +10,6 @@ import {
   h,
   onBeforeUnmount,
   watch,
-  type Component,
   type PropType,
 } from 'vue'
 import { adoptPluginStyle, getPluginStyle } from '../styles'
@@ -58,7 +57,7 @@ export const SlotViewHost = defineComponent({
     usePluginStyles(() => views.value)
     return () =>
       props.view
-        ? h(props.view.registration.component as Component, { key: props.view.pluginId })
+        ? h(props.view.registration.component, { key: props.view.pluginId })
         : null
   },
 })

@@ -235,7 +235,7 @@ describe('mock plugin context', () => {
     expect(createMockPluginContext().work).not.toHaveProperty('agent')
   })
 
-  it('forwards the provided buffers and closeTab and omits them when not provided', () => {
+  it('forwards the provided buffers and closeTab, and closes nothing by default', () => {
     const buffers = { track: () => ({ dispose: vi.fn() }) } as unknown as NonNullable<
       PluginVault['buffers']
     >
@@ -246,6 +246,6 @@ describe('mock plugin context', () => {
     expect(ctx.vault.buffers).toBe(buffers)
     expect(ctx.tabs.close).toBe(closeTab)
     expect(createMockPluginContext().vault).not.toHaveProperty('buffers')
-    expect(createMockPluginContext().tabs).not.toHaveProperty('close')
+    expect(() => createMockPluginContext().tabs.close('tab-1')).not.toThrow()
   })
 })

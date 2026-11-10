@@ -1,5 +1,4 @@
-import type { JsonObject } from './json'
-import type { Result } from './types'
+import type { JsonObject, Result } from './types'
 
 // TextKind is what a text version is, as the plugin that makes it names it. The core
 // compares it as an opaque string.

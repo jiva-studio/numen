@@ -2,7 +2,6 @@
  * The registration of one reader or tab kind of a plugin: the tab kind the window holds for it, the
  * extensions it opens, and the undoing of both.
  */
-import type { Component } from 'vue'
 import type {
   Disposable,
   FilePlacement,
@@ -47,7 +46,7 @@ export function registerReaderEntry(
             })
             .catch((error: unknown) => reportError(deps, pluginId, error))
         },
-        registration.icon as Component | undefined,
+        registration.icon,
       ),
     )
   }

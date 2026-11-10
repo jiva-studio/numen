@@ -146,7 +146,7 @@ export function createReaderTabKind(
   return {
     kind: kindId,
     pluginId,
-    ...(registration.icon ? { icon: registration.icon as Component } : {}),
+    ...(registration.icon ? { icon: registration.icon } : {}),
     open: (targetPath: string, _id: string, saved?: unknown) =>
       createReaderState(pluginId, targetPath, saved),
     getState: (state: unknown) =>

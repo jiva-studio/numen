@@ -210,13 +210,11 @@ describe('the views the plugins place in a slot of a bar', () => {
 
   it('are the entries of the slot once registered, in the order of the plugins, reactively', () => {
     const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
-    const components = computed(() =>
-      host.slots
-        .getEntries('statusBar.right')
-        .map((one) => (one.kind === 'view' ? one.component : '')),
+    const viewKeys = computed(() =>
+      host.slots.getEntries('statusBar.right').map((one) => (one.kind === 'view' ? one.key : '')),
     )
 
-    expect(components.value).toStrictEqual([])
+    expect(viewKeys.value).toStrictEqual([])
     host
       .createContext('second.plugin', manifest('update'))
       .register.slotView({ id: 'update', component: COMPONENT_B })
@@ -224,7 +222,7 @@ describe('the views the plugins place in a slot of a bar', () => {
       .createContext('first.plugin', manifest('update'))
       .register.slotView({ id: 'update', component: COMPONENT_A })
 
-    expect(components.value).toStrictEqual([COMPONENT_A, COMPONENT_B])
+    expect(viewKeys.value).toStrictEqual(['first.plugin/view/update', 'second.plugin/view/update'])
   })
 
   it('are removed with the plugin and with the host', () => {

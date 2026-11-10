@@ -1,7 +1,6 @@
 import type { Component, Ref } from 'vue'
-import type { JsonValue } from './json'
+import type { JsonValue, TextRange } from './types'
 import type { Selector } from './texts'
-import type { TextRange } from './types'
 import type { Severity } from './notices'
 import type { ErrorCode } from './errors/errorCode'
 import type { Result } from './result'

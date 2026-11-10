@@ -1,5 +1,4 @@
-import type { JsonValue } from './json'
-import type { TextRange } from './types'
+import type { JsonValue, TextRange } from './types'
 
 // SourceLocation is where a call was working: a file, and the run of its text the call named.
 export interface SourceLocation {

@@ -5,7 +5,6 @@ import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
 
-/** A view kind a plugin defines itself, which the SDK does not name, as the plugin SDK types it. */
 const asCapability = (name: string) => name as ViewCapability
 
 const VIEW = asCapability('md.numen.owner.note-viewer')

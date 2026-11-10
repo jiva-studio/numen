@@ -169,13 +169,15 @@ describe('a recording tab', () => {
   it('seeks to the cue of a search hit span', async () => {
     const setup = createRecordings()
     setup.state.cueTimes.set(22, 83_000)
-    const { tab, seeks, state } = mountTab(setup.recordings)
+    const state = reactive<{ path: string; ranges: readonly { start: number; end: number }[] | null }>({
+      path: 'talks/Ants.mp3',
+      ranges: null,
+    })
+    const { tab, seeks } = mountTab(setup.recordings, true, state)
     await flush()
 
-    const focus = (
-      state as { focusSpans?: (...spans: { start: number; end: number }[]) => Promise<void> }
-    ).focusSpans
-    await focus?.({ start: 22, end: 30 })
+    state.ranges = [{ start: 22, end: 30 }]
+    await flush()
 
     expect(seeks.at(-1)?.[1]).toBe(83_000)
     tab.unmount()

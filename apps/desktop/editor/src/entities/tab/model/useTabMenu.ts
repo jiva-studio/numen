@@ -141,8 +141,7 @@ export function useTabMenu(deps: TabMenuDeps) {
   }
 
   /** The icon of the command or submenu of the entry a row stands for. */
-  const getIcon = (id: string): Component | null =>
-    (slotMenu.getIcon(id) as Component | undefined) ?? null
+  const getIcon = (id: string): Component | null => slotMenu.getIcon(id) ?? null
 
   return { menu, open, choose, dismiss, highlight, getIcon }
 }

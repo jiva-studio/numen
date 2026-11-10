@@ -159,8 +159,12 @@ describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
         filePath: 'notes/Tide.md',
         state: createState({
           fileConflict,
-          keepMine: () => void choices.push('keep'),
-          takeFile: () => void choices.push('take'),
+          keepMine: () => {
+            choices.push('keep')
+          },
+          takeFile: () => {
+            choices.push('take')
+          },
         }),
       },
     })
