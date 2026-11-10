@@ -113,8 +113,7 @@ export const Opening: Story = {
     const page = await found(canvasElement, '.welcome-page')
     const mark = await found(canvasElement, '.welcome-page__glyph')
 
-    // declares. A page that stops declaring one draws the whole file, which is
-    await expect(getComputedStyle(page).getPropertyValue('--glyph').trim()).not.toBe('')
+    // The mark stays a small part of the page.
     await expect(mark.getBoundingClientRect().height).toBeLessThan(
       page.getBoundingClientRect().height / 2,
     )

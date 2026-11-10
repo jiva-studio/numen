@@ -59,4 +59,33 @@ describe('where a menu is placed', () => {
     })
     expect(withAsking.menuStyle.value['--asking']).toBe('180px')
   })
+
+  it('is brought in off an edge it was requested for right against', () => {
+    const { placed, menuStyle } = useMenuPlacement({
+      at: () => ({ x: 0, y: 0 }),
+      viewport: () => ROOM,
+      margin: () => 12,
+    })
+    expect(placed.value).toStrictEqual({ x: 12, y: 12 })
+    expect(menuStyle.value['left']).toBe('12px')
+    expect(menuStyle.value['top']).toBe('12px')
+  })
+})
+
+describe('how tall a menu grows', () => {
+  const getRoom = (viewport: Size | null, margin: number) =>
+    useMenuPlacement({ at: () => ({ x: 0, y: 0 }), viewport: () => viewport, margin: () => margin }).menuStyle
+      .value['--room']
+
+  it('leaves the area its margin on both sides', () => {
+    expect(getRoom({ width: 900, height: 300 }, 10)).toBe('280px')
+  })
+
+  it('reads the room off the browser window where no area is given', () => {
+    expect(getRoom(null, 8)).toBe('calc(100dvh - 16px)')
+  })
+
+  it('never leaves a negative room', () => {
+    expect(getRoom({ width: 900, height: 10 }, 8)).toBe('0px')
+  })
 })

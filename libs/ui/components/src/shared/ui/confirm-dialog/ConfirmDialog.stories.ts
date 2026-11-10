@@ -19,11 +19,11 @@ const meta: Meta<Knobs> = {
     text: { control: 'text' },
     tone: { control: 'inline-radio', options: ['danger', 'default'] },
   },
-  args: { text: 'Delete the note? It is removed from this machine.', tone: 'danger' },
+  args: { text: 'Delete the page? It is removed from this machine.', tone: 'danger' },
   render: (args) => ({
     components: { ConfirmDialog },
     setup: () => ({ args }),
-    template: `<ConfirmDialog :text="args.text" :tone="args.tone" label="Delete note" confirm-text="Delete" cancel-text="Cancel" />`,
+    template: `<ConfirmDialog :text="args.text" :tone="args.tone" label="Delete page" confirm-text="Delete" cancel-text="Cancel" />`,
   }),
 }
 

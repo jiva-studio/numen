@@ -3,7 +3,7 @@
  * plugin from the key the host holds for its command. Control and Command are equivalent.
  */
 import { APP_KEYBINDINGS } from '@numen/plugin-loader'
-import { keyChord, type PaletteKeys } from '@numen/ui'
+import { keyChord, type Keystroke } from '@numen/ui'
 
 /** The keys that hold the window's modifier in a key a plugin declares, such as `mod+shift+x`. */
 const MODIFIERS: ReadonlySet<string> = new Set(['mod', 'ctrl', 'control', 'cmd'])
@@ -12,7 +12,7 @@ const MODIFIERS: ReadonlySet<string> = new Set(['mod', 'ctrl', 'control', 'cmd']
  * The keys of a declared key as drawn for the current platform, or undefined unless the key is the
  * window's modifier plus a letter, optionally with Shift.
  */
-export const findShortcutKeys = (shortcut: string, agent: string): PaletteKeys | undefined => {
+export const findShortcutKeys = (shortcut: string, agent: string): Keystroke | undefined => {
   const parts = shortcut
     .toLowerCase()
     .split('+')
@@ -39,7 +39,7 @@ export const findChordKeys = (
   command: string,
   agent: string,
   values: Values = {},
-): PaletteKeys | undefined => {
+): Keystroke | undefined => {
   const key = APP_KEYBINDINGS.find(
     (one) => one.command === command && hasSameValues(one.values, values),
   )?.key
@@ -51,7 +51,7 @@ export const createRowKeys = (
   command: string,
   agent: string,
   values: Values = {},
-): { keys?: PaletteKeys } => {
+): { keys?: Keystroke } => {
   const keys = findChordKeys(command, agent, values)
   return keys ? { keys } : {}
 }

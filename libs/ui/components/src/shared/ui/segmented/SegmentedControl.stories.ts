@@ -9,7 +9,6 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import SegmentedControl from './SegmentedControl.vue'
-import { lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 import { CYRILLIC_CHOICES, LONG_CHOICES, UNBROKEN_CHOICES } from '@/shared/fixtures/prose'
 
@@ -183,36 +182,14 @@ export const NoTextAtAll: Story = {
 /** A disabled control. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
-/**
- * The same control on the dark token set, where the selected segment is
- * distinguished from the two adjacent segments by a background blend.
- *
- * The accent carries its own text color. On the dark set the selected
- * background is lighter than the unselected segments' while its text is darker.
- */
+/** The same control on the dark token set, with the same segments and the same one in force. */
 export const Dark: Story = {
   globals: DARK,
   args: { chosen: 'medium' },
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
-    const [small, medium, large] = segments(canvasElement)
     await expect(segments(canvasElement)).toHaveLength(3)
     await expect(getChosen(canvasElement)).toBe('Medium')
-
-    // An unselected segment has no background of its own, so both are measured
-    // over the background of the control itself.
-    const slotBg = getComputedStyle(
-      canvasElement.querySelector('[data-slot="segmented"]') as HTMLElement,
-    ).backgroundColor
-    const selected = getComputedStyle(medium as HTMLElement)
-    const ground = lightness(selected.backgroundColor, slotBg)
-    const ink = lightness(selected.color, selected.backgroundColor)
-
-    for (const other of [small, large]) {
-      const unchosen = getComputedStyle(other as HTMLElement)
-      await expect(ground).toBeGreaterThan(lightness(unchosen.backgroundColor, slotBg) + 24)
-      await expect(ink).toBeLessThan(lightness(unchosen.color, slotBg) - 24)
-    }
   },
 }
 

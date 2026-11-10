@@ -14,9 +14,9 @@ import {
 } from './rows'
 
 const MODELS: readonly ListItem[] = [
-  { id: 'a', text: 'Opus 4', group: 'Claude Code' },
-  { id: 'b', text: 'gpt-5 mini', detail: 'openai/gpt-5-mini', group: 'Numen Agent' },
-  { id: 'c', text: 'Sonnet', group: 'Claude Code' },
+  { id: 'a', text: 'Plum 4', group: 'Orchard' },
+  { id: 'b', text: 'Apple mini', detail: 'hedge/apple-mini', group: 'Hedge' },
+  { id: 'c', text: 'Pear', group: 'Orchard' },
 ]
 
 const keys = (rows: ReturnType<typeof buildRows>) => rows.map((row) => row.key)
@@ -28,17 +28,17 @@ describe('which items a query keeps', () => {
   })
 
   it('finds a word in the text, in any case', () => {
-    expect(filterItems(MODELS, 'OPUS').map((one) => one.id)).toStrictEqual(['a'])
+    expect(filterItems(MODELS, 'PLUM').map((one) => one.id)).toStrictEqual(['a'])
   })
 
   it('finds a word in the detail and in the group', () => {
-    expect(filterItems(MODELS, 'openai').map((one) => one.id)).toStrictEqual(['b'])
-    expect(filterItems(MODELS, 'claude').map((one) => one.id)).toStrictEqual(['a', 'c'])
+    expect(filterItems(MODELS, 'hedge').map((one) => one.id)).toStrictEqual(['b'])
+    expect(filterItems(MODELS, 'orchard').map((one) => one.id)).toStrictEqual(['a', 'c'])
   })
 
   it('wants every word found', () => {
-    expect(filterItems(MODELS, 'claude son').map((one) => one.id)).toStrictEqual(['c'])
-    expect(filterItems(MODELS, 'claude gpt')).toStrictEqual([])
+    expect(filterItems(MODELS, 'orchard pea').map((one) => one.id)).toStrictEqual(['c'])
+    expect(filterItems(MODELS, 'orchard apple')).toStrictEqual([])
     expect(filterItems([{ id: 'x', text: 'ab', detail: 'cd' }], 'bc')).toStrictEqual([])
     expect(filterItems([{ id: 'x', text: 'ab' }], 'stryker')).toStrictEqual([])
   })
@@ -46,7 +46,7 @@ describe('which items a query keeps', () => {
 
 describe('the item whose text is the query', () => {
   it('ignores case and the space around the query', () => {
-    expect(findExactItem(MODELS, ' SONNET ')?.id).toBe('c')
+    expect(findExactItem(MODELS, ' PEAR ')?.id).toBe('c')
   })
 
   it('is none for a part of a text, and for nothing typed', () => {
@@ -78,13 +78,13 @@ describe('the rows of a list with an action row', () => {
   })
 
   it('give the first row to an item that is exactly the query, under the key the action had', () => {
-    const rows = buildRows(MODELS, 'sonnet', true)
+    const rows = buildRows(MODELS, 'pear', true)
     expect(keys(rows)).toStrictEqual([FIRST_KEY, 'a', 'b'])
     expect(rows[0]).toMatchObject({ kind: 'item', item: { id: 'c' } })
   })
 
   it('do not repeat the exact item further down', () => {
-    const rows = buildRows(MODELS, 'opus 4', true)
+    const rows = buildRows(MODELS, 'plum 4', true)
     expect(rows.filter((row) => row.kind === 'item' && row.item.id === 'a')).toHaveLength(1)
   })
 })
@@ -92,16 +92,16 @@ describe('the rows of a list with an action row', () => {
 describe('the group names over the rows', () => {
   it('stand where the group differs from the row before', () => {
     const rows = buildRows(MODELS, '', false)
-    expect(getHeadings(rows)).toStrictEqual(['Claude Code', 'Numen Agent', 'Claude Code'])
+    expect(getHeadings(rows)).toStrictEqual(['Orchard', 'Hedge', 'Orchard'])
   })
 
   it('are not drawn over items of one group again', () => {
     const rows = buildRows([MODELS[0]!, MODELS[2]!], '', false)
-    expect(getHeadings(rows)).toStrictEqual(['Claude Code', undefined])
+    expect(getHeadings(rows)).toStrictEqual(['Orchard', undefined])
   })
 
   it('are none for items that name no group, and none over the action row', () => {
-    const rows = buildRows([{ id: 'n', text: 'Note' }], 'x', true)
+    const rows = buildRows([{ id: 'n', text: 'Page' }], 'x', true)
     expect(getHeadings(rows)).toStrictEqual([undefined, undefined])
     const mixed = buildRows(
       [

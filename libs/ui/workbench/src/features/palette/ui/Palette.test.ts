@@ -12,7 +12,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Palette from './Palette.vue'
 import type { PaletteGroup } from '../lib/item'
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 import { MANY } from '../fixtures/actions'
 
 beforeAll(() => {
@@ -20,7 +20,7 @@ beforeAll(() => {
 })
 
 /** A keystroke that triggers an item without the palette focused. */
-const OPTION_1: PaletteKeys = { icons: ['option'], letter: '1' }
+const OPTION_1: Keystroke = { icons: ['option'], letter: '1' }
 
 const OPEN = [{ id: 'open', text: 'Open note' }]
 const BOTH = [

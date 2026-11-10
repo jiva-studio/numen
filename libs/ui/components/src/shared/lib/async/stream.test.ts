@@ -2,7 +2,7 @@
  * A resumed stream, tested without a core to talk to.
  *
  * The failure here looks like nothing at all: a window that stopped following
- * shows what the vault held a moment ago, with no error and no way back.
+ * shows what the source held a moment ago, with no error and no way back.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createFollower, AGAIN, LOST } from './stream'

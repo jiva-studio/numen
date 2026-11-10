@@ -172,8 +172,7 @@ Each follows the target.
 
 These places do not follow the target and are not models.
 
-- `Switch.stories.ts` (`BusyUntilTheAnswer`, `TheThumbSlidesAndTheTrackFills`, `Dark`) measures the thumb position per frame, a fill colour and a lightness. Behavior is the `aria-checked` change and the busy state.
-- 12 story files read `getComputedStyle` or `.style` (`checks.md`).
+- `Switch.stories.ts` (`BusyUntilTheAnswer`, `TheThumbSlides`) measures the thumb position per frame. Behavior is the `aria-checked` change and the busy state.
 - `Menu.types.ts:16` takes `clock?: () => number`; the target is `Clock`.
 - No story passes `viewport`; the stories place a menu with `at` coordinates.
 - `Select.stories.ts` and `Tree.stories.ts` find elements by class (`.menu__item`, `.tree__field`); the target is role and name.
@@ -186,12 +185,13 @@ These places do not follow the target and are not models.
 
 Today, in `main`:
 
-- `ui-components-lint` and `workbench-lint`: an import of a domain or wire package in a component (stories and fixtures stand outside this rule today), `Date.now()`, `new Date()` and `performance.now()` outside the clock function, `Math.random()`, `setTimeout` and `setInterval` in a pure segment, a layer that imports a higher layer.
+- `ui-components-lint` and `workbench-lint`: an import of a domain or wire package in a component, a story or a fixture, `Date.now()`, `new Date()` and `performance.now()` outside the clock function, `Math.random()`, `setTimeout` and `setInterval` in a pure segment, a layer that imports a higher layer.
 - `styles-use-tokens` (stylelint): a colour literal, a `--numen-` declaration outside the token and theme files, a `var()` with a fallback, an undeclared `--numen-` token.
 - `no-suppressions`: `eslint-disable`, `@ts-ignore` and the like.
+- `numen/no-style-declaration-read` (ESLint, typed): a read of `getComputedStyle(...)` or `element.style` in a story, a test or a fixture.
 - The keyboard walk after every story: a tab stop that cannot be seen, a tab stop without a name, a component that keeps Tab.
 
-Proposed, in [`checks.md`](checks.md): a story imports no domain or wire type; every public component has a story; every component that emits has a story with a `play` function; a component declares no raw length or font value; a story and a test read no style text. Four of these are built by Package F25 of the refactor plan: a story for every public component, a `play` story for every emitting one, the import block applied to stories and fixtures, and `eslint-plugin-storybook`. The rest of the list in `checks.md` stays as candidates.
+Proposed, in [`checks.md`](checks.md): every public component has a story; every component that emits has a story with a `play` function; a component declares no raw length or font value. Three of these are built by Package F25 of the refactor plan: a story for every public component, a `play` story for every emitting one, and `eslint-plugin-storybook`. The rest of the list in `checks.md` stays as candidates.
 
 ## What no check decides
 

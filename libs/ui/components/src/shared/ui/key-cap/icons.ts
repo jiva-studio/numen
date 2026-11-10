@@ -13,7 +13,7 @@ import {
   Option,
   type LucideIcon,
 } from '@lucide/vue'
-import type { PaletteIcon } from './keys'
+import type { KeyIcon } from './keys'
 
 /**
  * How thick an icon is stroked, in the 24 units it is drawn on, for an icon
@@ -50,4 +50,4 @@ export const ICONS = {
   command: createIcon(Command, 'Command'),
   option: createIcon(Option, 'Option'),
   return: createIcon(CornerDownLeft, 'Return'),
-} as const satisfies Record<PaletteIcon, DrawnIcon>
+} as const satisfies Record<KeyIcon, DrawnIcon>

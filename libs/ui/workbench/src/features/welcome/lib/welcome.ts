@@ -6,14 +6,14 @@
  * not.
  */
 import type { Component } from 'vue'
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 
 /** One entry point: its name, its icon, and the keystroke that triggers it. */
 export interface WelcomeAction {
   readonly id: string
   readonly text: string
   readonly icon?: Component
-  readonly keys?: PaletteKeys
+  readonly keys?: Keystroke
 }
 
 /** One vault of the list, as the screen draws it. */
@@ -30,5 +30,5 @@ export interface FooterEntry {
   readonly text: string
   readonly detail?: string
   readonly icon?: Component
-  readonly keys?: PaletteKeys
+  readonly keys?: Keystroke
 }

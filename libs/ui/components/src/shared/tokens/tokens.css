@@ -31,7 +31,7 @@
   --numen-edge: light-dark(#d8ccb8, #423a31);
 
   --numen-edge-label: light-dark(#8a7f70, #a1968a);
-  /* The name written along an edge of a plex is said in that voice. */
+  /* The name written along an edge of a map is said in that voice. */
   --numen-hushed: var(--numen-edge-label);
   --numen-ring: light-dark(#a85816, #e9a23b);
   /* The ground under selected text. The second is the same selection where the
@@ -134,8 +134,8 @@
 
   --numen-edge-label-size: var(--numen-text-1);
 
-  /* The clearance reading keeps from the edge of the pane it fills. A note and
-     a conversation are read at the same measure, so they keep the same one. */
+  /* The clearance reading keeps from the edge of the pane it fills. A page and
+     a letter are read at the same measure, so they keep the same one. */
   --numen-gutter: 1.25rem;
 
   --numen-inset: 0.5rem;
@@ -167,7 +167,7 @@
      floats takes one of these, and nothing takes a number of its own. */
   --numen-lift-sheet: 20;
   --numen-lift-menu: 60;
-  --numen-lift-palette: 70;
+  --numen-lift-overlay: 70;
   --numen-lift-tooltip: 75;
   --numen-lift-unsaved: 80;
 

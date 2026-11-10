@@ -2,11 +2,11 @@
 /** The footer of the palette: the actions bound to keys on the highlighted item, and the way to the rest. */
 import { KeyCap } from '@numen/ui'
 import type { PaletteShortcut } from '../lib/keys'
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 
 defineProps<{
   hinted: readonly PaletteShortcut[]
-  actionKey: PaletteKeys
+  actionKey: Keystroke
   name: string
 }>()
 </script>

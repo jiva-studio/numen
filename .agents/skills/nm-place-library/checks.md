@@ -18,7 +18,7 @@ A red check is fixed in the code, not by changing the check or moving code out o
 
 ## Inside `@numen/ui` and `@numen/workbench` (`ui-components-lint`, `workbench-lint`)
 
-- An import of any first-party package but `@numen/ui`, or of a path under `apps` or `libs`, in the sources and tests of the library. Stories and fixtures stand outside the layer block of the configuration, and `architecture.md` section 2 holds them to the same rule.
+- An import of any first-party package but `@numen/ui`, or of a path under `apps` or `libs`, in the sources and tests of the library. Stories and fixtures stand outside the layer order and carry the same import ban in a block of their own (`createStoryImportConfig` in `tools/lint-layers/layers.mjs`, self-tested by `layers.test.mjs`).
 - A layer that imports a higher layer, a slice that imports another slice, and an import of a slice by any file but its `index.ts`.
 - `Date.now()`, `new Date()` with no argument and `performance.now()` outside the one function that is the clock; `Math.random()`; `getBoundingClientRect` and `matchMedia` in source files; `setTimeout` and `setInterval` in `lib` and `domain` segments; the other globals with a lifetime (`requestAnimationFrame` and the like) outside a port.
 

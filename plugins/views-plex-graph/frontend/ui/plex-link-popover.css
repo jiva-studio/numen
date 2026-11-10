@@ -1,6 +1,6 @@
 .plex-link-popover {
   position: absolute;
-  z-index: var(--numen-lift-palette);
+  z-index: var(--numen-lift-overlay);
   display: flex;
   flex-direction: column;
   gap: 0.625rem;

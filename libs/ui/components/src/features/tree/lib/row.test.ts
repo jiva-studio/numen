@@ -31,12 +31,12 @@ describe('what is drawn', () => {
   })
 
   it('is what an open row holds, in its place', () => {
-    expect(getRowIds('work')).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
+    expect(getRowIds('work')).toStrictEqual(['work', 'plans', 'pages', 'empty', 'loose'])
     expect(getRowIds('work', 'plans')).toStrictEqual([
       'work',
       'plans',
       'friday',
-      'notes',
+      'pages',
       'empty',
       'loose',
     ])
@@ -103,7 +103,7 @@ describe('what a row is marked with', () => {
   })
 
   it('is the attribute set to what the row is answered with', () => {
-    expect(getMarkOf(marker('work'), 'notes')).toStrictEqual({ 'data-place': 'work' })
+    expect(getMarkOf(marker('work'), 'pages')).toStrictEqual({ 'data-place': 'work' })
   })
 
   it('is the attribute set to an empty answer', () => {
@@ -112,20 +112,20 @@ describe('what a row is marked with', () => {
 
   it('is requested about the row it marks', () => {
     const getAttributeValue = vi.fn<(row: RowId | null) => string | null>(() => 'x')
-    getMarkOf({ attribute: 'data-place', getAttributeValue }, 'notes')
-    expect(getAttributeValue).toHaveBeenCalledWith('notes')
+    getMarkOf({ attribute: 'data-place', getAttributeValue }, 'pages')
+    expect(getAttributeValue).toHaveBeenCalledWith('pages')
   })
 
   it('is nothing where the row is answered with null', () => {
-    expect(getMarkOf(marker(null), 'notes')).toStrictEqual({})
+    expect(getMarkOf(marker(null), 'pages')).toStrictEqual({})
   })
 
   it('is nothing where the row is answered with nothing', () => {
-    expect(getMarkOf(marker(undefined), 'notes')).toStrictEqual({})
+    expect(getMarkOf(marker(undefined), 'pages')).toStrictEqual({})
   })
 
   it('is nothing where there is no marker', () => {
-    expect(getMarkOf(undefined, 'notes')).toStrictEqual({})
+    expect(getMarkOf(undefined, 'pages')).toStrictEqual({})
   })
 })
 
@@ -161,8 +161,8 @@ describe('where a key takes the keyboard', () => {
   })
 
   it('goes to the ends', () => {
-    expect(step('notes', 'Home').at).toBe('work')
-    expect(step('notes', 'End').at).toBe('loose')
+    expect(step('pages', 'Home').at).toBe('work')
+    expect(step('pages', 'End').at).toBe('loose')
   })
 
   it('opens a shut row and stays on it', () => {
@@ -177,7 +177,7 @@ describe('where a key takes the keyboard', () => {
   })
 
   it('stays where there is nothing to descend into', () => {
-    expect(step('notes', 'ArrowRight')).toStrictEqual({ at: 'notes', turn: null })
+    expect(step('pages', 'ArrowRight')).toStrictEqual({ at: 'pages', turn: null })
     expect(stepTo(getShownRows('work', 'empty'), 'empty', 'ArrowRight')).toStrictEqual({
       at: 'empty',
       turn: null,
@@ -192,7 +192,7 @@ describe('where a key takes the keyboard', () => {
   })
 
   it('climbs to the holder from a row that is shut', () => {
-    expect(step('notes', 'ArrowLeft')).toStrictEqual({ at: 'work', turn: null })
+    expect(step('pages', 'ArrowLeft')).toStrictEqual({ at: 'work', turn: null })
     expect(step('plans', 'ArrowLeft')).toStrictEqual({ at: 'work', turn: null })
   })
 
@@ -212,7 +212,7 @@ describe('where a key takes the keyboard', () => {
 })
 
 describe('where a drag lands', () => {
-  // work, plans, notes, empty, loose — one row every 24.
+  // work, plans, pages, empty, loose — one row every 24.
   const visibleRows = getShownRows('work')
   const HEIGHT = 24
   const getDropTargetAt = (y: number, ...dragging: readonly RowId[]) =>
@@ -228,7 +228,7 @@ describe('where a drag lands', () => {
   })
 
   it('has no middle over a row that cannot hold', () => {
-    expect(getDropTargetAt(52)).toStrictEqual({ before: 'notes' })
+    expect(getDropTargetAt(52)).toStrictEqual({ before: 'pages' })
     expect(getDropTargetAt(60)).toStrictEqual({ before: 'empty' })
     expect(getDropTargetAt(71)).toStrictEqual({ before: 'empty' })
   })
@@ -260,7 +260,7 @@ describe('where a drag lands', () => {
   })
 
   it('has no drop target where it would name any of several being dragged', () => {
-    expect(getDropTargetAt(12, 'notes', 'work')).toBeNull()
+    expect(getDropTargetAt(12, 'pages', 'work')).toBeNull()
     expect(getDropTargetAt(20, 'loose', 'plans')).toBeNull()
   })
 })
@@ -273,7 +273,7 @@ describe('the row a drop target puts what is retained inside', () => {
   })
 
   it('is what holds the row it arrives before', () => {
-    expect(findHolder(visibleRows, { before: 'notes' })).toBe('work')
+    expect(findHolder(visibleRows, { before: 'pages' })).toBe('work')
   })
 
   it('is nothing at the top level', () => {
@@ -302,7 +302,7 @@ describe('what rows being dragged are rejected', () => {
     expect(isRefused(ROWS, ['work'], 'empty')).toBe(false)
     expect(isRefused(ROWS, ['loose'], 'friday')).toBe(false)
     expect(isRefused(ROWS, ['empty'], 'plans')).toBe(false)
-    expect(isRefused(ROWS, ['notes', 'loose'], 'empty')).toBe(false)
+    expect(isRefused(ROWS, ['pages', 'loose'], 'empty')).toBe(false)
   })
 
   it('is nothing at the top level', () => {
@@ -318,11 +318,11 @@ describe('the rows between two rows', () => {
   const visibleRows = getShownRows('work')
 
   it('are the ones drawn from the first to the second, both among them', () => {
-    expect(getRowsBetween(visibleRows, 'work', 'notes')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(visibleRows, 'work', 'pages')).toStrictEqual(['work', 'plans', 'pages'])
   })
 
   it('are the same rows in the same order the other way round', () => {
-    expect(getRowsBetween(visibleRows, 'notes', 'work')).toStrictEqual(['work', 'plans', 'notes'])
+    expect(getRowsBetween(visibleRows, 'pages', 'work')).toStrictEqual(['work', 'plans', 'pages'])
   })
 
   it('are the one row where both ends are it', () => {
@@ -332,14 +332,14 @@ describe('the rows between two rows', () => {
   it('span whatever a folder boundary puts between them', () => {
     expect(getRowsBetween(visibleRows, 'plans', 'loose')).toStrictEqual([
       'plans',
-      'notes',
+      'pages',
       'empty',
       'loose',
     ])
   })
 
   it('are the row reached alone, measured from a row that is not drawn', () => {
-    expect(getRowsBetween(visibleRows, 'friday', 'notes')).toStrictEqual(['notes'])
+    expect(getRowsBetween(visibleRows, 'friday', 'pages')).toStrictEqual(['pages'])
   })
 
   it('are none at all where the row reached is not drawn', () => {
@@ -364,61 +364,61 @@ describe('what a press makes the selection', () => {
     resolveSelection(visibleRows, { rows, anchor }, { row, press })
 
   it('is the row alone, pressed plainly', () => {
-    expect(select(['plans', 'notes'], 'plans', 'loose')).toStrictEqual({
+    expect(select(['plans', 'pages'], 'plans', 'loose')).toStrictEqual({
       rows: ['loose'],
       anchor: 'loose',
     })
   })
 
   it('takes a row in that remains outside it, joining', () => {
-    expect(select(['work'], 'work', 'notes', JOINING)).toStrictEqual({
-      rows: ['work', 'notes'],
-      anchor: 'notes',
+    expect(select(['work'], 'work', 'pages', JOINING)).toStrictEqual({
+      rows: ['work', 'pages'],
+      anchor: 'pages',
     })
   })
 
   it('takes a row out that remains in it, joining', () => {
-    expect(select(['work', 'notes'], 'work', 'notes', JOINING)).toStrictEqual({
+    expect(select(['work', 'pages'], 'work', 'pages', JOINING)).toStrictEqual({
       rows: ['work'],
-      anchor: 'notes',
+      anchor: 'pages',
     })
   })
 
   it('draws what it joined in the order the rows are drawn', () => {
-    expect(select(['loose', 'notes'], 'loose', 'work', JOINING).rows).toStrictEqual([
+    expect(select(['loose', 'pages'], 'loose', 'work', JOINING).rows).toStrictEqual([
       'work',
-      'notes',
+      'pages',
       'loose',
     ])
   })
 
   it('reaches from the anchor to the row, in the order they are drawn', () => {
     expect(select(['plans'], 'plans', 'empty', REACHING)).toStrictEqual({
-      rows: ['plans', 'notes', 'empty'],
+      rows: ['plans', 'pages', 'empty'],
       anchor: 'plans',
     })
   })
 
   it('reaches back to the anchor from a row above it', () => {
-    expect(select(['notes'], 'notes', 'work', REACHING).rows).toStrictEqual([
+    expect(select(['pages'], 'pages', 'work', REACHING).rows).toStrictEqual([
       'work',
       'plans',
-      'notes',
+      'pages',
     ])
   })
 
   it('leaves the anchor at its current position, reaching again from it', () => {
-    const once = select(['work'], 'work', 'notes', REACHING)
+    const once = select(['work'], 'work', 'pages', REACHING)
     const twice = select(once.rows, once.anchor, 'loose', REACHING)
 
     expect(twice.anchor).toBe('work')
-    expect(twice.rows).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
+    expect(twice.rows).toStrictEqual(['work', 'plans', 'pages', 'empty', 'loose'])
   })
 
   it('reaches from the row itself where there is no anchor yet', () => {
-    expect(select([], null, 'notes', REACHING)).toStrictEqual({
-      rows: ['notes'],
-      anchor: 'notes',
+    expect(select([], null, 'pages', REACHING)).toStrictEqual({
+      rows: ['pages'],
+      anchor: 'pages',
     })
   })
 
@@ -435,9 +435,9 @@ describe('what a press makes the selection', () => {
 
 describe('every row drawn, selected at once', () => {
   it('is all of them, in the order they are drawn', () => {
-    expect(everyRow(getShownRows('work'), 'notes')).toStrictEqual({
-      rows: ['work', 'plans', 'notes', 'empty', 'loose'],
-      anchor: 'notes',
+    expect(everyRow(getShownRows('work'), 'pages')).toStrictEqual({
+      rows: ['work', 'plans', 'pages', 'empty', 'loose'],
+      anchor: 'pages',
     })
   })
 
@@ -452,24 +452,24 @@ describe('every row drawn, selected at once', () => {
 
 describe('the rows a press drags', () => {
   it('are the selection, where the row remains in it', () => {
-    expect(getDraggedRows(['work', 'notes'], 'notes')).toStrictEqual(['work', 'notes'])
+    expect(getDraggedRows(['work', 'pages'], 'pages')).toStrictEqual(['work', 'pages'])
   })
 
   it('are the row alone, at its current position outside', () => {
-    expect(getDraggedRows(['work', 'notes'], 'loose')).toStrictEqual(['loose'])
+    expect(getDraggedRows(['work', 'pages'], 'loose')).toStrictEqual(['loose'])
     expect(getDraggedRows([], 'loose')).toStrictEqual(['loose'])
   })
 })
 
 describe('two selections', () => {
   it('are the same holding the same rows in the same order', () => {
-    expect(isSameSelection(['work', 'notes'], ['work', 'notes'])).toBe(true)
+    expect(isSameSelection(['work', 'pages'], ['work', 'pages'])).toBe(true)
     expect(isSameSelection([], [])).toBe(true)
   })
 
   it('are not the same in another order, or of another length', () => {
-    expect(isSameSelection(['work', 'notes'], ['notes', 'work'])).toBe(false)
-    expect(isSameSelection(['work'], ['work', 'notes'])).toBe(false)
+    expect(isSameSelection(['work', 'pages'], ['pages', 'work'])).toBe(false)
+    expect(isSameSelection(['work'], ['work', 'pages'])).toBe(false)
   })
 })
 
@@ -481,11 +481,11 @@ describe('what follows the pointer', () => {
     dragLabel(visibleRows, rows, { at: point, getCountWords: formatCount })
 
   it('is the name of the one row dragged', () => {
-    expect(label(['notes'])).toStrictEqual({ label: 'Notes', at: point })
+    expect(label(['pages'])).toStrictEqual({ label: 'Pages', at: point })
   })
 
   it('is how many are dragged, where there are several', () => {
-    expect(label(['work', 'notes'])?.label).toBe('2 rows')
+    expect(label(['work', 'pages'])?.label).toBe('2 rows')
   })
 
   it('is the identity of a row dragged that is not drawn', () => {

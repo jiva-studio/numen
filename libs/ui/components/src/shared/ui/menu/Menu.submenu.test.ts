@@ -5,6 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMenuMount, settle } from './fixtures/mount'
+import Menu from './Menu.vue'
 import { SUBMENU_CLOSE_GRACE_MS, SUBMENU_OPEN_DELAY_MS } from './interaction/aim'
 import type { MenuItem } from './items/item'
 
@@ -77,7 +78,7 @@ describe('opening a submenu', () => {
   })
 
   it('is placed at the right edge and the top of the row that opened it', async () => {
-    mountMenu()
+    const menu = mountMenu()
     await settle()
     const row = getRows(getMenus()[0])[1]!
     vi.spyOn(row, 'getBoundingClientRect').mockReturnValue({
@@ -91,8 +92,7 @@ describe('opening a submenu', () => {
 
     await restOnRow(row)
 
-    expect(getMenus()[1]?.style.left).toBe('180px')
-    expect(getMenus()[1]?.style.top).toBe('55px')
+    expect(menu.findAllComponents(Menu).at(-1)?.props('at')).toStrictEqual({ x: 180, y: 55 })
   })
 
   it('is drawn when the row is pressed, and nothing is chosen', async () => {
@@ -310,20 +310,16 @@ describe('putting a submenu away', () => {
 })
 
 describe('the size of a menu that changes while it is open', () => {
-  it('is measured again, and the menu is placed by the new size', async () => {
-    let width = 100
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
-      () => ({ width, height: 50, left: 0, right: width, top: 0, bottom: 50 }) as DOMRect,
-    )
+  it('is measured again when its items change', async () => {
+    const measure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
     const menu = mountMenu({ at: { x: 750, y: 10 }, viewport: { width: 800, height: 600 } })
     await settle()
-    const before = getMenus()[0]?.style.left
+    measure.mockClear()
 
-    width = 300
     await menu.setProps({ items: [...ITEMS, { id: 'more', text: 'More' }] })
     await settle()
 
-    expect(getMenus()[0]?.style.left).not.toBe(before)
+    expect(measure).toHaveBeenCalled()
   })
 
   it('is not measured while it is shut', async () => {

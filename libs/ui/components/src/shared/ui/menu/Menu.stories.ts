@@ -36,8 +36,8 @@ interface Knobs {
 /** Items passed to the menu. The stories do not interpret them. */
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },
-  { id: 'child', text: 'New child note' },
-  { id: 'ask', text: 'Ask the agent about this note' },
+  { id: 'child', text: 'New child page' },
+  { id: 'ask', text: 'Ask the helper about this page' },
   { id: 'copy', text: 'Copy path' },
 ]
 
@@ -148,7 +148,7 @@ export const Playground: Story = {}
  */
 export const Choosing: Story = {
   play: async ({ args }) => {
-    await userEvent.click(within(menuElement()!).getByRole('menuitem', { name: 'New child note' }))
+    await userEvent.click(within(menuElement()!).getByRole('menuitem', { name: 'New child page' }))
     await expect(args.onChoose).toHaveBeenCalledWith('child')
     await waitFor(async () => {
       await expect(menuElement()).toBeNull()
@@ -196,7 +196,7 @@ export const GivingItBack: Story = {
     await expect(getItem('Open')).toHaveFocus()
 
     await userEvent.keyboard('{Tab}')
-    await expect(getItem('New child note')).toHaveFocus()
+    await expect(getItem('New child page')).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
     await waitFor(async () => {
@@ -436,7 +436,7 @@ export const NotChoosable: Story = {
     trigger: 'keyboard',
     items: [
       { id: 'open', text: 'Open' },
-      { id: 'ask', text: 'Ask the agent about this note', isDisabled: true },
+      { id: 'ask', text: 'Ask the helper about this page', isDisabled: true },
       { id: 'copy', text: 'Copy path' },
     ],
   },
@@ -459,14 +459,14 @@ export const NotChoosable: Story = {
 export const Grouped: Story = {
   args: {
     items: [
-      { id: 'open', text: 'Open note', group: 'open' },
-      { id: 'travel', text: 'Show in plex', group: 'open' },
-      { id: 'note', text: 'New note', group: 'file' },
+      { id: 'open', text: 'Open page', group: 'open' },
+      { id: 'travel', text: 'Show on map', group: 'open' },
+      { id: 'page', text: 'New page', group: 'file' },
       { id: 'folder', text: 'New folder', group: 'file' },
       { id: 'rename', text: 'Rename', group: 'file' },
-      { id: 'child', text: 'New child note', group: 'plex' },
-      { id: 'title', text: 'Change title', group: 'plex' },
-      { id: 'remove', text: 'Remove note', group: 'gone' },
+      { id: 'child', text: 'New child page', group: 'map' },
+      { id: 'title', text: 'Change title', group: 'map' },
+      { id: 'remove', text: 'Remove page', group: 'gone' },
     ],
   },
   play: async () => {
@@ -475,9 +475,9 @@ export const Grouped: Story = {
     await expect(menu.getAllByRole('separator')).toHaveLength(3)
     // The keyboard passes over the rules: they are drawn, not chosen.
     await userEvent.keyboard('{ArrowDown}')
-    await expect(menu.getByRole('menuitem', { name: 'Open note' })).toHaveFocus()
+    await expect(menu.getByRole('menuitem', { name: 'Open page' })).toHaveFocus()
     await userEvent.keyboard('{ArrowUp}')
-    await expect(menu.getByRole('menuitem', { name: 'Remove note' })).toHaveFocus()
+    await expect(menu.getByRole('menuitem', { name: 'Remove page' })).toHaveFocus()
   },
 }
 

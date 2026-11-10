@@ -51,9 +51,9 @@ describe('what a button is', () => {
   })
 
   it('is a link that looks like a button where it is rendered as an anchor', () => {
-    const button = mount(Button, { props: { as: 'a' }, attrs: { href: '/notes' } })
+    const button = mount(Button, { props: { as: 'a' }, attrs: { href: '/pages' } })
     expect(button.element.tagName).toBe('A')
-    expect(button.attributes('href')).toBe('/notes')
+    expect(button.attributes('href')).toBe('/pages')
     expect(button.classes()).toContain('bg-accent')
   })
 

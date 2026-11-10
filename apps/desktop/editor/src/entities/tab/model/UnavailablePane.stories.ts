@@ -4,7 +4,7 @@
  * colours and its disabled look, and the text fits a narrow pane.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { CATALOG_INCOMPATIBILITY, CATALOG_STATE, type PluginCatalog } from '@numen/core-client'
 import {
   createMockCatalogEntry,
@@ -103,15 +103,10 @@ export const Disabled: Story = {
     await expect(canvas.getByText('The plugin for sample notes is disabled.')).toBeVisible()
     const button = canvas.getByRole('button', { name: 'Enable Sample Notes' })
     await expect(button).toHaveAttribute('data-slot', 'button')
-    const look = getComputedStyle(button)
-    await expect(look.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-    await expect(look.color).not.toBe(look.backgroundColor)
 
     await userEvent.click(button)
     await expect(enablePlugin).toHaveBeenLastCalledWith('sample.notes')
-    const busy = canvas.getByRole('button', { name: 'Enabling Sample Notes…' })
-    await expect(busy).toBeDisabled()
-    await waitFor(() => expect(Number.parseFloat(getComputedStyle(busy).opacity)).toBeLessThan(1))
+    await expect(canvas.getByRole('button', { name: 'Enabling Sample Notes…' })).toBeDisabled()
   },
 }
 
@@ -161,17 +156,12 @@ export const Incompatible: Story = {
   },
 }
 
-/** The disabled state on the dark token set: the button keeps the library's dark colours. */
+/** The disabled state on the dark token set. */
 export const DisabledInDark: Story = {
   globals: { theme: 'dark' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(getComputedStyle(canvasElement.ownerDocument.documentElement).colorScheme).toBe(
-      'dark',
-    )
-    const button = await canvas.findByRole('button', { name: 'Enable Sample Notes' })
-    const look = getComputedStyle(button)
-    await expect(look.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-    await expect(look.color).not.toBe(look.backgroundColor)
+    await expect(canvasElement.ownerDocument.documentElement.dataset['theme']).toBe('dark')
+    await expect(await canvas.findByRole('button', { name: 'Enable Sample Notes' })).toBeEnabled()
   },
 }

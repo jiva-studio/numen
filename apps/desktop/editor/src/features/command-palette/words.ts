@@ -6,7 +6,7 @@
  * `lib/table.ts` lists which commands exist; this file holds only their text.
  */
 // Stryker disable StringLiteral: interface copy
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 import { VAULT_ERRORS } from '@/entities/vault'
 import type { VaultErrorCode } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
@@ -69,7 +69,7 @@ export interface Words extends EmptyWords {
   readonly find: string
   readonly openSettings: string
   readonly searchVault: string
-  readonly findKeys: PaletteKeys
+  readonly findKeys: Keystroke
   readonly goto: string
   readonly openVault: string
   readonly newVault: string

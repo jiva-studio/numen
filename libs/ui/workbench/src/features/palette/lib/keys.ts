@@ -1,9 +1,9 @@
 /** The keystrokes a palette answers to, and the caps they are drawn as. */
-import { keyChord, type PaletteKeys } from '@numen/ui'
+import { keyChord, type Keystroke } from '@numen/ui'
 import { canChoose, type PaletteAction, type PaletteItem } from './item'
 
 /** The keys that reach an item's actions, in the order the actions are offered. */
-export const PALETTE_KEYS: readonly PaletteKeys[] = [
+export const PALETTE_KEYS: readonly Keystroke[] = [
   { icons: ['return'], letter: '' },
   { icons: ['shift', 'return'], letter: '' },
 ]
@@ -11,7 +11,7 @@ export const PALETTE_KEYS: readonly PaletteKeys[] = [
 /** One action and the key that triggers it directly from the list. */
 export interface PaletteShortcut {
   readonly action: PaletteAction
-  readonly key: PaletteKeys | null
+  readonly key: Keystroke | null
 }
 
 /**
@@ -42,4 +42,4 @@ export const isActionsChord = (event: {
   (event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'k'
 
 /** The keystroke that opens the action panel. */
-export const commandKeyChord = (agent: string): PaletteKeys => keyChord('k', agent)
+export const commandKeyChord = (agent: string): Keystroke => keyChord('k', agent)

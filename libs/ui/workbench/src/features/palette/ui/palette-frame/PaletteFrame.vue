@@ -53,7 +53,7 @@ defineSlots<{
 /* Over the window, with what it covers showing through the panel and dimmed
    everywhere else. */
 .palette {
-  --lift: var(--numen-lift-palette);
+  --lift: var(--numen-lift-overlay);
   /* How far down the window it hangs, how wide it may be, and how much of the
      screen its list takes before it scrolls. */
   --drop: 12vh;

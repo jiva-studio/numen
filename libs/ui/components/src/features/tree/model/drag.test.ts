@@ -11,7 +11,7 @@ const ROWS: readonly Row[] = [
     hasChildren: true,
     rows: [
       { id: 'plans', name: 'Plans', hasChildren: false },
-      { id: 'notes', name: 'Notes', hasChildren: false },
+      { id: 'pages', name: 'Pages', hasChildren: false },
     ],
   },
   { id: 'empty', name: 'Empty', hasChildren: true },

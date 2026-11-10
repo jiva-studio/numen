@@ -136,7 +136,7 @@
   overflow-x: auto;
 }
 
-/* A word that has just arrived fades up at its position in the editor. */
+/* A word that has just arrived fades up at its position in the text. */
 @keyframes numen-word {
   from {
     opacity: 0;
@@ -163,8 +163,8 @@
   opacity: 0.6;
 }
 
-/* Selected text is one colour, wherever it is selected. The editor paints its
-   own and is told the same one. */
+/* Selected text is one colour, wherever it is selected. A surface that paints its
+   own is told the same one. */
 ::selection {
   background-color: var(--numen-selection);
 }
@@ -173,7 +173,7 @@
    else. Left to itself the webview rings a focused element in the machine's
    accent colour, which belongs to no theme numen applies, on a click as well as
    on a key. The rule holds for the whole window, its status bar and every
-   shadow root a plugin view is drawn in. Specificity is nil, so anything that
+   shadow root an embedded view is drawn in. Specificity is nil, so anything that
    draws its own ring keeps it. */
 :where(:focus, :focus-visible) {
   outline: none;

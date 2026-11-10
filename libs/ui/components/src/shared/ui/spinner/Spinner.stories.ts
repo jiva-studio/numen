@@ -64,7 +64,7 @@ export const OnAFilledBackground: Story = {
     template: `
       <div class="numen" style="padding:24px;background:var(--numen-accent);color:var(--numen-accent-ink);font:var(--numen-font-size)/var(--numen-line-height) var(--numen-font-sans)">
         <span style="display:inline-flex;align-items:center;gap:8px">
-          <span>Reading the vault</span>
+          <span>Reading the shed</span>
           <Spinner />
         </span>
       </div>

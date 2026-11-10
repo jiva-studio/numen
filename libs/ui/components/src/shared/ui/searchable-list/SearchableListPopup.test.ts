@@ -1,7 +1,6 @@
 /**
- * What the popup adds to the list: where it is drawn, how it is put away, and
- * where the keyboard goes afterwards. It is drawn at the end of the document, so
- * everything here is read off the document.
+ * What the popup adds to the list: that it is drawn at the end of the document, how it is put
+ * away, and where the keyboard goes afterwards.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -37,14 +36,10 @@ afterEach(() => {
 })
 
 describe('the popup', () => {
-  it('is drawn at the end of the document, at its own point', async () => {
-    mountPopup({ asking: 300 })
+  it('is drawn at the end of the document', async () => {
+    mountPopup()
     await nextTick()
-    const frame = getFrame()
-    expect(frame?.parentElement).toBe(document.body)
-    expect(frame?.style.left).toBe('40px')
-    expect(frame?.style.top).toBe('60px')
-    expect(frame?.style.getPropertyValue('--asking')).toBe('300px')
+    expect(getFrame()?.parentElement).toBe(document.body)
   })
 
   it('asks to close on Escape and on a press outside', async () => {

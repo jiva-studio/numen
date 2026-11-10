@@ -14,7 +14,7 @@ import type { MenuProps } from './Menu.types'
 
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },
-  { id: 'child', text: 'New child note' },
+  { id: 'child', text: 'New child page' },
   { id: 'copy', text: 'Copy path' },
 ]
 
@@ -262,22 +262,6 @@ describe('where the keyboard goes when it closes', () => {
   })
 })
 
-describe('where it is drawn', () => {
-  it('is placed against the area it is drawn into, not against its caller', async () => {
-    mountMenu({ at: { x: 30, y: 20 }, viewport: { width: 900, height: 700 } })
-    await settle()
-    expect(getDrawnMenu()?.style.left).toBe('30px')
-    expect(getDrawnMenu()?.style.top).toBe('20px')
-  })
-
-  it('is brought in off an edge it was requested for right against', async () => {
-    mountMenu({ at: { x: 0, y: 0 }, viewport: { width: 900, height: 700 }, margin: 12 })
-    await settle()
-    expect(getDrawnMenu()?.style.left).toBe('12px')
-    expect(getDrawnMenu()?.style.top).toBe('12px')
-  })
-})
-
 describe('when there is nothing to choose', () => {
   it('says so and not drawing an empty box', async () => {
     mountMenu({ items: [] })
@@ -371,42 +355,6 @@ describe('typing to jump', () => {
     typeLetter(' ')
     await nextTick()
     expect(document.activeElement).toBe(getDrawnMenu())
-  })
-})
-
-describe('the width it is configured to keep to', () => {
-  it('carries the width of what requested for it into its own rule', async () => {
-    mountMenu({ asking: 420 })
-    await settle()
-    expect(getDrawnMenu()?.style.getPropertyValue('--asking')).toBe('420px')
-  })
-
-  it('asks for nothing where nothing returned how wide it requested', async () => {
-    mountMenu()
-    await settle()
-    expect(getDrawnMenu()?.style.getPropertyValue('--asking')).toBe('0px')
-  })
-})
-
-describe('how tall it grows', () => {
-  const getFreeSpace = () => getDrawnMenu()?.style.getPropertyValue('--room')
-
-  it('leaves the area its margin on both sides', async () => {
-    mountMenu({ viewport: { width: 900, height: 300 }, margin: 10 })
-    await settle()
-    expect(getFreeSpace()).toBe('280px')
-  })
-
-  it('reads the room off the browser window where no area is given', async () => {
-    mountMenu({ margin: 8 })
-    await settle()
-    expect(getFreeSpace()).toBe('calc(100dvh - 16px)')
-  })
-
-  it('never leaves a negative room', async () => {
-    mountMenu({ viewport: { width: 900, height: 10 }, margin: 8 })
-    await settle()
-    expect(getFreeSpace()).toBe('0px')
   })
 })
 

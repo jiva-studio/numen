@@ -1,5 +1,5 @@
 /**
- * Everything an agent is likely to write, typeset the way the panel shows it.
+ * Everything a writer is likely to produce, typeset the way the panel shows it.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
@@ -18,7 +18,7 @@ const keepLinksInPlace: Decorator = (story) => ({
 })
 
 const meta = {
-  title: 'Chat/Prose',
+  title: 'Text/Prose',
   component: Prose,
   parameters: {
     layout: 'centered',
@@ -49,7 +49,7 @@ type Story = StoryObj<typeof meta>
 export const Playground: Story = {
   args: {
     text: [
-      'Three notes are about **entropy**, and one of them is `Entropy` itself.',
+      'Three pages are about **entropy**, and one of them is `Entropy` itself.',
       '',
       'What I would do:',
       '',
@@ -66,9 +66,9 @@ export const Everything: Story = {
     text: [
       '## What is here',
       '',
-      '> A note is named by its file.',
+      '> A page is named by its file.',
       '',
-      '| note | seat |',
+      '| page | seat |',
       '| --- | --- |',
       '| Entropy | child |',
       '| Thermodynamics | parent |',
@@ -80,7 +80,7 @@ export const Everything: Story = {
   },
 }
 
-/** Code, which arrives whenever the agent quotes what it wrote. */
+/** Code, which arrives whenever the writer quotes what it wrote. */
 export const Code: Story = {
   args: {
     text: [
@@ -105,7 +105,7 @@ export const HalfWritten: Story = {
  * markup.
  */
 export const NotMarkup: Story = {
-  args: { text: 'A note can say <script>alert(1)</script> and it is prose, not a program.' },
+  args: { text: 'A page can say <script>alert(1)</script> and it is prose, not a program.' },
 }
 
 /**

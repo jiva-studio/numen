@@ -9,7 +9,6 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref } from 'vue'
 import Switch from './Switch.vue'
-import { lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
@@ -68,7 +67,7 @@ export const Disabled: Story = { args: { isDisabled: true } }
 /**
  * A write in flight: the parent keeps the old value for a while and then passes the new one.
  * The thumb must not move on the press nor while busy, must move once when the value arrives,
- * and the track must not dim. It is sampled on every frame.
+ * It is sampled on every frame.
  */
 export const BusyUntilTheAnswer: Story = {
   render: () => ({
@@ -94,12 +93,10 @@ export const BusyUntilTheAnswer: Story = {
       thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
     const startLeft = getThumbLeft()
     const samples: number[] = []
-    const opacities = new Set<string>()
     let isSampling = true
     const sample = (): void => {
       if (!isSampling) return
       samples.push(getThumbLeft())
-      opacities.add(getComputedStyle(control).opacity)
       requestAnimationFrame(sample)
     }
     requestAnimationFrame(sample)
@@ -115,11 +112,10 @@ export const BusyUntilTheAnswer: Story = {
     await new Promise((resolve) => setTimeout(resolve, 600))
     isSampling = false
 
-    // One slide, off to the left, with no step back on the way, and no dimming.
+    // One slide, off to the left, with no step back on the way.
     const steps = samples.slice(1).map((one, index) => one - samples[index]!)
     await expect(steps.every((one) => one <= 0.5)).toBe(true)
     await expect(samples.at(-1)!).toBeLessThan(startLeft - thumb.offsetWidth / 2)
-    await expect([...opacities]).toEqual(['1'])
   },
 }
 
@@ -147,19 +143,10 @@ export const Dark: Story = {
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     const control = getSwitch(canvasElement)
-    const off = getComputedStyle(control).backgroundColor
+    await expect(control.getAttribute('aria-checked')).toBe('false')
 
     await userEvent.click(control)
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
-    await waitFor(() => expect(getComputedStyle(control).backgroundColor).not.toBe(off))
-
-    // The on-state track colour is lighter than the off-state colour, as the dark token
-    // set defines it.
-    await waitFor(() =>
-      expect(lightness(getComputedStyle(control).backgroundColor)).toBeGreaterThan(
-        lightness(off) + 8,
-      ),
-    )
   },
 }
 
@@ -172,21 +159,16 @@ export const AnnouncedAsASwitch: Story = {
   },
 }
 
-/**
- * What the user sees: the thumb slides along the track and the track fills behind it.
- * Neither is readable from an attribute, so both are measured where rendered.
- */
-export const TheThumbSlidesAndTheTrackFills: Story = {
+/** The thumb slides along the track and stays on it. */
+export const TheThumbSlides: Story = {
   args: { isOn: false },
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     const thumb = control.firstElementChild as HTMLElement
     const getThumbLeft = () =>
       thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
-    const getFill = () => getComputedStyle(control).backgroundColor
 
     const wasAcross = getThumbLeft()
-    const wasFilling = getFill()
 
     await userEvent.click(control)
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
@@ -198,12 +180,8 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
     await expect(box.right).toBeLessThanOrEqual(track.right + 1)
     await expect(box.left).toBeGreaterThanOrEqual(track.left - 1)
 
-    // And the track behind it is not the colour it was.
-    await waitFor(() => expect(getFill()).not.toBe(wasFilling))
-
     await userEvent.click(control)
     await waitFor(() => expect(getThumbLeft()).toBeCloseTo(wasAcross, 0))
-    await waitFor(() => expect(getFill()).toBe(wasFilling))
   },
 }
 

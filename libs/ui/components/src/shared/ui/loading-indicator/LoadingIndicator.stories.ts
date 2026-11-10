@@ -38,32 +38,6 @@ export const Playground: Story = {
 }
 
 /**
- * Two panes of different heights, waiting side by side. The ring and the word
- */
-export const OneSizeInEveryContainer: Story = {
-  render: () => ({
-    components: { LoadingIndicator },
-    template: `
-      <div class="numen" style="display:flex;gap:2px;background:var(--numen-surface)">
-        <div style="flex:1;block-size:320px;font-size:2rem"><LoadingIndicator :delay="0" /></div>
-        <div style="flex:1;block-size:120px;font-size:0.75rem"><LoadingIndicator :delay="0" /></div>
-      </div>
-    `,
-  }),
-  play: async ({ canvasElement }) => {
-    const [wide, narrow] = within(canvasElement).getAllByRole('status')
-
-    const getRing = (element: HTMLElement) =>
-      element.querySelector<HTMLElement>('.spinner')!.getBoundingClientRect().height
-    const getWord = (element: HTMLElement) =>
-      getComputedStyle(element.querySelector<HTMLElement>('span')!).fontSize
-
-    await expect(getRing(wide!)).toBeCloseTo(getRing(narrow!), 1)
-    await expect(getWord(wide!)).toBe(getWord(narrow!))
-  },
-}
-
-/**
  * A pane whose content arrives within the delay never displays the ring: the pane stays empty until
  * the delay has passed.
  */

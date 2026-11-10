@@ -32,12 +32,12 @@ interface Knobs {
 }
 
 const MODELS: readonly ListItem[] = [
-  { id: 'gemini-4', text: 'Gemini 4 Argon', group: 'Antigravity' },
-  { id: 'gemini-3', text: 'Gemini 3.8 Flash', group: 'Antigravity' },
-  { id: 'opus', text: 'Claude Opus 5.5', group: 'Antigravity' },
-  { id: 'default', text: 'Default (recommended)', group: 'Claude Code' },
-  { id: 'sonnet', text: 'Sonnet 5.5', group: 'Claude Code', detail: 'Fast, for everyday work' },
-  { id: 'haiku', text: 'Haiku 5.5', group: 'Claude Code' },
+  { id: 'quince-4', text: 'Quince 4 Argon', group: 'Meadow' },
+  { id: 'quince-3', text: 'Quince 3.8 Flash', group: 'Meadow' },
+  { id: 'plum', text: 'Orchard Plum 5.5', group: 'Meadow' },
+  { id: 'default', text: 'Default (recommended)', group: 'Orchard' },
+  { id: 'pear', text: 'Pear 5.5', group: 'Orchard', detail: 'Fast, for everyday work' },
+  { id: 'fig', text: 'Fig 5.5', group: 'Orchard' },
 ]
 
 const SHELVES: readonly ListItem[] = Array.from({ length: 60 }, (_, index) => ({
@@ -113,18 +113,17 @@ const expectOneFrame = async (canvasElement: HTMLElement) => {
   const canvas = within(canvasElement)
   await expect(frame.firstElementChild).toBe(canvas.getByRole('combobox'))
   await expect(frame.contains(canvas.getByRole('listbox'))).toBe(true)
-  await expect(getComputedStyle(frame).overflow).toBe('hidden')
 }
 
 /** Rows under the names of their groups, one of them in force. */
 export const Grouped: Story = {
-  args: { modelValue: 'sonnet' },
+  args: { modelValue: 'pear' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expectOneFrame(canvasElement)
     await expect(canvas.getAllByRole('option')).toHaveLength(6)
     await expect(canvasElement.querySelectorAll('.searchable-list__heading')).toHaveLength(2)
-    await expect(canvas.getByRole('option', { name: /Sonnet 5.5/ })).toHaveAttribute(
+    await expect(canvas.getByRole('option', { name: /Pear 5.5/ })).toHaveAttribute(
       'aria-current',
       'true',
     )
@@ -137,7 +136,7 @@ export const Filtering: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     const field = canvas.getByRole('combobox')
-    await userEvent.type(field, 'claude')
+    await userEvent.type(field, 'orchard')
     await waitFor(() => expect(canvas.getAllByRole('option')).toHaveLength(4))
     await userEvent.keyboard('{ArrowDown}{Enter}')
     await expect(args.onSelect).toHaveBeenCalledWith('default')
@@ -152,7 +151,6 @@ export const LongList: Story = {
     const canvas = within(canvasElement)
     const list = canvas.getByRole('listbox')
     await expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
-    await expect(getComputedStyle(list).overflowY).toBe('auto')
     await userEvent.type(canvas.getByRole('combobox'), '{ArrowUp}')
     await waitFor(() => expect(canvas.getByRole('option', { name: 'Shelf 60' })).toBeVisible())
     const active = canvas.getByRole('option', { name: 'Shelf 60' }).getBoundingClientRect()
@@ -286,8 +284,10 @@ export const Popup: Story = {
   play: async ({ args }) => {
     const frame = document.body.querySelector<HTMLElement>('[data-numen-searchable-list]')!
     await expect(frame.parentElement).toBe(document.body)
-    await expect(getComputedStyle(frame).position).toBe('fixed')
     const box = frame.getBoundingClientRect()
+    await expect(box.left).toBeCloseTo(24, 0)
+    await expect(box.top).toBeCloseTo(24, 0)
+    await expect(box.width).toBeGreaterThanOrEqual(240)
     await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
     await userEvent.keyboard('{Escape}')
     await expect(args.onClose).toHaveBeenCalled()

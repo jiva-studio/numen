@@ -152,6 +152,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `core-client-private`: `@numen/core-client` is private and no plugin relies on it.
 - `dependency-graph`: dependency-cruiser decides package boundaries, segment direction and import cycles for libraries, applications and plugin frontends.
 - `styles-use-tokens`: stylelint allows no colour literal, no `--numen-` declaration outside token and theme files, no `var()` fallback and no undeclared token.
+- `numen/no-style-declaration-read`: an ESLint rule of `tools/lint-layers/base-eslint.mjs`, so in the lint of every package built from `createBaseConfig`. It fails any read of a value of type `CSSStyleDeclaration` (`getComputedStyle(...)`, `element.style`, a parameter of that type) in `*.test.ts`, `*.stories.ts`, `fixtures/` and `testing/`; writes (`style.left = ...`, `setProperty`, `removeProperty`) pass. It decides by type with typescript-eslint, so no list of property names. `tools/lint-layers/styleDeclaration.test.mjs` lints a planted file against the DOM library.
 - `all-ts-packages-eslint`: every TypeScript package has ESLint configured.
 - `ui-components-lint`: `npm run lint` passes in `libs/ui/components`.
 - `workbench-lint`: `npm run lint` passes in `libs/ui/workbench`.

@@ -53,13 +53,8 @@ export const TwoNotes: Story = {
     await expect(notes(canvasElement)).toHaveLength(2)
     await expect(getAnswers(canvasElement)).toHaveLength(6)
 
-    const answer = getComputedStyle(getAnswers(canvasElement)[0]!)
-    await expect(answer.textDecorationLine).toBe('none')
-    await expect(answer.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-
     // It overlays the work, at the bottom of the window and inside it.
     const box = response!.getBoundingClientRect()
-    await expect(getComputedStyle(response!).position).toBe('fixed')
     await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
     await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
   },

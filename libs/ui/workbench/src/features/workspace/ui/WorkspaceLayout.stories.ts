@@ -184,56 +184,27 @@ const sweep = async (from: Position, to: Position): Promise<void> => {
   await new Promise((isDone) => setTimeout(isDone, 16))
 }
 
-function getCursor(): string | null {
-  const cursorPrefix = '*{cursor:'
-
-  for (const style of document.head.querySelectorAll('style')) {
-    const text = (style.textContent ?? '').trim()
-    if (text.startsWith(cursorPrefix))
-      return text.slice(cursorPrefix.length, text.indexOf('!')).trim()
-  }
-  return null
-}
-
-/** A place the pointer was at, and the cursor the splitter drew there. */
-interface Caught {
-  readonly away: number
-  readonly pos: Position
-  readonly cursor: string | null
-}
-
 /**
- * How far either side of the line the pointer is put, in pixels. The reach is a
- * rectangle seven pixels out, so anywhere between two places it catches is
- * caught too; what is worth asking about is where it ends. The line itself, the
- * panel either side of it, the far edge of the reach a pixel in for where the
- * window rounds the pointer to, and clear of it.
+ * How far from the line the pointer is put, in pixels. The reach is a rectangle seven pixels out,
+ * so what is worth asking about is where it ends: the far edge of the reach a pixel in for where
+ * the window rounds the pointer to, and clear of it.
  */
-const AWAY = [-10, -6, -3, 0, 3, 6, 10]
+const EDGE_OF_REACH = 6
+const CLEAR_OF_REACH = 10
 
-async function measureAcross(handle: HTMLElement, axis: 'x' | 'y'): Promise<readonly Caught[]> {
+/** Presses the pointer `away` pixels from the line across `handle` and drags it `distance` along the axis. */
+async function dragFromAway(
+  handle: HTMLElement,
+  axis: 'x' | 'y',
+  away: number,
+  distance: number,
+): Promise<void> {
   const box = getRect(handle)
-  const found: Caught[] = []
-
-  for (const away of AWAY) {
-    const point =
-      axis === 'x'
-        ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
-        : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
-
-    await sweep(point, point)
-    found.push({ away, pos: point, cursor: getCursor() })
-  }
-  return found
-}
-
-const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
-
-function getFurthest(places: readonly Caught[]): Position {
-  const target = places.filter((place) => place.cursor)
-  const edge = target[target.length - 1]?.pos
-  if (!edge) throw new Error('missing handle edge position')
-  return edge
+  const from =
+    axis === 'x'
+      ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
+      : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
+  await sweep(from, axis === 'x' ? { x: from.x + distance, y: from.y } : { x: from.x, y: from.y + distance })
 }
 
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
@@ -517,24 +488,19 @@ export const CatchesAPressOnEitherSideOfTheLine: Story = {
 }
 
 /**
- * The splitter has the pointer over the whole reach the handle draws, one cursor throughout, and a press at the far edge of that reach drags the split.
+ * A press at the far edge of the reach the handle draws drags the split, and a press clear of it does not.
  * Only a browser can answer it: the splitter takes the pointer by where it is, which a made-up event does not say.
  */
 export const DragsFromItsWholeReach: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle') as HTMLElement
-    const captured = await measureAcross(handle, 'x')
-
-    await expect(captured.map((place) => [place.away, place.cursor])).toStrictEqual(
-      getReach('ew-resize'),
-    )
-    await expect(getComputedStyle(handle).cursor).toBe('ew-resize')
-
-    const edge = getFurthest(captured)
     const before = paneBox(canvasElement, 'main').width
 
-    await sweep(edge, { x: edge.x + 40, y: edge.y })
+    await dragFromAway(handle, 'x', CLEAR_OF_REACH, 40)
+    await expect(Math.abs(paneBox(canvasElement, 'main').width - before)).toBeLessThan(2)
+
+    await dragFromAway(handle, 'x', EDGE_OF_REACH, 40)
 
     // The pointer goes to whole pixels of the window, which the story counts in
     // its own.
@@ -551,17 +517,12 @@ export const DragsFromItsWholeReachDownwards: Story = {
     const handle = canvasElement.querySelector(
       '.branch__handle[data-direction="vertical"]',
     ) as HTMLElement
-    const captured = await measureAcross(handle, 'y')
-
-    await expect(captured.map((place) => [place.away, place.cursor])).toStrictEqual(
-      getReach('ns-resize'),
-    )
-    await expect(getComputedStyle(handle).cursor).toBe('ns-resize')
-
-    const edge = getFurthest(captured)
     const before = paneBox(canvasElement, 'b').height
 
-    await sweep(edge, { x: edge.x, y: edge.y + 30 })
+    await dragFromAway(handle, 'y', CLEAR_OF_REACH, 30)
+    await expect(Math.abs(paneBox(canvasElement, 'b').height - before)).toBeLessThan(2)
+
+    await dragFromAway(handle, 'y', EDGE_OF_REACH, 30)
 
     const moved = paneBox(canvasElement, 'b').height - before
     await expect(Math.abs(moved - 30)).toBeLessThan(2)

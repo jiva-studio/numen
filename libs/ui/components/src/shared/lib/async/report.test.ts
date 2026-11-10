@@ -8,7 +8,7 @@ describe('reporting a failure', () => {
     const queue = vi.spyOn(globalThis, 'queueMicrotask').mockImplementation((run) => {
       queued.push(run)
     })
-    const failure = new Error('the vault is gone')
+    const failure = new Error('the shed is gone')
 
     reportFailure(failure)
 

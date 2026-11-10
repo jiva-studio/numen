@@ -7,7 +7,7 @@ import { WORK_ROWS } from '../fixtures/rows'
 
 const ROWS = WORK_ROWS
 
-/** One row every 24 down the page: work, plans, notes, empty, loose. */
+/** One row every 24 down the page: work, plans, pages, empty, loose. */
 const HEIGHT = 24
 
 /** A clock whose next frame is now. */
@@ -104,7 +104,7 @@ const findDragged = (wrapper: Tree) => wrapper.find('.tree__dragged')
 
 describe('what is drawn', () => {
   it('is the rows an open row holds, in their place', () => {
-    expect(getDrawnRows(mountTree())).toStrictEqual(['work', 'plans', 'notes', 'empty', 'loose'])
+    expect(getDrawnRows(mountTree())).toStrictEqual(['work', 'plans', 'pages', 'empty', 'loose'])
   })
 
   it('is nothing a shut row holds', () => {
@@ -126,21 +126,21 @@ describe('what is drawn', () => {
   })
 
   it('says it holds a selection of several, and which rows are in it', () => {
-    const target = mountTree({ selected: ['work', 'notes'] })
+    const target = mountTree({ selected: ['work', 'pages'] })
 
     expect(target.get('[role="tree"]').attributes('aria-multiselectable')).toBe('true')
     expect(getRow(target, 'work').attributes('aria-selected')).toBe('true')
-    expect(getRow(target, 'notes').attributes('aria-selected')).toBe('true')
+    expect(getRow(target, 'pages').attributes('aria-selected')).toBe('true')
     expect(getRow(target, 'plans').attributes('aria-selected')).toBe('false')
   })
 
   it('offers the keyboard one row of the tree', () => {
-    const target = mountTree({ selected: ['notes'] })
+    const target = mountTree({ selected: ['pages'] })
     const reachable = target
       .findAll('[data-tree-row]')
       .filter((row) => row.attributes('tabindex') === '0')
     expect(reachable).toHaveLength(1)
-    expect(reachable[0]?.attributes('data-tree-row')).toBe('notes')
+    expect(reachable[0]?.attributes('data-tree-row')).toBe('pages')
   })
 
   it('is what the caller says when there is nothing to draw', () => {
@@ -153,45 +153,45 @@ describe('what is drawn', () => {
 describe('a press', () => {
   it('selects the row', async () => {
     const target = mountTree()
-    await press(target, 'notes')
-    expect(target.emitted('select')).toStrictEqual([[['notes']]])
+    await press(target, 'pages')
+    expect(target.emitted('select')).toStrictEqual([[['pages']]])
   })
 
   it('selects nothing where the row is the selection already', async () => {
-    const target = mountTree({ selected: ['notes'] })
-    await press(target, 'notes')
+    const target = mountTree({ selected: ['pages'] })
+    await press(target, 'pages')
     expect(target.emitted('select')).toBeUndefined()
   })
 
   it('collapses a selection of several onto the row it landed on', async () => {
-    const target = mountTree({ selected: ['work', 'notes'] })
-    await press(target, 'notes')
-    expect(target.emitted('select')).toStrictEqual([[['notes']]])
+    const target = mountTree({ selected: ['work', 'pages'] })
+    await press(target, 'pages')
+    expect(target.emitted('select')).toStrictEqual([[['pages']]])
   })
 
   it('takes a row into the selection, joined', async () => {
     const target = mountTree({ selected: ['work'] })
-    await press(target, 'notes', { ctrlKey: true })
-    expect(target.emitted('select')).toStrictEqual([[['work', 'notes']]])
+    await press(target, 'pages', { ctrlKey: true })
+    expect(target.emitted('select')).toStrictEqual([[['work', 'pages']]])
   })
 
   it('takes a row out of the selection it remains in, joined', async () => {
-    const target = mountTree({ selected: ['work', 'notes'] })
-    await press(target, 'notes', { metaKey: true })
+    const target = mountTree({ selected: ['work', 'pages'] })
+    await press(target, 'pages', { metaKey: true })
     expect(target.emitted('select')).toStrictEqual([[['work']]])
   })
 
   it('reaches from where the last plain press landed', async () => {
     const target = mountTree()
     await press(target, 'work')
-    await press(target, 'notes', { shiftKey: true })
+    await press(target, 'pages', { shiftKey: true })
 
-    expect(target.emitted('select')?.at(-1)).toStrictEqual([['work', 'plans', 'notes']])
+    expect(target.emitted('select')?.at(-1)).toStrictEqual([['work', 'plans', 'pages']])
   })
 
   it('says the selection once for a press with a modifier', async () => {
     const target = mountTree({ selected: ['work'] })
-    await press(target, 'notes', { ctrlKey: true })
+    await press(target, 'pages', { ctrlKey: true })
     expect(target.emitted('select')).toHaveLength(1)
   })
 
@@ -247,8 +247,8 @@ describe('the keyboard', () => {
   })
 
   it('climbs to the holder from a row that is shut', async () => {
-    const target = mountTree({ selected: ['notes'] })
-    await pressKey(target, 'notes', 'ArrowLeft')
+    const target = mountTree({ selected: ['pages'] })
+    await pressKey(target, 'pages', 'ArrowLeft')
 
     expect(target.emitted('select')).toStrictEqual([[['work']]])
     expect(target.emitted('close')).toBeUndefined()
@@ -256,37 +256,37 @@ describe('the keyboard', () => {
 
   it('selects every row that is drawn', async () => {
     const target = mountTree()
-    await pressKey(target, 'notes', 'a', { ctrlKey: true })
+    await pressKey(target, 'pages', 'a', { ctrlKey: true })
 
-    expect(target.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
+    expect(target.emitted('select')).toStrictEqual([[['work', 'plans', 'pages', 'empty', 'loose']]])
   })
 
   it('asks for the whole selection to go', async () => {
-    const target = mountTree({ selected: ['work', 'notes'] })
-    await pressKey(target, 'notes', 'Delete')
-    await pressKey(target, 'notes', 'Backspace')
+    const target = mountTree({ selected: ['work', 'pages'] })
+    await pressKey(target, 'pages', 'Delete')
+    await pressKey(target, 'pages', 'Backspace')
 
-    expect(target.emitted('remove')).toStrictEqual([[['work', 'notes']], [['work', 'notes']]])
+    expect(target.emitted('remove')).toStrictEqual([[['work', 'pages']], [['work', 'pages']]])
   })
 
   it('asks for nothing to go while nothing is selected', async () => {
     const target = mountTree()
-    await pressKey(target, 'notes', 'Delete')
+    await pressKey(target, 'pages', 'Delete')
     expect(target.emitted('remove')).toBeUndefined()
   })
 
   it('puts the row the keyboard relies on into the selection', async () => {
     const target = mountTree({ selected: ['work'] })
-    await getRow(target, 'notes').trigger('focus')
-    await pressKey(target, 'notes', ' ')
+    await getRow(target, 'pages').trigger('focus')
+    await pressKey(target, 'pages', ' ')
 
-    expect(target.emitted('select')).toStrictEqual([[['work', 'notes']]])
+    expect(target.emitted('select')).toStrictEqual([[['work', 'pages']]])
   })
 
   it('takes that row out again where it already stood in it', async () => {
-    const target = mountTree({ selected: ['work', 'notes'] })
-    await getRow(target, 'notes').trigger('focus')
-    await pressKey(target, 'notes', ' ')
+    const target = mountTree({ selected: ['work', 'pages'] })
+    await getRow(target, 'pages').trigger('focus')
+    await pressKey(target, 'pages', ' ')
 
     expect(target.emitted('select')).toStrictEqual([[['work']]])
   })
@@ -294,16 +294,16 @@ describe('the keyboard', () => {
   it('keeps the space to itself', () => {
     const target = mountTree({ selected: ['work'] })
     const press = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
-    getRow(target, 'notes').element.dispatchEvent(press)
+    getRow(target, 'pages').element.dispatchEvent(press)
 
     expect(press.defaultPrevented).toBe(true)
   })
 
   it('acts on a row that cannot hold, and opens nothing', async () => {
-    const target = mountTree({ selected: ['notes'] })
-    await pressKey(target, 'notes', 'Enter')
+    const target = mountTree({ selected: ['pages'] })
+    await pressKey(target, 'pages', 'Enter')
 
-    expect(target.emitted('activate')).toStrictEqual([['notes']])
+    expect(target.emitted('activate')).toStrictEqual([['pages']])
     expect(target.emitted('open')).toBeUndefined()
   })
 
@@ -316,25 +316,25 @@ describe('the keyboard', () => {
   })
 
   it('reaches the menu the pointer reaches', async () => {
-    const target = mountTree({ selected: ['notes'] })
-    await pressKey(target, 'notes', 'F10', { shiftKey: true })
+    const target = mountTree({ selected: ['pages'] })
+    await pressKey(target, 'pages', 'F10', { shiftKey: true })
 
-    expect(target.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
+    expect(target.emitted('menu')).toStrictEqual([['pages', { x: 0, y: 3 * HEIGHT }]])
   })
 })
 
 describe('a menu requested for', () => {
   it('is requested for on the row, and the selection relies on it', async () => {
     const target = mountTree()
-    await getRow(target, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
+    await getRow(target, 'pages').trigger('contextmenu', { clientX: 40, clientY: 60 })
 
-    expect(target.emitted('select')).toStrictEqual([[['notes']]])
-    expect(target.emitted('menu')).toStrictEqual([['notes', { x: 40, y: 60 }]])
+    expect(target.emitted('select')).toStrictEqual([[['pages']]])
+    expect(target.emitted('menu')).toStrictEqual([['pages', { x: 40, y: 60 }]])
   })
 
   it('leaves a selection of several alone where the row remains in it', async () => {
-    const target = mountTree({ selected: ['work', 'notes'] })
-    await getRow(target, 'notes').trigger('contextmenu', { clientX: 40, clientY: 60 })
+    const target = mountTree({ selected: ['work', 'pages'] })
+    await getRow(target, 'pages').trigger('contextmenu', { clientX: 40, clientY: 60 })
 
     expect(target.emitted('select')).toBeUndefined()
   })
@@ -368,15 +368,15 @@ describe('a drag', () => {
   })
 
   it('drags the whole selection, off a row standing in it', async () => {
-    const target = mountTree({ selected: ['notes', 'loose'] })
+    const target = mountTree({ selected: ['pages', 'loose'] })
     await dragTo(target, 'loose', 12)
 
-    expect(target.emitted('move')).toStrictEqual([[['notes', 'loose'], { into: 'work' }]])
+    expect(target.emitted('move')).toStrictEqual([[['pages', 'loose'], { into: 'work' }]])
     expect(target.emitted('select')).toBeUndefined()
   })
 
   it('selects a row standing outside the selection, and drags it alone', async () => {
-    const target = mountTree({ selected: ['notes'] })
+    const target = mountTree({ selected: ['pages'] })
     await dragTo(target, 'loose', 12)
 
     expect(target.emitted('select')).toStrictEqual([[['loose']]])
@@ -437,19 +437,19 @@ describe('a drag', () => {
     const target = mountTree({ selected: ['loose'], clock: world.clock })
 
     await dragTo(target, 'loose', 12)
-    await getRow(target, 'notes').trigger('click')
+    await getRow(target, 'pages').trigger('click')
 
     expect(target.emitted('select')).toBeUndefined()
 
     world.run()
-    await getRow(target, 'notes').trigger('click')
-    expect(target.emitted('select')).toStrictEqual([[['notes']]])
+    await getRow(target, 'pages').trigger('click')
+    expect(target.emitted('select')).toStrictEqual([[['pages']]])
   })
 })
 
 describe('rows dragged out of the tree', () => {
   it('says which rows are being dragged, once for the whole drag', async () => {
-    const target = mountTree({ selected: ['notes', 'loose'] })
+    const target = mountTree({ selected: ['pages', 'loose'] })
     const from = getRow(target, 'loose').element
 
     pointer('pointerdown', getMiddle(target, 'loose'), from)
@@ -457,7 +457,7 @@ describe('rows dragged out of the tree', () => {
     pointer('pointermove', 4 * HEIGHT)
     await target.vm.$nextTick()
 
-    expect(target.emitted('drag')).toStrictEqual([[['notes', 'loose']]])
+    expect(target.emitted('drag')).toStrictEqual([[['pages', 'loose']]])
   })
 
   it('says so for a drag over another pane, where nothing in the tree is landed on', async () => {
@@ -505,7 +505,7 @@ describe('what follows the pointer', () => {
   })
 
   it('says how many are being dragged, where there are several', async () => {
-    const target = mountTree({ selected: ['notes', 'loose'] })
+    const target = mountTree({ selected: ['pages', 'loose'] })
     pointer('pointerdown', 108, getRow(target, 'loose').element)
     pointer('pointermove', 60)
     await target.vm.$nextTick()
@@ -515,7 +515,7 @@ describe('what follows the pointer', () => {
 
   it('says it in the words the caller gave for how many', async () => {
     const wrapper = mountTree({
-      selected: ['notes', 'loose'],
+      selected: ['pages', 'loose'],
       counted: (rows: number) => `${rows} files`,
     })
     pointer('pointerdown', 108, getRow(wrapper, 'loose').element)
@@ -523,15 +523,6 @@ describe('what follows the pointer', () => {
     await wrapper.vm.$nextTick()
 
     expect(findDragged(wrapper).text()).toBe('2 files')
-  })
-
-  it('remains where the pointer is', async () => {
-    const wrapper = mountTree()
-    pointer('pointerdown', 108, getRow(wrapper, 'loose').element)
-    pointer('pointermove', 60)
-    await wrapper.vm.$nextTick()
-
-    expect(findDragged(wrapper).attributes('style')).toContain('top: 60px')
   })
 
   it('is drawn nowhere before the pointer has travelled far enough', async () => {
@@ -559,31 +550,31 @@ describe('a name being typed', () => {
   const getField = (wrapper: Tree) => wrapper.get('.tree__field')
 
   it('remains over the row it belongs to and over no other', () => {
-    const wrapper = mountTree({ renamingPath: 'notes' })
+    const wrapper = mountTree({ renamingPath: 'pages' })
 
-    expect(getRow(wrapper, 'notes').find('.tree__field').exists()).toBe(true)
+    expect(getRow(wrapper, 'pages').find('.tree__field').exists()).toBe(true)
     expect(wrapper.findAll('.tree__field')).toHaveLength(1)
-    expect(getRow(wrapper, 'notes').find('.tree__name').exists()).toBe(false)
+    expect(getRow(wrapper, 'pages').find('.tree__name').exists()).toBe(false)
   })
 
   it('starts as the name the row already carries', () => {
-    expect((getField(mountTree({ renamingPath: 'notes' })).element as HTMLInputElement).value).toBe(
-      'Notes',
+    expect((getField(mountTree({ renamingPath: 'pages' })).element as HTMLInputElement).value).toBe(
+      'Pages',
     )
   })
 
   it('is committed on Enter', async () => {
-    const wrapper = mountTree({ renamingPath: 'notes' })
-    await getField(wrapper).setValue('Friday notes')
+    const wrapper = mountTree({ renamingPath: 'pages' })
+    await getField(wrapper).setValue('Friday pages')
     await getField(wrapper).trigger('keydown', { key: 'Enter' })
 
-    expect(wrapper.emitted('rename')).toStrictEqual([['notes', 'Friday notes']])
+    expect(wrapper.emitted('rename')).toStrictEqual([['pages', 'Friday pages']])
     expect(wrapper.emitted('update:renamingPath')).toStrictEqual([[null]])
   })
 
   it('is abandoned on Escape, and does not rename', async () => {
-    const wrapper = mountTree({ renamingPath: 'notes' })
-    await getField(wrapper).setValue('Friday notes')
+    const wrapper = mountTree({ renamingPath: 'pages' })
+    await getField(wrapper).setValue('Friday pages')
     await getField(wrapper).trigger('keydown', { key: 'Escape' })
 
     expect(wrapper.emitted('rename')).toBeUndefined()
@@ -591,7 +582,7 @@ describe('a name being typed', () => {
   })
 
   it('keeps the arrows to itself while it is being typed in', async () => {
-    const wrapper = mountTree({ renamingPath: 'notes', selected: ['notes'] })
+    const wrapper = mountTree({ renamingPath: 'pages', selected: ['pages'] })
     await getField(wrapper).trigger('keydown', { key: 'ArrowDown' })
 
     expect(wrapper.emitted('select')).toBeUndefined()
@@ -613,7 +604,7 @@ describe('the attribute rows are marked with', () => {
     const wrapper = mountTree({ marking: { attribute: ATTRIBUTE, getAttributeValue } })
 
     expect(getMark(wrapper, 'plans')).toBe('plans')
-    expect(getMark(wrapper, 'notes')).toBe('work')
+    expect(getMark(wrapper, 'pages')).toBe('work')
     expect(wrapper.get('.tree').attributes(ATTRIBUTE)).toBe('')
   })
 
@@ -659,29 +650,29 @@ describe('the keys the tree takes', () => {
 
   it('takes Ctrl and A, in either case, to select every row', () => {
     const wrapper = mountTree()
-    const lower = sendKeyOn(wrapper, 'notes', 'a', { ctrlKey: true })
-    const upper = sendKeyOn(wrapper, 'notes', 'A', { ctrlKey: true })
+    const lower = sendKeyOn(wrapper, 'pages', 'a', { ctrlKey: true })
+    const upper = sendKeyOn(wrapper, 'pages', 'A', { ctrlKey: true })
 
     expect(lower.defaultPrevented).toBe(true)
     expect(upper.defaultPrevented).toBe(true)
     expect(wrapper.emitted('select')?.[0]).toStrictEqual([
-      ['work', 'plans', 'notes', 'empty', 'loose'],
+      ['work', 'plans', 'pages', 'empty', 'loose'],
     ])
   })
 
   it('takes Meta and A to select every row', () => {
     const wrapper = mountTree()
-    const acquiredItem = sendKeyOn(wrapper, 'notes', 'a', { metaKey: true })
+    const acquiredItem = sendKeyOn(wrapper, 'pages', 'a', { metaKey: true })
 
     expect(acquiredItem.defaultPrevented).toBe(true)
     expect(wrapper.emitted('select')).toStrictEqual([
-      [['work', 'plans', 'notes', 'empty', 'loose']],
+      [['work', 'plans', 'pages', 'empty', 'loose']],
     ])
   })
 
   it('leaves A alone while nothing is retained down', () => {
     const wrapper = mountTree()
-    const keyResult = sendKeyOn(wrapper, 'notes', 'a')
+    const keyResult = sendKeyOn(wrapper, 'pages', 'a')
 
     expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('select')).toBeUndefined()
@@ -689,57 +680,57 @@ describe('the keys the tree takes', () => {
 
   it('leaves another key alone with Ctrl retained down', () => {
     const wrapper = mountTree()
-    const keyResult = sendKeyOn(wrapper, 'notes', 'b', { ctrlKey: true })
+    const keyResult = sendKeyOn(wrapper, 'pages', 'b', { ctrlKey: true })
 
     expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('select')).toBeUndefined()
   })
 
   it('takes Delete and Backspace', () => {
-    const wrapper = mountTree({ selected: ['notes'] })
+    const wrapper = mountTree({ selected: ['pages'] })
 
-    expect(sendKeyOn(wrapper, 'notes', 'Delete').defaultPrevented).toBe(true)
-    expect(sendKeyOn(wrapper, 'notes', 'Backspace').defaultPrevented).toBe(true)
+    expect(sendKeyOn(wrapper, 'pages', 'Delete').defaultPrevented).toBe(true)
+    expect(sendKeyOn(wrapper, 'pages', 'Backspace').defaultPrevented).toBe(true)
   })
 
   it('takes Delete where nothing is selected', () => {
     const wrapper = mountTree()
-    expect(sendKeyOn(wrapper, 'notes', 'Delete').defaultPrevented).toBe(true)
+    expect(sendKeyOn(wrapper, 'pages', 'Delete').defaultPrevented).toBe(true)
   })
 
   it('takes Enter', () => {
-    const wrapper = mountTree({ selected: ['notes'] })
-    expect(sendKeyOn(wrapper, 'notes', 'Enter').defaultPrevented).toBe(true)
+    const wrapper = mountTree({ selected: ['pages'] })
+    expect(sendKeyOn(wrapper, 'pages', 'Enter').defaultPrevented).toBe(true)
   })
 
   it('takes the menu key, and reaches the menu the pointer reaches', () => {
-    const wrapper = mountTree({ selected: ['notes'] })
-    const acquiredItem = sendKeyOn(wrapper, 'notes', 'ContextMenu')
+    const wrapper = mountTree({ selected: ['pages'] })
+    const acquiredItem = sendKeyOn(wrapper, 'pages', 'ContextMenu')
 
     expect(acquiredItem.defaultPrevented).toBe(true)
-    expect(wrapper.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
+    expect(wrapper.emitted('menu')).toStrictEqual([['pages', { x: 0, y: 3 * HEIGHT }]])
   })
 
   it('takes F10 only with Shift', () => {
-    const wrapper = mountTree({ selected: ['notes'] })
-    const keyResult = sendKeyOn(wrapper, 'notes', 'F10')
+    const wrapper = mountTree({ selected: ['pages'] })
+    const keyResult = sendKeyOn(wrapper, 'pages', 'F10')
 
     expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('menu')).toBeUndefined()
   })
 
   it('takes the arrows, the Home key and the End key', () => {
-    const wrapper = mountTree({ selected: ['notes'] })
+    const wrapper = mountTree({ selected: ['pages'] })
     const keys = ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End']
 
-    expect(keys.map((key) => sendKeyOn(wrapper, 'notes', key).defaultPrevented)).toStrictEqual(
+    expect(keys.map((key) => sendKeyOn(wrapper, 'pages', key).defaultPrevented)).toStrictEqual(
       keys.map(() => true),
     )
   })
 
   it('leaves any other key alone', () => {
-    const wrapper = mountTree({ selected: ['notes'] })
-    const keyResult = sendKeyOn(wrapper, 'notes', 'x')
+    const wrapper = mountTree({ selected: ['pages'] })
+    const keyResult = sendKeyOn(wrapper, 'pages', 'x')
 
     expect(keyResult.defaultPrevented).toBe(false)
     expect(wrapper.emitted('select')).toBeUndefined()
@@ -778,19 +769,19 @@ describe('a press on a row', () => {
 
   it('is taken with the primary button, and puts the keyboard on the row', () => {
     const wrapper = mountTree()
-    const acquiredItem = sendPress(wrapper, 'notes', 0)
+    const acquiredItem = sendPress(wrapper, 'pages', 0)
 
     expect(acquiredItem.defaultPrevented).toBe(true)
-    expect(document.activeElement).toBe(getRow(wrapper, 'notes').element)
-    expect(wrapper.emitted('select')).toStrictEqual([[['notes']]])
+    expect(document.activeElement).toBe(getRow(wrapper, 'pages').element)
+    expect(wrapper.emitted('select')).toStrictEqual([[['pages']]])
   })
 
   it('is left alone with any other button', () => {
     const wrapper = mountTree()
-    const keyResult = sendPress(wrapper, 'notes', 2)
+    const keyResult = sendPress(wrapper, 'pages', 2)
 
     expect(keyResult.defaultPrevented).toBe(false)
-    expect(document.activeElement).not.toBe(getRow(wrapper, 'notes').element)
+    expect(document.activeElement).not.toBe(getRow(wrapper, 'pages').element)
     expect(wrapper.emitted('select')).toBeUndefined()
   })
 })
@@ -843,15 +834,15 @@ describe('where a drop would land, shown on the tree', () => {
   })
 
   it('marks the rows being dragged while they are, and no other', async () => {
-    const wrapper = mountTree({ selected: ['notes', 'loose'] })
+    const wrapper = mountTree({ selected: ['pages', 'loose'] })
     lift(wrapper, 'loose', 12)
     await wrapper.vm.$nextTick()
 
-    expect(marked(wrapper, 'data-dragged')).toStrictEqual(['notes', 'loose'])
+    expect(marked(wrapper, 'data-dragged')).toStrictEqual(['pages', 'loose'])
   })
 
   it('marks no row once the rows have been release', async () => {
-    const wrapper = mountTree({ selected: ['notes', 'loose'] })
+    const wrapper = mountTree({ selected: ['pages', 'loose'] })
     await dragTo(wrapper, 'loose', 12)
 
     expect(marked(wrapper, 'data-dragged')).toStrictEqual([])

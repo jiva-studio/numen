@@ -44,7 +44,7 @@ describe('a press on a link', () => {
   })
 
   it('leaves a page this window serves alone', () => {
-    const { openLink, prevented } = pressLink('/notes/one')
+    const { openLink, prevented } = pressLink('/pages/one')
     expect(prevented).toBe(false)
     expect(openLink).not.toHaveBeenCalled()
   })
@@ -75,7 +75,7 @@ describe('a press on a link', () => {
   })
 
   it('takes the window nowhere and passes no caller an address it cannot open', () => {
-    for (const href of ['note://01J8', 'javascript:alert(1)', 'data:text/html,<h1>x']) {
+    for (const href of ['page://01J8', 'javascript:alert(1)', 'data:text/html,<h1>x']) {
       const { openLink, prevented } = pressLink(href)
       expect(prevented).toBe(true)
       expect(openLink).not.toHaveBeenCalled()
@@ -163,18 +163,18 @@ describe('a press that is answered before the page sees it', () => {
 })
 
 describe('whether an address leads out', () => {
-  const here = new URL('https://notes.example:8080/a')
+  const here = new URL('https://pages.example:8080/a')
 
   it('does when the scheme differs and nothing else', () => {
-    expect(isExternalLink(new URL('http://notes.example:8080/a'), here)).toBe(true)
+    expect(isExternalLink(new URL('http://pages.example:8080/a'), here)).toBe(true)
   })
 
   it('does when the host differs and nothing else', () => {
     expect(isExternalLink(new URL('https://other.example:8080/a'), here)).toBe(true)
-    expect(isExternalLink(new URL('https://notes.example:9090/a'), here)).toBe(true)
+    expect(isExternalLink(new URL('https://pages.example:9090/a'), here)).toBe(true)
   })
 
   it('does not when scheme and host are the same', () => {
-    expect(isExternalLink(new URL('https://notes.example:8080/b?c#d'), here)).toBe(false)
+    expect(isExternalLink(new URL('https://pages.example:8080/b?c#d'), here)).toBe(false)
   })
 })

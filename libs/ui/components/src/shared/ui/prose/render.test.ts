@@ -23,16 +23,16 @@ describe('what is drawn at the top', () => {
 
 describe('prose', () => {
   it('makes a paragraph of a line', () => {
-    expect(mountProse('Two notes are about entropy.').findAll('p')).toHaveLength(1)
+    expect(mountProse('Two pages are about entropy.').findAll('p')).toHaveLength(1)
   })
 
   it('makes a word a node of its own, so one that arrives can be shown arriving', () => {
-    const words = mountProse('two notes here').findAll(`.${WORD}`)
-    expect(words.map((word) => word.text())).toEqual(['two', 'notes', 'here'])
+    const words = mountProse('two pages here').findAll(`.${WORD}`)
+    expect(words.map((word) => word.text())).toEqual(['two', 'pages', 'here'])
   })
 
   it('keeps the space between words', () => {
-    expect(mountProse('two notes').find('p').text()).toBe('two notes')
+    expect(mountProse('two pages').find('p').text()).toBe('two pages')
   })
 
   it('reads the marks', () => {
@@ -56,7 +56,7 @@ describe('prose', () => {
   })
 
   it('follows a link', () => {
-    expect(mountProse('[a note](https://example.com)').find('a').attributes('href')).toBe(
+    expect(mountProse('[a page](https://example.com)').find('a').attributes('href')).toBe(
       'https://example.com',
     )
   })
@@ -72,7 +72,7 @@ describe('prose', () => {
   })
 
   it('leaves what somebody else wrote as words', () => {
-    const prose = mountProse('A note can say <script>alert(1)</script> and it is prose.')
+    const prose = mountProse('A page can say <script>alert(1)</script> and it is prose.')
     expect(prose.find('script').exists()).toBe(false)
     expect(prose.text()).toContain('alert(1)')
   })

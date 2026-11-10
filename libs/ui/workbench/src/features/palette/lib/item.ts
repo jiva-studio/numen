@@ -3,7 +3,7 @@
  */
 import { stepTo } from '@numen/ui'
 import type { TextRange } from '@numen/ui'
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 import type { PaletteAction } from '../types'
 
 export type { PaletteAction }
@@ -19,7 +19,7 @@ export interface PaletteItem {
   readonly detail?: string
   readonly detailAt?: readonly TextRange[]
   readonly actions?: readonly PaletteAction[]
-  readonly keys?: PaletteKeys
+  readonly keys?: Keystroke
   readonly isDisabled?: boolean
 }
 

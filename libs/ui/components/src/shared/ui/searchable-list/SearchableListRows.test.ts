@@ -9,9 +9,9 @@ import SearchableListRows from './SearchableListRows.vue'
 import type { ListRow } from './rows'
 
 const ROWS: readonly ListRow[] = [
-  { key: 'a', kind: 'item', item: { id: 'a', text: 'Opus', group: 'Claude' } },
-  { key: 'b', kind: 'item', item: { id: 'b', text: 'Sonnet', group: 'Claude' } },
-  { key: 'c', kind: 'item', item: { id: 'c', text: 'Mini', group: 'Numen' } },
+  { key: 'a', kind: 'item', item: { id: 'a', text: 'Plum', group: 'Orchard' } },
+  { key: 'b', kind: 'item', item: { id: 'b', text: 'Pear', group: 'Orchard' } },
+  { key: 'c', kind: 'item', item: { id: 'c', text: 'Mini', group: 'Hedge' } },
 ]
 
 const mountRows = (props: Record<string, unknown> = {}) =>
@@ -65,21 +65,21 @@ describe('what the rows say', () => {
   it('draws a line above an item that asks for a separator, and above no other', () => {
     const rows = mountRows({
       rows: [
-        { key: 'a', kind: 'item', item: { id: 'a', text: 'Orchard notes' } },
-        { key: 'b', kind: 'item', item: { id: 'b', text: 'Create vault', hasSeparator: true } },
+        { key: 'a', kind: 'item', item: { id: 'a', text: 'Orchard pages' } },
+        { key: 'b', kind: 'item', item: { id: 'b', text: 'Create shed', hasSeparator: true } },
       ],
     })
 
     const list = rows.get('[role="listbox"]').element
     const separators = list.querySelectorAll('[role="separator"]')
     expect(separators).toHaveLength(1)
-    expect(separators[0]?.nextElementSibling?.textContent?.trim()).toBe('Create vault')
+    expect(separators[0]?.nextElementSibling?.textContent?.trim()).toBe('Create shed')
   })
 
   it('draws no line above the first row, as when a search leaves the item alone', () => {
     const rows = mountRows({
       rows: [
-        { key: 'b', kind: 'item', item: { id: 'b', text: 'Create vault', hasSeparator: true } },
+        { key: 'b', kind: 'item', item: { id: 'b', text: 'Create shed', hasSeparator: true } },
       ],
     })
 
@@ -89,8 +89,8 @@ describe('what the rows say', () => {
   it('names a group once, over the row that begins it', () => {
     const rows = mountRows()
     expect(rows.findAll('.searchable-list__heading').map((one) => one.text())).toEqual([
-      'Claude',
-      'Numen',
+      'Orchard',
+      'Hedge',
     ])
   })
 

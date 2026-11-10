@@ -9,6 +9,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Select from './Select.vue'
+import { Menu } from '../menu'
 
 const CHOICES = [
   { id: 'small', text: 'Small' },
@@ -197,9 +198,7 @@ describe('how wide the choices are drawn', () => {
       ({ left: 0, bottom: 32, width: 288 }) as DOMRect
     await openSelect(control)
 
-    expect(
-      document.body.querySelector<HTMLElement>('.menu')?.style.getPropertyValue('--asking'),
-    ).toBe('288px')
+    expect(control.findComponent(Menu).props('asking')).toBe(288)
   })
 })
 
@@ -254,12 +253,12 @@ describe('searching the choices', () => {
 describe('the value written on the line', () => {
   it('is kept to one line and read whole from its title', () => {
     const control = mountSelect({
-      choices: [{ id: 'long', text: 'Agent of the panel (OpenAI Codex) with a long tail' }],
+      choices: [{ id: 'long', text: 'Helper of the panel (Grove Press) with a long tail' }],
       modelValue: 'long',
     })
     const readingElement = control.get('.select__reading')
     expect(readingElement.attributes('title')).toBe(
-      'Agent of the panel (OpenAI Codex) with a long tail',
+      'Helper of the panel (Grove Press) with a long tail',
     )
   })
 })

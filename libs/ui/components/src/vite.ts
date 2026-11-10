@@ -1,6 +1,6 @@
 /**
- * The build settings of a stylesheet loaded after the one of `@numen/ui`: the shell's, and each
- * plugin's.
+ * The build settings of a stylesheet loaded after the one of `@numen/ui`: the host's, and each
+ * add-on's.
  *
  * A stylesheet built with the theme of `@numen/ui` repeats every utility its sources name. A
  * repeated rule loaded later wins over the rules of `@numen/ui` that override it, so `.prose`
