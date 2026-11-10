@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  MAX_SERVICE_LINES,
+  findOversizedServices,
   findPluginEntryViolations,
   parseEnabledGoLinters,
   readPluginPackageExports,
@@ -80,4 +82,24 @@ test('the exports of the plugin packages of this repository are read', () => {
 test('enabled Go linters are read from the YAML structure', () => {
   const yaml = 'version: "2"\nlinters:\n  default: none\n  enable:\n    - govet\n    # comment\n    - errcheck\n'
   assert.deepEqual(parseEnabledGoLinters(yaml), ['errcheck', 'govet'])
+})
+
+test('a service within the limit is clean', () => {
+  const backends = [{ plugin: 'a', serviceLines: MAX_SERVICE_LINES, innerPackages: [] }]
+  assert.deepEqual(findOversizedServices(backends), [])
+})
+
+test('a service over the limit is reported with the inner packages it lacks', () => {
+  const backends = [
+    { plugin: 'big', serviceLines: MAX_SERVICE_LINES + 1, innerPackages: ['api', 'domain'] },
+    {
+      plugin: 'split',
+      serviceLines: MAX_SERVICE_LINES + 1,
+      innerPackages: ['domain', 'usecase/read', 'ports'],
+    },
+  ]
+  const found = findOversizedServices(backends)
+  assert.equal(found.length, 2)
+  assert.match(found[0].symbol, /no usecase, ports package/)
+  assert.doesNotMatch(found[1].symbol, /; the backend has no/)
 })

@@ -171,6 +171,59 @@ export function verifyPluginBackendInternalLayers() {
   )
 }
 
+export const MAX_SERVICE_LINES = 600
+const MIN_SERVICES_EXAMINED = 15
+const REQUIRED_INNER_KINDS = ['domain', 'usecase', 'ports']
+
+/**
+ * The service package of a plugin backend is the composition root and the wire. Finds a service
+ * whose non-test code is longer than the limit, and says which of the domain, use case and ports
+ * packages the backend lacks to move that code into.
+ *
+ * @param {{ plugin: string, serviceLines: number, innerPackages: string[] }[]} backends
+ */
+export function findOversizedServices(backends) {
+  const found = []
+  for (const { plugin, serviceLines, innerPackages } of backends) {
+    if (serviceLines <= MAX_SERVICE_LINES) continue
+    const missing = REQUIRED_INNER_KINDS.filter(
+      (kind) => !innerPackages.some((name) => name === kind || name.startsWith(`${kind}/`)),
+    )
+    const lacking = missing.length > 0 ? `; the backend has no ${missing.join(', ')} package` : ''
+    found.push({
+      file: `plugins/${plugin}/backend/service`,
+      line: 1,
+      symbol: `service holds ${serviceLines} non-test lines, at most ${MAX_SERVICE_LINES}${lacking}`,
+    })
+  }
+  return found
+}
+
+function listPluginBackends() {
+  const byPlugin = new Map()
+  for (const file of listShippedFiles(['plugins/*/backend/*.go', 'plugins/*/backend/**/*.go'])) {
+    const [, plugin, , ...rest] = file.split('/')
+    const entry = byPlugin.get(plugin) ?? { plugin, serviceLines: 0, innerPackages: new Set() }
+    byPlugin.set(plugin, entry)
+    if (rest.length < 2) continue
+    if (rest[0] === 'service') {
+      entry.hasService = true
+      entry.serviceLines += fs.readFileSync(path.join(REPO_ROOT, file), 'utf8').split('\n').length - 1
+    } else {
+      entry.innerPackages.add(rest.slice(0, -1).join('/'))
+    }
+  }
+  return [...byPlugin.values()]
+    .filter((entry) => entry.hasService)
+    .map((entry) => ({ ...entry, innerPackages: [...entry.innerPackages] }))
+}
+
+export function verifyPluginServiceSize() {
+  const backends = listPluginBackends()
+  requireMatches('plugin backends with a service package', backends.length, MIN_SERVICES_EXAMINED)
+  failOnFindings('Plugin backend service package is too large', findOversizedServices(backends))
+}
+
 /**
  * Golden Template & Config Drift Verification for Standalone Plugins.
  */
@@ -374,6 +427,13 @@ export const PLUGIN_VERIFIERS = [
     module: 'plugins',
     name: 'Plugin Backend Internal Hexagonal Layer Direction',
     run: verifyPluginBackendInternalLayers,
+  },
+  {
+    id: 'plugin-service-size',
+    scope: 'plugins',
+    module: 'plugins',
+    name: 'Plugin Backend Service Package Stays The Composition Root And Wire',
+    run: verifyPluginServiceSize,
   },
   {
     id: 'plugins-independence',
