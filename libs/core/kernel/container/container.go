@@ -166,29 +166,35 @@ func (c Config) GetWait() machine.Wait {
 func settingsOf(c Config) settingsWiring {
 	res := getResources(c)
 	return settingsWiring{
-		SettingsPath:    c.SettingsPath,
-		ThemesPath:      c.ThemesPath,
-		RegistryPath:    c.RegistryPath,
-		InterfaceScale:  c.InterfaceScale,
-		TextScale:       c.TextScale,
-		Hardware:        c.Hardware,
-		ResolvedCompute: c.ResolvedCompute,
-		PluginHost:      c.PluginHost,
-		KeyStore:        c.KeyStore,
-		Watches:         res.watches,
-		SettingsFiles:   res.settingsFiles,
-		SettingEvents:   res.settingEvents,
-		Programs:        getPrograms(c),
-		SecretGate:      res.secretGate,
-		PluginChanges:   res.pluginChanges,
-		SubscribedHosts: &res.subscribedHosts,
-		ErrorHandler:    func(err error) { handleError(c, err) },
-		AgentProvider:   func() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) },
-		GetAgentPrograms: func(p agentport.AgentProvider, t settingsadapter.Agent) []agentdomain.Program {
-			return getAgentPrograms(plugins(c), p, t)
+		settingsPlaces: settingsPlaces{
+			SettingsPath:    c.SettingsPath,
+			ThemesPath:      c.ThemesPath,
+			RegistryPath:    c.RegistryPath,
+			InterfaceScale:  c.InterfaceScale,
+			TextScale:       c.TextScale,
+			Hardware:        c.Hardware,
+			ResolvedCompute: c.ResolvedCompute,
 		},
-		SetSecretSource: func() { setSecretSource(plugins(c)) },
-		SetCompleter:    func() { setCompleter(plugins(c)) },
+		settingsStores: settingsStores{
+			Watches:         res.watches,
+			SettingsFiles:   res.settingsFiles,
+			SettingEvents:   res.settingEvents,
+			Programs:        getPrograms(c),
+			SecretGate:      res.secretGate,
+			PluginChanges:   res.pluginChanges,
+			SubscribedHosts: &res.subscribedHosts,
+		},
+		settingsPlugins: settingsPlugins{
+			PluginHost:    c.PluginHost,
+			KeyStore:      c.KeyStore,
+			AgentProvider: func() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) },
+			GetAgentPrograms: func(p agentport.AgentProvider, t settingsadapter.Agent) []agentdomain.Program {
+				return getAgentPrograms(plugins(c), p, t)
+			},
+			SetSecretSource: func() { setSecretSource(plugins(c)) },
+			SetCompleter:    func() { setCompleter(plugins(c)) },
+		},
+		ErrorHandler: func(err error) { handleError(c, err) },
 	}
 }
 
@@ -242,44 +248,47 @@ func plugins(c Config) pluginsWiring {
 	programs := getPrograms(c)
 	v := vaultBase(c)
 	s := settingsWiring{
-		SettingsPath:  c.SettingsPath,
-		ThemesPath:    c.ThemesPath,
-		RegistryPath:  c.RegistryPath,
-		PluginHost:    c.PluginHost,
-		Watches:       res.watches,
-		SettingsFiles: res.settingsFiles,
-		SettingEvents: res.settingEvents,
-		Programs:      programs,
-		ErrorHandler:  func(err error) { handleError(c, err) },
+		settingsPlaces: settingsPlaces{SettingsPath: c.SettingsPath, ThemesPath: c.ThemesPath, RegistryPath: c.RegistryPath},
+		settingsStores: settingsStores{
+			Watches: res.watches, SettingsFiles: res.settingsFiles, SettingEvents: res.settingEvents, Programs: programs,
+		},
+		settingsPlugins: settingsPlugins{PluginHost: c.PluginHost},
+		ErrorHandler:    func(err error) { handleError(c, err) },
 	}
 	return pluginsWiring{
-		PluginCachePath:       c.PluginCachePath,
-		ServiceDir:            c.ServiceDir,
-		SafeMode:              c.SafeMode,
-		PluginHost:            c.PluginHost,
-		PluginCatalog:         c.PluginCatalog,
-		PluginDirs:            c.PluginDirs,
-		KeyStore:              c.KeyStore,
-		SettingsFiles:         res.settingsFiles,
-		SecretGate:            res.secretGate,
-		PluginChanges:         res.pluginChanges,
-		TextVersions:          c.TextVersions,
-		ListAppSettings:       func() []plugindomain.Setting { return listAppSettings(s) },
-		CredentialsPath:       func() string { return getCredentialsPath(plugins(c)) },
-		Programs:              programs,
-		VaultReaders:          vaultReaders(v),
-		NoteWriters:           noteWriters(v),
-		VaultLocks:            writeLocks(v),
-		VaultWatcher:          vaultWatcher(v),
-		ErrorHandler:          func(err error) { handleError(c, err) },
-		SettingsFile:          func() (string, error) { return settingsSettingsFile(s) },
-		ReadCheckedSettings:   func() (settingsadapter.File, error) { return readCheckedSettings(s) },
-		GetSettingsOrDefaults: func() settingsadapter.File { return settingsGetSettingsOrDefaults(s) },
-		RefreshSettingEvents:  func() { refreshSettingEvents(s) },
-		MakeRefresh: func(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
-			return vaultMakeRefresh(vaultOf(c), db, notes)
+		pluginInstall: pluginInstall{
+			PluginCachePath: c.PluginCachePath,
+			ServiceDir:      c.ServiceDir,
+			SafeMode:        c.SafeMode,
+			PluginHost:      c.PluginHost,
+			PluginCatalog:   c.PluginCatalog,
+			PluginDirs:      c.PluginDirs,
+			KeyStore:        c.KeyStore,
+			CredentialsPath: func() string { return getCredentialsPath(plugins(c)) },
 		},
-		BuildNotes: func(db *vault.Index, index edit.IndexUpdater) note.Scenarios { return Notes(c, db, index) },
-		Moves:      func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) },
+		pluginSettingsAccess: pluginSettingsAccess{
+			SettingsFiles:         res.settingsFiles,
+			SecretGate:            res.secretGate,
+			Programs:              programs,
+			PluginChanges:         res.pluginChanges,
+			ListAppSettings:       func() []plugindomain.Setting { return listAppSettings(s) },
+			SettingsFile:          func() (string, error) { return settingsSettingsFile(s) },
+			ReadCheckedSettings:   func() (settingsadapter.File, error) { return readCheckedSettings(s) },
+			GetSettingsOrDefaults: func() settingsadapter.File { return settingsGetSettingsOrDefaults(s) },
+			RefreshSettingEvents:  func() { refreshSettingEvents(s) },
+		},
+		pluginVaultAccess: pluginVaultAccess{
+			TextVersions: c.TextVersions,
+			VaultReaders: vaultReaders(v),
+			NoteWriters:  noteWriters(v),
+			VaultLocks:   writeLocks(v),
+			VaultWatcher: vaultWatcher(v),
+			MakeRefresh: func(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
+				return vaultMakeRefresh(vaultOf(c), db, notes)
+			},
+			BuildNotes: func(db *vault.Index, index edit.IndexUpdater) note.Scenarios { return Notes(c, db, index) },
+			Moves:      func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) },
+		},
+		ErrorHandler: func(err error) { handleError(c, err) },
 	}
 }

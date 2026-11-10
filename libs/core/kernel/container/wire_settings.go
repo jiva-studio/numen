@@ -90,27 +90,39 @@ func UnsubscribeHost(c Config) {
 const agentAt = "agent"
 
 // settingsWiring wires the settings, setting change events and themes of an installation.
-type settingsWiring struct {
+type settingsPlaces struct {
 	SettingsPath              string
 	ThemesPath                string
 	RegistryPath              string
 	InterfaceScale, TextScale float64
 	Hardware                  hardware.Specs
 	ResolvedCompute           hardware.ResolvedCompute
-	PluginHost                *PluginHost
-	KeyStore                  pluginport.KeyStore
-	Watches                   *vaultwatch.Hub
-	SettingsFiles             *settingsadapter.Files
-	SettingEvents             *settingevents.Events
-	Programs                  *settingsadapter.ProgramList
-	SecretGate                *secret.Gate
-	SubscribedHosts           *settingsusecase.HostSubscriptions
-	PluginChanges             *settingsusecase.PluginChanges
-	ErrorHandler              func(error)
-	AgentProvider             func() agentport.AgentProvider
-	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
-	SetSecretSource           func()
-	SetCompleter              func()
+}
+
+type settingsStores struct {
+	Watches         *vaultwatch.Hub
+	SettingsFiles   *settingsadapter.Files
+	SettingEvents   *settingevents.Events
+	Programs        *settingsadapter.ProgramList
+	SecretGate      *secret.Gate
+	SubscribedHosts *settingsusecase.HostSubscriptions
+	PluginChanges   *settingsusecase.PluginChanges
+}
+
+type settingsPlugins struct {
+	PluginHost       *PluginHost
+	KeyStore         pluginport.KeyStore
+	AgentProvider    func() agentport.AgentProvider
+	GetAgentPrograms func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
+	SetSecretSource  func()
+	SetCompleter     func()
+}
+
+type settingsWiring struct {
+	settingsPlaces
+	settingsStores
+	settingsPlugins
+	ErrorHandler func(error)
 }
 
 func defaultSettings() settingsadapter.File {

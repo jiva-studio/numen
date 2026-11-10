@@ -144,33 +144,45 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 }
 
 // pluginsWiring wires the plugin catalog, plugin host, agent provider and dependencies.
-type pluginsWiring struct {
-	PluginCachePath       string
-	ServiceDir            string
-	SafeMode              bool
-	PluginHost            *PluginHost
-	PluginCatalog         catalog.Config
-	PluginDirs            []string
-	KeyStore              pluginport.KeyStore
+type pluginInstall struct {
+	PluginCachePath string
+	ServiceDir      string
+	SafeMode        bool
+	PluginHost      *PluginHost
+	PluginCatalog   catalog.Config
+	PluginDirs      []string
+	KeyStore        pluginport.KeyStore
+	CredentialsPath func() string
+}
+
+type pluginSettingsAccess struct {
 	SettingsFiles         *settingsadapter.Files
 	SecretGate            *secret.Gate
 	Programs              *settingsadapter.ProgramList
-	VaultReaders          vaultport.VaultReaders
-	NoteWriters           vaultport.NoteWriters
-	VaultLocks            vaultport.VaultLocks
-	VaultWatcher          vaultport.VaultWatcher
-	ErrorHandler          func(error)
+	PluginChanges         *settingsusecase.PluginChanges
+	ListAppSettings       func() []plugindomain.Setting
 	SettingsFile          func() (string, error)
 	ReadCheckedSettings   func() (settingsadapter.File, error)
 	GetSettingsOrDefaults func() settingsadapter.File
 	RefreshSettingEvents  func()
-	MakeRefresh           func(*vault.Index, noteport.NoteRepository) vault.Refresh
-	BuildNotes            func(*vault.Index, edit.IndexUpdater) note.Scenarios
-	Moves                 func(context.Context) (<-chan struct{}, error)
-	PluginChanges         *settingsusecase.PluginChanges
-	TextVersions          *textversion.Versions
-	ListAppSettings       func() []plugindomain.Setting
-	CredentialsPath       func() string
+}
+
+type pluginVaultAccess struct {
+	TextVersions *textversion.Versions
+	VaultReaders vaultport.VaultReaders
+	NoteWriters  vaultport.NoteWriters
+	VaultLocks   vaultport.VaultLocks
+	VaultWatcher vaultport.VaultWatcher
+	MakeRefresh  func(*vault.Index, noteport.NoteRepository) vault.Refresh
+	BuildNotes   func(*vault.Index, edit.IndexUpdater) note.Scenarios
+	Moves        func(context.Context) (<-chan struct{}, error)
+}
+
+type pluginsWiring struct {
+	pluginInstall
+	pluginSettingsAccess
+	pluginVaultAccess
+	ErrorHandler func(error)
 }
 
 func getPluginCatalog(c pluginsWiring) *catalog.Service {
