@@ -10,19 +10,15 @@ import {
 } from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing/plexScale'
 import { EXPANSION_DELAY } from '../model/sizing/expansion'
-import { type PlexHeading } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { createNeighbourhood, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
 import { nameNow } from '../fixtures/names'
 import { ring } from '../fixtures/ring'
-import type { PlexEdge } from '../lib/edge'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import type { PlexNode, Position } from '../lib/node'
-import type { PlexRelation } from '../lib/relation'
-import type { PlexDestination } from '../model/interaction/destination'
+import type { Position } from '../lib/node'
 import type { Clock } from '../model/transition'
 import type { MenuTrigger } from '@numen/ui'
+import type { PlexHeading, PlexEdge, PlexNeighbourhood, PlexNode, PlexRelation, PlexDestination } from '../../types'
 
 interface Knobs {
   neighbourhood: PlexNeighbourhood

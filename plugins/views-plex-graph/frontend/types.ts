@@ -3,7 +3,6 @@
  */
 import type { Component, ComputedRef, Ref } from 'vue'
 import type { MenuItem, MenuTrigger } from '@numen/ui'
-import type { PlexNeighbourhood, PlexHeading, PlexRelation, PlexDestination } from './plex'
 import type {
   CommandItem,
   CommandTarget,
@@ -237,4 +236,62 @@ export interface PlexTabState {
 export interface PlexGraphViewProps {
   readonly state: PlexTabState
   readonly context?: PluginContext
+}
+
+/** Every relation a node can take to the one in focus. */
+export type PlexRelation = 'parent' | 'child' | 'jump' | 'sibling'
+
+/** Where a node is positioned relative to the one in focus. */
+export type PlexNodeRelation = 'focus' | PlexRelation
+
+/** Where an opened node is shown: in the current pane, or in an adjacent split. */
+export type PlexDestination = 'current' | 'split'
+
+/**
+ * A node as the caller describes it. The id is opaque: the plex cannot query what
+ * it addresses, and the relation is a position in the layout, not a claim about
+ * a graph.
+ */
+export interface PlexNode {
+  readonly id: string
+  readonly title: string
+  readonly relation: PlexNodeRelation
+}
+
+/** The end of a line an arrowhead is drawn at, pointing out of the line there. */
+export type EdgeArrow = 'from' | 'to'
+
+/**
+ * Words set along an edge. A line with one label carries it in the middle, on
+ * the line, its letters across it. With two whose records both have a head,
+ * each is set near the end its head is at, on its own side, and reads toward that end. Otherwise
+ * the first, written in the `from` note, is set near the `from` end and reads from `from` to `to`,
+ * and the second, written in the `to` note, is set near the `to` end on the other side and reads back.
+ */
+export interface EdgeLabel {
+  readonly text: string
+  readonly end?: EdgeArrow
+}
+
+export interface PlexEdge {
+  readonly from: string
+  readonly to: string
+  readonly labels?: readonly EdgeLabel[]
+  readonly arrows?: readonly EdgeArrow[]
+}
+
+/** One neighbourhood: the node in focus and everything shown around it. */
+export interface PlexNeighbourhood {
+  readonly nodes: readonly PlexNode[]
+  readonly edges: readonly PlexEdge[]
+}
+
+/**
+ * One heading of a node, as the caller describes it. The identifier is opaque:
+ * the plex has no way to ask what it addresses.
+ */
+export interface PlexHeading {
+  readonly id: string
+  readonly text: string
+  readonly level: number
 }

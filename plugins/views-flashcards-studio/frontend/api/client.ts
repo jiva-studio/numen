@@ -52,7 +52,7 @@ import type {
   WriteDeckResponse,
   WritePresetRequest,
   WritePresetResponse,
-} from './types'
+} from '../lib/wire/types'
 
 /** The name the manifest declares for the service. */
 export const SERVICE = 'md.numen.views.flashcards.studio'

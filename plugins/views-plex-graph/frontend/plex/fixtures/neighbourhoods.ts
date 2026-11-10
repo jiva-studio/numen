@@ -1,13 +1,10 @@
+import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexNodeRelation } from '../../types'
 /**
  * Neighbourhoods to build against, handwritten and deliberately awkward.
  *
  * None of this comes from a vault: a fixture taken from the domain would pull
  * the dependency in through tests.
  */
-import type { PlexEdge } from '../lib/edge'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import type { PlexNode } from '../lib/node'
-import type { PlexNodeRelation } from '../lib/relation'
 
 function neighbourhood(
   focus: string,

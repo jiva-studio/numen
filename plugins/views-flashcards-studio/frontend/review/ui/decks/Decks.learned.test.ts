@@ -1,0 +1,158 @@
+// @vitest-environment jsdom
+import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
+
+import Decks from './Decks.vue'
+import { getLearnedShare } from '../../lib/decks/progress'
+import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '../../lib/vault/types'
+import type { Preset, Settings } from '../../lib/decks/types'
+
+const settings: Settings = {
+  goal: 'minutes',
+  byDate: '',
+  minutesADay: 20,
+  newADay: 10,
+  reviewsADay: 45,
+  retention: 0.9,
+  load: {},
+  hasEvenLoad: true,
+}
+
+/** What closes the day of the fixture, which is steered by its minutes. */
+const closes: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
+
+const preset = (fields: Partial<Preset> = {}): Preset => ({
+  path: 'Sanskrit.md',
+  name: 'Sanskrit',
+  settings,
+  decks: ['decks/Words.md'],
+  named: 1,
+  reviewCards: 20,
+  cards: 16,
+  budget: { new: 10, reviews: 45, minutes: 20 },
+  closes,
+  reviewed: 0,
+  reviewedNew: 0,
+  reviewedReviews: 0,
+  took: 0,
+  paused: '',
+  wrong: '',
+  ...fields,
+})
+
+const deck = (fields: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
+  deck: 'decks/Words.md',
+  reviewCards: 20,
+  due: 8,
+  new: 2,
+  learned: 5,
+  unbegun: 0,
+  ...fields,
+})
+
+const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
+  identity: { vault: '01A', name: 'Studies', path: '/vaults/01A' },
+  isCounted: true,
+  totals: { reviewCards: 20, due: 8, new: 2 },
+  decks: [deck()],
+  presets: [],
+  unread: '',
+  isIndexing: false,
+  ...fields,
+})
+
+const mountDecks = (overrides: VaultCardsDue, presets: readonly Preset[], isScheduled = true) =>
+  mount(Decks, {
+    props: {
+      vault: overrides,
+      days: new Map(),
+      due: new Map(),
+      presets,
+      byDeck: new Map(presets.flatMap((one) => one.decks.map((deck) => [deck, one] as const))),
+      hasPresets: isScheduled,
+      today: '2026-09-05',
+    },
+  })
+
+describe('how much of a deck remains learned', () => {
+  it('is drawn as a share of the deck, with the word', () => {
+    const one = mountDecks(vault(), [preset()])
+
+    expect(one.findAll('.decks__learned').map((el) => el.text())).toEqual(['25% learned'])
+  })
+
+  //   // The tile above renders a bare share of the day's work, so this one always
+  //   // carries the word: the two answer different questions.
+  it('never remains as a figure alone', () => {
+    const one = mountDecks(vault(), [preset({ reviewed: 10, took: 10 })])
+
+    for (const el of one.findAll('.decks__learned')) {
+      expect(el.text()).toContain('learned')
+    }
+  })
+
+  it('says nothing of a deck holding no review card', () => {
+    const one = mountDecks(
+      vault({
+        totals: { reviewCards: 0, due: 0, new: 0 },
+        decks: [deck({ reviewCards: 0, due: 0, new: 0, learned: 0 })],
+      }),
+      [preset({ reviewCards: 0, cards: 0 })],
+    )
+
+    expect(one.findAll('.decks__learned')).toHaveLength(0)
+  })
+
+  //   // A count that has not arrived shows a placeholder figure and never claims that
+  //   // there is none, and the row does not move when it arrives.
+  it('is drawn as the shape it will be until the count lands', () => {
+    const one = mountDecks(vault({ isCounted: false }), [])
+
+    expect(one.findAll('.decks__learned')).toHaveLength(1)
+    expect(one.find('.decks__learned').text()).toBe('')
+    expect(one.find('.decks__learned').classes()).toContain('skeleton')
+  })
+
+  // The rule the share is counted by is the preset's, so a deck whose preset
+  // could not be read has none to be counted by.
+  it('says there is no rule to count by where the deck has no preset', () => {
+    const one = mountDecks(vault(), [preset({ decks: [] })])
+
+    expect(one.find('.decks__learned').text()).toBe('no learned rule')
+  })
+
+  // The figure is the count's and the rule is the preset's, so a screen still
+  // reading the presets draws the figure and holds its verdict.
+  it('draws the count while the presets are still being read', () => {
+    const one = mountDecks(vault(), [], false)
+
+    expect(one.find('.decks__learned').text()).toBe('25% learned')
+  })
+
+  it('remains along with what is due in the deck and not in its place', () => {
+    const one = mountDecks(vault(), [preset()])
+
+    expect(one.find('.decks__learned').exists()).toBe(true)
+    expect(one.text()).toContain('10')
+  })
+})
+
+describe('a deck as a share of itself', () => {
+  it('is what remains learned over what the deck holds', () => {
+    expect(getLearnedShare(deck({ reviewCards: 20, learned: 5 }))).toBe(0.25)
+    expect(getLearnedShare(deck({ reviewCards: 4, learned: 4 }))).toBe(1)
+    expect(getLearnedShare(deck({ reviewCards: 4, learned: 0 }))).toBe(0)
+  })
+
+  it('is nothing at all for a deck holding no review card', () => {
+    expect(getLearnedShare(deck({ reviewCards: 0, learned: 0 }))).toBeNull()
+  })
+})
+
+// Nothing here reads a preset's own day, and the fixture is a preset that
+// schedules something.
+it('draws a deck of a stopped preset with its share all the same', () => {
+  const one = mountDecks(vault(), [preset({ paused: 'no cards per day' })])
+
+  expect(one.find('.decks__learned').text()).toBe('25% learned')
+})

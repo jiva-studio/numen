@@ -1,0 +1,45 @@
+/**
+ * Tab-level card and section mutations for flashcard deck tabs.
+ */
+import {
+  addCard,
+  addSection,
+  dropCard,
+  replaceCardValue,
+  findCardModelPath,
+  removeCard,
+  removeSection,
+  renameSection,
+  type BufferDeck,
+} from '../../lib/deck/deck'
+import type { CardModelSummary, Value } from '../../../types'
+
+export interface DeckTabActionDeps {
+  getDeck: (id: string) => BufferDeck
+  updateDeck: (id: string, deck: BufferDeck) => void
+  getCardModelChoices: () => readonly CardModelSummary[]
+}
+
+export function createDeckTabActions(id: string, deps: DeckTabActionDeps) {
+  const { getDeck, updateDeck, getCardModelChoices } = deps
+  return {
+    addCard: (cardModel: string, values: readonly Value[], section: string | null = null) =>
+      updateDeck(
+        id,
+        addCard(getDeck(id), cardModel, {
+          cardModelPath: findCardModelPath(getCardModelChoices(), cardModel),
+          values,
+          section,
+        }),
+      ),
+    removeCard: (card: string) => updateDeck(id, removeCard(getDeck(id), card)),
+    moveCard: (card: string, target: string | null) =>
+      updateDeck(id, dropCard(getDeck(id), card, target)),
+    writeCardField: (...[card, field, index, text]: [string, string, number, string]) =>
+      updateDeck(id, replaceCardValue(getDeck(id), card, { field, index, text })),
+    addSection: (name: string) => updateDeck(id, addSection(getDeck(id), name)),
+    renameSection: (section: string, name: string) =>
+      updateDeck(id, renameSection(getDeck(id), section, name)),
+    removeSection: (section: string) => updateDeck(id, removeSection(getDeck(id), section)),
+  }
+}

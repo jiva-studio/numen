@@ -1,3 +1,4 @@
+import type { PlexEdge, PlexNeighbourhood, PlexNode } from '../../types'
 /**
  * A small graph, and the rule for extracting one neighbourhood from it.
  *
@@ -5,9 +6,6 @@
  * once the plex works out who a sibling is, it depends on the domain. It exists because
  * movement can only be judged by walking a real graph back and forth.
  */
-import type { PlexEdge } from '../lib/edge'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import type { PlexNode } from '../lib/node'
 
 interface GraphNode {
   readonly title: string

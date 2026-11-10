@@ -21,11 +21,8 @@ import { ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
 import { hoverOver } from '../../fixtures/colour'
 import Plex from './Plex.vue'
-import { RELATION_NAMES, type PlexRelation } from '../lib/relation'
-import type { PlexEdge } from '../lib/edge'
-import type { PlexHeading } from '../lib/inside'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import type { PlexNode } from '../lib/node'
+import { RELATION_NAMES } from '../lib/relation'
+import type { PlexRelation, PlexEdge, PlexHeading, PlexNeighbourhood, PlexNode } from '../../types'
 
 const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
   id,

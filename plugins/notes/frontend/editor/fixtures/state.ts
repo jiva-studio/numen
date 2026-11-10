@@ -6,7 +6,7 @@
 import { markdown } from '@codemirror/lang-markdown'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState } from '@codemirror/state'
-import { LANGUAGES } from '../config/languages'
+import { LANGUAGES } from '../lib/config/languages'
 import { GFM } from '@lezer/markdown'
 
 export const createState = (doc: string, caret = 0) => {

@@ -3,7 +3,7 @@
  * frontend. Each is checked against the interfaces of `types.ts` and sent through the client.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import typesSource from './types.ts?raw'
+import typesSource from '../lib/wire/types.ts?raw'
 import stopSource from '../lib/stop.ts?raw'
 
 const fixtureFiles = import.meta.glob('../../testdata/api/*.json', {

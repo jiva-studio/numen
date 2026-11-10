@@ -3,8 +3,9 @@
  * it to the recording after typing stops.
  */
 import { ref, type Ref } from 'vue'
-import { applyCues, isSame, type Cue } from '../lib/cues'
+import { applyCues, isSame } from '../lib/cues'
 import { formatErrorMessage } from '@numen/plugin-sdk'
+import type { Cue } from '../types'
 
 /** What the words being edited are kept against. */
 export interface DraftOptions {
