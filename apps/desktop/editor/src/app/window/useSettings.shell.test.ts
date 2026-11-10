@@ -97,7 +97,7 @@ describe('the appearance of the window after a write of the settings of the shel
     await vi.waitFor(() => {
       expect(settings.appearance.state.applied.value).toBe('plugin:md.example.themes/dusk')
       expect(settings.appearance.state.mode.value).toBe('dark')
-      expect(settings.appearance.preview.sized.value).toStrictEqual({
+      expect(settings.appearance.preview.display.sized.value).toStrictEqual({
         interfaceScale: 1.4,
         textScale: 1.2,
       })
