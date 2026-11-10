@@ -41,7 +41,7 @@ func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost
 	}
 	pluginHost := pluginswiring.OpenPluginHost("desktop.editor", root)
 	lent := container.LendPluginHost(pluginHost)
-	host := &recordingHost{SettingUpdater: lent, SettingsPush: lent}
+	host := &recordingHost{SettingUpdater: lent.SettingUpdater, SettingsPush: lent.SettingsPush}
 	lent.SettingUpdater, lent.SettingsPush = host, host
 	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
 	selected, err := cfg.Settings()

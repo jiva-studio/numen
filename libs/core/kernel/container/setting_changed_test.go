@@ -90,10 +90,10 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	real := container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))
-	host := &recordingHost{SettingUpdater: real, SettingsPush: real}
-	real.SettingUpdater, real.SettingsPush = host, host
-	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: real})
+	lent := container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))
+	host := &recordingHost{SettingUpdater: lent.SettingUpdater, SettingsPush: lent.SettingsPush}
+	lent.SettingUpdater, lent.SettingsPush = host, host
+	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
 	cfg = cfg.SetSettings(container.DefaultSettings())
 	t.Cleanup(cfg.UnsubscribeHost)
 	return cfg, path, host
