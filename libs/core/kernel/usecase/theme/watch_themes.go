@@ -53,13 +53,7 @@ func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) err
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			current := u.catalog.listPluginThemeNames()
-			names := listDifference(previous, current)
-			previous = current
-			if len(names) == 0 {
-				continue
-			}
-			if err := send(names); err != nil {
+			if err := u.sendPluginChanges(&previous, send); err != nil {
 				return err
 			}
 		case titles, open := <-changed:
@@ -71,6 +65,17 @@ func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) err
 			}
 		}
 	}
+}
+
+// sendPluginChanges sends the plugin themes added or removed since previous, and keeps the current set in previous.
+func (u *WatchThemes) sendPluginChanges(previous *[]string, send func(names []string) error) error {
+	current := u.catalog.listPluginThemeNames()
+	names := listDifference(*previous, current)
+	*previous = current
+	if len(names) == 0 {
+		return nil
+	}
+	return send(names)
 }
 
 func (u *WatchThemes) watchOwnThemes(ctx context.Context) (<-chan []string, error) {

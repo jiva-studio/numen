@@ -16,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/apps/mobile/bind"
 )
 
-// graphCentre is the note of writeGraph with every relation: a parent, two
+// graphCenter is the note of writeGraph with every relation: a parent, two
 // children, a sibling and a jump.
-const graphCentre = "Physics.md"
+const graphCenter = "Physics.md"
 
 func writeGraph(t *testing.T, root string) {
 	t.Helper()
@@ -118,7 +118,7 @@ func TestStartAnswers(t *testing.T) {
 	for ctx.Err() == nil {
 		relations = map[string]int{}
 		var around []any
-		if related, hasRelated := ask("NoteService", "GetNeighborhood", map[string]any{"path": graphCentre})["related"]; hasRelated && related != nil {
+		if related, hasRelated := ask("NoteService", "GetNeighborhood", map[string]any{"path": graphCenter})["related"]; hasRelated && related != nil {
 			around = asList(t, related)
 		}
 		for _, one := range around {
@@ -131,7 +131,7 @@ func TestStartAnswers(t *testing.T) {
 	}
 	for _, relation := range wanted {
 		if relations[relation] == 0 {
-			t.Errorf("%s has no %s: %v", graphCentre, relation, relations)
+			t.Errorf("%s has no %s: %v", graphCenter, relation, relations)
 		}
 	}
 
