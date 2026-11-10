@@ -168,7 +168,6 @@ interface Activation {
   readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 
-/** Settles once every enabled plugin with a kind of tab has started or failed. */
 function createTabPluginsWait(status: PluginStatus, activation: Activation) {
   const { isEnabled, listPlugins, settlePlugin } = status
   return async (): Promise<void> => {
