@@ -13,6 +13,7 @@ import (
 	"time"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
@@ -62,10 +63,10 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 // ResolvePlugin resolves the plugin manager for capability when available and not in safe mode.
 func (c Config) ResolvePlugin(capability string) (pluginport.PluginManager, error) {
 	if c.PluginHost == nil {
-		return nil, &pluginport.UnavailableError{Capability: capability, Reason: pluginport.PluginNotInstalled}
+		return nil, &plugindomain.UnavailableError{Capability: capability, Reason: plugindomain.NotInstalled}
 	}
 	if c.SafeMode {
-		return nil, &pluginport.UnavailableError{Capability: capability, Reason: pluginport.PluginDisabled, Err: errSafeMode}
+		return nil, &plugindomain.UnavailableError{Capability: capability, Reason: plugindomain.Disabled, Err: errSafeMode}
 	}
 	if _, err := c.PluginHost.ResolveCapability(capability); err != nil {
 		return nil, err
@@ -135,10 +136,10 @@ func (c Config) GetPluginServices() PluginServices {
 }
 
 // GetPluginRetrier starts again, on request from the window, a plugin whose last start failed.
-func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
-	return func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
+func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
+	return func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
 		if c.PluginHost == nil {
-			return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled}
+			return nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.NotInstalled}
 		}
 		return c.PluginHost.RetryPlugin(ctx, pluginID)
 	}
@@ -150,7 +151,7 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.SetOnPluginFailed(func(failure pluginport.PluginFailure) {
+	c.PluginHost.SetOnPluginFailed(func(failure plugindomain.Failure) {
 		tasks.Set(run.Task{
 			ID:         pluginFailureTaskPrefix + failure.PluginID,
 			Title:      "Plugin stopped",
@@ -398,7 +399,7 @@ func (c Config) SetSecretSource() {
 		return
 	}
 	ledger := c.OpenSecretLedger()
-	c.PluginHost.SetSecretSource(pluginport.SecretSource{
+	c.PluginHost.SetSecretSource(plugindomain.SecretSource{
 		List:  ledger.GetSecrets,
 		Prune: c.OpenSecrets().Prune.Execute,
 	})
@@ -440,12 +441,12 @@ type commandManifests interface {
 	ListSlots() []pluginport.PluginSlotEntry
 	ListKeybindings() []pluginport.PluginKeybindingEntry
 	ListHandlers() []pluginport.PluginCommandEntry
-	GetParts(pluginID string) pluginport.PluginParts
+	GetParts(pluginID string) plugindomain.Parts
 }
 
 // commandRuns runs a command in the backend of its plugin.
 type commandRuns interface {
-	RunCommand(ctx context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
+	RunCommand(ctx context.Context, call plugindomain.CommandCall) (plugindomain.CommandResult, error)
 }
 
 // pluginCommands is the commands the manifests declare, listed from the manifests, and run in the

@@ -1,5 +1,7 @@
 package pluginport
 
+import "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+
 // PluginSetting declares one configuration field managed by the core host.
 type PluginSetting struct {
 	Key           string
@@ -59,15 +61,9 @@ type PluginInfo struct {
 	IsActive      bool
 	Permissions   []string
 	Secrets       []SecretDeclaration
-	Failure       *PluginFailure
+	Failure       *plugin.Failure
 	HasFrontend   bool
 	HasBackend    bool
-	Readers       []PluginReaderInfo
+	Readers       []plugin.ReaderInfo
 	SettingsViews []PluginSettingsView
-}
-
-// PluginReaderInfo is a reader of a plugin and the files it opens.
-type PluginReaderInfo struct {
-	ID         string
-	Extensions []string
 }

@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // keySecrets is the key of the section of the file that lists the secrets. It is no plugin id,
@@ -51,15 +51,15 @@ func (f *File) readSecrets(raw json.RawMessage) {
 	}
 }
 
-func newSecret(entry secretEntry) pluginport.Secret {
-	secret := pluginport.Secret{ID: entry.ID, Name: entry.Name, Group: entry.Group}
+func newSecret(entry secretEntry) plugin.Secret {
+	secret := plugin.Secret{ID: entry.ID, Name: entry.Name, Group: entry.Group}
 	for _, one := range entry.Allowed {
-		secret.Allowed = append(secret.Allowed, pluginport.DeclarationKey(one))
+		secret.Allowed = append(secret.Allowed, plugin.DeclarationKey(one))
 	}
 	return secret
 }
 
-func newSecretEntries(secrets []pluginport.Secret) []secretEntry {
+func newSecretEntries(secrets []plugin.Secret) []secretEntry {
 	entries := make([]secretEntry, 0, len(secrets))
 	for _, secret := range secrets {
 		entry := secretEntry{ID: secret.ID, Name: secret.Name, Group: secret.Group, Allowed: []permissionEntry{}}
@@ -75,8 +75,8 @@ func newSecretEntries(secrets []pluginport.Secret) []secretEntry {
 // declaration isDeclared does not know. A secret is invalid when its id, name or group has the
 // wrong shape, its id repeats, or its name repeats inside its group. Each one adds a notice and the
 // bytes of the file on disk are not touched.
-func (f *File) DropInvalidSecrets(isDeclared func(pluginport.DeclarationKey) bool) {
-	var kept []pluginport.Secret
+func (f *File) DropInvalidSecrets(isDeclared func(plugin.DeclarationKey) bool) {
+	var kept []plugin.Secret
 	seenIDs := map[string]bool{}
 	seenNames := map[[2]string]bool{}
 	for _, secret := range f.Secrets {
@@ -92,15 +92,15 @@ func (f *File) DropInvalidSecrets(isDeclared func(pluginport.DeclarationKey) boo
 	f.Secrets = kept
 }
 
-func getSecretIssue(secret pluginport.Secret, seenIDs map[string]bool, seenNames map[[2]string]bool) string {
+func getSecretIssue(secret plugin.Secret, seenIDs map[string]bool, seenNames map[[2]string]bool) string {
 	switch {
-	case !pluginport.IsValidSecretID(secret.ID):
+	case !plugin.IsValidSecretID(secret.ID):
 		return "the id has the wrong shape"
 	case seenIDs[secret.ID]:
 		return "the id is used twice"
-	case !pluginport.IsValidSecretName(secret.Name):
+	case !plugin.IsValidSecretName(secret.Name):
 		return "the name has the wrong shape"
-	case !pluginport.IsValidSecretName(secret.Group):
+	case !plugin.IsValidSecretName(secret.Group):
 		return "the group has the wrong shape"
 	case seenNames[[2]string{secret.Group, secret.Name}]:
 		return "the name is used twice in its group"
@@ -108,8 +108,8 @@ func getSecretIssue(secret pluginport.Secret, seenIDs map[string]bool, seenNames
 	return ""
 }
 
-func (f *File) keepDeclared(secret pluginport.Secret, isDeclared func(pluginport.DeclarationKey) bool) []pluginport.DeclarationKey {
-	var kept []pluginport.DeclarationKey
+func (f *File) keepDeclared(secret plugin.Secret, isDeclared func(plugin.DeclarationKey) bool) []plugin.DeclarationKey {
+	var kept []plugin.DeclarationKey
 	for _, one := range secret.Allowed {
 		switch {
 		case !isDeclared(one):
@@ -127,7 +127,7 @@ func (f *File) keepDeclared(secret pluginport.Secret, isDeclared func(pluginport
 // ChangeSecrets reads the secrets section of the file, applies change and writes the section back,
 // all under one hold of the lock. The rest of the file is kept byte for byte. Nothing is written
 // where change fails or leaves the list as it was.
-func (f *Files) ChangeSecrets(path string, change func([]pluginport.Secret) ([]pluginport.Secret, error)) error {
+func (f *Files) ChangeSecrets(path string, change func([]plugin.Secret) ([]plugin.Secret, error)) error {
 	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
@@ -158,11 +158,11 @@ func (f *Files) ChangeSecrets(path string, change func([]pluginport.Secret) ([]p
 	})
 }
 
-func normalize(secrets []pluginport.Secret) []pluginport.Secret {
-	out := make([]pluginport.Secret, 0, len(secrets))
+func normalize(secrets []plugin.Secret) []plugin.Secret {
+	out := make([]plugin.Secret, 0, len(secrets))
 	for _, secret := range secrets {
 		if secret.Allowed == nil {
-			secret.Allowed = []pluginport.DeclarationKey{}
+			secret.Allowed = []plugin.DeclarationKey{}
 		}
 		out = append(out, secret)
 	}

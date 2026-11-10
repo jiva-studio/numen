@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -87,7 +88,7 @@ func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (*vau
 	vault := &cancellingVault{fakeNoteVault: newFakeNoteVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
 	hostCallers := newCallers(nil)
 	hostCallers.vault = vault
-	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}})
+	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}})
 	return endpoint, vault, ctx
 }
 
@@ -328,7 +329,7 @@ func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.
 	vault := &cancellingLinkVault{linkingVault: newLinkingVault(), cancel: cancel}
 	hostCallers := newCallers(nil)
 	hostCallers.vault = vault
-	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}})
+	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}})
 	batch := getCancelledBatch()
 	links := make([]*v1.HostLinkAddition, len(batch))
 	for i, from := range batch {

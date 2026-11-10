@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -26,14 +27,14 @@ type Plugins interface {
 // CommandRun runs a handler checked against its declaration, as a run a person starts is: its
 // backend, its condition and its arguments.
 type CommandRun interface {
-	Execute(ctx context.Context, v domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
+	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
 }
 
 // Versions gives the text versions of a file as target.versions holds them.
 type Versions interface {
 	// ListTargetVersions lists the versions of the file, each with its kind, its plugin and whether it
 	// is live.
-	ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]pluginport.TargetVersion, error)
+	ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]plugin.TargetVersion, error)
 }
 
 // Triggers runs the triggers over the files of a vault. One pass over a vault runs at a time.
@@ -163,7 +164,7 @@ type pass struct {
 // only where a condition depends on them.
 type file struct {
 	path           string
-	values         pluginport.TargetValues
+	values         plugin.TargetValues
 	isNoteRead     bool
 	isVersionsRead bool
 }
@@ -171,7 +172,7 @@ type file struct {
 func (p *pass) runFile(ctx context.Context, path string) {
 	current := &file{
 		path:   path,
-		values: pluginport.NewTargetValues(path, false, p.triggers.types.GetContentType(path)).WithConfig(p.config),
+		values: plugin.NewTargetValues(path, false, p.triggers.types.GetContentType(path)).WithConfig(p.config),
 	}
 	for _, one := range p.list {
 		if p.skipped[one.entry.PluginID] {
@@ -185,13 +186,13 @@ func (p *pass) runFile(ctx context.Context, path string) {
 		if !isTrue {
 			continue
 		}
-		_, err = p.triggers.run.Execute(ctx, p.vault, pluginport.PluginCommandCall{
+		_, err = p.triggers.run.Execute(ctx, p.vault, plugin.CommandCall{
 			PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: path,
 		})
 		if err == nil {
 			continue
 		}
-		if errors.As(err, new(*pluginport.UnavailableError)) {
+		if errors.As(err, new(*plugin.UnavailableError)) {
 			p.skipped[one.entry.PluginID] = true
 		}
 		p.failures = append(p.failures, fmt.Errorf("%s of %s over %s: %w", one.entry.Trigger.Command, one.entry.PluginID, path, err))
@@ -219,7 +220,7 @@ func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, er
 	return result == pluginport.ConditionTrue, nil
 }
 
-func evaluate(values pluginport.TargetValues, one trigger) pluginport.PluginConditionResult {
+func evaluate(values plugin.TargetValues, one trigger) pluginport.PluginConditionResult {
 	got := values.Get()
 	results := []pluginport.PluginConditionResult{one.condition.Evaluate(got), one.handler.Evaluate(got)}
 	switch {

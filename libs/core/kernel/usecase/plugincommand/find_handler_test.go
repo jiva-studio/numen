@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -81,7 +82,7 @@ func TestRunPassesTheVersionArgumentToACommandWithItems(t *testing.T) {
 	}}}}
 	run := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run
 
-	_, err := run.Execute(t.Context(), getVault(), plugincommand.Call{
+	_, err := run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "org.example.proofs", Command: "proofread", Path: "talks/a.mp3",
 		Arguments: map[string]string{plugincommand.ArgumentVersion: "org.example.ears/ears"},
 	})

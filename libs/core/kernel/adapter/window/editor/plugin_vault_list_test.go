@@ -398,7 +398,7 @@ func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	t.Helper()
 	select {
 	case err := <-openResult:
-		if !errors.Is(err, pluginport.ErrUnavailable) {
+		if !errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("the plugin's open returned %v, want ErrUnavailable", err)
 		}
 	case <-time.After(20 * time.Second):
@@ -512,7 +512,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	err := list.OpenVault(t.Context(), f.first.ID)
 	close(release)
 
-	if !errors.Is(err, pluginport.ErrUnavailable) {
+	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("the plugin's open during the user's switch returned %v, want ErrUnavailable", err)
 	}
 	if err := <-switchCh; err != nil {
@@ -610,7 +610,7 @@ func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 				switch {
 				case err == nil:
 					succeeded.Add(1)
-				case errors.Is(err, pluginport.ErrUnavailable):
+				case errors.Is(err, domain.ErrUnavailable):
 					unavailable.Add(1)
 				default:
 					unexpected.Store(err.Error())
@@ -667,7 +667,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	select {
 	case err := <-openResult:
 		close(release)
-		if !errors.Is(err, pluginport.ErrUnavailable) {
+		if !errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("the plugin's open returned %v, want ErrUnavailable", err)
 		}
 	case <-time.After(time.Second):
@@ -710,7 +710,7 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	hangUp()
 	select {
 	case err := <-openResult:
-		if !errors.Is(err, pluginport.ErrUnavailable) {
+		if !errors.Is(err, domain.ErrUnavailable) {
 			t.Errorf("the plugin's open whose call ended returned %v, want ErrUnavailable", err)
 		}
 	case <-time.After(5 * time.Second):

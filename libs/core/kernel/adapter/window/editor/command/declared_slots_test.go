@@ -8,6 +8,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -26,16 +27,16 @@ func (menuPlacingPlugins) ListSlots() []plugincommand.SlotEntry {
 	}
 }
 
-func (menuPlacingPlugins) GetParts(pluginID string) plugincommand.Parts {
+func (menuPlacingPlugins) GetParts(pluginID string) plugin.Parts {
 	switch pluginID {
 	case "md.numen.cards":
-		return plugincommand.Parts{HasBackend: true, HasFrontend: true}
+		return plugin.Parts{HasBackend: true, HasFrontend: true}
 	case "md.numen.down":
-		return plugincommand.Parts{HasBackend: true, IsSuspended: true}
+		return plugin.Parts{HasBackend: true, IsSuspended: true}
 	case "md.numen.tree":
-		return plugincommand.Parts{HasFrontend: true}
+		return plugin.Parts{HasFrontend: true}
 	}
-	return plugincommand.Parts{}
+	return plugin.Parts{}
 }
 
 func TestListCommands_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheManifests(t *testing.T) {

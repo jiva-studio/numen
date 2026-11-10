@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // Delete removes a secret with its value and its permissions.
@@ -16,9 +16,9 @@ type Delete struct{ operation }
 // value stays named and the call can be repeated.
 func (u *Delete) Execute(ctx context.Context, id string) error {
 	return u.apply(ctx, func() ([]string, error) {
-		var removed pluginport.Secret
+		var removed plugin.Secret
 		var index int
-		err := u.ledger.ChangeSecrets(func(list []pluginport.Secret) ([]pluginport.Secret, error) {
+		err := u.ledger.ChangeSecrets(func(list []plugin.Secret) ([]plugin.Secret, error) {
 			index = getIndex(list, id)
 			if index < 0 {
 				return nil, newNotFoundError(id)
@@ -36,8 +36,8 @@ func (u *Delete) Execute(ctx context.Context, id string) error {
 	})
 }
 
-func (u *Delete) restoreEntry(entry pluginport.Secret, index int) error {
-	return u.ledger.ChangeSecrets(func(list []pluginport.Secret) ([]pluginport.Secret, error) {
+func (u *Delete) restoreEntry(entry plugin.Secret, index int) error {
+	return u.ledger.ChangeSecrets(func(list []plugin.Secret) ([]plugin.Secret, error) {
 		if getIndex(list, entry.ID) >= 0 {
 			return list, nil
 		}

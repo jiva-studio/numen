@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -25,16 +26,10 @@ type (
 	SlotEntry = pluginport.PluginSlotEntry
 	// KeybindingEntry is one keybinding an enabled plugin declares, and the plugin that does.
 	KeybindingEntry = pluginport.PluginKeybindingEntry
-	// Parts is what one plugin has and whether the host holds it suspended.
-	Parts = pluginport.PluginParts
 	// Command is a command as its manifest declares it.
 	Command = pluginport.PluginCommand
 	// Argument is one argument a command takes.
 	Argument = pluginport.PluginCommandArgument
-	// Call is one run of a command.
-	Call = pluginport.PluginCommandCall
-	// Result is what a command that ran answered.
-	Result = pluginport.PluginCommandResult
 )
 
 // The types an argument holds.
@@ -112,9 +107,9 @@ func (u List) ExecuteHandlers() []Entry {
 }
 
 // GetParts returns the parts of the enabled plugin of the id, its name and the titles of its text kinds.
-func (u List) GetParts(pluginID string) Parts {
+func (u List) GetParts(pluginID string) plugin.Parts {
 	if u.commands == nil {
-		return Parts{}
+		return plugin.Parts{}
 	}
 	return u.commands.GetParts(pluginID)
 }
@@ -171,9 +166,9 @@ type Run struct {
 // Execute checks the call against the declaration and runs it over the vault; a call of a shared
 // command runs the handler the plugin declares. A call that does not meet the declaration is
 // ErrBadArguments, saying what is wrong, and nothing is run.
-func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, error) {
+func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	if u.commands == nil {
-		return Result{}, ErrUnavailable
+		return plugin.CommandResult{}, ErrUnavailable
 	}
 	var entries []Entry
 	if pluginport.IsSharedCommand(call.Command) {
@@ -182,17 +177,17 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 		entries = u.commands.ListCommands()
 	}
 	if !u.commands.GetParts(call.PluginID).HasBackend {
-		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
+		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
 	index := slices.IndexFunc(entries, func(one Entry) bool {
 		return one.PluginID == call.PluginID && one.Command.ID == call.Command
 	})
 	if index < 0 {
-		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
+		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
 	declared := entries[index].Command
 	if err := u.checkCall(ctx, v, declared, call); err != nil {
-		return Result{}, err
+		return plugin.CommandResult{}, err
 	}
 	normalized := call
 	normalized.Arguments = normalizeArguments(declared, call.Arguments)
@@ -202,17 +197,17 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 // IsAvailable reports whether the condition of the command of the entry holds over the path, as a
 // run of it checks; a condition the core cannot decide holds.
 func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry Entry, path string) bool {
-	return u.checkPath(ctx, v, entry.Command, Call{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
+	return u.checkPath(ctx, v, entry.Command, plugin.CommandCall{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
 }
 
-func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, call Call) error {
+func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, call plugin.CommandCall) error {
 	if err := u.checkPath(ctx, v, declared, call); err != nil {
 		return err
 	}
 	return checkArguments(declared, call, hasItems(u.conditions, declared))
 }
 
-func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call Call) error {
+func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call plugin.CommandCall) error {
 	condition, err := u.conditions.Parse(declared.When)
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
@@ -220,7 +215,7 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	if condition.HasItems() && call.Path == "" {
 		return fmt.Errorf("%w: %s needs a file", ErrBadArguments, declared.ID)
 	}
-	values, err := u.readNote(ctx, v, condition, pluginport.NewTargetValues(call.Path, false, u.getContentType(call.Path)), call.Path)
+	values, err := u.readNote(ctx, v, condition, plugin.NewTargetValues(call.Path, false, u.getContentType(call.Path)), call.Path)
 	if err != nil {
 		return fmt.Errorf("read the note %s: %w", call.Path, err)
 	}
@@ -234,7 +229,7 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	return nil
 }
 
-func checkArguments(declared Command, call Call, hasItems bool) error {
+func checkArguments(declared Command, call plugin.CommandCall, hasItems bool) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
 		if name == ArgumentVersion && hasItems {
 			continue
@@ -287,8 +282,8 @@ func (u Run) getContentType(path string) domain.ContentType {
 }
 
 func (u Run) readNote(
-	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, target pluginport.TargetValues, path string,
-) (pluginport.TargetValues, error) {
+	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, target plugin.TargetValues, path string,
+) (plugin.TargetValues, error) {
 	names := condition.ListNames()
 	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.readers == nil || !target.IsNote() {
 		return target, nil

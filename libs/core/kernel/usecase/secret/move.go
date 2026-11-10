@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // Move changes the priority of a secret inside its group.
@@ -14,13 +14,13 @@ type Move struct{ operation }
 // of its group, where beforeID is empty.
 func (u *Move) Execute(ctx context.Context, id, beforeID string) error {
 	return u.apply(ctx, func() ([]string, error) {
-		return nil, u.ledger.ChangeSecrets(func(list []pluginport.Secret) ([]pluginport.Secret, error) {
+		return nil, u.ledger.ChangeSecrets(func(list []plugin.Secret) ([]plugin.Secret, error) {
 			return moveSecret(list, id, beforeID)
 		})
 	})
 }
 
-func moveSecret(list []pluginport.Secret, id, beforeID string) ([]pluginport.Secret, error) {
+func moveSecret(list []plugin.Secret, id, beforeID string) ([]plugin.Secret, error) {
 	index := getIndex(list, id)
 	if index < 0 {
 		return nil, newNotFoundError(id)

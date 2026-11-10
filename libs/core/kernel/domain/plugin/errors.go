@@ -1,4 +1,4 @@
-// Package plugin holds the sentinel errors of the plugin host.
+// Package plugin holds the values, constants and sentinel errors of the plugin host.
 package plugin
 
 import "errors"

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
@@ -162,7 +163,7 @@ func (p *plugins) ListHandlers() []pluginport.PluginCommandEntry {
 	return out
 }
 
-func (p *plugins) Execute(_ context.Context, _ domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+func (p *plugins) Execute(_ context.Context, _ domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	if p.hold != nil {
 		p.started <- struct{}{}
 		<-p.hold
@@ -171,12 +172,12 @@ func (p *plugins) Execute(_ context.Context, _ domain.Vault, call pluginport.Plu
 	defer p.mu.Unlock()
 	p.ran = append(p.ran, call.PluginID+" "+call.Command+" "+call.Path)
 	if p.unavailable[call.PluginID] {
-		return pluginport.PluginCommandResult{}, &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginFailed}
+		return plugin.CommandResult{}, &plugin.UnavailableError{PluginID: call.PluginID, Reason: plugin.Failed}
 	}
 	if p.failing[call.Path] {
-		return pluginport.PluginCommandResult{}, errors.New("the scanner is out of paper")
+		return plugin.CommandResult{}, errors.New("the scanner is out of paper")
 	}
-	return pluginport.PluginCommandResult{Message: "done"}, nil
+	return plugin.CommandResult{Message: "done"}, nil
 }
 
 func (p *plugins) take() []string {
@@ -190,11 +191,11 @@ func (p *plugins) take() []string {
 // versions is the text versions of each file by its path, counting the reads.
 type versions struct {
 	mu     sync.Mutex
-	byPath map[string][]pluginport.TargetVersion
+	byPath map[string][]plugin.TargetVersion
 	reads  int
 }
 
-func (v *versions) ListTargetVersions(_ context.Context, _ domain.Vault, path string) ([]pluginport.TargetVersion, error) {
+func (v *versions) ListTargetVersions(_ context.Context, _ domain.Vault, path string) ([]plugin.TargetVersion, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	v.reads++
@@ -219,7 +220,7 @@ func newScene(t *testing.T, files map[string]string, entries ...pluginport.Plugi
 	s := &scene{
 		memoryVault: newMemoryVault(files),
 		plugins:     &plugins{triggers: entries, failing: map[string]bool{}, unavailable: map[string]bool{}},
-		versions:    &versions{byPath: map[string][]pluginport.TargetVersion{}},
+		versions:    &versions{byPath: map[string][]plugin.TargetVersion{}},
 		config:      map[string]any{},
 	}
 	s.triggers = trigger.NewTriggers(s.plugins, s.plugins, readers{s.memoryVault}, types{}, s.versions, settingsOf{config: &s.config})
@@ -264,9 +265,9 @@ func TestTriggerRunsOverEveryFileWhereItsConditionIsTrue(t *testing.T) {
 
 func TestTriggerSkipsAFileWithAValidVersionOfItsKind(t *testing.T) {
 	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.pdf": "%PDF b", "scans/c.pdf": "%PDF c", "scans/d.pdf": "%PDF d"}, getExtractText())
-	s.versions.byPath["scans/a.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: true, IsValid: true}}
-	s.versions.byPath["scans/c.pdf"] = []pluginport.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: false, IsValid: false}}
-	s.versions.byPath["scans/d.pdf"] = []pluginport.TargetVersion{
+	s.versions.byPath["scans/a.pdf"] = []plugin.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: true, IsValid: true}}
+	s.versions.byPath["scans/c.pdf"] = []plugin.TargetVersion{{Kind: "text-layer", PluginID: scanner, IsLive: false, IsValid: false}}
+	s.versions.byPath["scans/d.pdf"] = []plugin.TargetVersion{
 		{Kind: "text-layer", PluginID: scanner, IsLive: false, IsValid: true},
 		{Kind: "proofreading", PluginID: "org.example.proofs", IsLive: true, IsValid: true},
 	}
@@ -358,7 +359,7 @@ func TestAPluginThatCannotBeReachedIsSkippedForTheRestOfThePass(t *testing.T) {
 
 	err := s.triggers.ExecuteAll(t.Context(), domain.Vault{ID: "v1"})
 
-	if !errors.As(err, new(*pluginport.UnavailableError)) {
+	if !errors.As(err, new(*plugin.UnavailableError)) {
 		t.Errorf("the pass answered %v, want the plugin unavailable", err)
 	}
 	want := []string{linker + " app:file.createText links/tide.md", scanner + " app:file.createText scans/a.pdf"}

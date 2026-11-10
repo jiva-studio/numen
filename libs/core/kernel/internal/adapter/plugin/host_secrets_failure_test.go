@@ -16,9 +16,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -27,10 +27,10 @@ import (
 // collectFailures records the failures the host passes on.
 type collectFailures struct {
 	mu       sync.Mutex
-	failures []pluginport.PluginFailure
+	failures []plugindomain.Failure
 }
 
-func (c *collectFailures) add(failure pluginport.PluginFailure) {
+func (c *collectFailures) add(failure plugindomain.Failure) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.failures = append(c.failures, failure)
@@ -91,15 +91,15 @@ func (l *listing) allow(pluginID string) {
 	l.plugins = append(l.plugins, pluginID)
 }
 
-func (l *listing) source() pluginport.SecretSource {
-	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
+func (l *listing) source() plugindomain.SecretSource {
+	return plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) {
 		l.mu.Lock()
 		defer l.mu.Unlock()
-		var allowed []pluginport.DeclarationKey
+		var allowed []plugindomain.DeclarationKey
 		for _, id := range l.plugins {
-			allowed = append(allowed, pluginport.DeclarationKey{Plugin: id, Name: declared})
+			allowed = append(allowed, plugindomain.DeclarationKey{Plugin: id, Name: declared})
 		}
-		return []pluginport.Secret{{ID: secretID, Name: l.name, Group: l.group, Allowed: allowed}}, nil
+		return []plugindomain.Secret{{ID: secretID, Name: l.name, Group: l.group, Allowed: allowed}}, nil
 	}}
 }
 
@@ -171,7 +171,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	sup := lifecycle.New(testsupport.GetMachine())
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	host.supervisors[pluginID] = sup
-	host.endpoints[pluginID] = transport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"}
+	host.endpoints[pluginID] = plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"}
 	source.allow(pluginID)
 	return probe
 }

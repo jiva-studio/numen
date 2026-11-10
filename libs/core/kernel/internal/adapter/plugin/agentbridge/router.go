@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -103,8 +104,8 @@ func (r *Router) listPrograms(
 }
 
 func isDisabled(err error) bool {
-	var unavailable *pluginport.UnavailableError
-	return errors.As(err, &unavailable) && unavailable.Reason == pluginport.PluginDisabled
+	var unavailable *plugin.UnavailableError
+	return errors.As(err, &unavailable) && unavailable.Reason == plugin.Disabled
 }
 
 func (r *Router) setProviders(programs []agentdomain.Program) {

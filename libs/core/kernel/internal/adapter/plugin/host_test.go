@@ -29,7 +29,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
@@ -358,7 +357,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 
 	const numGoroutines = 8
 	var wg sync.WaitGroup
-	endpoints := make([]transport.Endpoint, numGoroutines)
+	endpoints := make([]plugindomain.Endpoint, numGoroutines)
 	errs := make([]error, numGoroutines)
 
 	wg.Go(func() {
@@ -436,7 +435,7 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	})
 
 	var slowWg sync.WaitGroup
-	var slowEndpoint transport.Endpoint
+	var slowEndpoint plugindomain.Endpoint
 	var slowErr error
 
 	slowWg.Go(func() {
@@ -557,7 +556,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	})
 
 	var wg sync.WaitGroup
-	var activeEp transport.Endpoint
+	var activeEp plugindomain.Endpoint
 	var activeErr error
 
 	wg.Go(func() {
@@ -929,7 +928,7 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 func TestTheExitOfAProcessDropsItsEndpoint(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	host.mu.Lock()
-	host.endpoints["p"] = transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"}
+	host.endpoints["p"] = plugindomain.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"}
 	host.mu.Unlock()
 
 	host.dropEndpointOfStoppedPlugin("p")
@@ -1037,7 +1036,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 
 	type result struct {
-		endpoint transport.Endpoint
+		endpoint plugindomain.Endpoint
 		err      error
 	}
 	reply := make(chan result, 1)
@@ -1182,7 +1181,7 @@ func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 		sup := lifecycle.New(testsupport.GetMachine())
 		sup.SetPermissions(one.perms)
 		host.supervisors[id] = sup
-		host.endpoints[id] = transport.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token}
+		host.endpoints[id] = plugindomain.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token}
 	}
 	return host
 }

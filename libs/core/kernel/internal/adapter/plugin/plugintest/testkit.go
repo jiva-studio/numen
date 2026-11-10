@@ -18,9 +18,11 @@ import (
 	"time"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	manifestdomain "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -132,7 +134,7 @@ func ServePing(t *testing.T, protocol int32) int {
 // ServeHostPing starts a server answering Ping with the host's protocol and returns its port.
 func ServeHostPing(t *testing.T) int {
 	t.Helper()
-	return ServePing(t, pluginport.PluginProtocolVersion)
+	return ServePing(t, manifestdomain.ProtocolVersion)
 }
 
 type MockAgentServer struct {
@@ -208,7 +210,7 @@ func (s *MockAgentServer) GetAgentTools(
 
 // LeaseHost resolves every capability to one stub plugin and counts the references taken and given back.
 type LeaseHost struct {
-	Endpoint  pluginport.Endpoint
+	Endpoint  plugin.Endpoint
 	EnsureErr error
 	Acquired  atomic.Int32
 	Released  atomic.Int32
@@ -226,9 +228,9 @@ func (h *LeaseHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
 	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "org.example.stub"}}, true
 }
 
-func (h *LeaseHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
+func (h *LeaseHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
 	if h.EnsureErr != nil {
-		return pluginport.Endpoint{}, h.EnsureErr
+		return plugin.Endpoint{}, h.EnsureErr
 	}
 	h.Acquired.Add(1)
 	return h.Endpoint, nil

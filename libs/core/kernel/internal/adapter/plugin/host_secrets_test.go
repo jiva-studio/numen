@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
@@ -209,7 +208,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	sup := lifecycle.New(testsupport.GetMachine())
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	host.supervisors[secretPluginID] = sup
-	host.endpoints[secretPluginID] = transport.Endpoint{
+	host.endpoints[secretPluginID] = plugindomain.Endpoint{
 		Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "launch-name",
 	}
 	if store != nil {
@@ -230,11 +229,11 @@ func assertNoKey(t *testing.T, where, text string, keys ...string) {
 // secretID is the id of the one secret the tests of this file list.
 const secretID = "s0a1b2c3d"
 
-func allowOne(pluginID string) pluginport.SecretSource {
-	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
-		return []pluginport.Secret{{
+func allowOne(pluginID string) plugindomain.SecretSource {
+	return plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) {
+		return []plugindomain.Secret{{
 			ID: secretID, Name: "Work", Group: "openrouter",
-			Allowed: []pluginport.DeclarationKey{{Plugin: pluginID, Name: declared}},
+			Allowed: []plugindomain.DeclarationKey{{Plugin: pluginID, Name: declared}},
 		}}, nil
 	}}
 }
@@ -519,11 +518,11 @@ func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 			{Name: "token", Title: "Token", Group: "mistral"},
 		},
 	}}
-	want := []pluginport.DeclarationKey{
+	want := []plugindomain.DeclarationKey{
 		{Plugin: secretPluginID, Name: declared},
 		{Plugin: "md.numen.other", Name: "token", Group: "mistral"},
 	}
-	if got := host.ListDeclarations(); !slices.Equal(got, want) && !slices.Equal(got, []pluginport.DeclarationKey{want[1], want[0]}) {
+	if got := host.ListDeclarations(); !slices.Equal(got, want) && !slices.Equal(got, []plugindomain.DeclarationKey{want[1], want[0]}) {
 		t.Errorf("declarations = %v, want %v", got, want)
 	}
 }
@@ -532,8 +531,8 @@ func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 // a problem, which may have hidden an installed plugin.
 func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
-	var pruned [][]pluginport.DeclarationKey
-	host.SetSecretSource(pluginport.SecretSource{Prune: func(declared []pluginport.DeclarationKey) error {
+	var pruned [][]plugindomain.DeclarationKey
+	host.SetSecretSource(plugindomain.SecretSource{Prune: func(declared []plugindomain.DeclarationKey) error {
 		pruned = append(pruned, declared)
 		return nil
 	}})

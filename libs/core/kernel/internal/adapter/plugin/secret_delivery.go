@@ -13,6 +13,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
@@ -33,7 +34,7 @@ type secretDelivery struct {
 	lock                   chan struct{}
 	mu                     sync.RWMutex
 	keyStore               pluginport.KeyStore
-	source                 pluginport.SecretSource
+	source                 plugindomain.SecretSource
 	delivered              map[string]string
 	rejected               map[string]string
 	awaitingFirstConfigure map[string]bool
@@ -58,13 +59,13 @@ func (d *secretDelivery) setKeyStore(store pluginport.KeyStore) {
 	d.keyStore = store
 }
 
-func (d *secretDelivery) setSource(source pluginport.SecretSource) {
+func (d *secretDelivery) setSource(source plugindomain.SecretSource) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.source = source
 }
 
-func (d *secretDelivery) getSource() pluginport.SecretSource {
+func (d *secretDelivery) getSource() plugindomain.SecretSource {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	return d.source
@@ -186,14 +187,14 @@ func (d *secretDelivery) isDue(pluginID, signature string) bool {
 // allowedList is one declaration of a plugin with the secrets allowed to it, in the order they are sent.
 type allowedList struct {
 	declaration manifest.SecretDeclaration
-	secrets     []pluginport.Secret
+	secrets     []plugindomain.Secret
 }
 
 func (d *secretDelivery) listAllowed(snapshot configSnapshot) ([]allowedList, error) {
 	if len(snapshot.declared) == 0 {
 		return nil, nil
 	}
-	var list []pluginport.Secret
+	var list []plugindomain.Secret
 	var listErr error
 	if snapshot.source.List != nil {
 		if list, listErr = snapshot.source.List(); listErr != nil {
@@ -206,7 +207,7 @@ func (d *secretDelivery) listAllowed(snapshot configSnapshot) ([]allowedList, er
 	for _, declaration := range snapshot.declared {
 		lists = append(lists, allowedList{
 			declaration: declaration,
-			secrets: secret.ListAllowed(page, pluginport.DeclarationKey{
+			secrets: secret.ListAllowed(page, plugindomain.DeclarationKey{
 				Plugin: snapshot.pluginID, Name: declaration.Name, Group: declaration.Group,
 			}),
 		})
@@ -227,7 +228,7 @@ func readEntries(ctx context.Context, snapshot configSnapshot, lists []allowedLi
 	return entries, failures
 }
 
-func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []pluginport.Secret) ([]*v1.SecretValue, error) {
+func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []plugindomain.Secret) ([]*v1.SecretValue, error) {
 	values := make([]*v1.SecretValue, 0, len(secrets))
 	for _, one := range secrets {
 		if store == nil {

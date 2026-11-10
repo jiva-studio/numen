@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // DeleteGroup removes every secret of a group with its values and its permissions.
@@ -25,15 +25,15 @@ func (u *DeleteGroup) Execute(ctx context.Context, group string) error {
 }
 
 type removedEntry struct {
-	secret pluginport.Secret
+	secret plugin.Secret
 	index  int
 }
 
 func (u *DeleteGroup) removeEntries(group string) ([]removedEntry, error) {
 	var removed []removedEntry
-	err := u.ledger.ChangeSecrets(func(list []pluginport.Secret) ([]pluginport.Secret, error) {
+	err := u.ledger.ChangeSecrets(func(list []plugin.Secret) ([]plugin.Secret, error) {
 		removed = nil
-		remaining := make([]pluginport.Secret, 0, len(list))
+		remaining := make([]plugin.Secret, 0, len(list))
 		for index, one := range list {
 			if one.Group == group {
 				removed = append(removed, removedEntry{secret: one, index: index})
@@ -59,8 +59,8 @@ func (u *DeleteGroup) deleteValues(ctx context.Context, removed []removedEntry) 
 	return errors.Join(failures...)
 }
 
-func (u *DeleteGroup) restoreEntry(entry pluginport.Secret, index int) error {
-	return u.ledger.ChangeSecrets(func(list []pluginport.Secret) ([]pluginport.Secret, error) {
+func (u *DeleteGroup) restoreEntry(entry plugin.Secret, index int) error {
+	return u.ledger.ChangeSecrets(func(list []plugin.Secret) ([]plugin.Secret, error) {
 		if getIndex(list, entry.ID) >= 0 {
 			return list, nil
 		}

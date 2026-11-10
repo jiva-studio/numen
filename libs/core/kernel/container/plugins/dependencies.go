@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
@@ -65,12 +66,12 @@ func (c Config) ReportDependencies(tasks *run.Tasks) {
 	if catalog == nil {
 		return
 	}
-	catalog.SetObserver(func(req pluginport.DependencyRequirement, status pluginport.DependencyStatus) {
+	catalog.SetObserver(func(req pluginport.DependencyRequirement, status plugin.DependencyStatus) {
 		id := dependencyTaskPrefix + req.ID
 		switch status.State {
-		case pluginport.DependencyStateReady:
+		case plugin.DependencyStateReady:
 			tasks.Remove(id)
-		case pluginport.DependencyStateMissing, pluginport.DependencyStateProvisioning, pluginport.DependencyStateFailed:
+		case plugin.DependencyStateMissing, plugin.DependencyStateProvisioning, plugin.DependencyStateFailed:
 			tasks.Set(run.Task{
 				ID: id, Title: "Downloading " + req.ID, Unit: run.Bytes,
 				Count: status.BytesDownloaded, Total: status.BytesTotal, Error: status.Error, IsUserStarted: false,

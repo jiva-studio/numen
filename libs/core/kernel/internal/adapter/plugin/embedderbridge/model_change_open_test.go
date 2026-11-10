@@ -8,15 +8,15 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // failingActivator is a plugin host that cannot activate any plugin.
 type failingActivator struct{}
 
-func (failingActivator) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
-	return pluginport.Endpoint{}, errors.New("the plugin did not start")
+func (failingActivator) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
+	return plugin.Endpoint{}, errors.New("the plugin did not start")
 }
 
 func (failingActivator) Release(string) {}

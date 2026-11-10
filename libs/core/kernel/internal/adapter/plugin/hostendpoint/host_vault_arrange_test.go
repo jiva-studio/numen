@@ -17,6 +17,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -280,7 +281,7 @@ func TestNoteChangesAreDeniedWithoutVaultWrite(t *testing.T) {
 }
 
 func TestNoteChangesAreServedWithVaultWrite(t *testing.T) {
-	client, _, hostCallers := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultWrite)
+	client, _, hostCallers := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultWrite)
 
 	for call, err := range callNoteChanges(t, client) {
 		if err != nil {
@@ -290,7 +291,7 @@ func TestNoteChangesAreServedWithVaultWrite(t *testing.T) {
 	hostCallers.mu.Lock()
 	defer hostCallers.mu.Unlock()
 	for _, one := range hostCallers.checked {
-		if one != "md.numen.a "+pluginport.PermissionVaultWrite {
+		if one != "md.numen.a "+manifest.PermissionVaultWrite {
 			t.Errorf("a note change checked %q, want vault:write only", one)
 		}
 	}
@@ -298,7 +299,7 @@ func TestNoteChangesAreServedWithVaultWrite(t *testing.T) {
 
 func TestVaultListChangesAreDeniedWithOnlyVaultWrite(t *testing.T) {
 	list := newRecordingList()
-	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultRead, pluginport.PermissionVaultWrite)
+	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultRead, manifest.PermissionVaultWrite)
 
 	for call, err := range callVaultChanges(t, client) {
 		if !isDenied(err) {
@@ -366,7 +367,7 @@ func TestVaultChecksNeedVaultRead(t *testing.T) {
 }
 
 func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
-	client, _, _ := newArrangeClient(t, nil, pluginport.PermissionVaultWrite)
+	client, _, _ := newArrangeClient(t, nil, manifest.PermissionVaultWrite)
 
 	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
@@ -391,7 +392,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 }
 
 func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
-	client, vault, _ := newArrangeClient(t, nil, pluginport.PermissionVaultWrite)
+	client, vault, _ := newArrangeClient(t, nil, manifest.PermissionVaultWrite)
 
 	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: []string{"Danube.md", "Nowhere.md", "Deltas.md"}, Folder: "Rivers",
@@ -433,7 +434,7 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 }
 
 func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
-	client, vault, _ := newArrangeClient(t, nil, pluginport.PermissionVaultWrite)
+	client, vault, _ := newArrangeClient(t, nil, manifest.PermissionVaultWrite)
 
 	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: []string{"Danube.md", "Rivers", "Nowhere.md"},
@@ -607,7 +608,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			hostCallers := newCallers(nil)
 			hostCallers.vault = failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)}
-			endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
+			endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
 			mux := http.NewServeMux()
 			mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 			server := httptest.NewServer(mux)
@@ -749,7 +750,7 @@ func newEscapingPathClient(t *testing.T) (numenv1connect.HostVaultServiceClient,
 	vault := newFakeNoteVault()
 	hostCallers := newCallers(nil)
 	hostCallers.vault = escapingPathVault{vault}
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
+	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)

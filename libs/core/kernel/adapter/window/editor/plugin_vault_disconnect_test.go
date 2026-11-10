@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // A plugin open whose call ends while the page is still writing leaves no request of its own running,
@@ -32,7 +31,7 @@ func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 		t.Fatal("the plugin's open never requested a flush from the page")
 	}
 	hangUp()
-	if err := <-openResult; !errors.Is(err, pluginport.ErrUnavailable) {
+	if err := <-openResult; !errors.Is(err, domain.ErrUnavailable) {
 		close(release)
 		t.Fatalf("the plugin's open whose call ended returned %v, want ErrUnavailable", err)
 	}

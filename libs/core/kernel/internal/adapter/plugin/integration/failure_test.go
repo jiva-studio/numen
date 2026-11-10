@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -20,7 +21,7 @@ func failLaunching(_ context.Context, _ manifest.Discovered, _ int, _ string) (*
 	return nil, nil, errors.New("exec format error")
 }
 
-func getFailure(t *testing.T, host *plugin.Host, id string) *pluginport.PluginFailure {
+func getFailure(t *testing.T, host *plugin.Host, id string) *plugindomain.Failure {
 	t.Helper()
 	for _, info := range host.GetPluginInfos() {
 		if info.ID == id {
@@ -34,7 +35,7 @@ func getFailure(t *testing.T, host *plugin.Host, id string) *pluginport.PluginFa
 func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion+1, &procs))
+	host.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
 
 	if got := getFailure(t, host, failingPluginID); got != nil {
 		t.Fatalf("failure before any start = %+v, want none", got)
@@ -58,14 +59,14 @@ func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion+1, &procs))
+	host.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
 	var recovered []string
 	host.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 	if _, err := host.EnsureActive(t.Context(), failingPluginID); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
 
-	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
+	host.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
 	failure, err := host.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil || failure != nil {
 		t.Fatalf("RetryPlugin() = %+v, %v, want the plugin started", failure, err)
@@ -85,8 +86,8 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.SetLauncher(failLaunching)
-	var notified []pluginport.PluginFailure
-	host.SetOnPluginFailed(func(failure pluginport.PluginFailure) { notified = append(notified, failure) })
+	var notified []plugindomain.Failure
+	host.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure) })
 
 	failure, err := host.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil {
@@ -119,7 +120,7 @@ func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
 	var recovered []string
 	host.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 
-	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
+	host.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
 	if _, err := host.EnsureActive(t.Context(), failingPluginID); err != nil {
 		t.Fatalf("EnsureActive() on the next use = %v, want the plugin started", err)
 	}
@@ -137,8 +138,8 @@ func TestRetryOfAPluginTheHostDoesNotKnowIsNotInstalled(t *testing.T) {
 
 	_, err := host.RetryPlugin(t.Context(), "md.numen.missing")
 
-	var unavailable *pluginport.UnavailableError
-	if !errors.As(err, &unavailable) || unavailable.Reason != pluginport.PluginNotInstalled {
+	var unavailable *plugindomain.UnavailableError
+	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.NotInstalled {
 		t.Fatalf("RetryPlugin() = %v, want a plugin that is not installed", err)
 	}
 }

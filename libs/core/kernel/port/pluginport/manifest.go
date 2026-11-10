@@ -30,12 +30,8 @@ type (
 	PluginSettingOptionsBy = manifest.OptionsBy
 )
 
-// ConfigPerformanceProfile is the entry of the Configure values that holds the performance profile; plugin-sdk-go names it performance.ConfigKey.
-const ConfigPerformanceProfile = "host.performanceProfile"
-
 const (
 	PermissionVaultRead         = manifest.PermissionVaultRead
-	PermissionVaultWrite        = manifest.PermissionVaultWrite
 	PermissionVaultManage       = manifest.PermissionVaultManage
 	PermissionNetworkOutbound   = manifest.PermissionNetworkOutbound
 	PermissionAIComplete        = manifest.PermissionAIComplete
@@ -50,7 +46,6 @@ const (
 	ConditionTrue               = when.True
 	ConditionFalse              = when.False
 	ConditionUnknown            = when.Unknown
-	PluginProtocolVersion       = manifest.ProtocolVersion
 	SettingTypeString           = manifest.SettingTypeString
 	SettingTypeEnum             = manifest.SettingTypeEnum
 	SettingTypeFile             = manifest.SettingTypeFile
@@ -116,11 +111,6 @@ func NewConditions() *PluginConditions {
 
 // IsSharedCommand reports whether the full id is a shared command of libs/core/protocol/commands.json.
 func IsSharedCommand(id string) bool { return manifest.IsSharedCommand(id) }
-
-// GetSharedCommandArguments returns the arguments the shared command of the full id takes.
-func GetSharedCommandArguments(id string) []PluginCommandArgument {
-	return manifest.GetSharedCommandArguments(id)
-}
 
 // The events of libs/core/protocol/events.json a trigger runs on.
 const (

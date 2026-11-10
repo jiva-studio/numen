@@ -7,6 +7,7 @@ import (
 	"io"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -98,7 +99,7 @@ func runSharedCommand(
 	if err != nil {
 		return err
 	}
-	result, err := run.Execute(ctx, v, plugincommand.Call{
+	result, err := run.Execute(ctx, v, plugin.CommandCall{
 		PluginID: handler.PluginID, Command: handler.Command.ID, Path: path, Arguments: arguments,
 	})
 	if err != nil {

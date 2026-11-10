@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -15,21 +16,21 @@ func (h *Host) SetKeyStore(store pluginport.KeyStore) {
 
 // SetSecretSource sets where the list of secrets is read from and how the permissions of removed
 // declarations are dropped.
-func (h *Host) SetSecretSource(source pluginport.SecretSource) {
+func (h *Host) SetSecretSource(source plugindomain.SecretSource) {
 	h.secrets.setSource(source)
 	h.pruneSecretPermissions()
 }
 
 // ListDeclarations returns every secret declaration of every installed plugin, in the order of the
 // plugin ids and then of the manifest.
-func (h *Host) ListDeclarations() []pluginport.DeclarationKey {
+func (h *Host) ListDeclarations() []plugindomain.DeclarationKey {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.listDeclarationsLocked()
 }
 
-func (h *Host) listDeclarationsLocked() []pluginport.DeclarationKey {
-	var declarations []pluginport.DeclarationKey
+func (h *Host) listDeclarationsLocked() []plugindomain.DeclarationKey {
+	var declarations []plugindomain.DeclarationKey
 	for _, p := range h.getPluginsInOrderLocked() {
 		declarations = appendDeclarations(declarations, p)
 	}
@@ -76,8 +77,8 @@ func (h *Host) pruneSecretPermissions() {
 	}
 }
 
-func (h *Host) listInstalledDeclarationsLocked() []pluginport.DeclarationKey {
-	var declarations []pluginport.DeclarationKey
+func (h *Host) listInstalledDeclarationsLocked() []plugindomain.DeclarationKey {
+	var declarations []plugindomain.DeclarationKey
 	installed := make(map[string]bool, len(h.installed))
 	for _, p := range h.installed {
 		installed[p.Manifest.ID] = true
@@ -91,9 +92,9 @@ func (h *Host) listInstalledDeclarationsLocked() []pluginport.DeclarationKey {
 	return declarations
 }
 
-func appendDeclarations(declarations []pluginport.DeclarationKey, p manifest.Discovered) []pluginport.DeclarationKey {
+func appendDeclarations(declarations []plugindomain.DeclarationKey, p manifest.Discovered) []plugindomain.DeclarationKey {
 	for _, declaration := range p.Manifest.Secrets {
-		declarations = append(declarations, pluginport.DeclarationKey{
+		declarations = append(declarations, plugindomain.DeclarationKey{
 			Plugin: p.Manifest.ID, Name: declaration.Name, Group: declaration.Group,
 		})
 	}

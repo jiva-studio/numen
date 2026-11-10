@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -36,7 +37,7 @@ func NewVersionItems(versions *Versions, run CommandRun, types contenttypeport.C
 // CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
 // and its arguments.
 type CommandRun interface {
-	Execute(ctx context.Context, v domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
+	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
 }
 
 func (u *VersionItems) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
@@ -59,7 +60,7 @@ type VersionItem struct {
 	CreateTime time.Time
 }
 
-func listVersionItems(condition pluginport.PluginCondition, target pluginport.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
+func listVersionItems(condition pluginport.PluginCondition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
 	var items []VersionItem
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
@@ -88,7 +89,7 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 	if err != nil {
 		return nil, err
 	}
-	values := pluginport.NewTargetValues(path, false, u.types.GetContentType(path))
+	values := plugin.NewTargetValues(path, false, u.types.GetContentType(path))
 	return listVersionItems(condition, values, versions, live, hasLive), nil
 }
 
@@ -129,16 +130,16 @@ const DeleteCommand = "app:version.delete"
 // without items, is ErrInvalidVersion.
 func (u *VersionItems) RunVersionItem(
 	ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry, version domain.TextVersionID,
-) (pluginport.PluginCommandResult, error) {
+) (plugin.CommandResult, error) {
 	items, err := u.ListVersionItems(ctx, v, path, entry)
 	if err != nil {
-		return pluginport.PluginCommandResult{}, err
+		return plugin.CommandResult{}, err
 	}
 	if !slices.ContainsFunc(items, func(item VersionItem) bool { return item.Version == version }) {
-		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s of %s offers no version %q over %s",
+		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s offers no version %q over %s",
 			ErrInvalidVersion, entry.Command.ID, entry.PluginID, version, path)
 	}
-	return u.run.Execute(ctx, v, pluginport.PluginCommandCall{
+	return u.run.Execute(ctx, v, plugin.CommandCall{
 		PluginID: entry.PluginID, Command: entry.Command.ID, Path: path,
 		Arguments: map[string]string{pluginport.CommandArgumentVersion: string(version)},
 	})

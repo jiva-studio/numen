@@ -48,7 +48,7 @@ func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr
 	if code, ok := getVaultsErrorCode(err); ok {
 		return code, err.Error(), nil
 	}
-	if errors.Is(err, pluginport.ErrUnavailable) {
+	if errors.Is(err, domain.ErrUnavailable) {
 		return 0, "", connect.NewError(connect.CodeUnavailable, err)
 	}
 	return 0, "", connect.NewError(connect.CodeInternal, err)

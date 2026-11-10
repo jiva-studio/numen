@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
 	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
@@ -147,7 +148,7 @@ func (c Config) GetPluginServices() PluginServices {
 }
 
 // GetPluginRetrier restarts, on request from the window, a plugin the host has suspended.
-func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
+func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
 	return c.plugins().GetPluginRetrier()
 }
 

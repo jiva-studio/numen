@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // RenameGroup changes the group name for all secrets in a custom group.
@@ -23,20 +23,20 @@ func (u *RenameGroup) Execute(ctx context.Context, group, name string) error {
 		if slices.Contains(requested, name) {
 			return nil, newInvalidError("the name is the name of a group an installed plugin asks for")
 		}
-		return nil, u.ledger.ChangeSecrets(func(list []pluginport.Secret) ([]pluginport.Secret, error) {
+		return nil, u.ledger.ChangeSecrets(func(list []plugin.Secret) ([]plugin.Secret, error) {
 			return renameGroup(list, group, name)
 		})
 	})
 }
 
-func renameGroup(list []pluginport.Secret, group, name string) ([]pluginport.Secret, error) {
-	if !slices.ContainsFunc(list, func(one pluginport.Secret) bool { return one.Group == group }) {
+func renameGroup(list []plugin.Secret, group, name string) ([]plugin.Secret, error) {
+	if !slices.ContainsFunc(list, func(one plugin.Secret) bool { return one.Group == group }) {
 		return nil, newNotFoundError(group)
 	}
 	if group == name {
 		return list, nil
 	}
-	if slices.ContainsFunc(list, func(one pluginport.Secret) bool { return one.Group == name }) {
+	if slices.ContainsFunc(list, func(one plugin.Secret) bool { return one.Group == name }) {
 		return nil, newInvalidError("the name is the name of another group")
 	}
 	regrouped := slices.Clone(list)

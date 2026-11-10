@@ -12,10 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 type stubEmbeddingServer struct {
@@ -35,7 +35,7 @@ func newLeaseHost(t *testing.T) *plugintest.LeaseHost {
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return &plugintest.LeaseHost{Endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server)}}
+	return &plugintest.LeaseHost{Endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server)}}
 }
 
 func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {

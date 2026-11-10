@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // brokenKeys fails to read the named entries and reads the others from the store it wraps.
@@ -24,10 +24,10 @@ func (b brokenKeys) GetKey(ctx context.Context, name string) (string, error) {
 	return b.keys.GetKey(ctx, name)
 }
 
-func getTwoSecrets() pluginport.SecretSource {
-	allowed := []pluginport.DeclarationKey{{Plugin: secretPluginID, Name: declared}}
-	return pluginport.SecretSource{List: func() ([]pluginport.Secret, error) {
-		return []pluginport.Secret{
+func getTwoSecrets() plugindomain.SecretSource {
+	allowed := []plugindomain.DeclarationKey{{Plugin: secretPluginID, Name: declared}}
+	return plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) {
+		return []plugindomain.Secret{
 			{ID: "s00000001", Name: "First", Group: "openrouter", Allowed: allowed},
 			{ID: "s00000002", Name: "Second", Group: "openrouter", Allowed: allowed},
 		}, nil
@@ -88,7 +88,7 @@ func TestAListSentWithAFailedReadIsSentAgainByTheNextRefresh(t *testing.T) {
 
 // countedList counts the reads of the list of secrets.
 type countedList struct {
-	pluginport.SecretSource
+	plugindomain.SecretSource
 	reads atomic.Int32
 }
 
@@ -96,7 +96,7 @@ func TestOneConfigureReadsTheListOfSecretsOnce(t *testing.T) {
 	host, _ := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	counted := &countedList{SecretSource: allowOne(secretPluginID)}
 	read := counted.List
-	counted.List = func() ([]pluginport.Secret, error) {
+	counted.List = func() ([]plugindomain.Secret, error) {
 		counted.reads.Add(1)
 		return read()
 	}
@@ -119,7 +119,7 @@ func TestAListThatCannotBeReadIsSentEmptyAndReturnedAsAnError(t *testing.T) {
 		t.Fatal(err)
 	}
 	errDisk := errors.New("the disk failed")
-	host.SetSecretSource(pluginport.SecretSource{List: func() ([]pluginport.Secret, error) { return nil, errDisk }})
+	host.SetSecretSource(plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) { return nil, errDisk }})
 
 	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); !errors.Is(err, errDisk) {
 		t.Errorf("error = %v, want the error of the list", err)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -40,7 +41,7 @@ func (h *manifestHost) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) 
 }
 
 func (h *manifestHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{}, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+	return pluginport.DiscoveredPlugin{}, &plugin.UnavailableError{Reason: plugin.NotInstalled}
 }
 
 func (h *manifestHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {

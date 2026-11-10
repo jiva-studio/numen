@@ -11,7 +11,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 	configureTimeout = 3 * time.Second
 )
 
-func (w *window) getFailure(pluginID string) *pluginport.PluginFailure {
+func (w *window) getFailure(pluginID string) *plugin.Failure {
 	for _, info := range w.host.GetPluginInfos() {
 		if info.ID == pluginID {
 			return info.Failure

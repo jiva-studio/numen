@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -30,16 +31,16 @@ func (menuPlugins) ListSlots() []plugincommand.SlotEntry {
 	}
 }
 
-func (menuPlugins) GetParts(pluginID string) plugincommand.Parts {
-	return map[string]plugincommand.Parts{
+func (menuPlugins) GetParts(pluginID string) plugin.Parts {
+	return map[string]plugin.Parts{
 		"org.example.atlas":  {HasFrontend: true},
 		"org.example.crash":  {HasBackend: true, HasFrontend: true, IsSuspended: true},
 		"org.example.worker": {HasBackend: true},
 	}[pluginID]
 }
 
-func (menuPlugins) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {
-	return plugincommand.Result{}, nil
+func (menuPlugins) RunCommand(context.Context, plugin.CommandCall) (plugin.CommandResult, error) {
+	return plugin.CommandResult{}, nil
 }
 
 func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {

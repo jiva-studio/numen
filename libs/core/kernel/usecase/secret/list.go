@@ -3,7 +3,7 @@ package secret
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // Listing is the secrets as the window shows them: the sections of the page in order, the menu of
@@ -29,7 +29,7 @@ func (u *List) Execute() (Listing, error) {
 	}
 	declarations := u.plugins.ListDeclarations()
 	listing := Listing{Sections: ListSections(list, ListAskedGroups(declarations))}
-	var seen []pluginport.DeclarationKey
+	var seen []plugin.DeclarationKey
 	for _, one := range declarations {
 		if slices.Contains(seen, one) {
 			continue
