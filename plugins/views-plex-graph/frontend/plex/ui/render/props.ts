@@ -2,6 +2,7 @@
  * Props and events of the plex drawing: the edge layer between nodes, and one
  * node.
  */
+import type { VNode } from 'vue'
 import type { MenuTrigger } from '@numen/ui'
 import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
@@ -89,5 +90,5 @@ export interface PlexNodeEvents {
 
 export interface PlexDrawnSlots {
   /** Content drawn next to a node's title. */
-  icon?(props: { node: PlacedNode }): unknown
+  icon?(props: { node: PlacedNode }): VNode[]
 }

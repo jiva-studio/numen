@@ -1,11 +1,13 @@
 import type { Component } from 'vue'
-import type { AnyTabKind } from '../lib/kinds'
+import type { JsonValue } from '@/shared/api/json'
+import type { AnyTabKind, TabKind } from '../lib/kinds'
+import type { Caught } from '@/shared/api/errors'
 
 /** What a tab holds in place of a saved tab that could not be restored. */
 export interface RestoreFailedState {
   readonly kind: string
   readonly targetPath: string
-  readonly saved: unknown
+  readonly saved: JsonValue | undefined
   readonly message: string
 }
 
@@ -18,19 +20,21 @@ export const createRestoreFailedKind = (
   pane: Component,
   kind: string,
   title: string | undefined,
-  error: unknown,
-): AnyTabKind => ({
-  kind,
-  open: (targetPath: string, _id: string, saved?: unknown): RestoreFailedState => ({
+  error: Caught,
+): AnyTabKind => {
+  const restoreFailed: TabKind<RestoreFailedState> = {
     kind,
-    targetPath,
-    saved,
-    message: error instanceof Error ? error.message : String(error),
-  }),
-  getTitle: (state: unknown) =>
-    title || (state as RestoreFailedState).targetPath.split('/').pop() || kind,
-  getOpenTab: (state: unknown) => ({ path: (state as RestoreFailedState).targetPath }),
-  getState: (state: unknown) => (state as RestoreFailedState).saved,
-  pane,
-  identity: (targetPath: string) => targetPath,
-})
+    open: (targetPath: string, _id: string, saved?: JsonValue): RestoreFailedState => ({
+      kind,
+      targetPath,
+      saved,
+      message: error instanceof Error ? error.message : String(error),
+    }),
+    getTitle: (state) => title || state.targetPath.split('/').pop() || kind,
+    getOpenTab: (state) => ({ path: state.targetPath }),
+    getState: (state) => state.saved,
+    pane,
+    identity: (targetPath: string) => targetPath,
+  }
+  return restoreFailed
+}

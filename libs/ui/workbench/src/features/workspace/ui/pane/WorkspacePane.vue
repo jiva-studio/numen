@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, useTemplateRef, watch } from 'vue'
+import { onMounted, useTemplateRef, watch, type VNode } from 'vue'
 import { PaneBody } from './body'
 import { PaneStrip } from './strip'
 import type { Pane, TabId } from '../../lib/node'
@@ -24,10 +24,10 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  tab(props: { id: TabId }): unknown
-  icon(props: { id: TabId }): unknown
-  mark(props: { id: TabId; mark: string }): unknown
-  silence(): unknown
+  tab(props: { id: TabId }): VNode[]
+  icon(props: { id: TabId }): VNode[]
+  mark(props: { id: TabId; mark: string }): VNode[]
+  silence(): VNode[]
 }>()
 
 /* ---------------------------------- State --------------------------------- */

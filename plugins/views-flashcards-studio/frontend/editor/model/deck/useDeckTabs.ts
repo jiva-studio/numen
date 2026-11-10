@@ -9,6 +9,7 @@ import {
   type BufferHost,
   type MessageWriter,
   type PathRename,
+  type Caught,
 } from '@numen/plugin-sdk'
 import { openNotes } from '../buffer/notes'
 import { getFailureCode } from '../../../lib/failures'
@@ -43,7 +44,7 @@ export interface DeckTabsOptions {
 export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOptions) {
   // Messages are dropped when the caller supplies no writer.
   const { buffers, closeTab, writeMessage = () => undefined, component } = options
-  const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
+  const reportFailure = (error: Caught): void => writeMessage(formatErrorMessage(error), 'error')
   const vaultAnswers = createDeckAnswers()
   const store = openNotes(createDeckNotePort(cards, vaultAnswers))
   buffers.track(store)
@@ -149,7 +150,7 @@ interface DeckTabStateFactoryDeps {
   vaultAnswers: ReturnType<typeof createDeckAnswers>
   wiring: ReturnType<typeof useDeckScheduleSync>
   closeTab: (id: string) => void
-  reportFailure: (error: unknown) => void
+  reportFailure: (error: Caught) => void
 }
 
 function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {

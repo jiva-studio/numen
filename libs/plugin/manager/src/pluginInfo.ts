@@ -3,6 +3,19 @@
  * reports for it.
  */
 
+/** A value a setting holds: anything that survives JSON.stringify and JSON.parse unchanged. */
+export type SettingValue = string | number | boolean | null | SettingList | SettingObject
+
+/** The list a setting value holds. */
+export interface SettingList extends ReadonlyArray<SettingValue> {
+  readonly length: number
+}
+
+/** The object a setting value holds. */
+export interface SettingObject {
+  readonly [key: string]: SettingValue
+}
+
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType = 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file'
 
@@ -41,7 +54,7 @@ export interface PluginSettingInfo {
   readonly type: PluginSettingType
   readonly title: string
   readonly description: string
-  readonly default: unknown
+  readonly default: SettingValue | undefined
   readonly palette?: boolean | undefined
   readonly icon?: string | undefined
   readonly options?: readonly PluginSettingOption[] | undefined
@@ -56,7 +69,7 @@ export interface PluginSettingInfo {
   readonly optionsFrom?: string | undefined
   readonly activeOptions?: readonly PluginSettingOption[] | undefined
   readonly isShown?: boolean | undefined
-  readonly value?: unknown
+  readonly value?: SettingValue | undefined
 }
 
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */

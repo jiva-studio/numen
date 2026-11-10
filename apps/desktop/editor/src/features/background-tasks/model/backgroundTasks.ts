@@ -5,6 +5,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-loader'
 import type { Task } from '@/entities/window'
+import type { Caught } from '@/shared/api/errors'
 
 /** The settings action of a failed task: the words of its link and the plugin it opens. */
 interface TaskAction {
@@ -17,7 +18,7 @@ export interface BackgroundTaskHostDeps {
   /** Asks the core to stop the task; resolves once the core has cancelled it. */
   cancelTask(id: string): Promise<void>
   /** Receives the error of a cancel the core did not accept. */
-  reportCancelError(error: unknown): void
+  reportCancelError(error: Caught): void
   resolveAction(task: Task): TaskAction | undefined
   openSettings(pluginId: string): void
 }

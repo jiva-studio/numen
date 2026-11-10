@@ -1,4 +1,4 @@
-import type { CommandNote, CommandRegistration, Disposable } from '@numen/plugin-sdk'
+import type { CommandNote, CommandRegistration, Disposable, Caught } from '@numen/plugin-sdk'
 import type { CommandRun, PluginHostDeps } from './types'
 
 export interface PluginListener<E> {
@@ -19,7 +19,7 @@ export function addListener<E>(
 }
 
 /** Hands a plugin's failure to the host's reporter, under the id of the plugin. */
-export function reportError(deps: PluginHostDeps, pluginId: string, error: unknown): void {
+export function reportError(deps: PluginHostDeps, pluginId: string, error: Caught): void {
   deps.onError?.(pluginId, error)
 }
 
@@ -32,7 +32,7 @@ export function notifyListeners<E>(
   for (const { pluginId, handler } of [...listeners]) {
     Promise.resolve()
       .then(() => handler(event))
-      .catch((error: unknown) => reportError(deps, pluginId, error))
+      .catch((error: Caught) => reportError(deps, pluginId, error))
   }
 }
 

@@ -10,7 +10,7 @@ export default tseslint.config(
   {
     files: ['src/**/*_pb.ts'],
     linterOptions: { reportUnusedDisableDirectives: 'off' },
-    rules: { 'max-lines': 'off' },
+    rules: { 'max-lines': 'off', 'numen/no-unknown': 'off' },
   },
 
   // The generators are node scripts outside the TypeScript project.

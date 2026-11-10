@@ -3,9 +3,9 @@ import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
-import { createWindowStreams } from './useWindowStreams'
+import { createWindowStreams, type VaultScan } from './useWindowStreams'
 import { useDisplayHealth, type DisplayHealth } from './useDisplayHealth'
 import { useDisplayOpening } from './useDisplayOpening'
 import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVault'
@@ -21,7 +21,7 @@ import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVaul
  */
 /** What the window passes for reading a vault, alongside the vault itself. */
 interface DisplayOptions {
-  wait?(this: void, ms: number): Promise<unknown>
+  wait?(this: void, ms: number): Promise<void>
   /**
    * Receives vault change notifications, and is awaited. A change carrying no
    * paths is empty: everything showing the vault reads again.
@@ -49,11 +49,11 @@ interface DisplayOptions {
 
 interface StartDisplayDeps {
   health: DisplayHealth
-  ask: () => Promise<unknown>
+  ask: () => Promise<VaultScan>
   readInitialNote: () => Promise<string>
   onVaultChanged: (paths: readonly string[], renames: readonly PathRename[]) => Promise<void> | void
   streams: ReturnType<typeof createWindowStreams>
-  wait: (ms: number) => Promise<unknown>
+  wait: (ms: number) => Promise<void>
   isOpen: () => boolean
 }
 
@@ -61,7 +61,7 @@ function startStreams(
   streams: ReturnType<typeof createWindowStreams>,
   health: DisplayHealth,
 ): void {
-  const onError = (error: unknown) => {
+  const onError = (error: Caught) => {
     health.failure.value = formatError(error)
   }
   runInBackground(streams.follow(), onError)
@@ -74,7 +74,7 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
   const { health, ask, readInitialNote, onVaultChanged, streams, wait, isOpen } = deps
   try {
     while (isOpen()) {
-      const vault = (await ask()) as { scan: { error?: string; isReady?: boolean } }
+      const vault = await ask()
       const note = await readInitialNote()
       if (!isOpen()) return
       if (note) {
@@ -156,4 +156,4 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
 
 export type WindowDisplay = ReturnType<typeof useWindowDisplay>
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

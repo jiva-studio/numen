@@ -24,16 +24,15 @@ export interface SlotViewRegistry {
    * The component the plugin registered for the view, in any slot, drawn with the stylesheet of the
    * plugin; undefined while it has registered none.
    */
-  findView(this: void, pluginId: string, view: string): Component | undefined
+  readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
-  registerSlotView(
-    this: void,
+  readonly registerSlotView: (
     pluginId: string,
     slot: string,
     registration: SlotViewRegistration,
-  ): Disposable
+  ) => Disposable
   /** The view a window slot draws, or null while no plugin registered one; reactive. */
-  getSlotView(this: void, slot: string): ComputedRef<DeclaredSlotView | null>
+  readonly getSlotView: (slot: string) => ComputedRef<DeclaredSlotView | null>
   /** Removes every view the plugin registered. */
   disposePlugin(pluginId: string): void
 }
@@ -44,7 +43,10 @@ export interface SlotViewManifest {
     | {
         readonly slots: readonly {
           readonly slot: string
-          readonly placed: { readonly case?: string | undefined; readonly value?: unknown }
+          readonly placed: {
+            readonly case?: string | undefined
+            readonly value?: string | undefined
+          }
         }[]
       }
     | undefined

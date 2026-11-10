@@ -46,6 +46,9 @@ import type {
 
 export { createPluginPaneWrapper }
 
+/** The target the editor activates its plugins in. */
+const EDITOR_TARGET = 'desktop.editor'
+
 function getSettingsViewKey(pluginId: string, viewId: string): string {
   return `${pluginId}:${viewId}`
 }
@@ -141,9 +144,9 @@ function createViewBridge(shared: SharedRegistries): ContextViewHost {
 
 function createTabBridge(deps: PluginHostDeps): ContextTabHost {
   return {
-    openTab: (kind: string, target?: string) => deps.openTab(kind, target),
-    navigateTab: (kind: string, target: string) => deps.navigateTab?.(kind, target),
-    closeTab: (id: string) => deps.closeTab?.(id),
+    openTab: (kind, target) => deps.openTab(kind, target),
+    navigateTab: (kind, target) => deps.navigateTab?.(kind, target),
+    closeTab: (id) => deps.closeTab?.(id),
   }
 }
 
@@ -163,6 +166,7 @@ function createHostContextBridge(
   return {
     info: {
       app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
+      target: EDITOR_TARGET,
       openExternal: (url) =>
         deps.openExternal
           ? deps.openExternal(url)

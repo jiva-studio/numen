@@ -16,6 +16,7 @@ import {
 import {
   isNotePath,
   type EditorHandle,
+  type JsonValue,
   type PluginContext,
   type ReaderHandle,
   type ReaderRegistration,
@@ -23,18 +24,20 @@ import {
   type TabKindRegistration,
   type TabPlace,
   type TextRange,
+  type Unvalidated,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '../styles'
-import type { AnyTabKind, OpenTab } from './tabKinds'
+import type { AnyTabKind, OpenTab, TabKind } from './tabKinds'
 import {
   attachPluginRoot,
   extractFilename,
-  extractTitleValue,
+  parsePluginComponent,
+  parseTitle,
   renderFallback,
   renderPaneContent,
   renderWrapper,
-  resolvePluginComponent,
   stripMarkdownExtension,
+  type PluginComponentSource,
 } from './pane/pluginView'
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
@@ -42,13 +45,11 @@ import { pickDeclaredHooks } from './pluginTabKind'
 import { NOTE_KIND, createBufferedNoteState } from './customTabBuffer'
 
 export function createPluginPaneWrapper(
-  pluginIdOrComponent: string | unknown,
-  maybeComponent?: unknown,
+  pluginId: string,
+  rawComponent: PluginComponentSource,
   getContext?: () => PluginContext | undefined,
 ): Component {
-  const pluginId = typeof pluginIdOrComponent === 'string' ? pluginIdOrComponent : 'plugin'
-  const rawComponent = maybeComponent !== undefined ? maybeComponent : pluginIdOrComponent
-  const component = resolvePluginComponent(rawComponent)
+  const component = parsePluginComponent(rawComponent)
   const sanitizedId = pluginId.replace(/[^a-zA-Z0-9_-]/g, '-')
   const classes = {
     wrapper: `plugin-pane-wrapper plugin-pane-${sanitizedId}`,
@@ -98,11 +99,11 @@ export function createPluginPaneWrapper(
   })
 }
 
-const isSelector = (value: unknown): value is Selector =>
+const isSelector = (value: Unvalidated): value is Selector =>
   // Stryker disable next-line ConditionalExpression: null saved value maps to null place in both branches
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-const createReaderState = (pluginId: string, targetPath: string, saved: unknown) => {
+const createReaderState = (pluginId: string, targetPath: string, saved: JsonValue | undefined) => {
   const place = isSelector(saved) ? saved : null
   let reader: ReaderHandle | null = null
   const state = reactive({
@@ -129,11 +130,10 @@ const createReaderState = (pluginId: string, targetPath: string, saved: unknown)
   return state
 }
 
-const getReaderOpenTab = (state: unknown): OpenTab => {
-  const s = state as { path?: string; reported?: TabPlace | null } | undefined
-  const path = s?.path ?? ''
-  return s?.reported ? { path, place: { ...s.reported } } : { path }
-}
+type ReaderState = ReturnType<typeof createReaderState>
+
+const getReaderOpenTab = (state: ReaderState): OpenTab =>
+  state.reported ? { path: state.path, place: { ...state.reported } } : { path: state.path }
 
 export function getReaderTabKind(
   pluginId: string,
@@ -143,43 +143,25 @@ export function getReaderTabKind(
   const kindId = registration.id.startsWith('reader:')
     ? registration.id
     : `reader:${registration.id}`
-  return {
+  const kind: TabKind<ReaderState> = {
     kind: kindId,
     pluginId,
     ...(registration.icon ? { icon: registration.icon } : {}),
-    open: (targetPath: string, _id: string, saved?: unknown) =>
-      createReaderState(pluginId, targetPath, saved),
-    getState: (state: unknown) =>
-      (state as { place?: Selector | null } | undefined)?.place ?? undefined,
-    onShow: (state: unknown) => {
-      const s = state as { measure?: () => void; focusTab?: () => void } | undefined
-      s?.measure?.()
-      s?.focusTab?.()
+    open: (targetPath, _id, saved) => createReaderState(pluginId, targetPath, saved),
+    getState: (state) => state.place ?? undefined,
+    onShow: (state) => {
+      state.measure()
+      state.focusTab()
     },
-    onKeyPress: (state: unknown, event: KeyboardEvent) => {
-      const s = state as { handleKeyPress?: (e: KeyboardEvent) => boolean } | undefined
-      return s?.handleKeyPress?.(event) ?? false
-    },
-    getTitle: (state: unknown) => {
-      const s = state as { title?: unknown; path?: string } | undefined
-      const titleVal = extractTitleValue(s?.title)
-      if (titleVal) return titleVal
-      const filename = extractFilename(s?.path)
-      if (filename) return filename
-      return registration.title || ''
-    },
+    // A reader may keep the title as a ref, which the state of a tab does not unwrap.
+    getTitle: (state) =>
+      parseTitle(state.title) || extractFilename(state.path) || registration.title || '',
     pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
-    identity: (targetPath: string) => targetPath,
-    getTarget: (state: unknown) => {
-      const s = state as { path?: string; title?: string } | undefined
-      const path = s?.path
-      return {
-        ...(path !== undefined ? { file: path, path } : {}),
-        title: s?.title ?? '',
-      }
-    },
+    identity: (targetPath) => targetPath,
+    getTarget: (state) => ({ file: state.path, path: state.path, title: state.title }),
     getOpenTab: getReaderOpenTab,
   }
+  return kind
 }
 
 interface CustomTabStateDeps {
@@ -254,34 +236,31 @@ function resolveTargetTitle(title?: string, defaultName?: string, fallback = '')
   return title || defaultName || fallback
 }
 
-function resolveCustomTabTarget(state: unknown, registration: TabKindRegistration) {
-  const s = state as { path?: string; at?: string; title?: string } | undefined
-  const stateFile = s?.path ?? s?.at
-  const defaultName = stripMarkdownExtension(extractFilename(stateFile))
-  const title = resolveTargetTitle(s?.title, defaultName, registration.title || registration.kind)
+type CustomTabState =
+  ReturnType<typeof createCustomTabState> | ReturnType<typeof createBufferedNoteState>
+
+function resolveCustomTabTarget(state: CustomTabState, registration: TabKindRegistration) {
+  const defaultName = stripMarkdownExtension(extractFilename(state.path))
+  const title = resolveTargetTitle(
+    state.title,
+    defaultName,
+    registration.title || registration.kind,
+  )
 
   return {
-    ...(stateFile ? { file: stateFile, path: stateFile } : {}),
+    ...(state.path ? { file: state.path, path: state.path } : {}),
     title,
   }
 }
 
-function measureCustomTab(state: unknown): void {
-  const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
-  s?.measure?.()
-  s?.editor?.measure?.()
-}
-
-function notifyCustomTabShown(state: unknown, id: string | undefined, deps?: PluginHostDeps): void {
-  measureCustomTab(state)
+function notifyCustomTabShown(
+  state: CustomTabState,
+  id: string | undefined,
+  deps?: PluginHostDeps,
+): void {
+  state.measure()
   if (!id || !deps?.getWorkspace) return
-  const s = state as { path?: string; at?: string; title?: unknown } | undefined
-  const path = s?.path || s?.at
-  if (path) {
-    deps
-      .getWorkspace()
-      ?.files.syncPath(id, path, extractTitleValue((state as { title?: unknown }).title))
-  }
+  if (state.path) deps.getWorkspace()?.files.syncPath(id, state.path, state.title)
 }
 
 export function getCustomTabKind(
@@ -291,10 +270,10 @@ export function getCustomTabKind(
     readonly getContext?: (() => PluginContext | undefined) | undefined
   },
 ): AnyTabKind {
-  return {
+  const kind: TabKind<CustomTabState> = {
     kind: registration.kind,
     pluginId,
-    open: (targetPath: string, id: string) => {
+    open: (targetPath, id) => {
       const buffer = registration.kind === NOTE_KIND ? deps?.getNoteBuffer?.() : undefined
       if (!buffer)
         return createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps })
@@ -306,28 +285,21 @@ export function getCustomTabKind(
         },
       )
     },
-    getTitle: (state: unknown) => {
-      const s = state as { title?: unknown; at?: string; path?: string } | undefined
-      const titleVal = extractTitleValue(s?.title)
-      if (titleVal) return titleVal
-      const stateFile = s?.path ?? s?.at
-      const defaultName = stripMarkdownExtension(extractFilename(stateFile))
-      if (defaultName) return defaultName
-      return registration.title || registration.kind
-    },
+    getTitle: (state) =>
+      state.title ||
+      stripMarkdownExtension(extractFilename(state.path)) ||
+      registration.title ||
+      registration.kind,
     pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
-    identity: (targetPath: string) => targetPath || registration.kind,
-    onShow: (state: unknown, id?: string) => notifyCustomTabShown(state, id, deps),
-    navigate: (state: unknown, targetPath: string, title?: string) => {
+    identity: (targetPath) => targetPath || registration.kind,
+    onShow: (state, id) => notifyCustomTabShown(state, id, deps),
+    navigate: (state, targetPath, title) => {
       if (!isNotePath(targetPath)) return
-      const s = state as { navigate?: (path: string, title?: string) => void } | undefined
-      s?.navigate?.(targetPath, title)
+      state.navigate(targetPath, title)
     },
-    getTarget: (state: unknown) => resolveCustomTabTarget(state, registration),
-    getOpenTab: (state: unknown) => {
-      const s = state as { path?: string; at?: string } | undefined
-      return { path: s?.path ?? s?.at ?? '' }
-    },
+    getTarget: (state) => resolveCustomTabTarget(state, registration),
+    getOpenTab: (state) => ({ path: state.path }),
     ...pickDeclaredHooks(registration),
   }
+  return kind
 }

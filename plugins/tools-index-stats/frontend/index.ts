@@ -22,8 +22,8 @@ export interface StatsParts {
 }
 
 const browserTimer: Timer = {
-  set: (run, delayMs) => setTimeout(run, delayMs),
-  clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+  set: (run, delayMs) => window.setTimeout(run, delayMs),
+  clear: (handle) => window.clearTimeout(handle),
 }
 
 /** The window is in use while it is visible and has the focus. */

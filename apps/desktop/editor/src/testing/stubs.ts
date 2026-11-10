@@ -4,7 +4,10 @@
 import { defineComponent, h } from 'vue'
 import { requests } from './requests'
 
-const createStub = (name: string, answers: Record<string, unknown>) =>
+const createStub = (
+  name: string,
+  answers: Record<string, (...args: never[]) => boolean | number | undefined>,
+) =>
   defineComponent({
     name,
     setup: (_, { expose }) => {

@@ -715,32 +715,54 @@ export default {
       },
     },
 
-    'no-unknown-in-contract': {
+    'no-unknown': {
       meta: {
         type: 'problem',
         docs: {
           description:
-            'Forbid `unknown` in an exported declaration of a contract: name the real type, JsonValue for a value that crosses as JSON, or Caught for a caught error',
+            'Forbid `unknown`: name the real type, JsonValue for JSON, Caught for a caught error, and Unvalidated only for the parameter of a parse function',
         },
         messages: {
-          unknownInContract:
-            'A contract does not say `unknown`. Name the type, use JsonValue for JSON, or Caught for a caught value.',
+          unknownType:
+            '`unknown` is not a type to write. Name the type, use JsonValue for JSON, Caught for a caught value, or Unvalidated for the parameter of a parse function.',
+          unvalidatedOutsideParse:
+            '`Unvalidated` is the parameter of a function that validates it: name the function parseX, or return a type guard.',
         },
       },
       create(context) {
-        const isInside = (node, type) => {
-          for (let up = node.parent; up; up = up.parent) if (up.type === type) return true
-          return false
+        const HELPERS = new Set(['Caught', 'Unvalidated'])
+        const FUNCTIONS = new Set([
+          'FunctionDeclaration',
+          'FunctionExpression',
+          'ArrowFunctionExpression',
+          'TSDeclareFunction',
+        ])
+        const getFunctionName = (fn) => {
+          if (fn.id) return fn.id.name
+          const holder = fn.parent
+          if (holder?.type === 'VariableDeclarator' && holder.id.type === 'Identifier') return holder.id.name
+          if ((holder?.type === 'MethodDefinition' || holder?.type === 'Property') && holder.key.type === 'Identifier')
+            return holder.key.name
+          return ''
         }
-        const isCaughtAlias = (node) => {
-          const alias = node.parent
-          return alias?.type === 'TSTypeAliasDeclaration' && alias.id.name === 'Caught'
+        const isParseBoundary = (node) => {
+          const annotation = node.parent
+          const param = annotation?.parent
+          if (annotation?.type !== 'TSTypeAnnotation' || param?.type !== 'Identifier') return false
+          const fn = param.parent
+          if (!fn || !FUNCTIONS.has(fn.type) || !fn.params.includes(param)) return false
+          return fn.returnType?.typeAnnotation?.type === 'TSTypePredicate' || /^parse[A-Z]/.test(getFunctionName(fn))
         }
         return {
           TSUnknownKeyword(node) {
-            if (!isInside(node, 'ExportNamedDeclaration')) return
-            if (isInside(node, 'BlockStatement') || isCaughtAlias(node)) return
-            context.report({ node, messageId: 'unknownInContract' })
+            const alias = node.parent
+            const isHelper =
+              alias?.type === 'TSTypeAliasDeclaration' && alias.typeAnnotation === node && HELPERS.has(alias.id.name)
+            if (!isHelper) context.report({ node, messageId: 'unknownType' })
+          },
+          TSTypeReference(node) {
+            if (node.typeName.type === 'Identifier' && node.typeName.name === 'Unvalidated' && !isParseBoundary(node))
+              context.report({ node, messageId: 'unvalidatedOutsideParse' })
           },
         }
       },

@@ -82,7 +82,9 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 // When the embedding plugin is absent, search queries seamlessly fall back to
 // lexical full-text search without throwing errors.
 func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
-	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}), t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
+	}), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

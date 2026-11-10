@@ -17,6 +17,7 @@ import {
   type SettingOwner,
 } from '../lib/settingsConfig'
 import { getNamedIcon } from '@/shared/ui/icons'
+import type { JsonValue } from '@/shared/api/json'
 import { getSettingCommandId, parseSettingCommandId } from '../lib/settingCommandId'
 
 /** The words a row is drawn with. */
@@ -29,7 +30,7 @@ export interface SettingWords {
 /** What a setting flagged `preview` is applied and restored through. */
 export interface SettingPreview {
   /** The window shows the value at the path of a setting while its row is focused. */
-  apply(at: readonly string[], value: unknown): void
+  apply(at: readonly string[], value: JsonValue): void
   /** The window shows the value in force at the path of a setting again. */
   restore(at: readonly string[]): void
 }

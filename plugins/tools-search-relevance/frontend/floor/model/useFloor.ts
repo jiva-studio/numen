@@ -7,6 +7,7 @@ import { getErrorMessage, getInitialManual } from './present'
 import type { FloorClient, FloorProbeResult, FloorState, Wait } from './types'
 import { createFloorClient } from '../api/wire'
 import { sleep } from './wait'
+import type { Caught } from '@numen/plugin-sdk'
 
 /** The pause after the last slider move before the value is written. */
 export const SLIDER_DEBOUNCE_MS = 300
@@ -143,7 +144,7 @@ export function useFloor(options: UseFloorOptions) {
   }
 
   /** Shows a failure that no action of this model handled itself. */
-  function reportFailure(error: unknown): void {
+  function reportFailure(error: Caught): void {
     if (!isDisposed) actionError.value = getErrorMessage(error)
   }
 

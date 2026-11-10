@@ -92,9 +92,12 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 		t.Fatal(err)
 	}
 	lent := container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))
-	host := &recordingHost{apply: lent.ApplySetting, SettingsPush: lent.SettingsPush}
-	lent.ApplySetting, lent.SettingsPush = host.applySetting, host
-	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
+	host := &recordingHost{apply: lent.ApplySetting, SettingsPush: lent.Configuration.SettingsPush}
+	lent.ApplySetting, lent.Configuration.SettingsPush = host.applySetting, host
+	cfg := container.NewConfig(container.Config{
+		PluginHost: lent,
+		Paths:      container.Paths{SettingsPath: path},
+	})
 	cfg = cfg.SetSettings(container.DefaultSettings())
 	t.Cleanup(func() { container.UnsubscribeHost(cfg) })
 	return cfg, path, host

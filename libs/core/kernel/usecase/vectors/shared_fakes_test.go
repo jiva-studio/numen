@@ -2,8 +2,9 @@ package vectors
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 // fakeClaim is the hold on a vault's index, in memory.

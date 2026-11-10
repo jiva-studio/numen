@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { JsonValue } from '@numen/plugin-sdk'
 import {
   bindPDFReaderPreferences,
   readPDFReaderPreferences,
@@ -7,7 +8,7 @@ import {
 
 describe('the PDF reader settings', () => {
   it('reads the default zoom the settings name', () => {
-    const settings: Record<string, unknown> = { defaultZoom: 'width' }
+    const settings: Record<string, JsonValue> = { defaultZoom: 'width' }
 
     expect(readPDFReaderPreferences((key) => settings[key])).toStrictEqual({ defaultZoom: 'width' })
   })

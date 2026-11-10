@@ -3,13 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { watchCommandLists } from './watchCommandLists'
 import type { DeclaredCommands } from './declaredCommands'
+import type { JsonValue } from '@/shared/api/json'
 
 const PLEX = 'org.example.plex'
 
 function setup() {
   const load = vi.fn(async () => undefined)
   const plugins = ref([{ id: PLEX, isActive: false }])
-  const settings = ref<Record<string, unknown>>({})
+  const settings = ref<Record<string, JsonValue>>({})
   const getCommittedSetting = (path: readonly string[]) => settings.value[path.join('.')]
   watchCommandLists(
     {

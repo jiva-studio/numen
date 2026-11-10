@@ -34,21 +34,33 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
-// Config is what the user may point somewhere else. Empty fields mean the
-// platform's own locations.
-type Config struct {
+// Paths are the files and folders the user may point somewhere else. An empty path means the platform's
+// own location.
+type Paths struct {
 	IndexPath       string
 	RegistryPath    string
 	ServiceDir      string
 	SettingsPath    string
 	ThemesPath      string
 	PluginCachePath string
+}
 
+// Scales are the sizes of the interface and of the text; zero means the settings decide.
+type Scales struct {
 	InterfaceScale, TextScale float64
+}
 
+// Machine is what the hardware allows the installation to use.
+type Machine struct {
 	ResolvedCompute hardware.ResolvedCompute
+	Hardware        hardware.Specs
+}
 
-	Hardware hardware.Specs
+// Config is what the user may point somewhere else. Empty fields mean the platform's own locations.
+type Config struct {
+	Paths
+	Scales
+	Machine
 
 	Chunks *note.ChunkTokens
 
@@ -73,9 +85,6 @@ type Config struct {
 	Now machineport.Clock
 
 	Resources *Resources
-
-	agentProvider agentport.AgentProvider
-	programs      *settingsadapter.ProgramList
 }
 
 // Resources is what every part a container assembles shares: the write lock of each vault, the
@@ -121,15 +130,10 @@ func getResources(c Config) *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &settingsusecase.PluginChanges{}}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &settingsusecase.PluginChanges{}, programs: &settingsadapter.ProgramList{}}
 }
 
-func getPrograms(c Config) *settingsadapter.ProgramList {
-	if c.programs != nil {
-		return c.programs
-	}
-	return getResources(c).programs
-}
+func getPrograms(c Config) *settingsadapter.ProgramList { return getResources(c).programs }
 
 // Clock is the clock every scenario assembled here is handed.
 func (c Config) Clock() machineport.Clock {

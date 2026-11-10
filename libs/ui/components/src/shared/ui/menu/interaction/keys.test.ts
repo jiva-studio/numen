@@ -256,12 +256,15 @@ describe('useMenuNavigation', () => {
     expect(nav.submenu.trigger.value).toBe('pointer')
 
     // Register row without getElement, then with getElement
-    nav.submenu.onRegisterRow('sub', {})
+    nav.submenu.onRegisterRow('sub', document.createElement('div'))
     nav.submenu.onChoose(parent)
     expect(nav.submenu.active.value?.from).toBeNull()
 
     const rowEl = document.createElement('button')
-    nav.submenu.onRegisterRow('sub', { getElement: () => rowEl, focus: vi.fn() })
+    nav.submenu.onRegisterRow(
+      'sub',
+      Object.assign(document.createElement('button'), { getElement: () => rowEl }),
+    )
     nav.focusInitial()
     expect(nav.here.value).toBe(0)
     nav.onKey(createKey('ArrowRight'))

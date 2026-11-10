@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, type ComponentPublicInstance, type VNode } from 'vue'
 import { WorkspaceTab } from '../../tab'
-import { stepTo } from '../keys'
+import { isFocusable, stepTo } from '../keys'
 import { getPanelName, getTabName } from '../names'
 import { NO_STRIP_EDGE, WORKSPACE_CONTEXT } from '../../../model/context'
 import type { Pane, TabId } from '../../../lib/node'
@@ -24,8 +24,8 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  icon(props: { id: TabId }): unknown
-  mark(props: { id: TabId; mark: string }): unknown
+  icon(props: { id: TabId }): VNode[]
+  mark(props: { id: TabId; mark: string }): VNode[]
 }>()
 
 defineExpose({ reach })
@@ -48,8 +48,8 @@ const edgeStyle = computed(() =>
 const drawnTabs = new Map<TabId, { focus: () => void }>()
 
 /* -------------------------------- Handlers -------------------------------- */
-const onHoldTab = (tab: TabId, element: unknown): void => {
-  if (element) drawnTabs.set(tab, element as { focus: () => void })
+const onHoldTab = (tab: TabId, element: Element | ComponentPublicInstance | null): void => {
+  if (isFocusable(element)) drawnTabs.set(tab, element)
   else drawnTabs.delete(tab)
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, useTemplateRef, watch, type VNode } from 'vue'
 import type { TreeRowProps } from './TreeRow.types'
 import { TreeField } from './tree-field'
 
@@ -14,7 +14,7 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  default(): unknown
+  default(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */

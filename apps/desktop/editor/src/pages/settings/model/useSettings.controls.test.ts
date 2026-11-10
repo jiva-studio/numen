@@ -3,6 +3,7 @@
  * the write, its answer, the setting-changed event and the reads that follow arrive in turn, and
  * the control shows the value the person set from the first moment on. Every value here is invented.
  */
+import type { JsonValue } from '@/shared/api/json'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
@@ -24,7 +25,7 @@ import { useSettings } from './useSettings'
 
 type Tree = Record<string, Record<string, unknown>>
 
-const file = { current: {} as Record<string, unknown> }
+const file = { current: {} as Record<string, JsonValue> }
 
 const THEME_CHOICES = [
   { value: 'preset:numen', title: 'Numen', detail: '' },
@@ -66,10 +67,13 @@ const DECLARED = [
   },
 ] as const
 
-const getValueAt = (tree: unknown, key: string): unknown =>
+const getValueAt = (tree: JsonValue | undefined, key: string): JsonValue | undefined =>
   key
     .split('.')
-    .reduce<unknown>((one, step) => (one as Record<string, unknown> | undefined)?.[step], tree)
+    .reduce<JsonValue | undefined>(
+      (one, step) => (one as Record<string, JsonValue> | undefined)?.[step],
+      tree,
+    )
 
 const declare = (): readonly PluginSettingInfo[] =>
   DECLARED.map((one) => {
@@ -160,9 +164,9 @@ const create = (timing: Timing) => {
               const target = steps.reduce<Record<string, unknown>>(
                 (one, step) => {
                   one[step] = { ...((one[step] as object | undefined) ?? {}) }
-                  return one[step] as Record<string, unknown>
+                  return one[step] as Record<string, JsonValue>
                 },
-                (file.current[owner as string] ??= {}) as Record<string, unknown>,
+                (file.current[owner as string] ??= {}) as Record<string, JsonValue>,
               )
               target[last] = JSON.parse(edit.value)
             }

@@ -42,7 +42,7 @@ const callWhileBusy = async <M extends keyof Methods>(
   }
 }
 
-const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
+const readOutcome = <Response>(result: Result<Response, ApiError>): Outcome<null> =>
   result.ok ? { ok: true, value: null } : { ok: false, error: describeError(result.error) }
 
 export const links: Links = {

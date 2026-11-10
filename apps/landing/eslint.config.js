@@ -8,7 +8,7 @@ import globals from 'globals'
 import astro from 'eslint-plugin-astro'
 import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
-import { createStrictRules, createStrictScriptRules, maxComposableReturnProperties } from '../../tools/lint-layers/base-eslint.mjs'
+import { createStrictRules, createStrictScriptRules, numenPlugin } from '../../tools/lint-layers/base-eslint.mjs'
 
 /** A parameter that is named and unused is part of a required signature; a leading underscore marks it. */
 const unused = [
@@ -29,7 +29,7 @@ export default tseslint.config(
 
   {
     files: typed,
-    plugins: { numen: { rules: { 'max-composable-return-properties': maxComposableReturnProperties } } },
+    plugins: { numen: numenPlugin },
     languageOptions: {
       globals: globals.browser,
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname, extraFileExtensions: ['.vue'] },
@@ -41,6 +41,13 @@ export default tseslint.config(
       ...createStrictRules(),
       'numen/max-composable-return-properties': ['error', { max: 8 }],
     },
+  },
+
+  {
+    files: typed,
+    ignores: ['**/*.test.ts'],
+    plugins: { numen: numenPlugin },
+    rules: { 'numen/no-unknown': 'error' },
   },
 
   {

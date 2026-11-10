@@ -25,7 +25,9 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return NewConfig(Config{SettingsPath: path}), path
+	return NewConfig(Config{
+		Paths: Paths{SettingsPath: path},
+	}), path
 }
 
 // What the window is given is every setting, so a setting the file leaves out
@@ -236,7 +238,7 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = &PluginHost{SettingsPush: host}
+	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{SettingsPush: host}}
 
 	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {

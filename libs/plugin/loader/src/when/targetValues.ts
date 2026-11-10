@@ -2,12 +2,12 @@
  * The target variables of when conditions, derived in this one place from the path a place passes,
  * as VS Code derives its resource keys from the URI. The core derives the same values for a run.
  */
-import { isNotePath, type CommandTarget } from '@numen/plugin-sdk'
+import { isNotePath, type CommandTarget, type JsonObject, type JsonValue } from '@numen/plugin-sdk'
 
 /** What a place read of the note of a target: its type and its frontmatter. */
 export interface TargetNote {
   readonly type?: string | undefined
-  readonly properties?: Readonly<Record<string, unknown>> | undefined
+  readonly properties?: JsonObject | undefined
 }
 
 /** What the derivation reads of a target. */
@@ -44,7 +44,7 @@ export function getTargetValues(
   target: TargetPath | undefined,
   contentTypes: Readonly<Record<string, string>>,
   note: TargetNote = {},
-): Readonly<Record<string, unknown>> {
+): Readonly<Record<string, JsonValue>> {
   if (!target) return NO_TARGET
   const { path, isFolder, others } = target
   const extension = isFolder ? '' : getExtension(path)

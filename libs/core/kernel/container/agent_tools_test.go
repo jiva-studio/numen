@@ -512,7 +512,7 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	container.AdaptPluginHost(host).SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	container.AdaptPluginHost(host).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)

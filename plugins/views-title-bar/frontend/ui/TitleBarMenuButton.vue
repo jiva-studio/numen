@@ -93,7 +93,7 @@ function getIcon(id: string): Component | undefined {
     style="--wails-draggable: no-drag"
     @click="onToggle"
   >
-    <component :is="icon as Component" v-if="icon !== undefined" :size="16" />
+    <component :is="icon" v-if="icon !== undefined" :size="16" />
     <template v-else>{{ label }}</template>
   </button>
   <Menu

@@ -22,7 +22,7 @@ import {
 } from '@/entities/settings'
 import { PLUGIN_FAILURE_WORDS, readPluginReadme, useCatalogEntries } from '@/entities/plugin'
 import { createFollower, runInBackground } from '@numen/ui'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { useSettingsTab } from '../kind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -46,7 +46,7 @@ interface SettingsTabConfigDeps {
   getSettingsViews: InstallationPlugin['getSettingsViews']
   getPlatform: InstallationSettings['getPlatform']
   catalogEntries: NonNullable<InstallationPlugin['catalog']>
-  reportError: (error: unknown) => void
+  reportError: (error: Caught) => void
 }
 
 function createInstallationSettings(deps: SettingsTabConfigDeps) {
@@ -135,8 +135,8 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
 }
 
 function createChangeFollower(deps: {
-  refresh: () => Promise<unknown>
-  wait?: (ms: number) => Promise<unknown>
+  refresh: () => Promise<void>
+  wait?: (ms: number) => Promise<void>
 }) {
   const { refresh, wait = sleep } = deps
   const abortController = new AbortController()
@@ -170,7 +170,7 @@ function createChangeFollower(deps: {
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 export function useSettings({
   rest,
@@ -190,7 +190,7 @@ export function useSettings({
     words: APPEARANCE_WORDS,
     write: writeAppearanceMessage,
   })
-  const reportError = (error: unknown) => writeSettingsMessage(formatError(error), 'error')
+  const reportError = (error: Caught) => writeSettingsMessage(formatError(error), 'error')
   const secrets = createSecretStore({
     words: SETTINGS_WORDS,
     notify: log.getWriter('keys'),
@@ -225,7 +225,7 @@ export function useSettings({
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 
   const changes = createChangeFollower({
-    refresh: () => Promise.all([rest.start(), appearance.reload()]),
+    refresh: () => Promise.all([rest.start(), appearance.reload()]).then(() => undefined),
   })
 
   const start = async () => {

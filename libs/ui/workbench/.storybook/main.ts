@@ -35,7 +35,7 @@ const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
               id: string,
               importer?: string,
               options?: { skipSelf?: boolean },
-            ) => Promise<unknown>
+            ) => Promise<{ id: string } | null>
           },
           source: string,
           importer: string | undefined,

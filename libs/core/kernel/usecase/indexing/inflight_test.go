@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -125,7 +127,7 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 			case <-time.After(10 * time.Second):
 				t.Fatal("the pass never reached the second source")
 			}
-			if !events.tasks.Cancel(MakingVectors) {
+			if !events.tasks.Cancel(work.MakingVectors) {
 				t.Fatalf("the vector pass is not cancellable: %+v", events.tasks.List())
 			}
 			select {

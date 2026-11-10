@@ -2,7 +2,7 @@
  * Loads plugin frontends: each module is fetched from the window, activated with a context
  * created by the host, and deactivated according to its `enabled` setting.
  */
-import type { Disposable } from '@numen/plugin-sdk'
+import type { Caught, Disposable, JsonValue } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
 import {
@@ -10,6 +10,7 @@ import {
   isWindowSlotManifest,
   readPluginManifest,
   resolveModule,
+  type PluginModule,
 } from './module'
 import { startLoader } from './loading/startLoader'
 import { activateEntry, type ActivateContext, type ActivePluginEntry } from './loading/activation'
@@ -22,14 +23,14 @@ export interface PluginLoaderDeps {
   readonly status?: PluginStatus
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
-  readonly dynamicImport?: (url: string) => Promise<unknown>
-  readonly onError?: (pluginId: string, error: unknown) => void
+  readonly dynamicImport?: (url: string) => Promise<PluginModule>
+  readonly onError?: (pluginId: string, error: Caught) => void
 }
 
 export const DEFAULT_PLUGIN_ENABLED = true
 
 /** A plugin is enabled unless its setting is false. */
-export function isPluginEnabledValue(value: unknown): boolean {
+export function isPluginEnabledValue(value: JsonValue | undefined): boolean {
   return typeof value === 'boolean' ? value : DEFAULT_PLUGIN_ENABLED
 }
 
@@ -37,7 +38,7 @@ interface DeactivateDeps {
   readonly host: LoaderHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly manifests: Map<string, Manifest>
-  readonly reportError: (pluginId: string, error: unknown) => void
+  readonly reportError: (pluginId: string, error: Caught) => void
 }
 
 async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<boolean> {
@@ -115,13 +116,16 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
   const { activePlugins, failures, manifests, moduleLoaders } = state
-  const queues = new Map<string, Promise<unknown>>()
+  const queues = new Map<string, Promise<void>>()
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
     const run = (queues.get(id) ?? Promise.resolve()).then(task)
     queues.set(
       id,
-      run.catch(() => undefined),
+      run.then(
+        () => undefined,
+        () => undefined,
+      ),
     )
     return run
   }
@@ -150,7 +154,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
       !moduleLoaders.has(id) &&
       ((await readPluginManifest(id, activateContext).catch(() => undefined))?.contributes?.tabKinds
         .length ?? 0) > 0,
-    activatePlugin: (id: string, module?: unknown, limit?: StartLimit) =>
+    activatePlugin: (id: string, module?: PluginModule, limit?: StartLimit) =>
       enqueue(id, () => activateEntry(activateContext, id, { module, limit })),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
   }
@@ -161,8 +165,12 @@ type LoaderState = Pick<PluginStatus['state'], 'activePlugins' | 'failures' | 'm
 }
 
 interface Activation {
-  readonly loadModule: (id: string) => Promise<unknown>
-  readonly activatePlugin: (id: string, module?: unknown, limit?: StartLimit) => Promise<boolean>
+  readonly loadModule: (id: string) => Promise<PluginModule | undefined>
+  readonly activatePlugin: (
+    id: string,
+    module?: PluginModule,
+    limit?: StartLimit,
+  ) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
   readonly isInterface: (id: string) => Promise<boolean>
   readonly hasTabKinds: (id: string) => Promise<boolean>
@@ -217,14 +225,14 @@ function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation:
 
   const activateInBackground = (id: string): void => {
     // Stryker disable next-line BlockStatement,CallExpression,OptionalChaining: activatePlugin handles its own errors inside activateEntry
-    activatePlugin(id).catch((error: unknown) => {
+    activatePlugin(id).catch((error: Caught) => {
       deps.onError?.(id, error)
     })
   }
 
   return {
     status: createLoaderStatus(status, activation, () => interfaceStarted.promise),
-    registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
+    registerPluginModule: (id: string, loader: () => Promise<PluginModule>) => {
       moduleLoaders.set(id, loader)
       if (isRunning.value) {
         listen(id)

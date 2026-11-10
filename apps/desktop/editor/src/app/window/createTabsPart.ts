@@ -1,7 +1,7 @@
 /**
  * The tabs of the window: how they open, close, link and move between windows.
  */
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { getTabPaneRect } from '@numen/workbench'
@@ -36,7 +36,7 @@ interface TabsCoreDeps {
   readonly isPluginStarting: (pluginId: string) => boolean
 }
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 export function createTabsCore(deps: TabsCoreDeps): TabsCore {
   const { writeMessage, rest } = deps
@@ -101,7 +101,7 @@ interface WindowTabLinksDeps {
 export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   const isMain = !isSecondaryWindow()
   const getReport = () => getWindowReport(base.tabs.windowTabs, isMain)
-  const onError = (error: unknown) =>
+  const onError = (error: Caught) =>
     base.writeMessage(`The tab links were not written: ${formatError(error)}`, 'error')
   const session = createTabLinkSession({
     acceptTabMove,

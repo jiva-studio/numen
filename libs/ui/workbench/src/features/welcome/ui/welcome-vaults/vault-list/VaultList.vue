@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
 /**
  * The vault list: one vault per row, each opened by the letter at the end of its
  * row for as many rows as the alphabet covers.
@@ -20,7 +21,7 @@ defineEmits<{
 
 defineSlots<{
   /** How a vault on the list is drawn. */
-  vault?(props: { vault: VaultRow }): unknown
+  vault?(props: { vault: VaultRow }): VNode[]
 }>()
 
 const getVaultKeys = (pos: number, vault: VaultRow): Keystroke | undefined => {

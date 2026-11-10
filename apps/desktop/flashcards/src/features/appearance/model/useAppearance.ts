@@ -6,7 +6,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { createFollower } from '@numen/ui'
 import type { NoticeQueue } from '@numen/workbench'
 import { listPlugins } from '@/entities/plugin'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { themeClient } from '../api/theme'
 import { createAppearance } from './appearance'
@@ -59,7 +59,7 @@ export function useAppearance(notices: NoticeQueue) {
     query.value = ''
     isOpen.value = true
     // Stryker disable next-line all: refreshPluginNames and appearance.refresh catch their own errors
-    Promise.all([refreshPluginNames(), appearance.refresh()]).catch((error: unknown) =>
+    Promise.all([refreshPluginNames(), appearance.refresh()]).catch((error: Caught) =>
       showError(formatError(error)),
     )
   }
@@ -77,7 +77,7 @@ export function useAppearance(notices: NoticeQueue) {
   onMounted(() => {
     globalThis.addEventListener('keydown', onKeyDown)
     // Stryker disable next-line all: appearance.refresh catches its own errors
-    appearance.refresh().catch((error: unknown) => showError(formatError(error)))
+    appearance.refresh().catch((error: Caught) => showError(formatError(error)))
     follow(
       () => themeClient.watchThemes(abortController.signal),
       async (names) => {
@@ -85,7 +85,7 @@ export function useAppearance(notices: NoticeQueue) {
       },
     ).catch(
       // Stryker disable next-line all: createFollower catches stream errors and reports them through setLost
-      (error: unknown) => showError(formatError(error)),
+      (error: Caught) => showError(formatError(error)),
     )
   })
   onUnmounted(() => {

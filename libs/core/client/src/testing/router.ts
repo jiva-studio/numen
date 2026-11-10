@@ -63,7 +63,7 @@ export const installCoreAnswers = (answers: CoreAnswers): (() => void) =>
   )
 
 /** A core method answered without its service named. */
-type CoreHandler = (...request: never[]) => unknown
+type CoreHandler = (...request: never[]) => object | Promise<object>
 
 /**
  * Answers calls like `installCoreAnswers`, from handlers named by their method alone: each goes

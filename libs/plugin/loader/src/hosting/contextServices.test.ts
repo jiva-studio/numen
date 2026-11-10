@@ -13,26 +13,13 @@ import {
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import {
-  createMockCommandsHost,
-  createMockNoticeHost,
-  createMockSlotHost,
-} from '@numen/plugin-sdk/testing'
+import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginContextHost } from './types'
+import { createTestContextHost } from '../testing/contextHost'
 
-/** A host that offers no service: every part of it is empty, but for the notices and slots every window has. */
-const NO_SERVICES = {
-  info: {},
-  registration: {},
-  views: {},
-  settings: {},
-  events: {},
-  tabs: {},
-  vault: {},
-  window: { getNotices: () => createMockNoticeHost(), getSlots: () => createMockSlotHost() },
-} as unknown as PluginContextHost
+const createEmptyHost = (): PluginContextHost => createTestContextHost()
 
 const createServices = () => {
   const workspace = {
@@ -78,8 +65,7 @@ const createServices = () => {
     addFlushHandler: vi.fn(() => ({ dispose: vi.fn() })),
   } as unknown as BufferHost
   const commands = createMockCommandsHost()
-  const host = {
-    ...NO_SERVICES,
+  const host = createTestContextHost({
     vault: {
       getBuffers: () => buffers,
       getNotes: () => notes,
@@ -90,10 +76,8 @@ const createServices = () => {
       getAgent: () => agent,
       getWorkspace: () => workspace,
       getCommands: () => commands,
-      getNotices: () => createMockNoticeHost(),
-      getSlots: () => createMockSlotHost(),
     },
-  } as unknown as PluginContextHost
+  })
   return { host, workspace, notes, relations, files, agent, buffers, commands }
 }
 
@@ -297,7 +281,7 @@ describe('the open files a plugin passes the window', () => {
 
     expect(buffers.track).toHaveBeenCalledOnce()
     expect(
-      createPluginContext('md.numen.sample', NO_SERVICES, {
+      createPluginContext('md.numen.sample', createEmptyHost(), {
         permissions: ['vault:write'],
       }),
     ).not.toHaveProperty('buffers')

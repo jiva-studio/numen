@@ -9,6 +9,7 @@
  * runs in this window.
  */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import type { Caught } from '@numen/ui'
 import { getDraggedHeight, getFrameOrigin, getTallest, LEAST, parseJson, seekFrame } from '../lib/frame'
 import { createHeightStore, type HeightStore } from '../model/heightStore'
 
@@ -167,7 +168,7 @@ function getPaneHeight(): number {
 function seek(ms: number): void {
   if (player.value) {
     player.value.currentTime = ms / 1000
-    player.value.play().catch((error: unknown) => {
+    player.value.play().catch((error: Caught) => {
       console.error(error)
     })
     return

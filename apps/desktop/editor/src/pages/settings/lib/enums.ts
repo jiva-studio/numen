@@ -11,9 +11,10 @@ import type {
   PluginSettingInfo,
   PluginSettingOption,
 } from '@/entities/settings'
+import type { JsonValue } from '@/shared/api/json'
 
 /** The value a plugin's setting holds, or nothing where the file holds none. */
-export type ReadPluginSetting = (key: string) => unknown
+export type ReadPluginSetting = (key: string) => JsonValue | undefined
 
 export interface EnumFields {
   getEnumOptions(this: void, setting: PluginSettingInfo): readonly PluginSettingOption[]
@@ -36,7 +37,7 @@ function toSelectChoices(
   }))
 }
 
-const toText = (value: unknown): string => {
+const toText = (value: JsonValue | undefined): string => {
   if (value === undefined || value === null) return ''
   return typeof value === 'string' ? value : JSON.stringify(value)
 }
@@ -46,7 +47,7 @@ export function getValueInForce(
   setting: PluginSettingInfo,
   read: ReadPluginSetting,
   isRequested: (key: string) => boolean,
-): unknown {
+): JsonValue | undefined {
   if (setting.value !== undefined && !isRequested(setting.key)) return setting.value
   return read(setting.key) ?? setting.default
 }

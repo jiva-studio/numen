@@ -1,3 +1,4 @@
+import type { JsonValue } from '@/shared/api/json'
 /**
  * The tabs of the window, and what currently open in them.
  */
@@ -19,7 +20,7 @@ export interface SavedTab {
   readonly kind: string
   readonly path: string
   readonly title?: string | undefined
-  readonly saved?: unknown
+  readonly saved?: JsonValue | undefined
 }
 
 /** What currently open: every tab, and which of them is active. */

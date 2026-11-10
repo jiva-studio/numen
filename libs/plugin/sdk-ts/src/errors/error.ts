@@ -64,6 +64,13 @@ export class ReportedError extends Error {
 /** Whatever a try block threw or a promise rejected with: anything can be thrown. */
 export type Caught = unknown
 
+/**
+ * A value read from outside the program, such as a file, a message or a global, before a function
+ * has checked its shape. Only the parameter of a parseX function or of a type guard has this type;
+ * the function returns the typed value.
+ */
+export type Unvalidated = unknown
+
 const isReportedError = (error: Caught): error is { readonly message: string } =>
   typeof error === 'object' &&
   error !== null &&

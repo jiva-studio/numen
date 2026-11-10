@@ -1,3 +1,4 @@
+import type { VNode } from 'vue'
 import type { Clock } from '@/shared/lib/time/clock'
 import type { Position } from '@/shared/lib/math/geometry'
 import type { RowDropTarget } from '../lib/drop'
@@ -31,6 +32,6 @@ export interface TreeEvents {
 
 /** Slots for the tree component. */
 export interface TreeSlots {
-  icon(props: { id: RowId; hasChildren: boolean; isOpen: boolean }): unknown
-  silence(): unknown
+  icon(props: { id: RowId; hasChildren: boolean; isOpen: boolean }): VNode[]
+  silence(): VNode[]
 }

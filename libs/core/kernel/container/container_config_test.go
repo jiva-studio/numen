@@ -94,7 +94,9 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
-	got, err := settingsSettingsFile(settingsOf(NewConfig(Config{RegistryPath: registry})))
+	got, err := settingsSettingsFile(settingsOf(NewConfig(Config{
+		Paths: Paths{RegistryPath: registry},
+	})))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +106,9 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 }
 
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
-	cfg := NewConfig(Config{ServiceDir: ".mine"})
+	cfg := NewConfig(Config{
+		Paths: Paths{ServiceDir: ".mine"},
+	})
 
 	opened, ok := noteWriters(vaultOf(cfg)).(vaultwriter.VaultWriters)
 	if !ok {
@@ -126,7 +130,9 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := resolveIndexPath(vaultOf(NewConfig(Config{IndexPath: named})))
+	got, err := resolveIndexPath(vaultOf(NewConfig(Config{
+		Paths: Paths{IndexPath: named},
+	})))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,11 +151,15 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := resolveIndexPath(vaultOf(NewConfig(Config{IndexPath: filepath.Join(file, "index.db")})))
+	got, err := resolveIndexPath(vaultOf(NewConfig(Config{
+		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
+	})))
 	if err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
 	}
-	if _, err := openIndex(vaultOf((NewConfig(Config{IndexPath: filepath.Join(file, "index.db")}))), t.Context()); err == nil {
+	if _, err := openIndex(vaultOf((NewConfig(Config{
+		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
+	}))), t.Context()); err == nil {
 		t.Error("an index was opened where its folder cannot be made")
 	}
 }
@@ -198,7 +208,9 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }
 
-	got, err := NewConfig(Config{RegistryPath: named}).Registry()
+	got, err := NewConfig(Config{
+		Paths: Paths{RegistryPath: named},
+	}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}

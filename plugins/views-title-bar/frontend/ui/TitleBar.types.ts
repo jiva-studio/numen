@@ -1,4 +1,4 @@
-import type { AppInfo, CommandItem, SlotItem, VaultsState } from '@numen/plugin-sdk'
+import type { AppInfo, CommandItem, SlotItem, VaultsState, Caught } from '@numen/plugin-sdk'
 import type { ButtonsSetting } from '../lib/frame'
 
 export interface TitleBarProps {
@@ -12,5 +12,5 @@ export interface TitleBarProps {
   status?: readonly SlotItem[]
   canCreateVault?: boolean
   listItems?: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: ((error: unknown) => void) | undefined
+  reportError?: ((error: Caught) => void) | undefined
 }

@@ -3,7 +3,7 @@
  * which the frame carries out. Both windows give their plugins this one host of their frame.
  */
 import { computed, watch, type Ref } from 'vue'
-import type { WindowHost, WindowState } from '@numen/plugin-sdk'
+import type { WindowHost, WindowState, Caught } from '@numen/plugin-sdk'
 
 /** The part of the frame of a window the host reads and drives. */
 export interface WindowControls {
@@ -17,7 +17,7 @@ export interface WindowControls {
 /** The host of the frame; a button whose call fails passes the failure to `onError`. */
 export function createWindowHost(
   frame: WindowControls,
-  onError: (error: unknown) => void,
+  onError: (error: Caught) => void,
 ): WindowHost {
   const state = computed<WindowState>(() => ({
     isMaximized: frame.isMaximized.value,

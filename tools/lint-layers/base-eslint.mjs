@@ -160,6 +160,8 @@ export function createStrictScriptRules() {
   }
 }
 
+export { numenPlugin }
+
 /** The rule is shared with configurations that do not build on createBaseConfig. */
 export const maxComposableReturnProperties = numenPlugin.rules['max-composable-return-properties']
 
@@ -230,6 +232,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
+        'numen/no-unknown': 'error',
         'numen/no-comment-only-catch': 'error',
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/consistent-type-assertions': [
@@ -438,6 +441,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': 'off',
         'numen/enforce-vue-reactivity-in-composable': 'off',
         'numen/no-double-type-assertion': 'off',
+        'numen/no-unknown': 'off',
         'numen/no-comment-only-catch': 'off',
         '@typescript-eslint/consistent-type-assertions': 'off',
         'max-depth': 'off',
@@ -473,15 +477,6 @@ export function createBaseConfig(dirname, options = {}) {
   ]
 }
 
-/**
- * Bans `unknown` in the exported declarations of the given files, which are a contract other code
- * is written against.
- *
- * @param {string[]} files The globs of the files; tests are left out
- * @returns {object}
- */
-export function createNoUnknownContractConfig(files) {
-  return { files, ignores: ['**/*.test.ts', '**/*.spec.ts'], plugins: { numen: numenPlugin }, rules: { 'numen/no-unknown-in-contract': 'error' } }
 }
 
 /**
@@ -519,6 +514,7 @@ export function createPlainLibraryConfig(dirname) {
     {
       ...sources,
       rules: {
+        'numen/no-unknown': 'error',
         'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
         'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
         complexity: ['error', 10],

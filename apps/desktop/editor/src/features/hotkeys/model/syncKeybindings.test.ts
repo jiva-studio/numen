@@ -37,7 +37,7 @@ const create = (list?: readonly DeclaredKeybinding[]) => {
     getSlotWhenValues: (target) => getWhenValues({ window, target, contentTypes: {} }),
   })
   const keybindings = ref<readonly DeclaredKeybinding[] | undefined>(list)
-  const plugins = ref<readonly unknown[]>([])
+  const plugins = ref<readonly object[]>([])
   syncKeybindings(host.keybindings, keybindings, plugins)
   const runApp = vi.fn()
   const press = (code: string, init: KeyboardEventInit = {}) =>

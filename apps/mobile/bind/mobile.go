@@ -187,15 +187,13 @@ func (c *Core) Port() int {
 
 func makeConfig(dir string, out io.Writer) container.Config {
 	return container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(dir, "index.db"),
-		RegistryPath: filepath.Join(dir, "vaults.json"),
-		ThemesPath:   filepath.Join(dir, "themes"),
-		Resources:    container.NewResources(),
+		Resources: container.NewResources(),
 		ErrorHandler: func(err error) {
 			if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 				return
 			}
 		},
+		Paths: container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")},
 	})
 }
 

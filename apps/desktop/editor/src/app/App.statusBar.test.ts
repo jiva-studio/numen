@@ -78,7 +78,7 @@ describe('the background tasks a plugin is given', () => {
     vaultState.opening = null
     vaultState.error = 'the vault folder is not there'
     await mountWindow()
-    const host = hosts.current!.contextHost.window.getBackgroundTasks?.()
+    const host = hosts.current!.contextHost.window.getBackgroundTasks()
 
     let tasks: readonly BackgroundTask[] = []
     host!.watch((list) => (tasks = list)).dispose()

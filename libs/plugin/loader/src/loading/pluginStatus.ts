@@ -4,6 +4,7 @@
  * it, such as the host and the tabs of a plugin, so none of them needs the loader to exist.
  */
 import { shallowRef } from 'vue'
+import type { PluginModule } from '../module'
 import type { ActivePluginEntry } from './activation'
 import { createPluginStarts } from './pluginStarts'
 
@@ -14,7 +15,7 @@ export interface PluginStatusDeps {
 export function createPluginStatus(deps: PluginStatusDeps) {
   const activePlugins = shallowRef<ReadonlyMap<string, ActivePluginEntry>>(new Map())
   const failures = shallowRef<ReadonlyMap<string, string>>(new Map())
-  const moduleLoaders = new Map<string, () => Promise<unknown>>()
+  const moduleLoaders = new Map<string, () => Promise<PluginModule>>()
   const tracked = shallowRef<ReadonlySet<string>>(new Set())
   const isRunning = shallowRef(false)
   const listPlugins = (): string[] => [...new Set([...moduleLoaders.keys(), ...tracked.value])]

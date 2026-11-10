@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
 /**
  * The screen a window opens on: the mark and the name, the ways in under the
  * keystrokes that reach them, the vaults this installation holds, and what
@@ -33,9 +34,9 @@ defineEmits<{
 
 defineSlots<{
   /** Content shown in place of the list while the list is not yet available. */
-  waiting?(): unknown
+  waiting?(): VNode[]
   /** How a vault on the list is drawn. */
-  vault?(props: { vault: VaultRow }): unknown
+  vault?(props: { vault: VaultRow }): VNode[]
 }>()
 </script>
 

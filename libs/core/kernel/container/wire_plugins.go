@@ -100,32 +100,47 @@ func InstallPluginVault(c Config,
 	return installPluginVault(plugins(c), vaults, db, current, hooks)
 }
 
-// PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from
-// the role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
-// made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
-// store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
-// provisions them as the environment names them now.
-type PluginHost struct {
+// PluginRuntime is what runs, finds and addresses the plugins.
+type PluginRuntime struct {
 	pluginport.PluginActivator
 	pluginport.PluginRetrier
 	pluginport.PluginDiscoverer
 	pluginport.PluginLister
 	pluginport.PluginResolver
-	pluginport.PluginSettingDeclarer
 	pluginport.PluginEventEmitter
-	pluginport.SecretConfigurator
+	pluginport.PluginBinding
+	transport.ClientLookup
+	textport.TextPlugins
+	pluginport.PluginFailures
 	pluginport.ConfigWatcher
+}
+
+// PluginConfiguration is what carries the settings and the secrets to the plugins.
+type PluginConfiguration struct {
+	pluginport.PluginSettingDeclarer
+	pluginport.SecretConfigurator
 	pluginport.SettingsPush
 	pluginport.SettingChecker
 	pluginport.PersistHook
-	pluginport.PluginFailures
+}
+
+// PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
+type PluginWatch struct {
 	pluginport.PluginShutdown
-	pluginport.PluginBinding
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
-	transport.ClientLookup
-	textport.TextPlugins
-	*hostendpoint.Services
+}
+
+// PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from the
+// role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
+// made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
+// store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
+// provisions them as the environment names them now.
+type PluginHost struct {
+	Runtime             PluginRuntime
+	Configuration       PluginConfiguration
+	Watch               PluginWatch
+	Endpoint            *hostendpoint.Services
 	ApplySetting        settingsport.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
@@ -139,31 +154,37 @@ func AdaptPluginHost(host *plugin.Host) *PluginHost {
 
 func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
-		Services:              lendHostEndpoint(host),
-		TextPlugins:           host.Registry,
-		PluginActivator:       host.Activation,
-		PluginRetrier:         host.Activation,
-		PluginDiscoverer:      host.Discovery,
-		PluginLister:          host.Registry,
-		PluginResolver:        host.Registry,
-		PluginSettingDeclarer: host.Registry,
-		PluginEventEmitter:    host.Events,
-		SecretConfigurator:    host.Config,
-		ConfigWatcher:         host.Config,
-		SettingsPush:          host.Settings,
-		SettingChecker:        host.Settings,
-		PersistHook:           host.Settings,
-		PluginFailures:        host.Failures,
-		PluginShutdown:        host.Teardown,
-		PluginBinding:         host.Mode,
-		DependencyReporter:    host.Services,
-		ContentTypeTable:      host.ContentTypes,
+		Runtime: PluginRuntime{
+			PluginActivator:    host.Activation,
+			PluginRetrier:      host.Activation,
+			PluginDiscoverer:   host.Discovery,
+			PluginLister:       host.Registry,
+			PluginResolver:     host.Registry,
+			PluginEventEmitter: host.Events,
+			PluginBinding:      host.Mode,
+			ClientLookup:       host.Activation.ClientLookup(),
+			TextPlugins:        host.Registry,
+			PluginFailures:     host.Failures,
+			ConfigWatcher:      host.Config,
+		},
+		Configuration: PluginConfiguration{
+			PluginSettingDeclarer: host.Registry,
+			SecretConfigurator:    host.Config,
+			SettingsPush:          host.Settings,
+			SettingChecker:        host.Settings,
+			PersistHook:           host.Settings,
+		},
+		Watch: PluginWatch{
+			PluginShutdown:     host.Teardown,
+			DependencyReporter: host.Services,
+			ContentTypeTable:   host.ContentTypes,
+		},
+		Endpoint: lendHostEndpoint(host),
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
 		}).Execute,
 		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
 		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
-		ClientLookup:        host.Activation.ClientLookup(),
 	}
 }
 
@@ -201,7 +222,7 @@ func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
 	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}
-	return agentbridge.NewRouter(c.PluginHost)
+	return agentbridge.NewRouter(c.PluginHost.Runtime)
 }
 
 // programsWait is how long a read of the settings waits for the providers to list their programs.

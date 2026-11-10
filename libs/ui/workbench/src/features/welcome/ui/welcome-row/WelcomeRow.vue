@@ -5,7 +5,7 @@
  *
  * The caller handles activation.
  */
-import type { Component } from 'vue'
+import type { Component, VNode } from 'vue'
 import { KeyCap } from '@numen/ui'
 import type { Keystroke } from '@numen/ui'
 
@@ -20,7 +20,7 @@ defineProps<{
 
 defineSlots<{
   /** Content shown at the far end of the row. */
-  default?(): unknown
+  default?(): VNode[]
 }>()
 </script>
 

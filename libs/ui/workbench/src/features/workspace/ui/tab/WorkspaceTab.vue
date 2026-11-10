@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue'
+import { useTemplateRef, type VNode } from 'vue'
 import type { TabId } from '../../lib/node'
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(
@@ -21,8 +21,8 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  icon(): unknown
-  mark(props: { mark: string }): unknown
+  icon(): VNode[]
+  mark(props: { mark: string }): VNode[]
 }>()
 
 defineExpose({ focus: () => root.value?.focus() })

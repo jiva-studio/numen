@@ -5,6 +5,7 @@
  */
 import { MODEL_PRESENCE, type ModelPresenceCode } from '@numen/core-client'
 import { settingsService } from '@/shared/api/clients'
+import type { JsonValue } from '@/shared/api/json'
 import type {
   Configuration,
   PluginSettingCondition,
@@ -78,7 +79,7 @@ const readSecretMenus = (
   }))
 }
 
-const readJson = (text: string): unknown => {
+const readJson = (text: string): JsonValue | undefined => {
   // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the value undefined
   if (!text) return undefined
   /* Stryker disable BlockStatement: the value is already undefined when JSON.parse throws */

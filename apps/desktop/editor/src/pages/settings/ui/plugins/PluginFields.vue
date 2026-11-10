@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { JsonValue } from '@/shared/api/json'
 /**
  * Declarative settings fields and secrets for a plugin: switches,
  * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
@@ -53,7 +54,7 @@ const pathProblems = ref<Record<string, string>>({})
 const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onSettingChange(key: string, value: unknown): void {
+function onSettingChange(key: string, value: JsonValue): void {
   pluginSettings.set(key, value)
 }
 
@@ -79,27 +80,27 @@ function hasManyPaths(setting: PluginSettingInfo): boolean {
   return setting.type === 'file' && setting.multiple === true
 }
 
-function readSetting(key: string): unknown {
+function readSetting(key: string): JsonValue | undefined {
   return pluginSettings.get(key)
 }
 
-function getValue(key: string): unknown {
+function getValue(key: string): JsonValue | undefined {
   const setting = props.plugin.settings.find((one) => one.key === key)
   if (!setting) return readSetting(key)
   return getValueInForce(setting, readSetting, pluginSettings.isRequested)
 }
 
-function getBooleanSetting(key: string, fallback: unknown): boolean {
+function getBooleanSetting(key: string, fallback: JsonValue | undefined): boolean {
   const val = getValue(key) ?? fallback
   return typeof val === 'boolean' ? val : Boolean(fallback)
 }
 
-function getNumberSetting(key: string, fallback: unknown): number {
+function getNumberSetting(key: string, fallback: JsonValue | undefined): number {
   const val = getValue(key) ?? fallback
   return typeof val === 'number' ? val : Number(fallback ?? 0)
 }
 
-function getStringSetting(key: string, fallback: unknown): string {
+function getStringSetting(key: string, fallback: JsonValue | undefined): string {
   const val = getValue(key) ?? fallback
   return typeof val === 'string' ? val : String(fallback ?? '')
 }

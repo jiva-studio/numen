@@ -45,7 +45,7 @@ func TestLoad(t *testing.T) {
 	t.Logf("generated %d notes in %s", notes, getElapsed(generating))
 
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
-		IndexPath: filepath.Join(t.TempDir(), "index.db"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
 	}), ctx)
 	if err != nil {
 		t.Fatal(err)

@@ -4,7 +4,7 @@
  * button for a plugin that is not installed), the failure card of a suspended plugin, the
  * settings the application draws in the `settings` slot, and the plugin's data.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, type VNode } from 'vue'
 import { Button, Prose, Switch } from '@numen/ui'
 import ChevronIcon from './ChevronIcon.vue'
 import PluginData from './PluginData.vue'
@@ -28,7 +28,7 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
-  settings(): unknown
+  settings(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */

@@ -9,7 +9,7 @@ import { resolvePopoverPosition } from '../lib/popoverPlacement'
 export interface PopoverPositionOptions {
   readonly target: Ref<HTMLElement | null>
   readonly at: () => { readonly x: number; readonly y: number }
-  readonly watchTriggers?: readonly unknown[]
+  readonly watchTriggers?: readonly (() => object | number)[]
 }
 
 function getElementSize(el: HTMLElement): { width: number; height: number } {
@@ -76,16 +76,14 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
   })
 
   for (const trigger of watchTriggers) {
-    if (typeof trigger === 'function') {
-      watch(
-        trigger as () => unknown,
-        async () => {
-          await nextTick()
-          updatePosition()
-        },
-        { deep: true },
-      )
-    }
+    watch(
+      trigger,
+      async () => {
+        await nextTick()
+        updatePosition()
+      },
+      { deep: true },
+    )
   }
 
   return {

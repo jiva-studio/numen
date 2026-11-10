@@ -4,7 +4,7 @@ import {
   DEFAULT_AGENT_PATH,
   DEFAULT_MODEL_PATH,
   getProgramModelPath,
-  readAgentChoice,
+  parseAgentChoice,
 } from './agentSettings'
 
 describe('agent settings paths', () => {
@@ -16,19 +16,19 @@ describe('agent settings paths', () => {
   })
 })
 
-describe('readAgentChoice', () => {
+describe('parseAgentChoice', () => {
   it('returns empty strings when the raw setting is not an object', () => {
-    expect(readAgentChoice(null)).toStrictEqual({ agent: '', model: '' })
-    expect(readAgentChoice(undefined)).toStrictEqual({ agent: '', model: '' })
-    expect(readAgentChoice('claude')).toStrictEqual({ agent: '', model: '' })
+    expect(parseAgentChoice(null)).toStrictEqual({ agent: '', model: '' })
+    expect(parseAgentChoice(undefined)).toStrictEqual({ agent: '', model: '' })
+    expect(parseAgentChoice('claude')).toStrictEqual({ agent: '', model: '' })
   })
 
   it('reads string agent and model fields and defaults non-strings to empty', () => {
-    expect(readAgentChoice({ agent: 'claude', model: 'sonnet' })).toStrictEqual({
+    expect(parseAgentChoice({ agent: 'claude', model: 'sonnet' })).toStrictEqual({
       agent: 'claude',
       model: 'sonnet',
     })
-    expect(readAgentChoice({ agent: 42, model: true })).toStrictEqual({
+    expect(parseAgentChoice({ agent: 42, model: true })).toStrictEqual({
       agent: '',
       model: '',
     })

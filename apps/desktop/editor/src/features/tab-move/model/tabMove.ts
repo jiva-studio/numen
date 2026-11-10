@@ -2,7 +2,7 @@
  * Sends a tab with its saved state to another open window or a new window, and opens a tab
  * sent from another window.
  */
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import type { Result } from '@/shared/lib/result'
 import {
   formatSavedState,
@@ -105,8 +105,8 @@ export interface MovedTabOpenerDeps {
   readonly closeTab: (id: string) => void
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
   readonly focusWindow: () => Promise<void>
-  readonly wait: (ms: number) => Promise<unknown>
-  readonly onError: (error: unknown) => void
+  readonly wait: (ms: number) => Promise<void>
+  readonly onError: (error: Caught) => void
 }
 
 /** Opens a tab sent from another window as the active tab and focuses the window. */

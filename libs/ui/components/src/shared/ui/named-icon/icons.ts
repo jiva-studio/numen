@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 
-type Catalog = Readonly<Record<string, unknown>>
+type Catalog = Readonly<Record<string, Component | symbol | undefined>>
 
 let catalog: Promise<Catalog> | null = null
 
@@ -25,5 +25,6 @@ export const isIconKey = (key: string): boolean =>
 export async function findNamedIcon(name: string): Promise<Component | null> {
   const key = getIconKey(name)
   if (!isIconKey(key)) return null
-  return ((await loadCatalog())[key] as Component | undefined) ?? null
+  const found = (await loadCatalog())[key]
+  return typeof found === 'symbol' ? null : (found ?? null)
 }

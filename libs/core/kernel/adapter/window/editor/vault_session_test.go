@@ -54,8 +54,7 @@ func openTwoVaults(t *testing.T) *showing {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -715,8 +714,7 @@ func openInstallation(t *testing.T) (*editor.Installation, *vaults.Index) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -794,8 +792,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	t.Setenv("XDG_DOCUMENTS_DIR", elsewhere)
 
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
 	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {

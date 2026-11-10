@@ -27,7 +27,7 @@ interface KeyHandlerParts {
   readonly windowTabs: WindowTabs
   readonly pluginHost: PluginHost | undefined
   readonly declaredCommands: DeclaredCommands | undefined
-  readonly plugins: Ref<readonly unknown[]>
+  readonly plugins: Ref<readonly object[]>
   readonly palette: ReturnType<typeof useSearch>
   readonly commands: ReturnType<typeof createCommandPalette>
   readonly commandDeps: CommandDeps

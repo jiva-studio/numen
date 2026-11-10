@@ -6,7 +6,7 @@
  * What the review is made of is `review.ts`, created when the window opens it.
  * This component renders it and binds the two.
  */
-import { computed, provide } from 'vue'
+import { computed, provide, type ComponentPublicInstance } from 'vue'
 import { Spinner } from '@numen/ui'
 
 import Decks from './decks/Decks.vue'
@@ -15,7 +15,7 @@ import NotesPanel from './session/NotesPanel.vue'
 import Session from './session/Session.vue'
 import SessionSummary from './session/SessionSummary.vue'
 import { MOUNT_VIEW } from '../model/views'
-import type { NotesPage, Review } from '../model/review'
+import { isNotesPage, type Review } from '../model/review'
 import { REVIEW_WORDS } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -34,8 +34,8 @@ const statusText = computed(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onNotesPage(page: unknown) {
-  notesPage.value = (page as NotesPage | null) ?? null
+function onNotesPage(page: Element | ComponentPublicInstance | null) {
+  notesPage.value = isNotesPage(page) ? page : null
 }
 </script>
 

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, inject, useSlots, type Ref } from 'vue'
+import { computed, inject, useSlots, type Ref, type VNode } from 'vue'
 import { SplitterPanel } from 'reka-ui'
 import { BranchHandle } from '../handle'
 import { WorkspacePane } from '../../pane'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../../model/context'
 import type { TabId } from '../../../lib/node'
+import { getSlotProps } from '../../../lib/slotBinding'
 import type { BranchPanelProps } from './BranchPanel.types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -16,10 +17,10 @@ defineEmits<{
 }>()
 
 defineSlots<{
-  tab(props: { id: TabId }): unknown
-  icon(props: { id: TabId }): unknown
-  mark(props: { id: TabId; mark: string }): unknown
-  silence(): unknown
+  tab(props: { id: TabId }): VNode[]
+  icon(props: { id: TabId }): VNode[]
+  mark(props: { id: TabId; mark: string }): VNode[]
+  silence(): VNode[]
 }>()
 
 /* ---------------------------------- State --------------------------------- */
@@ -30,9 +31,6 @@ type BranchSlotName = 'tab' | 'icon' | 'mark' | 'silence'
 const slots = useSlots()
 
 const passed = computed(() => Object.keys(slots) as BranchSlotName[])
-
-/* --------------------------------- Helpers -------------------------------- */
-const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 </script>
 
 <template>

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
+import { createTestContextHost } from '../testing/contextHost'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('PluginContext', () => {
@@ -19,11 +19,8 @@ describe('PluginContext', () => {
       emitFileSelect: 0,
     }
 
-    const host: PluginContextHost = {
-      info: {
-        app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
-        openExternal: vi.fn(async (_url: string) => undefined),
-      },
+    const host: PluginContextHost = createTestContextHost({
+      info: { openExternal: vi.fn(async (_url: string) => undefined) },
       registration: {
         registerReader: vi.fn((_id, _reg) => {
           calls.registerReader++
@@ -51,38 +48,35 @@ describe('PluginContext', () => {
           dispose: vi.fn(),
         })),
         registerDropHandler: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
-        drops: { canDrop: vi.fn(() => false), drop: vi.fn(async () => []) },
       },
       settings: {
         getSetting: vi.fn((_id: string, key: string) => {
           calls.getSetting++
           return key === 'enabled' ? true : undefined
-        }) as unknown as PluginContextHost['settings']['getSetting'],
+        }) as PluginContextHost['settings']['getSetting'],
         onSettingChange: vi.fn((_id, _key, _handler) => {
           calls.onSettingChange++
           return { dispose: vi.fn() }
         }),
       },
       events: {
-        onVaultChange: vi.fn((_handler) => {
+        onVaultChange: vi.fn((_id, _handler) => {
           calls.onVaultChange++
           return { dispose: vi.fn() }
         }),
-        onFileSelect: vi.fn((_handler) => {
+        onFileSelect: vi.fn((_id, _handler) => {
           calls.onFileSelect++
           return { dispose: vi.fn() }
         }),
-        emitVaultChange: vi.fn((_event) => {
+        emitVaultChange: vi.fn((_id, _event) => {
           calls.emitVaultChange++
         }),
-        emitFileSelect: vi.fn((_event) => {
+        emitFileSelect: vi.fn((_id, _event) => {
           calls.emitFileSelect++
         }),
       },
       tabs: { openTab: vi.fn(async (_kind, _at) => 'opened-tab-id') },
-      vault: {},
-      window: { getNotices: () => createMockNoticeHost(), getSlots: () => createMockSlotHost() },
-    }
+    })
 
     return { host, calls }
   }
@@ -174,7 +168,7 @@ describe('PluginContext', () => {
     const closeTab = vi.fn()
     const hostWithTabs = createPluginContext(
       'tabs.plugin',
-      { ...host, tabs: { ...host.tabs, navigateTab, closeTab } },
+      createTestContextHost({ tabs: { navigateTab, closeTab } }),
       { permissions: ['vault:read'] },
     )
     await expect(hostWithTabs.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
@@ -182,8 +176,7 @@ describe('PluginContext', () => {
     hostWithTabs.tabs.close?.('tab-9')
     expect(closeTab).toHaveBeenCalledWith('tab-9')
 
-    const hostWithoutOpen = { ...host, tabs: {} }
-    const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen, {
+    const ctxWithoutOpen = createPluginContext('noopen.plugin', createTestContextHost(), {
       permissions: ['vault:read'],
     })
     expect(ctxWithoutOpen.tabs.open?.('note', 'a.md')).toBeUndefined()

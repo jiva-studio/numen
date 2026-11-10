@@ -8,6 +8,7 @@ import type { createNoteEditors } from '../tabs/createNoteEditors'
 import type { useSettings } from '@/pages/settings'
 import type { WindowDisplay } from '@/features/window-display'
 import type { PluginNotes } from './pluginNotes'
+import type { Component } from 'vue'
 
 export interface WindowKindsDeps {
   core: Pick<SearchDeps, 'names'>
@@ -23,5 +24,5 @@ export interface WindowKindsDeps {
   commandDeps: () => CommandDeps
   tabLinks?: TabLinksState
   tabSync?: ReturnType<typeof createTabSync>
-  getPluginCommandIcon?: (id: string) => unknown
+  getPluginCommandIcon?: (id: string) => Component | undefined
 }

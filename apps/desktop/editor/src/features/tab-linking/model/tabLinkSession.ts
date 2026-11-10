@@ -15,6 +15,7 @@ import type {
 import { cancelTabLinksWatch, watchTabLinks } from '../api/tab-links'
 import type { TabLinksState } from '../types'
 import type { TabReports } from './tabReports'
+import type { Caught } from '@/shared/api/errors'
 
 export interface TabLinkSessionDeps {
   readonly windowId: string
@@ -29,8 +30,8 @@ export interface TabLinkSessionDeps {
   readonly openMovedTab: (moved: MovedTab) => void
   readonly setHighlighted: (isOn: boolean) => void
   readonly reports: Pick<TabReports, 'reportTabs' | 'waitForReports' | 'stop' | 'resume'>
-  readonly wait: (ms: number) => Promise<unknown>
-  readonly onError: (error: unknown) => void
+  readonly wait: (ms: number) => Promise<void>
+  readonly onError: (error: Caught) => void
 }
 
 export function createTabLinkSession(deps: TabLinkSessionDeps) {

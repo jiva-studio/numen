@@ -3,10 +3,10 @@
  * hook the window calls on a kind.
  */
 import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
-import type { JsonValue, TabKindRegistration } from '@numen/plugin-sdk'
-import type { AnyTabKind } from './tabKinds'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
+import type { AnyTabKind, TabKind } from './tabKinds'
 import { adoptPluginStyle, getPluginStyle } from '../styles'
-import { renderFallback, resolvePluginComponent } from './pane/pluginView'
+import { parsePluginComponent, renderFallback, type PluginComponentSource } from './pane/pluginView'
 
 /** A registration that declares the content of its tabs. */
 export type DeclaredTabKindRegistration = TabKindRegistration & {
@@ -18,38 +18,72 @@ export const isDeclaredTabKind = (
   registration: TabKindRegistration,
 ): registration is DeclaredTabKindRegistration => typeof registration.open === 'function'
 
-/** The hooks a registration hands the window as they are, each only where it declares one. */
-const OPTIONAL_HOOKS = [
-  'identity',
-  'onShow',
-  'receiveText',
-  'onKeyPress',
-  'getTarget',
-  'getOpenTab',
-  'onClose',
-  'onDestroy',
-  'navigate',
-  'isAsking',
-  'flushPending',
-  'createFile',
-  'getMark',
-  'isTool',
-  'icon',
-  'placement',
-  'getState',
-] as const satisfies readonly (keyof TabKindRegistration & keyof AnyTabKind)[]
+/** The hooks of a registration that the window takes unchanged. */
+type DeclaredHook =
+  | 'identity'
+  | 'onShow'
+  | 'receiveText'
+  | 'onKeyPress'
+  | 'getTarget'
+  | 'getOpenTab'
+  | 'onClose'
+  | 'onDestroy'
+  | 'navigate'
+  | 'isAsking'
+  | 'flushPending'
+  | 'createFile'
+  | 'getMark'
+  | 'isTool'
+  | 'icon'
+  | 'placement'
+  | 'getState'
 
-/** The hooks of the registration the window takes unchanged. */
-export function pickDeclaredHooks(registration: TabKindRegistration): Partial<AnyTabKind> {
-  const hooks: Record<string, unknown> = {}
-  for (const name of OPTIONAL_HOOKS) {
-    if (registration[name] !== undefined) hooks[name] = registration[name]
+/** The fields of an object that are set. */
+type DefinedParts<T> = { [K in keyof T]?: Exclude<T[K], undefined> }
+
+function pickDefined<T extends object>(parts: T): DefinedParts<T> {
+  const defined: Partial<T> = {}
+  for (const key of Object.keys(parts) as (keyof T)[]) {
+    if (parts[key] !== undefined) defined[key] = parts[key]
   }
-  return hooks
+  return defined as DefinedParts<T>
 }
 
-function createDeclaredPane(pluginId: string, rawComponent: unknown): Component {
-  const component = resolvePluginComponent(rawComponent)
+/** The hooks of the registration the window takes unchanged, each only where the registration declares one. */
+export function pickDeclaredHooks<State extends object>(
+  registration: TabKindRegistration<State>,
+): Partial<Pick<TabKind<State>, DeclaredHook>> {
+  return pickDefined({
+    identity: registration.identity,
+    onShow: registration.onShow,
+    receiveText: registration.receiveText,
+    onKeyPress: registration.onKeyPress,
+    getTarget: registration.getTarget,
+    getOpenTab: registration.getOpenTab,
+    onClose: registration.onClose,
+    onDestroy: registration.onDestroy,
+    navigate: registration.navigate,
+    isAsking: registration.isAsking,
+    flushPending: registration.flushPending,
+    createFile: registration.createFile,
+    getMark: registration.getMark,
+    isTool: registration.isTool,
+    icon: registration.icon,
+    placement: registration.placement,
+    getState: registration.getState,
+  })
+}
+
+/**
+ * The pane of a declared kind: its component, given the tab's state, beside the
+ * stylesheet the plugin's manifest names. A component that fails is replaced by
+ * the plugin's failure.
+ */
+export function createDeclaredPane(
+  pluginId: string,
+  rawComponent: PluginComponentSource | null,
+): Component {
+  const component = parsePluginComponent(rawComponent)
   return defineComponent({
     // Stryker disable next-line StringLiteral: Vue component debug name
     name: `PluginKindPane[${pluginId}]`,
@@ -89,10 +123,8 @@ export function getDeclaredTabKind(
     ...pickDeclaredHooks(registration),
     kind,
     pluginId,
-    // The window keeps the state a tab saved as JSON, and hands it back as it was saved.
-    open: (targetPath, id, saved) =>
-      registration.open(targetPath, id, saved as JsonValue | undefined),
-    getTitle: (state) => getTitle?.(state as object) ?? title ?? kind,
+    open: (targetPath, id, saved) => registration.open(targetPath, id, saved),
+    getTitle: (state) => getTitle?.(state) ?? title ?? kind,
     pane: createDeclaredPane(pluginId, registration.component),
   }
 }

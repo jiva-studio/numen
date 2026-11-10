@@ -2,7 +2,7 @@
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
 import { parseManifest, type Manifest } from '@numen/core-client'
-import type { PluginLifecycle, SlotName } from '@numen/plugin-sdk'
+import type { PluginLifecycle, SlotName, Unvalidated } from '@numen/plugin-sdk'
 import { WINDOW_SLOTS } from './slots/windowSlots'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
@@ -16,40 +16,40 @@ export function removePluginStyles(pluginId: string): void {
   unregisterPluginStyle(pluginId)
 }
 
-function extractLifecycleFunction(
-  target: Record<string, unknown>,
-  fallback: Record<string, unknown>,
-  key: string,
-): ((...args: unknown[]) => unknown) | undefined {
-  if (typeof target[key] === 'function') {
-    return target[key] as (...args: unknown[]) => unknown
-  }
-  if (typeof fallback[key] === 'function') {
-    return fallback[key] as (...args: unknown[]) => unknown
+/**
+ * What a plugin bundle exports: the lifecycle hooks at the top or under `default`. An ES module
+ * namespace is an object whatever the bundle holds, so the hooks are read where they are found.
+ */
+export type PluginModule = object
+
+type HookName = keyof Pick<PluginLifecycle, 'activate' | 'deactivate'>
+
+function readHook<K extends HookName>(
+  sources: readonly PluginModule[],
+  key: K,
+): PluginLifecycle[K] | undefined {
+  for (const source of sources) {
+    const hook = (source as Partial<PluginLifecycle>)[key]
+    if (typeof hook === 'function') return hook
   }
   return undefined
 }
 
-export function getLifecycleHooks(resolved: unknown): {
+/** The lifecycle hooks a loaded bundle exports, at the top or under `default`; a bundle that exports none yields none. */
+export function parseLifecycleHooks(resolved: Unvalidated): {
   activate?: PluginLifecycle['activate'] | undefined
   deactivate?: PluginLifecycle['deactivate'] | undefined
 } {
   if (typeof resolved !== 'object' || resolved === null) return {}
-  const mod = resolved as Record<string, unknown>
-  const target = (
-    typeof mod.default === 'object' && mod.default !== null ? mod.default : mod
-  ) as Record<string, unknown>
-  const activate = extractLifecycleFunction(target, mod, 'activate') as
-    PluginLifecycle['activate'] | undefined
-  const deactivate = extractLifecycleFunction(target, mod, 'deactivate') as
-    PluginLifecycle['deactivate'] | undefined
-  return { activate, deactivate }
+  const inner = (resolved as { default?: PluginModule | null }).default
+  const sources = typeof inner === 'object' && inner !== null ? [inner, resolved] : [resolved]
+  return { activate: readHook(sources, 'activate'), deactivate: readHook(sources, 'deactivate') }
 }
 
 export interface LoadModuleOptions {
   readonly baseUrl: string
   readonly fetchFn: typeof fetch
-  readonly importFn: (url: string) => Promise<unknown>
+  readonly importFn: (url: string) => Promise<PluginModule>
   readonly manifests: Map<string, Manifest>
 }
 
@@ -83,7 +83,7 @@ export function isWindowSlotManifest(manifest: Manifest): boolean {
 async function loadDynamicModule(
   pluginId: string,
   options: LoadModuleOptions,
-): Promise<unknown | undefined> {
+): Promise<PluginModule | undefined> {
   const { baseUrl, fetchFn, importFn } = options
   const manifest = await readPluginManifest(pluginId, options)
   if (manifest.frontend === undefined) return undefined
@@ -96,17 +96,17 @@ async function loadDynamicModule(
 }
 
 export interface ResolveModuleContext extends LoadModuleOptions {
-  readonly loaders: Map<string, () => Promise<unknown>>
+  readonly loaders: Map<string, () => Promise<PluginModule>>
 }
 
 export async function resolveModule(
   pluginId: string,
-  candidate: unknown,
+  candidate: PluginModule | undefined,
   ctx: ResolveModuleContext,
-): Promise<unknown> {
+): Promise<PluginModule | undefined> {
   if (candidate !== undefined) {
     if (typeof candidate === 'function' && !('activate' in candidate)) {
-      return (candidate as () => Promise<unknown>)()
+      return (candidate as () => Promise<PluginModule>)()
     }
     return candidate
   }

@@ -31,6 +31,7 @@ import {
   getWhenGroup,
   type WindowWhenContext,
 } from '../lib/whenContext'
+import type { Caught } from '@/shared/api/errors'
 
 /** The items a command of a plugin offers over a file. */
 type ListItems = (
@@ -92,10 +93,8 @@ function createDeclaredPaletteCommands(
   })
 }
 
-const isSameList = (
-  current: readonly unknown[] | undefined,
-  received: readonly unknown[],
-): boolean => current !== undefined && JSON.stringify(current) === JSON.stringify(received)
+const isSameList = <T>(current: readonly T[] | undefined, received: readonly T[]): boolean =>
+  current !== undefined && JSON.stringify(current) === JSON.stringify(received)
 
 /** What the lists of declarations are read through. */
 export interface DeclaredStateDeps {
@@ -184,7 +183,7 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load: (): Promise<void> =>
-      read().catch((error: unknown) => {
+      read().catch((error: Caught) => {
         onFirstList()
         throw error
       }),

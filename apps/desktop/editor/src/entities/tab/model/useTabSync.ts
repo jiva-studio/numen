@@ -8,6 +8,7 @@
  */
 import type { TabId, TabLinkGroup, TabPathSync } from '../lib/links'
 import type { WindowTabs } from './windowTabs'
+import type { Caught } from '@/shared/api/errors'
 
 export interface TabSyncDeps {
   windowTabs: Pick<WindowTabs, 'tabs'>
@@ -16,7 +17,7 @@ export interface TabSyncDeps {
     readonly groups: ReadonlyMap<string, TabLinkGroup>
   }
   sendSync: (sync: { sourceTabId: string; path: string; title: string }) => Promise<void>
-  onError: (error: unknown) => void
+  onError: (error: Caught) => void
 }
 
 function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' | 'onError'>) {
@@ -51,7 +52,7 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
   }
 
   /** Forgets a move to the path, after the tab failed to navigate to it. */
-  const forgetMove = (tabId: TabId, path: string, error: unknown) => {
+  const forgetMove = (tabId: TabId, path: string, error: Caught) => {
     forgetEcho(tabId, path)
     if (shownPaths.get(tabId) === path) shownPaths.delete(tabId)
     onError(error)
@@ -74,7 +75,7 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
       }
       navigation.then(
         () => forgetEcho(tabId, path),
-        (error: unknown) => forgetMove(tabId, path, error),
+        (error: Caught) => forgetMove(tabId, path, error),
       )
     } catch (error) {
       forgetMove(tabId, path, error)
@@ -139,7 +140,7 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
       return true
     }
     sentPaths.set(group.id, path)
-    sendSync({ sourceTabId, path, title }).catch((error: unknown) => {
+    sendSync({ sourceTabId, path, title }).catch((error: Caught) => {
       if (sentPaths.get(group.id) === path) sentPaths.delete(group.id)
       onError(error)
     })

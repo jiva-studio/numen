@@ -6,7 +6,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { createFollower } from '@numen/ui'
 import type { NoticeQueue } from '@numen/workbench'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { watchTasks } from '../api/tasks'
 
@@ -27,7 +27,7 @@ export function useWindowTasks(notices: NoticeQueue) {
       },
     ).catch(
       // Stryker disable next-line all: createFollower catches stream errors and reports them through setLost
-      (error: unknown) => notices.show(WINDOW_SOURCE, formatError(error), 'error'),
+      (error: Caught) => notices.show(WINDOW_SOURCE, formatError(error), 'error'),
     )
   })
   onUnmounted(() => {

@@ -3,6 +3,7 @@
  * `app` and a plugin's under its id, as VS Code reads `config.editor.tabCompletion`.
  */
 import type { WhenSettings } from '@numen/plugin-loader'
+import type { JsonValue } from '@/shared/api/json'
 import type { PluginSettingInfo } from '@/entities/settings'
 
 /** The owner whose settings the core declares. */
@@ -20,7 +21,7 @@ const getConfigPath = (owner: string, key: string): readonly string[] =>
 
 /** Every setting of the owners by its dotted key, nested. */
 export function getSettingsConfig(owners: readonly SettingOwner[]): WhenSettings {
-  const config: Record<string, unknown> = {}
+  const config: Record<string, JsonValue> = {}
   for (const owner of owners) {
     for (const one of owner.settings) {
       const path = getConfigPath(owner.id, one.key)
@@ -29,9 +30,9 @@ export function getSettingsConfig(owners: readonly SettingOwner[]): WhenSettings
       if (key === undefined) continue
       for (const part of path.slice(0, -1)) {
         level[part] ??= {}
-        level = level[part] as Record<string, unknown>
+        level = level[part] as Record<string, JsonValue>
       }
-      level[key] = one.value
+      if (one.value !== undefined) level[key] = one.value
     }
   }
   return config

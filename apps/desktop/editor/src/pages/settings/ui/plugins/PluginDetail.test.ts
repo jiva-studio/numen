@@ -1,3 +1,5 @@
+import type { Component } from 'vue'
+import type { JsonObject } from '@/shared/api/json'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -28,7 +30,7 @@ afterEach(() => {
 
 const createDetail = (
   plugin: PluginInfo,
-  file: Record<string, unknown> = {},
+  file: JsonObject = {},
   platform?: string,
   attachTo?: HTMLElement,
 ) => {
@@ -643,7 +645,7 @@ describe('the settings views of a plugin', () => {
     { id: 'top', title: 'Top' },
     { id: 'gone', title: 'Gone' },
   ]
-  const mountWith = (registered: Record<string, unknown>) => {
+  const mountWith = (registered: Record<string, Component>) => {
     const plugin = createPluginInfo('views.plugin', 'Views', { settings, settingsViews: views })
     const recordedWrites: SettingEdit[] = []
     const installation = createInstallation({
@@ -805,7 +807,7 @@ describe('an enum whose value is not offered on this platform', () => {
   })
 
   /** What the closed select shows and what the open list checks, with nothing chosen. */
-  const look = async (platform: string, file: Record<string, unknown> = {}) => {
+  const look = async (platform: string, file: JsonObject = {}) => {
     const host = document.createElement('div')
     document.body.append(host)
     const { wrapper, recordedWrites } = createDetail(buttons, file, platform, host)

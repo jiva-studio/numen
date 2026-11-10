@@ -5,7 +5,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { interceptExternalLinks, openExternalUrl } from '@numen/ui'
 import type { NoticeQueue } from '@numen/workbench'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 
 export function useExternalLinks(notices: NoticeQueue) {
@@ -13,7 +13,7 @@ export function useExternalLinks(notices: NoticeQueue) {
 
   onMounted(() => {
     stop = interceptExternalLinks((href) => {
-      openExternalUrl(href).catch((error: unknown) => {
+      openExternalUrl(href).catch((error: Caught) => {
         notices.show(WINDOW_SOURCE, formatError(error), 'error')
       })
     })

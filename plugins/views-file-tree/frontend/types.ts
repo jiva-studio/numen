@@ -10,6 +10,7 @@ import type {
   SlotItem,
   CommandTarget,
   VaultEntry,
+  Caught,
 } from '@numen/plugin-sdk'
 
 /** One file or folder of the vault, as represented by a row of the tree. */
@@ -176,5 +177,5 @@ export interface FilesTabState {
   readonly transfer: FilesTabTransfer
   readonly menu: FilesTabMenu
   /** Shows the failure of an operation that runs in the background. */
-  reportFailure(error: unknown): void
+  reportFailure(error: Caught): void
 }

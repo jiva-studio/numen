@@ -201,98 +201,104 @@ export interface NoteBuffer {
 /** The window a plugin runs in: its application, its target and how it opens web links. */
 export interface ContextInfoHost {
   readonly app: AppInfo
-  readonly target?: string
-  openExternal(this: void, url: string): Promise<void>
+  readonly target: string
+  readonly openExternal: (url: string) => Promise<void>
 }
 
 /** The registrations a plugin makes into the registry of the host. */
 export interface ContextRegistrationHost {
-  registerReader(pluginId: string, registration: ReaderRegistration): Disposable
-  registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
-  registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
-  registerCommand(pluginId: string, registration: CommandRegistration): Disposable
-  registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
+  readonly registerReader: (pluginId: string, registration: ReaderRegistration) => Disposable
+  readonly registerSettingsView: (
+    pluginId: string,
+    registration: SettingsViewRegistration,
+  ) => Disposable
+  readonly registerTabKind: (pluginId: string, registration: TabKindRegistration) => Disposable
+  readonly registerCommand: (pluginId: string, registration: CommandRegistration) => Disposable
+  readonly registerAgentProvider: (
+    pluginId: string,
+    registration: AgentProviderRegistration,
+  ) => Disposable
 }
 
 /** The views and drop handlers a plugin registers, and the views it mounts. */
 export interface ContextViewHost {
-  registerSlotView(
-    this: void,
+  readonly registerSlotView: (
     pluginId: string,
     slot: string,
     registration: SlotViewRegistration,
-  ): Disposable
-  registerView(
+  ) => Disposable
+  readonly registerView: (
     pluginId: string,
     registration: DeclaredViewRegistration,
     permissions?: readonly string[],
-  ): Disposable
-  mountView(
+  ) => Disposable
+  readonly mountView: (
     capability: string,
     element: HTMLElement,
     context: object,
     access: MountAccess,
-  ): MountedView
-  registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
+  ) => MountedView
+  readonly registerDropHandler: (pluginId: string, registration: DropRegistration) => Disposable
   readonly drops: DropHost
 }
 
 /** The settings a plugin reads and follows. */
 export interface ContextSettingHost {
-  getSetting<T extends JsonValue = JsonValue>(
-    this: void,
+  readonly getSetting: <T extends JsonValue = JsonValue>(
     pluginId: string,
     key: string,
-  ): T | undefined
-  onSettingChange<T extends JsonValue = JsonValue>(
-    this: void,
+  ) => T | undefined
+  readonly onSettingChange: <T extends JsonValue = JsonValue>(
     pluginId: string,
     key: string,
     handler: (value: T) => void | Promise<void>,
-  ): Disposable
+  ) => Disposable
 }
 
 /** The events of the vault and of the selection that plugins listen to and emit. */
 export interface ContextEventHost {
-  onVaultChange(
+  readonly onVaultChange: (
     pluginId: string,
     handler: (event: VaultChangeEvent) => void | Promise<void>,
-  ): Disposable
-  onFileSelect(
+  ) => Disposable
+  readonly onFileSelect: (
     pluginId: string,
     handler: (event: FileSelectEvent) => void | Promise<void>,
-  ): Disposable
-  emitVaultChange(pluginId: string, event: VaultChangeEvent): void
-  emitFileSelect(pluginId: string, event: FileSelectEvent): void
+  ) => Disposable
+  readonly emitVaultChange: (pluginId: string, event: VaultChangeEvent) => void
+  readonly emitFileSelect: (pluginId: string, event: FileSelectEvent) => void
 }
 
-/** The tabs a plugin opens, navigates and closes. */
+/** The tabs a plugin opens, navigates and closes. A window without tabs answers no id. */
 export interface ContextTabHost {
-  openTab?(kind: string, at?: string): Promise<string>
-  navigateTab?(kind: string, path: string): Promise<string> | undefined
-  closeTab?(id: string): void
+  readonly openTab: (kind: string, at?: string) => Promise<string> | undefined
+  readonly navigateTab: (kind: string, path: string) => Promise<string> | undefined
+  readonly closeTab: (id: string) => void
 }
 
-/** The services that read and write the vault. */
+/** The services that read and write the vault; a service the window lacks answers undefined. */
 export interface ContextVaultHost {
-  getNotes?(): VaultNotes | undefined
-  getRelations?(): VaultRelations | undefined
-  getFiles?(): VaultFiles | undefined
-  getBuffers?(): BufferHost | undefined
-  getVaults?(): VaultsHost | undefined
-  getTexts?(pluginId: string): VaultTexts | undefined
+  readonly getNotes: () => VaultNotes | undefined
+  readonly getRelations: () => VaultRelations | undefined
+  readonly getFiles: () => VaultFiles | undefined
+  readonly getBuffers: () => BufferHost | undefined
+  readonly getVaults: () => VaultsHost | undefined
+  readonly getTexts: (pluginId: string) => VaultTexts | undefined
 }
 
-/** The services of the window itself: its workspace, commands, notices, tasks, slots and agent. */
+/**
+ * The services of the window itself: its workspace, commands, notices, tasks, slots and agent. A
+ * service the window lacks answers undefined.
+ */
 export interface ContextWindowHost {
-  getWorkspace?(): WorkspaceHost | undefined
-  getAgent?(): AgentHost | undefined
-  getCommands?(): CommandsHost | undefined
-  getWindow?(): WindowHost | undefined
-  getNotices(pluginId: string): NoticeHost
-  getTasks?(pluginId: string): TaskHost | undefined
-  getBackgroundTasks?(): BackgroundTaskHost | undefined
-  getSlots(): SlotHost
+  readonly getWorkspace: () => WorkspaceHost | undefined
+  readonly getAgent: () => AgentHost | undefined
+  readonly getCommands: () => CommandsHost | undefined
+  readonly getWindow: () => WindowHost | undefined
+  readonly getNotices: (pluginId: string) => NoticeHost
+  readonly getTasks: (pluginId: string) => TaskHost | undefined
+  readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
+  readonly getSlots: () => SlotHost
 }
 
 /** What a plugin context is made from, by the responsibility of each part. */

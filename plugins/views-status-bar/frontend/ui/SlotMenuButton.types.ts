@@ -1,11 +1,12 @@
-import type { CommandItem, SlotItem } from '@numen/plugin-sdk'
+import type { Component } from 'vue'
+import type { CommandItem, SlotItem, Caught } from '@numen/plugin-sdk'
 
 export interface SlotMenuButtonProps {
   entries: readonly SlotItem[]
   label: string
-  icon?: unknown
+  icon?: Component | undefined
   tooltip?: string
   isItemList?: boolean
   listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: ((error: unknown) => void) | undefined
+  reportError?: ((error: Caught) => void) | undefined
 }

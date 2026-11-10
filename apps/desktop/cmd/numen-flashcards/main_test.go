@@ -32,8 +32,7 @@ func makeWindow(
 
 	state := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(state, "index.db"),
-		RegistryPath: filepath.Join(state, "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
 	})
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
@@ -175,7 +174,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	if err := container.InstallPluginVault(cfg, registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		t.Fatal(err)
 	}
-	lent := cfg.PluginHost.GetPluginVault()
+	lent := cfg.PluginHost.Endpoint.GetPluginVault()
 
 	recognized, listErr := lent.Switch.GetVaults()
 	linked, withErr := lent.Switch.With(target[1].ID)
@@ -202,4 +201,10 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	if api.Window.Name != platform.TargetFlashcards {
 		t.Errorf("the window answers as %q", api.Window.Name)
 	}
+}
+
+func getNoCurrentVault() (domain.Vault, bool) { return domain.Vault{}, false }
+
+func getPluginVaultHooks(api *shell.API) container.PluginVaultHooks {
+	return container.PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
 }

@@ -12,7 +12,9 @@ func makePlan(workers int) hardware.ResolvedCompute {
 }
 
 func TestASearchExtractsAsManySourcesAtOnceAsThePlanHasWorkers(t *testing.T) {
-	got := newSearchOver(searchOf(NewConfig(Config{ResolvedCompute: makePlan(5)})), nil, nil, nil).Extractors
+	got := newSearchOver(searchOf(NewConfig(Config{
+		Machine: Machine{ResolvedCompute: makePlan(5)},
+	})), nil, nil, nil).Extractors
 	if got != 5 {
 		t.Errorf("a search extracts %d sources at once, want the 5 planned", got)
 	}

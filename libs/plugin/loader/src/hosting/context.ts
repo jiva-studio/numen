@@ -47,9 +47,6 @@ function createBuffers(buffers: BufferHost, add: Track): BufferHost {
   }
 }
 
-/** The target the editor activates its plugins in. */
-const EDITOR_TARGET = 'desktop.editor'
-
 function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
   return {
     get: <T extends JsonValue = JsonValue>(key: string) =>
@@ -72,11 +69,9 @@ function createEvents(pluginId: string, host: PluginContextHost, add: Track): Pl
 
 function createTabs(host: PluginContextHost): PluginTabs {
   return {
-    open: (kind: string, targetPath?: string) => host.tabs.openTab?.(kind, targetPath),
-    navigate: (kind: string, targetPath: string) => host.tabs.navigateTab?.(kind, targetPath),
-    close: (id: string) => {
-      host.tabs.closeTab?.(id)
-    },
+    open: (kind: string, targetPath?: string) => host.tabs.openTab(kind, targetPath),
+    navigate: (kind: string, targetPath: string) => host.tabs.navigateTab(kind, targetPath),
+    close: (id: string) => host.tabs.closeTab(id),
   }
 }
 
@@ -90,27 +85,29 @@ function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined
 }
 
 function createVault(pluginId: string, host: PluginContextHost, add: Track): PluginVault {
-  const buffers = host.vault.getBuffers?.()
+  const { vault } = host
+  const buffers = vault.getBuffers()
   return pickDefined<PluginVault>({
-    notes: host.vault.getNotes?.(),
-    relations: host.vault.getRelations?.(),
-    files: host.vault.getFiles?.(),
-    texts: host.vault.getTexts?.(pluginId),
+    notes: vault.getNotes(),
+    relations: vault.getRelations(),
+    files: vault.getFiles(),
+    texts: vault.getTexts(pluginId),
     buffers: buffers && createBuffers(buffers, add),
-    vaults: host.vault.getVaults?.(),
+    vaults: vault.getVaults(),
   })
 }
 
 function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mountView'> {
+  const { window: ui, views } = host
   return {
     ...pickDefined<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
-      workspace: host.window.getWorkspace?.(),
-      window: host.window.getWindow?.(),
-      commands: host.window.getCommands?.(),
-      drops: host.views.drops,
+      workspace: ui.getWorkspace(),
+      window: ui.getWindow(),
+      commands: ui.getCommands(),
+      drops: views.drops,
     }),
-    slots: host.window.getSlots(),
-    notices: host.window.getNotices(pluginId),
+    slots: ui.getSlots(),
+    notices: ui.getNotices(pluginId),
   }
 }
 
@@ -126,11 +123,12 @@ function createUiService(
 }
 
 function createWork(pluginId: string, host: PluginContextHost): PluginWork {
-  const agent = host.window.getAgent?.()
+  const { window: work } = host
+  const agent = work.getAgent()
   return pickDefined<PluginWork>({
     agent: agent && limitAgentSettings(agent),
-    tasks: host.window.getTasks?.(pluginId),
-    backgroundTasks: host.window.getBackgroundTasks?.(),
+    tasks: work.getTasks(pluginId),
+    backgroundTasks: work.getBackgroundTasks(),
   })
 }
 
@@ -159,7 +157,7 @@ export function createPluginContext(
   return {
     plugin: {
       id: pluginId,
-      target: host.info.target ?? EDITOR_TARGET,
+      target: host.info.target,
       app: host.info.app,
       openExternal: createExternalOpener(host.info.openExternal),
       subscriptions: subscriptions.view,

@@ -59,7 +59,10 @@ func TestEditorSettings_ReportsLatePrograms(t *testing.T) {
 		t.Fatal(err)
 	}
 	assembly := newEditorServices(
-		container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), SettingsPath: settingsFile}),
+		container.NewConfig(container.Config{
+			PluginHost: container.AdaptPluginHost(host),
+			Paths:      container.Paths{SettingsPath: settingsFile},
+		}),
 	)
 
 	changes, stop := assembly.OpenWatchSettings().Execute()

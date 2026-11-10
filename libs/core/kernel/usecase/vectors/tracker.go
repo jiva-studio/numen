@@ -1,9 +1,10 @@
 package vectors
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"slices"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 )
 
 // tracker reports the progress of one run in the order the changes happened,

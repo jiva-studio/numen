@@ -6,6 +6,7 @@
 import type { CommandItem } from '@numen/plugin-loader'
 import type { ItemListAnswer, ItemListRequest } from '@/entities/plugin'
 import type { FileKind } from '@/shared/model/fileTypes'
+import type { Caught } from '@/shared/api/errors'
 
 export interface CommandItemListsDeps {
   readonly listLists: (
@@ -56,7 +57,7 @@ function settleLists(pending: readonly PendingList[], answers: readonly ItemList
   }
 }
 
-function failLists(pending: readonly PendingList[], error: unknown): void {
+function failLists(pending: readonly PendingList[], error: Caught): void {
   for (const one of pending) {
     one.reject(error instanceof Error ? error : new Error(String(error)))
   }
@@ -78,7 +79,7 @@ export function createCommandItemLists(deps: CommandItemListsDeps) {
       )
       .then(
         (answers) => settleLists(pending, answers),
-        (error: unknown) => failLists(pending, error),
+        (error: Caught) => failLists(pending, error),
       )
   }
 

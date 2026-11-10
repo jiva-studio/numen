@@ -4,7 +4,7 @@
  *
  * The notes are stacked vertically in one column for continuous reading.
  */
-import { nextTick, useTemplateRef, watch } from 'vue'
+import { nextTick, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 import { Prose } from '@numen/ui'
 
 import { NoteHead } from './note-head'
@@ -56,8 +56,11 @@ watch(
 )
 
 /* -------------------------------- Helpers --------------------------------- */
-const registerNoteElement = (one: Neighbour, element: unknown): void => {
-  if (element) noteElements.set(getNoteKey(one), element as HTMLElement)
+const registerNoteElement = (
+  one: Neighbour,
+  element: Element | ComponentPublicInstance | null,
+): void => {
+  if (element instanceof HTMLElement) noteElements.set(getNoteKey(one), element)
   else noteElements.delete(getNoteKey(one))
 }
 

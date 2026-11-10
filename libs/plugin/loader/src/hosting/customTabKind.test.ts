@@ -7,13 +7,14 @@ import { getCustomTabKind, createPluginPaneWrapper, getReaderTabKind } from './c
 import {
   attachPluginRoot,
   extractFilename,
-  extractTitleValue,
+  parseTitle,
   renderFallback,
   renderPaneContent,
-  resolvePluginComponent,
+  parsePluginComponent,
   stripMarkdownExtension,
 } from './pane/pluginView'
-import { adoptHostStyles, extractStatePath, PANE_LAYOUT_STYLE } from './pane/paneHost'
+import { adoptHostStyles, parseStatePath, PANE_LAYOUT_STYLE } from './pane/paneHost'
+import type { ReaderHandle } from '@numen/plugin-sdk'
 import type { NoteBuffer } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 
@@ -397,17 +398,6 @@ describe('getReaderTabKind (place)', () => {
     expect(childProps.title).toBeUndefined()
     expect((childProps.state as { title?: string })?.title).toBe('730707BG.LON.mp3')
 
-    const primNodes = renderPaneContent({
-      pluginId: 'viewer-plugin',
-      component: FakeReader,
-      state: 'raw-string',
-      shadowRoot: null,
-      containerClass: 'reader-pane',
-    }) as unknown[]
-    const primChildProps =
-      (primNodes[2] as { children?: Array<{ props?: Record<string, unknown> }> }).children?.[0]
-        ?.props ?? {}
-    expect(primChildProps['0']).toBeUndefined()
   })
 })
 
@@ -466,19 +456,20 @@ describe('getCustomTabKind (notes)', () => {
   it('covers reader and custom tab kind edge cases, action collisions, and in-flight navigation', async () => {
     const measure = vi.fn()
     const focusTab = vi.fn()
-    const handleKeyPress = vi.fn((e: KeyboardEvent) => e.key === 'Enter')
 
     const prefixedReader = getReaderTabKind('p', {
       id: 'reader:pdf',
       component: STUB_COMPONENT,
     })
     expect(prefixedReader.kind).toBe('reader:pdf')
-    expect(prefixedReader.getTitle!(undefined)).toBe('')
-    expect(prefixedReader.getTarget!(undefined)).toStrictEqual({ title: '' })
-    expect(prefixedReader.getOpenTab!(undefined)).toStrictEqual({ path: '' })
-    expect(prefixedReader.getOpenTab!({ path: 'a.pdf' })).toStrictEqual({ path: 'a.pdf' })
+    const emptyReaderTab = prefixedReader.open('', 't0')
+    expect(prefixedReader.getTitle!(emptyReaderTab)).toBe('')
+    expect(prefixedReader.getTarget!(emptyReaderTab)).toStrictEqual({ file: '', path: '', title: '' })
+    expect(prefixedReader.getOpenTab!(emptyReaderTab)).toStrictEqual({ path: '' })
+    const readerTab = prefixedReader.open('a.pdf', 't1')
+    expect(prefixedReader.getOpenTab!(readerTab)).toStrictEqual({ path: 'a.pdf' })
     expect(prefixedReader.identity!('a.pdf')).toBe('a.pdf')
-    expect(prefixedReader.getState!(undefined)).toBeUndefined()
+    expect(prefixedReader.getState!(readerTab)).toBeUndefined()
 
     const middleReader = getReaderTabKind('p', {
       id: 'my-reader:2',
@@ -486,24 +477,20 @@ describe('getCustomTabKind (notes)', () => {
       title: 'Fallback Reader',
     })
     expect(middleReader.kind).toBe('reader:my-reader:2')
-    expect(middleReader.getTitle!({ path: '' })).toBe('Fallback Reader')
+    expect(middleReader.getTitle!(middleReader.open('', 't'))).toBe('Fallback Reader')
     expect(
       (middleReader.open('a.pdf', 't', ['array']) as { selector: unknown }).selector,
     ).toBeNull()
     expect((middleReader.open('a.pdf', 't', 'str') as { selector: unknown }).selector).toBeNull()
 
-    prefixedReader.onShow!(undefined, 't1')
-    prefixedReader.onShow!({}, 't1')
-    prefixedReader.onShow!({ measure, focusTab }, 't1')
+    prefixedReader.onShow!(readerTab, 't1')
+    ;(readerTab as { attachReader(reader: ReaderHandle): void }).attachReader({
+      measure,
+      focus: focusTab,
+    })
+    prefixedReader.onShow!(readerTab, 't1')
     expect(measure).toHaveBeenCalledTimes(1)
     expect(focusTab).toHaveBeenCalledTimes(1)
-
-    const enterEv = new KeyboardEvent('keydown', { key: 'Enter' })
-    const escEv = new KeyboardEvent('keydown', { key: 'Escape' })
-    expect(prefixedReader.onKeyPress!(undefined, enterEv)).toBe(false)
-    expect(prefixedReader.onKeyPress!({}, enterEv)).toBe(false)
-    expect(prefixedReader.onKeyPress!({ handleKeyPress }, enterEv)).toBe(true)
-    expect(prefixedReader.onKeyPress!({ handleKeyPress }, escEv)).toBe(false)
 
     const syncPath = vi.fn()
     let resolveFirstRead: ((val: string) => void) | undefined
@@ -580,25 +567,20 @@ describe('getCustomTabKind (notes)', () => {
     const navSpy = vi.fn()
     await kindWithDispatch.navigate!({ navigate: navSpy }, 'books/book.epub', 'Book')
     expect(navSpy).not.toHaveBeenCalled()
-    await kindWithDispatch.navigate!(undefined, 'notes/a.md', 'A')
-    await kindWithDispatch.navigate!({}, 'notes/a.md', 'A')
     await kindWithDispatch.navigate!({ navigate: navSpy }, 'notes/a.md', 'A')
     expect(navSpy).toHaveBeenCalledWith('notes/a.md', 'A')
 
-    // onShow measures state and editor, and syncs path via s.at or s.path
+    // onShow measures the state and syncs its path
     const m1 = vi.fn()
-    const m2 = vi.fn()
-    kindWithDispatch.onShow!(undefined, '')
-    kindWithDispatch.onShow!(undefined, 't1')
-    kindWithDispatch.onShow!({ path: 'notes/no-id.md' }, '')
-    kindWithDispatch.onShow!({ editor: {} }, 't1')
-    kindWithDispatch.onShow!({ measure: m1, editor: { measure: m2 }, path: '' }, 't1')
+    kindWithDispatch.onShow!({ path: 'notes/no-id.md', title: '', measure: vi.fn() }, '')
+    kindWithDispatch.onShow!({ measure: m1, path: '', title: '' }, 't1')
     expect(m1).toHaveBeenCalledTimes(1)
-    expect(m2).toHaveBeenCalledTimes(1)
     expect(syncPath).not.toHaveBeenCalled()
 
     const kindNoDeps = getCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
-    expect(() => kindNoDeps.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
+    expect(() =>
+      kindNoDeps.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
+    ).not.toThrow()
     const kindUndefWorkspace = getCustomTabKind(
       'p',
       { kind: 'custom', component: STUB_COMPONENT },
@@ -609,29 +591,49 @@ describe('getCustomTabKind (notes)', () => {
         getWorkspace: () => undefined,
       },
     )
-    expect(() => kindUndefWorkspace.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
+    expect(() =>
+      kindUndefWorkspace.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
+    ).not.toThrow()
 
-    kindWithDispatch.onShow!({ at: 'notes/at-only.md', title: 'At Title' }, 't1')
+    kindWithDispatch.onShow!(
+      { path: 'notes/at-only.md', title: 'At Title', measure: vi.fn() },
+      't1',
+    )
     expect(syncPath).toHaveBeenCalledWith('t1', 'notes/at-only.md', 'At Title')
 
     // getTitle, identity, getTarget, getOpenTab fallbacks
-    expect(kindWithDispatch.getTitle!(undefined)).toBe('custom')
-    expect(kindWithDispatch.getTitle!({ at: 'notes/from-at.md' })).toBe('from-at')
+    expect(kindWithDispatch.getTitle!({ title: '', path: '' })).toBe('custom')
+    expect(kindWithDispatch.getTitle!({ title: '', path: 'notes/from-at.md' })).toBe('from-at')
     expect(kindWithDispatch.identity!('notes/a.md')).toBe('notes/a.md')
     expect(kindWithDispatch.identity!('')).toBe('custom')
-    expect(kindWithDispatch.getTarget!(undefined)).toStrictEqual({ title: 'custom' })
-    expect(kindWithDispatch.getTarget!({ at: 'notes/from-at.md' })).toStrictEqual({
+    expect(kindWithDispatch.getTarget!({ title: '', path: '' })).toStrictEqual({ title: 'custom' })
+    expect(kindWithDispatch.getTarget!({ title: '', path: 'notes/from-at.md' })).toStrictEqual({
       file: 'notes/from-at.md',
       path: 'notes/from-at.md',
       title: 'from-at',
     })
-    expect(kindWithDispatch.getOpenTab!(undefined)).toStrictEqual({ path: '' })
-    expect(kindWithDispatch.getOpenTab!({ at: 'notes/from-at.md' })).toStrictEqual({
-      path: 'notes/from-at.md',
-    })
     expect(kindWithDispatch.getOpenTab!({ path: 'notes/from-path.md' })).toStrictEqual({
       path: 'notes/from-path.md',
     })
+  })
+})
+
+describe('the pane of a custom note tab', () => {
+  it('hands a component the refs of the tab state through state only, never as props', async () => {
+    const seen: string[] = []
+    const Probe = defineComponent({
+      props: { errorMessage: { type: String, default: '' }, state: { type: Object, default: null } },
+      setup: (props) => () => {
+        seen.push(props.errorMessage.trim())
+        return h('span', 'note')
+      },
+    })
+    const kind = getCustomTabKind('p', { kind: 'custom', component: Probe })
+    const state = kind.open('notes/a.md', 't1')
+    const view = mount(kind.pane, { props: { state } })
+    await view.vm.$nextTick()
+    expect(view.element.shadowRoot?.textContent).toContain('note')
+    expect(seen).toEqual([''])
   })
 })
 
@@ -886,40 +888,40 @@ describe('createBufferedNoteState', () => {
 
 describe('pluginView helpers and stylesheet adoption', () => {
   it('resolves sync, async, and functional components and extracts paths/titles', () => {
-    expect(resolvePluginComponent(null)).toBeNull()
-    expect(resolvePluginComponent(undefined)).toBeNull()
-    expect(resolvePluginComponent({ default: null })).toBeNull()
-    expect(resolvePluginComponent({ default: undefined })).toBeNull()
-    expect(resolvePluginComponent('div')).toBe('div')
+    expect(parsePluginComponent(null)).toBeNull()
+    expect(parsePluginComponent(undefined)).toBeNull()
+    expect(parsePluginComponent({ default: null })).toBeNull()
+    expect(parsePluginComponent({ default: undefined })).toBeNull()
+    expect(parsePluginComponent('div')).toBe('div')
 
     const syncComp = { name: 'Sync', setup: () => () => null }
-    expect(resolvePluginComponent(syncComp)).toBe(syncComp)
-    expect(resolvePluginComponent({ default: syncComp })).toBe(syncComp)
+    expect(parsePluginComponent(syncComp)).toBe(syncComp)
+    expect(parsePluginComponent({ default: syncComp })).toBe(syncComp)
 
     const objWithLoaderOnly = { loader: () => Promise.resolve(syncComp) }
-    expect(resolvePluginComponent(objWithLoaderOnly)).toBe(objWithLoaderOnly)
+    expect(parsePluginComponent(objWithLoaderOnly)).toBe(objWithLoaderOnly)
 
     const fnWithSetup = Object.assign(() => null, { setup: () => null })
     const fnWithRender = Object.assign(() => null, { render: () => null })
     const fnWithProps = Object.assign(() => null, { props: ['a'] })
     const fnWithName = Object.assign(() => null, { __name: 'Named' })
     const fnWithArity = (props: unknown) => props
-    expect(resolvePluginComponent(fnWithSetup)).toBe(fnWithSetup)
-    expect(resolvePluginComponent(fnWithRender)).toBe(fnWithRender)
-    expect(resolvePluginComponent(fnWithProps)).toBe(fnWithProps)
-    expect(resolvePluginComponent(fnWithName)).toBe(fnWithName)
-    expect(resolvePluginComponent(fnWithArity)).toBe(fnWithArity)
+    expect(parsePluginComponent(fnWithSetup)).toBe(fnWithSetup)
+    expect(parsePluginComponent(fnWithRender)).toBe(fnWithRender)
+    expect(parsePluginComponent(fnWithProps)).toBe(fnWithProps)
+    expect(parsePluginComponent(fnWithName)).toBe(fnWithName)
+    expect(parsePluginComponent(fnWithArity)).toBe(fnWithArity)
 
     const asyncObj = { type: 'async', loader: () => Promise.resolve(syncComp) }
-    expect(resolvePluginComponent(asyncObj)).not.toBe(asyncObj)
+    expect(parsePluginComponent(asyncObj)).not.toBe(asyncObj)
 
     const nonLoaderAsync = { type: 'async', loader: 'invalid' }
-    expect(resolvePluginComponent(nonLoaderAsync)).toBe(nonLoaderAsync)
+    expect(parsePluginComponent(nonLoaderAsync)).toBe(nonLoaderAsync)
 
-    expect(extractTitleValue('Plain')).toBe('Plain')
-    expect(extractTitleValue({ value: 'RefVal' })).toBe('RefVal')
-    expect(extractTitleValue(null)).toBe('')
-    expect(extractTitleValue(42)).toBe('')
+    expect(parseTitle('Plain')).toBe('Plain')
+    expect(parseTitle({ value: 'RefVal' })).toBe('RefVal')
+    expect(parseTitle(null)).toBe('')
+    expect(parseTitle(42)).toBe('')
 
     expect(extractFilename(undefined)).toBe('')
     expect(extractFilename('')).toBe('')
@@ -928,13 +930,13 @@ describe('pluginView helpers and stylesheet adoption', () => {
     expect(stripMarkdownExtension('note.md')).toBe('note')
     expect(stripMarkdownExtension('note.md.bak')).toBe('note.md.bak')
 
-    expect(extractStatePath(null)).toBe('')
-    expect(extractStatePath('str')).toBe('')
-    expect(extractStatePath(Object.assign(() => null, { path: 'fn.md' }))).toBe('')
-    expect(extractStatePath({ path: 123 })).toBe('')
-    expect(extractStatePath({ path: 'a.md' })).toBe('a.md')
-    expect(extractStatePath({ file: 'b.md' })).toBe('b.md')
-    expect(extractStatePath({ at: 'c.md' })).toBe('c.md')
+    expect(parseStatePath(null)).toBe('')
+    expect(parseStatePath('str')).toBe('')
+    expect(parseStatePath(Object.assign(() => null, { path: 'fn.md' }))).toBe('')
+    expect(parseStatePath({ path: 123 })).toBe('')
+    expect(parseStatePath({ path: 'a.md' })).toBe('a.md')
+    expect(parseStatePath({ file: 'b.md' })).toBe('b.md')
+    expect(parseStatePath({ at: 'c.md' })).toBe('c.md')
   })
 
   it('copies and adopts host stylesheets or falls back to cloning head nodes', () => {
@@ -1122,7 +1124,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
     const adoptedNodes = renderPaneContent({
       pluginId: 'p',
       component: Comp,
-      state: null,
+      state: {},
       shadowRoot: null,
       containerClass: 'custom-container',
       hasAdoptedStyle: true,
@@ -1143,7 +1145,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
         return () => h('span', 'hi')
       },
     })
-    const SingleArgWrapper = createPluginPaneWrapper(CountingComp)
+    const SingleArgWrapper = createPluginPaneWrapper('plugin', CountingComp)
     const mountedSingle = mount(SingleArgWrapper, { props: { state: 'primitive' } })
     await mountedSingle.vm.$nextTick()
     expect(singleCompSetups).toBe(1)

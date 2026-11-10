@@ -11,13 +11,37 @@ import type {
 
 const NOTHING: Disposable = { dispose: () => undefined }
 
+const NO_TABS: ContextTabHost = {
+  openTab: () => undefined,
+  navigateTab: () => undefined,
+  closeTab: () => undefined,
+}
+
+const NO_VAULT: ContextVaultHost = {
+  getNotes: () => undefined,
+  getRelations: () => undefined,
+  getFiles: () => undefined,
+  getBuffers: () => undefined,
+  getVaults: () => undefined,
+  getTexts: () => undefined,
+}
+
+const NO_WINDOW: Omit<ContextWindowHost, 'getSlots' | 'getNotices'> = {
+  getWorkspace: () => undefined,
+  getAgent: () => undefined,
+  getCommands: () => undefined,
+  getWindow: () => undefined,
+  getTasks: () => undefined,
+  getBackgroundTasks: () => undefined,
+}
+
 /** What a window must give to host plugin contexts; everything else it leaves idle. */
 export interface IdleContextHostParts {
   readonly info: ContextInfoHost
   readonly registration: Pick<ContextRegistrationHost, 'registerTabKind'>
   readonly views: Pick<ContextViewHost, 'registerView' | 'registerSlotView' | 'mountView'>
-  readonly tabs?: ContextTabHost
-  readonly vault?: ContextVaultHost
+  readonly tabs?: Partial<ContextTabHost>
+  readonly vault?: Partial<ContextVaultHost>
   readonly window: Pick<ContextWindowHost, 'getSlots' | 'getNotices'> & Partial<ContextWindowHost>
 }
 
@@ -48,8 +72,8 @@ export function createIdleContextHost(parts: IdleContextHostParts): PluginContex
       emitVaultChange: () => undefined,
       emitFileSelect: () => undefined,
     },
-    tabs: parts.tabs ?? {},
-    vault: parts.vault ?? {},
-    window: parts.window,
+    tabs: { ...NO_TABS, ...parts.tabs },
+    vault: { ...NO_VAULT, ...parts.vault },
+    window: { ...NO_WINDOW, ...parts.window },
   }
 }

@@ -1,3 +1,4 @@
+import type { JsonObject } from '@/shared/api/json'
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
@@ -10,7 +11,7 @@ import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { pick } from '@/testing/pick'
 
 const createList = (
-  file: Record<string, unknown> = {},
+  file: JsonObject = {},
   plugins: readonly PluginInfo[] = [],
   catalog: readonly CatalogEntry[] = [],
 ) => {

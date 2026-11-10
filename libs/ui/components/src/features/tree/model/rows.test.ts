@@ -19,7 +19,7 @@ const create = (rows: readonly Row[] = ROWS, selection: readonly RowId[] = []) =
 
 const createDrawn = () => {
   const focus = vi.fn<() => void>()
-  return { focus, rendered: { $el: { focus } } }
+  return { focus, rendered: Object.assign(document.createElement('div'), { $el: { focus } }) }
 }
 
 describe('the row the tab key reaches', () => {
@@ -74,7 +74,7 @@ describe('a row as it is drawn', () => {
   it('is forgotten once it is replaced by something that draws nothing', () => {
     const rows = create()
     rows.setRowElement('pages', createDrawn().rendered)
-    rows.setRowElement('pages', {})
+    rows.setRowElement('pages', document.createElement('div'))
 
     expect(rows.getRowElement('pages')).toBeNull()
   })

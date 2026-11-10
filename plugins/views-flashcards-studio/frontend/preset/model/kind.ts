@@ -207,7 +207,7 @@ export function usePresetTab(deps: PresetTabDeps) {
   /** The preset of a note, in a tab of its own, or a message saying why there is none. */
   const openPresetOf = async (
     note: CommandNote,
-    openTab: (kind: string, path: string) => unknown,
+    openTab: (kind: string, path: string) => Promise<string> | void,
   ): Promise<void> => {
     const place = await findPreset(note)
     if (place.ok) await openTab(PRESET, place.at)

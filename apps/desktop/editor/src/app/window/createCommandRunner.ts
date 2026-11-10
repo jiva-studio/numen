@@ -65,7 +65,11 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   const { commands, palette, pluginHost, getCommandNote } = parts
 
   /** The run of the command over the target, or the objection to it where it cannot start. */
-  const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
+  const startRun = (
+    id: string,
+    target: CommandTarget,
+    way: RunWay,
+  ): Promise<string | boolean | void> | string => {
     if (
       pluginHost &&
       (pluginHost.commands.hasCommand(id) || pluginHost.commands.handlers.isSharedCommand(id))

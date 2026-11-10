@@ -7,7 +7,7 @@
  * settings values are restored as soon as the keyboard leaves the list. What a
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { ref, watch, type Ref } from 'vue'
 import { createFollower, createRequestGuard } from '@numen/ui'
 import type { MessageWriter } from '@/shared/model/notices/messages'
@@ -22,7 +22,7 @@ export interface WindowAppearanceDeps {
   words: AppearanceWords
   write: MessageWriter
   sheet?: Document
-  wait?: (ms: number) => Promise<unknown>
+  wait?: (ms: number) => Promise<void>
 }
 
 interface ThemeApplierDeps {
@@ -115,7 +115,7 @@ function createThemeWatcher(deps: {
   applyAppearance: () => Promise<void>
   loadAppearance: () => Promise<void>
   lost: Ref<string>
-  wait: (ms: number) => Promise<unknown>
+  wait: (ms: number) => Promise<void>
 }) {
   let open = true
   const abortController = new AbortController()
@@ -213,7 +213,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     start: async () => {
       await loadAppearance(true)
       // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
-      watcher.follow().catch((error: unknown) => write(formatError(error), 'error'))
+      watcher.follow().catch((error: Caught) => write(formatError(error), 'error'))
     },
     close: () => {
       watcher.stop()
@@ -223,4 +223,4 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

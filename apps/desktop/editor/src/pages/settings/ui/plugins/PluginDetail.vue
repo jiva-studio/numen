@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { JsonValue } from '@/shared/api/json'
 /**
  * The page of one plugin in the settings tab: the plugin manager's page, with the README and the
  * data of the plugin read here, and the declarative settings and secrets drawn in its slot.
@@ -42,7 +43,8 @@ const managed = computed(
   () => createManagedFromEntries([props.plugin], props.manager.catalog.value)[0],
 )
 
-const readEnabled = (): unknown => props.settings.getConfirmedSetting([props.plugin.id, 'enabled'])
+const readEnabled = (): JsonValue | undefined =>
+  props.settings.getConfirmedSetting([props.plugin.id, 'enabled'])
 const isEnabled = computed<boolean>(() => {
   const value = readEnabled()
   return typeof value === 'boolean' ? value : true

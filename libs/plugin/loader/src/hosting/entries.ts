@@ -9,6 +9,7 @@ import type {
   Selector,
   TabKindRegistration,
   TextRange,
+  Caught,
 } from '@numen/plugin-sdk'
 import { reportError } from './events'
 import { getReaderTabKind, getCustomTabKind } from './customTabKind'
@@ -44,7 +45,7 @@ export function registerReaderEntry(
               if (selector) state.selector = { ...selector }
               if (ranges) state.ranges = [...ranges]
             })
-            .catch((error: unknown) => reportError(deps, pluginId, error))
+            .catch((error: Caught) => reportError(deps, pluginId, error))
         },
         registration.icon,
       ),
@@ -89,11 +90,11 @@ export function registerTabKindEntry(
         if (where === 'split' && deps.openTabAdjacent) {
           deps
             .openTabAdjacent(registration.kind, path)
-            .catch((error: unknown) => reportError(deps, pluginId, error))
+            .catch((error: Caught) => reportError(deps, pluginId, error))
         } else {
           deps
             .openTab(registration.kind, path)
-            .catch((error: unknown) => reportError(deps, pluginId, error))
+            .catch((error: Caught) => reportError(deps, pluginId, error))
         }
       },
     )

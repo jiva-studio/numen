@@ -14,24 +14,24 @@ type FlushResult = 'written' | 'unsaved'
 /** What the flush needs of the core. */
 export interface FlushDeps {
   watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
-  reportFlush(token: string, result?: FlushResult): Promise<unknown>
+  reportFlush(token: string, result?: FlushResult): Promise<void>
 }
 
 /** Somewhere unwritten work is held, which the flush calls and waits for. */
-export type FlushHandler = () => Promise<unknown>
+export type FlushHandler = () => Promise<void>
 
 /** Text a file moved out from under, and the two ways of settling it. */
 export interface Conflict {
   readonly note: string
-  readonly keep: () => Promise<unknown>
-  readonly take: () => Promise<unknown>
+  readonly keep: () => Promise<void>
+  readonly take: () => Promise<void>
 }
 
 /** A conflict as presented to the user. */
 export interface ConflictPrompt {
   readonly note: string
-  readonly keep: () => Promise<unknown>
-  readonly take: () => Promise<unknown>
+  readonly keep: () => Promise<void>
+  readonly take: () => Promise<void>
   readonly later: () => void
 }
 
@@ -81,7 +81,7 @@ function createFlushReporter(
 ) {
   let underVal: string | null = null
   let lastResult: FlushResult | null = null
-  let writing: Promise<unknown> | null = null
+  let writing: Promise<PromiseSettledResult<void>[]> | null = null
 
   async function report() {
     const token = underVal
@@ -128,7 +128,7 @@ function createFlushReporter(
   return { answer, report, reportInBackground, reset }
 }
 
-export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
+export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<void> = sleep) {
   const handlers = new Set<FlushHandler>()
   let open = true
   const abortController = new AbortController()
@@ -173,4 +173,4 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<u
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

@@ -5,6 +5,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { formatError } from '@/shared/api/errors'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
 import { createRemoteValues } from './remoteValues'
 import type {
   Configuration,
@@ -26,19 +27,25 @@ export interface Words {
   readonly unreadSettings: string
 }
 
-const withSettingAt = (settings: unknown, at: readonly string[], value: unknown): unknown => {
+const withSettingAt = (
+  settings: JsonValue | undefined,
+  at: readonly string[],
+  value: JsonValue,
+): JsonValue => {
   const [step, ...rest] = at
   if (step === undefined) return value
-  const base = typeof settings === 'object' && settings !== null ? settings : {}
-  const child = (base as Record<string, unknown>)[step]
-  return { ...base, [step]: withSettingAt(child, rest, value) }
+  const base: JsonObject =
+    typeof settings === 'object' && settings !== null && !Array.isArray(settings)
+      ? (settings as JsonObject)
+      : {}
+  return { ...base, [step]: withSettingAt(base[step], rest, value) }
 }
 
 const PATH_JOIN = '\u0000'
 
 const getPathKey = (path: readonly string[]): string => path.join(PATH_JOIN)
 
-const readEditValue = (edit: SettingEdit): unknown => {
+const parseEditValue = (edit: SettingEdit): JsonValue | undefined => {
   /* Stryker disable BlockStatement: falling off catch returns undefined */
   try {
     return JSON.parse(edit.value)
@@ -55,7 +62,7 @@ const getDeclaredDefault = (
   app: readonly PluginSettingInfo[],
   plugins: readonly PluginInfo[],
   path: readonly string[],
-): unknown => {
+): JsonValue | undefined => {
   const [owner, ...key] = path
   if (owner === OWNER_APP) return app.find((one) => one.key === key.join('.'))?.default
   if (key.length !== 1) return undefined
@@ -71,7 +78,7 @@ const askVault = async (): Promise<Configuration | undefined> => {
   }
 }
 
-const parseSettingsText = (text: string): unknown => {
+const parseSettingsText = (text: string): JsonValue | undefined => {
   try {
     return JSON.parse(text)
   } catch {
@@ -92,7 +99,7 @@ const readVault = async (words: Words, say: MessageWriter) => {
 
 export function createSettingsStore(words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
-  const target = shallowRef<unknown>({})
+  const target = shallowRef<JsonValue>({})
 
   /** The file the settings stand in, and the models the settings offer. */
   const path = ref('')
@@ -125,9 +132,9 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     })
   }
 
-  const getSetting = (path: readonly string[]): unknown => {
+  const getSetting = (path: readonly string[]): JsonValue | undefined => {
     const edit = requested.getRequested(getPathKey(path))?.value
-    const value = (edit && readEditValue(edit)) ?? getSettingAt(target.value, path)
+    const value = (edit && parseEditValue(edit)) ?? getSettingAt(target.value, path)
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
@@ -142,7 +149,7 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
    * A setting as the vault answered it: the last read, and each value written since from the
    * answer to its write. It does not show a value requested and not yet answered.
    */
-  const getCommittedSetting = (path: readonly string[]): unknown => {
+  const getCommittedSetting = (path: readonly string[]): JsonValue | undefined => {
     const value = getSettingAt(target.value, path)
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
@@ -158,7 +165,7 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     try {
       await requested.requestWrite(new Map(edits.map((one) => [getPathKey(one.at), one])))
       for (const one of edits) {
-        const value = readEditValue(one)
+        const value = parseEditValue(one)
         if (value !== undefined) target.value = withSettingAt(target.value, one.at, value)
       }
     } catch (caughtError) {
@@ -168,7 +175,7 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
   }
 
   /** One setting written, by what is to stand there. */
-  const writeSetting = (path: readonly string[], value: unknown): Promise<void> =>
+  const writeSetting = (path: readonly string[], value: JsonValue): Promise<void> =>
     writeSettings([{ at: path, value: write(value) }])
 
   return {

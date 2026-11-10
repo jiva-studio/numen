@@ -75,7 +75,9 @@ func TestTheSecretsSectionIsNotThePrivateSettingsOfAPlugin(t *testing.T) {
 
 func TestAWriteOfAnotherSettingKeepsTheSecretsSectionAsItWas(t *testing.T) {
 	path := write(t, `{`+validSecretsSection+`}`)
-	cfg := container.NewConfig(container.Config{SettingsPath: path})
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{SettingsPath: path},
+	})
 
 	err := container.GetSettingsWriter(cfg)([]settingsdomain.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
@@ -98,7 +100,9 @@ func TestAWriteAtTheSecretsSectionIsRejectedAndTheFileIsUnchanged(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.NewConfig(container.Config{SettingsPath: path})
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{SettingsPath: path},
+	})
 
 	for _, target := range [][]string{{"secrets"}, {"secrets", "0", "allowed"}} {
 		err := container.GetSettingsWriter(cfg)([]settingsdomain.Setting{{Path: target, JSON: `[]`}})

@@ -3,6 +3,7 @@
  */
 import { watch, type Ref } from 'vue'
 import { loadWailsRuntime, type WailsRuntimeLoader } from '@numen/ui'
+import type { Caught } from '@/shared/api/errors'
 
 /** Loads the runtime module; resolves to undefined where the page is not served by Wails. */
 type WindowRuntimeLoader = WailsRuntimeLoader
@@ -21,7 +22,7 @@ export interface EmptyWindowCloseDeps {
   readonly isLayoutReady: Readonly<Ref<boolean>>
   readonly tabCount: () => number
   readonly closeWindow: () => Promise<void>
-  readonly onError: (error: unknown) => void
+  readonly onError: (error: Caught) => void
 }
 
 /** Closes the window when the layout is ready and the tab count drops to zero. */

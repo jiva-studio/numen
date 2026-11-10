@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { AppInfo } from '@numen/plugin-sdk'
+import type { AppInfo, JsonValue } from '@numen/plugin-sdk'
 import type { Status } from '../api/updater'
 import {
   createUpdates,
@@ -35,7 +35,7 @@ const createFakeTimer = () => {
       return handle
     },
     clear: (handle) => {
-      waits.delete(handle as number)
+      waits.delete(handle)
     },
   }
   return {
@@ -55,7 +55,7 @@ const flush = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve()
 }
 
-const create = (answers: Array<Status | 'fail' | 'reject'>, hours: unknown = 4) => {
+const create = (answers: Array<Status | 'fail' | 'reject'>, hours: JsonValue | undefined = 4) => {
   const clock = createFakeTimer()
   const queue = [...answers]
   const check = vi.fn(async () => {

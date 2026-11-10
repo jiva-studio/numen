@@ -5,11 +5,11 @@ import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/test
 import type { LoaderHost } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
-import { getLifecycleHooks, resolveModule } from './module'
+import { parseLifecycleHooks, resolveModule } from './module'
 
 function registerModules(
   loader: ReturnType<typeof createPluginLoader>,
-  modules: Record<string, () => Promise<unknown>>,
+  modules: Record<string, () => Promise<object>>,
 ) {
   for (const [id, load] of Object.entries(modules)) loader.registerPluginModule(id, load)
   return loader
@@ -492,9 +492,9 @@ describe('createPluginLoader failures, order and toggles', () => {
     try {
       const { host } = createHost()
       const log: string[] = []
-      let finishReading: (module: unknown) => void = () => undefined
+      let finishReading: (module: object) => void = () => undefined
       const slow = () =>
-        new Promise<unknown>((resolve) => {
+        new Promise<object>((resolve) => {
           finishReading = resolve
         })
       const quick = async () => ({
@@ -901,28 +901,28 @@ describe('createPluginLoader failures, order and toggles', () => {
   })
 })
 
-describe('getLifecycleHooks and resolveModule', () => {
+describe('parseLifecycleHooks and resolveModule', () => {
   it('extracts activate and deactivate from module or default export', () => {
-    expect(getLifecycleHooks(null)).toEqual({})
-    expect(getLifecycleHooks(undefined)).toEqual({})
-    expect(getLifecycleHooks('string')).toEqual({})
-    expect(getLifecycleHooks(42)).toEqual({})
+    expect(parseLifecycleHooks(null)).toEqual({})
+    expect(parseLifecycleHooks(undefined)).toEqual({})
+    expect(parseLifecycleHooks('string')).toEqual({})
+    expect(parseLifecycleHooks(42)).toEqual({})
 
     const activate = () => undefined
     const deactivate = () => undefined
-    expect(getLifecycleHooks({ default: { activate, deactivate } })).toEqual({
+    expect(parseLifecycleHooks({ default: { activate, deactivate } })).toEqual({
       activate,
       deactivate,
     })
     expect(
-      getLifecycleHooks({
+      parseLifecycleHooks({
         default: { activate: 'not-a-fn', deactivate: 123 },
         activate,
         deactivate,
       }),
     ).toEqual({ activate, deactivate })
     expect(
-      getLifecycleHooks({
+      parseLifecycleHooks({
         default: null,
         activate: 'not-a-fn',
         deactivate: 'not-a-fn',

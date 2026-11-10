@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
 /**
  * The backdrop of the palette, and the panel it is rendered in.
  *
@@ -23,7 +24,7 @@ defineEmits<{
 
 defineSlots<{
   /** What the panel holds. */
-  default(): unknown
+  default(): VNode[]
 }>()
 </script>
 

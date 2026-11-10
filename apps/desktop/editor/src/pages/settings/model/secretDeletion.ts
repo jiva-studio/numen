@@ -7,8 +7,8 @@ import type { PluginInfo } from '@/entities/settings'
 import { getDeletionIds, getDeletionText, type DeletionTarget } from '../lib/secretSections'
 
 export function useSecretDeletion(
-  deleteSecret: (id: string) => unknown,
-  deleteSecretGroup: (group: string) => unknown,
+  deleteSecret: (id: string) => void,
+  deleteSecretGroup: (group: string) => void,
   getPlugins: () => readonly PluginInfo[],
 ) {
   const target = ref<DeletionTarget | null>(null)

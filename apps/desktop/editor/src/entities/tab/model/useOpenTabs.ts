@@ -7,16 +7,18 @@ import { findTabKindIcon } from '../lib/icons'
 import { writeOpenTabs as writeOpenTabsToCore } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import type { WindowTabs } from './windowTabs'
+import type { Caught } from '@/shared/api/errors'
+import type { JsonValue } from '@/shared/api/json'
 
 export interface OpenTabsDeps {
   windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
-  reportError: (error: unknown) => void
+  reportError: (error: Caught) => void
   writeOpenTabs?: (open: OpenTabs) => Promise<void>
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
-export const formatSavedState = (saved: unknown): string =>
+export const formatSavedState = (saved: JsonValue | undefined): string =>
   saved === undefined ? '' : JSON.stringify(saved)
 
 function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
@@ -123,10 +125,10 @@ export function useOpenTabs({
   }
 }
 
-const parseSavedState = (state: string): unknown => {
+const parseSavedState = (state: string): JsonValue | undefined => {
   /* Stryker disable BlockStatement: falling off catch returns undefined */
   try {
-    return JSON.parse(state) as unknown
+    return JSON.parse(state)
   } catch {
     return undefined
   }

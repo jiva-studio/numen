@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useReviewSession } from './session'
 import type { SessionClient, SessionStart } from './session'
+import type { UndoReviewResponse } from '../../../lib/wire/review'
 
 const createCard = (cardId: string) => ({
   deck: 'decks/Words.md',
@@ -340,8 +341,8 @@ describe('an answer taken back', () => {
       },
       undoReview(one) {
         asks.push(one.answer)
-        return new Promise<void>((then) => {
-          settle = then
+        return new Promise<UndoReviewResponse>((then) => {
+          settle = () => then({})
         })
       },
     }

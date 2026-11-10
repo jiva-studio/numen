@@ -179,7 +179,7 @@ export interface SettingsCore {
   deletePluginData(pluginId: string): Promise<void>
 }
 
-type Answers = Record<string, unknown>
+type Answers = Record<string, (request: never, context: never) => object | AsyncIterable<object>>
 
 interface Declaration {
   readonly secretId: string
@@ -204,7 +204,7 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
       : {}),
     ...(watchSettings
       ? {
-          watchSettings: async function* (_request: unknown, context: { signal: AbortSignal }) {
+          watchSettings: async function* (_request: object, context: { signal: AbortSignal }) {
             for await (const batch of watchSettings(context.signal)) yield { changed: batch }
           },
         }

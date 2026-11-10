@@ -5,12 +5,13 @@
  * keyboard focus can be set on a row added in the same update.
  */
 import { computed, nextTick, shallowRef, type ComputedRef, type Ref } from 'vue'
+import type { RefTarget } from '@/shared/lib/dom/refs'
 import type { RowId, ShownRow } from '../lib/row'
 
 export interface DrawnRowsState {
   readonly here: Ref<RowId | null>
   readonly tabbed: ComputedRef<RowId | null>
-  readonly setRowElement: (row: RowId, element: unknown) => void
+  readonly setRowElement: (row: RowId, element: RefTarget) => void
   readonly getRowElement: (row: RowId) => HTMLElement | null
   readonly focusRow: (row: RowId | null, scrollTo?: (index: number) => void) => Promise<void>
 }
@@ -33,10 +34,10 @@ export function useDrawnRows(
     )
   })
 
-  const setRowElement = (row: RowId, element: unknown): void => {
-    const found = (element as { $el?: unknown } | null)?.$el
+  const setRowElement = (row: RowId, element: RefTarget): void => {
+    const found: HTMLElement | null = element && '$el' in element ? element.$el : null
     // Stryker disable next-line ConditionalExpression: deleting absent elements prevents map retention while getRowElement coalesces undefined to null
-    if (found) viewElement.set(row, found as HTMLElement)
+    if (found) viewElement.set(row, found)
     else viewElement.delete(row)
   }
 
