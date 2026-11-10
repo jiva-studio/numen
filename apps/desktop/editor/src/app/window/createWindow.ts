@@ -150,10 +150,8 @@ export const createWindow = () => {
       vaultList: vaults.vaultList,
       readNoteKind: createNoteKindReader(base.plugins.itemLists),
     },
-    settings: {
-      openSettings: (pluginId?: string, filter?: string) =>
-        settings.configured.openSettings(pluginId, filter),
-    },
+    openSettings: (pluginId?: string, filter?: string) =>
+      settings.configured.openSettings(pluginId, filter),
     lifecycle: {
       isStarted: bootstrap.isStarted,
       isLayoutReady,

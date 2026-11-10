@@ -18,13 +18,6 @@ const props = defineProps<{ state: SettingsTabState }>()
 const initialPluginId = props.state.initialPluginId
 const selectedPluginId = ref<string | null>(initialPluginId.value)
 
-watch(
-  () => initialPluginId.value,
-  (newId) => {
-    selectedPluginId.value = newId
-  },
-)
-
 const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugin.plugins.value)
 const uninstalled = computed(() =>
   createManagedFromEntries([], props.state.installation.plugin.catalog.value).find(
@@ -41,6 +34,14 @@ const selectedPlugin = computed<PluginInfo | undefined>(() => {
   if (match) lastSelected = match
   return match ?? (lastSelected?.id === selectedPluginId.value ? lastSelected : undefined)
 })
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(
+  () => initialPluginId.value,
+  (newId) => {
+    selectedPluginId.value = newId
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {

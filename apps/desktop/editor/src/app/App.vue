@@ -52,7 +52,7 @@ const { slots, windowCommands } = parts.plugins
 const { titleBarView, statusBarView } = parts.plugins.views
 const { failure, fileFlush, getTitle } = parts.notices
 const { vaultList, readNoteKind } = parts.display
-const { openSettings } = parts.settings
+const { openSettings } = parts
 const { isStarted, isLayoutReady, bootstrapFailure, retryBootstrap, openCurrentVault } =
   parts.lifecycle
 
@@ -67,15 +67,6 @@ const tabMenu = useWindowTabMenu({
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-function onOpenSettings(event: Event): void {
-  const detail = (event as CustomEvent<{ filter?: string; pluginId?: string } | null>).detail
-  if (detail?.filter || detail?.pluginId) {
-    openSettings(detail.pluginId, detail.filter)
-    return
-  }
-  runCommand(COMMAND.openSettings, getTarget())
-}
-
 onMounted(() => {
   globalThis.addEventListener('numen:open-settings', onOpenSettings)
 })
@@ -85,6 +76,15 @@ onUnmounted(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
+function onOpenSettings(event: Event): void {
+  const detail = (event as CustomEvent<{ filter?: string; pluginId?: string } | null>).detail
+  if (detail?.filter || detail?.pluginId) {
+    openSettings(detail.pluginId, detail.filter)
+    return
+  }
+  runCommand(COMMAND.openSettings, getTarget())
+}
+
 function onCloseTab(id: string, hold?: () => void) {
   closeTab(id, hold)
 }
