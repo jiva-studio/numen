@@ -78,7 +78,7 @@ func (c Config) getTriggerSource() windowsession.TriggerSource {
 			}
 			return nil
 		},
-		Watch: c.WatchPluginChanges,
+		Watch: c.watchPluginChanges,
 	}
 }
 

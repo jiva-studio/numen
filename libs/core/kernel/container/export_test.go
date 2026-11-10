@@ -33,7 +33,7 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 
 // The methods below are the wiring the tests of this package reach from outside it.
 
-func (c Config) AgentProvider() agentport.AgentProvider { return c.agentProvider() }
+func (c Config) AgentProvider() agentport.AgentProvider { return c.providerOfAgents() }
 
 func (c Config) CutNotes() chunking.CutNotes { return c.cutNotes() }
 

@@ -180,7 +180,7 @@ func (c Config) openSecrets() *secret.Secrets {
 	return openSecrets(c.plugins())
 }
 
-func (c Config) agentProvider() agentport.AgentProvider {
+func (c Config) providerOfAgents() agentport.AgentProvider {
 	return pluginsAgentProvider(c.plugins())
 }
 
@@ -648,7 +648,7 @@ func setPluginVault(c pluginsWiring, v *hostendpoint.VaultAccess) {
 
 func setPluginVaultList(c pluginsWiring, list hostendpoint.VaultList) {
 	if c.PluginHost != nil {
-		c.PluginHost.setPluginVaultList(list)
+		c.PluginHost.SetPluginVaultList(list)
 	}
 }
 
@@ -760,8 +760,8 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		Moved:      hooks.Moved,
 		Index:      index,
 	}
-	if c.VaultWatcher != nil {
-		vaults.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
+	if c.vaultWatcher != nil {
+		vaults.Watcher = vault.NewWatchChanges(c.vaultWatcher).Execute
 	}
 	if vaults.IndexState == nil {
 		vaults.IndexState = getIndexState(db)
@@ -826,7 +826,7 @@ func getFrontendPluginIDs(c pluginsWiring) []string {
 
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
 	if c.PluginHost != nil {
-		c.PluginHost.setPluginWindow(window)
+		c.PluginHost.SetPluginWindow(window)
 	}
 }
 

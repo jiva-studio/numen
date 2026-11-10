@@ -187,7 +187,7 @@ func (c Config) settings() settingsWiring {
 		PluginChanges:    res.pluginChanges,
 		SubscribedHosts:  &res.subscribedHosts,
 		ErrorHandler:     c.handleError,
-		AgentProvider:    c.AgentProvider,
+		AgentProvider:    c.providerOfAgents,
 		GetAgentPrograms: c.getAgentPrograms,
 		SetSecretSource:  c.setSecretSource,
 		SetCompleter:     c.setCompleter,

@@ -230,7 +230,7 @@ func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Emb
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.setPluginSearch(hostsearch.Search{
+	c.PluginHost.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
 		Samples:  db.SearchSamples(),

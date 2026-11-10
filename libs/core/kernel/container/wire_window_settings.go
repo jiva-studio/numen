@@ -19,7 +19,7 @@ func (c Config) openWatchSettings() *settings.WatchSettingChanges {
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	handler := &windowsettings.Handler{}
-	handler.Get = w.cfg.openGetSettings(w.cfg.agentProvider())
+	handler.Get = w.cfg.openGetSettings(w.cfg.providerOfAgents())
 	handler.Values.Write = openWriteSettings(w.cfg.settings())
 	handler.Watch = w.cfg.openWatchSettings()
 	handler.Retry = openRetryPlugin(w.cfg.settings(), w.cfg.getPluginRetrier())

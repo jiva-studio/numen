@@ -63,7 +63,7 @@ func (c Config) Plugins() func() []plugindomain.Info {
 }
 
 func (c Config) models() func() []settingsdomain.Model {
-	return c.modelsForProvider(c.agentProvider())
+	return c.modelsForProvider(c.providerOfAgents())
 }
 
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsdomain.Model {

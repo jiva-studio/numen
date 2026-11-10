@@ -117,7 +117,7 @@ func (c Config) openCLIProblems(ctx context.Context) (cli.Problems, error) {
 }
 
 func (c Config) getCLIPluginCommands() cli.PluginCommands {
-	return cli.PluginCommands{List: c.getPluginCommands().List, Open: c.OpenPluginCommands}
+	return cli.PluginCommands{List: c.getPluginCommands().List, Open: c.openPluginCommands}
 }
 
 func closeIfOpen(closeFn func() error) error {
