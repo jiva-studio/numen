@@ -105,7 +105,7 @@ function pick(context: PluginContext, path: readonly string[]): { target: unknow
 
 function call(context: PluginContext, path: readonly string[]): unknown {
   const { target, key } = pick(context, path)
-  return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.('a.md', 'b.md')
+  return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(['app', 'agent'], 'b.md')
 }
 
 const MEMBERS = SERVICE_PARTS.flatMap((part) =>
