@@ -21,7 +21,7 @@ import { checkPermission, type PermissionTarget, type RequirePermission } from '
 import { createMountView, createRegistrations, type Track } from './guards/registrations'
 import { guardService, SERVICE_RULES } from './guards/servicePermissions'
 import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
-import { createSlotViewRegistration } from './slotContext'
+import { createSlotViewRegistration } from './guards/slotContext'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: SubscriptionList, disposable: Disposable): Disposable {

@@ -142,13 +142,13 @@ describe('createShellHost', () => {
     const vaults = createMockVaultsHost()
     const switchTo = vi.spyOn(vaults, 'switchTo')
     const { host } = createShellHost(undefined, { vaults })
-    const plain = host.createContext(
+    const noGrants = host.createContext(
       'org.example.bare',
       createMockManifest('org.example.bare', { name: 'Bare' }),
     )
     const reader = host.createContext('org.example.reader', withVault('org.example.reader'))
 
-    expect(() => plain.vault.vaults?.getState()).toThrowError('vault:read')
+    expect(() => noGrants.vault.vaults?.getState()).toThrowError('vault:read')
     await expect(reader.vault.vaults?.switchTo('roots')).rejects.toThrowError('vault:manage')
     expect(switchTo).not.toHaveBeenCalled()
   })

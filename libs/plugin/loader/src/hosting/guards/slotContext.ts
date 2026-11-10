@@ -2,8 +2,8 @@
  * The views a plugin registers, in the slots its manifest places them.
  */
 import type { Disposable, SlotViewRegistration } from '@numen/plugin-sdk'
-import { getDeclaredSlots, type SlotViewManifest } from '../slot-views/slotViews'
-import type { PluginContextHost } from './types'
+import { getDeclaredSlots, type SlotViewManifest } from '../../slot-views/slotViews'
+import type { PluginContextHost } from '../types'
 
 export interface SlotContextPlugin {
   readonly pluginId: string
