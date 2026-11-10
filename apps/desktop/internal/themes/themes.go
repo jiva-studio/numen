@@ -6,8 +6,8 @@ import (
 	"io"
 )
 
-// Report writes the fault of loading the themes to out. If a folder cannot be created, the themes the
-// binary ships are kept, so the fault is all there is to report.
+// Report writes the fault of loading the themes to out, and nothing when there is none. The window
+// keeps the themes the binary ships when a folder cannot be created.
 func Report(err error, out io.Writer) {
 	if err == nil {
 		return

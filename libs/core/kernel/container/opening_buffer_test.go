@@ -134,7 +134,11 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 
 		got, err := open.Read(t.Context(), func() {
 			if one.encoded {
-				opening.Buffered.(interface{ Record(path string) }).Record("Leaf.md")
+				recorder, isRecorder := opening.Buffered.(interface{ Record(path string) })
+				if !isRecorder {
+					t.Fatal("the buffered writes cannot record a path")
+				}
+				recorder.Record("Leaf.md")
 			}
 		})
 		if err != nil {

@@ -34,11 +34,6 @@ func openSettingsAt(path string) (settings.File, error) {
 	return container.NewConfig(container.Config{SettingsPath: path}).Settings()
 }
 
-func newSettingsDocument() *settings.File {
-	target := container.DefaultSettings()
-	return &target
-}
-
 func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	cfg, err := openSettingsAt(filepath.Join(t.TempDir(), "numen.json"))
 	if err != nil {
