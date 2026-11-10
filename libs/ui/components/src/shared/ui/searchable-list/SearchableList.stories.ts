@@ -112,8 +112,11 @@ const expectOneFrame = async (canvasElement: HTMLElement) => {
   const frame = getFrame(canvasElement)
   const canvas = within(canvasElement)
   await expect(frame.firstElementChild).toBe(canvas.getByRole('combobox'))
-  await expect(frame.contains(canvas.getByRole('listbox'))).toBe(true)
-  await expect(getComputedStyle(frame).overflow).toBe('hidden')
+  const list = canvas.getByRole('listbox')
+  await expect(frame.contains(list)).toBe(true)
+  await expect(list.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+    frame.getBoundingClientRect().bottom + 1,
+  )
 }
 
 /** Rows under the names of their groups, one of them in force. */
@@ -152,7 +155,6 @@ export const LongList: Story = {
     const canvas = within(canvasElement)
     const list = canvas.getByRole('listbox')
     await expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
-    await expect(getComputedStyle(list).overflowY).toBe('auto')
     await userEvent.type(canvas.getByRole('combobox'), '{ArrowUp}')
     await waitFor(() => expect(canvas.getByRole('option', { name: 'Shelf 60' })).toBeVisible())
     const active = canvas.getByRole('option', { name: 'Shelf 60' }).getBoundingClientRect()
@@ -286,8 +288,10 @@ export const Popup: Story = {
   play: async ({ args }) => {
     const frame = document.body.querySelector<HTMLElement>('[data-numen-searchable-list]')!
     await expect(frame.parentElement).toBe(document.body)
-    await expect(getComputedStyle(frame).position).toBe('fixed')
     const box = frame.getBoundingClientRect()
+    await expect(box.left).toBeCloseTo(24, 0)
+    await expect(box.top).toBeCloseTo(24, 0)
+    await expect(box.width).toBeGreaterThanOrEqual(240)
     await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
     await userEvent.keyboard('{Escape}')
     await expect(args.onClose).toHaveBeenCalled()

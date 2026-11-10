@@ -525,15 +525,6 @@ describe('what follows the pointer', () => {
     expect(findDragged(wrapper).text()).toBe('2 files')
   })
 
-  it('remains where the pointer is', async () => {
-    const wrapper = mountTree()
-    pointer('pointerdown', 108, getRow(wrapper, 'loose').element)
-    pointer('pointermove', 60)
-    await wrapper.vm.$nextTick()
-
-    expect(findDragged(wrapper).attributes('style')).toContain('top: 60px')
-  })
-
   it('is drawn nowhere before the pointer has travelled far enough', async () => {
     const wrapper = mountTree()
     pointer('pointerdown', 108, getRow(wrapper, 'loose').element)

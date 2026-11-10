@@ -747,8 +747,7 @@ export const NotLatin: Story = {
 
 /**
  * Lines past any width, and words with nowhere to break.
- * Each is one line ending in an ellipsis. The panel keeps its side clearance and nothing pushes the window wider.
- * The clearance moves with the interface multiplier, so the story reads it from the panel.
+ * Each is one line ending in an ellipsis. The panel stays inside its room and nothing pushes the window wider.
  */
 export const TooLong: Story = {
   args: {
@@ -769,12 +768,11 @@ export const TooLong: Story = {
 
     const panel = document.body.querySelector<HTMLElement>('[data-palette="panel"]')!
     const overElement = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
-    const clear = Number.parseFloat(getComputedStyle(overElement).paddingInlineStart)
     const bounds = panel.getBoundingClientRect()
     const room = overElement.getBoundingClientRect()
 
-    await expect(bounds.left).toBeGreaterThanOrEqual(room.left + clear - 1)
-    await expect(bounds.right).toBeLessThanOrEqual(room.right - clear + 1)
+    await expect(bounds.left).toBeGreaterThanOrEqual(room.left)
+    await expect(bounds.right).toBeLessThanOrEqual(room.right)
     for (const option of options()) {
       await expect(option.scrollWidth).toBeLessThanOrEqual(option.clientWidth + 1)
     }

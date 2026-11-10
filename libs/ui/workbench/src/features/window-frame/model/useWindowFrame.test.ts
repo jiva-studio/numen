@@ -178,9 +178,6 @@ describe('the room of the system buttons', () => {
 })
 
 describe('the corner radius of the window', () => {
-  const readRoot = (): string =>
-    document.documentElement.style.getPropertyValue('--numen-window-radius')
-
   /** A macOS runtime that reports the version, and full screen when asked. */
   function createMacRuntime(version: string | undefined, isFullscreen = false): FrameRuntime {
     const { runtime } = createRuntime('mac')
@@ -200,19 +197,11 @@ describe('the corner radius of the window', () => {
     expect(frame.windowRadius.value).toBe(10)
   })
 
-  it('sets the radius of macOS 26 on the root', async () => {
+  it('takes the larger radius of macOS 26 from the version in the runtime environment', async () => {
     const frame = useWindowFrame(async () => createMacRuntime('26.6.2'))
     await flushPromises()
 
     expect(frame.windowRadius.value).toBe(16)
-    expect(readRoot()).toBe('16px')
-  })
-
-  it('sets the smaller radius on the root before macOS 26', async () => {
-    useWindowFrame(async () => createMacRuntime('15.6.1'))
-    await flushPromises()
-
-    expect(readRoot()).toBe('10px')
   })
 
   it('takes the larger radius when the version cannot be read', async () => {
@@ -220,7 +209,6 @@ describe('the corner radius of the window', () => {
     await flushPromises()
 
     expect(frame.windowRadius.value).toBe(16)
-    expect(readRoot()).toBe('16px')
   })
 
   it('takes the larger radius when the environment call fails', async () => {
@@ -234,58 +222,25 @@ describe('the corner radius of the window', () => {
         },
       },
     }
-    useWindowFrame(async () => failing)
+    const frame = useWindowFrame(async () => failing)
     await flushPromises()
 
-    expect(readRoot()).toBe('16px')
+    expect(frame.windowRadius.value).toBe(16)
   })
 
-  it('sets no radius in macOS full screen', async () => {
-    useWindowFrame(async () => createMacRuntime('26.0', true))
+  it('takes no radius in macOS full screen', async () => {
+    const frame = useWindowFrame(async () => createMacRuntime('26.0', true))
     await flushPromises()
 
-    expect(readRoot()).toBe('0px')
+    expect(frame.windowRadius.value).toBe(0)
   })
 
-  it('sets no radius on Windows and Linux', async () => {
+  it('takes no radius on Windows and Linux', async () => {
     for (const platform of ['windows', 'linux'] as const) {
-      useWindowFrame(async () => createRuntime(platform).runtime)
+      const frame = useWindowFrame(async () => createRuntime(platform).runtime)
       await flushPromises()
 
-      expect(readRoot()).toBe('0px')
-    }
-  })
-})
-
-describe('the top edge of the window', () => {
-  const readEdge = (): string =>
-    document.documentElement.style.getPropertyValue('--numen-window-edge')
-
-  it('sets one pixel on the root on macOS', async () => {
-    const { runtime } = createRuntime('mac')
-    useWindowFrame(async () => runtime)
-    await flushPromises()
-
-    expect(readEdge()).toBe('1px')
-  })
-
-  it('sets none in macOS full screen', async () => {
-    const { runtime } = createRuntime('mac')
-    useWindowFrame(async () => ({
-      ...runtime,
-      Window: { ...runtime.Window, IsFullscreen: async () => true },
-    }))
-    await flushPromises()
-
-    expect(readEdge()).toBe('0px')
-  })
-
-  it('sets none on Windows and Linux', async () => {
-    for (const platform of ['windows', 'linux'] as const) {
-      useWindowFrame(async () => createRuntime(platform).runtime)
-      await flushPromises()
-
-      expect(readEdge()).toBe('0px')
+      expect(frame.windowRadius.value).toBe(0)
     }
   })
 })

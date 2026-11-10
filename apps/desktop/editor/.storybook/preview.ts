@@ -17,6 +17,7 @@ const preview: Preview = {
     (story, context) => {
       const theme = context.globals['theme'] === 'dark' ? 'dark' : 'light'
       document.documentElement.style.colorScheme = theme
+      document.documentElement.dataset['theme'] = theme
       return { components: { story }, template: '<story />' }
     },
   ],

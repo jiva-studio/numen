@@ -733,6 +733,52 @@ const numenPlugin = {
       },
     },
 
+    'no-style-declaration-read': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Forbid reading a CSSStyleDeclaration (getComputedStyle(...), element.style) in a test or story: they check behavior, not appearance',
+        },
+        messages: {
+          forbiddenRead:
+            'a test or story checks what the user can do (open, close, flip, move), never a style value: assert state, an attribute, an event or what is on screen',
+        },
+        schema: [],
+      },
+      create(context) {
+        const services = context.sourceCode.parserServices
+        if (!services?.program) return {}
+        const checker = services.program.getTypeChecker()
+        const isDeclaration = (type, seen = new Set()) => {
+          if (seen.has(type)) return false
+          seen.add(type)
+          if (type.getSymbol()?.getName() === 'CSSStyleDeclaration') return true
+          if (type.isUnionOrIntersection()) return type.types.some((one) => isDeclaration(one, seen))
+          return type.isClassOrInterface() && checker.getBaseTypes(type).some((one) => isDeclaration(one, seen))
+        }
+        const hasDeclarationType = (node) =>
+          isDeclaration(checker.getTypeAtLocation(services.esTreeNodeToTSNodeMap.get(node)))
+        const isBase = (node) => node.parent.type === 'MemberExpression' && node.parent.object === node
+        const isWrite = (node) =>
+          (node.parent.type === 'AssignmentExpression' && node.parent.left === node) ||
+          (node.property.type === 'Identifier' && ['setProperty', 'removeProperty'].includes(node.property.name))
+        return {
+          'CallExpression, MemberExpression'(node) {
+            // A declaration that is kept or passed on (`const style = getComputedStyle(x)`, `read(x.style)`).
+            if (!isBase(node) && hasDeclarationType(node)) {
+              context.report({ node, messageId: 'forbiddenRead' })
+              return
+            }
+            // A property or method of a declaration that is read.
+            if (node.type === 'MemberExpression' && hasDeclarationType(node.object) && !isWrite(node)) {
+              context.report({ node, messageId: 'forbiddenRead' })
+            }
+          },
+        }
+      },
+    },
+
     'no-double-type-assertion': {
       meta: {
         type: 'problem',
@@ -1170,6 +1216,11 @@ export function createBaseConfig(dirname, options = {}) {
         'max-lines-per-function': 'off',
         'max-statements': 'off',
       },
+    },
+
+    {
+      files: ['**/*.test.ts', '**/*.spec.ts', '**/*.stories.ts', '**/testing/**/*.ts', '**/fixtures/**/*.ts'],
+      rules: { 'numen/no-style-declaration-read': 'error' },
     },
 
     prettier,

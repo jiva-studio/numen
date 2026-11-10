@@ -59,6 +59,7 @@ export const toolbar = {
       const theme = context.globals['theme'] === 'dark' ? 'dark' : 'light'
       const root = document.documentElement
       root.style.colorScheme = theme
+      root.dataset['theme'] = theme
       // On the root, where the window puts them, so every story is looked at
       // through the same two numbers the window is drawn through.
       root.style.setProperty(

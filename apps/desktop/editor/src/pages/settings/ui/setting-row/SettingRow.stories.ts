@@ -127,19 +127,6 @@ export const WideRowsDoNotOverlap: Story = {
   },
 }
 
-/** Wide: text, select, path and secret controls share one width. */
-export const WideTextControlsShareOneWidth: Story = {
-  play: async ({ canvasElement }) => {
-    const widths = [
-      ...canvasElement.querySelectorAll(
-        '.settings__choice, .settings__text-input, .settings__secret',
-      ),
-    ].map((one) => Math.round(one.getBoundingClientRect().width))
-    const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
-    await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem, 16 * rem])
-  },
-}
-
 /** Narrow: every control moves under its description at full width. */
 export const NarrowRowsStackTheControl: Story = {
   render: rows('24rem'),

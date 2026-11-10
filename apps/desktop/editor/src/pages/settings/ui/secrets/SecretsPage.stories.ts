@@ -109,25 +109,14 @@ export const DeletionAsksFirst: Story = {
   },
 }
 
-/**
- * A secret not created yet has the columns, the field text and the controls of a saved one, and
- * its plugin list is disabled.
- */
-export const NewSecretLooksLikeSaved: Story = {
+/** A secret not created yet has its plugin list disabled until a value is saved. */
+export const NewSecretWaitsForAValue: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getAllByRole('button', { name: 'Add secret' })[0]!)
     const rows = Array.from(canvasElement.querySelectorAll('[role="group"]'))
     const draft = rows.find((one) => one.querySelector('button[title="Save a value first"]'))!
-    const saved = rows.find((one) => one !== draft && one.querySelector('input[type="text"]'))!
-    await expect(getComputedStyle(draft).gridTemplateColumns).toBe(
-      getComputedStyle(saved).gridTemplateColumns,
-    )
     await expect(draft.querySelector('button[title="Save a value first"]')).toBeDisabled()
-    const sizes = [...draft.querySelectorAll('input, button')].map(
-      (one) => getComputedStyle(one).fontSize,
-    )
-    await expect(new Set(sizes.slice(0, 3)).size).toBe(1)
   },
 }
 
