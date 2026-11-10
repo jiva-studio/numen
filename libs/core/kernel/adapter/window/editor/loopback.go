@@ -162,7 +162,7 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		refuse(w, err)
 		return
 	}
-	defer closeAndReport(h.state.reportTask, opened.Body)
+	defer closeAndReport(h.state.Window.AddTask, opened.Body)
 
 	w.Header().Set("Cache-Control", immutable)
 	if named := getMediaType(h.mediaTypes, opened.Path); named != "" {

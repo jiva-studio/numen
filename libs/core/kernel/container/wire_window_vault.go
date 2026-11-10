@@ -17,8 +17,8 @@ import (
 
 func mountVault(w *windowWiring) {
 	state := w.inst.State
-	handler := windowvault.NewHandler(state)
-	path, served := windowvault.NewRoute(handler, state.CountQuestions())
+	handler := windowvault.NewHandler(state, state.Notices)
+	path, served := windowvault.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -41,10 +41,10 @@ func newIndexWorker(w *windowWiring, state *editor.State, embedding *indexing.Em
 				return 0, 0, indexing.ErrNoProgress
 			}
 			name, recipe := embedding.Describe()
-			state.RecordModel(name, recipe)
+			state.Runtime.RecordModel(name, recipe)
 			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
-		VectorsReady: state.EmitVectorsReady,
+		VectorsReady: state.Events.EmitVectorsReady,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
 		After:        time.After,

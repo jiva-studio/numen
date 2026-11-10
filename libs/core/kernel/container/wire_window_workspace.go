@@ -9,7 +9,7 @@ import (
 
 func mountWindowState(w *windowWiring) {
 	state := w.inst.State
-	path, served := windowstate.NewRoute(state.Window, state.CountQuestions())
+	path, served := windowstate.NewRoute(state.Window, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, state.Window))
 }
 
@@ -21,9 +21,9 @@ func mountWorkspace(w *windowWiring) error {
 	}
 	store := w.db.OpenTabs()
 	handler := workspace.NewHandler(
-		state, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
+		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)
-	path, served := workspace.NewRoute(handler, state.CountQuestions())
+	path, served := workspace.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 	return nil
 }

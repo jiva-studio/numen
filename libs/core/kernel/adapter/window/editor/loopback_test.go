@@ -30,7 +30,7 @@ func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(sharedmimeinfo.Open()))
-	api.state.SetVault(vault)
+	api.state.Runtime.SetVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
@@ -144,7 +144,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.
-	api.state.SetVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
+	api.state.Runtime.SetVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
 	if out := ask(t, handler, back.Address(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
@@ -173,7 +173,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 	})
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(sharedmimeinfo.Open()))
-	api.state.SetVault(vault)
+	api.state.Runtime.SetVault(vault)
 	back, handler := openLoopback(t, api)
 
 	if out := ask(t, handler, back.Address(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {
