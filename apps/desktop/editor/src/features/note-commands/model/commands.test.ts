@@ -37,7 +37,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** The window the commands run in: its tabs are doubles, and the core answers through the router. */
 const createWindow = (answers: Answers = {}) => {
   const actions: string[] = []
   const notices: string[] = []

@@ -100,7 +100,6 @@ function isPaletteOpen(ctx: WindowContext): boolean {
   return commands ? commands.palette.open.value || commands.commands.open.value : false
 }
 
-/** The commands of the features, over the parts of the window they act on. */
 function initFeatureCommands(base: WindowCore, ctx: WindowContext, services: WindowServices) {
   const { editing, window } = services
   ctx.featureCommands = collectFeatureCommands(

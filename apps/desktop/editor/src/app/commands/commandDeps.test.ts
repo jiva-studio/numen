@@ -80,7 +80,7 @@ describe('the commands reach the window', () => {
     expect(() => createOptions().deps.navigator.search()).not.toThrow()
   })
 
-  it('hands the runs it was given, and emits events through the core', () => {
+  it('keeps the runs it was given, and emits events through the core', () => {
     const emitEvent = vi.fn()
     const runs = { name: 'runs' } as never
     const { deps } = createOptions({ core: { emitEvent } as never, runs })
@@ -93,7 +93,7 @@ describe('the commands reach the window', () => {
 })
 
 describe('the open files a command can access', () => {
-  it('are those held by the note editors and those a tab kind serves', async () => {
+  it('include the files of the note editors and the files of the tab kinds', async () => {
     const flushTab = vi.fn(() => Promise.resolve())
     const closeReached = vi.fn()
     const requestClose = vi.fn()

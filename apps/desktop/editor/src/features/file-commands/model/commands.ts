@@ -21,10 +21,6 @@ export interface FileCommandsDeps {
   readonly writeMessage: MessageWriter
 }
 
-/**
- * A file or a folder filed somewhere else, carrying the name the path ends in. A destination that
- * is taken leaves it where it was.
- */
 const moveFileCommand = async (
   invocation: CommandInvocation,
   deps: FileCommandsDeps,
@@ -42,15 +38,11 @@ const moveFileCommand = async (
 
 const getUntitledFolderPath = async (invocation: CommandInvocation): Promise<string> => {
   if (!invocation.isFolder) return ''
-  const names = (await listFiles(invocation.path)).map((one) => one.name)
-  const name = generateUniqueName(names, FILE_WORDS.untitledFolder)
+  const taken = (await listFiles(invocation.path)).map((one) => one.name)
+  const name = generateUniqueName(taken, FILE_WORDS.untitledFolder)
   return invocation.path ? `${invocation.path}/${name}` : name
 }
 
-/**
- * An empty folder, made under the path that was typed. Over a folder and without a path it is made
- * in that folder under a name nothing there carries. Answers the path of the folder made.
- */
 const createFolderCommand = async (
   invocation: CommandInvocation,
   deps: FileCommandsDeps,

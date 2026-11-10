@@ -49,10 +49,6 @@ async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promi
   }
 }
 
-/**
- * The invocation over the path its note is at now. The note a command was made over may have been
- * renamed since, and the window holds it at the name it has.
- */
 const withCurrentNotePath = (invocation: CommandInvocation, on: CommandDeps): CommandInvocation =>
   invocation.note ? { ...invocation, path: on.notes.getPath(invocation.note) } : invocation
 

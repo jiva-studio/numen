@@ -60,7 +60,6 @@ const revealFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void
   if (kind === 'plex' || kind === 'files') deps.navigator.showTab(kind, invocation.path)
 }
 
-/** A note made, in a relation of the note it was requested over where there is one. */
 const createNoteCommand = async (
   invocation: CommandInvocation,
   deps: NoteCommandsDeps,
@@ -86,10 +85,6 @@ const createNoteCommand = async (
   return made.path
 }
 
-/**
- * A note given a different name, and its file renamed with it where the two are one name. Edits on
- * disk not yet loaded here leave the note as it is.
- */
 const renameNoteCommand = async (
   invocation: CommandInvocation,
   deps: NoteCommandsDeps,

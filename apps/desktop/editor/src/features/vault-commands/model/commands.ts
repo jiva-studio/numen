@@ -21,23 +21,19 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import { VAULT_WORDS } from '../words'
 import { openAfterSavingTabs, type TabsHold } from './leaveVault'
 
-/** What the commands over the vaults use of the window. */
+/**
+ * What the commands over the vaults use of the window. `tabsHold` holds the writes of the open tabs
+ * while the window changes vault, so a write cannot reach the vault it switches to. `reload` draws
+ * the page again on the vault the window shows now, because what the page holds belongs to the
+ * vault that has gone. `setVaultName` updates the displayed name of one vault in the list.
+ */
 export interface VaultCommandsDeps {
   readonly tabsHold?: TabsHold | undefined
-  /** Updates the displayed name of one vault in the list. */
   readonly setVaultName: (vault: VaultRef) => void
-  /**
-   * The page drawn again, on the vault the window shows now. Every tab and every plex belonged to
-   * the vault that has gone.
-   */
   readonly reload: () => void
   readonly writeMessage: MessageWriter
 }
 
-/**
- * Another vault under this window. What the page holds belongs to the vault that has gone, so the
- * page is drawn again on the one that arrived.
- */
 const showVault = async (id: string, deps: VaultCommandsDeps): Promise<void> => {
   if (!id) return
   const open = deps.tabsHold ? openAfterSavingTabs(vaults.open, deps.tabsHold) : vaults.open
@@ -46,10 +42,6 @@ const showVault = async (id: string, deps: VaultCommandsDeps): Promise<void> => 
   deps.reload()
 }
 
-/**
- * Adds a folder chosen on this machine as a vault and opens it. When the user chooses no folder,
- * nothing happens.
- */
 const addVault = async (deps: VaultCommandsDeps): Promise<void> => {
   const path = await vaults.choose(VAULT_WORDS.folder)
   if (!path) return
@@ -59,7 +51,6 @@ const addVault = async (deps: VaultCommandsDeps): Promise<void> => {
   await showVault(answer.value.id, deps)
 }
 
-/** A vault called something else. Its folder keeps the name it has on disk. */
 const renameVault = async (
   invocation: CommandInvocation,
   deps: VaultCommandsDeps,
@@ -70,10 +61,6 @@ const renameVault = async (
   if (answer.value) deps.setVaultName({ id: answer.value.id, name: answer.value.name })
 }
 
-/**
- * A vault taken off the list. Erasing it puts the folder in the trash this machine keeps; removing
- * it leaves the folder where it is.
- */
 const removeVault = async (
   invocation: CommandInvocation,
   deps: VaultCommandsDeps,
@@ -83,7 +70,6 @@ const removeVault = async (
   if (error) deps.writeMessage(VAULT_WORDS.vaultErrors[error], 'error')
 }
 
-/** Deletes what the trash holds for good, and reports how many paths stayed. */
 const emptyVaultTrash = async (deps: VaultCommandsDeps): Promise<void> => {
   const undeleted = await emptyTrash()
   if (undeleted > 0) deps.writeMessage(VAULT_WORDS.undeleted(undeleted), 'error')
