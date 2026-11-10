@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -168,9 +169,11 @@ func listTextKindIssues(kinds []TextKind) []error {
 	return issues
 }
 
-// ApplicationViewCapabilities lists the kinds of view the application defines. A plugin draws one for
+// GetApplicationViewCapabilities returns the kinds of view the application defines. A plugin draws one for
 // others to mount only when its manifest lists the kind under contributes.viewCapabilities.
-var ApplicationViewCapabilities = []string{"conversation", "note-editor", "vault-summary"}
+func GetApplicationViewCapabilities() []string {
+	return []string{"conversation", "note-editor", "vault-summary"}
+}
 
 func (m Manifest) listViewCapabilityIssues() []error {
 	var issues []error
@@ -184,17 +187,15 @@ func (m Manifest) listViewCapabilityIssues() []error {
 		}
 		observed[capability] = true
 		if !m.isViewCapabilityAllowed(capability) {
-			issues = append(issues, fmt.Errorf("%w: view capability %q is neither one of %s nor named %q followed by a name", ErrInvalidContribution, capability, strings.Join(ApplicationViewCapabilities, ", "), m.ID+"."))
+			issues = append(issues, fmt.Errorf("%w: view capability %q is neither one of %s nor named %q followed by a name", ErrInvalidContribution, capability, strings.Join(GetApplicationViewCapabilities(), ", "), m.ID+"."))
 		}
 	}
 	return issues
 }
 
 func (m Manifest) isViewCapabilityAllowed(capability string) bool {
-	for _, allowed := range ApplicationViewCapabilities {
-		if capability == allowed {
-			return true
-		}
+	if slices.Contains(GetApplicationViewCapabilities(), capability) {
+		return true
 	}
 	rest, isOwn := strings.CutPrefix(capability, m.ID+".")
 	return isOwn && rest != "" && tabKindPattern.MatchString(rest)
