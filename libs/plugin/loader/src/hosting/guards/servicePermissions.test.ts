@@ -183,8 +183,10 @@ describe('the services of a plugin context', () => {
     expect(needs('vault.vaults.switchTo')).toStrictEqual(['vault:manage'])
     expect(needs('ui.commands.run')).toStrictEqual(['vault:write'])
     expect(needs('work.agent.finish')).toStrictEqual(needs('work.agent.ask'))
-    expect(needs('tabs.close')).toStrictEqual(['vault:write'])
-    expect(needs('events.emitFileSelect')).toStrictEqual(needs('events.emitVaultChange'))
+    expect(SERVICE_RULES.tabs.close.permissions).toStrictEqual(['vault:write'])
+    expect(SERVICE_RULES.events.emitFileSelect.permissions).toStrictEqual(
+      SERVICE_RULES.events.emitVaultChange.permissions,
+    )
     expect(needs('ui.workspace.files.open')).toStrictEqual(['vault:read'])
     expect(needs('ui.workspace.ask')).toStrictEqual(['vault:write'])
     expect(needs('ui.drops.drop')).toStrictEqual(['vault:write'])

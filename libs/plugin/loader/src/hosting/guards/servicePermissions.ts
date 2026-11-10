@@ -54,7 +54,6 @@ function requireNothing(reason: string): Rule<'none'> {
   return new Rule([], 'none', reason)
 }
 
-/** The rule with the reason the table states for the permissions it asks. */
 function explain<M extends Mode>(rule: Rule<M>, reason: string): Rule<M> {
   return new Rule(rule.permissions, rule.mode, reason)
 }
@@ -69,10 +68,10 @@ type Leaf =
 
 /**
  * The rule a member can have, from its type: a member that returns a promise (or may) takes an
- * async rule, so a refusal rejects instead of throwing; any other member takes a sync rule.
+ * async rule, so a refusal rejects; any other member takes a sync rule, so a refusal throws.
  */
 type RuleOf<M> = M extends (...args: never[]) => infer R
-  ? [Extract<R, PromiseLike<unknown>>] extends [never]
+  ? [Extract<R, PromiseLike<Value>>] extends [never]
     ? Rule<'sync' | 'none'>
     : Rule<'async' | 'none'>
   : Rule<'sync' | 'none'>
@@ -123,11 +122,11 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   },
   tabs: {
     open: explain(
-      requirePermissions(READ),
+      requirePermissionsAsync(READ),
       'the tab shows the user a file and answers only its id; the plugin of the tab kind reads the file under its own permissions',
     ),
     navigate: explain(
-      requirePermissions(READ),
+      requirePermissionsAsync(READ),
       'the tab shows the user a file and answers only its id; the plugin of the tab kind reads the file under its own permissions',
     ),
     close: explain(
@@ -162,8 +161,8 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       createNote: requirePermissionsAsync(WRITE),
     },
     texts: {
-      readLiveText: requirePermissions(READ),
-      createEdit: requirePermissions(WRITE),
+      readLiveText: requirePermissionsAsync(READ),
+      createEdit: requirePermissionsAsync(WRITE),
     },
     buffers: {
       track: requirePermissions(WRITE),
@@ -239,7 +238,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
         requirePermissionsAsync(WRITE),
         'it ends a conversation the agent holds, as ask starts one',
       ),
-      resolveLinks: requirePermissions(READ),
+      resolveLinks: requirePermissionsAsync(READ),
       getUnreachable: requireNothing('why no agent can be reached, which holds no vault data'),
       getSetting: requirePermissions(READ),
       writeSetting: requirePermissionsAsync(WRITE),

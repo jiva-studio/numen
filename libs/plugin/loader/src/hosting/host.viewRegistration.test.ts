@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type Component } from 'vue'
-import { CONVERSATION, NOTE_EDITOR, VAULT_SUMMARY } from '@numen/plugin-sdk'
+import { CONVERSATION, NOTE_EDITOR, VAULT_SUMMARY, type ViewCapability } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
@@ -125,7 +125,7 @@ describe('a plugin that registers a view for other plugins', () => {
     expect(element.textContent).toBe('next: Notes/Secret.md')
   })
 
-  it.each([
+  it.each<[ViewCapability, string[], string]>([
     [CONVERSATION, ['vault:read'], 'vault:write'],
     [CONVERSATION, [], 'vault:read'],
     [NOTE_EDITOR, ['vault:read'], 'vault:write'],
@@ -159,7 +159,7 @@ describe('a plugin that registers a view for other plugins', () => {
     },
   )
 
-  it('is registered with the permissions each kind hands its view', () => {
+  it('registers a view of each kind for a plugin that holds the permissions of the kind', () => {
     const { createPlugin } = createHost()
     const cases = [
       [CONVERSATION, READ_WRITE],
@@ -223,7 +223,7 @@ describe('a plugin that registers a view for other plugins', () => {
     expect(element.textContent).toBe('')
   })
 
-  it('does not take over a mount that waits for the capability when its registration is refused', () => {
+  it('leaves a waiting mount empty when its registration is refused, and draws the next valid one', () => {
     const { createPlugin } = createHost()
     const received: string[] = []
     const element = document.createElement('div')

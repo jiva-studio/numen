@@ -293,7 +293,6 @@ export interface ContextWindowHost {
   readonly getWorkspace: () => WorkspaceHost | undefined
   readonly getAgent: () => AgentHost | undefined
   readonly getCommands: () => CommandsHost | undefined
-  /** Whether a manifest places the command, by its full id, in a slot of the window. */
   readonly isCommandListed: (command: string) => boolean
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost

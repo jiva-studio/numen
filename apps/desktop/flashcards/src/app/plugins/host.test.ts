@@ -498,19 +498,19 @@ describe('the agent calls of a plugin in the window', () => {
     expect(spy).not.toHaveBeenCalled()
   })
 
-  it('refuses the agent to a plugin without vault:read to finish', () => {
+  it('refuses the agent to a plugin without vault:write to finish', async () => {
     const { agent, agentOfPlugin } = createContext([])
     const spy = vi.spyOn(agent, 'finish')
 
-    expect(() => agentOfPlugin.finish('c1')).toThrow(/vault:read/)
+    await expect(agentOfPlugin.finish('c1')).rejects.toThrow(/vault:write/)
     expect(spy).not.toHaveBeenCalled()
   })
 
-  it('refuses the agent to a plugin without vault:read to resolve links', () => {
+  it('refuses the agent to a plugin without vault:read to resolve links', async () => {
     const { agent, agentOfPlugin } = createContext([])
     const spy = vi.spyOn(agent, 'resolveLinks')
 
-    expect(() => agentOfPlugin.resolveLinks('[[Garden]]')).toThrow(/vault:read/)
+    await expect(agentOfPlugin.resolveLinks('[[Garden]]')).rejects.toThrow(/vault:read/)
     expect(spy).not.toHaveBeenCalled()
   })
 
@@ -538,8 +538,8 @@ describe('the agent calls of a plugin in the window', () => {
     expect(spy).toHaveBeenCalledOnce()
   })
 
-  it('lets a plugin with vault:read finish a conversation and resolve links', async () => {
-    const { agent, agentOfPlugin } = createContext(['vault:read'])
+  it('lets a plugin with vault:read and vault:write finish a conversation and resolve links', async () => {
+    const { agent, agentOfPlugin } = createContext(['vault:read', 'vault:write'])
     const finish = vi.spyOn(agent, 'finish')
     const resolveLinks = vi.spyOn(agent, 'resolveLinks')
 

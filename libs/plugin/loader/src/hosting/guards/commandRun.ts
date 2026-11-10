@@ -18,9 +18,8 @@ export interface CommandRunPolicy {
 }
 
 /**
- * The commands service with a `run` that refuses a command nobody offers: a plugin runs its own
- * commands, the commands a slot lists and the short list of application commands, and nothing
- * else. The refusal rejects.
+ * The commands service with a `run` that refuses a command the plugin does not own, no slot lists
+ * and the short list of application commands lacks. The refusal rejects.
  */
 export function limitCommands(commands: CommandsHost, policy: CommandRunPolicy): CommandsHost {
   const canRun = (command: string): boolean =>
@@ -31,12 +30,12 @@ export function limitCommands(commands: CommandsHost, policy: CommandRunPolicy):
     getIds: () => commands.getIds(),
     watch: (handler) => commands.watch(handler),
     listItems: (command, target) => commands.listItems(command, target),
-    run: (command, target, itemId, values) =>
-      canRun(command)
-        ? commands.run(command, target, itemId, values)
+    run: (...args) =>
+      canRun(args[0])
+        ? commands.run(...args)
         : Promise.reject(
             new Error(
-              `Plugin "${policy.pluginId}" runs the command "${command}", which it does not own and no slot lists`,
+              `Plugin "${policy.pluginId}" runs the command "${args[0]}", which it does not own and no slot lists`,
             ),
           ),
   }
