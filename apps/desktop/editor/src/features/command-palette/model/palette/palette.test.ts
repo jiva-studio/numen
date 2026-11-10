@@ -173,8 +173,6 @@ describe('the commands as they open', () => {
       file: ['app:version.delete'],
       note: [
         'app:file.open',
-        'app:file.reveal#plex',
-        'app:file.reveal#files',
         'app:note.createChild',
         'app:note.createParent',
         'app:note.createJump',

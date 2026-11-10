@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CommandTarget } from '@/entities/command'
 import { WORDS } from '@/shared/ui/words'
 import { createEmptyWindow } from '@/testing/appCommands'
-import { collectFeatureCommands } from './createCommands'
+import { collectFeatureCommands } from './createFeatureCommands'
 
 const NO_WINDOW = createEmptyWindow()
 
@@ -48,8 +48,6 @@ describe('the commands of the features', () => {
       'app:file.open',
       'app:file.open#beside',
       'app:file.reveal',
-      'app:file.reveal#plex',
-      'app:file.reveal#files',
       'app:note.createChild',
       'app:note.createParent',
       'app:note.createJump',

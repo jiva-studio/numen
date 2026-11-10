@@ -57,7 +57,7 @@ const openFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void =
 
 const revealFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void => {
   const kind = invocation.values?.[ARGUMENT.kind]
-  if (kind === 'plex' || kind === 'files') deps.navigator.showTab(kind, invocation.path)
+  if (kind) deps.navigator.showTab(kind, invocation.path)
 }
 
 const createNoteCommand = async (
@@ -159,22 +159,6 @@ const createOpenCommands = (words: NoteWords): readonly Command[] => [
     group: 'note',
     when: 'target.isNote',
     isAvailable: () => false,
-  },
-  {
-    id: ROW.revealInPlex,
-    command: COMMAND.revealFile,
-    values: { [ARGUMENT.kind]: 'plex' },
-    text: words.revealInPlex,
-    group: 'note',
-    ...withWhen('target.isNote'),
-  },
-  {
-    id: ROW.revealInFiles,
-    command: COMMAND.revealFile,
-    values: { [ARGUMENT.kind]: 'files' },
-    text: words.revealInFiles,
-    group: 'note',
-    ...withWhen('target.isNote'),
   },
 ]
 

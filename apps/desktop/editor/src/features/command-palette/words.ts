@@ -14,8 +14,6 @@ export interface Words extends EmptyWords {
   readonly readDocument: string
   readonly beside: string
   readonly reveal: string
-  readonly revealInPlex: string
-  readonly revealInFiles: string
   readonly travel: string
   readonly child: string
   readonly parent: string

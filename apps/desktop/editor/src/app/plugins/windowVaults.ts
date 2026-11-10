@@ -4,12 +4,8 @@
  */
 import { computed, watch, type Ref } from 'vue'
 import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
-import {
-  createInvocation,
-  runInvocation,
-  type CommandDeps,
-} from '@/features/command-palette'
-import { COMMAND, type CommandTarget, type VaultRef } from '@/entities/command'
+import { createInvocation, runInvocation } from '@/features/command-palette'
+import { COMMAND, type CommandTarget, type VaultRef, type CommandDeps } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
 import { formatError } from '@/shared/api/errors'
 

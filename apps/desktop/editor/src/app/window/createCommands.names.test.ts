@@ -10,8 +10,6 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:file.open': 'Open note',
   'app:file.open#beside': 'Open note beside',
   'app:file.reveal': 'Show note',
-  'app:file.reveal#plex': 'Show in plex',
-  'app:file.reveal#files': 'Show in file tree',
   'app:note.create': 'Create note',
   'app:folder.create': 'Create folder',
   'app:note.createChild': 'Create child note',

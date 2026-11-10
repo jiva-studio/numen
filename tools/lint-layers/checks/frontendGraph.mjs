@@ -150,6 +150,58 @@ export function verifySharedServesSeveralSlices() {
   failOnFindings("A shared file serves one slice", findings);
 }
 
+/** The longest file the app layer of a window holds; a longer one holds more than composition. */
+export const APP_MAX_LINES = 300;
+
+/**
+ * The files of a window's `app` layer that hold more than composition: a source file over `maxLines`, a file named
+ * as a composable (`use<Name>.ts`) and a composable exported from any other file. State and behavior belong to a
+ * slice; `app` creates, connects and orders slices.
+ *
+ * @param {Array<{ file: string, text: string }>} files The files under `app/`, with their text
+ * @param {number} maxLines The longest file allowed
+ * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
+ */
+export function findAppOverreach(files, maxLines = APP_MAX_LINES) {
+  const findings = [];
+  const shipped = files.filter((one) => !isNotShipped(one.file));
+  for (const { file, text } of shipped) {
+    const count = text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
+    if (count > maxLines) findings.push({ file, line: maxLines + 1, symbol: `${count} lines, at most ${maxLines} are allowed in app` });
+    if (/^use[A-Z]/.test(path.posix.basename(file))) findings.push({ file, line: 1, symbol: "a composable file in app" });
+    text.split("\n").forEach((line, at) => {
+      const exported = /^export (?:async )?(?:function|const) (use[A-Z]\w*)/.exec(line);
+      if (exported) findings.push({ file, line: at + 1, symbol: `composable ${exported[1]} is exported from app` });
+    });
+  }
+  return { findings, read: shipped.length };
+}
+
+function listAppFiles(root) {
+  const out = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(path.join(REPO_ROOT, dir), { withFileTypes: true })) {
+      const next = path.posix.join(dir, entry.name);
+      if (entry.isDirectory()) walk(next);
+      else if (/\.(ts|vue)$/.test(entry.name)) out.push({ file: next, text: fs.readFileSync(path.join(REPO_ROOT, next), "utf8") });
+    }
+  };
+  walk(path.posix.join(root, "app"));
+  return out;
+}
+
+export function verifyAppIsComposition() {
+  const findings = [];
+  let read = 0;
+  for (const root of listWindows(REPO_ROOT)) {
+    const one = findAppOverreach(listAppFiles(root));
+    findings.push(...one.findings);
+    read += one.read;
+  }
+  requireMatches("Source files of the app layers", read, 10);
+  failOnFindings("The app layer of a window holds more than composition", findings);
+}
+
 export const FRONTEND_GRAPH_VERIFIERS = [
   {
     id: "no-component-below-ui",
@@ -171,5 +223,12 @@ export const FRONTEND_GRAPH_VERIFIERS = [
     module: "boundary",
     name: "A Shared File of a Window Is Imported From More Than One Slice",
     run: verifySharedServesSeveralSlices,
+  },
+  {
+    id: "app-is-composition",
+    scope: "apps",
+    module: "boundary",
+    name: "The app Layer of a Window Holds Short Files and No Composable",
+    run: verifyAppIsComposition,
   },
 ];

@@ -186,3 +186,4 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     write: { writeSettings, writeSetting },
   }
 }
+export type SettingsStore = ReturnType<typeof createSettingsStore>

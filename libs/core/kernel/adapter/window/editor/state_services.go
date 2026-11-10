@@ -1,8 +1,11 @@
 package editor
 
 import (
+	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/protocol"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -49,4 +52,9 @@ func (s *State) GetMediaAddress(v domain.Vault, stat domain.FileStat) string {
 // while the socket does not answer.
 func (s *State) GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string {
 	return s.Playing.Load().PluginFileAddress(v, address, size)
+}
+
+// EmitVectorsReady tells the plugins of the window that every vector of the vault exists.
+func (s *State) EmitVectorsReady(_ context.Context, v domain.Vault) {
+	s.EmitFileEvent(protocol.GetVectorsReadyEvent(string(v.ID)))
 }

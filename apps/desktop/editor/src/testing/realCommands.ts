@@ -3,6 +3,7 @@
  * the manifests of the plugins declare, the palette model, the runner and the handler table. Only
  * the edge is a double: the navigation of a tab and the events the core is notified of.
  */
+import { ref } from 'vue'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
@@ -14,15 +15,14 @@ import {
 } from '@numen/plugin-loader'
 import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
-import { createSlotCommandFinder } from '@/app/plugins/commands/pluginSlots'
+import { createSlotCommandFinder } from '@/features/plugin-commands'
+import { createCommands, type CommandsDepsOptions } from '@/app/window/createCommands'
 import {
   collectFeatureCommands,
-  createCommands,
   createFeatureDeps,
   registerFeatureCommands,
-  type CommandsDepsOptions,
-} from '@/app/window/createCommands'
-import { WORDS } from '@/shared/ui/words'
+} from '@/app/window/createFeatureCommands'
+import { WORDS } from '@/shared/words'
 import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'
 
@@ -162,7 +162,7 @@ export function createRealWindow(parts: RealWindowParts) {
       close: () => undefined,
       openFile: () => undefined,
     },
-    rest: {},
+    settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage: (text: string) => messages.push(text),
     pluginHost,
     slots: pluginHost.slots,

@@ -1,31 +1,26 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
-import { WORDS as windowWords } from '@/shared/ui/words'
+import { WORDS as windowWords } from '@/shared/words'
 import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
-import type { CommandDeps } from '../model/handlers/deps'
-import { commands as registry, registerCommand } from '../model/handlers/handlers'
+import type { CommandDeps } from '@/entities/command'
 import type { CommandTarget } from '@/entities/command'
 import CommandPalette from './CommandPalette.vue'
+import type * as HandlersModule from '../model/handlers/handlers'
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 
-const COPY_PATH = 'app:file.copyPath'
-const copyPath = vi.fn()
+const h = vi.hoisted(() => ({ runInvocation: vi.fn(() => Promise.resolve()) }))
 
-beforeEach(() => {
-  copyPath.mockClear()
-  registerCommand(COPY_PATH, copyPath)
-})
-
-afterEach(() => {
-  registry.clear()
-})
+vi.mock('../model/handlers/handlers', async (importOriginal) => ({
+  ...(await importOriginal<typeof HandlersModule>()),
+  runInvocation: h.runInvocation,
+}))
 
 const ATLAS = 'org.example.atlas'
 const SHOW: SlotCommand = {
@@ -116,7 +111,7 @@ async function mountField(
     props: {
       commands,
       search,
-      doing: { writeMessage: vi.fn() } as unknown as CommandDeps,
+      doing: {} as CommandDeps,
       getTarget: () => inFront,
       places: {},
       runChoice,
@@ -135,6 +130,10 @@ async function mountField(
   return { search, commands, runChoice, choose, rows, field }
 }
 
+beforeEach(() => {
+  h.runInvocation.mockClear()
+})
+
 describe('choosing an action of a row of the search', () => {
   it('runs the choice the search answers for every action of every row, and nothing else', async () => {
     const found = { names: [byName, heading], passages: [notePassage, bookPassage] }
@@ -152,7 +151,7 @@ describe('choosing an action of a row of the search', () => {
 
       expect(one.runChoice, `${item} ${action}`).toHaveBeenCalledExactlyOnceWith(expected)
     }
-    expect(copyPath).not.toHaveBeenCalled()
+    expect(h.runInvocation).not.toHaveBeenCalled()
   })
 
   it('runs the command that opens a document over its file for the action of a document', async () => {
@@ -189,7 +188,7 @@ describe('choosing an action of a row of the search', () => {
     await one.choose(row!.item, 'note')
 
     expect(one.runChoice).not.toHaveBeenCalled()
-    expect(copyPath).not.toHaveBeenCalled()
+    expect(h.runInvocation).not.toHaveBeenCalled()
   })
 })
 
@@ -211,7 +210,7 @@ describe('choosing an action that creates a note on a row of the search', () => 
         over: null,
         input: 'Entropy',
       })
-      expect(copyPath).not.toHaveBeenCalled()
+      expect(h.runInvocation).not.toHaveBeenCalled()
       expect(one.search.open.value).toBe(false)
     },
   )
@@ -223,9 +222,9 @@ describe('choosing a row of the commands', () => {
     one.search.setOpen(false)
     one.commands.palette.setOpen(true)
 
-    await one.choose(COPY_PATH, COPY_PATH)
+    await one.choose('app:file.copyPath', 'app:file.copyPath')
 
-    expect(copyPath).toHaveBeenCalledTimes(1)
+    expect(h.runInvocation).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()
   })
 })

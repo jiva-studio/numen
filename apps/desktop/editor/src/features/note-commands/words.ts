@@ -8,8 +8,6 @@ export const NOTE_WORDS = {
   read: WORDS.read,
   beside: WORDS.beside,
   reveal: WORDS.reveal,
-  revealInPlex: WORDS.revealInPlex,
-  revealInFiles: WORDS.revealInFiles,
   child: WORDS.child,
   parent: WORDS.parent,
   jump: WORDS.jump,
