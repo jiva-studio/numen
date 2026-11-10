@@ -511,22 +511,17 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.Services.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
-	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.Services.GetEndpointCallers())
+	LendPluginHost(host).SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		if err := served.Close(context.WithoutCancel(t.Context())); err != nil {
-			t.Error(err)
-		}
-	})
 	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin)
 	if err != nil {
 		t.Fatal(err)
 	}
 	client := numenv1connect.NewPluginToolServiceClient(
-		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", served.GetPort()))
+		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", port))
 
 	listed, err := client.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {

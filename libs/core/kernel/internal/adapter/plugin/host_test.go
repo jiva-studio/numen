@@ -1216,16 +1216,17 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 // stops when the host does.
 func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	if got, err := host.Services.openHostEndpoint(t.Context()); err != nil || got != 0 {
+	services, _ := lendEndpoint(host, hostendpoint.Address)
+	if got, err := host.Services.OpenHostEndpoint(t.Context()); err != nil || got != 0 {
 		t.Fatalf("without a completer: port %d, %v", got, err)
 	}
 
-	host.Services.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
-	first, err := host.Services.openHostEndpoint(t.Context())
+	services.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
+	first, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil || first <= 0 {
 		t.Fatalf("with a completer: port %d, %v", first, err)
 	}
-	again, err := host.Services.openHostEndpoint(t.Context())
+	again, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil || again != first {
 		t.Errorf("a second call opened port %d, %v, want %d", again, err, first)
 	}
@@ -1233,7 +1234,7 @@ func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 	if err := host.Teardown.TeardownAll(t.Context(), time.Millisecond); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := host.Services.openHostEndpoint(t.Context()); got != 0 {
+	if got, err := host.Services.OpenHostEndpoint(t.Context()); got != 0 {
 		t.Errorf("a closed host opened port %d, %v", got, err)
 	}
 }
@@ -1261,13 +1262,14 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.Services.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
+	services, _ := lendEndpoint(host, hostendpoint.Address)
+	services.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
 
 	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	served, err := host.Services.openHostEndpoint(t.Context())
+	served, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1284,8 +1286,8 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.Services.hostAddress = "127.0.0.1:-1"
-	host.Services.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
+	services, _ := lendEndpoint(host, "127.0.0.1:-1")
+	services.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
@@ -1313,7 +1315,7 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 		}
 	})
 	for _, address := range []string{":0", "0.0.0.0:0", "[::]:0", "localhost:0", "192.168.1.5:0", "127.0.0.1", ""} {
-		endpoint, err := hostendpoint.Open(t.Context(), address, host.Services.GetEndpointCallers())
+		endpoint, err := hostendpoint.Open(t.Context(), address, lentCallers(host))
 		if err == nil {
 			if closeErr := endpoint.Close(t.Context()); closeErr != nil {
 				t.Error(closeErr)
@@ -1326,10 +1328,10 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	if host.Services.hostAddress != "127.0.0.1:0" {
-		t.Errorf("a host listens on %q by default", host.Services.hostAddress)
+	if hostendpoint.Address != "127.0.0.1:0" {
+		t.Errorf("a host listens on %q by default", hostendpoint.Address)
 	}
-	endpoint, err := hostendpoint.Open(t.Context(), host.Services.hostAddress, host.Services.GetEndpointCallers())
+	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -200,3 +200,15 @@ type VaultList interface {
 	// IsMissing reports whether the vault's folder is missing.
 	IsMissing(v domain.Vault) bool
 }
+
+// DependencySourceFunc lends the provisioner the function returns, or nil.
+type DependencySourceFunc func() Dependencies
+
+// GetDependencies returns the provisioner, or nil when the host has none.
+func (f DependencySourceFunc) GetDependencies() Dependencies { return f() }
+
+// ToolSourceFunc lends the tools the function returns.
+type ToolSourceFunc func() PluginTools
+
+// GetPluginTools returns the tools the plugins offer.
+func (f ToolSourceFunc) GetPluginTools() PluginTools { return f() }

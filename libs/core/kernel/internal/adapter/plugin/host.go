@@ -79,13 +79,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	discovery.dropEndpoint, processes.dropEndpoint = teardown.dropEndpoint, teardown.dropEndpoint
 	config.prune = discovery.pruneSecretPermissions
 
-	services.tools = func() hostendpoint.PluginTools {
-		return agenttoolsbridge.NewCatalog(NewToolHost(activation, registry), agenttoolsbridge.Full)
-	}
-	services.callers = hostendpoint.Callers{
-		Identity: activation, Leases: activation, Completion: services, Vault: services, Texts: services,
-		Search: services, Window: services, Work: services, Dependencies: services, Tools: services,
-	}
 	return &Host{
 		Registry: registry, Discovery: discovery, Activation: activation, Processes: processes, Teardown: teardown,
 		Failures: failures, Settings: settings, Config: config, Listeners: listeners, Services: services,

@@ -60,7 +60,7 @@ func (p *Processes) getLaunchVars(ctx context.Context, pluginID string, requirem
 }
 
 func (p *Processes) getEnvironmentVars(ctx context.Context, pluginID string, processPort int, token string, runtimeVars []string) []string {
-	hostPort, err := p.services.openHostEndpoint(ctx)
+	hostPort, err := p.services.OpenHostEndpoint(ctx)
 	if err != nil {
 		p.errs.report(fmt.Errorf("open host endpoint for plugin %s: %w", pluginID, err))
 		hostPort = 0
