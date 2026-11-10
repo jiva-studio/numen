@@ -28,6 +28,15 @@ export const clampShares = (load: Load, within: Bounds | undefined): Load => {
 
 type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
 
+/** Copies one field of the settings. */
+const copyField = <Field extends keyof Settings>(
+  target: MutableSettings,
+  field: Field,
+  source: Settings,
+): void => {
+  target[field] = source[field]
+}
+
 /** Reconciles newly read settings with unwritten local edits. */
 export const reconcileSettings = (
   readItem: Settings,
@@ -37,7 +46,7 @@ export const reconcileSettings = (
   if (dirtyFields.size === 0) return readItem
   const out: MutableSettings = { ...readItem }
   for (const field of dirtyFields) {
-    ;(out as Record<keyof Settings, unknown>)[field] = was[field]
+    copyField(out, field, was)
   }
   return out
 }

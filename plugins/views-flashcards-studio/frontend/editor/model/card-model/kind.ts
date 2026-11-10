@@ -10,6 +10,7 @@ import {
   type MessageWriter,
   type PathRename,
   type TabKindRegistration,
+  type Caught,
 } from '@numen/plugin-sdk'
 import { getMarkOf } from '../../lib/buffer/words'
 import { openNotes } from '../buffer/notes'
@@ -42,7 +43,7 @@ function createCardModelTabItem(
     fields: CardModelFields
     wire: CardModelWire
     closeTab: (id: string) => void
-    reportFailure: (error: unknown) => void
+    reportFailure: (error: Caught) => void
   },
 ): CardModelTabState {
   const { store, fields, wire, closeTab, reportFailure } = deps
@@ -128,7 +129,7 @@ function createCardModelKindDefinition(deps: {
 export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions) {
   // Messages are dropped when the caller supplies no writer.
   const { buffers, closeTab, writeMessage = () => undefined, component } = options
-  const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
+  const reportFailure = (error: Caught): void => writeMessage(formatErrorMessage(error), 'error')
   const wire = createCardModelWire(cards, writeMessage)
   const store = openNotes({ read: wire.read, write: wire.write })
   buffers.track(store)

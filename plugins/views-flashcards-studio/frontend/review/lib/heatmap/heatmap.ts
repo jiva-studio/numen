@@ -93,9 +93,9 @@ export function getDays(
   return out
 }
 
-function getFirstDay(
-  did: ReadonlyMap<string, unknown>,
-  due: ReadonlyMap<string, unknown>,
+function getFirstDay<Did, Due>(
+  did: ReadonlyMap<string, Did>,
+  due: ReadonlyMap<string, Due>,
   now: Date,
 ): Date {
   let first = ''

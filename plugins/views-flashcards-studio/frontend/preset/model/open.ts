@@ -3,7 +3,7 @@
  */
 import { StopReason } from '../../lib/wire/types'
 import { ref, shallowRef, type Ref } from 'vue'
-import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
+import { formatErrorMessage, type MessageWriter, type Caught } from '@numen/plugin-sdk'
 import { DEFAULTS, type Goal, type Presets, type Settings, type SettingsBounds } from '../../lib/presets'
 import { produceSchedule } from '../lib/curve'
 import { getShapeKey, getGoalField } from '../lib/fields'
@@ -107,7 +107,7 @@ export interface PresetStateContext {
 /** Shows the failure of an operation that runs in the background. */
 export const createFailureReporter =
   (context: { readonly writeMessage: MessageWriter }) =>
-  (error: unknown): void => {
+  (error: Caught): void => {
     context.writeMessage(formatErrorMessage(error), 'error')
   }
 

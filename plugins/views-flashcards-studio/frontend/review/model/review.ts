@@ -15,7 +15,7 @@ import type { VaultCardsDue } from '../lib/vault/types'
 import { useReviewDays } from './decks/reviewDays'
 import { useVaultPresets } from './decks/presets'
 import { useReviewSession } from './session/session'
-import type { AgentHost, NoticeHost, Severity } from '@numen/plugin-sdk'
+import type { AgentHost, NoticeHost, Severity, Caught, Unvalidated } from '@numen/plugin-sdk'
 import { createNotices } from './notices'
 import type { VaultCounts } from './counts'
 import { usePanels } from './usePanels'
@@ -41,6 +41,13 @@ export interface ReviewDeps {
 export interface NotesPage {
   scrollPage(back: boolean): void
 }
+
+/** Whether a ref callback received the notes panel, which exposes scrollPage. */
+export const isNotesPage = (value: Unvalidated): value is NotesPage =>
+  typeof value === 'object' &&
+  value !== null &&
+  'scrollPage' in value &&
+  typeof value.scrollPage === 'function'
 
 const reportSessionNotice = (
   report: Report,
@@ -68,7 +75,7 @@ interface ReviewActionDeps {
   state: ReturnType<typeof useReviewSession>
   agentPanel: { endConversation: () => void }
   showNotice: (text: string, severity: Severity) => void
-  reportError: (why: unknown) => void
+  reportError: (why: Caught) => void
   goToVaults: () => void
 }
 
@@ -117,7 +124,7 @@ function useChosenVault(deps: {
   vaultCount: ComputedRef<VaultCardsDue | null>
   counts: VaultCounts
   readSchedules: () => Promise<void>
-  reportError: (why: unknown) => void
+  reportError: (why: Caught) => void
 }) {
   let isRead = false
   watch(

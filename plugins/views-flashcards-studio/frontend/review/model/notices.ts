@@ -6,7 +6,7 @@
  * window itself cancelled shows nothing.
  */
 import { formatFailureMessage } from '../../api/failure'
-import type { NoticeHost, NoticeTask, Severity } from '@numen/plugin-sdk'
+import type { NoticeHost, NoticeTask, Severity, Caught } from '@numen/plugin-sdk'
 
 export function createNotices(host: NoticeHost) {
   const showNotice = (text: string, severity: Severity) => host.show(text, severity)
@@ -15,7 +15,7 @@ export function createNotices(host: NoticeHost) {
    * Shows a failure message. A call that the window itself cancelled has
    * nothing to report, and no notice is raised for it.
    */
-  const reportError = (why: unknown) => {
+  const reportError = (why: Caught) => {
     const text = sentence(formatFailureMessage(why))
     if (text) showNotice(text, 'error')
   }

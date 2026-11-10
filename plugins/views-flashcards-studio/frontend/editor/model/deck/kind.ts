@@ -3,9 +3,10 @@
  */
 import { Layers } from '@lucide/vue'
 import type { Component } from 'vue'
-import type { TabKindRegistration } from '@numen/plugin-sdk'
+import type { TabKindRegistration, Caught } from '@numen/plugin-sdk'
 import { getMarkOf } from '../../lib/buffer/words'
 import type { Cards } from '../../../types'
+import type { ConflictWords } from '../../lib/buffer/types'
 import type { DeckTabState } from './tabState'
 
 /** The word deck tabs are filed under. */
@@ -17,7 +18,7 @@ export interface DeckTabsInside {
     open(id: string, path?: string): void
     getPath(id: string): string
     getOpenIds(): readonly string[]
-    stale(id: string): unknown
+    stale(id: string): ConflictWords | null
     flushPending(id: string): Promise<void>
   }
   readonly vaultAnswers: { getTitle(path: string): string }
@@ -28,7 +29,7 @@ export interface DeckTabsInside {
   listPresetsAgain(): void
   refreshDeckPreset(path: string): Promise<void>
   /** Shows the failure of an operation that runs in the background. */
-  reportFailure(error: unknown): void
+  reportFailure(error: Caught): void
   createDeckTabState(id: string): DeckTabState
   readonly component: Component
 }
