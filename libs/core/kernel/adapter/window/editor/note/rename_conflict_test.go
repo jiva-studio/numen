@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	usecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	notecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -48,7 +48,7 @@ func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "Old.md"), []byte("---\ntitle: Old\n---\n\n# Old\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	rename := usecase.NewRename(usecase.NewMove(usecase.MoveDeps{
+	rename := notecase.NewRename(notecase.NewMove(notecase.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: staleNoteWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}},
 		Now: testsupport.NewClock(),
 	}))
