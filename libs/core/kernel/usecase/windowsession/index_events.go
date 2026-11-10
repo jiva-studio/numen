@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -37,7 +37,7 @@ func (e IndexEvents) ReportNotes(v domain.Vault, notes int) {
 }
 
 // ReportTexts records how many file texts were cut.
-func (e IndexEvents) ReportTexts(v domain.Vault, res vaultreading.IndexResult) {
+func (e IndexEvents) ReportTexts(v domain.Vault, res indexdomain.IndexResult) {
 	e.say("%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
