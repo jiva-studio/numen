@@ -35,11 +35,11 @@ func (c *steppingClock) Now() time.Time {
 
 func newTestAgentWith(t *testing.T, env ports.Environment) *agent {
 	t.Helper()
-	built, err := newAgent(parts{environment: env, clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}, isAsync: false})
+	subject, err := newAgent(parts{environment: env, clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}, isAsync: false})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return built
+	return subject
 }
 
 func newTestAgent(t *testing.T) *agent {
@@ -104,10 +104,10 @@ func TestLifecycleServer(t *testing.T) {
 }
 
 func TestAgentServiceRPC(t *testing.T) {
-	built := newTestAgent(t)
-	built.toolset.ExtendPrompt("Base prompt.")
-	built.toolset.Register(&agentrun.ToolDefinition{Name: "search_tool", Description: "Search notes"})
-	client := startAgent(t, built)
+	subject := newTestAgent(t)
+	subject.toolset.ExtendPrompt("Base prompt.")
+	subject.toolset.Register(&agentrun.ToolDefinition{Name: "search_tool", Description: "Search notes"})
+	client := startAgent(t, subject)
 	ctx := t.Context()
 
 	if err := client.RegisterTool(ctx, &agentrun.ToolDefinition{Name: "new_tool", Description: "New tool"}); err != nil {
@@ -159,7 +159,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 }
 
 // The program list names Claude Code as the default program, installed where it is found, with the
-// models the program accepts, listed with no key and no network.
+// models the program accepts, shown with no key and no network.
 func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
 	client := startAgent(t, newTestAgent(t))
@@ -289,9 +289,9 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
 			"while [ $# -gt 0 ]; do if [ \"$1\" = --mcp-config ]; then cp \"$2\" "+out+".config; fi; shift; done\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-	built := newTestAgent(t)
-	built.settings.Apply(map[string]string{"readsHooksAndSkills": "true"})
-	client := startAgent(t, built)
+	subject := newTestAgent(t)
+	subject.settings.Apply(map[string]string{"readsHooksAndSkills": "true"})
+	client := startAgent(t, subject)
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
 		Prompt:     "the question",
@@ -635,7 +635,7 @@ func TestAskAgentDropsInternalClaudeEnvironmentVariables(t *testing.T) {
 	}
 }
 
-// A Claude Code installation needs no key of the plugin: the models are listed with none, and a key
+// A Claude Code installation needs no key of the plugin: the models are shown with none, and a key
 // handed to the plugin is not the program's key.
 func TestTheProgramListNeedsNoKey(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
@@ -648,8 +648,8 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if listed := got[0].Models; len(listed) != len(models.GetFallback()) {
-		t.Errorf("the models are %v", listed)
+	if shown := got[0].Models; len(shown) != len(models.GetFallback()) {
+		t.Errorf("the models are %v", shown)
 	}
 }
 
@@ -735,9 +735,9 @@ func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
 			script := writeScript(t, "mock-claude.sh",
 				"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+
 					"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-			built := newTestAgent(t)
-			built.settings.Apply(c.values)
-			client := startAgent(t, built)
+			subject := newTestAgent(t)
+			subject.settings.Apply(c.values)
+			client := startAgent(t, subject)
 
 			stream, err := client.Ask(t.Context(), &agentrun.Request{
 				Prompt: "q", Command: []string{script}, Tools: []string{"note_read"},
@@ -754,4 +754,17 @@ func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
 			assertPair(t, strings.Split(strings.TrimSuffix(string(raw), "\n"), "\n"), "--setting-sources", c.want)
 		})
 	}
+}
+
+func assertPair(t *testing.T, args []string, flag, want string) {
+	t.Helper()
+	for i, a := range args {
+		if a == flag && i+1 < len(args) {
+			if args[i+1] != want {
+				t.Errorf("%s = %q, want %q", flag, args[i+1], want)
+			}
+			return
+		}
+	}
+	t.Errorf("%s absent from %v", flag, args)
 }
