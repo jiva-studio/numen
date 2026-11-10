@@ -39,10 +39,10 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("embedder reports not ready", func(t *testing.T) {
-		if cfg.embedderReady() {
+		if embedderReady(cfg.search()) {
 			t.Fatal("expected EmbedderReady to report false in safe mode")
 		}
-		indexing, asking, closer, err := cfg.embedders(ctx, nil)
+		indexing, asking, closer, err := searchEmbedders(cfg.search(), ctx, nil)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedders in safe mode, got %v", err)
 		}
@@ -53,7 +53,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		embedder, closer, err := cfg.embedder(ctx)
+		embedder, closer, err := searchEmbedder(cfg.search(), ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedder in safe mode, got %v", err)
 		}
@@ -78,12 +78,12 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 // plugins are set and stopped without one.
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := NewConfig(Config{})
-	_, err := cfg.resolvePlugin(bridge.CapabilityEmbedding)
+	_, err := pluginsResolvePlugin(cfg.plugins(), bridge.CapabilityEmbedding)
 	var missing *plugindomain.UnavailableError
 	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilityEmbedding {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
-	cfg.SetPluginVaultPath("vault")
+	setPluginVaultPath(cfg.plugins(), "vault")
 	if err := cfg.StopPlugins(t.Context()); err != nil {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
@@ -107,22 +107,22 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	host := pluginhost.Open("desktop.editor", tmp)
 	cfg := NewConfig(Config{PluginHost: LendPluginHost(host)})
 
-	cfg.SetPluginVaultPath("vault")
+	setPluginVaultPath(cfg.plugins(), "vault")
 	if got := host.Mode.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
-	if !cfg.embedderReady() {
+	if !embedderReady(cfg.search()) {
 		t.Fatal("an installed plugin is not ready")
 	}
 	safe := cfg.SetSafeMode(true)
 	cfg.SafeMode = false
-	if cfg.embedderReady() {
+	if embedderReady(cfg.search()) {
 		t.Error("the host started a plugin in safe mode")
 	}
 	if !safe.SafeMode {
 		t.Error("safe mode was not set")
 	}
-	if !cfg.SetSafeMode(false).embedderReady() {
+	if !embedderReady(cfg.SetSafeMode(false).search()) {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

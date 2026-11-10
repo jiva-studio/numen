@@ -80,7 +80,7 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

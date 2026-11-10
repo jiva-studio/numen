@@ -148,7 +148,7 @@ func TestAWriteByTheSettingsPageReachesEveryReaderOnceWithItsDeclaredPath(t *tes
 	cfg, _, _ := openInstallation(t, `{}`)
 	window, other := listen(t, cfg), listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settings.Setting{
+	err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -165,7 +165,7 @@ func TestAWriteOfSeveralSettingsArrivesAsOneBatch(t *testing.T) {
 	cfg, _, _ := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settings.Setting{
+	err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 		{Path: []string{"app", "appearance", "textScale"}, JSON: `1.2`},
 	})
@@ -184,7 +184,7 @@ func TestAWriteByAPluginReachesEveryReaderOnceWithItsDeclaredPath(t *testing.T) 
 	cfg, _, _ := openInstallation(t, `{}`)
 	window, other := listen(t, cfg), listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settings.Setting{
+	err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{eventPlugin, "mode"}, JSON: `"b"`},
 	})
 	if err != nil {
@@ -201,7 +201,7 @@ func TestAWriteTheCheckRejectsReachesNoReader(t *testing.T) {
 	cfg, _, _ := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	if err := cfg.GetSettingsWriter()([]settings.Setting{
+	if err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{eventPlugin, "undeclared"}, JSON: `"x"`},
 	}); err == nil {
 		t.Fatal("a key nobody declares was written")
@@ -214,7 +214,7 @@ func TestAWriteThatChangesNoValueReachesNoReader(t *testing.T) {
 	cfg, _, _ := openInstallation(t, `{"app":{"appearance":{"mode":"dark"}}}`)
 	reader := listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settings.Setting{
+	err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -335,7 +335,7 @@ func TestAWriteByAPluginReachesThePluginHostOnce(t *testing.T) {
 	cfg, _, host := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	if err := cfg.GetSettingsWriter()([]settings.Setting{
+	if err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{eventPlugin, "mode"}, JSON: `"b"`},
 	}); err != nil {
 		t.Fatal(err)
@@ -354,7 +354,7 @@ func TestAReaderThatStoppedListeningReceivesNothingMore(t *testing.T) {
 	changes, stop := cfg.SubscribeSettingChanges()
 	stop()
 
-	err := cfg.GetSettingsWriter()([]settings.Setting{
+	err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -412,7 +412,7 @@ func TestAWriteOfThePerformanceProfileReachesThePluginHostOnce(t *testing.T) {
 	reader := listen(t, cfg)
 	before := len(host.listProfiles())
 
-	if err := cfg.GetSettingsWriter()([]settings.Setting{
+	if err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{"app", "performance", "profile"}, JSON: `"eco"`},
 	}); err != nil {
 		t.Fatal(err)

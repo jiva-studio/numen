@@ -63,7 +63,7 @@ func vaultConfig(t *testing.T) container.Config {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
+	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -125,7 +125,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	cfg := vaultConfig(t)
 	cfg.PluginHost = container.LendPluginHost(host)
 
-	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 
 // An installation with no model opens, and reports that by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
-	installation, err := vaultConfig(t).OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(vaultConfig(t), t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,11 +185,11 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	installation, err := cfg.OpenWindowWith(t.Context(), ports, db, "", os.Stderr, func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
+	installation, err := container.OpenWindowWith(cfg, t.Context(), ports, db, "", os.Stderr, func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
 		return gateWalk(start, release)
 	})
 	if err != nil {

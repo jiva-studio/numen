@@ -32,133 +32,79 @@ import (
 
 // Registry opens the vault registry for this installation.
 func (c Config) Registry() (vaultregistry.Ports, error) {
-	return vaultRegistry(c.vault())
+	return vaultRegistry(vaultOf(c))
 }
 
 // VaultReaders opens vaults for reading.
-func (c Config) VaultReaders() vaultport.VaultReaders {
-	return vaultReaders(c.vault())
+func VaultReaders(c Config) vaultport.VaultReaders {
+	return vaultReaders(vaultOf(c))
 }
 
 // NoteWriters opens vaults for writing notes.
-func (c Config) NoteWriters() vaultport.NoteWriters {
-	return noteWriters(c.vault())
-}
-
-func (c Config) fileMovers() vaultport.FileMovers {
-	return fileMovers(c.vault())
+func NoteWriters(c Config) vaultport.NoteWriters {
+	return noteWriters(vaultOf(c))
 }
 
 // VaultLocks holds the write locks of the vaults.
-func (c Config) VaultLocks() vaultport.VaultLocks {
-	return writeLocks(c.vault())
-}
-
-func (c Config) vaultWatcher() vaultport.VaultWatcher {
-	return vaultWatcher(c.vault())
+func VaultLocks(c Config) vaultport.VaultLocks {
+	return writeLocks(vaultOf(c))
 }
 
 // VaultIdentity provides vault identification.
-func (c Config) VaultIdentity() vaultport.VaultIdentity {
-	return vaultIdentity(c.vault())
-}
-
-// Trash provides trash and recycling operations.
-func (c Config) Trash() machineport.Trash {
-	return vaultTrash(c.vault())
-}
-
-func (c Config) indexPath() (string, error) {
-	return resolveIndexPath(c.vault())
-}
-
-// Vaults builds the list of vaults an installation holds, and the vault's own
-// tree, against this installation's list and index.
-func (c Config) Vaults(ports vaultregistry.Ports, db *vault.Index, notes note.Move) vault.Scenarios {
-	return vaultVaults(c.vault(), ports, db, notes)
+func VaultIdentity(c Config) vaultport.VaultIdentity {
+	return vaultIdentity(vaultOf(c))
 }
 
 // AddVault registers a new vault in the registry with the given root path and name.
 func (c Config) AddVault(ports vaultregistry.Ports, root, name string) (domain.Vault, error) {
-	return addVault(c.vault(), ports, root, name)
-}
-
-// GetProblems holds the vault to the standard checks.
-func (c Config) GetProblems(problems problemport.ProblemQueries) *vault.GetProblems {
-	return getProblems(c.vault(), problems)
-}
-
-// GetSummary builds the vault summary query use case.
-func (c Config) GetSummary(summaries noteport.VaultSummaries) *vaultregistry.GetSummary {
-	return getSummary(c.vault(), summaries)
+	return addVault(vaultOf(c), ports, root, name)
 }
 
 // OpenIndex opens the cache. The caller closes it.
-func (c Config) OpenIndex(ctx context.Context) (*vault.Index, error) {
-	return openIndex(c.vault(), ctx)
+func OpenIndex(c Config, ctx context.Context) (*vault.Index, error) {
+	return openIndex(vaultOf(c), ctx)
 }
 
 // UpdateIndex updates the notes at the paths given up to date in the index.
-func (c Config) UpdateIndex(db *vault.Index) edit.IndexUpdater {
-	return updateIndex(c.vault(), db)
+func UpdateIndex(c Config, db *vault.Index) edit.IndexUpdater {
+	return updateIndex(vaultOf(c), db)
 }
 
 // Moves reports each time the index file changes.
-func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
-	return vaultMoves(c.vault(), ctx)
+func Moves(c Config, ctx context.Context) (<-chan struct{}, error) {
+	return vaultMoves(vaultOf(c), ctx)
 }
 
 // Notes builds everything that acts on the notes of a vault, against this
 // installation's vault readers and writers.
-func (c Config) Notes(db *vault.Index, index edit.IndexUpdater) note.Scenarios {
-	return vaultNotes(c.vault(), db, index)
-}
-
-// FocusNote builds the use case that shows a note in the window.
-func (c Config) FocusNote(refs noteport.NoteRefs, view windowport.Window) *query.FocusNote {
-	return vaultFocusNote(c.vault(), refs, view)
-}
-
-// GetNamedPaths builds the note named paths query use case.
-func (c Config) GetNamedPaths(names noteport.NamedPaths) *query.GetNamedPaths {
-	return getNamedPaths(c.vault(), names)
-}
-
-// Read builds the vault file reader use case.
-func (c Config) Read() file.Read {
-	return vaultRead(c.vault())
+func Notes(c Config, db *vault.Index, index edit.IndexUpdater) note.Scenarios {
+	return vaultNotes(vaultOf(c), db, index)
 }
 
 // VaultOpener is how this installation opens a vault, the way the settings say
 // one is read and watched.
-func (c Config) VaultOpener(db *vault.Index) *vault.VaultOpener {
-	return vaultOpener(c.vault(), db)
-}
-
-func (c Config) vaultOpenerWith(
-	db *vault.Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
-) *vault.VaultOpener {
-	return vaultOpenerWith(c.vault(), db, walking, watcher)
+func VaultOpener(c Config, db *vault.Index) *vault.VaultOpener {
+	return vaultOpener(vaultOf(c), db)
 }
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
-func (c Config) GetRefresh(db *vault.Index) vault.Refresh {
+func GetRefresh(c Config, db *vault.Index) vault.Refresh {
 	return makeRefresh(c, db, db.Notes())
 }
 
 func makeRefresh(c Config, db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
-	return vaultMakeRefresh(c.vault(), db, notes)
+	return vaultMakeRefresh(vaultOf(c), db, notes)
 }
 
 // NewTextVersions is the text versions of the vaults' files.
-func (c Config) NewTextVersions(db *vault.Index) (*textversion.Versions, error) {
-	return newTextVersions(c.vault(), db)
+func NewTextVersions(c Config, db *vault.Index) (*textversion.Versions, error) {
+	return newTextVersions(vaultOf(c), db)
 }
 
 // SetPluginTexts provides the text versions of the vaults to the plugins through
 // the host.
-func (c Config) SetPluginTexts() {
-	setPluginTexts(c.vault())
+func SetPluginTexts(c Config) {
+	setPluginTexts(vaultOf(c))
 }
 
 // vaultWiring wires vaults, opening, notes, text versions, index and open vaults.

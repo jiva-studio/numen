@@ -298,10 +298,10 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
+	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
-	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

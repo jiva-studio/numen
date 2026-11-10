@@ -49,29 +49,29 @@ type windowWiring struct {
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
-func (c Config) OpenWindow(ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
+func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
 	ports, err := c.Registry()
 	if err != nil {
 		return nil, err
 	}
-	db, err := c.OpenIndex(ctx)
+	db, err := openIndex(c.vault(), ctx)
 	if err != nil {
 		return nil, err
 	}
-	return c.OpenWindowOver(ctx, ports, db, named, out)
+	return OpenWindowOver(c, ctx, ports, db, named, out)
 }
 
 // OpenWindowOver is OpenWindow over a registry and a cache already open, for a caller that opened
 // them itself. The window closes the cache.
-func (c Config) OpenWindowOver(
+func OpenWindowOver(c Config,
 	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
 ) (*editor.Installation, error) {
-	return c.OpenWindowWith(ctx, ports, db, named, out, nil)
+	return OpenWindowWith(c, ctx, ports, db, named, out, nil)
 }
 
 // OpenWindowWith is OpenWindowOver with the walk of the vault put through wrap, for a caller
 // that holds one back or drives it. A nil wrap leaves it as it is.
-func (c Config) OpenWindowWith(
+func OpenWindowWith(c Config,
 	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
 	wrap func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc,
 ) (*editor.Installation, error) {
@@ -90,20 +90,20 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// before any component that reports into it.
 	tasks := run.NewTasks()
 	models := &run.Lock{}
-	w.cfg.reportPluginFailures(tasks)
-	w.cfg.reportDependencies(tasks)
-	w.cfg.SetPluginWork(tasks, models)
+	reportPluginFailures(w.cfg.plugins(), tasks)
+	reportDependencies(w.cfg.plugins(), tasks)
+	setPluginWork(w.cfg.plugins(), tasks, models)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := w.cfg.embedders(ctx, tasks)
+	embedder, asking, closeEmbedder, why := searchEmbedders(w.cfg.search(), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
 	}
 	embedding := indexing.NewEmbedding(embedder, w.db.Progress())
 	state := editor.NewState(tasks)
-	state.EmitEvent = func(event string) { emitPluginEvent(w.cfg.plugins(), event) }
+	state.EmitEvent = func(event string) { emitPluginEvent(plugins(w.cfg), event) }
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(w, state, embedding, out)
 	state.NotifyNoteWritten = indexer.WakeNotes
@@ -115,14 +115,14 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		if running := refreshing.Load(); running != nil {
 			return *running
 		}
-		return w.cfg.GetRefresh(w.db)
+		return GetRefresh(w.cfg, w.db)
 	}
-	notes := w.cfg.Notes(w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
+	notes := vaultNotes(w.cfg.vault(), w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
 	w.notes = &notes
-	moves := w.cfg.Vaults(w.ports, w.db, w.notes.Place.Move)
+	moves := vaultVaults(w.cfg.vault(), w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
 
-	passes := w.cfg.startVault(w.db, &refreshing)
+	passes := startVault(w.cfg, w.db, &refreshing)
 	if w.wrap != nil {
 		passes = w.wrap(passes)
 	}
@@ -131,11 +131,11 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 			Pages: state.Window, Writes: &state.Writing, Tasks: state.Window, Changes: &state.ChangeEvents, TabFront: &state.TabIDs,
 		},
 		Vault: windowsession.VaultPorts{
-			Identity: vault.NewCheckIdentity(w.cfg.VaultIdentity()), Recorded: moves.RecordOpen, Passes: passes,
-			Texts: w.cfg.getTextVersions(),
+			Identity: vault.NewCheckIdentity(vaultIdentity(w.cfg.vault())), Recorded: moves.RecordOpen, Passes: passes,
+			Texts: getTextVersions(w.cfg),
 		},
 		Index: windowsession.IndexPorts{
-			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: w.cfg.getTriggerSource(), Model: embedding,
+			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: getTriggerSource(w.cfg), Model: embedding,
 		},
 		Shutdown: windowsession.ShutdownPorts{
 			Door: state,

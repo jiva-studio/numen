@@ -26,7 +26,7 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: dir}
 	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
 
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 
 func read(t *testing.T, cfg container.Config) *vault.Index {
 	t.Helper()
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

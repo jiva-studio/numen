@@ -19,10 +19,10 @@ func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
 	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(&applied)}})
-	changes, stop := c.watchPluginChanges()
+	changes, stop := watchPluginChanges(c.plugins())
 	defer stop()
 
-	notifyHost(c.settings(), []settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
+	notifyHost(settingsOf(c), []settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
 
 	select {
 	case <-changes:
@@ -36,10 +36,10 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
 	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(new([]string))}})
-	changes, stop := c.watchPluginChanges()
+	changes, stop := watchPluginChanges(c.plugins())
 	stop()
 
-	notifyHost(c.settings(), nil)
+	notifyHost(settingsOf(c), nil)
 
 	select {
 	case <-changes:

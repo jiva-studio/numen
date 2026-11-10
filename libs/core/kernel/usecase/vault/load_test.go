@@ -44,9 +44,9 @@ func TestLoad(t *testing.T) {
 	v := testsupport.GenerateVault(t, notes)
 	t.Logf("generated %d notes in %s", notes, getElapsed(generating))
 
-	db, err := container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		IndexPath: filepath.Join(t.TempDir(), "index.db"),
-	}).OpenIndex(ctx)
+	}), ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

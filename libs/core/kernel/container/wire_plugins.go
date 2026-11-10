@@ -28,52 +28,36 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
-func (c Config) reportDependencies(tasks *run.Tasks) {
-	reportDependencies(c.plugins(), tasks)
-}
-
-func (c Config) getPluginCatalog() *catalog.Service {
-	return getPluginCatalog(c.plugins())
-}
-
-func (c Config) resolvePlugin(capability string) (*PluginHost, error) {
-	return pluginsResolvePlugin(c.plugins(), capability)
-}
-
 // SetSafeMode is the configuration started in safe mode or out of it, and its plugin host with it.
 func (c Config) SetSafeMode(enabled bool) Config {
-	c.SafeMode = setSafeMode(c.plugins(), enabled).SafeMode
+	c.SafeMode = setSafeMode(plugins(c), enabled).SafeMode
 	return c
 }
 
 // SetPluginVaultPath is the vault the plugins' paths are inside.
-func (c Config) SetPluginVaultPath(path string) {
-	setPluginVaultPath(c.plugins(), path)
+func SetPluginVaultPath(c Config, path string) {
+	setPluginVaultPath(plugins(c), path)
 }
 
 // StopPlugins stops every plugin the host runs.
 func (c Config) StopPlugins(ctx context.Context) error {
-	return stopPlugins(c.plugins(), ctx)
+	return stopPlugins(plugins(c), ctx)
 }
 
-func (c Config) getPluginCommands() plugincommand.Commands {
-	return getPluginCommands(c.plugins())
-}
-
-func (c Config) openPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-	db, err := c.OpenIndex(ctx)
+func openPluginCommands(c Config, ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
+	db, err := openIndex(c.vault(), ctx)
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
-	_, work, err := c.openPluginWork(db, v)
+	_, work, err := openPluginWork(c, db, v)
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return c.getPluginCommands().Run, closeAfterWork(ctx, work, db.Close), nil
+	return getPluginCommands(c.plugins()).Run, closeAfterWork(ctx, work, db.Close), nil
 }
 
-func (c Config) openedPluginWork(db *vault.Index, v domain.Vault) (Config, error) {
-	opened, _, err := c.openPluginWork(db, v)
+func openedPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, error) {
+	opened, _, err := openPluginWork(c, db, v)
 	return opened, err
 }
 
@@ -83,9 +67,9 @@ func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func()
 	}
 }
 
-func (c Config) openPluginWork(db *vault.Index, v domain.Vault) (Config, *run.PluginWork, error) {
-	c.SetPluginVaultPath(v.Path)
-	versions, err := c.NewTextVersions(db)
+func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.PluginWork, error) {
+	setPluginVaultPath(c.plugins(), v.Path)
+	versions, err := newTextVersions(c.vault(), db)
 	if err != nil {
 		return c, nil, err
 	}
@@ -95,78 +79,25 @@ func (c Config) openPluginWork(db *vault.Index, v domain.Vault) (Config, *run.Pl
 		return c, nil, err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	if err := c.InstallPluginVault(registry, db, current, PluginVaultHooks{}); err != nil {
+	if err := installPluginVault(c.plugins(), registry, db, current, PluginVaultHooks{}); err != nil {
 		return c, nil, err
 	}
-	work := pluginsOpenPluginWork(c.plugins(), run.NewTasks(), &run.Lock{})
-	c.SetPluginTexts()
+	work := pluginsOpenPluginWork(plugins(c), run.NewTasks(), &run.Lock{})
+	setPluginTexts(c.vault())
 	return c, work, nil
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
-func (c Config) GetPluginServices() PluginServices {
-	return getPluginServices(c.plugins())
-}
-
-func (c Config) getPluginRetrier() func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
-	return getPluginRetrier(c.plugins())
-}
-
-func (c Config) reportPluginFailures(tasks *run.Tasks) {
-	reportPluginFailures(c.plugins(), tasks)
-}
-
-// SetPluginWork opens the lock the models are held under and the list of tasks to the plugins.
-func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
-	setPluginWork(c.plugins(), tasks, models)
-}
-
-func (c Config) getPluginName(pluginID string) string {
-	return pluginsGetPluginName(c.plugins(), pluginID)
-}
-
-func (c Config) setPluginVaultList(list hostendpoint.VaultList) {
-	setPluginVaultList(c.plugins(), list)
-}
-
-func (c Config) GetPluginDir(id string) (string, bool) {
-	return getPluginDir(c.plugins(), id)
-}
-
-func (c Config) GetFrontendPluginIDs() []string {
-	return getFrontendPluginIDs(c.plugins())
-}
-
-func (c Config) setPluginWindow(window hostendpoint.WindowControl) {
-	setPluginWindow(c.plugins(), window)
-}
-
-func (c Config) openSecrets() *secret.Secrets {
-	return openSecrets(c.plugins())
-}
-
-func (c Config) providerOfAgents() agentport.AgentProvider {
-	return pluginsAgentProvider(c.plugins())
-}
-
-func (c Config) getSettingsAgent() agentport.Agent {
-	return getSettingsAgent(c.plugins())
-}
-
-func (c Config) openChooseTabKind() *tabkind.Choose {
-	return openChooseTabKind(c.plugins())
-}
-
-func (c Config) watchPluginChanges() (<-chan struct{}, func()) {
-	return watchPluginChanges(c.plugins())
+func GetPluginServices(c Config) PluginServices {
+	return getPluginServices(plugins(c))
 }
 
 // InstallPluginVault lets the plugins work through the host the vault of a list and the index that
 // holds them: the one current names, else the one a call names by identity.
-func (c Config) InstallPluginVault(
+func InstallPluginVault(c Config,
 	vaults vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) error {
-	return installPluginVault(c.plugins(), vaults, db, current, hooks)
+	return installPluginVault(plugins(c), vaults, db, current, hooks)
 }
 
 // PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from
@@ -269,16 +200,6 @@ func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
 // Past it the read answers with the programs listed last, so a provider that is slow to start does
 // not hold the window back.
 const programsWait = time.Second
-
-func (c Config) getCredentialsPath() string { return getCredentialsPath(c.plugins()) }
-
-func (c Config) setSecretSource() { setSecretSource(c.plugins()) }
-
-func (c Config) setCompleter() { setCompleter(c.plugins()) }
-
-func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
-	return getAgentPrograms(c.plugins(), provider, target)
-}
 
 func getAgentPrograms(c pluginsWiring, provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	if provider == nil {

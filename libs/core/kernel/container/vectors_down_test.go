@@ -82,7 +82,7 @@ func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) 
 		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 	}
 
-	whole, err := target.ReadWholeVault(t.Context(), db, indexing, v)
+	whole, err := container.ReadWholeVault(target, t.Context(), db, indexing, v)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -74,7 +74,7 @@ func (c *Core) Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := cfg.OpenWindow(ctx, filed, os.Stderr)
+	opened, err := container.OpenWindow(cfg, ctx, filed, os.Stderr)
 	if err != nil {
 		stop()
 		return 0, err
@@ -85,7 +85,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	if wrong := cfg.SetThemes(opened, opened.SayTheme); wrong != nil {
+	if wrong := container.SetThemes(cfg, opened, opened.SayTheme); wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	listener, err := listenLocal(ctx)

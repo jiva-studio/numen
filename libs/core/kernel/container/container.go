@@ -115,18 +115,18 @@ func NewConfig(c Config) Config {
 	return c
 }
 
-func (c Config) getResources() *Resources {
+func getResources(c Config) *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
 	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &settingsusecase.PluginChanges{}}
 }
 
-func (c Config) getPrograms() *settingsadapter.ProgramList {
+func getPrograms(c Config) *settingsadapter.ProgramList {
 	if c.programs != nil {
 		return c.programs
 	}
-	return c.getResources().programs
+	return getResources(c).programs
 }
 
 // Clock is the clock every scenario assembled here is handed.
@@ -137,7 +137,7 @@ func (c Config) Clock() machineport.Clock {
 	return clock.System{}
 }
 
-func (c Config) handleError(err error) {
+func handleError(c Config, err error) {
 	if c.ErrorHandler != nil {
 		c.ErrorHandler(err)
 	}
@@ -161,8 +161,8 @@ func (c Config) GetWait() machine.Wait {
 	}
 }
 
-func (c Config) settings() settingsWiring {
-	res := c.getResources()
+func settingsOf(c Config) settingsWiring {
+	res := getResources(c)
 	return settingsWiring{
 		SettingsPath:     c.SettingsPath,
 		ThemesPath:       c.ThemesPath,
@@ -176,7 +176,7 @@ func (c Config) settings() settingsWiring {
 		Watches:          res.watches,
 		SettingsFiles:    res.settingsFiles,
 		SettingEvents:    res.settingEvents,
-		Programs:         c.getPrograms(),
+		Programs:         getPrograms(c),
 		SecretGate:       res.secretGate,
 		PluginChanges:    res.pluginChanges,
 		SubscribedHosts:  &res.subscribedHosts,
@@ -188,9 +188,9 @@ func (c Config) settings() settingsWiring {
 	}
 }
 
-func (c Config) search() searchWiring {
-	v := c.vaultBase()
-	plugins := c.plugins()
+func searchOf(c Config) searchWiring {
+	v := vaultBase(c)
+	plugins := plugins(c)
 	return searchWiring{
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
@@ -207,8 +207,8 @@ func (c Config) search() searchWiring {
 	}
 }
 
-func (c Config) vaultBase() vaultWiring {
-	res := c.getResources()
+func vaultBase(c Config) vaultWiring {
+	res := getResources(c)
 	return vaultWiring{
 		IndexPath:    c.IndexPath,
 		RegistryPath: c.RegistryPath,
@@ -224,19 +224,19 @@ func (c Config) vaultBase() vaultWiring {
 	}
 }
 
-func (c Config) vault() vaultWiring {
-	v := c.vaultBase()
-	s := c.search()
-	v.SyncSetting = syncSetting(c.settings())
+func vaultOf(c Config) vaultWiring {
+	v := vaultBase(c)
+	s := searchOf(c)
+	v.SyncSetting = syncSetting(settingsOf(c))
 	v.CutNotes = cutNotes(s)
 	v.SetNoteCut = func(scan *vault.Scan, db *vault.Index) { setNoteCut(s, scan, db) }
 	return v
 }
 
-func (c Config) plugins() pluginsWiring {
-	res := c.getResources()
-	programs := c.getPrograms()
-	v := c.vaultBase()
+func plugins(c Config) pluginsWiring {
+	res := getResources(c)
+	programs := getPrograms(c)
+	v := vaultBase(c)
 	s := settingsWiring{
 		SettingsPath:  c.SettingsPath,
 		ThemesPath:    c.ThemesPath,
@@ -273,7 +273,7 @@ func (c Config) plugins() pluginsWiring {
 		GetSettingsOrDefaults: func() settingsadapter.File { return settingsGetSettingsOrDefaults(s) },
 		RefreshSettingEvents:  func() { refreshSettingEvents(s) },
 		MakeRefresh: func(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
-			return vaultMakeRefresh(c.vault(), db, notes)
+			return vaultMakeRefresh(vaultOf(c), db, notes)
 		},
 		BuildNotes: c.Notes,
 		Moves:      func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) },

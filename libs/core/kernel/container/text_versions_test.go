@@ -52,10 +52,10 @@ func putTranscript(t *testing.T, db *vault.Index, v domain.Vault, words string) 
 
 func readIntoIndex(t *testing.T, cfg Config, db *vault.Index, v domain.Vault) {
 	t.Helper()
-	if _, err := cfg.Scan(db).Execute(t.Context(), v); err != nil {
+	if _, err := searchScan(cfg.search(), db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := cfg.IndexTexts(db, v)
+	extract, err := indexTexts(cfg.search(), db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,12 +79,12 @@ func newTalkVault(t *testing.T) domain.Vault {
 func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	v := newTalkVault(t)
 	cfg := NewConfig(Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := cfg.NewTextVersions(db)
+	versions, err := newTextVersions(cfg.vault(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
 	readIntoIndex(t, cfg, db, v)
-	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(cfg.search(), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	v := newTalkVault(t)
 	path := filepath.Join(t.TempDir(), "index.db")
 	cfg := NewConfig(Config{IndexPath: path})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,12 +115,12 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	}
 
 	cfg.ShouldRebuildIndex = true
-	db, err = cfg.OpenIndex(t.Context())
+	db, err = openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := cfg.NewTextVersions(db)
+	versions, err := newTextVersions(cfg.vault(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,12 +149,12 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	v := newTalkVault(t)
 	cfg := NewConfig(Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := cfg.NewTextVersions(db)
+	versions, err := newTextVersions(cfg.vault(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, cfg, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(cfg.fileMovers(), db.Links(), db.SourcesUnder(), db.Sources(), note.Move{})
+	move := vault.NewMove(fileMovers(cfg.vault()), db.Links(), db.SourcesUnder(), db.Sources(), note.Move{})
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
@@ -188,12 +188,12 @@ func newTalkIndex(t *testing.T) (Config, *vault.Index, domain.Vault, domain.Text
 	t.Helper()
 	v := newTalkVault(t)
 	cfg := NewConfig(Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := cfg.NewTextVersions(db)
+	versions, err := newTextVersions(cfg.vault(), db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func TestRenamingAFileOnDiskMovesItsTextVersions(t *testing.T) {
 	if len(listing.Versions) != 1 || listing.Live != version.GetID() || listing.Versions[0].Path != renamed {
 		t.Fatalf("after the rename on disk the talk has %+v, want its transcript live at the new path", listing)
 	}
-	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(cfg.search(), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +259,7 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 	if len(listing.Versions) != 1 || listing.Versions[0].GetID() != version.GetID() {
 		t.Fatalf("after the delete the talk's path has %+v, want its transcript to stay", listing)
 	}
-	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(cfg.search(), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -309,12 +309,12 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err := repo.SaveVersion(t.Context(), subtitles); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := cfg.IndexTexts(db, v)
+	extract, err := indexTexts(cfg.search(), db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.TextVersions.SetListener(cutOnChange{t: t, extract: extract})
-	data := openPluginData(cfg.vault())
+	data := openPluginData(vaultOf(cfg))
 
 	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {
 		t.Fatal(err)
@@ -330,14 +330,14 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err != nil || len(listing.Versions) != 1 || listing.Live != subtitles.GetID() {
 		t.Fatalf("after the delete the talk has %+v (%v), want the other plugin's version alone and live", listing, err)
 	}
-	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(cfg.search(), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) != 0 {
 		t.Fatalf("found %+v, want the deleted transcript out of the index", found)
 	}
-	found, err = cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "kingfisher", search.Parameters{})
+	found, err = newSearch(cfg.search(), db, nil, nil).Execute(t.Context(), v, "kingfisher", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,11 +350,11 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	v := newTalkVault(t)
 	path := filepath.Join(t.TempDir(), "index.db")
 	cfg := NewConfig(Config{IndexPath: path})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.TextVersions, err = cfg.NewTextVersions(db); err != nil {
+	if cfg.TextVersions, err = newTextVersions(cfg.vault(), db); err != nil {
 		t.Fatal(err)
 	}
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
@@ -367,12 +367,12 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db, err = cfg.OpenIndex(t.Context())
+	db, err = openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	if cfg.TextVersions, err = cfg.NewTextVersions(db); err != nil {
+	if cfg.TextVersions, err = newTextVersions(cfg.vault(), db); err != nil {
 		t.Fatal(err)
 	}
 	readIntoIndex(t, cfg, db, v)
@@ -388,7 +388,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if len(listing.Versions) != 1 || listing.Live != version.GetID() {
 		t.Fatalf("after the rescan the talk has %+v, want its transcript live at the new path", listing)
 	}
-	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(cfg.search(), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}

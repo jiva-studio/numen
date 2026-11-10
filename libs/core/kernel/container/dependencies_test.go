@@ -31,7 +31,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	registry := provision.NewRegistry()
 	host.Services.SetDependencies(registry)
 	tasks := run.NewTasks()
-	NewConfig(Config{PluginHost: LendPluginHost(host)}).reportDependencies(tasks)
+	reportDependencies(NewConfig(Config{PluginHost: LendPluginHost(host)}).plugins(), tasks)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})

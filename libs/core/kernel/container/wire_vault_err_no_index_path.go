@@ -283,20 +283,20 @@ func getMediaType(_ vaultWiring) *file.GetMediaType {
 
 // OpenVaults is every vault a window has open over db: each is read into the index, and what it
 // reports goes to out under label.
-func (c Config) OpenVaults(db *vault.Index, out io.Writer, label string) *vault.OpenVaults[*vault.Index] {
-	return &vault.OpenVaults[*vault.Index]{Opener: func(i *vault.Index) *vault.VaultOpener { return c.VaultOpener(i) }, Index: db, Out: out, Label: label}
+func OpenVaults(c Config, db *vault.Index, out io.Writer, label string) *vault.OpenVaults[*vault.Index] {
+	return &vault.OpenVaults[*vault.Index]{Opener: func(i *vault.Index) *vault.VaultOpener { return vaultOpener(c.vault(), i) }, Index: db, Out: out, Label: label}
 }
 
 // SetShellNotes gives a shell the notes it answers about: whether a vault is indexed and what a link
 // resolves to. A write updates the index through updateIndex.
-func (c Config) SetShellNotes(api *shell.API, db *vault.Index, updateIndex edit.IndexUpdater) {
-	notes := c.Notes(db, updateIndex)
+func SetShellNotes(c Config, api *shell.API, db *vault.Index, updateIndex edit.IndexUpdater) {
+	notes := vaultNotes(c.vault(), db, updateIndex)
 	api.IsVaultIndexed, api.ResolveLinks = notes.Browse.IsVaultIndexed, notes.Refer.ResolveLinks
 }
 
 // BindVaultIndexer has a shell read a vault into the index through vaults, and report a change each
 // time a vault is read.
-func (c Config) BindVaultIndexer(ctx context.Context, api *shell.API, vaults *vault.OpenVaults[*vault.Index]) {
+func BindVaultIndexer(c Config, ctx context.Context, api *shell.API, vaults *vault.OpenVaults[*vault.Index]) {
 	vaults.RecordVault = func(v domain.Vault) {
 		api.ClearIndexFailure(v.ID)
 		api.ReportChange()

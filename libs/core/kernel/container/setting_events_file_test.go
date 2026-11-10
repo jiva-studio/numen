@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
@@ -56,7 +57,7 @@ func TestAWriteThatDisablesAPluginReachesThePluginHost(t *testing.T) {
 	cfg, _, host := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	if err := cfg.GetSettingsWriter()([]settings.Setting{
+	if err := container.GetSettingsWriter(cfg)([]settings.Setting{
 		{Path: []string{eventPlugin, "enabled"}, JSON: `false`},
 	}); err != nil {
 		t.Fatal(err)
@@ -71,7 +72,7 @@ func TestAWriteThatDisablesAPluginReachesThePluginHost(t *testing.T) {
 
 func TestAPluginHostReceivesNoChangeAfterItIsUnsubscribed(t *testing.T) {
 	cfg, path, host := openInstallation(t, `{}`)
-	cfg.UnsubscribeHost()
+	container.UnsubscribeHost(cfg)
 
 	if err := os.WriteFile(path, []byte(`{"`+eventPlugin+`":{"enabled":false}}`), 0o600); err != nil {
 		t.Fatal(err)

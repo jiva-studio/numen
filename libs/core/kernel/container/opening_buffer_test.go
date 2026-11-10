@@ -115,17 +115,17 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		{"a note written under the walk", true, 1},
 	} {
 		cfg := NewConfig(Config{IndexPath: indexfile.Path(t)})
-		db, err := cfg.OpenIndex(t.Context())
+		db, err := openIndex(cfg.vault(), t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
 		testsupport.CloseAfter(t, db)
 		v := testsupport.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
 
-		opening := cfg.VaultOpener(db)
+		opening := vaultOpener(cfg.vault(), db)
 		broken := errors.New("index unavailable")
 		opening.Refresh = vault.NewRefresh(
-			cfg.VaultReaders(), db.Vaults(), repositoryAnswering{err: broken},
+			vaultReaders(cfg.vault()), db.Vaults(), repositoryAnswering{err: broken},
 			db.RemovalLookup(), db.Sources(), cfg.Clock(),
 		)
 		var received []error
@@ -162,7 +162,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 // one ledger by every refresh of the index.
 func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 	cfg := NewConfig(Config{IndexPath: indexfile.Path(t)})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(cfg.vault(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,13 +172,13 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 		"Two.md": "---\ntitle: Two\n---\n\n# Two\n",
 	})
 
-	if err := cfg.VaultOpener(db).UpdateIndex(t.Context(), v, []string{"One.md"}); err != nil {
+	if err := vaultOpener(cfg.vault(), db).UpdateIndex(t.Context(), v, []string{"One.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger().Len(); got != 1 {
 		t.Fatalf("the opener's refresh left %d notes in the index's ledger", got)
 	}
-	if err := cfg.UpdateIndex(db)(t.Context(), v, []string{"Two.md"}); err != nil {
+	if err := updateIndex(cfg.vault(), db)(t.Context(), v, []string{"Two.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger().Len(); got != 2 {

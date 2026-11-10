@@ -18,57 +18,59 @@ import (
 )
 
 // Settings reads the settings file; an unconfigured installation returns the default settings.
-func (c Config) Settings() (settingsadapter.File, error) { return c.readSettingsFile() }
+func (c Config) Settings() (settingsadapter.File, error) { return settingsSettings(c.settings()) }
 
 // SetSettings returns the configuration with the values of a settings file applied.
-func (c Config) SetSettings(s settingsadapter.File) Config { return c.applySettingsFile(s) }
+func (c Config) SetSettings(s settingsadapter.File) Config { return applySettingsFile(c, s) }
 
 // DefaultSettings returns the settings of an unconfigured installation.
 func DefaultSettings() settingsadapter.File { return defaultSettings() }
 
 // Themes returns the themes service the window offers.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
-	return settingsThemes(c.settings(), say)
+	return settingsThemes(settingsOf(c), say)
 }
 
 // The methods below are the wiring the tests of this package reach from outside it.
 
-func (c Config) AgentProvider() agentport.AgentProvider { return c.providerOfAgents() }
+func (c Config) AgentProvider() agentport.AgentProvider { return pluginsAgentProvider(c.plugins()) }
 
-func (c Config) CutNotes() chunking.CutNotes { return c.cutNotes() }
+func (c Config) CutNotes() chunking.CutNotes { return cutNotes(c.search()) }
 
 func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
-	return c.embedder(ctx)
+	return searchEmbedder(c.search(), ctx)
 }
 
-func (c Config) EmbedderReady() bool { return c.embedderReady() }
+func (c Config) EmbedderReady() bool { return embedderReady(c.search()) }
 
 func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
-	return c.embedders(ctx, tasks)
+	return searchEmbedders(c.search(), ctx, tasks)
 }
 
-func (c Config) GetEditorAgent() agentport.Agent { return c.getEditorAgent() }
+func (c Config) GetEditorAgent() agentport.Agent { return getToolProvider(c.plugins()) }
 
-func (c Config) GetSettingsAgent() agentport.Agent { return c.getSettingsAgent() }
+func (c Config) GetSettingsAgent() agentport.Agent { return getSettingsAgent(c.plugins()) }
 
-func (c Config) Models() func() []settingsdomain.Model { return c.models() }
+func (c Config) Models() func() []settingsdomain.Model { return models(c) }
 
 func (c Config) NewSearchOver(passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	return c.newSearchOver(passages, asking, errorHandler)
+	return newSearchOver(c.search(), passages, asking, errorHandler)
 }
 
 func (c Config) OpenGetSettings(provider agentport.AgentProvider) *settings.Get {
-	return c.openGetSettings(provider)
+	return openGetSettings(c, provider)
 }
 
-func (c Config) OpenWatchSettings() *settings.WatchSettingChanges { return c.openWatchSettings() }
+func (c Config) OpenWatchSettings() *settings.WatchSettingChanges {
+	return openWatchSettings(c.settings())
+}
 
 func (c Config) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func()) {
-	return c.subscribeSettingChanges()
+	return subscribeSettingChanges(c.settings())
 }
 
 func (c Config) VaultOpenerWith(db *vault.Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher) *vault.VaultOpener {
-	return c.vaultOpenerWith(db, walking, watcher)
+	return vaultOpenerWith(c.vault(), db, walking, watcher)
 }
 
-func (c Config) VaultWatcher() vaultport.VaultWatcher { return c.vaultWatcher() }
+func (c Config) VaultWatcher() vaultport.VaultWatcher { return vaultWatcher(c.vault()) }

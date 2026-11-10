@@ -27,7 +27,7 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 		t.Fatal(err)
 	}
 
-	opened, err := cfg.OpenWindow(t.Context(), "one", io.Discard)
+	opened, err := container.OpenWindow(cfg, t.Context(), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}

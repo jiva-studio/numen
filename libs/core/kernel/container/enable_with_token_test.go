@@ -77,7 +77,7 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 	for name, write := range map[string]func(t *testing.T, cfg container.Config, path string){
 		"one write of both settings": func(t *testing.T, cfg container.Config, _ string) {
 			t.Helper()
-			if err := cfg.GetSettingsWriter()([]settings.Setting{
+			if err := container.GetSettingsWriter(cfg)([]settings.Setting{
 				{Path: []string{courierPlugin, "enabled"}, JSON: `true`},
 				{Path: []string{courierPlugin, "token"}, JSON: `"` + courierToken + `"`},
 			}); err != nil {
