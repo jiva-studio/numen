@@ -79,6 +79,10 @@ function onInput(event: Event) {
   cursor: text;
 }
 
+.note__prose :deep(a) {
+  color: var(--numen-accent);
+}
+
 .note__field {
   display: block;
   inline-size: 100%;
@@ -87,6 +91,7 @@ function onInput(event: Event) {
   border: 0;
   outline: 0;
   resize: none;
+  field-sizing: content;
   background: transparent;
   color: inherit;
   font: inherit;
