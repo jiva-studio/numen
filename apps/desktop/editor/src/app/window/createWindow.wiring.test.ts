@@ -264,7 +264,7 @@ beforeEach(() => {
     },
     openTabs: { getTabIcon: vi.fn(), pause: vi.fn(async () => undefined), resume: vi.fn() },
     commands: {
-      commands: { applyRenames: vi.fn() },
+      commands: { navigation: { applyRenames: vi.fn() } },
       runCommand: vi.fn(),
       pluginRuns: {
         runCommandToEnd: vi.fn(async () => undefined),
@@ -371,7 +371,7 @@ describe('the parts of the window', () => {
     await h.args.display.onVaultChanged(paths, renamedItems)
 
     expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamedItems)
-    expect(h.f.commands.commands.applyRenames).toHaveBeenCalledWith(renamedItems)
+    expect(h.f.commands.commands.navigation.applyRenames).toHaveBeenCalledWith(renamedItems)
     expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed: renamedItems })
   })
 

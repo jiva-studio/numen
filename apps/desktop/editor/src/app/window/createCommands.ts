@@ -203,7 +203,7 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   /** The run of the command over the target, or the objection to it where it cannot start. */
   const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
     if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
-      commands.setOpen(false)
+      commands.palette.setOpen(false)
       return getCommandNote(target).then((note) => {
         const run = { ...getValues(way.values), ...(way.isAwaited ? { isAwaited: true } : {}) }
         return Object.keys(run).length > 0
@@ -213,20 +213,20 @@ export function createCommandRunner(parts: CommandRunnerParts) {
     }
     const { values } = getValues(way.values)
     const invocation = values
-      ? commands.startCommand(id, target, way.input, values)
+      ? commands.palette.startCommand(id, target, way.input, values)
       : way.input === undefined
-        ? commands.startCommand(id, target)
-        : commands.startCommand(id, target, way.input)
+        ? commands.palette.startCommand(id, target)
+        : commands.palette.startCommand(id, target, way.input)
     if (invocation) {
       const deps = parts.getCommandDeps()
       const run = withValues(invocation, way.values)
       return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps)
     }
-    if (commands.open.value) {
+    if (commands.palette.open.value) {
       palette.setOpen(false)
       return Promise.resolve()
     }
-    return commands.getObjection(id, target)
+    return commands.palette.getObjection(id, target)
   }
 
   return {
@@ -254,16 +254,7 @@ function createWindowCommandPalette(
   listExtras: () => readonly Command[],
 ) {
   const { core, words, getTarget, knows, runs } = options
-  return createCommandPalette(
-    { ...core, vaults: getVaultList },
-    { ...words, ...PALETTE_WORDS },
-    getTarget,
-    knows,
-    lists,
-    runs,
-    undefined,
-    listExtras,
-  )
+  return createCommandPalette({ core: { ...core, vaults: getVaultList }, words: { ...words, ...PALETTE_WORDS }, at: getTarget, knows, lists, runs, getCommands: listExtras })
 }
 
 export function createCommands(options: CommandsDepsOptions) {
@@ -287,13 +278,13 @@ export function createCommands(options: CommandsDepsOptions) {
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
   const commands = createWindowCommandPalette(options, lists, listExtras)
 
-  watchCommandLists({ ...options, plugins: options.rest.state?.plugins }, commands.open)
-  resetWhenClosed(commands.open)
+  watchCommandLists({ ...options, plugins: options.rest.state?.plugins }, commands.palette.open)
+  resetWhenClosed(commands.palette.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
     search: () => {
-      commands.setOpen(false)
+      commands.palette.setOpen(false)
       palette.setOpen(true)
     },
   })
@@ -331,11 +322,11 @@ export function createCommands(options: CommandsDepsOptions) {
   /** Runs the command of the application a key is bound to, with the values of the keybinding. */
   const runAppKey = (command: string, values: Values): void => {
     if (command === COMMAND.searchVault) {
-      commands.setOpen(false)
+      commands.palette.setOpen(false)
       palette.setOpen(!palette.open.value)
     } else if (command === COMMAND.openCommands) {
       palette.setOpen(false)
-      commands.setOpen(!commands.open.value)
+      commands.palette.setOpen(!commands.palette.open.value)
     } else if (Object.keys(values).length > 0) runKeyWithValues(command, values)
     else runCommand(command, getTarget())
   }

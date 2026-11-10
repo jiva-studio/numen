@@ -19,9 +19,9 @@ export function findRowIcon(
   findFileIcon?: (path: string) => Component | undefined,
 ) {
   if (id.endsWith(KEEP_SUFFIX)) return Undo2
-  if (commands.open.value) {
-    const picked = commands.findTabKind(id)
-    return picked === null ? (commands.findCommandIcon(id) ?? findIcon(id)) : getNoteIcon(picked)
+  if (commands.palette.open.value) {
+    const picked = commands.view.findTabKind(id)
+    return picked === null ? (commands.view.findCommandIcon(id) ?? findIcon(id)) : getNoteIcon(picked)
   }
   const tabKind = search.reads.findTabKind(id)
   if (tabKind !== null) return getNoteIcon(tabKind)

@@ -107,9 +107,9 @@ describe('the default of a key press', () => {
     const one = create([])
 
     one.used.onKeyDown(press('KeyP', { ctrlKey: true }))
-    expect(one.used.commands.open.value).toBe(true)
+    expect(one.used.commands.palette.open.value).toBe(true)
 
     one.used.onKeyDown(press('KeyP', { ctrlKey: true }))
-    expect(one.used.commands.open.value).toBe(false)
+    expect(one.used.commands.palette.open.value).toBe(false)
   })
 })

@@ -94,16 +94,7 @@ async function mountField(
     getTarget: () => inFront,
     menu: { getEntries: () => [SHOW] },
   })
-  const commands = createCommandPalette(
-    { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
-    words,
-    () => inFront,
-    { getTitle: () => '', getTabAt: () => null },
-    { getStepGroups: () => [], previewItem: () => undefined },
-    runSupport(),
-    undefined,
-    createAppCommands,
-  )
+  const commands = createCommandPalette({ core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) }, words, at: () => inFront, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: () => undefined }, runs: runSupport(), getCommands: createAppCommands })
   search.setOpen(true)
   await search.setTyped(text)
   await flushPromises()
@@ -221,7 +212,7 @@ describe('choosing a row of the commands', () => {
   it('runs the invocation of the command with the deps of the window and no choice of a result', async () => {
     const one = await mountField({}, 'x')
     one.search.setOpen(false)
-    one.commands.setOpen(true)
+    one.commands.palette.setOpen(true)
 
     await one.choose('app:file.copyPath', 'app:file.copyPath')
 
@@ -258,14 +249,7 @@ describe('the highlight of the search menu as groups answer', () => {
       getTarget: () => inFront,
       menu: { getEntries: () => [SHOW] },
     })
-    const commands = createCommandPalette(
-      { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
-      words,
-      () => inFront,
-      { getTitle: () => '', getTabAt: () => null },
-      { getStepGroups: () => [], previewItem: () => undefined },
-      runSupport(),
-    )
+    const commands = createCommandPalette({ core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) }, words, at: () => inFront, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: () => undefined }, runs: runSupport() })
     const field = mount(CommandPalette, {
       props: {
         commands,

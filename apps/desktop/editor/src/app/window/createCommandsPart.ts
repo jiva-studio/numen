@@ -95,7 +95,7 @@ export const createNoteKindReader = (itemLists: CommandItemLists) => async (path
 
 function isPaletteOpen(ctx: WindowContext): boolean {
   const { commands } = ctx
-  return commands ? commands.palette.open.value || commands.commands.open.value : false
+  return commands ? commands.palette.open.value || commands.commands.palette.open.value : false
 }
 
 function initFeatureCommands(

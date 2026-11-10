@@ -105,17 +105,8 @@ const searchFor = async (
 }
 
 const listCommands = (target: CommandTarget) => {
-  const commands = createCommandPalette(
-    { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
-    words,
-    () => target,
-    { getTitle: () => '', getTabAt: () => null },
-    { getStepGroups: () => [], previewItem: () => undefined },
-    runSupport(),
-    undefined,
-    createAppCommands,
-  )
-  commands.setOpen(true)
+  const commands = createCommandPalette({ core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) }, words, at: () => target, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: () => undefined }, runs: runSupport(), getCommands: createAppCommands })
+  commands.palette.setOpen(true)
   return commands
 }
 
@@ -128,11 +119,11 @@ describe('the actions of the palette', () => {
   }
 
   it('are commands in the list of commands over a note', () => {
-    expectCommands(collectActionIds(listCommands(inFront).groups.value))
+    expectCommands(collectActionIds(listCommands(inFront).view.groups.value))
   })
 
   it('are commands in the list of commands over a window with no note', () => {
-    expectCommands(collectActionIds(listCommands(nothingInFront).groups.value))
+    expectCommands(collectActionIds(listCommands(nothingInFront).view.groups.value))
   })
 
   it('are commands on the rows of a note found by name, by heading and by a passage', async () => {

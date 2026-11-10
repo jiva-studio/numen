@@ -40,16 +40,16 @@ const actionWords: ActionWords = {
 
 /** What the palette draws: the commands while they are open, the search under. */
 const field = computed(() =>
-  props.commands.open.value
+  props.commands.palette.open.value
     ? {
         open: true,
         isBusy: false,
-        typed: props.commands.typed.value,
-        groups: props.commands.groups.value,
-        crumb: props.commands.crumb.value,
-        step: props.commands.step.value,
-        opensOn: props.commands.opensOn.value,
-        placeholder: props.commands.placeholder.value,
+        typed: props.commands.palette.typed.value,
+        groups: props.commands.view.groups.value,
+        crumb: props.commands.navigation.crumb.value,
+        step: props.commands.navigation.step.value,
+        opensOn: props.commands.navigation.opensOn.value,
+        placeholder: props.commands.navigation.placeholder.value,
       }
     : {
         open: props.search.open.value,
@@ -65,20 +65,20 @@ const field = computed(() =>
 
 /* -------------------------------- Handlers -------------------------------- */
 async function onTyping(text: string) {
-  if (props.commands.open.value) return await props.commands.setTyped(text)
+  if (props.commands.palette.open.value) return await props.commands.palette.setTyped(text)
   if (!isCommandPrefixTyped(props.search.typed.value, text))
     return await props.search.setTyped(text)
   const setSearchOpen = props.search.setOpen
-  const setCommandsOpen = props.commands.setOpen
+  const setCommandsOpen = props.commands.palette.setOpen
   setSearchOpen(false)
   setCommandsOpen(true)
 }
 
 async function onChoose(item: string, action: string) {
   const setSearchOpen = props.search.setOpen
-  const setCommandsOpen = props.commands.setOpen
-  if (props.commands.open.value) {
-    const invocation = props.commands.chooseItem(item, action)
+  const setCommandsOpen = props.commands.palette.setOpen
+  if (props.commands.palette.open.value) {
+    const invocation = props.commands.palette.chooseItem(item, action)
     if (!invocation) return
     setCommandsOpen(false)
     await runInvocation(invocation, props.doing)
@@ -90,12 +90,12 @@ async function onChoose(item: string, action: string) {
 }
 
 function onDismiss() {
-  if (props.commands.open.value) props.commands.leaveStep()
+  if (props.commands.palette.open.value) props.commands.navigation.leaveStep()
   else props.search.setOpen(false)
 }
 
 function onBack() {
-  if (props.commands.open.value && props.commands.goBack()) {
+  if (props.commands.palette.open.value && props.commands.navigation.goBack()) {
     props.search.setOpen(true)
   }
 }
@@ -120,14 +120,14 @@ function getRowIcon(id: string) {
     :action-words="actionWords"
     @update:model-value="onTyping"
     @choose="onChoose"
-    @light="commands.previewItem"
+    @light="commands.palette.previewItem"
     @back="onBack"
     @dismiss="onDismiss"
   >
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
-    <template v-if="!commands.open.value && search.status.isNothingFound.value" #silence>
+    <template v-if="!commands.palette.open.value && search.status.isNothingFound.value" #silence>
       <span class="nothing-found">
         <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
         <span class="nothing-found__text" data-palette="nothing-text">{{

@@ -45,7 +45,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
           writeMessage(formatError(error), 'error'),
         )
       }
-      getCommands().commands.applyRenames(renamed)
+      getCommands().commands.navigation.applyRenames(renamed)
       notifyPlugins({ paths: changed, renamed })
     },
     reportChange: editing.changes.reportChange,
