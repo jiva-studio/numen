@@ -1,5 +1,5 @@
 /**
- * What the palette draws: the groups of the step it stands at, and the kind and icon of a row.
+ * What the palette draws: the groups of the current step, and the kind and icon of a row.
  */
 import { computed, type Component } from 'vue'
 import type { Vault } from '@/entities/vault'

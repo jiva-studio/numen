@@ -1,5 +1,5 @@
 /**
- * Where the palette stands among its steps, and how it moves between them.
+ * The step the palette is at, and how it moves between steps.
  */
 import type { PaletteSession } from './session'
 
