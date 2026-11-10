@@ -10,8 +10,8 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -247,11 +247,27 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 		t.Fatalf("start process: %v", err)
 	}
 	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
-	sup := lifecycle.New(testsupport.GetMachine())
+	sup := lifecycle.New(nil)
 	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetMachine().Now()); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
-	sup.BeginTeardown()
+	release := make(chan struct{})
+	teardownResult := make(chan error, 1)
+	t.Cleanup(func() {
+		close(release)
+		if err := <-teardownResult; err != nil {
+			t.Error(err)
+		}
+	})
+	go func() {
+		teardownResult <- sup.Teardown(context.WithoutCancel(t.Context()), 100*time.Millisecond, func(context.Context) error {
+			<-release
+			return nil
+		})
+	}()
+	for sup.GetState() != lifecycle.StateDeactivating {
+		time.Sleep(time.Millisecond)
+	}
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 

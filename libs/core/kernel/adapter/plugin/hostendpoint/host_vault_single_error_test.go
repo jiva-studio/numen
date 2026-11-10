@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -122,7 +123,7 @@ func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
 	hostCallers.vault = vaultOf(tooLargeMoveVault{newFakeNoteVault()})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))

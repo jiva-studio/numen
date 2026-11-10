@@ -399,7 +399,7 @@ func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {
 func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
 	release := make(chan struct{})
 	defer close(release)
-	transport := NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	transport := transport.NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if err := http.NewResponseController(w).Flush(); err != nil {
 			t.Error(err)
 		}
@@ -421,7 +421,7 @@ func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
 
 // A call whose context ends after the header has been written ends with the error of the context.
 func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
-	transport := NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	transport := transport.NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		<-r.Context().Done()
 	}))

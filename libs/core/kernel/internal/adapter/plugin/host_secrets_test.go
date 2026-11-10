@@ -205,7 +205,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},
 	}}
-	sup := lifecycle.New(testsupport.GetMachine())
+	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	host.Registry.t.supervisors[secretPluginID] = sup
 	host.Registry.t.endpoints[secretPluginID] = plugindomain.Endpoint{
@@ -555,9 +555,7 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	host.Config.SetSecretSource(allowOne(secretPluginID))
-	host.Config.delivery.mu.Lock()
-	host.Config.delivery.awaitingFirstConfigure[secretPluginID] = true
-	host.Config.delivery.mu.Unlock()
+	host.Config.delivery.AwaitFirstConfigure(secretPluginID)
 
 	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)

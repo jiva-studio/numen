@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"io/fs"
 	"net/http"
 
@@ -24,7 +25,7 @@ type storeEndpoint struct {
 
 var _ numenv1connect.HostStoreServiceHandler = (*storeEndpoint)(nil)
 
-func (e *storeEndpoint) begin(header http.Header) (*VaultAccess, string, error) {
+func (e *storeEndpoint) begin(header http.Header) (*vault.Access, string, error) {
 	pluginID, err := e.endpoint.authenticate(header.Get("Authorization"))
 	if err != nil {
 		return nil, "", err
@@ -33,7 +34,7 @@ func (e *storeEndpoint) begin(header http.Header) (*VaultAccess, string, error) 
 	return vault, pluginID, err
 }
 
-func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (StoreReader, v1.HostStoreErrorCode, error) {
+func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (vault.StoreReader, v1.HostStoreErrorCode, error) {
 	vault, pluginID, err := e.begin(header)
 	if err != nil {
 		return nil, 0, err
@@ -41,7 +42,7 @@ func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (Sto
 	if vault == nil {
 		return nil, noStoreVault, nil
 	}
-	store, err := vault.OpenStore(pluginID)
+	store, err := vault.Stores.OpenStore(pluginID)
 	if err != nil {
 		code, err := answerStore(ctx, err)
 		return nil, code, err
@@ -49,7 +50,7 @@ func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (Sto
 	return store, 0, nil
 }
 
-func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (StoreWriter, v1.HostStoreErrorCode, error) {
+func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (vault.StoreWriter, v1.HostStoreErrorCode, error) {
 	vault, pluginID, err := e.begin(header)
 	if err != nil {
 		return nil, 0, err
@@ -57,7 +58,7 @@ func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (Sto
 	if vault == nil {
 		return nil, noStoreVault, nil
 	}
-	store, err := vault.OpenStoreWriter(pluginID)
+	store, err := vault.Stores.OpenStoreWriter(pluginID)
 	if err != nil {
 		code, err := answerStore(ctx, err)
 		return nil, code, err

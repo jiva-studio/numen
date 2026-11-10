@@ -28,7 +28,7 @@ type windowEndpoint struct {
 var _ numenv1connect.HostWindowServiceHandler = (*windowEndpoint)(nil)
 
 func (e *windowEndpoint) begin(header http.Header) (WindowControl, error) {
-	if _, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionWindowFocus); err != nil {
+	if _, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionWindowFocus); err != nil {
 		return nil, err
 	}
 	return e.endpoint.callers.Window.GetPluginWindow(), nil

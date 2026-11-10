@@ -29,6 +29,13 @@ type Arranger struct {
 	Window      NoteChanges
 	WindowVault func() (domain.Vault, bool)
 	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
+	Problems    problemQueries
+
+	session *Session
+}
+
+type problemQueries interface {
+	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 }
 
 func (a Arranger) getChanges(v domain.Vault) NoteChanges {
@@ -56,57 +63,57 @@ func (a Arranger) notifyWindowIfCurrent(v domain.Vault, draw note.TellMove) note
 	}
 }
 
-func (a Vault) RenameNote(ctx context.Context, path, title string) (string, bool, *domain.MoveResult, error) {
-	v, err := a.open()
+func (a Arranger) RenameNote(ctx context.Context, path, title string) (string, bool, *domain.MoveResult, error) {
+	v, err := a.session.open()
 	if err != nil {
 		return "", false, nil, err
 	}
-	rename, err := a.Arranger.getChanges(v).Rename.Execute(ctx, v, path, title)
+	rename, err := a.getChanges(v).Rename.Execute(ctx, v, path, title)
 	if rename.Moved != nil || err == nil {
-		a.notifyFileWritten()
+		a.session.notifyFileWritten()
 	}
 	return rename.Path, rename.By == query.ByFilename, rename.Moved, err
 }
 
-func (a Vault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
-	v, err := a.open()
+func (a Arranger) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
+	v, err := a.session.open()
 	if err != nil {
 		return domain.MoveResult{From: from, To: to}, err
 	}
-	move, err := a.Arranger.getChanges(v).Move.Execute(ctx, v, from, to)
+	move, err := a.getChanges(v).Move.Execute(ctx, v, from, to)
 	if move.IsMoved {
-		a.notifyFileWritten()
+		a.session.notifyFileWritten()
 	}
 	return move, err
 }
 
-func (a Vault) RemoveNote(ctx context.Context, path string) (string, []string, error) {
-	v, err := a.open()
+func (a Arranger) RemoveNote(ctx context.Context, path string) (string, []string, error) {
+	v, err := a.session.open()
 	if err != nil {
 		return "", nil, err
 	}
-	removal, err := a.Arranger.getChanges(v).Remove.Execute(ctx, v, path, false)
+	removal, err := a.getChanges(v).Remove.Execute(ctx, v, path, false)
 	if errors.Is(err, note.ErrFolder) {
 		return "", nil, domain.NewDetailError(fmt.Sprintf("%s is a folder; pass the paths of the notes to remove", path), edit.ErrNotANote, err)
 	}
 	if removal.Trashed != "" {
-		a.notifyFileWritten()
+		a.session.notifyFileWritten()
 	}
 	return removal.Trashed, removal.Dangling, err
 }
 
-func (a Vault) GetProblems(ctx context.Context, checks []domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
-	v, err := a.open()
+func (a Arranger) GetProblems(ctx context.Context, checks []domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
+	v, err := a.session.open()
 	if err != nil {
 		return nil, nil, err
 	}
-	if a.Arranger.Checks == nil {
+	if a.Checks == nil {
 		return nil, nil, fmt.Errorf("the checks of %s cannot run: %w", v.Name, domain.ErrUnavailable)
 	}
-	return a.Arranger.Checks(ctx, v, checks...)
+	return a.Checks(ctx, v, checks...)
 }
-func (a Vault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
-	v, err := a.open()
+func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
+	v, err := a.session.open()
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +121,7 @@ func (a Vault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([
 	for i, one := range additions {
 		in[i] = note.LinkAddition{From: one.From, FileStat: one.Baseline, Link: one.Link}
 	}
-	added, err := a.Arranger.getChanges(v).AddLinks.Execute(ctx, v, in)
+	added, err := a.getChanges(v).AddLinks.Execute(ctx, v, in)
 	if err != nil {
 		return nil, err
 	}
@@ -125,29 +132,38 @@ func (a Vault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([
 		isWritten = isWritten || one.Error == nil || errors.Is(one.Error, edit.ErrIndexOutdated)
 	}
 	if isWritten {
-		a.notifyFileWritten()
+		a.session.notifyFileWritten()
 	}
 	return out, nil
 }
 
-func (a Vault) UpdateLinks(
+func (a Arranger) UpdateLinks(
 	ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat,
 ) (domain.FileStat, error) {
-	v, err := a.open()
+	v, err := a.session.open()
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	stat, err := a.Arranger.getChanges(v).Links.Update(ctx, v, from, to, change, baseline)
-	return stat, a.notifyAfterWrite(err)
+	stat, err := a.getChanges(v).Links.Update(ctx, v, from, to, change, baseline)
+	return stat, a.session.notifyAfterWrite(err)
 }
 
-func (a Vault) RemoveLinks(
+func (a Arranger) RemoveLinks(
 	ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat,
 ) (domain.FileStat, error) {
-	v, err := a.open()
+	v, err := a.session.open()
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	stat, err := a.Arranger.getChanges(v).Links.RemoveTargetLinks(ctx, v, from, to, role, baseline)
-	return stat, a.notifyAfterWrite(err)
+	stat, err := a.getChanges(v).Links.RemoveTargetLinks(ctx, v, from, to, role, baseline)
+	return stat, a.session.notifyAfterWrite(err)
+}
+
+// GetParseProblems returns the notes of the vault that could not be read.
+func (a Arranger) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
+	v, err := a.session.open()
+	if err != nil || a.Problems == nil {
+		return nil, err
+	}
+	return a.Problems.GetParseProblems(ctx, v.ID)
 }

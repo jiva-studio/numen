@@ -5,14 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"slices"
 	"sync"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 var (
@@ -36,67 +30,31 @@ const (
 	StateDeactivating
 )
 
-// Supervisor monitors and controls the execution lifecycle of a single plugin process.
+// Supervisor monitors and controls the execution lifecycle of a single plugin process. Failure keeps why
+// the last start failed, and Permissions what the manifest of the plugin lets it do.
 type Supervisor struct {
-	mu               sync.Mutex
-	state            ProcessState
-	process          *os.Process
-	inProcess        bool
-	teardownBegun    bool
-	failure          error
-	failedAt         time.Time
-	activationPolicy ActivationPolicy
-	lastActiveTime   time.Time
-	activeRefCount   int
-	permissions      []string
-	validator        security.VaultPathValidator
-	exitCh           chan struct{}
-	onExit           func()
-	activatingCh     chan struct{}
-	activationErr    error
+	Failure     StartFailure
+	Permissions Permissions
 
-	rpcShutdown func(ctx context.Context) error
-	onError     func(error)
-	clock       machineport.Clock
+	mu             sync.Mutex
+	state          ProcessState
+	process        *os.Process
+	inProcess      bool
+	teardownBegun  bool
+	lastActiveTime time.Time
+	activeRefCount int
+	exitCh         chan struct{}
+	onExit         func()
+	activatingCh   chan struct{}
+	activationErr  error
+	rpcShutdown    func(ctx context.Context) error
+	onError        func(error)
 }
 
-// New creates an idle supervisor for a plugin that reads the time from clock.
-func New(clock machineport.Clock) *Supervisor {
-	return &Supervisor{
-		clock:            clock,
-		mu:               sync.Mutex{},
-		state:            StateDormant,
-		process:          nil,
-		inProcess:        false,
-		teardownBegun:    false,
-		failure:          nil,
-		failedAt:         time.Time{},
-		activationPolicy: DefaultActivationPolicy(),
-		lastActiveTime:   time.Time{},
-		activeRefCount:   0,
-		permissions:      nil,
-		validator:        security.NewVaultPathValidator(),
-		exitCh:           nil,
-		onExit:           nil,
-		activatingCh:     nil,
-		activationErr:    nil,
-		rpcShutdown:      nil,
-		onError:          nil,
-	}
-}
-
-// SetActivationPolicy sets the deadline of an activation.
-func (s *Supervisor) SetActivationPolicy(policy ActivationPolicy) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.activationPolicy = policy
-}
-
-// GetActivationPolicy returns the configured activation policy.
-func (s *Supervisor) GetActivationPolicy() ActivationPolicy {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.activationPolicy
+// New creates an idle supervisor for a plugin. onError receives the errors the supervisor meets outside
+// a call, such as a failed wait for the process; it may be nil.
+func New(onError func(error)) *Supervisor {
+	return &Supervisor{Permissions: newPermissions(), state: StateDormant, onError: onError}
 }
 
 // SetOnExit sets a callback invoked when the plugin process terminates, before the supervisor goes Dormant.
@@ -104,22 +62,6 @@ func (s *Supervisor) SetOnExit(fn func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.onExit = fn
-}
-
-// SetOnError sets the callback that receives errors the supervisor meets outside a call, such as a failed kill.
-func (s *Supervisor) SetOnError(fn func(error)) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.onError = fn
-}
-
-func (s *Supervisor) reportError(err error) {
-	s.mu.Lock()
-	fn := s.onError
-	s.mu.Unlock()
-	if fn != nil {
-		fn(err)
-	}
 }
 
 // GetState returns the current lifecycle state of the supervised plugin.
@@ -164,10 +106,7 @@ func (s *Supervisor) FinishActivating() {
 	defer s.mu.Unlock()
 	s.state = StateActive
 	s.activationErr = nil
-	if s.activatingCh != nil {
-		close(s.activatingCh)
-		s.activatingCh = nil
-	}
+	closeActivating(&s.activatingCh)
 }
 
 // SetDormant transitions the supervisor state to StateDormant and clears activation state.
@@ -180,44 +119,14 @@ func (s *Supervisor) SetDormant(err error) {
 	s.teardownBegun = false
 	s.activeRefCount = 0
 	s.activationErr = err
-	if s.activatingCh != nil {
-		close(s.activatingCh)
-		s.activatingCh = nil
-	}
+	closeActivating(&s.activatingCh)
 }
 
-// SetPermissions stores the security permissions declared by the supervised plugin.
-func (s *Supervisor) SetPermissions(permissions []string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	norm := make([]string, len(permissions))
-	for i, p := range permissions {
-		norm[i] = manifest.NormalizePermission(p)
+func closeActivating(ch *chan struct{}) {
+	if *ch != nil {
+		close(*ch)
+		*ch = nil
 	}
-	s.permissions = norm
-}
-
-// HasPermission reports whether the supervised plugin holds the given permission.
-func (s *Supervisor) HasPermission(permission string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return slices.Contains(s.permissions, manifest.NormalizePermission(permission))
-}
-
-// CheckPermission returns an error if the supervised plugin lacks the requested permission.
-func (s *Supervisor) CheckPermission(permission string) error {
-	if !s.HasPermission(permission) {
-		return plugin.ErrPermissionDenied
-	}
-	return nil
-}
-
-// ValidatePath checks that targetPath is within vaultRoot and the plugin has vault:read permission.
-func (s *Supervisor) ValidatePath(vaultRoot, targetPath string) (string, error) {
-	if err := s.CheckPermission(manifest.PermissionVaultRead); err != nil {
-		return "", err
-	}
-	return s.validator.ValidatePath(vaultRoot, targetPath)
 }
 
 // Attach registers a newly started OS process under this supervisor.
@@ -232,17 +141,14 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	s.state = StateActive
 	s.lastActiveTime = now
 	s.activationErr = nil
-	if s.activatingCh != nil {
-		close(s.activatingCh)
-		s.activatingCh = nil
-	}
+	closeActivating(&s.activatingCh)
 	exitCh := make(chan struct{})
 	s.exitCh = exitCh
 
 	go func() {
 		_, waitErr := p.Wait()
-		if waitErr != nil && !errors.Is(waitErr, os.ErrProcessDone) {
-			s.reportError(fmt.Errorf("wait for plugin process %d: %w", p.Pid, waitErr))
+		if waitErr != nil && !errors.Is(waitErr, os.ErrProcessDone) && s.onError != nil {
+			s.onError(fmt.Errorf("wait for plugin process %d: %w", p.Pid, waitErr))
 		}
 		s.mu.Lock()
 		var onExit func()
@@ -278,13 +184,10 @@ func (s *Supervisor) ActivateInProcess(now time.Time) {
 	s.activeRefCount = 1
 	s.lastActiveTime = now
 	s.activationErr = nil
-	if s.activatingCh != nil {
-		close(s.activatingCh)
-		s.activatingCh = nil
-	}
+	closeActivating(&s.activatingCh)
 }
 
-func (s *Supervisor) isRunningLocked() bool {
+func isRunning(s *Supervisor) bool {
 	if s.state != StateActive && s.state != StateIdle {
 		return false
 	}
@@ -295,7 +198,7 @@ func (s *Supervisor) isRunningLocked() bool {
 func (s *Supervisor) Acquire(now time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.isRunningLocked() {
+	if !isRunning(s) {
 		return false
 	}
 	s.activeRefCount++
@@ -308,7 +211,7 @@ func (s *Supervisor) Acquire(now time.Time) bool {
 func (s *Supervisor) Release(now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.isRunningLocked() {
+	if !isRunning(s) {
 		return
 	}
 	if s.activeRefCount > 0 {
@@ -318,16 +221,6 @@ func (s *Supervisor) Release(now time.Time) {
 	if s.activeRefCount == 0 {
 		s.state = StateIdle
 	}
-}
-
-// IsIdle reports whether the process has been idle longer than the specified threshold.
-func (s *Supervisor) IsIdle(threshold time.Duration, now time.Time) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.state != StateIdle || s.activeRefCount > 0 {
-		return false
-	}
-	return now.Sub(s.lastActiveTime) >= threshold
 }
 
 // BeginDeactivation moves a plugin that has been idle for the threshold to StateDeactivating and reports whether it did.
@@ -379,14 +272,11 @@ func (s *Supervisor) Teardown(
 	if s.state == StateDeactivating && s.teardownBegun {
 		exitCh := s.exitCh
 		s.mu.Unlock()
-		return s.waitDeactivating(ctx, exitCh)
+		return waitDeactivating(ctx, exitCh)
 	}
 	s.state = StateDeactivating
 	s.teardownBegun = true
-	if s.activatingCh != nil {
-		close(s.activatingCh)
-		s.activatingCh = nil
-	}
+	closeActivating(&s.activatingCh)
 	proc := s.process
 	exitCh := s.exitCh
 	if rpcShutdown == nil {
@@ -394,25 +284,27 @@ func (s *Supervisor) Teardown(
 	}
 	s.mu.Unlock()
 
-	if err := s.requestGracefulShutdown(ctx, rpcShutdown); err != nil {
-		// A plugin that cannot be asked to stop is killed without waiting out the grace period.
-		return s.forceKill(proc, exitCh)
+	// A plugin that cannot be asked to stop is killed without waiting out the grace period.
+	if rpcShutdown == nil || rpcShutdown(ctx) == nil {
+		select {
+		case <-exitCh:
+			s.markDormant(proc)
+			return nil
+		case <-time.After(gracePeriod):
+		}
 	}
-
-	select {
-	case <-exitCh:
-		s.markDormant(proc)
-		return nil
-	case <-time.After(gracePeriod):
-		return s.forceKill(proc, exitCh)
+	if err := kill(proc, exitCh); err != nil {
+		return err
 	}
+	s.markDormant(proc)
+	return nil
 }
 
 func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ctx context.Context) error) error {
 	var shutdownErr error
 	defer func() {
-		if shutdownErr != nil {
-			s.reportError(fmt.Errorf("request plugin shutdown: %w", shutdownErr))
+		if shutdownErr != nil && s.onError != nil {
+			s.onError(fmt.Errorf("request plugin shutdown: %w", shutdownErr))
 		}
 	}()
 	s.mu.Lock()
@@ -424,17 +316,14 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	s.inProcess = false
 	s.teardownBegun = false
 	s.activeRefCount = 0
-	if s.activatingCh != nil {
-		close(s.activatingCh)
-		s.activatingCh = nil
-	}
+	closeActivating(&s.activatingCh)
 	if rpcShutdown != nil {
 		shutdownErr = rpcShutdown(ctx)
 	}
 	return nil
 }
 
-func (s *Supervisor) waitDeactivating(ctx context.Context, exitCh chan struct{}) error {
+func waitDeactivating(ctx context.Context, exitCh chan struct{}) error {
 	if exitCh == nil {
 		return nil
 	}
@@ -446,14 +335,7 @@ func (s *Supervisor) waitDeactivating(ctx context.Context, exitCh chan struct{})
 	}
 }
 
-func (s *Supervisor) requestGracefulShutdown(ctx context.Context, rpcShutdown func(ctx context.Context) error) error {
-	if rpcShutdown != nil {
-		return rpcShutdown(ctx)
-	}
-	return nil
-}
-
-func (s *Supervisor) forceKill(proc *os.Process, exitCh chan struct{}) error {
+func kill(proc *os.Process, exitCh chan struct{}) error {
 	if proc != nil {
 		if err := proc.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
 			return fmt.Errorf("kill plugin process %d: %w", proc.Pid, err)
@@ -462,7 +344,6 @@ func (s *Supervisor) forceKill(proc *os.Process, exitCh chan struct{}) error {
 	if exitCh != nil {
 		<-exitCh
 	}
-	s.markDormant(proc)
 	return nil
 }
 
@@ -476,10 +357,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.teardownBegun = false
 		s.activeRefCount = 0
 		s.activationErr = nil
-		if s.activatingCh != nil {
-			close(s.activatingCh)
-			s.activatingCh = nil
-		}
+		closeActivating(&s.activatingCh)
 	}
 }
 
@@ -496,12 +374,4 @@ func (s *Supervisor) GetExitSignal() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.exitCh
-}
-
-// BeginTeardown marks the supervisor as deactivating with its teardown under way.
-func (s *Supervisor) BeginTeardown() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.state = StateDeactivating
-	s.teardownBegun = true
 }

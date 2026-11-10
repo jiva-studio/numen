@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"strings"
 	"sync"
@@ -22,7 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func openListEndpoint(t *testing.T, list VaultList) (*Endpoint, numenv1connect.HostVaultServiceClient) {
+func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
 	hostCallers := newCallers(nil)
 	hostCallers.vault = vaultOf(newFakeNoteVault())

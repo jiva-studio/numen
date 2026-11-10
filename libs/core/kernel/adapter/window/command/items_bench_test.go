@@ -2,8 +2,10 @@ package command_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
 	"connectrpc.com/connect"
 
@@ -12,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
@@ -31,7 +32,7 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 	if err := host.Discovery.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := plugincommand.NewCommands(manifestlist.Open(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), pluginhost.Join(host), nil, nil)
+	commands := plugincommand.NewCommands(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), pluginhost.Join(host), nil, nil)
 	return command.NewHandler(shownVault{}, commands, &versionItems{})
 }
 

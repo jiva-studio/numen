@@ -32,7 +32,7 @@ type toolEndpoint struct {
 var _ numenv1connect.PluginToolServiceHandler = (*toolEndpoint)(nil)
 
 func (e *toolEndpoint) begin(header http.Header) (string, PluginTools, error) {
-	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionVaultRead)
+	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionVaultRead)
 	if err != nil {
 		return "", nil, err
 	}
@@ -83,7 +83,7 @@ func (e *Endpoint) getVaultID(header http.Header) (domain.VaultID, error) {
 	if err != nil || vault == nil {
 		return "", err
 	}
-	v, showing := vault.GetVault()
+	v, showing := vault.Switch.GetVault()
 	if !showing {
 		return "", nil
 	}
