@@ -7,7 +7,7 @@ import { windowService } from '@/shared/api/clients'
 import type { Task } from '../lib/task'
 import { WINDOW } from './window'
 
-/** What a piece of work counts, in the words the window uses. */
+/** What a piece of work counts, in the words the window uses. A unit it has no word for is counted one by one. */
 const counted: Record<TaskUnitCode, TallyUnit> = {
   [TASK_UNIT.UNSPECIFIED]: 'items',
   [TASK_UNIT.THINGS]: 'items',
@@ -15,7 +15,6 @@ const counted: Record<TaskUnitCode, TallyUnit> = {
   [TASK_UNIT.SECONDS]: 'seconds',
 }
 
-/** A unit the window has no word for is counted one by one. */
 const getCounting = (unit: number): TallyUnit =>
   (counted as Partial<Record<number, TallyUnit>>)[unit] ?? 'items'
 

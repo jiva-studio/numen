@@ -25,7 +25,6 @@ afterEach(() => {
   restore()
 })
 
-/** The vaults of a window whose core lists two vaults and says the window shows the first. */
 const open = () => {
   restore = installCoreAnswers({
     vaultsService: { listVaults: () => ({ vaults: TWO.vaults }) },

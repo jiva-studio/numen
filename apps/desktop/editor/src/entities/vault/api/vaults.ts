@@ -29,7 +29,6 @@ const getVaultError = (from: {
   error?: VaultsErrorCodeValue | undefined
 }): VaultErrorCode | null => (from.error === undefined ? null : unvaulted[from.error])
 
-/** One vault of the list, kept as the plain value the window carries it as. */
 const mapVault = (one: VaultWire): Vault => ({
   id: one.id,
   name: one.name,

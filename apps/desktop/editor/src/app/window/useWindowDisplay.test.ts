@@ -61,7 +61,6 @@ afterEach(() => {
   restore()
 })
 
-/** Answers the calls of the vault and the window from the fake, as the core would. */
 const answerFrom = (core: Fake) => {
   restore()
   restore = installCoreAnswers({
@@ -560,6 +559,9 @@ describe('a vault that could not be read', () => {
     const travelled: string[] = []
     const core = fake({
       getInitialOpenPath: async () => null,
+      watchVaultChanges: async function* () {
+        await waitForever()
+      },
       watchFocus: async function* () {
         yield { path: 'Focused.md', ranges: [], tabId: '' }
       },

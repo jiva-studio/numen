@@ -64,9 +64,9 @@ describe('a vault requested for', () => {
     requestLog.renameVault.mockResolvedValue({
       vault: { id: 'v2', name: 'Other', path: '/v2', isMissing: false },
     })
-    const renamed = await vaults.rename('v2', 'Other')
+    const answer = await vaults.rename('v2', 'Other')
     expect(requestLog.renameVault.mock.calls.at(-1)?.[0]).toMatchObject({ id: 'v2', name: 'Other' })
-    expect(renamed.ok ? renamed.value?.name : null).toBe('Other')
+    expect(answer.ok ? answer.value?.name : null).toBe('Other')
   })
 
   it('leaves the list as it was where the core names no vault', async () => {

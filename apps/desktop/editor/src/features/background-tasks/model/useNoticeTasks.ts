@@ -13,7 +13,6 @@ import { WORDS as words } from '@/shared/words'
 export interface NoticeTasksDeps {
   log: MessageLog
   plugins: NoticeQueue
-  /** What the window lost, could not watch or could not read. */
   window: {
     readonly lost: Readonly<Ref<string>>
     readonly unwatched: Readonly<Ref<string>>
