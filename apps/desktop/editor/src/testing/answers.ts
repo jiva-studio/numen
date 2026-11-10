@@ -6,7 +6,6 @@
  */
 import type { Entry } from '@/entities/file'
 import type { Tab } from '@/entities/tab'
-import type { Tab } from '@/entities/tab'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonObject, JsonValue } from '@/shared/api/json'
 
