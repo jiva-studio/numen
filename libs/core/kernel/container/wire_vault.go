@@ -217,7 +217,3 @@ func addVault(c vaultWiring, registry vaultregistry.Ports, root, name string) (d
 func getProblems(_ vaultWiring, problems problemport.ProblemQueries) *vault.GetProblems {
 	return vault.NewStandardGetProblems(problems)
 }
-
-func getSummary(_ vaultWiring, summaries noteport.VaultSummaries) *vaultregistry.GetSummary {
-	return vaultregistry.NewGetSummary(summaries)
-}

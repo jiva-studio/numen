@@ -110,12 +110,9 @@ type settingsStores struct {
 }
 
 type settingsPluginRefs struct {
-	PluginHost       *PluginHost
-	KeyStore         pluginport.KeyStore
-	AgentProvider    func() agentport.AgentProvider
-	GetAgentPrograms func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
-	SetSecretSource  func()
-	SetCompleter     func()
+	PluginHost *PluginHost
+	KeyStore   pluginport.KeyStore
+	Plugins    func() pluginsWiring
 }
 
 type settingsWiring struct {
@@ -179,11 +176,9 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 
 func setUpPluginHost(c settingsWiring) {
 	c.PluginHost.SetKeyStore(c.KeyStore)
-	if c.SetSecretSource != nil {
-		c.SetSecretSource()
-	}
-	if c.SetCompleter != nil {
-		c.SetCompleter()
+	if c.Plugins != nil {
+		setSecretSource(c.Plugins())
+		setCompleter(c.Plugins())
 	}
 }
 
@@ -211,8 +206,8 @@ func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvide
 	return func() []settingsdomain.Model {
 		target := settingsGetSettingsOrDefaults(c)
 		var programs []agentdomain.Program
-		if c.GetAgentPrograms != nil {
-			programs = c.GetAgentPrograms(provider, target.Agent)
+		if c.Plugins != nil {
+			programs = getAgentPrograms(c.Plugins(), provider, target.Agent)
 		}
 		return prefixModels(settingsdomain.AppOwner, settingsadapter.AgentModels(agentAt, target.Agent, programs))
 	}

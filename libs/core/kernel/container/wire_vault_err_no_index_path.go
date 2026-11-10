@@ -170,14 +170,6 @@ func vaultFocusNote(_ vaultWiring, refs noteport.NoteRefs, view windowport.Windo
 	return query.NewFocusNote(refs, view)
 }
 
-func getNamedPaths(_ vaultWiring, names noteport.NamedPaths) *query.GetNamedPaths {
-	return query.NewGetNamedPaths(names)
-}
-
-func vaultRead(c vaultWiring) file.Read {
-	return file.Read{Readers: vaultReaders(c)}
-}
-
 func vaultOpener(c vaultWiring, db *vault.Index) *vault.VaultOpener {
 	return vaultOpenerWith(c, db, vaultReaders(c), vaultWatcher(c))
 }
@@ -284,7 +276,7 @@ func SetShellNotes(c Config, api *shell.API, db *vault.Index, updateIndex edit.I
 
 // BindVaultIndexer has a shell read a vault into the index through vaults, and report a change each
 // time a vault is read.
-func BindVaultIndexer(c Config, ctx context.Context, api *shell.API, vaults *vault.OpenVaults[*vault.Index]) {
+func BindVaultIndexer(_ Config, ctx context.Context, api *shell.API, vaults *vault.OpenVaults[*vault.Index]) {
 	vaults.RecordVault = func(v domain.Vault) {
 		api.ClearIndexFailure(v.ID)
 		api.ReportChange()

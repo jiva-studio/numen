@@ -185,14 +185,9 @@ func settingsOf(c Config) settingsWiring {
 			SubscribedHosts: &res.subscribedHosts,
 		},
 		settingsPluginRefs: settingsPluginRefs{
-			PluginHost:    c.PluginHost,
-			KeyStore:      c.KeyStore,
-			AgentProvider: func() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) },
-			GetAgentPrograms: func(p agentport.AgentProvider, t settingsadapter.Agent) []agentdomain.Program {
-				return getAgentPrograms(plugins(c), p, t)
-			},
-			SetSecretSource: func() { setSecretSource(plugins(c)) },
-			SetCompleter:    func() { setCompleter(plugins(c)) },
+			PluginHost: c.PluginHost,
+			KeyStore:   c.KeyStore,
+			Plugins:    func() pluginsWiring { return plugins(c) },
 		},
 		ErrorHandler: func(err error) { handleError(c, err) },
 	}

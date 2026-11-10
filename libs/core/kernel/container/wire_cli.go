@@ -131,7 +131,7 @@ func closeIfOpen(closeFn func() error) error {
 }
 
 // GetVaultList builds the use case that lists the vaults of the registry given.
-func GetVaultList(c Config, ports registry.Ports) registry.List {
+func GetVaultList(_ Config, ports registry.Ports) registry.List {
 	return registry.NewList(ports.Vaults)
 }
 
