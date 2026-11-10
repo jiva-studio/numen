@@ -54,7 +54,7 @@ func newIndexWorker(
 	reading ReadVaultFunc, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:  reading,
+		Reading:  indexing.OpenReading(reading),
 		Embedder: embedder,
 		VectorCounts: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
 			if state.Indexing.Progress == nil {

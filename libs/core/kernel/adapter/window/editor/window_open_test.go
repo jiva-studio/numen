@@ -153,7 +153,6 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 }
 
-
 // gateWalk holds the first walk of the notes of a vault start until release is closed.
 func gateWalk(start editor.StartVaultFunc, release <-chan struct{}) editor.StartVaultFunc {
 	return func(
