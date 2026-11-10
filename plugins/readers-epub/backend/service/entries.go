@@ -7,7 +7,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/books"
 )
 
 // entriesPattern is where the entries of a book's archive are served below the plugin route. The
@@ -16,12 +18,12 @@ const entriesPattern = "entries/{entry...}"
 
 // EntryServer serves the entries of the books of a vault, such as the pictures a book carries.
 type EntryServer struct {
-	books *BookServer
+	reader *books.Reader
 }
 
-// NewEntryServer serves the entries the book server reads.
-func NewEntryServer(books *BookServer) *EntryServer {
-	return &EntryServer{books: books}
+// NewEntryServer serves the entries the book reader reads.
+func NewEntryServer(reader *books.Reader) *EntryServer {
+	return &EntryServer{reader: reader}
 }
 
 // ServeHTTP answers a request for one entry: the entry is the path value "entry", the book is the
@@ -33,7 +35,7 @@ func (s *EntryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Entry:    r.PathValue("entry"),
 		Baseline: parseBytesQuery(r.URL.Query()),
 	}
-	res, err := s.books.ReadBookEntry(withRequestVault(r.Context(), r.Header), req)
+	res, err := s.reader.ReadBookEntry(books.WithVault(r.Context(), host.GetRequestVault(r.Header)), req)
 	if err != nil {
 		failure := toAPIError(err)
 		http.Error(w, failure.Error(), getStatus(failure.Code))
