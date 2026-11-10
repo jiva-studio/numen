@@ -13,6 +13,15 @@ export interface Tab {
   readonly place?: OpenTab['place']
 }
 
+/** A tab kept by the core, to open again. */
+export interface SavedTab {
+  readonly id: string
+  readonly kind: string
+  readonly path: string
+  readonly title?: string | undefined
+  readonly saved?: unknown
+}
+
 /** What currently open: every tab, and which of them is active. */
 export interface OpenTabs {
   readonly tabs: readonly Tab[]

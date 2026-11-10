@@ -30,14 +30,14 @@ import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { WORDS } from '@/shared/words'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 
 type Words = typeof WORDS
 
 export interface SettingsDeps {
   words: Words
   log: MessageLog
-  windowTabs: ReturnType<typeof useWindowTabs>
+  windowTabs: WindowTabs
   onSizeChanged: () => void
   getSettingsViews?: Installation['getSettingsViews']
   getPlatform?: Installation['getPlatform']

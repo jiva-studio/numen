@@ -6,12 +6,16 @@ import { formatError } from '@/shared/api/errors'
 import type { Ref } from 'vue'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import type { useWindowTabs, MovedTab } from '@/entities/tab'
+import {
+  parseSavedTabs,
+  readDetachedTab,
+  readOpenTabs,
+  type MovedTab,
+  type WindowTabs,
+} from '@/entities/tab'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { core } from '../vault'
 import { getFrontendPluginIds } from '../plugins/useWindowPlugins'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
-import { parseSavedTabs } from '../tabs/useOpenTabs'
 import type { WindowCore } from './createDisplayPart'
 import type { useSettings } from './useSettings'
 import { useAppBootstrap } from './useAppBootstrap'
@@ -21,7 +25,7 @@ import { closeWindow, closeWindowWhenEmpty } from '@/entities/window'
 
 interface AppLifecycleDeps {
   vaultsModule: ReturnType<typeof useVaults>
-  windowTabs: ReturnType<typeof useWindowTabs>
+  windowTabs: WindowTabs
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
@@ -36,9 +40,9 @@ interface AppLifecycleDeps {
   openDetachedTab(moved: MovedTab): void
 }
 
-const readDetachedTab = async (windowId: string, tabId: string) => {
+const findDetachedTab = async (windowId: string, tabId: string) => {
   try {
-    return await core.readDetachedTab(windowId, tabId)
+    return await readDetachedTab(windowId, tabId)
   } catch {
     return null
   }
@@ -46,7 +50,7 @@ const readDetachedTab = async (windowId: string, tabId: string) => {
 
 const readSavedTabs = async () => {
   try {
-    return await core.readOpenTabs()
+    return await readOpenTabs()
   } catch {
     // Stryker disable next-line StringLiteral: empty tabs array skips restoreTabs so activeId is unused
     return { tabs: [], activeId: '' }
@@ -64,7 +68,7 @@ export function initAppLifecycle(deps: AppLifecycleDeps) {
     if (detachedId) {
       // A window made for a detach shows only that tab. With no detach to read, it opens no tab
       // and closes; it does not restore the tabs of the main window.
-      const detached = await readDetachedTab(deps.windowId, detachedId)
+      const detached = await findDetachedTab(deps.windowId, detachedId)
       if (detached) deps.openDetachedTab(detached)
       deps.onLayoutStarted()
       return

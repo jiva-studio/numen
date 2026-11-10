@@ -6,18 +6,18 @@ import { answerCore } from './coreAnswers'
 
 /**
  * Answers the question which plugin provides a kind of tab from `entries` until the test ends,
- * and returns the kinds asked about, in order. A kind no entry declares is answered as not found.
+ * and returns the kinds it is asked about, in order. A kind no entry declares is answered as not found.
  * `before` runs before each answer, and the answer waits for what it returns.
  */
 export const answerTabKinds = (
   entries: readonly CatalogEntry[],
   before: () => Promise<void> = () => Promise.resolve(),
 ): readonly string[] => {
-  const asked: string[] = []
+  const lookups: string[] = []
   answerCore({
     pluginCatalog: {
       findCatalogEntryByTabKind: async (request) => {
-        asked.push(request.kind)
+        lookups.push(request.kind)
         await before()
         const entry = entries.find((one) =>
           one.contributes?.tabKinds.some((tabKind) => tabKind.kind === request.kind),
@@ -26,5 +26,5 @@ export const answerTabKinds = (
       },
     },
   })
-  return asked
+  return lookups
 }

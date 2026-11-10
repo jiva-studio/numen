@@ -9,7 +9,7 @@ import { WORDS } from '@/shared/words'
 import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 import { createLostConnection, type CoreAnswers } from '@numen/core-client/testing'
 
 let restore: (() => void) | undefined
@@ -60,7 +60,7 @@ const createSettings = (
     },
   } as unknown as MessageLog
   const handle = { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') }
-  const windowTabs = { handle } as unknown as ReturnType<typeof useWindowTabs>
+  const windowTabs = { handle } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = useSettings({
     words: WORDS,

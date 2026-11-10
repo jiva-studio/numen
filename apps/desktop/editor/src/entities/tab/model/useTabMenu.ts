@@ -15,7 +15,7 @@ import {
   type SlotItem,
   type SlotMenu,
 } from '@numen/plugin-loader'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from './windowTabs'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS } from '@/shared/words'
 
@@ -144,7 +144,7 @@ export function useTabMenu(deps: TabMenuDeps) {
 
 /** The tabs of a window, and how the commands of the menu of a tab are read and run. */
 export interface WindowTabMenuDeps {
-  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs' | 'getTab'>
   readonly slots?: SlotHost | undefined
   readonly commands?: CommandsHost | undefined
   onHighlight?(this: void, windowId: string, isOn: boolean): void

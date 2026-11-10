@@ -11,7 +11,7 @@ import {
   resolveTaskAction,
   useNoticeTasks,
 } from '@/features/background-tasks'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 import type { NoteLookup, runSupport } from '@/features/command-palette'
 import type { Command, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
@@ -40,18 +40,18 @@ import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
 import type { useWindowDisplay } from './useWindowDisplay'
 import { createTargetResolver } from './useWindowDisplayOptions'
-import { useWindowKinds } from './useWindowKinds'
+import { useTabKinds } from './useTabKinds'
 
 interface WindowCommandsOptions {
   tabsHold: TabsHold
-  windowTabs: ReturnType<typeof useWindowTabs>
+  windowTabs: WindowTabs
   getTarget: () => CommandTarget
   knows: NoteLookup
   settings: ReturnType<typeof useSettings>
   runs: ReturnType<typeof runSupport>
   vaultsModule: ReturnType<typeof useVaults>
   editing: ReturnType<typeof createNoteEditors>
-  kinds: ReturnType<typeof useWindowKinds>
+  kinds: ReturnType<typeof useTabKinds>
   window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
@@ -126,7 +126,7 @@ export function initWindowKindsAndCommands(
   }
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  ctx.kinds = useWindowKinds({
+  ctx.kinds = useTabKinds({
     core,
     log: base.log,
     tabOpeners: base.tabOpeners,

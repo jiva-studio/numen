@@ -49,9 +49,9 @@ describe('getUnavailableView', () => {
   })
 
   it('offers to install a plugin that a source offers', () => {
-    const offered = { ...notes, feature: 'Notes', standing: 'offered' } as const
+    const uninstalled = { ...notes, feature: 'Notes', standing: 'offered' } as const
 
-    expect(getUnavailableView({ status: 'found', plugin: offered }, false)).toStrictEqual({
+    expect(getUnavailableView({ status: 'found', plugin: uninstalled }, false)).toStrictEqual({
       heading: 'Plugin not installed',
       message: 'The plugin for Notes is not installed.',
       action: 'install',

@@ -3,14 +3,13 @@
  */
 import { computed, ref, watch, type Component, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { findTabKindIcon } from '@/entities/tab'
-import type { OpenTabs, Tab } from '@/entities/tab'
-import type { VaultPort } from '@/app/ports/vault'
-import type { SavedTab, useWindowTabs } from '@/entities/tab'
+import { findTabKindIcon } from '../lib/icons'
+import { writeOpenTabs } from '../api/saved-tabs'
+import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
+import type { WindowTabs } from './windowTabs'
 
 export interface OpenTabsDeps {
-  core: Pick<VaultPort, 'writeOpenTabs'>
-  windowTabs: ReturnType<typeof useWindowTabs>
+  windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
   reportError: (error: unknown) => void
 }
@@ -19,12 +18,7 @@ export interface OpenTabsDeps {
 export const formatSavedState = (saved: unknown): string =>
   saved === undefined ? '' : JSON.stringify(saved)
 
-export function useOpenTabs({
-  core,
-  windowTabs,
-  isWriting = ref(true),
-  reportError,
-}: OpenTabsDeps) {
+export function useOpenTabs({ windowTabs, isWriting = ref(true), reportError }: OpenTabsDeps) {
   /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
   const isTakingText = (id: string): boolean =>
     windowTabs.getTab(id)?.kind.receiveText !== undefined
@@ -61,7 +55,7 @@ export function useOpenTabs({
       const current = pendingWrite
       pendingWrite = null
       try {
-        await core.writeOpenTabs(current)
+        await writeOpenTabs(current)
       } catch {
         // A list that did not reach the core is written again by the next tab
         // opened, closed or moved, and the window renders from its own state

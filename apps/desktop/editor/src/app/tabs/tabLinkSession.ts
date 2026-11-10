@@ -5,24 +5,29 @@
 import { createFollower } from '@numen/ui'
 import type { Result } from '@/shared/lib/result'
 import type {
-  useWindowTabs,
+  WindowTabs,
   TabLinkGroup,
   MovedTab,
   TabMoveError,
   TabPathSync,
   WindowTabsReport,
+  acceptTabMove,
+  cancelTabLinksWatch,
+  watchTabLinks,
+  writeTabLinks,
 } from '@/entities/tab'
 import type { TabLinksState } from '@/features/tab-linking'
-import type { VaultPort } from '../ports/vault'
 
 /** How long a failed tab report waits before it is sent again. */
 export const REPORT_RETRY_MS = 2000
 
 export interface TabLinkSessionDeps {
-  readonly core: Pick<
-    VaultPort,
-    'watchTabLinks' | 'cancelTabLinksWatch' | 'writeTabLinks' | 'acceptTabMove'
-  >
+  readonly core: {
+    readonly watchTabLinks: typeof watchTabLinks
+    readonly cancelTabLinksWatch: typeof cancelTabLinksWatch
+    readonly writeTabLinks: typeof writeTabLinks
+    readonly acceptTabMove: typeof acceptTabMove
+  }
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
   readonly applySync: (sync: TabPathSync) => void
@@ -143,7 +148,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   return { start, close, reopen, reportTabs, acceptMove, waitForReports }
 }
 
-type ReportedTabs = Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab' | 'handle'>
+type ReportedTabs = Pick<WindowTabs, 'tabs' | 'getTab' | 'handle'>
 
 /** Returns the tabs whose kind supports navigate, in tab order. */
 export function getLinkableTabs(

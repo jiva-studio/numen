@@ -15,7 +15,7 @@ import {
   type PluginHostDeps,
   type PluginLoader,
 } from '@numen/plugin-loader'
-import type { fileOpeners, useWindowTabs } from '@/entities/tab'
+import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/workbench'
 import type { useSettings } from '../window/useSettings'
@@ -23,7 +23,7 @@ import type { WindowPlatform } from '@numen/workbench'
 import { texts } from '@/shared/api/clients'
 
 export interface PluginSupportDeps {
-  readonly windowTabs: ReturnType<typeof useWindowTabs>
+  readonly windowTabs: WindowTabs
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }

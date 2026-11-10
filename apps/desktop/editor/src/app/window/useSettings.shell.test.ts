@@ -9,7 +9,7 @@ import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { WORDS } from '@/shared/words'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 
 let restore: (() => void) | undefined
 
@@ -66,7 +66,7 @@ const createWindow = () => {
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = {
     handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') },
-  } as unknown as ReturnType<typeof useWindowTabs>
+  } as unknown as WindowTabs
   const settings = useSettings({ words: WORDS, log, windowTabs, onSizeChanged: vi.fn() })
   vi.spyOn(settings.rest, 'start').mockResolvedValue()
   vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()

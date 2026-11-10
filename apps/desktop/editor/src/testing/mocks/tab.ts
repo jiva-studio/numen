@@ -4,25 +4,34 @@
  */
 import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
+import type { Tab } from '@/entities/tab'
 import { requests } from '../requests'
 import { mockVaultState, pendingStream } from '../answers'
+
+const toWire = ({
+  id,
+  kind,
+  path,
+  title,
+  state,
+}: Pick<Tab, 'id' | 'kind' | 'path' | 'title' | 'state'>) => ({
+  id,
+  kind,
+  path,
+  title,
+  state,
+})
 
 export const tabAnswers = {
   workspace: {
     writeOpenTabs: (request) => {
-      requests.openTabs.push({
-        tabs: request.tabs.map(({ id, kind, path, title, state }) => ({
-          id,
-          kind,
-          path,
-          title,
-          state,
-        })),
-        activeId: request.activeId,
-      })
+      requests.openTabs.push({ tabs: request.tabs.map(toWire), activeId: request.activeId })
       return {}
     },
-    readOpenTabs: () => mockVaultState.savedTabs,
+    readOpenTabs: () => ({
+      tabs: mockVaultState.savedTabs.tabs.map(toWire),
+      activeId: mockVaultState.savedTabs.activeId,
+    }),
     detachTab: () => {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
       return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
@@ -31,10 +40,10 @@ export const tabAnswers = {
     cancelWatchTabLinks: () => ({}),
     writeTabLinks: () => ({}),
     syncTabPath: () => ({}),
-    readDetachedTab: (request) =>
-      mockVaultState.detachedTab?.id === request.tabId
-        ? { tab: mockVaultState.detachedTab, moveId: 'move-1' }
-        : {},
+    readDetachedTab: (request) => {
+      const tab = mockVaultState.detachedTab
+      return tab?.id === request.tabId ? { tab: toWire(tab), moveId: 'move-1' } : {}
+    },
     moveTab: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
     acceptTabMove: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
     highlightWindow: () => ({}),

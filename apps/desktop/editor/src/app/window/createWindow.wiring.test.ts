@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { createWindow } from './createWindow'
 import type * as BackgroundTasksModule from '@/features/background-tasks'
 import type * as WindowModule from '@/entities/window'
-import type * as UseOpenTabsModule from '../tabs/useOpenTabs'
+import type * as TabModule from '@/entities/tab'
 
 /** What each part was made with, and what it was made as. */
 const h = vi.hoisted(() => ({
@@ -20,11 +20,11 @@ const h = vi.hoisted(() => ({
     name: 'core',
     readOpenTabs: vi.fn(async () => ({ tabs: [], activeId: '' })),
     cancelTask: vi.fn(async (_id: string) => undefined),
-    detachTab: vi.fn(),
-    writeTabLinks: vi.fn(async () => undefined),
-    syncTabPath: vi.fn(async () => undefined),
-    readDetachedTab: vi.fn(async (): Promise<unknown> => null),
-    highlightWindow: vi.fn(async () => undefined),
+    detachTab: vi.fn(async (_tab: unknown, _place: unknown) => undefined),
+    writeTabLinks: vi.fn(async (_windowId: string, _change: unknown) => undefined),
+    syncTabPath: vi.fn(async (_sync: unknown) => undefined),
+    readDetachedTab: vi.fn(async (_windowId: string, _tabId: string): Promise<unknown> => null),
+    highlightWindow: vi.fn(async (_windowId: string, _isOn: boolean) => undefined),
   },
 }))
 
@@ -41,23 +41,32 @@ vi.mock('@/features/tab-linking', () => ({
   },
 }))
 vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
-vi.mock('@/entities/tab', () => ({
+vi.mock('@/entities/tab', async (importOriginal) => ({
+  ...(await importOriginal<typeof TabModule>()),
   createWorkspace: vi.fn(),
   fileOpeners: (args: unknown) => {
     h.args.openers = args
     return h.f.tabOpeners
   },
-  useWindowTabs: (args: unknown) => {
-    h.args.windowTabs = args
+  createWindowTabs: (_panes: unknown, services: unknown) => {
+    h.args.windowTabs = services
     return h.f.windowTabs
   },
-}))
-vi.mock('../tabs/useTabSync', () => ({
   createTabSync: (args: unknown) => {
     h.args.tabSync = args
     h.args.tabSyncResult = { name: 'tabSync', applySync: vi.fn(), applyGroupPaths: vi.fn() }
     return h.args.tabSyncResult
   },
+  useOpenTabs: (args: unknown) => {
+    h.args.openTabs = args
+    return h.f.openTabs
+  },
+  readOpenTabs: () => h.core.readOpenTabs(),
+  readDetachedTab: (windowId: string, tabId: string) => h.core.readDetachedTab(windowId, tabId),
+  writeTabLinks: (windowId: string, change: unknown) => h.core.writeTabLinks(windowId, change),
+  syncTabPath: (sync: unknown) => h.core.syncTabPath(sync),
+  highlightWindow: (windowId: string, isOn: boolean) => h.core.highlightWindow(windowId, isOn),
+  detachTab: (tab: unknown, place: unknown) => h.core.detachTab(tab, place),
 }))
 vi.mock('../tabs/useNoteEditors', () => ({
   createNoteEditors: (args: unknown) => {
@@ -72,16 +81,6 @@ vi.mock('./useSettings', () => ({
   },
 }))
 vi.mock('./useVaults', () => ({ useVaults: () => h.f.vaults }))
-vi.mock('../tabs/useOpenTabs', async (importOriginal) => {
-  const actual = await importOriginal<typeof UseOpenTabsModule>()
-  return {
-    ...actual,
-    useOpenTabs: (args: unknown) => {
-      h.args.openTabs = args
-      return h.f.openTabs
-    },
-  }
-})
 vi.mock('../commands/useCommands', () => ({
   useCommands: (args: unknown) => {
     h.args.commands = args
@@ -94,8 +93,8 @@ vi.mock('./useWindowDisplay', () => ({
     return h.f.display
   },
 }))
-vi.mock('./useWindowKinds', () => ({
-  useWindowKinds: (args: unknown) => {
+vi.mock('./useTabKinds', () => ({
+  useTabKinds: (args: unknown) => {
     h.args.kinds = args
     return h.f.kinds
   },
@@ -508,7 +507,7 @@ describe('a tab closed', () => {
 })
 
 describe('tab detach and move wiring', () => {
-  it('calls the mover with the window id', () => {
+  it('calls the mover with the window id', async () => {
     const window = createWindow()
 
     window.tabs.moves.detachTab('t1', { x: 1, y: 2 })
@@ -519,7 +518,9 @@ describe('tab detach and move wiring', () => {
     expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
     expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
     expect(h.args.tabMover.windowId).toBe(window.tabs.moves.windowId)
-    expect(h.args.tabMover.core).toBe(h.core)
+    const place = { x: 1, y: 2, width: 3, height: 4 }
+    await h.args.tabMover.core.detachTab({ id: 't1' }, place)
+    expect(h.core.detachTab).toHaveBeenCalledWith({ id: 't1' }, place)
   })
 
   it('closes the source tab through the tab closer', () => {
@@ -641,7 +642,7 @@ describe('the services a plugin is given', () => {
   it('wires plugin support, windowTabs, settings, kinds, commands, background tasks, and lifecycle callbacks', async () => {
     const window = createWindow()
 
-    // useWindowTabs options
+    // createWindowTabs options
     await h.args.windowTabs.enablePlugin('p1')
     expect(h.f.settings.rest.writeSetting).toHaveBeenCalledWith(['p1', 'enabled'], true)
 
@@ -710,7 +711,7 @@ describe('the services a plugin is given', () => {
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
     expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
 
-    // useWindowKinds callbacks
+    // useTabKinds callbacks
     const target = window.palette.getTarget()
     h.args.kinds.runCommand('cmd-1', target)
     expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-1', target)

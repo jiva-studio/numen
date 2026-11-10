@@ -20,7 +20,6 @@ const notesOptions: MockCatalogEntryOptions = {
   state: CATALOG_STATE.DISABLED,
 }
 
-/** Answers the catalog with the plugin `options` describe, or with none, and draws the pane. */
 const mountPane = async (
   options: MockCatalogEntryOptions | null = notesOptions,
   services: UnavailableServices = {},
@@ -70,7 +69,10 @@ describe('the pane of a tab whose plugin is disabled', () => {
 describe('the pane of a tab whose plugin is not installed', () => {
   it('offers to install it and opens the plugin on click', async () => {
     const openPlugin = vi.fn()
-    const view = await mountPane({ ...notesOptions, state: CATALOG_STATE.AVAILABLE }, { openPlugin })
+    const view = await mountPane(
+      { ...notesOptions, state: CATALOG_STATE.AVAILABLE },
+      { openPlugin },
+    )
 
     expect(view.text()).toContain('Plugin not installed')
     expect(view.text()).toContain('The plugin for Markdown notes is not installed.')
@@ -85,7 +87,10 @@ describe('the pane of a tab whose plugin is not installed', () => {
 describe('the pane of a tab whose plugin is installed but not running', () => {
   it('opens the plugin so the person can see why', async () => {
     const openPlugin = vi.fn()
-    const view = await mountPane({ ...notesOptions, state: CATALOG_STATE.INSTALLED }, { openPlugin })
+    const view = await mountPane(
+      { ...notesOptions, state: CATALOG_STATE.INSTALLED },
+      { openPlugin },
+    )
 
     expect(view.text()).toContain('Plugin not running')
     expect(view.find('button').text()).toBe('Open Settings')

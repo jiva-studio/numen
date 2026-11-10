@@ -1,16 +1,18 @@
 /** How a plugin stands: switched off, offered by a source and not installed, or installed and enabled. */
 export type PluginStanding = 'disabled' | 'offered' | 'installed'
 
-/** The plugin that provides a kind of tab, as the placeholder of the kind needs it. */
+/**
+ * The plugin that provides a kind of tab, as the placeholder of the kind needs it. The feature is
+ * the one the plugin declares, else its name. The incompatibility says why the application cannot
+ * run the plugin and is null where it can. The kind title is the one the plugin declares for the
+ * kind, empty where it declares none.
+ */
 export interface TabKindPlugin {
   readonly id: string
   readonly name: string
-  /** The feature the plugin declares, else its name. */
   readonly feature: string
   readonly standing: PluginStanding
-  /** Why the application cannot run the plugin, or null where it can. */
   readonly incompatibility: string | null
-  /** The title the plugin declares for the kind, or empty where it declares none. */
   readonly kindTitle: string
 }
 

@@ -40,7 +40,7 @@ describe('createUnavailableKind', () => {
   })
 
   it('names a tab with no path and no title after the kind the catalog declares once it answers', async () => {
-    const asked = answerTabKinds([
+    const lookups = answerTabKinds([
       createMockCatalogEntry('sample.decks', {
         tabKinds: [
           { kind: 'other', title: 'Other' },
@@ -55,7 +55,7 @@ describe('createUnavailableKind', () => {
     await waitForAnswer(state)
 
     expect(kind.getTitle?.(state)).toBe('Deck')
-    expect(asked).toStrictEqual(['deck'])
+    expect(lookups).toStrictEqual(['deck'])
   })
 
   it('names a tab after its kind where the catalog declares no title for it', async () => {

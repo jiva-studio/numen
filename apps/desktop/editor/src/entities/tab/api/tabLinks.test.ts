@@ -242,9 +242,9 @@ describe('tab move requests', () => {
     expect(
       await tabLinksCore.detachTab(ORBITS, { x: 100.6, y: 200.4, width: 640.5, height: 479.6 }),
     ).toStrictEqual({ ok: true, value: undefined })
-    expect(
-      await tabLinksCore.detachTab(ORBITS, { x: 0, y: 0, width: 0, height: 0 }),
-    ).toStrictEqual({ ok: false, error: 'timeout' })
+    expect(await tabLinksCore.detachTab(ORBITS, { x: 0, y: 0, width: 0, height: 0 })).toStrictEqual(
+      { ok: false, error: 'timeout' },
+    )
 
     expect(request.detachTab.mock.calls[0]?.[0]).toMatchObject({
       tab: ORBITS,

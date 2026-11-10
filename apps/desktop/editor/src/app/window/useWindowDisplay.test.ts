@@ -8,7 +8,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { useWindowDisplay } from './useWindowDisplay'
-import type { VaultPort } from '@/app/ports/vault'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/textRange'
 import type { NoteEdit } from '@/entities/note'
@@ -52,7 +51,7 @@ interface NoteStreams {
   watchEdits(): AsyncGenerator<NoteEdit>
 }
 
-type Fake = VaultPort & Streams & NoteStreams
+type Fake = Streams & NoteStreams
 
 let restore: () => void = () => undefined
 
@@ -139,21 +138,10 @@ function fake(overrides: Partial<Fake> = {}): Fake {
     agentUnreachable: async () => '',
     watchVaultChanges: emptyStream,
     watchFocus: emptyStream,
-    writeOpenTabs: vi.fn(() => Promise.resolve()),
-    readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], activeId: '' })),
     watchEdits: emptyStream,
     watchTasks: async function* () {
       await waitForever()
     },
-    detachTab: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
-    watchTabLinks: emptyStream,
-    cancelTabLinksWatch: vi.fn(() => Promise.resolve()),
-    writeTabLinks: vi.fn(() => Promise.resolve()),
-    syncTabPath: vi.fn(() => Promise.resolve()),
-    readDetachedTab: vi.fn(() => Promise.resolve(null)),
-    moveTab: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
-    acceptTabMove: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
-    highlightWindow: vi.fn(() => Promise.resolve()),
     ...overrides,
   }
 }

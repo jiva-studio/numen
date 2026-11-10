@@ -42,7 +42,6 @@ const OPTIONS: Record<Exclude<Answer, 'pending' | 'missing'>, MockCatalogEntryOp
 const enablePlugin = fn(() => createDeferred<void>().promise)
 const openPlugin = fn()
 
-/** Answers which plugin provides the kind, the way the story's `answer` says. */
 const answerCatalog = (answer: Answer): void => {
   installCoreAnswers({
     pluginCatalog: {

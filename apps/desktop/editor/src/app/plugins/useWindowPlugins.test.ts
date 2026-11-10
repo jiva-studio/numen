@@ -7,7 +7,7 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
-import { useWindowTabs } from '@/entities/tab'
+import { createTestTabs } from '@/testing/tabs'
 import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
@@ -16,7 +16,7 @@ import { getNoteIcon } from '@/entities/note'
 import { createBackendHandlers } from '../commands/backendHandlers'
 
 const createSupport = () => {
-  const windowTabs = useWindowTabs()
+  const windowTabs = createTestTabs()
   const support = createPluginSupport({
     windowTabs,
     tabLinks: {} as never,
@@ -129,7 +129,7 @@ describe('the tab kind a plugin adds', () => {
 describe('the settings and notices a plugin is given', () => {
   const createWith = (more: Partial<Parameters<typeof createPluginSupport>[0]>) =>
     createPluginSupport({
-      windowTabs: useWindowTabs(),
+      windowTabs: createTestTabs(),
       tabLinks: {} as never,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),
@@ -385,7 +385,7 @@ describe('the plugins the window loads', () => {
   })
 
   it('tracks frontend plugins when settings change and wires host capabilities', async () => {
-    const windowTabs = useWindowTabs()
+    const windowTabs = createTestTabs()
     const reportError = vi.fn()
     const readNote = vi.fn(async () => ({ body: 'text' }))
     const writeNote = vi.fn(async () => undefined)
