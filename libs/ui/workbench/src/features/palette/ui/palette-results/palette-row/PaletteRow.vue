@@ -76,12 +76,17 @@ defineSlots<{
 }
 
 .palette__lines {
-  gap: 0.1rem;
+  --gap: 0.1rem;
+
+  gap: var(--gap);
 }
 
 .palette__icon {
+  /* The height of one line of the row's type, which the icon is centered on. */
+  --line: calc(var(--numen-font-size) * var(--numen-line-height));
+
   align-self: start;
-  margin-block-start: calc((1lh - var(--icon)) / 2);
+  margin-block-start: calc((var(--line) - var(--icon)) / 2);
   inline-size: var(--icon);
   block-size: var(--icon);
 }
@@ -115,7 +120,9 @@ defineSlots<{
    tint and not a colour. */
 .palette__name [data-hit],
 .palette__detail [data-hit] {
-  border-radius: 0.125rem;
+  --corner: 0.125rem;
+
+  border-radius: var(--corner);
   background: var(--numen-highlight);
   font-weight: 600;
 }

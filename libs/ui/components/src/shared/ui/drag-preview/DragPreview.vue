@@ -29,11 +29,13 @@ const previewStyle = computed(() => ({
      text is truncated. */
   --gap: 0.75rem;
   --widest: 15rem;
+  --pad-block: 0.15rem;
+  --pad-inline: 0.5rem;
 
   position: fixed;
   max-inline-size: var(--widest);
   margin: 0;
-  padding: 0.15rem 0.5rem;
+  padding: var(--pad-block) var(--pad-inline);
   translate: var(--gap) var(--gap);
   pointer-events: none;
   overflow: hidden;

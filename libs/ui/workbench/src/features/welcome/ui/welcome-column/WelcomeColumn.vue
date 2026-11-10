@@ -61,12 +61,18 @@ defineSlots<{
 
 <style scoped>
 .welcome-page__column {
+  /* The width of a column on its own, and of the two side by side, which the
+     container query below is written in. */
+  --narrow: 22rem;
+  --wide: 45.4rem;
+  --gap: 1.4rem;
+
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: var(--gap);
   margin: auto;
   inline-size: 100%;
-  max-inline-size: 22rem;
+  max-inline-size: var(--narrow);
 }
 
 /* Short of the height the one column takes — the mark over the name, six ways
@@ -78,7 +84,7 @@ defineSlots<{
     flex-direction: row;
     margin-block: 0;
     block-size: 100%;
-    max-inline-size: 45.4rem;
+    max-inline-size: var(--wide);
   }
 }
 </style>
