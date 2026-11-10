@@ -127,8 +127,9 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
 }
 
 .card__cut {
+  --cut-inset-inline: 2rem;
   position: absolute;
-  inset-inline: 2rem;
+  inset-inline: var(--cut-inset-inline);
   inset-block-start: 50%;
   translate: 0 -50%;
   margin: 0;

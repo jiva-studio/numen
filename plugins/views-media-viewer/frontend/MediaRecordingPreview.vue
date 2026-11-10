@@ -106,32 +106,40 @@ function onSaveRecording() {
 
 <style scoped>
 .media-recorder__preview {
+  --preview-gap: 0.75rem;
+  --preview-padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.25rem;
+  gap: var(--preview-gap);
+  padding: var(--preview-padding);
   background: var(--numen-field-bg);
   border-radius: var(--numen-radius);
 }
 
 .media-recorder__preview-title {
+  --preview-title-font-size: 0.9375rem;
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: var(--preview-title-font-size);
   font-weight: 600;
 }
 
 .media-recorder__preview-controls {
+  --preview-controls-gap: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--preview-controls-gap);
 }
 
 .media-recorder__btn {
+  --btn-gap: 0.5rem;
+  --btn-padding-block: 0.625rem;
+  --btn-padding-inline: 1.25rem;
+  --btn-font-size: 0.9375rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  font-size: 0.9375rem;
+  gap: var(--btn-gap);
+  padding: var(--btn-padding-block) var(--btn-padding-inline);
+  font-size: var(--btn-font-size);
   font-weight: 600;
   border-radius: var(--numen-radius);
   border: none;
@@ -141,8 +149,10 @@ function onSaveRecording() {
 }
 
 .media-recorder__btn--play {
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
+  --btn-play-inline-size: 2.25rem;
+  --btn-play-block-size: 2.25rem;
+  inline-size: var(--btn-play-inline-size);
+  block-size: var(--btn-play-block-size);
   padding: 0;
   display: grid;
   place-items: center;
@@ -152,12 +162,15 @@ function onSaveRecording() {
 }
 
 .media-recorder__icon {
-  inline-size: 1.1rem;
-  block-size: 1.1rem;
+  --icon-inline-size: 1.1rem;
+  --icon-block-size: 1.1rem;
+  inline-size: var(--icon-inline-size);
+  block-size: var(--icon-block-size);
 }
 
 .media-recorder__time {
-  font-size: 0.8125rem;
+  --time-font-size: 0.8125rem;
+  font-size: var(--time-font-size);
   font-variant-numeric: tabular-nums;
   color: var(--numen-hushed);
 }
@@ -167,9 +180,12 @@ function onSaveRecording() {
 }
 
 .media-recorder__save-btn {
+  --save-btn-padding-block: 0.5rem;
+  --save-btn-padding-inline: 1rem;
+  --save-btn-font-size: 0.8125rem;
   margin-inline-start: auto;
-  padding: 0.5rem 1rem;
-  font-size: 0.8125rem;
+  padding: var(--save-btn-padding-block) var(--save-btn-padding-inline);
+  font-size: var(--save-btn-font-size);
   font-weight: 600;
   border-radius: var(--numen-radius);
   border: 1px solid var(--numen-accent);

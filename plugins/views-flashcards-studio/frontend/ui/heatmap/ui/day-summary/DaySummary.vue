@@ -49,7 +49,8 @@ const recallRate = computed(() => {
 
 <style scoped>
 .day-summary {
-  min-inline-size: 8rem;
+  --day-summary-min-inline-size: 8rem;
+  min-inline-size: var(--day-summary-min-inline-size);
 }
 
 .day-summary__day {

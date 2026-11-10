@@ -192,9 +192,10 @@ const getRole = (node: PlacedNode): GestureRole => {
 }
 
 .plex__edge-hit {
+  --edge-hit-stroke-width: 0.875rem;
   fill: none;
   stroke: transparent;
-  stroke-width: 14px;
+  stroke-width: var(--edge-hit-stroke-width);
   pointer-events: stroke;
 }
 

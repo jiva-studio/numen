@@ -88,9 +88,10 @@ function onSeekChange() {
 <style scoped>
 /* The controls are flat and inherit the surrounding background. */
 .player {
+  --player-gap: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--player-gap);
   inline-size: 100%;
 }
 
@@ -114,16 +115,19 @@ function onSeekChange() {
 }
 
 .player__sound svg {
-  inline-size: 0.9rem;
-  block-size: 0.9rem;
+  --sound-inline-size: 0.9rem;
+  --sound-block-size: 0.9rem;
+  inline-size: var(--sound-inline-size);
+  block-size: var(--sound-block-size);
   fill: currentColor;
 }
 
 /* The two times share the width of the longer one, so the bar does not
    move as the seconds count up. */
 .player__at {
+  --at-min-inline-size: 2.4em;
   flex: none;
-  min-inline-size: 4ch;
+  min-inline-size: var(--at-min-inline-size);
   color: var(--numen-hushed);
   font-variant-numeric: tabular-nums;
   font-size: var(--numen-text-1);

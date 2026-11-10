@@ -112,18 +112,21 @@ function onSave() {
 
 /* An empty transcript centres its note or its Transcribe button. */
 .transcript__silence {
+  --silence-gap: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: var(--silence-gap);
   margin: auto;
   padding: var(--numen-gutter);
   text-align: center;
 }
 
 .transcript__ask {
+  --ask-padding-block: 0.3rem;
+  --ask-padding-inline: 0.9rem;
   flex: none;
-  padding: 0.3rem 0.9rem;
+  padding: var(--ask-padding-block) var(--ask-padding-inline);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius-field);
   background: var(--numen-field-bg);

@@ -33,36 +33,44 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
 
 <style scoped>
 .media-recorder__meter {
+  --meter-gap: 1rem;
+  --meter-padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 2rem;
+  gap: var(--meter-gap);
+  padding: var(--meter-padding);
   background: var(--numen-field-bg);
   border-radius: var(--numen-radius);
 }
 
 .media-recorder__timer {
-  font-size: 2.5rem;
+  --timer-font-size: 2.5rem;
+  --timer-letter-spacing: 0.05em;
+  font-size: var(--timer-font-size);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--timer-letter-spacing);
   color: var(--numen-ink);
 }
 
 .media-recorder__waveform {
+  --waveform-gap: 0.25rem;
+  --waveform-block-size: 5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--waveform-gap);
   inline-size: 100%;
-  block-size: 80px;
+  block-size: var(--waveform-block-size);
 }
 
 .media-recorder__waveform-bar {
-  inline-size: 4px;
+  --waveform-bar-inline-size: 0.25rem;
+  --waveform-bar-border-radius: 0.125rem;
+  inline-size: var(--waveform-bar-inline-size);
   background: var(--numen-rule);
-  border-radius: 2px;
+  border-radius: var(--waveform-bar-border-radius);
   transition:
     height 0.1s ease,
     background-color 0.1s ease;

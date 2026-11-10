@@ -46,10 +46,11 @@ const emit = defineEmits<{
 
 /* Sizing container matches width to mirror content up to max-inline-size. */
 .section-heading__name {
+  --name-max-inline-size: 20rem;
   display: inline-grid;
   flex: 0 1 auto;
   min-inline-size: 0;
-  max-inline-size: 20rem;
+  max-inline-size: var(--name-max-inline-size);
 }
 
 .section-heading__name::after,

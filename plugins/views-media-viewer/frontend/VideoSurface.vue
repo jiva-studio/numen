@@ -43,7 +43,8 @@ onBeforeUnmount(() => {
 }
 
 .recording__video :deep(video) {
+  --video-max-block-size: 24rem;
   inline-size: 100%;
-  max-block-size: 24rem;
+  max-block-size: var(--video-max-block-size);
 }
 </style>

@@ -104,6 +104,7 @@ defineExpose({
 }
 
 .template__amiss {
+  --amiss-gap: 0.125rem;
   position: absolute;
   z-index: 1;
   inset-block-end: var(--box-air);
@@ -111,14 +112,16 @@ defineExpose({
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.125rem;
+  gap: var(--amiss-gap);
   max-inline-size: calc(100% - 2 * var(--box-pad-inline));
   pointer-events: none;
 }
 
 /* Problem messages are displayed over the content below them, so they have a background. */
 .template__amiss > .template__objections {
-  padding: 0.125rem 0.375rem;
+  --objections-padding-block: 0.125rem;
+  --objections-padding-inline: 0.375rem;
+  padding: var(--objections-padding-block) var(--objections-padding-inline);
   border-radius: var(--numen-radius);
   background: var(--numen-alarm-bg);
 }

@@ -120,17 +120,20 @@ const says = computed(() => {
 /* The name is the heading of the template: the largest thing in the strip, and
    never squeezed by however many fields stand beside it. */
 .template__title {
-  flex: 0 1 12rem;
-  min-inline-size: 5rem;
+  --title-flex-basis: 12rem;
+  --title-min-inline-size: 5rem;
+  flex: 0 1 var(--title-flex-basis);
+  min-inline-size: var(--title-min-inline-size);
   font-weight: 500;
 }
 
 /* The fields are a group under the heading, not its equal. A long row scrolls
    inside the strip. */
 .template__slots {
+  --slots-gap: 0.25rem;
   flex: 1 1 auto;
   min-inline-size: 0;
-  gap: 0.25rem;
+  gap: var(--slots-gap);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -151,6 +154,7 @@ const says = computed(() => {
 
 /* What is wrong with the template is placed at the bottom right, stacked over any pane errors. */
 .template__amiss {
+  --amiss-gap: 0.125rem;
   position: absolute;
   z-index: 5;
   inset-block-end: var(--box-air);
@@ -158,18 +162,21 @@ const says = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.125rem;
+  gap: var(--amiss-gap);
   max-inline-size: calc(100% - 2 * var(--box-pad-inline));
   pointer-events: none;
 }
 
 :global(.template:has(.template__pane .template__amiss)) .template__amiss {
-  inset-block-end: calc(var(--box-air) + 1.875rem);
+  --amiss-inset-block-end: 1.875rem;
+  inset-block-end: calc(var(--box-air) + var(--amiss-inset-block-end));
 }
 
 /* Problems are drawn over the content they cover, so they have a background. */
 .template__amiss > .template__objections {
-  padding: 0.125rem 0.375rem;
+  --objections-padding-block: 0.125rem;
+  --objections-padding-inline: 0.375rem;
+  padding: var(--objections-padding-block) var(--objections-padding-inline);
   border-radius: var(--numen-radius);
   background: var(--numen-alarm-bg);
 }

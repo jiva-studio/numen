@@ -67,7 +67,9 @@ function onToggleFollow() {
 }
 
 .media__icon {
-  inline-size: 1rem;
-  block-size: 1rem;
+  --icon-inline-size: 1rem;
+  --icon-block-size: 1rem;
+  inline-size: var(--icon-inline-size);
+  block-size: var(--icon-block-size);
 }
 </style>

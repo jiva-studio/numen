@@ -45,9 +45,12 @@ const label = computed(() => {
 
 <style scoped>
 .due-count {
+  --due-count-min-inline-size: 1.5rem;
+  --due-count-padding-block: 0.0625rem;
+  --due-count-padding-inline: 0.4rem;
   flex: none;
-  min-inline-size: 1.5rem;
-  padding: 0.0625rem 0.4rem;
+  min-inline-size: var(--due-count-min-inline-size);
+  padding: var(--due-count-padding-block) var(--due-count-padding-inline);
   text-align: center;
   border-radius: var(--numen-radius-pill);
   background: var(--numen-highlight);

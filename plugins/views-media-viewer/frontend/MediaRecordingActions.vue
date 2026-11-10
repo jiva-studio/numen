@@ -81,17 +81,22 @@ function onAction(type: RecordAction) {
 
 <style scoped>
 .media-recorder__actions {
+  --actions-gap: 1rem;
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--actions-gap);
 }
 
 .media-recorder__btn {
+  --btn-gap: 0.5rem;
+  --btn-padding-block: 0.625rem;
+  --btn-padding-inline: 1.25rem;
+  --btn-font-size: 0.9375rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  font-size: 0.9375rem;
+  gap: var(--btn-gap);
+  padding: var(--btn-padding-block) var(--btn-padding-inline);
+  font-size: var(--btn-font-size);
   font-weight: 600;
   border-radius: var(--numen-radius);
   border: none;
@@ -133,7 +138,9 @@ function onAction(type: RecordAction) {
 }
 
 .media-recorder__icon {
-  inline-size: 1.1rem;
-  block-size: 1.1rem;
+  --icon-inline-size: 1.1rem;
+  --icon-block-size: 1.1rem;
+  inline-size: var(--icon-inline-size);
+  block-size: var(--icon-block-size);
 }
 </style>

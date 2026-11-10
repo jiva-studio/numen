@@ -155,10 +155,11 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 }
 
 .deck__plus {
+  --plus-min-block-size: 12rem;
   --plus: 2.5rem;
 
   place-items: center;
-  min-block-size: 12rem;
+  min-block-size: var(--plus-min-block-size);
   padding: var(--numen-box-air);
   border: var(--numen-stroke) dashed var(--numen-rule);
 }

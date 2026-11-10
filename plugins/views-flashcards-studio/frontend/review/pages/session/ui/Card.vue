@@ -89,8 +89,9 @@ function decodeHref(href: string): string {
 }
 
 .card__rule {
+  --rule-block-size: 0.0625rem;
   flex: none;
-  block-size: 1px;
+  block-size: var(--rule-block-size);
   background: var(--numen-edge);
 }
 </style>

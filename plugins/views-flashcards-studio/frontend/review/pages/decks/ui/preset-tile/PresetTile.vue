@@ -66,10 +66,11 @@ defineEmits<{
 
 /* The name, with the goal under it. */
 .presets__transcript {
+  --transcript-gap: 0.125rem;
   display: flex;
   min-inline-size: 0;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--transcript-gap);
 }
 
 .presets__name {

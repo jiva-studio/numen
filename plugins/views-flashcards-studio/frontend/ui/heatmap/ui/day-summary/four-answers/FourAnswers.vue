@@ -34,11 +34,12 @@ const ratings = computed(() =>
 
 <style scoped>
 .day-summary__ratings {
+  --ratings-gap: 0.125rem;
   display: flex;
   margin: var(--numen-inset) 0 0;
   padding: 0;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--ratings-gap);
   list-style: none;
 }
 

@@ -78,6 +78,8 @@ function onSave(blob: Blob) {
 
 <style scoped>
 .media-recorder {
+  --media-recorder-padding: 1.5rem;
+  --media-recorder-gap: 1.5rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -86,10 +88,10 @@ function onSave(blob: Blob) {
   background: var(--numen-surface);
   color: var(--numen-ink);
   font-family: var(--numen-font-sans);
-  padding: 1.5rem;
+  padding: var(--media-recorder-padding);
   box-sizing: border-box;
   overflow-y: auto;
-  gap: 1.5rem;
+  gap: var(--media-recorder-gap);
 }
 
 .media-recorder__header {
@@ -99,16 +101,20 @@ function onSave(blob: Blob) {
 }
 
 .media-recorder__title {
+  --title-font-size: 1.25rem;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--title-font-size);
   font-weight: 600;
 }
 
 .media-recorder__status {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.75rem;
+  --status-padding-block: 0.25rem;
+  --status-padding-inline: 0.6rem;
+  --status-font-size: 0.75rem;
+  padding: var(--status-padding-block) var(--status-padding-inline);
+  font-size: var(--status-font-size);
   font-weight: 700;
-  border-radius: 9999px;
+  border-radius: var(--numen-radius-pill);
   background: var(--numen-field-bg);
 }
 
@@ -129,12 +135,16 @@ function onSave(blob: Blob) {
 }
 
 .media-recorder__error {
-  padding: 0.75rem 1rem;
+  --error-padding-block: 0.75rem;
+  --error-padding-inline: 1rem;
+  --error-border-radius: 0.375rem;
+  --error-font-size: 0.875rem;
+  padding: var(--error-padding-block) var(--error-padding-inline);
   background: var(--numen-alarm-bg);
   border: 1px solid var(--numen-alarm);
-  border-radius: 6px;
+  border-radius: var(--error-border-radius);
   color: var(--numen-alarm);
-  font-size: 0.875rem;
+  font-size: var(--error-font-size);
 }
 
 @keyframes pulse {

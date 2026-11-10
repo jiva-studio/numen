@@ -85,12 +85,16 @@ function onDismissScheduleMenu() {
 
 <style scoped>
 .deck-tab__scheduled {
+  --scheduled-gap: 0.5rem;
+  --scheduled-padding-block-start: 0.75rem;
+  --scheduled-padding-inline: 1rem;
+  --scheduled-padding-block-end: 0.6rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--scheduled-gap);
   margin: 0;
-  padding: 0.75rem 1rem 0.6rem;
+  padding: var(--scheduled-padding-block-start) var(--scheduled-padding-inline) var(--scheduled-padding-block-end);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
 }
@@ -100,10 +104,12 @@ function onDismissScheduleMenu() {
 }
 
 .deck-tab__choice {
+  --choice-padding-block: 0.15rem;
+  --choice-padding-inline: 0.4rem;
   display: inline-flex;
   align-items: center;
   gap: var(--numen-node-gap);
-  padding: 0.15rem 0.4rem;
+  padding: var(--choice-padding-block) var(--choice-padding-inline);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius-tight);
   background: var(--numen-field-bg);
@@ -119,8 +125,10 @@ function onDismissScheduleMenu() {
 }
 
 .deck-tab__icon {
-  inline-size: 1em;
-  block-size: 1em;
+  --icon-inline-size: 1em;
+  --icon-block-size: 1em;
+  inline-size: var(--icon-inline-size);
+  block-size: var(--icon-block-size);
 }
 
 .deck-tab__wrong {
