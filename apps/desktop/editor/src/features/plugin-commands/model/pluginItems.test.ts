@@ -5,9 +5,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { CommandItem } from '@numen/plugin-loader'
-import type { PaletteLists } from '@/features/command-palette'
 import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import { createItemLists } from './pluginItems'
+import { createItemLists, type WindowLists } from './pluginItems'
 
 const TARGET = {
   tab: '',
@@ -19,7 +18,7 @@ const TARGET = {
   isReady: true,
 } as CommandTarget
 
-const WINDOW_LISTS: PaletteLists = { getStepGroups: () => [], previewItem: () => undefined }
+const WINDOW_LISTS: WindowLists = { getStepGroups: () => [], previewItem: () => undefined }
 const RUNS: RunSupport = { canRun: () => true, cannotRun: () => undefined }
 
 const createCommand = (id: string): Command => ({

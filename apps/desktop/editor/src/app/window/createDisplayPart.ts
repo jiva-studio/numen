@@ -7,16 +7,16 @@ import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import type { runSupport } from '@/features/command-palette'
 import type { Command, FeatureCommands } from '@/entities/command'
 import { createTabSync, type fileOpeners, type WindowTabs } from '@/entities/tab'
+import type { SettingsStore } from '@/entities/settings'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
 import { syncTabPath, type useTabLinks } from '@/features/tab-linking'
 import { createNoteEditors } from '../tabs/useNoteEditors'
-import { useSettings } from './useSettings'
+import { useSettings } from '@/pages/settings'
 import { useVaults } from './useVaults'
 import type { TabsHold } from '@/features/vault-commands'
 import type { createCommands } from './createCommands'
-import type { useDeclaredCommands } from '../plugins/commands/declaredCommands'
-import type { CommandItemLists } from '../plugins/commands/commandItemLists'
+import type { useDeclaredCommands, CommandItemLists } from '@/features/plugin-commands'
 import { useWindowDisplay } from '@/features/window-display'
 import { createDisplayOptions } from './displayOptions'
 import type { useTabKinds } from './useTabKinds'
@@ -28,6 +28,7 @@ import type { createPluginSupport } from '../plugins/useWindowPlugins'
 /** What the window is made of before its parts exist: the tabs, the plugins and the message log. */
 export interface WindowCore {
   readonly frame: ReturnType<typeof useWindowFrame>
+  readonly rest: SettingsStore
   readonly log: ReturnType<typeof createMessageLog>
   readonly writeMessage: MessageWriter
   readonly runs: ReturnType<typeof runSupport>
@@ -91,11 +92,7 @@ export function getVaults(ctx: WindowContext): NonNullable<WindowContext['vaults
   return ctx.vaults
 }
 
-export function initWindowServices(
-  base: WindowCore,
-  ctx: WindowContext,
-  settingsHolder: { current?: ReturnType<typeof useSettings> },
-) {
+export function initWindowServices(base: WindowCore, ctx: WindowContext) {
   const editing = createNoteEditors({
     log: base.log,
     tabOpeners: base.tabs.tabOpeners,
@@ -123,6 +120,7 @@ export function initWindowServices(
   )
 
   const settings = useSettings({
+    rest: base.rest,
     words,
     log: base.log,
     windowTabs: base.tabs.windowTabs,
@@ -131,7 +129,6 @@ export function initWindowServices(
       base.plugins.host.pluginHost.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })
-  settingsHolder.current = settings
 
   ctx.vaults = useVaults({
     log: base.log,

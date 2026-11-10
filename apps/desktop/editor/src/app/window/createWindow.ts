@@ -28,17 +28,16 @@ import {
   openPlacedTabs,
   useWindowOpenTabs,
 } from './createTabsPart'
-import type { useSettings } from './useSettings'
+import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 
-function createWindowCore(settingsHolder: {
-  current?: ReturnType<typeof useSettings>
-}): WindowCore {
+function createWindowCore(): WindowCore {
   const log = createMessageLog()
+  const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
   const writeMessage = log.getWriter('command')
   const frame = useWindowFrame()
   // The plugin loader is made after the tabs; until then every plugin counts as starting.
   const pluginStarts: { current?: (pluginId: string) => boolean } = {}
-  const tabs = createTabsCore({ writeMessage, settingsHolder, pluginStarts })
+  const tabs = createTabsCore({ writeMessage, rest, pluginStarts })
   const runs = runSupport()
   const plugins = createPluginsCore({
     log,
@@ -47,10 +46,10 @@ function createWindowCore(settingsHolder: {
     windowTabs: tabs.windowTabs,
     tabLinks: tabs.tabLinks,
     tabOpeners: tabs.tabOpeners,
-    settingsHolder,
+    rest,
   })
   pluginStarts.current = plugins.host.pluginLoader.isPluginStarting
-  return { frame, log, writeMessage, runs, tabs, plugins }
+  return { frame, log, rest, writeMessage, runs, tabs, plugins }
 }
 
 function createPaletteApi(
@@ -89,15 +88,14 @@ const getTabsApi = (base: WindowCore, parts: TabsApiParts) => ({
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const createWindow = () => {
-  const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
-  const base = createWindowCore(settingsHolder)
+  const base = createWindowCore()
   const ctx: WindowContext = {}
-  const services = initWindowServices(base, ctx, settingsHolder)
+  const services = initWindowServices(base, ctx)
   const { editing, window, settings } = services
   const closeTab = createTabCloser(base)
   const moves = createWindowTabMoves(base, editing, closeTab)
   const kindsAndCommands = initWindowKindsAndCommands(base, ctx, services, moves)
-  watchPluginSettings(settings, base.plugins.host.pluginLoader, (error) =>
+  watchPluginSettings(base.rest, base.plugins.host.pluginLoader, (error) =>
     base.writeMessage(`Plugins were not tracked: ${formatError(error)}`, 'error'),
   )
   const isWritingTabs = ref(false)

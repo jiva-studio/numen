@@ -1,0 +1,12 @@
+/** The commands the enabled plugins declare: how the palette lists and runs them, and where they sit in the slots. */
+export { createCommandItems } from './lib/commandItems'
+export { getNamedTarget, toRunTarget } from './lib/runTarget'
+export { createBackendHandlers } from './model/backendHandlers'
+export { createCommandItemLists } from './model/commandItemLists'
+export type { CommandItemLists } from './model/commandItemLists'
+export { getPaletteId, useDeclaredCommands } from './model/declaredCommands'
+export type { DeclaredCommands } from './model/declaredCommands'
+export { createItemLists } from './model/pluginItems'
+export { createSlotCommandFinder, readSlotEntries } from './model/pluginSlots'
+export { createCommandNoteReader, usePluginCommands } from './model/usePluginCommands'
+export { watchCommandLists } from './model/watchCommandLists'

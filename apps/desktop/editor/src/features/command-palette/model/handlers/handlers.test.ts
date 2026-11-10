@@ -5,7 +5,7 @@ import { ReportedError } from '@numen/core-client'
 import type { CommandInvocation, CommandTarget } from '@/entities/command'
 import { createInvocation } from '../../lib/entries/invocation'
 import { runSupport } from '../palette/runSupport'
-import type { CommandDeps } from './deps'
+import type { CommandDeps } from '@/entities/command'
 import { commands, registerCommand, runInvocation } from './handlers'
 
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({

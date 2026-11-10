@@ -103,7 +103,11 @@ vi.mock('../tabs/useNoteEditors', () => ({
     return h.f.editing
   },
 }))
-vi.mock('./useSettings', () => ({
+vi.mock('@/entities/settings', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createSettingsStore: () => h.f.settings.rest,
+}))
+vi.mock('@/pages/settings/model/useSettings', () => ({
   useSettings: (args: unknown) => {
     h.args.settings = args
     return h.f.settings

@@ -7,11 +7,16 @@
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-loader'
-import type { PaletteLists } from '@/features/command-palette'
 import type { Command, CommandTarget, RunSupport } from '@/entities/command'
 import type { StepGroup } from '@/shared/steps'
 import { WORDS } from '@/shared/words'
-import { toRunTarget } from './runTarget'
+import { toRunTarget } from '../lib/runTarget'
+
+/** The lists of the steps of the commands the window offers besides the plugin commands. */
+export interface WindowLists {
+  getStepGroups(command: string, typed: string): readonly StepGroup[]
+  previewItem(command: string, item: string): void
+}
 
 type ItemHost = Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
 
@@ -112,7 +117,7 @@ const findOnlyHandler = (items: readonly CommandItem[] | undefined): CommandItem
 
 /** What the palette's lists are made of besides the plugin host. */
 interface PaletteParts {
-  readonly paletteLists: PaletteLists
+  readonly paletteLists: WindowLists
   readonly getTarget: () => CommandTarget
   readonly runs: RunSupport
 }
@@ -124,7 +129,7 @@ interface PaletteParts {
 export function createItemLists(pluginHost: ItemHost, parts: PaletteParts) {
   const { paletteLists: windowLists, getTarget, runs } = parts
   const items = createPluginItems({ pluginHost, getTarget })
-  const lists: PaletteLists = {
+  const lists: WindowLists = {
     getStepGroups: (command, typed) =>
       items.getGroups(command, typed) ?? windowLists.getStepGroups(command, typed),
     previewItem: (command, item) => windowLists.previewItem(command, item),

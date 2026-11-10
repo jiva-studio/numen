@@ -3,6 +3,7 @@
  * follows a write of a setting of the shell: the theme, the mode and the scales are applied after
  * the file changes. Every value here is invented.
  */
+import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettings } from './useSettings'
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
@@ -68,6 +69,7 @@ const createWindow = () => {
     groups: { handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') } },
   } as unknown as WindowTabs
   const settings = useSettings({
+    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,
     windowTabs,

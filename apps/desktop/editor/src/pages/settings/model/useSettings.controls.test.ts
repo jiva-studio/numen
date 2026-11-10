@@ -11,7 +11,12 @@ import { createLostConnection } from '@numen/core-client/testing'
 import { Select, Slider } from '@numen/ui'
 import { SettingsTab } from '@/pages/settings'
 import { createTestTabs } from '@/testing/tabs'
-import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import {
+  createSettingsStore,
+  SETTINGS_WORDS,
+  type PluginSettingInfo,
+  type SettingEdit,
+} from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
@@ -171,6 +176,7 @@ const create = (timing: Timing) => {
   restore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
   const settings = useSettings({
+    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,
     windowTabs: createTestTabs(),

@@ -2,9 +2,10 @@
  * The commands the plugins declare as the palette offers them, and a run of
  * one as the palette carries it out.
  */
+import { commands, type CommandDeps } from '@/entities/command'
 import { describe, expect, it, vi } from 'vitest'
 import { createWhenReader } from '@numen/plugin-loader'
-import { commands, runInvocation, type CommandDeps } from '@/features/command-palette'
+import { runInvocation } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import {

@@ -3,6 +3,7 @@
  * for each required argument (an optional one is for a caller that is not a person),
  * and the run handed to the plugin's backend.
  */
+import { registerCommand } from '@/entities/command'
 import { computed, shallowRef, watch } from 'vue'
 import {
   createWhenReader,
@@ -13,7 +14,6 @@ import {
   type WhenReader,
   type WhenSettings,
 } from '@numen/plugin-loader'
-import { registerCommand } from '@/features/command-palette'
 import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import type { Writable } from '@/shared/lib/writable'
@@ -30,7 +30,7 @@ import {
   createWhenAvailability,
   getWhenGroup,
   type WindowWhenContext,
-} from './whenContext'
+} from '../lib/whenContext'
 
 /** The items a command of a plugin offers over a file. */
 type ListItems = (

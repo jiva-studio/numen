@@ -12,24 +12,24 @@ import {
   choosePluginPath,
   createPluginRetry,
   createSecretStore,
-  createSettingsStore,
   SETTINGS_WORDS,
   deletePluginData,
   getPluginData,
   themes,
   watchSettings,
   type SettingEdit,
+  type SettingsStore,
 } from '@/entities/settings'
-import { readPluginReadme, useCatalogEntries } from '@/entities/plugin'
+import { PLUGIN_FAILURE_WORDS, readPluginReadme, useCatalogEntries } from '@/entities/plugin'
 import { createFollower, runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
-import { useSettingsTab } from '@/pages/settings'
-import type { Installation, InstallationPlugin, InstallationSettings } from '@/pages/settings'
+import { useSettingsTab } from '../kind'
+import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/notices/messages'
-import { WINDOW_WORDS } from './words'
 import type { WindowTabs } from '@/entities/tab'
 
 export interface SettingsDeps {
+  rest: SettingsStore
   words: SettingWords
   log: MessageLog
   windowTabs: WindowTabs
@@ -40,7 +40,7 @@ export interface SettingsDeps {
 
 interface SettingsTabConfigDeps {
   appearance: ReturnType<typeof createWindowAppearance>
-  rest: ReturnType<typeof createSettingsStore>
+  rest: SettingsStore
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
   getSettingsViews: InstallationPlugin['getSettingsViews']
@@ -167,6 +167,7 @@ function createChangeFollower(deps: {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function useSettings({
+  rest,
   words,
   log,
   windowTabs,
@@ -176,7 +177,6 @@ export function useSettings({
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
-  const rest = createSettingsStore(SETTINGS_WORDS, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
@@ -191,7 +191,7 @@ export function useSettings({
     refresh: () => rest.start(),
   })
   const retry = createPluginRetry({
-    words: { stopped: WINDOW_WORDS.pluginStopped, retryFailed: WINDOW_WORDS.pluginRetryFailed },
+    words: { stopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },
     notify: log.getWriter('plugins'),
     refresh: () => rest.start(),
     getName: getPluginName,

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { nextTick, ref } from 'vue'
 import {
   DEFAULT_PLUGIN_ENABLED,
@@ -13,7 +14,7 @@ import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginSupport, getFrontendPluginIds, watchPluginSettings } from './useWindowPlugins'
 import { getNoteIcon } from '@/entities/note'
-import { createBackendHandlers } from './commands/backendHandlers'
+import { createBackendHandlers } from '@/features/plugin-commands'
 
 const createSupport = () => {
   const windowTabs = createTestTabs()
@@ -24,7 +25,7 @@ const createSupport = () => {
       registerExtensionReader: vi.fn(() => () => undefined),
       registerEditor: vi.fn(() => () => undefined),
     } as never,
-    settingsHolder: {},
+    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
     services: {
       workspace: { getNoteInFocus: () => ({ path: '', title: '' }) } as unknown as WorkspaceHost,
       agent: { finish: () => Promise.resolve(), getModelsAt: () => [] } as unknown as AgentHost,
@@ -135,7 +136,7 @@ describe('the settings and notices a plugin is given', () => {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      settingsHolder: {},
+      rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
       ...more,
     })
 
@@ -144,7 +145,7 @@ describe('the settings and notices a plugin is given', () => {
     const rest = {
       read: { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] },
     }
-    const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
+    const { pluginHost } = createWith({ rest: rest as never })
     const ctx = pluginHost.createContext('md.numen.a')
 
     expect(ctx.settings.get('fontSize')).toBe(14)
@@ -160,7 +161,7 @@ describe('the settings and notices a plugin is given', () => {
         getSetting: () => true,
       },
     }
-    const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
+    const { pluginHost } = createWith({ rest: rest as never })
     const ctx = pluginHost.createContext('md.numen.a')
 
     expect(ctx.settings.get('enabled')).toBe(false)
@@ -190,7 +191,7 @@ describe('the settings and notices a plugin is given', () => {
         registerExtensionReader,
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      settingsHolder: { current: { rest } as never },
+      rest: rest as never,
     })
 
     pluginHost
@@ -211,7 +212,7 @@ describe('the settings and notices a plugin is given', () => {
       },
     }
     const { pluginHost } = createWith({
-      settingsHolder: { current: { rest } as never },
+      rest: rest as never,
       getCommandDeclarations: () => [
         { pluginId: 'md.numen.tree', id: 'tree.open', title: 'Open tree' },
         { pluginId: 'md.numen.job', id: 'job.run', title: 'Run job' },
@@ -234,7 +235,7 @@ describe('the settings and notices a plugin is given', () => {
     }
     const reportCommandIssue = vi.fn()
     const { pluginHost } = createWith({
-      settingsHolder: { current: { rest } as never },
+      rest: rest as never,
       getCommandDeclarations: () => [
         { pluginId: 'md.numen.tree', id: 'tree.open', title: 'Open tree' },
         { pluginId: 'md.numen.cards', id: 'deck.create', title: 'Create deck' },
@@ -259,7 +260,7 @@ describe('the settings and notices a plugin is given', () => {
     }
     const runBackendHandler = vi.fn(async () => undefined)
     const { pluginHost } = createWith({
-      settingsHolder: { current: { rest } as never },
+      rest: rest as never,
       handlers: {
         getHandlerDeclarations: () => [
           {
@@ -308,7 +309,7 @@ describe('the settings and notices a plugin is given', () => {
       openFile: async () => undefined,
     })
     const { pluginHost } = createWith({
-      settingsHolder: { current: { rest } as never },
+      rest: rest as never,
       handlers,
       reportError: onError,
     })
@@ -327,7 +328,7 @@ describe('the settings and notices a plugin is given', () => {
     }
     const listBackendHandlerItems = vi.fn(async () => [{ id: 'v1', title: 'Recognition' }])
     const { pluginHost } = createWith({
-      settingsHolder: { current: { rest } as never },
+      rest: rest as never,
       handlers: {
         getHandlerDeclarations: () => [
           {
@@ -363,7 +364,7 @@ describe('the settings and notices a plugin is given', () => {
     const rest = {
       read: { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] },
     }
-    const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
+    const { pluginHost } = createWith({ rest: rest as never })
     const handler = vi.fn()
     pluginHost.createContext('md.numen.a').settings.onChange('fontSize', handler)
 
@@ -435,7 +436,7 @@ describe('the plugins the window loads', () => {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      settingsHolder: { current: { rest } as never },
+      rest: rest as never,
       reportError,
       readNote,
       writeNote,
@@ -492,7 +493,7 @@ describe('the plugins the window loads', () => {
     // watchPluginSettings tracks frontend plugins when pluginsRef updates
     const trackPlugins = vi.fn(() => Promise.resolve())
     const watchErr = vi.fn()
-    watchPluginSettings({ rest } as never, { trackPlugins } as never, watchErr)
+    watchPluginSettings(rest as never, { trackPlugins } as never, watchErr)
     pluginsRef.value = [
       { id: 'md.numen.a', hasFrontend: true },
       { id: 'md.numen.b', hasFrontend: false },

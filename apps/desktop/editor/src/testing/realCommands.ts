@@ -14,7 +14,7 @@ import {
 } from '@numen/plugin-loader'
 import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
-import { createSlotCommandFinder } from '@/app/plugins/commands/pluginSlots'
+import { createSlotCommandFinder } from '@/features/plugin-commands'
 import {
   collectFeatureCommands,
   createCommands,

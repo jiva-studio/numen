@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, shallowRef, type Ref } from 'vue'
 import { createCommands, type CommandsDepsOptions } from './createCommands'
-import type { DeclaredCommands } from '../plugins/commands/declaredCommands'
+import type { DeclaredCommands } from '@/features/plugin-commands'
 
 const isOpen = ref(false)
 

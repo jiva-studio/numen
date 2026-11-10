@@ -20,7 +20,7 @@ import { findIcon, type Command } from '@/entities/command'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import { getPaletteId } from './declaredCommands'
-import { APP_SLOT_ENTRIES } from './appPlacements'
+import { APP_SLOT_ENTRIES } from '../lib/appPlacements'
 
 /** The entries of the plugins with those of the application; undefined until the plugins have been listed. */
 export function readSlotEntries(

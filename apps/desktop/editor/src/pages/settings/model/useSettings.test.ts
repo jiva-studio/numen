@@ -6,7 +6,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettings } from './useSettings'
 import { WORDS } from '@/shared/words'
-import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
+import {
+  createSettingsStore,
+  SETTINGS_WORDS,
+  type Model,
+  type PluginInfo,
+  type PluginSettingInfo,
+} from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
@@ -63,6 +69,7 @@ const createSettings = (
   const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = useSettings({
+    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,
     windowTabs,

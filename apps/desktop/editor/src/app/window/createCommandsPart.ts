@@ -17,10 +17,8 @@ import { getNamedIcon } from '@/shared/icons'
 import { isFieldFocused } from './isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
-import type { CommandItemLists } from '../plugins/commands/commandItemLists'
-import { getPaletteId, type useDeclaredCommands } from '../plugins/commands/declaredCommands'
+import { type CommandItemLists, getPaletteId, type useDeclaredCommands, createCommandNoteReader } from '@/features/plugin-commands'
 import { createCommandNotes } from '../tabs/commandDeps'
-import { createCommandNoteReader } from '../plugins/commands/usePluginCommands'
 import {
   collectFeatureCommands,
   createCommands,
@@ -38,7 +36,7 @@ import {
   type WindowCore,
   type WindowServices,
 } from './createDisplayPart'
-import type { useSettings } from './useSettings'
+import type { useSettings } from '@/pages/settings'
 import type { useVaults } from './useVaults'
 import type { createWindowTabMoves } from './createTabsPart'
 import { createTargetResolver } from './displayOptions'

@@ -5,16 +5,13 @@
 import { formatError } from '@/shared/api/errors'
 import { createWindowHost, SLOT, type PluginHost } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
-import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
+import { listDeclaredItemLists, PLUGIN_FAILURE_WORDS, runDeclaredHandler } from '@/entities/plugin'
 import type { fileOpeners } from '@/entities/tab'
 import type { Command } from '@/entities/command'
 import { getFileKinds } from '@/entities/file'
 import { readNote, resolveLinks, writeNote } from '@/entities/note'
 import type { createMessageLog } from '@/shared/notices/messages'
-import { WINDOW_WORDS } from './words'
-import { createBackendHandlers } from '../plugins/commands/backendHandlers'
-import { createCommandItemLists, type CommandItemLists } from '../plugins/commands/commandItemLists'
-import { useDeclaredCommands } from '../plugins/commands/declaredCommands'
+import { createBackendHandlers, createCommandItemLists, type CommandItemLists, useDeclaredCommands } from '@/features/plugin-commands'
 import { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import { createPluginSupport } from '../plugins/useWindowPlugins'
@@ -28,34 +25,28 @@ import {
   type WindowCore,
 } from './createDisplayPart'
 import { getSettingsConfig } from '@/features/settings-commands'
-import type { useSettings } from './useSettings'
+import type { SettingsStore } from '@/entities/settings'
 import { createWindowCommands } from '../plugins/windowCommands'
 import { createWindowSlots } from '../plugins/windowSlots'
 import { createEditorVaults } from '../plugins/windowVaults'
 
-const getDeclaredCommandsDeps = (
-  hostHolder: { current?: PluginHost },
-  settingsHolder: { current?: ReturnType<typeof useSettings> },
-) => ({
+const getDeclaredCommandsDeps = (hostHolder: { current?: PluginHost }, rest: SettingsStore) => ({
   isListed: (id: string): boolean =>
     hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
   hasBackend: (pluginId: string): boolean =>
-    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)
-      ?.hasBackend ?? true,
-  getConfig: () => getWindowConfig(settingsHolder.current),
+    rest.state.plugins.value.find((one) => one.id === pluginId)?.hasBackend ?? true,
+  getConfig: () => getWindowConfig(rest),
 })
 
-const getWindowConfig = (settings: ReturnType<typeof useSettings> | undefined) =>
-  settings
-    ? getSettingsConfig([
-        { id: 'app', name: '', settings: settings.rest.state.app.value },
-        ...settings.rest.state.plugins.value.map((one) => ({
-          id: one.id,
-          name: one.name,
-          settings: one.settings,
-        })),
-      ])
-    : {}
+const getWindowConfig = (rest: SettingsStore) =>
+  getSettingsConfig([
+    { id: 'app', name: '', settings: rest.state.app.value },
+    ...rest.state.plugins.value.map((one) => ({
+      id: one.id,
+      name: one.name,
+      settings: one.settings,
+    })),
+  ])
 
 function createPluginReports(
   log: ReturnType<typeof createMessageLog>,
@@ -71,15 +62,15 @@ function createPluginReports(
     reportError: (pluginId: string, error: unknown) =>
       write(
         pluginId,
-        WINDOW_WORDS.pluginError(getPluginName(pluginId), formatError(error)),
+        PLUGIN_FAILURE_WORDS.error(getPluginName(pluginId), formatError(error)),
         'error',
       ),
     reportLoadError: (pluginId: string, error: unknown) =>
       write(
         pluginId,
-        WINDOW_WORDS.pluginStopped(
+        PLUGIN_FAILURE_WORDS.stopped(
           getPluginName(pluginId),
-          `${WINDOW_WORDS.pluginLoadFailed}: ${formatError(error)}`,
+          `${PLUGIN_FAILURE_WORDS.loadFailed}: ${formatError(error)}`,
         ),
         'error',
       ),
@@ -100,16 +91,13 @@ const createWindowHandlers = (
     openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
   })
 
-const createDeclaredParts = (
-  hostHolder: { current?: PluginHost },
-  settingsHolder: { current?: ReturnType<typeof useSettings> },
-) => {
+const createDeclaredParts = (hostHolder: { current?: PluginHost }, rest: SettingsStore) => {
   const itemLists = createCommandItemLists({
     listLists: listDeclaredItemLists,
     fileKinds: getFileKinds,
   })
   const declaredCommands = useDeclaredCommands({
-    ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
+    ...getDeclaredCommandsDeps(hostHolder, rest),
     listItems: itemLists.listItems,
   })
   return { itemLists, declaredCommands }
@@ -122,20 +110,19 @@ interface PluginsCoreDeps {
   readonly windowTabs: TabsCore['windowTabs']
   readonly tabLinks: TabsCore['tabLinks']
   readonly tabOpeners: TabsCore['tabOpeners']
-  readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
+  readonly rest: SettingsStore
 }
 
 export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
-  const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, settingsHolder } = deps
+  const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, rest } = deps
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const getPluginName = (pluginId: string): string =>
-    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)?.name ??
-    pluginId
+    rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const pluginServices: PluginServices = {}
   const pluginNotices = createNoticeQueue()
   const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })
   const hostHolder: { current?: PluginHost } = {}
-  const { itemLists, declaredCommands } = createDeclaredParts(hostHolder, settingsHolder)
+  const { itemLists, declaredCommands } = createDeclaredParts(hostHolder, rest)
   const appCommands: { current?: () => readonly Command[] } = {}
   const slots = createWindowSlots({
     declaredCommands,
@@ -151,7 +138,7 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
     windowTabs,
     tabLinks,
     tabOpeners,
-    settingsHolder,
+    rest,
     getPlatform: () => frame.platform.value,
     services: pluginServices,
     notices: pluginNotices,

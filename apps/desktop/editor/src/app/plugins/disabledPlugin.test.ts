@@ -3,6 +3,7 @@
  * from the placeholder returns the tab with the state the plugin saved.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { CATALOG_STATE, type CatalogEntry, type Manifest } from '@numen/core-client'
@@ -49,7 +50,7 @@ const createWindow = () => {
       registerExtensionReader: () => () => undefined,
       registerEditor: () => () => undefined,
     } as never,
-    settingsHolder: {},
+    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
   })
   holder.activate = () => {
     support.pluginHost

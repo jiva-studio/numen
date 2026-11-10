@@ -18,14 +18,14 @@ import {
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/workbench'
-import type { useSettings } from '../window/useSettings'
+import type { SettingsStore } from '@/entities/settings'
 import type { WindowPlatform } from '@numen/workbench'
 
 export interface PluginSupportDeps {
   readonly windowTabs: WindowTabs
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
-  readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
+  readonly rest: SettingsStore
   readonly getPlatform?: () => WindowPlatform
   readonly readNote?: (
     path: string,
@@ -55,12 +55,10 @@ export interface PluginSupportDeps {
 }
 
 function createPluginSettingsAccessor(
-  settingsHolder: { current?: ReturnType<typeof useSettings> },
+  rest: SettingsStore,
   reportError: (pluginId: string, error: unknown) => void,
 ) {
   const getSetting = (pluginId: string, key: string): unknown => {
-    const rest = settingsHolder.current?.rest
-    if (!rest) return undefined
     // Stryker disable next-line StringLiteral: rest reads under the plugin id.
     const value = rest.read.getCommittedSetting([pluginId, key])
     if (value !== undefined) return value
@@ -133,9 +131,9 @@ function getHostDeclarations(deps: PluginSupportDeps) {
 }
 
 export function createPluginSupport(deps: PluginSupportDeps) {
-  const { windowTabs, tabOpeners, settingsHolder } = deps
+  const { windowTabs, tabOpeners, rest } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(
-    settingsHolder,
+    rest,
     // Stryker disable next-line OptionalChaining: reportError is optional on PluginSupportDeps
     (pluginId, error) => deps.reportError?.(pluginId, error),
   )
@@ -150,10 +148,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const pluginHost = createPluginHost({
     ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
-      settingsHolder.current?.rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
+      rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
         ?.hasFrontend ?? true,
     hasPluginBackend: (pluginId) =>
-      settingsHolder.current?.rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
+      rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
         ?.hasBackend ?? true,
     isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
     waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
@@ -174,7 +172,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     },
     registerExtensionReader: tabOpeners.registerExtensionReader,
     getReaderExtensions: (pluginId, readerId) =>
-      settingsHolder.current?.rest.state.plugins.value
+      rest.state.plugins.value
         .find((plugin) => plugin.id === pluginId)
         ?.readers?.find((reader) => reader.id === readerId)?.extensions ?? [],
     registerEditor: tabOpeners.registerEditor,
@@ -211,12 +209,12 @@ export const getFrontendPluginIds = (
 ): string[] => plugins.filter((plugin) => plugin.hasFrontend).map((plugin) => plugin.id)
 
 export function watchPluginSettings(
-  settings: ReturnType<typeof useSettings>,
+  rest: SettingsStore,
   pluginLoader: PluginLoader,
   reportError: (error: unknown) => void,
 ) {
   watch(
-    () => settings.rest.state.plugins.value,
+    () => rest.state.plugins.value,
     (plugins) => {
       runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), reportError)
     },

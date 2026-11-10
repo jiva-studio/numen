@@ -19,3 +19,13 @@ export { createRowKeys, findChordKeys, findShortcutKeys } from './lib/keys'
 export { findIcon } from './lib/icons'
 export { flushTab } from './model/notes'
 export type { Notes } from './model/notes'
+export type {
+  CommandDeps,
+  CommandHandler,
+  RunContext,
+  SettingsWriter,
+  TabContext,
+  Voice,
+  WindowNavigator,
+} from './model/deps'
+export { commands, registerCommand } from './model/registry'

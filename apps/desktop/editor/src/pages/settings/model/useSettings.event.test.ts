@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createTestTabs } from '@/testing/tabs'
-import type { SettingEdit } from '@/entities/settings'
+import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
@@ -70,6 +70,7 @@ const create = () => {
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = createTestTabs()
   const settings = useSettings({
+    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,
     windowTabs,
@@ -187,7 +188,7 @@ describe('a setting that changes', () => {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      settingsHolder: { current: settings },
+      rest: settings.rest,
       services: {} as never,
     })
     await settings.start()
@@ -211,7 +212,7 @@ describe('a setting that changes', () => {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      settingsHolder: { current: settings },
+      rest: settings.rest,
       services: {} as never,
     })
     await settings.start()

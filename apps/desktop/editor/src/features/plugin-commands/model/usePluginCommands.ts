@@ -10,8 +10,7 @@ import type {
   PluginPaletteCommand,
 } from '@numen/plugin-loader'
 import type { WelcomeAction } from '@numen/workbench'
-import { registerCommand } from '@/features/command-palette'
-import { findShortcutKeys, type Command, type CommandTarget } from '@/entities/command'
+import { findShortcutKeys, type Command, type CommandTarget, registerCommand } from '@/entities/command'
 import type { FileKind } from '@/entities/file'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -19,8 +18,8 @@ import {
   createWhenAvailability,
   hasNoteVariable,
   type WindowWhenContext,
-} from './whenContext'
-import { createSharedCommands } from './sharedCommands'
+} from '../lib/whenContext'
+import { createSharedCommands } from '../lib/sharedCommands'
 
 /** What a run names: the note, the others selected with it, and the tab it is over. */
 type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'> & {

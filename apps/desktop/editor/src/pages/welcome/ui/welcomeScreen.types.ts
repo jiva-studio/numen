@@ -1,6 +1,7 @@
+import { type CommandDeps } from '@/entities/command'
 import type { WelcomeAction } from '@numen/workbench'
 import type { Tab } from '@numen/workbench'
-import type { CommandDeps, Commands, SearchState } from '@/features/command-palette'
+import type { Commands, SearchState } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
 

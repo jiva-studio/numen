@@ -2,9 +2,9 @@
  * The shared commands in the palette: one entry for each the enabled plugins handle, whose pick
  * list is its handlers, run over the target with the one picked.
  */
+import { commands, type CommandDeps } from '@/entities/command'
 import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
-import { commands, type CommandDeps } from '@/features/command-palette'
 import type { CommandInvocation, CommandTarget, RunSupport } from '@/entities/command'
 import { getFileKinds } from '@/entities/file'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
