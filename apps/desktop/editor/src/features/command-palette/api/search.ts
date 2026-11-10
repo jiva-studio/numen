@@ -5,7 +5,7 @@ import { getNames, SEARCH_MODE, type SearchModeCode } from '@numen/core-client'
 import type { Selector } from '@numen/plugin-loader'
 import { search } from '@/shared/api/clients'
 import { mapNoteType, mapRange } from '@/shared/api/wire'
-import type { SearchDeps, SearchMode } from '../model/search/search'
+import type { SearchDeps, SearchMode } from '../lib/search/types'
 
 const queryModes: Record<SearchModeCode, SearchMode | null> = {
   [SEARCH_MODE.UNSPECIFIED]: null,
