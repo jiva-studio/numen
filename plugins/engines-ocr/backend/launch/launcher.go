@@ -27,9 +27,9 @@ var (
 
 // Outcome is what a call to Create did for a file.
 type Outcome struct {
-	TaskID string
-	Path   string
-	State  string
+	TaskID  string
+	Path    string
+	State   string
 	Version string
 }
 
