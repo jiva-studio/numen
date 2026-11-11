@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/launch"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
@@ -14,14 +15,14 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 	s := newToolFixture(t)
 	result := make(chan error, 1)
 	go func() {
-		_, err := newRecogniseCommand(s.tools)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})
+		_, err := newRecogniseCommand(s.launcher)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})
 		result <- err
 	}()
 	s.waitStarted(t)
 
 	out := s.recognize(t, "Physics", scanPath)
 
-	if out.State != stateRunning {
+	if out.State != launch.StateRunning {
 		t.Errorf("recognition_create while the command recognizes the scan returned %+v, want the state running", out)
 	}
 	close(s.recogniser.release)
@@ -38,7 +39,7 @@ func TestRecogniseCommandDuringToolRecognitionFails(t *testing.T) {
 	out := s.recognize(t, "Physics", scanPath)
 	s.waitStarted(t)
 
-	_, err := newRecogniseCommand(s.tools)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})
+	_, err := newRecogniseCommand(s.launcher)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})
 
 	if !errors.Is(err, recognition.ErrAlreadyRecognising) {
 		t.Errorf("the command while the tool recognizes the scan returned %v, want it already being recognized", err)

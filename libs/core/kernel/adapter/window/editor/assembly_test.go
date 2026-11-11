@@ -81,7 +81,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
 			Links: queries, Problems: db.NoteProblems(),
 		},
 		Chunks: vault.IndexChunks{
-			Passages: db.ChunkSearch(), Progress: db.ChunkVectors(), Stats: db.ChunkVectors(),
+			Passages: db.ChunkSearch(), Nearest: db.ChunkSearch(), Progress: db.ChunkVectors(), Stats: db.ChunkVectors(),
 			Index:   db,
 			Vectors: db.Sources(), VectorQueries: db.Sources(),
 		},
@@ -90,7 +90,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
 			SourceRecords: db.Sources(), SourceBacklog: db.Sources(),
 		},
 		Search: vault.IndexSearch{
-			Nearest: db.ChunkSearch(), SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
+			SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
 		},
 		TextVersions: version.NewIndexVersions(db.TextVersions()),
 	}), nil

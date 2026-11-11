@@ -299,7 +299,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.FindNearest(ctx, c.vault.ID, source.NearestQuery{Recipe: c.recipe, Vector: c.queryVec, Limit: 20, Floor: 0.1})
+					res, err := search.NewFindNearest(c.db.Chunks.Nearest).Execute(ctx, c.vault.ID, source.NearestQuery{Recipe: c.recipe, Vector: c.queryVec, Limit: 20, Floor: 0.1})
 					if err != nil {
 						b.Fatal(err)
 					}

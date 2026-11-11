@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/model"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/proofread"
@@ -31,7 +32,7 @@ const (
 type scene struct {
 	texts     *hosttest.Texts
 	host      proofread.Host
-	settings  *settings
+	settings  *settings.Store
 	questions []*ai.Question
 	script    func(prompt string) string
 	run       *proofread.Proofreading
@@ -42,7 +43,7 @@ func newScene(t *testing.T) *scene {
 	vault := hosttest.New("Physics")
 	s := &scene{
 		texts:    hosttest.NewTexts("Physics", PluginID),
-		settings: newSettings(),
+		settings: settings.NewStore(),
 		script:   func(string) string { return "" },
 	}
 	s.texts.File(scanPath, []byte("the scan"))
@@ -189,7 +190,7 @@ func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
 	defer srv.Close()
 
 	s := newScene(t)
-	s.settings.updateConfig(map[string]string{
+	s.settings.Update(map[string]string{
 		"provider": "custom",
 		"baseUrl":  srv.URL,
 		"model":    "google/gemini-2.5-flash",

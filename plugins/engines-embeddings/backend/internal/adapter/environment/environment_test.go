@@ -22,7 +22,7 @@ func TestTheVariablesNameTheModelAndTheRuntime(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MAX_TOKENS", "4294967296")
 	t.Setenv("NUMEN_ONNX_THREADS", "6")
 
-	got := GetOverrides()
+	got := (Variables{}).GetOverrides()
 
 	if got.Model != "owner/model" || got.Dimensions != 1 || got.MaxTokens != 0 || got.Threads != 6 {
 		t.Fatalf("overrides = %+v", got)
@@ -32,7 +32,7 @@ func TestTheVariablesNameTheModelAndTheRuntime(t *testing.T) {
 func TestAThreadCountThatIsNoPositiveNumberNamesNothing(t *testing.T) {
 	for _, value := range []string{"", "invalid", "0", "-2"} {
 		t.Setenv("NUMEN_ONNX_THREADS", value)
-		if got := GetOverrides().Threads; got != 0 {
+		if got := (Variables{}).GetOverrides().Threads; got != 0 {
 			t.Errorf("threads %q = %d, want 0", value, got)
 		}
 	}
@@ -40,24 +40,24 @@ func TestAThreadCountThatIsNoPositiveNumberNamesNothing(t *testing.T) {
 
 func TestTheMockOpenHoldWaitsAndStopsWithItsContext(t *testing.T) {
 	t.Setenv(envMockOpenHold, "0")
-	if err := WaitMockOpenHold(t.Context()); err != nil {
+	if err := (Variables{}).WaitMockOpenHold(t.Context()); err != nil {
 		t.Fatalf("0ms hold failed: %v", err)
 	}
 
 	t.Setenv(envMockOpenHold, "bad")
-	if err := WaitMockOpenHold(t.Context()); err != nil {
+	if err := (Variables{}).WaitMockOpenHold(t.Context()); err != nil {
 		t.Fatalf("invalid hold failed: %v", err)
 	}
 
 	t.Setenv(envMockOpenHold, "1")
-	if err := WaitMockOpenHold(t.Context()); err != nil {
+	if err := (Variables{}).WaitMockOpenHold(t.Context()); err != nil {
 		t.Fatalf("1ms hold failed: %v", err)
 	}
 
 	t.Setenv(envMockOpenHold, "200")
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if err := WaitMockOpenHold(ctx); !errors.Is(err, context.Canceled) {
+	if err := (Variables{}).WaitMockOpenHold(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatalf("hold with a canceled context = %v, want Canceled", err)
 	}
 }

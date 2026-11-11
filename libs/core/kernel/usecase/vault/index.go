@@ -42,6 +42,7 @@ type IndexNoteQueries struct {
 // IndexChunks are the questions the index answers about the chunks it holds, and their vectors.
 type IndexChunks struct {
 	Passages      sourceport.PassageQueries
+	Nearest       sourceport.NearestQueries
 	Progress      indexport.IndexProgress
 	Stats         indexport.IndexStats
 	Index         embeddingport.VectorIndex
@@ -60,7 +61,6 @@ type IndexSources struct {
 
 // IndexSearch is what the search of a vault ranks with and learns its floors from.
 type IndexSearch struct {
-	Nearest       searchpolicyport.Nearest
 	SearchFloors  searchpolicyport.FloorStore
 	SearchSamples searchpolicyport.Samples
 }
