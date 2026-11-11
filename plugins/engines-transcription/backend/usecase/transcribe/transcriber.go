@@ -45,22 +45,21 @@ type Transcriber struct {
 	running  map[string]bool
 }
 
-// NewTranscriber is the transcriber over what the host gives the plugin.
-func NewTranscriber(files Files, stores func(domain.VaultID) Folder, texts func(domain.VaultID) host.TextVersions, queue host.Queue, engines Engines) *Transcriber {
+// NewTranscriber is the transcriber over what the host gives the plugin. report receives the
+// failures of the background work.
+func NewTranscriber(
+	files Files, stores func(domain.VaultID) Folder, texts func(domain.VaultID) host.TextVersions, queue host.Queue, engines Engines,
+	report func(what string, err error),
+) *Transcriber {
 	return &Transcriber{
-		files: files, stores: stores, texts: texts, queue: queue, engines: engines, report: nil,
+		files: files, stores: stores, texts: texts, queue: queue, engines: engines, report: report,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
 		mu: sync.Mutex{}, isClosed: false, running: map[string]bool{},
 	}
 }
 
-// SetReport sets the callback that receives background failures of the transcriber.
-func (t *Transcriber) SetReport(report func(what string, err error)) {
-	t.report = report
-}
-
 func (t *Transcriber) reportError(what string, err error) {
-	if t.report != nil && err != nil {
+	if err != nil {
 		t.report(what, err)
 	}
 }

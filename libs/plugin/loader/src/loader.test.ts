@@ -71,7 +71,6 @@ describe('createPluginLoader', () => {
             command: vi.fn(noop),
             view: vi.fn(noop),
             settingsView: vi.fn(noop),
-            agentProvider: vi.fn(noop),
           },
           settings: {
             get: vi.fn((key: string) =>

@@ -23,9 +23,9 @@ const (
 	// installation.
 	PermissionVaultManage = "vault:manage"
 
-	// PermissionNetworkOutbound allows a plugin to open external links in the system browser. It does not
+	// PermissionLinkOpen allows a plugin to open external links in the system browser. It does not
 	// restrict network requests: a plugin is trusted code, and permissions are consent and API hygiene.
-	PermissionNetworkOutbound = "network:outbound"
+	PermissionLinkOpen = "link:open"
 
 	// PermissionAIComplete allows asking the host for a model completion.
 	PermissionAIComplete = "ai:complete"
@@ -41,7 +41,7 @@ const (
 	// the tabs it has open.
 	PermissionWindowFocus = "window:focus"
 
-	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
+	// PermissionNetworkAlias is the accepted short spelling of PermissionLinkOpen.
 	PermissionNetworkAlias = "network"
 
 	ProtocolVersion = 1
@@ -50,7 +50,7 @@ const (
 // PluginPermissions is every permission a manifest may declare, in its canonical spelling.
 func PluginPermissions() []string {
 	return []string{
-		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionNetworkOutbound,
+		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
 		PermissionAIComplete, PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
 	}
 }
@@ -315,7 +315,7 @@ func (m Manifest) listBackendlessIssues() []error {
 // NormalizePermission maps the accepted permission spellings to their canonical form.
 func NormalizePermission(permission string) string {
 	if permission == PermissionNetworkAlias {
-		return PermissionNetworkOutbound
+		return PermissionLinkOpen
 	}
 	return permission
 }

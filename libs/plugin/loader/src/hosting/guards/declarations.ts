@@ -1,8 +1,5 @@
 import type { PermissionTarget } from './permission'
 
-/** The capability a manifest names to declare that its plugin registers agent providers. */
-const AGENT_PROVIDER_CAPABILITY = 'ai.agent.provider'
-
 /** The parts of a manifest that declare what a plugin registers. */
 interface DeclaringManifest {
   readonly permissions?: readonly string[] | undefined
@@ -19,8 +16,7 @@ interface DeclaringManifest {
     | undefined
 }
 
-type Registration =
-  'drop type' | 'reader' | 'tab kind' | 'command' | 'settings view' | 'agent provider'
+type Registration = 'drop type' | 'reader' | 'tab kind' | 'command' | 'settings view'
 
 interface Undeclared {
   readonly kind: Registration
@@ -74,12 +70,6 @@ export function requireDeclaredSettingsView(target: PermissionTarget, id: string
   const declared = getManifest(target)?.settingsViews ?? []
   if (!declared.some((one) => one.id === id))
     fail(target, { kind: 'settings view', id, where: 'settingsViews' })
-}
-
-export function requireDeclaredAgentProvider(target: PermissionTarget, id: string): void {
-  if (!(getManifest(target)?.capabilities ?? []).includes(AGENT_PROVIDER_CAPABILITY)) {
-    fail(target, { kind: 'agent provider', id, where: 'capabilities' })
-  }
 }
 
 /** Checks every type of a drop handler against the manifest, and answers the types it read. */

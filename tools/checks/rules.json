@@ -508,6 +508,21 @@
       "target": "plugin-boundary"
     },
     {
+      "name": "go/plugin-copies-agree",
+      "paths": [
+        "plugins/*/backend/internal/adapter/engine/onnx/*.go"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "fast"
+      ],
+      "selftest": "structure/go/plugin-copies-agree/check_test.go",
+      "runner": "go",
+      "target": "plugin-copies-agree"
+    },
+    {
       "name": "go/plugin-gomod",
       "paths": [
         "**/*.go",

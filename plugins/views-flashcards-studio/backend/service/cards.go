@@ -15,18 +15,14 @@ import (
 
 // cardsHandler answers about the decks and card models a vault is arranged into.
 type cardsHandler struct {
-	getCurrentVault func(context.Context) (domain.Vault, error)
-	createCardNote  func(context.Context, func(domain.Vault, cards.New) (cards.CreateNoteResult, error), string, string) (cards.CreateNoteResult, api.ErrorCode, bool, error)
-	newTitler       func(context.Context, domain.Vault) func(string) string
-	cards           cards.Scenarios
+	*vaultSession
+	cards cards.Scenarios
 }
 
 func (b *Backend) newCardsHandler() *cardsHandler {
 	return &cardsHandler{
-		getCurrentVault: b.getCurrentVault,
-		createCardNote:  b.createCardNote,
-		newTitler:       b.newTitler,
-		cards:           cards.NewScenarios(b.getCardsConfig()),
+		vaultSession: b.vaultSession,
+		cards:        cards.NewScenarios(b.getCardsConfig()),
 	}
 }
 
@@ -58,16 +54,6 @@ func (h *cardsHandler) CreateDeck(ctx context.Context, req *api.CreateDeckReques
 		return nil, err
 	}
 	return &api.CreateDeckResponse{Path: made.Path, Error: code, IsIndexOutdated: indexOutdated}, nil
-}
-
-func (b *Backend) createCardNote(
-	ctx context.Context, create func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
-) (cards.CreateNoteResult, api.ErrorCode, bool, error) {
-	showing, err := b.getCurrentVault(ctx)
-	if err != nil {
-		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, err
-	}
-	return apierror.ClassifyCreate(create(showing, cards.New{Title: title, Body: "", Path: folder, Fields: nil, Templates: nil}))
 }
 
 func (h *cardsHandler) RenameCardModelField(

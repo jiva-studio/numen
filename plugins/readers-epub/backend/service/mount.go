@@ -22,8 +22,7 @@ func Mount(s *server.Server) error {
 
 func mount(s *server.Server, connected *hostclient.Host) error {
 	reader := books.NewReader(connected.OpenFiles)
-	writer := texts.NewWriter(connected.OpenVault, connected.OpenTexts, connected.OpenStore, connected.GetQueue())
-	writer.SetReport(connected.ReportError)
+	writer := texts.NewWriter(connected.OpenVault, connected.OpenTexts, connected.OpenStore, connected.GetQueue(), connected.ReportError)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook releases cached books"
 	s.OnClose(func() error {
 		reader.Close()

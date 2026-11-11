@@ -54,10 +54,13 @@ type Request struct {
 }
 
 // NewWriter is the texts of the books read through vaults, written into store and reported to
-// texts, each written in a turn of queue.
-func NewWriter(vaults func(domain.VaultID) Vault, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue) *Writer {
+// texts, each written in a turn of queue. report receives the failures of the background work.
+func NewWriter(
+	vaults func(domain.VaultID) Vault, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue,
+	report func(what string, err error),
+) *Writer {
 	return &Writer{
-		vaults: vaults, texts: texts, store: store, queue: queue, report: nil,
+		vaults: vaults, texts: texts, store: store, queue: queue, report: report,
 		wg:       sync.WaitGroup{},
 		mu:       sync.Mutex{},
 		isClosed: false,
@@ -66,13 +69,8 @@ func NewWriter(vaults func(domain.VaultID) Vault, texts func(domain.VaultID) hos
 	}
 }
 
-// SetReport sets the callback that receives background failures of the writer.
-func (s *Writer) SetReport(report func(what string, err error)) {
-	s.report = report
-}
-
 func (s *Writer) reportError(what string, err error) {
-	if s.report != nil && err != nil {
+	if err != nil {
 		s.report(what, err)
 	}
 }

@@ -21,7 +21,7 @@ func (f listerFunc) ListModels(ctx context.Context, command, env []string) ([]mo
 
 func newCatalog(t *testing.T, lister listerFunc, isAsync bool, extra ...cache.Option) *Catalog {
 	t.Helper()
-	c, err := New(lister, isAsync, extra...)
+	c, err := New(lister, func(err error) { t.Logf("the catalog fell back: %v", err) }, isAsync, extra...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func readFixtureModels(t *testing.T) []model.Model {
 }
 
 func TestNewRefusesAMissingLister(t *testing.T) {
-	if _, err := New(nil, false); err == nil {
+	if _, err := New(nil, func(error) {}, false); err == nil {
 		t.Error("a catalog without a lister was created")
 	}
 }
@@ -151,9 +151,11 @@ func TestAsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 }
 
 func TestAProgramThatIsNotInstalledListsTheFallbackModels(t *testing.T) {
-	c := newCatalog(t, neverCalled(t), false)
 	var reported error
-	c.SetReport(func(err error) { reported = err })
+	c, err := New(neverCalled(t), func(err error) { reported = err }, false)
+	if err != nil {
+		t.Fatal(err)
+	}
 	list := c.List(t.Context(), "", nil, nil)
 	if reported == nil {
 		t.Error("expected List to report error when program is not installed")
