@@ -1,5 +1,4 @@
 import { execFileSync } from "node:child_process";
-import path from "node:path";
 
 /** The regular expression of a path pattern: `**` crosses folders, `*` and `?` stay in one, `{a,b}` is a choice. */
 export function getPathPattern(pattern) {
@@ -51,8 +50,3 @@ export function listChangedFiles(root, base = process.env.BASE_REF || "origin/ma
   return [...new Set([...committed, ...worktree, ...untracked])];
 }
 
-/** The checks directory relative to the repository, so a change in the runner or the library selects everything. */
-export function getCheckerPaths(root, checksDir) {
-  const relative = path.relative(root, checksDir).split(path.sep).join("/");
-  return { runner: [`${relative}/run.mjs`, `${relative}/rules.json`, `${relative}/lib/*.mjs`, `${relative}/structure/go/load/*.go`], dir: relative };
-}

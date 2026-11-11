@@ -43,9 +43,9 @@ func getMethodIdentities(file *ast.File) []load.Identity {
 				for _, name := range one.Names {
 					if strings.HasSuffix(name.Name, "ID") {
 						found = append(found, load.Identity{
-							spec.Name.Name + "." + method.Names[0].Name,
-							name.Name,
-							load.GetTypeName(one.Type),
+							In:      spec.Name.Name + "." + method.Names[0].Name,
+							Field:   name.Name,
+							Spelled: load.GetTypeName(one.Type),
 						})
 					}
 				}

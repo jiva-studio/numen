@@ -1,3 +1,4 @@
+// Package drivingoneusecase is the check `go/driving-one-use-case`, run on the tree with the planted violations that prove it.
 package drivingoneusecase
 
 import (
@@ -51,4 +52,8 @@ func hand(...any) {}
 	if functions != 8 {
 		t.Errorf("%d functions reach a use case, want 8", functions)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

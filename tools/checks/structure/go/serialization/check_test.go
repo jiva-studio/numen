@@ -1,6 +1,8 @@
+// Package serialization is the check `go/serialization`, run on the tree with the planted violations that prove it.
 package serialization
 
 import (
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -10,8 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	// The import changes the working directory to the container of the kernel, where the relative paths below start.
-	_ "github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies that port/, usecase/, and domain/
@@ -68,4 +68,8 @@ func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

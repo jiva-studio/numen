@@ -1,3 +1,4 @@
+// Package compositionroot is the check `go/composition-root`, run on the tree with the planted violations that prove it.
 package compositionroot
 
 import (
@@ -25,4 +26,8 @@ func TestTheCompositionRootIsOnePackage(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkCompositionRootIsOnePackage(t, load.Workspace(t, "libs/core/kernel"))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

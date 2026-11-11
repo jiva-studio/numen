@@ -1,3 +1,4 @@
+// Package adaptersclaimnoports is the check `go/adapters-claim-no-ports`, run on the tree with the planted violations that prove it.
 package adaptersclaimnoports
 
 import (
@@ -80,4 +81,8 @@ func mount() {
 	if got := getClaimedPorts(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

@@ -1,3 +1,4 @@
+// Package ports is the check `go/ports`, run on the tree with the planted violations that prove it.
 package ports
 
 import (
@@ -178,4 +179,8 @@ func TestCompositionRootDefinesNoAdapterStructs(t *testing.T) {
 			t.Errorf("container/%s defines inline adapter struct %s with methods [%s]: move adapter and business logic out of Composition Root", name, st, strings.Join(methods, ", "))
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

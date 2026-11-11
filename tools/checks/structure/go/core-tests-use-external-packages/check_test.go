@@ -1,3 +1,4 @@
+// Package coretestsuseexternalpackages is the check `go/core-tests-use-external-packages`, run on the tree with the planted violations that prove it.
 package coretestsuseexternalpackages
 
 import (
@@ -58,4 +59,8 @@ func TestCoreTestsBuildingAdaptersUseExternalPackages(t *testing.T) {
 	if read < 100 {
 		t.Fatalf("%d tests of the core read: the walk is not reading them", read)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

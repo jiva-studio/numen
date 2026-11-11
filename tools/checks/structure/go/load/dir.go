@@ -3,24 +3,30 @@
 package load
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+	"testing"
 )
 
 // ContainerDir is the directory every relative path of a check is written against: the container of the
-// kernel, where the checks lived before they moved. Importing this package changes the working directory
-// of the test binary to it.
+// kernel, where the checks lived before they moved.
 var ContainerDir string
 
-func init() {
+// Main changes the working directory of a check's test binary to ContainerDir and runs its tests. A check
+// calls it from TestMain.
+func Main(m *testing.M) int {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
-		panic("load: the location of the package is unknown")
+		fmt.Fprintln(os.Stderr, "load: the location of the package is unknown")
+		return 1
 	}
 	root := filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "..")
 	ContainerDir = filepath.Join(root, "libs", "core", "kernel", "container")
 	if err := os.Chdir(ContainerDir); err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		return 1
 	}
+	return m.Run()
 }

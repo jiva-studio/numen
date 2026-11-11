@@ -1,3 +1,4 @@
+// Package direction is the check `go/direction`, run on the tree with the planted violations that prove it.
 package direction
 
 import (
@@ -66,4 +67,8 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 			inward(t, one.GOOS, one.GOARCH)
 		})
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

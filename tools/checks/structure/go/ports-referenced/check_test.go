@@ -1,6 +1,8 @@
+// Package portsreferenced is the check `go/ports-referenced`, run on the tree with the planted violations that prove it.
 package portsreferenced
 
 import (
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -79,4 +81,8 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 			t.Errorf("nothing outside calls %s and the rule does not refuse it", one)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

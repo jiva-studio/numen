@@ -1,3 +1,4 @@
+// Package machineclock is the check `go/machine-clock`, run on the tree with the planted violations that prove it.
 package machineclock
 
 import (
@@ -105,4 +106,8 @@ func TestNothingOutsideAdaptersReadsTheMachineClock(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

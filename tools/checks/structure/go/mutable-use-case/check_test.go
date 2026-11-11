@@ -1,3 +1,4 @@
+// Package mutableusecase is the check `go/mutable-use-case`, run on the tree with the planted violations that prove it.
 package mutableusecase
 
 import (
@@ -133,4 +134,8 @@ func TestNoFunctionFieldIsAssignedAfterConstruction(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkNoFunctionFieldIsAssignedAfterConstruction(t, load.Workspace(t))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

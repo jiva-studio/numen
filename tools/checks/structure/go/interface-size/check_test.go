@@ -1,3 +1,4 @@
+// Package interfacesize is the check `go/interface-size`, run on the tree with the planted violations that prove it.
 package interfacesize
 
 import (
@@ -117,4 +118,8 @@ func TestInterfaceSizeCountsTheWholeMethodSet(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkInterfaceSizeCountsTheWholeMethodSet(t, load.Workspace(t))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

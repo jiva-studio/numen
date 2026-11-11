@@ -1,3 +1,4 @@
+// Package identities is the check `go/identities`, run on the tree with the planted violations that prove it.
 package identities
 
 import (
@@ -121,4 +122,8 @@ type Store interface {
 	if !slices.Equal(rejected, []string{"chunkID", "rowID"}) {
 		t.Errorf("the rule rejected %v, want the two identities spelled as numbers", rejected)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

@@ -1,3 +1,4 @@
+// Package exhaustructinclude is the check `go/exhaustruct-include`, run on the tree with the planted violations that prove it.
 package exhaustructinclude
 
 import (
@@ -20,4 +21,8 @@ func TestEveryExhaustructIncludeMatchesAType(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkExhaustructIncludesMatchTypes(t, load.Workspace(t))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

@@ -1,3 +1,4 @@
+// Package instants is the check `go/instants`, run on the tree with the planted violations that prove it.
 package instants
 
 import (
@@ -66,4 +67,8 @@ type Reading struct {
 	if !slices.Equal(rejected, []string{"SeenTime"}) {
 		t.Errorf("rejected %v, want SeenTime", rejected)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

@@ -1,3 +1,4 @@
+// Package portshape is the check `go/port-shape`, run on the tree with the planted violations that prove it.
 package portshape
 
 import (
@@ -178,4 +179,8 @@ func TestPortsAreIndependentAndPure(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

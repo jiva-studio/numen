@@ -1,3 +1,4 @@
+// Package pluginboundary is the check `go/plugin-boundary`, run on the tree with the planted violations that prove it.
 package pluginboundary
 
 import (
@@ -117,4 +118,8 @@ func TestNoModuleRequiresAPlugin(t *testing.T) {
 	if found < 2 {
 		t.Fatalf("%d go.mod files found under %s: a rule checked against nothing", found, root)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

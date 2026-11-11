@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, it, after } from "node:test";
@@ -93,22 +93,26 @@ function normalize(text, root) {
 }
 
 function run(name, root) {
-  const result = spawnSync("node", [path.join(CHECKS_DIR, "run.mjs"), "--only", name], { encoding: "utf8", env: { ...process.env, NUMEN_CHECKS_ROOT: root }, maxBuffer: 1 << 28 });
-  return { status: result.status, text: normalize((result.stdout || "") + (result.stderr || ""), root) };
+  return new Promise((resolve) => {
+    const child = spawn("node", [path.join(CHECKS_DIR, "run.mjs"), "--only", name], { env: { ...process.env, NUMEN_CHECKS_ROOT: root } });
+    let text = "";
+    child.stdout.on("data", (d) => (text += d));
+    child.stderr.on("data", (d) => (text += d));
+    child.on("close", (status) => resolve({ status, text: normalize(text, root) }));
+  });
 }
 
 // A check that reads a file outside its `paths` gives another answer on a tree that holds only the
 // `paths`. The Go checks (they type-check the workspace through `go list`), the commands and the
 // rule tests are not run this way: a reduced tree has no go.work to load.
-describe("the paths of the verifiers", () => {
+describe("the paths of the verifiers", { concurrency: 4 }, () => {
   const planted = [];
   after(() => planted.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));
   for (const entry of registry.checks.filter((e) => e.runner === "verifiers")) {
-    it(`${entry.name} gives the same answer on a tree reduced to its paths`, () => {
-      const full = run(entry.name, REPO_ROOT);
+    it(`${entry.name} gives the same answer on a tree reduced to its paths`, async () => {
       const reduced = plantTree(REPO_ROOT, entry.paths);
       planted.push(reduced);
-      const small = run(entry.name, reduced);
+      const [full, small] = await Promise.all([run(entry.name, REPO_ROOT), run(entry.name, reduced)]);
       assert.equal(small.status, full.status);
       assert.equal(small.text.replace(/\(\d+\.\d+s\)/g, ""), full.text.replace(/\(\d+\.\d+s\)/g, ""), `${entry.name} reads a file outside its paths`);
     });

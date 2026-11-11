@@ -73,20 +73,29 @@ func GetImports(root string) (map[string][]string, error) {
 		if !strings.HasSuffix(path, ".go") {
 			return nil
 		}
-		file, err := parser.ParseFile(fset, path, nil, parser.ImportsOnly)
-		if err != nil {
-			return err
+		deps, err := readImports(fset, path)
+		if len(deps) > 0 {
+			imports[path] = append(imports[path], deps...)
 		}
-		for _, spec := range file.Imports {
-			dep, err := strconv.Unquote(spec.Path.Value)
-			if err != nil {
-				return err
-			}
-			imports[path] = append(imports[path], dep)
-		}
-		return nil
+		return err
 	})
 	return imports, err
+}
+
+func readImports(fset *token.FileSet, path string) ([]string, error) {
+	file, err := parser.ParseFile(fset, path, nil, parser.ImportsOnly)
+	if err != nil {
+		return nil, err
+	}
+	var deps []string
+	for _, spec := range file.Imports {
+		dep, err := strconv.Unquote(spec.Path.Value)
+		if err != nil {
+			return deps, err
+		}
+		deps = append(deps, dep)
+	}
+	return deps, nil
 }
 
 // DepguardRule is one rule of the depguard linter in a golangci configuration.

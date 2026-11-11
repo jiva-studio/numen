@@ -1,3 +1,4 @@
+// Package adapterrole is the check `go/adapter-role`, run on the tree with the planted violations that prove it.
 package adapterrole
 
 import (
@@ -63,4 +64,8 @@ func TestAdapterRoleRule_ClassifiesByStructure(t *testing.T) {
 	if want := []string{"window.go:8 fixture/port/noteport.Note", "window.go:8 fixture/port/noteport.Title"}; !slices.Equal(refs, want) {
 		t.Errorf("the port references are %v, want %v", refs, want)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

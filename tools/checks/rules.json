@@ -1292,10 +1292,7 @@
     {
       "name": "docs/paths-exist",
       "paths": [
-        ".agents/**/*.md",
-        "AGENTS.md",
-        "apps/**/AGENTS.md",
-        "libs/**/AGENTS.md"
+        "**"
       ],
       "tags": [
         "docs",

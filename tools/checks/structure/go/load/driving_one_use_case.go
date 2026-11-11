@@ -94,40 +94,50 @@ func GetFunctionUses(pkg *packages.Package, root string) map[*types.Func]*Functi
 			if !is {
 				continue
 			}
-			use := &FunctionUse{Position: NewFinding(pkg.Fset, function.Pos(), function.Name.Name)}
-			var literals []*ast.FuncLit
-			ast.Inspect(function.Body, func(node ast.Node) bool {
-				if literal, is := node.(*ast.FuncLit); is {
-					literals = append(literals, literal)
-				}
-				return true
-			})
-			// A function literal runs when its caller decides, which is not when the function that builds it runs.
-			isBuilt := func(position token.Pos) bool {
-				return slices.ContainsFunc(literals, func(literal *ast.FuncLit) bool { return literal.Pos() <= position && position < literal.End() })
-			}
-			ast.Inspect(function.Body, func(node ast.Node) bool {
-				switch one := node.(type) {
-				case *ast.SelectorExpr:
-					use.Add(GetUsedField(pkg.TypesInfo, one.X, root))
-					if called, is := pkg.TypesInfo.Uses[one.Sel].(*types.Func); is && called.Pkg() == pkg.Types && !isBuilt(one.Pos()) {
-						use.Callees = append(use.Callees, called)
-					}
-				case *ast.CallExpr:
-					for _, argument := range one.Args {
-						use.Add(GetUsedField(pkg.TypesInfo, argument, root))
-					}
-				case *ast.Ident:
-					if called, is := pkg.TypesInfo.Uses[one].(*types.Func); is && called.Pkg() == pkg.Types && !isBuilt(one.Pos()) {
-						use.Callees = append(use.Callees, called)
-					}
-				}
-				return true
-			})
-			uses[object] = use
+			uses[object] = readFunctionUse(pkg, function, root)
 		}
 	}
 	return uses
+}
+
+func listFunctionLiterals(body *ast.BlockStmt) []*ast.FuncLit {
+	var literals []*ast.FuncLit
+	ast.Inspect(body, func(node ast.Node) bool {
+		if literal, is := node.(*ast.FuncLit); is {
+			literals = append(literals, literal)
+		}
+		return true
+	})
+	return literals
+}
+
+func readFunctionUse(pkg *packages.Package, function *ast.FuncDecl, root string) *FunctionUse {
+	use := &FunctionUse{Position: NewFinding(pkg.Fset, function.Pos(), function.Name.Name)}
+	literals := listFunctionLiterals(function.Body)
+	// A function literal runs when its caller decides, which is not when the function that builds it runs.
+	isBuilt := func(position token.Pos) bool {
+		return slices.ContainsFunc(literals, func(literal *ast.FuncLit) bool { return literal.Pos() <= position && position < literal.End() })
+	}
+	addCallee := func(name *ast.Ident, position token.Pos) {
+		if called, is := pkg.TypesInfo.Uses[name].(*types.Func); is && called.Pkg() == pkg.Types && !isBuilt(position) {
+			use.Callees = append(use.Callees, called)
+		}
+	}
+	ast.Inspect(function.Body, func(node ast.Node) bool {
+		switch one := node.(type) {
+		case *ast.SelectorExpr:
+			use.Add(GetUsedField(pkg.TypesInfo, one.X, root))
+			addCallee(one.Sel, one.Pos())
+		case *ast.CallExpr:
+			for _, argument := range one.Args {
+				use.Add(GetUsedField(pkg.TypesInfo, argument, root))
+			}
+		case *ast.Ident:
+			addCallee(one, one.Pos())
+		}
+		return true
+	})
+	return use
 }
 
 func GetReach(uses map[*types.Func]*FunctionUse, start *types.Func) []*types.Var {
@@ -165,25 +175,32 @@ func ListManyUseCaseCalls(pkgs []*packages.Package, root string) (found []Findin
 				continue
 			}
 			functions++
-			if len(reach) < 2 {
-				continue
+			if finding, isMany := getManyCallFinding(uses, object, reach); isMany {
+				found = append(found, finding)
 			}
-			// A function is named when no function it calls already reaches two: the one that joins them.
-			delegated := slices.ContainsFunc(use.Callees, func(called *types.Func) bool {
-				return called != object && len(GetReach(uses, called)) > 1
-			})
-			if delegated {
-				continue
-			}
-			names := make([]string, len(reach))
-			for i, field := range reach {
-				names[i] = field.Name()
-			}
-			slices.Sort(names)
-			position := use.Position
-			position.Name += " calls " + strings.Join(names, ", ")
-			found = append(found, position)
 		}
 	}
 	return SortFindings(found), functions
+}
+
+func getManyCallFinding(uses map[*types.Func]*FunctionUse, object *types.Func, reach []*types.Var) (Finding, bool) {
+	if len(reach) < 2 {
+		return Finding{}, false
+	}
+	use := uses[object]
+	// A function is named when no function it calls already reaches two: the one that joins them.
+	delegated := slices.ContainsFunc(use.Callees, func(called *types.Func) bool {
+		return called != object && len(GetReach(uses, called)) > 1
+	})
+	if delegated {
+		return Finding{}, false
+	}
+	names := make([]string, len(reach))
+	for i, field := range reach {
+		names[i] = field.Name()
+	}
+	slices.Sort(names)
+	position := use.Position
+	position.Name += " calls " + strings.Join(names, ", ")
+	return position, true
 }

@@ -1,3 +1,4 @@
+// Package pluginadapterlayers is the check `go/plugin-adapter-layers`, run on the tree with the planted violations that prove it.
 package pluginadapterlayers
 
 import (
@@ -114,4 +115,8 @@ func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 		}
 	}
 	denied(hostRule, append([]string{"bridge"}, bridges...), "plugin-host-side")
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

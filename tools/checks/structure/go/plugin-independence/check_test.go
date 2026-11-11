@@ -1,3 +1,4 @@
+// Package pluginindependence is the check `go/plugin-independence`, run on the tree with the planted violations that prove it.
 package pluginindependence
 
 import (
@@ -236,4 +237,8 @@ func TestNoSharedPluginDirectoryExists(t *testing.T) {
 	if _, err := os.Stat(sharedPath); !os.IsNotExist(err) {
 		t.Fatalf("%s exists: plugins must be autonomous and cannot share internal libraries", sharedPath)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

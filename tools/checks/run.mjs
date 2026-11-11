@@ -25,6 +25,7 @@ import { printReport } from "./lib/report.mjs";
 const CHECKS_DIR = import.meta.dirname;
 const REPO_ROOT = process.env.NUMEN_CHECKS_ROOT ? path.resolve(process.env.NUMEN_CHECKS_ROOT) : path.resolve(CHECKS_DIR, "../..");
 const GO_DIR = path.join(CHECKS_DIR, "structure/go");
+const CHECKS_REL = path.relative(REPO_ROOT, CHECKS_DIR).split(path.sep).join("/");
 
 /** The registry: the tag vocabulary and the checks. */
 export function readRegistry() {
@@ -58,16 +59,16 @@ function parseArgs(argv) {
 
 /** The folders and files whose change selects a check beside its paths: its own code and the shared library. */
 function getOwnPaths(entry) {
-  const own = [];
-  if (entry.runner === "go") own.push(`tools/checks/structure/go/${entry.target}/**`, "tools/checks/structure/go/load/**");
-  if (entry.runner === "verifiers") own.push(`tools/checks/${path.dirname(entry.module)}/**`, "tools/checks/lib/**");
-  if (entry.selftest) own.push(`tools/checks/${entry.selftest}`);
+  const own = [`${CHECKS_REL}/lib/**`];
+  if (entry.runner === "go") own.push(`${CHECKS_REL}/structure/go/${entry.target}/**`, `${CHECKS_REL}/structure/go/load/**`, `${CHECKS_REL}/structure/go/go.mod`);
+  if (entry.runner === "verifiers") own.push(`${CHECKS_REL}/${path.dirname(entry.module)}/**`);
+  if (entry.selftest) own.push(path.posix.join(CHECKS_REL, entry.selftest));
   return own;
 }
 
 /** Decides which checks run, and why each one does or does not. */
 export function selectChecks(registry, options, changed) {
-  const wholeRunner = changed?.some((file) => isMatching(file, ["tools/checks/run.mjs", "tools/checks/rules.json", "tools/checks/lib/*.mjs"]));
+  const wholeRunner = changed?.some((file) => isMatching(file, [`${CHECKS_REL}/run.mjs`, `${CHECKS_REL}/rules.json`, `${CHECKS_REL}/lib/*.mjs`]));
   const only = options.only ? new Set(options.only.split(",").map((s) => s.trim())) : null;
   return registry.checks.map((entry) => {
     let reason = "all";

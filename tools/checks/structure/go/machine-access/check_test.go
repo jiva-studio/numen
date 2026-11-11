@@ -1,3 +1,4 @@
+// Package machineaccess is the check `go/machine-access`, run on the tree with the planted violations that prove it.
 package machineaccess
 
 import (
@@ -68,4 +69,8 @@ func TestCorePackagesDoNotAccessMachineDirectly(t *testing.T) {
 	if read < 100 {
 		t.Fatalf("%d files of the core read: the walk is not reading it", read)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

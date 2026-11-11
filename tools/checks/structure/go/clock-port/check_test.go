@@ -1,3 +1,4 @@
+// Package clockport is the check `go/clock-port`, run on the tree with the planted violations that prove it.
 package clockport
 
 import (
@@ -111,4 +112,8 @@ func TestTheMachineClockIsReadOnlyByAClockPortImplementation(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkMachineClockIsReadOnlyByAClockPortImplementation(t, load.Workspace(t))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

@@ -1,3 +1,4 @@
+// Package spelling is the check `go/spelling`, run on the tree with the planted violations that prove it.
 package spelling
 
 import (
@@ -55,4 +56,8 @@ func TestSpellingRule_RejectsBritishIdentifiersAndSkipsGeneratedFiles(t *testing
 	if err != nil || len(generated) != 0 {
 		t.Errorf("a generated file reports %v, %v, want nothing", generated, err)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

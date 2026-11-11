@@ -1,3 +1,4 @@
+// Package domainlayer is the check `go/domain-layer`, run on the tree with the planted violations that prove it.
 package domainlayer
 
 import (
@@ -121,4 +122,8 @@ func TestCoreImportRule_RejectsEveryPackageOfTheCore(t *testing.T) {
 			t.Errorf("the SDK imports %s: refused %v, want %v", tc.to, got, tc.isRefused)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

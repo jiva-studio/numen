@@ -1,3 +1,4 @@
+// Package pluginsdk is the check `go/plugin-sdk`, run on the tree with the planted violations that prove it.
 package pluginsdk
 
 import (
@@ -69,4 +70,8 @@ func TestNoSDKModuleRequiresAFeatureModule(t *testing.T) {
 	if found < 2 {
 		t.Fatalf("%d go.mod files found under %s: a rule checked against nothing", found, root)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

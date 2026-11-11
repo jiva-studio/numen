@@ -1,3 +1,4 @@
+// Package plugingomod is the check `go/plugin-gomod`, run on the tree with the planted violations that prove it.
 package plugingomod
 
 import (
@@ -47,4 +48,8 @@ func TestNoPluginModuleRequiresMoreThanTheSDK(t *testing.T) {
 			t.Errorf("%s/go.mod %s", dir, why)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

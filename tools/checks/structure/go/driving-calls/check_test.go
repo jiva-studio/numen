@@ -1,3 +1,4 @@
+// Package drivingcalls is the check `go/driving-calls`, run on the tree with the planted violations that prove it.
 package drivingcalls
 
 import (
@@ -120,4 +121,8 @@ func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
 	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "**/adapter/cli/**"}); len(got) != 0 {
 		t.Errorf("the rule refuses %v, want none", got)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

@@ -1,3 +1,4 @@
+// Package schemadriving is the check `go/schema-driving`, run on the tree with the planted violations that prove it.
 package schemadriving
 
 import (
@@ -46,4 +47,8 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 	if found == 0 {
 		t.Fatal("no adapter names the schema: the walk is not reading the adapters")
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

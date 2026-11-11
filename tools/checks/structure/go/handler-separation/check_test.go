@@ -1,3 +1,4 @@
+// Package handlerseparation is the check `go/handler-separation`, run on the tree with the planted violations that prove it.
 package handlerseparation
 
 import (
@@ -29,4 +30,8 @@ func TestHandlerRule_SeparatesServingFromCalling(t *testing.T) {
 			t.Errorf("%s: serving is %v, want %v", tc.what, got, tc.isServing)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

@@ -1,3 +1,4 @@
+// Package layers is the check `go/layers`, run on the tree with the planted violations that prove it.
 package layers
 
 import (
@@ -230,4 +231,8 @@ func TestLayerDirectoriesExist(t *testing.T) {
 	if _, err := os.Stat(filepath.Join("..", "domain")); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

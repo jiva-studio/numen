@@ -1,3 +1,4 @@
+// Package loggers is the check `go/loggers`, run on the tree with the planted violations that prove it.
 package loggers
 
 import (
@@ -71,4 +72,8 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 	if !slices.Equal(rejected, want) {
 		t.Errorf("the rule rejected %v, want %v", rejected, want)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

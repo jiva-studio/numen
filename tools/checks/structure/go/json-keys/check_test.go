@@ -1,3 +1,4 @@
+// Package jsonkeys is the check `go/json-keys`, run on the tree with the planted violations that prove it.
 package jsonkeys
 
 import (
@@ -73,4 +74,8 @@ func TestProjectJSONKeysAreCamelCase(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkProjectJSONKeysAreCamelCase(t, load.Workspace(t))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

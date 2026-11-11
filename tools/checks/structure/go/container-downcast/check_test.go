@@ -1,6 +1,8 @@
+// Package containerdowncast is the check `go/container-downcast`, run on the tree with the planted violations that prove it.
 package containerdowncast
 
 import (
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -8,8 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	// The import changes the working directory to the container of the kernel, whose files are read.
-	_ "github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestContainerDoesNotDowncastPluginHost ensures container code interacts with
@@ -52,4 +52,8 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 			return true
 		})
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

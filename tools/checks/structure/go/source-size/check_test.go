@@ -1,3 +1,4 @@
+// Package sourcesize is the check `go/source-size`, run on the tree with the planted violations that prove it.
 package sourcesize
 
 import (
@@ -58,4 +59,8 @@ func TestSourceSizeRule_CountsProductionLinesPerFileAndDirectory(t *testing.T) {
 	if files != 3 || dirs != 2 {
 		t.Errorf("%d files and %d directories read, want 3 and 2", files, dirs)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

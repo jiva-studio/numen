@@ -1,6 +1,8 @@
+// Package usecasesimportnoos is the check `go/usecases-import-no-os`, run on the tree with the planted violations that prove it.
 package usecasesimportnoos
 
 import (
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -9,8 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	// The import changes the working directory to the container of the kernel, where the relative paths below start.
-	_ "github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestUseCasesImportNoOSFilepathOrFS verifies that usecase/ never imports path/filepath or io/fs.
@@ -37,4 +37,8 @@ func TestUseCasesImportNoOSFilepathOrFS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

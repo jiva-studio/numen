@@ -1,3 +1,4 @@
+// Package structcontext is the check `go/struct-context`, run on the tree with the planted violations that prove it.
 package structcontext
 
 import (
@@ -53,4 +54,8 @@ func TestNoStructCarriesAContext(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

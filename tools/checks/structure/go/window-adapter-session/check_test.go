@@ -1,3 +1,4 @@
+// Package windowadaptersession is the check `go/window-adapter-session`, run on the tree with the planted violations that prove it.
 package windowadaptersession
 
 import (
@@ -65,4 +66,8 @@ func TestTheLockRuleSeesTheSyncImport(t *testing.T) {
 	if got := getLockImports(t, "b.go", "package p\nimport \"sync/atomic\"\nvar n atomic.Int32"); len(got) != 0 {
 		t.Errorf("%d imports of sync found in a file that imports sync/atomic only, want 0", len(got))
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

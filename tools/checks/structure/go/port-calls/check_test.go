@@ -1,3 +1,4 @@
+// Package portcalls is the check `go/port-calls`, run on the tree with the planted violations that prove it.
 package portcalls
 
 import (
@@ -60,4 +61,8 @@ func TestAPortDeclaresAndDoesNotOrchestrate(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkPortDeclaresAndDoesNotOrchestrate(t, load.Workspace(t, "libs/core/kernel"))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

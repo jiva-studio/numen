@@ -1,3 +1,4 @@
+// Package usecaseedges is the check `go/usecase-edges`, run on the tree with the planted violations that prove it.
 package usecaseedges
 
 import (
@@ -121,4 +122,8 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 			t.Errorf("%s reaches %s and fails: %s", tc.from, tc.to, reason)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

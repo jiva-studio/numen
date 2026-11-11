@@ -1,3 +1,4 @@
+// Package structusecases is the check `go/struct-use-cases`, run on the tree with the planted violations that prove it.
 package structusecases
 
 import (
@@ -104,4 +105,8 @@ func TestNoStructHoldsMoreThanFiveUseCases(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkNoStructHoldsMoreThanFiveUseCases(t, load.Workspace(t))
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

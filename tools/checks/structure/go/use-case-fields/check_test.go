@@ -1,6 +1,8 @@
+// Package usecasefields is the check `go/use-case-fields`, run on the tree with the planted violations that prove it.
 package usecasefields
 
 import (
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"go/parser"
 	"go/token"
 	"os"
@@ -79,4 +81,8 @@ func NewOver(passages port.PassageQueries) Search {
 	if !slices.Equal(violations, []string{"Read: Readers", "Search: Passages"}) {
 		t.Errorf("the rule rejects %v, want the one collaborator left in the open", violations)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }

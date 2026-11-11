@@ -1,3 +1,4 @@
+// Package pluginisolationpackages is the check `go/plugin-isolation-packages`, run on the tree with the planted violations that prove it.
 package pluginisolationpackages
 
 import (
@@ -76,4 +77,8 @@ func TestPluginIsolationRule_RejectsForeignPackagesInTheClosure(t *testing.T) {
 			t.Errorf("%s: foreign dependencies %v, want %v", name, got, one.want)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }
