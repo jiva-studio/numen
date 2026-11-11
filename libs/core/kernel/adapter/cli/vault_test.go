@@ -104,7 +104,10 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 
 func TestAVaultCommandReturnsWhatWentWrongOpeningTheList(t *testing.T) {
 	t.Parallel()
-	provided := stubSession{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }}
+	provided := stubSession{
+		Vaults:  func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
+		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused },
+	}
 	for _, args := range [][]string{
 		{"vault", "add", "somewhere"},
 		{"vault", "list"},

@@ -403,7 +403,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if len(listing.Versions) != 1 || listing.Live != version.GetID() {
 		t.Fatalf("after the rescan the talk has %+v, want its transcript live at the new path", listing)
 	}
-	found, err := newSearch(searchOf(cfg), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
