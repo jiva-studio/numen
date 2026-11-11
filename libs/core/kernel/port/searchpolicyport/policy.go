@@ -26,10 +26,3 @@ type Samples interface {
 	// vector under the recipe.
 	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicy.Passage, error)
 }
-
-// Nearest reads the similarity of the best passage of a vault to a vector.
-type Nearest interface {
-	// GetBestSimilarity returns the cosine similarity of the passage of the vault
-	// nearest the query vector under the recipe, and zero where there is none.
-	GetBestSimilarity(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error)
-}

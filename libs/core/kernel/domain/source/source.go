@@ -24,6 +24,30 @@ type NearestQuery struct {
 	Floor      float64
 }
 
+// CoarseQuery asks for the chunks of one vault whose one-bit vectors are nearest a query vector:
+// the recipe the vectors are kept under, the vector, the path prefix the sources must start
+// with (any where empty) and how many chunks to return at most.
+type CoarseQuery struct {
+	Recipe     string
+	Vector     []float32
+	PathPrefix string
+	Limit      int
+}
+
+// StoredVectorQuery asks for the full-precision vectors of some chunks under a recipe, limited to
+// sources of some kinds (all where empty).
+type StoredVectorQuery struct {
+	Recipe string
+	Kinds  []domain.SourceKind
+	Chunks []domain.ChunkID
+}
+
+// StoredVector is the full-precision vector kept for one chunk, one signed byte per dimension.
+type StoredVector struct {
+	Chunk  domain.ChunkID
+	Vector []byte
+}
+
 // LexicalQuery is a search by words: the words typed, the kinds of source to
 // look in (all where empty) and how many chunks to return at most.
 type LexicalQuery struct {

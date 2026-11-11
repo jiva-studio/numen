@@ -4,37 +4,31 @@ import (
 	"context"
 	"errors"
 	"math"
-	"sync"
+	"slices"
 	"testing"
 
-	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// floorSpy records the floor and recipe each search by meaning requests.
-type floorSpy struct {
-	mu      sync.Mutex
-	floors  []float64
-	recipes []string
+// newFloorFixture holds four chunks whose similarity to the query is 0.2, 0.35, 0.5 and 0.8.
+func newFloorFixture() *nearestFake {
+	f := &nearestFake{}
+	f.holdsSimilarity("weak", 0.35)
+	f.holdsSimilarity("faint", 0.2)
+	f.holdsSimilarity("fair", 0.5)
+	f.holdsSimilarity("great", 0.8)
+	return f
 }
 
-func (s *floorSpy) FindLexical(context.Context, domain.VaultID, sourcedomain.LexicalQuery) ([]domain.Passage, error) {
-	return nil, nil
-}
-
-func (s *floorSpy) GetNamedPassages(context.Context, domain.VaultID, sourcedomain.LexicalQuery) ([]domain.Passage, error) {
-	return nil, nil
-}
-
-func (s *floorSpy) FindNearest(_ context.Context, _ domain.VaultID, q sourcedomain.NearestQuery) ([]domain.Passage, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.floors = append(s.floors, q.Floor)
-	s.recipes = append(s.recipes, q.Recipe)
-	return nil, nil
+func chunkIDs(names []string) []domain.ChunkID {
+	out := make([]domain.ChunkID, len(names))
+	for i, n := range names {
+		out[i] = domain.ChunkID(n)
+	}
+	return out
 }
 
 func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
@@ -50,15 +44,15 @@ func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
 		name      string
 		source    search.FloorSource
 		parameter float64
-		want      float64
+		want      []string
 	}{
-		{"the query's own floor outranks the source", source, 0.7, 0.7},
-		{"the source outranks the default", source, 0, 0.41},
-		{"the default answers last", nil, 0, search.DefaultFloor},
+		{"the query's own floor outranks the source", source, 0.7, []string{"great"}},
+		{"the source outranks the default", source, 0, []string{"great", "fair"}},
+		{"the default answers last", nil, 0, []string{"great", "fair", "weak"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			spy := &floorSpy{}
-			searching := search.New(spy, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
+			spy := newFloorFixture()
+			searching := search.New(search.Index{Passages: noWords{}, Nearest: spy}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
 			if tc.source != nil {
 				searching.Floor = tc.source
 			}
@@ -68,11 +62,11 @@ func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
 			if _, err := searching.Execute(t.Context(), vault, "disorder", p); err != nil {
 				t.Fatal(err)
 			}
-			if len(spy.floors) != 1 || spy.floors[0] != tc.want {
-				t.Errorf("FindNearest was called with floors %v, want [%v]", spy.floors, tc.want)
+			if len(spy.enclosed) != 1 || !slices.Equal(spy.enclosed[0], chunkIDs(tc.want)) {
+				t.Errorf("the chunks that stayed above the floor are %v, want %v", spy.enclosed, tc.want)
 			}
-			if spy.recipes[0] != getModel().Recipe() {
-				t.Errorf("FindNearest was called under %q, want the model's recipe", spy.recipes[0])
+			if spy.stored[0].Recipe != getModel().Recipe() || spy.coarse[0].Recipe != getModel().Recipe() {
+				t.Errorf("the index was asked under %q and %q, want the model's recipe", spy.stored[0].Recipe, spy.coarse[0].Recipe)
 			}
 		})
 	}
@@ -95,7 +89,7 @@ func TestTheDefaultFloorIsThirtyHundredths(t *testing.T) {
 func TestASearchAsksTheFloorSourceOncePerQuery(t *testing.T) {
 	vault := domain.Vault{ID: "01VAULT"}
 	calls := 0
-	searching := search.New(&floorSpy{}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
+	searching := search.New(search.Index{Passages: noWords{}, Nearest: newFloorFixture()}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
 	searching.Floor = func(context.Context, domain.Vault, string) float64 { calls++; return 0.4 }
 
 	if _, err := searching.Execute(t.Context(), vault, "disorder", search.GetTypingParameters(search.Hybrid, 5)); err != nil {

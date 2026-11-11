@@ -33,9 +33,9 @@ type Samples interface {
 
 // Nearest reads the similarity of the best passage of a vault to a vector.
 type Nearest interface {
-	// GetBestSimilarity returns the cosine similarity of the passage of the vault nearest the query
-	// vector under the recipe, and zero where there is none.
-	GetBestSimilarity(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error)
+	// Execute returns the cosine similarity of the passage of the vault nearest the query vector
+	// under the recipe, and zero where there is none.
+	Execute(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error)
 }
 
 // Progress reads how far a vault is embedded.
@@ -215,7 +215,7 @@ func (s Search) GetBestSimilarity(ctx context.Context, v domain.Vault, recipe st
 	if err := s.checkRecipe(recipe); err != nil {
 		return 0, err
 	}
-	return s.Nearest.GetBestSimilarity(ctx, v.ID, recipe, query)
+	return s.Nearest.Execute(ctx, v.ID, recipe, query)
 }
 
 // GetSearchFloor is the floor a search applies to the vault under the recipe.

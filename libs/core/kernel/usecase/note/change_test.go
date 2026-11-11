@@ -45,7 +45,7 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 }
 
 func (c changing) search() search.Search {
-	return search.New(c.db.Chunks.Passages, vaultreader.Readers{}, nil, nil, nil, nil)
+	return search.New(search.Index{Passages: c.db.Chunks.Passages}, vaultreader.Readers{}, nil, nil, nil, nil)
 }
 
 func (c changing) create() note.Create {
