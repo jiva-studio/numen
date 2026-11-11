@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 func TestLocateModelResolvesExplicitPath(t *testing.T) {
@@ -96,23 +98,23 @@ func TestIsFetchedWithConfiguredOrEnvPath(t *testing.T) {
 	}
 
 	// False when missing
-	if IsFetched(Config{}, RecogniserModel{}) {
+	if IsFetched(settings.Config{}, settings.RecogniserModel{}) {
 		t.Fatal("expected IsFetched to be false when nothing configured")
 	}
 
 	// True when path is configured
-	if !IsFetched(Config{}, RecogniserModel{Path: recPath}) {
+	if !IsFetched(settings.Config{}, settings.RecogniserModel{Path: recPath}) {
 		t.Fatal("expected IsFetched to be true with explicit path")
 	}
 
 	// True when env var points to existing file
 	t.Setenv("NUMEN_DEPENDENCY_PP_OCR_REC", recPath)
-	if !IsFetched(Config{}, RecogniserModel{}) {
+	if !IsFetched(settings.Config{}, settings.RecogniserModel{}) {
 		t.Fatal("expected IsFetched to be true with env var set")
 	}
 
 	// False when explicit path does not exist
-	if IsFetched(Config{}, RecogniserModel{Path: filepath.Join(dir, "missing.onnx")}) {
+	if IsFetched(settings.Config{}, settings.RecogniserModel{Path: filepath.Join(dir, "missing.onnx")}) {
 		t.Fatal("expected IsFetched to be false when explicit path is missing")
 	}
 }

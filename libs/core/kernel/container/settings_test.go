@@ -159,14 +159,14 @@ func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 // plan is resolved from the performance section.
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response := DefaultSettings()
-	response.Performance = hardware.Performance{Profile: hardware.ProfileEco}
+	response.Performance = hardware.Performance{Profile: settingsdomain.ProfileEco}
 
 	got := NewConfig(Config{}).SetSettings(response)
 
 	if got.Hardware.LogicalCPUs < 1 {
 		t.Errorf("the hardware was not detected: %+v", got.Hardware)
 	}
-	if got.ResolvedCompute.Profile != hardware.ProfileEco || got.ResolvedCompute.Workers != 1 {
+	if got.ResolvedCompute.Profile != settingsdomain.ProfileEco || got.ResolvedCompute.Workers != 1 {
 		t.Errorf("the compute plan is %+v", got.ResolvedCompute)
 	}
 }

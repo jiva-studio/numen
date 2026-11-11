@@ -13,7 +13,7 @@ import (
 )
 
 func openCLIVaults(c Config) (cli.Vaults, error) {
-	ports, err := c.Registry()
+	ports, err := c.registry()
 	if err != nil {
 		return cli.Vaults{}, err
 	}

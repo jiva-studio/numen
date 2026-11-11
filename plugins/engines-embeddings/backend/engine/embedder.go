@@ -12,6 +12,7 @@ import (
 	"github.com/gomlx/go-huggingface/tokenizers/api"
 	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
@@ -23,7 +24,7 @@ const (
 )
 
 func getOutputs(pooling string) []string {
-	if pooling == PoolOutput {
+	if pooling == model.PoolOutput {
 		return []string{"sentence_embedding"}
 	}
 	return []string{"last_hidden_state", "sentence_embedding"}
@@ -52,9 +53,9 @@ type Embedder struct {
 
 // Open loads the model, fetching it first where this machine does not hold it.
 func Open(
-	ctx context.Context, library *onnx.Library, identity ModelInfo, cfg LocalModel, progress FetchProgress,
+	ctx context.Context, library *onnx.Library, identity model.ModelInfo, cfg model.LocalModel, progress FetchProgress,
 ) (*Embedder, error) {
-	if err := CheckIdentity(identity, cfg.Name); err != nil {
+	if err := model.CheckIdentity(identity, cfg.Name); err != nil {
 		return nil, err
 	}
 	paths, err := Locate(ctx, cfg, progress)
@@ -71,8 +72,8 @@ func Open(
 		return nil, err
 	}
 	options, provider, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: cfg.GetProvider(),
-		Threads:  cfg.GetThreads(),
+		Provider: getProvider(cfg),
+		Threads:  getThreads(cfg),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
 		ModelPath:    paths.Model,
@@ -139,27 +140,27 @@ type modelInputs struct {
 	isTyped, isPositioned bool
 }
 
-func checkInputs(model string, names, extra []string) (modelInputs, error) {
+func checkInputs(owner string, names, extra []string) (modelInputs, error) {
 	var inputs modelInputs
 	for _, name := range names {
 		switch name {
 		case inputIDs, attentionMask:
 		case tokenTypeIDs:
 			inputs.isTyped = true
-		case InputPositionIDs:
-			if !slices.Contains(extra, InputPositionIDs) {
-				return modelInputs{}, fmt.Errorf("%s takes %s: list it in extraInputs of its profile", model, name)
+		case model.InputPositionIDs:
+			if !slices.Contains(extra, model.InputPositionIDs) {
+				return modelInputs{}, fmt.Errorf("%s takes %s: list it in extraInputs of its profile", owner, name)
 			}
 			inputs.isPositioned = true
 		default:
-			return modelInputs{}, fmt.Errorf("%s requires an unsupported input: %s", model, name)
+			return modelInputs{}, fmt.Errorf("%s requires an unsupported input: %s", owner, name)
 		}
 	}
 	if !slices.Contains(names, inputIDs) || !slices.Contains(names, attentionMask) {
-		return modelInputs{}, fmt.Errorf("%s takes %v, expected tokens and mask", model, names)
+		return modelInputs{}, fmt.Errorf("%s takes %v, expected tokens and mask", owner, names)
 	}
-	if slices.Contains(extra, InputPositionIDs) && !inputs.isPositioned {
-		return modelInputs{}, fmt.Errorf("%s takes no %s, but its profile lists it in extraInputs", model, InputPositionIDs)
+	if slices.Contains(extra, model.InputPositionIDs) && !inputs.isPositioned {
+		return modelInputs{}, fmt.Errorf("%s takes no %s, but its profile lists it in extraInputs", owner, model.InputPositionIDs)
 	}
 	return inputs, nil
 }
@@ -178,8 +179,8 @@ func (e *Embedder) Concurrency() int {
 }
 
 // GetModel returns the model description.
-func (e *Embedder) GetModel() ModelInfo {
-	return ModelInfo{
+func (e *Embedder) GetModel() model.ModelInfo {
+	return model.ModelInfo{
 		Name:           e.name,
 		Dimensions:     e.dimensions,
 		MaxTokens:      e.maxTokens,
@@ -189,7 +190,7 @@ func (e *Embedder) GetModel() ModelInfo {
 		FloorHint:      0,
 		MinChunkLength: 0,
 		ChunkTokens:    0,
-		Handling:       Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalised, ExtraInputs: nil},
+		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalised, ExtraInputs: nil},
 	}
 }
 
@@ -315,9 +316,9 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 		{inputIDs, padded.ids},
 		{attentionMask, padded.mask},
 		{tokenTypeIDs, padded.types},
-		{InputPositionIDs, padded.positions},
+		{model.InputPositionIDs, padded.positions},
 	} {
-		if (one.name == tokenTypeIDs && !e.isTyped) || (one.name == InputPositionIDs && !e.isPositioned) {
+		if (one.name == tokenTypeIDs && !e.isTyped) || (one.name == model.InputPositionIDs && !e.isPositioned) {
 			continue
 		}
 		value, err := ort.NewTensor(shape, one.flat)
@@ -380,7 +381,7 @@ func splitRows(flat []float32, rows, dimensions int, isNormalised bool) ([][]flo
 
 func finishVector(vector []float32, isNormalised bool) []float32 {
 	if isNormalised {
-		return Normalise(vector)
+		return model.Normalise(vector)
 	}
 	return vector
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 // EnvDir names the folder plugins keep their models in. The host sets it, to the folder a user chose or
@@ -96,7 +97,7 @@ func findInEnv(envVar string) string {
 	return env
 }
 
-func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.Engine, paths, error) {
+func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config) (*ort.Engine, paths, error) {
 	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, paths{}, err

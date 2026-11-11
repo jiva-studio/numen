@@ -10,17 +10,19 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/environment"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/remote"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/serving"
 )
 
 func newLocalModelOpener(library *onnx.Library) serving.OpenEmbedder {
 	// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
-	return func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (loading.Embedder, error) {
+	return func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (loading.Embedder, error) {
 		emb, err := engine.Open(ctx, library, info, local, nil)
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="production opener wraps engine.Open with native ONNX runtime"
 		if err != nil {
@@ -32,12 +34,17 @@ func newLocalModelOpener(library *onnx.Library) serving.OpenEmbedder {
 	}
 }
 
+func newMockEmbedder(logPath string) loading.Embedder {
+	return mockembedder.Embedder{LogPath: logPath}
+}
+
 func newServer() *serving.Server {
 	return serving.New(serving.Ports{
 		Machine:      process.Process{},
 		Profiles:     profilefiles.GetDefaultDirectory(),
 		Environment:  environment.Variables{},
 		OpenLocal:    newLocalModelOpener(onnx.NewLibrary()),
+		NewMock:      newMockEmbedder,
 		FetchVectors: remote.FetchVectors,
 		Report:       console.Report,
 	})

@@ -4,6 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
+import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import { disposePluginEntry } from './registry'
 import type { PluginHostDeps } from './types'
@@ -15,6 +16,16 @@ const createDeps = (more: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
   openTab: vi.fn(async () => 'tab-1'),
   ...more,
 })
+
+const declaring = (pluginId: string) =>
+  createMockManifest(pluginId, {
+    permissions: ['vault:read'],
+    commands: ['count', `${pluginId}.count`],
+    readers: ['pdf', 'reader:bin', 'unprefixed', 'raw', 'none', `${pluginId}.reader`],
+    tabKinds: ['custom', 'sample', `${pluginId}.kind`],
+    settingsViews: ['floor'],
+    capabilities: ['ai.agent.provider'],
+  })
 
 const COMPONENT_A = { name: 'A' }
 const COMPONENT_B = { name: 'B' }
@@ -33,7 +44,9 @@ describe('a command run by its id', () => {
       }),
     )
     const handler = vi.fn()
-    host.lifecycle.createContext('sample.plugin').register.command({ id: 'count', handler })
+    host.lifecycle
+      .createContext('sample.plugin', declaring('sample.plugin'))
+      .register.command({ id: 'count', handler })
     const note = {
       path: 'Notes/One.md',
       title: 'One',
@@ -56,12 +69,7 @@ describe('a command run by its id', () => {
 describe('a registration replaced under the same id', () => {
   it('stays when the registration it replaced is disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.lifecycle.createContext('sample.plugin', {
-      id: 'sample.plugin',
-      name: 'Sample',
-      version: '1',
-      permissions: ['vault:read'],
-    } as never)
+    const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
     const firstReader = ctx.register.reader({
       id: 'pdf',
       title: 'First',
@@ -100,12 +108,7 @@ describe('a registration replaced under the same id', () => {
     const host = createPluginHost(createDeps())
     const handler = vi.fn()
     for (const pluginId of ['first.plugin', 'second.plugin']) {
-      host.lifecycle.registerManifest(pluginId, {
-        id: pluginId,
-        name: pluginId,
-        version: '1',
-        permissions: ['vault:read'],
-      } as never)
+      host.lifecycle.registerManifest(pluginId, declaring(pluginId))
       const ctx = host.lifecycle.createContext(pluginId)
       ctx.register.command({ id: `${pluginId}.count`, handler })
       ctx.register.agentProvider({ id: `${pluginId}.agent`, name: pluginId, createAgent: vi.fn() })
@@ -183,10 +186,10 @@ describe('the settings views of a plugin', () => {
   it('are the registrations of that plugin, by view id', () => {
     const host = createPluginHost(createDeps())
     host.lifecycle
-      .createContext('first.plugin')
+      .createContext('first.plugin', declaring('first.plugin'))
       .register.settingsView({ id: 'floor', component: COMPONENT_A })
     host.lifecycle
-      .createContext('second.plugin')
+      .createContext('second.plugin', declaring('second.plugin'))
       .register.settingsView({ id: 'floor', component: COMPONENT_B })
 
     expect([...host.registered.getRegisteredSettingsViews('first.plugin').keys()]).toStrictEqual([
@@ -203,7 +206,7 @@ describe('the settings views of a plugin', () => {
 
   it('re-evaluate a computed when a view is registered or disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.lifecycle.createContext('sample.plugin')
+    const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
     const count = computed(() => host.registered.getRegisteredSettingsViews('sample.plugin').size)
 
     expect(count.value).toBe(0)
@@ -215,7 +218,7 @@ describe('the settings views of a plugin', () => {
 
   it('stay when the registration they replaced is disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.lifecycle.createContext('sample.plugin')
+    const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
     const first = ctx.register.settingsView({ id: 'floor', component: COMPONENT_A })
     ctx.register.settingsView({ id: 'floor', component: COMPONENT_B })
 
@@ -229,10 +232,10 @@ describe('the settings views of a plugin', () => {
   it('are removed with the plugin and with the host', () => {
     const host = createPluginHost(createDeps())
     host.lifecycle
-      .createContext('first.plugin')
+      .createContext('first.plugin', declaring('first.plugin'))
       .register.settingsView({ id: 'floor', component: {} })
     host.lifecycle
-      .createContext('second.plugin')
+      .createContext('second.plugin', declaring('second.plugin'))
       .register.settingsView({ id: 'floor', component: {} })
 
     host.lifecycle.disposePlugin('first.plugin')
@@ -303,12 +306,7 @@ describe('a tab kind opened as the editor of a path', () => {
       }),
     })
     const sub = host.lifecycle
-      .createContext('sample.plugin', {
-        id: 'sample.plugin',
-        name: 'Sample',
-        version: '1',
-        permissions: ['vault:read'],
-      } as never)
+      .createContext('sample.plugin', declaring('sample.plugin'))
       .register.tabKind({ kind: 'sample', component: {} })
     return { open, sub }
   }
@@ -407,15 +405,10 @@ describe('a reader opened at a selector', () => {
       }),
     )
     const sub1 = host.lifecycle
-      .createContext('sample.plugin', {
-        id: 'sample.plugin',
-        name: 'Sample',
-        version: '1',
-        permissions: ['vault:read'],
-      } as never)
+      .createContext('sample.plugin', declaring('sample.plugin'))
       .register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })
     const sub2 = host.lifecycle
-      .createContext('sample.plugin')
+      .createContext('sample.plugin', declaring('sample.plugin'))
       .register.reader({ id: 'unprefixed', component: STUB_COMPONENT })
     const selector = { page: 3 }
 
@@ -430,7 +423,7 @@ describe('a reader opened at a selector', () => {
 
     // Re-register reader:bin to test selector setting and error handling
     host.lifecycle
-      .createContext('sample.plugin')
+      .createContext('sample.plugin', declaring('sample.plugin'))
       .register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })
     readers.get('bin')?.('Books/One.bin', selector)
     readers.get('bin')?.('Books/Gone.bin', selector)
@@ -458,7 +451,7 @@ describe('a reader opened at a selector', () => {
       }),
     )
     hostNoState.lifecycle
-      .createContext('p')
+      .createContext('p', declaring('p'))
       .register.reader({ id: 'raw', component: STUB_COMPONENT })
     noStateReader?.('Books/Raw.raw', { page: 1 })
     await Promise.resolve()
@@ -466,8 +459,38 @@ describe('a reader opened at a selector', () => {
     const hostNoExts = createPluginHost(createDeps())
     expect(() =>
       hostNoExts.lifecycle
-        .createContext('p')
+        .createContext('p', declaring('p'))
         .register.reader({ id: 'none', component: STUB_COMPONENT }),
     ).not.toThrow()
+  })
+})
+
+describe('agent providers of different plugins', () => {
+  it('stay apart when two plugins register the same id', () => {
+    const host = createPluginHost(createDeps())
+    const register = (pluginId: string, name: string) => {
+      host.lifecycle.registerManifest(
+        pluginId,
+        createMockManifest(pluginId, {
+          permissions: ['vault:read'],
+          capabilities: ['ai.agent.provider'],
+        }),
+      )
+      return host.lifecycle
+        .createContext(pluginId)
+        .register.agentProvider({ id: 'agent', name, createAgent: vi.fn() })
+    }
+    const list = () =>
+      host.registered.getRegisteredAgentProviders().map((one) => [one.pluginId, one.reg.name])
+
+    const first = register('first.plugin', 'First')
+    register('second.plugin', 'Second')
+    expect(list()).toStrictEqual([
+      ['first.plugin', 'First'],
+      ['second.plugin', 'Second'],
+    ])
+
+    first.dispose()
+    expect(list()).toStrictEqual([['second.plugin', 'Second']])
   })
 })

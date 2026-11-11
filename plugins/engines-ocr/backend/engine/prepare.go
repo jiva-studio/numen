@@ -11,6 +11,7 @@ import (
 	"github.com/getcharzp/go-ocr/paddle"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 // NewLibrary returns the ONNX Runtime library a page is read through, which binds the go-ocr runtime
@@ -47,7 +48,7 @@ func newProbeConfig(libPath, probeDir string) paddle.Config {
 func IsPrepared(library *onnx.Library) bool { return library.IsAvailable("") }
 
 // Prepare makes the runtime a page is read through.
-func Prepare(ctx context.Context, library *onnx.Library, cfg Config) error {
+func Prepare(ctx context.Context, library *onnx.Library, cfg settings.Config) error {
 	cfg.ShouldDownload = false
 	if _, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)); err != nil {
 		return err

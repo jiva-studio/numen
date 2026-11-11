@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 // Model describes active OCR models.
@@ -32,14 +33,14 @@ type Recogniser struct {
 }
 
 // Open loads the layout and PaddleOCR recognition models through the library.
-func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, error) {
+func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Recogniser, error) {
 	engine, pos, found, err := locateModels(ctx, library, cfg)
 	if err != nil {
 		return nil, err
 	}
 	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: onnx.GetSessionProvider(),
-		Threads:  cfg.threads(),
+		Threads:  getThreads(cfg),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
 		ModelPath:    found.layout,
@@ -50,7 +51,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 	defer options.Destroy()
 
 	layout, err := OpenLayout(engine, found.layout, options,
-		cfg.Layout.labels(), cfg.Layout.minimum(), cfg.Layout.overlap())
+		cfg.Layout.GetLabels(), cfg.Layout.GetMinimum(), cfg.Layout.GetOverlap())
 	if err != nil {
 		return nil, err
 	}
@@ -65,12 +66,12 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		RecModelPath:        found.recognize,
 		DictPath:            dict,
 		RecModelNumClasses:  classes,
-		DetMaxSideLen:       cfg.Detect.maxSide(),
-		DetOutsideExpandPix: cfg.Detect.getExpansion(),
-		HeatmapThreshold:    cfg.Detect.minimum(),
-		RecHeight:           cfg.Recognize.height(),
-		NumThreads:          cfg.threads(),
-		ThreadCount:         cfg.jobs(),
+		DetMaxSideLen:       cfg.Detect.GetMaxSide(),
+		DetOutsideExpandPix: cfg.Detect.GetExpansion(),
+		HeatmapThreshold:    cfg.Detect.GetMinimum(),
+		RecHeight:           cfg.Recognize.GetHeight(),
+		NumThreads:          getThreads(cfg),
+		ThreadCount:         cfg.GetJobs(),
 		UseCuda:             false,
 	})
 	if err != nil {
@@ -82,14 +83,14 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		lines:  lines,
 		layout: layout.Regions,
 		read:   lines.RunOCR,
-		body:   toSet(cfg.Regions.body()),
-		head:   getDepths(cfg.Regions.head()),
-		margin: cfg.Layout.margin(),
-		jobs:   cfg.jobs(),
+		body:   toSet(cfg.Regions.GetBody()),
+		head:   getDepths(cfg.Regions.GetHead()),
+		margin: cfg.Layout.GetMargin(),
+		jobs:   cfg.GetJobs(),
 		model: Model{
 			Layout:     name(found.layout),
 			Recogniser: name(found.recognize),
-			DPI:        cfg.Recognize.dpi(),
+			DPI:        cfg.Recognize.GetDPI(),
 			From:       found.from,
 		},
 	}, nil
@@ -249,8 +250,8 @@ func NewTestRecogniser(
 		lines:  nil,
 		layout: layout,
 		read:   read,
-		body:   map[string]bool{labelText: true, "paragraph": true, labelParagraphTitle: true},
-		head:   map[string]int{labelParagraphTitle: 1},
+		body:   map[string]bool{settings.LabelText: true, "paragraph": true, settings.LabelParagraphTitle: true},
+		head:   map[string]int{settings.LabelParagraphTitle: 1},
 		margin: 10,
 		jobs:   1,
 		model:  model,

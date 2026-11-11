@@ -1,6 +1,7 @@
 /** The commands a slot draws, found through what the host knows of its own commands. */
 import { describe, expect, it, vi } from 'vitest'
 import { SLOT } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import type { CommandDeclaration, SlotCommandFinder } from './types'
 
@@ -29,7 +30,10 @@ describe('the finder of the commands a slot draws', () => {
   it('is made once with the commands the host lists and the commands that offer items', () => {
     const { host, createSlotCommandFinder } = create()
     host.lifecycle
-      .createContext(LEDGER.pluginId)
+      .createContext(
+        LEDGER.pluginId,
+        createMockManifest(LEDGER.pluginId, { commands: ['ledger.open'] }),
+      )
       .register.command({ id: 'ledger.open', handler: vi.fn(), listItems: async () => [] })
 
     expect(createSlotCommandFinder).toHaveBeenCalledOnce()

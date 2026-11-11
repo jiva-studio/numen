@@ -7,25 +7,24 @@ import { computed, ref } from 'vue'
 import { ChevronLeft, ChevronRight, Minus, Plus } from '@lucide/vue'
 import { PAPER, getHighlights, getPagePicture, getPdfDoc } from '../lib/pdfPage'
 
-/* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ path: string; page: number }>()
-
-const emit = defineEmits<{ go: [page: number] }>()
+/* --------------------------------- Props ---------------------------------- */
+const props = defineProps<{ path: string }>()
 
 /* --------------------------------- State ---------------------------------- */
 const AROUND = 2
 const ZOOM_STEP = 0.15
 const doc = computed(() => getPdfDoc(props.path))
+const page = ref(doc.value.firstPage)
 const zoom = ref(1)
 const shown = computed(() =>
-  Array.from({ length: AROUND * 2 + 1 }, (_, index) => props.page - AROUND + index).filter(
+  Array.from({ length: AROUND * 2 + 1 }, (_, index) => page.value - AROUND + index).filter(
     (page) => page >= 0 && page < doc.value.leaves,
   ),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-function onGo(page: number) {
-  emit('go', Math.min(Math.max(page, 0), doc.value.leaves - 1))
+function onGo(target: number) {
+  page.value = Math.min(Math.max(target, 0), doc.value.leaves - 1)
 }
 
 function onTypePage(event: Event) {
@@ -47,7 +46,13 @@ function onZoom(by: number) {
       <button type="button" class="pdf__action" aria-label="Next page" @click="onGo(page + 1)">
         <ChevronRight class="pdf__icon" />
       </button>
-      <input class="pdf__page" :value="page + 1" inputmode="numeric" aria-label="Page" @change="onTypePage" />
+      <input
+        class="pdf__page"
+        :value="page + 1"
+        inputmode="numeric"
+        aria-label="Page"
+        @change="onTypePage"
+      />
       <span class="pdf__count">/ {{ doc.leaves }}</span>
       <button type="button" class="pdf__action" aria-label="Zoom out" @click="onZoom(-ZOOM_STEP)">
         <Minus class="pdf__icon" />

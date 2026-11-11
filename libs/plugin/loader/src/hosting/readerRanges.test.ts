@@ -2,6 +2,7 @@
  * The ranges a reader tab highlights: the reader tab kind opens a tab with none, and a file
  * opened at ranges puts a new array of them on the state of its tab.
  */
+import { createMockManifest } from '@numen/core-client/testing'
 import { describe, expect, it, vi } from 'vitest'
 import type { TextRange } from '@numen/plugin-sdk'
 import { createReaderTabKind } from './customTabKind'
@@ -37,7 +38,10 @@ describe('the ranges of a reader tab', () => {
       getReaderExtensions: () => ['bin'],
     }
     createPluginHost(deps)
-      .lifecycle.createContext('sample.plugin')
+      .lifecycle.createContext(
+        'sample.plugin',
+        createMockManifest('sample.plugin', { readers: ['reader:bin'] }),
+      )
       .register.reader({ id: 'reader:bin', component: STUB_COMPONENT })
     const ranges: readonly TextRange[] = [
       { start: 1500, end: 1580 },

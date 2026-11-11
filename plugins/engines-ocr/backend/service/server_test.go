@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	ocr "github.com/jiva-studio/numen/plugins/engines-ocr"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
@@ -129,7 +129,7 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 		}
 		for _, option := range setting.Options {
 			count++
-			address, ok := engine.FindRecogniser(option.Value)
+			address, ok := settings.FindRecogniser(option.Value)
 			if !ok {
 				t.Errorf("the manifest offers %s, which the engine does not run", option.Value)
 				continue
