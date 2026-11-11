@@ -58,7 +58,7 @@ func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewind
 			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(fileKinds, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
-		filewindow.NewChanges(open, open, nil, nil, nil),
+		filewindow.NewChanges(open, open, nil, nil, nil, nil),
 	)
 }
 

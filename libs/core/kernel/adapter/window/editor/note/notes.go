@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -51,7 +52,13 @@ func (h *Prose) WriteNote(
 	if err != nil {
 		return nil, err
 	}
-	pos, indexOutdated, err := h.save.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
+	pos, err := h.save.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
+	indexOutdated := h.writes.IsIndexOutdated(err)
+	if err == nil || indexOutdated {
+		// The written prose requires new vectors. The pending chunks are tracked in the index, so several saves
+		// are embedded in one pass.
+		h.writes.NoteWritten()
+	}
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
@@ -88,7 +95,8 @@ func (h *Prose) CreateNote(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Named: links}
-	made, indexOutdated, err := h.create.Execute(ctx, showing, creating)
+	made, err := h.createNote(ctx, showing, creating)
+	indexOutdated := h.writes.IsIndexOutdated(err)
 	switch {
 	case errors.Is(err, note.ErrInvalidLink):
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -368,7 +376,8 @@ func (h *Prose) RenameNote(
 	if err != nil {
 		return nil, err
 	}
-	renamed, isIndexOutdated, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
+	renamed, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
+	isIndexOutdated := h.writes.IsIndexOutdated(err)
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
@@ -411,4 +420,12 @@ func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,
 	}
+}
+
+// createNote creates the note; a blank title makes an untitled note.
+func (h *Prose) createNote(ctx context.Context, v domain.Vault, in note.NewNote) (note.CreateResult, error) {
+	if strings.TrimSpace(in.Title) == "" {
+		return h.create.ExecuteUntitled(ctx, v, in)
+	}
+	return h.create.Execute(ctx, v, in)
 }

@@ -328,6 +328,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		recording{NoteWriters: container.NoteWriters(cfg), VaultLocks: container.VaultLocks(cfg), order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
+		installation.State.Writes,
 	)
 	cases.Notes.Edit.Write = writing
 

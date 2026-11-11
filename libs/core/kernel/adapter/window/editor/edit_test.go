@@ -160,7 +160,9 @@ func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 func openEditor(t *testing.T, notes map[string]string) *Services {
 	t.Helper()
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
+		note.OpenGate{},
+	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := newBareServices()
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
@@ -351,7 +353,9 @@ func TestEditLoad(t *testing.T) {
 	db := wired.openIndex(t)
 
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
+		note.OpenGate{},
+	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(NewState(run.NewTasks(), nil, nil))
 	bindNotes(api, db)

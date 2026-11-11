@@ -50,3 +50,12 @@ func instant(nanos int64) time.Time {
 	}
 	return time.Unix(0, nanos)
 }
+
+// Writes tells what a write of the window did: whether the index followed it, and the embedder that a note
+// holds new prose.
+type Writes interface {
+	// IsIndexOutdated reports whether err says the write reached the vault and the index did not follow.
+	IsIndexOutdated(err error) bool
+	// NoteWritten tells the embedder that a note holds new prose.
+	NoteWritten()
+}

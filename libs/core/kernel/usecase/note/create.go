@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	pathpkg "path"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -25,18 +26,19 @@ type Create struct {
 	names   edit.NameQueries
 	index   edit.IndexUpdater
 	now     machineport.Clock
+	gate    WriteGate
 }
 
 // NewCreate builds the use case that creates notes. It takes the vault the note
 // is written into, the query for which names are taken, the index update for
-// the new file, and the clock.
+// the new file, the clock, and the gate a write passes.
 func NewCreate(
-	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock,
+	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock, gate WriteGate,
 ) Create {
-	return Create{writers: writers, names: names, index: index, now: now}
+	return Create{writers: writers, names: names, index: index, now: now, gate: gate}
 }
 
-// NewNote is what to make. CreateNote resolves Named into Links.
+// NewNote is what to make. Create resolves Named into Links.
 type NewNote struct {
 	Title string
 	Body  string
@@ -53,7 +55,29 @@ type CreateResult struct {
 	Shares []string
 }
 
+// Execute creates the note. A note that is on disk is answered with where it is, whether or not the index
+// followed.
+// A link in Named that names no note, or one with no address, is ErrInvalidLink and nothing is created. It
+// fails with window.ErrClosing once the window is closing.
 func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
+	in, err := u.resolveNamed(ctx, v, in)
+	if err != nil {
+		return CreateResult{}, err
+	}
+	return writeUnder(u.gate, func() (CreateResult, error) { return u.createTitled(ctx, v, in) })
+}
+
+func (u Create) resolveNamed(ctx context.Context, v domain.Vault, in NewNote) (NewNote, error) {
+	links, err := resolveNamedLinks(ctx, u.names, v, in.Named)
+	if err != nil {
+		return in, err
+	}
+	in.Links = append(slices.Clone(in.Links), links...)
+	in.Named = nil
+	return in, nil
+}
+
+func (u Create) createTitled(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	title := strings.TrimSpace(in.Title)
 	name, exact, err := domain.Filename(title)
 	if err != nil {
