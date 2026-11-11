@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** A line between two notes, with the words written on the link along it. */
-import type { PlexEdge } from '../lib/plexLayout'
+import type { PlexEdge } from '../lib/plex'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
@@ -31,7 +31,6 @@ defineProps<{
   fill: none;
   stroke: none;
 }
-
 
 .plex__label {
   fill: var(--numen-edge-label);

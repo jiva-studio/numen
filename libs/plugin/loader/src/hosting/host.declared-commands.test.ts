@@ -1,3 +1,4 @@
+import { createMockManifest } from '@numen/core-client/testing'
 import { describe, expect, it, vi } from 'vitest'
 import { createPluginHost } from './host'
 import { formatCommandId } from '../commandId'
@@ -11,6 +12,9 @@ const note = {
   others: [],
   tab: '',
 }
+
+const declaring = (pluginId: string) =>
+  createMockManifest(pluginId, { commands: ['tree.open', 'tree.revealNote'] })
 
 function declare(changes: Partial<CommandDeclaration> = {}): CommandDeclaration {
   return {
@@ -48,7 +52,7 @@ describe('the commands a plugin declares in its manifest', () => {
       { key: 'mod+shift+e', command: 'tree.revealNote' },
     ])
     host.lifecycle
-      .createContext('md.tree')
+      .createContext('md.tree', declaring('md.tree'))
       .register.command({ id: 'tree.revealNote', handler: vi.fn() })
 
     expect(host.commands.getPaletteCommands()).toStrictEqual([
@@ -61,29 +65,25 @@ describe('the commands a plugin declares in its manifest', () => {
     ])
   })
 
-  it('are not listed for a handler registered under an id the manifest does not declare, and the mismatch is reported once', () => {
+  it('are not registered under an id the manifest does not declare, and the registration fails', () => {
     const { host, deps } = createHost([declare()])
-    const ctx = host.lifecycle.createContext('md.tree')
+    const ctx = host.lifecycle.createContext('md.tree', declaring('md.tree'))
 
     ctx.register.command({ id: 'tree.open', handler: vi.fn() })
-    ctx.register.command({ id: 'tree.close', handler: vi.fn() })
-    host.commands.getPaletteCommands()
-    host.commands.getPaletteCommands()
+    expect(() => ctx.register.command({ id: 'tree.close', handler: vi.fn() })).toThrowError(
+      'Plugin "md.tree" registers the command "tree.close", which its manifest does not declare',
+    )
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',
     ])
     expect(host.commands.hasCommand('md.tree:tree.close')).toBe(false)
-    expect(deps.reportCommandIssue).toHaveBeenCalledTimes(1)
-    expect(deps.reportCommandIssue).toHaveBeenCalledWith(
-      'md.tree',
-      expect.stringContaining('tree.close'),
-    )
+    expect(deps.reportCommandIssue).not.toHaveBeenCalled()
   })
 
   it('are not listed while the plugin has no backend and registered no handler once its frontend has activated', () => {
     const { host, deps } = createHost([declare()])
-    host.lifecycle.createContext('md.tree')
+    host.lifecycle.createContext('md.tree', declaring('md.tree'))
 
     expect(host.commands.getPaletteCommands()).toStrictEqual([])
     expect(deps.reportCommandIssue).toHaveBeenCalledWith(
@@ -104,7 +104,9 @@ describe('the commands a plugin declares in its manifest', () => {
       'md.tree:tree.open',
     ])
     const running = host.commands.executeCommand('md.tree:tree.open', note)
-    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    host.lifecycle
+      .createContext('md.tree', declaring('md.tree'))
+      .register.command({ id: 'tree.open', handler })
     expect(handler).not.toHaveBeenCalled()
     settle()
 
@@ -114,7 +116,7 @@ describe('the commands a plugin declares in its manifest', () => {
 
   it('are not run for a plugin that failed to activate', async () => {
     const { host } = createHost([declare()], { waitForPlugin: async () => undefined })
-    host.lifecycle.createContext('md.tree')
+    host.lifecycle.createContext('md.tree', declaring('md.tree'))
     host.lifecycle.disposePlugin('md.tree')
 
     expect(await host.commands.executeCommand('md.tree:tree.open', note)).toBe(false)
@@ -133,7 +135,9 @@ describe('the commands a plugin declares in its manifest', () => {
     const handler = vi.fn()
     const keys = [{ key: 'mod+shift+e', command: 'tree.open' }]
     host.keybindings.registerKeybindings('md.tree', keys)
-    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    host.lifecycle
+      .createContext('md.tree', declaring('md.tree'))
+      .register.command({ id: 'tree.open', handler })
     const event = new KeyboardEvent('keydown', { code: 'KeyE', shiftKey: true, ctrlKey: true })
 
     host.lifecycle.disposePlugin('md.tree')
@@ -142,7 +146,9 @@ describe('the commands a plugin declares in its manifest', () => {
     expect(host.commands.handleShortcut(event, async () => note)).toBe(false)
 
     host.keybindings.registerKeybindings('md.tree', keys)
-    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    host.lifecycle
+      .createContext('md.tree', declaring('md.tree'))
+      .register.command({ id: 'tree.open', handler })
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',
@@ -153,7 +159,9 @@ describe('the commands a plugin declares in its manifest', () => {
   it('are run through the full id the palette lists', async () => {
     const { host } = createHost([declare()])
     const handler = vi.fn()
-    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    host.lifecycle
+      .createContext('md.tree', declaring('md.tree'))
+      .register.command({ id: 'tree.open', handler })
 
     expect(await host.commands.executeCommand('md.tree:tree.open', note)).toBe(true)
 
@@ -168,8 +176,12 @@ describe('the commands a plugin declares in its manifest', () => {
     const first = vi.fn()
     const second = vi.fn()
 
-    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler: first })
-    host.lifecycle.createContext('md.other').register.command({ id: 'tree.open', handler: second })
+    host.lifecycle
+      .createContext('md.tree', declaring('md.tree'))
+      .register.command({ id: 'tree.open', handler: first })
+    host.lifecycle
+      .createContext('md.other', declaring('md.other'))
+      .register.command({ id: 'tree.open', handler: second })
     await host.commands.executeCommand('md.other:tree.open', note)
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([

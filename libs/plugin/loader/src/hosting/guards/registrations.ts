@@ -1,20 +1,28 @@
 /**
  * The registrations and view mounting a plugin context offers, tracked for disposal.
  */
-import type {
-  AgentProviderRegistration,
-  CommandRegistration,
-  Disposable,
-  DropRegistration,
-  PluginRegistrations,
-  PluginUi,
-  ReaderRegistration,
-  SettingsViewRegistration,
-  SlotViewRegistration,
-  TabKindRegistration,
-  ViewRegistration,
+import {
+  isSharedCommand,
+  type AgentProviderRegistration,
+  type CommandRegistration,
+  type Disposable,
+  type DropRegistration,
+  type PluginRegistrations,
+  type PluginUi,
+  type ReaderRegistration,
+  type SettingsViewRegistration,
+  type SlotViewRegistration,
+  type TabKindRegistration,
+  type ViewRegistration,
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from '../types'
+import {
+  requireDeclaredAgentProvider,
+  requireDeclaredCommand,
+  requireDeclaredReader,
+  requireDeclaredSettingsView,
+  requireDeclaredTabKind,
+} from './declarations'
 import type { PermissionTarget } from './permission'
 import { requireMountAccess, requireViewRegistration } from './viewPermissions'
 
@@ -40,15 +48,27 @@ export function createRegistrations(
   const { target, add, slotView } = deps
   const permissions = target.manifest?.permissions ?? []
   return {
-    reader: (reg: ReaderRegistration) => add(host.registration.registerReader(pluginId, reg)),
-    settingsView: (reg: SettingsViewRegistration) =>
-      add(host.registration.registerSettingsView(pluginId, reg)),
+    reader: (reg: ReaderRegistration) => {
+      requireDeclaredReader(target, reg.id)
+      return add(host.registration.registerReader(pluginId, reg))
+    },
+    settingsView: (reg: SettingsViewRegistration) => {
+      requireDeclaredSettingsView(target, reg.id)
+      return add(host.registration.registerSettingsView(pluginId, reg))
+    },
     slotView,
-    tabKind: <State extends object>(reg: TabKindRegistration<State>) =>
-      add(host.registration.registerTabKind(pluginId, reg)),
-    command: (reg: CommandRegistration) => add(host.registration.registerCommand(pluginId, reg)),
-    agentProvider: (reg: AgentProviderRegistration) =>
-      add(host.registration.registerAgentProvider(pluginId, reg)),
+    tabKind: <State extends object>(reg: TabKindRegistration<State>) => {
+      requireDeclaredTabKind(target, reg.kind)
+      return add(host.registration.registerTabKind(pluginId, reg))
+    },
+    command: (reg: CommandRegistration) => {
+      requireDeclaredCommand(target, reg.id, isSharedCommand(reg.id))
+      return add(host.registration.registerCommand(pluginId, reg))
+    },
+    agentProvider: (reg: AgentProviderRegistration) => {
+      requireDeclaredAgentProvider(target, reg.id)
+      return add(host.registration.registerAgentProvider(pluginId, reg))
+    },
     view: (reg: ViewRegistration) => {
       // Read once: a getter on the registration cannot answer the check and the registry differently.
       const { capability, component } = reg

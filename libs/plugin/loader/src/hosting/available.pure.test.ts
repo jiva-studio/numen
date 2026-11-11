@@ -26,24 +26,13 @@ describe('listing the listed commands', () => {
       getCommandDeclarations: () => [declaration],
       reportCommandIssue,
     } as unknown as PluginHostDeps
-    const registry = createRegistry(
-      ['md.tree'],
-      [
-        [
-          'md.tree:tree.stray',
-          { pluginId: 'md.tree', reg: { id: 'tree.stray', handler: vi.fn() } },
-        ],
-      ],
-    )
+    const registry = createRegistry(['md.tree'], [])
 
     const first = listAvailableCommands(deps, registry)
     const second = listAvailableCommands(deps, registry)
 
     expect(first.commands).toStrictEqual([])
-    expect(first.issues).toStrictEqual([
-      { pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' },
-      { pluginId: 'md.tree', id: 'tree.stray', kind: 'undeclared' },
-    ])
+    expect(first.issues).toStrictEqual([{ pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' }])
     expect(second).toStrictEqual(first)
     expect(registry.reportedIssues.size).toBe(0)
     expect(reportCommandIssue).not.toHaveBeenCalled()

@@ -1,0 +1,175 @@
+{
+  "nodes": [
+    {
+      "path": "physics/Entropy.md",
+      "text": "Entropy",
+      "relation": "focus",
+      "x": 315,
+      "y": 169,
+      "width": 100,
+      "height": 40
+    },
+    {
+      "path": "physics/Thermodynamics.md",
+      "text": "Thermodynamics",
+      "relation": "parent",
+      "x": 237.5,
+      "y": 38,
+      "width": 131.2,
+      "height": 40
+    },
+    {
+      "path": "computation/Information theory.md",
+      "text": "Information theory",
+      "relation": "parent",
+      "x": 392.5,
+      "y": 38,
+      "width": 134.4,
+      "height": 40
+    },
+    {
+      "path": "physics/Entropy of mixing.md",
+      "text": "Entropy of mixing",
+      "relation": "child",
+      "x": 101.25,
+      "y": 299,
+      "width": 130.8,
+      "height": 40
+    },
+    {
+      "path": "physics/The second law.md",
+      "text": "The second law",
+      "relation": "child",
+      "x": 243.75,
+      "y": 299,
+      "width": 123.8,
+      "height": 40
+    },
+    {
+      "path": "physics/Free energy.md",
+      "text": "Free energy",
+      "relation": "child",
+      "x": 386.25,
+      "y": 299,
+      "width": 98,
+      "height": 40
+    },
+    {
+      "path": "computation/Landauer's principle.md",
+      "text": "Landauer's princip…",
+      "relation": "child",
+      "x": 528.75,
+      "y": 299,
+      "width": 145.8,
+      "height": 40
+    },
+    {
+      "path": "physics/Maxwell's demon.md",
+      "text": "Maxwell's demon",
+      "relation": "jump",
+      "x": 111,
+      "y": 140,
+      "width": 134.6,
+      "height": 40
+    },
+    {
+      "path": "computation/Shannon entropy.md",
+      "text": "Shannon entropy",
+      "relation": "jump",
+      "x": 111,
+      "y": 198,
+      "width": 127.6,
+      "height": 40
+    },
+    {
+      "path": "Reading list.md",
+      "text": "Reading list",
+      "relation": "sibling",
+      "x": 515,
+      "y": 140,
+      "width": 97.8,
+      "height": 40
+    },
+    {
+      "path": "reading/Shannon 1948.md",
+      "text": "Shannon 1948",
+      "relation": "sibling",
+      "x": 515,
+      "y": 198,
+      "width": 113,
+      "height": 40
+    }
+  ],
+  "edges": [
+    {
+      "id": "physics/Entropy.md->physics/Thermodynamics.md",
+      "path": "M 315 149 C 315 103.5, 237.5 103.5, 237.5 58",
+      "labelPath": "M 237.5 58 C 237.5 103.5, 315 103.5, 315 149",
+      "label": "measures",
+      "relation": "parent"
+    },
+    {
+      "id": "physics/Entropy.md->computation/Information theory.md",
+      "path": "M 315 149 C 315 103.5, 392.5 103.5, 392.5 58",
+      "labelPath": "M 315 149 C 315 103.5, 392.5 103.5, 392.5 58",
+      "label": "",
+      "relation": "parent"
+    },
+    {
+      "id": "physics/Entropy.md->physics/Entropy of mixing.md",
+      "path": "M 315 189 C 315 234, 101.25 234, 101.25 279",
+      "labelPath": "M 101.25 279 C 101.25 234, 315 234, 315 189",
+      "label": "",
+      "relation": "child"
+    },
+    {
+      "id": "physics/Entropy.md->physics/The second law.md",
+      "path": "M 315 189 C 315 234, 243.75 234, 243.75 279",
+      "labelPath": "M 243.75 279 C 243.75 234, 315 234, 315 189",
+      "label": "states",
+      "relation": "child"
+    },
+    {
+      "id": "physics/Entropy.md->physics/Free energy.md",
+      "path": "M 315 189 C 315 234, 386.25 234, 386.25 279",
+      "labelPath": "M 315 189 C 315 234, 386.25 234, 386.25 279",
+      "label": "costs",
+      "relation": "child"
+    },
+    {
+      "id": "physics/Entropy.md->computation/Landauer's principle.md",
+      "path": "M 315 189 C 315 234, 528.75 234, 528.75 279",
+      "labelPath": "M 315 189 C 315 234, 528.75 234, 528.75 279",
+      "label": "",
+      "relation": "child"
+    },
+    {
+      "id": "physics/Entropy.md->physics/Maxwell's demon.md",
+      "path": "M 265 169 C 221.65 169, 221.65 140, 178.3 140",
+      "labelPath": "M 178.3 140 C 221.65 140, 221.65 169, 265 169",
+      "label": "tests",
+      "relation": "jump"
+    },
+    {
+      "id": "physics/Entropy.md->computation/Shannon entropy.md",
+      "path": "M 265 169 C 219.9 169, 219.9 198, 174.8 198",
+      "labelPath": "M 174.8 198 C 219.9 198, 219.9 169, 265 169",
+      "label": "see also",
+      "relation": "jump"
+    },
+    {
+      "id": "physics/Thermodynamics.md->Reading list.md",
+      "path": "M 237.5 58 C 237.5 89, 515 89, 515 120",
+      "labelPath": "M 237.5 58 C 237.5 89, 515 89, 515 120",
+      "label": "",
+      "relation": "sibling"
+    },
+    {
+      "id": "physics/Thermodynamics.md->reading/Shannon 1948.md",
+      "path": "M 237.5 58 C 237.5 118, 515 118, 515 178",
+      "labelPath": "M 237.5 58 C 237.5 118, 515 118, 515 178",
+      "label": "",
+      "relation": "sibling"
+    }
+  ]
+}

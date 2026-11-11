@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
@@ -83,12 +84,18 @@ describe('PluginContext', () => {
 
   it('tracks subscriptions and delegates registrations to host', async () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext('test.plugin', host, {
-      id: 'test.plugin',
-      name: 'Test Plugin',
-      version: '1.0.0',
-      permissions: ['vault:read', 'vault:write'],
-    })
+    const ctx = createPluginContext(
+      'test.plugin',
+      host,
+      createMockManifest('test.plugin', {
+        name: 'Test Plugin',
+        permissions: ['vault:read', 'vault:write'],
+        readers: ['pdf'],
+        commands: ['cmd1'],
+        tabKinds: ['custom-tab'],
+        capabilities: ['ai.agent.provider'],
+      }),
+    )
 
     expect(ctx.plugin.id).toBe('test.plugin')
     expect(ctx.plugin.subscriptions).toHaveLength(0)
@@ -318,7 +325,11 @@ describe('PluginContext', () => {
 
   it('opens a web address through the host and refuses any other', async () => {
     const { host } = createMockHost()
-    const ctx = createPluginContext('test.plugin', host)
+    const ctx = createPluginContext(
+      'test.plugin',
+      host,
+      createMockManifest('test.plugin', { permissions: ['network:outbound'] }),
+    )
 
     expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
     expect((await ctx.plugin.openExternal('file:///etc/passwd')).ok).toBe(false)
