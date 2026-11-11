@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	// The import changes the working directory to the container of the kernel, whose files are read.
+	_ "github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestContainerDoesNotDowncastPluginHost ensures container code interacts with

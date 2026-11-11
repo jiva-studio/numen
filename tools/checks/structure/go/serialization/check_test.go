@@ -9,6 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	// The import changes the working directory to the container of the kernel, where the relative paths below start.
+	_ "github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies that port/, usecase/, and domain/

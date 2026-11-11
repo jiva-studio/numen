@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	// The import changes the working directory to the container of the kernel, where the relative paths below start.
+	_ "github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestUseCasesImportNoOSFilepathOrFS verifies that usecase/ never imports path/filepath or io/fs.

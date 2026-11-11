@@ -17,8 +17,8 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-import { runDuplicationCheck } from "./checks/duplication.mjs";
-import { runApiTypesCheck } from "./checks/apiTypes.mjs";
+import { runDuplicationCheck } from "../checks/structure/ts/duplication/check.mjs";
+import { runApiTypesCheck } from "../checks/structure/ts/api-types/check.mjs";
 import { runKnipCheck } from "./checks/knip.mjs";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
