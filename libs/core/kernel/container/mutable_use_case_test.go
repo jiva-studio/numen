@@ -51,8 +51,6 @@ func isAssigningThroughReceiver(function *ast.FuncDecl, info *types.Info, receiv
 	return isAssigned
 }
 
-// listMutatingWithMethods lists the methods named With... of use case types that assign to the receiver or
-// that return the receiver's type, which is a modified copy.
 func listMutatingWithMethods(pkgs []*packages.Package) (found []finding, useCases int) {
 	for _, pkg := range pkgs {
 		if !strings.Contains(pkg.PkgPath+"/", "/usecase/") {
@@ -115,8 +113,6 @@ func isFunctionField(field *types.Var) bool {
 	return field.IsField() && field.Exported() && isSignature
 }
 
-// listLateFunctionFields lists the assignments x.Field = value, outside a constructor, to an exported
-// function-typed field of a struct declared in a use case or adapter package.
 func listLateFunctionFields(pkgs []*packages.Package) (found []finding, fields int) {
 	for _, pkg := range pkgs {
 		if isUseCaseOrAdapterPath(pkg.PkgPath) {
@@ -241,7 +237,7 @@ func TestFunctionFieldRule_RejectsAnAssignmentAfterConstruction(t *testing.T) {
 
 type Store struct {
 	Notify func()
-	hidden func()
+	unexportedHook func()
 	Name   string
 }
 
@@ -253,16 +249,16 @@ func NewStore() *Store {
 
 func (s *Store) Attach(notify func()) { s.Notify = notify }
 
-func (s *Store) Rename(name string) { s.Name = name; s.hidden = nil }
+func (s *Store) Rename(name string) { s.Name = name; s.unexportedHook = nil }
 `,
 		"container/wire.go": `package container
 
 import "fixture/adapter/store"
 
 func Wire() *store.Store {
-	built := store.NewStore()
-	built.Notify = nil
-	return built
+	fresh := store.NewStore()
+	fresh.Notify = nil
+	return fresh
 }
 `,
 	})

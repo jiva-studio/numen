@@ -159,8 +159,6 @@ func getStructField(info *types.Info, literal *ast.CompositeLit, index int, elem
 	return nil
 }
 
-// getUseCaseMethodHolders lists the function-typed fields that receive a method value of a use case, such
-// as registry.Find or NewList(store).Execute, in a struct literal or in an assignment.
 func getUseCaseMethodHolders(pkgs []*packages.Package) map[*types.Var]bool {
 	holders := map[*types.Var]bool{}
 	for _, pkg := range pkgs {
@@ -181,8 +179,8 @@ func getUseCaseMethodHolders(pkgs []*packages.Package) map[*types.Var]bool {
 						}
 					}
 				case *ast.AssignStmt:
-					for index, left := range one.Lhs {
-						selector, ok := left.(*ast.SelectorExpr)
+					for index, target := range one.Lhs {
+						selector, ok := target.(*ast.SelectorExpr)
 						if !ok || index >= len(one.Rhs) || !isUseCaseMethodValue(pkg.TypesInfo, one.Rhs[index]) {
 							continue
 						}

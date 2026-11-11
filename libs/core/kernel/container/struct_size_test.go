@@ -187,17 +187,15 @@ type Free struct{ A, B, C, D int }
 	}
 }
 
-// countStructFields counts the fields of a struct, and in place of an embedded struct the fields of that
-// struct, down to the last one.
-func countStructFields(shape *types.Struct, seen map[*types.Struct]bool) int {
-	if seen[shape] {
+func countStructFields(shape *types.Struct, visited map[*types.Struct]bool) int {
+	if visited[shape] {
 		return 0
 	}
-	seen[shape] = true
+	visited[shape] = true
 	count := 0
 	for field := range shape.Fields() {
 		if inner, ok := getEmbeddedStruct(field); ok {
-			count += countStructFields(inner, seen)
+			count += countStructFields(inner, visited)
 			continue
 		}
 		count++

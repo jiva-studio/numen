@@ -39,8 +39,6 @@ func getAssignedTargets(node ast.Node) []ast.Expr {
 	return nil
 }
 
-// listCapturedAssignments lists the assignments inside a function literal to a variable, or to a field or
-// element of a variable, that the literal captures from the function around it.
 func listCapturedAssignments(pkg *packages.Package) []finding {
 	var found []finding
 	for _, file := range pkg.Syntax {
@@ -88,8 +86,6 @@ func appendCaptured(found []finding, pkg *packages.Package, literal *ast.FuncLit
 	return append(found, newFinding(pkg.Fset, target.Pos(), "assigns "+root.Name+", a variable the function literal captures"))
 }
 
-// listGenericFunctions lists the functions with a type parameter. The container wires concrete types, so a
-// type parameter there stands in for a type that the function avoids importing.
 func listGenericFunctions(pkg *packages.Package) (found []finding, functions int) {
 	for _, file := range pkg.Syntax {
 		if ast.IsGenerated(file) {
