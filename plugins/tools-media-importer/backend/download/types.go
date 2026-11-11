@@ -82,3 +82,15 @@ const (
 type Player interface {
 	Download(ctx context.Context, address string, media Media, into io.Writer) (Copy, error)
 }
+
+// ParseMedia returns the media a name selects; the empty name selects the video. A name that
+// selects no media gives the video and false.
+func ParseMedia(name string) (Media, bool) {
+	switch Media(name) {
+	case "", MediaVideo:
+		return MediaVideo, true
+	case MediaAudio:
+		return MediaAudio, true
+	}
+	return MediaVideo, false
+}

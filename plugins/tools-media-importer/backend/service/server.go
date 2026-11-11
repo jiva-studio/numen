@@ -5,10 +5,6 @@ package service
 
 import (
 	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
@@ -16,12 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/fetchers"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
-
-// EnvMockML names the variable that has the plugin reach video sites through the mock downloader.
-const EnvMockML = "NUMEN_MOCK_ML"
 
 // PluginID is the identity the manifest gives the plugin.
 const PluginID = "md.numen.tools.media.importer"
@@ -46,94 +40,18 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	}
 }
 
-// fetchers holds the downloader and the settings, made again once a setting about them changes.
-type fetchers struct {
-	mu       sync.RWMutex
-	isMock   bool
-	cfg      download.Config
-	current  *download.Downloader
-	settings link.Settings
-}
-
-func newFetchers(isMock bool) *fetchers {
-	f := &fetchers{
-		mu: sync.RWMutex{}, isMock: isMock, cfg: download.Defaults(), current: nil,
-		settings: link.Settings{Captions: nil, IsAutomatic: true, CopyMaxSize: 500 << 20},
-	}
-	f.current = f.open()
-	return f
-}
-
-func (f *fetchers) open() *download.Downloader {
-	if f.isMock {
-		return download.NewMock()
-	}
-	return download.New(f.cfg)
-}
-
-func (f *fetchers) getFetcher() link.Fetcher {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.current
-}
-
-func (f *fetchers) getSettings() link.Settings {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.settings
-}
-
-func (f *fetchers) updateConfig(values map[string]string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if v, ok := values["ytDlp"]; ok {
-		f.cfg.Video = getTool(v)
-	}
-	if v, ok := values["ffmpeg"]; ok {
-		f.cfg.Sound = getTool(v)
-	}
-	if v, ok := values["captions"]; ok {
-		f.settings.Captions = getLanguages(v)
-	}
-	if v, ok := values["automaticCaptions"]; ok {
-		f.settings.IsAutomatic = v != "false"
-	}
-	if mb, err := strconv.ParseInt(values["copyMaxSizeMb"], 10, 64); err == nil && mb >= 0 {
-		f.settings.CopyMaxSize = mb << 20
-	}
-	f.current = f.open()
-}
-
-func getTool(path string) download.Tool {
-	if path == "" {
-		// gomutants:disable-next-line RETURN_ZERO reason="explicit nil fields equal zero Tool"
-		return download.Tool{Command: nil, Arguments: nil, Environment: nil}
-	}
-	return download.Tool{Command: []string{path}, Arguments: nil, Environment: nil}
-}
-
-func getLanguages(value string) []string {
-	var out []string
-	for one := range strings.SplitSeq(value, ",") {
-		if one = strings.TrimSpace(one); one != "" {
-			out = append(out, one)
-		}
-	}
-	return out
-}
-
 // Mount registers the importer API, the commands and the agent tool url_import on s over the host
 // given. A video site is fetched through the mock downloader when isMock is set. The fetches end
 // with s.
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
-	f := newFetchers(isMock)
-	links := link.New(hosted, f.getFetcher, f.getSettings)
+	f := fetchers.New(isMock)
+	links := link.New(hosted, f.GetFetcher, f.GetSettings)
 	commands, err := newCommands(links)
 	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { f.updateConfig(values) })
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { f.UpdateConfig(values) })
 	// gomutants:disable-next-line BRANCH_IF reason="mountAPI with static service and method constants never returns an error"
 	if err := mountAPI(s, links); err != nil {
 		return err
@@ -157,7 +75,7 @@ func MountFromEnv(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return Mount(s, openHostAt(endpoint), os.Getenv(EnvMockML) == trueValue)
+	return Mount(s, openHostAt(endpoint), environment.IsMockModel())
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
@@ -169,6 +87,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	}
 	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return Mount(s, hosted, vars[EnvMockML] == trueValue)
+		return Mount(s, hosted, environment.IsMockModelIn(vars))
 	})
 }
