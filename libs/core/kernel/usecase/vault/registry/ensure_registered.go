@@ -13,10 +13,8 @@ type VaultAdder interface {
 
 // EnsureRequest names the folder to have on the list.
 type EnsureRequest struct {
-	Root string
-	// Name is given to the vault where the folder is not on the list yet; empty means the folder's name.
-	Name string
-	// IsRecordedOpened marks a vault the folder was added as, as the one opened last.
+	Root             string
+	Name             string
 	IsRecordedOpened bool
 }
 

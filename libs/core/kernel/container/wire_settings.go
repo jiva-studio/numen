@@ -312,7 +312,7 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
 		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
-		ResolveProfile: func(profile string) string { return resolveProfile(c, profile) }, Signal: signal,
+		ResolveProfile: func(profile string) string { return resolveProfile(profile) }, Signal: signal,
 		Report: func(err error) { settingsHandleError(c, err) },
 	})
 }
@@ -325,8 +325,8 @@ func refreshPluginSecrets(c settingsWiring, ctx context.Context) error {
 	return c.PluginHost.Configuration.Refresh(ctx)
 }
 
-func resolveProfile(c settingsWiring, profile string) string {
-	return settingsusecase.NewResolveCompute(knownMachine{specs: c.Hardware}).Execute(profile).Resolved.Profile
+func resolveProfile(profile string) string {
+	return settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(profile).Resolved.Profile
 }
 
 func settingsHandleError(c settingsWiring, err error) {
@@ -354,11 +354,6 @@ func settingsThemes(c settingsWiring, say func(string)) (*theme.Service, error) 
 		themeusecase.NewWatchThemes(sources, files, 0),
 	), err
 }
-
-// knownMachine is the machine that was read when the settings were applied.
-type knownMachine struct{ specs settingsdomain.MachineSpecs }
-
-func (m knownMachine) ReadMachine() settingsdomain.MachineSpecs { return m.specs }
 
 // CheckInterfaceScale returns an error when scale is outside the interface scale bounds.
 func CheckInterfaceScale(name string, scale float64) error {

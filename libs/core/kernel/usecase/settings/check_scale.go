@@ -2,7 +2,7 @@ package settings
 
 import settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 
-// CheckScale refuses a scale that the setting it belongs to does not take.
+// CheckScale refuses a scale outside the range of its setting.
 type CheckScale struct {
 	bounds settingsdomain.Bounds
 }

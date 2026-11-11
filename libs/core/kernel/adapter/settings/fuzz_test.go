@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	domaintheme "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )

@@ -28,7 +28,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
-// registry opens the vault registry for this installation.
 func (c Config) registry() (vaultregistry.Ports, error) {
 	return vaultRegistry(vaultOf(c))
 }

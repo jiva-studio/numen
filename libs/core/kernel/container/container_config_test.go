@@ -203,7 +203,7 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	}
 }
 
-func TestTheRegistryIsKeptAtTheConfiguredPathElseInTheConfigDir(t *testing.T) {
+func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }
