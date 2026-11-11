@@ -213,7 +213,6 @@ func vaultWith(base vaultWiring, settings settingsWiring, search searchWiring) v
 	return base
 }
 
-// texts are the text versions the open made over its index, or nil where it makes none.
 func assemble(c Config, texts *TextVersions) pluginsWiring {
 	settings := settingsOf(c)
 	base := vaultBase(c, texts)

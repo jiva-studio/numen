@@ -134,7 +134,6 @@ func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (embedding
 	return embedder, why
 }
 
-// getCLIPluginCommands returns the commands the enabled plugins declare, and what runs one over a vault.
 func getCLIPluginCommands(r *cliRun) cli.PluginCommands {
 	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(r.c, nameOrPath) }
 	return cli.PluginCommands{
@@ -166,8 +165,6 @@ func openCLIPluginCommands(r *cliRun, ctx context.Context, v domain.Vault) (plug
 	return getPluginCommands(plugins(r.c)).Run, closeAfterWork(ctx, pluginWork, db.Close), nil
 }
 
-// closeCLI closes what the run opened, the embedders before the index, and returns the tasks of the plugin
-// work that failed, one line each.
 func closeCLI(r *cliRun) ([]string, error) {
 	var err error
 	for _, closeOne := range slices.Backward(r.closers) {
