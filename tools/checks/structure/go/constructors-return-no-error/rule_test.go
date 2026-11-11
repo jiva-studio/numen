@@ -29,6 +29,7 @@ func listFallibleConstructors(fset *token.FileSet, file *ast.File) []string {
 
 func getFallibleConstructors(t *testing.T, roots ...string) (findings []string, files int) {
 	t.Helper()
+	// Tests and generated files are left out, and each constructor that answers with an error is listed with the path of its file.
 	for _, root := range roots {
 		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {

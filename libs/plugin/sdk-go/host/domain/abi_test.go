@@ -26,7 +26,8 @@ func getPinnedShapes() map[string]string {
 		"LinkMarker":         "string",
 		"LinkRole":           "string",
 		"MoveResult":         "struct{From string; To string; IsMoved bool; Repaired []string; Dangling []string}",
-		"Note":               "struct{FileStat domain.FileStat; Title string; Type domain.NoteType; ID string; Frontmatter map[string]interface {}; Headings []domain.Heading; Links []domain.Link; Body string; Problems []string; FrontmatterErr string}",
+		"Note":               "struct{FileStat domain.FileStat; Title string; Type domain.NoteType; ID string; Frontmatter map[string]interface {}; " +
+			"Headings []domain.Heading; Links []domain.Link; Body string; Problems []string; FrontmatterErr string}",
 		"NoteRef":            "struct{Path string; Title string; ID string}",
 		"NoteType":           "string",
 		"RelatedNote":        "struct{From string; Role domain.LinkRole; Title string; Type string; Marker domain.LinkMarker}",
@@ -37,7 +38,8 @@ func getPinnedShapes() map[string]string {
 		"TextKind":           "string",
 		"TextSegment":        "struct{Text string; Heading string; Selector domain.Selector}",
 		"TextSourceProperty": "struct{Key string; Value string}",
-		"TextVersion":        "struct{Path string; PluginID string; Key string; Source domain.TextVersionID; SourceProperty domain.TextSourceProperty; Kind domain.TextKind; File string; InputHash string; TextHash string; CreateTime time.Time}",
+		"TextVersion":        "struct{Path string; PluginID string; Key string; Source domain.TextVersionID; SourceProperty domain.TextSourceProperty; " +
+			"Kind domain.TextKind; File string; InputHash string; TextHash string; CreateTime time.Time}",
 		"TextVersionID":      "string",
 		"Vault":              "struct{ID domain.VaultID; Name string; Path string}",
 		"VaultID":            "string",
