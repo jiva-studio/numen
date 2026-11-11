@@ -50,7 +50,7 @@ type Profile struct {
 	Dimensions     int               `json:"dims"`
 	MaxTokens      int               `json:"maxTokens"`
 	Pooling        string            `json:"pooling"`
-	Normalize      *bool             `json:"normalise,omitempty"`
+	Normalize      *bool             `json:"normalize,omitempty"`
 	QueryPrefix    string            `json:"queryPrefix,omitempty"`
 	DocumentPrefix string            `json:"documentPrefix,omitempty"`
 	OnnxFile       string            `json:"onnxFile,omitempty"`
@@ -94,7 +94,7 @@ type Handling struct {
 	QueryPrefix    string   `json:"queryPrefix"`
 	DocumentPrefix string   `json:"documentPrefix"`
 	File           string   `json:"file"`
-	Normalize      bool     `json:"normalise"`
+	Normalize      bool     `json:"normalize"`
 	ExtraInputs    []string `json:"extraInputs"`
 }
 

@@ -99,7 +99,7 @@ func checkRetrieval(t *testing.T, profile model.Profile, dir, lib string, fixtur
 		if len(v) != profile.Dimensions {
 			t.Fatalf("vector %d has %d dimensions, the profile says %d", i, len(v), profile.Dimensions)
 		}
-		if profile.IsNormalised() && math.Abs(norm(v)-1) > 1e-3 {
+		if profile.IsNormalized() && math.Abs(norm(v)-1) > 1e-3 {
 			t.Fatalf("vector %d has length %v, want a unit vector", i, norm(v))
 		}
 	}

@@ -78,7 +78,7 @@ export type GetEmbeddingModelResponse = Message<"numen.v1.GetEmbeddingModelRespo
 
   /**
    * A short hash of what the plugin does to a text before the model reads it and to the output
-   * after: the prefixes, the model file, the token limit and the normalisation. Two models of
+   * after: the prefixes, the model file, the token limit and the normalization. Two models of
    * one name that differ in it make vectors that cannot be compared, so it is part of the
    * identity. Empty when the plugin holds no such settings.
    *

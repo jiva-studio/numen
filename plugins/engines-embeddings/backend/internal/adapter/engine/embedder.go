@@ -116,7 +116,7 @@ func Open(
 		isPositioned: false,
 		sessions:     newSessionPool(sessions, passes, (*ort.Session).Destroy),
 		paddings:     newPaddingPool(),
-		isNormalized: identity.Handling.Normalise,
+		isNormalized: identity.Handling.Normalize,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -189,7 +189,7 @@ func (e *Embedder) GetModel() model.ModelInfo {
 		FloorHint:      0,
 		MinChunkLength: 0,
 		ChunkTokens:    0,
-		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalized, ExtraInputs: nil},
+		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalize: e.isNormalized, ExtraInputs: nil},
 	}
 }
 
@@ -380,7 +380,7 @@ func splitRows(flat []float32, rows, dimensions int, isNormalized bool) ([][]flo
 
 func finishVector(vector []float32, isNormalized bool) []float32 {
 	if isNormalized {
-		return model.Normalise(vector)
+		return model.Normalize(vector)
 	}
 	return vector
 }

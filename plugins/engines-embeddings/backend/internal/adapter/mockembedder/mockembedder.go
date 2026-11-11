@@ -117,7 +117,7 @@ func embedMock(text string) []float32 {
 	for i := range model.MockSharedDimensions {
 		v[i] = shared
 	}
-	return model.Normalise(v)
+	return model.Normalize(v)
 }
 
 func addTerm(v []float32, term string, weight float64) {

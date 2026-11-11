@@ -292,7 +292,7 @@ func TestHandlingHashChangesWithWhatItCoversAndWithNothingElse(t *testing.T) {
 		"query prefix":    func() string { h := base; h.QueryPrefix = "q: "; return h.Hash(512) }(),
 		"document prefix": func() string { h := base; h.DocumentPrefix = "d: "; return h.Hash(512) }(),
 		"file":            func() string { h := base; h.File = "model_q4.onnx"; return h.Hash(512) }(),
-		"normalise":       func() string { h := base; h.Normalize = false; return h.Hash(512) }(),
+		"normalize":       func() string { h := base; h.Normalize = false; return h.Hash(512) }(),
 		"max tokens":      base.Hash(256),
 	}
 	for what, got := range changed {

@@ -96,7 +96,7 @@ func TestGetMockModelAndEmbedderDetails(t *testing.T) {
 	if info.Concurrency != 1 || info.FloorHint != 0 || info.MinChunkLength != 0 {
 		t.Errorf("model.GetMockModel() limits = %+v", info)
 	}
-	if info.Handling.QueryPrefix != model.MockQueryPrefix || info.Handling.DocumentPrefix != model.MockDocumentPrefix || !info.Handling.Normalise {
+	if info.Handling.QueryPrefix != model.MockQueryPrefix || info.Handling.DocumentPrefix != model.MockDocumentPrefix || !info.Handling.Normalize {
 		t.Errorf("model.GetMockModel() handling = %+v", info.Handling)
 	}
 

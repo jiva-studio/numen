@@ -125,7 +125,7 @@ type GetEmbeddingModelResponse struct {
 	// It is not part of the model's identity: changing it makes no vector stale.
 	MinChunkLength int32 `protobuf:"varint,8,opt,name=min_chunk_length,json=minChunkLength,proto3" json:"min_chunk_length,omitempty"`
 	// A short hash of what the plugin does to a text before the model reads it and to the output
-	// after: the prefixes, the model file, the token limit and the normalisation. Two models of
+	// after: the prefixes, the model file, the token limit and the normalization. Two models of
 	// one name that differ in it make vectors that cannot be compared, so it is part of the
 	// identity. Empty when the plugin holds no such settings.
 	Handling string `protobuf:"bytes,9,opt,name=handling,proto3" json:"handling,omitempty"`
