@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
@@ -28,9 +29,9 @@ func TestPoolKinds(t *testing.T) {
 		kind string
 		want [][]float32
 	}{
-		{PoolCLS, [][]float32{{1, 0, 0}, {0, 2, 0}}},
-		{PoolLast, [][]float32{{0, 0, 5}, {4, 0, 0}}},
-		{PoolMean, [][]float32{{1.0 / 3, 1, 5.0 / 3}, {2, 1, 0}}},
+		{model.PoolCLS, [][]float32{{1, 0, 0}, {0, 2, 0}}},
+		{model.PoolLast, [][]float32{{0, 0, 5}, {4, 0, 0}}},
+		{model.PoolMean, [][]float32{{1.0 / 3, 1, 5.0 / 3}, {2, 1, 0}}},
 	}
 	for _, tc := range cases {
 		got, err := pool(tc.kind, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
@@ -47,14 +48,14 @@ func TestPoolKinds(t *testing.T) {
 
 func TestPoolNormalisesOnlyWhereTheProfileAsksForIt(t *testing.T) {
 	flat, mask := twoRows()
-	raw, err := pool(PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
+	raw, err := pool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if raw[0][2] != 5 {
 		t.Errorf("a vector that is not normalised is scaled: %v", raw[0])
 	}
-	unit, err := pool(PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true)
+	unit, err := pool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestPoolNormalisesOnlyWhereTheProfileAsksForIt(t *testing.T) {
 
 func TestPoolOutputIsNoPerTokenPooling(t *testing.T) {
 	flat, mask := twoRows()
-	if _, err := pool(PoolOutput, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true); err == nil {
+	if _, err := pool(model.PoolOutput, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true); err == nil {
 		t.Error("output pooling of a per-token tensor gave no error")
 	}
 }
@@ -175,13 +176,13 @@ func TestChooseOutput(t *testing.T) {
 		want    string
 		isError bool
 	}{
-		{"per-token output of a mean model", []string{"last_hidden_state"}, PoolMean, "last_hidden_state", false},
-		{"both, pooled by the model", []string{"last_hidden_state", "sentence_embedding"}, PoolOutput, "sentence_embedding", false},
-		{"both, pooled here", []string{"sentence_embedding", "last_hidden_state"}, PoolLast, "last_hidden_state", false},
-		{"only a sentence embedding", []string{"sentence_embedding"}, PoolMean, "sentence_embedding", false},
-		{"output pooling without it", []string{"last_hidden_state", "other"}, PoolOutput, "", true},
-		{"one unknown output", []string{"logits"}, PoolOutput, "logits", false},
-		{"none we know", []string{"a", "b"}, PoolMean, "", true},
+		{"per-token output of a mean model", []string{"last_hidden_state"}, model.PoolMean, "last_hidden_state", false},
+		{"both, pooled by the model", []string{"last_hidden_state", "sentence_embedding"}, model.PoolOutput, "sentence_embedding", false},
+		{"both, pooled here", []string{"sentence_embedding", "last_hidden_state"}, model.PoolLast, "last_hidden_state", false},
+		{"only a sentence embedding", []string{"sentence_embedding"}, model.PoolMean, "sentence_embedding", false},
+		{"output pooling without it", []string{"last_hidden_state", "other"}, model.PoolOutput, "", true},
+		{"one unknown output", []string{"logits"}, model.PoolOutput, "logits", false},
+		{"none we know", []string{"a", "b"}, model.PoolMean, "", true},
 	}
 	for _, tc := range cases {
 		got, err := chooseOutput(tc.named, tc.pooling)
@@ -202,9 +203,9 @@ func TestCheckInputs(t *testing.T) {
 	}{
 		{"plain", base, nil, modelInputs{}, false},
 		{"typed", append(slices.Clone(base), tokenTypeIDs), nil, modelInputs{isTyped: true}, false},
-		{"positions asked and taken", append(slices.Clone(base), InputPositionIDs), []string{InputPositionIDs}, modelInputs{isPositioned: true}, false},
-		{"positions taken but not asked", append(slices.Clone(base), InputPositionIDs), nil, modelInputs{}, true},
-		{"positions asked but not taken", base, []string{InputPositionIDs}, modelInputs{}, true},
+		{"positions asked and taken", append(slices.Clone(base), model.InputPositionIDs), []string{model.InputPositionIDs}, modelInputs{isPositioned: true}, false},
+		{"positions taken but not asked", append(slices.Clone(base), model.InputPositionIDs), nil, modelInputs{}, true},
+		{"positions asked but not taken", base, []string{model.InputPositionIDs}, modelInputs{}, true},
 		{"cache inputs", append(slices.Clone(base), "past_key_values.0.key"), nil, modelInputs{}, true},
 		{"no mask", []string{inputIDs}, nil, modelInputs{}, true},
 		{"no ids", []string{attentionMask}, nil, modelInputs{}, true},

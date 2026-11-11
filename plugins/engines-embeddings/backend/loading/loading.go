@@ -51,6 +51,9 @@ type opening struct {
 	err    error
 }
 
+// ErrClosed is the error of a batch that meets a closed embedder.
+var ErrClosed = errors.New("the embedder is closed")
+
 // errSuperseded ends an opening whose model the settings changed while it ran.
 var errSuperseded = errors.New("the model was changed while it opened")
 

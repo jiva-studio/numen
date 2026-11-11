@@ -7,22 +7,23 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // openRecord is what the server opened a model with, and the models it closed.
 type openRecord struct {
 	mu      sync.Mutex
-	opened  []engine.LocalModel
+	opened  []model.LocalModel
 	nices   []int
 	closing int
 }
 
 type recordedEmbedder struct {
-	engine.MockEmbedder
+	mockembedder.Embedder
 	record *openRecord
 }
 
@@ -37,7 +38,7 @@ func newRecordedServer(t *testing.T) (*Server, *openRecord) {
 	t.Helper()
 	srv := newEmbeddingServer()
 	record := &openRecord{}
-	srv.open = func(_ context.Context, _ engine.ModelInfo, local engine.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, local model.LocalModel) (loading.Embedder, error) {
 		record.mu.Lock()
 		defer record.mu.Unlock()
 		record.opened = append(record.opened, local)
@@ -60,7 +61,7 @@ func (r *openRecord) openedCount() int {
 func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := record.opened[0]; got.Threads != 1 || got.BatchTexts != limits.EcoBatchTexts {
@@ -76,20 +77,20 @@ func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "maximum"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	first := record.opened[0]
 
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if record.openedCount() != 2 {
 		t.Fatalf("%d models opened, want 2", record.openedCount())
 	}
 	second := record.opened[1]
-	if second.Threads != 1 || second.BatchTexts != limits.EcoBatchTexts || first.BatchTexts != engine.GetDefaultBatchTexts() {
+	if second.Threads != 1 || second.BatchTexts != limits.EcoBatchTexts || first.BatchTexts != model.GetDefaultBatchTexts() {
 		t.Errorf("opened %d threads and %d texts after %d texts, want 1 thread and %d texts", second.Threads, second.BatchTexts, first.BatchTexts, limits.EcoBatchTexts)
 	}
 	if record.nices[len(record.nices)-1] != 19 {
@@ -102,11 +103,11 @@ func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	values := map[string]string{performance.ConfigKey: "eco"}
 	srv.updateConfig(values, nil)
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.updateConfig(values, nil)
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if record.openedCount() != 1 {
@@ -119,7 +120,7 @@ func TestTheThreadsOfTheEnvironmentWinOverTheProfile(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_THREADS", "3")
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "provider": "local"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := record.opened[0].Threads; got != 3 {
@@ -150,7 +151,7 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 		t.Fatalf("GOMAXPROCS = %d, want 1", got)
 	}
 
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.mu.Lock()
@@ -168,7 +169,7 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	isOpening, canceled, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
 	t.Cleanup(func() { close(release) })
 	var once sync.Once
-	srv.open = func(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv.open = func(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		isFirst := false
 		once.Do(func() { isFirst = true; close(isOpening) })
 		if isFirst {

@@ -1,6 +1,9 @@
 package engine
 
-import "github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
+import (
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
+)
 
 // headWidth is the width of one attention head in sentence encoders.
 const headWidth = 64
@@ -31,9 +34,9 @@ func getPassesWithinMemory(passes int, memory int64, batchTexts, window, hiddenD
 	return int(max(min(int64(passes), fit), 1))
 }
 
-func resolvePasses(cfg LocalModel, provider onnx.Provider, identity ModelInfo) int {
+func resolvePasses(cfg model.LocalModel, provider onnx.Provider, identity model.ModelInfo) int {
 	// gomutants:disable-next-line INTEGER_DECREMENT reason="GetPasses returns at least one pass"
-	passes := max(cfg.GetPasses(provider), 1)
+	passes := max(getPasses(cfg, provider), 1)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="one session returns one pass through either branch"
 	if cfg.Sessions > 0 {
 		return passes

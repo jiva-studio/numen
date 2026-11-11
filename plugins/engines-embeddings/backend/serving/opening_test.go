@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 func slowModel(t *testing.T) (srv *Server, started chan struct{}, release chan struct{}) {
@@ -16,11 +17,11 @@ func slowModel(t *testing.T) (srv *Server, started chan struct{}, release chan s
 	srv = newEmbeddingServer()
 	started, release = make(chan struct{}), make(chan struct{})
 	var once sync.Once
-	srv.open = func(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv.open = func(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		once.Do(func() { close(started) })
 		select {
 		case <-release:
-			return engine.MockEmbedder{}, nil
+			return mockembedder.Embedder{}, nil
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}
@@ -60,7 +61,7 @@ func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	ended := make(chan error, 1)
-	go func() { _, err := srv.EmbedTexts(ctx, engine.RoleDocument, []string{"text"}); ended <- err }()
+	go func() { _, err := srv.EmbedTexts(ctx, model.RoleDocument, []string{"text"}); ended <- err }()
 	<-started
 	cancel()
 	if err := <-ended; err == nil {
@@ -68,7 +69,7 @@ func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
 	}
 
 	close(release)
-	vectors, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"text"})
+	vectors, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"})
 	if err != nil || len(vectors) != 1 {
 		t.Fatalf("the next batch: %v, %v", vectors, err)
 	}
@@ -78,13 +79,13 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.isMock = false
 	names := make(chan string, 2)
-	srv.open = func(ctx context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv.open = func(ctx context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		names <- info.Name
 		if info.Name == "Xenova/bge-m3" {
 			<-ctx.Done()
 			return nil, ctx.Err()
 		}
-		return engine.MockEmbedder{}, nil
+		return mockembedder.Embedder{}, nil
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
 
@@ -94,8 +95,8 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 		t.Fatalf("opened %q first", got)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
-	vectors, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"text"})
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel}, nil)
+	vectors, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"})
 	if err != nil && !errors.Is(err, context.Canceled) {
 		t.Fatalf("the batch after the change: %v", err)
 	}
@@ -113,13 +114,13 @@ func closeServer(t *testing.T, srv *Server) {
 
 func embedText(ctx context.Context, t *testing.T, srv *Server) {
 	t.Helper()
-	if vectors, err := srv.EmbedTexts(ctx, engine.RoleDocument, []string{"text"}); err == nil && len(vectors) != 1 {
+	if vectors, err := srv.EmbedTexts(ctx, model.RoleDocument, []string{"text"}); err == nil && len(vectors) != 1 {
 		t.Errorf("vectors: %v", vectors)
 	}
 }
 
 type stubEmbedder struct {
-	engine.MockEmbedder
+	mockembedder.Embedder
 	concurrency int
 	closeErr    error
 	onClose     func()
@@ -137,10 +138,10 @@ func (s stubEmbedder) Close() error {
 func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.isMock = false
-	srv.modelInfo = engine.ModelInfo{Name: "remote-override"}
-	srv.localInfo = engine.ModelInfo{Name: "local-actual"}
-	var gotInfo engine.ModelInfo
-	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv.modelInfo = model.ModelInfo{Name: "remote-override"}
+	srv.localInfo = model.ModelInfo{Name: "local-actual"}
+	var gotInfo model.ModelInfo
+	srv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		gotInfo = info
 		return stubEmbedder{concurrency: 6}, nil
 	}
@@ -157,9 +158,9 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 
 	mockSrv := newEmbeddingServer()
 	mockSrv.isMock = true
-	mockSrv.modelInfo = engine.ModelInfo{Name: "mock-model-info"}
-	mockSrv.localInfo = engine.ModelInfo{Name: "unused-local"}
-	mockSrv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	mockSrv.modelInfo = model.ModelInfo{Name: "mock-model-info"}
+	mockSrv.localInfo = model.ModelInfo{Name: "unused-local"}
+	mockSrv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		gotInfo = info
 		return stubEmbedder{concurrency: 4}, nil
 	}
@@ -174,7 +175,7 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 func TestFinishOpeningFailure(t *testing.T) {
 	srv := newEmbeddingServer()
 	wantErr := errors.New("boom")
-	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		return stubEmbedder{}, wantErr
 	}
 	emb, err := srv.getEmbedder(t.Context())
@@ -192,7 +193,7 @@ func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
 	firstEntered := make(chan struct{})
 	releaseFirst := make(chan struct{})
 	calls := 0
-	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		calls++
 		if calls == 1 {
 			close(firstEntered)

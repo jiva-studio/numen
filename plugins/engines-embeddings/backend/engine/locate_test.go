@@ -16,24 +16,26 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 func TestLocate_ErrorsWhenOffline(t *testing.T) {
 	t.Setenv(EnvOffline, "1")
 	t.Setenv(EnvDir, t.TempDir())
-	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
+	_, err := Locate(t.Context(), model.LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
 	if err == nil || !strings.Contains(err.Error(), EnvOffline) {
 		t.Fatalf("Locate() error = %v", err)
 	}
 }
 
 func TestLocate_ErrorsWhenDownloadDisabled(t *testing.T) {
-	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo"}, nil)
+	_, err := Locate(t.Context(), model.LocalModel{Name: "owner/repo"}, nil)
 	if err == nil || !strings.Contains(err.Error(), "enable download") {
 		t.Fatalf("Locate() error = %v", err)
 	}
-	if _, err := Locate(t.Context(), LocalModel{ShouldDownload: true}, nil); err == nil || !strings.Contains(err.Error(), "no model to run") {
+	if _, err := Locate(t.Context(), model.LocalModel{ShouldDownload: true}, nil); err == nil || !strings.Contains(err.Error(), "no model to run") {
 		t.Fatalf("Locate() empty name error = %v", err)
 	}
 }
@@ -94,14 +96,14 @@ func sumOf(body string) string {
 	return hex.EncodeToString(digest[:])
 }
 
-func pinnedModel(revision string) LocalModel {
-	return LocalModel{
+func pinnedModel(revision string) model.LocalModel {
+	return model.LocalModel{
 		Name:           "owner/repo",
 		ShouldDownload: true,
 		Revision:       revision,
 		Sums: map[string]string{
-			"onnx/model.onnx": sumOf("weights"),
-			TokenizerFile:     sumOf("tokens"),
+			"onnx/model.onnx":   sumOf("weights"),
+			model.TokenizerFile: sumOf("tokens"),
 		},
 	}
 }
@@ -203,7 +205,7 @@ func TestLocateUsesCachedSnapshotWithoutRevisionOffline(t *testing.T) {
 	cache := cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
 	t.Setenv(EnvOffline, "1")
 
-	got, err := Locate(t.Context(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
+	got, err := Locate(t.Context(), model.LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,19 +216,19 @@ func TestLocateUsesCachedSnapshotWithoutRevisionOffline(t *testing.T) {
 
 func TestLocateFromDir(t *testing.T) {
 	dir := t.TempDir()
-	modelPath := filepath.Join(dir, ModelFile)
-	tokenPath := filepath.Join(dir, TokenizerFile)
+	modelPath := filepath.Join(dir, model.ModelFile)
+	tokenPath := filepath.Join(dir, model.TokenizerFile)
 	if err := os.WriteFile(modelPath, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Locate(t.Context(), LocalModel{Dir: dir}, nil); err == nil {
+	if _, err := Locate(t.Context(), model.LocalModel{Dir: dir}, nil); err == nil {
 		t.Fatal("Locate() succeeded with missing tokenizer")
 	}
 	if err := os.WriteFile(tokenPath, []byte("tokens"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := Locate(t.Context(), LocalModel{Dir: dir}, nil)
+	got, err := Locate(t.Context(), model.LocalModel{Dir: dir}, nil)
 	if err != nil {
 		t.Fatalf("Locate() error = %v", err)
 	}
@@ -242,7 +244,7 @@ func TestLocateErrorsWhenModelsHomeFails(t *testing.T) {
 	t.Setenv(EnvDir, "")
 	t.Setenv(cache.EnvSharedDataDir, "")
 	t.Setenv(cache.EnvDataDir, "")
-	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
+	_, err := Locate(t.Context(), model.LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
 	if err == nil || !strings.Contains(err.Error(), "models folder") || errors.Unwrap(err) == nil {
 		t.Fatalf("Locate() error = %v, want wrapped models folder error", err)
 	}
@@ -254,19 +256,19 @@ func TestLocateCachedFailsWhenCacheDirErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(blocker, "sub"))
-	_, ok, err := locateCached(repo, LocalModel{Name: "owner/repo", Revision: "rev"}, "model.onnx")
+	_, ok, err := locateCached(repo, model.LocalModel{Name: "owner/repo", Revision: "rev"}, "model.onnx")
 	if ok || err == nil || !strings.Contains(err.Error(), "cache folder of owner/repo") || errors.Unwrap(err) == nil {
 		t.Fatalf("locateCached() = %v, %v, want false and wrapped cache folder error", ok, err)
 	}
 }
 
 func TestLocateCachedIgnoresMissingModel(t *testing.T) {
-	cacheSnapshot(t, "abc", map[string]string{TokenizerFile: "tokens"})
+	cacheSnapshot(t, "abc", map[string]string{model.TokenizerFile: "tokens"})
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
-	cfg := LocalModel{
+	cfg := model.LocalModel{
 		Name:     "owner/repo",
 		Revision: "abc",
-		Sums:     map[string]string{TokenizerFile: sumOf("tokens")},
+		Sums:     map[string]string{model.TokenizerFile: sumOf("tokens")},
 	}
 	if _, ok, err := locateCached(repo, cfg, "model.onnx"); ok || err != nil {
 		t.Fatalf("locateCached() = %v, %v, want false, nil", ok, err)
@@ -313,7 +315,7 @@ func TestLocatePassesRevision(t *testing.T) {
 		requestedPath = ""
 	}
 
-	cfg := LocalModel{
+	cfg := model.LocalModel{
 		Name:           "owner/repo",
 		Revision:       "custom-rev",
 		ShouldDownload: true,
@@ -356,7 +358,7 @@ func TestAFileThatMissesItsPinnedSumIsRemovedWithItsBlobAndFetchedAgain(t *testi
 		t.Skipf("symlinks are not available: %v", err)
 	}
 
-	err := checkPinned(map[string]string{TokenizerFile: strings.Repeat("0", 64)}, TokenizerFile, link)
+	err := checkPinned(map[string]string{model.TokenizerFile: strings.Repeat("0", 64)}, model.TokenizerFile, link)
 
 	if err == nil {
 		t.Fatal("checkPinned() accepted a file that holds another sum")
@@ -419,7 +421,7 @@ func TestDiscardDownloadAndSnapshotEdgeCases(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(snapRoot, "snapshots", "a-incomplete", "onnx", "model.onnx"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "a-incomplete", TokenizerFile), []byte("t"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "a-incomplete", model.TokenizerFile), []byte("t"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Snapshot "b-complete" has both files with zero Time.
@@ -430,7 +432,7 @@ func TestDiscardDownloadAndSnapshotEdgeCases(t *testing.T) {
 	if err := os.WriteFile(bModel, []byte("m"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "b-complete", TokenizerFile), []byte("t"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "b-complete", model.TokenizerFile), []byte("t"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	zeroTime := time.Time{}

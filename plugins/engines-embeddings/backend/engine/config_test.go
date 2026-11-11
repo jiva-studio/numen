@@ -4,89 +4,9 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
-
-func TestNewConfigOfBGEM3(t *testing.T) {
-	info, local := newTestConfig(t, "Xenova/bge-m3")
-	if info.Name != "Xenova/bge-m3" {
-		t.Errorf("expected name Xenova/bge-m3, got %s", info.Name)
-	}
-	if info.Dimensions != 1024 {
-		t.Errorf("expected 1024 dimensions, got %d", info.Dimensions)
-	}
-	if info.MaxTokens != 512 {
-		t.Errorf("expected 512 max tokens, got %d", info.MaxTokens)
-	}
-	if info.Pooling != PoolCLS {
-		t.Errorf("expected cls pooling, got %s", info.Pooling)
-	}
-	if info.Concurrency != 1 {
-		t.Errorf("expected 1 concurrency, got %d", info.Concurrency)
-	}
-	if info.MinChunkLength != 0 {
-		t.Errorf("expected 0 min chunk length, got %d", info.MinChunkLength)
-	}
-	if local.Name != "Xenova/bge-m3" {
-		t.Errorf("expected Xenova/bge-m3, got %s", local.Name)
-	}
-	if local.File != "model_int8.onnx" {
-		t.Errorf("expected model_int8.onnx, got %s", local.File)
-	}
-	if local.BatchTexts != 8 {
-		t.Errorf("expected 8 batch texts, got %d", local.BatchTexts)
-	}
-	if local.Threads != 0 {
-		t.Errorf("expected 0 threads, got %d", local.Threads)
-	}
-	if local.Sessions != 0 {
-		t.Errorf("expected 0 sessions, got %d", local.Sessions)
-	}
-	if local.PassMemory != 0 {
-		t.Errorf("expected 0 pass memory, got %d", local.PassMemory)
-	}
-	if !local.ShouldDownload {
-		t.Errorf("expected download enabled by default")
-	}
-	if err := CheckIdentity(info, local.Name); err != nil {
-		t.Fatalf("check identity failed: %v", err)
-	}
-}
-
-func TestCheckIdentity(t *testing.T) {
-	for _, tc := range []ModelInfo{
-		{Dimensions: 1, MaxTokens: 1, Pooling: ""},
-		{Dimensions: 1024, MaxTokens: 512, Pooling: PoolMean},
-		{Dimensions: 1024, MaxTokens: 512, Pooling: PoolCLS},
-	} {
-		if err := CheckIdentity(tc, "repo"); err != nil {
-			t.Errorf("expected valid identity for %+v, got %v", tc, err)
-		}
-	}
-
-	for _, tc := range []ModelInfo{
-		{Dimensions: 0, MaxTokens: 100, Pooling: PoolMean},
-		{Dimensions: -1, MaxTokens: 100, Pooling: PoolMean},
-	} {
-		if err := CheckIdentity(tc, "repo"); err == nil {
-			t.Errorf("expected error for non-positive dimensions: %+v", tc)
-		}
-	}
-
-	for _, tc := range []ModelInfo{
-		{Dimensions: 1024, MaxTokens: 0, Pooling: PoolMean},
-		{Dimensions: 1024, MaxTokens: -1, Pooling: PoolMean},
-	} {
-		if err := CheckIdentity(tc, "repo"); err == nil {
-			t.Errorf("expected error for non-positive max tokens: %+v", tc)
-		}
-	}
-
-	invalidPooling := ModelInfo{Dimensions: 1024, MaxTokens: 512, Pooling: "invalid"}
-	if err := CheckIdentity(invalidPooling, "repo"); err == nil {
-		t.Error("expected error for invalid pooling")
-	}
-}
 
 func TestLocalModelGetPasses(t *testing.T) {
 	prev := runtime.GOMAXPROCS(0)
@@ -95,33 +15,33 @@ func TestLocalModelGetPasses(t *testing.T) {
 	// Set GOMAXPROCS to 5 so CPU fallback produces 3, distinguishing from returns of 1
 	runtime.GOMAXPROCS(5)
 
-	if passes := (LocalModel{Sessions: 3}).GetPasses(onnx.ProviderCPU); passes != 3 {
+	if passes := getPasses(model.LocalModel{Sessions: 3}, onnx.ProviderCPU); passes != 3 {
 		t.Errorf("expected 3 passes for Sessions=3, got %d", passes)
 	}
-	if passes := (LocalModel{Sessions: 1}).GetPasses(onnx.ProviderCPU); passes != 1 {
+	if passes := getPasses(model.LocalModel{Sessions: 1}, onnx.ProviderCPU); passes != 1 {
 		t.Errorf("expected 1 pass for Sessions=1, got %d", passes)
 	}
 
-	if passes := (LocalModel{}).GetPasses(onnx.ProviderCoreML); passes != 1 {
+	if passes := getPasses(model.LocalModel{}, onnx.ProviderCoreML); passes != 1 {
 		t.Errorf("expected 1 pass for CoreML, got %d", passes)
 	}
-	if passes := (LocalModel{}).GetPasses(onnx.ProviderCUDA); passes != 1 {
+	if passes := getPasses(model.LocalModel{}, onnx.ProviderCUDA); passes != 1 {
 		t.Errorf("expected 1 pass for CUDA, got %d", passes)
 	}
 
-	if passes := (LocalModel{PassBudget: 5}).GetPasses(onnx.ProviderCPU); passes != 5 {
+	if passes := getPasses(model.LocalModel{PassBudget: 5}, onnx.ProviderCPU); passes != 5 {
 		t.Errorf("expected 5 passes for PassBudget=5, got %d", passes)
 	}
-	if passes := (LocalModel{PassBudget: 1}).GetPasses(onnx.ProviderCPU); passes != 1 {
+	if passes := getPasses(model.LocalModel{PassBudget: 1}, onnx.ProviderCPU); passes != 1 {
 		t.Errorf("expected 1 pass for PassBudget=1, got %d", passes)
 	}
 
 	// Verify querying GOMAXPROCS does not mutate it (calling twice gives consistent result)
 	runtime.GOMAXPROCS(4)
-	if p1 := (LocalModel{}).GetPasses(onnx.ProviderCPU); p1 != 2 {
+	if p1 := getPasses(model.LocalModel{}, onnx.ProviderCPU); p1 != 2 {
 		t.Errorf("expected 2 passes for 4 cpus, got %d", p1)
 	}
-	if p2 := (LocalModel{}).GetPasses(onnx.ProviderCPU); p2 != 2 {
+	if p2 := getPasses(model.LocalModel{}, onnx.ProviderCPU); p2 != 2 {
 		t.Errorf("expected 2 passes on repeated call, got %d", p2)
 	}
 
@@ -136,20 +56,20 @@ func TestLocalModelGetPasses(t *testing.T) {
 		{cpus: 5, want: 3},
 	} {
 		runtime.GOMAXPROCS(tc.cpus)
-		if got := (LocalModel{}).GetPasses(onnx.ProviderCPU); got != tc.want {
+		if got := getPasses(model.LocalModel{}, onnx.ProviderCPU); got != tc.want {
 			t.Errorf("GetPasses with GOMAXPROCS=%d: got %d, want %d", tc.cpus, got, tc.want)
 		}
 	}
 }
 
 func TestLocalModelGetProvider(t *testing.T) {
-	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderAuto {
+	if p := getProvider(model.LocalModel{}); p != onnx.ProviderAuto {
 		t.Errorf("expected default ProviderAuto, got %v", p)
 	}
-	if p := (LocalModel{Provider: "invalid"}).GetProvider(); p != onnx.ProviderAuto {
+	if p := getProvider(model.LocalModel{Provider: "invalid"}); p != onnx.ProviderAuto {
 		t.Errorf("expected ProviderAuto for invalid provider, got %v", p)
 	}
-	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnx.ProviderCPU {
+	if p := getProvider(model.LocalModel{Provider: "cpu"}); p != onnx.ProviderCPU {
 		t.Errorf("expected ProviderCPU, got %v", p)
 	}
 }
@@ -159,69 +79,27 @@ func TestLocalModelGetThreads(t *testing.T) {
 	defer runtime.GOMAXPROCS(prev)
 	runtime.GOMAXPROCS(2)
 
-	if th := (LocalModel{Threads: 4}).GetThreads(); th != 4 {
+	if th := getThreads(model.LocalModel{Threads: 4}); th != 4 {
 		t.Errorf("expected 4 threads, got %d", th)
 	}
-	if th := (LocalModel{Threads: 1}).GetThreads(); th != 1 {
+	if th := getThreads(model.LocalModel{Threads: 1}); th != 1 {
 		t.Errorf("expected 1 thread, got %d", th)
 	}
-	if th := (LocalModel{}).GetThreads(); th != onnx.GetDefaultThreads() {
+	if th := getThreads(model.LocalModel{}); th != onnx.GetDefaultThreads() {
 		t.Errorf("expected default threads, got %d", th)
-	}
-}
-
-func TestLocalModelGetAddress(t *testing.T) {
-	m1 := LocalModel{Name: "Xenova/bge-m3"}
-	if addr := m1.GetAddress(); addr != "local:Xenova/bge-m3/model.onnx" {
-		t.Errorf("expected local:Xenova/bge-m3/model.onnx, got %s", addr)
-	}
-
-	m2 := LocalModel{Name: "model", Dir: "custom/path", File: "weights.onnx"}
-	if addr := m2.GetAddress(); addr != "local:custom/path/weights.onnx" {
-		t.Errorf("expected local:custom/path/weights.onnx, got %s", addr)
-	}
-}
-
-func TestNewConfigIsPinnedForTheCuratedModels(t *testing.T) {
-	for _, id := range []string{"Xenova/bge-m3", DefaultModel} {
-		_, local := newTestConfig(t, id)
-		requirePins(t, id, local)
-	}
-}
-
-func requirePins(t *testing.T, id string, local LocalModel) {
-	t.Helper()
-	if len(local.Revision) != 40 {
-		t.Errorf("%s: revision %q is not a commit", id, local.Revision)
-	}
-	for _, name := range []string{ModelFolder + "/" + local.File, TokenizerFile} {
-		if len(local.Sums[name]) != 64 {
-			t.Errorf("%s: %s has no sha256 pinned: %q", id, name, local.Sums[name])
-		}
-	}
-}
-
-func TestWithRepositoryDropsThePins(t *testing.T) {
-	_, local := newTestConfig(t, "Xenova/bge-m3")
-	other := local.WithRepository("owner/repo")
-	if other.Name != "owner/repo" || other.Revision != "" || other.Sums != nil {
-		t.Errorf("WithRepository() = %+v", other)
-	}
-	if local.Name != "Xenova/bge-m3" || local.Revision == "" || local.Sums == nil {
-		t.Errorf("WithRepository changed the receiver: %+v", local)
 	}
 }
 
 func TestLocalModel_GetProviderFallsBackToHostEnv(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_PROVIDER", "cpu")
-	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderCPU {
+	if p := getProvider(model.LocalModel{}); p != onnx.ProviderCPU {
 		t.Errorf("expected the host's ProviderCPU, got %v", p)
 	}
 	t.Setenv("NUMEN_ONNX_PROVIDER", "cuda")
-	if p := (LocalModel{Provider: "cpu"}).GetProvider(); p != onnx.ProviderCPU {
+	if p := getProvider(model.LocalModel{Provider: "cpu"}); p != onnx.ProviderCPU {
 		t.Errorf("expected the model's ProviderCPU, got %v", p)
 	}
-	if p := (LocalModel{}).GetProvider(); p != onnx.ProviderCUDA {
+	if p := getProvider(model.LocalModel{}); p != onnx.ProviderCUDA {
 		t.Errorf("expected the host's ProviderCUDA, got %v", p)
 	}
 }
@@ -231,7 +109,7 @@ func TestNewConfigRunsOnePassWhateverTheCPUCount(t *testing.T) {
 	defer runtime.GOMAXPROCS(prev)
 	runtime.GOMAXPROCS(16)
 
-	info, local := newTestConfig(t, DefaultModel)
+	info, local := newTestConfig(t, model.DefaultModel)
 
 	if got := resolvePasses(local, onnx.ProviderCPU, info); got != 1 {
 		t.Errorf("expected one pass at a time, got %d", got)
@@ -239,8 +117,8 @@ func TestNewConfigRunsOnePassWhateverTheCPUCount(t *testing.T) {
 }
 
 func TestGetPassBytesAndMemoryBounds(t *testing.T) {
-	if got := GetDefaultBatchTexts(); got != 8 {
-		t.Errorf("GetDefaultBatchTexts() = %d, want 8", got)
+	if got := model.GetDefaultBatchTexts(); got != 8 {
+		t.Errorf("model.GetDefaultBatchTexts() = %d, want 8", got)
 	}
 	if got := getPassBytes(0, 0, 0); got != 20 {
 		t.Errorf("getPassBytes(0, 0, 0) = %d, want 20", got)
@@ -279,21 +157,21 @@ func TestGetPassBytesAndMemoryBounds(t *testing.T) {
 		t.Errorf("getPassesWithinMemory with memory=2*passBytes: got %d, want 2", got)
 	}
 
-	info := ModelInfo{Dimensions: 64, MaxTokens: 64}
-	if got := resolvePasses(LocalModel{Sessions: 3, PassMemory: 1}, onnx.ProviderCPU, info); got != 3 {
+	info := model.ModelInfo{Dimensions: 64, MaxTokens: 64}
+	if got := resolvePasses(model.LocalModel{Sessions: 3, PassMemory: 1}, onnx.ProviderCPU, info); got != 3 {
 		t.Errorf("resolvePasses with explicit Sessions=3: got %d, want 3", got)
 	}
-	if got := resolvePasses(LocalModel{PassBudget: 3, PassMemory: 1}, onnx.ProviderCPU, info); got != 1 {
+	if got := resolvePasses(model.LocalModel{PassBudget: 3, PassMemory: 1}, onnx.ProviderCPU, info); got != 1 {
 		t.Errorf("resolvePasses with PassBudget=3 and tight memory: got %d, want 1", got)
 	}
-	if got := resolvePasses(LocalModel{BatchTexts: 1, PassBudget: 3, PassMemory: passBytes * 2}, onnx.ProviderCPU, info); got != 2 {
+	if got := resolvePasses(model.LocalModel{BatchTexts: 1, PassBudget: 3, PassMemory: passBytes * 2}, onnx.ProviderCPU, info); got != 2 {
 		t.Errorf("resolvePasses with BatchTexts=1 and memory for 2 passes: got %d, want 2", got)
 	}
 }
 
-func newTestConfig(t *testing.T, id string) (ModelInfo, LocalModel) {
+func newTestConfig(t *testing.T, id string) (model.ModelInfo, model.LocalModel) {
 	t.Helper()
-	profiles, err := GetShippedProfiles()
+	profiles, err := model.GetShippedProfiles()
 	if err != nil {
 		t.Fatalf("GetShippedProfiles: %v", err)
 	}
@@ -301,5 +179,14 @@ func newTestConfig(t *testing.T, id string) (ModelInfo, LocalModel) {
 	if err != nil {
 		t.Fatalf("GetLocal(%s): %v", id, err)
 	}
-	return NewConfig(profile)
+	return model.NewConfig(profile)
+}
+
+func getShipped(t *testing.T) *model.Profiles {
+	t.Helper()
+	table, err := model.GetShippedProfiles()
+	if err != nil {
+		t.Fatalf("GetShippedProfiles: %v", err)
+	}
+	return table
 }

@@ -8,9 +8,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/chunking"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // Machine is the process the server runs in.
@@ -23,12 +23,12 @@ type Machine interface {
 // ProfileSource reads the model profiles. It returns the profiles it could read together with the
 // error that kept it from reading the shipped ones.
 type ProfileSource interface {
-	Load() (*engine.Profiles, error)
+	Load() (*model.Profiles, error)
 }
 
 // Environment is what the process environment sets for the model.
 type Environment interface {
-	GetOverrides() engine.Overrides
+	GetOverrides() model.Overrides
 	GetServiceURL() string
 	IsMockModel() bool
 	GetMockLogPath() string
@@ -36,7 +36,10 @@ type Environment interface {
 }
 
 // OpenEmbedder loads the model a server embeds with.
-type OpenEmbedder func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (loading.Embedder, error)
+type OpenEmbedder func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (loading.Embedder, error)
+
+// NewMockEmbedder returns the stand-in for the model that appends the texts it is given to the file at logPath, when logPath is not empty.
+type NewMockEmbedder func(logPath string) loading.Embedder
 
 // FetchVectors asks a remote service for one vector per text.
 type FetchVectors func(ctx context.Context, key, baseURL, model string, texts []string) ([][]float32, error)
@@ -47,6 +50,7 @@ type Ports struct {
 	Profiles     ProfileSource
 	Environment  Environment
 	OpenLocal    OpenEmbedder
+	NewMock      NewMockEmbedder
 	FetchVectors FetchVectors
 	Report       func(what string, err error)
 }
@@ -59,16 +63,17 @@ type Server struct {
 	fetchVectors FetchVectors
 	report       func(what string, err error)
 
-	modelInfo   engine.ModelInfo
-	localModel  engine.LocalModel
-	localInfo   engine.ModelInfo
+	modelInfo   model.ModelInfo
+	localModel  model.LocalModel
+	localInfo   model.ModelInfo
 	localErr    error
 	profilesErr error
 	localKey    string
 
-	profiles *engine.Profiles
+	profiles *model.Profiles
 
 	open    OpenEmbedder
+	newMock NewMockEmbedder
 	isMock  bool
 	mockLog string
 
@@ -89,20 +94,21 @@ type Server struct {
 // modelSpec is the model one load opens, with the function that opens it.
 type modelSpec struct {
 	open  OpenEmbedder
-	info  engine.ModelInfo
-	local engine.LocalModel
+	info  model.ModelInfo
+	local model.LocalModel
 }
 
 // New returns a server with the model the environment names, or the default model.
 func New(ports Ports) *Server {
-	var none engine.ModelInfo
-	var noLocal engine.LocalModel
+	var none model.ModelInfo
+	var noLocal model.LocalModel
 	s := &Server{
 		machine: ports.Machine, profileSrc: ports.Profiles, env: ports.Environment,
 		fetchVectors: ports.FetchVectors, report: ports.Report,
 		modelInfo: none, localModel: noLocal, localInfo: none, localErr: nil,
 		profilesErr: nil, localKey: "", profiles: nil, mockLog: "", localName: "",
 		open:        ports.OpenLocal,
+		newMock:     ports.NewMock,
 		isMock:      false,
 		chunkTokens: chunking.DefaultTokens,
 		mu:          sync.Mutex{},
@@ -127,7 +133,7 @@ func New(ports Ports) *Server {
 }
 
 func (s *Server) useMockModel() {
-	s.modelInfo = engine.GetMockModel()
+	s.modelInfo = model.GetMockModel()
 	s.modelInfo.MinChunkLength = chunking.DefaultMinLength
 	s.modelInfo.ChunkTokens = chunking.ClampTokens(chunking.DefaultTokens, s.modelInfo.MaxTokens)
 	s.isMock = true
@@ -166,7 +172,7 @@ func (s *Server) getStartLocked() loading.Start[modelSpec] {
 }
 
 func (s *Server) getLimitsLocked() limits.Run {
-	return limits.GetRun(s.profile, s.machine.CountCPUs(), engine.GetDefaultBatchTexts())
+	return limits.GetRun(s.profile, s.machine.CountCPUs(), model.GetDefaultBatchTexts())
 }
 
 func (s *Server) applyProfileLocked(profile performance.Profile) {
@@ -189,11 +195,11 @@ func (s *Server) applyProfileLocked(profile performance.Profile) {
 	}
 }
 
-func (s *Server) openMockModel(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+func (s *Server) openMockModel(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 	if err := s.env.WaitMockOpenHold(ctx); err != nil {
 		return nil, err
 	}
-	return engine.MockEmbedder{LogPath: s.mockLog}, nil
+	return s.newMock(s.mockLog), nil
 }
 
 // Close ends the load of the model and closes the loaded model.
