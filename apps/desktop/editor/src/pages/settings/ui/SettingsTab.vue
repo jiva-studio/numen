@@ -13,28 +13,9 @@ import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const {
-  installation,
-  searchQuery: initialSearchQuery,
-  selectedPluginId,
-  plugins,
-  uninstalled,
-  selectedPlugin,
-  actions,
-} = useSettingsTab(props.state)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onSelectPlugin(pluginId: string): void {
-  actions.selectPlugin(pluginId)
-}
-
-function onUpdateQuery(query: string): void {
-  actions.updateQuery(query)
-}
-
-function onBack(): void {
-  actions.goBack()
-}
+const { installation, initialSearchQuery } = props.state
+const { selectedPluginId, plugins, uninstalled, selectedPlugin, selectPlugin, updateQuery, goBack } =
+  useSettingsTab(props.state)
 </script>
 
 <template>
@@ -46,14 +27,14 @@ function onBack(): void {
           :settings="installation.settings"
           :manager="installation.plugin"
           :choices="installation.secrets"
-          @back="onBack"
-          @open-secrets="onSelectPlugin('secrets')"
+          @back="goBack"
+          @open-secrets="selectPlugin('secrets')"
         />
         <SecretsPage
           v-else-if="selectedPluginId === 'secrets'"
           :secrets="installation.secrets"
           :plugins="plugins"
-          @back="onBack"
+          @back="goBack"
         />
         <PluginDetail
           v-else-if="selectedPlugin"
@@ -62,18 +43,18 @@ function onBack(): void {
           :manager="installation.plugin"
           :choices="installation.secrets"
           :plugin="selectedPlugin"
-          @back="onBack"
-          @open-secrets="onSelectPlugin('secrets')"
+          @back="goBack"
+          @open-secrets="selectPlugin('secrets')"
         />
-        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
+        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="goBack" />
         <PluginsList
           v-else
           :settings="installation.settings"
           :catalog="installation.plugin.catalog.value"
-          :query="initialSearchQuery"
+          :query="initialSearchQuery.value"
           :plugins="plugins"
-          @select-plugin="onSelectPlugin"
-          @update:query="onUpdateQuery"
+          @select-plugin="selectPlugin"
+          @update:query="updateQuery"
         />
       </div>
     </div>

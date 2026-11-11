@@ -40,6 +40,7 @@ const { frame } = parts.base
 const { windowTabs } = parts.base.tabs
 const { tabLinks } = parts.base.tabs
 const { closeTab } = windowTabs
+const { onTabShown: showTab } = windowTabs.panes
 const { layout } = windowTabs.panes
 const { moves, openTabs, linkSession, openCurrentVault } = parts.tabs
 const { highlightWindow, detachTab } = moves
@@ -73,14 +74,6 @@ const tabMenu = useWindowTabMenu({
   reportError: (error: Caught) => commandDeps.writeMessage(formatError(error), 'error'),
 })
 
-/* -------------------------------- Handlers -------------------------------- */
-function onCloseTab(id: string, hold?: () => void) {
-  closeTab(id, hold)
-}
-
-function onShowTab(id: string) {
-  windowTabs.panes.onTabShown(id)
-}
 </script>
 
 <template>
@@ -99,8 +92,8 @@ function onShowTab(id: string) {
       :tabs="windowTabs.tabs.tabs.value"
       :window-edge="titleBarView ? undefined : frame.windowEdge.value"
       :tab-menu="tabMenu.menu.value"
-      @close="onCloseTab"
-      @show="onShowTab"
+      @close="closeTab"
+      @show="showTab"
       @tab-context-menu="tabMenu.open"
       @tab-menu-choose="tabMenu.choose"
       @tab-menu-dismiss="tabMenu.dismiss"
