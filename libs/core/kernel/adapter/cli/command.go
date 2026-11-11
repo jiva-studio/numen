@@ -28,13 +28,13 @@ type group struct {
 	list    func() []command
 }
 
-// registry holds the built-in commands and those the plugins declare, in the order help lists them.
-type registry struct {
+// commandRegistry holds the built-in commands and those the plugins declare, in the order help lists them.
+type commandRegistry struct {
 	groups []group
 }
 
-func newRegistry(deps Deps) registry {
-	return registry{groups: []group{
+func newCommandRegistry(deps Deps) commandRegistry {
+	return commandRegistry{groups: []group{
 		{list: func() []command { return getBuiltinCommands(deps) }},
 		{heading: "commands of the plugins:", list: func() []command { return listDeclaredCommands(deps) }},
 		{heading: "shared commands, run by the handler of a plugin:", list: func() []command { return listSharedCommands(deps) }},
@@ -81,8 +81,7 @@ func listSharedCommands(deps Deps) []command {
 	return commands
 }
 
-// find returns the command of the name, searching the groups in order.
-func (r registry) find(name string) (command, bool) {
+func (r commandRegistry) find(name string) (command, bool) {
 	if name == "-h" || name == "--help" {
 		name = "help"
 	}
@@ -106,10 +105,10 @@ func (helpCommand) Name() string { return "help" }
 func (helpCommand) Synopsis() string { return "" }
 
 func (c helpCommand) Run(_ context.Context, term terminal, _ []string) error {
-	return writeUsage(term.out, newRegistry(c.deps))
+	return writeUsage(term.out, newCommandRegistry(c.deps))
 }
 
-func writeUsage(out io.Writer, r registry) error {
+func writeUsage(out io.Writer, r commandRegistry) error {
 	w := newReporter(out)
 	for i, g := range r.groups {
 		var lines []string

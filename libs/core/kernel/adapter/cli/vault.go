@@ -271,7 +271,7 @@ func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string
 }
 
 func confirmErase(out io.Writer, v domain.Vault) (bool, error) {
-	r := newReporter(term.out)
+	r := newReporter(out)
 	r.Printf("erase %s?\n  %s goes to the trash\n"+
 		"  the vault leaves the list and the index\ntype yes to erase it: ", v.Name, v.Path)
 	if err := r.Err(); err != nil {

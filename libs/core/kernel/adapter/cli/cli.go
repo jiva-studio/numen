@@ -65,7 +65,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	deps := open(where)
 
 	rest := fs.Args()
-	commands := newRegistry(deps)
+	commands := newCommandRegistry(deps)
 	if len(rest) == 0 {
 		if err := writeUsage(out, commands); err != nil {
 			return err
