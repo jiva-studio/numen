@@ -83,18 +83,21 @@ export function registerTabKindEntry(
     : createCustomTabKind(pluginId, registration, { ...deps, getContext })
   const cleanups: (() => void)[] = [deps.registerKind(kind)]
   if (deps.registerEditor) {
-    const unreg = deps.registerEditor(registration.kind, (path, _title, options) => {
-      const where = extractWhere(options)
-      if (where === 'split' && deps.openTabAdjacent) {
-        deps
-          .openTabAdjacent(registration.kind, path)
-          .catch((error: Caught) => reportError(deps, pluginId, error))
-      } else {
-        deps
-          .openTab(registration.kind, path)
-          .catch((error: Caught) => reportError(deps, pluginId, error))
-      }
-    })
+    const unreg = deps.registerEditor(
+      registration.kind,
+      (path, _title, options) => {
+        const where = extractWhere(options)
+        if (where === 'split' && deps.openTabAdjacent) {
+          deps
+            .openTabAdjacent(registration.kind, path)
+            .catch((error: Caught) => reportError(deps, pluginId, error))
+        } else {
+          deps
+            .openTab(registration.kind, path)
+            .catch((error: Caught) => reportError(deps, pluginId, error))
+        }
+      },
+    )
     if (typeof unreg === 'function') cleanups.push(unreg)
   }
   let isDisposed = false

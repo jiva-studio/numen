@@ -4,7 +4,14 @@
  * host adds the plugin's stylesheet while the view is drawn and removes it with the view.
  * Without a view it draws nothing.
  */
-import { computed, defineComponent, h, onBeforeUnmount, watch, type PropType } from 'vue'
+import {
+  computed,
+  defineComponent,
+  h,
+  onBeforeUnmount,
+  watch,
+  type PropType,
+} from 'vue'
 import { adoptPluginStyle, getPluginStyle } from '../styles'
 import type { DeclaredSlotView } from './slotViews'
 
@@ -49,6 +56,8 @@ export const SlotViewHost = defineComponent({
     const views = computed(() => (props.view ? [props.view] : []))
     usePluginStyles(() => views.value)
     return () =>
-      props.view ? h(props.view.registration.component, { key: props.view.pluginId }) : null
+      props.view
+        ? h(props.view.registration.component, { key: props.view.pluginId })
+        : null
   },
 })

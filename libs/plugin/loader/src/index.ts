@@ -38,7 +38,11 @@ export {
   type SlotViewRegistry,
 } from './slot-views'
 export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
-export { createExternalOpener, isWebAddress, type ExternalOpener } from './externalOpener'
+export {
+  createExternalOpener,
+  isWebAddress,
+  type ExternalOpener,
+} from './externalOpener'
 export { createAgentPort, type AgentClient } from './agentPort'
 export { resolveTextLinks, type LinkClient } from './textLinks'
 export { createPluginTexts } from './pluginTexts'

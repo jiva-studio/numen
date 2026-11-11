@@ -131,9 +131,7 @@ export function createKeybindingRegistry(deps: KeybindingRegistryDeps): Keybindi
 
   return {
     register: (owner, sources) => {
-      const added = sources.flatMap(
-        (source) => readKeybinding(owner, source, { whenReader, report }) ?? [],
-      )
+      const added = sources.flatMap((source) => readKeybinding(owner, source, { whenReader, report }) ?? [])
       keybindings = [...keybindings.filter((one) => one.owner !== owner), ...added]
     },
     unregister: (owner) => {

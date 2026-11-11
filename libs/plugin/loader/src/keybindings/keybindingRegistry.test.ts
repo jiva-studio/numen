@@ -7,11 +7,7 @@ const CTRL_P = press({ code: 'KeyP', ctrlKey: true })
 
 function create(isMac = false) {
   const report = vi.fn()
-  const registry = createKeybindingRegistry({
-    isMac: () => isMac,
-    whenReader: createWhenReader(),
-    report,
-  })
+  const registry = createKeybindingRegistry({ isMac: () => isMac, whenReader: createWhenReader(), report })
   return { registry, report }
 }
 
@@ -98,9 +94,7 @@ describe('the keybinding registry', () => {
   describe('conditions', () => {
     it('match only where the condition holds over the context', () => {
       const { registry } = create()
-      registry.register('app', [
-        bind('mod+p', 'app:commands.open', { when: '!window.isFieldFocused' }),
-      ])
+      registry.register('app', [bind('mod+p', 'app:commands.open', { when: '!window.isFieldFocused' })])
 
       expect(registry.match(CTRL_P, { 'window.isFieldFocused': false })).toBeDefined()
       expect(registry.match(CTRL_P, { 'window.isFieldFocused': true })).toBeUndefined()
@@ -115,19 +109,12 @@ describe('the keybinding registry', () => {
 
     it('leave out a keybinding whose condition cannot be read, and report it once', () => {
       const { registry, report } = create()
-      registry.register('org.example.ledger', [
-        bind('mod+p', 'ledger.open', { when: 'nowhere.at.all' }),
-      ])
-      registry.register('org.example.ledger', [
-        bind('mod+p', 'ledger.open', { when: 'nowhere.at.all' }),
-      ])
+      registry.register('org.example.ledger', [bind('mod+p', 'ledger.open', { when: 'nowhere.at.all' })])
+      registry.register('org.example.ledger', [bind('mod+p', 'ledger.open', { when: 'nowhere.at.all' })])
 
       expect(registry.match(CTRL_P, {})).toBeUndefined()
       expect(report).toHaveBeenCalledOnce()
-      expect(report).toHaveBeenCalledWith(
-        'org.example.ledger',
-        expect.stringContaining('nowhere.at.all'),
-      )
+      expect(report).toHaveBeenCalledWith('org.example.ledger', expect.stringContaining('nowhere.at.all'))
     })
 
     it('leave out a keybinding whose key cannot be read, and report it', () => {
@@ -141,9 +128,7 @@ describe('the keybinding registry', () => {
     it('leave out a keybinding that canRun refuses, so a weaker one can win', () => {
       const { registry } = create()
       registry.register('app', [bind('mod+p', 'app:commands.open')])
-      registry.register('org.example.ledger', [
-        bind('mod+p', 'ledger.open', { when: '!window.isPaletteOpen' }),
-      ])
+      registry.register('org.example.ledger', [bind('mod+p', 'ledger.open', { when: '!window.isPaletteOpen' })])
 
       const found = registry.match(CTRL_P, {}, (one) => one.owner !== 'app')
 
@@ -177,9 +162,7 @@ describe('the keybinding registry', () => {
         bind('mod+p', 'b.open', { when: 'window.isFieldFocused && !window.isPaletteOpen' }),
       ])
 
-      expect(registry.match(CTRL_P, { 'window.isFieldFocused': true })?.command).toBe(
-        'org.example.b:b.open',
-      )
+      expect(registry.match(CTRL_P, { 'window.isFieldFocused': true })?.command).toBe('org.example.b:b.open')
     })
 
     it('is won by the application over a plugin when the conditions are as wide', () => {
@@ -205,9 +188,7 @@ describe('the keybinding registry', () => {
 
     it('is no conflict when the other condition does not hold', () => {
       const { registry, report } = create()
-      registry.register('org.example.a', [
-        bind('mod+p', 'a.open', { when: 'window.isPaletteOpen' }),
-      ])
+      registry.register('org.example.a', [bind('mod+p', 'a.open', { when: 'window.isPaletteOpen' })])
       registry.register('org.example.b', [bind('mod+p', 'b.open')])
 
       registry.match(CTRL_P, { 'window.isPaletteOpen': false })
