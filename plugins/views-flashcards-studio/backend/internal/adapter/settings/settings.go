@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 // settingDayStart is the setting that defines when a day of review begins.

@@ -14,9 +14,9 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 // GetSettingsBounds returns how far each setting of a preset may go, as the

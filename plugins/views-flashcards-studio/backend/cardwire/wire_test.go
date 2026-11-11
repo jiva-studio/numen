@@ -7,9 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 )
 
 func requireEqual(t *testing.T, got, want any) {

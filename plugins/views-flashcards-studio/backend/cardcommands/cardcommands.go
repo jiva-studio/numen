@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 )
 
 // The commands the manifest declares, and the argument each takes.

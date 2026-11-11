@@ -1,0 +1,308 @@
+package review_test
+
+import (
+	"fmt"
+	"math"
+	"slices"
+	"testing"
+	"time"
+
+	"pgregory.net/rapid"
+
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+)
+
+func makeAnswers(
+	pos time.Time, reviewCards, each int, took func(reviewCard, step int) time.Duration,
+) []review.Answer {
+	var out []review.Answer
+	for reviewCard := range reviewCards {
+		on := review.CardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognize"}
+		for step := range each {
+			out = append(out, review.Answer{
+				ID: fmt.Sprintf("%06d", len(out)), ReviewCard: on,
+				At:     pos.Add(time.Duration(len(out)) * time.Hour),
+				Rating: review.Good, Took: took(reviewCard, step),
+			})
+		}
+	}
+	return out
+}
+
+// What an answer costs is the median of the answers of its kind: half of them
+// fall on either side of it, so a single outlier moves it by one position and
+// not by minutes.
+func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
+	delta := review.NewFSRS()
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
+
+	// Twelve review cards answered three times each: three seconds while a card
+	// review card is being learned and nine once it is scheduled in days. One of them
+	// stayed on the screen for an hour every time.
+	answers := makeAnswers(pos, 12, 3, func(reviewCard, step int) time.Duration {
+		switch {
+		case reviewCard == 0:
+			return time.Hour
+		case step < 2:
+			return 3 * time.Second
+		default:
+			return 9 * time.Second
+		}
+	})
+
+	cost := getCost(delta, answers)
+	if cost.New != 3*time.Second {
+		t.Errorf("a card being learned costs %v, want 3s", cost.New)
+	}
+	if cost.Review != 9*time.Second {
+		t.Errorf("a review costs %v, want 9s", cost.Review)
+	}
+	if !cost.ShouldReadNew || !cost.ShouldReadReview {
+		t.Errorf("cost = %+v, want both halves read from the answers", cost)
+	}
+}
+
+// A history too short to determine what one answer kind costs leaves that kind
+// at the default and reports it.
+func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
+	delta := review.NewFSRS()
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
+
+	// One review card answered once, for fifty-five seconds.
+	answers := makeAnswers(pos, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
+
+	cost := getCost(delta, answers)
+	if cost != review.GetDefaultCost() {
+		t.Errorf("cost = %+v, want the default %+v", cost, review.GetDefaultCost())
+	}
+	if cost.ShouldReadNew || cost.ShouldReadReview {
+		t.Errorf("cost = %+v, want neither half read from the answers", cost)
+	}
+}
+
+// The two kinds of answer are counted apart: a history of one kind leaves the
+// other at the default and reports which of the two it is.
+func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
+	delta := review.NewFSRS()
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
+
+	// Twelve review cards answered twice each, which is a vault holding no answer
+	// to a card that comes round in days.
+	answers := makeAnswers(pos, 12, 2, func(int, int) time.Duration { return 30 * time.Second })
+
+	cost := getCost(delta, answers)
+	if cost.New != 30*time.Second || !cost.ShouldReadNew {
+		t.Errorf("a card being learned costs %v, read %t, want 30s read", cost.New, cost.ShouldReadNew)
+	}
+	if cost.Review != review.GetDefaultCost().Review || cost.ShouldReadReview {
+		t.Errorf("a review costs %v, read %t, want the default %v unread",
+			cost.Review, cost.ShouldReadReview, review.GetDefaultCost().Review)
+	}
+}
+
+// A history of key hits is costed at the shortest an answer is costed at, so a
+// day is never priced at more cards than can be answered.
+func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
+	delta := review.NewFSRS()
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
+
+	answers := makeAnswers(pos, 12, 3, func(int, int) time.Duration { return 20 * time.Millisecond })
+
+	cost := getCost(delta, answers)
+	if cost.New != review.ShortestAnswer || cost.Review != review.ShortestAnswer {
+		t.Errorf("cost = %+v, want both halves at %v", cost, review.ShortestAnswer)
+	}
+}
+
+// An abandoned answer is capped at the longest cost, so an hour away from the
+// screen does not count as an hour of review.
+func TestAnUnattendedAnswerIsCappedAtTheLongest(t *testing.T) {
+	delta := review.NewFSRS()
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
+
+	// Every answer stayed on the screen for an hour, so the median of them is
+	// what one answer is capped at.
+	answers := makeAnswers(pos, 12, 3, func(int, int) time.Duration { return time.Hour })
+
+	cost := getCost(delta, answers)
+	if cost.New != review.LongestAnswer || cost.Review != review.LongestAnswer {
+		t.Errorf("cost = %+v, want both halves at %v", cost, review.LongestAnswer)
+	}
+}
+
+// A vault holding no answer times is projected at the default, and not at
+// nothing a minute.
+func TestAVaultContainingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
+	if got := getCost(review.NewFSRS(), nil); got != review.GetDefaultCost() {
+		t.Errorf("cost = %+v, want the default %+v", got, review.GetDefaultCost())
+	}
+}
+
+// An answer carrying no time reveals nothing about how long its kind takes, so
+// only the answers that carry a time determine a cost.
+func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
+	delta := review.NewFSRS()
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
+
+	// Twenty-four review cards answered three times each, at nine seconds an
+	// answer. Half the review cards were answered with no time recorded at all.
+	answers := makeAnswers(pos, 24, 3, func(reviewCard, _ int) time.Duration {
+		if reviewCard%2 == 0 {
+			return 0
+		}
+		return 9 * time.Second
+	})
+
+	cost := getCost(delta, answers)
+	if cost.New != 9*time.Second || cost.Review != 9*time.Second {
+		t.Errorf("cost = %+v, want both halves at 9s", cost)
+	}
+}
+
+func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost {
+	const group = "all"
+	underMap := make(map[review.CardID]string)
+	for _, a := range answers {
+		underMap[a.ReviewCard] = group
+	}
+	costs := review.GetCostUnder(delta, answers, underMap)
+	if cost, ok := costs[group]; ok {
+		return cost
+	}
+	return review.GetDefaultCost()
+}
+
+func drawDivision(t *rapid.T) (int, []int) {
+	demands := rapid.SliceOfN(rapid.IntRange(0, 400), 0, 8).Draw(t, "demands")
+	return rapid.IntRange(0, 1200).Draw(t, "budget"), demands
+}
+
+func getTotalDemand(demands []int) int {
+	out := 0
+	for _, one := range demands {
+		out += one
+	}
+	return out
+}
+
+// A day is distributed whole: the decks together take the budget when it is
+// smaller than the total due, and the whole total due when it is not. No
+// unusable remainder is left on the day.
+//
+// A preset's day is divided over the decks it schedules.
+func TestTheSharesOfADayAreHandedOutWhole(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, demands := drawDivision(t)
+		got := getTotalDemand(review.DivideBudget(budget, demands))
+		want := min(budget, getTotalDemand(demands))
+		if got != want {
+			t.Fatalf("a budget of %v over %v handed out %v, want %v",
+				budget, demands, got, want)
+		}
+	})
+}
+
+// No deck takes more of the day than it has due, and a deck with nothing due
+// takes nothing: a share is bounded by what the deck has due, so a deck with
+// nothing due receives no share.
+//
+// The shares are proportional to what is due in each deck.
+func TestDivideBudget_ShareNeverExceedsDemand(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, demands := drawDivision(t)
+		for item, share := range review.DivideBudget(budget, demands) {
+			if share < 0 || share > demands[item] {
+				t.Fatalf("a deck with %v due took %v of a budget of %v over %v",
+					demands[item], share, budget, demands)
+			}
+		}
+	})
+}
+
+// Shares are proportional to what each deck has due: three decks with the same count due take
+// a third each, and a deck with nine times another's count takes nine times the share. What the
+// proportions leave over is under one card a deck, and goes by the largest fraction.
+func TestDivideBudget_SharesAreProportional(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, demands := drawDivision(t)
+		total := getTotalDemand(demands)
+		if total <= 0 || budget >= total {
+			return
+		}
+		for item, share := range review.DivideBudget(budget, demands) {
+			exact := float64(budget) * float64(demands[item]) / float64(total)
+			if float64(share) < math.Floor(exact) || float64(share) > math.Ceil(exact) {
+				t.Fatalf("a deck with %v of %v due took %v of a budget of %v, "+
+					"where its proportion of it is %v",
+					demands[item], total, share, budget, exact)
+			}
+		}
+	})
+}
+
+// A deck with more due never takes less of the day than a deck with less due,
+// and decks with the same count due take what is left over in the order they are given.
+//
+// A deck with nine times another's count due takes nine times the share, and where the
+// fractions are equal the deck with more due takes the remainder.
+func TestADeckWithMoreDueNeverConsumesLess(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, demands := drawDivision(t)
+		out := review.DivideBudget(budget, demands)
+		for i := range demands {
+			for j := range demands {
+				ahead := demands[i] > demands[j] || (demands[i] == demands[j] && i < j)
+				if ahead && out[i] < out[j] {
+					t.Fatalf("a deck with %v due took %v where one with %v due took %v, "+
+						"out of a budget of %v over %v",
+						demands[i], out[i], demands[j], out[j], budget, demands)
+				}
+			}
+		}
+	})
+}
+
+// The decks take the same shares between them whatever order they are given in. A share is
+// computed from the amount its deck has due and nothing else, so renaming a deck's file moves no
+// card from one deck to another. Where fractions are equal the deck with more due takes the
+// remainder.
+func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, demands := drawDivision(t)
+		places := make([]int, len(demands))
+		for item := range places {
+			places[item] = item
+		}
+		otherwise := make([]int, len(demands))
+		for entry, one := range rapid.Permutation(places).Draw(t, "order") {
+			otherwise[entry] = demands[one]
+		}
+
+		was, now := review.DivideBudget(budget, demands), review.DivideBudget(budget, otherwise)
+		slices.Sort(was)
+		slices.Sort(now)
+		if !slices.Equal(was, now) {
+			t.Fatalf("a budget of %v over %v was handed out as %v, and as %v "+
+				"with the decks given in another order", budget, demands, was, now)
+		}
+	})
+}
+
+// Decks with different counts due have the same fraction: half a day leaves an odd count due
+// half a card over, whatever the count, so one due and seven due are equal. The two remaining
+// cards go to the two decks with the most due among those with equal fractions, not to the decks
+// with one card due each.
+func TestDecksLevelOnTheFractionAreSplitByWhatTheyOwe(t *testing.T) {
+	t.Parallel()
+	demands := []int{0, 1, 1, 7, 239, 400}
+	want := []int{0, 0, 0, 4, 120, 200}
+	if got := review.DivideBudget(324, demands); !slices.Equal(got, want) {
+		t.Fatalf("half a day over %v was handed out as %v, want %v",
+			demands, got, want)
+	}
+}

@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 // The vault list shown to the user is built from the first message, and
