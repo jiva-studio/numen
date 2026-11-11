@@ -31,7 +31,7 @@ The plugin runs scenarios over notes in a vault: cards, decks, review, schedules
 - `backend/ports/ports.go` declares what the scenarios require, in their vocabulary: `Clock` (`:32`), `VaultReader` (`:37`), and the writers, queries and stores after it. The package comment states that a use case does not depend on how the host implements them.
 - `backend/cards`, `backend/flashcards` and `backend/review` are the scenario and domain packages; `format`, `note` and `cardid` hold what a card and a note are.
 - `backend/hostports/hostports.go:21-45` builds every port from one function giving the narrow vault interfaces per vault identity and one function giving the plugin folder per vault identity. It is the adapter to the host; the target is to place it at `backend/internal/adapter/host/`, since it is an adapter named after the technology it uses.
-- `service/` holds the handlers of the JSON methods and the conversions to `api` (`cardwire`, `presetwire`).
+- `service/` holds the handlers of the JSON methods; `backend/wire/` holds the conversions to `api` (`cardwire`, `presetwire`, `reviewwire`, `filewire`, `apierror`) and the command and tool bindings (`cardcommands`, `cardtools`).
 - `service` is the only package that calls `hostports.New`, so a use case is tested with a fake port.
 
 Placing a new feature here: a new question the scenarios ask of the vault is a method of a port in `ports`, answered in the host adapter, with a fake in the tests; a new scenario is a function of a scenario package that takes ports.

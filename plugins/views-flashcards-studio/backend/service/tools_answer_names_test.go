@@ -1,4 +1,4 @@
-package cardtools_test
+package service_test
 
 import (
 	"encoding/json"

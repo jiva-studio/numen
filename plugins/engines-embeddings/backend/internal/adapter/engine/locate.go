@@ -18,7 +18,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/clock"
 )
 
 // FetchProgress reports progress while downloading models.
@@ -236,7 +235,7 @@ func reportProgress(dir string, files []string, sizes map[string]int64, total in
 	doneCh := make(chan struct{})
 	go func() {
 		defer close(doneCh)
-		tick := clock.NewTicker(time.Second)
+		tick := time.NewTicker(time.Second)
 		defer tick.Stop()
 		for {
 			select {

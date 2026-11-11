@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )

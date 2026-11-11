@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine/onnx"
 )
 
 // envTestModels names the folder that holds the files of the curated models for the retrieval test: one

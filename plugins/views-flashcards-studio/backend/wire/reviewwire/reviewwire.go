@@ -11,14 +11,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/vaultcount"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
 )
 
 func formatTime(t time.Time) string {

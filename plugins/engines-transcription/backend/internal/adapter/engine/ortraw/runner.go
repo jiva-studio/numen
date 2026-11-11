@@ -7,7 +7,7 @@ import (
 
 	"github.com/ebitengine/purego"
 
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/onnx"
 )
 
 // Runner holds the entry points of the runtime a Graph is run through, resolved by Bind from the
