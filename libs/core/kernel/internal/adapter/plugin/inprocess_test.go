@@ -22,8 +22,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -245,7 +245,7 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 // A plugin found on disk with no built-in of its id is launched as a process.
 func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
@@ -267,7 +267,7 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 // A built-in plugin whose copy on disk is removed is the built-in again.
 func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
@@ -478,7 +478,7 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 // A built-in plugin's permissions are the built-in's again when its copy on disk leaves.
 func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
@@ -511,7 +511,7 @@ func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 // A copy on disk is launched as a process, whatever built-in shares its id.
 func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)

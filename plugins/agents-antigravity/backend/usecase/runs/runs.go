@@ -110,14 +110,13 @@ func (r *Runner) newSpec(req *agentrun.Request, executablePath string) spec {
 		NewHandler:   events.NewHandler,
 		Root:         "",
 		Token:        "",
-		Build:        nil,
+		Build: func(ctx context.Context) (Command, error) {
+			return r.commands.Build(ctx, req, r.registry, executablePath)
+		},
 	}
 	if agentrun.HasTools(req) {
 		s.Root = req.Root
 		s.Token = req.ToolsToken
-	}
-	s.Build = func(ctx context.Context) (Command, error) {
-		return r.commands.Build(ctx, req, r.registry, executablePath)
 	}
 	return s
 }

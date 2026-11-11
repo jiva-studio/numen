@@ -5,7 +5,12 @@ import { readStored, writeStored } from './storage'
 
 const I18N: Readonly<Record<string, Readonly<Record<string, string>>>> = { en: EN, ru: RU, sr: SR }
 
-const ARROW_STEP: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
+const ARROW_STEP: Readonly<Record<string, number>> = {
+  ArrowRight: 1,
+  ArrowDown: 1,
+  ArrowLeft: -1,
+  ArrowUp: -1,
+}
 
 function toggleTheme(): void {
   const current = document.documentElement.getAttribute('data-theme') || 'light'
@@ -19,7 +24,11 @@ function closeLanguageMenu(): void {
   document.getElementById('lang-dropdown-btn')?.setAttribute('aria-expanded', 'false')
 }
 
-function translate(selector: string, attribute: string, dict: Readonly<Record<string, string>>): void {
+function translate(
+  selector: string,
+  attribute: string,
+  dict: Readonly<Record<string, string>>,
+): void {
   for (const el of document.querySelectorAll<HTMLElement>(`[${attribute}]`)) {
     const key = el.getAttribute(attribute)
     const text = key ? dict[key] : undefined
@@ -73,7 +82,8 @@ function bindLanguageMenu(): void {
   document.getElementById('lang-dropdown-btn')?.addEventListener('click', toggleLanguageMenu)
   document.addEventListener('click', (event) => {
     const dropdown = document.getElementById('lang-dropdown')
-    if (dropdown && event.target instanceof Node && !dropdown.contains(event.target)) closeLanguageMenu()
+    if (dropdown && event.target instanceof Node && !dropdown.contains(event.target))
+      closeLanguageMenu()
   })
   for (const item of document.querySelectorAll<HTMLButtonElement>('.lang-dropdown__item')) {
     item.addEventListener('click', () => {

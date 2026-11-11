@@ -30,9 +30,9 @@ type Shower interface {
 	Execute(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error
 }
 
-// PluginOpener switches the window to a vault on behalf of a plugin, through the function given.
+// PluginOpener switches the window to a vault on behalf of a plugin.
 type PluginOpener interface {
-	Execute(ctx context.Context, v domain.Vault, open func(context.Context, domain.Vault, *windowsession.PluginOpen) error) error
+	Execute(ctx context.Context, v domain.Vault) error
 }
 
 // Flusher has every page write what only it holds, and reports whether none holds work that needs
@@ -51,8 +51,8 @@ type Importer interface {
 	Execute(ctx context.Context, v domain.Vault, into string, paths []string)
 }
 
-// Lifecycle is what runs the window from its start to its close. OpenVault shows a vault as a user switch,
-// and NoteWritten tells the embedder that a note holds new prose; a nil one leaves the state as it is.
+// Lifecycle is what runs the window from its start to its close. NoteWritten tells the embedder that a note
+// holds new prose; a nil one leaves the state as it is.
 type Lifecycle struct {
 	Start      Starter
 	Show       Shower
@@ -60,7 +60,6 @@ type Lifecycle struct {
 	Flush      Flusher
 	Close      Closer
 
-	OpenVault   func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error
 	NoteWritten func()
 }
 
@@ -84,9 +83,6 @@ var errNoVault = errors.New("the window has no vault")
 // NewInstallation makes the installation of a window over its state, the lifecycle of what it shows and
 // the import of dropped files. Nothing is served and no vault is open until Start.
 func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io.Writer) *Installation {
-	if lifecycle.OpenVault != nil {
-		state.OpenVault = lifecycle.OpenVault
-	}
 	if lifecycle.NoteWritten != nil {
 		state.Writes.NotifyNoteWritten = lifecycle.NoteWritten
 	}
@@ -158,9 +154,9 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault, open *windowses
 	return o.lifecycle.Show.Execute(ctx, v, open)
 }
 
-// OpenPluginVault switches the window to the vault on behalf of a plugin, through State.OpenVault.
+// OpenPluginVault switches the window to the vault on behalf of a plugin.
 func (o *Installation) OpenPluginVault(ctx context.Context, v domain.Vault) error {
-	return o.lifecycle.OpenPlugin.Execute(ctx, v, o.State.OpenVault)
+	return o.lifecycle.OpenPlugin.Execute(ctx, v)
 }
 
 // FlushPending has every page write what only it holds, then waits for the

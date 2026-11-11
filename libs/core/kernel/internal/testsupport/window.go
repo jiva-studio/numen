@@ -2,22 +2,10 @@ package testsupport
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
-
-// NewRootedHandler serves the handler the way a window does: the request
-// context is the process's own, and ends when the application ends and at no
-// other moment.
-func NewRootedHandler(handler http.Handler, entered, returned chan<- struct{}) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entered <- struct{}{}
-		defer func() { returned <- struct{}{} }()
-		handler.ServeHTTP(w, r.WithContext(context.WithoutCancel(r.Context())))
-	})
-}
 
 // SilentAgent accepts a task and produces no output, as an agent waiting on a
 // model does.

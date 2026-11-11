@@ -13,7 +13,7 @@ import (
 // so the next plugin open succeeds.
 func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)

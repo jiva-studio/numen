@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -87,11 +86,9 @@ type Erasing struct {
 
 // Scan is one vault made searchable.
 type Scan struct {
-	Read       indexing.ReadWholeVault
-	Summary    func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error)
-	Now        func() time.Time
-	Unembedded error
-	Close      func() error
+	Scan  indexing.ScanVault
+	Now   func() time.Time
+	Close func() error
 }
 
 // Search is one question answered.

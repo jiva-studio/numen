@@ -38,17 +38,16 @@ func makeAntigravityCommand(
 		args = append(args, "--conversation", sessID)
 	}
 
-	cmd := runs.Command{Path: binName, Args: args, Dir: "", Env: nil, Token: "", Release: nil}
-	if req.ToolsURL != "" {
-		tempHome, clean, err := setupAntigravityHome(&endpoint{URL: req.ToolsURL, Token: req.ToolsToken})
-		if err != nil {
-			return runs.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
-		}
-		cmd.Env = append(os.Environ(), "HOME="+tempHome)
-		cmd.Release = clean
-		return cmd, nil
+	if req.ToolsURL == "" {
+		return runs.Command{Path: binName, Args: args, Dir: "", Env: nil, Token: "", Release: nil}, nil
 	}
-	return cmd, nil
+	tempHome, clean, err := setupAntigravityHome(&endpoint{URL: req.ToolsURL, Token: req.ToolsToken})
+	if err != nil {
+		return runs.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
+	}
+	return runs.Command{
+		Path: binName, Args: args, Dir: "", Env: append(os.Environ(), "HOME="+tempHome), Token: "", Release: clean,
+	}, nil
 }
 
 func makeAnswerCommand(

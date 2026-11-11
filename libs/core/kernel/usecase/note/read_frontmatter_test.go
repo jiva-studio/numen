@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -15,7 +15,7 @@ import (
 // before any index does.
 func TestTheFrontmatterIsReadFromTheCurrentFile(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, map[string]string{"Harbor.md": "---\ntype: pdf\nshelf: east\n---\n# Harbor\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"Harbor.md": "---\ntype: pdf\nshelf: east\n---\n# Harbor\n"})
 	u := note.NewReadFrontmatter(vaultreader.Readers{})
 
 	noteType, properties, err := u.Execute(t.Context(), v, "Harbor.md")
@@ -36,7 +36,7 @@ func TestTheFrontmatterIsReadFromTheCurrentFile(t *testing.T) {
 // A note with no frontmatter is an ordinary note with an empty set of properties, never none.
 func TestANoteWithoutFrontmatterHasNoProperties(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, map[string]string{"Harbor.md": "# Harbor\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"Harbor.md": "# Harbor\n"})
 
 	noteType, properties, err := note.NewReadFrontmatter(vaultreader.Readers{}).Execute(t.Context(), v, "Harbor.md")
 	if err != nil || noteType != domain.TypeNote || properties == nil || len(properties) != 0 {
@@ -48,7 +48,7 @@ func TestANoteWithoutFrontmatterHasNoProperties(t *testing.T) {
 // is no failure.
 func TestAFileThatIsNoNoteIsNotRead(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 
 	noteType, properties, err := note.NewReadFrontmatter(vaultreader.Readers{}).Execute(t.Context(), v, "Harbor.png")
 	if err != nil || noteType != "" || properties == nil || len(properties) != 0 {
@@ -59,7 +59,7 @@ func TestAFileThatIsNoNoteIsNotRead(t *testing.T) {
 // A note that is not there fails with the reader's error.
 func TestANoteThatIsNotThereFails(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 
 	if _, _, err := note.NewReadFrontmatter(vaultreader.Readers{}).Execute(t.Context(), v, "Harbor.md"); err == nil {
 		t.Error("a note that is not there was read")

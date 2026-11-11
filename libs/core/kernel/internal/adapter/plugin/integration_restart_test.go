@@ -21,8 +21,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -65,7 +65,7 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(plugin))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(restartedTools{plugin: plugin}))
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(testsupport.PluginLifecycle{}))
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(wiretest.PluginLifecycle{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return plugin, server
@@ -82,18 +82,18 @@ type restartingLauncher struct {
 }
 
 func (l *restartingLauncher) launch(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-	cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
+	cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err
 	}
-	l.t.Cleanup(func() { plugintest.KillProcess(l.t, cmd.Process) })
+	l.t.Cleanup(func() { wiretest.KillProcess(l.t, cmd.Process) })
 	plugin, server := newRestartedPlugin(l.t)
 	l.mu.Lock()
 	l.procs = append(l.procs, cmd.Process)
 	l.plugins = append(l.plugins, plugin)
 	l.servers = append(l.servers, server)
 	l.mu.Unlock()
-	ready := fmt.Sprintf("NUMEN_READY port=%d\n", plugintest.GetPort(l.t, server))
+	ready := fmt.Sprintf("NUMEN_READY port=%d\n", wiretest.GetPort(l.t, server))
 	return cmd.Process, io.NopCloser(strings.NewReader(ready)), nil
 }
 
@@ -153,8 +153,8 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			}
 
 			first, _, firstServer := launcher.get(0)
-			plugintest.KillProcess(t, first)
-			plugintest.WaitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
+			wiretest.KillProcess(t, first)
+			wiretest.WaitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
 				return !host.Activation.HasEndpoint(contractPluginID)
 			})
 			firstServer.Close()

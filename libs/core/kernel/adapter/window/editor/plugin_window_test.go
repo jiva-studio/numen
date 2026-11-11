@@ -19,8 +19,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -34,17 +34,14 @@ import (
 func newPluginWindow(
 	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, limit time.Duration,
 ) hostendpoint.WindowControl {
-	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Window:   windowsession.WindowPorts{Tasks: state.Window, TabFront: &state.Notices.TabIDs},
-		TabBound: limit,
-	})
 	return windowsession.NewPluginWindow(
 		&state.Runtime,
+		&state.Tabs,
 		focusNote,
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),
-		session.ShowTab,
+		windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, limit),
 	)
 }
 
@@ -78,11 +75,11 @@ func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan do
 func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
 	state := NewState(run.NewTasks(), nil, nil)
-	state.Runtime.SetVault(testsupport.NewVault(t, map[string]string{
+	state.Runtime.SetVault(vaultfixture.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Grey Heron\nHerons fish at dusk.\n",
 	}))
-	line, unsubscribe := state.Notices.Places.subscribe()
+	line, unsubscribe := state.Notices.Places.Subscribe()
 	t.Cleanup(unsubscribe)
 	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, ViewOf(state)), limit), line
 }

@@ -99,7 +99,7 @@ interface NavigationActionDeps {
   goTo: (screen: ReviewScreen) => void
   reviewDays: ReturnType<typeof useReviewDays>
   readSchedules: () => Promise<void>
-  reportError: (why: Caught) => void
+  reportError: (error: Caught) => void
   goToVaults: () => void
 }
 
@@ -130,7 +130,7 @@ function useChosenVault(deps: {
   vaultCount: ComputedRef<VaultCardsDue | null>
   counts: VaultCounts
   readSchedules: () => Promise<void>
-  reportError: (why: Caught) => void
+  reportError: (error: Caught) => void
 }) {
   let isRead = false
   watch(

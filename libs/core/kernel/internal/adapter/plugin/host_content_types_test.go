@@ -8,14 +8,14 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 func newReaderHost(manifests ...catalogmanifest.Manifest) *Host {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
 		setPlugin(host, manifest.ID, catalogmanifest.Discovered{Manifest: manifest})

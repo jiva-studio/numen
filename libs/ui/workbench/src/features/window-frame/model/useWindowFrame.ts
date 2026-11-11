@@ -4,7 +4,12 @@
  * tests) gets a frame that does nothing.
  */
 import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { loadWailsRuntime, runInBackground, type WailsRuntime, type WailsRuntimeLoader } from '@numen/ui'
+import {
+  loadWailsRuntime,
+  runInBackground,
+  type WailsRuntime,
+  type WailsRuntimeLoader,
+} from '@numen/ui'
 import {
   getWindowEdge as getTopEdge,
   getWindowRadius,
@@ -37,7 +42,6 @@ export interface WindowFrame {
   toggleMaximizeWindow(): Promise<void>
   closeWindow(): Promise<void>
 }
-
 
 function getPlatform(system: FrameRuntime['System']): WindowPlatform {
   if (system?.IsMac?.()) return 'darwin'

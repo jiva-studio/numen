@@ -41,7 +41,7 @@ interface Day {
 
 export interface ReviewDaysDeps {
   cards: ReviewDaysClient
-  reportError(why: Caught): void
+  reportError(error: Caught): void
   /**
    * The widest the grid of days can be rendered, in pixels. The requested days
    * are the days a grid of that width displays, and a vault has an entry for

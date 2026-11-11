@@ -14,7 +14,7 @@ func TestAFileEventAsksForAPassOverTheChangedPathsOnly(t *testing.T) {
 	passes := newTriggerPasses()
 	passes.take()
 	w := newTestWindow(t, nil)
-	report := (&lifecycle{rt: w.rt, deps: Deps{Window: WindowPorts{Changes: w.changes}}}).newChangeReporter(passes, func([]string) {})
+	report := (&ChangeReporter{changes: w.changes}).newChangeReporter(passes, func([]string) {})
 
 	report([]string{"links/talk.md"}, []string{"scans/page.png"}, false)
 	report([]string{"links/talk.md"}, nil, false)
@@ -32,7 +32,7 @@ func TestAReloadAsksForAPassOverTheWholeVaultAndWakesTheSources(t *testing.T) {
 	w := newTestWindow(t, nil)
 	passes := newTriggerPasses()
 	passes.take()
-	report := (&lifecycle{rt: w.rt, deps: Deps{Window: WindowPorts{Changes: w.changes}, Index: IndexPorts{Wake: w.wake}}}).newChangeReporter(passes, func([]string) {})
+	report := (&ChangeReporter{changes: w.changes, wake: w.wake}).newChangeReporter(passes, func([]string) {})
 
 	report(nil, nil, true)
 
@@ -46,7 +46,7 @@ func TestAReloadAsksForAPassOverTheWholeVaultAndWakesTheSources(t *testing.T) {
 
 func TestAChangedNoteWakesTheVectorsAndAnAssetWakesTheSources(t *testing.T) {
 	w := newTestWindow(t, nil)
-	report := (&lifecycle{rt: w.rt, deps: Deps{Window: WindowPorts{Changes: w.changes}, Index: IndexPorts{Wake: w.wake}}}).newChangeReporter(newTriggerPasses(), func([]string) {})
+	report := (&ChangeReporter{changes: w.changes, wake: w.wake}).newChangeReporter(newTriggerPasses(), func([]string) {})
 
 	report([]string{"links/talk.md"}, nil, false)
 	report(nil, []string{"books/tide.epub"}, false)
@@ -61,7 +61,7 @@ func TestAChangedNoteWakesTheVectorsAndAnAssetWakesTheSources(t *testing.T) {
 
 func TestAChangeIsShownToTheViewsAsEveryPathThatChanged(t *testing.T) {
 	w := newTestWindow(t, nil)
-	report := (&lifecycle{rt: w.rt, deps: Deps{Window: WindowPorts{Changes: w.changes}}}).newChangeReporter(newTriggerPasses(), func([]string) {})
+	report := (&ChangeReporter{changes: w.changes}).newChangeReporter(newTriggerPasses(), func([]string) {})
 
 	report([]string{"links/talk.md"}, []string{"scans/page.png"}, false)
 
@@ -74,7 +74,7 @@ func TestAChangeIsShownToTheViewsAsEveryPathThatChanged(t *testing.T) {
 func TestAChangedFileIsCheckedForAChangeOfItsLiveVersion(t *testing.T) {
 	w := newTestWindow(t, nil)
 	var checked []string
-	report := (&lifecycle{rt: w.rt, deps: Deps{Window: WindowPorts{Changes: w.changes}}}).newChangeReporter(newTriggerPasses(), func(paths []string) { checked = append(checked, paths...) })
+	report := (&ChangeReporter{changes: w.changes}).newChangeReporter(newTriggerPasses(), func(paths []string) { checked = append(checked, paths...) })
 
 	report([]string{"links/talk.md"}, []string{"scans/page.png"}, false)
 

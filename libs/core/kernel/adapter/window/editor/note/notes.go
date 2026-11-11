@@ -208,7 +208,7 @@ func (h *Links) ResolveAddresses(
 	if named := r.Msg.GetVault(); named != "" && named != string(showing.ID) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("vault %q is not the one this window shows", named))
 	}
-	out, err := wire.ResolveAddresses(ctx, h.resolveLinks, showing, r.Msg)
+	out, err := wire.ResolveAddresses(ctx, h.resolveLinks, showing.ID, r.Msg)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

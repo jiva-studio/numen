@@ -23,13 +23,15 @@ import (
 // every question, the writes taken, and who is drawing what changes. Each part answers for one role.
 type State struct {
 	Runtime windowsession.Runtime
+	Tabs    windowsession.TabReports
 
 	Gate    *Gate
 	Writes  *Writes
 	Notices *Notices
 	Events  *Events
 
-	OpenVault func(context.Context, domain.Vault, *windowsession.PluginOpen) error
+	// Switch shows a vault as a user switch.
+	Switch windowsession.VaultSwitch
 
 	NotifyOpenTabs func(window.OpenTabs)
 
@@ -115,7 +117,7 @@ func (s *State) GetVaultState(ctx context.Context) (window.VaultState, error) {
 // ReportOpenTabs keeps the tabs the window reported, wakes whoever waits for a report, and tells
 // the application.
 func (s *State) ReportOpenTabs(open window.OpenTabs) {
-	s.Runtime.ReportOpenTabs(open)
+	s.Tabs.ReportOpenTabs(open)
 	if s.NotifyOpenTabs != nil {
 		s.NotifyOpenTabs(open)
 	}
@@ -124,19 +126,17 @@ func (s *State) ReportOpenTabs(open window.OpenTabs) {
 // ShowOpenTabs tells the application the tabs that are open now.
 func (s *State) ShowOpenTabs() {
 	if s.NotifyOpenTabs != nil {
-		s.NotifyOpenTabs(s.Runtime.GetOpenTabs())
+		s.NotifyOpenTabs(s.Tabs.GetOpenTabs())
 	}
 }
 
 // ShowVault shows another vault in the window, as a user switch.
 func (s *State) ShowVault(ctx context.Context, v domain.Vault) error {
-	return s.OpenVault(ctx, v, nil)
+	return s.Switch.Execute(ctx, v, nil)
 }
 
-// CanOpenTabWindow is whether the application opens a window for a tab.
 func (s *State) CanOpenTabWindow() bool { return s.DetachTab != nil }
 
-// OpenTabWindow opens a window of its own for a tab.
 func (s *State) OpenTabWindow(ctx context.Context, tab window.DetachedTab) error {
 	return s.DetachTab(ctx, tab)
 }
@@ -154,4 +154,16 @@ func (s *State) GetMediaAddress(v domain.Vault, stat domain.FileStat) string {
 // while the socket does not answer.
 func (s *State) GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string {
 	return s.Playing.Load().PluginFileAddress(v, address, size)
+}
+
+// GetVaultSwitch returns the switch of the window as it is when a vault is switched, so a plugin's open
+// goes through whatever Switch holds then.
+func (s *State) GetVaultSwitch() windowsession.VaultSwitch { return vaultSwitch{state: s} }
+
+type vaultSwitch struct {
+	state *State
+}
+
+func (v vaultSwitch) Execute(ctx context.Context, target domain.Vault, open *windowsession.PluginOpen) error {
+	return v.state.Switch.Execute(ctx, target, open)
 }

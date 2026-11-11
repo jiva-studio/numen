@@ -196,7 +196,7 @@ func setPluginSearch(c searchWiring, db *Index, embedder embeddingport.Embedder,
 	}.Access())
 }
 
-func searchEmbedders(c searchWiring, ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
+func searchEmbedders(c searchWiring, ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.WatchedEmbedder, closer func() error, why error) {
 	embedder, closeEmbedder, err := searchOpenEmbedder(c, ctx, run.NewModelReadReporter(tasks))
 	if err != nil {
 		return nil, nil, func() error { return nil }, err
@@ -204,11 +204,11 @@ func searchEmbedders(c searchWiring, ctx context.Context, tasks *run.Tasks) (ind
 	return embedder, embedder, closeEmbedder, nil
 }
 
-func searchEmbedder(c searchWiring, ctx context.Context) (embeddingport.Embedder, func() error, error) {
+func searchEmbedder(c searchWiring, ctx context.Context) (embeddingport.WatchedEmbedder, func() error, error) {
 	return searchOpenEmbedder(c, ctx, nil)
 }
 
-func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
+func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(error)) (embeddingport.WatchedEmbedder, func() error, error) {
 	if _, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding); errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
 	} else if err != nil {
@@ -217,7 +217,7 @@ func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(er
 	return openEmbedder(c, ctx, c.RunningHost, onReadError)
 }
 
-func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
+func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadError func(error)) (embeddingport.WatchedEmbedder, func() error, error) {
 	opened, err := embedderbridge.Open(ctx, host.Runtime)
 	if err != nil {
 		return nil, nil, err

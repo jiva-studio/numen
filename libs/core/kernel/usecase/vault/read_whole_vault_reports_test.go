@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -71,7 +72,7 @@ func (f failing) Embed(context.Context, []string) ([][]float32, error) { return 
 // created are in the result.
 func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	isolateHome(t)
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
@@ -112,7 +113,7 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 // stopped them, and the answer holds what the pass had done.
 func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	isolateHome(t)
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	stopErr := errors.New("the notes cannot be taken out")
 	notes := vaults.NewScan(readers, db.Vaults(), notRemoving{NoteRepository: db.Notes(), err: stopErr}, db.NoteQueries(), db.Maintenance(), nil)
@@ -136,7 +137,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 // answer holds what the pass had done.
 func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	isolateHome(t)
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	stopErr := errors.New("the books cannot be cut")
 	making := indexing.NewReadWholeVault(
@@ -161,7 +162,7 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 // the answer holds what the pass had done.
 func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	isolateHome(t)
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
@@ -187,7 +188,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 // A run that ended while the books were being cut reports what had completed.
 func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	isolateHome(t)
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -218,7 +219,7 @@ func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 // state afterwards.
 func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	isolateHome(t)
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -247,7 +248,7 @@ func (u unreadable) Open(domain.Vault) (vaultport.VaultReader, error) { return n
 // error naming it and carrying what stopped it.
 func TestOneSourceIsSplitAgain(t *testing.T) {
 	isolateHome(t)
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	making := newWholeVaultRead(readers, db)
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{}); err != nil {

@@ -4,12 +4,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // reading reads a vault into the index of its own that a test holds.
 type reading struct {
 	ReadWholeVault OpenReading
 	readers        vaultport.VaultReaders
+	newVault       func(tb testing.TB, notes map[string]string) domain.Vault
 }
 
 // GetVaultReaders opens vaults for reading.
@@ -22,13 +24,13 @@ type openFunc func(t *testing.T) (reading, *WorkerIndex)
 type ReadingProvider func(t *testing.T) (OpenReading, vaultport.VaultReaders, *WorkerIndex)
 
 // RunWorkerTests runs the tests of the worker that read vaults into an index. The composition root
-// imports this package, so a test of the external package gives it the provider.
-func RunWorkerTests(t *testing.T, provide ReadingProvider) {
+// imports this package, so a test of the external package gives it the provider and the function that writes a vault.
+func RunWorkerTests(t *testing.T, provide ReadingProvider, newVault func(tb testing.TB, notes map[string]string) domain.Vault) {
 	t.Helper()
 	open := func(t *testing.T) (reading, *WorkerIndex) {
 		t.Helper()
 		read, readers, db := provide(t)
-		return reading{ReadWholeVault: read, readers: readers}, db
+		return reading{ReadWholeVault: read, readers: readers, newVault: newVault}, db
 	}
 	t.Run("APassThatCouldNotEmbedStaysInTheList", func(t *testing.T) { testAPassThatCouldNotEmbedStaysInTheList(t, open) })
 	t.Run("APassThatEmbeddedPreservesTheList", func(t *testing.T) { testAPassThatEmbeddedPreservesTheList(t, open) })

@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
@@ -27,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
@@ -506,13 +508,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			read := indexing.NewReadWholeVaultByName(registry.NewFind(singleVaultList{target}).Execute, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
 			read.Unembedded = s.unembedded
 			return cli.Scan{
-				Read: read,
-				Summary: func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error) {
-					if s.summary != nil {
-						return domain.VaultSummary{}, s.summary
-					}
-					return db.NoteQueries().GetSummary(ctx, v.ID)
-				},
+				Scan:  indexing.NewScanVault(read, refusingSummaries{VaultSummaries: db.NoteQueries(), err: s.summary}),
 				Close: db.Close,
 			}, nil
 		},
@@ -521,7 +517,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 
 func createNoteVault(t *testing.T) domain.Vault {
 	t.Helper()
-	return testsupport.NewVault(t, map[string]string{"Bees.md": "# Bees\n\nBees make honey.\n"})
+	return vaultfixture.NewVault(t, map[string]string{"Bees.md": "# Bees\n\nBees make honey.\n"})
 }
 
 func TestScanReportsTheNotesItIndexed(t *testing.T) {
@@ -570,8 +566,8 @@ func TestScanReportsTheVectorsItMade(t *testing.T) {
 
 func TestScanReportsTheBooksItRead(t *testing.T) {
 	t.Parallel()
-	target := testsupport.NewVault(t, nil)
-	testsupport.WriteBook(t, target.Path, "bee.epub")
+	target := vaultfixture.NewVault(t, nil)
+	vaultfixture.WriteBook(t, target.Path, "bee.epub")
 	s := &scanFixture{}
 	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
 	if err != nil {
@@ -657,4 +653,17 @@ func TestScanNeedsExactlyOneVault(t *testing.T) {
 			t.Errorf("%v answered %v", args, err)
 		}
 	}
+}
+
+// refusingSummaries counts what the index holds, or fails with err when it is set.
+type refusingSummaries struct {
+	noteport.VaultSummaries
+	err error
+}
+
+func (r refusingSummaries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error) {
+	if r.err != nil {
+		return domain.VaultSummary{}, r.err
+	}
+	return r.VaultSummaries.GetSummary(ctx, vaultID)
 }

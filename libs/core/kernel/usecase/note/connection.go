@@ -368,3 +368,27 @@ func getLinkAddress(ctx context.Context, names edit.NameQueries, v domain.Vault,
 	}
 	return edit.GetAddress(ctx, names, v.ID, path)
 }
+
+// TrackSaveConnection returns u with its writes tracked through track.
+func TrackSaveConnection(u SaveConnection, track TrackWrites) SaveConnection {
+	u.editor.track = track
+	return u
+}
+
+// TrackRemoveConnection returns u with its writes tracked through track.
+func TrackRemoveConnection(u RemoveConnection, track TrackWrites) RemoveConnection {
+	u.editor.track = track
+	return u
+}
+
+// TrackRemoveSide returns u with its writes tracked through track.
+func TrackRemoveSide(u RemoveSide, track TrackWrites) RemoveSide {
+	u.editor.track = track
+	return u
+}
+
+// TrackJoin returns u with its writes tracked through track.
+func TrackJoin(u Join, track TrackWrites) Join {
+	u.editor.track = track
+	return u
+}

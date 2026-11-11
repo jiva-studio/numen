@@ -11,7 +11,7 @@ type Server struct {
 	callers Callers
 
 	mu       sync.Mutex
-	endpoint *Endpoint
+	endpoint serving
 }
 
 // NewServer creates a server that serves callers on address once Open finds a service set.
@@ -78,4 +78,11 @@ func (s *Server) ClearPlugin(pluginID string) {
 	if work := s.callers.Work.GetPluginWork(); work != nil {
 		work.ClearPlugin(pluginID)
 	}
+}
+
+// serving is an endpoint that answers the calls of plugins.
+type serving interface {
+	GetPort() int
+	Close(ctx context.Context) error
+	ClearPluginTasks(pluginID string)
 }

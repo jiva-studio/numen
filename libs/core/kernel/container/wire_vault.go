@@ -84,7 +84,7 @@ func Moves(c Config, ctx context.Context) (<-chan struct{}, error) {
 
 // Notes builds everything that changes the notes of a vault, against this
 // installation's vault readers and writers. No view receives a move.
-func Notes(c Config, db *Index, index edit.IndexUpdater) note.Scenarios {
+func Notes(c Config, db *Index, index edit.IndexUpdater) NoteScenarios {
 	return vaultNotes(vaultOf(c), db, index, noteViews{Writes: note.OpenGate{}})
 }
 
@@ -179,13 +179,13 @@ func vaultOptions(c vaultWiring) vaultconfig.Options {
 	}
 }
 
-func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *Index, notes note.Move) vault.Scenarios {
+func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *Index, notes note.Move) VaultScenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	erase := vault.NewErase(vaultIdentity(c), vaultTrash(c), unregister)
 	find := vaultregistry.NewFind(registry.Lookup)
-	return vault.Scenarios{
-		Change: vault.Changing{
+	return VaultScenarios{
+		Change: VaultChanging{
 			Add:        newAddVault(c, registry),
 			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
 			Remove:     vault.NewRemove(find.Execute, unregister, erase),

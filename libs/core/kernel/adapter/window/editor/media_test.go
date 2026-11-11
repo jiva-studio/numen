@@ -12,8 +12,9 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -98,10 +99,10 @@ const (
 
 func newStoreClient(t *testing.T, files storedFiles) numenv1connect.MediaServiceClient {
 	t.Helper()
-	vault := testsupport.NewVault(t, map[string]string{talk: sound})
+	vault := vaultfixture.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
 	readers := vaultreader.Readers{}
-	api.readFiles(readers, file.NewOpenPluginFile(files), file.NewGetMediaType(sharedmimeinfo.Open()))
+	api.readFiles(readers, file.NewOpenPluginFile(files), file.NewGetMediaType(contenttype.Open()))
 	api.state.Runtime.SetVault(vault)
 	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {

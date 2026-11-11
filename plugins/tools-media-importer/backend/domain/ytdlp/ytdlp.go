@@ -25,27 +25,39 @@ type Info struct {
 	IsAutomatic []string
 }
 
-// ParseInfo reads the information yt-dlp prints for a video as JSON.
+// ParseInfo reads the information yt-dlp prints for a video as JSON. The keys are yt-dlp's own
+// (snake_case), so they are read by name from the document and not through struct tags.
 func ParseInfo(raw []byte) (Info, error) {
-	var metadata struct {
-		Title             string                `json:"title"`
-		Language          string                `json:"language"`
-		Duration          float64               `json:"duration"`
-		Filesize          int64                 `json:"filesize"`
-		Approximate       int64                 `json:"filesize_approx"`
-		Subtitles         map[string][]struct{} `json:"subtitles"`
-		AutomaticCaptions map[string][]struct{} `json:"automatic_captions"`
-	}
-	if err := json.Unmarshal(raw, &metadata); err != nil {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
 		return Info{}, err
 	}
+	var metadata struct {
+		title, language              string
+		duration                     float64
+		filesize, approximate        int64
+		subtitles, automaticCaptions map[string][]struct{}
+	}
+	for key, target := range map[string]any{
+		"title": &metadata.title, "language": &metadata.language, "duration": &metadata.duration,
+		"filesize": &metadata.filesize, "filesize_approx": &metadata.approximate,
+		"subtitles": &metadata.subtitles, "automatic_captions": &metadata.automaticCaptions,
+	} {
+		value, ok := fields[key]
+		if !ok {
+			continue
+		}
+		if err := json.Unmarshal(value, target); err != nil {
+			return Info{}, fmt.Errorf("read %s: %w", key, err)
+		}
+	}
 	return Info{
-		Title:       strings.TrimSpace(metadata.Title),
-		Language:    metadata.Language,
-		Length:      int(metadata.Duration * 1000),
-		Bytes:       max(metadata.Filesize, metadata.Approximate),
-		Captions:    getLanguages(metadata.Subtitles),
-		IsAutomatic: getLanguages(metadata.AutomaticCaptions),
+		Title:       strings.TrimSpace(metadata.title),
+		Language:    metadata.language,
+		Length:      int(metadata.duration * 1000),
+		Bytes:       max(metadata.filesize, metadata.approximate),
+		Captions:    getLanguages(metadata.subtitles),
+		IsAutomatic: getLanguages(metadata.automaticCaptions),
 	}, nil
 }
 

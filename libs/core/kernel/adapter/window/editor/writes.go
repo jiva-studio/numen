@@ -27,7 +27,7 @@ func (w *Writes) FinishWrite() { w.writing.finish() }
 func (w *Writes) Seal() <-chan struct{} { return w.writing.seal() }
 
 // Open accepts writes again.
-func (w *Writes) Open() { w.writing.Open() }
+func (w *Writes) Open() { w.writing.in.Open() }
 
 // IsIndexOutdated reports whether err says the write reached the vault and the index did not
 // follow, and shows the task that tells the user so.

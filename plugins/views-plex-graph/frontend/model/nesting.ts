@@ -20,7 +20,7 @@ export interface Nesting {
   readonly headings: Readonly<Ref<number>>
 }
 
-const parseIsNesting = (value: Unvalidated): boolean => value !== false
+const parseIsNesting = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 
 const parseHeadingLimit = (value: Unvalidated): number =>
   typeof value === 'number' && Number.isInteger(value)

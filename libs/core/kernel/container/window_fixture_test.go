@@ -40,7 +40,7 @@ type windowVaults struct {
 
 func (w windowVaults) GetRefresh() vault.Refresh { return container.GetRefresh(w.cfg, w.db) }
 
-func (w windowVaults) OpenNotes(index edit.IndexUpdater) note.Scenarios {
+func (w windowVaults) OpenNotes(index edit.IndexUpdater) container.NoteScenarios {
 	return container.Notes(w.cfg, w.db, index)
 }
 
@@ -55,6 +55,6 @@ func (w windowVaults) OpenPluginVault(
 
 func (w windowVaults) OpenNotesShowingMoves(
 	index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
-) note.Scenarios {
+) container.NoteScenarios {
 	return container.NotesShowingMoves(w.cfg, w.db, index, showing, view)
 }

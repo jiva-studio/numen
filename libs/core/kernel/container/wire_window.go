@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/startup"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -64,10 +63,10 @@ type WindowOpening struct {
 
 // WindowUseCases are the use cases of notes and vaults a window works through.
 type WindowUseCases struct {
-	Notes   *note.Scenarios
+	Notes   *NoteScenarios
 	Queries *query.Scenarios
 	Listing *registry.Listing
-	Vaults  *vault.Scenarios
+	Vaults  *VaultScenarios
 	ShowTab windowsession.ShowTab
 }
 
@@ -112,7 +111,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
-	embedding := indexing.NewEmbedding(embedder, w.db.ChunkVectors())
+	embedding := indexing.NewEmbedding(embedder, embedder, w.db.ChunkVectors())
 	state := editor.NewState(tasks, w.frame, func(event string) { emitPluginEvent(plugins(w.cfg), event) })
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(w, state, embedding, out)
@@ -131,42 +130,17 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	listing := vaultListing(vaultOf(w.cfg), w.ports)
 	w.cases.Listing = &listing
 
-	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Window: windowsession.WindowPorts{
-			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
-		},
-		Vault: windowsession.VaultPorts{
-			Import: moves.Tree.Import, Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: wrapPasses(w, startVault(w.cfg, w.db, current)),
-			Texts: getTextVersions(w.cfg),
-		},
-		Index: windowsession.IndexPorts{
-			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: getTriggerSource(w.cfg), Model: embedding,
-		},
-		Shutdown: windowsession.ShutdownPorts{
-			Door: state.Gate,
-			Closers: []windowsession.Closer{
-				windowsession.CloseFunc(state.ClosePlaying),
-				windowsession.CloseFunc(func(context.Context) error { return closeEmbedder() }),
-				windowsession.CloseFunc(func(context.Context) error { return w.db.Close() }),
-			},
-		},
-		Out:           out,
-		EmbedderError: why,
-		Closing:       ctx.Done(),
-		IsRebuilding:  w.cfg.ShouldRebuildIndex,
+	session, tools := windowSession(w, state, ctx, windowParts{
+		indexer: indexer, embedding: embedding, moves: &moves, current: current, out: out,
+		embedderError: why, closeEmbedder: closeEmbedder,
 	})
-	switching := startup.SwitchVault[*windowsession.PluginOpen]{
-		Show:        session.Switching.Show.Execute,
-		FollowVault: func(path string) { setPluginVaultPath(plugins(w.cfg), path) },
-		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
-	}
 	inst := editor.NewInstallation(state, editor.Lifecycle{
-		Start: session.Start, Show: session.Switching.Show, OpenPlugin: session.Switching.OpenPlugin,
-		Flush: session.Closing.Flush, Close: session.Closing.Close,
-		OpenVault: switching.Execute, NoteWritten: indexer.WakeNotes,
-	}, session.Import, out)
+		Start: session.start, Show: session.show, OpenPlugin: session.openPlugin,
+		Flush: session.flush, Close: session.close,
+		NoteWritten: indexer.WakeNotes,
+	}, tools.importFiles, out)
 	w.inst = inst
-	w.cases.ShowTab = session.ShowTab
+	w.cases.ShowTab = tools.showTab
 
 	if err := startWindow(ctx, w, first); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), w.db.Close())

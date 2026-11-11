@@ -3,12 +3,12 @@ package file_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 func TestGetMediaTypeNamesTheTypeOfAFileByItsName(t *testing.T) {
-	types := file.NewGetMediaType(sharedmimeinfo.Open())
+	types := file.NewGetMediaType(contenttype.Open())
 
 	if got := types.Execute("talks/A Lecture.MP3"); got != "audio/mpeg" {
 		t.Errorf("type = %q, want audio/mpeg", got)

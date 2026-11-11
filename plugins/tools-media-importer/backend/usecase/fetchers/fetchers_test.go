@@ -7,17 +7,18 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/tempfiles"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 )
 
 const videoAddress = "https://www.youtube.com/watch?v=tidalmill01"
 
 // The settings name the programs, the captions and how large a copy may be.
 func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
-	fMock := New(true, process.Runner{}, tempfiles.Files{}, tempfiles.Files{}, webpage.New())
+	fMock := New(true, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
 	if fMock.GetFetcher() == nil || fMock.GetFetcher().GetDownloadModel(videoAddress).Tool != "mock" {
 		t.Fatalf("mock fetcher = %+v", fMock.GetFetcher())
 	}
-	f := New(false, process.Runner{}, tempfiles.Files{}, tempfiles.Files{}, webpage.New())
+	f := New(false, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
 	if f.GetFetcher() == nil || f.GetFetcher().GetDownloadModel(videoAddress).Tool == "mock" {
 		t.Fatalf("real fetcher = %+v", f.GetFetcher())
 	}
@@ -59,7 +60,7 @@ func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
 }
 
 func TestImportSettingsAreReadFromTheCamelCaseKeys(t *testing.T) {
-	f := New(false, process.Runner{}, tempfiles.Files{}, tempfiles.Files{}, webpage.New())
+	f := New(false, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
 	f.UpdateConfig(map[string]string{
 		"ytDlp": "/custom/yt-dlp", "automaticCaptions": "false", "copyMaxSizeMb": "20",
 	})
@@ -72,7 +73,7 @@ func TestImportSettingsAreReadFromTheCamelCaseKeys(t *testing.T) {
 }
 
 func TestImportSettingsAreNotReadFromTheSnakeCaseKeys(t *testing.T) {
-	f := New(false, process.Runner{}, tempfiles.Files{}, tempfiles.Files{}, webpage.New())
+	f := New(false, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
 	before, command := f.GetSettings(), slices.Clone(f.GetPrograms().Video.Command)
 	f.UpdateConfig(map[string]string{
 		"yt_dlp": "/custom/yt-dlp", "automatic_captions": "false", "copy_max_size_mb": "20",

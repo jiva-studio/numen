@@ -1,10 +1,4 @@
-export {
-  
-  
-  
-  
-  type WindowPlatform,
-} from './lib/corners'
+export { type WindowPlatform } from './lib/corners'
 export { MAC_BUTTONS_INSET } from './lib/sizes'
 export {
   getWindowEdge,

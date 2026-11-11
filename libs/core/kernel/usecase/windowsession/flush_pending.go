@@ -9,7 +9,13 @@ import (
 
 // FlushPending has every page write what only it holds, then waits for the writes already taken.
 type FlushPending struct {
-	life *lifecycle
+	guard *Guard
+	flush *PageFlush
+}
+
+// NewFlushPending makes the use case over the guard of the window and the flush of its pages.
+func NewFlushPending(guard *Guard, flush *PageFlush) FlushPending {
+	return FlushPending{guard: guard, flush: flush}
 }
 
 // Execute flushes the pages. Calling it again returns true immediately.
@@ -17,15 +23,14 @@ type FlushPending struct {
 // user confirmation. A close that arrives while a flush runs returns false: the
 // window stays, and the next close flushes again.
 func (u FlushPending) Execute(ctx context.Context) bool {
-	rt, deps := u.life.rt, u.life.deps
-	switch err := rt.guard.tryBegin(); {
+	switch err := u.guard.tryBegin(); {
 	case errors.Is(err, window.ErrClosing):
 		return true
 	case err != nil:
 		return false
 	}
 
-	flushed := flushPending(ctx, deps.Window.Pages, deps.Window.Writes)
-	rt.guard.end(flushed)
+	flushed := u.flush.Execute(ctx)
+	u.guard.end(flushed)
 	return flushed
 }

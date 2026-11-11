@@ -10,12 +10,12 @@ import (
 )
 
 type inflight struct {
-	broadcast.Inflight
+	in broadcast.Inflight
 }
 
-func (w *inflight) begin() bool           { return w.Inflight.Begin() }
-func (w *inflight) finish()               { w.Inflight.Finish() }
-func (w *inflight) seal() <-chan struct{} { return w.Inflight.Seal() }
+func (w *inflight) begin() bool           { return w.in.Begin() }
+func (w *inflight) finish()               { w.in.Finish() }
+func (w *inflight) seal() <-chan struct{} { return w.in.Seal() }
 
 // Gate is the door on every question of the window. It counts the questions being answered and refuses
 // new ones once the window is shut.

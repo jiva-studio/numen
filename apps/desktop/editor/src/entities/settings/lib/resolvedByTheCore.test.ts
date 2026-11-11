@@ -32,7 +32,10 @@ describe('the rules of options and conditions', () => {
   it('are applied by no source of the window', () => {
     const readers = listSources(src).filter((file) => {
       const text = readFileSync(file, 'utf8')
-      return /\.optionsBy\b/.test(text) && !/(entities\/settings\/api\/settings|testing\/settingsWire)\.ts$/.test(file)
+      return (
+        /\.optionsBy\b/.test(text) &&
+        !/(entities\/settings\/api\/settings|testing\/settingsWire)\.ts$/.test(file)
+      )
     })
     expect(readers).toStrictEqual([])
   })

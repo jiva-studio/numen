@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -39,5 +40,5 @@ func TestWorker(t *testing.T) {
 			Maintenance: db.Maintenance(), Progress: db.ChunkVectors(), Vectors: db, Closer: db,
 		}
 		return read, container.VaultReaders(cfg), index
-	})
+	}, vaultfixture.NewVault)
 }

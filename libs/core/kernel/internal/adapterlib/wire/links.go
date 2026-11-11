@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
@@ -16,11 +15,11 @@ import (
 // text within one vault. An address that resolves to nothing is omitted from the
 // result. Every window that resolves links uses it.
 func ResolveAddresses(
-	ctx context.Context, resolve *query.ResolveLinks, v domain.Vault, r *v1.ResolveAddressesRequest,
+	ctx context.Context, resolve LinkResolver, vault domain.VaultID, r *v1.ResolveAddressesRequest,
 ) (*v1.ResolveAddressesResponse, error) {
 	inText, addresses := getTextLinks(r.GetText())
 	requested := append(slices.Clone(r.GetWritten()), addresses...)
-	found, err := resolve.Execute(ctx, v, r.GetFrom(), requested)
+	found, err := resolve.Execute(ctx, vault, r.GetFrom(), requested)
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +34,11 @@ func ResolveAddresses(
 			continue
 		}
 		observed[content] = true
-		vault, crossed := one.InVault(v.ID)
+		resolvedVault, crossed := one.InVault(vault)
 		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
 			Written:     content,
 			Path:        one.To,
-			Vault:       string(vault),
+			Vault:       string(resolvedVault),
 			IsCrossed:   crossed,
 			IsAmbiguous: one.IsAmbiguous,
 		})
@@ -77,4 +76,9 @@ func getWikilinkText(inside string) string {
 		return strings.TrimSpace(after)
 	}
 	return strings.TrimSpace(inside)
+}
+
+// LinkResolver finds where addresses written in one note of a vault land.
+type LinkResolver interface {
+	Execute(ctx context.Context, vaultID domain.VaultID, from string, targets []string) (map[string]domain.ResolvedLink, error)
 }

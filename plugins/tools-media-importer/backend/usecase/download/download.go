@@ -148,3 +148,11 @@ func (f *Downloader) CanCopy(address string) bool {
 	_, err := f.playerFor(address)
 	return err == nil
 }
+
+// Tools are the ports a downloader works through.
+type Tools struct {
+	Runner Runner
+	Files  Files
+	Paths  Paths
+	Web    Web
+}

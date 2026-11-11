@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -98,6 +99,7 @@ func bindFlashcards(
 	SetShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
+	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
 	hooks := PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
 	if err := installPluginVault(plugins(c), ports, db, getNoShownVault, hooks); err != nil {

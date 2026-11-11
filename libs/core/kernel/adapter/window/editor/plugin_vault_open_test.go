@@ -16,13 +16,13 @@ import (
 // unsaved. A plugin's open after that shows the vault.
 func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	userResponded := make(chan struct{})
 	f.respondPromptUntil(t, stream, userResponded)
 
-	if err := f.installation.State.OpenVault(t.Context(), f.second, nil); err == nil {
+	if err := f.installation.State.Switch.Execute(t.Context(), f.second, nil); err == nil {
 		t.Fatal("the user's switch during a page prompt returned nil")
 	}
 	close(userResponded)
@@ -53,14 +53,16 @@ func TestVaultSwitchAfterPluginOpenFailsDuringUserClose(t *testing.T) {
 	var mu sync.Mutex
 	var pluginOpenCtx context.Context
 	var finishedOpen *windowsession.PluginOpen
-	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
-		mu.Lock()
-		if pluginOpenCtx == nil {
-			pluginOpenCtx, finishedOpen = ctx, open
-		}
-		mu.Unlock()
-		return f.installation.Show(ctx, v, open)
-	}
+	f.installation.WrapPluginSwitch(t, func(windowsession.VaultSwitch) windowsession.VaultSwitch {
+		return switchFunc(func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
+			mu.Lock()
+			if pluginOpenCtx == nil {
+				pluginOpenCtx, finishedOpen = ctx, open
+			}
+			mu.Unlock()
+			return f.installation.Show(ctx, v, open)
+		})
+	})
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	secondFlush := make(chan struct{}, 1)

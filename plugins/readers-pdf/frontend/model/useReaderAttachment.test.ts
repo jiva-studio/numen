@@ -11,11 +11,17 @@ const mountAttached = (hasAttach = true) => {
     focus: () => log.push('focus'),
     measure: () => log.push('measure'),
   }
-  const state = hasAttach ? { attachReader: (handle: ReaderHandle | null) => attached.push(handle) } : {}
+  const state = hasAttach
+    ? { attachReader: (handle: ReaderHandle | null) => attached.push(handle) }
+    : {}
   const view = mount(
     defineComponent({
       setup() {
-        useReaderAttachment(() => state, reader, () => log.push('detach'))
+        useReaderAttachment(
+          () => state,
+          reader,
+          () => log.push('detach'),
+        )
         return () => h('div')
       },
     }),

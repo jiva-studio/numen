@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	broken := filepath.Join(tmp, "broken")
 	if err := os.Mkdir(broken, 0o755); err != nil {
 		t.Fatal(err)
@@ -52,7 +52,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 
 func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -82,7 +82,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 
 func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -127,7 +127,7 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 
 func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -157,7 +157,7 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 
 func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 
 	var wg sync.WaitGroup

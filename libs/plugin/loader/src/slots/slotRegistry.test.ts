@@ -164,15 +164,27 @@ describe('the entries of a slot', () => {
     }
     const { registry } = setup(
       [
-        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open', values: { kind: 'plex' } },
-        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open', values: { kind: 'files' } },
+        {
+          pluginId: LEDGER,
+          slot: 'titleBar.commands',
+          command: 'ledger.open',
+          values: { kind: 'plex' },
+        },
+        {
+          pluginId: LEDGER,
+          slot: 'titleBar.commands',
+          command: 'ledger.open',
+          values: { kind: 'files' },
+        },
         { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open' },
       ],
       { getKeyFor: (command, values) => keys[`${command}?kind=${values?.kind}`] },
     )
 
     expect(
-      registry.getEntries('titleBar.commands').map((one) => (one.kind === 'command' ? one.shortcut : '')),
+      registry
+        .getEntries('titleBar.commands')
+        .map((one) => (one.kind === 'command' ? one.shortcut : '')),
     ).toStrictEqual(['', 'mod+alt+e', 'mod+shift+p'])
   })
 

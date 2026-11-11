@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
@@ -70,7 +71,7 @@ func newCorpus(t *testing.T) corpus {
 
 	c := corpus{db: db}
 	for i, notes := range []map[string]string{getFirstNotes(), getSecondNotes()} {
-		v := testsupport.NewVault(t, notes)
+		v := vaultfixture.NewVault(t, notes)
 		if _, err := scan.Execute(ctx, v); err != nil {
 			t.Fatal(err)
 		}
@@ -433,7 +434,7 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 
 	const path = "notes/Isotherm.md"
 	const target = "The curve holds throughout."
-	v := testsupport.NewVault(t, map[string]string{path: getIsotherm()})
+	v := vaultfixture.NewVault(t, map[string]string{path: getIsotherm()})
 	scan := vaults.NewScan(
 		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(),
 		c.db.NoteQueries(), c.db.Maintenance(), nil,

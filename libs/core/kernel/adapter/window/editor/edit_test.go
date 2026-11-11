@@ -16,6 +16,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
@@ -35,7 +36,7 @@ import (
 // opened in the editor does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	state := NewState(run.NewTasks(), nil, nil)
-	line, isDone := state.Notices.Edits.subscribe()
+	line, isDone := state.Notices.Edits.Subscribe()
 	t.Cleanup(isDone)
 
 	response := domain.Edit{
@@ -54,11 +55,11 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 // has not read one is given the newest and not the backlog.
 func TestTheLastChangeGeneratedIsTheOneWaiting(t *testing.T) {
 	broadcaster := newEditBroadcaster()
-	line, isDone := broadcaster.subscribe()
+	line, isDone := broadcaster.Subscribe()
 	t.Cleanup(isDone)
 
-	broadcaster.publish(domain.Edit{Change: "one", Text: "first"})
-	broadcaster.publish(domain.Edit{Change: "one", Text: "second"})
+	broadcaster.Publish(domain.Edit{Change: "one", Text: "first"})
+	broadcaster.Publish(domain.Edit{Change: "one", Text: "second"})
 
 	if got := <-line; got.Text != "second" {
 		t.Errorf("what waited is %q", got.Text)
@@ -69,11 +70,11 @@ func TestTheLastChangeGeneratedIsTheOneWaiting(t *testing.T) {
 // that is never ended stays on the screen.
 func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 	broadcaster := newEditBroadcaster()
-	line, isDone := broadcaster.subscribe()
+	line, isDone := broadcaster.Subscribe()
 	t.Cleanup(isDone)
 
-	broadcaster.publish(domain.Edit{Change: "one", IsDone: true})
-	broadcaster.publish(domain.Edit{Change: "one", Text: "more of it"})
+	broadcaster.Publish(domain.Edit{Change: "one", IsDone: true})
+	broadcaster.Publish(domain.Edit{Change: "one", Text: "more of it"})
 
 	got := <-line
 	if got.Change != "one" || !got.IsDone {
@@ -90,12 +91,12 @@ func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 // another.
 func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
 	broadcaster := newEditBroadcaster()
-	line, isDone := broadcaster.subscribe()
+	line, isDone := broadcaster.Subscribe()
 	t.Cleanup(isDone)
 
-	broadcaster.publish(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
-	broadcaster.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})
-	broadcaster.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
+	broadcaster.Publish(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
+	broadcaster.Publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})
+	broadcaster.Publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
 
 	if got := <-line; got.Change != "one" || got.Text != "An axe" {
 		t.Errorf("the first report waiting is %+v, want change one saying %q", got, "An axe")
@@ -164,7 +165,7 @@ func openEditor(t *testing.T, notes map[string]string) *Services {
 	api := newBareServices()
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.Runtime.SetVault(testsupport.NewVault(t, notes))
+	api.state.Runtime.SetVault(vaultfixture.NewVault(t, notes))
 	return api
 }
 
@@ -345,7 +346,7 @@ func TestEditLoad(t *testing.T) {
 		notes = n
 	}
 
-	v := testsupport.GenerateVault(t, notes)
+	v := vaultfixture.GenerateVault(t, notes)
 	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), false, nil)
 	db := wired.openIndex(t)
 
@@ -356,7 +357,7 @@ func TestEditLoad(t *testing.T) {
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Chunks.Progress)
+	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, nil, db.Chunks.Progress)
 	api.state.Runtime.SetVault(v)
 
 	startTime := testsupport.GetMachine().Now()
@@ -372,7 +373,7 @@ func TestEditLoad(t *testing.T) {
 	}
 	t.Logf("read %d notes in %s", notes, testsupport.GetMachine().Now().Sub(startTime).Round(time.Millisecond))
 
-	line, isDone := api.state.Notices.ChangeEvents.subscribe()
+	line, isDone := api.state.Notices.ChangeEvents.Subscribe()
 	t.Cleanup(isDone)
 
 	const path = "01/note-000001.md"

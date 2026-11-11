@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -15,8 +16,8 @@ import (
 // when the changes cannot be determined the vault is scanned again.
 type Follow struct {
 	watcher vaultport.VaultWatcher
-	refresh Refresh
-	scan    Scan
+	refresh refreshing
+	scan    scanning
 
 	changed      func(VaultChanges)
 	errorHandler window.ErrorHandler
@@ -109,4 +110,14 @@ func (f *Watch) handleError(err error) {
 	if f.follow.errorHandler != nil {
 		f.follow.errorHandler(err)
 	}
+}
+
+// refreshing brings the named files of a vault up to date.
+type refreshing interface {
+	Execute(ctx context.Context, v domain.Vault, paths []string) (RefreshResult, error)
+}
+
+// scanning reads a whole vault into the index.
+type scanning interface {
+	Execute(ctx context.Context, v domain.Vault) (vaultreading.ScanResult, error)
 }
