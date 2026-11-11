@@ -18,20 +18,14 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 		PluginHost: newExternalPluginHost(t, "md.numen.test", t.TempDir()),
 		Paths:      container.Paths{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 	v := testsupport.NewVault(t, notes)
-	if err := registry.Saver.Save(v); err != nil {
-		t.Fatal(err)
-	}
-	return v, func() (domain.Vault, bool) { return v, true }, windowVaults{cfg: cfg, registry: registry, db: db}
+	testsupport.SaveVaults(t, cfg.RegistryPath, v)
+	return v, func() (domain.Vault, bool) { return v, true }, windowVaults{cfg: cfg, db: db}
 }
 
 func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	domaintheme "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
@@ -50,7 +50,7 @@ func FuzzAt(f *testing.F) {
 			// The file is well formed and every value in it is of the kind its
 			// setting takes, so the one thing left to refuse it for is a number
 			// the setting does not go to — and the rejection names which.
-			if !errors.As(err, new(*settings.OutsideBoundsError)) {
+			if !errors.As(err, new(*settingsdomain.OutsideBoundsError)) {
 				t.Fatalf("%s failed as %v, which names no setting", raw, err)
 			}
 			return

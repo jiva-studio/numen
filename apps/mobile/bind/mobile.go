@@ -198,23 +198,11 @@ func makeConfig(dir string, out io.Writer) container.Config {
 }
 
 func registerVault(cfg container.Config, root string) (string, error) {
-	registry, err := cfg.Registry()
+	registered, err := cfg.EnsureVault(root, "numen", false)
 	if err != nil {
 		return "", err
 	}
-	if resolved, err := filepath.EvalSymlinks(root); err == nil {
-		root = resolved
-	}
-	if target, found, err := registry.Lookup.FindVault(root); err != nil {
-		return "", err
-	} else if found {
-		return target.Path, nil
-	}
-	added, err := cfg.AddVault(registry, root, "numen")
-	if err != nil {
-		return "", err
-	}
-	return added.Path, nil
+	return registered.Path, nil
 }
 
 // Page is the origin from which the platform serves this application's page:
