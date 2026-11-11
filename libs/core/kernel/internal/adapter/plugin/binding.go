@@ -6,7 +6,6 @@ type Binding struct {
 	mode     *Mode
 }
 
-// NewBinding creates the binding of the teardown and the mode of a host.
 func NewBinding(teardown *Teardown, mode *Mode) Binding {
 	return Binding{teardown: teardown, mode: mode}
 }

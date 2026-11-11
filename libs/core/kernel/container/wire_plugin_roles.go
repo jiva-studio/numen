@@ -28,8 +28,6 @@ type PluginRoles struct {
 	Mode         *plugin.Mode
 }
 
-// newPluginRoles creates the roles of a plugin host for the target application and the folders its plugins are in.
-// The roles read the time from clock.
 func newPluginRoles(clock machineport.Clock, target string, dirs []string) *PluginRoles {
 	errs := plugin.NewErrorSink()
 	mode := plugin.NewMode()
@@ -80,8 +78,6 @@ func newPluginRoles(clock machineport.Clock, target string, dirs []string) *Plug
 	}
 }
 
-// setPluginStorage sets the folders the plugins store files in. Where the storage names a models folder, the
-// dependencies of the plugins are provisioned into it by the registry newRegistry makes.
 func setPluginStorage(roles *PluginRoles, cacheRoot, dataRoot string, newRegistry func(modelsDir string) pluginport.DependencyRegistry) {
 	roles.Storage.SetStorageRoots(cacheRoot, dataRoot)
 	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"

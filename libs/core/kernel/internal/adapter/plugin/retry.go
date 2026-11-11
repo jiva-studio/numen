@@ -42,7 +42,6 @@ type RetryDeps struct {
 	Listeners  listenerRefresher
 }
 
-// NewRetry creates the retry of the start of a plugin.
 func NewRetry(d RetryDeps) *Retry {
 	return &Retry{set: d.Set, failures: d.Failures, activator: d.Activation, listeners: d.Listeners}
 }

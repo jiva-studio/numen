@@ -47,7 +47,6 @@ type ConfigPushDeps struct {
 	Report      func(error)
 }
 
-// NewConfigPush creates the push of the configuration to the running plugins.
 func NewConfigPush(d ConfigPushDeps) *ConfigPush {
 	c := &ConfigPush{set: d.Set, sups: d.Supervisors, report: d.Report}
 	c.delivery = delivery.New(c)

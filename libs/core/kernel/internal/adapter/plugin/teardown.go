@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 )
 
-// pluginStopper stops the process of a plugin.
 type pluginStopper interface {
 	StopPlugin(ctx context.Context, pluginID string) error
 }
@@ -52,7 +51,6 @@ type TeardownDeps struct {
 	Report      func(error)
 }
 
-// NewTeardown creates the teardown of the plugins.
 func NewTeardown(d TeardownDeps) *Teardown {
 	return &Teardown{
 		mode: d.Mode, sups: d.Supervisors, stopper: d.Stopper, evictor: d.Evictor, events: d.Events, listeners: d.Listeners,

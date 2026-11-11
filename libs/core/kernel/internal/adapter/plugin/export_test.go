@@ -54,13 +54,11 @@ func GetRequirementIDs(r *Registry, id string) []string { return r.set.getRequir
 // GetLaunch returns how the set launches p.
 func GetLaunch(r *Registry, p manifest.Discovered) supervision.Launch { return r.set.getLaunch(p) }
 
-// GetSupervisors returns the supervisors the registry reads.
 func GetSupervisors(r *Registry) *supervision.Supervisors { return r.sups }
 
 // SetPerformance sets the performance profile the push holds, without pushing it.
 func SetPerformance(c *ConfigPush, profile string) { c.performance = profile }
 
-// GetDelivery returns the delivery of the configuration the push serializes.
 func GetDelivery(c *ConfigPush) *delivery.Delivery { return c.delivery }
 
 // SetScanned marks that the push has seen a scan.
@@ -75,7 +73,6 @@ func HoldScan(d *Discovery) { d.scan.holdScan() }
 // ReleaseScan releases the hold HoldScan took.
 func ReleaseScan(d *Discovery) { d.scan.releaseScan() }
 
-// GetStopper returns the stopper the teardown stops plugins with.
 func GetStopper(t *Teardown) *supervision.Stopper { return t.stopper }
 
 // RunActivation starts the process of p under sup.

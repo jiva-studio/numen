@@ -52,7 +52,6 @@ type PluginSetDeps struct {
 	Mode        *Mode
 }
 
-// NewPluginSet creates an empty set of plugins.
 func NewPluginSet(d PluginSetDeps) *PluginSet {
 	return &PluginSet{
 		sups: d.Supervisors, values: d.Values, mode: d.Mode,
