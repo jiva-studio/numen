@@ -45,7 +45,7 @@ describe('the target of a command that names none', () => {
     })
   })
 
-  it('is what the kind of the tab in front says it stands on', async () => {
+  it('takes its file, path and title from the kind of the tab in front', async () => {
     const { windowTabs, resolve } = create()
     const id = await windowTabs.tabs.openTabOfKind('note', 'Tides.md')
 
