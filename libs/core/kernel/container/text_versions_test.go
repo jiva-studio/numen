@@ -55,7 +55,7 @@ func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
 	if _, err := searchScan(searchOf(cfg), db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := indexTexts(searchOf(cfg), db, v)
+	extract, err := indexTexts(searchOf(cfg), db, v, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +317,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err := repo.SaveVersion(t.Context(), subtitles); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := indexTexts(searchOf(cfg), db, v)
+	extract, err := indexTexts(searchOf(cfg), db, v, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

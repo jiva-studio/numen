@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
@@ -71,22 +73,22 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 		Paths:              container.Paths{ServiceDir: ".numen"},
 	})
 
-	indexing, asking, _, err := target.Embedders(t.Context(), nil)
+	indexed, asking, _, err := target.Embedders(t.Context(), nil)
 	if err == nil {
 		t.Fatal("an embedding plugin that is down was opened")
 	}
-	if indexing != nil || asking != nil {
-		t.Fatalf("an embedder was made without a model: %v, %v", indexing, asking)
+	if indexed != nil || asking != nil {
+		t.Fatalf("an embedder was made without a model: %v, %v", indexed, asking)
 	}
 	if host.acquired.Load() != host.released.Load() {
 		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 	}
 
-	whole, err := container.ReadWholeVault(target, t.Context(), db, indexing, v)
+	whole, err := container.ReadWholeVault(target, t.Context(), db, indexed, v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v); err != nil {
+	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
 		t.Fatal(err)
 	}
 	if got := unembeddedTo(t, db, v, unit{"first"}); got != 0 {

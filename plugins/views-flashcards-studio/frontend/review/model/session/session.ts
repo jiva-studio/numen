@@ -164,13 +164,12 @@ function createAnswerActions(deps: {
   run: Ref<string>
   cards: ReturnType<typeof useSessionCards>
   writing: Ref<boolean>
-  getPut: () => number
-  setPut: (time: number) => void
+  put: { get: () => number; set: (time: number) => void }
 }) {
   const answer = async (how: Grade) => {
     const one = deps.cards.queue.card.value
     if (!one || !deps.cards.queue.isAnswerShown.value || deps.writing.value) return
-    const elapsedMs = deps.now() - deps.getPut()
+    const elapsedMs = deps.now() - deps.put.get()
     deps.writing.value = true
     try {
       const ans = await submitAnswer({
@@ -189,7 +188,7 @@ function createAnswerActions(deps: {
     }
     deps.cards.queue.cardIndex.value += 1
     deps.cards.queue.isAnswerShown.value = false
-    deps.setPut(deps.now())
+    deps.put.set(deps.now())
   }
 
   const takeBack = async () => {
@@ -211,7 +210,7 @@ function createAnswerActions(deps: {
     deps.cards.queue.answers.value.pop()
     deps.cards.queue.cardIndex.value = Math.max(0, deps.cards.queue.cardIndex.value - 1)
     deps.cards.queue.isAnswerShown.value = true
-    deps.setPut(deps.now())
+    deps.put.set(deps.now())
   }
 
   return { answer, takeBack }
@@ -286,9 +285,11 @@ export function useReviewSession(deps: SessionDeps) {
     run,
     cards,
     writing,
-    getPut: () => displayedAt,
-    setPut: (time) => {
-      displayedAt = time
+    put: {
+      get: () => displayedAt,
+      set: (time) => {
+        displayedAt = time
+      },
     },
   })
 

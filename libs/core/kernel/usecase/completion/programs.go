@@ -19,6 +19,27 @@ type ProgramSettings struct {
 	Command []string
 }
 
+// AgentSection is the agent part of the settings file.
+type AgentSection interface {
+	IsNamed() bool
+	GetUse() string
+	GetCommands() map[string][]string
+	GetProgramSettings(name string) (model string, command []string)
+}
+
+// NewAgentSettings reads the active agent configuration from the agent part of the settings.
+func NewAgentSettings(section AgentSection) AgentSettings {
+	return AgentSettings{
+		IsNamed:  section.IsNamed(),
+		Use:      section.GetUse(),
+		Commands: section.GetCommands(),
+		GetProgram: func(name string) ProgramSettings {
+			model, command := section.GetProgramSettings(name)
+			return ProgramSettings{Model: model, Command: command}
+		},
+	}
+}
+
 // AgentSettings holds the active agent configuration read from the settings file.
 type AgentSettings struct {
 	IsNamed    bool

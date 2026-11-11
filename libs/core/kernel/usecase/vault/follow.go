@@ -18,17 +18,17 @@ type Follow struct {
 	refresh Refresh
 	scan    Scan
 
-	Changed      func(VaultChanges)
-	ErrorHandler window.ErrorHandler
+	changed      func(VaultChanges)
+	errorHandler window.ErrorHandler
 }
 
-// NewFollow creates a Follow from the watcher that reports file changes, the
-// refresh that updates the named files, and the scan used when the changes
-// cannot be determined.
-//
-// Refresh and scan run from Run, which the caller starts without waiting on.
-func NewFollow(watcher vaultport.VaultWatcher, refresh Refresh, scan Scan) Follow {
-	return Follow{watcher: watcher, refresh: refresh, scan: scan}
+// NewFollow creates a Follow from the watcher that reports file changes, the refresh that updates the named
+// files, the scan used when the changes cannot be determined, and what receives the changes and the errors;
+// a nil one receives nothing. Refresh and scan run from Run, which the caller starts without waiting on.
+func NewFollow(
+	watcher vaultport.VaultWatcher, refresh Refresh, scan Scan, changed func(VaultChanges), errorHandler window.ErrorHandler,
+) Follow {
+	return Follow{watcher: watcher, refresh: refresh, scan: scan, changed: changed, errorHandler: errorHandler}
 }
 
 // VaultChanges is the notification passed to a caller: the notes that changed,
@@ -100,13 +100,13 @@ func (f *Watch) Run(ctx context.Context) {
 }
 
 func (f *Watch) reportChanges(m VaultChanges) {
-	if f.follow.Changed != nil {
-		f.follow.Changed(m)
+	if f.follow.changed != nil {
+		f.follow.changed(m)
 	}
 }
 
 func (f *Watch) handleError(err error) {
-	if f.follow.ErrorHandler != nil {
-		f.follow.ErrorHandler(err)
+	if f.follow.errorHandler != nil {
+		f.follow.errorHandler(err)
 	}
 }

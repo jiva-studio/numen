@@ -22,12 +22,12 @@ func newVaultsClient(t *testing.T, api *API) numenv1connect.VaultsServiceClient 
 
 func TestTheWindowListsTheVaultsOfTheInstallation(t *testing.T) {
 	api := newAPI(t)
-	api.ListVaults = func() ([]domain.Vault, error) {
+	api.Vaults = listing(func() ([]domain.Vault, error) {
 		return []domain.Vault{
 			{ID: "v1", Name: "Studies", Path: "/vaults/Studies"},
 			{ID: "v2", Name: "Words", Path: "/vaults/Words"},
 		}, nil
-	}
+	})
 
 	response, err := newVaultsClient(t, api).ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 	if err != nil {
@@ -42,7 +42,7 @@ func TestTheWindowListsTheVaultsOfTheInstallation(t *testing.T) {
 
 func TestAListThatCannotBeReadIsAnError(t *testing.T) {
 	api := newAPI(t)
-	api.ListVaults = func() ([]domain.Vault, error) { return nil, errors.New("the list is locked") }
+	api.Vaults = listing(func() ([]domain.Vault, error) { return nil, errors.New("the list is locked") })
 
 	_, err := newVaultsClient(t, api).ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 	if connect.CodeOf(err) != connect.CodeInternal {

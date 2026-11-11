@@ -133,12 +133,12 @@ func (p testPasses) StartVault(
 ) windowsession.Started {
 	opening := p.reading.OpenVaultWith(p.db, p.readers, p.watcher)
 	opening.ShouldRebuild = rebuild
-	opening.ErrorHandler = report.Failed
+	var changed func(vaults.VaultChanges)
 	if report.Changed != nil {
-		opening.Told = func(m vaults.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
+		changed = func(m vaults.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
-	open := opening.Begin(ctx, v)
+	open := opening.Begin(ctx, v, changed, report.Failed)
 	return windowsession.Started{Read: open.Read, Run: open.Run, Unwatched: open.GetUnwatchedReason()}
 }
 

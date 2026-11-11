@@ -57,7 +57,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Links{}, err
 			}
-			return cli.Links{Show: query.NewShowLinks(db.NoteQueries()).WithFind(find), Close: db.Close}, nil
+			return cli.Links{Show: query.NewShowLinksByName(find, query.NewShowLinks(db.NoteQueries())), Close: db.Close}, nil
 		},
 
 		Scan: func(ctx context.Context, rebuild bool) (cli.Scan, error) {
@@ -69,10 +69,10 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes(),
-				db.NoteQueries(), db.Maintenance())
+				db.NoteQueries(), db.Maintenance(), nil)
 			notes.ShouldRebuildIndex = rebuild
 
-			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
+			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}, nil, nil)
 			books.ShouldRebuildIndex = rebuild
 
 			// No vectors: a test uses no model, and a vault is searched by words alone.
@@ -80,7 +80,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			embed.Texts = testsupport.Texts{Readers: readers}
 
 			return cli.Scan{
-				Read: indexing.NewReadWholeVault(notes, books, embed).WithFind(find),
+				Read: indexing.NewReadWholeVaultByName(find, preparingRead(indexing.NewReadWholeVault(notes, books, embed))),
 				Summary: func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error) {
 					return db.NoteQueries().GetSummary(ctx, v.ID)
 				},
@@ -96,8 +96,8 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Search{}, err
 			}
 			return cli.Search{
-				Search: search.New(search.Index{Passages: db.ChunkSearch(), Nearest: db.ChunkSearch()}, vaultreader.Readers{Options: options},
-					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, nil, errorHandler).WithFind(find),
+				Search: search.NewByName(find, preparing(search.New(search.Index{Passages: db.ChunkSearch(), Nearest: db.ChunkSearch()}, vaultreader.Readers{Options: options},
+					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, nil, errorHandler))),
 				Close: db.Close,
 			}, nil
 		},
@@ -107,7 +107,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Problems{}, err
 			}
-			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(db.NoteProblems())).WithFind(find), Close: db.Close}, nil
+			return cli.Problems{Problems: vaults.NewGetProblemsByName(find, vaults.NewGetProblems(check.Standard(db.NoteProblems()))), Close: db.Close}, nil
 		},
 	}
 }
@@ -125,32 +125,32 @@ type vaultParts struct {
 func (p vaultParts) build() cli.Vaults {
 	find := registry.NewFind(p.ports.Lookup).Execute
 	unregister := func(rows vaultport.VaultRepository) vaults.Unregister {
-		return vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows).WithFind(find)
+		return vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
 	}
 	return cli.Vaults{
 		Add:        vaults.NewAdd(p.identity, p.ports.Vaults, p.ports.Lookup, p.ports.Saver, p.now),
 		Known:      registry.NewGetKnownVaults(p.ports.Vaults, p.ports.Last, p.readers),
-		RecordOpen: vaults.NewRecordOpen(p.ports.Recorder).WithFind(find),
+		RecordOpen: vaults.NewRecordOpenByName(find, vaults.NewRecordOpen(p.ports.Recorder)),
 		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
 			rows, closeRows, err := p.rows(ctx)
 			if err != nil {
 				return cli.Renaming{}, err
 			}
-			return cli.Renaming{Rename: vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows).WithFind(find), Close: closeRows}, nil
+			return cli.Renaming{Rename: vaults.NewRenameByName(find, vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows)), Close: closeRows}, nil
 		},
 		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
 			rows, closeRows, err := p.rows(ctx)
 			if err != nil {
 				return cli.Unregistering{}, err
 			}
-			return cli.Unregistering{Unregister: unregister(rows), Close: closeRows}, nil
+			return cli.Unregistering{Unregister: vaults.NewUnregisterByName(find, unregister(rows)), Close: closeRows}, nil
 		},
 		OpenErase: func(ctx context.Context) (cli.Erasing, error) {
 			rows, closeRows, err := p.rows(ctx)
 			if err != nil {
 				return cli.Erasing{}, err
 			}
-			return cli.Erasing{Erase: vaults.NewErase(p.identity, p.trash, unregister(rows)).WithFind(find), Close: closeRows}, nil
+			return cli.Erasing{Erase: vaults.NewEraseByName(find, vaults.NewErase(p.identity, p.trash, unregister(rows))), Close: closeRows}, nil
 		},
 	}
 }
@@ -208,7 +208,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 			return vaultParts{ports: portsOfSingle(singleVaultList{target})}.build(), nil
 		},
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{
+			return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(singleVaultList{target}).Execute, query.NewShowLinks(fixedLinkQueries{
 				links: []domain.ResolvedLink{{
 					Link: domain.Link{
 						Target: domain.Address{Scheme: domain.SchemeName, Value: "Hives"},
@@ -225,7 +225,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 					From: "Honey.md",
 					To:   "Bees.md",
 				}},
-			}).WithFind(registry.NewFind(singleVaultList{target}).Execute)}, nil
+			}))}, nil
 		},
 	}
 

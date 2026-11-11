@@ -67,7 +67,7 @@ func createLinkDeps(links, backlinks []domain.ResolvedLink) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute)}, nil
+			return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}))}, nil
 		},
 	}
 }
@@ -85,7 +85,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	for name, provided := range map[string]cli.Deps{
 		"the list of vaults cannot be opened": {
 			Links: func(context.Context) (cli.Links, error) {
-				return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{}).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused })}, nil
+				return cli.Links{Show: query.NewShowLinksByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, query.NewShowLinks(fixedLinkQueries{}))}, nil
 			},
 		},
 		"the links cannot be opened": {
@@ -95,7 +95,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 		"the index cannot say what a note points at": {
 			Vaults: createVaultList(getNotebook()),
 			Links: func(context.Context) (cli.Links, error) {
-				return cli.Links{Show: query.NewShowLinks(failingLinkQueries{}).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute)}, nil
+				return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(failingLinkQueries{}))}, nil
 			},
 		},
 	} {
@@ -221,7 +221,7 @@ func problemsDeps(queries problemport.ProblemQueries) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		Problems: func(context.Context) (cli.Problems, error) {
-			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(queries)).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute)}, nil
+			return cli.Problems{Problems: vaults.NewGetProblemsByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, vaults.NewGetProblems(check.Standard(queries)))}, nil
 		},
 	}
 }
@@ -288,7 +288,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}{
 		"the list of vaults cannot be opened": {
 			cli.Deps{Problems: func(context.Context) (cli.Problems, error) {
-				return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(fixedProblemQueries{})).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused })}, nil
+				return cli.Problems{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
 			}},
 			[]string{"problems", "notebook"},
 		},
@@ -313,7 +313,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		}
 	}
 	if _, err := runWithDeps(cli.Deps{Problems: func(context.Context) (cli.Problems, error) {
-		return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(fixedProblemQueries{})).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused })}, nil
+		return cli.Problems{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
 	}},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the rejection was lost: %v", err)
@@ -326,7 +326,7 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 	provided := createLinkDeps(nil, nil)
 	provided.Links = func(context.Context) (cli.Links, error) {
 		return cli.Links{
-			Show:  query.NewShowLinks(fixedLinkQueries{}).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute),
+			Show:  query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(fixedLinkQueries{})),
 			Close: func() error { closed++; return nil },
 		}, nil
 	}
@@ -346,7 +346,7 @@ func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 			return vaultParts{ports: brokenVaultList{}.ports()}.build(), nil
 		},
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{}).WithFind(registry.NewFind(brokenVaultList{}).Execute)}, nil
+			return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(brokenVaultList{}).Execute, query.NewShowLinks(fixedLinkQueries{}))}, nil
 		},
 	}
 	_, err := runWithDeps(provided, "links", "notebook", "Bees.md")
@@ -493,8 +493,8 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			readers := vaultreader.Readers{Options: options}
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes(),
-				db.NoteQueries(), db.Maintenance())
-			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
+				db.NoteQueries(), db.Maintenance(), nil)
+			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}, nil, nil)
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {
@@ -503,7 +503,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 				}
 				embed.Embedder = s.embedder
 			}
-			read := indexing.NewReadWholeVault(notes, books, embed).WithFind(registry.NewFind(singleVaultList{target}).Execute)
+			read := indexing.NewReadWholeVaultByName(registry.NewFind(singleVaultList{target}).Execute, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
 			read.Unembedded = s.unembedded
 			return cli.Scan{
 				Read: read,

@@ -35,7 +35,7 @@ func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List.WithFind(find),
+				List: commands.List, ByName: plugincommand.NewRunByName(find),
 				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
 					return commands.Run, nil, nil
 				},

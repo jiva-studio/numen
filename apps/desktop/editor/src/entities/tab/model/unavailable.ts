@@ -68,13 +68,15 @@ export const createUnavailableKind = (
   options?: UnavailableKindOptions,
   services: UnavailableServices = {},
 ): AnyTabKind => {
-  const base: TabKind<UnavailableState> = {
+  const placeholder: {
+    -readonly [K in keyof TabKind<UnavailableState>]: TabKind<UnavailableState>[K]
+  } = {
     kind,
     open: (targetPath: string, _id: string, saved?: JsonValue): UnavailableState => ({
       kind,
       targetPath,
       saved,
-      ...(options?.title ? { title: options.title } : {}),
+      title: options?.title,
       lookup: startLookup(kind),
       services,
     }),
@@ -91,9 +93,7 @@ export const createUnavailableKind = (
       identity: (targetPath: string) => targetPath,
     },
   }
-  const placeholder: TabKind<UnavailableState> = options?.icon
-    ? { ...base, display: { icon: options.icon } }
-    : base
+  if (options?.icon) placeholder.display = { icon: options.icon }
   placeholders.add(placeholder)
   return placeholder
 }

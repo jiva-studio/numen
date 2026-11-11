@@ -65,10 +65,11 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}.File(ctx, path)
 }
 
-// noteViews are the viewers that receive what a person or a program does to the notes. A nil view receives
-// no one.
+// noteViews are the viewers that receive what a person or a program does to the notes, and the gate the
+// writes that empty the trash pass. A nil view receives no one.
 type noteViews struct {
-	Moves note.TellMove
+	Moves  note.TellMove
+	Writes note.WriteGate
 }
 
 func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) note.Scenarios {
@@ -104,7 +105,7 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 			Rename:     note.NewRename(moveDeps, mover),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
-			EmptyTrash: note.NewEmptyTrash(writers),
+			EmptyTrash: note.NewEmptyTrash(writers, views.Writes),
 		},
 		Connect: note.Connecting{
 			SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, names),
@@ -151,9 +152,10 @@ func vaultOpenerWith(c vaultWiring,
 		db.Notes(),
 		db.NoteQueries(),
 		db.Maintenance(),
+		db.Sources(),
 	)
 	if c.SetNoteCut != nil {
-		c.SetNoteCut(&scan, db)
+		c.SetNoteCut(&scan)
 	}
 	scan.Walks = &db.Walks
 
@@ -196,7 +198,7 @@ func openPluginData(c vaultWiring) *textversion.PluginData {
 	}
 	data, err := textversion.NewPluginData(c.TextVersions, derivedfile.PluginStores{Options: vaultOptions(c)})
 	if err != nil {
-		vaultHandleError(c, err)
+		c.ErrorHandler(err)
 		return nil
 	}
 	return data
@@ -208,7 +210,7 @@ func openFileText(c vaultWiring) *textversion.FileText {
 	}
 	text, err := textversion.NewFileText(c.TextVersions)
 	if err != nil {
-		vaultHandleError(c, err)
+		c.ErrorHandler(err)
 		return nil
 	}
 	return text
@@ -222,8 +224,11 @@ func getMediaType(_ vaultWiring) *file.GetMediaType {
 	return file.NewGetMediaType(sharedmimeinfo.Open())
 }
 
-func openVaults(c Config, db *Index, out io.Writer, label string) *vault.OpenVaults[*Index] {
-	return &vault.OpenVaults[*Index]{Opener: func(i *Index) *vault.VaultOpener { return vaultOpener(vaultOf(c), i) }, Index: db, Out: out, Label: label}
+func openVaults(c Config, db *Index, out io.Writer, label string, record func(domain.Vault)) *vault.OpenVaults[*Index] {
+	return &vault.OpenVaults[*Index]{
+		Opener: func(i *Index) *vault.VaultOpener { return vaultOpener(vaultOf(c), i) }, Index: db, Out: out, Label: label,
+		RecordVault: record,
+	}
 }
 
 // SetShellNotes gives a shell the notes it answers about: whether a vault is indexed and what a link
@@ -232,23 +237,4 @@ func SetShellNotes(api *shell.API, db *Index) {
 	queries := vaultQueries(db)
 	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, queries.Browse.IsVaultIndexed, api.Window, api)
 	api.ResolveLinks = queries.Refer.ResolveLinks
-}
-
-// BindVaultIndexer has a shell read a vault into the index through vaults, and report a change each
-// time a vault is read.
-func BindVaultIndexer(_ Config, ctx context.Context, api *shell.API, vaults *vault.OpenVaults[*Index]) {
-	vaults.RecordVault = func(v domain.Vault) {
-		api.ClearIndexFailure(v.ID)
-		api.ReportChange()
-	}
-	api.SetVaultIndexer(ctx, vaults.IndexVault)
-}
-
-func showMovesIn(showing func() (domain.Vault, bool), view MoveView) note.TellMove {
-	return func(ctx context.Context, v domain.Vault, went domain.Move) error {
-		if current, isShowing := showing(); !isShowing || current.ID != v.ID {
-			return nil
-		}
-		return view.ShowMove(ctx, went)
-	}
 }

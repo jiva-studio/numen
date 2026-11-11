@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, useTemplateRef, watch, type VNode } from 'vue'
+import { computed, useTemplateRef, type VNode } from 'vue'
+import { useRenameFocus } from '../model/useRenameFocus'
 import type { TreeRowProps } from './TreeRow.types'
 import { TreeField } from './tree-field'
 
@@ -23,14 +24,7 @@ const field = useTemplateRef<InstanceType<typeof TreeField>>('field')
 const rowStyle = computed(() => ({ '--level': props.row.level }))
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(
-  () => props.isRenaming,
-  async (on) => {
-    if (!on) return
-    await nextTick()
-    field.value?.focus()
-  },
-)
+useRenameFocus(() => props.isRenaming, field)
 </script>
 
 <template>

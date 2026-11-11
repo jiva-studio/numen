@@ -65,63 +65,8 @@ func NewCommands(
 
 // List lists the commands the enabled plugins declare.
 type List struct {
-	find       VaultFinding
 	commands   pluginport.PluginCommands
 	conditions *when.Conditions
-}
-
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u List) WithFind(find VaultFinding) List {
-	u.find = find
-	return u
-}
-
-// RunInVault resolves the vault, opens the command runner over it, and runs the command.
-func (u List) RunInVault(
-	ctx context.Context, open RunnerOpener, nameOrPath string, call plugin.CommandCall,
-) (_ plugin.CommandResult, err error) {
-	v, err := u.find(nameOrPath)
-	if err != nil {
-		return plugin.CommandResult{}, err
-	}
-	run, closeRun, err := open(ctx, v)
-	if err != nil {
-		return plugin.CommandResult{}, err
-	}
-	defer func() {
-		if closeRun != nil {
-			err = errors.Join(err, closeRun())
-		}
-	}()
-	return run.Execute(ctx, v, call)
-}
-
-// RunSharedInVault resolves the vault, opens the command runner over it, picks the handler of the shared
-// command, and runs it.
-func (u List) RunSharedInVault(
-	ctx context.Context, open RunnerOpener, nameOrPath string, handlers []plugin.CommandEntry,
-	pluginID string, call plugin.CommandCall,
-) (_ plugin.CommandResult, err error) {
-	v, err := u.find(nameOrPath)
-	if err != nil {
-		return plugin.CommandResult{}, err
-	}
-	run, closeRun, err := open(ctx, v)
-	if err != nil {
-		return plugin.CommandResult{}, err
-	}
-	defer func() {
-		if closeRun != nil {
-			err = errors.Join(err, closeRun())
-		}
-	}()
-	handler, err := run.FindHandler(ctx, v, handlers, pluginID, call.Path)
-	if err != nil {
-		return plugin.CommandResult{}, err
-	}
-	call.PluginID = handler.PluginID
-	call.Command = handler.Command.ID
-	return run.Execute(ctx, v, call)
 }
 
 // Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.

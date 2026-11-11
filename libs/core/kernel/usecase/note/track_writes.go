@@ -28,10 +28,11 @@ type IndexFollow interface {
 	NoteWritten()
 }
 
-type openWriteGate struct{}
+// OpenGate admits every write, for an installation with no window that waits for writes.
+type OpenGate struct{}
 
-func (openWriteGate) BeginWrite() bool { return true }
-func (openWriteGate) FinishWrite()     {}
+func (OpenGate) BeginWrite() bool { return true }
+func (OpenGate) FinishWrite()     {}
 
 type noIndexFollow struct{}
 

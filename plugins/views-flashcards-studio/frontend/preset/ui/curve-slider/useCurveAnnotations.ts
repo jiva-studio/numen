@@ -35,7 +35,8 @@ function createCalloutData(options: CalloutOptions) {
     short: point.short,
     cards: curve.cards,
   })
-  return { lines, ...createCallout(position) }
+  const callout = createCallout(position)
+  return { lines, isUnder: callout.isUnder, box: callout.box, at: callout.at, tail: callout.tail }
 }
 
 function createMarks(goal: Goal, knob: Position | null, suggested: Position | null): Mark[] {

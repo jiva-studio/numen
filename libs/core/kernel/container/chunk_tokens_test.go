@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -111,11 +113,11 @@ func (c closerOf) Close() error { return c() }
 func TestChunkLimitIsTheCharacterBoundOfTheChunkSizeInTheCell(t *testing.T) {
 	cfg := container.NewConfig(container.Config{})
 
-	cfg.Chunks.Set(512)
+	cfg.Resources.Chunks.Set(512)
 	if got := cfg.CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
 		t.Errorf("cut at %d characters with 512 tokens, want %d", got, chunking.GetCharacterBound(512))
 	}
-	cfg.Chunks.Set(0)
+	cfg.Resources.Chunks.Set(0)
 	if got := cfg.CutNotes().Sizes.Limit; got != chunking.DefaultLimit {
 		t.Errorf("cut at %d characters with no size known, want the default %d", got, chunking.DefaultLimit)
 	}
@@ -125,7 +127,7 @@ func TestEveryCopyOfAConfigChunksAtTheSizeSetThroughOneCopy(t *testing.T) {
 	cfg := container.NewConfig(container.Config{})
 	copied := cfg
 
-	cfg.Chunks.Set(300)
+	cfg.Resources.Chunks.Set(300)
 
 	if got := copied.CutNotes().Sizes.Limit; got != 600 {
 		t.Errorf("a copy of the configuration cuts at %d characters, want 600", got)
@@ -137,7 +139,7 @@ func TestNotesAreChunkedAtTheSizeTheEmbeddingPluginReports(t *testing.T) {
 
 	openEmbedder(t, cfg)
 
-	if got := cfg.Chunks.Get(); got != 300 {
+	if got := cfg.Resources.Chunks.Get(); got != 300 {
 		t.Errorf("the cell holds %d tokens, want the 300 the plugin reports", got)
 	}
 	if got := cfg.CutNotes().Sizes.Limit; got != 600 {
@@ -154,7 +156,7 @@ func TestAChangeOfTheChunkSizeOfThePluginReachesTheCell(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	plugintest.WaitUntil(t, "the cell to hold the new chunk size", func() bool { return cfg.Chunks.Get() == 128 })
+	plugintest.WaitUntil(t, "the cell to hold the new chunk size", func() bool { return cfg.Resources.Chunks.Get() == 128 })
 }
 
 func TestWithNoEmbeddingPluginNotesAreChunkedAtTheDefaultLimit(t *testing.T) {
@@ -170,8 +172,8 @@ func TestWithNoEmbeddingPluginNotesAreChunkedAtTheDefaultLimit(t *testing.T) {
 	if got := cfg.CutNotes().Sizes.Limit; got != chunking.DefaultLimit {
 		t.Errorf("notes are cut at %d characters, want the default %d", got, chunking.DefaultLimit)
 	}
-	if cfg.Chunks.Get() != 0 {
-		t.Errorf("the cell holds %d tokens with no plugin", cfg.Chunks.Get())
+	if cfg.Resources.Chunks.Get() != 0 {
+		t.Errorf("the cell holds %d tokens with no plugin", cfg.Resources.Chunks.Get())
 	}
 }
 
@@ -180,7 +182,7 @@ func TestNoChunkSizeFromThePluginKeepsTheCellAtZero(t *testing.T) {
 
 	openEmbedder(t, cfg)
 
-	if got := cfg.Chunks.Get(); got != 0 {
+	if got := cfg.Resources.Chunks.Get(); got != 0 {
 		t.Errorf("the cell holds %d tokens, want 0", got)
 	}
 	if got := cfg.CutNotes().Sizes.Limit; got != chunking.DefaultLimit {
@@ -196,12 +198,12 @@ func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	})
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	cfg.Chunks.Set(256)
+	cfg.Resources.Chunks.Set(256)
 	small, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.Chunks.Set(512)
+	cfg.Resources.Chunks.Set(512)
 	large, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
@@ -262,7 +264,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := read.Execute(t.Context(), v); err != nil {
+	if _, err := read.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -282,10 +284,10 @@ func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 	if scan := container.Scan(cfg, db); scan.ShouldRecut {
 		t.Error("a scan with no chunk size known checks the recorded cut")
 	}
-	cfg.Chunks.Set(256)
+	cfg.Resources.Chunks.Set(256)
 	scan := container.Scan(cfg, db)
-	if !scan.ShouldRecut || scan.GetOtherRecipePaths == nil {
-		t.Errorf("a scan with a chunk size known has ShouldRecut %v and GetOtherRecipePaths %v, want the check to run", scan.ShouldRecut, scan.GetOtherRecipePaths != nil)
+	if !scan.ShouldRecut {
+		t.Error("a scan with a chunk size known does not check the recorded cut")
 	}
 }
 
@@ -298,12 +300,12 @@ func TestANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
 		"Compost.md": "# Compost\n\nThe compost heap sits behind the shed.\n",
 	})
 
-	cfg.Chunks.Set(256)
+	cfg.Resources.Chunks.Set(256)
 	first, err := container.Scan(cfg, db).Execute(t.Context(), v)
 	if err != nil || first.Indexed != 3 {
 		t.Fatalf("first scan: %+v, %v", first, err)
 	}
-	cfg.Chunks.Set(512)
+	cfg.Resources.Chunks.Set(512)
 	second, err := container.Scan(cfg, db).Execute(t.Context(), v)
 	if err != nil || second.Indexed != 3 {
 		t.Errorf("scan after the chunk size changed indexed %d notes (%v), want 3", second.Indexed, err)

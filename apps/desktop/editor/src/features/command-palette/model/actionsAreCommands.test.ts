@@ -231,11 +231,15 @@ describe('the source of the editor', () => {
   })
 
   it('runs a chosen result in the field only through the choice it is handed', () => {
-    const field = sources['/src/features/command-palette/ui/CommandPalette.vue'] ?? ''
+    const view = sources['/src/features/command-palette/ui/CommandPalette.vue'] ?? ''
+    const field = sources['/src/features/command-palette/model/usePaletteInput.ts'] ?? ''
 
     expect(field).not.toBe('')
-    expect(field).not.toMatch(/CREATE_NOTE/)
-    expect(field).not.toMatch(/item\s*===/)
+    for (const text of [view, field]) {
+      expect(text).not.toMatch(/CREATE_NOTE/)
+      expect(text).not.toMatch(/item\s*===/)
+    }
+    expect(view).not.toMatch(/runInvocation\(/)
     expect(field.match(/runInvocation\(/g) ?? []).toHaveLength(1)
   })
 })

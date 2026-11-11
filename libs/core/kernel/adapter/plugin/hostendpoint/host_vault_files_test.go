@@ -121,7 +121,7 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 			},
 		},
 		Stores: hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
-		Locks:  hold.NewLocks(writers, testsupport.GetMachine()),
+		Locks:  hold.NewLocks(writers, testsupport.GetMachine(), hold.LockHold),
 	}
 }
 

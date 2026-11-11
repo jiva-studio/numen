@@ -118,11 +118,10 @@ func mountFile(w *windowWiring) {
 		state, state.Events,
 		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), w.tabKinds),
 		file.NewListFileKinds(fileKinds, chooser),
-		file.NewCreateFolder(folderWriters(vaultOf(w.cfg))).WithWriteGate(state.Writes),
+		file.NewCreateFolder(folderWriters(vaultOf(w.cfg)), state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
 	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes, state.Writes)
-	w.cases.Notes.Place.EmptyTrash = w.cases.Notes.Place.EmptyTrash.WithWriteGate(state.Writes)
 	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.server = editor.NewFileServer(
@@ -218,8 +217,8 @@ func mountSettings(w *windowWiring) {
 	var groups windowsettings.SecretGroups
 	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
 		secretLister = secrets.List.ListForSettings
-		items = windowsettings.NewSecretItems(secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write, secrets.Items.Delete, secrets.Items.Move)
-		groups = windowsettings.NewSecretGroups(secrets.Groups.Rename, secrets.Groups.Delete, secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates)
+		items = windowsettings.NewSecretItems(secrets.Items)
+		groups = windowsettings.NewSecretGroups(secrets.Groups, secrets.Access)
 	}
 	retry := openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
@@ -244,7 +243,7 @@ func mountPlugin(w *windowWiring) {
 }
 
 func shareEditorWindow(c Config, db *Index, opened *windowWiring) {
-	view := GetWindowView(opened.inst)
+	view := windowView(opened.inst.State)
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
 		&opened.inst.State.Runtime,
@@ -285,16 +284,9 @@ func getReadVault(cfg Config, db *Index) indexing.OpenReading {
 
 func newIndexWorker(w *windowWiring, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:  getReadVault(w.cfg, w.db),
-		Embedder: embedding.GetEmbedder(),
-		VectorCounts: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
-			if !embedding.HasProgress() {
-				return 0, 0, indexing.ErrNoProgress
-			}
-			name, recipe := embedding.Describe()
-			state.Runtime.RecordModel(name, recipe)
-			return embedding.CountProgress(ctx, v.ID, recipe)
-		},
+		Reading:      getReadVault(w.cfg, w.db),
+		Embedder:     embedding.GetEmbedder(),
+		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
 		VectorsReady: state.Events.EmitVectorsReady,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
@@ -342,12 +334,12 @@ func startVault(c Config, db *Index, current *vault.CurrentRefresh) windowsessio
 
 		opening := vaultOpener(vaultOf(request), db)
 		opening.ShouldRebuild = rebuild
-		opening.ErrorHandler = report.Failed
+		var changed func(vault.VaultChanges)
 		if report.Changed != nil {
-			opening.Told = func(m vault.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
+			changed = func(m vault.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
 		}
 
-		open := opening.Begin(ctx, v)
+		open := opening.Begin(ctx, v, changed, report.Failed)
 		refresh := opening.GetRefresh()
 		return windowsession.Started{
 			Read:      open.Read,

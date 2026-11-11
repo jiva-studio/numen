@@ -18,11 +18,6 @@ import (
 // so a library of any size is processed in pages.
 const sourcesPerQuery = 100
 
-// versionReader names the text a source is cut from: the live text version of
-// the file. It is part of every recipe, and changes when the text or the
-// offsets a version gives do.
-const versionReader = "text-version-1"
-
 // Index cuts the live text versions of the files a vault holds into chunks, in two passes.
 // The first records the files that have text or that a plugin can extract text
 // from, without opening them. The second reads the live text of every file that
@@ -39,19 +34,15 @@ type Index struct {
 
 	ShouldRebuildIndex bool
 
-	OnProgress func(vaultreading.IndexResult)
-
-	IsSkipped func(path string) bool
-
-	ErrorHandler window.ErrorHandler
-
-	ReadNote func(ctx context.Context, v domain.Vault, path string) error
+	errorHandler window.ErrorHandler
+	readNote     func(ctx context.Context, v domain.Vault, path string) error
 }
 
 // NewIndex creates an Index from the vault readers, the source repository
 // that stores sources and chunks, the queries that report which sources the
 // index records, which still need text and the text kept for the ones that left,
-// and the text readers. Nil texts means no file has text.
+// and the text readers. Nil texts means no file has text. A nil errorHandler ignores the errors a pass reports,
+// and a nil readNote reads no note again before it is cut.
 func NewIndex(
 	readers vaultport.VaultReaders,
 	sources sourceport.SourceRepository,
@@ -59,9 +50,11 @@ func NewIndex(
 	backlog sourceport.SourceBacklog,
 	lookup sourceport.RemovalLookup,
 	texts text.Readers,
+	errorHandler window.ErrorHandler,
+	readNote func(ctx context.Context, v domain.Vault, path string) error,
 ) Index {
 	return Index{
-		readers: readers, sources: sources, texts: texts,
+		readers: readers, sources: sources, texts: texts, errorHandler: errorHandler, readNote: readNote,
 		queries: sourceQueries{records: records, backlog: backlog, lookup: lookup},
 	}
 }
@@ -71,18 +64,18 @@ func NewIndex(
 func (u Index) IndexWithProgress(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool,
 ) (vaultreading.IndexResult, error) {
-	if onProgress != nil {
-		u.OnProgress = onProgress
-	}
-	if isSkipped != nil {
-		u.IsSkipped = isSkipped
-	}
-	return u.Execute(ctx, v)
+	return u.run(ctx, v, onProgress, isSkipped)
 }
 
 // Execute brings the chunks of one vault's file texts up to date with what is
 // on disk.
 func (u Index) Execute(ctx context.Context, v domain.Vault) (vaultreading.IndexResult, error) {
+	return u.run(ctx, v, nil, nil)
+}
+
+func (u Index) run(
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool,
+) (vaultreading.IndexResult, error) {
 	var res vaultreading.IndexResult
 
 	on, err := u.open(v)
@@ -97,7 +90,7 @@ func (u Index) Execute(ctx context.Context, v domain.Vault) (vaultreading.IndexR
 	if err != nil {
 		return res, err
 	}
-	return res, newCutter(u).cut(ctx, v, on, noteStats, notePaths, &res)
+	return res, newCutter(u, onProgress, isSkipped).cut(ctx, v, on, noteStats, notePaths, &res)
 }
 
 // IndexOne brings a single file's chunks up to date with its live text
@@ -108,7 +101,7 @@ func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (vault
 	if err != nil {
 		return res, err
 	}
-	return res, newCutter(u).source(ctx, v, on, path, u.sizes(), &res)
+	return res, newCutter(u, nil, nil).source(ctx, v, on, path, u.sizes(), &res)
 }
 
 // openVault is one vault as a cut reads it: its files and the text versions of them.
@@ -163,6 +156,6 @@ func (noTexts) GetVersionText(context.Context, string, domain.TextVersionID) (do
 func (noTexts) IsTextSource(context.Context, string) (bool, error) { return false, nil }
 
 // Recipe returns the recipe that names the version reader and the chunk sizes.
-func (u Index) Recipe() string { return recipe(versionReader, u.sizes()) }
+func (u Index) Recipe() string { return chunking.GetTextVersionRecipe(u.sizes()) }
 
 func (u Index) sizes() chunking.Sizes { return u.Sizes.Resolve() }

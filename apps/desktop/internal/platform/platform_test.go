@@ -153,10 +153,10 @@ func TestGetConfigListsThePluginsOfTheIndex(t *testing.T) {
 
 	sources := GetConfigFor(TargetEditor).PluginCatalog.Sources
 
-	if len(sources) != 1 {
-		t.Fatalf("%d catalog sources, want the plugin index", len(sources))
+	if len(sources) != 2 {
+		t.Fatalf("%d catalog sources, want the plugin folders and the plugin index", len(sources))
 	}
-	entries, err := sources[0].List(t.Context())
+	entries, err := sources[1].List(t.Context())
 	if err != nil || len(entries) != 1 || entries[0].ID != "org.example.offered" {
 		t.Errorf("List = %+v, %v; want the plugin of the index", entries, err)
 	}

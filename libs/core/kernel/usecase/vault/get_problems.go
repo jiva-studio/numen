@@ -15,18 +15,11 @@ type problemChecks interface {
 // GetProblems lists what a vault contains that could not be acted on and was
 // not guessed at.
 type GetProblems struct {
-	find   VaultFinding
 	checks problemChecks
 }
 
 func NewGetProblems(checks problemChecks) *GetProblems {
 	return &GetProblems{checks: checks}
-}
-
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u *GetProblems) WithFind(find VaultFinding) *GetProblems {
-	u.find = find
-	return u
 }
 
 // Problems is what the checks found and the checks that ran.
@@ -35,13 +28,24 @@ type Problems struct {
 	Found []domain.VaultProblem
 }
 
+// GetProblemsByName lists the problems of the vault a person names.
+type GetProblemsByName struct {
+	find     VaultFinding
+	problems *GetProblems
+}
+
+// NewGetProblemsByName creates the use case that resolves the vault with find and lists its problems with problems.
+func NewGetProblemsByName(find VaultFinding, problems *GetProblems) GetProblemsByName {
+	return GetProblemsByName{find: find, problems: problems}
+}
+
 // ExecuteByName resolves the vault and runs the named checks.
-func (u *GetProblems) ExecuteByName(ctx context.Context, nameOrPath string, named ...domain.Check) (Problems, error) {
+func (u GetProblemsByName) ExecuteByName(ctx context.Context, nameOrPath string, named ...domain.Check) (Problems, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {
 		return Problems{}, err
 	}
-	return u.Execute(ctx, v, named...)
+	return u.problems.Execute(ctx, v, named...)
 }
 
 // Execute runs the named checks, or every check that is not quiet when none is

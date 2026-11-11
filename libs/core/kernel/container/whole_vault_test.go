@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -79,9 +81,6 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if trimmed.ErrorHandler == nil {
-		t.Error("the error handler was not set for a source whose text could not be read")
-	}
 	if !trimmed.ShouldRebuildIndex {
 		t.Error("a rebuild was asked for and the cut skips sources the index remembers")
 	}
@@ -152,7 +151,7 @@ func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v); err != nil {
+	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
 		t.Fatal(err)
 	}
 	if unembeddedTo(t, db, v, first) != 0 {
@@ -195,7 +194,7 @@ func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := whole.Execute(t.Context(), v); err != nil {
+	if _, err := whole.Execute(t.Context(), v, indexing.Reporting{}); err != nil {
 		t.Fatal(err)
 	}
 	return db, v

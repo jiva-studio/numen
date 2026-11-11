@@ -12,21 +12,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/startup"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// GetUnknownVaultName returns the name of the vault, named at start, that err says the registry does not
-// hold.
-func GetUnknownVaultName(err error) (string, bool) {
-	unknown, ok := errors.AsType[*registry.UnknownError](err)
-	if !ok {
-		return "", false
-	}
-	return unknown.Name, true
-}
 
 // windowWiring is what the wire_window_<service>.go files share while one editor window is built.
 // The state, the scenarios of notes and vaults and the installation are the window's own, and each
@@ -35,6 +26,7 @@ type windowWiring struct {
 	cfg   Config
 	ports registry.Ports
 	db    *Index
+	frame editor.Frame
 
 	embedder embeddingport.Embedder
 	asking   embeddingport.Embedder
@@ -52,24 +44,20 @@ func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*ed
 	if err != nil {
 		return nil, err
 	}
-	return OpenWindowOver(c, ctx, db, named, out)
-}
-
-// OpenWindowOver is OpenWindow over a cache already open, for a caller that opened
-// it itself. The window closes the cache.
-func OpenWindowOver(c Config,
-	ctx context.Context, db *Index, named string, out io.Writer,
-) (*editor.Installation, error) {
 	return OpenWindowWith(c, ctx, WindowOpening{DB: db, Named: named, Out: out})
 }
 
 // WindowOpening is what OpenWindowWith opens a window over: the cache already open,
 // the vault to show, where the window writes, and an optional function the walk of the vault goes through.
+// Frame is the application window around the editor; none leaves the editor with no window of its own to
+// title or to open for a tab.
 type WindowOpening struct {
 	DB    *Index
 	Named string
 	Out   io.Writer
 	Wrap  func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
+
+	Frame editor.Frame
 
 	UseCases *WindowUseCases
 }
@@ -83,8 +71,9 @@ type WindowUseCases struct {
 	ShowTab windowsession.ShowTab
 }
 
-// OpenWindowWith is OpenWindowOver with the walk of the vault put through Wrap, for a caller
-// that holds one back or drives it. A nil Wrap leaves it as it is.
+// OpenWindowWith is OpenWindow over a cache already open, for a caller that opened it itself, with the walk of
+// the vault put through Wrap, for a caller that holds one back or drives it. A nil Wrap leaves it as it is.
+// The window closes the cache.
 func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*editor.Installation, error) {
 	ports, err := c.registry()
 	if err != nil {
@@ -98,7 +87,9 @@ func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*edit
 }
 
 func openWindowWith(c Config, ctx context.Context, ports registry.Ports, opening WindowOpening) (*windowWiring, error) {
-	w := &windowWiring{cfg: c, ports: ports, db: opening.DB, wrap: opening.Wrap, cases: getWindowUseCases(opening)}
+	w := &windowWiring{
+		cfg: c, ports: ports, db: opening.DB, frame: opening.Frame, wrap: opening.Wrap, cases: getWindowUseCases(opening),
+	}
 	return openWindow(ctx, w, opening.Named, opening.Out)
 }
 
@@ -122,18 +113,16 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
 	embedding := indexing.NewEmbedding(embedder, w.db.ChunkVectors())
-	state := editor.NewState(tasks)
-	state.Events.Emit = func(event string) { emitPluginEvent(plugins(w.cfg), event) }
+	state := editor.NewState(tasks, w.frame, func(event string) { emitPluginEvent(plugins(w.cfg), event) })
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(w, state, embedding, out)
-	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
 	current := &vault.CurrentRefresh{Fallback: func() vault.Refresh { return GetRefresh(w.cfg, w.db) }}
 	notes := vaultNotes(
 		vaultOf(w.cfg), w.db, vault.NewUpdateIndex(current.Get).Execute,
-		noteViews{Moves: showMovesIn(state.GetShownVault, windowView(state))},
+		noteViews{Moves: note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)), Writes: state.Writes},
 	)
 	queries := vaultQueries(w.db)
 	w.cases.Notes, w.cases.Queries = &notes, &queries
@@ -166,9 +155,15 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		Closing:       ctx.Done(),
 		IsRebuilding:  w.cfg.ShouldRebuildIndex,
 	})
+	switching := startup.SwitchVault[*windowsession.PluginOpen]{
+		Show:        session.Switching.Show.Execute,
+		FollowVault: func(path string) { setPluginVaultPath(plugins(w.cfg), path) },
+		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
+	}
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.Start, Show: session.Switching.Show, OpenPlugin: session.Switching.OpenPlugin,
 		Flush: session.Closing.Flush, Close: session.Closing.Close,
+		OpenVault: switching.Execute, NoteWritten: indexer.WakeNotes,
 	}, session.Import, out)
 	w.inst = inst
 	w.cases.ShowTab = session.ShowTab
@@ -213,11 +208,6 @@ func mountServices(w *windowWiring) error {
 	return nil
 }
 
-// GetWindowView returns the window as the core asks it to show a place, a move, an edit or a tab.
-func GetWindowView(inst *editor.Installation) windowsession.View {
-	return windowView(inst.State)
-}
-
 func windowView(state *editor.State) windowsession.View {
 	notices := state.Notices
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
@@ -228,4 +218,14 @@ func getWindowUseCases(opening WindowOpening) *WindowUseCases {
 		return opening.UseCases
 	}
 	return &WindowUseCases{}
+}
+
+// GetUnknownVaultName returns the name of the vault, named at start, that err says the registry does not
+// hold.
+func GetUnknownVaultName(err error) (string, bool) {
+	unknown, ok := errors.AsType[*registry.UnknownError](err)
+	if !ok {
+		return "", false
+	}
+	return unknown.Name, true
 }

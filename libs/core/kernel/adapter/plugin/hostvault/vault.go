@@ -24,7 +24,7 @@ func (v Vault) Access() *vault.Access {
 	session := v.Session
 	session.rebuild = func(found domain.Vault) *vault.Access {
 		linked := v
-		linked.Session.Current = func() (domain.Vault, bool) { return found, true }
+		linked.Session = v.Session.showing(found)
 		return linked.Access()
 	}
 	files, lookups, connections, arranger, stores := v.Files, v.Lookups, v.Connections, v.Arranger, v.Stores

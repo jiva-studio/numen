@@ -78,12 +78,6 @@ func (o *OpenVaults[I]) getOpenedVault(ctx context.Context, v domain.Vault) *ope
 
 func (o *OpenVaults[I]) openVault(ctx context.Context, v domain.Vault, one *openedVault) {
 	opening := o.Opener(o.Index)
-	opening.Told = func(VaultChanges) { o.RecordVault(v) }
-	opening.ErrorHandler = func(err error) {
-		if err != nil {
-			o.writeOutput("%s: %s: %v\n", o.Label, v.Name, err)
-		}
-	}
 
 	lifetime, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	o.mu.Lock()
@@ -94,7 +88,11 @@ func (o *OpenVaults[I]) openVault(ctx context.Context, v domain.Vault, one *open
 	}
 	o.mu.Unlock()
 
-	open := opening.Begin(lifetime, v)
+	open := opening.Begin(lifetime, v, func(VaultChanges) { o.RecordVault(v) }, func(err error) {
+		if err != nil {
+			o.writeOutput("%s: %s: %v\n", o.Label, v.Name, err)
+		}
+	})
 	if why := open.GetUnwatchedReason(); why != nil {
 		o.writeOutput("%s: %s is not being followed: %v\n", o.Label, v.Name, why)
 	}

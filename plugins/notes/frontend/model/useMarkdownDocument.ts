@@ -3,6 +3,8 @@ import type { EditorHandle, NoteTabState, Caught } from '@numen/plugin-sdk'
 import { readTextAsset } from '../api/readTextAsset'
 import { parseFrontmatter, type FrontmatterResult } from '../lib/frontmatter'
 import { getFrontmatterError } from '../lib/frontmatterError'
+import { createWikilinkExtension } from '../lib/wikilinks'
+import type { Extension } from '@codemirror/state'
 
 export interface DocumentOptions {
   readonly modelValue?: string
@@ -27,6 +29,16 @@ export function getEditorLanguage(props: DocumentOptions): 'markdown' | 'json' |
   if (path.endsWith('.txt')) return 'plaintext'
   if (path.endsWith('.json')) return 'json'
   return 'markdown'
+}
+
+/** The extensions the caller passes, else the wikilink completion over the notes the host offers. */
+export function getEditorExtensions(props: {
+  readonly extensions?: Extension | readonly Extension[] | undefined
+  readonly state?: NoteTabState | undefined
+}): Extension | undefined {
+  if (props.extensions) return props.extensions as Extension
+  const links = props.state?.wikilinks
+  return links ? createWikilinkExtension(links) : undefined
 }
 
 export function useMarkdownDocument(

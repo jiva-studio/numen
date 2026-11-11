@@ -22,7 +22,6 @@ type EraseConfirmation interface {
 // person deleted. The folder is taken away only while it still carries this
 // vault's identity.
 type Erase struct {
-	find       VaultFinding
 	identity   vaultport.VaultIdentity
 	trash      machineport.Trash
 	unregister Unregister
@@ -35,12 +34,6 @@ func NewErase(identity vaultport.VaultIdentity, trash machineport.Trash, unregis
 	return Erase{identity: identity, trash: trash, unregister: unregister}
 }
 
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u Erase) WithFind(find VaultFinding) Erase {
-	u.find = find
-	return u
-}
-
 // EraseResult reports what happened to the folder. Only Erase can tell whether
 // the folder was already missing, so the caller receives it from here.
 type EraseResult struct {
@@ -48,8 +41,19 @@ type EraseResult struct {
 	IsTrashed bool
 }
 
+// EraseByName erases the vault a person names.
+type EraseByName struct {
+	find  VaultFinding
+	erase Erase
+}
+
+// NewEraseByName creates the use case that resolves the vault with find and erases it with erase.
+func NewEraseByName(find VaultFinding, erase Erase) EraseByName {
+	return EraseByName{find: find, erase: erase}
+}
+
 // ExecuteByName resolves the vault, asks for confirmation when confirm is non-nil, and erases the vault.
-func (u Erase) ExecuteByName(ctx context.Context, nameOrPath string, confirm EraseConfirmation) (EraseResult, error) {
+func (u EraseByName) ExecuteByName(ctx context.Context, nameOrPath string, confirm EraseConfirmation) (EraseResult, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {
 		return EraseResult{}, err
@@ -63,7 +67,7 @@ func (u Erase) ExecuteByName(ctx context.Context, nameOrPath string, confirm Era
 			return EraseResult{Vault: v}, fmt.Errorf("%s was not erased", v.Name)
 		}
 	}
-	res, err := u.Execute(ctx, v)
+	res, err := u.erase.Execute(ctx, v)
 	res.Vault = v
 	return res, err
 }

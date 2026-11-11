@@ -14,7 +14,6 @@ import (
 // index. The folder keeps its position, with the identity it carries, and adding
 // it again brings back the same vault.
 type Unregister struct {
-	find    VaultFinding
 	vaults  vaultport.VaultList
 	remover vaultport.VaultRemover
 	index   vaultport.VaultRepository
@@ -26,19 +25,24 @@ func NewUnregister(vaults vaultport.VaultList, remover vaultport.VaultRemover, i
 	return Unregister{vaults: vaults, remover: remover, index: index}
 }
 
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u Unregister) WithFind(find VaultFinding) Unregister {
-	u.find = find
-	return u
+// UnregisterByName takes the vault a person names off the list.
+type UnregisterByName struct {
+	find       VaultFinding
+	unregister Unregister
+}
+
+// NewUnregisterByName creates the use case that resolves the vault with find and unregisters it with unregister.
+func NewUnregisterByName(find VaultFinding, unregister Unregister) UnregisterByName {
+	return UnregisterByName{find: find, unregister: unregister}
 }
 
 // ExecuteByName resolves the vault and takes it off the list and out of the index.
-func (u Unregister) ExecuteByName(ctx context.Context, nameOrPath string) (domain.Vault, error) {
+func (u UnregisterByName) ExecuteByName(ctx context.Context, nameOrPath string) (domain.Vault, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if err := u.Execute(ctx, v); err != nil {
+	if err := u.unregister.Execute(ctx, v); err != nil {
 		return domain.Vault{}, err
 	}
 	return v, nil

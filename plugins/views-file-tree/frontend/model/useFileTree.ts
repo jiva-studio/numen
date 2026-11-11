@@ -96,8 +96,10 @@ interface TreeRefreshDeps {
   errorMessage: Ref<string>
   isLoaded: Ref<boolean>
   selectedPaths: ShallowRef<readonly string[]>
-  isFolderOpen: (folder: string) => boolean
-  getEntryAt: (path: string) => Entry | null
+  lookup: {
+    isFolderOpen: (folder: string) => boolean
+    getEntryAt: (path: string) => Entry | null
+  }
   isAlive: () => boolean
 }
 
@@ -109,8 +111,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     errorMessage,
     isLoaded,
     selectedPaths,
-    isFolderOpen,
-    getEntryAt,
+    lookup: { isFolderOpen, getEntryAt },
     isAlive,
   } = deps
 
@@ -225,8 +226,7 @@ export function createFileTree(core: Folders): FileTree {
   const refreshControl = createTreeRefresh({
     core,
     ...state,
-    isFolderOpen: queries.isFolderOpen,
-    getEntryAt: queries.getEntryAt,
+    lookup: queries,
     isAlive: () => isAlive,
   })
 

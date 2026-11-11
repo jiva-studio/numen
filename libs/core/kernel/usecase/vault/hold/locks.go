@@ -32,15 +32,10 @@ type hold struct {
 	until   time.Time
 }
 
-// NewLocks returns the use case over the locks of the vaults. A hold ends LockHold after it began.
-func NewLocks(locks vaultport.VaultLocks, clock machineport.Clock) *Locks {
-	return &Locks{locks: locks, clock: clock, hold: LockHold, leases: map[string]hold{}}
-}
-
-// WithHold returns the use case with holds that end after d.
-func (u *Locks) WithHold(d time.Duration) *Locks {
-	u.hold = d
-	return u
+// NewLocks returns the use case over the locks of the vaults. A hold ends holdFor after it began; LockHold is
+// the longest an installation grants.
+func NewLocks(locks vaultport.VaultLocks, clock machineport.Clock, holdFor time.Duration) *Locks {
+	return &Locks{locks: locks, clock: clock, hold: holdFor, leases: map[string]hold{}}
 }
 
 // Execute waits while another holder has the writers of the vault, holds them, and returns the id of

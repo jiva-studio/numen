@@ -43,7 +43,7 @@ func newConnectionEditor(
 ) connectionEditor {
 	return connectionEditor{
 		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
-		track: NewTrackWrites(openWriteGate{}, noIndexFollow{}),
+		track: NewTrackWrites(OpenGate{}, noIndexFollow{}),
 	}
 }
 

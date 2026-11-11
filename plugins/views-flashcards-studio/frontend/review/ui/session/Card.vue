@@ -4,7 +4,7 @@
  */
 import { computed, ref } from 'vue'
 import { findLinkHref, renderCardHtml, vMarkup } from '../../../api/render'
-import { scheme } from '../../../lib/cards'
+import { decodeHref, scheme } from '../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -47,17 +47,6 @@ const onClick = (press: MouseEvent) => {
   const distanceX = from.value === null ? 0 : Math.abs(press.clientX - from.value)
   from.value = null
   if (distanceX <= MAX_TAP_DISTANCE && !props.isShown) emit('show')
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function decodeHref(href: string): string {
-  try {
-    return decodeURIComponent(href)
-  } catch {
-    // Nothing is wrong with the card; only with an escape in it, and the
-    // characters as written are the closest thing to what was meant.
-    return href
-  }
 }
 </script>
 

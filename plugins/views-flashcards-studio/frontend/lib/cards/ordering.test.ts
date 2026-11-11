@@ -9,7 +9,7 @@ import {
   getFreeName,
   checkFieldName,
   checkHeadingName,
-  createSealedMap,
+  getSealedMap,
   orderNames,
   reorderFields,
   getStepInsertionPoint,
@@ -199,13 +199,13 @@ describe('names written with space around them', () => {
   })
 })
 
-describe('createSealedMap', () => {
+describe('getSealedMap', () => {
   it('is a map of nothing', () => {
-    expect(createSealedMap<string, string>().size).toBe(0)
+    expect(getSealedMap<string, string>().size).toBe(0)
   })
 
   it('refuses every way of putting something into it or taking something out', () => {
-    const sealed = createSealedMap<string, string>() as Map<string, string>
+    const sealed = getSealedMap<string, string>() as Map<string, string>
     expect(() => sealed.set('a', 'b')).toThrow(TypeError)
     expect(() => sealed.delete('a')).toThrow(TypeError)
     expect(() => sealed.clear()).toThrow(TypeError)

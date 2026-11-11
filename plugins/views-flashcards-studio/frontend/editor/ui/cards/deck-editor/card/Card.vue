@@ -6,7 +6,7 @@ import { RemoveButton } from '../../remove-button'
 import { CardValue } from './card-value'
 import { DECK_WORDS, type CardWords } from '../../../../../lib/cards'
 import type { PlacedFieldValue, Tile } from '../../../../../lib/cards'
-import { createSealedMap, type StepDirection } from '../../../../../lib/cards'
+import { getSealedMap, type StepDirection } from '../../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -16,7 +16,7 @@ const props = withDefaults(
     wrongUnder?: ReadonlyMap<string, readonly string[]>
     words?: CardWords
   }>(),
-  { wrong: () => [], wrongUnder: () => createSealedMap(), words: () => DECK_WORDS },
+  { wrong: () => [], wrongUnder: () => getSealedMap(), words: () => DECK_WORDS },
 )
 
 /* --------------------------------- Events --------------------------------- */

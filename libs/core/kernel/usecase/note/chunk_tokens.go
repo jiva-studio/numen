@@ -1,6 +1,10 @@
 package note
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+)
 
 // ChunkTokens is the chunk size in tokens that the embedding plugin reports, shared by every copy of the
 // configuration that holds it. A nil ChunkTokens is a size that is not known.
@@ -19,4 +23,10 @@ func (c *ChunkTokens) Get() int {
 		return 0
 	}
 	return int(c.tokens.Load())
+}
+
+// Follow holds the chunk size of the model of the embedder, and again each time onChange has the model change.
+func (c *ChunkTokens) Follow(embedder embeddingport.Embedder, onChange func(func())) {
+	c.Set(embedder.GetModel().ChunkTokens)
+	onChange(func() { c.Set(embedder.GetModel().ChunkTokens) })
 }

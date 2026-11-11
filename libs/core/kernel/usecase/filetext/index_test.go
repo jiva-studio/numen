@@ -47,7 +47,7 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			}
 
 			source := index.Sources[indexfake.GetFirst().ID][bookPath]
-			if want := recipe(versionReader, extract.sizes()); source.Recipe != want {
+			if want := chunking.GetTextVersionRecipe(extract.sizes()); source.Recipe != want {
 				t.Errorf("recipe = %q, want %q", source.Recipe, want)
 			}
 			if source.ContentHash == "" {
@@ -193,7 +193,7 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	other := one
 	other.Small = 21
 
-	if recipe(versionReader, one) == recipe(versionReader, other) {
+	if chunking.GetTextVersionRecipe(one) == chunking.GetTextVersionRecipe(other) {
 		t.Fatal("one word of difference in a chunk size is not in the recipe")
 	}
 
@@ -206,7 +206,7 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stale, err := index.GetSourcesWithOtherRecipe(ctx, indexfake.GetFirst().ID, domain.KindFile, []string{recipe(versionReader, Index{Sizes: other}.sizes())}, 10)
+	stale, err := index.GetSourcesWithOtherRecipe(ctx, indexfake.GetFirst().ID, domain.KindFile, []string{chunking.GetTextVersionRecipe(Index{Sizes: other}.sizes())}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +225,7 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	if index.Extractions[bookPath] != 2 {
 		t.Errorf("the source was written %d times, want the cut at each of the two sizes", index.Extractions[bookPath])
 	}
-	if want := recipe(versionReader, extract.sizes()); index.Sources[indexfake.GetFirst().ID][bookPath].Recipe != want {
+	if want := chunking.GetTextVersionRecipe(extract.sizes()); index.Sources[indexfake.GetFirst().ID][bookPath].Recipe != want {
 		t.Errorf("recipe = %q, want %q", index.Sources[indexfake.GetFirst().ID][bookPath].Recipe, want)
 	}
 
@@ -451,7 +451,7 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	if src.Producer != string(transcript.GetID()) {
 		t.Errorf("the source names %q as the version it was cut from, want %q", src.Producer, transcript.GetID())
 	}
-	if want := recipe(versionReader, extract.sizes()); src.Recipe != want {
+	if want := chunking.GetTextVersionRecipe(extract.sizes()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)
 	}
 }
@@ -520,7 +520,7 @@ func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	texts.failure = errors.New("the plugin is not running")
 	var errs []error
-	extract.ErrorHandler = func(err error) { errs = append(errs, err) }
+	extract.errorHandler = func(err error) { errs = append(errs, err) }
 	res, err := extract.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatalf("a provider that failed ended the run: %v", err)
@@ -532,8 +532,8 @@ func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 
 func TestTheRecipeNamesTheVersionReaderAndTheSizes(t *testing.T) {
 	sizes := (Index{}).sizes()
-	if want := "text-version-1/large=200+40/small=50+10/limit=1000"; recipe(versionReader, sizes) != want {
-		t.Errorf("a source is cut by %q, want %q", recipe(versionReader, sizes), want)
+	if want := "text-version-1/large=200+40/small=50+10/limit=1000"; chunking.GetTextVersionRecipe(sizes) != want {
+		t.Errorf("a source is cut by %q, want %q", chunking.GetTextVersionRecipe(sizes), want)
 	}
 }
 
@@ -550,7 +550,7 @@ func TestANoteWhoseVersionIsDeletedIsReadAsANoteAgain(t *testing.T) {
 
 	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	var reread []string
-	extract.ReadNote = func(_ context.Context, _ domain.Vault, path string) error {
+	extract.readNote = func(_ context.Context, _ domain.Vault, path string) error {
 		reread = append(reread, path)
 		return nil
 	}
@@ -582,7 +582,7 @@ func TestExecuteIndexesNoteTextVersion(t *testing.T) {
 
 	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	var reread []string
-	extract.ReadNote = func(_ context.Context, _ domain.Vault, path string) error {
+	extract.readNote = func(_ context.Context, _ domain.Vault, path string) error {
 		reread = append(reread, path)
 		return nil
 	}

@@ -52,6 +52,12 @@ func (a Agent) GetProgram(name string) AgentProgram {
 	return AgentProgram{}
 }
 
+// GetProgramSettings is the model and the command line the settings give the program.
+func (a Agent) GetProgramSettings(name string) (model string, command []string) {
+	program := a.GetProgram(name)
+	return program.Model, program.Command
+}
+
 // GetCommands are the command lines the settings give, by program.
 func (a Agent) GetCommands() map[string][]string {
 	commands := make(map[string][]string)

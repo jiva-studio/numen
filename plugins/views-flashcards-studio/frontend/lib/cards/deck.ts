@@ -5,7 +5,7 @@
  */
 
 import type { FieldValue } from './card'
-import { getDeclaredFields, createSealedMap, type Problems, type InsertionPoint } from './order'
+import { getDeclaredFields, getSealedMap, type Problems, type InsertionPoint } from './order'
 
 /**
  * Where a card dropped at the head of the deck lands: before the first section,
@@ -22,7 +22,7 @@ const END = 'the end of '
  * under that heading, and under the heading itself. The run before the first
  * section is named by the head of the deck.
  */
-export const createRunEnd = (run: string): InsertionPoint => `${END}${run}`
+export const getRunEndPoint = (run: string): InsertionPoint => `${END}${run}`
 
 /** Which run's end a drop target is, and nothing for a drop target that is not one. */
 export const getRunEnd = (target: InsertionPoint): string | null =>
@@ -95,8 +95,8 @@ export interface DeckProblems {
 
 /** Nothing wrong with anything. */
 export const NO_DECK_PROBLEMS: DeckProblems = Object.freeze({
-  at: createSealedMap<string, readonly string[]>(),
-  under: createSealedMap<string, Problems>(),
+  at: getSealedMap<string, readonly string[]>(),
+  under: getSealedMap<string, Problems>(),
 })
 
 /** One value of a card, laid out under the card model that cuts it. */

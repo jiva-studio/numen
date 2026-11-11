@@ -34,7 +34,7 @@ import (
 // A change arrives at every subscriber drawing the vault, the same way a note
 // opened in the editor does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
-	state := NewState(run.NewTasks())
+	state := NewState(run.NewTasks(), nil, nil)
 	line, isDone := state.Notices.Edits.subscribe()
 	t.Cleanup(isDone)
 
@@ -352,7 +352,7 @@ func TestEditLoad(t *testing.T) {
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
-	api := createServices(NewState(run.NewTasks()))
+	api := createServices(NewState(run.NewTasks(), nil, nil))
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()

@@ -199,7 +199,7 @@ func openingWith(
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
-	api := createServices(NewState(run.NewTasks()))
+	api := createServices(NewState(run.NewTasks(), nil, nil))
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
@@ -498,7 +498,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	readers := vaultreader.Readers{}
 	watcher := newManualWatcher()
-	api := createServices(NewState(run.NewTasks()))
+	api := createServices(NewState(run.NewTasks(), nil, nil))
 	bindNotes(api, db)
 	api.state.Runtime.SetVault(v)
 
@@ -526,7 +526,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	}
 }
 
-func newBareServices() *Services { return createServices(NewState(run.NewTasks())) }
+func newBareServices() *Services { return createServices(NewState(run.NewTasks(), nil, nil)) }
 
 func newThemedServices(themes numenv1connect.ThemeServiceHandler) *Services {
 	services := newBareServices()
@@ -575,7 +575,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			state := NewState(run.NewTasks())
+			state := NewState(run.NewTasks(), nil, nil)
 			services := createServices(state)
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
@@ -861,7 +861,7 @@ func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Reque
 }
 
 func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
-	state := NewState(run.NewTasks())
+	state := NewState(run.NewTasks(), nil, nil)
 	state.Runtime.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
@@ -964,7 +964,7 @@ func TestPluginRouteReachesThePluginServices(t *testing.T) {
 
 func TestPluginRouteNamesTheVaultTheWindowShows(t *testing.T) {
 	plugins := &routedPlugins{}
-	state := NewState(run.NewTasks())
+	state := NewState(run.NewTasks(), nil, nil)
 	state.Runtime.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	services.PluginServices = plugins

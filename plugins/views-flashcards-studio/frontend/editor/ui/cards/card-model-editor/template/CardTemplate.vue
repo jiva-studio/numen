@@ -1,18 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, shallowRef, type ComponentPublicInstance } from 'vue'
 import { CardHeader } from '../../card-header'
 import { RemoveButton } from '../../remove-button'
 import TemplatePane from './TemplatePane.vue'
 import TemplateStrip from './TemplateStrip.vue'
-import type { Half, StepDirection } from '../../../../../lib/cards'
-import {
-  getPanes,
-  CARD_MODEL_WORDS,
-  type TemplateRow,
-  type Pane,
-  type CardModelWords,
-} from '../../../../../lib/cards'
-import { insert } from '../../../../../lib/cards'
+import { useCardTemplate } from '../../../../model/cards/useCardTemplate'
+import { CARD_MODEL_WORDS } from '../../../../../lib/cards'
+import type { CardModelWords, Half, StepDirection, TemplateRow } from '../../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -35,43 +28,11 @@ const emit = defineEmits<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-const aim = shallowRef<Half | null>(null)
-
-const focusedHalf = computed<Half>(() => aim.value ?? 'front')
-
-const front = shallowRef<InstanceType<typeof TemplatePane> | null>(null)
-const back = shallowRef<InstanceType<typeof TemplatePane> | null>(null)
-
-const divided = computed<readonly Pane[]>(() => getPanes(props.template, props.words))
-
-/* -------------------------------- Handlers -------------------------------- */
-const onSetBox = (pane: Pane, element: Element | ComponentPublicInstance | null): void => {
-  if (pane.mode !== 'written') return
-  const box = element as InstanceType<typeof TemplatePane> | null
-  if (pane.half === 'front') front.value = box
-  else back.value = box
-}
-
-const onPut = async (field: string): Promise<void> => {
-  const half = focusedHalf.value
-  const target = getBox(half)
-  if (!target) return
-
-  const caret = (aim.value === null ? null : target.selectionStart) ?? target.value.length
-  const insertResult = insert(target.value, caret, field)
-  emit('write', half, insertResult.text)
-  await nextTick()
-  const again = getBox(half)
-  again?.focus()
-  again?.setSelectionRange(insertResult.caret, insertResult.caret)
-}
-
-/* --------------------------------- Helpers -------------------------------- */
-const getBox = (half: Half): HTMLTextAreaElement | null =>
-  (half === 'front' ? front.value : back.value)?.box ?? null
-
-const isFocused = (pane: Pane): boolean =>
-  pane.mode === 'written' && focusedHalf.value === pane.half
+const { aim, divided, setBox, putField, isFocused } = useCardTemplate({
+  getTemplate: () => props.template,
+  getWords: () => props.words,
+  write: (half, text) => emit('write', half, text),
+})
 </script>
 
 <template>
@@ -87,7 +48,7 @@ const isFocused = (pane: Pane): boolean =>
         :wrong="wrong"
         :words="words"
         @rename="(name) => emit('rename', name)"
-        @put="onPut"
+        @put="putField"
       />
 
       <template #actions>
@@ -99,7 +60,7 @@ const isFocused = (pane: Pane): boolean =>
       <TemplatePane
         v-for="pane in divided"
         :key="`${pane.half}-${pane.mode}`"
-        :ref="(el) => onSetBox(pane, el)"
+        :ref="(el) => setBox(pane, el)"
         :pane="pane"
         :is-focused="isFocused(pane)"
         :words="words"

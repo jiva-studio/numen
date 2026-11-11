@@ -37,10 +37,6 @@ type Embed struct {
 	BatchCharacters int
 
 	Concurrency int
-
-	OnProgress func(vaultreading.EmbedResult)
-
-	IsSkipped func(path, hash string) bool
 }
 
 func (u Embed) inferWorkers() int {
@@ -68,20 +64,20 @@ func NewEmbed(
 func (u Embed) EmbedWithProgress(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
 ) (vaultreading.EmbedResult, error) {
-	if onProgress != nil {
-		u.OnProgress = onProgress
-	}
-	if isSkipped != nil {
-		u.IsSkipped = isSkipped
-	}
-	return u.Execute(ctx, v)
+	return u.run(ctx, v, onProgress, isSkipped)
 }
 
 // pipelineBufferSize is the number of batches buffered between pipeline stages.
 const pipelineBufferSize = 4
 
 // Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.EmbedResult, err error) {
+func (u Embed) Execute(ctx context.Context, v domain.Vault) (vaultreading.EmbedResult, error) {
+	return u.run(ctx, v, nil, nil)
+}
+
+func (u Embed) run(
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
+) (res vaultreading.EmbedResult, err error) {
 	if u.Embedder == nil {
 		return res, nil
 	}
@@ -110,7 +106,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.Em
 
 	var mu sync.Mutex
 	workers := max(u.inferWorkers(), 1)
-	track := newTracker(u.OnProgress, workers, &res, &mu)
+	track := newTracker(onProgress, workers, &res, &mu)
 	updateProgress := func(comp completedBatch) {
 		track.leave(comp.id)
 		track.publish(func(r *vaultreading.EmbedResult) {
@@ -126,7 +122,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.Em
 
 	g.Go(func() error {
 		defer close(preparedChan)
-		return newProducer(u).produceBatches(gctx, v, model, &source, track, preparedChan)
+		return newProducer(u, isSkipped).produceBatches(gctx, v, model, &source, track, preparedChan)
 	})
 	g.Go(func() error {
 		defer close(completedChan)

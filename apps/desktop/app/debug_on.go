@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // DebugOptions holds test settings for debug builds.
@@ -58,7 +56,5 @@ func (d *DebugOptions) serveHTTP(
 	opened *editor.Installation,
 	pages http.Handler,
 ) error {
-	opened.State.NotifyOpenTabs = func(windowdomain.OpenTabs) {}
-	container.FollowVaultSwitch(cfg, opened, func(domain.Vault, error) {})
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }

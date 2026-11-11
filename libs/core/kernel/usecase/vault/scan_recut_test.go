@@ -3,7 +3,6 @@ package vault_test
 import (
 	"context"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -18,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // A scan cuts the notes at the chunk size the embedding plugin reports. These tests are about when it
@@ -33,13 +33,26 @@ func newOrchardVault(t *testing.T) domain.Vault {
 }
 
 func scanAt(db *container.Index, tokens int) vaults.Scan {
-	scan := scanner(vaultreader.Readers{}, db)
+	return scanAtBacklog(db, tokens, db.Sources())
+}
+
+func scanAtBacklog(db *container.Index, tokens int, backlog sourceport.SourceBacklog) vaults.Scan {
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), backlog)
+	scan.Walks = &db.Walks
 	scan.Cut = chunking.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
-	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
-		return db.Sources().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
-	}
 	return scan
+}
+
+// forbiddenBacklog fails the test when it is asked which sources were cut by another recipe.
+type forbiddenBacklog struct {
+	sourceport.SourceBacklog
+	t *testing.T
+}
+
+func (b forbiddenBacklog) GetSourcesWithOtherRecipe(context.Context, domain.VaultID, domain.SourceKind, []string, int) ([]string, error) {
+	b.t.Error("a scan that does not know the chunk size asked for the paths to cut again")
+	return nil, nil
 }
 
 func getNotesWithOtherChunking(t *testing.T, db *container.Index, v domain.Vault, tokens int) []string {
@@ -95,8 +108,7 @@ func TestAScanWithNoCheckGivenReadsNoUnchangedNoteWhateverItsSize(t *testing.T) 
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 256), v)
 
-	scan := scanAt(db, 512)
-	scan.GetOtherRecipePaths = nil
+	scan := scanAtBacklog(db, 512, nil)
 	if res := runScan(t, scan, v); res.Indexed != 0 || res.Unchanged != 3 {
 		t.Errorf("indexed %d, unchanged %d; want 0 and 3", res.Indexed, res.Unchanged)
 	}
@@ -107,11 +119,7 @@ func TestAScanWithoutAChunkSizeNeitherAsksForRecutPathsNorReadsAnyNote(t *testin
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 512), v)
 
-	scan := scanAt(db, 0)
-	scan.GetOtherRecipePaths = func(context.Context, domain.VaultID, string) ([]string, error) {
-		t.Error("a scan that does not know the chunk size asked for the paths to cut again")
-		return nil, nil
-	}
+	scan := scanAtBacklog(db, 0, forbiddenBacklog{SourceBacklog: db.Sources(), t: t})
 	if res := runScan(t, scan, v); res.Indexed != 0 || res.Unchanged != 3 {
 		t.Errorf("indexed %d, unchanged %d; want 0 and 3", res.Indexed, res.Unchanged)
 	}
@@ -159,7 +167,7 @@ func (r recipeless) Save(ctx context.Context, v domain.VaultID, notes []domain.N
 func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
-	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance())
+	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance(), nil)
 	old.Walks = &db.Walks
 	old.Cut = chunking.NewCutNotes(512)
 	runScan(t, old, v)
@@ -185,11 +193,10 @@ func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) 
 	runScan(t, scanAt(db, 256), v)
 
 	content := &groupedWrites{}
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), db.Maintenance())
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), db.Sources())
 	scan.Walks = &db.Walks
 	scan.Cut = chunking.NewCutNotes(512)
 	scan.ShouldRecut = true
-	scan.GetOtherRecipePaths = scanAt(db, 512).GetOtherRecipePaths
 	res := runScan(t, scan, v)
 
 	if res.Indexed != notes || len(content.groups) != 2 {

@@ -85,7 +85,7 @@ func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
 		db.Vaults,
 		db.Notes,
 		db.FileStats,
-		db.Maintenance,
+		db.Maintenance, nil,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)

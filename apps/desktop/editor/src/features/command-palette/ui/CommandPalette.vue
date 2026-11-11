@@ -6,16 +6,14 @@
  * The two share a field, and which one is active determines what is drawn in it
  * and what a keystroke in it means. The keys of the window open and close each.
  */
-import { computed } from 'vue'
 import { Search } from '@lucide/vue'
 import { Palette, type ActionWords } from '@numen/workbench'
-import { isCommandPrefixTyped } from '../lib/commands/commands'
 import type { CommandDeps } from '@/shared/model/command'
 import type { CommandTarget } from '@/shared/model/command'
 import type { Commands } from '../model/palette/palette'
-import { runInvocation } from '../model/handlers/handlers'
 import type { ResultChoice, SearchState } from '../model/search/search'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'
+import { usePaletteInput } from '../model/usePaletteInput'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../words'
 
@@ -38,66 +36,29 @@ const actionWords: ActionWords = {
   silence: words.noAction,
 }
 
-/** What the palette draws: the commands while they are open, the search under. */
-const field = computed(() =>
-  props.commands.palette.open.value
-    ? {
-        open: true,
-        isBusy: false,
-        typed: props.commands.palette.typed.value,
-        groups: props.commands.view.groups.value,
-        crumb: props.commands.navigation.crumb.value,
-        step: props.commands.navigation.step.value,
-        opensOn: props.commands.navigation.opensOn.value,
-        placeholder: props.commands.navigation.placeholder.value,
-      }
-    : {
-        open: props.search.open.value,
-        isBusy: props.search.status.isBusy.value,
-        typed: props.search.typed.value,
-        groups: props.search.groups.value,
-        crumb: '',
-        step: '',
-        opensOn: '',
-        placeholder: words.find,
-      },
-)
+const { field, actions } = usePaletteInput({
+  commands: props.commands,
+  search: props.search,
+  doing: props.doing,
+  runChoice: props.runChoice,
+  findPlaceholder: () => words.find,
+})
 
 /* -------------------------------- Handlers -------------------------------- */
-async function onTyping(text: string) {
-  if (props.commands.palette.open.value) return await props.commands.palette.setTyped(text)
-  if (!isCommandPrefixTyped(props.search.typed.value, text))
-    return await props.search.setTyped(text)
-  const setSearchOpen = props.search.setOpen
-  const setCommandsOpen = props.commands.palette.setOpen
-  setSearchOpen(false)
-  setCommandsOpen(true)
+function onTyping(text: string) {
+  actions.type(text)
 }
 
-async function onChoose(item: string, action: string) {
-  const setSearchOpen = props.search.setOpen
-  const setCommandsOpen = props.commands.palette.setOpen
-  if (props.commands.palette.open.value) {
-    const invocation = props.commands.palette.chooseItem(item, action)
-    if (!invocation) return
-    setCommandsOpen(false)
-    await runInvocation(invocation, props.doing)
-    return
-  }
-  const choice = props.search.chooseResult(item, action)
-  setSearchOpen(false)
-  if (choice) props.runChoice(choice)
+function onChoose(item: string, action: string) {
+  actions.choose(item, action)
 }
 
 function onDismiss() {
-  if (props.commands.palette.open.value) props.commands.navigation.leaveStep()
-  else props.search.setOpen(false)
+  actions.dismiss()
 }
 
 function onBack() {
-  if (props.commands.palette.open.value && props.commands.navigation.goBack()) {
-    props.search.setOpen(true)
-  }
+  actions.goBack()
 }
 
 /* -------------------------------- Helpers --------------------------------- */

@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
@@ -47,7 +48,7 @@ func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
 }
 
 func openNoteWriter(c pluginsWiring, v domain.Vault) (hostvault.NoteWriter, error) {
-	writer, err := c.NoteWriters.OpenNoteWriter(v)
+	writer, err := noteWriters(c.vault).OpenNoteWriter(v)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +73,12 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	if err != nil {
 		return nil, err
 	}
-	refresh := c.MakeRefresh(db, db.Notes())
+	refresh := vaultMakeRefresh(c.vault, db, db.Notes())
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	scenarios := c.BuildNotes(db, index)
+	scenarios := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
 	connections := hostvault.Connections{
 		Reader:  note.NewConnectionReader(query.NewGetConnection(db.NoteQueries())),
 		Writer:  note.NewConnectionWriter(scenarios),
@@ -87,20 +88,20 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	arranger := newArranger(scenarios, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	vaults := hostvault.Vault{
-		Locks: hold.NewLocks(c.VaultLocks, clock.System{}),
+		Locks: hold.NewLocks(writeLocks(c.vault), clock.System{}, hold.LockHold),
 		Session: hostvault.Session{
 			Current:    current,
 			Vaults:     registry.Vaults.List,
 			Find:       vaultregistry.NewFindByID(registry.Lookup).Execute,
 			IndexState: hooks.IndexState,
-			Watcher:    vault.NewWatchChanges(c.VaultWatcher).Execute,
+			Watcher:    vault.NewWatchChanges(vaultWatcher(c.vault)).Execute,
 			Moved:      hooks.Moved,
 			Written:    hooks.Written,
 		},
 		Files: hostvault.Files{
-			Stat:        file.NewStatFile(c.VaultReaders),
-			ReadFile:    file.NewReadFile(c.VaultReaders),
-			RangeReader: file.Read{Readers: c.VaultReaders},
+			Stat:        file.NewStatFile(vaultReaders(c.vault)),
+			ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
+			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
 			Index:       index,
 		},
@@ -145,7 +146,7 @@ func completeHooks(c pluginsWiring, db *Index, hooks PluginVaultHooks) PluginVau
 		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
 	if hooks.Moved == nil {
-		hooks.Moved = c.Moves
+		hooks.Moved = func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(c.vault, ctx) }
 	}
 	return hooks
 }
@@ -168,11 +169,17 @@ func emitPluginEvent(c pluginsWiring, event string) {
 }
 
 func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
-	return settingsadapter.NewSecretLedger(c.SettingsFiles, c.SettingsFile, c.ReadCheckedSettings, c.RefreshSettingEvents)
+	s := c.settings
+	return settingsadapter.NewSecretLedger(
+		s.SettingsFiles,
+		func() (string, error) { return settingsSettingsFile(s) },
+		func() (settingsadapter.File, error) { return readCheckedSettings(s) },
+		func() { refreshSettingEvents(s) },
+	)
 }
 
 func openSecrets(c pluginsWiring) *secret.Secrets {
-	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, settingsadapter.CreateSecretID, c.CredentialsPath, c.SecretGate)
+	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, settingsadapter.CreateSecretID, c.CredentialsPath, c.settings.SecretGate)
 }
 
 func setSecretSource(c pluginsWiring) {
@@ -184,59 +191,54 @@ func setSecretSource(c pluginsWiring) {
 }
 
 func signalPluginChanges(c pluginsWiring) {
-	if c.PluginChanges != nil {
-		c.PluginChanges.Signal()
-	}
+	c.settings.PluginChanges.Signal()
 }
 
 func watchPluginChanges(c pluginsWiring) (<-chan struct{}, func()) {
-	if c.PluginChanges == nil {
-		return make(chan struct{}), func() {}
-	}
-	return c.PluginChanges.Subscribe()
+	return c.settings.PluginChanges.Subscribe()
 }
 
 func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
 	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
 	if err != nil {
-		pluginsHandleError(c, err)
+		c.settings.ErrorHandler(err)
 		return nil
 	}
 	return choose
 }
 
 func openVersionItems(c pluginsWiring) *textversion.VersionItems {
-	if c.TextVersions == nil {
+	if c.vault.TextVersions == nil {
 		return nil
 	}
 	run := newPluginCommands(c, c.RunningHost).Run
-	items, err := textversion.NewVersionItems(c.TextVersions, run, c.RunningHost.Watch)
+	items, err := textversion.NewVersionItems(c.vault.TextVersions, run, c.RunningHost.Watch)
 	if err != nil {
-		pluginsHandleError(c, err)
+		c.settings.ErrorHandler(err)
 		return nil
 	}
 	return items
 }
 
 func openTriggers(c pluginsWiring) *trigger.Triggers {
-	if c.TextVersions == nil {
+	if c.vault.TextVersions == nil {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost).Run, Readers: c.VaultReaders,
-		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.TextVersions.Texts, Config: getWhenConfig(c),
+		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost).Run, Readers: vaultReaders(c.vault),
+		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }
 
 func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {
-	if c.VaultReaders == nil {
-		return nil
-	}
-	return note.NewReadFrontmatter(c.VaultReaders)
+	return note.NewReadFrontmatter(vaultReaders(c.vault))
 }
 
 func getWhenConfig(c pluginsWiring) pluginport.WhenConfig {
-	return settingsadapter.WhenConfig{App: c.ListAppSettings, Plugins: c.PluginHost.Runtime.GetPluginInfos}
+	return settingsadapter.WhenConfig{
+		App:     func() []plugindomain.Setting { return listAppSettings(c.settings) },
+		Plugins: c.PluginHost.Runtime.GetPluginInfos,
+	}
 }
 
 func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.Check, []domain.VaultProblem, error) {

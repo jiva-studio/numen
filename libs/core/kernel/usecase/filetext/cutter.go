@@ -29,10 +29,10 @@ type cutter struct {
 	onProgress   func(vaultreading.IndexResult)
 }
 
-func newCutter(u Index) cutter {
+func newCutter(u Index, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool) cutter {
 	return cutter{
 		sources: u.sources, backlog: u.queries.backlog, lookup: u.queries.lookup, sizes: u.sizes(), legibility: u.Legibility,
-		isSkipped: u.IsSkipped, errorHandler: u.ErrorHandler, readNote: u.ReadNote, onProgress: u.OnProgress,
+		isSkipped: isSkipped, errorHandler: u.errorHandler, readNote: u.readNote, onProgress: onProgress,
 	}
 }
 
@@ -45,7 +45,7 @@ func (u cutter) cut(
 	res *vaultreading.IndexResult,
 ) error {
 	sizes := u.sizes
-	recognized := []string{recipe(versionReader, sizes)}
+	recognized := []string{chunking.GetTextVersionRecipe(sizes)}
 	run := cutRun{tried: map[string]bool{}, sizes: sizes, res: res}
 
 	questions := []func(context.Context) ([]string, error){
@@ -187,7 +187,7 @@ func (u cutter) source(
 		Source: domain.Source{
 			FileStat:    ref,
 			ContentHash: hash,
-			Recipe:      recipe(versionReader, sizes),
+			Recipe:      chunking.GetTextVersionRecipe(sizes),
 			Producer:    string(doc.Version().GetID()),
 		},
 		Chunks: chunks,
@@ -265,11 +265,6 @@ func countChunks(chunks []domain.Chunk) int {
 		n += len(c.Small)
 	}
 	return n
-}
-
-func recipe(reader string, s chunking.Sizes) string {
-	return fmt.Sprintf("%s/large=%d+%d/small=%d+%d/limit=%d",
-		reader, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
 }
 
 func (u cutter) progress(res vaultreading.IndexResult) {

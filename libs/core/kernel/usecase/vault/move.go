@@ -81,17 +81,6 @@ func NewMove(
 	return Move{movers: movers, links: links, queries: queries, sources: sources, notes: notes}
 }
 
-// WithSources returns a copy of Move with the given SourceRepository.
-func (u Move) WithSources(sources sourceport.SourceRepository) Move {
-	u.sources = sources
-	return u
-}
-
-// Sources returns the SourceRepository Move files through.
-func (u Move) Sources() sourceport.SourceRepository {
-	return u.sources
-}
-
 // Execute moves the path and repairs what pointed at the notes under it.
 //
 // A folder is one rename, so its contents arrive whole or keep their position.

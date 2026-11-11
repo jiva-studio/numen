@@ -68,7 +68,7 @@ func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
 		db.Vaults(),
 		db.Notes(),
 		db.NoteQueries(),
-		db.Maintenance(),
+		db.Maintenance(), nil,
 	)
 	scan.Walks = &db.Walks
 	return scan
@@ -608,7 +608,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// Checks the order in which notes reach the index: the index contents
 	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance())
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), nil)
 	scan.Walks = &db.Walks
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -632,9 +632,8 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	db := openIndex(t)
 
 	scan := scanner(vaultreader.Readers{}, db)
-	scan.OnProgress = func(vaultreading.ScanResult) { cancel() }
 
-	res, err := scan.Execute(ctx, v)
+	res, err := scan.ScanWithProgress(ctx, v, func(vaultreading.ScanResult) { cancel() })
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a canceled scan returned %v", err)
 	}

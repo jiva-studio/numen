@@ -54,7 +54,7 @@ func (c *steppedClock) advance(d time.Duration) {
 
 func TestAHoldIsReleasedByItsID(t *testing.T) {
 	locks := &fakeLocks{}
-	hold := hold.NewLocks(locks, &steppedClock{now: time.Unix(1000, 0)})
+	hold := hold.NewLocks(locks, &steppedClock{now: time.Unix(1000, 0)}, hold.LockHold)
 
 	id, err := hold.Execute(t.Context(), domain.Vault{})
 	if err != nil {
@@ -73,7 +73,7 @@ func TestAHoldIsReleasedByItsID(t *testing.T) {
 func TestAHoldThatEndedIsReleasedWithoutTheHolder(t *testing.T) {
 	locks := &fakeLocks{}
 	clock := &steppedClock{now: time.Unix(1000, 0)}
-	hold := hold.NewLocks(locks, clock).WithHold(time.Hour)
+	hold := hold.NewLocks(locks, clock, time.Hour)
 
 	if _, err := hold.Execute(t.Context(), domain.Vault{}); err != nil {
 		t.Fatal(err)

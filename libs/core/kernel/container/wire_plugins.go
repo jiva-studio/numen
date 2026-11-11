@@ -3,8 +3,6 @@ package container
 import (
 	"context"
 	"errors"
-	"fmt"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
@@ -21,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -195,7 +194,7 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 			Secrets: host.Config, Infos: host.Registry, Checks: host.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
-		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
+		SetStorage:          func(cacheRoot, dataRoot string) { host.SetStorage(cacheRoot, dataRoot, newDependencyRegistry) },
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 	}
 }
@@ -218,52 +217,15 @@ func lendHostEndpoint(host *plugin.Host) *hostendpoint.Services {
 	return services
 }
 
-func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
-	host.Storage.SetStorageRoots(cacheRoot, dataRoot)
-	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
-	if models := host.Storage.GetModelsDir(); models != "" {
-		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
-		host.Services.SetDependencies(newDependencyRegistry(models))
-	}
-}
-
-// programsLimit is how long the providers have to list the programs they run.
-const programsLimit = 8 * time.Second
-
 func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
 	return agentbridge.NewRouter(c.RunningHost.Runtime)
 }
 
-// programsWait is how long a read of the settings waits for the providers to list their programs.
-// Past it the read answers with the programs listed last, so a provider that is slow to start does
-// not hold the window back.
-const programsWait = time.Second
-
 func getAgentPrograms(c pluginsWiring, provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
-	list := func() []agentdomain.Program {
-		ctx, stop := context.WithTimeout(context.Background(), programsLimit)
-		defer stop()
-		programs, err := provider.GetPrograms(ctx, target.GetCommands())
-		if err != nil {
-			pluginsHandleError(c, fmt.Errorf("list agent programs: %w", err))
-		}
-		return programs
-	}
-	return c.Programs.Get(programsWait, list, c.RefreshSettingEvents)
+	list := agentcase.NewListPrograms(provider, c.settings.Programs, func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
+	return list.Execute(target.GetCommands())
 }
 
 func completionAgentSettings(c pluginsWiring) completion.AgentSettings {
-	target := c.GetSettingsOrDefaults().Agent
-	return completion.AgentSettings{
-		IsNamed:  target.IsNamed(),
-		Use:      target.GetUse(),
-		Commands: target.GetCommands(),
-		GetProgram: func(name string) completion.ProgramSettings {
-			section := target.GetProgram(name)
-			return completion.ProgramSettings{
-				Model:   section.Model,
-				Command: section.Command,
-			}
-		},
-	}
+	return completion.NewAgentSettings(settingsGetSettingsOrDefaults(c.settings).Agent)
 }
