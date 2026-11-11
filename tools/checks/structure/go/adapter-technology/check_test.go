@@ -2,6 +2,8 @@
 package adaptertechnology
 
 import (
+	"go/token"
+	"go/types"
 	"os"
 	"slices"
 	"testing"
@@ -80,6 +82,49 @@ func TestTechnologyCallRule_ExcludesTheWireFraming(t *testing.T) {
 	} {
 		if got := isTechnologyCall(path); got != want {
 			t.Errorf("a call into %s reaches outside the process: %v, want %v", path, got, want)
+		}
+	}
+}
+
+// A call through a generated Connect client is a call across a process boundary: the constructor and the methods
+// of a client declared in a *connect.go file count, a call of the connect.Client type counts, and naming a client
+// type, building a request or calling the server side of the generated code does not.
+func TestTechnologyCallRule_CountsGeneratedConnectClientCalls(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"gen/svcconnect/svc.connect.go": "package svcconnect\n\ntype SvcClient interface{ Ping() }\n\ntype svcClient struct{}\n\n" +
+			"func (*svcClient) Ping() {}\n\nfunc NewSvcClient() SvcClient { return &svcClient{} }\n\n" +
+			"type SvcHandler struct{}\n\nfunc (SvcHandler) Serve() {}\n\nfunc NewSvcHandler() SvcHandler { return SvcHandler{} }\n",
+		"adapter/index/calls/calls.go":   "package calls\n\nimport \"fixture/gen/svcconnect\"\n\nfunc Ping() { svcconnect.NewSvcClient().Ping() }\n",
+		"adapter/index/method/method.go": "package method\n\nimport \"fixture/gen/svcconnect\"\n\nfunc Ping(c svcconnect.SvcClient) { c.Ping() }\n",
+		"adapter/index/named/named.go":   "package named\n\nimport \"fixture/gen/svcconnect\"\n\ntype Named struct{ Client svcconnect.SvcClient }\n",
+		"adapter/index/server/server.go": "package server\n\nimport \"fixture/gen/svcconnect\"\n\nfunc Serve() { svcconnect.NewSvcHandler().Serve() }\n",
+		"adapter/index/ctor/ctor.go":     "package ctor\n\nimport \"fixture/gen/svcconnect\"\n\nvar _ = svcconnect.NewSvcClient\n",
+	})
+	found, _ := getAdapterTechnologyFindings(load.LoadFixture(t, dir), "fixture", map[string]string{})
+	want := []string{
+		"adapter/index/ctor is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/index/named is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/index/server is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+	}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule rejects %v, want %v", found, want)
+	}
+}
+
+func TestConnectClientCallRule_ReadsTheClientTypeOfTheLibrary(t *testing.T) {
+	library := types.NewPackage("connectrpc.com/connect", "connect")
+	fset := token.NewFileSet()
+	method := func(receiver string) *types.Func {
+		recv := types.NewVar(token.NoPos, library, "c", types.NewPointer(types.NewNamed(types.NewTypeName(token.NoPos, library, receiver, nil), types.NewStruct(nil, nil), nil)))
+		return types.NewFunc(token.NoPos, library, "CallUnary", types.NewSignatureType(recv, nil, nil, nil, nil, false))
+	}
+	function := types.NewFunc(token.NoPos, library, "NewRequest", types.NewSignatureType(nil, nil, nil, nil, nil, false))
+	for name, tc := range map[string]struct {
+		fn   *types.Func
+		want bool
+	}{"a method of Client": {method("Client"), true}, "a method of another type": {method("Request"), false}, "a function": {function, false}} {
+		if got := isConnectClientCall(fset, tc.fn); got != tc.want {
+			t.Errorf("%s is a client call: %v, want %v", name, got, tc.want)
 		}
 	}
 }

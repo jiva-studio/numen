@@ -15,8 +15,8 @@ import (
 type structLimit struct {
 	methods int
 	fields  int
-	// holdsWiring marks a package of the container: its struct without any method is a holder of wired parts and
-	// counts its direct and embedded fields only.
+	// holdsWiring marks a package of the container: every type in it, with or without methods, counts its direct
+	// and embedded fields, each embedded field as one.
 	holdsWiring bool
 }
 
@@ -80,7 +80,11 @@ func getOversizedTypes(pkgs []*packages.Package, getLimit func(path string) (str
 				methods := types.NewMethodSet(types.NewPointer(named)).Len()
 				fields := 0
 				if st, ok := named.Underlying().(*types.Struct); ok {
-					fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{}, !limit.holdsWiring || methods > 0)
+					if limit.holdsWiring {
+						fields = st.NumFields()
+					} else {
+						fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{})
+					}
 				}
 				if methods > limit.methods {
 					found = append(found, load.NewFinding(pkg.Fset, spec.Name.Pos(),
@@ -140,7 +144,7 @@ func checkNoTypeExceedsItsLayersSize(t *testing.T, workspace load.WorkspacePacka
 	}
 }
 
-func countStructFields(shape *types.Struct, home *types.Package, visiting map[*types.Struct]bool, isNested bool) int {
+func countStructFields(shape *types.Struct, home *types.Package, visiting map[*types.Struct]bool) int {
 	if visiting[shape] {
 		return 0
 	}
@@ -148,8 +152,8 @@ func countStructFields(shape *types.Struct, home *types.Package, visiting map[*t
 	defer delete(visiting, shape)
 	count := 0
 	for field := range shape.Fields() {
-		if inner, ok := getGroupedStruct(field, home); ok && (isNested || field.Embedded()) {
-			count += countStructFields(inner, home, visiting, isNested)
+		if inner, ok := getGroupedStruct(field, home); ok {
+			count += countStructFields(inner, home, visiting)
 			continue
 		}
 		count++

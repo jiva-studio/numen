@@ -137,9 +137,9 @@ type Flat struct{ a, b, c int }
 	}
 }
 
-// A holder of wired parts in the container (a struct with no method) counts its direct and embedded fields,
-// not the fields of the groups it names; a type with behavior counts the leaf fields of its groups.
-func TestStructSizeRule_CountsGroupLeavesOnlyForTypesWithBehavior(t *testing.T) {
+// Every type of the container, with or without methods, counts its direct and embedded fields and not the
+// fields of the groups it names; a type with behavior outside the container counts the leaf fields of its groups.
+func TestStructSizeRule_CountsDirectFieldsInTheContainerAndLeafFieldsElsewhere(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"container/wiring.go": `package container
 
@@ -166,6 +166,12 @@ type Builder struct {
 }
 
 func (Builder) Build() {}
+
+type Wide struct{ a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13 int }
+
+type WideBuilder struct{ a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13 int }
+
+func (WideBuilder) Build() {}
 `,
 		"adapter/hidden/hidden.go": `package hidden
 
@@ -188,8 +194,8 @@ func (Hider) Serve() {}
 	found, _ := getOversizedTypes(load.LoadFixture(t, dir), getLimit)
 	want := []string{
 		"hidden.go:7 hidden.Hider has 30 fields, more than 12",
-		"wiring.go:13 container.EmbeddingHolder has 15 fields, more than 12",
-		"wiring.go:19 container.Builder has 15 fields, more than 12",
+		"wiring.go:24 container.Wide has 13 fields, more than 12",
+		"wiring.go:26 container.WideBuilder has 13 fields, more than 12",
 	}
 	if got := load.FormatFindings(found); !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)

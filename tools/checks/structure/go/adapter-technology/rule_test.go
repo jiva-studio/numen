@@ -58,7 +58,7 @@ func isCallingTechnology(pkg *packages.Package) bool {
 	return found
 }
 
-// isDrivenAdapter reports whether a package under adapter/ is a driven adapter: it sits in internal/adapter, in
+// isDrivenAdapter reports whether a package under adapter/ is a driven adapter: it is in internal/adapter, in
 // adapter/index or adapter/settings, or declares a type that implements an interface of port/. The rest of
 // adapter/ translates a wire or a command line into calls and has no technology of its own to wrap.
 func isDrivenAdapter(pkg *packages.Package, rel string, ports []load.PortInterface) bool {
