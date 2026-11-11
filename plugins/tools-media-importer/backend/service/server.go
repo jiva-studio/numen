@@ -12,11 +12,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/fetchers"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/tempfiles"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/fetchers"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // PluginID is the identity the manifest gives the plugin.
@@ -47,7 +48,7 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 // given. A video site is fetched through the mock downloader when isMock is set. The fetches end
 // with s.
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
-	f := fetchers.New(isMock, process.Runner{}, tempfiles.Files{})
+	f := fetchers.New(isMock, process.Runner{}, tempfiles.Files{}, tempfiles.Files{}, webpage.New())
 	links := link.New(hosted, f.GetFetcher, f.GetSettings)
 	commands, err := newCommands(links)
 	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"

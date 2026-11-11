@@ -17,8 +17,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // revisedProse is what articleAddress publishes from the second fetch of its text on.
@@ -63,7 +64,7 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(), release: release}, fetchErr: fetchErr}
+	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(webpage.New()), release: release}, fetchErr: fetchErr}
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
 		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),

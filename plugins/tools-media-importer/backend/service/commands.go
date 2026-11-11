@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // The shared commands the plugin handles.
