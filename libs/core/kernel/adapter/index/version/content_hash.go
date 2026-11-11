@@ -7,14 +7,11 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Statements returns every statement of the package by name, for the query plan test.
-func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
 
 // FindContentHash returns the stored hash and stat for the file at the path, and
 // false when no row exists.
