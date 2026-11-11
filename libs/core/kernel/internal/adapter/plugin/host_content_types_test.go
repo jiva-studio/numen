@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 

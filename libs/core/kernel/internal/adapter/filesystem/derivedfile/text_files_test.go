@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 )
 
-const plugin = "org.example.transcription"
+const transcriber = "org.example.transcription"
 
 func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 	root := t.TempDir()
@@ -21,18 +21,18 @@ func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 		t.Fatal(err)
 	}
 	segments := []domain.TextSegment{{Text: "Good morning.", Selector: `{"t":[0,1.5]}`}}
-	hash, err := files.WriteTextFile(t.Context(), plugin, "a.jsonl", segments)
+	hash, err := files.WriteTextFile(t.Context(), transcriber, "a.jsonl", segments)
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, err := os.ReadFile(filepath.Join(root, ".numen", plugin, "a.jsonl"))
+	raw, err := os.ReadFile(filepath.Join(root, ".numen", transcriber, "a.jsonl"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if hash != domain.HashContent(raw) {
 		t.Fatalf("hash %s is not the hash of the file", hash)
 	}
-	got, err := files.ReadTextFile(t.Context(), plugin, "a.jsonl")
+	got, err := files.ReadTextFile(t.Context(), transcriber, "a.jsonl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestReadTextFileRejectsANameOutsideThePluginFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := files.ReadTextFile(t.Context(), plugin, "../core/x.jsonl"); err == nil || errors.Is(err, text.ErrNoText) {
+	if _, err := files.ReadTextFile(t.Context(), transcriber, "../core/x.jsonl"); err == nil || errors.Is(err, text.ErrNoText) {
 		t.Fatalf("a name with a slash: got %v, want a refusal", err)
 	}
 }

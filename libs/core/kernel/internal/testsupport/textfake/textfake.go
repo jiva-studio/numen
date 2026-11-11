@@ -5,8 +5,8 @@ package textfake
 import (
 	"bytes"
 	"context"
-	"io"
 	"github.com/jiva-studio/numen/libs/note/edit"
+	"io"
 	"slices"
 	"sync"
 	"time"

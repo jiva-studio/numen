@@ -5,12 +5,12 @@ package pluginhost
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 )
 
 // Open returns a plugin host for the target that has discovered the plugins in dirs.
