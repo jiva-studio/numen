@@ -25,6 +25,7 @@ import {
 import type { CommandRegistry, CommandTarget, Notes } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
+import type { createWindowSettings } from '@/features/settings-commands'
 import { createCommandSources } from './createCommandSources'
 import { createHostConnection } from './createHostConnection'
 import type { createWindowBase } from './createWindowBase'
@@ -61,16 +62,19 @@ export interface PluginPaletteDeps {
   readonly declaredCommands: DeclaredCommands
   readonly itemLists: Parameters<typeof createCommandNoteReader>[0]
   readonly commandDeps: ReturnType<typeof createPaletteBase>['commandDeps']
+  readonly registry: CommandRegistry
   readonly appCommands: readonly Command[]
   readonly getTarget: () => CommandTarget
-  readonly settingPalette: { readonly getCommands: () => readonly Command[] }
-  readonly paletteLists: Parameters<typeof createItemLists>[1]['paletteLists']
+  readonly windowSettings: Pick<
+    ReturnType<typeof createWindowSettings>,
+    'settingPalette' | 'paletteLists'
+  >
 }
 
 export function createPluginPalette(deps: PluginPaletteDeps) {
-  const { pluginHost, declaredCommands, commandDeps, getTarget } = deps
+  const { pluginHost, declaredCommands, commandDeps, getTarget, windowSettings } = deps
   const plugin = usePluginCommands(
-    commandDeps.registry,
+    deps.registry,
     createCommandNoteReader(deps.itemLists),
     pluginHost,
     {
@@ -80,7 +84,7 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
   )
   const sources = createCommandSources({
     appCommands: deps.appCommands,
-    settingPalette: deps.settingPalette,
+    settingPalette: windowSettings.settingPalette,
     declaredCommands,
     pluginHost,
     plugin,
@@ -88,7 +92,7 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
     commandDeps,
   })
   const lists: PluginPaletteLists = createItemLists(sources.items, {
-    paletteLists: deps.paletteLists,
+    paletteLists: windowSettings.paletteLists,
     getTarget,
     runs: commandDeps.runSupport,
   })
@@ -134,10 +138,10 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     declaredCommands,
     itemLists: vault.itemLists,
     commandDeps,
+    registry: foundation.registry,
     appCommands,
     getTarget,
-    settingPalette: windowSettings.settingPalette,
-    paletteLists: windowSettings.paletteLists,
+    windowSettings,
   })
   const palette = createWindowPalette({
     commandDeps,

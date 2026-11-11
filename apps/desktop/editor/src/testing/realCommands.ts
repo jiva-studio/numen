@@ -37,6 +37,7 @@ import {
   watchCommandLists,
 } from '@/features/plugin-commands'
 import { createPluginPalette } from '@/app/window/createWindowPalettes'
+import { getVaultList } from '@/features/window-display'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
@@ -191,10 +192,10 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     declaredCommands,
     itemLists: options.itemLists,
     commandDeps,
+    registry,
     appCommands,
     getTarget,
-    settingPalette: options.settingPalette,
-    paletteLists: options.paletteLists,
+    windowSettings: { settingPalette: options.settingPalette, paletteLists: options.paletteLists },
   })
   const { search, commands, paletteSwitch, runs } = createWindowPalette({
     commandDeps,
@@ -203,7 +204,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots) },
-    getVaultList: options.core.vaults,
+    getVaultList,
   })
   watchCommandLists(
     {
