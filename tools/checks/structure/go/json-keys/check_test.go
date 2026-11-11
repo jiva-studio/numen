@@ -65,8 +65,8 @@ func register() {
 	if !slices.Equal(got, want) {
 		t.Errorf("violations = %v, want %v", got, want)
 	}
-	if checked < 5 {
-		t.Errorf("checked = %d, want at least 5", checked)
+	if checked != 11 {
+		t.Errorf("checked = %d, want the 11 tags and fields of the fixture", checked)
 	}
 }
 

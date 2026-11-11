@@ -18,10 +18,6 @@ import (
 // Anything that decides more over data is a rule, and a rule belongs to a use case or an adapter.
 const maxWiringComplexity = 3
 
-// minWiringFunctions is how many functions the walk of the composition root reads at least; fewer means the
-// check read the wrong package.
-const minWiringFunctions = 100
-
 func isRandomImport(path string) bool {
 	return load.IsWithin(path, "math/rand") || load.IsWithin(path, "crypto")
 }
@@ -97,7 +93,7 @@ func checkTheCompositionRootHoldsWiringOnly(t *testing.T, workspace load.Workspa
 	for _, one := range found {
 		t.Errorf("%s: %s; the composition root connects and holds no rule", one.Position, one.Name)
 	}
-	if functions < minWiringFunctions {
+	if functions == 0 {
 		t.Fatalf("%d functions of the composition root read: the rule is checked against nothing", functions)
 	}
 }

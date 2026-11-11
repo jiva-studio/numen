@@ -438,6 +438,22 @@
       "target": "mutable-use-case"
     },
     {
+      "name": "go/note-library",
+      "paths": [
+        "libs/note/**",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/go/note-library/check_test.go",
+      "runner": "go",
+      "target": "note-library"
+    },
+    {
       "name": "go/plugin-adapter-layers",
       "paths": [
         "libs/core/kernel/**",

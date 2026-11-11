@@ -30,8 +30,39 @@ func TestEveryKernelPackageBelongsToOneKnownLayer(t *testing.T) {
 			t.Errorf("the helper %s is not a package of the kernel or has no reason", helper)
 		}
 	}
-	if len(dirs) < 100 {
-		t.Fatalf("%d packages read: the walk is not reading the kernel", len(dirs))
+}
+
+// TestProductionDirs_ListsThePlantedPackages verifies that the walk lists the folders that hold
+// production Go files and skips test files and testdata, and fails on a tree without one.
+func TestProductionDirs_ListsThePlantedPackages(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/note.go":       "package note\n",
+		"usecase/note/note_test.go":  "package note\n",
+		"usecase/only/only_test.go":  "package only\n",
+		"usecase/data/testdata/x.go": "package x\n",
+	})
+	dirs, err := listProductionDirs(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"usecase/note"}; !slices.Equal(dirs, want) {
+		t.Errorf("the walk lists %v, want %v", dirs, want)
+	}
+	if _, err := listProductionDirs(t.TempDir()); err == nil {
+		t.Error("a tree without a Go package passed")
+	}
+}
+
+// TestUseCaseImports_ListsThePlantedEdge verifies that the use case imports are read from a loaded
+// package: a scenario that imports an adapter is listed with that edge.
+func TestUseCaseImports_ListsThePlantedEdge(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"adapter/index/index.go": "package index\n",
+		"usecase/note/note.go":   "package note\n\nimport _ \"fixture/adapter/index\"\n",
+	})
+	imports, read := getUseCaseImports(load.LoadFixture(t, dir), "fixture")
+	if read != 1 || !slices.Equal(imports["usecase/note"], []string{"adapter/index"}) {
+		t.Errorf("read %d use case packages with imports %v, want the edge to adapter/index", read, imports)
 	}
 }
 
@@ -94,8 +125,8 @@ func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 	for _, one := range getHelperReasonFindings(pkgs, load.CoreImportPath, helpers) {
 		t.Error(one)
 	}
-	if read < 10 {
-		t.Fatalf("%d helper packages read: the rule is checked against nothing", read)
+	if read == 0 {
+		t.Fatal("no helper package read: the rule is checked against nothing")
 	}
 }
 

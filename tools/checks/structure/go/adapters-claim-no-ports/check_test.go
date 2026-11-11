@@ -2,6 +2,7 @@
 package adaptersclaimnoports
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -20,14 +21,49 @@ import (
 // another (`VaultReaders.Open` returns a `VaultReader`), the return type is part
 // of the port's signature. The rule rejects only free-standing assertions.
 func TestAdaptersDoNotClaimSatisfiedPorts(t *testing.T) {
+	wrong, err := findPortClaims("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
+// TestPortClaimWalk_FindsThePlantedClaim verifies that the walk finds the claim of an adapter and
+// passes the same line outside the adapters.
+func TestPortClaimWalk_FindsThePlantedClaim(t *testing.T) {
+	claim := "package p\n\nvar _ vaultport.VaultReader = (*Reader)(nil)\n"
+	root := load.WriteTreeFixture(t, map[string]string{
+		"adapter/index/index.go": claim,
+		"usecase/note/note.go":   claim,
+	})
+	wrong, err := findPortClaims(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.Contains(wrong[0], "adapter/index/index.go names port.VaultReader") {
+		t.Errorf("the walk found %v, want the claim in adapter/index/index.go only", wrong)
+	}
+}
+
+// TestPortClaimWalk_FailsOnATreeWithoutAdapters verifies that a root without an adapter file is an error, not a pass.
+func TestPortClaimWalk_FailsOnATreeWithoutAdapters(t *testing.T) {
+	if _, err := findPortClaims(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without an adapter passed")
+	}
+}
+
+// findPortClaims lists the port claims in the adapter and shared files under root. It fails when it
+// reads no file.
+func findPortClaims(root string) ([]string, error) {
 	var wrong []string
 	var read int
-	reached := map[string]bool{}
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		pkg := load.GetPackage("..", path)
+		pkg := load.GetPackage(root, path)
 		if strings.HasSuffix(path, "_test.go") || !load.IsAdapter(pkg) && !load.IsShared(pkg) {
 			return nil
 		}
@@ -36,26 +72,15 @@ func TestAdaptersDoNotClaimSatisfiedPorts(t *testing.T) {
 			return err
 		}
 		read++
-		reached[load.GetFamily(pkg)] = true
 		for _, one := range getClaimedPorts(file) {
 			wrong = append(wrong, path+" names port."+one)
 		}
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
+	if err == nil && read == 0 {
+		err = fmt.Errorf("no adapter file read under %s: the walk checks nothing", root)
 	}
-	for _, one := range wrong {
-		t.Error(one)
-	}
-
-	// A walk that reads no file of an adapter checks nothing and passes.
-	if read < 50 {
-		t.Fatalf("%d files of the adapters read: the walk is not reading them", read)
-	}
-	if len(reached) < 10 {
-		t.Fatalf("%d adapters reached: the walk stops short of the adapters", len(reached))
-	}
+	return wrong, err
 }
 
 // shapes of the claim are one claim, and the walk has to reach the one written

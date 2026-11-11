@@ -2,6 +2,7 @@
 package pluginindependence
 
 import (
+	"fmt"
 	"go/ast"
 	"os"
 	"path/filepath"
@@ -211,14 +212,44 @@ func TestManifestValidator_RejectsInvalidManifests(t *testing.T) {
 	}
 }
 
-// Every manifest.json of a plugin passes the validator.
-func TestEveryPluginManifestPassesTheValidator(t *testing.T) {
-	found, err := filepath.Glob(filepath.Join(load.RepoRootDir, "plugins", "*", "manifest.json"))
+// TestManifestList_FindsThePlantedManifests verifies that the list finds the manifest of each
+// plugin folder and nothing else, and fails on a tree without one.
+func TestManifestList_FindsThePlantedManifests(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"plugins/alpha/manifest.json": "{}",
+		"plugins/beta/manifest.json":  "{}",
+		"plugins/beta/other.json":     "{}",
+		"docs/manifest.json":          "{}",
+	})
+	found, err := listManifests(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) < 2 {
-		t.Fatalf("%d manifests found: a rule checked against nothing", len(found))
+	if len(found) != 2 {
+		t.Errorf("found %v, want the manifests of alpha and beta", found)
+	}
+	if _, err := listManifests(t.TempDir()); err == nil {
+		t.Error("a tree without a manifest passed")
+	}
+}
+
+// listManifests lists the manifest.json of the plugin folders under root. It fails when there is none.
+func listManifests(root string) ([]string, error) {
+	found, err := filepath.Glob(filepath.Join(root, "plugins", "*", "manifest.json"))
+	if err != nil {
+		return nil, err
+	}
+	if len(found) == 0 {
+		return nil, fmt.Errorf("no plugin manifest under %s/plugins: a rule checked against nothing", root)
+	}
+	return found, nil
+}
+
+// Every manifest.json of a plugin passes the validator.
+func TestEveryPluginManifestPassesTheValidator(t *testing.T) {
+	found, err := listManifests(load.RepoRootDir)
+	if err != nil {
+		t.Fatal(err)
 	}
 	for _, path := range found {
 		data, err := os.ReadFile(path)

@@ -85,6 +85,34 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 	}
 }
 
+// TestPortWalk_FindsThePlantedPort verifies on a planted tree that the walks find the method nothing
+// calls and the type nothing names, and fail on a port folder with no declaration.
+func TestPortWalk_FindsThePlantedPort(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface {\n\tRead() string\n\tClose()\n}\n\ntype Orphan interface{ Drop() }\n",
+		"usecase/note/note.go":      "package note\n\nimport \"fixture/port/noteport\"\n\nfunc read(r noteport.Reader) string { return r.Read() }\n",
+	})
+	port := filepath.Join(root, "port", "noteport")
+	uncalled, err := getUncalledMethods(root, port)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Orphan.Drop", "Reader.Close"}; !slices.Equal(uncalled, want) {
+		t.Errorf("the walk reports uncalled methods %v, want %v", uncalled, want)
+	}
+	unnamed, err := getUnnamedTypes(root, port, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Orphan"}; !slices.Equal(unnamed, want) {
+		t.Errorf("the walk reports unnamed types %v, want %v", unnamed, want)
+	}
+	empty := t.TempDir()
+	if _, err := getUncalledMethods(empty, empty); err == nil {
+		t.Error("a port folder without a declaration passed")
+	}
+}
+
 func TestMain(m *testing.M) {
 	os.Exit(load.Main(m))
 }
