@@ -131,10 +131,10 @@ type moveParts struct {
 
 func (c changing) moveOf(p moveParts) note.Move {
 	if p.links == nil {
-		p.links = c.db.NoteQueries.Links
+		p.links = c.db.NoteQueries()
 	}
 	if p.names == nil {
-		p.names = c.db.NoteQueries.NamedPaths
+		p.names = c.db.NoteQueries()
 	}
 	if p.readers == nil {
 		p.readers = vaultreader.Readers{}
@@ -147,7 +147,7 @@ func (c changing) moveOf(p moveParts) note.Move {
 	}
 	return note.NewMove(note.MoveDeps{
 		Readers: p.readers, Writers: p.writers, Links: p.links, Names: p.names,
-		Sources: c.db.Source.Sources, Index: p.index, Now: testsupport.NewClock(),
+		Sources: c.db.Sources(), Index: p.index, Now: testsupport.NewClock(),
 	})
 }
 
@@ -190,7 +190,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 		"the links pointing at it cannot be read": {
 			from: "physics/Entropy.md",
 			parts: func(c changing) moveParts {
-				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, backlinksErr: boom}}
+				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries(), backlinksErr: boom}}
 			},
 			want: boom,
 		},
@@ -232,11 +232,12 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 	c := openLinked(t)
 	var notified []domain.Move
-	mover := c.move()
-	mover.Drawing = func(_ context.Context, went domain.Move) error {
+	deps := c.moveDeps()
+	deps.Drawing = func(_ context.Context, _ domain.Vault, went domain.Move) error {
 		notified = append(notified, went)
 		return nil
 	}
+	mover := note.NewMove(deps)
 
 	if _, err := mover.Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md"); err != nil {
 		t.Fatal(err)
@@ -290,7 +291,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		},
 		"the links of the note holding the link cannot be read": {
 			parts: func(c changing) moveParts {
-				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, linksErr: boom}}
+				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries(), linksErr: boom}}
 			},
 			want: boom,
 		},
@@ -368,7 +369,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 // A link the note does not contain is neither repaired nor reported.
 func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
 	c := openLinked(t)
-	parts := moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, isLinksEmpty: true}}
+	parts := moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries(), isLinksEmpty: true}}
 
 	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if err != nil {
@@ -479,7 +480,7 @@ func TestALinkTheNoteNoLongerContainsDoesNotStopTheNextRepair(t *testing.T) {
 		"physics/Cold.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Cold\n",
 		"physics/Heat.md":    heatLinkedToEntropy,
 	})
-	parts := moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, emptyFor: "physics/Cold.md"}}
+	parts := moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries(), emptyFor: "physics/Cold.md"}}
 
 	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if err != nil {

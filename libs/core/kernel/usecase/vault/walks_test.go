@@ -2,6 +2,7 @@ package vault_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"io"
 	"testing"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 // blockedWalk is a vault whose walk signals when it begins and then blocks until
@@ -98,7 +98,7 @@ func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
 	isDone := make(chan error, 2)
-	for _, db := range []*vaults.Index{openIndex(t), openIndex(t)} {
+	for _, db := range []*container.Index{openIndex(t), openIndex(t)} {
 		scan := scanner(readers, db)
 		go func() { _, err := scan.Execute(t.Context(), v); isDone <- err }()
 	}

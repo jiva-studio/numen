@@ -32,11 +32,6 @@ type NoteTypes interface {
 	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
 }
 
-// TypedPaths lists the notes of one type.
-type TypedPaths interface {
-	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
-}
-
 // VaultHolds checks the index for any note of a vault.
 type VaultHolds interface {
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)

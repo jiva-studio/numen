@@ -37,7 +37,7 @@ func (e editorServices) OpenWatchSettings() *settings.WatchSettingChanges {
 type windowVaults struct {
 	cfg      container.Config
 	registry vaultregistry.Ports
-	db       *vault.Index
+	db       *container.Index
 }
 
 func (w windowVaults) GetRefresh() vault.Refresh { return container.GetRefresh(w.cfg, w.db) }
@@ -53,4 +53,10 @@ func (w windowVaults) OpenPluginVault(
 		return nil, err
 	}
 	return w.cfg.PluginHost.Endpoint.GetPluginVault(), nil
+}
+
+func (w windowVaults) OpenNotesShowingMoves(
+	index edit.IndexUpdater, showing func() (domain.Vault, bool), view container.MoveView,
+) note.Scenarios {
+	return container.NotesShowingMoves(w.cfg, w.db, index, showing, view)
 }

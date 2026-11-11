@@ -44,10 +44,10 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 	v, current, assembly := openPluginVault(t, notes)
 	refresh := assembly.GetRefresh()
 	window := &moveRecordingWindow{}
-	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+	scenarios := assembly.OpenNotesShowingMoves(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
-	}).FollowMoves(window)
+	}, current, window)
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: scenarios})
 	if err != nil {
 		t.Fatal(err)
@@ -98,10 +98,10 @@ func TestWindowIgnoresPluginMoveInOtherVault(t *testing.T) {
 	other, current, assembly := openTwoPluginVaults(t)
 	refresh := assembly.GetRefresh()
 	window := &moveRecordingWindow{}
-	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+	scenarios := assembly.OpenNotesShowingMoves(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
-	}).FollowMoves(window)
+	}, current, window)
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: scenarios})
 	if err != nil {
 		t.Fatal(err)
@@ -172,12 +172,12 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	assembly := windowVaults{cfg: cfg, registry: registry, db: db}
 	refresh := assembly.GetRefresh()
 	window := &vaultMoveRecordingWindow{current: current}
-	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+	scenarios := assembly.OpenNotesShowingMoves(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		// The window changes vault while the rename writes the title, before the file moves.
 		isSwitched.Store(true)
 		return err
-	}).FollowMoves(window)
+	}, current, window)
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: scenarios})
 	if err != nil {
 		t.Fatal(err)
@@ -205,10 +205,10 @@ func TestWindowMoveAfterPluginMoveIsShownToTheWindow(t *testing.T) {
 	v, current, assembly := openPluginVault(t, getRivers())
 	refresh := assembly.GetRefresh()
 	window := &moveRecordingWindow{}
-	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+	scenarios := assembly.OpenNotesShowingMoves(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
-	}).FollowMoves(window)
+	}, current, window)
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: scenarios})
 	if err != nil {
 		t.Fatal(err)

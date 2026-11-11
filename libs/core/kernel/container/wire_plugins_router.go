@@ -108,8 +108,8 @@ type pluginVaultAccess struct {
 	NoteWriters  vaultport.NoteWriters
 	VaultLocks   vaultport.VaultLocks
 	VaultWatcher vaultport.VaultWatcher
-	MakeRefresh  func(*vault.Index, noteport.NoteRepository) vault.Refresh
-	BuildNotes   func(*vault.Index, edit.IndexUpdater) note.Scenarios
+	MakeRefresh  func(*Index, noteport.NoteRepository) vault.Refresh
+	BuildNotes   func(*Index, edit.IndexUpdater) note.Scenarios
 	Moves        func(context.Context) (<-chan struct{}, error)
 }
 

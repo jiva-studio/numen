@@ -12,9 +12,6 @@ import (
 // ErrNoName is a call that names no vault.
 var ErrNoName = errors.New("the call names no vault")
 
-// ErrShowing is returned when the vault to remove is the one the window shows.
-var ErrShowing = errors.New("the vault is open in the window")
-
 // ErrUnknown is a name, a path or an identity no vault on the list answers to.
 var ErrUnknown = errors.New("the vault is not on the list")
 

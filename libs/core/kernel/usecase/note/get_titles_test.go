@@ -11,7 +11,7 @@ func TestGetTitles_PreservesRequestOrderAndReportsMissing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "Work.md": "# Work\n"})
 
-	got, err := query.NewGetTitles(c.db.NoteQueries.NoteRefs).Execute(t.Context(), c.vault,
+	got, err := query.NewGetTitles(c.db.NoteQueries()).Execute(t.Context(), c.vault,
 		[]string{"Work.md", "Gone.md", "Heat.md", "Lost.md"})
 	if err != nil {
 		t.Fatal(err)

@@ -710,7 +710,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-func openInstallation(t *testing.T) (*editor.Installation, *vaults.Index) {
+func openInstallation(t *testing.T) (*editor.Installation, *container.Index) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
@@ -757,7 +757,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save failed: %v", rejected)
 	}
 
-	found, err := db.Chunks.Passages.FindLexical(
+	found, err := db.ChunkSearch().FindLexical(
 		t.Context(), installation.State.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)

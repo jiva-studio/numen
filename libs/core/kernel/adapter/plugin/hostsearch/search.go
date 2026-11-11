@@ -24,7 +24,8 @@ type Embedder interface {
 	GetModel() embedding.Model
 }
 
-// Samples reads the small chunks of a vault that carry a vector.
+// Samples reads the small chunks of a vault that carry a vector. The order is a function of the content
+// hashes in the index, so the same index yields the same sample.
 type Samples interface {
 	// ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
 	// vector under the recipe.

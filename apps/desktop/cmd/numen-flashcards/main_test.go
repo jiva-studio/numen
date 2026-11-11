@@ -27,7 +27,7 @@ func getNotes() map[string]string {
 
 func makeWindow(
 	t *testing.T,
-) (container.Config, *vault.Index, *vault.OpenVaults[*vault.Index], *shell.API, []domain.Vault) {
+) (container.Config, *container.Index, *vault.OpenVaults[*container.Index], *shell.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -48,8 +48,8 @@ func makeWindow(
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
-	vaults := &vault.OpenVaults[*vault.Index]{
-		Opener: func(i *vault.Index) *vault.VaultOpener { return container.VaultOpener(cfg, i) }, Index: db,
+	vaults := &vault.OpenVaults[*container.Index]{
+		Opener: func(i *container.Index) *vault.VaultOpener { return container.VaultOpener(cfg, i) }, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
@@ -78,10 +78,10 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 // The page is given the notes it answers about, the window it draws and the plugins' services it
 // forwards.
 func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
-	cfg, db, vaults, _, _ := makeWindow(t)
+	cfg, db, _, _, _ := makeWindow(t)
 
 	api := makeWindowAPI(cfg)
-	container.SetShellNotes(cfg, api, db, vaults.UpdateIndex)
+	container.SetShellNotes(api, db)
 
 	if api == nil {
 		t.Fatal("the page has no API")
@@ -105,7 +105,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	cfg, db, vaults, _, target := makeWindow(t)
 	api := makeWindowAPI(cfg)
-	container.SetShellNotes(cfg, api, db, vaults.UpdateIndex)
+	container.SetShellNotes(api, db)
 
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		return errors.New("boom")

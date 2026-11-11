@@ -53,7 +53,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 
 	v := testsupport.NewVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
-	heldChunks, _, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, recipe)
+	heldChunks, _, err := db.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}

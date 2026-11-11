@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
-func newIndexedVault(t *testing.T, notes map[string]string) (*vaults.Index, domain.Vault) {
+func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
@@ -29,10 +29,10 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*vaults.Index, doma
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
-		db.Stores.Vaults,
-		db.Stores.Notes,
-		db.NoteQueries.FileStats,
-		db.Stores.Maintenance,
+		db.Vaults(),
+		db.Notes(),
+		db.NoteQueries(),
+		db.Maintenance(),
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -40,9 +40,9 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*vaults.Index, doma
 	return db, v
 }
 
-func links(t *testing.T, db *vaults.Index, v domain.Vault, path string) query.NoteLinks {
+func links(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
-	c, err := query.NewShowLinks(db.NoteQueries.Links).Execute(t.Context(), v, path)
+	c, err := query.NewShowLinks(db.NoteQueries()).Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,14 +260,14 @@ func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 	}
 }
 
-func addVault(t *testing.T, db *vaults.Index, v domain.Vault) domain.Vault {
+func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	t.Helper()
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
-		db.Stores.Vaults,
-		db.Stores.Notes,
-		db.NoteQueries.FileStats,
-		db.Stores.Maintenance,
+		db.Vaults(),
+		db.Notes(),
+		db.NoteQueries(),
+		db.Maintenance(),
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -416,8 +416,8 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 		with failingLinks
 		want error
 	}{
-		{"outgoing", failingLinks{LinkQueries: db.NoteQueries.Links, links: errOutgoing}, errOutgoing},
-		{"incoming", failingLinks{LinkQueries: db.NoteQueries.Links, backlinks: errIncoming}, errIncoming},
+		{"outgoing", failingLinks{LinkQueries: db.NoteQueries(), links: errOutgoing}, errOutgoing},
+		{"incoming", failingLinks{LinkQueries: db.NoteQueries(), backlinks: errIncoming}, errIncoming},
 	} {
 		got, err := query.NewShowLinks(tc.with).Execute(t.Context(), v, "source.md")
 		if !errors.Is(err, tc.want) {
@@ -429,7 +429,7 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 	}
 }
 
-func getSingleLink(t *testing.T, db *vaults.Index, v domain.Vault, path string) query.NoteLinks {
+func getSingleLink(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
 	c := links(t, db, v, path)
 	if len(c.Links) != 1 {

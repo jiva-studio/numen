@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
@@ -20,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
@@ -52,7 +52,7 @@ func modelsForProvider(c Config, provider agentport.AgentProvider) func() []sett
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.
-func SyncSetting(c Config) query.SyncSetting {
+func SyncSetting(c Config) naming.SyncSetting {
 	return syncSetting(settingsOf(c))
 }
 
@@ -230,13 +230,13 @@ func refreshSettingEvents(c settingsWiring) {
 	feed(c).Refresh()
 }
 
-func syncSetting(c settingsWiring) query.SyncSetting {
-	return func() query.SyncTitleAndFilename {
+func syncSetting(c settingsWiring) naming.SyncSetting {
+	return func() naming.SyncTitleAndFilename {
 		target, err := settingsSettings(c)
 		if err != nil {
 			settingsHandleError(c, fmt.Errorf("read settings: %w", err))
 		}
-		return query.SyncTitleAndFilename(target.Sync())
+		return naming.SyncTitleAndFilename(target.Sync())
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -31,11 +32,13 @@ func GetUnknownVaultName(err error) (string, bool) {
 // The state, the scenarios of notes and vaults and the installation are the window's own, and each
 // service is handed the ones it uses.
 type windowWiring struct {
-	cfg    Config
-	ports  registry.Ports
-	db     *vault.Index
-	notes  *note.Scenarios
-	vaults *vault.Scenarios
+	cfg     Config
+	ports   registry.Ports
+	db      *Index
+	notes   *note.Scenarios
+	queries query.Scenarios
+	vaults  *vault.Scenarios
+	listing registry.Listing
 
 	embedder embeddingport.Embedder
 	asking   embeddingport.Embedder
@@ -62,7 +65,7 @@ func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*ed
 // OpenWindowOver is OpenWindow over a registry and a cache already open, for a caller that opened
 // them itself. The window closes the cache.
 func OpenWindowOver(c Config,
-	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
+	ctx context.Context, ports registry.Ports, db *Index, named string, out io.Writer,
 ) (*editor.Installation, error) {
 	return OpenWindowWith(c, ctx, WindowOpening{Ports: ports, DB: db, Named: named, Out: out})
 }
@@ -71,7 +74,7 @@ func OpenWindowOver(c Config,
 // the vault to show, where the window writes, and an optional function the walk of the vault goes through.
 type WindowOpening struct {
 	Ports registry.Ports
-	DB    *vault.Index
+	DB    *Index
 	Named string
 	Out   io.Writer
 	Wrap  func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
@@ -103,7 +106,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
-	embedding := indexing.NewEmbedding(embedder, w.db.Chunks.Progress)
+	embedding := indexing.NewEmbedding(embedder, w.db.ChunkVectors())
 	state := editor.NewState(tasks)
 	state.Events.Emit = func(event string) { emitPluginEvent(plugins(w.cfg), event) }
 	state.SetIndexing(embedding)
@@ -113,10 +116,14 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
 	current := &vault.CurrentRefresh{Fallback: func() vault.Refresh { return GetRefresh(w.cfg, w.db) }}
-	notes := vaultNotes(vaultOf(w.cfg), w.db, vault.NewUpdateIndex(current.Get).Execute).FollowMoves(windowView(state))
-	w.notes = &notes
+	notes := vaultNotes(
+		vaultOf(w.cfg), w.db, vault.NewUpdateIndex(current.Get).Execute,
+		noteViews{Moves: showMovesIn(state.GetShownVault, windowView(state))},
+	)
+	w.notes, w.queries = &notes, vaultQueries(w.db)
 	moves := vaultVaults(vaultOf(w.cfg), w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
+	w.listing = vaultListing(vaultOf(w.cfg), w.ports)
 
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
 		Window: windowsession.WindowPorts{
@@ -144,7 +151,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	})
 	inst := editor.NewInstallation(state, session, out)
 	w.inst = inst
-	inst.UseScenarios(w.notes, w.vaults)
+	inst.UseScenarios(&editor.Scenarios{Notes: w.notes, Queries: &w.queries, Vaults: w.vaults, Listing: &w.listing})
 
 	if err := startWindow(ctx, w, first); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), w.db.Close())

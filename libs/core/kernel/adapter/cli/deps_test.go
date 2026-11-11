@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -104,7 +105,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Problems{}, err
 			}
-			return cli.Problems{Problems: vaults.NewStandardGetProblems(db.NoteProblems()), Close: db.Close}, nil
+			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(db.NoteProblems())), Close: db.Close}, nil
 		},
 	}
 }

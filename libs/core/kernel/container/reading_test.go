@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -34,10 +33,10 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	}
 	defer testsupport.Close(t, db)
 
-	if err := db.Stores.Vaults.Register(t.Context(), vault.ID); err != nil {
+	if err := db.Vaults().Register(t.Context(), vault.ID); err != nil {
 		t.Fatal(err)
 	}
-	err = db.Source.Sources.SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
+	err = db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
 		Source: domain.Source{
 			FileStat:    domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), ModTime: time.Unix(0, 1)},
 			ContentHash: "hash-entropy",
@@ -54,7 +53,7 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	return cfg, vault
 }
 
-func read(t *testing.T, cfg container.Config) *vault.Index {
+func read(t *testing.T, cfg container.Config) *container.Index {
 	t.Helper()
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
@@ -68,7 +67,7 @@ func read(t *testing.T, cfg container.Config) *vault.Index {
 func TestSearchOver_WithoutModelUsesWords(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
-	found, err := cfg.NewSearchOver(read(t, cfg).Chunks.Passages, nil, nil).
+	found, err := cfg.NewSearchOver(read(t, cfg).ChunkSearch(), nil, nil).
 		Execute(t.Context(), vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +87,7 @@ func TestSearchOver_WithoutModelUsesWords(t *testing.T) {
 func TestReopenedIndex_KeepsSources(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
-	target, err := read(t, cfg).Source.SourcesUnder.GetSourcesUnder(t.Context(), vault.ID, "Entropy.md")
+	target, err := read(t, cfg).Sources().GetSourcesUnder(t.Context(), vault.ID, "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +108,7 @@ func TestAnIndexThatWasNeverBuiltAnswersEmpty(t *testing.T) {
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: t.TempDir()}
 
 	db := read(t, cfg)
-	found, err := cfg.NewSearchOver(db.Chunks.Passages, nil, nil).
+	found, err := cfg.NewSearchOver(db.ChunkSearch(), nil, nil).
 		Execute(t.Context(), vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
@@ -117,7 +116,7 @@ func TestAnIndexThatWasNeverBuiltAnswersEmpty(t *testing.T) {
 	if len(found) != 0 {
 		t.Errorf("the search answered with %d passages", len(found))
 	}
-	if target, err := db.Source.SourcesUnder.GetSourcesUnder(t.Context(), vault.ID, ""); err != nil || len(target) != 0 {
+	if target, err := db.Sources().GetSourcesUnder(t.Context(), vault.ID, ""); err != nil || len(target) != 0 {
 		t.Errorf("the vault holds %d sources: %v", len(target), err)
 	}
 }

@@ -32,30 +32,30 @@ import (
 
 // Scan is the walk that reads a vault's notes into the index, cut at this
 // installation's sizes. Every application that reads a vault takes it from here.
-func Scan(c Config, db *vault.Index) vault.Scan {
+func Scan(c Config, db *Index) vault.Scan {
 	return searchScan(searchOf(c), db)
 }
 
 // ReadWholeVault is what makes a vault answer, put together the one way: the
 // notes read, the file texts cut, and the vectors made.
 func ReadWholeVault(c Config,
-	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault,
+	ctx context.Context, db *Index, embedder embeddingport.Embedder, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, embedder, v, makeRefresh(c, db, db.Stores.Notes))
+	return readWholeVault(searchOf(c), ctx, db, embedder, v, makeRefresh(c, db, db.Notes()))
 }
 
 // Embed gives a vault's chunks the vectors they need.
-func Embed(c Config, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
+func Embed(c Config, db *Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
 	return searchEmbed(searchOf(c), db, embedder, v)
 }
 
 // IndexTexts cuts the text versions of a vault's files into chunks.
-func IndexTexts(c Config, db *vault.Index, v domain.Vault) (filetext.Index, error) {
+func IndexTexts(c Config, db *Index, v domain.Vault) (filetext.Index, error) {
 	return indexTexts(searchOf(c), db, v)
 }
 
 // NewSearch is the search a question is answered by, put together the one way.
-func NewSearch(c Config, db *vault.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
+func NewSearch(c Config, db *Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
 	return newSearch(searchOf(c), db, asking, errorHandler)
 }
 
@@ -82,31 +82,31 @@ func cutNotes(c searchWiring) chunking.CutNotes {
 	return cutter
 }
 
-func setNoteCut(c searchWiring, scan *vault.Scan, db *vault.Index) {
+func setNoteCut(c searchWiring, scan *vault.Scan, db *Index) {
 	scan.Cut = cutNotes(c)
 	scan.ShouldRecut = c.Chunks.Get() > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
 		recipes := []string{recipe, filetext.Index{Sizes: scan.Cut.Sizes}.Recipe()}
-		return db.Source.SourceBacklog.GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
+		return db.Sources().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
 	}
 }
 
-func searchScan(c searchWiring, db *vault.Index) vault.Scan {
+func searchScan(c searchWiring, db *Index) vault.Scan {
 	scan := vault.NewScan(
 		c.VaultReaders,
-		db.Stores.Vaults,
-		db.Stores.Notes,
-		db.NoteQueries.FileStats,
-		db.Stores.Maintenance,
+		db.Vaults(),
+		db.Notes(),
+		db.NoteQueries(),
+		db.Maintenance(),
 	)
 	setNoteCut(c, &scan, db)
-	scan.Walks = db.Walks()
+	scan.Walks = &db.Walks
 	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return scan
 }
 
 func readWholeVault(c searchWiring,
-	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
+	ctx context.Context, db *Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	if err := fitIndex(c, db).Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
@@ -115,7 +115,7 @@ func readWholeVault(c searchWiring,
 }
 
 func buildReadWholeVault(c searchWiring,
-	db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
+	db *Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	texts, err := indexTexts(c, db, v)
 	if err != nil {
@@ -137,30 +137,30 @@ func getUnreadable(refresh vault.Refresh) func(ctx context.Context, v domain.Vau
 	}
 }
 
-func fitIndex(c searchWiring, db *vault.Index) vectorscase.FitIndex {
-	fit := vectorscase.NewFitIndex(db.VectorIndex())
+func fitIndex(c searchWiring, db *Index) vectorscase.FitIndex {
+	fit := vectorscase.NewFitIndex(db)
 	fit.ShouldRebuildIndex = c.ShouldRebuildIndex
 	fit.ErrorHandler = c.ErrorHandler
 	return fit
 }
 
-func searchEmbed(c searchWiring, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
+func searchEmbed(c searchWiring, db *Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{ServiceDir: c.ServiceDir}, coreFolder)
 	if err != nil {
 		return vectorscase.Embed{}, err
 	}
-	embed := vectorscase.NewEmbed(c.VaultReaders, db.Chunks.VectorQueries, db.Chunks.Vectors)
+	embed := vectorscase.NewEmbed(c.VaultReaders, db.Sources(), db.Sources())
 	embed.Claim = store.NewIndexClaim(coreFolder + "/indexing")
 	embed.Texts = c.TextReaders
 	embed.Embedder = embedder
 	return embed, nil
 }
 
-func indexTexts(c searchWiring, db *vault.Index, v domain.Vault) (filetext.Index, error) {
+func indexTexts(c searchWiring, db *Index, v domain.Vault) (filetext.Index, error) {
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewIndex(c.VaultReaders, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, c.TextReaders)
+	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders)
 	index.ErrorHandler = c.ErrorHandler
 	cutter := cutNotes(c)
 	index.Sizes = cutter.Sizes
@@ -169,9 +169,9 @@ func indexTexts(c searchWiring, db *vault.Index, v domain.Vault) (filetext.Index
 	return index, nil
 }
 
-func newSearch(c searchWiring, db *vault.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
+func newSearch(c searchWiring, db *Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
 	policy := newFloorPolicy(c, db, asking, c.ErrorHandler)
-	searching := newSearchOver(c, db.Chunks.Passages, asking, errorHandler)
+	searching := newSearchOver(c, db.ChunkSearch(), asking, errorHandler)
 	searching.Floor = policy.GetFloor
 	return searching
 }
@@ -186,18 +186,18 @@ func newSearchOver(c searchWiring, passages sourceport.PassageQueries, asking em
 	return searching
 }
 
-func newFloorPolicy(_ searchWiring, db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) searchusecase.FloorPolicy {
-	return searchusecase.NewFloorPolicy(db.Search.SearchFloors, getFloorHint(embedder), errorHandler)
+func newFloorPolicy(_ searchWiring, db *Index, embedder embeddingport.Embedder, errorHandler func(error)) searchusecase.FloorPolicy {
+	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(embedder), errorHandler)
 }
 
-func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) {
+func setPluginSearch(c searchWiring, db *Index, embedder embeddingport.Embedder, errorHandler func(error)) {
 	c.PluginHost.Endpoint.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
-		Samples:  db.Search.SearchSamples,
-		Nearest:  db.Search.Nearest,
-		Progress: db.Chunks.Progress,
-		Stats:    hostsearch.NewStats(db.Chunks.Stats, c.Clock),
+		Samples:  db.SearchSamples(),
+		Nearest:  db.ChunkSearch(),
+		Progress: db.ChunkVectors(),
+		Stats:    hostsearch.NewStats(db.ChunkVectors(), c.Clock),
 		Policy:   newFloorPolicy(c, db, embedder, errorHandler),
 		Passages: searchusecase.NewSearchPassages(newSearch(c, db, embedder, errorHandler)),
 	}.Access())

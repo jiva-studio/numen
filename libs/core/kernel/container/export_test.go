@@ -71,7 +71,7 @@ func (c Config) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func
 	return subscribeSettingChanges(settingsOf(c))
 }
 
-func (c Config) VaultOpenerWith(db *vault.Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher) *vault.VaultOpener {
+func (c Config) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher) *vault.VaultOpener {
 	return vaultOpenerWith(vaultOf(c), db, walking, watcher)
 }
 

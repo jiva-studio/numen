@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
@@ -23,18 +23,23 @@ import (
 )
 
 func (c changing) rename() note.Rename {
-	return note.Rename{Move: c.move()}
+	return note.NewRename(c.moveDeps(), c.move())
+}
+
+func (c changing) moveApartDeps() note.MoveDeps {
+	deps := c.moveDeps()
+	deps.Sync = func() naming.SyncTitleAndFilename { return false }
+	return deps
 }
 
 func (c changing) renameApart() note.Rename {
-	mover := c.move()
-	mover.Sync = func() query.SyncTitleAndFilename { return false }
-	return note.Rename{Move: mover}
+	deps := c.moveApartDeps()
+	return note.NewRename(deps, note.NewMove(deps))
 }
 
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
-	displayed, err := c.db.NoteQueries.NoteRefs.GetNotes(t.Context(), c.vault.ID, []string{path})
+	displayed, err := c.db.NoteQueries().GetNotes(t.Context(), c.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +54,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		raw   string
 		title string
 		path  string
-		delta query.NameSource
+		delta naming.Source
 		holds []string
 		lacks []string
 	}{
@@ -57,14 +62,14 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "---\ntitle: Old\n---\n# Old\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			delta: query.ByFrontmatter,
+			delta: naming.ByFrontmatter,
 			holds: []string{"title: Entropy", "# Old"},
 		},
 		"a level-one heading, which names nothing and is left standing": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			delta: query.ByFilename,
+			delta: naming.ByFilename,
 			holds: []string{"# Old", "A measure."},
 			lacks: []string{"title:", "id: "},
 		},
@@ -72,7 +77,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "TCP/IP",
 			path:  "TCP-IP.md",
-			delta: query.ByFrontmatter,
+			delta: naming.ByFrontmatter,
 			holds: []string{"title: TCP/IP", "A measure.", "id: "},
 			lacks: []string{"# TCP/IP"},
 		},
@@ -80,7 +85,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			delta: query.ByFilename,
+			delta: naming.ByFilename,
 			holds: []string{"A measure."},
 			lacks: []string{"id: ", "# Entropy", "title:"},
 		},
@@ -190,7 +195,7 @@ func TestATitleOnlyTheKeyCanCarryIsSavedThere(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the rename failed: %v", err)
 			}
-			if renamed.By != query.ByFrontmatter {
+			if renamed.By != naming.ByFrontmatter {
 				t.Errorf("want named by the frontmatter, got %s", renamed.By)
 			}
 			if got := v.title(t, renamed.Path); got != "C#" {
@@ -335,11 +340,12 @@ func TestRename_ReturnsMoveWhenFollowUpFails(t *testing.T) {
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	sulk := errors.New("the index would not have it")
-	rename := note.NewRename(note.NewMove(note.MoveDeps{
+	deps := note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: c.db.NoteQueries.Links, Names: c.db.NoteQueries.NamedPaths,
-		Sources: sulking{SourceRepository: c.db.Source.Sources, moveError: sulk}, Index: c.index, Now: testsupport.NewClock(),
-	}))
+		Links: c.db.NoteQueries(), Names: c.db.NoteQueries(),
+		Sources: sulking{SourceRepository: c.db.Sources(), moveError: sulk}, Index: c.index, Now: testsupport.NewClock(),
+	}
+	rename := note.NewRename(deps, note.NewMove(deps))
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {
@@ -418,7 +424,7 @@ func TestRename_LongTitleTruncatesNameAndCachesFullTitle(t *testing.T) {
 	if len(renamed.Path) >= len(title) {
 		t.Errorf("the name was not cut: %s", renamed.Path)
 	}
-	if renamed.By != query.ByFrontmatter {
+	if renamed.By != naming.ByFrontmatter {
 		t.Errorf("want named by the frontmatter, got %s", renamed.By)
 	}
 	if body := c.read(t, renamed.Path); !strings.Contains(body, "title: "+title) {
@@ -482,7 +488,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
-	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries.Links, c.db.Source.SourcesUnder, c.index)
+	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index)
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
@@ -512,7 +518,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.NoteQueries.NamedPaths.GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -530,19 +536,19 @@ func TestRename_RetitlesInFrontmatterWithoutMovingFile(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
 		title string
-		delta query.NameSource
+		delta naming.Source
 		holds string
 	}{
 		"a title in the frontmatter": {
 			raw:   "---\ntitle: Old\n---\nA measure.\n",
 			title: "Entropy",
-			delta: query.ByFrontmatter,
+			delta: naming.ByFrontmatter,
 			holds: "title: Entropy",
 		},
 		"no key, and a title the filename cannot carry": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "TCP/IP",
-			delta: query.ByFrontmatter,
+			delta: naming.ByFrontmatter,
 			holds: "title: TCP/IP",
 		},
 	} {
@@ -593,7 +599,7 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 			if renamed.Path != "Entropy.md" {
 				t.Fatalf("the note is filed at %q", renamed.Path)
 			}
-			if renamed.By != query.ByFilename {
+			if renamed.By != naming.ByFilename {
 				t.Errorf("want named by filename, got %s", renamed.By)
 			}
 			if body := v.read(t, "Entropy.md"); body != "A measure.\n" {

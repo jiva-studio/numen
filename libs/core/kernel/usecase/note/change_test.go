@@ -3,6 +3,7 @@ package note_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"os"
 	"path/filepath"
 	"slices"
@@ -24,7 +25,7 @@ import (
 // changing is a vault that can be both queried and written to, with the index
 // kept current as a real caller would keep it.
 type changing struct {
-	db    *vaults.Index
+	db    *container.Index
 	vault domain.Vault
 	index func(ctx context.Context, v domain.Vault, paths []string) error
 }
@@ -33,7 +34,7 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.NewClock())
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
 	return changing{
 		db:    db,
 		vault: v,
@@ -45,23 +46,25 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 }
 
 func (c changing) search() search.Search {
-	return search.New(c.db.Chunks.Passages, vaultreader.Readers{}, nil, nil, nil, nil)
+	return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, nil, nil, nil)
 }
 
 func (c changing) create() note.Create {
-	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries.NamedPaths, c.index, testsupport.NewClock())
+	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock())
 }
 
-func (c changing) move() note.Move {
-	return note.NewMove(note.MoveDeps{
+func (c changing) moveDeps() note.MoveDeps {
+	return note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: c.db.NoteQueries.Links, Names: c.db.NoteQueries.NamedPaths, Sources: c.db.Source.Sources, Index: c.index, Now: testsupport.NewClock(),
-	})
+		Links: c.db.NoteQueries(), Names: c.db.NoteQueries(), Sources: c.db.Sources(), Index: c.index, Now: testsupport.NewClock(),
+	}
 }
+
+func (c changing) move() note.Move { return note.NewMove(c.moveDeps()) }
 
 func (c changing) remove() note.Remove {
 	return note.NewRemove(
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries.Links, c.db.Source.SourcesUnder, c.index)
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index)
 }
 
 func (c changing) newEditLinks() note.EditLinks {
@@ -124,7 +127,7 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 		t.Errorf("the exact title is not in the note:\n%s", body)
 	}
 
-	displayed, err := c.db.NoteQueries.NoteRefs.GetNotes(t.Context(), c.vault.ID, []string{created.Path})
+	displayed, err := c.db.NoteQueries().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +206,7 @@ func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 	if got := c.title(t, "physics/Old.md"); got != "Entropy" {
 		t.Errorf("the vault shows the note as %q, and the file says Entropy", got)
 	}
-	named, err := c.db.NoteQueries.NamedPaths.GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +243,7 @@ func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 
 	// The note answers to the name it is filed under now, wherever a link
 	// naming it is written.
-	named, err := c.db.NoteQueries.NamedPaths.GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NoteQueries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}

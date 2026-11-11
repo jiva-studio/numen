@@ -11,9 +11,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
@@ -429,11 +429,11 @@ func (h *Prose) RenameNote(
 	return connect.NewResponse(out), nil
 }
 
-func newWireNameSource(delta query.NameSource) v1.NameSource {
+func newWireNameSource(delta naming.Source) v1.NameSource {
 	switch delta {
-	case query.ByFrontmatter:
+	case naming.ByFrontmatter:
 		return v1.NameSource_NAME_SOURCE_FRONTMATTER
-	case query.ByFilename:
+	case naming.ByFilename:
 		return v1.NameSource_NAME_SOURCE_FILENAME
 	default:
 		return v1.NameSource_NAME_SOURCE_UNSPECIFIED

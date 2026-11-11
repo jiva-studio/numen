@@ -36,4 +36,7 @@ var (
 
 	// ErrLastVault is the one vault an installation has left. It stays on the list.
 	ErrLastVault = errors.New("the last vault cannot be removed")
+
+	// ErrShowing is returned when the vault to remove is the one the window shows.
+	ErrShowing = errors.New("the vault is open in the window")
 )

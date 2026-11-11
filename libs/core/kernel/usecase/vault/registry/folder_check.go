@@ -1,4 +1,4 @@
-package check
+package registry
 
 import (
 	"github.com/jiva-studio/numen/libs/note/domain"

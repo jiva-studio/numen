@@ -22,7 +22,7 @@ func relationsOf(n domain.Neighborhood) []string {
 func neighborhoodOf(t *testing.T, files map[string]string, path string) domain.Neighborhood {
 	t.Helper()
 	db, v := newIndexedVault(t, files)
-	n, err := query.NewShowNeighborhood(db.NoteQueries.Links, db.NoteQueries.NoteRefs).
+	n, err := query.NewShowNeighborhood(db.NoteQueries(), db.NoteQueries()).
 		Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
@@ -304,7 +304,7 @@ func TestANeighborhoodStaysInsideItsVault(t *testing.T) {
 		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
 	}))
 
-	n, err := query.NewShowNeighborhood(db.NoteQueries.Links, db.NoteQueries.NoteRefs).
+	n, err := query.NewShowNeighborhood(db.NoteQueries(), db.NoteQueries()).
 		Execute(t.Context(), here, "Area.md")
 	if err != nil {
 		t.Fatal(err)
@@ -377,7 +377,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
 	})
 
-	opening, found, err := db.NoteQueries.OpeningNote.GetOpeningNote(t.Context(), v.ID)
+	opening, found, err := db.NoteQueries().GetOpeningNote(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -388,7 +388,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 		t.Errorf("opening = %+v", opening)
 	}
 
-	again, _, err := db.NoteQueries.OpeningNote.GetOpeningNote(t.Context(), v.ID)
+	again, _, err := db.NoteQueries().GetOpeningNote(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +401,7 @@ func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
 	t.Parallel()
 	db, v := newIndexedVault(t, map[string]string{})
 
-	_, found, err := db.NoteQueries.OpeningNote.GetOpeningNote(t.Context(), v.ID)
+	_, found, err := db.NoteQueries().GetOpeningNote(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
