@@ -8,8 +8,8 @@ runs:
       with:
         key: webkit-${{ hashFiles('.github/actions/setup-webkit/action.yml') }}
 
-    # With the .deb files restored the package lists of the runner image are enough; a list that
-    # has moved on from them is refreshed and the install tried again.
+    # With the .deb files restored the package lists of the runner image are enough; a failed
+    # attempt refreshes the lists and tries again.
     - name: Install WebKit & GTK dependencies
       shell: bash
       env:
@@ -17,13 +17,10 @@ runs:
         RESTORED: ${{ steps.apt.outputs.cache-hit }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
-        install() {
-          sudo apt-get install -y --no-install-recommends \
-            -o Dpkg::Options::=--force-unsafe-io \
-            libgtk-4-dev libwebkitgtk-6.0-dev
-        }
-        if [ "$RESTORED" = true ] && install; then
-          exit 0
+        refresh=()
+        if [ "$RESTORED" != true ]; then
+          refresh=(--update)
         fi
-        sudo apt-get update -qq
-        install
+        .github/scripts/apt-retry.sh "${refresh[@]}" sudo apt-get install -y --no-install-recommends \
+          -o Dpkg::Options::=--force-unsafe-io \
+          libgtk-4-dev libwebkitgtk-6.0-dev
