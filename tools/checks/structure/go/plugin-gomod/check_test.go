@@ -2,6 +2,7 @@
 package plugingomod
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 

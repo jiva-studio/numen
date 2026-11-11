@@ -2,6 +2,7 @@
 package adapterrole
 
 import (
+	"os"
 	"slices"
 	"strings"
 	"testing"

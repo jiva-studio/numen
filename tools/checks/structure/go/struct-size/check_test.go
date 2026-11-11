@@ -2,6 +2,7 @@
 package structsize
 
 import (
+	"os"
 	"slices"
 	"strings"
 	"testing"

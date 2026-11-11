@@ -2,6 +2,7 @@
 package containerclosures
 
 import (
+	"os"
 	"slices"
 	"testing"
 

@@ -2,6 +2,7 @@
 package scancomplete
 
 import (
+	"os"
 	"slices"
 	"testing"
 

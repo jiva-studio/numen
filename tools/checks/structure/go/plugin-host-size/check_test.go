@@ -2,6 +2,7 @@
 package pluginhostsize
 
 import (
+	"os"
 	"slices"
 	"testing"
 

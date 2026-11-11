@@ -2,6 +2,7 @@
 package windowadaptersession
 
 import (
+	"os"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"

@@ -169,7 +169,7 @@ func ListManyUseCaseCalls(pkgs []*packages.Package, root string) (found []Findin
 			continue
 		}
 		uses := GetFunctionUses(pkg, root)
-		for object, use := range uses {
+		for object := range uses {
 			reach := GetReach(uses, object)
 			if len(reach) == 0 {
 				continue

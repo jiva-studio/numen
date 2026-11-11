@@ -2,7 +2,6 @@
 package usecasefields
 
 import (
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"go/parser"
 	"go/token"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // A use case or service across the repository is made with everything it needs, or it is not made.

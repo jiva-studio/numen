@@ -2,6 +2,7 @@
 package corereexport
 
 import (
+	"os"
 	"slices"
 	"strings"
 	"testing"

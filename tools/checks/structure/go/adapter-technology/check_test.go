@@ -2,6 +2,7 @@
 package adaptertechnology
 
 import (
+	"os"
 	"slices"
 	"testing"
 

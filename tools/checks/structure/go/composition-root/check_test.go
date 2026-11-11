@@ -2,6 +2,7 @@
 package compositionroot
 
 import (
+	"os"
 	"slices"
 	"testing"
 

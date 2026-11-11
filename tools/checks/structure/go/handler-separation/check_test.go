@@ -4,6 +4,7 @@ package handlerseparation
 import (
 	"go/parser"
 	"go/token"
+	"os"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"

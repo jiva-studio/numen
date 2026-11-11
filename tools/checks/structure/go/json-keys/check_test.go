@@ -2,6 +2,7 @@
 package jsonkeys
 
 import (
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"

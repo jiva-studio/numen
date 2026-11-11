@@ -2,6 +2,7 @@
 package structusecases
 
 import (
+	"os"
 	"slices"
 	"testing"
 

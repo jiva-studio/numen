@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
+	"os"
 	"slices"
 	"testing"
 

@@ -2,6 +2,7 @@
 package sdkprotocolencapsulation
 
 import (
+	"os"
 	"slices"
 	"strings"
 	"testing"

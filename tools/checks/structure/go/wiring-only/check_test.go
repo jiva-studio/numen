@@ -2,6 +2,7 @@
 package wiringonly
 
 import (
+	"os"
 	"slices"
 	"testing"
 

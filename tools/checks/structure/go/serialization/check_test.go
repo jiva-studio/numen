@@ -2,16 +2,17 @@
 package serialization
 
 import (
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies that port/, usecase/, and domain/

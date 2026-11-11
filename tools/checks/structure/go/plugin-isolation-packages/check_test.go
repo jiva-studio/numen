@@ -2,6 +2,7 @@
 package pluginisolationpackages
 
 import (
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"

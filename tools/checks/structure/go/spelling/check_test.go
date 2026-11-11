@@ -3,6 +3,7 @@ package spelling
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"

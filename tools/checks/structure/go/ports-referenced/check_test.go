@@ -2,10 +2,12 @@
 package portsreferenced
 
 import (
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // A port is a dependency the core has on something outside it, and a port with no

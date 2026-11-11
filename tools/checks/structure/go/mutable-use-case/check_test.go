@@ -4,6 +4,7 @@ package mutableusecase
 import (
 	"go/ast"
 	"go/types"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"

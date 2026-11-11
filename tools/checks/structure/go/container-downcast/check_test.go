@@ -2,14 +2,15 @@
 package containerdowncast
 
 import (
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // TestContainerDoesNotDowncastPluginHost ensures container code interacts with

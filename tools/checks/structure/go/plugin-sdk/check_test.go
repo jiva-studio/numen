@@ -3,6 +3,7 @@ package pluginsdk
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"testing"
 

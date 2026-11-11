@@ -2,6 +2,7 @@
 package wiringpackage
 
 import (
+	"os"
 	"slices"
 	"testing"
 

@@ -2,6 +2,7 @@
 package lintconfig
 
 import (
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
