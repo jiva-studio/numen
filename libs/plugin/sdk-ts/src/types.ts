@@ -1,6 +1,6 @@
 import type { Component, Ref } from 'vue'
 import type { FileConflict } from './buffers'
-import type { AgentHost, AgentPort } from './agent'
+import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
