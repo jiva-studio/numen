@@ -1,6 +1,12 @@
+import type { WhenValues } from '@numen/plugin-loader'
 import type { Command, CommandTarget } from '@/entities/command'
 import { isFieldFocused } from './isFieldFocused'
-import type { WindowFactsSource } from './hostPort'
+
+/** What the commands part of the window says of the window: its own commands and the when values. */
+export interface WindowFactsSource {
+  readonly getAppCommands: () => readonly Command[]
+  readonly getValues: () => WhenValues
+}
 
 export interface WindowFactsDeps {
   readonly getAppCommands: () => readonly Command[]

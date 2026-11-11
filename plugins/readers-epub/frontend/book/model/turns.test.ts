@@ -45,7 +45,7 @@ const paperWithStyle = () => {
   return { paper, writes }
 }
 
-const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
+const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true, duration?: number) => {
   const { paper, writes } = paperWithStyle()
   const props = {
     book: { start: 0, end: 400 },
@@ -60,6 +60,7 @@ const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
     spreadCount: computed(() => 4),
     marks: shallowRef(marks),
     onMove,
+    ...(duration !== undefined ? { getDuration: () => duration } : {}),
   })
   return { turns, writes, onMove, paper }
 }
@@ -190,9 +191,6 @@ describe('a turn drawn frame by frame', () => {
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
       queue[id - 1] = () => undefined
     })
-    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-      getPropertyValue: () => `${MOTION_MS}ms`,
-    } as unknown as CSSStyleDeclaration)
     const frame = () => {
       now += 20
       queue.shift()?.(now)
@@ -208,7 +206,7 @@ describe('a turn drawn frame by frame', () => {
 
   it('moves the columns toward the spread on every frame and ends exactly on it', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
     turns.moves.stand(0, 'auto')
     writes.length = 0
 
@@ -227,7 +225,7 @@ describe('a turn drawn frame by frame', () => {
 
   it('writes nothing after the last frame', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
     turns.moves.stand(0, 'auto')
     writes.length = 0
 
@@ -242,7 +240,7 @@ describe('a turn drawn frame by frame', () => {
 
   it('goes on from where the columns stand when another turn is made, and never goes back', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
     turns.moves.stand(0, 'auto')
     writes.length = 0
 
@@ -262,7 +260,7 @@ describe('a turn drawn frame by frame', () => {
 
   it('puts the columns where an unsmooth stand says, and ends a turn under way', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
     turns.moves.stand(0, 'auto')
     writes.length = 0
 
@@ -279,7 +277,7 @@ describe('a turn drawn frame by frame', () => {
 
   it('moves the columns across frames when the thread blocks before the first frame', () => {
     const { frame, advance } = setUpFrames()
-    const { turns, writes } = setUp()
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
     turns.moves.stand(0, 'auto')
     writes.length = 0
 
@@ -395,10 +393,7 @@ describe('the place a turn goes to', () => {
       queue.push(callback)
       return queue.length
     })
-    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-      getPropertyValue: () => '200ms',
-    } as unknown as CSSStyleDeclaration)
-    const { turns, paper, writes } = setUp()
+    const { turns, paper, writes } = setUp(MARKS, 0, true, 200)
     turns.moves.stand(0, 'auto')
 
     turns.moves.stand(2, 'smooth')

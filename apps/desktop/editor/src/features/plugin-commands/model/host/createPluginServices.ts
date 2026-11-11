@@ -35,8 +35,7 @@ export interface PluginServicesDeps {
   readonly tabSync: NonNullable<WorkspaceHostDeps['tabSync']>
   readonly window: WorkspaceHostDeps['window'] & AgentHostDeps['window']
   readonly settings: AgentHostDeps['settings']
-  readonly getTarget: WorkspaceHostDeps['getTarget']
-  readonly runCommand: WorkspaceHostDeps['runCommand']
+  readonly getTarget: VaultFilesDeps['getTarget']
   readonly runInvocation: VaultFilesDeps['runCommand']
   readonly getPluginCommandIcon: NonNullable<WorkspaceHostDeps['getPluginCommandIcon']>
 }

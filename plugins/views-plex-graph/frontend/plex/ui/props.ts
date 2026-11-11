@@ -9,6 +9,7 @@ import type { PlexPending } from './render/props'
 import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
+import type { PlexType, Probe } from '../model/sizing/measure'
 import type { PlexHeading, PlexNeighborhood, PlexRelation, PlexDestination } from '../../types'
 
 export interface PlexProps {
@@ -29,6 +30,7 @@ export interface PlexProps {
   pending?: PlexPending | null
   dragged?: readonly string[]
   dropName?: (relation: PlexRelation) => string
+  readType?: (probe: Probe) => PlexType
 }
 
 export interface PlexEvents {

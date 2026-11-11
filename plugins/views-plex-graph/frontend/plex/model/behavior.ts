@@ -8,7 +8,7 @@ import { byHandle, type ReachStrategy } from './interaction/reachStrategy'
 import { byDoubleClick, type ShowStrategy } from './interaction/destination'
 import { browserClock, type Clock } from '@numen/ui'
 
-export interface PlexBehaviour {
+export interface PlexBehavior {
   readonly expansionDelay: number
   readonly reaching: ReachStrategy
   readonly showing: ShowStrategy
@@ -16,7 +16,7 @@ export interface PlexBehaviour {
 }
 
 /** The handle, the second click, the browser's clock, and the usual wait. */
-export const DEFAULT_BEHAVIOUR: PlexBehaviour = {
+export const DEFAULT_BEHAVIOR: PlexBehavior = {
   expansionDelay: EXPANSION_DELAY,
   reaching: byHandle,
   showing: byDoubleClick,

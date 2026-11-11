@@ -8,7 +8,7 @@
  */
 import { computed, onMounted, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
 import { getWideBox } from './expansion'
-import { useTitleWidths, type PlexMetrics } from './measure'
+import { useTitleWidths, type PlexMetrics, type PlexType, type Probe } from './measure'
 import { getNodeHeadings } from '../../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arrange'
 import type { PlacedNode } from '../../lib/node'
@@ -23,6 +23,7 @@ export interface PlexSizingProps {
   readonly options?: PlexOptionsInput | undefined
   readonly viewport: Viewport
   readonly headings?: ((id: string) => readonly PlexHeading[]) | undefined
+  readonly readType?: ((probe: Probe) => PlexType) | undefined
 }
 
 /**
@@ -33,7 +34,10 @@ export function useFreeSpace(
   element: Readonly<ShallowRef<HTMLElement | null>>,
   props: PlexSizingProps,
   hasIcon: () => boolean,
-  measureTitles: (icon: () => number) => Ref<PlexMetrics | undefined> = useTitleWidths,
+  measureTitles: (
+    icon: () => number,
+    readType?: (probe: Probe) => PlexType,
+  ) => Ref<PlexMetrics | undefined> = useTitleWidths,
 ) {
   /** The available size of the plex, as last measured. */
   const room = ref<Size>(FALLBACK)
@@ -64,7 +68,7 @@ export function useFreeSpace(
    * so a box is drawn at the size it keeps, and taken again when a theme changes
    * that type.
    */
-  const measures = measureTitles(() => iconWidthReserve.value)
+  const measures = measureTitles(() => iconWidthReserve.value, props.readType)
 
   /**
    * The width of a box drawn while it has attention: the width its whole title

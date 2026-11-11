@@ -47,7 +47,7 @@ export function getTitleBoxes(
   return boxes
 }
 
-/** The height of the type across the line, and how far its centre is from the line. */
+/** The height of the type across the line, and how far its center is from the line. */
 export interface RunSet {
   readonly depth: number
   readonly shift: number
@@ -80,13 +80,13 @@ export function runBoxes(edge: PlacedEdge, set: RunSet): (from: number, to: numb
       const acrossX = (Math.abs(on.y - back.y) / span) * deep
       const acrossY = (Math.abs(on.x - back.x) / span) * deep
       // The right of the line taken from its start, in a y axis that points down.
-      const centreX = point.x - ((on.y - back.y) / span) * set.shift
-      const centreY = point.y + ((on.x - back.x) / span) * set.shift
+      const centerX = point.x - ((on.y - back.y) / span) * set.shift
+      const centerY = point.y + ((on.x - back.x) / span) * set.shift
 
-      minX = Math.min(minX, centreX - acrossX)
-      minY = Math.min(minY, centreY - acrossY)
-      maxX = Math.max(maxX, centreX + acrossX)
-      maxY = Math.max(maxY, centreY + acrossY)
+      minX = Math.min(minX, centerX - acrossX)
+      minY = Math.min(minY, centerY - acrossY)
+      maxX = Math.max(maxX, centerX + acrossX)
+      maxY = Math.max(maxY, centerY + acrossY)
     }
 
     return { minX, minY, maxX, maxY }

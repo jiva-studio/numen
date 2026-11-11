@@ -111,7 +111,7 @@ const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined 
   return { start: Math.max(span.start, first.at), end: Math.min(span.end, textEnd) }
 }
 
-const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => {
+const createRangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => {
   const clipped = clipSpan(runs, span)
   if (!clipped) return undefined
   const { start, end } = clipped
@@ -129,10 +129,10 @@ const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => 
 }
 
 /** The stretches that fall in the drawn document, as ranges over its nodes. */
-export function rangesOver(runs: readonly Run[], spans: readonly TextRange[]): Range[] {
+export function createRangesOver(runs: readonly Run[], spans: readonly TextRange[]): Range[] {
   const renderedRanges: Range[] = []
   for (const span of spans) {
-    const range = rangeOver(runs, span)
+    const range = createRangeOver(runs, span)
     if (range) renderedRanges.push(range)
   }
   return renderedRanges

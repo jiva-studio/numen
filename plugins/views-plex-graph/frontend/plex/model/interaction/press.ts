@@ -13,7 +13,7 @@ import {
   type Position,
 } from '../../lib/node'
 import type { MenuTrigger } from '@numen/ui'
-import type { PlexBehaviour } from '../behaviour'
+import type { PlexBehavior } from '../behavior'
 import { getDestination, mergeListeners } from './destination'
 import type { PlexDestination } from '../../../types'
 
@@ -29,7 +29,7 @@ export interface NodePressReport {
 export interface NodePressProps {
   readonly node: PlacedNode
   readonly gestureRole: GestureRole
-  readonly behaviour: Pick<PlexBehaviour, 'reaching' | 'showing'>
+  readonly behavior: Pick<PlexBehavior, 'reaching' | 'showing'>
 }
 
 /**
@@ -65,11 +65,11 @@ export function useNodePress(
 
   /** The listeners this node adds beyond the handle. */
   const combinedListeners = mergeListeners(
-    props.behaviour.reaching.listeners({
+    props.behavior.reaching.listeners({
       ready: () => !isGhost.value && props.gestureRole === 'open',
       reach: (event: PointerEvent) => listeners.reach(event),
     }),
-    props.behaviour.showing.listeners({
+    props.behavior.showing.listeners({
       ready: () => canStop.value,
       show: (hasModifier: boolean) => showNode(hasModifier),
     }),
@@ -81,7 +81,7 @@ export function useNodePress(
     },
 
     onDoubleClick: (event: MouseEvent): void => {
-      if (props.behaviour.showing.isDoubleClick) showNode(event.altKey)
+      if (props.behavior.showing.isDoubleClick) showNode(event.altKey)
     },
 
     onContextMenu: (event: MouseEvent): void => {

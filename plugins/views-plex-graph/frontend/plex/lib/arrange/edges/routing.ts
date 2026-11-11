@@ -62,7 +62,7 @@ const NEAR_END = 0.2
 /**
  * Where each of `count` labels of one line is set, as a fraction of the line's
  * length from its `from` end, in the order the labels are written: the first
- * is the record of the `from` note. One label is centred. Several are spread
+ * is the record of the `from` note. One label is centered. Several are spread
  * from near the start to near the end, so each reads as belonging to its own end.
  */
 export const getLabelPositions = (count: number): number[] => {
@@ -81,15 +81,15 @@ export const getLabelPositions = (count: number): number[] => {
 export const LABEL_GAP = 2
 
 /**
- * How far from the line the centre of a title is: nothing for a title on the line, whose
- * lowercase letters are centred on it; else half of the depth of the ink and the gap, so the
+ * How far from the line the center of a title is: nothing for a title on the line, whose
+ * lowercase letters are centered on it; else half of the depth of the ink and the gap, so the
  * near edge of the letters is `LABEL_GAP` from the line.
  */
 export const getShift = (side: EdgeSide, type: LabelType): number =>
   side * (getDepth(type) / 2 + LABEL_GAP)
 
 /**
- * How far below the centre of a title its baseline is, across the line. The centre of a title
+ * How far below the center of a title its baseline is, across the line. The center of a title
  * on the line is the middle of the x-height band, of a title beside it the middle of the ink
  * from capital to descender. The baseline is set by this alone, so no engine's own
  * idea of a middle decides where the letters stand.

@@ -11,7 +11,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../../fixtures/neighborhoods'
-import { hoverOver, lightness } from '../../../fixtures/colour'
+import { hoverOver, getLightness } from '../../../fixtures/color'
 import { DARK, expectDark } from '../../../fixtures/theme'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { RELATION_NAMES } from '../../lib/relation'
@@ -372,8 +372,8 @@ export const Dark: Story = {
     for (const title of ['Where you are', 'Below it']) {
       const node = canvas.getByLabelText(new RegExp(`^${title},`))
       const box = node.querySelector('rect')!
-      const ink = lightness(getComputedStyle(canvas.getByText(title)).color)
-      const restingLightness = lightness(getComputedStyle(box).fill)
+      const ink = getLightness(getComputedStyle(canvas.getByText(title)).color)
+      const restingLightness = getLightness(getComputedStyle(box).fill)
       fills.push(restingLightness)
 
       // The title color is compared with the box background, which hover then
@@ -384,7 +384,7 @@ export const Dark: Story = {
 
       await hoverOver(node)
       await waitFor(async () => {
-        const moved = lightness(getComputedStyle(box).fill) - restingLightness
+        const moved = getLightness(getComputedStyle(box).fill) - restingLightness
         await expect(Math.abs(moved)).toBeGreaterThan(2)
         await expect(Math.sign(moved)).toBe(Math.sign(ink - restingLightness))
       })

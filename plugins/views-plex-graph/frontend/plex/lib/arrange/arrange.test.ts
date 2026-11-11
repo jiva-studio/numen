@@ -164,7 +164,7 @@ describe('a box is as wide as its title needs', () => {
     for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
-  it('leaves a row packed to one gap between boxes, and centred on the focus', () => {
+  it('leaves a row packed to one gap between boxes, and centered on the focus', () => {
     const mixed = createNeighborhood('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
     const children = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'child')
 

@@ -10,14 +10,14 @@ import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
-import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
+import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
   canReach: true,
   relationName: getRelationName,
-  behaviour: () => DEFAULT_BEHAVIOUR,
+  behavior: () => DEFAULT_BEHAVIOR,
   gestureFrom: null,
   gestureAt: null,
   gestureOutcome: null,
@@ -152,7 +152,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       :gesture-role="getRole(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
-      :behaviour="behaviour"
+      :behavior="behavior"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"

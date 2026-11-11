@@ -37,7 +37,7 @@ export const STYLE_VERIFIERS = [
     id: "styles-use-tokens",
     scope: "libs",
     module: "ui",
-    name: "Styles Use Declared Tokens (stylelint: no colour literal or --numen- declaration outside token and theme files, no var() fallback, no undeclared --numen- token, no length on a property)",
+    name: "Styles Use Declared Tokens (stylelint: no color literal or --numen- declaration outside token and theme files, no var() fallback, no undeclared --numen- token, no length on a property)",
     run: verifyStyles,
   },
 ];

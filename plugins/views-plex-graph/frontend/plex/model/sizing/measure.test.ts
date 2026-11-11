@@ -6,12 +6,10 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { useTitleWidths } from './measure'
+import { useTitleWidths, type PlexType } from './measure'
 import type { PlexNode } from '../../../types'
 
 const node = (title: string): PlexNode => ({ id: title, title, relation: 'child' })
-
-const widths = (icon = 0) => useTitleWidths(() => icon).value
 
 const PER_CHARACTER = 7
 
@@ -52,29 +50,20 @@ const inPixels = (value: string): string =>
 
 const getToken = (token: string): string => inPixels(theme[token] ?? '')
 
-const isBox = (element: Element): boolean => element.getAttribute('aria-hidden') === 'true'
-const isLabel = (element: Element): boolean =>
-  element.parentElement !== null &&
-  isBox(element.parentElement) &&
-  element.previousElementSibling !== null
+const readThemeType = (): PlexType => {
+  const family = getToken('--numen-font-sans') || 'sans-serif'
+  return {
+    font: `${getToken('--numen-font-size')} ${family}`,
+    labelFont: `${getToken('--numen-edge-label-size')} ${family}`,
+    padding: Number.parseFloat(getToken('--numen-node-padding')) || 0,
+    gap: Number.parseFloat(getToken('--numen-node-gap')) || 0,
+  }
+}
+
+const widths = (icon = 0) => useTitleWidths(() => icon, readThemeType).value
 
 function stubStyles() {
-  const engine: (element: Element, pseudo?: string | null) => unknown =
-    window.getComputedStyle.bind(window)
-
-  vi.spyOn(window, 'getComputedStyle').mockImplementation(((
-    element: Element,
-    pseudo?: string | null,
-  ) => {
-    if (!isBox(element) && !isLabel(element)) return engine(element, pseudo)
-
-    return {
-      fontSize: getToken(isLabel(element) ? '--numen-edge-label-size' : '--numen-font-size'),
-      fontFamily: getToken('--numen-font-sans'),
-      paddingInlineStart: getToken('--numen-node-padding'),
-      columnGap: getToken('--numen-node-gap'),
-    } as CSSStyleDeclaration
-  }) as typeof window.getComputedStyle)
+  // Type values are read by readThemeType above.
 }
 
 function stubObserver(): (() => void)[] {
@@ -247,7 +236,7 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
 
@@ -263,7 +252,7 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     const first = measures.value
     for (const ring of observers) ring()
@@ -277,7 +266,7 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     stubObserver()
-    const { stop } = scoped(() => useTitleWidths(() => 0))
+    const { stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     expect(document.body.children).toHaveLength(1)
     stop()
@@ -288,7 +277,7 @@ describe('a theme changed under a plex already standing', () => {
     stubCanvas()
     stubStyles()
     setTheme()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
     expect(document.body.children).toHaveLength(0)
@@ -376,7 +365,7 @@ describe('the box a plex measures its type against', () => {
     setTheme()
     const { disconnect } = stubWatching()
     const scope = effectScope()
-    scope.run(() => useTitleWidths(() => 0))
+    scope.run(() => useTitleWidths(() => 0, readThemeType))
     expect(disconnect).not.toHaveBeenCalled()
 
     scope.stop()
@@ -444,7 +433,7 @@ describe('a theme changed in one token under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
     const first = measures.value
 
     setTheme(tokens)

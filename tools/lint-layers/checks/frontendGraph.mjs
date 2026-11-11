@@ -425,6 +425,86 @@ function listLayerFiles(root, layer) {
   return out;
 }
 
+/** The calls a component in a window's `ui` segment must not make: a window listener or a request guard belongs in `model`. */
+const UI_COMPONENT_FORBIDDEN_CALLS = new Set([
+  "addEventListener",
+  "removeEventListener",
+  "createRequestGuard",
+  "setTimeout",
+  "setInterval",
+  "clearTimeout",
+  "clearInterval",
+  "requestAnimationFrame",
+]);
+
+/** The hooks and watchers inside which a component in `ui` must not call a service on its `props`. */
+const UI_LIFECYCLE_OR_WATCH_CALLS = new Set([
+  "onMounted",
+  "onBeforeMount",
+  "onUnmounted",
+  "onBeforeUnmount",
+  "watch",
+  "watchEffect",
+  "watchPostEffect",
+  "watchSyncEffect",
+]);
+
+/** Whether an expression is rooted at `props` (such as `props.secrets.loadStates` or `props.manager.files.getReadme`). */
+function isPropsChain(node) {
+  let cur = node;
+  while (ts.isPropertyAccessExpression(cur)) cur = cur.expression;
+  return ts.isIdentifier(cur) && cur.text === "props";
+}
+
+/**
+ * The places in a window's `ui` segment where a component (`.vue`) holds behavior or service calls that belong in
+ * `model`: registering a listener or timer, guarding in-flight requests with `createRequestGuard`, or calling a method
+ * on `props` inside a lifecycle hook or watcher (other than `props.mount(...)` to mount an external view into a DOM
+ * element ref).
+ *
+ * @param {Array<{ file: string, text: string }>} files The `.vue` files in `ui` segments of windows, with their text
+ * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
+ */
+export function findUiComponentSideEffects(files) {
+  const findings = [];
+  const shipped = files.filter((one) => one.file.endsWith(".vue") && !isNotShipped(one.file) && getSegment(one.file) === "ui");
+  for (const { file, text } of shipped) {
+    const source = ts.createSourceFile(file, readScriptText(file, text), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const lineOf = (node) => source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+    const visit = (node, inHook) => {
+      if (ts.isCallExpression(node)) {
+        const name = getCalledName(node);
+        if (name && UI_COMPONENT_FORBIDDEN_CALLS.has(name)) {
+          findings.push({ file, line: lineOf(node), symbol: `calls ${name} in a ui component` });
+        }
+        if (inHook && ts.isPropertyAccessExpression(node.expression) && isPropsChain(node.expression) && node.expression.name.text !== "mount") {
+          findings.push({ file, line: lineOf(node), symbol: `calls props.${node.expression.name.text} inside ${inHook}` });
+        }
+        const nextHook = name && UI_LIFECYCLE_OR_WATCH_CALLS.has(name) ? name : inHook;
+        ts.forEachChild(node, (child) => visit(child, nextHook));
+        return;
+      }
+      ts.forEachChild(node, (child) => visit(child, inHook));
+    };
+    visit(source, undefined);
+  }
+  return { findings, read: shipped.length };
+}
+
+export function verifyUiComponentsAreHumble() {
+  const findings = [];
+  let read = 0;
+  for (const root of listWindows(REPO_ROOT)) {
+    const files = ["pages", "features", "entities", "shared"].flatMap((layer) => listLayerFiles(root, layer));
+    const one = findUiComponentSideEffects(files);
+    findings.push(...one.findings);
+    read += one.read;
+  }
+  // 40 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Components in ui segments of the windows", read, 38);
+  failOnFindings("A component in a ui segment of a window registers a listener, guards requests or calls a service on props in a hook or watcher", findings);
+}
+
 export function verifyPagesAreComposedNotConsumed() {
   const findings = [];
   let read = 0;
@@ -538,5 +618,12 @@ export const FRONTEND_GRAPH_VERIFIERS = [
     module: "boundary",
     name: "The Test Support of a Window Imports a Slice Only Through Its Index",
     run: verifyTestingReachesSlicesByIndex,
+  },
+  {
+    id: "ui-components-are-humble",
+    scope: "apps",
+    module: "boundary",
+    name: "A Component in a ui Segment of a Window Holds No Listener, Request Guard or Service Call in a Hook or Watcher",
+    run: verifyUiComponentsAreHumble,
   },
 ];

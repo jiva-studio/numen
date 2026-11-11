@@ -11,7 +11,7 @@ import {
 } from '@numen/plugin-loader'
 import {
   type DeclaredCommands,
-  type HostPort,
+  type WindowFactsSource,
   createSlotCommandFinder,
   readSlotEntries,
   getPaletteId,
@@ -22,7 +22,7 @@ export interface WindowSlotsDeps {
     DeclaredCommands,
     'slots' | 'commands' | 'contributions' | 'whenContext'
   >
-  readonly facts: Pick<HostPort, 'getAppCommands' | 'getValues'>
+  readonly facts: WindowFactsSource
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
 }
 

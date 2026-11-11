@@ -14,7 +14,7 @@ import {
   type PluginSettingInfo,
 } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
-import type { MessageLog } from '@/shared/model/notices/messages'
+import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import { createLostConnection, type CoreAnswers } from '@numen/core-client/testing'
 
@@ -30,13 +30,14 @@ const createSettings = (
   others: CoreAnswers = {},
 ) => {
   const writers: string[] = []
-  const writerFns: Record<string, ReturnType<typeof vi.fn>> = {}
+  const writerFns: Record<string, ReturnType<typeof vi.fn<MessageWriter>>> = {}
   const core = {
     getSettings: vi.fn(async () => ({
       written: '{}',
       path: '/vault/.numen/settings.json',
       models: [],
     })),
+    updateSettings: vi.fn(async () => undefined),
     watchSettings: vi.fn(async function* () {
       yield* []
     }),
@@ -69,7 +70,10 @@ const createSettings = (
   const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = createWindowSettingsPart({
-    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+    rest: createSettingsStore(
+      SETTINGS_WORDS,
+      (text, level) => writerFns.configured?.(text, level),
+    ),
     words: WORDS,
     log,
     windowTabs,
@@ -89,6 +93,8 @@ const model = (overrides: Partial<Model> = {}): Model => ({
   isDefault: false,
   presence: 'present',
   writes: [],
+  reasoningLevels: [],
+  defaultReasoning: '',
   ...overrides,
 })
 
@@ -196,28 +202,53 @@ describe('the settings as they are put together', () => {
     expect(settings.kinds).toStrictEqual([settings.configured.kind])
   })
 
-  it('puts the appearance away when it is put away', () => {
-    const { settings } = createSettings()
-    const close = vi.spyOn(settings.appearance, 'close')
+  it('puts the appearance away when it is put away', async () => {
+    vi.useFakeTimers()
+    try {
+      const { settings, onSizeChanged } = createSettings()
 
-    settings.close()
+      settings.appearance.preview.keyboard.previewSize('interfaceScale', 1.2)
+      settings.close()
+      vi.advanceTimersByTime(1000)
+      await Promise.resolve()
 
-    expect(close).toHaveBeenCalledOnce()
+      expect(onSizeChanged).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('reads the settings once when it starts and never again on a timer', async () => {
     vi.useFakeTimers()
     try {
-      const { settings } = createSettings()
-      vi.spyOn(settings.appearance, 'start').mockResolvedValue()
-      const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
+      const listThemes = vi.fn(() => ({
+        themes: [],
+        applied: 'preset:numen',
+        mode: 0,
+        interfaceScale: 1,
+        textScale: 1,
+        interfaceScaleBounds: { min: 0.8, max: 2 },
+        textScaleBounds: { min: 0.8, max: 1.75 },
+      }))
+      const { settings, core } = createSettings(
+        {},
+        {
+          theme: {
+            listThemes,
+            readTheme: () => ({ css: '' }),
+            async *watchThemes() {
+              yield* []
+            },
+          },
+        },
+      )
 
       await settings.start()
-      expect(settings.appearance.start).toHaveBeenCalledTimes(1)
-      expect(startRest).toHaveBeenCalledTimes(1)
+      expect(listThemes).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
 
       vi.advanceTimersByTime(20000)
-      expect(startRest).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
 
       settings.close()
     } finally {
@@ -236,8 +267,10 @@ describe('the settings as they are put together', () => {
 describe('the lists the palette offers for a setting', () => {
   it('offers nothing for a command that is over no setting', () => {
     const { settings } = createSettings()
-    vi.spyOn(settings.rest.read, 'getSetting').mockReturnValue('people/own-model')
-    vi.spyOn(settings.rest.read, 'getModelsAt').mockReturnValue([model()])
+    settings.rest.state.target.value = {
+      indexing: { embedding: { model: { name: 'people/own-model' } } },
+    }
+    settings.rest.state.models.value = [model()]
 
     expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
@@ -296,13 +329,14 @@ describe('the lists the palette offers for a setting', () => {
   })
 
   it('writes the row chosen under the path of the setting through the settings the window holds', async () => {
-    const { settings } = createSettings()
+    const { settings, core } = createSettings()
     settings.rest.state.app.value = SHELL_DECLARATION
-    const write = vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
 
     await settings.settingPalette.choose('setting:app:performance.profile', 'eco')
 
-    expect(write).toHaveBeenCalledWith([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
+    expect(core.updateSettings).toHaveBeenCalledWith([
+      { at: ['app', 'performance', 'profile'], value: '"eco"' },
+    ])
   })
 })
 
@@ -310,21 +344,24 @@ describe('the settings tab', () => {
   it('reads and writes the rest of the file through the settings the window holds', async () => {
     vi.useFakeTimers()
     try {
-      const { settings } = createSettings()
+      const { settings, core } = createSettings()
       const { installation } = settings.configured.state
-      vi.spyOn(settings.rest.read, 'getSetting').mockReturnValue('eco')
-      vi.spyOn(settings.rest.read, 'getModelsAt').mockReturnValue([model()])
-      const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-      const write = vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
+      vi.mocked(core.getSettings).mockResolvedValue({
+        written: JSON.stringify({ app: { performance: { profile: 'eco' } } }),
+        path: '/vault/.numen/settings.json',
+        models: [model()],
+      })
       const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
       await (installation.settings.write(edits) as unknown as Promise<void>)
       vi.advanceTimersByTime(1500)
 
       expect(installation.settings.getSetting(['app', 'performance', 'profile'])).toBe('eco')
-      expect(installation.settings.getModels(['indexing'])).toStrictEqual([model()])
-      expect(write).toHaveBeenCalledWith(edits)
-      expect(startRest).toHaveBeenCalledTimes(0)
+      expect(installation.settings.getModels(['indexing', 'embedding', 'model', 'name'])).toStrictEqual([
+        model(),
+      ])
+      expect(core.updateSettings).toHaveBeenCalledWith(edits)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
       settings.close()
     } finally {
       vi.useRealTimers()
@@ -339,24 +376,20 @@ describe('the settings tab', () => {
     expect(installation.plugin.getSettingsViews).toBe(getSettingsViews)
     expect(installation.plugin.catalog).toBeDefined()
 
-    vi.spyOn(settings.rest.read, 'getCommittedSetting').mockReturnValue('committed-val')
-    vi.spyOn(settings.rest.read, 'isPending').mockReturnValue(true)
+    settings.rest.state.target.value = { a: { b: 'committed-val' } }
     expect(installation.settings.getConfirmedSetting?.(['a', 'b'])).toBe('committed-val')
-    expect(settings.rest.read.getCommittedSetting).toHaveBeenCalledWith(['a', 'b'])
-    expect(installation.settings.isPending?.(['a', 'b'])).toBe(true)
-    expect(settings.rest.read.isPending).toHaveBeenCalledWith(['a', 'b'])
+    expect(installation.settings.isPending?.(['a', 'b'])).toBe(false)
 
-    const startSpy = vi.spyOn(settings.rest, 'start').mockResolvedValue()
     await (installation.secrets.edit.writeSecret(
       's0a1b2c3d',
       'secret-val',
     ) as unknown as Promise<void>)
     expect(core.writeSecret).toHaveBeenCalledWith('s0a1b2c3d', 'secret-val')
-    expect(startSpy).toHaveBeenCalledTimes(1)
+    expect(core.getSettings).toHaveBeenCalledTimes(1)
 
     await (installation.secrets.edit.deleteSecret('s0a1b2c3d') as unknown as Promise<void>)
     expect(core.deleteSecret).toHaveBeenCalledWith('s0a1b2c3d')
-    expect(startSpy).toHaveBeenCalledTimes(2)
+    expect(core.getSettings).toHaveBeenCalledTimes(2)
 
     await (installation.secrets.access.allowPluginSecret(
       's0a1b2c3d',
@@ -382,9 +415,9 @@ describe('the settings tab', () => {
       'apiKey',
       'openrouter',
     )
-    expect(startSpy).toHaveBeenCalledTimes(4)
+    expect(core.getSettings).toHaveBeenCalledTimes(4)
 
-    settings.rest.state.plugins.value = [
+    const ocrPlugins: readonly PluginInfo[] = [
       {
         id: 'plugin.other',
         name: 'Other Plugin',
@@ -410,6 +443,13 @@ describe('the settings tab', () => {
         settings: [],
       },
     ]
+    vi.mocked(core.getSettings).mockImplementation(async () => ({
+      written: '{}',
+      path: '/vault/.numen/settings.json',
+      models: [],
+      plugins: ocrPlugins,
+    }))
+    settings.rest.state.plugins.value = ocrPlugins
     vi.mocked(core.retryPlugin).mockResolvedValueOnce('Failed to start')
     await (installation.plugin.retryPlugin('plugin.ocr') as unknown as Promise<void>)
     expect(core.retryPlugin).toHaveBeenCalledWith('plugin.ocr')
@@ -421,25 +461,25 @@ describe('the settings tab', () => {
 
     vi.useFakeTimers()
     try {
-      startSpy.mockClear()
+      vi.mocked(core.getSettings).mockClear()
       await (installation.secrets.edit.writeSecret(
         's0a1b2c3d',
         'secret-val-2',
       ) as unknown as Promise<void>)
-      expect(startSpy).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
-      expect(startSpy).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
 
-      startSpy.mockClear()
+      vi.mocked(core.getSettings).mockClear()
       vi.mocked(core.choosePluginPath).mockResolvedValueOnce({
         path: '/folder',
         isChosen: true,
         problem: '',
       })
       expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe('')
-      expect(startSpy).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
-      expect(startSpy).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
 
       vi.mocked(core.choosePluginPath).mockResolvedValueOnce({
         path: '',
@@ -447,7 +487,7 @@ describe('the settings tab', () => {
         problem: 'cancelled',
       })
       expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe('cancelled')
-      expect(startSpy).toHaveBeenCalledTimes(1)
+      expect(core.getSettings).toHaveBeenCalledTimes(1)
       settings.close()
     } finally {
       vi.useRealTimers()
@@ -471,16 +511,14 @@ describe('the settings tab', () => {
       'Numen is not responding; retrying',
     )
 
-    vi.spyOn(settings.rest.write, 'writeSettings').mockRejectedValueOnce(
-      createLostConnection('write failed'),
-    )
+    vi.mocked(core.updateSettings).mockRejectedValueOnce(createLostConnection('write failed'))
     const failed = installation.settings.write([
       { at: ['app', 'performance', 'profile'], value: '"eco"' },
     ]) as unknown as Promise<void>
     await failed.catch(() => undefined)
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(
-        'Numen is not responding; retrying',
+        'Setting not saved: Numen is not responding; retrying',
         'error',
       ),
     )

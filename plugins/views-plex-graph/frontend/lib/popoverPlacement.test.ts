@@ -113,7 +113,7 @@ describe('resolvePopoverPosition', () => {
     expect(pos.top).toBeGreaterThan(0)
   })
 
-  it('centres a popover of its own width on the anchor', () => {
+  it('centers a popover of its own width on the anchor', () => {
     const pos = resolvePopoverPosition({
       at: { x: 500, y: 400 },
       popoverSize: { width: 240, height: 160 },

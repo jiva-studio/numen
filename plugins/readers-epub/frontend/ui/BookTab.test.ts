@@ -2,59 +2,38 @@
  * A book tab whose text ranges the window highlights: the tab passes them to its reader.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { h, nextTick, reactive, ref, shallowRef } from 'vue'
+import { flushPromises, mount } from '@vue/test-utils'
+import { reactive } from 'vue'
 import BookTab from './BookTab.vue'
-import type { TextRange } from '../types'
+import type { Book, Books, TextRange } from '../types'
 
-const reader = vi.hoisted(() => ({
-  focusSpans: vi.fn(async (..._spans: readonly TextRange[]) => undefined),
-}))
+const BOOK: Book = {
+  title: 'Marsh Book',
+  span: { start: 0, end: 9_000 },
+  documents: [
+    { path: 'text/part0001.xhtml', span: { start: 0, end: 3_000 } },
+    { path: 'text/part0002.xhtml', span: { start: 3_000, end: 6_000 } },
+    { path: 'text/part0003.xhtml', span: { start: 6_000, end: 9_000 } },
+  ],
+  parts: [{ title: 'Chapter One', offset: 0, level: 0 }],
+  printedPages: [],
+  pages: 3,
+  pageBytes: 3_000,
+  stat: '20480 1700000000000000000 marsh.epub',
+}
 
-vi.mock('../model/useBookReader', () => ({
-  useBookReader: () => ({
-    path: '',
-    close: () => undefined,
-    state: {
-      isLoading: ref(false),
-      contents: shallowRef([]),
-      span: ref({ start: 0, end: 0 }),
+function createFakeBooks(readChapters: string[]): Books {
+  return {
+    getBook: async () => BOOK,
+    readMarkup: async (_path, document) => {
+      readChapters.push(document)
+      return `<p data-offset="6500">${document}</p>`
     },
-    progress: { page: ref(0), chapter: ref('') },
-    navigation: {
-      offset: ref(0),
-      target: ref(null),
-      goToOffset: async () => undefined,
-      moveTo: async () => undefined,
-      followLink: async () => undefined,
-    },
-    bookDocument: {
-      documentSpan: ref({ start: 0, end: 0 }),
-      renderedChapter: ref(''),
-      markup: ref(''),
-    },
-    marks: {
-      highlights: shallowRef([]),
-      otherHighlights: shallowRef([]),
-    },
-    actions: {
-      getCfi: async () => null,
-      goToCfi: async () => false,
-      focusSpans: reader.focusSpans,
-      reportFailure: () => undefined,
-    },
-  }),
-}))
-
-vi.mock('../book', () => ({
-  Book: () => h('div', { class: 'book-stub' }),
-  BookContents: () => h('nav'),
-}))
-
-vi.mock('@numen/ui', () => ({
-  LoadingIndicator: () => h('span'),
-  win: { addEventListener: () => undefined, removeEventListener: () => undefined },
-}))
+    getEntryUrl: (path, name) => `/assets/${path}/${name}`,
+    getCfi: async (_path, offset) => `epubcfi(/6/2!/4/2/1:${offset})`,
+    findOffset: async () => null,
+  }
+}
 
 const RANGES: readonly TextRange[] = [
   { start: 6_500, end: 6_520 },
@@ -63,21 +42,23 @@ const RANGES: readonly TextRange[] = [
 
 describe('the ranges of a book tab component', () => {
   it('passes the ranges the window sets to the reader of the book', async () => {
-    reader.focusSpans.mockClear()
+    const readChapters: string[] = []
+    const books = createFakeBooks(readChapters)
     const state = reactive({
       path: 'library/Marsh Book.epub',
       selector: null,
       ranges: null as readonly TextRange[] | null,
       savePlace: vi.fn(),
     })
-    const tab = mount(BookTab, { props: { state } })
-    await nextTick()
-    expect(reader.focusSpans).not.toHaveBeenCalled()
+    const tab = mount(BookTab, { props: { state, books } })
+    await flushPromises()
+    expect(readChapters).toStrictEqual(['text/part0001.xhtml'])
 
     state.ranges = RANGES
-    await nextTick()
+    await flushPromises()
 
-    expect(reader.focusSpans).toHaveBeenCalledWith(...RANGES)
+    expect(readChapters).toStrictEqual(['text/part0001.xhtml', 'text/part0003.xhtml'])
+    expect(tab.find('.book__paper').html()).toContain('text/part0003.xhtml')
     tab.unmount()
   })
 })

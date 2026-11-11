@@ -74,7 +74,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
     stroke var(--plex-move) var(--numen-easing);
 }
 
-/* Icon then title, centred together in a box of a size the arrangement chose. A
+/* Icon then title, centered together in a box of a size the arrangement chose. A
    title is something to look at and press, and takes no selection. */
 .plex__title {
   block-size: 100%;

@@ -78,7 +78,7 @@ watch(query, (text) => setQuery(text))
   --plex-quick-link-width: 14rem;
 }
 
-/* The frame is centred on the point of the node it was asked from, by the middle of its search line. */
+/* The frame is centered on the point of the node it was asked from, by the middle of its search line. */
 .plex-quick-link :deep(.plex-quick-link__frame) {
   position: absolute;
   margin-inline-start: calc(var(--plex-quick-link-width) / -2);
@@ -86,7 +86,7 @@ watch(query, (text) => setQuery(text))
   inline-size: var(--plex-quick-link-width);
 }
 
-/* The frame takes the colour of the relation it makes. */
+/* The frame takes the color of the relation it makes. */
 .plex-quick-link :deep(.plex-quick-link__frame) {
   border-color: var(--relation-color);
 }
