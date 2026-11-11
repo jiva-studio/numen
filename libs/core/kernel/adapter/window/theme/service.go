@@ -118,17 +118,30 @@ func (s *Service) WatchThemes(
 	// The request context belongs to the process and does not reflect whether the page that opened the
 	// stream is still open. A failed write of an empty report is how a gone client is detected.
 	watching, stop := context.WithCancel(ctx)
-	defer stop()
 	var (
 		sending sync.Mutex
+		isOver  bool
+		keeping sync.WaitGroup
 		gone    = make(chan error, 1)
 	)
+	// A write to the stream after this handler returned panics inside net/http. The stream is
+	// closed to writes and the keepalive has ended before the handler returns.
+	defer func() {
+		stop()
+		sending.Lock()
+		isOver = true
+		sending.Unlock()
+		keeping.Wait()
+	}()
 	send := func(names []string) error {
 		sending.Lock()
 		defer sending.Unlock()
+		if isOver {
+			return context.Canceled
+		}
 		return stream.Send(&v1.WatchThemesResponse{Names: names})
 	}
-	go func() {
+	keeping.Go(func() {
 		repeat := time.NewTicker(keepaliveInterval)
 		defer repeat.Stop()
 		for {
@@ -143,7 +156,7 @@ func (s *Service) WatchThemes(
 				}
 			}
 		}
-	}()
+	})
 	err := s.watchThemes.Execute(watching, send)
 	select {
 	case failed := <-gone:
