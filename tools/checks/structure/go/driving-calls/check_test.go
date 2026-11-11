@@ -53,8 +53,8 @@ func TestDrivingWalk_FailsOnATreeWithoutDrivingAdapters(t *testing.T) {
 	}
 }
 
-// Fails when it reads no driving adapter.
 func findPortFieldCalls(root string) ([]string, error) {
+	// Fails when it reads no driving adapter.
 	fields := map[string][]string{}
 	files := map[string]*ast.File{}
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {

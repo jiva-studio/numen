@@ -52,8 +52,8 @@ func TestClockWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// Fails when it reads no file.
 func findClockReads(root string) ([]string, error) {
+	// Fails when it reads no file.
 	var wrong []string
 	var read int
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {

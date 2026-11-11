@@ -59,9 +59,9 @@ func isCallingTechnology(pkg *packages.Package) bool {
 	return found
 }
 
-// A call across a process boundary through Connect is a method of the connect.Client type, or a constructor or a method of a client
-// generated into a *connect.go file. Handlers and routes of the server side are not client calls.
 func isConnectClientCall(fset *token.FileSet, fn *types.Func) bool {
+	// A call across a process boundary through Connect is a method of the connect.Client type, or a constructor or a method of a client
+	// generated into a *connect.go file. Handlers and routes of the server side are not client calls.
 	signature, ok := fn.Type().(*types.Signature)
 	if !ok {
 		return false
@@ -93,9 +93,9 @@ func getReceiverName(signature *types.Signature) string {
 	return ""
 }
 
-// A driven adapter is in internal/adapter, in adapter/index or adapter/settings, or declares a type that implements an interface of port/.
-// The rest of adapter/ translates a wire or a command line into calls and has no technology of its own to wrap.
 func isDrivenAdapter(pkg *packages.Package, rel string, ports []load.PortInterface) bool {
+	// A driven adapter is in internal/adapter, in adapter/index or adapter/settings, or declares a type that implements an interface of port/.
+	// The rest of adapter/ translates a wire or a command line into calls and has no technology of its own to wrap.
 	switch {
 	case load.IsWithin(rel, "internal/adapter"), load.IsWithin(rel, "adapter/index"), load.IsWithin(rel, "adapter/settings"):
 		return true

@@ -24,8 +24,8 @@ type OpenGate struct{}
 func (OpenGate) BeginWrite() bool { return true }
 func (OpenGate) FinishWrite()     {}
 
-// Once the window is closing it fails with window.ErrClosing and does not run write.
 func writeUnder[T any](gate WriteGate, write func() (T, error)) (T, error) {
+	// Once the window is closing it fails with window.ErrClosing and does not run write.
 	if !gate.BeginWrite() {
 		var none T
 		return none, windowdomain.ErrClosing

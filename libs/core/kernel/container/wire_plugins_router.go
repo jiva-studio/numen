@@ -136,8 +136,8 @@ func getPluginCommands(c pluginsWiring) PluginCommandScenarios {
 	return newPluginCommands(c, c.PluginHost, nil)
 }
 
-// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand.VersionItems) PluginCommandScenarios {
+	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := pluginmanifest.New(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
 	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)

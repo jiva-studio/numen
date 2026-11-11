@@ -135,8 +135,8 @@ func TestPortWalk_FindsThePlantedInternalType(t *testing.T) {
 	}
 }
 
-// Fails when it reads no file.
 func findInternalPortTypes(dir string) ([]string, error) {
+	// Fails when it reads no file.
 	entries, err := load.ReadTree(dir)
 	if err != nil {
 		return nil, err
