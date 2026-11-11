@@ -324,8 +324,7 @@
         "core",
         "library",
         "plugin",
-        "slow",
-        "needs-nix"
+        "slow"
       ],
       "selftest": "structure/go/interface-size/check_test.go",
       "runner": "go",
@@ -1408,7 +1407,7 @@
       "tags": [
         "structure",
         "gate",
-        "fast"
+        "slow"
       ],
       "selftest": "registry.test.mjs",
       "runner": "command",

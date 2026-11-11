@@ -1,0 +1,117 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { describe, it, after } from "node:test";
+import { getPathPattern } from "./lib/changed.mjs";
+import { listTrackedFiles, plantTree } from "./lib/plant.mjs";
+import { isTagged, readRegistry } from "./run.mjs";
+
+const CHECKS_DIR = import.meta.dirname;
+const REPO_ROOT = path.resolve(CHECKS_DIR, "../..");
+const registry = readRegistry();
+const tracked = listTrackedFiles(REPO_ROOT).filter((file) => fs.existsSync(path.join(REPO_ROOT, file)));
+
+describe("the registry", () => {
+  it("describes every tag of its vocabulary", () => {
+    for (const [tag, description] of Object.entries(registry.tags)) {
+      assert.ok(typeof description === "string" && description.length > 10, `the tag ${tag} has no description`);
+    }
+  });
+
+  it("gives each check a unique name, paths, a runner and tags of the vocabulary", () => {
+    const names = new Set();
+    for (const entry of registry.checks) {
+      assert.ok(entry.name && !names.has(entry.name), `the name ${entry.name} is empty or used twice`);
+      names.add(entry.name);
+      assert.ok(Array.isArray(entry.paths) && entry.paths.length > 0, `${entry.name} lists no paths`);
+      assert.ok(Array.isArray(entry.tags) && entry.tags.length > 0, `${entry.name} has no tags`);
+      for (const tag of entry.tags) assert.ok(tag in registry.tags, `${entry.name} has the tag ${tag}, which the vocabulary does not declare`);
+    }
+  });
+
+  it("tags each check fast or slow, and not both", () => {
+    for (const entry of registry.checks) {
+      const speeds = entry.tags.filter((tag) => tag === "fast" || tag === "slow");
+      assert.equal(speeds.length, 1, `${entry.name} must carry exactly one of fast and slow, has ${speeds.length}`);
+    }
+  });
+
+  it("points each check at a planted-violation test that exists", () => {
+    for (const entry of registry.checks) {
+      assert.ok(entry.selftest, `${entry.name} names no selftest`);
+      assert.ok(fs.existsSync(path.join(CHECKS_DIR, entry.selftest)), `${entry.name}: the selftest ${entry.selftest} does not exist`);
+    }
+  });
+
+  it("gives each runner what it needs", () => {
+    for (const entry of registry.checks) {
+      if (entry.runner === "go") assert.ok(fs.existsSync(path.join(CHECKS_DIR, "structure/go", entry.target, "check_test.go")), `${entry.name}: no Go test in ${entry.target}`);
+      else if (entry.runner === "verifiers") {
+        assert.ok(fs.existsSync(path.join(CHECKS_DIR, entry.module)), `${entry.name}: no module ${entry.module}`);
+        assert.match(fs.readFileSync(path.join(CHECKS_DIR, entry.module), "utf8"), new RegExp(`export const ${entry.export}\\b`), `${entry.name}: ${entry.module} does not export ${entry.export}`);
+      } else if (entry.runner === "command") assert.ok(Array.isArray(entry.cmd), `${entry.name} has no cmd`);
+      else assert.ok(["eslint", "stylelint"].includes(entry.runner), `${entry.name}: unknown runner ${entry.runner}`);
+    }
+  });
+
+  it("lists every check folder", () => {
+    const listed = new Set(registry.checks.flatMap((e) => [e.runner === "go" ? `structure/go/${e.target}` : null, e.module ? path.dirname(e.module) : null, e.runner === "command" ? path.dirname(e.selftest) : null]).filter(Boolean));
+    const folders = [];
+    const goDir = path.join(CHECKS_DIR, "structure/go");
+    for (const one of fs.readdirSync(goDir, { withFileTypes: true })) if (one.isDirectory() && one.name !== "load") folders.push(`structure/go/${one.name}`);
+    for (const area of ["structure/ts", "docs", "style"]) {
+      for (const one of fs.readdirSync(path.join(CHECKS_DIR, area), { withFileTypes: true })) {
+        if (one.isDirectory() && fs.existsSync(path.join(CHECKS_DIR, area, one.name, "check.mjs"))) folders.push(`${area}/${one.name}`);
+      }
+    }
+    assert.ok(folders.length > 0);
+    for (const folder of folders) assert.ok(listed.has(folder), `${folder} holds a check and the registry does not list it`);
+  });
+
+  it("lists only paths that match a tracked file", () => {
+    for (const entry of registry.checks) {
+      for (const pattern of entry.paths) {
+        const regex = getPathPattern(pattern);
+        assert.ok(tracked.some((file) => regex.test(file)), `${entry.name}: the path ${pattern} matches no tracked file`);
+      }
+    }
+  });
+
+  it("selects by tags with and, or and exclusion", () => {
+    const entry = { tags: ["structure", "go", "fast"] };
+    assert.ok(isTagged(entry, "fast,go"));
+    assert.ok(!isTagged(entry, "fast,ts"));
+    assert.ok(isTagged(entry, "ts|go"));
+    assert.ok(!isTagged(entry, "ts|window"));
+  });
+});
+
+/** The text of a run with the root of the tree it ran in replaced, so two trees can be compared. */
+function normalize(text, root) {
+  return text.split(root).join("<root>").replace(/\(\d+(\.\d+)?s\)/g, "(time)");
+}
+
+function run(name, root) {
+  const result = spawnSync("node", [path.join(CHECKS_DIR, "run.mjs"), "--only", name], { encoding: "utf8", env: { ...process.env, NUMEN_CHECKS_ROOT: root }, maxBuffer: 1 << 28 });
+  return { status: result.status, text: normalize((result.stdout || "") + (result.stderr || ""), root) };
+}
+
+// A check that reads a file outside its `paths` gives another answer on a tree that holds only the
+// `paths`. The Go checks (they type-check the workspace through `go list`), the commands and the
+// rule tests are not run this way: a reduced tree has no go.work to load.
+describe("the paths of the verifiers", () => {
+  const planted = [];
+  after(() => planted.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));
+  for (const entry of registry.checks.filter((e) => e.runner === "verifiers")) {
+    it(`${entry.name} gives the same answer on a tree reduced to its paths`, () => {
+      const full = run(entry.name, REPO_ROOT);
+      const reduced = plantTree(REPO_ROOT, entry.paths);
+      planted.push(reduced);
+      const small = run(entry.name, reduced);
+      assert.equal(small.status, full.status);
+      assert.equal(small.text.replace(/\(\d+\.\d+s\)/g, ""), full.text.replace(/\(\d+\.\d+s\)/g, ""), `${entry.name} reads a file outside its paths`);
+    });
+  }
+});
+

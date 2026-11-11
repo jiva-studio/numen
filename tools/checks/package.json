@@ -1,0 +1,21 @@
+{
+  "name": "@numen/checks",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The structural, style and documentation checks of the repository, with the registry that selects and runs them.",
+  "dependencies": {
+    "@vue/compiler-sfc": "^3.5.44",
+    "dependency-cruiser": "^18.7.1",
+    "postcss": "^8.5.32",
+    "postcss-html": "^2.0.0",
+    "postcss-value-parser": "^4.2.0",
+    "stylelint": "^17.16.0",
+    "typescript": "^6.0.3",
+    "yaml": "^2.9.1"
+  },
+  "scripts": {
+    "check": "node run.mjs",
+    "test": "node --test registry.test.mjs lib/*.test.mjs structure/ts/*/*.test.mjs docs/*/*.test.mjs style/*/*.test.mjs"
+  }
+}
