@@ -1,15 +1,11 @@
-package service
+package serving
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/environment"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/remote"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/providers"
 )
@@ -17,28 +13,60 @@ import (
 // defaultPasses is the passes a model is taken to run when it names none.
 const defaultPasses = 4
 
-func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, error) {
+// PreconditionError is a refusal because the settings do not allow the call. Any other error of the
+// server is a fault.
+type PreconditionError struct {
+	Err error
+}
+
+// Error returns the message of the refusal.
+func (e PreconditionError) Error() string {
+	return e.Err.Error()
+}
+
+// Unwrap returns the cause of the refusal.
+func (e PreconditionError) Unwrap() error {
+	return e.Err
+}
+
+// ModelInfo describes the model the server serves. Concurrency is the passes the index may take.
+type ModelInfo struct {
+	Name           string
+	Dimensions     int
+	MaxTokens      int
+	Pooling        string
+	From           string
+	Concurrency    int
+	FloorHint      float64
+	MinChunkLength int
+	ChunkTokens    int
+	Handling       string
+}
+
+// GetModelInfo returns the model the server serves. It refuses with a PreconditionError while the
+// local model cannot be resolved.
+func (s *Server) GetModelInfo() (ModelInfo, error) {
 	s.mu.Lock()
 	info := s.modelInfo
 	localErr := s.getLocalErrLocked()
 	s.mu.Unlock()
 	if localErr != nil {
-		return embedding.ModelInfo{}, rpcerror.New(rpcerror.FailedPrecondition, localErr)
+		return ModelInfo{}, PreconditionError{Err: localErr}
 	}
 	passes := info.Concurrency
 	if passes <= 0 {
 		passes = defaultPasses
 	}
-	return embedding.ModelInfo{
+	return ModelInfo{
 		Name:           info.Name,
-		Dimensions:     int32(info.Dimensions),
-		MaxTokens:      int32(info.MaxTokens),
+		Dimensions:     info.Dimensions,
+		MaxTokens:      info.MaxTokens,
 		Pooling:        info.Pooling,
 		From:           info.From,
-		Concurrency:    int32(limits.GetIndexShare(passes)),
+		Concurrency:    limits.GetIndexShare(passes),
 		FloorHint:      info.FloorHint,
-		MinChunkLength: int32(info.MinChunkLength),
-		ChunkTokens:    int32(info.ChunkTokens),
+		MinChunkLength: info.MinChunkLength,
+		ChunkTokens:    info.ChunkTokens,
 		Handling:       getHandlingHash(info),
 	}, nil
 }
@@ -50,32 +78,29 @@ func getHandlingHash(info engine.ModelInfo) string {
 	return info.Handling.Hash(info.MaxTokens)
 }
 
-func (s *embeddingServer) getLocalErr() error {
+func (s *Server) getLocalErr() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.getLocalErrLocked()
 }
 
-func (s *embeddingServer) getLocalErrLocked() error {
+func (s *Server) getLocalErrLocked() error {
 	if s.isMock || providers.IsRemote(s.provider) {
 		return nil
 	}
 	return s.localErr
 }
 
-func (s *embeddingServer) applyHandling(role embedding.Role, texts []string) []string {
+func (s *Server) applyHandling(role engine.Role, texts []string) []string {
 	s.mu.Lock()
 	handling := s.modelInfo.Handling
 	s.mu.Unlock()
-	if role == embedding.RoleQuery {
-		return handling.Apply(engine.RoleQuery, texts)
-	}
-	return handling.Apply(engine.RoleDocument, texts)
+	return handling.Apply(role, texts)
 }
 
 // EmbedTexts returns one vector per text. A local model reads the texts with the prefix its profile
-// names for the role; a remote service reads them as they are.
-func (s *embeddingServer) EmbedTexts(ctx context.Context, role embedding.Role, texts []string) ([][]float32, error) {
+// names for the role; a remote service reads them as they are. A refusal is a PreconditionError.
+func (s *Server) EmbedTexts(ctx context.Context, role engine.Role, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
@@ -86,18 +111,18 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, role embedding.Role, t
 	}
 	if s.isRemoteProvider() {
 		if baseURL == "" {
-			return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding service URL is not configured"))
+			return nil, PreconditionError{Err: errors.New("embedding service URL is not configured")}
 		}
-		return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding API key is not configured"))
+		return nil, PreconditionError{Err: errors.New("embedding API key is not configured")}
 	}
 
 	if err := s.getLocalErr(); err != nil {
-		return nil, rpcerror.New(rpcerror.FailedPrecondition, err)
+		return nil, PreconditionError{Err: err}
 	}
 	texts = s.applyHandling(role, texts)
 	emb, err := s.getEmbedder(ctx)
 	if err != nil {
-		return nil, rpcerror.New(rpcerror.Internal, err)
+		return nil, err
 	}
 
 	denseVectors, err := emb.Embed(ctx, texts)
@@ -108,21 +133,19 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, role embedding.Role, t
 		}
 	}
 	if err != nil {
-		// gomutants:disable-next-line ERRORF_WRAP reason="rpcerror.New extracts only error message string"
-		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("embed batch: %w", err))
+		return nil, fmt.Errorf("embed batch: %w", err)
 	}
 	if len(denseVectors) != len(texts) {
-		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors)))
+		return nil, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors))
 	}
 
 	return denseVectors, nil
 }
 
-func (s *embeddingServer) embedRemoteTexts(ctx context.Context, key, baseURL string, texts []string) ([][]float32, error) {
-	vectors, err := remote.FetchVectors(ctx, key, baseURL, s.getModelName(), texts)
+func (s *Server) embedRemoteTexts(ctx context.Context, key, baseURL string, texts []string) ([][]float32, error) {
+	vectors, err := s.fetchVectors(ctx, key, baseURL, s.getModelName(), texts)
 	if err != nil {
-		// gomutants:disable-next-line ERRORF_WRAP reason="rpcerror.New extracts only error message string"
-		return nil, rpcerror.New(rpcerror.Internal, err)
+		return nil, err
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="a vector fetched without an error is not empty"
 	if dimensions := len(vectors[len(vectors)-1]); dimensions > 0 {
@@ -133,13 +156,13 @@ func (s *embeddingServer) embedRemoteTexts(ctx context.Context, key, baseURL str
 	return vectors, nil
 }
 
-func (s *embeddingServer) isRemoteProvider() bool {
+func (s *Server) isRemoteProvider() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return !s.isMock && providers.IsRemote(s.provider)
 }
 
-func (s *embeddingServer) getService() (key, baseURL string) {
+func (s *Server) getService() (key, baseURL string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.isMock || s.provider == providers.Local {
@@ -150,12 +173,12 @@ func (s *embeddingServer) getService() (key, baseURL string) {
 	}
 	baseURL = s.baseURL
 	if baseURL == "" {
-		baseURL = environment.GetServiceURL()
+		baseURL = s.env.GetServiceURL()
 	}
 	return s.apiKey, baseURL
 }
 
-func (s *embeddingServer) getModelName() string {
+func (s *Server) getModelName() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.modelInfo.Name

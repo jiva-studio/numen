@@ -1,4 +1,4 @@
-package service
+package serving
 
 import (
 	"context"
@@ -8,31 +8,28 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
 
 func TestEmbeddingServerGetModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	msg, err := srv.GetModelInfo(t.Context())
+	msg, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if msg.GetName() != "Xenova/multilingual-e5-small" {
-		t.Errorf("expected the default model, got %s", msg.GetName())
+	if msg.Name != "Xenova/multilingual-e5-small" {
+		t.Errorf("expected the default model, got %s", msg.Name)
 	}
-	if msg.GetDimensions() != 384 {
-		t.Errorf("expected 384 dimensions, got %d", msg.GetDimensions())
+	if msg.Dimensions != 384 {
+		t.Errorf("expected 384 dimensions, got %d", msg.Dimensions)
 	}
-	if msg.GetMaxTokens() != 512 {
-		t.Errorf("expected 512 max tokens, got %d", msg.GetMaxTokens())
+	if msg.MaxTokens != 512 {
+		t.Errorf("expected 512 max tokens, got %d", msg.MaxTokens)
 	}
-	if msg.GetPooling() != "mean" {
-		t.Errorf("expected mean pooling, got %s", msg.GetPooling())
+	if msg.Pooling != "mean" {
+		t.Errorf("expected mean pooling, got %s", msg.Pooling)
 	}
 }
 
@@ -43,21 +40,21 @@ func TestEmbeddingServerEnvOverrides(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_POOLING", "mean")
 
 	srv := newEmbeddingServer()
-	msg, err := srv.GetModelInfo(t.Context())
+	msg, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if msg.GetName() != "Xenova/bge-m3" {
-		t.Errorf("expected Xenova/bge-m3, got %s", msg.GetName())
+	if msg.Name != "Xenova/bge-m3" {
+		t.Errorf("expected Xenova/bge-m3, got %s", msg.Name)
 	}
-	if msg.GetDimensions() != 512 {
-		t.Errorf("expected 512 dimensions, got %d", msg.GetDimensions())
+	if msg.Dimensions != 512 {
+		t.Errorf("expected 512 dimensions, got %d", msg.Dimensions)
 	}
-	if msg.GetMaxTokens() != 1024 {
-		t.Errorf("expected 1024 max tokens, got %d", msg.GetMaxTokens())
+	if msg.MaxTokens != 1024 {
+		t.Errorf("expected 1024 max tokens, got %d", msg.MaxTokens)
 	}
-	if msg.GetPooling() != "mean" {
-		t.Errorf("expected mean pooling, got %s", msg.GetPooling())
+	if msg.Pooling != "mean" {
+		t.Errorf("expected mean pooling, got %s", msg.Pooling)
 	}
 }
 
@@ -87,7 +84,7 @@ func TestModelDimensionResolutionAcrossProviders(t *testing.T) {
 	cases := []struct {
 		provider string
 		model    string
-		wantDims int32
+		wantDims int
 	}{
 		{provider: "local", model: "Xenova/bge-m3", wantDims: 1024},
 		{provider: "local", model: "Xenova/multilingual-e5-small", wantDims: 384},
@@ -105,12 +102,12 @@ func TestModelDimensionResolutionAcrossProviders(t *testing.T) {
 			"provider": tc.provider,
 			"model":    tc.model,
 		}, nil)
-		info, err := emb.GetModelInfo(t.Context())
+		info, err := emb.GetModelInfo()
 		if err != nil {
 			t.Fatalf("%s/%s: %v", tc.provider, tc.model, err)
 		}
-		if info.GetDimensions() != tc.wantDims {
-			t.Errorf("%s/%s: got %d dimensions, want %d", tc.provider, tc.model, info.GetDimensions(), tc.wantDims)
+		if info.Dimensions != tc.wantDims {
+			t.Errorf("%s/%s: got %d dimensions, want %d", tc.provider, tc.model, info.Dimensions, tc.wantDims)
 		}
 	}
 }
@@ -126,11 +123,11 @@ func TestEmbeddingServerCustomRepositoryIsNotPinned(t *testing.T) {
 func TestEmbeddingServerWithoutAProfileFailsAndNamesWhereToAddOne(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MODEL", "owner/model")
 	srv := newEmbeddingServer()
-	_, err := srv.GetModelInfo(t.Context())
-	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), "owner/model") || !strings.Contains(err.Error(), "profile") {
+	_, err := srv.GetModelInfo()
+	if !isPrecondition(err) || !strings.Contains(err.Error(), "owner/model") || !strings.Contains(err.Error(), "profile") {
 		t.Fatalf("GetModelInfo error = %v, want FailedPrecondition that names the model and the profile", err)
 	}
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"}); rpcerror.GetCode(err) != rpcerror.FailedPrecondition {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"text"}); !isPrecondition(err) {
 		t.Errorf("EmbedTexts error = %v, want FailedPrecondition", err)
 	}
 }
@@ -147,23 +144,23 @@ func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
 	t.Setenv("NUMEN_MOCK_ML", "true")
 	srv := newEmbeddingServer()
 
-	model, err := srv.GetModelInfo(t.Context())
+	model, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if model.GetFrom() != "mock" {
-		t.Errorf("the model is from %q, want mock", model.GetFrom())
+	if model.From != "mock" {
+		t.Errorf("the model is from %q, want mock", model.From)
 	}
 
-	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"boat", "ferry"})
+	vectors, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"boat", "ferry"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(vectors) != 2 {
 		t.Fatalf("got %d vectors for 2 texts", len(vectors))
 	}
-	if got := len(vectors[0]); got != int(model.GetDimensions()) {
-		t.Errorf("got %d dimensions, want %d", got, model.GetDimensions())
+	if got := len(vectors[0]); got != int(model.Dimensions) {
+		t.Errorf("got %d dimensions, want %d", got, model.Dimensions)
 	}
 }
 
@@ -180,8 +177,8 @@ func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 		"model":    "openai/text-embedding-3-small",
 	}, nil)
 
-	_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"})
-	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition {
+	_, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"})
+	if !isPrecondition(err) {
 		t.Fatalf("err = %v, want FailedPrecondition", err)
 	}
 	if hasOpenCall {
@@ -204,15 +201,15 @@ func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 		"model":    "openai/text-embedding-3-small",
 	}, nil)
 
-	info, err := srv.GetModelInfo(t.Context())
+	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.GetName() != engine.DefaultModel || info.GetDimensions() != 384 {
-		t.Fatalf("GetModelInfo = %s@%d, want the default model at 384", info.GetName(), info.GetDimensions())
+	if info.Name != engine.DefaultModel || info.Dimensions != 384 {
+		t.Fatalf("GetModelInfo = %s@%d, want the default model at 384", info.Name, info.Dimensions)
 	}
 
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
 	if activeInfo.Name != engine.DefaultModel || activeInfo.Dimensions != 384 || activeLocal.Name != engine.DefaultModel {
@@ -225,8 +222,8 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 	steps := []struct {
 		values      map[string]string
 		name        string
-		dimensions  int32
-		maxTokens   int32
+		dimensions  int
+		maxTokens   int
 		pooling     string
 		floorHint   float64
 		description string
@@ -239,14 +236,14 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 	}
 	for _, step := range steps {
 		srv.updateConfig(step.values, nil)
-		info, err := srv.GetModelInfo(t.Context())
+		info, err := srv.GetModelInfo()
 		if err != nil {
 			t.Fatalf("%s: %v", step.description, err)
 		}
-		if info.GetName() != step.name || info.GetDimensions() != step.dimensions || info.GetMaxTokens() != step.maxTokens ||
-			info.GetPooling() != step.pooling || info.GetFloorHint() != step.floorHint {
+		if info.Name != step.name || info.Dimensions != step.dimensions || info.MaxTokens != step.maxTokens ||
+			info.Pooling != step.pooling || info.FloorHint != step.floorHint {
 			t.Errorf("%s: got %s/%d/%d/%s/%v, want %s/%d/%d/%s/%v", step.description,
-				info.GetName(), info.GetDimensions(), info.GetMaxTokens(), info.GetPooling(), info.GetFloorHint(),
+				info.Name, info.Dimensions, info.MaxTokens, info.Pooling, info.FloorHint,
 				step.name, step.dimensions, step.maxTokens, step.pooling, step.floorHint)
 		}
 	}
@@ -260,7 +257,7 @@ func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 		return engine.MockEmbedder{}, nil
 	}
 	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
 	if openedInfo.Dimensions != 384 || openedInfo.MaxTokens != 512 || openedInfo.Pooling != "mean" {
@@ -275,15 +272,15 @@ func TestTheMockModelReportsNoFloorHint(t *testing.T) {
 		t.Fatalf("initial mock MinChunkLength = %d, want 40", srv.modelInfo.MinChunkLength)
 	}
 	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, nil)
-	info, err := srv.GetModelInfo(t.Context())
+	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.GetName() != "mock-embedding" || info.GetFloorHint() != 0 {
-		t.Fatalf("mock model = %s with hint %v", info.GetName(), info.GetFloorHint())
+	if info.Name != "mock-embedding" || info.FloorHint != 0 {
+		t.Fatalf("mock model = %s with hint %v", info.Name, info.FloorHint)
 	}
-	if info.GetMinChunkLength() != 40 {
-		t.Fatalf("mock MinChunkLength = %d, want 40", info.GetMinChunkLength())
+	if info.MinChunkLength != 40 {
+		t.Fatalf("mock MinChunkLength = %d, want 40", info.MinChunkLength)
 	}
 }
 
@@ -383,83 +380,30 @@ func TestUpdateLocalModelHandlesMockProfilesErrAndClosingRetired(t *testing.T) {
 	}
 }
 
-func TestGetProfilesDirAndEnvOverrides(t *testing.T) {
-	t.Setenv("NUMEN_PLUGIN_DATA_DIR", "/tmp/numen-data")
-	if got := getProfilesDir(); got != "/tmp/numen-data/profiles" {
-		t.Fatalf("getProfilesDir with NUMEN_PLUGIN_DATA_DIR = %q", got)
-	}
-	t.Setenv("NUMEN_PLUGIN_DATA_DIR", "")
-	if got := getProfilesDir(); got != "" {
-		t.Fatalf("getProfilesDir without NUMEN_PLUGIN_DATA_DIR = %q, want empty", got)
-	}
-
-	var local engine.LocalModel
-	t.Setenv("NUMEN_EMBEDDING_DIR", "/custom/dir")
-	t.Setenv("NUMEN_ONNX_RUNTIME", "/custom/libonnx.so")
-	t.Setenv("NUMEN_ONNX_THREADS", "6")
-	applyLocalOverrides(&local, environment.GetOverrides())
-	if local.Dir != "/custom/dir" || local.Runtime != "/custom/libonnx.so" || local.Threads != 6 {
-		t.Fatalf("overrides = %+v", local)
-	}
-
-	local2 := engine.LocalModel{Threads: 4}
-	t.Setenv("NUMEN_ONNX_RUNTIME", "")
-	t.Setenv("NUMEN_ONNX_THREADS", "invalid")
-	applyLocalOverrides(&local2, environment.GetOverrides())
-	if local2.Runtime != "" || local2.Threads != 4 {
-		t.Fatalf("invalid threads changed local2 = %+v", local2)
-	}
-	t.Setenv("NUMEN_ONNX_THREADS", "0")
-	applyLocalOverrides(&local2, environment.GetOverrides())
-	if local2.Threads != 4 {
-		t.Fatalf("zero threads changed local2 = %+v", local2)
-	}
-	t.Setenv("NUMEN_ONNX_THREADS", "-2")
-	applyLocalOverrides(&local2, environment.GetOverrides())
-	if local2.Threads != 4 {
-		t.Fatalf("negative threads changed local2 = %+v", local2)
-	}
-	t.Setenv("NUMEN_ONNX_THREADS", "1")
-	applyLocalOverrides(&local2, environment.GetOverrides())
-	if local2.Threads != 1 {
-		t.Fatalf("1 thread = %d, want 1", local2.Threads)
-	}
-}
-
-func TestDimensionOverridesOfTheEnvironmentReachTheModel(t *testing.T) {
-	info := engine.ModelInfo{Dimensions: 384, MaxTokens: 512}
-	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "1")
-	t.Setenv("NUMEN_EMBEDDING_MAX_TOKENS", "1")
-	applyInfoOverrides(&info, environment.GetOverrides())
-	if info.Dimensions != 1 || info.MaxTokens != 1 {
-		t.Fatalf("applyInfoOverrides with 1 = %+v", info)
-	}
-}
-
 func TestGetModelInfoConcurrencyAndGetLocalErrLocked(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.modelInfo.Concurrency = 0
-	info, err := srv.GetModelInfo(t.Context())
-	if err != nil || info.GetConcurrency() != 3 {
-		t.Fatalf("Concurrency(0) = %d, %v, want 3", info.GetConcurrency(), err)
+	info, err := srv.GetModelInfo()
+	if err != nil || info.Concurrency != 3 {
+		t.Fatalf("Concurrency(0) = %d, %v, want 3", info.Concurrency, err)
 	}
 
 	srv.modelInfo.Concurrency = -1
-	info, err = srv.GetModelInfo(t.Context())
-	if err != nil || info.GetConcurrency() != 3 {
-		t.Fatalf("Concurrency(-1) = %d, %v, want 3", info.GetConcurrency(), err)
+	info, err = srv.GetModelInfo()
+	if err != nil || info.Concurrency != 3 {
+		t.Fatalf("Concurrency(-1) = %d, %v, want 3", info.Concurrency, err)
 	}
 
 	srv.modelInfo.Concurrency = 1
-	info, err = srv.GetModelInfo(t.Context())
-	if err != nil || info.GetConcurrency() != 1 {
-		t.Fatalf("Concurrency(1) = %d, %v, want 1", info.GetConcurrency(), err)
+	info, err = srv.GetModelInfo()
+	if err != nil || info.Concurrency != 1 {
+		t.Fatalf("Concurrency(1) = %d, %v, want 1", info.Concurrency, err)
 	}
 
 	srv.modelInfo.Concurrency = 3
-	info, err = srv.GetModelInfo(t.Context())
-	if err != nil || info.GetConcurrency() != 2 {
-		t.Fatalf("Concurrency(3) = %d, %v, want 2", info.GetConcurrency(), err)
+	info, err = srv.GetModelInfo()
+	if err != nil || info.Concurrency != 2 {
+		t.Fatalf("Concurrency(3) = %d, %v, want 2", info.Concurrency, err)
 	}
 
 	srv.localErr = errors.New("broken local")
@@ -492,20 +436,20 @@ func (f funcEmbedder) Close() error { return nil }
 
 func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 	srv := newEmbeddingServer()
-	vecs, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, nil)
+	vecs, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, nil)
 	if err != nil || vecs != nil {
 		t.Fatalf("empty EmbedTexts = %v, %v", vecs, err)
 	}
 
 	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": ""}, keysOf("my-key"))
-	_, err = srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hi"})
-	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), "URL is not configured") {
+	_, err = srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
+	if !isPrecondition(err) || !strings.Contains(err.Error(), "URL is not configured") {
 		t.Fatalf("missing URL err = %v", err)
 	}
 
 	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": "https://example.com"}, keysOf())
-	_, err = srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hi"})
-	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), "API key is not configured") {
+	_, err = srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
+	if !isPrecondition(err) || !strings.Contains(err.Error(), "API key is not configured") {
 		t.Fatalf("missing key err = %v", err)
 	}
 
@@ -525,7 +469,7 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 			},
 		}, nil
 	}
-	vecs, err = srv2.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hi"})
+	vecs, err = srv2.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
 	if err != nil || len(vecs) != 1 || calls != 2 {
 		t.Fatalf("retry on ErrClosed = %v, %v, calls=%d", vecs, err, calls)
 	}
@@ -538,8 +482,8 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 			},
 		}, nil
 	}
-	_, err = srv3.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hi"})
-	if rpcerror.GetCode(err) != rpcerror.Internal || !strings.Contains(err.Error(), "embed batch: onnx crash") {
+	_, err = srv3.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
+	if isPrecondition(err) || !strings.Contains(err.Error(), "embed batch: onnx crash") {
 		t.Fatalf("embed error = %v", err)
 	}
 
@@ -551,8 +495,8 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 			},
 		}, nil
 	}
-	_, err = srv4.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"one", "two"})
-	if rpcerror.GetCode(err) != rpcerror.Internal || !strings.Contains(err.Error(), "expected 2 vectors, got 1") {
+	_, err = srv4.EmbedTexts(t.Context(), engine.RoleDocument, []string{"one", "two"})
+	if isPrecondition(err) || !strings.Contains(err.Error(), "expected 2 vectors, got 1") {
 		t.Fatalf("vector count mismatch err = %v", err)
 	}
 }
@@ -631,7 +575,7 @@ func TestEmbedRemoteTexts(t *testing.T) {
 		"model":    "remote-test",
 	}, keysOf("secret"))
 
-	vecs, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"})
+	vecs, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"})
 	if err != nil || len(vecs) != 1 || len(vecs[0]) != 5 {
 		t.Fatalf("EmbedTexts remote = %v, %v", vecs, err)
 	}
@@ -643,19 +587,8 @@ func TestEmbedRemoteTexts(t *testing.T) {
 	}
 
 	mode = "status500"
-	_, err = srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"})
-	if rpcerror.GetCode(err) != rpcerror.Internal || !strings.Contains(err.Error(), "service text 0: status 500: server exploded") {
+	_, err = srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"})
+	if isPrecondition(err) || !strings.Contains(err.Error(), "service text 0: status 500: server exploded") {
 		t.Fatalf("status500 err = %v", err)
-	}
-}
-
-func TestMountRegistersCloseCallback(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
-	s := server.New(server.WithToken("token"))
-	if err := Mount(s); err != nil {
-		t.Fatalf("Mount: %v", err)
-	}
-	if err := s.Close(); err != nil {
-		t.Fatalf("s.Close: %v", err)
 	}
 }

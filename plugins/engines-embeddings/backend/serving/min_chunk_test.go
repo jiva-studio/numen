@@ -1,4 +1,4 @@
-package service
+package serving
 
 import "testing"
 
@@ -6,21 +6,21 @@ import "testing"
 // value the host sends after.
 func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
 	srv := newEmbeddingServer()
-	info, err := srv.GetModelInfo(t.Context())
+	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.GetMinChunkLength() != 40 {
-		t.Errorf("before configure = %d, want 40", info.GetMinChunkLength())
+	if info.MinChunkLength != 40 {
+		t.Errorf("before configure = %d, want 40", info.MinChunkLength)
 	}
-	for value, want := range map[string]int32{"0": 0, "250": 250, "9999": 1000} {
+	for value, want := range map[string]int{"0": 0, "250": 250, "9999": 1000} {
 		srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": value}, nil)
-		info, err = srv.GetModelInfo(t.Context())
+		info, err = srv.GetModelInfo()
 		if err != nil {
 			t.Fatal(err)
 		}
-		if info.GetMinChunkLength() != want {
-			t.Errorf("configured %s: reported %d, want %d", value, info.GetMinChunkLength(), want)
+		if info.MinChunkLength != want {
+			t.Errorf("configured %s: reported %d, want %d", value, info.MinChunkLength, want)
 		}
 	}
 }
@@ -29,12 +29,12 @@ func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
 func TestMinChunkLengthIsNotPartOfTheModel(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": "40"}, nil)
-	before, err := srv.GetModelInfo(t.Context())
+	before, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
 	srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": "0"}, nil)
-	after, err := srv.GetModelInfo(t.Context())
+	after, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}

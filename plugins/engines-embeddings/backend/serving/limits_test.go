@@ -1,4 +1,4 @@
-package service
+package serving
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
@@ -33,7 +33,7 @@ func (e recordedEmbedder) Close() error {
 	return nil
 }
 
-func newRecordedServer(t *testing.T) (*embeddingServer, *openRecord) {
+func newRecordedServer(t *testing.T) (*Server, *openRecord) {
 	t.Helper()
 	srv := newEmbeddingServer()
 	record := &openRecord{}
@@ -43,12 +43,11 @@ func newRecordedServer(t *testing.T) (*embeddingServer, *openRecord) {
 		record.opened = append(record.opened, local)
 		return recordedEmbedder{record: record}, nil
 	}
-	srv.lowerNice = func(nice int) error {
+	srv.machine = niceRecorder{Process: process.Process{}, record: func(nice int) {
 		record.mu.Lock()
 		defer record.mu.Unlock()
 		record.nices = append(record.nices, nice)
-		return nil
-	}
+	}}
 	return srv, record
 }
 
@@ -61,7 +60,7 @@ func (r *openRecord) openedCount() int {
 func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := record.opened[0]; got.Threads != 1 || got.BatchTexts != limits.EcoBatchTexts {
@@ -77,13 +76,13 @@ func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "maximum"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	first := record.opened[0]
 
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if record.openedCount() != 2 {
@@ -103,11 +102,11 @@ func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	values := map[string]string{performance.ConfigKey: "eco"}
 	srv.updateConfig(values, nil)
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.updateConfig(values, nil)
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if record.openedCount() != 1 {
@@ -120,7 +119,7 @@ func TestTheThreadsOfTheEnvironmentWinOverTheProfile(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_THREADS", "3")
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "provider": "local"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := record.opened[0].Threads; got != 3 {
@@ -151,7 +150,7 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 		t.Fatalf("GOMAXPROCS = %d, want 1", got)
 	}
 
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.mu.Lock()
@@ -207,4 +206,15 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	if got := runtime.GOMAXPROCS(0); got != 4 {
 		t.Fatalf("mock profile changed GOMAXPROCS to %d, want 4", got)
 	}
+}
+
+// niceRecorder is a process whose priority changes are recorded and not made.
+type niceRecorder struct {
+	process.Process
+	record func(nice int)
+}
+
+func (n niceRecorder) LowerNice(nice int) error {
+	n.record(nice)
+	return nil
 }

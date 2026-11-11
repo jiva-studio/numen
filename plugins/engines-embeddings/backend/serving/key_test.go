@@ -1,21 +1,13 @@
-package service
+package serving
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
-
-func keysOf(values ...string) server.Secrets {
-	list := make([]server.Secret, 0, len(values))
-	for i, value := range values {
-		list = append(list, server.Secret{ID: "s0000000" + string(rune('1'+i)), Name: "Key", Group: "openrouter", Value: value})
-	}
-	return server.Secrets{server.SecretAPIKey: list}
-}
 
 // The key in the environment of the plugin is not a key: the remote service is
 // queried only with the one Configure supplies.
@@ -44,7 +36,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL}, keysOf("host-key"))
-	vectors, err := emb.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a fixture sentence"})
+	vectors, err := emb.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a fixture sentence"})
 	if err != nil {
 		t.Fatal(err)
 	}

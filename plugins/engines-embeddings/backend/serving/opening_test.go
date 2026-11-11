@@ -1,4 +1,4 @@
-package service
+package serving
 
 import (
 	"context"
@@ -7,12 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
 
-func slowModel(t *testing.T) (srv *embeddingServer, started chan struct{}, release chan struct{}) {
+func slowModel(t *testing.T) (srv *Server, started chan struct{}, release chan struct{}) {
 	t.Helper()
 	srv = newEmbeddingServer()
 	started, release = make(chan struct{}), make(chan struct{})
@@ -49,7 +48,7 @@ func TestACallOfTheHostDoesNotWaitForTheModelToOpen(t *testing.T) {
 	<-started
 
 	within(t, "GetModelInfo", func() {
-		if _, err := srv.GetModelInfo(t.Context()); err != nil {
+		if _, err := srv.GetModelInfo(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -61,7 +60,7 @@ func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	ended := make(chan error, 1)
-	go func() { _, err := srv.EmbedTexts(ctx, embedding.RoleDocument, []string{"text"}); ended <- err }()
+	go func() { _, err := srv.EmbedTexts(ctx, engine.RoleDocument, []string{"text"}); ended <- err }()
 	<-started
 	cancel()
 	if err := <-ended; err == nil {
@@ -69,7 +68,7 @@ func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
 	}
 
 	close(release)
-	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"})
+	vectors, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"text"})
 	if err != nil || len(vectors) != 1 {
 		t.Fatalf("the next batch: %v, %v", vectors, err)
 	}
@@ -96,7 +95,7 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	}
 
 	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
-	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"})
+	vectors, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"text"})
 	if err != nil && !errors.Is(err, context.Canceled) {
 		t.Fatalf("the batch after the change: %v", err)
 	}
@@ -105,16 +104,16 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	}
 }
 
-func closeServer(t *testing.T, srv *embeddingServer) {
+func closeServer(t *testing.T, srv *Server) {
 	t.Helper()
 	if err := srv.Close(); err != nil {
 		t.Error(err)
 	}
 }
 
-func embedText(ctx context.Context, t *testing.T, srv *embeddingServer) {
+func embedText(ctx context.Context, t *testing.T, srv *Server) {
 	t.Helper()
-	if vectors, err := srv.EmbedTexts(ctx, embedding.RoleDocument, []string{"text"}); err == nil && len(vectors) != 1 {
+	if vectors, err := srv.EmbedTexts(ctx, engine.RoleDocument, []string{"text"}); err == nil && len(vectors) != 1 {
 		t.Errorf("vectors: %v", vectors)
 	}
 }

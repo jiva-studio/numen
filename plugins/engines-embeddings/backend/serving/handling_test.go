@@ -1,4 +1,4 @@
-package service
+package serving
 
 import (
 	"context"
@@ -12,9 +12,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
 
@@ -32,10 +31,10 @@ func (r recording) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	return r.MockEmbedder.Embed(ctx, texts)
 }
 
-func newRecordingServer(t *testing.T) (*embeddingServer, *[]string) {
+func newRecordingServer(t *testing.T) (*Server, *[]string) {
 	t.Helper()
 	srv := newEmbeddingServer()
-	srv.profilesDir = t.TempDir()
+	srv.profileSrc = profilefiles.NewDirectory(t.TempDir())
 	var mu sync.Mutex
 	var received []string
 	srv.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (loading.Embedder, error) {
@@ -49,10 +48,10 @@ func TestALocalModelReadsDocumentsAndQueriesWithTheirOwnPrefix(t *testing.T) {
 	srv, texts := newRecordingServer(t)
 	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
 
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a note", "another"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a note", "another"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleQuery, []string{"a question"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleQuery, []string{"a question"}); err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"passage: a note", "passage: another", "query: a question"}
@@ -69,7 +68,7 @@ func TestAModelWithAQueryPrefixNeverRunsAQueryWithoutIt(t *testing.T) {
 	for _, p := range profiles.GetCurated() {
 		srv, texts := newRecordingServer(t)
 		srv.updateConfig(map[string]string{"provider": "local", "model": p.ID}, nil)
-		if _, err := srv.EmbedTexts(t.Context(), embedding.RoleQuery, []string{"question"}); err != nil {
+		if _, err := srv.EmbedTexts(t.Context(), engine.RoleQuery, []string{"question"}); err != nil {
 			t.Fatalf("%s: %v", p.ID, err)
 		}
 		if got := (*texts)[0]; got != p.QueryPrefix+"question" {
@@ -81,7 +80,7 @@ func TestAModelWithAQueryPrefixNeverRunsAQueryWithoutIt(t *testing.T) {
 func TestAnUnsetRoleIsADocument(t *testing.T) {
 	srv, texts := newRecordingServer(t)
 	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
-	var role embedding.Role
+	var role engine.Role
 	if _, err := srv.EmbedTexts(t.Context(), role, []string{"text"}); err != nil {
 		t.Fatal(err)
 	}
@@ -103,22 +102,22 @@ func TestARemoteProviderGetsNoPrefix(t *testing.T) {
 
 	for _, provider := range []string{"openrouter", "openai", "custom"} {
 		srv := newEmbeddingServer()
-		srv.profilesDir = t.TempDir()
+		srv.profileSrc = profilefiles.NewDirectory(t.TempDir())
 		srv.updateConfig(map[string]string{
 			"provider": provider, "model": "vendor/model", "baseUrl": stand.URL,
 		}, keysOf("key"))
-		info, err := srv.GetModelInfo(t.Context())
+		info, err := srv.GetModelInfo()
 		if err != nil {
 			t.Fatalf("%s: %v", provider, err)
 		}
-		if info.GetHandling() != "" {
-			t.Errorf("%s: handling %q, want none", provider, info.GetHandling())
+		if info.Handling != "" {
+			t.Errorf("%s: handling %q, want none", provider, info.Handling)
 		}
 	}
 
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"provider": "custom", "model": "vendor/model", "baseUrl": stand.URL}, keysOf("key"))
-	for _, role := range []embedding.Role{embedding.RoleQuery, embedding.RoleDocument} {
+	for _, role := range []engine.Role{engine.RoleQuery, engine.RoleDocument} {
 		if _, err := srv.EmbedTexts(t.Context(), role, []string{"a question"}); err != nil {
 			t.Fatal(err)
 		}
@@ -131,16 +130,16 @@ func TestARemoteProviderGetsNoPrefix(t *testing.T) {
 func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
-	srv.profilesDir = dir
+	srv.profileSrc = profilefiles.NewDirectory(dir)
 	handling := func(values map[string]string) string {
 		t.Helper()
 		values["provider"], values["model"] = "local", engine.DefaultModel
 		srv.updateConfig(values, nil)
-		info, err := srv.GetModelInfo(t.Context())
+		info, err := srv.GetModelInfo()
 		if err != nil {
 			t.Fatal(err)
 		}
-		return info.GetHandling()
+		return info.Handling
 	}
 
 	base := handling(map[string]string{})
@@ -169,7 +168,7 @@ func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testi
 func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
-	srv.profilesDir = dir
+	srv.profileSrc = profilefiles.NewDirectory(dir)
 	openCount := 0
 	srv.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (loading.Embedder, error) {
 		openCount++
@@ -194,16 +193,16 @@ func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
-	srv.profilesDir = dir
+	srv.profileSrc = profilefiles.NewDirectory(dir)
 	writeFile(t, filepath.Join(dir, "mine.json"), `{"id":"owner/mine","dims":96,"maxTokens":300,"pooling":"last","onnxFile":"onnx/model.onnx","queryPrefix":"Q: "}`)
 	writeFile(t, filepath.Join(dir, "broken.json"), `{"id":`)
 	srv.updateConfig(map[string]string{"provider": "local", "model": "owner/mine"}, nil)
 
-	info, err := srv.GetModelInfo(t.Context())
+	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.GetName() != "owner/mine" || info.GetDimensions() != 96 || info.GetMaxTokens() != 300 || info.GetPooling() != "last" {
+	if info.Name != "owner/mine" || info.Dimensions != 96 || info.MaxTokens != 300 || info.Pooling != "last" {
 		t.Errorf("model = %+v", info)
 	}
 }
@@ -211,10 +210,10 @@ func TestAUserProfileAddsALocalModelWithoutRecompiling(t *testing.T) {
 func TestTheModelOfAUserProfileThatWasRemovedFailsWithAClearError(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
-	srv.profilesDir = dir
+	srv.profileSrc = profilefiles.NewDirectory(dir)
 	srv.updateConfig(map[string]string{"provider": "local", "model": "owner/gone"}, nil)
-	_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"})
-	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), dir) {
+	_, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"text"})
+	if !isPrecondition(err) || !strings.Contains(err.Error(), dir) {
 		t.Errorf("error = %v, want FailedPrecondition that names %s", err, dir)
 	}
 }
@@ -226,14 +225,14 @@ func TestTheEnvironmentOverridesTheChosenProfile(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_FILE", "model_other.onnx")
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
-	info, err := srv.GetModelInfo(t.Context())
+	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.GetDimensions() != 100 || info.GetMaxTokens() != 128 || info.GetPooling() != "last" || srv.localModel.File != "model_other.onnx" {
+	if info.Dimensions != 100 || info.MaxTokens != 128 || info.Pooling != "last" || srv.localModel.File != "model_other.onnx" {
 		t.Errorf("info %+v, file %q", info, srv.localModel.File)
 	}
-	if info.GetHandling() == "" {
+	if info.Handling == "" {
 		t.Error("the handling is gone")
 	}
 }
@@ -245,10 +244,10 @@ func TestTheMockModelRecordsWhatItIsGiven(t *testing.T) {
 	srv := newEmbeddingServer()
 	t.Cleanup(func() { closeServer(t, srv) })
 
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a note"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a note"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleQuery, []string{"a question"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), engine.RoleQuery, []string{"a question"}); err != nil {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(log)

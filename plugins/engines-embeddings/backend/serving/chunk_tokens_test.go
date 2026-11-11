@@ -1,4 +1,4 @@
-package service
+package serving
 
 import (
 	"os"
@@ -6,26 +6,27 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
 )
 
-func getReportedChunkTokens(t *testing.T, srv *embeddingServer) int32 {
+func getReportedChunkTokens(t *testing.T, srv *Server) int {
 	t.Helper()
-	info, err := srv.GetModelInfo(t.Context())
+	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	return info.GetChunkTokens()
+	return info.ChunkTokens
 }
 
 func TestGetModelInfoReportsTheDefaultChunkTokensOfALocalModelOf512(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
-	info, err := srv.GetModelInfo(t.Context())
+	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.GetMaxTokens() != 512 || info.GetChunkTokens() != 256 {
-		t.Errorf("max tokens %d, chunk tokens %d; want 512 and 256", info.GetMaxTokens(), info.GetChunkTokens())
+	if info.MaxTokens != 512 || info.ChunkTokens != 256 {
+		t.Errorf("max tokens %d, chunk tokens %d; want 512 and 256", info.MaxTokens, info.ChunkTokens)
 	}
 }
 
@@ -45,7 +46,7 @@ func TestGetModelInfoNeverReportsMoreChunkTokensThanTheModelReads(t *testing.T) 
 
 func TestGetModelInfoReportsTheRequestedChunkTokensWithinTheBounds(t *testing.T) {
 	srv := newEmbeddingServer()
-	for value, want := range map[string]int32{"abc": 256, "0": 16, "15": 16, "300": 300, "256.9": 256} {
+	for value, want := range map[string]int{"abc": 256, "0": 16, "15": 16, "300": 300, "256.9": 256} {
 		srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": value}, nil)
 		if got := getReportedChunkTokens(t, srv); got != want {
 			t.Errorf("configured %q: reported %d, want %d", value, got, want)
@@ -56,7 +57,7 @@ func TestGetModelInfoReportsTheRequestedChunkTokensWithinTheBounds(t *testing.T)
 func TestAModelOfALowerLimitLowersChunkTokensAndTheOldModelRestoresThem(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
-	srv.profilesDir = dir
+	srv.profileSrc = profilefiles.NewDirectory(dir)
 	values := map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": "400"}
 
 	srv.updateConfig(values, nil)
@@ -78,17 +79,17 @@ func TestAModelOfALowerLimitLowersChunkTokensAndTheOldModelRestoresThem(t *testi
 func TestAChangeOfChunkTokensDoesNotChangeTheModelNorItsHandling(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": "256"}, nil)
-	before, err := srv.GetModelInfo(t.Context())
+	before, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
 	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": "128"}, nil)
-	after, err := srv.GetModelInfo(t.Context())
+	after, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if after.GetChunkTokens() != 128 || before.GetChunkTokens() != 256 {
-		t.Fatalf("chunk tokens = %d then %d, want 256 then 128", before.GetChunkTokens(), after.GetChunkTokens())
+	if after.ChunkTokens != 128 || before.ChunkTokens != 256 {
+		t.Fatalf("chunk tokens = %d then %d, want 256 then 128", before.ChunkTokens, after.ChunkTokens)
 	}
 	after.ChunkTokens = before.ChunkTokens
 	if after != before {
