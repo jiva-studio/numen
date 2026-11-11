@@ -481,7 +481,7 @@ func TestRemovingASourcePreservesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkSearch().FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
+	matches, err := queriesOf(db).FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -948,7 +948,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		}
 	}
 
-	data, err := db.ChunkSearch().FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 1, Floor: search.DefaultFloor})
+	data, err := queriesOf(db).FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 1, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
