@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cachefile"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
@@ -723,7 +722,7 @@ func TestCountReviewsInternalsAndErrors(t *testing.T) {
 	}
 	uNoSched := NewCountReviews(stubLogStores{store: storeRepeated}, Schedules{}, day, clock.NewFake(now))
 	runState := reviewCounter{
-		was: map[string]cachefile.Run{
+		was: map[string]review.RunCache{
 			"04-cached-repeat": {
 				Name: "04-cached-repeat",
 				Size: len(raw1) + len(raw2),
@@ -755,7 +754,7 @@ func TestCountReviewsInternalsAndErrors(t *testing.T) {
 		},
 	}
 	runFailLazy := reviewCounter{
-		was: map[string]cachefile.Run{
+		was: map[string]review.RunCache{
 			"04-cached-repeat": {
 				Name: "04-cached-repeat",
 				Size: 10,
@@ -1502,7 +1501,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	if _, ok := sCache.readRemembered(ctx, v, nil, "m"); ok {
 		t.Fatal("expected false on invalid Last timestamp in schedule cache")
 	}
-	if read([]cachefile.File{{Name: "a", Size: 10}}, []ports.Entry{{Run: "b", Size: 10}}) {
+	if read([]review.FileCache{{Name: "a", Size: 10}}, []ports.Entry{{Run: "b", Size: 10}}) {
 		t.Fatal("expected read() false when file names differ")
 	}
 

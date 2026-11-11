@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cachefile"
 )
 
 // countedVersion is the shape of the cache file. A cache of another shape is
@@ -72,7 +71,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 	run := reviewCounter{
 		was: u.readRemembered(ctx, v),
-		now: cachefile.Counts{V: countedVersion, Runs: nil},
+		now: review.CountsCache{V: countedVersion, Runs: nil},
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Streak is always overwritten from the day tallies before return."
 		out:        ReviewCounts{Days: make(map[string]review.Tally), Due: nil, Retained: nil, Streak: 0, Answered: 0},
 		countedIDs: make(map[string]bool),
@@ -104,8 +103,8 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 // reviewCounter is the state of one counting over the runs of a log.
 type reviewCounter struct {
-	was        map[string]cachefile.Run
-	now        cachefile.Counts
+	was        map[string]review.RunCache
+	now        review.CountsCache
 	out        ReviewCounts
 	countedIDs map[string]bool
 	coming     bool
@@ -128,7 +127,7 @@ func (u CountReviews) countFile(
 		didOpen = true
 	}
 	if isStale {
-		one = cachefile.Run{
+		one = review.RunCache{
 			Name: file.Run,
 			Size: ran.Size,
 			Days: review.GetDayTallies(u.day, ran.Answers),
@@ -226,7 +225,7 @@ func (u CountReviews) getDueAndRetained(
 	return falls, target.GetHistory().GetRetained(u.schedules.scheduler, u.day), nil
 }
 
-func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[string]cachefile.Run {
+func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[string]review.RunCache {
 	if u.Cache == nil {
 		return nil
 	}
@@ -234,22 +233,22 @@ func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[st
 	if err != nil {
 		return nil
 	}
-	was, err := cachefile.DecodeCounts(raw)
+	was, err := review.DecodeCounts(raw)
 	if err != nil || was.V != countedVersion {
 		return nil
 	}
-	out := make(map[string]cachefile.Run, len(was.Runs))
+	out := make(map[string]review.RunCache, len(was.Runs))
 	for _, one := range was.Runs {
 		out[one.Name] = one
 	}
 	return out
 }
 
-func (u CountReviews) remember(ctx context.Context, v domain.Vault, now cachefile.Counts) {
+func (u CountReviews) remember(ctx context.Context, v domain.Vault, now review.CountsCache) {
 	if u.Cache == nil {
 		return
 	}
-	raw, err := cachefile.EncodeCounts(now)
+	raw, err := review.EncodeCounts(now)
 	// gomutants:disable-next-line BRANCH_IF reason="Marshaling the counts cache with primitive and map fields cannot fail."
 	if err != nil {
 		return

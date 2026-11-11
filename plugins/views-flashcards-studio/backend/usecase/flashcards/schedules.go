@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cachefile"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
@@ -241,7 +240,7 @@ func (u Schedules) readRemembered(
 	if err != nil {
 		return nil, false
 	}
-	was, err := cachefile.DecodeSchedules(raw)
+	was, err := review.DecodeSchedules(raw)
 	if err != nil {
 		return nil, false
 	}
@@ -267,7 +266,7 @@ func (u Schedules) readRemembered(
 	return out, true
 }
 
-func read(was []cachefile.File, files []ports.Entry) bool {
+func read(was []review.FileCache, files []ports.Entry) bool {
 	if len(was) != len(files) {
 		return false
 	}
@@ -286,12 +285,12 @@ func (u Schedules) remember(
 	if u.Cache == nil {
 		return
 	}
-	now := cachefile.Schedules{V: keptVersion, By: mark, Files: nil, ReviewCards: nil}
+	now := review.SchedulesCache{V: keptVersion, By: mark, Files: nil, ReviewCards: nil}
 	for _, one := range files {
-		now.Files = append(now.Files, cachefile.File{Name: one.Run, Size: one.Size})
+		now.Files = append(now.Files, review.FileCache{Name: one.Run, Size: one.Size})
 	}
 	for on, s := range out {
-		now.ReviewCards = append(now.ReviewCards, cachefile.Schedule{
+		now.ReviewCards = append(now.ReviewCards, review.ScheduleCache{
 			Card: on.Card, Template: on.Template,
 			Due:  s.Due.UTC().Format(review.TimestampLayout),
 			Last: s.Last.UTC().Format(review.TimestampLayout),
@@ -299,14 +298,14 @@ func (u Schedules) remember(
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		})
 	}
-	slices.SortFunc(now.ReviewCards, func(a, b cachefile.Schedule) int {
+	slices.SortFunc(now.ReviewCards, func(a, b review.ScheduleCache) int {
 		if a.Card != b.Card {
 			return strings.Compare(a.Card, b.Card)
 		}
 		return strings.Compare(a.Template, b.Template)
 	})
 
-	raw, err := cachefile.EncodeSchedules(now)
+	raw, err := review.EncodeSchedules(now)
 	// gomutants:disable-next-line BRANCH_IF reason="Marshaling the schedules cache with primitive fields cannot fail."
 	if err != nil {
 		return

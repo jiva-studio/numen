@@ -1,4 +1,7 @@
 // Package numbered holds the numbered lines of a text, the batches they are sent in, and the digest of a recording.
+// It builds the text and the instructions the model is asked about, reads a model reply into corrections (refusing a
+// reply that breaks the rules and gathering the corrections of overlapping batches), and reads the lines and pages of
+// text segments and puts corrected lines back into them.
 package numbered
 
 // Line is one numbered run of words. Last is the final line number of a run put
