@@ -6,8 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/domain/epub"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/domain/epub/cfi"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/cfi"
 )
 
 // placedBook is the book a place was last requested of, retained while its file is the same bytes: the tab

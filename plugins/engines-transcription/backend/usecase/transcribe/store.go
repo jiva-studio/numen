@@ -2,7 +2,6 @@ package transcribe
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -29,13 +28,6 @@ func getReachedName(key string) string { return key + ".reached" }
 
 func isWholeFile(version domain.TextVersion) bool { return version.File == getFileName(version.Key) }
 
-// reached is how far a partial transcript got: the millisecond of the recording, and the size of
-// the partial file at that moment.
-type reached struct {
-	MS   int   `json:"ms"`
-	Size int64 `json:"size"`
-}
-
 func (t transcripts) hasWhole(ctx context.Context, key string) (bool, error) {
 	_, err := t.store.Read(ctx, getFileName(key))
 	if errors.Is(err, host.ErrNotExist) {
@@ -52,8 +44,8 @@ func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	var progress reached
-	if err := json.Unmarshal(raw, &progress); err != nil {
+	progress, err := transcript.ParseReached(raw)
+	if err != nil {
 		return 0, errors.Join(t.store.Delete(ctx, getPartialName(key)), t.store.Delete(ctx, getReachedName(key)))
 	}
 	partial, err := t.store.Read(ctx, getPartialName(key))
@@ -85,8 +77,8 @@ func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcr
 	if err != nil {
 		return err
 	}
-	raw, err := json.Marshal(reached{MS: ms, Size: int64(len(partial))})
-	// gomutants:disable-next-line BRANCH_IF reason="json.Marshal of integer struct reached cannot fail"
+	raw, err := transcript.Reached{MS: ms, Size: int64(len(partial))}.Encode()
+	// gomutants:disable-next-line BRANCH_IF reason="Reached encodes two integers cannot fail"
 	if err != nil {
 		return err
 	}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/progress"
 )
 
 // VersionKey is the key the plugin keeps the recognition of a file under: one recognition a file.
@@ -348,12 +349,12 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 	return putVersion(ctx, on, rec)
 }
 
-func keepOrRestart(rec *record, path, inputHash string, model Model, pageCount int) *record {
+func keepOrRestart(rec *progress.Record, path, inputHash string, model Model, pageCount int) *progress.Record {
 	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
-	if rec.isFor(inputHash, recipe) {
+	if rec.IsFor(inputHash, recipe) {
 		return rec
 	}
-	return &record{Path: path, InputHash: inputHash, Recipe: recipe, PageCount: pageCount, Pages: nil}
+	return &progress.Record{Path: path, InputHash: inputHash, Recipe: recipe, PageCount: pageCount, Pages: nil}
 }
 
 // pageReading is what the pages of one file are read with.
@@ -365,7 +366,7 @@ type pageReading struct {
 	task       *host.Task
 }
 
-func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record) error {
+func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *progress.Record) error {
 	on.task.TotalCount, on.task.CompletedCount = int64(rec.PageCount), int64(len(rec.Pages))
 	if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
 		return err
@@ -393,29 +394,29 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 	return nil
 }
 
-func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
+func putVersion(ctx context.Context, on reach, rec *progress.Record) (Result, error) {
 	store := on.store
-	text, err := rec.getText()
+	text, err := rec.GetText()
 	if err != nil {
 		return Result{}, err
 	}
 	if strings.TrimSpace(text.Text) == "" {
-		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
+		if err := store.Delete(ctx, progress.GetRecordName(rec.Path)); err != nil {
 			return Result{}, err
 		}
 		return Result{Pages: rec.PageCount, IsEmpty: true}, nil
 	}
-	file := getVersionName(rec.Path)
+	file := progress.GetVersionName(rec.Path)
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
 		return Result{}, err
 	}
 	_, err = on.texts.PutVersion(ctx, host.TextPut{
-		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, InputHash: rec.InputHash, File: file,
+		Path: rec.Path, Key: VersionKey, Source: "", Kind: progress.TextKind, InputHash: rec.InputHash, File: file,
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("report the recognition of %s: %w", rec.Path, err)
 	}
-	if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
+	if err := store.Delete(ctx, progress.GetRecordName(rec.Path)); err != nil {
 		return Result{}, err
 	}
 	return Result{Pages: rec.PageCount, IsEmpty: false}, nil

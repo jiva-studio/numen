@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/domain/epub"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/domain/segments"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/segments"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 )
 

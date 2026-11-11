@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/progress"
 )
 
 func encodeTestPNG(t *testing.T) string {
@@ -132,7 +133,7 @@ func (s *stubStore) Read(ctx context.Context, name string) ([]byte, error) {
 
 func (s *stubStore) Write(ctx context.Context, name string, data []byte) error {
 	if strings.HasSuffix(name, ".progress.json") {
-		var rec record
+		var rec progress.Record
 		if err := json.Unmarshal(data, &rec); err == nil {
 			s.recordedLengths = append(s.recordedLengths, len(rec.Pages))
 		}
@@ -185,36 +186,13 @@ func TestReadRecordHandlesErrorsAndCorruptJSON(t *testing.T) {
 	}
 }
 
-func TestRecordIsForChecksHashAndRecipe(t *testing.T) {
-	var nilRec *record
-	if nilRec.isFor("h1", "r1") {
-		t.Fatal("nil record matched")
-	}
-	rec := &record{InputHash: "h1", Recipe: "r1"}
-	if !rec.isFor("h1", "r1") {
-		t.Fatal("matching hash and recipe returned false")
-	}
-	if rec.isFor("h2", "r1") {
-		t.Fatal("mismatched hash returned true")
-	}
-	if rec.isFor("h1", "r2") {
-		t.Fatal("mismatched recipe returned true")
-	}
-}
-
-func TestRecordGetTextPropagatesSelectorError(t *testing.T) {
-	rec := &record{
+func TestPutVersionPropagatesSelectorError(t *testing.T) {
+	rec := &progress.Record{
 		Path:      "books/scan.pdf",
 		InputHash: "h1",
 		Recipe:    "r1",
 		PageCount: 1,
-		Pages:     [][]part{{{Text: "bad", Rects: [][4]float32{{float32(math.NaN()), 0, 1, 1}}}}},
-	}
-	if _, err := rec.getTextSegments(0); err == nil {
-		t.Fatal("getTextSegments succeeded on NaN rect")
-	}
-	if _, err := rec.getText(); err == nil {
-		t.Fatal("getText succeeded on NaN rect")
+		Pages:     [][]progress.Part{{{Text: "bad", Rects: [][4]float32{{float32(math.NaN()), 0, 1, 1}}}}},
 	}
 	v := hosttest.New("Physics")
 	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
@@ -294,7 +272,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rec := &record{Path: "books/scan.pdf", InputHash: "h1", Recipe: "r1", PageCount: 9}
+	rec := &progress.Record{Path: "books/scan.pdf", InputHash: "h1", Recipe: "r1", PageCount: 9}
 	task := &host.Task{ID: "recognize:books/scan.pdf"}
 	err = r.readPages(t.Context(), pageReading{
 		doc:        stubDocument{pages: 9},
@@ -327,20 +305,20 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	}
 	if err := rInitErr.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 1}, recogniser: recEngine, dpi: 72, store: s, task: &host.Task{},
-	}, &record{PageCount: 1}); err == nil {
+	}, &progress.Record{PageCount: 1}); err == nil {
 		t.Fatal("readPages succeeded when initial ReportTask failed")
 	}
 
 	if err := r.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 1, renderErr: errors.New("render failed")}, recogniser: recEngine, dpi: 72, store: s, task: &host.Task{},
-	}, &record{PageCount: 1}); err == nil {
+	}, &progress.Record{PageCount: 1}); err == nil {
 		t.Fatal("readPages succeeded when RenderPage failed")
 	}
 
 	recSentinel := errors.New("ocr engine fault")
 	err = r.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 1}, recogniser: &stubRecogniser{err: recSentinel}, dpi: 72, store: s, task: &host.Task{},
-	}, &record{Path: "books/scan.pdf", PageCount: 1})
+	}, &progress.Record{Path: "books/scan.pdf", PageCount: 1})
 	if !errors.Is(err, recSentinel) || !strings.Contains(err.Error(), "recognize page 1 of books/scan.pdf") {
 		t.Fatalf("readPages recognize error = %v", err)
 	}
@@ -348,7 +326,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	sWriteErr := &stubStore{Folder: v.Store(), writeErr: errors.New("store write failed")}
 	if err := r.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 8}, recogniser: recEngine, dpi: 72, store: sWriteErr, task: &host.Task{},
-	}, &record{Path: "books/scan.pdf", PageCount: 8}); err == nil {
+	}, &progress.Record{Path: "books/scan.pdf", PageCount: 8}); err == nil {
 		t.Fatal("readPages succeeded when batch writeRecord failed")
 	}
 
@@ -361,7 +339,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	}
 	if err := rStepErr.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 1}, recogniser: recEngine, dpi: 72, store: s, task: &host.Task{},
-	}, &record{PageCount: 1}); err == nil {
+	}, &progress.Record{PageCount: 1}); err == nil {
 		t.Fatal("readPages succeeded when step ReportTask failed")
 	}
 }
@@ -371,17 +349,17 @@ func TestRecognitionVersionStorage(t *testing.T) {
 	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
 	texts.SetStore("md.numen.engines.ocr", v.Store())
 
-	emptyRec := &record{Path: "books/scan.pdf", InputHash: "h1", PageCount: 1}
+	emptyRec := &progress.Record{Path: "books/scan.pdf", InputHash: "h1", PageCount: 1}
 	delErrStore := &stubStore{Folder: v.Store(), deleteErr: errors.New("delete failed")}
 	if _, err := putVersion(t.Context(), reach{vault: v, store: delErrStore, texts: texts}, emptyRec); err == nil {
 		t.Fatal("putVersion on empty record succeeded when Delete failed")
 	}
 
-	fullRec := &record{
+	fullRec := &progress.Record{
 		Path:      "books/scan.pdf",
 		InputHash: "h1",
 		PageCount: 1,
-		Pages:     [][]part{{{Text: "some text\n\n"}}},
+		Pages:     [][]progress.Part{{{Text: "some text\n\n"}}},
 	}
 	writeErrStore := &stubStore{Folder: v.Store(), writeErr: errors.New("write failed")}
 	if _, err := putVersion(t.Context(), reach{vault: v, store: writeErrStore, texts: texts}, fullRec); err == nil {

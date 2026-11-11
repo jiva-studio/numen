@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/domain/epub"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
 // maxCachedBooks is the most books a bookCache keeps open.

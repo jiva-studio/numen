@@ -1,0 +1,202 @@
+package epub_test
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"golang.org/x/net/html"
+
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
+)
+
+// updateFlag names the flag that rewrites the goldens and compares against none of them.
+const updateFlag = "update"
+
+func TestMain(m *testing.M) {
+	flag.Bool(updateFlag, false, "write the goldens of the corpus again")
+	flag.Parse()
+	os.Exit(m.Run())
+}
+
+func isUpdating() bool {
+	return flag.Lookup(updateFlag).Value.String() == "true"
+}
+
+// spineCorpus is one spine document as this package emits it, which the window
+// that renders it is tested against. It is stored with the corpora both sides
+// share: it is the one thing about a book that crosses as neither the
+// schema nor bytes: an attribute name, a set of elements, an escaping and a set
+// of offsets, agreed on by a producer here and a reader there.
+const spineCorpus = "../../frontend/testdata/spine.html"
+
+// middleDoc is the document the corpus is taken from. A document precedes it
+// in the spine, so its offsets start at a non-zero position.
+const middleDoc = "OEBPS/middle.xhtml"
+
+// textGolden is the whole of one book as this package reads it: the text, and
+// the position of every document, part and printed page. A chunk stores an
+// offset into that text, not the text itself, so a byte moving here moves
+// every chunk split before it, and the reader name has to change with it.
+const textGolden = "testdata/seam.text"
+
+// A change meaning to move the text moves this file with it, under -update, and
+// the diff is what it moved.
+func TestABookIsReadAsTheGoldenReturnsItIs(t *testing.T) {
+	got := formatGolden(read(t, seamBook(t)))
+	if isUpdating() {
+		if err := os.WriteFile(textGolden, []byte(got), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	want, err := os.ReadFile(textGolden)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != string(want) {
+		t.Fatalf("the book is read as\n%s\nand the golden says\n%s", got, want)
+	}
+}
+
+func formatGolden(book *epub.Book) string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "title\t%s\ntier\t%s\nlayout\t%s\ndirection\t%s\nbytes\t%d\npage\t%d\npages\t%d\n",
+		book.Title, book.Tier, book.Layout, book.Direction, len(book.Text), book.PageBytes(), book.PageCount())
+	out.WriteString("\ndocuments\n")
+	for _, doc := range book.Documents {
+		fmt.Fprintf(&out, "\t%d\t%d\t%v\t%s\n", doc.Offset, doc.Length, doc.IsLinear, doc.Path)
+	}
+	out.WriteString("\nparts\n")
+	for _, part := range book.Parts {
+		fmt.Fprintf(&out, "\t%d\t%d\t%s\n", part.Offset, part.Level, part.Title)
+	}
+	out.WriteString("\nprinted\n")
+	for _, page := range book.Pages {
+		fmt.Fprintf(&out, "\t%d\t%s\n", page.Offset, page.Label)
+	}
+	fmt.Fprintf(&out, "\ntext\n%s", book.Text)
+	return out.String()
+}
+
+// A change meaning to move the markup moves this file with it, under -update,
+// and the diff is what it moved.
+func TestASpineDocumentCrossesAsTheCorpusReturnsItDoes(t *testing.T) {
+	got := seamMarkup(t).HTML() + "\n"
+	if isUpdating() {
+		if err := os.WriteFile(spineCorpus, []byte(got), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	want, err := os.ReadFile(spineCorpus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != string(want) {
+		t.Fatalf("the document crosses as\n%s\nand the corpus says\n%s", got, want)
+	}
+}
+
+// so the window reading them off it is reading the book's own numbers.
+func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
+	book := read(t, seamBook(t))
+	markup := seamMarkup(t)
+
+	runs := offsets(t, parseHTML(t, markup.HTML()))
+	if len(runs) == 0 {
+		t.Fatal("the corpus says no offsets")
+	}
+	if markup.Offset == 0 {
+		t.Error("the corpus is taken from the first document, and its offsets say nothing")
+	}
+	var out strings.Builder
+	for _, run := range runs {
+		if !strings.HasPrefix(book.Text[run.offset:], run.text) {
+			t.Errorf("a run says it begins at %d, where the text is %q",
+				run.offset, excerpt(book.Text, run.offset))
+		}
+		out.WriteString(run.text)
+	}
+	if want := book.Text[markup.Offset : markup.Offset+markup.Length]; out.String() != want {
+		t.Errorf("the runs say\n%q\nand the document is\n%q", out.String(), want)
+	}
+}
+
+// A picture is drawn from an entry of the archive, so the address the markup
+// names it by is the name that entry is answered under.
+func TestAPictureIsNamedByTheEntryItIsGeneratedFrom(t *testing.T) {
+	book := read(t, seamBook(t))
+	markup := seamMarkup(t)
+
+	named := pictures(parseHTML(t, markup.HTML()))
+	if len(named) == 0 {
+		t.Fatal("the document draws no picture")
+	}
+	for _, name := range named {
+		if _, err := book.Entry(name); err != nil {
+			t.Errorf("the markup draws %q, and the archive answers %v", name, err)
+		}
+	}
+}
+
+// A link inside the book names a document of the book, or a place in the
+// document being read. Either is a move within the book and never an address
+// the window is sent to.
+func TestALinkInsideTheBookNamesADocumentOrAPlaceInThisOne(t *testing.T) {
+	book := read(t, seamBook(t))
+	targetVal := map[string]bool{}
+	for _, doc := range book.Documents {
+		targetVal[doc.Path] = true
+	}
+
+	var within, down, away int
+	for _, found := range elements(parseHTML(t, seamMarkup(t).HTML()), "a") {
+		href := getAttribute(found, "href")
+		target, fragment, _ := strings.Cut(href, "#")
+		switch {
+		case strings.Contains(target, ":"):
+			away++
+		case target != "":
+			if !targetVal[target] {
+				t.Errorf("a link names %q, and the book is not read in it", target)
+			}
+			within++
+		case fragment != "":
+			down++
+		default:
+			t.Errorf("a link carries %q, which leads nowhere", href)
+		}
+	}
+	if within == 0 || down == 0 || away == 0 {
+		t.Errorf("the corpus carries %d links to another document, %d to a place in this one and %d out of the book",
+			within, down, away)
+	}
+}
+
+func seamMarkup(t *testing.T) *epub.Markup {
+	t.Helper()
+	rendered, err := read(t, seamBook(t)).Markup(middleDoc)
+	if err != nil {
+		t.Fatalf("markup: %v", err)
+	}
+	return rendered
+}
+
+func seamBook(t *testing.T) []byte {
+	t.Helper()
+	return buildReversedArchive(t, partsIn(t, filepath.Join("testdata", "seam")))
+}
+
+func pictures(root *html.Node) []string {
+	var out []string
+	for _, found := range elements(root, "img") {
+		if src := getAttribute(found, "src"); src != "" && !strings.HasPrefix(src, "data:") {
+			out = append(out, src)
+		}
+	}
+	return out
+}
