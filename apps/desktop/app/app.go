@@ -326,7 +326,9 @@ func connectWindow(
 ) {
 	opened.SetFolderDialog(folderdialog.New(window))
 
-	naming := func(open windowdomain.OpenTabs) { window.SetTitle(getWindowTitle(opened.State.GetCurrentVault(), open)) }
+	naming := func(open windowdomain.OpenTabs) {
+		window.SetTitle(getWindowTitle(opened.State.GetCurrentVault(), open))
+	}
 	opened.State.NotifyOpenTabs = naming
 
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
