@@ -24,8 +24,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"

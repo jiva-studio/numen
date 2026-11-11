@@ -12,7 +12,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -21,10 +20,7 @@ import (
 	manifestdomain "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func CreateTestPluginTree(t *testing.T, dir string) {

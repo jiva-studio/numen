@@ -55,11 +55,11 @@ func TestVaultSwitchAfterPluginOpenFailsDuringUserClose(t *testing.T) {
 	var finishedOpen *windowsession.PluginOpen
 	f.installation.WrapPluginSwitch(func(windowsession.VaultSwitch) windowsession.VaultSwitch {
 		return switchFunc(func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
-		mu.Lock()
-		if pluginOpenCtx == nil {
-			pluginOpenCtx, finishedOpen = ctx, open
-		}
-		mu.Unlock()
+			mu.Lock()
+			if pluginOpenCtx == nil {
+				pluginOpenCtx, finishedOpen = ctx, open
+			}
+			mu.Unlock()
 			return f.installation.Show(ctx, v, open)
 		})
 	})

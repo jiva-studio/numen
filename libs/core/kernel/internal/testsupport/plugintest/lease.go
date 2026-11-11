@@ -58,4 +58,3 @@ type CompleterFunc func(ctx context.Context, question completion.Question) (stri
 func (f CompleterFunc) Complete(ctx context.Context, _ string, question completion.Question) (string, error) {
 	return f(ctx, question)
 }
-

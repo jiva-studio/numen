@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-
 )
 
 func getHeldWords() []string {

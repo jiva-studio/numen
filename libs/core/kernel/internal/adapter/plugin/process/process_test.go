@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
 
 func TestEnvironmentSanitization(t *testing.T) {
