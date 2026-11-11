@@ -780,15 +780,68 @@ const flags = async () => {
 const CLI = new URL('../../../libs/core/kernel/adapter/cli/', import.meta.url)
 
 /**
+ * The text the command line prints when asked for help, put together the way
+ * it puts it together: `usageHead`, the synopsis of each built-in command in
+ * the order the registry lists them, then `usageTail`. A synopsis is the string
+ * returned by the `Synopsis` method of a command type; the vault subcommands
+ * are listed in `newVaultCommand`. Commands the plugins declare are not in the
+ * source, so they are not on this page.
+ */
+const getUsageText = async () => {
+  const constant = (source, name) => {
+    const found = source.match(new RegExp('const ' + name + ' = `([^`]*)`'))
+    if (!found) die(`cli.go no longer defines ${name}`)
+    return found[1]
+  }
+
+  const cliSource = await read(CLI, 'cli.go')
+  const head = constant(cliSource, 'usageHead')
+  const tail = constant(cliSource, 'usageTail')
+  if (!head.includes('usage:')) die('cli.go no longer prints a usage string')
+
+  const names = (await readdir(CLI)).filter((n) => n.endsWith('.go') && !n.endsWith('_test.go'))
+  const synopses = new Map()
+  const method =
+    /func \((?:\w+ )?(\w+)\) Synopsis\(\) string \{\s*return ("(?:[^"\\\n]|\\.)*"|`[^`]*`)\s*\}/g
+  for (const name of names) {
+    for (const [, type, literal] of (await read(CLI, name)).matchAll(method)) {
+      synopses.set(type, literal.startsWith('`') ? literal.slice(1, -1) : JSON.parse(literal))
+    }
+  }
+
+  const typesIn = (source, from) => {
+    const start = source.indexOf(from)
+    if (start === -1) die(`the cli package no longer has ${from}`)
+    const end = source.indexOf('\n}', start)
+    return [...source.slice(start, end).matchAll(/^\t\t(\w+)\{/gm)].map((one) => one[1])
+  }
+
+  const vault = typesIn(await read(CLI, 'vault.go'), 'func newVaultCommand')
+  const builtin = []
+  for (const type of typesIn(await read(CLI, 'command.go'), 'func getBuiltinCommands')) {
+    if (type !== 'helpCommand') builtin.push(type)
+  }
+  if (!(await read(CLI, 'command.go')).includes('newVaultCommand(deps)')) {
+    die('command.go no longer lists the vault commands')
+  }
+  const commands = [...vault, ...builtin]
+
+  const lines = commands.map((type) => {
+    const synopsis = synopses.get(type)
+    if (!synopsis) die(`${type} has no synopsis the manual can read`)
+    return synopsis
+  })
+  return head + lines.join('\n') + '\n' + tail
+}
+
+/**
  * What the command line says it takes, out of the one string it prints when
  * asked. Two of its blocks are read: the commands, and the options standing
  * over all of them. The line above them says what the program is, which is
  * prose and is written on the page.
  */
 const cli = async () => {
-  const source = await read(CLI, 'cli.go')
-  const usage = source.match(/const usage = `([\s\S]*?)`/)
-  if (!usage) die('cli.go no longer prints a usage string')
+  const usage = [null, await getUsageText()]
 
   /** Where a command stands. Anything further in is a line, not an entry. */
   const LEFT = 2
