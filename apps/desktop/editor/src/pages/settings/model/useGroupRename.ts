@@ -1,10 +1,5 @@
 import { onMounted, ref } from 'vue'
-import {
-  MAX_NAME_LENGTH,
-  isGroupNameTaken,
-  isNameTooLong,
-  trimName,
-} from '@/entities/settings'
+import { MAX_NAME_LENGTH, isGroupNameTaken, isNameTooLong, trimName } from '@/entities/settings'
 import { WORDS as words } from '../words'
 import { runAfterRender } from './afterRender'
 

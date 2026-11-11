@@ -34,7 +34,6 @@ const input = useTemplateRef<InstanceType<typeof SecretInput>>('input')
 const stateId = useId()
 const failureId = useId()
 const describedBy = computed(() => (hasFailed.value ? `${stateId} ${failureId}` : stateId))
-
 </script>
 
 <template>

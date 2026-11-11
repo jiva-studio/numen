@@ -13,7 +13,14 @@ import {
 } from '@/features/command-palette'
 import { getVaultList } from '@/features/window-display'
 import type { Command } from '@/entities/command'
-import { createCommandNoteReader, createItemLists, createPluginCommandPort, usePluginCommands, watchCommandLists, type DeclaredCommands } from '@/features/plugin-commands'
+import {
+  createCommandNoteReader,
+  createItemLists,
+  createPluginCommandPort,
+  usePluginCommands,
+  watchCommandLists,
+  type DeclaredCommands,
+} from '@/features/plugin-commands'
 import { createCommandIconFinder, createSearchMenu } from '@/features/plugin-host'
 import type { CommandRegistry, CommandTarget, Notes } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'

@@ -36,7 +36,6 @@ const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
 function onBack(): void {
   emit('back')
 }
-
 </script>
 
 <template>

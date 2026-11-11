@@ -7,7 +7,9 @@ import { getPaletteId, type DeclaredCommand } from '@/entities/plugin'
 export const createCommandIconFinder =
   (
     pluginHost: Pick<PluginHost, 'commands'>,
-    declaredCommands: { readonly commands: { readonly value: readonly DeclaredCommand[] | undefined } },
+    declaredCommands: {
+      readonly commands: { readonly value: readonly DeclaredCommand[] | undefined }
+    },
   ) =>
   (id: string): Component | undefined => {
     const name =
