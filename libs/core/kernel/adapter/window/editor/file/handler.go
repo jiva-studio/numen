@@ -24,7 +24,7 @@ type Tree interface {
 	PublishChange(paths ...string)
 }
 
-// IndexFollow tells whether the index followed a write.
+// IndexFollow reports whether the index followed a write.
 type IndexFollow interface {
 	IsIndexOutdated(err error) bool
 }

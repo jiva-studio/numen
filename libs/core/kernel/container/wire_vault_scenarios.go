@@ -63,9 +63,9 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 	}
 	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}.File(ctx, path)
 }
-
 // noteViews are the viewers that receive what a person or a program does to the notes, the gate the writes
-// pass, and what tells whether the index followed a write. A nil view receives no one; a nil Follow takes the
+// pass, and the report of whether the index followed a write. A nil view receives no one; a nil Follow takes
+// the index to follow every write.
 // index to follow every write.
 type noteViews struct {
 	Moves  note.TellMove
