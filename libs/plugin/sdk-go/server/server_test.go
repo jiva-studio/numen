@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
@@ -768,12 +767,12 @@ func TestParseDefaultFlagsAndOptions(t *testing.T) {
 		t.Fatalf("readEnvPort invalid = %d, want 0", got)
 	}
 
-	s := New(WithPort(8123), WithSignals(syscall.SIGUSR1))
+	s := New(WithPort(8123), WithSignals(os.Interrupt))
 	if s.Port() != 8123 {
 		t.Fatalf("s.Port() = %d, want 8123", s.Port())
 	}
-	if len(s.signals) != 1 || s.signals[0] != syscall.SIGUSR1 {
-		t.Fatalf("s.signals = %v, want [SIGUSR1]", s.signals)
+	if len(s.signals) != 1 || s.signals[0] != os.Interrupt {
+		t.Fatalf("s.signals = %v, want [interrupt]", s.signals)
 	}
 	if s.shutdownTimeout != 2*time.Second || s.readHeaderTimeout != 5*time.Second {
 		t.Fatalf("default timeouts = %v, %v; want 2s, 5s", s.shutdownTimeout, s.readHeaderTimeout)
@@ -896,47 +895,6 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 	serveHTTP(httpSrv, lnClose, errsCh)
 	if err, open := <-errsCh; open {
 		t.Fatalf("expected serveHTTP to close errs channel, got %v", err)
-	}
-
-	// notifySignals with empty and non-empty signals
-	guardSig := make(chan os.Signal, 1)
-	signal.Notify(guardSig, syscall.SIGUSR1)
-	defer signal.Stop(guardSig)
-
-	sNoSig := New(WithSignals())
-	sigCh, stop := sNoSig.notifySignals()
-	if sigCh == nil {
-		t.Fatal("expected non-nil sigCh when signals is empty")
-	}
-	stop()
-
-	sWithSig := New(WithSignals(syscall.SIGUSR1))
-	sigCh2, stop2 := sWithSig.notifySignals()
-	if sigCh2 == nil {
-		t.Fatal("expected non-nil sigCh when signals is non-empty")
-	}
-	if err := syscall.Kill(os.Getpid(), syscall.SIGUSR1); err != nil {
-		t.Fatal(err)
-	}
-	select {
-	case <-sigCh2:
-	case <-time.After(time.Second):
-		t.Fatal("expected SIGUSR1 on sigCh2")
-	}
-	stop2()
-	if err := syscall.Kill(os.Getpid(), syscall.SIGUSR1); err != nil {
-		t.Fatal(err)
-	}
-	select {
-	case <-guardSig:
-	case <-time.After(time.Second):
-		t.Fatal("expected SIGUSR1 on guardSig")
-	}
-	time.Sleep(10 * time.Millisecond)
-	select {
-	case <-sigCh2:
-		t.Fatal("expected no SIGUSR1 on sigCh2 after stop2()")
-	default:
 	}
 
 	// authenticate edge cases

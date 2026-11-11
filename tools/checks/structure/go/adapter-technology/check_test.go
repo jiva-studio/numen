@@ -128,3 +128,28 @@ func TestConnectClientCallRule_ReadsTheClientTypeOfTheLibrary(t *testing.T) {
 		}
 	}
 }
+
+// A package nested in an adapter family that a sibling of the family imports and that implements no port holds what
+// the family shares, and calls no technology of its own. One that implements a port, one nobody in its family
+// imports, and one imported from another family are adapters and still have to call a technology.
+func TestTechnologyRule_LetsAFamilyShareItsPlumbing(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"port/storeport/store.go":                  "package storeport\n\ntype Store interface{ Save() }\n",
+		"internal/adapter/plug/lease/lease.go":     "package lease\n\ntype Lease struct{ Release func() }\n",
+		"internal/adapter/plug/store/store.go":     "package store\n\ntype Store struct{}\n\nfunc (Store) Save() {}\n",
+		"internal/adapter/plug/user/user.go":       "package user\n\nimport (\n\t\"os\"\n\n\t\"fixture/internal/adapter/plug/lease\"\n\t\"fixture/internal/adapter/plug/store\"\n)\n\nfunc Use(l lease.Lease, s store.Store) error { _ = l; s.Save(); _, err := os.ReadFile(\"x\"); return err }\n",
+		"internal/adapter/plug/lonely/lonely.go":   "package lonely\n\ntype Lonely struct{ Release func() }\n",
+		"internal/adapter/other/hollow/hollow.go":  "package hollow\n\ntype Hollow struct{ Release func() }\n",
+		"internal/adapter/other/user/user.go":      "package user\n\nimport (\n\t\"os\"\n\n\t\"fixture/internal/adapter/other/hollow\"\n)\n\nfunc Use(h hollow.Hollow) error { _ = h; _, err := os.ReadFile(\"x\"); return err }\n",
+		"internal/adapter/plug/foreign/foreign.go": "package foreign\n\nimport \"fixture/internal/adapter/other/hollow\"\n\nfunc Use(h hollow.Hollow) error { _ = h; return nil }\n",
+	})
+	found, _ := getAdapterTechnologyFindings(load.LoadFixture(t, dir), "fixture", map[string]string{})
+	want := []string{
+		"internal/adapter/plug/foreign is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"internal/adapter/plug/lonely is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"internal/adapter/plug/store is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+	}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule rejects %v, want %v", found, want)
+	}
+}

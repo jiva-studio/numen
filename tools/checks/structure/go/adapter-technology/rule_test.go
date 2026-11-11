@@ -103,8 +103,46 @@ func isDrivenAdapter(pkg *packages.Package, rel string, ports []load.PortInterfa
 	return load.GetImplementation(pkg, ports).Name != ""
 }
 
+// getAdapterFamily is the folder of the adapters that belong together, internal/adapter/<technology>, for a package nested
+// below it, and empty for any other package.
+func getAdapterFamily(rel string) string {
+	parts := strings.Split(rel, "/")
+	if len(parts) < 4 || !load.IsWithin(rel, "internal/adapter") {
+		return ""
+	}
+	return strings.Join(parts[:3], "/")
+}
+
+// getSharedPlumbing lists the packages nested in an adapter family that another package of the same family imports and
+// that implement no port. They hold what the adapters of the family share, such as a lease or a null object, and
+// are no adapter of a technology themselves.
+func getSharedPlumbing(pkgs []*packages.Package, root string, ports []load.PortInterface) map[string]bool {
+	shared := map[string]bool{}
+	for _, pkg := range pkgs {
+		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
+		family := getAdapterFamily(rel)
+		if family == "" {
+			continue
+		}
+		for path := range pkg.Imports {
+			imported := strings.TrimPrefix(strings.TrimPrefix(path, root), "/")
+			if imported != rel && getAdapterFamily(imported) == family {
+				shared[imported] = true
+			}
+		}
+	}
+	for _, pkg := range pkgs {
+		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
+		if shared[rel] && load.GetImplementation(pkg, ports).Name != "" {
+			delete(shared, rel)
+		}
+	}
+	return shared
+}
+
 func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free map[string]string) (found []string, driven int) {
 	ports := load.ListPortInterfaces(pkgs, root)
+	shared := getSharedPlumbing(pkgs, root, ports)
 	for _, pkg := range pkgs {
 		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
 		isInternalAdapter := load.IsWithin(rel, "internal/adapter")
@@ -121,7 +159,7 @@ func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free ma
 		switch {
 		case isDriving && isInternalAdapter:
 			found = append(found, rel+" calls a use case: a driving adapter lives under adapter/")
-		case isDriving:
+		case isDriving, shared[rel]:
 		default:
 			driven++
 			if _, isFree := free[rel]; !isFree && !isCallingTechnology(pkg) {
