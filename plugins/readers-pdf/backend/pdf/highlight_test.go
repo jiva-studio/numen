@@ -20,6 +20,7 @@ const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
 // failOnReport fails the test with a background failure of the pool.
 func failOnReport(tb testing.TB) func(string, error) {
+	tb.Helper()
 	return func(what string, err error) { tb.Errorf("%s: %v", what, err) }
 }
 
