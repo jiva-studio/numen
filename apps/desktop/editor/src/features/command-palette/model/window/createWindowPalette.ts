@@ -5,8 +5,7 @@
  */
 import type { Ref } from 'vue'
 import type { Command } from '@/entities/command'
-import type { CommandDeps, CommandTarget, RunSupport } from '@/shared/model/command'
-import type { MessageWriter } from '@/shared/model/notices/messages'
+import type { CommandDeps, CommandTarget } from '@/shared/model/command'
 import { WORDS } from '@/shared/ui/words'
 import { searchCore } from '../../api/search'
 import type { CommandsDeps, NoteLookup, PaletteLists } from '../../types'
@@ -26,17 +25,20 @@ export interface PluginPaletteLists {
   readonly resetWhenClosed: (isOpen: Readonly<Ref<boolean>>) => void
 }
 
+/** What the plugins add to the palettes: their lists, the commands they list and the commands they run. */
+export interface PluginPaletteParts {
+  readonly lists: PluginPaletteLists
+  /** The commands the palette of the commands lists, before the empty ones are left out. */
+  readonly getCommands: () => readonly Command[]
+  readonly pluginCommands: PluginCommandPort
+}
+
 /** What the palettes of the window are made from. */
 export interface WindowPaletteDeps {
   readonly commandDeps: CommandDeps
-  readonly runs: RunSupport
   readonly getTarget: () => CommandTarget
-  readonly writeMessage: MessageWriter
-  /** The commands the palette of the commands lists, before the empty ones are left out. */
-  readonly getCommands: () => readonly Command[]
   readonly knows: NoteLookup
-  readonly lists: PluginPaletteLists
-  readonly pluginCommands: PluginCommandPort
+  readonly plugin: PluginPaletteParts
   readonly searchRequests: ReturnType<typeof createSearchRequests>
   readonly searchOptions: Pick<SearchOptions, 'coverage' | 'menu'>
   /** The vaults the installation holds. */
@@ -44,7 +46,8 @@ export interface WindowPaletteDeps {
 }
 
 export function createWindowPalette(deps: WindowPaletteDeps) {
-  const { commandDeps, getTarget, writeMessage, lists } = deps
+  const { commandDeps, getTarget, plugin } = deps
+  const { lists } = plugin
   const words = { ...WORDS, ...PALETTE_WORDS }
   const search = useSearch(searchCore, words, { ...deps.searchOptions, getTarget })
   const commands = createCommandPalette({
@@ -53,8 +56,8 @@ export function createWindowPalette(deps: WindowPaletteDeps) {
     at: getTarget,
     knows: deps.knows,
     lists: lists.lists,
-    runs: deps.runs,
-    getCommands: () => lists.removeEmptyCommands(deps.getCommands()),
+    runs: commandDeps.runSupport,
+    getCommands: () => lists.removeEmptyCommands(plugin.getCommands()),
   })
   lists.resetWhenClosed(commands.palette.open)
   const paletteSwitch = createPaletteSwitch(commands, search)
@@ -62,9 +65,9 @@ export function createWindowPalette(deps: WindowPaletteDeps) {
   const { runCommand, runCommandToEnd } = createCommandRunner({
     commands,
     closeSearch: paletteSwitch.closeSearch,
-    pluginCommands: deps.pluginCommands,
+    pluginCommands: plugin.pluginCommands,
     getCommandDeps: () => commandDeps,
-    writeMessage,
+    writeMessage: commandDeps.writeMessage,
   })
   return {
     search,
@@ -74,7 +77,7 @@ export function createWindowPalette(deps: WindowPaletteDeps) {
       runCommand,
       runCommandToEnd,
       runChoice: createChoiceRunner(runCommand, getTarget),
-      runWithValues: createValuesRunner(commandDeps, writeMessage),
+      runWithValues: createValuesRunner(commandDeps, commandDeps.writeMessage),
     },
   }
 }

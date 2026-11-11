@@ -198,13 +198,9 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
   })
   const { search, commands, paletteSwitch, runs } = createWindowPalette({
     commandDeps,
-    runs: options.runs,
     getTarget,
-    writeMessage,
-    getCommands: () => pluginPalette.sources.paletteCommands.listCommands(),
     knows: options.knows,
-    lists: pluginPalette.lists,
-    pluginCommands: pluginPalette.pluginCommands,
+    plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots) },
     getVaultList: options.core.vaults,
@@ -226,7 +222,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
   const onKeyDown = createKeyHandler({
     windowTabs,
     getTarget,
-    handleShortcut: pluginPalette.pluginCommands.handleShortcut,
+    handleShortcut: pluginPalette.plugin.pluginCommands.handleShortcut,
     runApp: createAppKeyRunner({
       toggleSearch: paletteSwitch.toggleSearch,
       toggleCommands: paletteSwitch.toggleCommands,

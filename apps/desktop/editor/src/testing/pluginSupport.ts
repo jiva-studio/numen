@@ -73,8 +73,10 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
     catalog: createPluginCatalog(deps.rest),
     status: deps.status ?? createWindowPluginStatus(deps.rest),
     getPlatform: deps.getPlatform ?? (() => NO_PLATFORM),
-    reportError: deps.reportError ?? ignoreError,
-    reportLoadError: deps.reportLoadError ?? deps.reportError ?? ignoreError,
+    reports: {
+      reportError: deps.reportError ?? ignoreError,
+      reportLoadError: deps.reportLoadError ?? deps.reportError ?? ignoreError,
+    },
     kinds: createTabKindParts(deps),
     tabs: createTabActionParts(deps),
     parts: [

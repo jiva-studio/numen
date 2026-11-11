@@ -125,7 +125,7 @@ export function createWindowStart(deps: WindowStartDeps) {
     windowTabs,
     getTarget,
     palette: palettes.palette,
-    pluginCommands: palettes.pluginPalette.pluginCommands,
+    pluginCommands: palettes.pluginPalette.plugin.pluginCommands,
   })
   return {
     views: createWindowViews({ pluginHost, frame }),

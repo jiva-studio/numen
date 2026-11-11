@@ -94,9 +94,12 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
   })
   return {
     sources,
-    lists,
     pluginWays: plugin.pluginWays,
-    pluginCommands: createPluginCommandPort(pluginHost, plugin.getCommandNote),
+    plugin: {
+      lists,
+      getCommands: () => sources.paletteCommands.listCommands(),
+      pluginCommands: createPluginCommandPort(pluginHost, plugin.getCommandNote),
+    },
   }
 }
 
@@ -138,13 +141,9 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   })
   const palette = createWindowPalette({
     commandDeps,
-    runs: commandDeps.runSupport,
     getTarget,
-    writeMessage,
-    getCommands: () => pluginPalette.sources.paletteCommands.listCommands(),
     knows: createNoteLookup(vault.editing, windowTabs),
-    lists: pluginPalette.lists,
-    pluginCommands: pluginPalette.pluginCommands,
+    plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { coverage: vault.vaults.coverage, menu: createSearchMenu(pluginHost.slots) },
     getVaultList,

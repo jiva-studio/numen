@@ -22,8 +22,10 @@ export interface PluginSupportDeps {
   readonly tabs: TabActionParts
   readonly parts: readonly HostParts[]
   readonly getPlatform: () => WindowPlatform
-  readonly reportError: (pluginId: string, error: Caught) => void
-  readonly reportLoadError: (pluginId: string, error: Caught) => void
+  readonly reports: {
+    readonly reportError: (pluginId: string, error: Caught) => void
+    readonly reportLoadError: (pluginId: string, error: Caught) => void
+  }
 }
 
 const mergeHostParts = (parts: readonly HostParts[]): HostParts =>
@@ -31,7 +33,10 @@ const mergeHostParts = (parts: readonly HostParts[]): HostParts =>
 
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { rest, catalog, status } = deps
-  const { getSetting, onSettingChange } = createPluginSettingsAccessor(rest, deps.reportError)
+  const { getSetting, onSettingChange } = createPluginSettingsAccessor(
+    rest,
+    deps.reports.reportError,
+  )
   const pluginHost = createPluginHost({
     ...mergeHostParts(deps.parts),
     ...deps.kinds,
@@ -46,7 +51,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
       getPlatform: deps.getPlatform,
     }),
     openExternal: (url) => openExternalUrl(url),
-    onError: deps.reportError,
+    onError: deps.reports.reportError,
     getReaderExtensions: catalog.getReaderExtensions,
     getSetting,
     onSettingChange,
@@ -55,7 +60,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,
     status,
-    onError: deps.reportLoadError,
+    onError: deps.reports.reportLoadError,
   })
   return { pluginHost, pluginLoader }
 }
