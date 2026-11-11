@@ -1357,7 +1357,8 @@
     {
       "name": "style/comments",
       "paths": [
-        "**/*.{ts,vue,go}"
+        "**/*.{ts,vue,go}",
+        "tools/checks/style/comments/restate.json"
       ],
       "tags": [
         "style",

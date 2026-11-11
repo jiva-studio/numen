@@ -1,30 +1,49 @@
 package main
 
 import (
+	_ "embed"
+	"encoding/json"
 	"go/ast"
 	"strings"
 	"unicode"
 )
 
-// restateThresholdPercent is the share of the words of a doc comment, stop words left out, that the name and the
-// signature of the declaration already hold, from which the comment is refused.
-const restateThresholdPercent = 80
+//go:embed restate.json
+var restateJSON []byte
 
-var stopWords = toSet(
-	"a an the of to for in is are was were be " +
-		"been by that which and or with from on as it its " +
-		"this these those at if when then into each one any does " +
-		"do has have whose whether so not than there their can will " +
-		"may",
+// restateRules is restate.json, the one definition of the threshold, the stop words and the synonyms that
+// check.mjs reads as well.
+type restateRules struct {
+	ThresholdPercent int                 `json:"thresholdPercent"`
+	StopWords        string              `json:"stopWords"`
+	Synonyms         map[string][]string `json:"synonyms"`
+}
+
+var (
+	rules                   = readRestateRules()
+	restateThresholdPercent = rules.ThresholdPercent
+	stopWords               = toSet(rules.StopWords)
+	synonyms                = invertSynonyms(rules.Synonyms)
 )
 
-// synonyms maps verbs that mean the same operation in a name and in a sentence to one word, so that
-// `GetPlugin finds no plugin` and `SetVault stores the vault` are read as what they say.
-var synonyms = map[string]string{
-	"find": "get", "read": "get", "fetch": "get", "return": "get", "load": "get", "retrieve": "get", "obtain": "get", "lookup": "get",
-	"put": "set", "store": "set", "save": "set", "write": "set", "update": "set", "assign": "set",
-	"make": "create", "build": "create", "new": "create", "construct": "create",
-	"remove": "delete", "drop": "delete",
+func readRestateRules() restateRules {
+	var read restateRules
+	if err := json.Unmarshal(restateJSON, &read); err != nil {
+		panic("restate.json: " + err.Error())
+	}
+	return read
+}
+
+// invertSynonyms maps each verb of the rules to the word it stands for, so that `GetPlugin finds no plugin` and
+// `SetVault stores the vault` are read as what they say.
+func invertSynonyms(groups map[string][]string) map[string]string {
+	inverted := map[string]string{}
+	for canonical, verbs := range groups {
+		for _, verb := range verbs {
+			inverted[verb] = canonical
+		}
+	}
+	return inverted
 }
 
 func toSet(words string) map[string]bool {
