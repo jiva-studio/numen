@@ -38,7 +38,6 @@ export interface TestPluginSupportDeps {
   readonly slots?: HostParts
 }
 
-/** The entries a test names, without the ones it leaves out. */
 const pickDefined = (entries: Record<string, object | undefined>): Record<string, object> =>
   Object.fromEntries(Object.entries(entries).filter(([, value]) => value !== undefined)) as Record<
     string,

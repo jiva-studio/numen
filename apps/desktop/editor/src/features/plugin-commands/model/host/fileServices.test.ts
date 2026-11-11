@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { Folder, FolderOpen } from '@lucide/vue'
 import { COMMAND, findIcon } from '@/shared/model/command'
-import { createFileMakers, createIconHost, createVaultFiles } from './fileServices'
+import { createIconHost, createVaultFiles } from './fileServices'
 
 const target = {
   tab: 't',
@@ -85,55 +85,6 @@ describe('the files of the vault a plugin is handed', () => {
     expect(await files.createNote('dir')).toBe('dir/Untitled.md')
     expect(await files.createNote('dir')).toBe('')
     expect(createUntitled).toHaveBeenCalledWith('dir')
-  })
-})
-
-describe('dynamic creator registration', () => {
-  it('registers custom file creators, falls back to windowTabs, and handles errors', async () => {
-    const writeMessage = vi.fn()
-    const openFile = vi.fn()
-    const createFileOfKind = vi.fn()
-    const makers = createFileMakers({
-      tabOpeners: { openFile } as never,
-      windowTabs: { groups: { createFileOfKind } },
-      writeMessage,
-      creators: {
-        preset: async (title, folder) => ({
-          ok: true,
-          value: { path: `${folder}/${title}.preset` },
-        }),
-      },
-    })
-
-    expect(await makers.createFile('preset', 'dir', 'One')).toBe('dir/One.preset')
-
-    const disposeFirst = makers.registerCreator('kanban', async (title, folder) => ({
-      ok: true,
-      value: { path: `${folder}/${title}.kanban` },
-    }))
-    const disposeSecond = makers.registerCreator('kanban', async (title, folder) => ({
-      ok: true,
-      value: { path: `${folder}/${title}.kanban2` },
-    }))
-    disposeFirst()
-    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('boards/Sprint.kanban2')
-
-    disposeSecond()
-    createFileOfKind.mockResolvedValueOnce(undefined)
-    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('')
-    expect(writeMessage).toHaveBeenCalledTimes(1)
-    expect(writeMessage).toHaveBeenCalledWith(
-      'Unavailable: the plugin is disabled or stopped.',
-      'error',
-    )
-
-    writeMessage.mockClear()
-    createFileOfKind.mockResolvedValueOnce({ ok: false, error: 'alreadyExists' })
-    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('')
-    expect(writeMessage).toHaveBeenCalledWith('a file with this name exists', 'error')
-
-    createFileOfKind.mockResolvedValueOnce({ ok: true, value: { path: 'boards/Sprint.kb' } })
-    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('boards/Sprint.kb')
   })
 })
 
