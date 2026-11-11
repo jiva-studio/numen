@@ -32,11 +32,7 @@ type PluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Notes      NoteScenarios
-}
-
-func hasReaders(notes NoteScenarios) bool {
-	return notes.Place.Move.IsConfigured()
+	Notes      *NoteScenarios
 }
 
 func getNoteChanges(notes NoteScenarios) hostvault.NoteChanges {
@@ -125,15 +121,15 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	scenarios NoteScenarios, db *Index, window NoteScenarios, current func() (domain.Vault, bool),
+	scenarios NoteScenarios, db *Index, window *NoteScenarios, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(scenarios),
 		Checks:   getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
 		Problems: db.NoteProblems(),
 	}
-	if hasReaders(window) {
-		arranger.Window, arranger.WindowVault = getNoteChanges(window), current
+	if window != nil {
+		arranger.Window, arranger.WindowVault = getNoteChanges(*window), current
 	}
 	return arranger
 }
