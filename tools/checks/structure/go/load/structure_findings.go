@@ -19,7 +19,7 @@ type Finding struct {
 
 func NewFinding(fset *token.FileSet, pos token.Pos, name string) Finding {
 	position := fset.Position(pos)
-	return Finding{position: filepath.ToSlash(position.Filename) + ":" + strconv.Itoa(position.Line), name: name}
+	return Finding{Position: filepath.ToSlash(position.Filename) + ":" + strconv.Itoa(position.Line), Name: name}
 }
 
 func SortFindings(found []Finding) []Finding {

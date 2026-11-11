@@ -146,10 +146,10 @@ func GetPackageDir(pos string) string {
 }
 
 // TreeEntry is one file of a folder tree, named by its path under the folder.
-type TreeEntry struct{ name string }
+type TreeEntry struct{ Path string }
 
 // Name returns the path of the file under the folder that was read.
-func (e TreeEntry) Name() string { return e.Name }
+func (e TreeEntry) Name() string { return e.Path }
 
 // IsDir reports false: a tree entry is a file.
 func (e TreeEntry) IsDir() bool { return false }
@@ -164,7 +164,7 @@ func ReadTree(dir string) ([]TreeEntry, error) {
 		if err != nil {
 			return err
 		}
-		found = append(found, TreeEntry{name: filepath.ToSlash(rel)})
+		found = append(found, TreeEntry{Path: filepath.ToSlash(rel)})
 		return nil
 	})
 	return found, err

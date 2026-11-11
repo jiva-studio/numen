@@ -34,7 +34,7 @@ func ListPortInterfaces(pkgs []*packages.Package, root string) []PortInterface {
 			if !ok || !iface.IsMethodSet() || iface.NumMethods() == 0 {
 				continue
 			}
-			found = append(found, PortInterface{name: pkg.PkgPath + "." + name, iface: iface})
+			found = append(found, PortInterface{Name: pkg.PkgPath + "." + name, Iface: iface})
 		}
 	}
 	return found
@@ -56,5 +56,5 @@ func GetImplementation(pkg *packages.Package, ports []PortInterface) Finding {
 			}
 		}
 	}
-	return Finding{position: "", name: ""}
+	return Finding{Position: "", Name: ""}
 }

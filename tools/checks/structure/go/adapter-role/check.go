@@ -53,7 +53,7 @@ func getAdapterRoles(adapters, core []*packages.Package, root string) []adapterR
 	isUseCase := func(path string) bool { return load.IsInLayer(path, root, "usecase") }
 	roles := make([]adapterRole, 0, len(adapters))
 	for _, pkg := range adapters {
-		role := adapterRole{pkgPath: pkg.PkgPath, drivingBy: load.Finding{position: "", name: ""}, drivenBy: load.GetImplementation(pkg, ports)}
+		role := adapterRole{pkgPath: pkg.PkgPath, drivingBy: load.Finding{Position: "", Name: ""}, drivenBy: load.GetImplementation(pkg, ports)}
 		if uses := listReferences(pkg, isUseCase, getDeclaredObject); len(uses) > 0 {
 			role.drivingBy = uses[0]
 		}

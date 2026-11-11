@@ -94,7 +94,7 @@ func GetFunctionUses(pkg *packages.Package, root string) map[*types.Func]*Functi
 			if !is {
 				continue
 			}
-			use := &FunctionUse{position: NewFinding(pkg.Fset, function.Pos(), function.Name.Name)}
+			use := &FunctionUse{Position: NewFinding(pkg.Fset, function.Pos(), function.Name.Name)}
 			var literals []*ast.FuncLit
 			ast.Inspect(function.Body, func(node ast.Node) bool {
 				if literal, is := node.(*ast.FuncLit); is {
