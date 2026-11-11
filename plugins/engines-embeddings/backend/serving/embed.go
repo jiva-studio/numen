@@ -5,26 +5,27 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/limits"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/providers"
 )
 
 // defaultPasses is the passes a model is taken to run when it names none.
 const defaultPasses = 4
 
-// PreconditionError is a refusal because the settings do not allow the call. Any other error of the
+// PreconditionError is the failure of a call that the settings do not allow. Any other error of the
 // server is a fault.
 type PreconditionError struct {
 	Err error
 }
 
-// Error returns the message of the refusal.
+// Error returns the message of the failed precondition.
 func (e PreconditionError) Error() string {
 	return e.Err.Error()
 }
 
-// Unwrap returns the cause of the refusal.
+// Unwrap returns the cause of the failed precondition.
 func (e PreconditionError) Unwrap() error {
 	return e.Err
 }
@@ -43,7 +44,7 @@ type ModelInfo struct {
 	Handling       string
 }
 
-// GetModelInfo returns the model the server serves. It refuses with a PreconditionError while the
+// GetModelInfo returns the model the server serves. It fails with a PreconditionError while the
 // local model cannot be resolved.
 func (s *Server) GetModelInfo() (ModelInfo, error) {
 	s.mu.Lock()
@@ -71,7 +72,7 @@ func (s *Server) GetModelInfo() (ModelInfo, error) {
 	}, nil
 }
 
-func getHandlingHash(info engine.ModelInfo) string {
+func getHandlingHash(info model.ModelInfo) string {
 	if info.Handling.IsZero() {
 		return ""
 	}
@@ -91,7 +92,7 @@ func (s *Server) getLocalErrLocked() error {
 	return s.localErr
 }
 
-func (s *Server) applyHandling(role engine.Role, texts []string) []string {
+func (s *Server) applyHandling(role model.Role, texts []string) []string {
 	s.mu.Lock()
 	handling := s.modelInfo.Handling
 	s.mu.Unlock()
@@ -99,8 +100,8 @@ func (s *Server) applyHandling(role engine.Role, texts []string) []string {
 }
 
 // EmbedTexts returns one vector per text. A local model reads the texts with the prefix its profile
-// names for the role; a remote service reads them as they are. A refusal is a PreconditionError.
-func (s *Server) EmbedTexts(ctx context.Context, role engine.Role, texts []string) ([][]float32, error) {
+// names for the role; a remote service reads them as they are. A call the settings do not allow fails with a PreconditionError.
+func (s *Server) EmbedTexts(ctx context.Context, role model.Role, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
@@ -126,7 +127,7 @@ func (s *Server) EmbedTexts(ctx context.Context, role engine.Role, texts []strin
 	}
 
 	denseVectors, err := emb.Embed(ctx, texts)
-	if errors.Is(err, engine.ErrClosed) {
+	if errors.Is(err, loading.ErrClosed) {
 		// A change of the performance profile retired the model while this batch waited for a pass.
 		if emb, err = s.getEmbedder(ctx); err == nil {
 			denseVectors, err = emb.Embed(ctx, texts)

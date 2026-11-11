@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/chunking"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/providers"
 )
 
@@ -21,7 +21,7 @@ func (s *Server) refreshModelIdentityLocked() {
 	keep := s.modelInfo
 	if s.provider != providers.Local && s.remoteModel != "" {
 		profile := s.profiles.GetRemote(s.remoteModel)
-		s.modelInfo = engine.ModelInfo{
+		s.modelInfo = model.ModelInfo{
 			Name: s.remoteModel, Dimensions: profile.Dimensions, MaxTokens: profile.GetTokens(), Pooling: profile.Pooling,
 			From: keep.From, Concurrency: keep.Concurrency, FloorHint: profile.FloorHint, MinChunkLength: keep.MinChunkLength,
 			ChunkTokens: chunking.ClampTokens(s.chunkTokens, profile.GetTokens()),
@@ -35,11 +35,11 @@ func (s *Server) refreshModelIdentityLocked() {
 	s.modelInfo.MinChunkLength = keep.MinChunkLength
 }
 
-func (s *Server) updateLocalModelLocked(model string) {
+func (s *Server) updateLocalModelLocked(name string) {
 	if s.isMock {
 		return
 	}
-	info, local, err := s.resolveLocalModel(model)
+	info, local, err := s.resolveLocalModel(name)
 	if s.profilesErr != nil {
 		err = s.profilesErr
 	}
@@ -47,7 +47,7 @@ func (s *Server) updateLocalModelLocked(model string) {
 	if err == nil {
 		s.localInfo, s.localModel, s.localName = info, local, info.Name
 	} else {
-		s.localName = model
+		s.localName = name
 	}
 	if key := getLocalKey(info, local, err); key != s.localKey {
 		s.localKey = key
@@ -55,7 +55,7 @@ func (s *Server) updateLocalModelLocked(model string) {
 	}
 }
 
-func getLocalKey(info engine.ModelInfo, local engine.LocalModel, err error) string {
+func getLocalKey(info model.ModelInfo, local model.LocalModel, err error) string {
 	if err != nil {
 		return "error"
 	}
@@ -66,19 +66,19 @@ func getLocalKey(info engine.ModelInfo, local engine.LocalModel, err error) stri
 	}, "|")
 }
 
-func (s *Server) resolveLocalModel(model string) (engine.ModelInfo, engine.LocalModel, error) {
+func (s *Server) resolveLocalModel(name string) (model.ModelInfo, model.LocalModel, error) {
 	overrides := s.env.GetOverrides()
-	if model == "" {
-		model = overrides.Model
+	if name == "" {
+		name = overrides.Model
 	}
-	if model == "" || s.profiles.IsRemote(model) {
-		model = engine.DefaultModel
+	if name == "" || s.profiles.IsRemote(name) {
+		name = model.DefaultModel
 	}
-	profile, err := s.profiles.GetLocal(model)
+	profile, err := s.profiles.GetLocal(name)
 	if err != nil {
-		return engine.ModelInfo{}, engine.LocalModel{}, err
+		return model.ModelInfo{}, model.LocalModel{}, err
 	}
-	info, local := engine.NewConfig(profile)
+	info, local := model.NewConfig(profile)
 	overrides.ApplyToInfo(&info)
 	overrides.ApplyToLocal(&local)
 	return info, local, nil

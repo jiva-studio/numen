@@ -6,9 +6,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 // Recogniser is the recogniser of a page and its contents.
@@ -18,35 +17,24 @@ type Recogniser interface {
 }
 
 // Opener opens the recogniser the configuration names.
-type Opener func(ctx context.Context, cfg engine.Config) (Recogniser, error)
+type Opener func(ctx context.Context, cfg settings.Config) (Recogniser, error)
 
 // Reporter receives the failures the holder cannot return.
 type Reporter interface {
 	ReportCloseError(err error)
 }
 
-// NewOpener returns an opener of the recogniser built on library, or of the mock recogniser while
-// isMock holds.
-func NewOpener(library *onnx.Library, isMock func() bool) Opener {
-	return func(ctx context.Context, cfg engine.Config) (Recogniser, error) {
-		if isMock() {
-			return engine.MockRecogniser{}, nil
-		}
-		return engine.Open(ctx, library, cfg)
-	}
-}
-
 // Holder keeps one recogniser for the current configuration.
 type Holder struct {
 	mu       sync.Mutex
-	cfg      engine.Config
+	cfg      settings.Config
 	open     Opener
 	reporter Reporter
 	engine   Recogniser
 }
 
 // NewHolder returns a holder that opens its recogniser with open for cfg.
-func NewHolder(cfg engine.Config, open Opener, reporter Reporter) *Holder {
+func NewHolder(cfg settings.Config, open Opener, reporter Reporter) *Holder {
 	return &Holder{mu: sync.Mutex{}, cfg: cfg, open: open, reporter: reporter, engine: nil}
 }
 
@@ -54,7 +42,7 @@ func NewHolder(cfg engine.Config, open Opener, reporter Reporter) *Holder {
 func (h *Holder) UpdateSettings(values map[string]string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	next := engine.ParseRecogniserSettings(h.cfg.Recognize, values)
+	next := settings.ParseRecogniserSettings(h.cfg.Recognize, values)
 	if next == h.cfg.Recognize {
 		return
 	}

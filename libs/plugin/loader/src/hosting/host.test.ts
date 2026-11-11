@@ -65,7 +65,13 @@ describe('createPluginHost', () => {
     ])
     const ctx = host.lifecycle.createContext(
       'sample.plugin',
-      createMockManifest('sample.plugin', { name: 'Sample', permissions: ['vault:read'] }),
+      createMockManifest('sample.plugin', {
+        name: 'Sample',
+        permissions: ['vault:read'],
+        readers: ['custom-pdf'],
+        tabKinds: ['my-tab'],
+        commands: ['test.run'],
+      }),
     )
 
     // Register reader
@@ -158,7 +164,10 @@ describe('createPluginHost', () => {
         },
       ],
     })
-    const ctx = host.lifecycle.createContext('disposable.plugin')
+    const ctx = host.lifecycle.createContext(
+      'disposable.plugin',
+      createMockManifest('disposable.plugin', { readers: ['reader1'], commands: ['cmd1'] }),
+    )
 
     ctx.register.reader({
       id: 'reader1',
@@ -224,7 +233,12 @@ describe('createPluginHost', () => {
     })
     const ctxNoExt = hostNoExt.lifecycle.createContext(
       'noext.plugin',
-      createMockManifest('noext.plugin', { name: 'No ext', permissions: ['vault:read'] }),
+      createMockManifest('noext.plugin', {
+        name: 'No ext',
+        permissions: ['vault:read'],
+        readers: ['r-noext'],
+        tabKinds: ['void-editor'],
+      }),
     )
     ctxNoExt.register.reader({ id: 'r-noext', component: STUB_COMPONENT })
     expect(registerExtensionReader).not.toHaveBeenCalled()
@@ -241,7 +255,7 @@ describe('createPluginHost', () => {
       onError,
     })
     hostWithExt.lifecycle
-      .createContext('ext.plugin')
+      .createContext('ext.plugin', createMockManifest('ext.plugin', { readers: ['r-pdf'] }))
       .register.reader({ id: 'r-pdf', component: STUB_COMPONENT })
     expect(extCallback).toBeDefined()
 

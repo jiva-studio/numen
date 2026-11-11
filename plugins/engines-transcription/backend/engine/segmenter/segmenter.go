@@ -1,3 +1,4 @@
+// Package segmenter finds the speech segments in a recording.
 package segmenter
 
 import (
@@ -11,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/ortraw"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/signal"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 // The input and output tensor names of the segmenter graph.
@@ -42,14 +44,14 @@ type Segment struct {
 // which the owner shares with whatever else uses the model's runtime.
 type Segmenter struct {
 	session *ort.Session
-	model   Model
+	model   settings.SegmenterModel
 	lock    sync.Locker
 	runner  *ortraw.Runner
 }
 
 // New returns a Segmenter that runs session with the parameters of model, calling the runtime
 // directly through runner where it offers the entry points.
-func New(session *ort.Session, model Model, lock sync.Locker, runner *ortraw.Runner) *Segmenter {
+func New(session *ort.Session, model settings.SegmenterModel, lock sync.Locker, runner *ortraw.Runner) *Segmenter {
 	return &Segmenter{session: session, model: model, lock: lock, runner: runner}
 }
 
@@ -66,10 +68,10 @@ func (s *Segmenter) Split(ctx context.Context, sound []float32) ([]Segment, erro
 
 	windows := func(ms int) int { return ms * signal.SampleRate / (1000 * speechWindow) }
 	found := joinShortSpans(
-		getSpans(scores, s.model.getThreshold(),
-			windows(s.model.getSilenceLength()), windows(s.model.getPadding()),
-			windows(s.model.getLongestSegment()), windows(s.model.getShortestSegment())),
-		windows(s.model.getShortestPause()), windows(s.model.getLongestSegment()),
+		getSpans(scores, s.model.GetThreshold(),
+			windows(s.model.GetSilenceLength()), windows(s.model.GetPadding()),
+			windows(s.model.GetLongestSegment()), windows(s.model.GetShortestSegment())),
+		windows(s.model.GetShortestPause()), windows(s.model.GetLongestSegment()),
 	)
 
 	var out []Segment

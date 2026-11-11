@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/serving"
 )
 
@@ -44,15 +44,15 @@ func (h handler) EmbedTexts(ctx context.Context, role embedding.Role, texts []st
 	return vectors, nil
 }
 
-func getEngineRole(role embedding.Role) engine.Role {
+func getEngineRole(role embedding.Role) model.Role {
 	if role == embedding.RoleQuery {
-		return engine.RoleQuery
+		return model.RoleQuery
 	}
-	return engine.RoleDocument
+	return model.RoleDocument
 }
 
 func getRPCError(err error) error {
-	if refusal, isRefusal := errors.AsType[serving.PreconditionError](err); isRefusal && refusal.Err != nil {
+	if failure, isFailure := errors.AsType[serving.PreconditionError](err); isFailure && failure.Err != nil {
 		return rpcerror.New(rpcerror.FailedPrecondition, err)
 	}
 	return rpcerror.New(rpcerror.Internal, err)

@@ -1,18 +1,12 @@
-package engine
+package model
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 )
 
 func TestProfileNamingTheOldPoolingIsRejected(t *testing.T) {
-	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "h.json"), []byte(`{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
 	var reported error
-	table := getShipped(t).WithUserProfiles(dir, func(_ string, err error) { reported = err })
+	table := getShipped(t).WithUserProfiles("/data/profiles", []UserFile{{Path: "h.json", Data: []byte(`{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}`)}}, func(_ string, err error) { reported = err })
 	if reported == nil {
 		t.Error("a profile with the pooling head was not reported")
 	}

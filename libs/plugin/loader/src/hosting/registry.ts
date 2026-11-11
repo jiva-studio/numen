@@ -36,7 +36,7 @@ export interface RegisteredCommand {
   reg: CommandRegistration
 }
 
-interface RegisteredAgentProvider {
+export interface RegisteredAgentProvider {
   pluginId: string
   reg: AgentProviderRegistration
 }

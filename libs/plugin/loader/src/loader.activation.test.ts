@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { watch } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost, type CommandDeclaration, type PluginHostDeps } from './hosting'
 import { createPluginLoader } from './loader'
 
@@ -13,6 +14,8 @@ const showNote: CommandDeclaration = {
   title: 'Show note in plex',
   when: 'target.isNote',
 }
+
+const MANIFEST = createMockManifest(PLUGIN, { commands: ['graph.open', 'graph.showNote'] })
 
 function createWindow(activate: (context: PluginContext) => void | Promise<void>) {
   const reportCommandIssue = vi.fn()
@@ -28,6 +31,7 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
   }
   const host = createPluginHost(deps)
   const loader = createPluginLoader({ host: host.lifecycle, onError })
+  loader.registerPluginManifest(PLUGIN, MANIFEST)
   loader.registerPluginModule(PLUGIN, async () => ({ activate }))
   return { host, loader, reportCommandIssue, onError }
 }
@@ -177,6 +181,7 @@ describe('a start cancelled at 30 s that ends after a newer start', () => {
       await vi.advanceTimersByTimeAsync(30_000 + 100)
       await started
 
+      loader.registerPluginManifest(PLUGIN, MANIFEST)
       expect(await loader.activation.activatePlugin(PLUGIN)).toBe(true)
       await vi.advanceTimersByTimeAsync(2_000)
 

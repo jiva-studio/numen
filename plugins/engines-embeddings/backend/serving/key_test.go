@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // The key in the environment of the plugin is not a key: the remote service is
@@ -36,7 +36,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL}, keysOf("host-key"))
-	vectors, err := emb.EmbedTexts(t.Context(), engine.RoleDocument, []string{"a fixture sentence"})
+	vectors, err := emb.EmbedTexts(t.Context(), model.RoleDocument, []string{"a fixture sentence"})
 	if err != nil {
 		t.Fatal(err)
 	}

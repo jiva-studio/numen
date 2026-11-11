@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/segmenter"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 // The size of the models is the sum of the files on this machine, and nothing
@@ -23,7 +23,7 @@ func TestModelBytesAreTheSumOfTheFilesHere(t *testing.T) {
 		}
 		want += int64(size)
 	}
-	cfg := Config{Runtime: runtime, Dir: dir, Segmenter: segmenter.Model{Path: segmenterPath}}
+	cfg := settings.Config{Runtime: runtime, Dir: dir, Segmenter: settings.SegmenterModel{Path: segmenterPath}}
 	cfg.Model.Repo = "https://example.invalid/parakeet/"
 
 	if got := GetModelBytes(cfg); got != want {

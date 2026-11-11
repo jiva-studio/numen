@@ -217,7 +217,11 @@ describe('a declared kind registered through a plugin context', () => {
     }
     const context = createPluginHost(deps).lifecycle.createContext(
       'md.numen.sample',
-      createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
+      createMockManifest('md.numen.sample', {
+        name: 'Sample',
+        permissions: ['vault:read'],
+        tabKinds: ['member'],
+      }),
     )
 
     const sub = context.register.tabKind<Held>({

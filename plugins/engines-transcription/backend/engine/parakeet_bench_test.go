@@ -6,11 +6,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 // A run of encoder frames decoded through the Parakeet predictor and joiner.
 func BenchmarkParakeetGreedyLoop(b *testing.B) {
-	cfg := Defaults()
+	cfg := settings.Defaults()
 	cfg.ShouldDownload = false
 	delta, err := Open(b.Context(), NewRuntime(), cfg)
 	if err != nil {
@@ -43,7 +44,7 @@ func BenchmarkParakeetGreedyLoop(b *testing.B) {
 
 // A run of audio cut by the segmenter, scored through Silero VAD.
 func BenchmarkSileroVAD(b *testing.B) {
-	cfg := Defaults()
+	cfg := settings.Defaults()
 	cfg.ShouldDownload = false
 	delta, err := Open(b.Context(), NewRuntime(), cfg)
 	if err != nil {
