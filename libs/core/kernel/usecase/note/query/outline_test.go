@@ -1,11 +1,11 @@
-package outline_test
+package query_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -32,7 +32,7 @@ func TestHeadingsAreListedInTheOrderOfThePathsAndLeaveOutWhatNamesNoNote(t *test
 		"Heat.md":    {{Text: "Work", Line: 3, Level: 2}},
 		"Entropy.md": {{Text: "Entropy", Line: 1, Level: 1}, {Text: "Order", Line: 8, Level: 2}},
 	}
-	got, err := outline.NewListHeadings(index).Execute(t.Context(), domain.Vault{ID: "v"}, []string{"Heat.md", "Missing.md", "Entropy.md"})
+	got, err := query.NewListHeadings(index).Execute(t.Context(), domain.Vault{ID: "v"}, []string{"Heat.md", "Missing.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestHeadingsAreListedInTheOrderOfThePathsAndLeaveOutWhatNamesNoNote(t *test
 }
 
 func TestAListingThatTheIndexCannotAnswerIsAnError(t *testing.T) {
-	if _, err := outline.NewListHeadings(brokenHeadings{}).Execute(t.Context(), domain.Vault{ID: "v"}, []string{"Heat.md"}); err == nil {
+	if _, err := query.NewListHeadings(brokenHeadings{}).Execute(t.Context(), domain.Vault{ID: "v"}, []string{"Heat.md"}); err == nil {
 		t.Error("a closed index answered")
 	}
 }

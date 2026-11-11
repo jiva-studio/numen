@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -104,13 +103,13 @@ func NewProse(
 type Outline struct {
 	vault           Vault
 	getOpeningNote  *query.GetOpeningNote
-	getNeighborhood *outline.GetNeighborhood
-	listHeadings    *outline.ListHeadings
+	getNeighborhood *query.GetNeighborhoodView
+	listHeadings    *query.ListHeadings
 }
 
 // NewOutline is the part of NoteService that answers what a note stands among.
 func NewOutline(
-	window Vault, opening *query.GetOpeningNote, neighborhood *outline.GetNeighborhood, headings *outline.ListHeadings,
+	window Vault, opening *query.GetOpeningNote, neighborhood *query.GetNeighborhoodView, headings *query.ListHeadings,
 ) *Outline {
 	return &Outline{vault: window, getOpeningNote: opening, getNeighborhood: neighborhood, listHeadings: headings}
 }

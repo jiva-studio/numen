@@ -27,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -160,8 +159,8 @@ func mountNote(w *windowWiring) {
 	outlining := notewindow.NewOutline(
 		state,
 		query.NewGetOpeningNote(w.db.NoteQueries()),
-		outline.NewGetNeighborhood(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
-		outline.NewListHeadings(w.db.NoteQueries()),
+		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
+		query.NewListHeadings(w.db.NoteQueries()),
 	)
 	links := notewindow.NewLinks(
 		session, addresses,

@@ -1,11 +1,9 @@
-// Package outline answers what a note stands among: its neighborhood and the headings of notes.
-package outline
+package query
 
 import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -14,31 +12,31 @@ type TabKinds interface {
 	Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
 }
 
-// Neighborhood is a note with the notes joined to it, what each of them is and the kind of tab each
+// NeighborhoodView is a note with the notes joined to it, what each of them is and the kind of tab each
 // opens in, by path.
-type Neighborhood struct {
+type NeighborhoodView struct {
 	domain.Neighborhood
 	Types    map[string]domain.NoteType
 	TabKinds map[string]string
 }
 
-// GetNeighborhood gathers the neighborhood of a note with the type and the kind of tab of each note in it.
-type GetNeighborhood struct {
-	neighborhood query.ShowNeighborhood
+// GetNeighborhoodView gathers the neighborhood of a note with the type and the kind of tab of each note in it.
+type GetNeighborhoodView struct {
+	neighborhood ShowNeighborhood
 	types        noteport.NoteTypes
 	tabKinds     TabKinds
 }
 
-// NewGetNeighborhood creates the gathering over the links and the notes of the index.
-func NewGetNeighborhood(links noteport.LinkQueries, notes query.RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetNeighborhood {
-	return &GetNeighborhood{neighborhood: query.NewShowNeighborhood(links, notes), types: types, tabKinds: tabKinds}
+// NewGetNeighborhoodView creates the gathering over the links and the notes of the index.
+func NewGetNeighborhoodView(links noteport.LinkQueries, notes RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetNeighborhoodView {
+	return &GetNeighborhoodView{neighborhood: NewShowNeighborhood(links, notes), types: types, tabKinds: tabKinds}
 }
 
 // Execute gathers the neighborhood of the note at the path. The types are read once for the whole graph.
-func (u *GetNeighborhood) Execute(ctx context.Context, v domain.Vault, path string) (Neighborhood, error) {
+func (u *GetNeighborhoodView) Execute(ctx context.Context, v domain.Vault, path string) (NeighborhoodView, error) {
 	found, err := u.neighborhood.Execute(ctx, v, path)
 	if err != nil {
-		return Neighborhood{}, err
+		return NeighborhoodView{}, err
 	}
 	paths := []string{found.Focus.Path}
 	for _, related := range found.Related {
@@ -46,13 +44,13 @@ func (u *GetNeighborhood) Execute(ctx context.Context, v domain.Vault, path stri
 	}
 	types, err := u.types.GetTypes(ctx, v.ID, paths)
 	if err != nil {
-		return Neighborhood{}, err
+		return NeighborhoodView{}, err
 	}
 	tabKinds, err := u.tabKinds.Execute(ctx, v, paths)
 	if err != nil {
-		return Neighborhood{}, err
+		return NeighborhoodView{}, err
 	}
-	return Neighborhood{Neighborhood: found, Types: types, TabKinds: tabKinds}, nil
+	return NeighborhoodView{Neighborhood: found, Types: types, TabKinds: tabKinds}, nil
 }
 
 // NoteHeadings is the headings of the note at a path, in the order they stand in the note.

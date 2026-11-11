@@ -33,7 +33,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -54,9 +53,9 @@ func (noTabKinds) Execute(context.Context, domain.Vault, []string) (map[string]s
 func bindNotes(services *Services, db *testIndex) {
 	refs, links := db.NoteQueries.NoteRefs, db.NoteQueries.Links
 	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
-	services.NoteCases.Headings = outline.NewListHeadings(db.NoteQueries.Headings)
+	services.NoteCases.Headings = query.NewListHeadings(db.NoteQueries.Headings)
 	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
-	services.NoteCases.Neighborhood = outline.NewGetNeighborhood(links, refs, db.NoteQueries.NoteTypes, noTabKinds{})
+	services.NoteCases.Neighborhood = query.NewGetNeighborhoodView(links, refs, db.NoteQueries.NoteTypes, noTabKinds{})
 	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NoteQueries.NamedPaths)
 	services.UseNotes()
 }

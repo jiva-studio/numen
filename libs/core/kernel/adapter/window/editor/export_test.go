@@ -15,7 +15,6 @@ import (
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -62,8 +61,8 @@ type NoteUseCases struct {
 	EditLinks      *note.EditLinks
 	GetLinkAddress *query.GetLinkAddress
 	OpeningNote    *query.GetOpeningNote
-	Headings       *outline.ListHeadings
-	Neighborhood   *outline.GetNeighborhood
+	Headings       *query.ListHeadings
+	Neighborhood   *query.GetNeighborhoodView
 	ResolveLinks   *query.ResolveLinks
 }
 
