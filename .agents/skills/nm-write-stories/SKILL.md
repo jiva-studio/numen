@@ -84,7 +84,7 @@ A behavior that depends on layout, focus-visible, paint order or pointer geometr
 
 The official page: "use a play function to simulate user behavior like clicks, typing, and submitting a form". The tools come from `storybook/test`: `userEvent`, `expect`, `fn`, `within`, `waitFor`.
 
-- Strike what a person strikes: `userEvent.click`, `userEvent.keyboard('{ArrowDown}')`, `userEvent.type`, `userEvent.pointer([...])` for a drag. Never call a component method, set a ref or dispatch a hand-built event to make the state change; an event the component needs from a person is produced the way a person produces it. Where one browser-level gesture is needed (a pointer sweep, the system colour scheme), the commands in `.storybook/browser.ts` exist.
+- Strike what a person strikes: `userEvent.click`, `userEvent.keyboard('{ArrowDown}')`, `userEvent.type`, `userEvent.pointer([...])` for a drag. Never call a component method, set a ref or dispatch a hand-built event to make the state change; an event the component needs from a person is produced the way a person produces it. Where one browser-level gesture is needed (a pointer sweep), the command in `.storybook/browser.ts` exists.
 - Find elements the way a screen reader does: `within(canvas).getByRole('menuitem', { name: 'Open' })`. A query by role and name fails when the control has no role or no name, which a person using assistive technology would also miss. A `data-*` hook or a class is the second choice and is for an element that has no role.
 - Spy only on the outer edge. The component's emitted events are the outer edge: pass `fn()` as the `onX` arg and assert `toHaveBeenCalledWith(id)`. The official page: "you will use `fn` as an `arg` value when writing your story". Everything between the event and the edge is real. A story mocks no module, no component, no `getBoundingClientRect`.
 - Wait for what takes a frame: `await waitFor(() => expect(...))`. A fixed sleep is a defect.
@@ -172,7 +172,6 @@ Each follows the target.
 
 These places do not follow the target and are not models.
 
-- `Switch.stories.ts` (`BusyUntilTheAnswer`, `TheThumbSlides`) measures the thumb position per frame. Behavior is the `aria-checked` change and the busy state.
 - `Menu.types.ts:16` takes `clock?: () => number`; the target is `Clock`.
 - No story passes `viewport`; the stories place a menu with `at` coordinates.
 - `Select.stories.ts` and `Tree.stories.ts` find elements by class (`.menu__item`, `.tree__field`); the target is role and name.

@@ -1,4 +1,11 @@
-import { computed, onMounted, onUnmounted, type Component, type ComputedRef, type WritableComputedRef } from 'vue'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  type Component,
+  type ComputedRef,
+  type WritableComputedRef,
+} from 'vue'
 import type { RowMarker } from '@numen/ui'
 import type { FilesTabState } from '../types'
 

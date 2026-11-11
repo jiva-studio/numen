@@ -5,7 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/engines"
 )
 

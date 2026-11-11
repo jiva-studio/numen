@@ -7,7 +7,11 @@ import { nextTick, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
-import { createInstallation, createPluginInfo, createSettingsState } from '@/pages/settings/testing/installation'
+import {
+  createInstallation,
+  createPluginInfo,
+  createSettingsState,
+} from '@/pages/settings/testing/installation'
 import SettingsTab from '../SettingsTab.vue'
 
 const PATH_SETTING = {

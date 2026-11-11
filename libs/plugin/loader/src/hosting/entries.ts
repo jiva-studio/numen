@@ -24,7 +24,6 @@ export interface TabKindOwners {
   readonly tabKinds: Map<string, RegisteredTabKind>
 }
 
-
 function requireFreeKind(
   owners: TabKindOwners,
   claim: { readonly pluginId: string; readonly what: 'reader' | 'tab kind'; readonly id: string },

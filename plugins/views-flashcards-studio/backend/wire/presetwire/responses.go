@@ -6,10 +6,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/filewire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/filewire"
 )
 
 // NewDeckPresetResponse answers the read of the preset a deck is scheduled by. The title is looked

@@ -6,7 +6,10 @@ import { describe, expect, it } from 'vitest'
 import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './limits'
 
 const ACTIVATION = fileURLToPath(
-  new URL('../../../../core/kernel/internal/adapter/plugin/lifecycle/activation.go', import.meta.url),
+  new URL(
+    '../../../../core/kernel/internal/adapter/plugin/lifecycle/activation.go',
+    import.meta.url,
+  ),
 )
 
 describe('the wait of a window for the plugins of its interface', () => {

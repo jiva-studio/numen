@@ -136,7 +136,7 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   await document.fonts.ready
   const readState = () => {
     const paper = getPaper(canvasElement)
-    return `${paper.style.translate}|${paper.scrollWidth}|${paper.className}`
+    return `${paper.getBoundingClientRect().left}|${paper.scrollWidth}|${paper.className}`
   }
   let last = readState()
   let stableFrameCount = 0
@@ -155,7 +155,7 @@ const watchRun = (canvasElement: HTMLElement, offset: number, fragment: 'first' 
     for (const run of canvasElement.querySelectorAll<HTMLElement>(`[data-offset="${offset}"]`)) {
       const rects = run.getClientRects()
       const rect = fragment === 'first' ? rects[0] : rects[rects.length - 1]
-      if (rect && getComputedStyle(run).visibility === 'visible') edges.push(rect.left)
+      if (rect && run.checkVisibility({ checkVisibilityCSS: true })) edges.push(rect.left)
     }
     frame = requestAnimationFrame(read)
   }

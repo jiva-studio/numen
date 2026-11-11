@@ -2,7 +2,7 @@
  * Tree state and operations for the files tree.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import { formatErrorMessage, getRenamedPath, type PathRename, type Caught } from '@numen/plugin-sdk'
+import { formatErrorMessage, getRenamedPath, type PathRename } from '@numen/plugin-sdk'
 import type { Entry, FileTree, Folders, ListingRow } from '../types'
 
 export const ROOT = ''
@@ -56,7 +56,7 @@ function getRowsInFolder(
 interface FolderListingResult {
   folder: string
   entries?: readonly Entry[]
-  error?: Caught
+  error?: string
 }
 
 function mergeFolderListings(
@@ -68,7 +68,7 @@ function mergeFolderListings(
   let error = ''
   for (const listing of listings) {
     if (listing.error !== undefined) {
-      error = formatErrorMessage(listing.error)
+      error = listing.error
     } else if (listing.entries && !isSameEntries(next.get(listing.folder), listing.entries)) {
       next.set(listing.folder, listing.entries)
       isChanged = true
@@ -121,7 +121,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
         try {
           return { folder, entries: await core.list(folder) }
         } catch (err) {
-          return { folder, error: err }
+          return { folder, error: formatErrorMessage(err) }
         }
       }),
     )

@@ -4,11 +4,23 @@
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
 import storybook from 'eslint-plugin-storybook'
-import { createBaseConfig, createPortConfig, createStoryConfig } from '../../../tools/lint-layers/base-eslint.mjs'
-import { createDomainImports, createLibraryLayerConfigs } from '../../../tools/lint-layers/layers.mjs'
+import {
+  createBaseConfig,
+  createPortConfig,
+  createStoryConfig,
+} from '../../../tools/lint-layers/base-eslint.mjs'
+import {
+  createDomainImports,
+  createLibraryLayerConfigs,
+} from '../../../tools/lint-layers/layers.mjs'
 
 /** The files that stand outside the layers. */
-const outsideLayers = ['src/**/*.stories.ts', 'src/**/fixtures/**', 'src/vite.ts', 'src/vite.test.ts']
+const outsideLayers = [
+  'src/**/*.stories.ts',
+  'src/**/fixtures/**',
+  'src/vite.ts',
+  'src/vite.test.ts',
+]
 
 const domainImports = createDomainImports({
   message:

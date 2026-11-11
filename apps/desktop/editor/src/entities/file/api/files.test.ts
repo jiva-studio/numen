@@ -49,7 +49,9 @@ describe('a file removed', () => {
 describe('a folder listed', () => {
   it('is listed under its path, each row in the words of the window', async () => {
     request.listFiles.mockResolvedValue({
-      entries: [{ path: 'Notes/test.md', name: 'test.md', isFolder: false, isNote: true, type: '' }],
+      entries: [
+        { path: 'Notes/test.md', name: 'test.md', isFolder: false, isNote: true, type: '' },
+      ],
     })
 
     expect(await listFiles('Notes')).toEqual([

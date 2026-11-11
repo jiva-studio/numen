@@ -15,8 +15,8 @@ export function createNotices(host: NoticeHost) {
    * Shows a failure message. A call that the window itself cancelled has
    * nothing to report, and no notice is raised for it.
    */
-  const reportError = (why: Caught) => {
-    const text = sentence(formatFailureMessage(why))
+  const reportError = (error: Caught) => {
+    const text = sentence(formatFailureMessage(error))
     if (text) showNotice(text, 'error')
   }
 

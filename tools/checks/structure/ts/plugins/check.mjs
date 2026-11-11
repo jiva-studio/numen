@@ -134,27 +134,33 @@ export function verifyPluginsUseMainEntry() {
 }
 
 const OUTER_BACKEND_PACKAGES = ['service', 'engine']
-const NON_INNER_BACKEND_PACKAGES = ['cmd', ...OUTER_BACKEND_PACKAGES, 'testsupport']
+const WIRE_BACKEND_PACKAGE = 'wire'
+const NON_INNER_BACKEND_PACKAGES = ['cmd', ...OUTER_BACKEND_PACKAGES, WIRE_BACKEND_PACKAGE, 'testsupport']
 
-/** Plugin backend internal layers (inner packages under backend/<pkg> must not import backend/service or backend/engine). */
-function findPluginBackendLayerInversions() {
+const isBackendPackageImport = (value, name) => value.endsWith(`/backend/${name}`) || value.includes(`/backend/${name}/`)
+
+/**
+ * Finds the imports that run against the layers of a plugin backend: an inner package (below `service` and `wire`)
+ * imports `service`, `engine` or `wire`; a `wire` package imports `service`, `engine` or an adapter. `wire` is the layer between
+ * `service` and `api`, the domain, the use cases and the ports: the service imports it, it imports them, nothing below
+ * imports it. `files` holds `{ file, imports }` with each import as `{ line, value }`.
+ */
+export function findPluginBackendLayerInversions(files) {
   const found = []
-  for (const file of listShippedFiles(['plugins/*.go'])) {
+  for (const { file, imports } of files) {
     const [root, plugin, tier, subpkg] = file.split('/')
     if (root !== 'plugins' || tier !== 'backend' || !subpkg || subpkg.endsWith('.go')) continue
-    if (NON_INNER_BACKEND_PACKAGES.includes(subpkg)) continue
-    const text = fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')
-    const { imports } = getGoReferences(text)
+    const isWire = subpkg === WIRE_BACKEND_PACKAGE
+    if (!isWire && NON_INNER_BACKEND_PACKAGES.includes(subpkg)) continue
+    const forbidden = isWire
+      ? (value) => OUTER_BACKEND_PACKAGES.some((outer) => isBackendPackageImport(value, outer)) || value.includes('/backend/internal/adapter/')
+      : (value) => [...OUTER_BACKEND_PACKAGES, WIRE_BACKEND_PACKAGE].some((outer) => isBackendPackageImport(value, outer))
     for (const { line, value } of imports) {
-      if (
-        OUTER_BACKEND_PACKAGES.some(
-          (outer) => value.endsWith(`/backend/${outer}`) || value.includes(`/backend/${outer}/`),
-        )
-      ) {
+      if (forbidden(value)) {
         found.push({
           file,
           line,
-          symbol: `inner package backend/${subpkg} imports outer ${value} in plugins/${plugin}`,
+          symbol: `${isWire ? 'wire' : 'inner'} package backend/${subpkg} imports ${value} in plugins/${plugin}, against the direction service, wire, then api, domain, usecase and ports`,
         })
       }
     }
@@ -163,9 +169,13 @@ function findPluginBackendLayerInversions() {
 }
 
 export function verifyPluginBackendInternalLayers() {
+  const files = listShippedFiles(['plugins/*.go']).map((file) => ({
+    file,
+    imports: getGoReferences(fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')).imports,
+  }))
   failOnFindings(
-    'Plugin backend inner package imports outer service/engine package',
-    findPluginBackendLayerInversions(),
+    'Plugin backend package imports against the layers: inner package imports service, engine or wire; wire imports service, engine or an adapter',
+    findPluginBackendLayerInversions(files),
   )
 }
 
@@ -226,8 +236,11 @@ export const SERVICE_STANDARD_IMPORTS = [
 /** The SDK packages a plugin service may import: every package of the Go SDK. */
 const SDK_GO_MODULE = `${GO_MODULE_ROOT}libs/plugin/sdk-go`
 
-/** The packages of the plugin's own backend a service may import: its API, domain, use cases and ports. */
-export const SERVICE_OWN_PACKAGES = ['api', 'domain', 'usecase', 'ports']
+/** The packages of the plugin's own backend a service may import: its API, domain, use cases, ports and wire. */
+export const SERVICE_OWN_PACKAGES = ['api', 'domain', 'usecase', 'ports', 'wire']
+
+/** The folder of the plugin's own adapters: the service is the composition root and builds them. */
+const SERVICE_OWN_ADAPTERS = 'internal/adapter/'
 
 /** Whether a service of `plugin` may import `value`: a listed standard package, an SDK package or an own package of the list. */
 function isAllowedServiceImport(value, plugin) {
@@ -235,14 +248,15 @@ function isAllowedServiceImport(value, plugin) {
   if (value === SDK_GO_MODULE || value.startsWith(`${SDK_GO_MODULE}/`)) return true
   const own = `${GO_MODULE_ROOT}plugins/${plugin}/backend/`
   if (!value.startsWith(own)) return false
-  return SERVICE_OWN_PACKAGES.includes(value.slice(own.length).split('/')[0])
+  const inner = value.slice(own.length)
+  return inner.startsWith(SERVICE_OWN_ADAPTERS) || SERVICE_OWN_PACKAGES.includes(inner.split('/')[0])
 }
 
 /**
  * Finds the imports of a backend `service` package that are not on the allow list: the listed standard packages, the
- * packages of the Go SDK and the `api`, `domain`, `usecase` and `ports` packages of its own plugin. Machine access
- * (`os`, `sync`, `net`), another standard package, a package of another plugin and any other package of its own
- * backend are refused. `files` holds `{ file, imports }` with each import as `{ line, value }`.
+ * packages of the Go SDK, the `api`, `domain`, `usecase`, `ports` and `wire` packages of its own plugin and its own
+ * `internal/adapter/*` packages. Machine access (`os`, `sync`, `net`), another standard package, a package of another
+ * plugin and any other package of its own backend are refused. `files` holds `{ file, imports }` with each import as `{ line, value }`.
  */
 export function findServiceImportsOffAllowList(files) {
   const found = []
@@ -253,7 +267,7 @@ export function findServiceImportsOffAllowList(files) {
         found.push({
           file,
           line,
-          symbol: `service imports ${value}, which is not on the allow list; machine access, state and own packages beyond api, domain, usecase and ports belong behind a use case`,
+          symbol: `service imports ${value}, which is not on the allow list; machine access, state and own packages beyond api, domain, usecase, ports, wire and internal/adapter belong behind a use case`,
         })
       }
     }

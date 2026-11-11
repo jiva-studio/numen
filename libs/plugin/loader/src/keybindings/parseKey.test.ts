@@ -87,9 +87,15 @@ describe('isKeyEvent', () => {
 
   it('is false with a missing or extra modifier', () => {
     expect(isKeyEvent(chord, press({ code: 'KeyP' }), false)).toBe(false)
-    expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, shiftKey: true }), false)).toBe(false)
-    expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, altKey: true }), false)).toBe(false)
-    expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, metaKey: true }), false)).toBe(false)
+    expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, shiftKey: true }), false)).toBe(
+      false,
+    )
+    expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, altKey: true }), false)).toBe(
+      false,
+    )
+    expect(isKeyEvent(chord, press({ code: 'KeyP', ctrlKey: true, metaKey: true }), false)).toBe(
+      false,
+    )
   })
 
   it('matches mod to Meta on macOS and not to Ctrl', () => {

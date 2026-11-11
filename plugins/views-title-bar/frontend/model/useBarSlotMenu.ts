@@ -1,4 +1,10 @@
-import { useSlotMenu, type Caught, type CommandItem, type SlotMenuState, type SlotMenuWords } from '@numen/plugin-sdk'
+import {
+  useSlotMenu,
+  type Caught,
+  type CommandItem,
+  type SlotMenuState,
+  type SlotMenuWords,
+} from '@numen/plugin-sdk'
 
 /** The target of a bar entry; the bar passes none of its own, and the window runs a bar entry over the front tab. */
 export const BAR = 'bar'

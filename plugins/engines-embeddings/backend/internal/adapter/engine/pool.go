@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine/onnx"
 )
 
 // referenceLength is the token length at which a full configured batch is one pass.

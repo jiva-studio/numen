@@ -1,6 +1,6 @@
 /** A fake vault and window for the tests of the preset writes: replies on demand, and records each message. */
 import { afterEach, expect } from 'vitest'
-import type { MessageWriter, Caught } from '@numen/plugin-sdk'
+import { formatErrorMessage, type MessageWriter, type Caught } from '@numen/plugin-sdk'
 import { DEFAULTS, type Presets, type PresetWriteResult, type Settings } from '../../lib/presets'
 
 const PATH = 'presets/Daily.md'
@@ -65,14 +65,14 @@ export const createWriteOpts = (core: Presets, writeMessage: MessageWriter = () 
 export const createBackgroundRequest = <Args extends object[]>(
   request: (...args: Args) => Promise<void>,
 ) => {
-  const writeFailures: Caught[] = []
+  const writeFailures: string[] = []
   afterEach(() => {
     expect(writeFailures).toStrictEqual([])
     writeFailures.length = 0
   })
   return (...args: Args): void => {
     request(...args).catch((error: Caught) => {
-      writeFailures.push(error)
+      writeFailures.push(formatErrorMessage(error))
     })
   }
 }

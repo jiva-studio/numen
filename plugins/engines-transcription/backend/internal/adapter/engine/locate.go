@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/onnx"
 )
 
 // EnvDir names the folder plugins keep their models in. The host sets it, to the folder a user chose or

@@ -2,7 +2,7 @@ package engine
 
 import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 )
 
 // Ready reports whether everything needed to recognize a page is on this

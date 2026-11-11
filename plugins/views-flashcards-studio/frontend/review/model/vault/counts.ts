@@ -72,7 +72,7 @@ const getMinutes = (ms: number): number => ms / 60000
 
 export interface CountsDeps {
   cards: CardsDueClient
-  reportError(why: Caught): void
+  reportError(error: Caught): void
 }
 
 const createUncountedVault = (one: VaultCounts): VaultCardsDue => ({

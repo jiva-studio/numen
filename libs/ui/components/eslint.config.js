@@ -14,7 +14,11 @@ import {
   createPureSegmentConfig,
   createStoryConfig,
 } from '../../../tools/lint-layers/base-eslint.mjs'
-import { createDomainImports, createLibraryLayerConfigs, createOwnImportConfig } from '../../../tools/lint-layers/layers.mjs'
+import {
+  createDomainImports,
+  createLibraryLayerConfigs,
+  createOwnImportConfig,
+} from '../../../tools/lint-layers/layers.mjs'
 
 /** The one function declaration that reads the wall clock. */
 const clockFunction = 'getNow'
@@ -43,7 +47,10 @@ const domainImports = createDomainImports({
 })
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname, { ...clockFunctions, defaultProject: ['eslint.config.js'] }),
+  ...createBaseConfig(import.meta.dirname, {
+    ...clockFunctions,
+    defaultProject: ['eslint.config.js'],
+  }),
 
   // UI layer boundaries and domain isolation
   ...createLibraryLayerConfigs({
