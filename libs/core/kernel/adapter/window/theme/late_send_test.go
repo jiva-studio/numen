@@ -14,17 +14,15 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
-// TestNoKeepaliveIsWrittenAfterTheHandlerReturned. A write to a response after its handler returned
-// panics inside net/http and ends the process, so a stream that clients open and cancel over and
-// over, as a reloading window does, must not leave a keepalive running behind the handler.
-func TestNoKeepaliveIsWrittenAfterTheHandlerReturned(t *testing.T) {
-	restore := theme.SetKeepaliveInterval(time.Millisecond)
-	t.Cleanup(restore)
+// A write to a response after its handler returned panics inside net/http and ends the process, so a
+// stream that clients open and cancel over and over, as a reloading window does, must leave no
+// keepalive running behind the handler.
+func TestAWatchEndsItsKeepaliveBeforeTheHandlerReturns(t *testing.T) {
 	service, _, _ := createService(t, themedomain.Appearance{})
+	service.SetKeepalive(time.Millisecond)
 
 	route, handler := numenv1connect.NewThemeServiceHandler(service)
 	mux := http.NewServeMux()
@@ -45,7 +43,6 @@ func TestNoKeepaliveIsWrittenAfterTheHandlerReturned(t *testing.T) {
 			t.Fatalf("the stream ended before a keepalive: %v", stream.Err())
 		}
 		cancel()
-		_ = stream.Close()
 	}
 
 	deadline := time.Now().Add(10 * time.Second)

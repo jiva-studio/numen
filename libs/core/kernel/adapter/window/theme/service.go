@@ -22,6 +22,7 @@ type Service struct {
 	readTheme       *themeusecase.ReadTheme
 	writeAppearance *themeusecase.WriteAppearance
 	watchThemes     *themeusecase.WatchThemes
+	keepalive       time.Duration
 }
 
 // NewService answers the requests of the theme service with the use cases.
@@ -31,7 +32,10 @@ func NewService(
 	writeAppearance *themeusecase.WriteAppearance,
 	watchThemes *themeusecase.WatchThemes,
 ) *Service {
-	return &Service{getThemes: getThemes, readTheme: readTheme, writeAppearance: writeAppearance, watchThemes: watchThemes}
+	return &Service{
+		getThemes: getThemes, readTheme: readTheme, writeAppearance: writeAppearance, watchThemes: watchThemes,
+		keepalive: keepaliveInterval,
+	}
 }
 
 // ListThemes returns every theme and the one applied.
@@ -106,7 +110,7 @@ func (s *Service) WriteAppearance(
 }
 
 // keepaliveInterval is the interval between empty reports to the client of a watch.
-var keepaliveInterval = time.Second
+const keepaliveInterval = time.Second
 
 // WatchThemes notifies the client when the themes folder or the set of plugin
 // themes changes, until the client disconnects.
@@ -142,7 +146,7 @@ func (s *Service) WatchThemes(
 		return stream.Send(&v1.WatchThemesResponse{Names: names})
 	}
 	keeping.Go(func() {
-		repeat := time.NewTicker(keepaliveInterval)
+		repeat := time.NewTicker(s.keepalive)
 		defer repeat.Stop()
 		for {
 			select {
