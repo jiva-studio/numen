@@ -32,6 +32,7 @@ use (
 	./plugins/tools-search-relevance
 	./plugins/tools-updater
 	./plugins/views-flashcards-studio
+	./tools/checks/structure/go
 	./tools/lint-comments
 )
 
