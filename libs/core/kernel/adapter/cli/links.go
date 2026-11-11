@@ -4,16 +4,25 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
+type linksCommand struct {
+	links func(ctx context.Context) (Links, error)
+}
+
+func (linksCommand) Name() string { return "links" }
+
+func (linksCommand) Synopsis() string {
+	return "  numen-cli links <vault> <note>               what a note points at, and what points at it"
+}
+
+func (c linksCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli links <vault> <note>")
 	}
-	open, err := deps.Links(ctx)
+	open, err := c.links(ctx)
 	if err != nil {
 		return err
 	}
@@ -24,7 +33,7 @@ func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 		return err
 	}
 
-	r := newReporter(out)
+	r := newReporter(term.out)
 	if len(links.Links) == 0 && len(links.Backlinks) == 0 {
 		r.Println("no links either way")
 		return r.Err()

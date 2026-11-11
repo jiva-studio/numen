@@ -3,27 +3,35 @@ package cli
 import (
 	"context"
 	"errors"
-	"io"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
 // excerptRunes is how much of a passage one line of terminal output carries.
 const excerptRunes = 160
 
-func runSearchCommand(
-	ctx context.Context, deps Deps, out, errOut io.Writer, args []string,
-) (err error) {
+type searchCommand struct {
+	search func(ctx context.Context, errorHandler window.ErrorHandler) (Search, error)
+}
+
+func (searchCommand) Name() string { return "search" }
+
+func (searchCommand) Synopsis() string {
+	return "  numen-cli search <vault> <query>             full-text search within one vault"
+}
+
+func (c searchCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
 	if len(args) < 2 {
 		return errors.New("usage: numen-cli search <vault> <query>")
 	}
 
 	// The same search the window runs. An installation with no model searches by
 	// words alone, which is reported through the error handler.
-	diagnostics := newReporter(errOut)
+	diagnostics := newReporter(term.errOut)
 	errorHandler := func(err error) { diagnostics.Printf("search by words only: %v\n", err) }
-	open, err := deps.Search(ctx, errorHandler)
+	open, err := c.search(ctx, errorHandler)
 	if err != nil {
 		return err
 	}
@@ -36,7 +44,7 @@ func runSearchCommand(
 	if err != nil {
 		return err
 	}
-	r := newReporter(out)
+	r := newReporter(term.out)
 	if len(found) == 0 {
 		r.Println("nothing found")
 		return errors.Join(r.Err(), diagnostics.Err())

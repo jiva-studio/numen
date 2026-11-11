@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
@@ -12,7 +11,19 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
+type scanCommand struct {
+	scan func(ctx context.Context, rebuild bool) (Scan, error)
+}
+
+func (scanCommand) Name() string { return "scan" }
+
+func (scanCommand) Synopsis() string {
+	return `  numen-cli scan <vault> [--rebuild-index]     update the index of a vault
+                                               --rebuild-index reads every file again and deletes the vectors
+                                               of every model except the one in use`
+}
+
+func (c scanCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
 	rebuild, rest := splitRebuildFlag(args)
 	if len(rest) != 1 {
 		return errors.New("usage: numen-cli scan <vault> [--rebuild-index]")
@@ -21,12 +32,12 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 	// The vectors are made here too. The window does all three in the
 	// background; here they are waited for, which is this adapter's property
 	// and not the use case's.
-	open, err := deps.Scan(ctx, rebuild)
+	open, err := c.scan(ctx, rebuild)
 	if err != nil {
 		return err
 	}
 	defer closeInto(&err, open.Close)
-	r := newReporter(out)
+	r := newReporter(term.out)
 	if open.Unembedded != nil {
 		open.Read.Unembedded = open.Unembedded
 	}
