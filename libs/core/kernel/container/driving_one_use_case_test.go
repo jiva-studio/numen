@@ -183,30 +183,11 @@ func listManyUseCaseCalls(pkgs []*packages.Package, root string) (found []findin
 	return sortFindings(found), functions
 }
 
-// maxCommandsWithTwoUseCases is the number of terminal commands that look up the vault the user typed with
-// the Find use case and then run their own, and the dispatcher of the commands of plugins. A command takes the vault by name or path and the use cases take a
-// vault, so the lookup runs first, and for erasing the confirmation of the person is asked
-// between the two. The count may only fall: a command that lost its lookup lowers it.
-const maxCommandsWithTwoUseCases = 8
-
 func checkDrivingFunctionCallsOneUseCase(t *testing.T, adapters []*packages.Package) {
 	t.Helper()
 	found, functions := listManyUseCaseCalls(adapters, coreImportPath)
-	terminal := 0
 	for _, one := range found {
-		if strings.Contains(one.position, "/adapter/cli/") {
-			terminal++
-			continue
-		}
 		t.Errorf("%s %s: a driving adapter calls one use case", one.position, one.name)
-	}
-	for _, one := range found {
-		if strings.Contains(one.position, "/adapter/cli/") {
-			t.Logf("%s %s", one.position, one.name)
-		}
-	}
-	if terminal != maxCommandsWithTwoUseCases {
-		t.Errorf("%d terminal commands call two use cases, want %d: set maxCommandsWithTwoUseCases to the count", terminal, maxCommandsWithTwoUseCases)
 	}
 	// A walk that read few calls is a rule checked against almost nothing.
 	if functions < 80 {

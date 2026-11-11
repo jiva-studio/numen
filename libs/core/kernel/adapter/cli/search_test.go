@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -40,9 +41,9 @@ func newVault(folder string) domain.Vault {
 func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(newVault(folder)),
-		Search: func(context.Context, domain.Vault, window.ErrorHandler) (cli.Search, error) {
+		Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
-				Search: search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil),
+				Search: search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil).WithFind(registry.NewFind(singleVaultList{newVault(folder)}).Execute),
 				Words:  words,
 			}, nil
 		},
@@ -71,11 +72,15 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 	folder := t.TempDir()
 	for name, provided := range map[string]cli.Deps{
 		"the list of vaults cannot be opened": {
-			Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
+			Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
+				return cli.Search{
+					Search: search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }),
+				}, nil
+			},
 		},
 		"the search cannot be opened": {
 			Vaults: createVaultList(newVault(folder)),
-			Search: func(context.Context, domain.Vault, window.ErrorHandler) (cli.Search, error) {
+			Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
 				return cli.Search{}, errRefused
 			},
 		},
@@ -161,9 +166,9 @@ func TestAHalfThatCannotRunIsReportedInTheAdjacentAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := provided.Search
-	provided.Search = func(ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler) (cli.Search, error) {
+	provided.Search = func(ctx context.Context, errorHandler window.ErrorHandler) (cli.Search, error) {
 		errorHandler(errRefused)
-		return open(ctx, v, errorHandler)
+		return open(ctx, errorHandler)
 	}
 
 	_, stderr, err := runWithStderr(t, provided, "search", "shelf", "bees")

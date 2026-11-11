@@ -37,6 +37,7 @@ type Tree struct {
 }
 
 type RecordOpen struct {
+	find     VaultFinding
 	recorder vaultport.VaultRecorder
 }
 
@@ -44,8 +45,26 @@ func NewRecordOpen(recorder vaultport.VaultRecorder) RecordOpen {
 	return RecordOpen{recorder: recorder}
 }
 
+// WithFind sets the lookup that resolves a name, path or identity into a vault.
+func (u RecordOpen) WithFind(find VaultFinding) RecordOpen {
+	u.find = find
+	return u
+}
+
 func (u RecordOpen) Execute(id domain.VaultID) error {
 	return u.recorder.RecordOpened(id)
+}
+
+// ExecuteByName resolves the vault and records it as the vault opened last.
+func (u RecordOpen) ExecuteByName(nameOrPath string) (domain.Vault, error) {
+	v, err := u.find(nameOrPath)
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	if err := u.recorder.RecordOpened(v.ID); err != nil {
+		return domain.Vault{}, err
+	}
+	return v, nil
 }
 
 // WriteOpenTabs saves the open tabs of a vault.

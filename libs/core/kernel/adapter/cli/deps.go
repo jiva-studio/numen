@@ -33,9 +33,9 @@ type Locations struct {
 type Deps struct {
 	Vaults func() (Vaults, error)
 
-	Scan func(ctx context.Context, v domain.Vault, rebuild bool) (Scan, error)
+	Scan func(ctx context.Context, rebuild bool) (Scan, error)
 
-	Search func(ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler) (Search, error)
+	Search func(ctx context.Context, errorHandler window.ErrorHandler) (Search, error)
 
 	Links func(ctx context.Context) (Links, error)
 
@@ -45,26 +45,26 @@ type Deps struct {
 }
 
 // Vaults is what the vault commands operate on: the use cases over the list this
-// installation keeps, and the clock. The commands that also change what the index
+// installation keeps. The commands that also change what the index
 // remembers about a vault open it when they run.
 type Vaults struct {
-	Find       registry.Find
 	Add        vault.Add
 	Known      registry.GetKnownVaults
 	RecordOpen vault.RecordOpen
-	Now        func() time.Time
 
 	OpenRename     func(ctx context.Context) (Renaming, error)
 	OpenUnregister func(ctx context.Context) (Unregistering, error)
 	OpenErase      func(ctx context.Context) (Erasing, error)
 }
 
-func (v Vaults) find(nameOrPath string) (domain.Vault, error) {
-	target, err := v.Find.Execute(nameOrPath)
-	if err != nil {
-		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
+func formatVaultError(err error) error {
+	if unknown, ok := errors.AsType[*registry.UnknownError](err); ok {
+		return fmt.Errorf("%w — add it with: numen-cli vault add %s", err, unknown.Name)
 	}
-	return target, nil
+	if lookup, ok := errors.AsType[*registry.LookupError](err); ok {
+		return fmt.Errorf("%w — add it with: numen-cli vault add %s", err, lookup.Name)
+	}
+	return err
 }
 
 // Renaming is the rename of a vault over an open index.
@@ -88,7 +88,8 @@ type Erasing struct {
 // Scan is one vault made searchable.
 type Scan struct {
 	Read       indexing.ReadWholeVault
-	Summary    func(ctx context.Context) (domain.VaultSummary, error)
+	Summary    func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error)
+	Now        func() time.Time
 	Unembedded error
 	Close      func() error
 }

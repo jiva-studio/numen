@@ -80,10 +80,18 @@ type Index struct {
 	Nearest  sourceport.NearestQueries
 }
 
+// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
+type VaultFinding = func(nameOrPath string) (domain.Vault, error)
+
+// VaultPreparing prepares a Search for a vault once it has been found.
+type VaultPreparing = func(ctx context.Context, v domain.Vault) (Search, error)
+
 // Search answers a query within one vault. Without an embedder only the word search runs.
 // Floor gives the floor of a query that names none, under the recipe of the model that embeds it.
 // Extractors is how many sources are extracted at once; the default holds where it is not positive.
 type Search struct {
+	find         VaultFinding
+	prepare      VaultPreparing
 	passages     sourceport.PassageQueries
 	nearest      FindNearest
 	readers      vaultport.VaultReaders
@@ -94,6 +102,37 @@ type Search struct {
 	errorHandler window.ErrorHandler
 	cache        *QueryCache
 	Extractors   int
+}
+
+// NewByName creates a Search that resolves the vault and prepares the search over it.
+func NewByName(find VaultFinding, prepare VaultPreparing) Search {
+	return Search{find: find, prepare: prepare}
+}
+
+// WithFind sets the lookup that resolves a name, path or identity into a vault.
+func (u Search) WithFind(find VaultFinding) Search {
+	u.find = find
+	return u
+}
+
+// ExecuteByName resolves the vault and runs the search.
+func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p Parameters) ([]domain.Passage, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	v, err := u.find(nameOrPath)
+	if err != nil {
+		return nil, err
+	}
+	runner := u
+	if u.prepare != nil {
+		var prepErr error
+		runner, prepErr = u.prepare(ctx, v)
+		if prepErr != nil {
+			return nil, prepErr
+		}
+	}
+	return runner.Execute(ctx, v, query, p)
 }
 
 // New returns a search over one vault's index.

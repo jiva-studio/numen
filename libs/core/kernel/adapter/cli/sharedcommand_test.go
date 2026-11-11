@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -29,11 +30,12 @@ func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
 		}},
 	}}
 	commands := plugincommand.NewCommands(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List,
+				List: commands.List.WithFind(find),
 				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
 					return commands.Run, nil, nil
 				},

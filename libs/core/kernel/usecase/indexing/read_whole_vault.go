@@ -30,12 +30,24 @@ type VectorEmbedder interface {
 	) (vaultreading.EmbedResult, error)
 }
 
+// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
+type VaultFinding = func(nameOrPath string) (domain.Vault, error)
+
+// VaultPreparing prepares a ReadWholeVault for a vault once it has been found.
+type VaultPreparing = func(ctx context.Context, v domain.Vault) (ReadWholeVault, error)
+
 // ReadWholeVault makes a vault answer: its notes are read, the text versions of
 // its other files are cut, and what was cut is given its vectors.
 type ReadWholeVault struct {
+	find    VaultFinding
+	prepare VaultPreparing
 	notes   NoteScanner
 	texts   TextIndexer
 	vectors VectorEmbedder
+
+	Unembedded error
+
+	OnVaultFound func(domain.Vault, error)
 
 	OnNotesProgress func(vaultreading.ScanResult)
 
@@ -51,6 +63,47 @@ type ReadWholeVault struct {
 // walked, the file texts cut, and the vectors made.
 func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors VectorEmbedder) ReadWholeVault {
 	return ReadWholeVault{notes: notes, texts: texts, vectors: vectors}
+}
+
+// NewReadWholeVaultByName creates a ReadWholeVault that resolves the vault and prepares the pass over it.
+func NewReadWholeVaultByName(find VaultFinding, prepare VaultPreparing) ReadWholeVault {
+	return ReadWholeVault{find: find, prepare: prepare}
+}
+
+// WithFind sets the lookup that resolves a name, path or identity into a vault.
+func (u ReadWholeVault) WithFind(find VaultFinding) ReadWholeVault {
+	u.find = find
+	return u
+}
+
+// ExecuteByName resolves the vault and reads the whole vault.
+func (u ReadWholeVault) ExecuteByName(ctx context.Context, nameOrPath string) (domain.Vault, ReadWholeVaultResult, error) {
+	v, err := u.find(nameOrPath)
+	if err != nil {
+		return domain.Vault{}, ReadWholeVaultResult{}, err
+	}
+	runner := u
+	if u.prepare != nil {
+		prepared, prepErr := u.prepare(ctx, v)
+		if prepErr != nil {
+			return domain.Vault{}, ReadWholeVaultResult{}, prepErr
+		}
+		if prepared.Unembedded == nil {
+			prepared.Unembedded = u.Unembedded
+		}
+		prepared.OnVaultFound = u.OnVaultFound
+		prepared.OnNotesProgress = u.OnNotesProgress
+		prepared.OnTextsProgress = u.OnTextsProgress
+		prepared.OnVectorsProgress = u.OnVectorsProgress
+		prepared.IsTextSkipped = u.IsTextSkipped
+		prepared.IsVectorSkipped = u.IsVectorSkipped
+		runner = prepared
+	}
+	if runner.OnVaultFound != nil {
+		runner.OnVaultFound(v, runner.Unembedded)
+	}
+	res, err := runner.Execute(ctx, v)
+	return v, res, err
 }
 
 // ReadWholeVaultResult is the outcome of each pass. A pass that did not run is

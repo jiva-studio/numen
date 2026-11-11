@@ -62,9 +62,10 @@ func getPluginCommandSynopsis(list plugincommand.List, command manifest.Command)
 
 func runPluginCommand(
 	ctx context.Context, out io.Writer, deps Deps, entry plugin.CommandEntry, args []string,
-) (err error) {
+) error {
 	declared := entry.Command
-	list := deps.PluginCommands().List
+	commands := deps.PluginCommands()
+	list := commands.List
 	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(list, declared))
 	fs, arguments := newArgumentFlags(declared)
 	positional, err := parseInterspersed(fs, args)
@@ -78,21 +79,12 @@ func runPluginCommand(
 	if len(positional) != wanted {
 		return usage
 	}
-	v, err := findVault(deps, positional[0])
-	if err != nil {
-		return err
-	}
-	run, closeRun, err := deps.PluginCommands().Open(ctx, v)
-	if err != nil {
-		return err
-	}
-	defer closeInto(&err, closeRun)
 
 	call := plugin.CommandCall{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
 	if list.HasTargetVariable(declared) {
 		call.Path = positional[1]
 	}
-	result, err := run.Execute(ctx, v, call)
+	result, err := list.RunInVault(ctx, commands.Open, positional[0], call)
 	if err != nil {
 		return err
 	}

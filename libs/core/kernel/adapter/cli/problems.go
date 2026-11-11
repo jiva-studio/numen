@@ -12,10 +12,6 @@ func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []st
 	if len(args) < 1 {
 		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}
-	v, err := findVault(deps, args[0])
-	if err != nil {
-		return err
-	}
 	open, err := deps.Problems(ctx)
 	if err != nil {
 		return err
@@ -27,7 +23,7 @@ func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []st
 		named = append(named, domain.Check(name))
 	}
 
-	report, err := open.Problems.Execute(ctx, v, named...)
+	report, err := open.Problems.ExecuteByName(ctx, args[0], named...)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -54,11 +55,12 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	}}
 	var vaults []domain.Vault
 	commands := plugincommand.NewCommands(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List,
+				List: commands.List.WithFind(find),
 				Open: func(_ context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
 					vaults = append(vaults, v)
 					return commands.Run, nil, nil
@@ -190,11 +192,12 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		Command:  manifest.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
 	commands := plugincommand.NewCommands(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List,
+				List: commands.List.WithFind(find),
 				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
 					return commands.Run, nil, nil
 				},
@@ -260,11 +263,12 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 		Command:  manifest.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
 	}}}
 	commands := plugincommand.NewCommands(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
+	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List,
+				List: commands.List.WithFind(find),
 				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
 					return commands.Run, func() error { return nil }, nil
 				},

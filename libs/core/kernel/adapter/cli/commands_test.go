@@ -67,7 +67,7 @@ func createLinkDeps(links, backlinks []domain.ResolvedLink) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks})}, nil
+			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute)}, nil
 		},
 	}
 }
@@ -84,7 +84,9 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
 	for name, provided := range map[string]cli.Deps{
 		"the list of vaults cannot be opened": {
-			Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
+			Links: func(context.Context) (cli.Links, error) {
+				return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{}).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused })}, nil
+			},
 		},
 		"the links cannot be opened": {
 			Vaults: createVaultList(getNotebook()),
@@ -93,7 +95,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 		"the index cannot say what a note points at": {
 			Vaults: createVaultList(getNotebook()),
 			Links: func(context.Context) (cli.Links, error) {
-				return cli.Links{Show: query.NewShowLinks(failingLinkQueries{})}, nil
+				return cli.Links{Show: query.NewShowLinks(failingLinkQueries{}).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute)}, nil
 			},
 		},
 	} {
@@ -219,7 +221,7 @@ func problemsDeps(queries problemport.ProblemQueries) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		Problems: func(context.Context) (cli.Problems, error) {
-			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(queries))}, nil
+			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(queries)).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute)}, nil
 		},
 	}
 }
@@ -285,7 +287,9 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		args  []string
 	}{
 		"the list of vaults cannot be opened": {
-			cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }},
+			cli.Deps{Problems: func(context.Context) (cli.Problems, error) {
+				return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(fixedProblemQueries{})).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused })}, nil
+			}},
 			[]string{"problems", "notebook"},
 		},
 		"the problems cannot be opened": {
@@ -308,7 +312,9 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 			t.Errorf("%s: problems said something before it failed:\n%s", name, out)
 		}
 	}
-	if _, err := runWithDeps(cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }},
+	if _, err := runWithDeps(cli.Deps{Problems: func(context.Context) (cli.Problems, error) {
+		return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(fixedProblemQueries{})).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused })}, nil
+	}},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the rejection was lost: %v", err)
 	}
@@ -320,7 +326,7 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 	provided := createLinkDeps(nil, nil)
 	provided.Links = func(context.Context) (cli.Links, error) {
 		return cli.Links{
-			Show:  query.NewShowLinks(fixedLinkQueries{}),
+			Show:  query.NewShowLinks(fixedLinkQueries{}).WithFind(registry.NewFind(singleVaultList{getNotebook()}).Execute),
 			Close: func() error { closed++; return nil },
 		}, nil
 	}
@@ -335,9 +341,14 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 // A vault the list cannot find is reported with the list's own reason intact.
 func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 	t.Parallel()
-	provided := cli.Deps{Vaults: func() (cli.Vaults, error) {
-		return vaultParts{ports: brokenVaultList{}.ports()}.build(), nil
-	}}
+	provided := cli.Deps{
+		Vaults: func() (cli.Vaults, error) {
+			return vaultParts{ports: brokenVaultList{}.ports()}.build(), nil
+		},
+		Links: func(context.Context) (cli.Links, error) {
+			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{}).WithFind(registry.NewFind(brokenVaultList{}).Execute)}, nil
+		},
+	}
 	_, err := runWithDeps(provided, "links", "notebook", "Bees.md")
 	if !errors.Is(err, errRefused) {
 		t.Errorf("the list's reason was lost: %v", err)
@@ -472,7 +483,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 	indexPath := filepath.Join(t.TempDir(), "index.db")
 	return cli.Deps{
 		Vaults: createVaultList(target),
-		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+		Scan: func(ctx context.Context, rebuild bool) (cli.Scan, error) {
 			s.rebuilt = rebuild
 			db, err := index.Open(ctx, indexPath)
 			if err != nil {
@@ -492,16 +503,17 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 				}
 				embed.Embedder = s.embedder
 			}
+			read := indexing.NewReadWholeVault(notes, books, embed).WithFind(registry.NewFind(singleVaultList{target}).Execute)
+			read.Unembedded = s.unembedded
 			return cli.Scan{
-				Read: indexing.NewReadWholeVault(notes, books, embed),
-				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
+				Read: read,
+				Summary: func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error) {
 					if s.summary != nil {
 						return domain.VaultSummary{}, s.summary
 					}
 					return db.NoteQueries().GetSummary(ctx, v.ID)
 				},
-				Unembedded: s.unembedded,
-				Close:      db.Close,
+				Close: db.Close,
 			}, nil
 		},
 	}
@@ -598,7 +610,7 @@ func TestScanReturnsWhatWentWrong(t *testing.T) {
 	target := createNoteVault(t)
 
 	opening := (&scanFixture{}).deps(t, target)
-	opening.Scan = func(context.Context, domain.Vault, bool) (cli.Scan, error) { return cli.Scan{}, errRefused }
+	opening.Scan = func(context.Context, bool) (cli.Scan, error) { return cli.Scan{}, errRefused }
 	if _, err := runWithDeps(opening, "scan", target.Name); !errors.Is(err, errRefused) {
 		t.Errorf("a scan that cannot open answered %v", err)
 	}

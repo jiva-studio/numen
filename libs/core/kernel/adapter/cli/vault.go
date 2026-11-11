@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -27,21 +28,35 @@ func runVaultCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 	if len(args) == 0 {
 		return errors.New(vaultUsage)
 	}
-	switch args[0] {
-	case "add":
-		return addVault(out, deps, args[1:])
-	case "list":
-		return listVaults(out, deps)
-	case "rename":
-		return renameVault(ctx, out, deps, args[1:])
-	case "remove":
-		return removeVaultFromList(ctx, out, deps, args[1:])
-	case "erase":
-		return eraseVault(ctx, out, deps, args[1:])
-	case "open":
-		return openVault(out, deps, args[1:])
-	default:
+	subcommand, ok := getVaultSubcommands()[args[0]]
+	if !ok {
 		return fmt.Errorf("unknown vault command %q", args[0])
+	}
+	return subcommand(ctx, out, deps, args[1:])
+}
+
+type vaultSubcommand func(ctx context.Context, out io.Writer, deps Deps, args []string) error
+
+func getVaultSubcommands() map[string]vaultSubcommand {
+	return map[string]vaultSubcommand{
+		"add": func(_ context.Context, out io.Writer, deps Deps, args []string) error {
+			return addVault(out, deps, args)
+		},
+		"list": func(_ context.Context, out io.Writer, deps Deps, _ []string) error {
+			return listVaults(out, deps)
+		},
+		"rename": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+			return renameVault(ctx, out, deps, args)
+		},
+		"remove": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+			return removeVaultFromList(ctx, out, deps, args)
+		},
+		"erase": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+			return eraseVault(ctx, out, deps, args)
+		},
+		"open": func(_ context.Context, out io.Writer, deps Deps, args []string) error {
+			return openVault(out, deps, args)
+		},
 	}
 }
 
@@ -114,22 +129,18 @@ func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) (
 	if err != nil {
 		return err
 	}
-	v, err := vaults.find(args[0])
-	if err != nil {
-		return err
-	}
 	renaming, err := vaults.OpenRename(ctx)
 	if err != nil {
 		return err
 	}
 	defer closeInto(&err, renaming.Close)
 
-	renamed, err := renaming.Rename.Execute(ctx, v, args[1])
+	renamed, err := renaming.Rename.ExecuteByName(ctx, args[0], args[1])
 	if err != nil {
 		return err
 	}
 	r := newReporter(out)
-	r.Printf("renamed %s to %s\n  the folder is still %s\n", v.Name, renamed.Name, renamed.Path)
+	r.Printf("renamed %s to %s\n  the folder is still %s\n", renamed.PreviousName, renamed.Vault.Name, renamed.Vault.Path)
 	return r.Err()
 }
 
@@ -141,23 +152,28 @@ func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []s
 	if err != nil {
 		return err
 	}
-	v, err := vaults.find(args[0])
-	if err != nil {
-		return err
-	}
 	forgetting, err := vaults.OpenUnregister(ctx)
 	if err != nil {
 		return err
 	}
 	defer closeInto(&err, forgetting.Close)
 
-	if err := forgetting.Unregister.Execute(ctx, v); err != nil {
+	v, err := forgetting.Unregister.ExecuteByName(ctx, args[0])
+	if err != nil {
 		return err
 	}
 	r := newReporter(out)
 	r.Printf("forgot %s\n  the folder is still %s, and adding it again brings back the same vault\n",
 		v.Name, v.Path)
 	return r.Err()
+}
+
+type eraseConfirmation struct {
+	out io.Writer
+}
+
+func (c eraseConfirmation) ConfirmErase(v domain.Vault) (bool, error) {
+	return confirmErase(c.out, v)
 }
 
 func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
@@ -175,40 +191,30 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 	if err != nil {
 		return err
 	}
-	v, err := vaults.find(rest[0])
-	if err != nil {
-		return err
-	}
-	if !*yes {
-		isConfirmed, confirmErr := confirmErase(out, v)
-		if confirmErr != nil {
-			return confirmErr
-		}
-		if !isConfirmed {
-			return fmt.Errorf("%s was not erased", v.Name)
-		}
-	}
-
 	erasing, err := vaults.OpenErase(ctx)
 	if err != nil {
 		return err
 	}
 	defer closeInto(&err, erasing.Close)
 
-	res, err := erasing.Erase.Execute(ctx, v)
+	var confirm vault.EraseConfirmation
+	if !*yes {
+		confirm = eraseConfirmation{out: out}
+	}
+	res, err := erasing.Erase.ExecuteByName(ctx, rest[0], confirm)
 	if errors.Is(err, machine.ErrNoTrash) {
-		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, v.Name)
+		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, res.Vault.Name)
 	}
 	if err != nil {
 		return err
 	}
 
-	went := fmt.Sprintf("nothing was at %s", v.Path)
+	went := fmt.Sprintf("nothing was at %s", res.Vault.Path)
 	if res.IsTrashed {
-		went = fmt.Sprintf("%s went to the trash", v.Path)
+		went = fmt.Sprintf("%s went to the trash", res.Vault.Path)
 	}
 	r := newReporter(out)
-	r.Printf("erased %s\n  %s\n", v.Name, went)
+	r.Printf("erased %s\n  %s\n", res.Vault.Name, went)
 	return r.Err()
 }
 
@@ -234,22 +240,11 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	v, err := vaults.find(args[0])
+	v, err := vaults.RecordOpen.ExecuteByName(args[0])
 	if err != nil {
-		return err
-	}
-	if err := vaults.RecordOpen.Execute(v.ID); err != nil {
 		return err
 	}
 	r := newReporter(out)
 	r.Printf("the next window opens %s\n  path %s\n", v.Name, v.Path)
 	return r.Err()
-}
-
-func findVault(deps Deps, nameOrPath string) (domain.Vault, error) {
-	vaults, err := deps.Vaults()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	return vaults.find(nameOrPath)
 }

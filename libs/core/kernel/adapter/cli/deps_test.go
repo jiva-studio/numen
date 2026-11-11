@@ -48,6 +48,7 @@ func (s *session) parts(where cli.Locations) vaultParts {
 
 func (s *session) deps(where cli.Locations) cli.Deps {
 	options := vaultconfig.Options{ServiceDir: where.ServiceDir}
+	find := registry.NewFind(s.parts(where).ports.Lookup).Execute
 	return cli.Deps{
 		Vaults: func() (cli.Vaults, error) { return s.parts(where).build(), nil },
 
@@ -56,10 +57,10 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Links{}, err
 			}
-			return cli.Links{Show: query.NewShowLinks(db.NoteQueries()), Close: db.Close}, nil
+			return cli.Links{Show: query.NewShowLinks(db.NoteQueries()).WithFind(find), Close: db.Close}, nil
 		},
 
-		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+		Scan: func(ctx context.Context, rebuild bool) (cli.Scan, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return cli.Scan{}, err
@@ -79,23 +80,24 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			embed.Texts = testsupport.Texts{Readers: readers}
 
 			return cli.Scan{
-				Read: indexing.NewReadWholeVault(notes, books, embed),
-				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
+				Read: indexing.NewReadWholeVault(notes, books, embed).WithFind(find),
+				Summary: func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error) {
 					return db.NoteQueries().GetSummary(ctx, v.ID)
 				},
+				Now:   clockOf(s.parts(where).now),
 				Close: db.Close,
 			}, nil
 		},
 
 		// No embedder: a test uses no model, so a query is answered by words alone.
-		Search: func(ctx context.Context, _ domain.Vault, errorHandler window.ErrorHandler) (cli.Search, error) {
+		Search: func(ctx context.Context, errorHandler window.ErrorHandler) (cli.Search, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return cli.Search{}, err
 			}
 			return cli.Search{
 				Search: search.New(search.Index{Passages: db.ChunkSearch(), Nearest: db.ChunkSearch()}, vaultreader.Readers{Options: options},
-					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, nil, errorHandler),
+					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, nil, errorHandler).WithFind(find),
 				Close: db.Close,
 			}, nil
 		},
@@ -105,7 +107,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Problems{}, err
 			}
-			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(db.NoteProblems())), Close: db.Close}, nil
+			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(db.NoteProblems())).WithFind(find), Close: db.Close}, nil
 		},
 	}
 }
@@ -121,21 +123,20 @@ type vaultParts struct {
 }
 
 func (p vaultParts) build() cli.Vaults {
+	find := registry.NewFind(p.ports.Lookup).Execute
 	unregister := func(rows vaultport.VaultRepository) vaults.Unregister {
-		return vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
+		return vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows).WithFind(find)
 	}
 	return cli.Vaults{
-		Find:       registry.NewFind(p.ports.Lookup),
 		Add:        vaults.NewAdd(p.identity, p.ports.Vaults, p.ports.Lookup, p.ports.Saver, p.now),
 		Known:      registry.NewGetKnownVaults(p.ports.Vaults, p.ports.Last, p.readers),
-		RecordOpen: vaults.NewRecordOpen(p.ports.Recorder),
-		Now:        clockOf(p.now),
+		RecordOpen: vaults.NewRecordOpen(p.ports.Recorder).WithFind(find),
 		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
 			rows, closeRows, err := p.rows(ctx)
 			if err != nil {
 				return cli.Renaming{}, err
 			}
-			return cli.Renaming{Rename: vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows), Close: closeRows}, nil
+			return cli.Renaming{Rename: vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows).WithFind(find), Close: closeRows}, nil
 		},
 		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
 			rows, closeRows, err := p.rows(ctx)
@@ -149,7 +150,7 @@ func (p vaultParts) build() cli.Vaults {
 			if err != nil {
 				return cli.Erasing{}, err
 			}
-			return cli.Erasing{Erase: vaults.NewErase(p.identity, p.trash, unregister(rows)), Close: closeRows}, nil
+			return cli.Erasing{Erase: vaults.NewErase(p.identity, p.trash, unregister(rows)).WithFind(find), Close: closeRows}, nil
 		},
 	}
 }
@@ -224,7 +225,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 					From: "Honey.md",
 					To:   "Bees.md",
 				}},
-			})}, nil
+			}).WithFind(registry.NewFind(singleVaultList{target}).Execute)}, nil
 		},
 	}
 

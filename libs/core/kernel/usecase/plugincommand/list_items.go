@@ -58,7 +58,7 @@ func (u ListItems) listOne(ctx context.Context, v domain.Vault, path string, id 
 	if !found {
 		return ItemList{Err: fmt.Errorf("%w: %s of %s", ErrUnknownCommand, id.Command, id.PluginID)}
 	}
-	if !u.list.HasItems(entry.Command) {
+	if !hasItems(u.list.conditions, entry.Command) {
 		return ItemList{}
 	}
 	if u.versions == nil {
@@ -80,7 +80,7 @@ func (u ListItems) newList(versions []text.VersionItem, err error) ItemList {
 	}
 	items := make([]Item, 0, len(versions))
 	for _, one := range versions {
-		parts := u.list.GetParts(one.PluginID)
+		parts := getParts(u.list.commands, one.PluginID)
 		items = append(items, Item{ID: string(one.Version), Title: getVersionTitle(one, parts), Detail: getVersionDetail(one, parts)})
 	}
 	return ItemList{Items: items}

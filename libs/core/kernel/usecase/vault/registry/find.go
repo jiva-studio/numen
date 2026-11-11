@@ -26,6 +26,16 @@ func (e *UnknownError) Error() string {
 
 func (e *UnknownError) Unwrap() error { return ErrUnknown }
 
+// LookupError is a failure of the vault list when resolving a name, path or identity.
+type LookupError struct {
+	Name string
+	Err  error
+}
+
+func (e *LookupError) Error() string { return e.Err.Error() }
+
+func (e *LookupError) Unwrap() error { return e.Err }
+
 // Find resolves what the user typed — a name, a path or an identity — into
 // a vault. It is shared by every use case that works on one.
 type Find struct {
@@ -44,7 +54,7 @@ func (u Find) Execute(nameOrPath string) (domain.Vault, error) {
 	}
 	v, found, err := u.lookup.FindVault(nameOrPath)
 	if err != nil {
-		return domain.Vault{}, err
+		return domain.Vault{}, &LookupError{Name: nameOrPath, Err: err}
 	}
 	if !found {
 		return domain.Vault{}, &UnknownError{Name: nameOrPath}

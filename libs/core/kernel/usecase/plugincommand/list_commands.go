@@ -38,7 +38,7 @@ func (u ListCommands) Execute() Listing {
 func (u ListCommands) mark(entries []plugin.CommandEntry) []ListedCommand {
 	out := make([]ListedCommand, 0, len(entries))
 	for _, one := range entries {
-		out = append(out, ListedCommand{CommandEntry: one, HasItems: u.list.HasItems(one.Command)})
+		out = append(out, ListedCommand{CommandEntry: one, HasItems: hasItems(u.list.conditions, one.Command)})
 	}
 	return out
 }

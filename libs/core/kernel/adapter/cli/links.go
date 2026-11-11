@@ -13,17 +13,13 @@ func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli links <vault> <note>")
 	}
-	v, err := findVault(deps, args[0])
-	if err != nil {
-		return err
-	}
 	open, err := deps.Links(ctx)
 	if err != nil {
 		return err
 	}
 	defer closeInto(&err, open.Close)
 
-	links, err := open.Show.Execute(ctx, v, args[1])
+	links, err := open.Show.ExecuteByName(ctx, args[0], args[1])
 	if err != nil {
 		return err
 	}
@@ -36,7 +32,7 @@ func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 	if len(links.Links) > 0 {
 		r.Println("points at:")
 		for _, l := range links.Links {
-			r.Printf("  %s\n", describeLink(v, l))
+			r.Printf("  %s\n", describeLink(links.Vault, l))
 		}
 	}
 	if len(links.Backlinks) > 0 {

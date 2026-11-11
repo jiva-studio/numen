@@ -27,7 +27,7 @@ func (u RunCommand) Execute(ctx context.Context, v domain.Vault, call plugin.Com
 	}
 	entry, found := findEntry(u.list, call.PluginID, call.Command)
 	switch {
-	case !found || !u.list.HasItems(entry.Command):
+	case !found || !hasItems(u.list.conditions, entry.Command):
 		return u.run.Execute(ctx, v, call)
 	case call.ItemID == "":
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s runs over an item it offers", ErrBadArguments, call.Command)

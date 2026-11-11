@@ -61,8 +61,9 @@ func writeSharedCommandUsage(r *reporter, deps Deps) {
 
 func runSharedCommand(
 	ctx context.Context, out io.Writer, deps Deps, handlers []plugin.CommandEntry, args []string,
-) (err error) {
-	list := deps.PluginCommands().List
+) error {
+	commands := deps.PluginCommands()
+	list := commands.List
 	usage := errors.New("usage: numen-cli " + getSharedCommandSynopsis(list, handlers))
 	fs, arguments := newArgumentFlags(handlers[0].Command)
 	picked := ""
@@ -78,30 +79,16 @@ func runSharedCommand(
 	if len(positional) != wanted {
 		return usage
 	}
-	v, err := findVault(deps, positional[0])
-	if err != nil {
-		return err
-	}
 	path := ""
 	if wanted == 2 {
 		path = positional[1]
 	}
-	run, closeRun, err := deps.PluginCommands().Open(ctx, v)
-	if err != nil {
-		return err
-	}
-	defer closeInto(&err, closeRun)
-
-	handler, err := run.FindHandler(ctx, v, handlers, picked, path)
+	result, err := list.RunSharedInVault(ctx, commands.Open, positional[0], handlers, picked, plugin.CommandCall{
+		Path: path, Arguments: arguments,
+	})
 	if errors.As(err, new(*plugincommand.SeveralHandlersError)) {
 		return fmt.Errorf("%w; pick one with --%s", err, pluginFlag)
 	}
-	if err != nil {
-		return err
-	}
-	result, err := run.Execute(ctx, v, plugin.CommandCall{
-		PluginID: handler.PluginID, Command: handler.Command.ID, Path: path, Arguments: arguments,
-	})
 	if err != nil {
 		return err
 	}

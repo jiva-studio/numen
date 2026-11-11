@@ -18,16 +18,12 @@ func runSearchCommand(
 	if len(args) < 2 {
 		return errors.New("usage: numen-cli search <vault> <query>")
 	}
-	v, err := findVault(deps, args[0])
-	if err != nil {
-		return err
-	}
 
 	// The same search the window runs. An installation with no model searches by
 	// words alone, which is reported through the error handler.
 	diagnostics := newReporter(errOut)
 	errorHandler := func(err error) { diagnostics.Printf("search by words only: %v\n", err) }
-	open, err := deps.Search(ctx, v, errorHandler)
+	open, err := deps.Search(ctx, errorHandler)
 	if err != nil {
 		return err
 	}
@@ -36,7 +32,7 @@ func runSearchCommand(
 		diagnostics.Printf("search by words only: %v\n", open.Words)
 	}
 
-	found, err := open.Search.Execute(ctx, v, args[1], search.Parameters{})
+	found, err := open.Search.ExecuteByName(ctx, args[0], args[1], search.Parameters{})
 	if err != nil {
 		return err
 	}

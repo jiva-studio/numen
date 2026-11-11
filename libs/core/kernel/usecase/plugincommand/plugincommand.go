@@ -24,6 +24,12 @@ type NoteReader interface {
 	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
 }
 
+// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
+type VaultFinding = func(nameOrPath string) (domain.Vault, error)
+
+// RunnerOpener opens the command runner over a vault.
+type RunnerOpener = func(ctx context.Context, v domain.Vault) (Run, func() error, error)
+
 var (
 	// ErrUnknownCommand is a command no enabled plugin declares.
 	ErrUnknownCommand = errors.New("no enabled plugin declares that command")
@@ -59,8 +65,63 @@ func NewCommands(
 
 // List lists the commands the enabled plugins declare.
 type List struct {
+	find       VaultFinding
 	commands   pluginport.PluginCommands
 	conditions *when.Conditions
+}
+
+// WithFind sets the lookup that resolves a name, path or identity into a vault.
+func (u List) WithFind(find VaultFinding) List {
+	u.find = find
+	return u
+}
+
+// RunInVault resolves the vault, opens the command runner over it, and runs the command.
+func (u List) RunInVault(
+	ctx context.Context, open RunnerOpener, nameOrPath string, call plugin.CommandCall,
+) (_ plugin.CommandResult, err error) {
+	v, err := u.find(nameOrPath)
+	if err != nil {
+		return plugin.CommandResult{}, err
+	}
+	run, closeRun, err := open(ctx, v)
+	if err != nil {
+		return plugin.CommandResult{}, err
+	}
+	defer func() {
+		if closeRun != nil {
+			err = errors.Join(err, closeRun())
+		}
+	}()
+	return run.Execute(ctx, v, call)
+}
+
+// RunSharedInVault resolves the vault, opens the command runner over it, picks the handler of the shared
+// command, and runs it.
+func (u List) RunSharedInVault(
+	ctx context.Context, open RunnerOpener, nameOrPath string, handlers []plugin.CommandEntry,
+	pluginID string, call plugin.CommandCall,
+) (_ plugin.CommandResult, err error) {
+	v, err := u.find(nameOrPath)
+	if err != nil {
+		return plugin.CommandResult{}, err
+	}
+	run, closeRun, err := open(ctx, v)
+	if err != nil {
+		return plugin.CommandResult{}, err
+	}
+	defer func() {
+		if closeRun != nil {
+			err = errors.Join(err, closeRun())
+		}
+	}()
+	handler, err := run.FindHandler(ctx, v, handlers, pluginID, call.Path)
+	if err != nil {
+		return plugin.CommandResult{}, err
+	}
+	call.PluginID = handler.PluginID
+	call.Command = handler.Command.ID
+	return run.Execute(ctx, v, call)
 }
 
 // Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
@@ -94,17 +155,15 @@ func (u List) ExecuteHandlers() []plugin.CommandEntry {
 	})
 }
 
-// GetParts returns the parts of the enabled plugin of the id, its name and the titles of its text kinds.
-func (u List) GetParts(pluginID string) plugin.Parts {
-	if u.commands == nil {
+func getParts(commands pluginport.PluginCommands, pluginID string) plugin.Parts {
+	if commands == nil {
 		return plugin.Parts{}
 	}
-	return u.commands.GetParts(pluginID)
+	return commands.GetParts(pluginID)
 }
 
-// HasBackend reports whether the plugin has a backend that runs its commands and handlers.
-func (u List) HasBackend(pluginID string) bool {
-	return u.commands != nil && u.commands.GetParts(pluginID).HasBackend
+func hasBackend(commands pluginport.PluginCommands, pluginID string) bool {
+	return commands != nil && commands.GetParts(pluginID).HasBackend
 }
 
 // ExecuteSlots lists the slot entries of the enabled plugins, leaving out those of a plugin the host
@@ -282,12 +341,6 @@ func (u Run) readNote(
 		return target, err
 	}
 	return target.WithNote(noteType, properties), nil
-}
-
-// HasItems reports whether the command offers one item per text version of a file: its condition
-// names version.*. A condition that cannot be read counts as having items, so it is listed nowhere.
-func (u List) HasItems(command manifest.Command) bool {
-	return hasItems(u.conditions, command)
 }
 
 func hasItems(conditions *when.Conditions, command manifest.Command) bool {

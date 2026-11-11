@@ -82,21 +82,37 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 		return errors.New("no command given")
 	}
 
-	switch rest[0] {
-	case "vault":
-		return runVaultCommand(ctx, out, deps, rest[1:])
-	case "scan":
-		return runScanCommand(ctx, out, deps, rest[1:])
-	case "search":
-		return runSearchCommand(ctx, out, errOut, deps, rest[1:])
-	case "links":
-		return runLinksCommand(ctx, out, deps, rest[1:])
-	case "problems":
-		return runProblemsCommand(ctx, out, deps, rest[1:])
-	case "help", "-h", "--help":
+	if cmd, ok := getCLICommands()[rest[0]]; ok {
+		return formatVaultError(cmd(ctx, out, errOut, deps, rest[1:]))
+	}
+	return formatVaultError(runCommandOfPlugins(ctx, out, deps, rest))
+}
+
+type cliCommand func(ctx context.Context, out, errOut io.Writer, deps Deps, args []string) error
+
+func getCLICommands() map[string]cliCommand {
+	help := func(_ context.Context, out, _ io.Writer, deps Deps, _ []string) error {
 		return writeUsage(out, deps)
-	default:
-		return runCommandOfPlugins(ctx, out, deps, rest)
+	}
+	return map[string]cliCommand{
+		"vault": func(ctx context.Context, out, _ io.Writer, deps Deps, args []string) error {
+			return runVaultCommand(ctx, out, deps, args)
+		},
+		"scan": func(ctx context.Context, out, _ io.Writer, deps Deps, args []string) error {
+			return runScanCommand(ctx, out, deps, args)
+		},
+		"search": func(ctx context.Context, out, errOut io.Writer, deps Deps, args []string) error {
+			return runSearchCommand(ctx, out, errOut, deps, args)
+		},
+		"links": func(ctx context.Context, out, _ io.Writer, deps Deps, args []string) error {
+			return runLinksCommand(ctx, out, deps, args)
+		},
+		"problems": func(ctx context.Context, out, _ io.Writer, deps Deps, args []string) error {
+			return runProblemsCommand(ctx, out, deps, args)
+		},
+		"help":   help,
+		"-h":     help,
+		"--help": help,
 	}
 }
 

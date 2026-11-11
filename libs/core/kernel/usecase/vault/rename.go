@@ -15,15 +15,41 @@ import (
 // lives in the list this installation keeps; the folder keeps the name assigned
 // by the filesystem.
 type Rename struct {
+	find   VaultFinding
 	vaults vaultport.VaultList
 	saver  vaultport.VaultSaver
 	index  vaultport.VaultRepository
+}
+
+// RenameResult is a renamed vault and the name it had before.
+type RenameResult struct {
+	PreviousName string
+	Vault        domain.Vault
 }
 
 // NewRename creates a Rename from the list this installation keeps and the saver of
 // the list, which stores the name, and the index, which holds the row the vault's other rows point at.
 func NewRename(vaults vaultport.VaultList, saver vaultport.VaultSaver, index vaultport.VaultRepository) Rename {
 	return Rename{vaults: vaults, saver: saver, index: index}
+}
+
+// WithFind sets the lookup that resolves a name, path or identity into a vault.
+func (u Rename) WithFind(find VaultFinding) Rename {
+	u.find = find
+	return u
+}
+
+// ExecuteByName resolves the vault and renames it.
+func (u Rename) ExecuteByName(ctx context.Context, nameOrPath, name string) (RenameResult, error) {
+	v, err := u.find(nameOrPath)
+	if err != nil {
+		return RenameResult{}, err
+	}
+	renamed, err := u.Execute(ctx, v, name)
+	if err != nil {
+		return RenameResult{}, err
+	}
+	return RenameResult{PreviousName: v.Name, Vault: renamed}, nil
 }
 
 // Execute answers with the vault under its new name. The name a vault already
