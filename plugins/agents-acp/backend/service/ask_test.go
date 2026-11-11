@@ -16,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/agents"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/ask"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/agents"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/ask"
 )
 
 func askAgent(t *testing.T, svc *testServer, task *agentrun.Request) (said, stopReason string) {

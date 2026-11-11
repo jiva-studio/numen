@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/preview"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 )
 
 // The invented vault: a note, a bird guide, a book and a recorded talk.

@@ -5,11 +5,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/notepath"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/arrange"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/files"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/library"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/links"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notepath"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notes"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/vaults"
 )

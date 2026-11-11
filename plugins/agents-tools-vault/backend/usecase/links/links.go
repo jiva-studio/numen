@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/notepath"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/ports"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notepath"
 )
 
 // UseCase works the links of the notes of one vault.

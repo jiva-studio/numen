@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/runs"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
 )
 
 func resolveCommand(command []string, customPath ...string) (string, []string) {
@@ -75,10 +75,10 @@ func makeAnswerCommand(
 		args = append(args, "--conversation", sessID)
 	}
 	return runs.Command{
-		Path: binName,
-		Args: args,
-		Dir:  dir,
-		Env:  append(os.Environ(), "HOME="+tempHome),
+		Path:  binName,
+		Args:  args,
+		Dir:   dir,
+		Env:   append(os.Environ(), "HOME="+tempHome),
 		Token: "",
 		Release: func() error {
 			return errors.Join(cleanHome(), cleanDir())
