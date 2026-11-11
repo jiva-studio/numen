@@ -14,9 +14,15 @@ const createLoader = () => {
   let settleInterface: () => void = () => undefined
   const failed: { id: string; error: string }[] = []
   const loader: PluginStarter = {
-    trackPlugins: async (ids) => void calls.push(`track ${ids.join(',')}`),
-    start: async () => void calls.push('start'),
-    close: async () => void calls.push('close'),
+    trackPlugins: async (ids) => {
+      calls.push(`track ${ids.join(',')}`)
+    },
+    start: async () => {
+      calls.push('start')
+    },
+    close: async () => {
+      calls.push('close')
+    },
     status: {
       waitForInterface: () => new Promise<void>((resolve) => (settleInterface = resolve)),
       getFailedPlugins: () => failed,

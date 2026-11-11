@@ -1,6 +1,15 @@
-import { computed, effectScope, shallowRef } from 'vue'
+import { computed, effectScope, shallowRef, type EffectScope } from 'vue'
 import type { Disposable } from '@numen/plugin-loader'
-import { findFrontView, type PluginView, type WindowTab } from '../lib/tab'
+import { findFrontView, type PluginView } from '../lib/tab'
+
+/** The one tab the window draws: a kind opened on a vault, and what the kind made of it. */
+export interface WindowTab {
+  readonly id: string
+  readonly vault: string
+  readonly view: PluginView
+  readonly state: object | undefined
+  readonly scope: EffectScope
+}
 
 /**
  * The tab kinds the plugins registered and the one tab the window draws: the front kind opened on a

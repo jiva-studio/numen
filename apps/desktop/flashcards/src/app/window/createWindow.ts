@@ -80,7 +80,12 @@ export function createWindow(deps: WindowDeps = {}) {
     tab: tabs.tab,
     openTab: tabs.openTab,
     vaults: { list: vaults, isListing },
-    plugins: { ...start, titleBarView },
+    plugins: {
+      failures: start.failures,
+      isLoading: start.isLoading,
+      isStarted: start.isStarted,
+      titleBarView,
+    },
     notices,
     mountView,
     appearance,
