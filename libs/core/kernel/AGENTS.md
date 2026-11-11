@@ -16,7 +16,7 @@ Each check is a folder of `tools/checks/structure/go`.
 | ----------------------------------------------------------------------------- | -------------------------------------------------- |
 | A package is on the layer its path states, and imports only from lower layers | `go/layers`                      |
 | No package that the core is compiled from imports an adapter                  | `go/direction`   |
-| A use case imports no other use case (use cases are isolated)                 | `go/usecase-edges`               |
+| A use case package imports no other use case package (packages are isolated; inside one package the use cases may call each other and no check covers it) | `go/usecase-edges`               |
 | An adapter does not name the port it implements                               | `go/adapters-claim-no-ports`             |
 | The composition root returns no adapter type                                  | `go/ports` |
 | A package is imported under the name its layer gives it                       | `go/layers`             |
@@ -87,9 +87,8 @@ after construction.
 No use case exposes a collaborator.
 
 A dependency that may be absent is an optional field or a separate type, and the
-composition root decides it explicitly: `ProofreadingConfig.Recognition`
-returns a boolean flag (e.g. `isConfigured`), so a window that cannot proofread never receives a
-proofreading dependency.
+composition root decides it explicitly. A use case does not test a required
+collaborator for nil.
 
 A policy is not a collaborator. How many pages a batch holds, where progress is
 reported, what to do after a write — those are set on the created value and have
