@@ -45,9 +45,15 @@ func getVaultSubcommands() map[string]vaultSubcommand {
 		"list": func(_ context.Context, out io.Writer, deps Deps, _ []string) error {
 			return listVaults(out, deps)
 		},
-		"rename": renameVault,
-		"remove": removeVaultFromList,
-		"erase":  eraseVault,
+		"rename": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+			return renameVault(ctx, deps, out, args)
+		},
+		"remove": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+			return removeVaultFromList(ctx, deps, out, args)
+		},
+		"erase": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+			return eraseVault(ctx, deps, out, args)
+		},
 		"open": func(_ context.Context, out io.Writer, deps Deps, args []string) error {
 			return openVault(out, deps, args)
 		},
@@ -115,7 +121,7 @@ func listVaults(out io.Writer, deps Deps) error {
 	return r.Err()
 }
 
-func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
+func renameVault(ctx context.Context, deps Deps, out io.Writer, args []string) (err error) {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli vault rename <vault> <new name>")
 	}
@@ -138,7 +144,7 @@ func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) (
 	return r.Err()
 }
 
-func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
+func removeVaultFromList(ctx context.Context, deps Deps, out io.Writer, args []string) (err error) {
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault remove <vault>")
 	}
@@ -170,7 +176,7 @@ func (c eraseConfirmation) ConfirmErase(v domain.Vault) (bool, error) {
 	return confirmErase(c.out, v)
 }
 
-func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
+func eraseVault(ctx context.Context, deps Deps, out io.Writer, args []string) (err error) {
 	fs := flag.NewFlagSet("vault erase", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	yes := fs.Bool("yes", false, "erase without asking")

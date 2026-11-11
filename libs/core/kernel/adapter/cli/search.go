@@ -13,7 +13,7 @@ import (
 const excerptRunes = 160
 
 func runSearchCommand(
-	ctx context.Context, out, errOut io.Writer, deps Deps, args []string,
+	ctx context.Context, deps Deps, out, errOut io.Writer, args []string,
 ) (err error) {
 	if len(args) < 2 {
 		return errors.New("usage: numen-cli search <vault> <query>")
