@@ -13,7 +13,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import { measureElementRect } from '@/shared/lib/dom'
+import { measureElementRect } from '@/shared/api/dom'
 import { useMenuDismissal, useMenuPlacement } from '../menu'
 import SearchableList from './SearchableList.vue'
 import type {

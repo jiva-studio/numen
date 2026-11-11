@@ -17,7 +17,7 @@ Pattern for a new control: a folder in `shared/ui/`, the component, the types fi
 
 `libs/ui/components/src/shared/ui/menu/Menu.types.ts:4-16` declares the props `items`, `at`, `isOpen`, `viewport` and `clock`. `Menu.vue:17-28` gives `viewport` and `clock` browser defaults. The event `choose` returns the identifier the caller gave the item (`Menu.types.ts:22`). The menu knows no domain: the caller maps notes, tabs or cards to `MenuItem`s and maps the returned identifier back.
 
-The clock parameter takes the shape `Clock` from `shared/lib/time/clock.ts:3-18` (`now`, `schedule`, `cancel`), whose `browserClock` is the default; `getNow()` and `getMonotonicNow()` are the only functions that read the machine clock, and the lint selectors allow the reads there alone. A test of the menu passes its own clock and decides when time passes.
+The clock parameter takes the shape `Clock` from `shared/lib/time/clock.ts` (`now`, `schedule`, `cancel`), whose `browserClock` in `shared/api/clock.ts` is the default; `getNow()` and `getMonotonicNow()` are the only functions that read the machine clock, and the lint selectors allow the reads there alone. A test of the menu passes its own clock and decides when time passes.
 
 ## A feature slice: the tree
 

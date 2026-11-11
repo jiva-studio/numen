@@ -207,6 +207,48 @@ const maxComposableReturnProperties = {
  * 2. vue-script-sections: Enforce the canonical order of the top-level statements of a script setup (AGENTS.md rule 4).
  * 3. max-script-lines: Enforce max lines of executable code in <script> (ignoring comments/banners).
  */
+/** The globals a pure segment may not reach: the window, the document, storage, timers, observers and the network. */
+const BROWSER_GLOBALS = new Set([
+  'window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'location', 'history', 'screen',
+  'performance', 'getComputedStyle', 'matchMedia', 'innerWidth', 'innerHeight', 'screenX', 'screenY',
+  'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'requestAnimationFrame',
+  'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'queueMicrotask',
+  'ResizeObserver', 'IntersectionObserver', 'MutationObserver', 'fetch', 'XMLHttpRequest',
+  'WebSocket', 'EventSource', 'Worker', 'CSS', 'alert', 'confirm', 'prompt',
+])
+
+/** The DOM types a pure segment may not name when they are the platform's own and no file declares them. */
+const DOM_TYPES = new Set([
+  'Element', 'Node', 'ParentNode', 'ChildNode', 'NodeList', 'Document', 'DocumentFragment', 'ShadowRoot',
+  'Window', 'Navigator', 'Storage', 'Location', 'History', 'EventTarget', 'Event', 'KeyboardEvent',
+  'MouseEvent', 'PointerEvent', 'WheelEvent', 'DragEvent', 'ClipboardEvent', 'FocusEvent', 'InputEvent',
+  'TouchEvent', 'CustomEvent', 'UIEvent', 'CompositionEvent', 'MessageEvent', 'StorageEvent', 'DOMRect',
+  'DOMRectReadOnly', 'DOMTokenList', 'DOMException', 'Range', 'Selection', 'CSSStyleDeclaration',
+  'ResizeObserverSize', 'ResizeObserverEntry', 'DataTransfer',
+])
+
+const isPlatformElementType = (name) => /^(HTML|SVG|MathML)\w*Element$/.test(name)
+
+/** The members that build, query or listen to the DOM, wherever the object came from. */
+const DOM_MEMBERS = new Set([
+  'addEventListener', 'removeEventListener', 'dispatchEvent', 'createElement', 'createElementNS',
+  'createTextNode', 'createRange', 'createDocumentFragment', 'querySelector', 'querySelectorAll',
+  'getElementById', 'getBoundingClientRect', 'appendChild', 'replaceChildren', 'setAttribute',
+  'removeAttribute', 'classList', 'dataset', 'innerHTML', 'execCommand', 'getSelection',
+])
+
+/** The platform ports of `@numen/ui`: a pure segment takes what they provide as a parameter. */
+const PLATFORM_PORTS = new Set([
+  'doc', 'win', 'nav', 'hasWindow', 'hasDocument', 'measureWindow', 'measureRect', 'measureElementRect',
+  'getNow', 'getCurrentDate', 'getMonotonicNow', 'browserClock', 'browserViewport', 'onNextFrame',
+  'loadWailsRuntime', 'openExternalUrl', 'interceptExternalLinks',
+])
+
+const isFrameworkImport = (source) =>
+  source === 'vue' || source === 'pinia' || source === 'vue-router' || source.startsWith('@vue/') || source.endsWith('.vue')
+
+const isUndeclared = (reference) => !reference.resolved || reference.resolved.defs.length === 0
+
 export default {
   rules: {
     'max-inline-props': {
@@ -763,6 +805,75 @@ export default {
           TSTypeReference(node) {
             if (node.typeName.type === 'Identifier' && node.typeName.name === 'Unvalidated' && !isParseBoundary(node))
               context.report({ node, messageId: 'unvalidatedOutsideParse' })
+          },
+        }
+      },
+    },
+
+    'pure-segment': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Keep a lib segment pure TypeScript: no Vue, DOM, browser global, timer, clock or platform port',
+        },
+        messages: {
+          framework: 'A pure segment imports no Vue, Pinia or component: "{{ source }}".',
+          global: 'A pure segment does not reach the browser global "{{ name }}"; take it as a parameter.',
+          domType: 'A pure segment does not name the DOM type "{{ name }}"; describe the fields it reads.',
+          domMember: 'A pure segment does not build, query or listen to the DOM: "{{ name }}".',
+          port: 'A pure segment does not import the platform port "{{ name }}"; take it as a parameter.',
+          clock: 'A pure segment does not read the clock; take the time as a parameter.',
+          random: 'A pure segment does not draw random numbers; take them as a parameter.',
+        },
+      },
+      create(context) {
+        const sourceCode = context.sourceCode
+        const reportReference = (reference) => {
+          const name = reference.identifier.name
+          if (!isUndeclared(reference)) return
+          if (BROWSER_GLOBALS.has(name)) {
+            context.report({ node: reference.identifier, messageId: 'global', data: { name } })
+          } else if (DOM_TYPES.has(name) || isPlatformElementType(name)) {
+            context.report({ node: reference.identifier, messageId: 'domType', data: { name } })
+          }
+        }
+        const isGlobalName = (node, name) => {
+          if (node.type !== 'Identifier' || node.name !== name) return false
+          let found
+          for (let one = sourceCode.getScope(node); one && !found; one = one.upper) found = one.set.get(name)
+          return !found || found.defs.length === 0
+        }
+        return {
+          Program() {
+            for (const scope of sourceCode.scopeManager.scopes) {
+              for (const reference of scope.references) reportReference(reference)
+            }
+          },
+          ImportDeclaration(node) {
+            const source = String(node.source.value)
+            if (isFrameworkImport(source)) context.report({ node, messageId: 'framework', data: { source } })
+            if (source !== '@numen/ui') return
+            for (const specifier of node.specifiers) {
+              const name = specifier.type === 'ImportSpecifier' ? specifier.imported.name : ''
+              if (PLATFORM_PORTS.has(name)) context.report({ node: specifier, messageId: 'port', data: { name } })
+            }
+          },
+          MemberExpression(node) {
+            const property = node.computed ? undefined : node.property.name
+            if (isGlobalName(node.object, 'globalThis') && (BROWSER_GLOBALS.has(property) || DOM_TYPES.has(property))) {
+              context.report({ node, messageId: 'global', data: { name: property } })
+            }
+            if (property && DOM_MEMBERS.has(property)) {
+              context.report({ node: node.property, messageId: 'domMember', data: { name: property } })
+            }
+            if (isGlobalName(node.object, 'Date') && property === 'now') context.report({ node, messageId: 'clock' })
+            if (isGlobalName(node.object, 'Math') && property === 'random') context.report({ node, messageId: 'random' })
+          },
+          NewExpression(node) {
+            if (isGlobalName(node.callee, 'Date') && node.arguments.length === 0) {
+              context.report({ node, messageId: 'clock' })
+            }
           },
         }
       },

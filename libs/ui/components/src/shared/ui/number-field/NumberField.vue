@@ -8,7 +8,7 @@
  */
 import { computed, useId, useTemplateRef } from 'vue'
 import { runInBackground } from '@/shared/lib/async/background'
-import { reportFailure } from '@/shared/lib/async/report'
+import { reportFailure } from '@/shared/api/report'
 import { cn } from '@/shared/lib/dom/classes'
 import { DEFAULT_BOUNDS, useNumberEntry } from './number'
 import type { NumberFieldProps } from './NumberField.types'

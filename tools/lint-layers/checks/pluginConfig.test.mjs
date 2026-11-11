@@ -58,6 +58,22 @@ describe("the golden plugin configuration", () => {
     assert.deepEqual(findLines(results, "frontend/deck/lib/cards.ts", "no-restricted-imports"), [1, 2, 3, 8, 9, 10, 11]);
   });
 
+  it("fails a lib file that reaches the browser, a timer, the clock, a DOM type or the DOM", async () => {
+    const results = await lintPlanted({
+      "frontend/deck/lib/browser.ts": [
+        "export const agent = navigator.userAgent",
+        "export const later = (run: () => void) => setTimeout(run, 1)",
+        "export const stamp = () => Date.now()",
+        "export const read = (element: HTMLElement) => element.id",
+        "export const press = (event: KeyboardEvent) => event.key",
+        "export const build = (host: { createElement: (tag: string) => object }) => host.createElement('div')",
+        "export const ok = (press: { readonly key: string }) => press.key",
+        "",
+      ].join("\n"),
+    });
+    assert.deepEqual(findLines(results, "frontend/deck/lib/browser.ts", "numen/pure-segment"), [1, 2, 3, 4, 5, 6]);
+  });
+
   it("applies the component rules of the base config to a plugin component", async () => {
     const props = Array.from({ length: 8 }, (_, i) => `  field${i}: string`).join("\n");
     const results = await lintPlanted({

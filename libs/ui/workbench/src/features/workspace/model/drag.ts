@@ -6,11 +6,11 @@ import {
   getCaretRect,
   findEdgeSide,
   getOverlay,
-  getRect,
   getSide,
   getSlot,
   type TabDropTarget,
 } from '../lib/drop'
+import { getRect } from '../api/rect'
 import {
   dropOnEdge,
   dropTab as dropTabInTree,
@@ -19,7 +19,7 @@ import {
 } from '../lib/edit'
 import type { NodeId, Tab, TabId, Workspace } from '../lib/node'
 import type { Rect } from '../lib/rect'
-import { getViewportSize, getWindowOrigin } from '@/shared/lib/dom'
+import { getViewportSize, getWindowOrigin } from '@/shared/api/dom'
 
 interface Drag {
   readonly tab: TabId

@@ -4,7 +4,6 @@ import {
   getCaretRect,
   findEdgeSide,
   getOverlay,
-  getRect,
   getSide,
   getSlot,
   DEFAULT_DROP,
@@ -196,15 +195,5 @@ describe('findEdgeSide', () => {
 
   it('reaches nothing at no reach at all', () => {
     expect(findEdgeSide({ x: 0, y: 200 }, BOX, 0)).toBeNull()
-  })
-})
-
-describe('getRect', () => {
-  it('reads what an element takes up on screen', () => {
-    const element = {
-      getBoundingClientRect: () => ({ left: 10, top: 20, width: 30, height: 40 }),
-    } as unknown as Element
-
-    expect(getRect(element)).toStrictEqual({ x: 10, y: 20, width: 30, height: 40 })
   })
 })

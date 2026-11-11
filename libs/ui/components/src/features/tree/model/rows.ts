@@ -5,7 +5,7 @@
  * keyboard focus can be set on a row added in the same update.
  */
 import { computed, nextTick, shallowRef, type ComputedRef, type Ref } from 'vue'
-import type { RefTarget } from '@/shared/lib/dom/refs'
+import type { RefTarget } from '@/shared/model/refs'
 import type { RowId, ShownRow } from '../lib/row'
 
 export interface DrawnRowsState {

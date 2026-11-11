@@ -5,8 +5,9 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, shallowRef, triggerRef } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { Size } from '../math/geometry'
-import { browserViewport, useFreeSpace, useViewport, useWholeViewport } from './viewport'
+import type { Size } from '../lib/math/geometry'
+import { browserViewport } from '../api/viewport'
+import { useFreeSpace, useViewport, useWholeViewport } from './viewport'
 
 afterEach(() => {
   vi.unstubAllGlobals()

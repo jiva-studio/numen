@@ -10,7 +10,8 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
-import { safe, scheme } from './safe'
+import { safe } from './safe'
+import { scheme } from '../lib/cards/links'
 
 /** How many arrangements one run measures. */
 const ARRANGEMENTS = 2_000

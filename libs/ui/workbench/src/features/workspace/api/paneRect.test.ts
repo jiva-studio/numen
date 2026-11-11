@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { branch, pane, type Workspace } from './node'
+import { branch, pane, type Workspace } from '../lib/node'
 import { getTabPaneRect } from './paneRect'
 
 const WORKSPACE: Workspace = {

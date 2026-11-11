@@ -6,7 +6,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate, TASKS_VIEW } from './index'
-import { APPEAR_DELAY_MS, HOLD_MS } from './lib/chipDisplay'
+import { APPEAR_DELAY_MS, HOLD_MS } from './model/chipDisplay'
 import { createTask } from './testing/tasks'
 
 const manifest = JSON.parse(

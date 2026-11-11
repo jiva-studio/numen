@@ -25,7 +25,7 @@ export const DEMO_TABS: readonly (Tab & { readonly kind: TabKind })[] = [
 ]
 
 /** The paper the pdf tab shows. */
-const PDF_TAB_PATH = BOLTZMANN_PATH
+export const PDF_TAB_PATH = BOLTZMANN_PATH
 
 /** The panes the window opens with: the files, the plex and the note tabs, and the agent. */
 export function createDemoWorkspace(): Workspace {

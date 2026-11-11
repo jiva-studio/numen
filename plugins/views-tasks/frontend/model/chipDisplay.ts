@@ -1,4 +1,4 @@
-import type { TaskBatch } from './summary'
+import type { TaskBatch } from '../lib/summary'
 
 export const APPEAR_DELAY_MS = 300
 export const HOLD_MS = 500

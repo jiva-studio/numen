@@ -34,6 +34,7 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
       at: getAnchor(),
       popoverSize: { width: 320, height: 160 },
       containerSize: measureWindow(),
+      windowSize: measureWindow(),
     }),
   )
 
@@ -50,6 +51,7 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
       at: getAnchor(),
       popoverSize: getElementSize(el),
       containerSize: getContainerSize(parent),
+      windowSize: measureWindow(),
     })
   }
 

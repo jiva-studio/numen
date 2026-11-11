@@ -3,7 +3,8 @@
  * address bar.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { interceptExternalLinks, isExternalLink } from './externalLink'
+import { isExternalLink } from '../lib/text/externalLink'
+import { interceptExternalLinks } from './externalLink'
 
 let stop: (() => void) | undefined
 

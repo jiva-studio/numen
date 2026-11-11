@@ -12,7 +12,7 @@
  */
 import { computed, useId, useTemplateRef, type VNode } from 'vue'
 import { reportFailure, runInBackground } from '@numen/ui'
-import { getUserAgent } from '@/shared/lib/dom'
+import { getUserAgent } from '@/shared/api/dom'
 import PaletteKeyHints from './PaletteKeyHints.vue'
 import { PaletteActions } from './palette-actions'
 import { PaletteField } from './palette-field'

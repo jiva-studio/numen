@@ -21,7 +21,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { browserClock, type Clock } from '@numen/ui'
+import type { Clock } from '@numen/ui'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {
@@ -236,5 +236,5 @@ class Pace {
   }
 }
 
-export const createPacePlugin = (clock: Clock = browserClock) =>
+export const createPacePlugin = (clock: Clock) =>
   ViewPlugin.define((view) => new Pace(view, clock))

@@ -9,7 +9,7 @@ import type { VNode } from 'vue'
  */
 import { WelcomeRow } from '../welcome-row'
 import { VaultList } from './vault-list'
-import type { FooterEntry, VaultRow } from '../../lib/welcome'
+import type { FooterEntry, VaultRow } from '../../model/welcome'
 
 withDefaults(
   defineProps<{

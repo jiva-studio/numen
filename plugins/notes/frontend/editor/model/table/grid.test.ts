@@ -5,7 +5,7 @@ import { ChangeSet, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import { getGrid, isWritable, moveBlock } from './grid'
 import { GFM } from '@lezer/markdown'
-import { LANGUAGES } from '../config/languages'
+import { LANGUAGES } from '../../lib/config/languages'
 import { createState } from '../../fixtures/state'
 
 const TABLE = '| a | b |\n|---|---|\n| c | d |\n'

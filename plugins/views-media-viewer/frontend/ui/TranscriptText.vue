@@ -4,7 +4,7 @@
  */
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 import type { Extension } from '@codemirror/state'
-import { createTranscriptView, type TranscriptView } from '../lib/transcriptView'
+import { createTranscriptView, type TranscriptView } from '../model/transcriptView'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{

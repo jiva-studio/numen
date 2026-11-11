@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { KeyCap } from '@numen/ui'
 import WelcomePage from './WelcomePage.vue'
 import { VAULT_LETTERS } from '../lib/letters'
-import type { FooterEntry, VaultRow, WelcomeAction } from '../lib/welcome'
+import type { FooterEntry, VaultRow, WelcomeAction } from '../model/welcome'
 
 const vault = (id: string): VaultRow => ({ id, name: id, path: `/vaults/${id}` })
 

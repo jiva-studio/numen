@@ -171,6 +171,34 @@ export function verifyStrictLintRules() {
   failOnFindings("Package lint configuration lacks the strict rule set", findings);
 }
 
+/** The packages that hold a `lib` segment, with the first source file of it: the file the resolved config is read for. */
+export function listLibProbes(trackedFiles) {
+  const probes = new Map();
+  const isLibSource = (file) => /\/lib\/.*\.ts$/.test(file) && !/\.(test|stories|d)\.ts$/.test(file);
+  const packages = listLintedPackages(trackedFiles).filter((one) => one.hasConfig);
+  for (const file of trackedFiles.filter(isLibSource)) {
+    const owner = packages.filter((one) => file.startsWith(`${one.dir}/`)).sort((a, b) => b.dir.length - a.dir.length)[0];
+    if (owner && !probes.has(owner.dir)) probes.set(owner.dir, file);
+  }
+  return probes;
+}
+
+/** The number of packages with a `lib` segment when the floor was set (6 apps and libraries, 15 plugins); the floor is that less 5%. */
+const MINIMUM_LIB_PACKAGES = 19;
+
+/** Every package with a `lib` segment resolves `numen/pure-segment` as an error on a file of it. */
+export function verifyPureSegmentRule() {
+  const probes = listLibProbes(readTrackedFiles());
+  requireMatches("Packages with a lib segment", probes.size, MINIMUM_LIB_PACKAGES);
+
+  const findings = [];
+  for (const [dir, probe] of probes) {
+    const { isError } = readRuleEntry(readResolvedRules(dir, probe)["numen/pure-segment"]);
+    if (!isError) findings.push({ file: probe, line: 1, symbol: "numen/pure-segment is not an error on a lib file" });
+  }
+  failOnFindings("A lib segment may reach the browser, Vue, a timer or the clock", findings);
+}
+
 export const LINT_CONFIG_VERIFIERS = [
   {
     id: "strict-lint-rules",
@@ -178,5 +206,12 @@ export const LINT_CONFIG_VERIFIERS = [
     module: "lint",
     name: "Every Package Resolves the Strict Lint Rule Set (no-void, no-empty, no-empty-function, no-floating-promises, no-misused-promises)",
     run: verifyStrictLintRules,
+  },
+  {
+    id: "pure-segment-rule",
+    scope: "libs",
+    module: "lint",
+    name: "Every Lib Segment Resolves the Pure Segment Rule (no Vue, DOM, browser global, timer, clock or platform port)",
+    run: verifyPureSegmentRule,
   },
 ];

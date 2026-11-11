@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { getUserAgent } from './shared/lib/dom'
+import { getUserAgent } from './shared/api/dom'
 import { LIGHTNING_CSS, createWindowAliases, createWindowConfig } from './vite'
 
 const ROOT = 'file:///repo/apps/desktop/sample/vite.config.ts'

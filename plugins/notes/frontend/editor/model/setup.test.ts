@@ -3,7 +3,7 @@ import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { Tree } from '@lezer/common'
-import { LANGUAGES } from './config/languages'
+import { LANGUAGES } from '../lib/config/languages'
 import { live } from './live/live'
 import { tabKeyBinding, escapeKeyBinding, preview, prose, setup, type Settings } from './setup'
 
