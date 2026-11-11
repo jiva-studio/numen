@@ -2,13 +2,12 @@ package mutableusecase
 
 import (
 	"go/ast"
-	"go/token"
 	"go/types"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

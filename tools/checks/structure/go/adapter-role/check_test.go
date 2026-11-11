@@ -1,12 +1,12 @@
 package adapterrole
 
 import (
-	"go/types"
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 // An adapter is driving when it calls a use case and driven when it implements a port. A driving adapter

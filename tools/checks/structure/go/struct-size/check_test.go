@@ -1,13 +1,10 @@
 package structsize
 
 import (
-	"go/ast"
-	"go/types"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

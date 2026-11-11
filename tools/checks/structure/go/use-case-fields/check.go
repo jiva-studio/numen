@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
@@ -100,7 +101,7 @@ func getUseCases(t *testing.T) []string {
 			}
 			for _, found := range getExposedDependencies(file) {
 				findings = append(findings, fmt.Sprintf("usecase/%s/%s %s exposes %s",
-					folder.Name(), one.Name(), found.In, strings.Join(found.fields, ", ")))
+					folder.Name(), one.Name(), found.in, strings.Join(found.fields, ", ")))
 			}
 		}
 	}

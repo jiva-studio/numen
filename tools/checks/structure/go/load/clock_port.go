@@ -2,15 +2,11 @@ package load
 
 import (
 	"encoding/json"
-	"go/ast"
-	"go/types"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
-	"strconv"
-	"strings"
 	"testing"
+
 	"golang.org/x/tools/go/packages"
 )
 

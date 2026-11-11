@@ -1,18 +1,17 @@
 package clockport
 
 import (
-	"encoding/json"
 	"go/ast"
 	"go/types"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 func listClockReaders() []string {
@@ -171,7 +170,7 @@ func getMachineClockReads(pkgs []*packages.Package) []clockRead {
 		}
 		reads = append(reads, walk.reads...)
 	}
-	slices.SortFunc(reads, func(a, b clockRead) int { return strings.Compare(a.Position, b.Position) })
+	slices.SortFunc(reads, func(a, b clockRead) int { return strings.Compare(a.position, b.position) })
 	return reads
 }
 
@@ -195,7 +194,7 @@ func checkMachineClockIsReadOnlyByAClockPortImplementation(t *testing.T, workspa
 			sanctioned++
 			continue
 		}
-		t.Errorf("%s references %s outside the Now method of a clock port implementation", one.Position, one.Name)
+		t.Errorf("%s references %s outside the Now method of a clock port implementation", one.position, one.name)
 	}
 
 	// A load that finds no clock implementation checks nothing. The system clocks of the core

@@ -1,14 +1,8 @@
 package windowadaptersession
 
 import (
-	"go/ast"
-	"go/parser"
-	"go/token"
-	"io/fs"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"testing"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
@@ -58,8 +52,8 @@ func TestTheWaitRuleSeesABoundOnAWait(t *testing.T) {
 		{"ticker of a stream", "package p\nimport \"time\"\nfunc f() { time.NewTicker(time.Second) }", 0},
 		{"cancel without a bound", "package p\nimport \"context\"\nfunc f(ctx context.Context) { context.WithCancel(ctx) }", 0},
 	} {
-		if got := getWaitFindings(t, tc.Name, tc.src); len(got) != tc.want {
-			t.Errorf("%s: %d calls found, want %d", tc.Name, len(got), tc.want)
+		if got := getWaitFindings(t, tc.name, tc.src); len(got) != tc.want {
+			t.Errorf("%s: %d calls found, want %d", tc.name, len(got), tc.want)
 		}
 	}
 }

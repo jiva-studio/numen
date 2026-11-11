@@ -1,10 +1,7 @@
 package load
 
 import (
-	"io/fs"
-	"path/filepath"
 	"strings"
-	"testing"
 )
 
 // SdkModule is the base module of the plugin SDK. Each feature module is a

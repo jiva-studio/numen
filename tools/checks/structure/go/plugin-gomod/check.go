@@ -1,11 +1,8 @@
 package plugingomod
 
 import (
-	"os"
-	"path/filepath"
-	"testing"
-	"golang.org/x/mod/modfile"
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/mod/modfile"
 )
 
 func getPluginGoModViolations(dir string, file *modfile.File) []string {

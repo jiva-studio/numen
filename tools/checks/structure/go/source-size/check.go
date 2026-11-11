@@ -10,8 +10,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"testing"
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // maxFileLines and maxPackageLines bound the production source of one file and of one package directory.

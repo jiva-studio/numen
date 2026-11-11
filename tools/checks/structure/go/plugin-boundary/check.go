@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/mod/modfile"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/mod/modfile"
 )
 
 func getPluginRequirements(file *modfile.File) []string {

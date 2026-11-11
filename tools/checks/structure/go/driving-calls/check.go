@@ -2,16 +2,14 @@ package drivingcalls
 
 import (
 	"go/ast"
-	"go/parser"
-	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
-	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"gopkg.in/yaml.v3"
 )
 
 func getPortFields(file *ast.File) []string {

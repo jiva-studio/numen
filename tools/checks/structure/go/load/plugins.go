@@ -2,8 +2,8 @@ package load
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
+
 	"golang.org/x/mod/modfile"
 )
 

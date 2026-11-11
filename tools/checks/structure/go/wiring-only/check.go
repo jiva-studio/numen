@@ -4,13 +4,13 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/types/typeutil"
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // maxWiringComplexity is the cyclomatic complexity of the most complex function of the composition root: a

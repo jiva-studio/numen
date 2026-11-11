@@ -1,18 +1,11 @@
 package interfacesize
 
 import (
-	"errors"
-	"fmt"
-	"go/ast"
-	"go/types"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"testing"
-	"golang.org/x/tools/go/packages"
-	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

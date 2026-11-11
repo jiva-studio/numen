@@ -2,15 +2,10 @@ package portshape
 
 import (
 	"go/ast"
-	"go/parser"
-	"go/token"
-	"io/fs"
 	"path"
-	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
-	"testing"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

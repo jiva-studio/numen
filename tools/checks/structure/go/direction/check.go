@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

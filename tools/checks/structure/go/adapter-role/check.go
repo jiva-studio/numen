@@ -5,10 +5,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
-	"go/ast"
-	"go/token"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 // adapterRole is what the structure of one adapter package shows it to be.

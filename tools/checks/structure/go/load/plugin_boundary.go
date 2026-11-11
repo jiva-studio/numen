@@ -1,18 +1,7 @@
 package load
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"io"
-	"io/fs"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"slices"
 	"strings"
-	"testing"
-	"golang.org/x/mod/modfile"
 )
 
 // PluginsPrefix is where the plugins are compiled from. A package under it is a

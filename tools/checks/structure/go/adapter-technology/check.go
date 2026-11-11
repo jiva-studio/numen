@@ -4,8 +4,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 func getTechnologyFreeAdapters() map[string]string {
@@ -25,7 +26,7 @@ func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free ma
 		if !isInternalAdapter && !load.IsWithin(rel, "adapter") {
 			continue
 		}
-		load.IsDriving := false
+		isDriving := false
 		isTechnical := false
 		for path := range pkg.Imports {
 			isDriving = isDriving || isUseCaseImport(root, path)

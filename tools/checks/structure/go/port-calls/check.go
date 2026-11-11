@@ -3,10 +3,10 @@ package portcalls
 import (
 	"go/ast"
 	"go/types"
-	"slices"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 func getCalledInterfaceMethod(call *ast.CallExpr, info *types.Info) *types.Func {

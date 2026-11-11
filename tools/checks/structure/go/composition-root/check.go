@@ -5,8 +5,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 func getRootSubpackages(pkgs []*packages.Package, rootPath string) ([]load.Finding, bool) {

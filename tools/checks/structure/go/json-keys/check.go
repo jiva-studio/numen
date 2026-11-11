@@ -10,8 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 // jsonKeyViolation is a struct field whose JSON key breaks the camelCase rule.
@@ -279,7 +280,7 @@ func getJSONKeyViolations(pkgs []*packages.Package) ([]jsonKeyViolation, int) {
 		}
 	}
 	slices.SortFunc(violations, func(a, b jsonKeyViolation) int {
-		if cmp := strings.Compare(a.Position, b.Position); cmp != 0 {
+		if cmp := strings.Compare(a.position, b.position); cmp != 0 {
 			return cmp
 		}
 		return strings.Compare(a.detail, b.detail)
@@ -295,7 +296,7 @@ func checkProjectJSONKeysAreCamelCase(t *testing.T, workspace load.WorkspacePack
 	}
 	violations, checked := getJSONKeyViolations(pkgs)
 	for _, one := range violations {
-		t.Errorf("%s: %s", one.Position, one.detail)
+		t.Errorf("%s: %s", one.position, one.detail)
 	}
 	if checked < 200 {
 		t.Fatalf("%d JSON struct tags checked: the rule is checked against nothing", checked)

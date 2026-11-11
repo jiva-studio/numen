@@ -1,11 +1,9 @@
 package compositionroot
 
 import (
-	"go/ast"
 	"slices"
-	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

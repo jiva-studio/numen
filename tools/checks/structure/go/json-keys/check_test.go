@@ -1,16 +1,10 @@
 package jsonkeys
 
 import (
-	"go/ast"
-	"go/token"
-	"go/types"
 	"path/filepath"
-	"reflect"
 	"slices"
-	"strconv"
-	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
@@ -58,7 +52,7 @@ func register() {
 	violations, checked := getJSONKeyViolations(pkgs)
 	var got []string
 	for _, one := range violations {
-		got = append(got, filepath.Base(one.Position)+" "+one.detail)
+		got = append(got, filepath.Base(one.position)+" "+one.detail)
 	}
 	want := []string{
 		`shapes.go:12 MaxTokens has non-camelCase json tag "max_tokens"`,

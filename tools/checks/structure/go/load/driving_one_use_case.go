@@ -6,7 +6,7 @@ import (
 	"go/types"
 	"slices"
 	"strings"
-	"testing"
+
 	"golang.org/x/tools/go/packages"
 )
 

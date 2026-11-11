@@ -7,8 +7,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 func getReexports(pkgs []*packages.Package, isRepo func(path string) bool) ([]load.Finding, int) {

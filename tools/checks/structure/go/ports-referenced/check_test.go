@@ -1,19 +1,9 @@
 package portsreferenced
 
 import (
-	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
-	"io/fs"
-	"maps"
-	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
-	"strings"
 	"testing"
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // A port is a dependency the core has on something outside it, and a port with no

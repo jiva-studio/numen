@@ -7,8 +7,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 // protocolLeak is a protocol type mentioned by the type of an exported identifier of a public package.

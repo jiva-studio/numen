@@ -5,12 +5,11 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
-	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

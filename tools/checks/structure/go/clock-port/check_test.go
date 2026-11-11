@@ -1,17 +1,10 @@
 package clockport
 
 import (
-	"encoding/json"
-	"go/ast"
-	"go/types"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
-	"strconv"
-	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
@@ -69,7 +62,7 @@ func generated() time.Time { return time.Now() }
 	reads := getMachineClockReads(load.LoadPackages(t, dir, []string{"GOWORK=off"}, "./..."))
 	var rejected, accepted []string
 	for _, one := range reads {
-		line := filepath.Base(one.Position) + " " + one.Name
+		line := filepath.Base(one.position) + " " + one.name
 		if one.isSanctioned {
 			accepted = append(accepted, line)
 		} else {

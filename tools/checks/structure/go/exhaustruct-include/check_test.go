@@ -1,14 +1,8 @@
 package exhaustructinclude
 
 import (
-	"go/types"
-	"os"
-	"path/filepath"
-	"regexp"
-	"slices"
 	"testing"
-	"golang.org/x/tools/go/packages"
-	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

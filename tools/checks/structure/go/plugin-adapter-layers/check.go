@@ -6,12 +6,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
-	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"gopkg.in/yaml.v3"
 )
 
 const pluginRootImportPath = "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"

@@ -1,12 +1,9 @@
 package containerclosures
 
 import (
-	"go/ast"
-	"go/token"
-	"go/types"
 	"slices"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

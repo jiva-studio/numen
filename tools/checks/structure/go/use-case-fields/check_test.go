@@ -1,8 +1,6 @@
 package usecasefields
 
 import (
-	"fmt"
-	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
@@ -10,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // A use case or service across the repository is made with everything it needs, or it is not made.
@@ -32,7 +29,7 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 				return err
 			}
 			for _, found := range getExposedDependencies(file) {
-				t.Errorf("%s %s exposes constructor-injected field(s) %s", path, found.In, strings.Join(found.fields, ", "))
+				t.Errorf("%s %s exposes constructor-injected field(s) %s", path, found.in, strings.Join(found.fields, ", "))
 			}
 			return nil
 		})
@@ -73,7 +70,7 @@ func NewOver(passages port.PassageQueries) Search {
 	}
 	var violations []string
 	for _, one := range getExposedDependencies(file) {
-		violations = append(violations, one.In+": "+strings.Join(one.fields, ", "))
+		violations = append(violations, one.in+": "+strings.Join(one.fields, ", "))
 	}
 	// Pages is the caller's own and no collaborator; notes is closed; Write has
 	// no constructor to promise anything. Search is reached through a

@@ -1,14 +1,8 @@
 package direction
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"io"
-	"os"
-	"os/exec"
-	"strings"
 	"testing"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

@@ -1,17 +1,10 @@
 package lintconfig
 
 import (
-	"go/types"
-	"io/fs"
-	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
-	"strconv"
-	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
-	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

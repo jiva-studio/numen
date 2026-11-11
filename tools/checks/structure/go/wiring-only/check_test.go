@@ -1,15 +1,9 @@
 package wiringonly
 
 import (
-	"go/ast"
-	"go/token"
-	"go/types"
 	"slices"
-	"strconv"
-	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/go/types/typeutil"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

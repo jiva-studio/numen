@@ -1,13 +1,9 @@
 package load
 
 import (
-	"go/types"
 	"os"
 	"path/filepath"
-	"slices"
-	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
 )
 
 func WriteFiles(t *testing.T, files map[string]string) string {

@@ -2,11 +2,6 @@ package load
 
 import (
 	"go/ast"
-	"go/token"
-	"go/types"
-	"slices"
-	"testing"
-	"golang.org/x/tools/go/packages"
 )
 
 func GetRootIdent(expr ast.Expr) *ast.Ident {

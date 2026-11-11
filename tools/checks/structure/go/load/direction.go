@@ -1,16 +1,5 @@
 package load
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"io"
-	"os"
-	"os/exec"
-	"strings"
-	"testing"
-)
-
 // Wire is the module the schema is generated into.
 const Wire = "github.com/jiva-studio/numen/libs/core/protocol"
 

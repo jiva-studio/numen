@@ -11,9 +11,10 @@ import (
 	"slices"
 	"strconv"
 	"testing"
+
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"golang.org/x/tools/go/packages"
 	"gopkg.in/yaml.v3"
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // structureConfigName is the golangci-lint configuration of the production-only rules, interfacebloat among them.

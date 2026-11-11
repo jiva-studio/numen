@@ -6,9 +6,9 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

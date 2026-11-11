@@ -4,10 +4,10 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"slices"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 func listCapturedAssignments(pkg *packages.Package) []load.Finding {

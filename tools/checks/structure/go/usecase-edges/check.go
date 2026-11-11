@@ -1,14 +1,12 @@
 package usecaseedges
 
 import (
-	"go/parser"
-	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

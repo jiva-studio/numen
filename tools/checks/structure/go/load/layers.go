@@ -1,7 +1,6 @@
 package load
 
 import (
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"

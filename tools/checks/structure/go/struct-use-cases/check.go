@@ -3,12 +3,12 @@ package structusecases
 import (
 	"go/ast"
 	"go/types"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 // maxUseCasesInStruct is the most use cases one struct holds, as fields of a use case type or as function

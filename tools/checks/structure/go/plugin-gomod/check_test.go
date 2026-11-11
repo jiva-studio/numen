@@ -1,11 +1,11 @@
 package plugingomod
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
-	"golang.org/x/mod/modfile"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/mod/modfile"
 )
 
 // getPluginGoModViolations defines the whole rule, so it is tested directly.

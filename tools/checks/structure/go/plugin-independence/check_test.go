@@ -2,18 +2,11 @@ package pluginindependence
 
 import (
 	"go/ast"
-	"go/parser"
-	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
-	"slices"
-	"strconv"
 	"strings"
 	"testing"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
-	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

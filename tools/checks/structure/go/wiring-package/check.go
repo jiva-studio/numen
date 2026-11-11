@@ -2,10 +2,10 @@ package wiringpackage
 
 import (
 	"regexp"
-	"slices"
 	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 // compositionRoot matches the packages of an application that compose it: apps/<name>/cmd and

@@ -7,9 +7,10 @@ import (
 	"regexp"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 	"golang.org/x/tools/go/packages"
 	"gopkg.in/yaml.v3"
-	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 type structureConfig struct {

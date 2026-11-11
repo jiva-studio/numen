@@ -1,19 +1,13 @@
 package load
 
 import (
-	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"os"
 	"path/filepath"
-	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
-	"gopkg.in/yaml.v3"
 )
 
 // NumenRoot is what every module of this repository is named under.

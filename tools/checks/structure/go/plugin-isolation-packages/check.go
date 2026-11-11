@@ -1,12 +1,11 @@
 package pluginisolationpackages
 
 import (
-	"path/filepath"
 	"slices"
 	"strings"
-	"testing"
-	"golang.org/x/tools/go/packages"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 func getPluginCapture(pkgPath string) string {

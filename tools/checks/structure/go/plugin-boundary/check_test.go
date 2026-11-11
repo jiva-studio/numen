@@ -1,18 +1,11 @@
 package pluginboundary
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"io"
 	"io/fs"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
-	"golang.org/x/mod/modfile"
+
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 

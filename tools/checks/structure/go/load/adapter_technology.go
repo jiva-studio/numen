@@ -1,10 +1,7 @@
 package load
 
 import (
-	"slices"
 	"strings"
-	"testing"
-	"golang.org/x/tools/go/packages"
 )
 
 func IsTechnologyImport(path string) bool {
