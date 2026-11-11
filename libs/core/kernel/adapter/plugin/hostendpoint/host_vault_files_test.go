@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -121,7 +121,7 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 				d.scanned = append(d.scanned, slices.Clone(paths))
 				return nil
 			},
-			Locks: hold.NewLocks(writers, testsupport.GetMachine(), hold.LockHold),
+			Locks: hold.NewLocks(writers, hold.LockHold),
 		},
 		hostvault.Lookups{}, hostvault.Connections{}, hostvault.Arranger{},
 		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},

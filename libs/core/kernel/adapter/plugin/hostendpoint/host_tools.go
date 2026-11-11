@@ -36,7 +36,7 @@ func (e *toolEndpoint) begin(header http.Header) (string, PluginTools, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	tools := e.endpoint.callers.Tools.GetPluginTools()
+	tools := e.endpoint.callers.Tools()
 	if tools == nil {
 		return "", nil, connect.NewError(connect.CodeUnavailable, errNoTools)
 	}

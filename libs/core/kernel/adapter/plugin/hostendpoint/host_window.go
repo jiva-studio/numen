@@ -32,7 +32,7 @@ func (e *windowEndpoint) begin(header http.Header) (WindowControl, error) {
 	if _, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionWindowFocus); err != nil {
 		return nil, err
 	}
-	return e.endpoint.callers.Window.GetPluginWindow(), nil
+	return e.endpoint.callers.Lent.GetPluginWindow(), nil
 }
 
 func mapWindowError(ctx context.Context, err error) (v1.HostWindowErrorCode, error) {

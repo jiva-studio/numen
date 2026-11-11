@@ -39,7 +39,7 @@ func (e *textEndpoint) begin(header http.Header, permission string) (textCall, e
 		return textCall{}, err
 	}
 	call := textCall{pluginID: pluginID}
-	texts := e.endpoint.callers.Texts.GetPluginTexts()
+	texts := e.endpoint.callers.Lent.GetPluginTexts()
 	if texts == nil {
 		return call, nil
 	}

@@ -17,7 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -33,21 +33,12 @@ func (readerIdentity) GetPluginIDByToken(token string) (string, bool) {
 
 func (readerIdentity) CheckPluginPermission(string, string) error { return nil }
 
-// noWindow is a host with no window, so no list of vaults to change.
-type noWindow struct{}
-
-func (noWindow) GetPluginWindow() hostendpoint.WindowControl { return nil }
-
-func (noWindow) GetPluginVaultList() vaultapi.List { return nil }
-
-type shownVault struct{ access *vaultapi.Access }
-
-func (s shownVault) GetPluginVault() *vaultapi.Access { return s.access }
-
 func openReadEndpoint(t *testing.T, access *vaultapi.Access) numenv1connect.HostVaultServiceClient {
 	t.Helper()
+	lent := hostendpoint.NewServices()
+	lent.SetPluginVault(access)
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
-		Identity: readerIdentity{}, Vault: shownVault{access: access}, Window: noWindow{},
+		Identity: readerIdentity{}, Lent: lent,
 	})
 	if err != nil {
 		t.Fatal(err)

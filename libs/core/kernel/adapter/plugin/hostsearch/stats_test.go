@@ -3,13 +3,13 @@ package hostsearch
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -38,7 +38,7 @@ func (s *stubStats) GetIndexSizes(context.Context) (index.Sizes, error) {
 
 func TestStatsCachesCountsForOneSecondAndSizesForHalfAMinute(t *testing.T) {
 	source := &stubStats{counts: index.Counts{Chunks: 3}, sizes: index.Sizes{Database: 100}}
-	now := clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC))
+	now := testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC))
 	stats := search.NewStats(source, now)
 	ctx := t.Context()
 
@@ -68,7 +68,7 @@ func TestStatsCachesCountsForOneSecondAndSizesForHalfAMinute(t *testing.T) {
 
 func TestStatsCachesCountsPerVaultAndRecipe(t *testing.T) {
 	source := &stubStats{}
-	stats := search.NewStats(source, clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
+	stats := search.NewStats(source, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
 	for _, key := range [][2]string{{"a", "r"}, {"b", "r"}, {"a", "other"}} {
 		if _, _, err := stats.Get(t.Context(), domain.VaultID(key[0]), key[1]); err != nil {
 			t.Fatal(err)
@@ -81,7 +81,7 @@ func TestStatsCachesCountsPerVaultAndRecipe(t *testing.T) {
 
 func TestStatsDoesNotCacheFailedRead(t *testing.T) {
 	source := &stubStats{err: errors.New("index closed")}
-	stats := search.NewStats(source, clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
+	stats := search.NewStats(source, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
 	if _, _, err := stats.Get(t.Context(), "v", "r"); !errors.Is(err, source.err) {
 		t.Fatalf("got %v", err)
 	}
@@ -92,7 +92,7 @@ func TestStatsDoesNotCacheFailedRead(t *testing.T) {
 
 	source = &stubStats{}
 	failing := &failingSizes{stubStats: source}
-	stats = search.NewStats(failing, clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
+	stats = search.NewStats(failing, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
 	if _, _, err := stats.Get(t.Context(), "v", "r"); err == nil {
 		t.Error("sizes that cannot be read gave no error")
 	}
@@ -112,7 +112,7 @@ func TestGetIndexStatsCarriesTheModelAndTheCounts(t *testing.T) {
 			Extensions: []index.ExtensionCount{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
 		},
 		sizes: index.Sizes{Database: 4096, Vectors: 2048},
-	}, clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
+	}, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
 
 	got, err := f.search.GetIndexStats(t.Context(), getVault())
 	if err != nil {
@@ -132,7 +132,7 @@ func TestGetIndexStatsCarriesTheModelAndTheCounts(t *testing.T) {
 func TestGetIndexStatsRefusesNoModelAndFailsWhenIndexFails(t *testing.T) {
 	f := newFixture()
 	failure := errors.New("index closed")
-	f.search.Stats = search.NewStats(&stubStats{err: failure}, clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
+	f.search.Stats = search.NewStats(&stubStats{err: failure}, testsupport.NewClockAt(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
 	if _, err := f.search.GetIndexStats(t.Context(), getVault()); !errors.Is(err, failure) {
 		t.Errorf("an index that fails gave %v", err)
 	}
