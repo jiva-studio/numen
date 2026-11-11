@@ -13,6 +13,7 @@ import (
 
 // or empty when dir is empty or holds none.
 func FindLibrary(dir string) string {
+	// gomutants:disable-next-line BRANCH_IF reason="An empty dir resolves to the current working directory where no library file exists."
 	if dir == "" {
 		return ""
 	}
@@ -48,7 +49,7 @@ func FindInstalled(name, pkg string) []string {
 		out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
 	}
 	stored := findMatching(filepath.Join("/nix/store", pkg, "lib", name+"*"))
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="/nix/store glob cannot be populated with multiple synthetic packages in unit tests"
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="FindInstalled queries the root /nix/store path directly; sortNewestFirst is covered by unit tests."
 	sortNewestFirst(stored)
 	return append(out, stored...)
 }
@@ -63,13 +64,14 @@ func sortNewestFirst(paths []string) {
 
 func getVersion(path string) []int {
 	rel, err := filepath.Rel("/nix/store", path)
+	// gomutants:disable-next-line BRANCH_IF reason="When filepath.Rel fails, rel is empty and the parsing below returns nil."
 	if err != nil {
 		return nil
 	}
 	pkg, _, _ := strings.Cut(rel, string(filepath.Separator))
 	_, name, _ := strings.Cut(pkg, "-")
 	var out []int
-	// gomutants:disable-next-line INTEGER_INCREMENT reason="regexp.FindAllString treats all negative counts as unlimited"
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="FindAllString treats any negative count as unlimited."
 	for _, digits := range versionPart.FindAllString(name, -1) {
 		n, err := strconv.Atoi(digits)
 		if err != nil {
@@ -100,7 +102,7 @@ func getLibraryDirectories() []string {
 
 func findMatching(pattern string) []string {
 	found, err := filepath.Glob(pattern)
-	// gomutants:disable-next-line BRANCH_IF reason="filepath.Glob returns nil slice on error so falling through also returns nil"
+	// gomutants:disable-next-line BRANCH_IF reason="When filepath.Glob fails, found is nil and the loop below returns nil."
 	if err != nil {
 		return nil
 	}
