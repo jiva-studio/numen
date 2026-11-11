@@ -22,6 +22,7 @@ type Service struct {
 	readTheme       *themeusecase.ReadTheme
 	writeAppearance *themeusecase.WriteAppearance
 	watchThemes     *themeusecase.WatchThemes
+	keepalive       time.Duration
 }
 
 // NewService answers the requests of the theme service with the use cases.
@@ -31,7 +32,10 @@ func NewService(
 	writeAppearance *themeusecase.WriteAppearance,
 	watchThemes *themeusecase.WatchThemes,
 ) *Service {
-	return &Service{getThemes: getThemes, readTheme: readTheme, writeAppearance: writeAppearance, watchThemes: watchThemes}
+	return &Service{
+		getThemes: getThemes, readTheme: readTheme, writeAppearance: writeAppearance, watchThemes: watchThemes,
+		keepalive: keepaliveInterval,
+	}
 }
 
 // ListThemes returns every theme and the one applied.
@@ -118,18 +122,31 @@ func (s *Service) WatchThemes(
 	// The request context belongs to the process and does not reflect whether the page that opened the
 	// stream is still open. A failed write of an empty report is how a gone client is detected.
 	watching, stop := context.WithCancel(ctx)
-	defer stop()
 	var (
 		sending sync.Mutex
+		isOver  bool
+		keeping sync.WaitGroup
 		gone    = make(chan error, 1)
 	)
+	// A write to the stream after this handler returned panics inside net/http. The stream is
+	// closed to writes and the keepalive has ended before the handler returns.
+	defer func() {
+		stop()
+		sending.Lock()
+		isOver = true
+		sending.Unlock()
+		keeping.Wait()
+	}()
 	send := func(names []string) error {
 		sending.Lock()
 		defer sending.Unlock()
+		if isOver {
+			return context.Canceled
+		}
 		return stream.Send(&v1.WatchThemesResponse{Names: names})
 	}
-	go func() {
-		repeat := time.NewTicker(keepaliveInterval)
+	keeping.Go(func() {
+		repeat := time.NewTicker(s.keepalive)
 		defer repeat.Stop()
 		for {
 			select {
@@ -143,7 +160,7 @@ func (s *Service) WatchThemes(
 				}
 			}
 		}
-	}()
+	})
 	err := s.watchThemes.Execute(watching, send)
 	select {
 	case failed := <-gone:
