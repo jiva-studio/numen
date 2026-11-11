@@ -9,7 +9,7 @@ import (
 // began under.
 type Current struct {
 	inputs Inputs
-	active   atomic.Pointer[Scenarios]
+	active atomic.Pointer[Scenarios]
 }
 
 // NewCurrent builds the scenarios from the inputs and holds them.
