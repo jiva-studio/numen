@@ -30,7 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-func newCompletionRouter(c pluginsWiring) (*completion.Router, error) {
+func newCompletionRouter(c pluginsWiring) *completion.Router {
 	provider := pluginsAgentProvider(c)
 	programs := completion.NewPrograms(provider, func() completion.AgentSettings { return completionAgentSettings(c) })
 	return completion.NewRouter(
@@ -42,12 +42,7 @@ func newCompletionRouter(c pluginsWiring) (*completion.Router, error) {
 }
 
 func setCompleter(c pluginsWiring) {
-	router, err := newCompletionRouter(c)
-	if err != nil {
-		c.settings.ErrorHandler(err)
-		return
-	}
-	c.RunningHost.Endpoint.SetCompleter(router)
+	c.RunningHost.Endpoint.SetCompleter(newCompletionRouter(c))
 }
 
 func getSettingsAgent(c pluginsWiring) agentport.Agent {
@@ -108,16 +103,19 @@ var errSafeMode = errors.New("numen is running in safe mode")
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset). The host is returned also when the discovery of the
-// plugins failed, with the failure.
-func NewPluginHost(target string, dirs ...string) (*PluginHost, error) {
-	host, err := OpenPluginRoles(target, dirs...)
+// plugins failed, with the failure. report receives the problems the host meets outside a call, such as a failed
+// shutdown of a plugin.
+func NewPluginHost(report func(error), target string, dirs ...string) (*PluginHost, error) {
+	host, err := OpenPluginRoles(report, target, dirs...)
 	return adaptPluginHost(host), err
 }
 
 // OpenPluginRoles creates the roles of a plugin host as NewPluginHost does and returns them, for a caller that holds
-// the roles. The roles are returned also when the discovery of the plugins failed, with the failure.
-func OpenPluginRoles(target string, dirs ...string) (*PluginRoles, error) {
+// the roles. The roles are returned also when the discovery of the plugins failed, with the failure. report receives
+// the problems the host meets outside a call.
+func OpenPluginRoles(report func(error), target string, dirs ...string) (*PluginRoles, error) {
 	host := NewPluginRoles(clock.System{}, target, dirs...)
+	host.Failures.SetErrorHandler(report)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Services.SetDependencies(newDependencyRegistry(""))
 	return host, host.Discovery.Discover()
