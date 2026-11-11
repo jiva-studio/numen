@@ -7,7 +7,9 @@ import vue from '@vitejs/plugin-vue'
  * `libs/ui/components` first.
  */
 const alias = {
-  '@numen/ui/styles.css': fileURLToPath(new URL('../../ui/components/dist/numen-ui.css', import.meta.url)),
+  '@numen/ui/styles.css': fileURLToPath(
+    new URL('../../ui/components/dist/numen-ui.css', import.meta.url),
+  ),
   '@numen/ui': fileURLToPath(new URL('../../ui/components/dist/index.js', import.meta.url)),
 }
 

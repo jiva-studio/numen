@@ -69,8 +69,6 @@ export const mockVaultList = {
   showing: 'physics',
 }
 
-
-
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
   '': [

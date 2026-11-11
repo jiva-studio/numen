@@ -4,7 +4,10 @@ import type { TabKindPlugin, UnavailableLookup } from '../lib/unavailableView'
 import type { UnavailableServices, UnavailableState } from './unavailable'
 import { useIsStartingPlugin } from './useIsStartingPlugin'
 
-const createState = (lookup: UnavailableLookup, services: UnavailableServices): UnavailableState => ({
+const createState = (
+  lookup: UnavailableLookup,
+  services: UnavailableServices,
+): UnavailableState => ({
   kind: 'reader:viewer',
   targetPath: 'cards/Place.md',
   saved: undefined,
@@ -26,7 +29,9 @@ const found = (id: string): UnavailableLookup => {
 
 describe('whether the plugin of an unavailable tab is starting', () => {
   it('is true when the window reports the found plugin as starting', () => {
-    const state = createState(found('sample.notes'), { isPluginStarting: (id) => id === 'sample.notes' })
+    const state = createState(found('sample.notes'), {
+      isPluginStarting: (id) => id === 'sample.notes',
+    })
 
     expect(useIsStartingPlugin(() => state).value).toBe(true)
   })

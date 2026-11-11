@@ -47,9 +47,7 @@ export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]
   'app:file.open': [
     { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
   ],
-  'app:file.reveal': [
-    { name: 'kind', title: 'Place', type: 'enum', options: ['plex', 'files'] },
-  ],
+  'app:file.reveal': [{ name: 'kind', title: 'Place', type: 'enum', options: ['plex', 'files'] }],
 }
 
 /** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */

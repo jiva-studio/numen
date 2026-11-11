@@ -74,8 +74,8 @@ describe('where a menu is placed', () => {
 
 describe('how tall a menu grows', () => {
   const getRoom = (viewport: Size | null, margin: number) =>
-    useMenuPlacement({ at: () => ({ x: 0, y: 0 }), viewport: () => viewport, margin: () => margin }).menuStyle
-      .value['--room']
+    useMenuPlacement({ at: () => ({ x: 0, y: 0 }), viewport: () => viewport, margin: () => margin })
+      .menuStyle.value['--room']
 
   it('leaves the area its margin on both sides', () => {
     expect(getRoom({ width: 900, height: 300 }, 10)).toBe('280px')

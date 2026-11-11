@@ -12,7 +12,10 @@ vi.mock('@capacitor/core', () => ({
 
 function answerWith(answers: Record<string, object>) {
   vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
-    const method = String(input instanceof Request ? input.url : input).split('/').pop() ?? ''
+    const method =
+      String(input instanceof Request ? input.url : input)
+        .split('/')
+        .pop() ?? ''
     return new Response(JSON.stringify(answers[method] ?? {}), {
       headers: { 'content-type': 'application/json' },
     })

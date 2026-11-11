@@ -81,12 +81,10 @@ export const SR: Record<string, string> = {
   review_f1_p:
     'Odredite dnevni limit (npr. 25 minuta), željeni procenat pamćenja ili rok ispita — FSRS automatski gradi redosled.',
   review_f2_t: 'Prognoza opterećenja',
-  review_f2_p:
-    'Pogledajte koliko kartica svaki tempo traži dnevno i kada se zaostatak čisti.',
+  review_f2_p: 'Pogledajte koliko kartica svaki tempo traži dnevno i kada se zaostatak čisti.',
   review_f3_t: 'Trenutni uvid u izvor',
   review_f3_p:
     'Otvorite izvornu belešku ili stranicu knjige pored kartice, ili pitajte AI asistenta tokom ponavljanja.',
   close_title: 'Preuzmite Numen.',
-  close_lede:
-    'Besplatno tokom alfe za macOS, Windows i Linux. Uključuje Numen i Numen Flashcards.',
+  close_lede: 'Besplatno tokom alfe za macOS, Windows i Linux. Uključuje Numen i Numen Flashcards.',
 }

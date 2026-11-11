@@ -7,11 +7,7 @@ import { ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import {
-  createPluginHost,
-  type DeclaredSlotEntry,
-  type PluginHost,
-} from '@numen/plugin-loader'
+import { createPluginHost, type DeclaredSlotEntry, type PluginHost } from '@numen/plugin-loader'
 import {
   createCommandDeps,
   createSearchRequests,

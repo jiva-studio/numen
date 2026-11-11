@@ -18,8 +18,7 @@ export const removeFile = async (path: string): Promise<RemoveResult> => {
 }
 
 /** Deletes everything the vault's trash holds for good; how many paths could not be deleted. */
-export const emptyTrash = async (): Promise<number> =>
-  (await files.emptyTrash({})).undeleted.length
+export const emptyTrash = async (): Promise<number> => (await files.emptyTrash({})).undeleted.length
 
 /**
  * What one folder of the vault holds, in the order to draw it: folders first and then files, each

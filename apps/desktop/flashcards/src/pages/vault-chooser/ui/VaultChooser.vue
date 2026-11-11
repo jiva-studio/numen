@@ -36,7 +36,9 @@ defineEmits<{ (event: 'open', vault: string): void }>()
   >
     <!-- What a plugin says of each vault, such as what is due in it today. -->
     <template #vault="{ vault }">
-      <MountedView :mount="(element) => props.mountView(VAULT_SUMMARY, element, { vault: vault.id })" />
+      <MountedView
+        :mount="(element) => props.mountView(VAULT_SUMMARY, element, { vault: vault.id })"
+      />
     </template>
 
     <!-- Nothing is known about the installation yet, not even which vaults it

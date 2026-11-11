@@ -148,7 +148,10 @@ describe('mock plugin context', () => {
     const declared = ctx.register.view({ capability: CONVERSATION, component: {} })
     const element = {} as HTMLElement
 
-    const view = ctx.ui.mountView(CONVERSATION, element, { agent: AGENT, focus: 'Decks/Physics.md' })
+    const view = ctx.ui.mountView(CONVERSATION, element, {
+      agent: AGENT,
+      focus: 'Decks/Physics.md',
+    })
     view.focus()
     view.dispose()
 

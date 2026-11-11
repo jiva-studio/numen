@@ -45,7 +45,9 @@ describe('the actions that create a note, chosen on the window', () => {
     await search(window, 'Entropy')
 
     const row = getGroups(window).flatMap((one) => one.items)[0]
-    expect(row?.actions?.map((one) => one.id).filter((id) => id.startsWith('app:note.create'))).toStrictEqual(['app:note.create'])
+    expect(
+      row?.actions?.map((one) => one.id).filter((id) => id.startsWith('app:note.create')),
+    ).toStrictEqual(['app:note.create'])
   })
 
   it('makes one note under the words typed on the choice of app:note.create, and closes the search', async () => {

@@ -68,7 +68,8 @@ export const LECTURE_CUES: readonly Cue[] = [
   },
 ]
 
-export const YOUTUBE_EMBED_URL = 'https://www.youtube-nocookie.com/embed/kYXlvBiv9V4?enablejsapi=1&hl=en'
+export const YOUTUBE_EMBED_URL =
+  'https://www.youtube-nocookie.com/embed/kYXlvBiv9V4?enablejsapi=1&hl=en'
 export const YOUTUBE_CUES: readonly Cue[] = [
   {
     from: 0,
@@ -206,5 +207,8 @@ export const LECTURE_MEDIA_URL = '/lecture-4.mp3'
 
 /** The line being spoken at a moment: the last one that has begun, or the first before any has. */
 export function getActiveCueIndex(cues: readonly Cue[], ms: number): number {
-  return Math.max(0, cues.findLastIndex((cue) => cue.from <= ms))
+  return Math.max(
+    0,
+    cues.findLastIndex((cue) => cue.from <= ms),
+  )
 }

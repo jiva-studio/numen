@@ -46,9 +46,12 @@ describe('the commands of the application the manifests name', () => {
     expect(NAMED.map((one) => one.command)).toContain('app:file.reveal')
   })
 
-  it.each(NAMED.map((one) => [one.command, one] as const))('%s is known to the palette', (_, one) => {
-    expect(TABLE.some((row) => row.id === one.command)).toBe(true)
-  })
+  it.each(NAMED.map((one) => [one.command, one] as const))(
+    '%s is known to the palette',
+    (_, one) => {
+      expect(TABLE.some((row) => row.id === one.command)).toBe(true)
+    },
+  )
 
   it.each(NAMED.map((one) => [one.command, one] as const))('%s has a handler', async (_, one) => {
     const window = setup()
