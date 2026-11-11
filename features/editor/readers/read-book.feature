@@ -9,7 +9,7 @@ Feature: Read a book
     And the application "editor" starts
     And the person opens the file at "assets/sample.epub"
 
-  Scenario: A book without contents lists its files
+  Scenario: A book without chapters lists one entry
     When the person clicks the button "Show contents" in the book tab at "assets/sample.epub"
     Then the contents of the book tab at "assets/sample.epub" are:
       | chapter |
@@ -19,3 +19,4 @@ Feature: Read a book
     Given the person clicks the button "Show contents" in the book tab at "assets/sample.epub"
     When the person chooses the chapter "doc1" in the contents of the book tab at "assets/sample.epub"
     Then the contents of the book tab at "assets/sample.epub" are not shown
+    And the book tab at "assets/sample.epub" is at page "1"

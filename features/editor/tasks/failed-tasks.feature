@@ -6,5 +6,5 @@ Feature: Failed tasks
     And the application "editor" starts
     And the person imports the link "http://unreachable.numen.test/tide-tables"
     When the person downloads the text of the link "http://unreachable.numen.test/tide-tables"
-    Then the task list has the failed task "tide-tables answered 404 Not Found"
+    Then the task list has the failed task "http://unreachable.numen.test/tide-tables answered 404 Not Found"
     And the task list has the failed task "Fetching the text of a link"

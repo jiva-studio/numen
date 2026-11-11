@@ -18,7 +18,7 @@ Feature: Proofreading
       When the person searches the vault for "proofread"
       Then the search has the result "assets/pumped-storage.pdf" in the group "Text"
 
-    Scenario: The recognized text is still found
+    Scenario: The text before the correction is still found
       When the person searches the vault for "upper reservoir"
       Then the search has the result "assets/pumped-storage.pdf" in the group "Text"
 

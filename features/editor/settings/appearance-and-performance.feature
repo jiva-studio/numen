@@ -1,5 +1,5 @@
 Feature: Appearance and performance settings
-  A person chooses how the window looks and how hard it works, and the choice stays.
+  A person chooses how the window looks and runs, and the choice stays.
 
   Background:
     Given the empty vault "Test"

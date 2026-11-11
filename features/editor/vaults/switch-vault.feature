@@ -11,10 +11,10 @@ Feature: Switch vault
       | path          | text                                      |
       | Lighthouse.md | # Lighthouse\n\nThe lamp turns all night. |
     And the application "editor" starts
-    And the list of vaults has the vault "Coastline"
 
-  Scenario: The window shows the other vault
-    Given the person opens the file at "Entropy.md"
+  Scenario: The notes of the first vault are closed
+    Given the list of vaults has the vault "Coastline"
+    And the person opens the file at "Entropy.md"
     And the note tab at "Entropy.md" is open
     When the person runs the command "Open vault" with:
       | Search vaults | Coastline |
@@ -22,14 +22,15 @@ Feature: Switch vault
     And the note tab at "Entropy.md" is not open
 
   Scenario: The file tree lists the other vault
-    Given the person runs the command "Open vault" with:
+    Given the list of vaults has the vault "Coastline"
+    And the person runs the command "Open vault" with:
       | Search vaults | Coastline |
-    And the window has the vault "Coastline"
     When the person opens the Files tab titled "Files"
     Then the Files tab titled "Files" has "Lighthouse.md"
 
   Scenario: The window shows the first vault again
-    Given the person runs the command "Open vault" with:
+    Given the list of vaults has the vault "Coastline"
+    And the person runs the command "Open vault" with:
       | Search vaults | Coastline |
     And the window has the vault "Coastline"
     When the person runs the command "Open vault" with:

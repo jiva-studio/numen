@@ -19,21 +19,19 @@ Feature: Turn PDF pages
     Then the PDF tab at "assets/pages.pdf" is at page "12"
 
   Scenario: The next page button turns the page
-    When the person clicks the button "Next page" in the PDF tab at "assets/pages.pdf"
-    And the person clicks the button "Next page" in the PDF tab at "assets/pages.pdf"
-    And the person clicks the button "Next page" in the PDF tab at "assets/pages.pdf"
-    Then the PDF tab at "assets/pages.pdf" is at page "4"
-
-  Scenario: The buttons stop at the first page
-    Then the button "Next page" in the PDF tab at "assets/pages.pdf" is enabled
+    Given the button "Next page" in the PDF tab at "assets/pages.pdf" is enabled
     And the button "Previous page" in the PDF tab at "assets/pages.pdf" is disabled
-
-  Scenario: The previous page button works after a turn
-    Given the button "Previous page" in the PDF tab at "assets/pages.pdf" is disabled
     When the person clicks the button "Next page" in the PDF tab at "assets/pages.pdf"
-    Then the button "Previous page" in the PDF tab at "assets/pages.pdf" is enabled
+    Then the PDF tab at "assets/pages.pdf" is at page "2"
+    And the button "Previous page" in the PDF tab at "assets/pages.pdf" is enabled
 
-  Scenario: The buttons stop at the last page
+  Scenario: The previous page button returns to the first page
+    Given the person clicks the button "Next page" in the PDF tab at "assets/pages.pdf"
+    And the PDF tab at "assets/pages.pdf" is at page "2"
+    When the person clicks the button "Previous page" in the PDF tab at "assets/pages.pdf"
+    Then the PDF tab at "assets/pages.pdf" is at page "1"
+
+  Scenario: The buttons stop at the last of 40 pages
     When the person goes to page "40" in the PDF tab at "assets/pages.pdf"
     Then the button "Previous page" in the PDF tab at "assets/pages.pdf" is enabled
     And the button "Next page" in the PDF tab at "assets/pages.pdf" is disabled

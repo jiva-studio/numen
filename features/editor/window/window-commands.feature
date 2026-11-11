@@ -15,7 +15,7 @@ Feature: Window commands
       When the person runs the command "Open file tree"
       Then the Files tab titled "Files" is open
 
-    Scenario: The tab in front is closed
+    Scenario: The active tab is closed
       Given the person opens the note titled "Entropy"
       When the person runs the command "Close tab"
       Then the note tab titled "Entropy" is not open
@@ -37,7 +37,7 @@ Feature: Window commands
       When the person presses "Ctrl+Shift+X"
       Then the plex has the focus note titled "Entropy"
 
-    Scenario: The tab in front is closed with Ctrl+Shift+W
+    Scenario: The active tab is closed with Ctrl+Shift+W
       Given the vault has the following:
         | path             | sample    |
         | assets/shore.pdf | shore.pdf |

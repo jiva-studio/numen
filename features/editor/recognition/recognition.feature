@@ -30,12 +30,12 @@ Feature: Recognition
         | assets/flywheel.pdf | flywheel.pdf |
       And the person recognizes the text of the file at "assets/flywheel.pdf"
 
-    Scenario: The recognized text is found
+    Scenario: The recognized text stays found
       When the person disables the plugin "Document OCR"
       And the person searches the vault for "rotor spinning in a vacuum"
       Then the search has the result "assets/flywheel.pdf" in the group "Text"
 
-    Scenario: The proofread text is found
+    Scenario: The proofread text stays found
       Given the person proofreads the recognized text of the file at "assets/flywheel.pdf"
       When the person disables the plugin "Document OCR"
       And the person searches the vault for "proofread"

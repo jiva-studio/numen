@@ -8,7 +8,8 @@ Feature: Title bar buttons
   Rule: A button runs its command
 
     Scenario: The file tree is opened with its button
-      Given the person closes the Files tab titled "Files"
+      Given the Files tab titled "Files" is open
+      And the person closes the Files tab titled "Files"
       When the person clicks the button "Open file tree" in the title bar
       Then the Files tab titled "Files" is open
 
@@ -21,6 +22,7 @@ Feature: Title bar buttons
   Rule: A button belongs to its plugin
 
     Scenario: The button of a disabled plugin is removed
+      Given the title bar has the button "Open file tree"
       When the person disables the plugin "File Tree Explorer"
       Then the title bar does not have the button "Open file tree"
 

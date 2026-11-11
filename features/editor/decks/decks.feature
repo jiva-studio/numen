@@ -31,7 +31,7 @@ Feature: Decks
       Then the vault contains the file at "Glaciers/Ice cores.md"
       And the Card Model tab at "Glaciers/Ice cores.md" is active
 
-  Rule: A deck is a file of the vault
+  Rule: A value of a card is kept in its deck
 
     Background:
       Given the vault has the following card models:
@@ -43,7 +43,7 @@ Feature: Decks
         | Shore birds | Animal     | Otter | about 30 cm |
       And the application "editor" starts
 
-    Scenario: A value of a card is saved
+    Scenario: A value is saved
       Given the person opens the file at "cards/Shore birds.md"
       When the person writes "1.2 m" in the field "Height" of the card "Card 1" of the Deck tab titled "Shore birds"
       Then the vault contains the following:
@@ -56,6 +56,17 @@ Feature: Decks
       When the application "editor" restarts
       Then the Deck tab titled "Shore birds" has "1.2 m" in the field "Height" of the card "Card 1"
       And the Deck tab titled "Shore birds" has "about 30 cm" in the field "Height" of the card "Card 2"
+
+  Rule: A removed deck or card model closes its tab
+
+    Background:
+      Given the vault has the following card models:
+        | card model | fields       | template | front    | back       |
+        | Animal     | Name, Height | Size     | {{Name}} | {{Height}} |
+      And the vault has the following cards:
+        | deck        | card model | Name  | Height    |
+        | Shore birds | Animal     | Heron | about 1 m |
+      And the application "editor" starts
 
     Scenario: A removed deck closes its tab
       Given the person opens the file at "cards/Shore birds.md"

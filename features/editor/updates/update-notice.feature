@@ -36,6 +36,15 @@ Feature: Update notice
         | latest release | none |
       Then the title bar does not have an update
 
+    Scenario: An older release is not announced
+      Given the environment is set to the following:
+        | latest release | 2.0.0 |
+      And the application "editor" starts
+      And the title bar has the update "v2.0.0"
+      When the environment is set to the following:
+        | latest release | 0.0.1 |
+      Then the title bar does not have an update
+
     Scenario: A missing feed address is a failed task
       Given the application "editor" starts
       When the person clears the setting "Release feed address" of the plugin "Update Notifier"

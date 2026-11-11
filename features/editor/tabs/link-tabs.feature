@@ -1,5 +1,5 @@
 Feature: Link tabs
-  A tab is linked to another tab. A note opened in the first tab opens in the linked tab.
+  A note opened in a tab opens in the tab that is linked to it.
 
   Scenario: A note is opened in the tab it is linked to
     Given the empty vault "Test"

@@ -10,3 +10,5 @@ Feature: Panes
     And the person opens the note titled "Entropy"
     When the person runs the command "Open note beside" on the note tab titled "Entropy"
     Then the note tab titled "Entropy" is in a pane of its own
+    And the note tab at "notes/Entropy.md" is open
+    And the note tab at "notes/Entropy.md" is active

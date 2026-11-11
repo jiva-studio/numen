@@ -20,7 +20,7 @@ Feature: File tree
       And the tab at "notes/Quay.md" is not open
       And the note titled "Jetty" links to the note at "daily/Quay.md"
 
-    Scenario: A folder is made in a folder
+    Scenario: A folder is created in a folder
       Given the vault has the following:
         | path       | text |
         | Saltworks/ |      |
@@ -28,31 +28,36 @@ Feature: File tree
         | Name | Brine tanks |
       Then the vault contains the folder at "Saltworks/Brine tanks"
 
-    Scenario: A folder is made with the palette command
+    Scenario: A folder is created at the top
       When the person runs the command "Create folder" with:
         | Name | Saltworks |
       Then the vault contains the folder at "Saltworks"
 
-    Scenario: A note is renamed
+    Scenario: A note is renamed with its links
       Given the vault has the following:
         | path                | text                    |
         | notes/Brine pump.md | The pump runs at night. |
+        | notes/Pier.md       | See [[Brine pump]].     |
       And the person opens the note titled "Brine pump"
+      And the person opens the note titled "Pier"
       When the person runs the command "Rename" on the file at "notes/Brine pump.md" with:
-        | Name | Brine pumps.md |
+        | Name | Brine pumps |
       Then the tab at "notes/Brine pumps.md" is open
       And the tab at "notes/Brine pump.md" is not open
+      And the vault contains the file at "notes/Brine pumps.md"
+      And the vault does not contain the file at "notes/Brine pump.md"
+      And the note titled "Pier" links to the note at "notes/Brine pumps.md"
 
   Rule: The file tree shows files
 
-    Scenario: A folder is opened
+    Scenario: A folder lists its files
       Given the vault has the following:
         | path             | text                      |
         | cards/Animals.md | A heron is a wading bird. |
       When the person opens the folder at "cards"
       Then the tab titled "Files" has "cards/Animals.md"
 
-    Scenario: A note is shown
+    Scenario: A note is shown in the file tree
       Given the vault has the following:
         | path             | text      |
         | notes/Entropy.md | # Entropy |

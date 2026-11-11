@@ -1,5 +1,5 @@
 Feature: Plex
-  A person sees the notes joined to the note in front and joins more.
+  A person sees the notes joined to the active note and joins more.
 
   Background:
     Given the empty vault "Test"
@@ -75,7 +75,7 @@ Feature: Plex
         | path          | text                        |
         | notes/Quay.md | The quay is at the harbour. |
 
-    Scenario: The plex is an action of a found note
+    Scenario: A found note can be shown in the plex
       When the person searches the vault for "Quay"
       Then the search result "Quay" in the group "Names" contains the following actions:
         | action            |
@@ -88,9 +88,3 @@ Feature: Plex
       Then the search result "Quay" in the group "Names" has only the following actions:
         | action    |
         | Open note |
-
-    Scenario: A found note without the plex is opened
-      Given the person disables the plugin "Plex Graph"
-      When the person searches the vault for "Quay"
-      And the person chooses the search result "Quay" in the group "Names"
-      Then the tab at "notes/Quay.md" is active

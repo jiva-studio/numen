@@ -4,8 +4,8 @@ Feature: Plex headings
   Background:
     Given the empty vault "Test"
     And the vault has the following:
-      | path           | text                                        |
-      | notes/Heat.md  | # Heat\n\n## First law\n\nEnergy is kept.   |
+      | path          | text                                      |
+      | notes/Heat.md | # Heat\n\n## First law\n\nEnergy is kept. |
     And the application "editor" starts
     And the person opens the note titled "Heat"
     And the person runs the command "Show note in plex" on the note tab titled "Heat"
@@ -14,8 +14,10 @@ Feature: Plex headings
     When the person hovers over the note titled "Heat" in the plex
     Then the plex has the heading "First law" under the note titled "Heat"
 
-  Scenario: The headings of a note are left out
-    Given the person runs the command "Plex Graph: Nest headings under notes" with:
+  Scenario: Headings are hidden
+    Given the person hovers over the note titled "Heat" in the plex
+    And the plex has the heading "First law" under the note titled "Heat"
+    When the person runs the command "Plex Graph: Nest headings under notes" with:
       | Nest headings under notes | Off |
-    When the person hovers over the note titled "Heat" in the plex
+    And the person hovers over the note titled "Heat" in the plex
     Then the plex does not have the heading "First law" under the note titled "Heat"

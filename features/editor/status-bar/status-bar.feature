@@ -5,9 +5,10 @@ Feature: Status bar
     Given the empty vault "Test"
     And the application "editor" starts
 
-  Rule: The bar is a plugin
+  Rule: The bar can be turned on
 
     Scenario: The bar is off at the start
+      Given the title bar has the button "Open file tree"
       Then the plugin "Status bar" is disabled
       And the window does not have the status bar
 

@@ -4,10 +4,10 @@ Feature: Link notes
   Background:
     Given the empty vault "Test"
     And the vault has the following:
-      | path            | text                                       |
-      | Entropy.md      | A measure of uncertainty.                  |
-      | Heat engine.md  | Work from a difference in temperature.     |
-      | Carnot cycle.md | The cycle is bounded by [[Entropy]] alone. |
+      | path            | text                     |
+      | Entropy.md      | Entropy is a measure.    |
+      | Heat engine.md  | A heat engine does work. |
+      | Carnot cycle.md | See [[Entropy]].         |
     And the application "editor" starts
 
   Scenario: A link is completed
@@ -21,4 +21,4 @@ Feature: Link notes
     Given the person opens the note titled "Carnot cycle"
     When the person opens the link "[[Entropy]]" in the note titled "Carnot cycle"
     Then the note tab at "Entropy.md" is active
-    And the note at "Entropy.md" has "A measure of uncertainty"
+    And the note at "Entropy.md" has "Entropy is a measure."

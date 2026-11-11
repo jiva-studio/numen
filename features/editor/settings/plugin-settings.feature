@@ -5,24 +5,29 @@ Feature: Plugin settings
     Given the empty vault "Test"
     And the application "editor" starts
 
-  Scenario: The settings list the plugins
-    When the person runs the command "Open settings"
-    Then the Settings tab titled "Settings" has "Audio/Video Transcription"
-    And the Settings tab titled "Settings" has "Document OCR"
+  Rule: The Settings tab shows the plugins
 
-  Rule: A setting is read and changed
+    Scenario: The settings list the plugins
+      When the person runs the command "Open settings"
+      Then the Settings tab titled "Settings" has "Audio/Video Transcription"
+      And the Settings tab titled "Settings" has "Document OCR"
 
     Scenario: A model is shown with its languages
+      Given the person runs the command "Open settings"
       Then the setting "Model" of the plugin "Audio/Video Transcription" is "Parakeet TDT 0.6B v3"
       And the setting "Model" of the plugin "Audio/Video Transcription" has the option "25 European languages"
 
     Scenario: A model is kept when the Settings tab is closed
-      Given the person sets the setting "Model" of the plugin "Audio/Video Transcription" to "Parakeet TDT 0.6B v2"
+      Given the person runs the command "Open settings"
+      And the person sets the setting "Model" of the plugin "Audio/Video Transcription" to "Parakeet TDT 0.6B v2"
       And the person closes the Settings tab titled "Settings"
       When the person runs the command "Open settings"
       Then the setting "Model" of the plugin "Audio/Video Transcription" is "Parakeet TDT 0.6B v2"
 
   Rule: A setting shows the settings it needs
+
+    Background:
+      Given the person runs the command "Open settings"
 
     Scenario: The files of a custom model are asked for
       When the person sets the setting "Model" of the plugin "Document OCR" to "Custom model"
@@ -30,6 +35,9 @@ Feature: Plugin settings
       And the settings of the plugin "Document OCR" have the field "Character dictionary"
 
     Scenario: The files of a custom model are not asked for
+      Given the person sets the setting "Model" of the plugin "Document OCR" to "Custom model"
+      And the settings of the plugin "Document OCR" have the field "Model file"
+      When the person sets the setting "Model" of the plugin "Document OCR" to "PP-OCRv5 Latin"
       Then the settings of the plugin "Document OCR" do not have the field "Model file"
 
     Scenario: The address of a custom service is asked for
@@ -38,7 +46,7 @@ Feature: Plugin settings
 
     Scenario: The address of a service is kept when another provider is chosen
       Given the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
-      And the person sets the setting "Service URL" of the plugin "Vector Embeddings" to "http://127.0.0.1:9/v1"
+      And the person sets the setting "Service URL" of the plugin "Vector Embeddings" to "http://numen.test/one"
       And the person sets the setting "Provider" of the plugin "Vector Embeddings" to "OpenAI"
       When the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
-      Then the setting "Service URL" of the plugin "Vector Embeddings" is "http://127.0.0.1:9/v1"
+      Then the setting "Service URL" of the plugin "Vector Embeddings" is "http://numen.test/one"

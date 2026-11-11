@@ -18,3 +18,9 @@ Feature: Cancel a task
     Given the task list has the task "notes/Tide clock.md"
     When the person cancels the task "notes/Tide clock.md"
     Then the task list does not have the task "notes/Tide clock.md"
+
+  Scenario: A finished task leaves the list
+    Given the task list has the task "notes/Tide clock.md"
+    When the environment is set to the following:
+      | embedding model | normal |
+    Then the task list does not have the task "notes/Tide clock.md"
