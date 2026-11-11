@@ -29,7 +29,7 @@ type IndexUpdater func(ctx context.Context, v domain.Vault, paths []string) erro
 
 // Baseline is what a caller last saw of the note it is saving.
 // Prose is compared first: equal text is unchanged whatever the file size and
-// time, which a synchroniser, a checkout or a touch change alone.
+// time, which a synchronizer, a checkout or a touch change alone.
 // FileStat answers for text that did move: a note at the file stat of the last
 // write is the note this caller put there.
 type Baseline struct {

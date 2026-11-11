@@ -32,7 +32,7 @@ func (s shownAccess) GetPluginVault() *Access { return s.access }
 
 func (shownAccess) GetPluginVaultList() List { return nil }
 
-func TestMoveCancelledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
+func TestMoveCanceledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
 	arranger := &recordingArranger{}
 	handler := &arrangeCalls{calls: &calls{auth: anyCaller{}, source: shownAccess{access: &Access{Arranger: arranger}}}}
 	ctx, cancel := context.WithCancel(t.Context())

@@ -103,7 +103,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 	}
 }
 
-func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
+func (c corpus) vectorize(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
 	unembedded, err := c.db.ChunkVectors().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), chunk.Cursor{}, 1000)
 	if err != nil {
@@ -208,8 +208,8 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// The vaults point different ways, and the query below is the second's own
 	// vector: nearest to everything it holds, and near enough to the first's for
 	// those to be answers too.
-	c.vectorise(t, c.first, newNearVector())
-	c.vectorise(t, c.second, newVector(+1))
+	c.vectorize(t, c.first, newNearVector())
+	c.vectorize(t, c.second, newVector(+1))
 
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
@@ -491,7 +491,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 	// meaning half would still look like a working search.
 	ctx := t.Context()
 	c := newCorpus(t)
-	c.vectorise(t, c.first, newVector(+1))
+	c.vectorize(t, c.first, newVector(+1))
 
 	// A word that appears in no note in the vault, so no lexical match is possible.
 	const unsaid = "zzqqxx"
@@ -518,7 +518,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	// error: a search by words answers and the search looks like it worked.
 	ctx := t.Context()
 	c := newCorpus(t)
-	c.vectorise(t, c.first, newVector(+1))
+	c.vectorize(t, c.first, newVector(+1))
 
 	limit, err := queriesOf(c.db).FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
@@ -544,7 +544,7 @@ func TestSearch_BookQueryUsesBookSources(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
-	c.vectorise(t, c.first, newVector(+1))
+	c.vectorize(t, c.first, newVector(+1))
 
 	everywhere, err := c.search(oneWay{newVector(+1)}).
 		Execute(ctx, c.first, "Madhavendra Puri", search.Parameters{})
@@ -583,7 +583,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
-	c.vectorise(t, c.first, newVector(+1))
+	c.vectorize(t, c.first, newVector(+1))
 	queries := queriesOf(c.db)
 	books := []domain.SourceKind{domain.KindFile}
 
@@ -633,7 +633,7 @@ func (e *countingEmbedder) Close() error {
 func TestASearchReusesCachedQueryEmbedding(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
-	c.vectorise(t, c.first, newVector(+1))
+	c.vectorize(t, c.first, newVector(+1))
 
 	embedder := &countingEmbedder{inner: oneWay{direction: newVector(+1)}}
 	searching := c.search(embedder)
@@ -696,7 +696,7 @@ func (e *twoKindsEmbedder) EmbedQueries(ctx context.Context, texts []string) ([]
 
 func TestASearchEmbedsTheTypedQueryAsAQuery(t *testing.T) {
 	c := newCorpus(t)
-	c.vectorise(t, c.first, newVector(+1))
+	c.vectorize(t, c.first, newVector(+1))
 	embedder := &twoKindsEmbedder{oneWay: oneWay{direction: newVector(+1)}}
 
 	if _, err := c.search(embedder).Execute(t.Context(), c.first, "disorder", search.Parameters{}); err != nil {

@@ -69,7 +69,7 @@ func writeNote(t *testing.T, root, name, body string) {
 	}
 }
 
-func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc) {
+func testCanceledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc) {
 	t.Helper()
 	events := newRecorder()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}

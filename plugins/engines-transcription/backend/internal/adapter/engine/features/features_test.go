@@ -45,9 +45,9 @@ func TestLogMelMatchesReference(t *testing.T) {
 
 // A band that is one value throughout has no spread, and the guard under the
 // division is what keeps it a number.
-func TestNormaliseFlatBand(t *testing.T) {
+func TestNormalizeFlatBand(t *testing.T) {
 	row := []float32{3, 3, 3, 3}
-	normalise(row)
+	normalize(row)
 	for i, v := range row {
 		if v != 0 {
 			t.Fatalf("frame %d of a flat band is %g", i, v)
@@ -97,7 +97,7 @@ func TestReflected(t *testing.T) {
 	}
 }
 
-func TestEmphasised(t *testing.T) {
+func TestEmphasized(t *testing.T) {
 	got := applyPreemphasis([]float32{1, 1, 1})
 	if got[0] != 1 {
 		t.Fatalf("the first sample is %g", got[0])

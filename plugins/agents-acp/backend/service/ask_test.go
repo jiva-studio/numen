@@ -353,7 +353,7 @@ func TestAskAgent_FailureReason(t *testing.T) {
 	}
 }
 
-func TestAskAgentStopsTheAgentWhenCancelled(t *testing.T) {
+func TestAskAgentStopsTheAgentWhenCanceled(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "hang")
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()

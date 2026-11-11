@@ -43,7 +43,7 @@ func (r *rangingTexts) ReadTextRange(_ context.Context, v domain.Vault, path str
 	}
 	return plugin.TextRange{
 		Segments: []domain.TextSegment{
-			{Text: "grey heron waits", Heading: "Herons", Selector: `{"page":2}`},
+			{Text: "gray heron waits", Heading: "Herons", Selector: `{"page":2}`},
 			{Text: " by the reeds", Selector: `{"page":3}`},
 		},
 		Start: 120,
@@ -83,7 +83,7 @@ func TestRangedReadTextReturnsSegmentsOffsetsAndTextSize(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(segments) != 2 || res.Msg.GetStart() != 120 || res.Msg.GetSize() != 4800 || res.Msg.GetNextCursor() != "" {
 		t.Fatalf("the ranged read returned %v, want two segments from 120 of a text of 4800 bytes", res.Msg)
 	}
-	if segments[0].GetText() != "grey heron waits" || segments[0].GetHeading() != "Herons" || segments[0].GetSelector() != `{"page":2}` ||
+	if segments[0].GetText() != "gray heron waits" || segments[0].GetHeading() != "Herons" || segments[0].GetSelector() != `{"page":2}` ||
 		segments[1].GetText() != " by the reeds" || segments[1].GetSelector() != `{"page":3}` {
 		t.Errorf("the segments are %v", segments)
 	}

@@ -14,7 +14,7 @@ var (
 	ErrClaimed = errors.New("the name is claimed by another caller")
 
 	// ErrLockedByAnother is what a name gets when a program outside this one has the
-	// file open and the system will not open it twice. A synchroniser and a backup
+	// file open and the system will not open it twice. A synchronizer and a backup
 	// reader each hold a file for moments at a time, so it is a state to be restored
 	// to and not a failure of the store.
 	ErrLockedByAnother = errors.New("the file is held by another program")

@@ -122,7 +122,7 @@ func TestAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 }
 
 // A drop that was canceled ends, and nothing is reported as a file that failed.
-func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
+func TestACanceledDropEndsWithTheCancellation(t *testing.T) {
 	isolateHome(t)
 	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -140,7 +140,7 @@ func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 
 // A drop canceled while a folder is being read leaves what is under it
 // outside.
-func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
+func TestADropCanceledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	isolateHome(t)
 	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -291,7 +291,7 @@ func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
 
 // Files under a folder are not brought once the drop is canceled, whatever the
 // vault would do with them.
-func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
+func TestNothingBelowAFolderIsBroughtOnceTheDropIsCanceled(t *testing.T) {
 	isolateHome(t)
 	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -310,7 +310,7 @@ func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 
 // A drop canceled after one handle ended keeps what that one brought, and the
 // rest is not tried.
-func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
+func TestADropCanceledAfterOneHandleReportsWhatArrived(t *testing.T) {
 	isolateHome(t)
 	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())

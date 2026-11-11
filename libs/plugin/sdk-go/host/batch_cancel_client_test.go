@@ -14,13 +14,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
-// cancelledArranging is a host whose batches were canceled after the first note: the first entry
+// canceledArranging is a host whose batches were canceled after the first note: the first entry
 // is done and the others are returned NOT_ATTEMPTED with the detail naming the path.
-type cancelledArranging struct {
+type canceledArranging struct {
 	fakeArrangeHost
 }
 
-func (a *cancelledArranging) MoveNotes(
+func (a *canceledArranging) MoveNotes(
 	context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
 	return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
@@ -32,7 +32,7 @@ func (a *cancelledArranging) MoveNotes(
 	}}), nil
 }
 
-func (a *cancelledArranging) RemoveNotes(
+func (a *canceledArranging) RemoveNotes(
 	context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
 	return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
@@ -44,15 +44,15 @@ func (a *cancelledArranging) RemoveNotes(
 	}}), nil
 }
 
-func cancelledClient(t *testing.T) *host.Client {
+func canceledClient(t *testing.T) *host.Client {
 	t.Helper()
-	server := httptest.NewServer(handler(&cancelledArranging{}))
+	server := httptest.NewServer(handler(&canceledArranging{}))
 	t.Cleanup(server.Close)
 	return host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
 func TestClientReturnsMoveSkippedByCancelAsNotAttempted(t *testing.T) {
-	moves, err := cancelledClient(t).MoveNotes(t.Context(), []string{"Danube.md", "Rivers/Rhine.md"}, "Archive")
+	moves, err := canceledClient(t).MoveNotes(t.Context(), []string{"Danube.md", "Rivers/Rhine.md"}, "Archive")
 	if err != nil {
 		t.Fatalf("the move failed as a whole: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestClientReturnsMoveSkippedByCancelAsNotAttempted(t *testing.T) {
 }
 
 func TestClientReturnsRemovalSkippedByCancelAsNotAttempted(t *testing.T) {
-	removals, err := cancelledClient(t).RemoveNotes(t.Context(), []string{"Danube.md", "Rivers/Rhine.md"})
+	removals, err := canceledClient(t).RemoveNotes(t.Context(), []string{"Danube.md", "Rivers/Rhine.md"})
 	if err != nil {
 		t.Fatalf("the removal failed as a whole: %v", err)
 	}

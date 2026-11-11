@@ -35,7 +35,7 @@ func (c *cancelSetup) assertNothingSent(t *testing.T, calls int) {
 
 // A call whose context ends while it waits for the lock returns the context error at once, sends
 // nothing, and the lock stays usable for the call after it.
-func TestACallCancelledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T) {
+func TestACallCanceledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T) {
 	for _, name := range getOperationNames() {
 		t.Run(name, func(t *testing.T) {
 			c := newCancelSetup(t)
@@ -80,7 +80,7 @@ func TestACallCancelledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T
 
 // A call whose context ended before it returns the context error and sends nothing, whether the
 // lock is free or busy.
-func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
+func TestACallCanceledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 	for _, name := range getOperationNames() {
 		for _, isLockBusy := range []bool{false, true} {
 			label := name + " with a free lock"
@@ -124,7 +124,7 @@ func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 
 // An activation whose context ends while it waits for the lock returns the context error, sends
 // nothing and no longer awaits its Configure, so the next refresh gives the plugin its list.
-func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefreshConfiguresThePlugin(t *testing.T) {
+func TestAnActivationCanceledWhileItWaitsForTheLockSendsNothingAndTheNextRefreshConfiguresThePlugin(t *testing.T) {
 	c := newCancelSetup(t)
 	calls := c.probe.count()
 	if err := plugin.GetDelivery(c.host.Config).Lock(t.Context()); err != nil {
@@ -169,7 +169,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 
 // An operation commits its change and then its context ends before the plugin is configured. The
 // next refresh gives the plugin the list the change made.
-func TestAnOperationCancelledAfterItsCommitIsRepairedByTheNextRefresh(t *testing.T) {
+func TestAnOperationCanceledAfterItsCommitIsRepairedByTheNextRefresh(t *testing.T) {
 	c := newCancelSetup(t)
 	calls := c.probe.count()
 	c.source.rename("Renamed")
@@ -192,7 +192,7 @@ func TestAnOperationCancelledAfterItsCommitIsRepairedByTheNextRefresh(t *testing
 // A write replaces a value and leaves the list as it is, so the plugin is due only because the
 // operation named it. When the context ends after the commit the plugin still gets the new value at
 // the next refresh.
-func TestAWriteCancelledAfterItsCommitIsRepairedByTheNextRefresh(t *testing.T) {
+func TestAWriteCanceledAfterItsCommitIsRepairedByTheNextRefresh(t *testing.T) {
 	c := newCancelSetup(t)
 	calls := c.probe.count()
 	if err := c.store.SetKey(t.Context(), "secret/"+secretID, "value-replaced"); err != nil {

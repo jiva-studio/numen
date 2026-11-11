@@ -808,7 +808,7 @@ func TestListThemes_LaunchScaleAppliesUntilUserSetsScale(t *testing.T) {
 
 // A build put together without a catalog answers that it has none, and the
 // rest of the window is as it was.
-func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
+func TestAWindowWithNoCatalogAnswersThatItHasNone(t *testing.T) {
 	server := httptest.NewServer(newBareServices().NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 

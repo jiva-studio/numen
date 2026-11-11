@@ -123,7 +123,7 @@ func TestAStoreNoticesTheIdentityChangingBelowIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// A synchroniser bringing another machine's vault down over this path
+	// A synchronizer bringing another machine's vault down over this path
 	// leaves the folder where it was and the identity in it another.
 	pos := filepath.Join(root, vaultconfig.DefaultServiceDir, "config.json")
 	other := `{"v":1,"id":"01J0000000000000000000000A"}` + "\n"

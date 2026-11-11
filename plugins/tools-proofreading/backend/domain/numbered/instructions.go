@@ -41,7 +41,7 @@ as the first and the last of them:
 12-14|the corrected sentence
 
 - Put right what the machine misheard: a word for one that sounds like it,
-  words run together or split apart, punctuation and capitalisation that are
+  words run together or split apart, punctuation and capitalization that are
   missing or wrong, numbers and names.
 - Put a sentence broken across lines back together as one line. The run is
   every line it covers, from first to last, with none left out.

@@ -200,7 +200,7 @@ func (w windowTools) getAnswer(t *testing.T, name, arguments string) map[string]
 func TestWindowTabListReturnsPlaceTabIDAndIsActive(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{
-		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
+		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"},
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 	}, "tab-2")
 	answer := w.getAnswer(t, "window_tab_list", `{}`)
@@ -320,8 +320,8 @@ func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
 	answer := w.getAnswer(t, "note_focus", `{"path":"notes/Heron.md"}`)
 	requireKeys(t, "the answer of note_focus", answer, []string{"note"}, []string{"focused"})
 	note := requireObject(t, "answer[note]", answer["note"])
-	if note["path"] != notePath || note["title"] != "Grey Heron" {
-		t.Errorf("note = %v, want %s titled Grey Heron", answer["note"], notePath)
+	if note["path"] != notePath || note["title"] != "Gray Heron" {
+		t.Errorf("note = %v, want %s titled Gray Heron", answer["note"], notePath)
 	}
 
 	schema := getToolSchema(t, w.registry, "note_focus", true)
@@ -358,7 +358,7 @@ func TestSourceFocusOfANoteReturnsAHighlightCountOfZero(t *testing.T) {
 
 func TestWindowTabActivateReturnsTheTabOnly(t *testing.T) {
 	w := newWindowTools(t)
-	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"}}, "tab-1")
+	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"}}, "tab-1")
 	answer := w.getAnswer(t, "window_tab_activate", `{"tabId":"tab-1"}`)
 	requireKeys(t, "the answer of window_tab_activate", answer, []string{"tab"}, []string{"success", "message"})
 	tab := requireObject(t, "answer[tab]", answer["tab"])

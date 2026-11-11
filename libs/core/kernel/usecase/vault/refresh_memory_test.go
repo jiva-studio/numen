@@ -256,7 +256,7 @@ func TestARefreshFailsWhenTheVaultCannotBeRegistered(t *testing.T) {
 	}
 }
 
-func TestACancelledRefreshSavesNothing(t *testing.T) {
+func TestACanceledRefreshSavesNothing(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Hour))
@@ -637,7 +637,7 @@ func TestARefreshWithoutALedgerSavesARecentNoteEveryTime(t *testing.T) {
 	}
 }
 
-func TestACancelledRefreshReportsWhatItDidFirst(t *testing.T) {
+func TestACanceledRefreshReportsWhatItDidFirst(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.addNote("First.md", "entropy", getMemBase().Add(-time.Hour))

@@ -569,7 +569,7 @@ func TestCreate_AcceptsLongNoteName(t *testing.T) {
 	}
 }
 
-// Correcting the capitalisation or the accent spelling of a note name is a
+// Correcting the capitalization or the accent spelling of a note name is a
 // move onto a name that a filesystem which does not distinguish them resolves
 // to the note itself. The writer then sees two names for one file, which a
 // filesystem that does distinguish them can only satisfy by creating a link.

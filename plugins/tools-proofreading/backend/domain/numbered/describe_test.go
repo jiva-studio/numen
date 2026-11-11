@@ -48,7 +48,7 @@ func TestADigestListsOnlyWhatRecurs(t *testing.T) {
 	}
 }
 
-// A word capitalised only where a sentence opens is a sentence's first word and not
+// A word capitalized only where a sentence opens is a sentence's first word and not
 // a name, however often it occurs.
 func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
 	about := DescribeSpeech(makeLines("Ganaka spoke. Ganaka listened. Ganaka left."))

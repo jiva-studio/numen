@@ -19,9 +19,9 @@ import (
 // and an index of that build is not readable by this one.
 const expectedVersion = 1
 
-type catalogueEntry struct{ kind, name, body string }
+type catalogEntry struct{ kind, name, body string }
 
-func readCatalogue(ctx context.Context, t *testing.T, db *sql.DB) []catalogueEntry {
+func readCatalog(ctx context.Context, t *testing.T, db *sql.DB) []catalogEntry {
 	t.Helper()
 	rows, err := db.QueryContext(ctx,
 		`SELECT type, name, coalesce(sql, '') FROM sqlite_master
@@ -34,9 +34,9 @@ func readCatalogue(ctx context.Context, t *testing.T, db *sql.DB) []catalogueEnt
 			t.Error(err)
 		}
 	}()
-	var out []catalogueEntry
+	var out []catalogEntry
 	for rows.Next() {
-		var e catalogueEntry
+		var e catalogEntry
 		if err := rows.Scan(&e.kind, &e.name, &e.body); err != nil {
 			t.Fatal(err)
 		}
@@ -81,9 +81,9 @@ func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 	if err := json.Unmarshal(raw, &dump); err != nil {
 		t.Fatal(err)
 	}
-	var want []catalogueEntry
+	var want []catalogEntry
 	for _, d := range dump {
-		want = append(want, catalogueEntry{d.Kind, d.Name, d.Body})
+		want = append(want, catalogEntry{d.Kind, d.Name, d.Body})
 	}
 
 	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"))
@@ -92,7 +92,7 @@ func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 	}
 	defer testsupport.Close(t, db)
 
-	got := readCatalogue(ctx, t, db.write)
+	got := readCatalog(ctx, t, db.write)
 	if !slices.Equal(got, want) {
 		for _, e := range got {
 			if !slices.Contains(want, e) {

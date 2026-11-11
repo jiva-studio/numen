@@ -299,31 +299,31 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	}
 }
 
-// cancellingReaders cancels the scan once the walk is complete.
+// cancelingReaders cancels the scan once the walk is complete.
 //
 // The cancellation happens after the walk, not during it: the reader rejects a
 // canceled context itself, so a scan that never checked the context would
 // still stop during the walk. The pass over the walk results, which is the
 // entire work of a warm scan, has no other guard.
-type cancellingReaders struct {
+type cancelingReaders struct {
 	vaultport.VaultReaders
 	cancel context.CancelFunc
 }
 
-func (c *cancellingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
+func (c *cancelingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := c.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	return &cancellingReader{VaultReader: reader, parent: c}, nil
+	return &cancelingReader{VaultReader: reader, parent: c}, nil
 }
 
-type cancellingReader struct {
+type cancelingReader struct {
 	vaultport.VaultReader
-	parent *cancellingReaders
+	parent *cancelingReaders
 }
 
-func (c *cancellingReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
+func (c *cancelingReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	err := c.VaultReader.WalkFiles(ctx, fn)
 	c.parent.cancel()
 	return err
@@ -620,12 +620,12 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	}
 }
 
-// TestScanStopsWhenCancelled. A canceled scan keeps what it committed and
+// TestScanStopsWhenCanceled. A canceled scan keeps what it committed and
 // discards the group being filled, whose files are read again on the next scan.
 //
 // Asserted on how far the walk got, not on the error: the next read rejects a
 // canceled context itself, so the error occurs either way.
-func TestScanStopsWhenCancelled(t *testing.T) {
+func TestScanStopsWhenCanceled(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -651,12 +651,12 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	}
 }
 
-// TestAWarmScanStopsWhenCancelled covers the check in the loop. A warm scan
+// TestAWarmScanStopsWhenCanceled covers the check in the loop. A warm scan
 // opens no file, so no reader rejects the canceled context and the scan must
 // check it itself.
 // The context is canceled part-way through: with an up-front cancellation the
 // first query fails and the loop check is never reached.
-func TestAWarmScanStopsWhenCancelled(t *testing.T) {
+func TestAWarmScanStopsWhenCanceled(t *testing.T) {
 	t.Parallel()
 	v := vaultfixture.GenerateVault(t, 600)
 	db := openIndex(t)
@@ -668,7 +668,7 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	warmScanner := scanner(&cancellingReaders{VaultReaders: vaultreader.Readers{}, cancel: cancel}, db)
+	warmScanner := scanner(&cancelingReaders{VaultReaders: vaultreader.Readers{}, cancel: cancel}, db)
 
 	res, err := warmScanner.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {

@@ -115,7 +115,7 @@ func TestMeanPool(t *testing.T) {
 		}
 	}
 
-	// Test dim=7 (below 8-wide unroll) and dim=16 (two 8-wide unroll steps) without normalisation
+	// Test dim=7 (below 8-wide unroll) and dim=16 (two 8-wide unroll steps) without normalization
 	for _, width := range []int{7, 16} {
 		rawFlat := make([]float32, 2*width)
 		for d := range width {

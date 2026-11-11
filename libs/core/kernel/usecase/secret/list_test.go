@@ -86,7 +86,7 @@ func TestListStatesReportsValuePresence(t *testing.T) {
 	}
 }
 
-func TestListStatesFailsOnACancelledContext(t *testing.T) {
+func TestListStatesFailsOnACanceledContext(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Here", Group: "g"})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

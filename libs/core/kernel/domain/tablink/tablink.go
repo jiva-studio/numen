@@ -27,7 +27,7 @@ const (
 	MoveErrorTimeout
 	// MoveErrorNotOwner is a source window that does not own the tab.
 	MoveErrorNotOwner
-	// MoveErrorCancelled is a move that a newer move or detach of the tab, a
+	// MoveErrorCanceled is a move that a newer move or detach of the tab, a
 	// cancel, or another window that took the tab ended.
-	MoveErrorCancelled
+	MoveErrorCanceled
 )

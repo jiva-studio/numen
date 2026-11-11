@@ -16,7 +16,7 @@ import (
 // interrupted leaves vec0 with a nil statement that it then clears, which
 // crashes the process. A save canceled at any moment must return an error and
 // leave the process alive.
-func TestSavingVectorsCancelledAtAnyMomentDoesNotCrash(t *testing.T) {
+func TestSavingVectorsCanceledAtAnyMomentDoesNotCrash(t *testing.T) {
 	for i := range 40 {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
 			s := newStore(t)

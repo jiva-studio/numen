@@ -562,7 +562,7 @@ func (b *blocking) Embed(ctx context.Context, _ []string) ([][]float32, error) {
 
 func (*blocking) Concurrency() int { return 1 }
 
-func testCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openFunc) {
+func testCancelingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openFunc) {
 	t.Helper()
 	events := newRecorder()
 	model := &blocking{

@@ -32,8 +32,8 @@ func (e *windowEntry) cancelWatches() {
 		return
 	}
 	for _, w := range e.watches {
-		if !w.isCancelled {
-			w.isCancelled = true
+		if !w.isCanceled {
+			w.isCanceled = true
 			close(w.stop)
 		}
 	}
@@ -47,7 +47,7 @@ type Watch struct {
 
 	windowID    string
 	stop        chan struct{}
-	isCancelled bool
+	isCanceled  bool
 	unsubscribe func()
 	host        shared
 }

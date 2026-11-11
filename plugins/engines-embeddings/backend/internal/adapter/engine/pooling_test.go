@@ -46,21 +46,21 @@ func TestPoolKinds(t *testing.T) {
 	}
 }
 
-func TestPoolNormalisesOnlyWhereTheProfileAsksForIt(t *testing.T) {
+func TestPoolNormalizesOnlyWhereTheProfileAsksForIt(t *testing.T) {
 	flat, mask := twoRows()
 	raw, err := pool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if raw[0][2] != 5 {
-		t.Errorf("a vector that is not normalised is scaled: %v", raw[0])
+		t.Errorf("a vector that is not normalized is scaled: %v", raw[0])
 	}
 	unit, err := pool(model.PoolLast, tokenOutput{flat: flat, mask: mask, rows: 2, seq: 3, dimensions: 3}, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !isNear(unit[0], []float32{0, 0, 1}) {
-		t.Errorf("a normalised vector is %v, want unit length", unit[0])
+		t.Errorf("a normalized vector is %v, want unit length", unit[0])
 	}
 }
 
@@ -78,7 +78,7 @@ func TestSplitRowsKeepsTheVectorsOfAnOutputThatIsPooled(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !isNear(got[0], []float32{0.6, 0.8}) || !isNear(got[1], []float32{0, 1}) {
-		t.Errorf("normalised rows = %v", got)
+		t.Errorf("normalized rows = %v", got)
 	}
 	raw, err := splitRows(flat, 2, 2, false)
 	if err != nil {
@@ -152,7 +152,7 @@ func TestPadBatchSetsPositionsOfTheRealTokensAndZeroForPadding(t *testing.T) {
 	exact := make([]int64, 0, 4)
 	out := resize(exact, 4)
 	if &out[0] != &exact[:1][0] {
-		t.Error("resize allocated when cap equalled size")
+		t.Error("resize allocated when cap equaled size")
 	}
 
 	if got := getWindow(onnx.ProviderCoreML, 1024); got != 512 {

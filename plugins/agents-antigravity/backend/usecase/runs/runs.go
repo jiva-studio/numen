@@ -184,14 +184,14 @@ func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *age
 	scanner.Buffer(nil, maxLine)
 	isEnded := scanOutput(scanner, s.NewHandler(r), r, w, stop)
 	scanErr := scanner.Err()
-	isCancelled := runCtx.Err() != nil
+	isCanceled := runCtx.Err() != nil
 	// gomutants:disable-next-line BRANCH_IF reason="Stopping the context on scanner error cancels the child before defer calls stop()."
 	if scanErr != nil {
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="Stopping the context on scanner error cancels the child before defer calls stop()."
 		stop()
 	}
 	waitErr := errors.Join(stdout.Close(), proc.Wait())
-	if isEnded || isCancelled {
+	if isEnded || isCanceled {
 		return
 	}
 	reportExit(r, scanErr, waitErr, proc.Stderr())

@@ -17,7 +17,7 @@ func getGuideTabs() []host.OpenTab {
 	return []host.OpenTab{
 		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 88, PageCount: 120}},
-		{ID: "tab-3", Kind: "note", Path: notePath, Title: "Grey Heron"},
+		{ID: "tab-3", Kind: "note", Path: notePath, Title: "Gray Heron"},
 	}
 }
 
@@ -83,7 +83,7 @@ func TestWindowTabActivateRejectsAMissingTabID(t *testing.T) {
 		"no arguments":              `{}`,
 		"an empty tab id":           `{"tabId":""}`,
 		"a path in place of an id":  `{"path":"library/Bird Guide.pdf"}`,
-		"a title in place of an id": `{"title":"Grey Heron"}`,
+		"a title in place of an id": `{"title":"Gray Heron"}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newWindowTools(t)

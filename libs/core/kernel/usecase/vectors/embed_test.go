@@ -620,7 +620,7 @@ func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
 
 // A batch whose send is canceled leaves the reports: they name only a source still in flight,
 // and none when an earlier batch finished while the send waited.
-func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
+func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	const (
 		inFlight = "library/in-flight.epub"
 		finished = "library/finished.epub"

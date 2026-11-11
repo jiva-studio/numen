@@ -37,7 +37,7 @@ func (h *windowHost) FocusNote(_ context.Context, req *connect.Request[v1.FocusN
 	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.FocusNoteResponse{Error: h.code}), nil
 	}
-	return connect.NewResponse(&v1.FocusNoteResponse{Path: req.Msg.GetPath(), Title: "Grey Heron", Id: "01J8HERON0000000000000000"}), nil
+	return connect.NewResponse(&v1.FocusNoteResponse{Path: req.Msg.GetPath(), Title: "Gray Heron", Id: "01J8HERON0000000000000000"}), nil
 }
 
 func (h *windowHost) FocusPassages(_ context.Context, req *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error) {
@@ -63,7 +63,7 @@ func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.Hos
 	return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{
 		ActiveId: "tab-2",
 		Tabs: []*v1.OpenTab{
-			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
 			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &v1.TabPlace{Page: 4, PageCount: 80}},
 			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: new(float64)}},
 			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
@@ -88,7 +88,7 @@ func TestClientFocusesANoteAndReadsWhatTheHostFocused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := host.FocusedNote{Path: "notes/Heron.md", Title: "Grey Heron", ID: "01J8HERON0000000000000000"}
+	want := host.FocusedNote{Path: "notes/Heron.md", Title: "Gray Heron", ID: "01J8HERON0000000000000000"}
 	if got != want {
 		t.Errorf("focused %+v, want %+v", got, want)
 	}
@@ -125,7 +125,7 @@ func TestClientReadsTheOpenTabsWithThePlaceEachReaderReported(t *testing.T) {
 	}
 	atStart := 0.0
 	want := []host.OpenTab{
-		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4, PageCount: 80}},
 		{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &host.TabPlace{PositionSeconds: &atStart}},
 		{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},

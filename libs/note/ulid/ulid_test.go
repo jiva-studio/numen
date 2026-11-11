@@ -61,7 +61,7 @@ func TestShapeAndAlphabet(t *testing.T) {
 }
 
 func TestOrderMatchesTime(t *testing.T) {
-	// Lexicographic order equalling chronological order is why ULID was chosen
+	// Lexicographic order equaling chronological order is why ULID was chosen
 	// over UUID, so it is worth a test and not a comment.
 	base := time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
 	earlier := newID(t, base)

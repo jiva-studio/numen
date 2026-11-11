@@ -16,25 +16,25 @@ type timers struct {
 }
 
 type timer struct {
-	after       time.Duration
-	run         func()
-	isCancelled bool
+	after      time.Duration
+	run        func()
+	isCanceled bool
 }
 
 func (s *timers) schedule(d time.Duration, f func()) func() bool {
 	one := &timer{after: d, run: f}
 	s.pending = append(s.pending, one)
 	return func() bool {
-		was := !one.isCancelled
-		one.isCancelled = true
+		was := !one.isCanceled
+		one.isCanceled = true
 		return was
 	}
 }
 
 func (s *timers) fireAll() {
 	for _, one := range s.pending {
-		if !one.isCancelled {
-			one.isCancelled = true
+		if !one.isCanceled {
+			one.isCanceled = true
 			one.run()
 		}
 	}

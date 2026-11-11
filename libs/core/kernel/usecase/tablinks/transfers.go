@@ -13,12 +13,12 @@ type Transfers struct {
 // moves to a new window. It returns a channel that receives the result once:
 // MoveErrorNone when the window that read the tab calls Accept. A tab that no
 // window reports within the grace period is dropped and unlinked. It ends a
-// pending move or detach of the same tab with MoveErrorCancelled.
+// pending move or detach of the same tab with MoveErrorCanceled.
 func (t *Transfers) Detach(tab tablink.SavedTab) <-chan tablink.MoveError {
 	result := make(chan tablink.MoveError, 1)
 	s, release := t.state.hold()
 	defer release()
-	s.transit.endTransfers(tab.ID, tablink.MoveErrorCancelled)
+	s.transit.endTransfers(tab.ID, tablink.MoveErrorCanceled)
 	pending := s.transit.addDetach(tab, result)
 	s.expiries.scheduleDetach(s, tab.ID, pending)
 	return result
@@ -46,14 +46,14 @@ func (t *Transfers) CancelDetach(tabID string) {
 	if !ok {
 		return
 	}
-	s.transit.endDetach(tabID, pending, tablink.MoveErrorCancelled)
+	s.transit.endDetach(tabID, pending, tablink.MoveErrorCanceled)
 	s.dropUnreportedTab(tabID)
 }
 
 // Move sends a tab to another window and returns a channel that receives the
 // result once. The source window owns the tab until the target window calls
 // Accept. It ends a pending move or detach of the same tab with
-// MoveErrorCancelled. A known tab moves only from the window that owns it.
+// MoveErrorCanceled. A known tab moves only from the window that owns it.
 func (t *Transfers) Move(sourceWindowID, targetWindowID string, tab tablink.SavedTab) <-chan tablink.MoveError {
 	result := make(chan tablink.MoveError, 1)
 	s, release := t.state.hold()
@@ -66,7 +66,7 @@ func (t *Transfers) Move(sourceWindowID, targetWindowID string, tab tablink.Save
 		result <- tablink.MoveErrorNotOwner
 		return result
 	}
-	s.transit.endTransfers(tab.ID, tablink.MoveErrorCancelled)
+	s.transit.endTransfers(tab.ID, tablink.MoveErrorCanceled)
 	pending := s.transit.addMove(tab.ID, targetWindowID, result)
 	s.expiries.scheduleMove(s, tab.ID, pending)
 	s.events.Publish(Event{Move: &MovedTab{WindowID: targetWindowID, MoveID: pending.id, Tab: tab}})
@@ -74,12 +74,12 @@ func (t *Transfers) Move(sourceWindowID, targetWindowID string, tab tablink.Save
 }
 
 // CancelMove ends the pending move that result belongs to with
-// MoveErrorCancelled. A move that already ended is left as it is.
+// MoveErrorCanceled. A move that already ended is left as it is.
 func (t *Transfers) CancelMove(tabID string, result <-chan tablink.MoveError) {
 	s, release := t.state.hold()
 	defer release()
 	if pending, ok := s.transit.getMove(tabID); ok && (<-chan tablink.MoveError)(pending.result) == result {
-		s.transit.endMove(tabID, pending, tablink.MoveErrorCancelled)
+		s.transit.endMove(tabID, pending, tablink.MoveErrorCanceled)
 	}
 }
 

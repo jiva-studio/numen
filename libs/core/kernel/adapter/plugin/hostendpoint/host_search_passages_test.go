@@ -19,7 +19,7 @@ func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q pl
 	s.vaults = append(s.vaults, v.ID)
 	s.passageQueries = append(s.passageQueries, q)
 	return []domain.Passage{
-		{Source: "library/Birds.pdf", Text: "the grey heron", Location: "page 12", Start: 400, Length: 700, Selector: domain.Selector(`{"page":12}`)},
+		{Source: "library/Birds.pdf", Text: "the gray heron", Location: "page 12", Start: 400, Length: 700, Selector: domain.Selector(`{"page":12}`)},
 		{Source: "notes/Heron.md", Text: "herons fish", Start: 20, Length: 40, Line: 4},
 	}, s.err
 }
@@ -36,7 +36,7 @@ func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 		t.Fatalf("returned %v (%v)", got.Msg, err)
 	}
 	first, second := got.Msg.GetPassages()[0], got.Msg.GetPassages()[1]
-	if first.GetPath() != "library/Birds.pdf" || first.GetText() != "the grey heron" || first.GetLocation() != "page 12" ||
+	if first.GetPath() != "library/Birds.pdf" || first.GetText() != "the gray heron" || first.GetLocation() != "page 12" ||
 		first.GetRange().GetStart() != 400 || first.GetRange().GetEnd() != 1100 || first.GetSelector() != `{"page":12}` {
 		t.Errorf("the first passage is %v", first)
 	}

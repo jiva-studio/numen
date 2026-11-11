@@ -72,10 +72,10 @@ func (s *settler) getSettledCount() int {
 	return s.callCount
 }
 
-// TestVaultFlush_RetriesAfterCancelledClose. A settling that ends with a question
+// TestVaultFlush_RetriesAfterCanceledClose. A settling that ends with a question
 // standing leaves the window where it is, and every later ask settles the vault
 // again.
-func TestVaultFlush_RetriesAfterCancelledClose(t *testing.T) {
+func TestVaultFlush_RetriesAfterCanceledClose(t *testing.T) {
 	vault := newSettler(false, false, true)
 	g := &vaultFlush{flush: vault.settle}
 

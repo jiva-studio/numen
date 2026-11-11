@@ -12,7 +12,7 @@ import (
 
 func newWindowVault() *hosttest.Window {
 	vault := hosttest.New("marsh")
-	vault.File("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Grey Heron\n---\nHerons fish at dusk.")
+	vault.File("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
 	vault.File("library/Birds.pdf", "%PDF-1.7\n\x00\x01binary body")
 	return hosttest.NewWindow(vault)
 }
@@ -24,7 +24,7 @@ func TestTheWindowFocusesANoteOfTheVaultAndRecordsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := host.FocusedNote{Path: "notes/Heron.md", Title: "Grey Heron", ID: "01H7X1234567890ABCDEFGHJKM"}
+	want := host.FocusedNote{Path: "notes/Heron.md", Title: "Gray Heron", ID: "01H7X1234567890ABCDEFGHJKM"}
 	if got != want {
 		t.Errorf("focused %+v, want %+v", got, want)
 	}
@@ -92,7 +92,7 @@ func TestTheWindowServesTheTabsItWasGiven(t *testing.T) {
 		t.Errorf("a new window has %+v open with %q active (%v)", tabs, activeID, err)
 	}
 	open := []host.OpenTab{
-		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4}},
 	}
 	window.SetOpenTabs(open, "tab-2")

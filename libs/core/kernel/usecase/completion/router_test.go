@@ -263,7 +263,7 @@ func TestAnAgentAnswersNoMoreQuestionsAtOnceThanTheLimit(t *testing.T) {
 
 // A question waiting for a place ends with its context, and the question
 // answering ends with it too.
-func TestACancelledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
+func TestACanceledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
 	block := newBlocker()
 	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 1}}, &programs{answer: block.answer})
 
@@ -299,7 +299,7 @@ func TestACancelledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
 }
 
 // A question whose context is already canceled starts no task.
-func TestAQuestionCancelledBeforeItStartsStartsNoTask(t *testing.T) {
+func TestAQuestionCanceledBeforeItStartsStartsNoTask(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t, completion.Config{}, fake)
 	ctx, cancel := context.WithCancel(t.Context())

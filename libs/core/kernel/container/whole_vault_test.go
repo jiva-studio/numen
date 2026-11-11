@@ -55,7 +55,7 @@ func missingVault(t *testing.T) domain.Vault {
 	return domain.Vault{ID: "gone", Path: filepath.Join(t.TempDir(), "absent")}
 }
 
-func TestAScanConsumesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
+func TestAScanConsumesItsTurnsFromTheIndexAndHonorsARebuild(t *testing.T) {
 	db := makeIndex(t)
 
 	scan := container.Scan(container.NewConfig(container.Config{ShouldRebuildIndex: true}), db)

@@ -25,7 +25,7 @@ const (
 	readerID   = "org.example.reader"
 	scribeID   = "org.example.scribe"
 	pageOne    = "Chapter one. The marsh at dawn is quiet. "
-	pageTwo    = "The grey heron stands in the reeds and waits for fish. "
+	pageTwo    = "The gray heron stands in the reeds and waits for fish. "
 	pageThree  = "Herons nest in tall trees near the water. "
 	talkSecond = "Welcome to the marsh talk. "
 	talkThird  = "Today we speak about the heron. "
@@ -133,7 +133,7 @@ func newLibrary(t *testing.T) library {
 
 	search := hosttest.NewSearch(testVault)
 	search.SetIndexedPassages([]host.Passage{
-		{Path: guidePath, Text: "The grey heron stands in the reeds", Location: "page 2", Start: 41, Length: 56, Selector: `{"page":2}`},
+		{Path: guidePath, Text: "The gray heron stands in the reeds", Location: "page 2", Start: 41, Length: 56, Selector: `{"page":2}`},
 		{Path: "notes/Herons.md", Text: "A heron fishes at dusk.", Start: 0, Length: 23, Line: 1},
 		{Path: talkPath, Text: "Today we speak about the heron.", Location: "00:04", Start: 27, Length: 32, Selector: `{"t":[4.5,9]}`},
 	})
@@ -196,7 +196,7 @@ func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 		t.Fatalf("matches %+v", out.Matches)
 	}
 	pdf := out.Matches[0]
-	if pdf.Path != guidePath || pdf.Title != "Bird Guide" || pdf.Text != "The grey heron stands in the reeds" ||
+	if pdf.Path != guidePath || pdf.Title != "Bird Guide" || pdf.Text != "The gray heron stands in the reeds" ||
 		pdf.Start != 41 || pdf.Length != 56 {
 		t.Errorf("the PDF passage is %+v", pdf)
 	}

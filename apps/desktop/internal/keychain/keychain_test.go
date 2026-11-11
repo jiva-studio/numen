@@ -120,7 +120,7 @@ func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 
 // A call the context ends on returns at once with the context's error, though
 // the keychain has not answered.
-func TestACancelledContextEndsAStalledCall(t *testing.T) {
+func TestACanceledContextEndsAStalledCall(t *testing.T) {
 	release := make(chan struct{})
 	ctx, cancel := context.WithCancel(t.Context())
 	baseline := runtime.NumGoroutine()

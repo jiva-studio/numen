@@ -44,7 +44,7 @@ func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.Note
 		return domain.NoteRef{}, w.err
 	}
 	w.notes = append(w.notes, path)
-	return domain.NoteRef{Path: path, Title: "Grey Heron", ID: "01J8HERON0000000000000000"}, nil
+	return domain.NoteRef{Path: path, Title: "Gray Heron", ID: "01J8HERON0000000000000000"}, nil
 }
 
 func (w *recordingWindow) FocusPassages(_ context.Context, path string, passages []domain.ByteRange) error {
@@ -70,7 +70,7 @@ func (w *recordingWindow) ReadOpenTabs(context.Context) (windowdomain.OpenTabs, 
 	return windowdomain.OpenTabs{
 		ActiveID: "tab-2",
 		Tabs: []windowdomain.Tab{
-			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
 			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"zoom":2}`, Place: &windowdomain.TabPlace{Page: 4, PageCount: 80}},
 		},
 	}, nil
@@ -132,7 +132,7 @@ func TestHostWindowFocusesANoteAndChecksThePermission(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED || got.Msg.GetPath() != "notes/Heron.md" ||
-		got.Msg.GetTitle() != "Grey Heron" || got.Msg.GetId() != "01J8HERON0000000000000000" {
+		got.Msg.GetTitle() != "Gray Heron" || got.Msg.GetId() != "01J8HERON0000000000000000" {
 		t.Errorf("returned %v", got.Msg)
 	}
 	if notes, _, _ := window.getRequests(); !slices.Equal(notes, []string{"notes/Heron.md"}) {
@@ -194,7 +194,7 @@ func TestHostWindowReturnsOpenTabsWithPlacesAndNoState(t *testing.T) {
 	if len(tabs) != 2 {
 		t.Fatalf("returned %d tabs, want 2: %v", len(tabs), tabs)
 	}
-	if tabs[0].GetId() != "tab-1" || tabs[0].GetKind() != "note" || tabs[0].GetPath() != "notes/Heron.md" || tabs[0].GetTitle() != "Grey Heron" {
+	if tabs[0].GetId() != "tab-1" || tabs[0].GetKind() != "note" || tabs[0].GetPath() != "notes/Heron.md" || tabs[0].GetTitle() != "Gray Heron" {
 		t.Errorf("the first tab is %v", tabs[0])
 	}
 	if tabs[1].GetId() != "tab-2" || tabs[1].GetKind() != "reader:reader-pdf" || tabs[1].GetPath() != "library/Birds.pdf" ||

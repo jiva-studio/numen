@@ -65,7 +65,7 @@ func GetLogMel(samples []float32, workers int) ([]float32, int) {
 					}
 					row[t] = float32(math.Log(sum + logGuard))
 				}
-				normalise(row)
+				normalize(row)
 			}
 		}(start, end)
 	}
@@ -73,7 +73,7 @@ func GetLogMel(samples []float32, workers int) ([]float32, int) {
 	return out, frames
 }
 
-func normalise(row []float32) {
+func normalize(row []float32) {
 	var sum float64
 	for _, v := range row {
 		sum += float64(v)

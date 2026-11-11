@@ -264,7 +264,7 @@ func TestCancelDetachDropsTheStoredTab(t *testing.T) {
 
 	r.CancelDetach("plex:2")
 
-	if got := readOutcome(t, result); got != tablink.MoveErrorCancelled {
+	if got := readOutcome(t, result); got != tablink.MoveErrorCanceled {
 		t.Errorf("the detach ended with %v, want canceled", got)
 	}
 
@@ -359,7 +359,7 @@ func TestAcceptOfAnOlderMoveDoesNotCompleteTheNewerMove(t *testing.T) {
 	if got := r.Accept("window-b", "plex:2", firstID); got != tablink.MoveErrorTimeout {
 		t.Errorf("Accept of the older move returned %v, want timeout", got)
 	}
-	if got := readOutcome(t, first); got != tablink.MoveErrorCancelled {
+	if got := readOutcome(t, first); got != tablink.MoveErrorCanceled {
 		t.Errorf("the older move ended with %v, want canceled", got)
 	}
 	if got := r.Accept("window-b", "plex:2", getMoveID(r, "plex:2")); got != tablink.MoveErrorNone {
@@ -399,7 +399,7 @@ func TestCancelMoveRejectsALaterAccept(t *testing.T) {
 
 	r.CancelMove("plex:2", result)
 
-	if got := readOutcome(t, result); got != tablink.MoveErrorCancelled {
+	if got := readOutcome(t, result); got != tablink.MoveErrorCanceled {
 		t.Errorf("the canceled move ended with %v, want canceled", got)
 	}
 	if got := r.Accept("window-b", "plex:2", moveID); got != tablink.MoveErrorTimeout {
@@ -543,7 +543,7 @@ func TestDetachEndsAPendingMoveOfTheSameTab(t *testing.T) {
 
 	r.Detach(newOrbits())
 
-	if got := readOutcome(t, moved); got != tablink.MoveErrorCancelled {
+	if got := readOutcome(t, moved); got != tablink.MoveErrorCanceled {
 		t.Errorf("the move ended with %v, want canceled", got)
 	}
 	if got := r.Accept("window-c", "plex:2", moveID); got == tablink.MoveErrorNone {
@@ -560,7 +560,7 @@ func TestMoveEndsAPendingDetachOfTheSameTab(t *testing.T) {
 
 	r.Move("window-a", "window-c", newOrbits())
 
-	if got := readOutcome(t, detached); got != tablink.MoveErrorCancelled {
+	if got := readOutcome(t, detached); got != tablink.MoveErrorCanceled {
 		t.Errorf("the detach ended with %v, want canceled", got)
 	}
 	if got := r.Accept("window-b", "plex:2", detachID); got == tablink.MoveErrorNone {
@@ -568,7 +568,7 @@ func TestMoveEndsAPendingDetachOfTheSameTab(t *testing.T) {
 	}
 }
 
-func TestDetachEndsWithCancelledOnAReportOfAnotherWindow(t *testing.T) {
+func TestDetachEndsWithCanceledOnAReportOfAnotherWindow(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	source := r.Watch("window-a")
 	r.WriteTabs(Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
@@ -578,12 +578,12 @@ func TestDetachEndsWithCancelledOnAReportOfAnotherWindow(t *testing.T) {
 	source.Close()
 	writeTabs(r, "window-c", []tablink.Tab{plex("plex:2", "Orbits")})
 
-	if got := readOutcome(t, result); got != tablink.MoveErrorCancelled {
+	if got := readOutcome(t, result); got != tablink.MoveErrorCanceled {
 		t.Errorf("the detach ended with %v, want canceled", got)
 	}
 }
 
-func TestMoveEndsWithCancelledWhenTheTabOwnerChanges(t *testing.T) {
+func TestMoveEndsWithCanceledWhenTheTabOwnerChanges(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	source := r.Watch("window-a")
 	r.WriteTabs(Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
@@ -594,7 +594,7 @@ func TestMoveEndsWithCancelledWhenTheTabOwnerChanges(t *testing.T) {
 
 	source.Close()
 
-	if got := readOutcome(t, result); got != tablink.MoveErrorCancelled {
+	if got := readOutcome(t, result); got != tablink.MoveErrorCanceled {
 		t.Errorf("the move ended with %v, want canceled", got)
 	}
 	if got := r.Accept("window-t", "plex:2", moveID); got == tablink.MoveErrorNone {

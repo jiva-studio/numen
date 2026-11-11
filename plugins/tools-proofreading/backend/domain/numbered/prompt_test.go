@@ -45,7 +45,7 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 			t.Errorf("the speech instruction mentions %q", word)
 		}
 	}
-	for _, word := range []string{"heard in a recording", "sounds like it", "capitalisation", "hesitation", "summarize"} {
+	for _, word := range []string{"heard in a recording", "sounds like it", "capitalization", "hesitation", "summarize"} {
 		if !strings.Contains(SpeechInstruction, word) {
 			t.Errorf("the speech instruction does not mention %q", word)
 		}

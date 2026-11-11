@@ -25,7 +25,7 @@ func TestHostWindowActivateTabReturnsTabPlaceAndActiveID(t *testing.T) {
 	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED || got.Msg.GetActiveId() != "tab-2" {
 		t.Errorf("returned %v, want no error and the active id tab-2 the window returned", got.Msg)
 	}
-	if tab.GetId() != "tab-1" || tab.GetKind() != "note" || tab.GetPath() != "notes/Heron.md" || tab.GetTitle() != "Grey Heron" {
+	if tab.GetId() != "tab-1" || tab.GetKind() != "note" || tab.GetPath() != "notes/Heron.md" || tab.GetTitle() != "Gray Heron" {
 		t.Errorf("returned the tab %v, want tab-1 of notes/Heron.md", tab)
 	}
 	if activated := window.getActivatedIDs(); !slices.Equal(activated, []string{"tab-1"}) {

@@ -80,7 +80,7 @@ func TestTheLimitOfASearchOfPassagesIsClamped(t *testing.T) {
 }
 
 func TestSearchPassagesTrimsTextAroundTheHit(t *testing.T) {
-	body := strings.Repeat("filler words ", 400) + "the grey heron stands" + strings.Repeat(" trailing words", 400)
+	body := strings.Repeat("filler words ", 400) + "the gray heron stands" + strings.Repeat(" trailing words", 400)
 	hitAt := strings.Index(body, "heron")
 	finder := &recordingFinder{found: []domain.Passage{
 		{Source: "library/Birds.pdf", Text: body, HitAt: hitAt, Start: 4000, Length: len(body), Location: "page 12", Selector: domain.Selector(`{"page":12}`)},
@@ -96,7 +96,7 @@ func TestSearchPassagesTrimsTextAroundTheHit(t *testing.T) {
 		t.Errorf("the text has %d bytes of %d, want a part of at most %d bytes that contains the hit",
 			len(long.Text), len(body), search.MaxPassageBytes)
 	}
-	if before := strings.Index(long.Text, "heron"); before < search.MaxPassageBytes/4-len("the grey ") || before > search.MaxPassageBytes/4 {
+	if before := strings.Index(long.Text, "heron"); before < search.MaxPassageBytes/4-len("the gray ") || before > search.MaxPassageBytes/4 {
 		t.Errorf("the hit is %d bytes into the window, want about a quarter of %d", before, search.MaxPassageBytes)
 	}
 	if long.Start != 4000 || long.Length != len(body) || long.Location != "page 12" || string(long.Selector) != `{"page":12}` {

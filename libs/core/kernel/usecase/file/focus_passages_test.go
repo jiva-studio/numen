@@ -31,7 +31,7 @@ func newFocusPassages(t *testing.T) (*file.FocusPassages, *placeRecorder, domain
 	t.Helper()
 	v := vaultfixture.NewVault(t, map[string]string{
 		talkPath:         "ID3 a recording of the marsh",
-		"notes/Heron.md": "# Grey Heron\nHerons fish at dusk.\n",
+		"notes/Heron.md": "# Gray Heron\nHerons fish at dusk.\n",
 	})
 	view := &placeRecorder{}
 	return file.NewFocusPassages(vaultreader.Readers{}, view), view, v

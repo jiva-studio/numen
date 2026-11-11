@@ -77,7 +77,7 @@ func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint
 	state := NewState(run.NewTasks(), nil, nil)
 	state.Runtime.SetVault(vaultfixture.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
-		"notes/Heron.md":    "# Grey Heron\nHerons fish at dusk.\n",
+		"notes/Heron.md":    "# Gray Heron\nHerons fish at dusk.\n",
 	}))
 	line, unsubscribe := state.Notices.Places.Subscribe()
 	t.Cleanup(unsubscribe)
@@ -132,7 +132,7 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 	if _, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		ActiveId: "tab-2",
 		Tabs: []*v1.Tab{
-			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
 			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &v1.TabPlace{Page: 4, PageCount: 80}},
 			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: &atStart}},
 			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
@@ -148,7 +148,7 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 	want := windowdomain.OpenTabs{
 		ActiveID: "tab-2",
 		Tabs: []windowdomain.Tab{
-			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
 			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &windowdomain.TabPlace{Page: 4, PageCount: 80}},
 			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &windowdomain.TabPlace{PositionSeconds: &atStart}},
 			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &windowdomain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
@@ -228,7 +228,7 @@ func (f activateFixture) reportTabs(t *testing.T, activeID string) {
 		Tabs: []*v1.Tab{
 			{Id: "tab-1", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"pageCount":80}`},
 			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":61,"pageCount":80}`},
-			{Id: "tab-3", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+			{Id: "tab-3", Kind: "note", Path: "notes/Heron.md", Title: "Gray Heron"},
 		},
 	})); err != nil {
 		t.Fatal(err)

@@ -30,7 +30,7 @@ type CopyMediaRequest struct {
 	Kind string `json:"kind"`
 }
 
-// CopyMediaResponse is the acknowledgement of a started copy.
+// CopyMediaResponse is the acknowledgment of a started copy.
 type CopyMediaResponse struct{}
 
 // CreateLinksRequest creates a link note in Folder for each web address in URLs.

@@ -106,7 +106,7 @@ func TestOpenPDFPropagatesWorkerAndDocumentErrors(t *testing.T) {
 	}
 }
 
-func TestPDFRenderAndCloseBehaviour(t *testing.T) {
+func TestPDFRenderAndCloseBehavior(t *testing.T) {
 	src := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	wantColor := color.RGBA{R: 10, G: 20, B: 30, A: 255}
 	src.SetRGBA(0, 0, wantColor)

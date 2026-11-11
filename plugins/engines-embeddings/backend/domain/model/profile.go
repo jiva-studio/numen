@@ -50,7 +50,7 @@ type Profile struct {
 	Dimensions     int               `json:"dims"`
 	MaxTokens      int               `json:"maxTokens"`
 	Pooling        string            `json:"pooling"`
-	Normalise      *bool             `json:"normalise,omitempty"`
+	Normalize      *bool             `json:"normalise,omitempty"`
 	QueryPrefix    string            `json:"queryPrefix,omitempty"`
 	DocumentPrefix string            `json:"documentPrefix,omitempty"`
 	OnnxFile       string            `json:"onnxFile,omitempty"`
@@ -60,9 +60,9 @@ type Profile struct {
 	FloorHint      float64           `json:"floorHint,omitempty"`
 }
 
-// IsNormalised reports whether the vectors of the model are scaled to unit length.
-func (p Profile) IsNormalised() bool {
-	return p.Normalise == nil || *p.Normalise
+// IsNormalized reports whether the vectors of the model are scaled to unit length.
+func (p Profile) IsNormalized() bool {
+	return p.Normalize == nil || *p.Normalize
 }
 
 // GetTokens returns the most tokens of a text the plugin gives the model.
@@ -94,7 +94,7 @@ type Handling struct {
 	QueryPrefix    string   `json:"queryPrefix"`
 	DocumentPrefix string   `json:"documentPrefix"`
 	File           string   `json:"file"`
-	Normalise      bool     `json:"normalise"`
+	Normalize      bool     `json:"normalise"`
 	ExtraInputs    []string `json:"extraInputs"`
 }
 
@@ -124,9 +124,9 @@ func (h Handling) Apply(role Role, texts []string) []string {
 }
 
 // Hash returns a short value that changes with the prefixes, the model file, the token limit and the
-// normalisation, and with nothing else.
+// normalization, and with nothing else.
 func (h Handling) Hash(maxTokens int) string {
-	parts := []string{h.QueryPrefix, h.DocumentPrefix, h.File, strconv.Itoa(maxTokens), strconv.FormatBool(h.Normalise)}
+	parts := []string{h.QueryPrefix, h.DocumentPrefix, h.File, strconv.Itoa(maxTokens), strconv.FormatBool(h.Normalize)}
 	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return hex.EncodeToString(sum[:])[:handlingHashLength]
 }
@@ -142,7 +142,7 @@ func (p Profile) GetHandling() Handling {
 		QueryPrefix:    p.QueryPrefix,
 		DocumentPrefix: p.DocumentPrefix,
 		File:           p.GetModelFile(),
-		Normalise:      p.IsNormalised(),
+		Normalize:      p.IsNormalized(),
 		ExtraInputs:    p.ExtraInputs,
 	}
 }
@@ -407,5 +407,5 @@ func (t *Profiles) IsRemote(id string) bool {
 
 // IsZero reports whether the handling changes nothing.
 func (h Handling) IsZero() bool {
-	return h.QueryPrefix == "" && h.DocumentPrefix == "" && h.File == "" && !h.Normalise && len(h.ExtraInputs) == 0
+	return h.QueryPrefix == "" && h.DocumentPrefix == "" && h.File == "" && !h.Normalize && len(h.ExtraInputs) == 0
 }

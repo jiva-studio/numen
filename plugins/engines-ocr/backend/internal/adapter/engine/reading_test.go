@@ -169,7 +169,7 @@ func TestMultiRegionPreservesReadingOrder(t *testing.T) {
 	}
 }
 
-func TestRecognizeContextCancelled(t *testing.T) {
+func TestRecognizeContextCanceled(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

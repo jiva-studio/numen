@@ -102,7 +102,7 @@ func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 	}
 }
 
-func TestACallCancelledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t *testing.T) {
+func TestACallCanceledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	ctx, cancel := context.WithCancel(t.Context())
@@ -122,7 +122,7 @@ func TestACallCancelledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t 
 	}
 }
 
-func TestACallCancelledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRest(t *testing.T) {
+func TestACallCanceledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRest(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
 		"Heat.md": "# Heat\n", "Work.md": "# Work\n", "Order.md": "# Order\n",

@@ -13,7 +13,7 @@ import (
 
 func getIndexedPassages() []host.Passage {
 	return []host.Passage{
-		{Path: "library/Birds.pdf", Text: "The grey heron stands in the reeds", Location: "page 12", Start: 400, Length: 700},
+		{Path: "library/Birds.pdf", Text: "The gray heron stands in the reeds", Location: "page 12", Start: 400, Length: 700},
 		{Path: "library/Birds.pdf", Text: "A heron fishes at dusk", Location: "page 40", Start: 9000, Length: 500},
 		{Path: "notes/Heron.md", Text: "A heron is patient", Start: 20, Length: 40, Line: 4},
 		{Path: "notes/Frogs.md", Text: "Frogs sing", Start: 0, Length: 10, Line: 1},
@@ -111,9 +111,9 @@ func TestTheSearchMatchesEveryWordOfTheQueryAsAWholeWord(t *testing.T) {
 	search := newSearch()
 	search.SetIndexedPassages(getIndexedPassages())
 
-	both, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "Grey HERON"})
+	both, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "Gray HERON"})
 	if err != nil || len(both) != 1 || both[0].Location != "page 12" {
-		t.Errorf("grey heron found %+v, %v, want only the passage that contains both words", both, err)
+		t.Errorf("gray heron found %+v, %v, want only the passage that contains both words", both, err)
 	}
 	part, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "her"})
 	if err != nil || len(part) != 0 {

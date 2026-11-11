@@ -4,9 +4,9 @@ import (
 	"math"
 )
 
-// Normalise scales a vector to unit length, in place, and returns it. A vector
+// Normalize scales a vector to unit length, in place, and returns it. A vector
 // of all zeros is returned unchanged.
-func Normalise(v []float32) []float32 {
+func Normalize(v []float32) []float32 {
 	var sum float64
 	for _, x := range v {
 		sum += float64(x) * float64(x)

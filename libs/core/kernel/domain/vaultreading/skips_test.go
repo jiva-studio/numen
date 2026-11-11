@@ -8,7 +8,7 @@ import (
 
 // A cancel is bound to the content hash the next pass sees, and a different
 // hash ends it.
-func TestCancelledSourceIsClearedByAnotherHash(t *testing.T) {
+func TestCanceledSourceIsClearedByAnotherHash(t *testing.T) {
 	skips := vaultreading.NewSkips()
 	skips.AddVectors("Book.pdf")
 

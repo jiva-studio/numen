@@ -133,7 +133,7 @@ func noteFile(modTime time.Time) scanFile {
 
 func getEpoch() time.Time { return time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC) }
 
-func TestAScanOfACancelledContextTouchesNothing(t *testing.T) {
+func TestAScanOfACanceledContextTouchesNothing(t *testing.T) {
 	t.Parallel()
 	m := &scanVault{files: map[string]scanFile{"a.md": noteFile(getEpoch())}}
 	ctx, cancel := context.WithCancel(t.Context())
@@ -332,7 +332,7 @@ func TestAGroupThatFailsWhenFullStopsTheScanWithWhatWasCounted(t *testing.T) {
 	}
 }
 
-func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
+func TestAWalkWaitingForItsTurnStopsWhenCanceled(t *testing.T) {
 	t.Parallel()
 	target := newBlockedWalk()
 	readers := blockedWalks{reader: target}

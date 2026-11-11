@@ -15,7 +15,7 @@ func getAttentionBudget(batchTexts int) int {
 	return batchTexts * referenceLength * referenceLength
 }
 
-func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalised bool) [][]float32 {
+func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalized bool) [][]float32 {
 	out := make([][]float32, rows)
 	backing := make([]float32, rows*dimensions)
 	for row := range rows {
@@ -49,7 +49,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormali
 				vector[d] /= k
 			}
 		}
-		out[row] = finishVector(vector, isNormalised)
+		out[row] = finishVector(vector, isNormalized)
 	}
 	return out
 }
@@ -81,30 +81,30 @@ type tokenOutput struct {
 	rows, seq, dimensions int
 }
 
-func pool(kind string, out tokenOutput, isNormalised bool) ([][]float32, error) {
+func pool(kind string, out tokenOutput, isNormalized bool) ([][]float32, error) {
 	switch kind {
 	case model.PoolMean:
-		return meanPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalised), nil
+		return meanPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalized), nil
 	case model.PoolCLS:
-		return headPool(out.flat, out.rows, out.seq, out.dimensions, isNormalised), nil
+		return headPool(out.flat, out.rows, out.seq, out.dimensions, isNormalized), nil
 	case model.PoolLast:
-		return lastPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalised), nil
+		return lastPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalized), nil
 	}
 	return nil, fmt.Errorf("a per-token output cannot be pooled as %q: the model answers one vector per text only as an output named sentence_embedding", kind)
 }
 
-func headPool(flat []float32, rows, seq, dimensions int, isNormalised bool) [][]float32 {
+func headPool(flat []float32, rows, seq, dimensions int, isNormalized bool) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
 		pos := row * seq * dimensions
 		vector := make([]float32, dimensions)
 		copy(vector, flat[pos:pos+dimensions])
-		out[row] = finishVector(vector, isNormalised)
+		out[row] = finishVector(vector, isNormalized)
 	}
 	return out
 }
 
-func lastPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalised bool) [][]float32 {
+func lastPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalized bool) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
 		last := 0
@@ -116,7 +116,7 @@ func lastPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormali
 		pos := (row*seq + last) * dimensions
 		vector := make([]float32, dimensions)
 		copy(vector, flat[pos:pos+dimensions])
-		out[row] = finishVector(vector, isNormalised)
+		out[row] = finishVector(vector, isNormalized)
 	}
 	return out
 }

@@ -309,7 +309,7 @@ func TestAFailureOfTheCompleterIsAStatus(t *testing.T) {
 }
 
 // A plugin giving up ends the question the completer is answering.
-func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
+func TestAPluginCancelingEndsTheQuestion(t *testing.T) {
 	started := make(chan struct{})
 	ended := make(chan error, 1)
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(ctx context.Context, _ completion.Question) (string, error) {

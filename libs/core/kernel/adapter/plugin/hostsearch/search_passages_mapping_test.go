@@ -23,7 +23,7 @@ func (f *askedFinder) Execute(_ context.Context, _ domain.Vault, query string, p
 }
 
 func TestSearchPassagesPassesPluginQueryToThePassageSearch(t *testing.T) {
-	finder := &askedFinder{found: []domain.Passage{{Source: "library/Birds.pdf", Text: "the grey heron"}}}
+	finder := &askedFinder{found: []domain.Passage{{Source: "library/Birds.pdf", Text: "the gray heron"}}}
 	s := Search{Passages: search.NewSearchPassages(finder)}
 
 	got, err := s.SearchPassages(t.Context(), getVault(), plugin.PassageQuery{

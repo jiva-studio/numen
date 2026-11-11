@@ -58,9 +58,9 @@ func (t *tokenizer) parseTagAttrs(hasAttr bool) tagAttrs {
 		}
 	}
 	if attrs.isPagebreak {
-		if s := words.NormaliseSpaces(titleAttr); s != "" {
+		if s := words.NormalizeSpaces(titleAttr); s != "" {
 			attrs.pageLabel = s
-		} else if al := words.NormaliseSpaces(ariaLabelAttr); al != "" {
+		} else if al := words.NormalizeSpaces(ariaLabelAttr); al != "" {
 			attrs.pageLabel = al
 		}
 	}
@@ -238,14 +238,14 @@ func (x *Extractor) closeFrame(f frame) {
 		x.preformattedDepth--
 	}
 	if f.heading > 0 {
-		if title := words.NormaliseSpaces(string(x.out[f.start:])); title != "" {
+		if title := words.NormalizeSpaces(string(x.out[f.start:])); title != "" {
 			x.headings = append(x.headings, Part{Title: title, Offset: f.start, Level: f.heading})
 		}
 	}
 	if f.isPagebreak {
 		label := f.pageLabel
 		if label == "" {
-			label = words.NormaliseSpaces(string(x.out[f.start:]))
+			label = words.NormalizeSpaces(string(x.out[f.start:]))
 		}
 		if label != "" {
 			x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: f.start})

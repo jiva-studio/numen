@@ -45,7 +45,7 @@ type Embedder struct {
 	output       string
 	isTyped      bool
 	isPositioned bool
-	isNormalised bool
+	isNormalized bool
 
 	sessions *sessionPool[*ort.Session]
 	paddings *sync.Pool
@@ -116,7 +116,7 @@ func Open(
 		isPositioned: false,
 		sessions:     newSessionPool(sessions, passes, (*ort.Session).Destroy),
 		paddings:     newPaddingPool(),
-		isNormalised: identity.Handling.Normalise,
+		isNormalized: identity.Handling.Normalise,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -190,7 +190,7 @@ func (e *Embedder) GetModel() model.ModelInfo {
 		FloorHint:      0,
 		MinChunkLength: 0,
 		ChunkTokens:    0,
-		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalised, ExtraInputs: nil},
+		Handling:       model.Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalized, ExtraInputs: nil},
 	}
 }
 
@@ -359,28 +359,28 @@ func (e *Embedder) readVectors(target *ort.Value, rows, seq int, mask []int64) (
 	}
 
 	if len(out) == 2 {
-		return splitRows(flat, rows, e.dimensions, e.isNormalised)
+		return splitRows(flat, rows, e.dimensions, e.isNormalized)
 	}
 	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %v", e.name, len(flat), out)
 	}
-	return pool(e.pooling, tokenOutput{flat: flat, mask: mask, rows: rows, seq: seq, dimensions: e.dimensions}, e.isNormalised)
+	return pool(e.pooling, tokenOutput{flat: flat, mask: mask, rows: rows, seq: seq, dimensions: e.dimensions}, e.isNormalized)
 }
 
-func splitRows(flat []float32, rows, dimensions int, isNormalised bool) ([][]float32, error) {
+func splitRows(flat []float32, rows, dimensions int, isNormalized bool) ([][]float32, error) {
 	if len(flat) != rows*dimensions {
 		return nil, fmt.Errorf("got %d values for %d vectors of %d dimensions", len(flat), rows, dimensions)
 	}
 	out := make([][]float32, rows)
 	for row := range out {
 		vector := slices.Clone(flat[row*dimensions : (row+1)*dimensions])
-		out[row] = finishVector(vector, isNormalised)
+		out[row] = finishVector(vector, isNormalized)
 	}
 	return out, nil
 }
 
-func finishVector(vector []float32, isNormalised bool) []float32 {
-	if isNormalised {
+func finishVector(vector []float32, isNormalized bool) []float32 {
+	if isNormalized {
 		return model.Normalise(vector)
 	}
 	return vector

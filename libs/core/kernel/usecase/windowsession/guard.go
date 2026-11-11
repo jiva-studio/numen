@@ -28,16 +28,16 @@ type PluginOpen struct {
 	end    chan struct{}
 }
 
-// errCancelledByUser is the cause a plugin's vault open is canceled with when the user closes the window,
+// errCanceledByUser is the cause a plugin's vault open is canceled with when the user closes the window,
 // quits or switches its vault.
-var errCancelledByUser = errors.New("the user closed the window or switched its vault")
+var errCanceledByUser = errors.New("the user closed the window or switched its vault")
 
 func (s *Guard) tryBegin() error {
 	s.mu.Lock()
 	for s.pluginOpen != nil {
 		current := s.pluginOpen
 		s.mu.Unlock()
-		current.cancel(errCancelledByUser)
+		current.cancel(errCanceledByUser)
 		<-current.end
 		s.mu.Lock()
 	}

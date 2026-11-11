@@ -114,7 +114,7 @@ func TestUserProfileAddsAModel(t *testing.T) {
 	if err != nil || len(reported) != 0 {
 		t.Fatalf("GetLocal = %v, reported %v", err, reported)
 	}
-	if p.Dimensions != 256 || p.Pooling != PoolLast || p.GetTokens() != MaxChunkTokens || !p.IsNormalised() {
+	if p.Dimensions != 256 || p.Pooling != PoolLast || p.GetTokens() != MaxChunkTokens || !p.IsNormalized() {
 		t.Errorf("profile = %+v", p)
 	}
 	if !slices.Contains(p.ExtraInputs, InputPositionIDs) {
@@ -257,7 +257,7 @@ func TestEveryCuratedModelWithAQueryPrefixAppliesItToQueries(t *testing.T) {
 }
 
 func TestHandlingHashChangesWithWhatItCoversAndWithNothingElse(t *testing.T) {
-	base := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: ", File: "model.onnx", Normalise: true}
+	base := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: ", File: "model.onnx", Normalize: true}
 	want := base.Hash(512)
 	if len(want) != 8 {
 		t.Errorf("hash %q is not 8 characters", want)
@@ -271,7 +271,7 @@ func TestHandlingHashChangesWithWhatItCoversAndWithNothingElse(t *testing.T) {
 		"query prefix":    func() string { h := base; h.QueryPrefix = "q: "; return h.Hash(512) }(),
 		"document prefix": func() string { h := base; h.DocumentPrefix = "d: "; return h.Hash(512) }(),
 		"file":            func() string { h := base; h.File = "model_q4.onnx"; return h.Hash(512) }(),
-		"normalise":       func() string { h := base; h.Normalise = false; return h.Hash(512) }(),
+		"normalise":       func() string { h := base; h.Normalize = false; return h.Hash(512) }(),
 		"max tokens":      base.Hash(256),
 	}
 	for what, got := range changed {
@@ -285,7 +285,7 @@ func TestHandlingIsZeroOnlyWhenItChangesNothing(t *testing.T) {
 	if !(Handling{}).IsZero() {
 		t.Error("an empty handling is not zero")
 	}
-	for _, h := range []Handling{{QueryPrefix: "q"}, {DocumentPrefix: "d"}, {File: "f"}, {Normalise: true}, {ExtraInputs: []string{InputPositionIDs}}} {
+	for _, h := range []Handling{{QueryPrefix: "q"}, {DocumentPrefix: "d"}, {File: "f"}, {Normalize: true}, {ExtraInputs: []string{InputPositionIDs}}} {
 		if h.IsZero() {
 			t.Errorf("%+v is zero", h)
 		}
@@ -328,13 +328,13 @@ func TestValidateRefusesWhatCannotRun(t *testing.T) {
 	}
 }
 
-func TestProfileNormaliseCloneAndErrorPaths(t *testing.T) {
+func TestProfileNormalizeCloneAndErrorPaths(t *testing.T) {
 	isTrue, isFalse := true, false
-	if !(Profile{Normalise: &isTrue}).IsNormalised() {
-		t.Error("expected Normalise=true to be normalised")
+	if !(Profile{Normalize: &isTrue}).IsNormalized() {
+		t.Error("expected Normalize=true to be normalized")
 	}
-	if (Profile{Normalise: &isFalse}).IsNormalised() {
-		t.Error("expected Normalise=false not to be normalised")
+	if (Profile{Normalize: &isFalse}).IsNormalized() {
+		t.Error("expected Normalize=false not to be normalized")
 	}
 
 	if _, err := ReadProfiles([]byte("[broken")); err == nil {

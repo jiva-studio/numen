@@ -56,7 +56,7 @@ func TestACallOfTheHostDoesNotWaitForTheModelToOpen(t *testing.T) {
 	within(t, "Configure", func() { srv.updateConfig(map[string]string{"provider": "local"}, nil) })
 }
 
-func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
+func TestACanceledBatchDoesNotStopTheOpening(t *testing.T) {
 	srv, started, release := slowModel(t)
 
 	ctx, cancel := context.WithCancel(t.Context())

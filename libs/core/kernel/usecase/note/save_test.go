@@ -176,7 +176,7 @@ func TestSavingANewHeadingPreservesTheFileWhereItIs(t *testing.T) {
 	}
 }
 
-// A synchroniser, a checkout and a touch all move a file's time over text that
+// A synchronizer, a checkout and a touch all move a file's time over text that
 // did not change. This is the rule that keeps the question off the screen of a
 // person whose vault is in a synchronized folder.
 func TestTheSameBytesSavedAgainAreNotAChange(t *testing.T) {

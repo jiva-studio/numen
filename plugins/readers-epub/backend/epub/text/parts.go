@@ -10,7 +10,7 @@ import (
 func (x *Extractor) GetParts(entries []Entry) []Part {
 	var out []Part
 	for _, e := range entries {
-		title := words.NormaliseSpaces(e.Title)
+		title := words.NormalizeSpaces(e.Title)
 		if title == "" {
 			continue
 		}
@@ -28,7 +28,7 @@ func (x *Extractor) GetParts(entries []Entry) []Part {
 func (x *Extractor) GetPages(entries []Entry) []Page {
 	var out []Page
 	for _, e := range entries {
-		label := words.NormaliseSpaces(e.Title)
+		label := words.NormalizeSpaces(e.Title)
 		if label == "" {
 			continue
 		}

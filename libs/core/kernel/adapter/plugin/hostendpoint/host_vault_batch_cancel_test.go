@@ -33,9 +33,9 @@ const (
 	changeThenCancelAndFail
 )
 
-// cancellingVault is the vault of rivers that cancels the call it serves on its change number cancelIndex
+// cancelingVault is the vault of rivers that cancels the call it serves on its change number cancelIndex
 // (counted from one), as mode sets.
-type cancellingVault struct {
+type cancelingVault struct {
 	*fakeNoteVault
 	cancel      context.CancelFunc
 	cancelIndex int
@@ -43,7 +43,7 @@ type cancellingVault struct {
 	calls       int
 }
 
-func (c *cancellingVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
+func (c *cancelingVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
 	c.calls++
 	if c.calls != c.cancelIndex {
 		return c.fakeNoteVault.MoveNote(ctx, from, to)
@@ -63,7 +63,7 @@ func (c *cancellingVault) MoveNote(ctx context.Context, from, to string) (domain
 	return move, err
 }
 
-func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
+func (c *cancelingVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
 	c.calls++
 	if c.calls != c.cancelIndex {
 		return c.fakeNoteVault.RemoveNote(ctx, target)
@@ -83,11 +83,11 @@ func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string
 	return trashPath, broken, err
 }
 
-func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (numenv1connect.HostVaultServiceClient, *cancellingVault, context.Context) {
+func newCancelingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (numenv1connect.HostVaultServiceClient, *cancelingVault, context.Context) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
-	vault := &cancellingVault{fakeNoteVault: newFakeNoteVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
+	vault := &cancelingVault{fakeNoteVault: newFakeNoteVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
 	hostCallers := newCallers(nil)
 	hostCallers.vault = vaultOf(vault)
 	endpoint := serveVaultCalls(t, ctx, hostCallers.over(nil, manifest.PermissionVaultWrite))
@@ -99,7 +99,7 @@ func authorizeAsA[T any](req *connect.Request[T]) *connect.Request[T] {
 	return req
 }
 
-func getCancelledBatch() []string { return []string{"Danube.md", "Rivers/Rhine.md", "Deltas.md"} }
+func getCanceledBatch() []string { return []string{"Danube.md", "Rivers/Rhine.md", "Deltas.md"} }
 
 func requireNotAttemptedMove(t *testing.T, entry *v1.HostNoteMove, from string) {
 	t.Helper()
@@ -133,11 +133,11 @@ func requireRemoved(t *testing.T, entry *v1.HostNoteRemoval, target string) {
 	}
 }
 
-func TestMoveCancelledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
-	endpoint, vault, _ := newCancellingEndpoint(t, 2, changeThenCancel)
+func TestMoveCanceledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
+	endpoint, vault, _ := newCancelingEndpoint(t, 2, changeThenCancel)
 
 	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: getCancelledBatch(), Folder: "Archive",
+		Paths: getCanceledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
 		t.Fatalf("the canceled move failed as a whole: %v", err)
@@ -159,10 +159,10 @@ func TestMoveCancelledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
 }
 
 func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
-	endpoint, vault, _ := newCancellingEndpoint(t, 2, cancelAndFail)
+	endpoint, vault, _ := newCancelingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: getCancelledBatch(), Folder: "Archive",
+		Paths: getCanceledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
 		t.Fatalf("the canceled move failed as a whole: %v", err)
@@ -183,10 +183,10 @@ func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
 }
 
 func TestMoveBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
-	endpoint, _, _ := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
+	endpoint, _, _ := newCancelingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: getCancelledBatch(), Folder: "Archive",
+		Paths: getCanceledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
 		t.Fatalf("the canceled move failed as a whole: %v", err)
@@ -201,11 +201,11 @@ func TestMoveBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
 	requireNotAttemptedMove(t, moves[2], "Deltas.md")
 }
 
-func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
-	endpoint, vault, _ := newCancellingEndpoint(t, 1, changeThenCancel)
+func TestRemovalCanceledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
+	endpoint, vault, _ := newCancelingEndpoint(t, 1, changeThenCancel)
 
 	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
-		Paths: getCancelledBatch(),
+		Paths: getCanceledBatch(),
 	})))
 	if err != nil {
 		t.Fatalf("the canceled removal failed as a whole: %v", err)
@@ -224,10 +224,10 @@ func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
 }
 
 func TestRemovalFailingOnCancelReturnsErrorAndRestNotAttempted(t *testing.T) {
-	endpoint, vault, _ := newCancellingEndpoint(t, 2, cancelAndFail)
+	endpoint, vault, _ := newCancelingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
-		Paths: getCancelledBatch(),
+		Paths: getCanceledBatch(),
 	})))
 	if err != nil {
 		t.Fatalf("the canceled removal failed as a whole: %v", err)
@@ -248,10 +248,10 @@ func TestRemovalFailingOnCancelReturnsErrorAndRestNotAttempted(t *testing.T) {
 }
 
 func TestRemovalTrashedBeforeCancelReturnsThatNoteAsRemoved(t *testing.T) {
-	endpoint, _, _ := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
+	endpoint, _, _ := newCancelingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
-		Paths: getCancelledBatch(),
+		Paths: getCanceledBatch(),
 	})))
 	if err != nil {
 		t.Fatalf("the canceled removal failed as a whole: %v", err)
@@ -266,15 +266,15 @@ func TestRemovalTrashedBeforeCancelReturnsThatNoteAsRemoved(t *testing.T) {
 	requireNotAttemptedRemoval(t, removals[2], "Deltas.md")
 }
 
-// cancellingLinkVault is the linking vault that writes the links of the first note of a call,
+// cancelingLinkVault is the linking vault that writes the links of the first note of a call,
 // cancels the call, and returns plugin.ErrNotAttempted for the links of every later note, as the
 // core vault does.
-type cancellingLinkVault struct {
+type cancelingLinkVault struct {
 	*linkingVault
 	cancel context.CancelFunc
 }
 
-func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
+func (c *cancelingLinkVault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
 	first := additions[0].From
 	var written []plugin.LinkAddition
 	for _, one := range additions {
@@ -302,14 +302,14 @@ func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []plugin.L
 	return out, nil
 }
 
-func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.T) {
+func TestAddLinksCanceledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
-	vault := &cancellingLinkVault{linkingVault: newLinkingVault(), cancel: cancel}
+	vault := &cancelingLinkVault{linkingVault: newLinkingVault(), cancel: cancel}
 	hostCallers := newCallers(nil)
 	hostCallers.vault = vaultOf(vault)
 	endpoint := serveVaultCalls(t, ctx, hostCallers.over(nil, manifest.PermissionVaultWrite))
-	batch := getCancelledBatch()
+	batch := getCanceledBatch()
 	links := make([]*v1.HostLinkAddition, len(batch))
 	for i, from := range batch {
 		links[i] = &v1.HostLinkAddition{From: from, Baseline: vault.readBaseline(t, from), To: "Estuary", Role: v1.Role_ROLE_REF}

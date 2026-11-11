@@ -65,7 +65,7 @@ func spawningScript(t *testing.T) []string {
 
 // Canceling a run ends the process the tool started as well as the tool, and
 // the call returns without waiting for either to finish by itself.
-func TestCancellingARunEndsEveryProcessTheToolStarted(t *testing.T) {
+func TestCancelingARunEndsEveryProcessTheToolStarted(t *testing.T) {
 	folder := t.TempDir()
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -100,7 +100,7 @@ func TestCancellingARunEndsEveryProcessTheToolStarted(t *testing.T) {
 
 // A folder the tool's child was writing in can be removed once the run is
 // canceled.
-func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
+func TestTheFolderOfACanceledRunCanBeRemoved(t *testing.T) {
 	folder := t.TempDir()
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()

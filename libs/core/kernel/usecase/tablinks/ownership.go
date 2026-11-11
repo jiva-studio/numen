@@ -20,10 +20,10 @@ func (o *ownership) setOwner(windowID string, tab tablink.Tab) {
 		return
 	}
 	if pending, ok := s.transit.getMove(tab.ID); ok && pending.targetWindowID != windowID {
-		s.transit.endMove(tab.ID, pending, tablink.MoveErrorCancelled)
+		s.transit.endMove(tab.ID, pending, tablink.MoveErrorCanceled)
 	}
 	if pending, ok := s.transit.getDetach(tab.ID); ok {
-		outcome := tablink.MoveErrorCancelled
+		outcome := tablink.MoveErrorCanceled
 		if pending.windowID == windowID {
 			// The window that read the detach still calls Accept.
 			outcome = tablink.MoveErrorNone

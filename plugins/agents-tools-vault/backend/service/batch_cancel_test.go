@@ -13,15 +13,15 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
-// cancelledBatchVault is the geology vault whose host returns a move or a removal as a call that was
+// canceledBatchVault is the geology vault whose host returns a move or a removal as a call that was
 // canceled after the first note: the first note is changed, every other is not attempted.
-type cancelledBatchVault struct {
+type canceledBatchVault struct {
 	*hosttest.Vault
 }
 
-func (c cancelledBatchVault) With(domain.VaultID) cancelledBatchVault { return c }
+func (c canceledBatchVault) With(domain.VaultID) canceledBatchVault { return c }
 
-func (c cancelledBatchVault) MoveNotes(ctx context.Context, paths []string, folder string) ([]host.NoteMove, error) {
+func (c canceledBatchVault) MoveNotes(ctx context.Context, paths []string, folder string) ([]host.NoteMove, error) {
 	out := make([]host.NoteMove, 0, len(paths))
 	for i, from := range paths {
 		if i == 0 {
@@ -37,7 +37,7 @@ func (c cancelledBatchVault) MoveNotes(ctx context.Context, paths []string, fold
 	return out, nil
 }
 
-func (c cancelledBatchVault) RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error) {
+func (c canceledBatchVault) RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error) {
 	out := make([]host.NoteRemoval, 0, len(paths))
 	for i, target := range paths {
 		if i == 0 {
@@ -52,18 +52,18 @@ func (c cancelledBatchVault) RemoveNotes(ctx context.Context, paths []string) ([
 	return out, nil
 }
 
-func newCancelledBatchRegistry(t *testing.T) *tools.Registry {
+func newCanceledBatchRegistry(t *testing.T) *tools.Registry {
 	t.Helper()
 	v, _ := newGeologyVault(t)
-	registry, err := service.New(cancelledBatchVault{v}.vaults()).Registry()
+	registry, err := service.New(canceledBatchVault{v}.vaults()).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
 	return registry
 }
 
-func TestCancelledNoteMoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
-	registry := newCancelledBatchRegistry(t)
+func TestCanceledNoteMoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
+	registry := newCanceledBatchRegistry(t)
 
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move",
@@ -83,8 +83,8 @@ func TestCancelledNoteMoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	}
 }
 
-func TestCancelledNoteRemoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
-	registry := newCancelledBatchRegistry(t)
+func TestCanceledNoteRemoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
+	registry := newCanceledBatchRegistry(t)
 
 	var out noteRemoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_remove",
@@ -104,7 +104,7 @@ func TestCancelledNoteRemoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	}
 }
 
-func (c cancelledBatchVault) vaults() func(domain.VaultID) service.Vault {
+func (c canceledBatchVault) vaults() func(domain.VaultID) service.Vault {
 	return func(id domain.VaultID) service.Vault {
 		on := c.With(id)
 		return service.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Arranger: on, Editor: on, Selector: on}
