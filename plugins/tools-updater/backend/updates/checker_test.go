@@ -123,8 +123,8 @@ func TestACheckOfAnUnknownBuildIsRefused(t *testing.T) {
 }
 
 func isPlatformError(err error) bool {
-	_, ok := errors.AsType[*PlatformError](err)
-	return ok
+	failure, ok := errors.AsType[*PlatformError](err)
+	return ok && failure != nil
 }
 
 func isUnknownVersion(err error) bool { return errors.Is(err, ErrUnknownVersion) }
