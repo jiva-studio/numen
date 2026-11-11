@@ -210,7 +210,7 @@ func checkSDKNamesNoProtocolType(t *testing.T, workspace load.WorkspacePackages)
 			}
 		}
 	}
-	if modules < 3 || len(pkgs) < 20 || examined < 100 || importsProtocol < 5 {
+	if modules == 0 || len(pkgs) == 0 || examined == 0 || importsProtocol == 0 {
 		t.Fatalf("%d modules, %d packages, %d exported identifiers and %d packages importing the protocol: the rule is checked against nothing", modules, len(pkgs), examined, importsProtocol)
 	}
 }

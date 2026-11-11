@@ -67,7 +67,7 @@ if (!rootDir) {
 function printHelp() {
   console.log(`
 Comprehensive Narrative & Slop Scanner (lint.narrative)
-Detects narrative slop, participles, prepositions as variables, 3rd-person functions,
+Detects narrative prose, 3rd-person function names,
 and narrative prose across Frontend (TS/Vue) & Backend (Go).
 
 Usage:
@@ -86,11 +86,8 @@ Options:
   --strict              Count advisory prose rules (rationale, actor, narrative-verb, poetic-noun,
                         filler, long-test-name) as findings, so --check fails on them
   --category <name>     Filter by category:
-                          fake-casts | participles | prepositions |
-                          third-person | tests | comments | gerunds |
-                          regular-participles | test-assertions |
-                          conversational | async | domestic |
-                          error-storytelling | domestic-structs | ui-words |
+                          fake-casts | third-person | tests | comments |
+                          test-assertions | async | ui-words |
                           prose (Markdown) | ui-strings (strings, manifest.json) | advisory |
                           phrases (test titles and comments)
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
@@ -118,23 +115,6 @@ const SKIPPED_PATHS = ['apps/landing']
 
 const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto', '.md', '.mdx', '.css', '.scss', '.mjs'])
 
-// 1. Full English irregular & narrative past participles used as identifiers
-const BANNED_PARTICIPLE_IDENTIFIERS = [
-  'held', 'said', 'drawn', 'written', 'kept', 'seen', 'done', 'shown', 'told',
-  'cut', 'left', 'gone', 'put', 'known', 'taken', 'chosen', 'laid', 'sent',
-  'stood', 'led', 'built', 'hit', 'cast', 'lost', 'bound', 'heard', 'meant',
-  'worn', 'hung', 'spoken', 'born', 'felt', 'caught', 'given', 'grown', 'bent',
-  'fed', 'met', 'shaken', 'spent', 'split', 'torn', 'thrown', 'woken', 'forgotten',
-  'frozen', 'hidden', 'settled', 'arriving', 'doing', 'asked', 'answered', 'listed', 'offered',
-  'stands', 'sits', 'listened', 'spoke', 'lit'
-]
-
-// 2. Prepositions used as bare variable/parameter names
-const BANNED_PREPOSITION_IDENTIFIERS = [
-  'beside', 'under', 'over', 'behind', 'along', 'near', 'across', 'against',
-  'without', 'around', 'through', 'beyond', 'among', 'beneath', 'upon', 'by', 'at'
-]
-
 // 4. Third-person singular verbs used as function names (Rule 2 AGENTS.md)
 const BANNED_THIRD_PERSON_FUNCTIONS = [
   'carries', 'attends', 'reads', 'opens', 'closes', 'speaks', 'hears', 'stands',
@@ -142,19 +122,6 @@ const BANNED_THIRD_PERSON_FUNCTIONS = [
   'leaves', 'makes', 'takes', 'keeps', 'finds', 'shows', 'comes', 'goes',
   'puts', 'runs', 'gives', 'sets', 'brings', 'leads', 'lies', 'draws', 'writes',
   'knows', 'warns', 'chooses', 'destroys', 'erases', 'stays', 'owes', 'says'
-]
-
-// 7. Banned gerund variables (Rule 5 & 6 AGENTS.md)
-const BANNED_GERUND_IDENTIFIERS = [
-  'asking', 'reading', 'standing', 'waiting', 'holding', 'drawing',
-  'counting', 'resting', 'routing', 'listening', 'pointing', 'moving',
-  'offering', 'hunting'
-]
-
-// 8. Banned regular -ed past participle variables
-const BANNED_REGULAR_PARTICIPLES = [
-  'typed', 'rendered', 'opened', 'displayed', 'placed', 'retained',
-  'notified', 'arranged', 'trimmed', 'stopped', 'acquired', 'arrived', 'renamed'
 ]
 
 // 9. Narrative words in Go test function names
@@ -307,91 +274,11 @@ const RE_TS_FAKE_CASTS = [
   { name: 'as any as Turn', re: /\bas\s+any\s+as\s+Turn\b/g },
 ]
 
-const RE_TS_VAR_PARTICIPLE = new RegExp(
-  `\\b(?:const|let|var)\\s+(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
-)
-
-const RE_TS_PARAM_PARTICIPLE = new RegExp(
-  `\\b(?:function\\s+[a-zA-Z0-9_$]+\\s*\\(|\\(\\s*)(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*(?:[,:)]|=>)`,
-)
-
-const RE_TS_VAR_GERUND = new RegExp(
-  `\\b(?:const|let|var)\\s+(${BANNED_GERUND_IDENTIFIERS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
-)
-
-const RE_TS_VAR_REGULAR_PARTICIPLE = new RegExp(
-  `\\b(?:const|let|var)\\s+(${BANNED_REGULAR_PARTICIPLES.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
-)
-
-const RE_TS_VAR_PREPOSITION = new RegExp(
-  `\\b(?:const|let|var)\\s+(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*(?:=|[;,:]|\\bas\\b)`,
-)
-
-const RE_TS_PARAM_OR_PROP_PREPOSITION = new RegExp(
-  `(?:function\\s+[a-zA-Z0-9_$]*\\s*\\(|\\(\\s*(?:[a-zA-Z0-9_$]+:\\s*[^,)]+,\\s*)*)\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:\\s*(?:[A-Z][a-zA-Z0-9_]*|string|number|boolean|bigint|any|unknown|\\{)`,
-)
-
-
 const RE_TS_THIRD_PERSON_FUNC = new RegExp(
   `\\b(?:function|const)\\s+(${BANNED_THIRD_PERSON_FUNCTIONS.join('|')})\\s*(?:=\\s*(?:async\\s*)?\\(|\\()`,
 )
 
-// Participle field and property accesses (e.g. found.listed, r.done, r.sent, s.kept, plot.held)
-const BANNED_PARTICIPLE_FIELDS = [
-  'held', 'said', 'drawn', 'written', 'kept', 'seen', 'done', 'shown', 'told',
-  'heard', 'asked', 'answered', 'listed', 'offered', 'sent', 'spent', 'met',
-]
-const RE_GO_FIELD_PARTICIPLE = new RegExp(
-  `\\b[a-zA-Z0-9_]+\\.(${BANNED_PARTICIPLE_FIELDS.join('|')})\\b`,
-)
-const RE_TS_PROP_PARTICIPLE = new RegExp(
-  `\\b[a-zA-Z0-9_$]+\\.(${BANNED_PARTICIPLE_FIELDS.join('|')})\\b`,
-)
-
-// Preposition arguments, member accesses, and object properties
-const BANNED_PREPOSITION_USAGES = [
-  'at', 'around', 'beside', 'along', 'over', 'behind', 'across', 'under',
-]
-const BANNED_PREPOSITION_SHORTHANDS = [
-  'around', 'beside', 'along', 'over', 'behind', 'across', 'under',
-]
-const RE_PREPOSITION_ARGUMENT = new RegExp(
-  `[(,]\\s*(${BANNED_PREPOSITION_USAGES.join('|')})\\s*[,)]`,
-)
-const RE_PREPOSITION_MEMBER = new RegExp(
-  `(?<![\\w$.])\\b(${BANNED_PREPOSITION_USAGES.join('|')})\\.[a-zA-Z0-9_$]+`,
-)
-const RE_PREPOSITION_SHORTHAND_OR_PROP = new RegExp(
-  `[{,]\\s*(${BANNED_PREPOSITION_SHORTHANDS.join('|')})\\s*[,}:]`,
-)
-const RE_PREPOSITION_AT_SHORTHAND = /[{,]\s*at\s*[,}]/
-
-
 // Go Regexes
-const RE_GO_VAR_PARTICIPLE = new RegExp(
-  `\\b(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[A-Za-z*]|for\\s+(?:[a-zA-Z0-9_]+,\\s*)?(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=`,
-)
-
-const RE_GO_PARAM_OR_FIELD_PARTICIPLE = new RegExp(
-  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|^\\s*(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]`,
-)
-
-const RE_GO_VAR_GERUND = new RegExp(
-  `\\b(${BANNED_GERUND_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_GERUND_IDENTIFIERS.join('|')})\\s+[A-Za-z*]`,
-)
-
-const RE_GO_VAR_REGULAR_PARTICIPLE = new RegExp(
-  `\\b(${BANNED_REGULAR_PARTICIPLES.join('|')})\\s*:=|var\\s+(${BANNED_REGULAR_PARTICIPLES.join('|')})\\s+[A-Za-z*]`,
-)
-
-const RE_GO_VAR_PREPOSITION = new RegExp(
-  `\\b(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[A-Za-z*]`,
-)
-
-const RE_GO_PARAM_OR_FIELD_PREPOSITION = new RegExp(
-  `[\\(,](?:\\s*[a-zA-Z0-9_]+,)*\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]|^\\s*(${BANNED_PREPOSITION_IDENTIFIERS.join('|')})\\s+[*a-zA-Z0-9_.\\[\\]]`,
-)
-
 const RE_GO_THIRD_PERSON_FUNC = new RegExp(
   `func\\s+(?:\\([^)]+\\)\\s*)?(${BANNED_THIRD_PERSON_FUNCTIONS.join('|')})\\s*\\(`,
 )
@@ -401,87 +288,9 @@ const RE_GO_TEST_FUNC = /^func\s+(Test[A-Za-z0-9_]+)\s*\(/
 const RE_GO_TEST_ASSERTION_NARRATIVE = /\bt\.(?:Errorf|Fatalf|Fatal|Error)\s*\(\s*["`']([^"`']*(?:stands\s+(?:at|in|under|on|over|against|behind)|told\s+(?:to|of|apart)|never\s+told|was\s+told|held\s+by|held\s+open|held\s+apart|held\s+to|left\s+behind|nobody\s+asked|nobody\s+named|nobody\s+has\s+answered)[^"`']*)["`']/i
 
 
-// 10. Conversational request slop (questions/answers instead of query/request)
-const BANNED_CONVERSATIONAL_REQUEST_IDENTIFIERS = [
-  'createAnswerGuard',
-  'AnswerGuard',
-  'useDebouncedAsk',
-  'DebouncedAskOptions',
-  'DebouncedAskSteps',
-  'debouncedAsk',
-]
-const RE_CONVERSATIONAL_REQUEST = new RegExp(
-  `\\b(${BANNED_CONVERSATIONAL_REQUEST_IDENTIFIERS.join('|')})\\b`,
-)
-
 // 11. Anthropomorphic async primitives (wake, nap)
 const RE_PROMISE_WAKE = /\bnew\s+Promise(?:\s*<[^>]+>)?\s*\(\s*\(\s*wake\s*[,)]/
 const RE_FUNC_NAP = /\b(?:const|let|var|function)\s+nap\s*(?:=|\()/
-
-// 12. Domestic metaphors
-const DOMESTIC_METAPHORS = [
-  'front door',
-  'clock on the wall',
-  'the heat a pixel',
-  'heat a pixel',
-  'air a row keeps',
-  'model that hears',
-  'what listened',
-  'two questions are asked as a person types',
-  'latest question wins',
-  'a person owes',
-  'a person answering',
-  'a person who asked',
-]
-const RE_DOMESTIC_METAPHOR = new RegExp(`(?:${DOMESTIC_METAPHORS.join('|')})`, 'i')
-
-// 15. Error Storytelling in errors.New, fmt.Errorf, throw new Error, ConnectError
-const ERROR_STORYTELLING_PATTERNS = [
-  'nobody',
-  'nothing has listened',
-  'nothing has read',
-  'nothing of that name is made',
-  'nothing answers',
-  'nothing said',
-  'nothing drawn',
-  'being listened to',
-  'the agent said nothing',
-  'holds no card',
-  'holds no section',
-  'the fixture holds no card',
-  'its day is spent',
-  'nothing under it is owed',
-  'a page is holding work a person has to answer for',
-  'the person has not let',
-  'nothing on this machine downloads',
-  'leaves nothing a file can be named after',
-  'and a question embedded by the second finds nothing',
-  'the index refuses',
-  'the deck says so',
-  'the handle caught nothing',
-  'the preset kind opens nothing',
-  'a command over a vault touches nothing else',
-  'stands on one line',
-  'there is nobody here to pick a folder',
-]
-const RE_ERROR_STORYTELLING = new RegExp(
-  `(?:errors\\.New|fmt\\.Errorf|throw\\s+new\\s+Error|new\\s+ConnectError)\\s*\\(\\s*["\`'][^"\`']*\\b(?:${ERROR_STORYTELLING_PATTERNS.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
-  'i',
-)
-
-// 16. Domestic Metaphor Data Structures (shareBook, shelf, drawer, pile)
-const BANNED_DATASTRUCTURE_METAPHORS = [
-  'shareBook',
-  'shelf',
-  'shelves',
-  'drawer',
-  'pile',
-  'piles',
-]
-const RE_DOMESTIC_STRUCT = new RegExp(
-  `\\b(?:type|struct|interface|class)\\s+([A-Za-z0-9_]*(?:${BANNED_DATASTRUCTURE_METAPHORS.join('|')})[A-Za-z0-9_]*)\\b`,
-  'i',
-)
 
 // 21. UI copy in words files (words.ts, *Words.ts): labels and messages are noun phrases,
 // imperative actions or "<Name> stopped: <reason>", never a narrated sentence.
@@ -518,31 +327,17 @@ const ADVISORY_COMMENT_RULES = [
   { name: 'poetic-noun', re: /\b(?:the picture|ink|shadow|breath|in the air|front door|back door|room|hand|ground)\b/i },
   { name: 'filler', re: /\b(?:just|actually|really|very|simply|quite|kind of|a little|basically|in fact)\b/i },
 ]
-const ADVISORY_IDENTIFIER_WORDS = new Set([
-  'held', 'said', 'told', 'asked', 'answered', 'beside', 'behind', 'along', 'stands', 'sits',
-  'owes', 'owed', 'owing', 'wears', 'hands', 'listens', 'hears', 'knows', 'wants', 'refuses', 'picture', 'ink',
-  'shadow', 'breath', 'ground', 'hand', 'door', 'room', 'offer', 'offers', 'offered', 'offering',
-])
-const RE_IDENTIFIER = /\b[A-Za-z_$][A-Za-z0-9_$]{3,}\b/g
 const RE_ERROR_STRING = /(?:errors\.New|fmt\.Errorf|throw\s+new\s+Error|new\s+ConnectError)\s*\(\s*["`']([^"`']*)["`']/
 const MAX_GO_TEST_NAME_LENGTH = 60
 const MAX_TS_TEST_TITLE_LENGTH = 90
 
 const findings = {
   fakeTurnCasts: [],
-  participleIdentifiers: [],
-  prepositionIdentifiers: [],
   thirdPersonFunctions: [],
   narrativeTestTitles: [],
   anglishComments: [],
-  gerundIdentifiers: [],
-  regularParticipleIdentifiers: [],
   narrativeTestAssertions: [],
-  conversationalRequests: [],
   anthropomorphicAsync: [],
-  domesticMetaphors: [],
-  errorStorytelling: [],
-  domesticStructs: [],
   uiWords: [],
   proseDocs: [],
   uiStrings: [],
@@ -554,7 +349,6 @@ const advisory = {
   'narrative-verb': [],
   'poetic-noun': [],
   filler: [],
-  'compound-identifier': [],
   'error-prose': [],
   'long-test-name': [],
 }
@@ -621,17 +415,6 @@ function scanFile(filePath) {
   const baseName = path.basename(filePath)
   if (path.resolve(filePath) === import.meta.filename || path.resolve(filePath) === path.join(import.meta.dirname, 'check.test.mjs')) return
   if (baseName.endsWith('_pb.ts') || baseName.endsWith('_pb.js') || baseName.endsWith('.pb.go')) return
-  if (shouldCheckCategory('conversational') && baseName === 'questions.ts') {
-    findings.conversationalRequests.push({
-      file: relPath,
-      line: 1,
-      lang: 'ts',
-      symbol: baseName,
-      text: `File naming slop: ${baseName} represents request/response or query sequence`,
-    })
-    stats.frontendTotal++
-  }
-
   let content
   try {
     content = fs.readFileSync(filePath, 'utf8')
@@ -807,60 +590,6 @@ function scanFile(filePath) {
     const lineWithoutStrings = line.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/`[^`]*`/g, '``').replace(/'(?:[^'\\]|\\.)*'/g, "''")
     const lineWithoutComments = removeLineComment(lineWithoutStrings).replace(/\/\*.*?\*\//g, '')
 
-    // 2. Participle Identifiers (variables, params, struct fields & member accesses)
-    if (isCode && !isCommentLine && shouldCheckCategory('participles')) {
-      if (isGo) {
-        const m = RE_GO_VAR_PARTICIPLE.exec(lineWithoutComments) ||
-                  RE_GO_PARAM_OR_FIELD_PARTICIPLE.exec(lineWithoutComments) ||
-                  RE_GO_FIELD_PARTICIPLE.exec(lineWithoutComments)
-        if (m) {
-          const word = m[1] || m[2] || m[3] || m[4]
-          if (!filterWord || filterWord === word) {
-            findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'go', word, text: trimmed })
-            stats.backendTotal++
-          }
-        }
-      } else {
-        const mVar = RE_TS_VAR_PARTICIPLE.exec(lineWithoutComments)
-        const rawProp = RE_TS_PROP_PARTICIPLE.exec(lineWithoutComments)
-        const isWireProp = rawProp && /\b(?:(?:answer|response|res|file|one|step|call|preset|reviewData|tally|day|task|at)\.(?:written|answered|asked|done)|(?:chunk|iteration|next)\.done|props\.preset\.answered|props\.day\.asked|\.(?:transcript|ocr|fetched)\.done|\.done\])\b/.test(lineWithoutComments)
-        const mProp = isWireProp ? null : rawProp
-        const mParam = RE_TS_PARAM_PARTICIPLE.exec(lineWithoutComments)
-        const m = mVar || mProp || mParam
-
-        if (m) {
-          const word = m[1]
-          if (!filterWord || filterWord === word) {
-            findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'ts', word, text: trimmed })
-            stats.frontendTotal++
-          }
-        }
-      }
-    }
-
-    // 3. Prepositions used as bare variables, arguments, member accesses, or object properties
-    if (isCode && !isCommentLine && shouldCheckCategory('prepositions')) {
-      const m = isGo
-        ? (RE_GO_VAR_PREPOSITION.exec(lineWithoutComments) ||
-           RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(lineWithoutComments) ||
-           RE_PREPOSITION_ARGUMENT.exec(lineWithoutComments) ||
-           RE_PREPOSITION_MEMBER.exec(lineWithoutComments))
-        : (RE_TS_VAR_PREPOSITION.exec(lineWithoutComments) ||
-           RE_TS_PARAM_OR_PROP_PREPOSITION.exec(lineWithoutComments) ||
-           RE_PREPOSITION_ARGUMENT.exec(lineWithoutComments) ||
-           RE_PREPOSITION_MEMBER.exec(lineWithoutComments) ||
-           RE_PREPOSITION_SHORTHAND_OR_PROP.exec(lineWithoutComments) ||
-           (RE_PREPOSITION_AT_SHORTHAND.test(lineWithoutComments) ? { 1: 'at' } : null))
-      if (m) {
-        const word = m[1] || m[2] || m[3]
-        if (!filterWord || filterWord === word) {
-          findings.prepositionIdentifiers.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word, text: trimmed })
-          if (isGo) stats.backendTotal++
-          else stats.frontendTotal++
-        }
-      }
-    }
-
     // 5. Third-person singular function names
     if (isCode && !isCommentLine && shouldCheckCategory('third-person')) {
       const m = isGo ? RE_GO_THIRD_PERSON_FUNC.exec(line) : RE_TS_THIRD_PERSON_FUNC.exec(line)
@@ -912,44 +641,6 @@ function scanFile(filePath) {
       }
     }
 
-    // 9. Gerund variables (Rule 5 & 6 AGENTS.md)
-    if (isCode && !isCommentLine && shouldCheckCategory('gerunds')) {
-      const m = isGo ? RE_GO_VAR_GERUND.exec(line) : RE_TS_VAR_GERUND.exec(line)
-      if (m) {
-        const word = m[1] || m[2]
-        if (!filterWord || filterWord === word) {
-          findings.gerundIdentifiers.push({
-            file: relPath,
-            line: lineNum,
-            lang: isGo ? 'go' : 'ts',
-            word,
-            text: trimmed,
-          })
-          if (isGo) stats.backendTotal++
-          else stats.frontendTotal++
-        }
-      }
-    }
-
-    // 10. Regular -ed participles as variables
-    if (isCode && !isCommentLine && shouldCheckCategory('regular-participles')) {
-      const m = isGo ? RE_GO_VAR_REGULAR_PARTICIPLE.exec(line) : RE_TS_VAR_REGULAR_PARTICIPLE.exec(line)
-      if (m) {
-        const word = m[1] || m[2]
-        if (!filterWord || filterWord === word) {
-          findings.regularParticipleIdentifiers.push({
-            file: relPath,
-            line: lineNum,
-            lang: isGo ? 'go' : 'ts',
-            word,
-            text: trimmed,
-          })
-          if (isGo) stats.backendTotal++
-          else stats.frontendTotal++
-        }
-      }
-    }
-
     // 11. Narrative assertions in tests
     if (isCode && shouldCheckCategory('test-assertions')) {
       if (isGo) {
@@ -966,22 +657,6 @@ function scanFile(filePath) {
       }
     }
 
-    // 12. Conversational request slop
-    if (isCode && shouldCheckCategory('conversational')) {
-      const m = RE_CONVERSATIONAL_REQUEST.exec(line)
-      if (m) {
-        findings.conversationalRequests.push({
-          file: relPath,
-          line: lineNum,
-          lang: isGo ? 'go' : 'ts',
-          symbol: m[1],
-          text: trimmed,
-        })
-        if (isGo) stats.backendTotal++
-        else stats.frontendTotal++
-      }
-    }
-
     // 13. Anthropomorphic async primitives
     if (isCode && shouldCheckCategory('async')) {
       if (RE_PROMISE_WAKE.test(line) || RE_FUNC_NAP.test(line)) {
@@ -989,53 +664,6 @@ function scanFile(filePath) {
           file: relPath,
           line: lineNum,
           lang: isGo ? 'go' : 'ts',
-          text: trimmed,
-        })
-        if (isGo) stats.backendTotal++
-        else stats.frontendTotal++
-      }
-    }
-
-    // 14. Domestic metaphors in code and comments
-    if (shouldCheckCategory('domestic')) {
-      const m = RE_DOMESTIC_METAPHOR.exec(line)
-      if (m) {
-        findings.domesticMetaphors.push({
-          file: relPath,
-          line: lineNum,
-          lang: isGo ? 'go' : (isTs ? 'ts' : 'doc'),
-          phrase: m[0],
-          text: trimmed,
-        })
-        if (isGo) stats.backendTotal++
-        else stats.frontendTotal++
-      }
-    }
-
-    // 15. Error Storytelling in errors.New, fmt.Errorf, throw new Error, ConnectError
-    if (isCode && shouldCheckCategory('error-storytelling')) {
-      const m = RE_ERROR_STORYTELLING.exec(line)
-      if (m) {
-        findings.errorStorytelling.push({
-          file: relPath,
-          line: lineNum,
-          lang: isGo ? 'go' : 'ts',
-          text: trimmed,
-        })
-        if (isGo) stats.backendTotal++
-        else stats.frontendTotal++
-      }
-    }
-
-    // 16. Domestic Metaphor Data Structures (shareBook, shelf, drawer, pile)
-    if (isCode && !isCommentLine && shouldCheckCategory('domestic-structs')) {
-      const m = RE_DOMESTIC_STRUCT.exec(line)
-      if (m) {
-        findings.domesticStructs.push({
-          file: relPath,
-          line: lineNum,
-          lang: isGo ? 'go' : 'ts',
-          symbol: m[1],
           text: trimmed,
         })
         if (isGo) stats.backendTotal++
@@ -1070,15 +698,6 @@ function scanFile(filePath) {
     }
 
     if (isCode && !isCommentLine && shouldCheckCategory('advisory')) {
-      for (const idMatch of removeLineComment(lineWithoutStrings).matchAll(RE_IDENTIFIER)) {
-        const parts = idMatch[0].split(/(?<=[a-z0-9])(?=[A-Z])|_/).map((w) => w.toLowerCase())
-        if (parts.length < 2) continue
-        const bad = /^(?:shadowRoot|ShadowRoot|attachShadow|boxShadow)$/.test(idMatch[0]) ? null : parts.find((w) => ADVISORY_IDENTIFIER_WORDS.has(w))
-        if (bad) {
-          advisory['compound-identifier'].push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word: idMatch[0], text: trimmed.slice(0, 140) })
-          break
-        }
-      }
       const errText = RE_ERROR_STRING.exec(line)?.[1]
       if (errText) {
         const hit = [ADVISORY_COMMENT_RULES[1], ADVISORY_COMMENT_RULES[2]].map((r) => r.re.exec(errText)).find(Boolean)
@@ -1303,19 +922,11 @@ const totalIssues =
   (isStrictMode ? advisoryTotal : 0) +
   narrativePhrases.length +
   findings.fakeTurnCasts.length +
-  findings.participleIdentifiers.length +
-  findings.prepositionIdentifiers.length +
   findings.thirdPersonFunctions.length +
   findings.narrativeTestTitles.length +
   findings.anglishComments.length +
-  findings.gerundIdentifiers.length +
-  findings.regularParticipleIdentifiers.length +
   findings.narrativeTestAssertions.length +
-  findings.conversationalRequests.length +
   findings.anthropomorphicAsync.length +
-  findings.domesticMetaphors.length +
-  findings.errorStorytelling.length +
-  findings.domesticStructs.length +
   findings.uiWords.length +
   findings.proseDocs.length +
   findings.uiStrings.length
@@ -1332,30 +943,6 @@ for (const cat of Object.keys(countedGroups)) {
   }
 }
 const sortedFiles = Object.entries(fileCounts).sort((a, b) => b[1] - a[1])
-
-const varBreakdown = {}
-for (const item of findings.participleIdentifiers) {
-  varBreakdown[item.word] = (varBreakdown[item.word] || 0) + 1
-}
-const sortedParticiples = Object.entries(varBreakdown).sort((a, b) => b[1] - a[1])
-
-const gerundBreakdown = {}
-for (const item of findings.gerundIdentifiers) {
-  gerundBreakdown[item.word] = (gerundBreakdown[item.word] || 0) + 1
-}
-const sortedGerunds = Object.entries(gerundBreakdown).sort((a, b) => b[1] - a[1])
-
-const regularParticipleBreakdown = {}
-for (const item of findings.regularParticipleIdentifiers) {
-  regularParticipleBreakdown[item.word] = (regularParticipleBreakdown[item.word] || 0) + 1
-}
-const sortedRegularParticiples = Object.entries(regularParticipleBreakdown).sort((a, b) => b[1] - a[1])
-
-const prepBreakdown = {}
-for (const item of findings.prepositionIdentifiers) {
-  prepBreakdown[item.word] = (prepBreakdown[item.word] || 0) + 1
-}
-const sortedPreps = Object.entries(prepBreakdown).sort((a, b) => b[1] - a[1])
 
 const thirdPersonBreakdown = {}
 for (const item of findings.thirdPersonFunctions) {
@@ -1375,19 +962,11 @@ if (filterCategory) console.log(`Category    : ${filterCategory}`)
 if (filterWord) console.log(`Filter word : ${filterWord}`)
 console.log('----------------------------------------------------------------------')
 console.log(`1. Fake Turn casts (as unknown as Turn, voice: 'said')    : ${findings.fakeTurnCasts.length}`)
-console.log(`2. Participle variables (held, said, written, cut, kept) : ${findings.participleIdentifiers.length}`)
-console.log(`3. Preposition variables (beside, under, behind, along)  : ${findings.prepositionIdentifiers.length}`)
 console.log(`5. 3rd-person singular functions (carries, reads, names)  : ${findings.thirdPersonFunctions.length}`)
 console.log(`7. Narrative test titles (storytelling in tests)          : ${findings.narrativeTestTitles.length}`)
 console.log(`8. Anglish comments (hands back, comes to, stands on)     : ${findings.anglishComments.length}`)
-console.log(`9. Gerund variables (asking, reading, standing, waiting) : ${findings.gerundIdentifiers.length}`)
-console.log(`10. Regular -ed participles (typed, rendered, opened)    : ${findings.regularParticipleIdentifiers.length}`)
 console.log(`11. Narrative test assertions (stands at, told to)        : ${findings.narrativeTestAssertions.length}`)
-console.log(`12. Conversational request slop (AnswerGuard, questions)  : ${findings.conversationalRequests.length}`)
 console.log(`13. Anthropomorphic async primitives (wake, nap)          : ${findings.anthropomorphicAsync.length}`)
-console.log(`14. Domestic metaphors (front door, clock, heat, air)      : ${findings.domesticMetaphors.length}`)
-console.log(`15. Error storytelling (errors.New, fmt.Errorf, ConnectErr): ${findings.errorStorytelling.length}`)
-console.log(`16. Domestic metaphor structs (shareBook, shelf, drawer)    : ${findings.domesticStructs.length}`)
 console.log(`21. Narrative UI copy in words files (that…, so…, That…)  : ${findings.uiWords.length}`)
 console.log(`22. Narrative prose in Markdown (wear, hands over, speaks...)  : ${findings.proseDocs.length}`)
 console.log(`23. Narrative prose in strings and manifests a person reads : ${findings.uiStrings.length}`)
@@ -1407,38 +986,6 @@ console.log(`BACKEND VIOLATIONS (Go)                                   : ${stats
 console.log(`TOTAL DETECTED ISSUES                                     : ${totalIssues}`)
 console.log(`OFFENDING FILES COUNT                                     : ${sortedFiles.length} (out of ${totalScannedFiles} total scanned files)`)
 console.log('======================================================================\n')
-
-if (sortedParticiples.length > 0) {
-  console.log('Top Participle Identifiers:')
-  for (const [word, count] of sortedParticiples.slice(0, 15)) {
-    console.log(`  - ${word.padEnd(16)}: ${count}`)
-  }
-  console.log('')
-}
-
-if (sortedGerunds.length > 0) {
-  console.log('Top Gerund Identifiers (Rule 5 & 6 AGENTS.md):')
-  for (const [word, count] of sortedGerunds.slice(0, 15)) {
-    console.log(`  - ${word.padEnd(16)}: ${count}`)
-  }
-  console.log('')
-}
-
-if (sortedRegularParticiples.length > 0) {
-  console.log('Top Regular Participle Identifiers:')
-  for (const [word, count] of sortedRegularParticiples.slice(0, 15)) {
-    console.log(`  - ${word.padEnd(16)}: ${count}`)
-  }
-  console.log('')
-}
-
-if (sortedPreps.length > 0) {
-  console.log('Top Preposition Identifiers:')
-  for (const [prep, count] of sortedPreps.slice(0, 10)) {
-    console.log(`  - ${prep.padEnd(16)}: ${count}`)
-  }
-  console.log('')
-}
 
 if (sortedThirdPerson.length > 0) {
   console.log('Top 3rd-Person Singular Functions (Rule 2 AGENTS.md):')

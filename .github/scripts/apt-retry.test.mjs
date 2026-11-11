@@ -27,7 +27,7 @@ beforeEach(() => {
 
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-const run = (args) =>
+const run = (args, extra = {}) =>
   spawnSync('bash', [SCRIPT, ...args], {
     encoding: 'utf8',
     env: {
@@ -35,6 +35,7 @@ const run = (args) =>
       APT_RETRY_DELAYS: '0 0 0',
       APT_RETRY_CONF: join(dir, 'apt.conf'),
       APT_RETRY_UPDATE: `bash ${join(dir, 'refresh.sh')}`,
+      ...extra,
     },
   })
 
@@ -82,8 +83,24 @@ describe('apt-retry.sh', () => {
   it('writes the apt options for the commands that call apt themselves', () => {
     run(flaky(1))
     const conf = readFileSync(join(dir, 'apt.conf'), 'utf8')
-    assert.match(conf, /Acquire::Retries "5"/)
+    assert.match(conf, /Acquire::Retries "1"/)
     assert.match(conf, /Acquire::http::Timeout "30"/)
     assert.match(conf, /Acquire::https::Timeout "30"/)
+  })
+  it('stops at the deadline when the command hangs', () => {
+    writeFileSync(join(dir, 'hang.sh'), 'echo started; sleep 30\n')
+    const began = Date.now()
+    const result = run(['bash', join(dir, 'hang.sh')], { APT_RETRY_DEADLINE: '2' })
+    assert.equal(result.status, 124)
+    assert.ok(Date.now() - began < 15000)
+    assert.match(result.stdout, /::error::apt did not finish within 2s/)
+  })
+
+  it('does not wait past the deadline between attempts', () => {
+    const began = Date.now()
+    const result = run(flaky(99), { APT_RETRY_DEADLINE: '3', APT_RETRY_DELAYS: '60 60 60' })
+    assert.equal(result.status, 124)
+    assert.ok(Date.now() - began < 15000)
+    assert.equal(readFileSync(join(dir, 'calls'), 'utf8').trim(), '1')
   })
 })

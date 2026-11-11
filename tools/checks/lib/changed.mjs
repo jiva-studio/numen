@@ -31,17 +31,19 @@ export function isMatching(file, patterns) {
 
 function listLines(args, cwd) {
   try {
-    return execFileSync("git", args, { cwd, encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "ignore"] })
+    return execFileSync("git", args, { cwd, encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "pipe"] })
       .split("\n")
       .filter(Boolean);
-  } catch {
-    return [];
+  } catch (err) {
+    const detail = String(err.stderr ?? err.message).trim();
+    throw new Error(`git ${args.join(" ")} failed in ${cwd}: ${detail}`);
   }
 }
 
 /**
  * The files a branch changes: the diff against `base` (origin/main unless `BASE_REF` names another), the
- * uncommitted changes and the untracked files.
+ * uncommitted changes and the untracked files. A failing git command throws: a selection built from a missing
+ * base would select nothing and pass.
  */
 export function listChangedFiles(root, base = process.env.BASE_REF || "origin/main") {
   const committed = listLines(["diff", "--name-only", `${base}...HEAD`], root);

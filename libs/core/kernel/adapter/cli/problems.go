@@ -8,7 +8,7 @@ import (
 )
 
 type problemsCommand struct {
-	problems func(ctx context.Context) (Problems, error)
+	session Session
 }
 
 func (problemsCommand) Name() string { return "problems" }
@@ -17,22 +17,21 @@ func (problemsCommand) Synopsis() string {
 	return "  numen-cli problems <vault> [<check>...]      list notes with broken links, invalid frontmatter or ambiguous links"
 }
 
-func (c problemsCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
+func (c problemsCommand) Run(ctx context.Context, term terminal, args []string) error {
 	if len(args) < 1 {
 		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}
-	open, err := c.problems(ctx)
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{})
 	if err != nil {
 		return err
 	}
-	defer closeInto(&err, open.Close)
 
 	var named []domain.Check
 	for _, name := range args[1:] {
 		named = append(named, domain.Check(name))
 	}
 
-	report, err := open.Problems.ExecuteByName(ctx, args[0], named...)
+	report, err := indexed.Problems.ExecuteByName(ctx, args[0], named...)
 	if err != nil {
 		return err
 	}

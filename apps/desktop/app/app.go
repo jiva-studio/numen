@@ -172,7 +172,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	applyMemoryLimit(cfg.GetMachine().ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 
 	frame := &windowFrame{}
-	displayed, cfg, err := openInstallation(ctx, cfg, vault, frame)
+	displayed, err := openInstallation(ctx, cfg, vault, frame)
 	if err != nil {
 		return err
 	}
@@ -229,16 +229,16 @@ type shownInstallation struct {
 
 func openInstallation(
 	ctx context.Context, cfg container.Config, vault string, frame editor.Frame,
-) (shownInstallation, container.Config, error) {
+) (shownInstallation, error) {
 	pages, err := editor.Pages()
 	if err != nil {
-		return shownInstallation{}, cfg, err
+		return shownInstallation{}, err
 	}
-	opened, cfg, err := container.OpenEditor(cfg, ctx, vault, os.Stdout, frame)
+	opened, err := container.OpenEditor(cfg, ctx, vault, os.Stdout, frame)
 	if err != nil {
-		return shownInstallation{}, cfg, err
+		return shownInstallation{}, err
 	}
-	return shownInstallation{pages: pages, opened: opened}, cfg, nil
+	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
 func makeApplication(

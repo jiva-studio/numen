@@ -118,6 +118,22 @@ describe('test titles', () => {
   })
 })
 
+describe('function names', () => {
+  it('flags a Go function named with a third-person verb', () => {
+    const { code, out } = scanFixture('fn/a.go', 'package p\n\nfunc carries() {}\n')
+    assert.equal(code, 1)
+    assert.match(out, /3rd-person singular functions[^\n]*: 1/)
+  })
+  it('flags a TypeScript function named with a third-person verb', () => {
+    const { code, out } = scanFixture('fn/a.ts', 'export function reads(): void {}\n')
+    assert.equal(code, 1)
+    assert.match(out, /3rd-person singular functions[^\n]*: 1/)
+  })
+  it('accepts an imperative function name and leaves the names of variables to the reader', () => {
+    assertClean('fn/b.go', 'package p\n\nfunc getVault() {}\n\nfunc use() {\n\theld := 1\n\t_ = held\n}\n')
+  })
+})
+
 describe('fake Turn values', () => {
   it('flags a held key after a brace, a comma or two spaces', () => {
     assert.match(scanFixture('u/a.ts', 'const a = { held: x }\n').out, /key held:/)
@@ -290,5 +306,16 @@ describe('diff mode', () => {
     assert.equal(run.status, 1, run.stdout)
     assert.match(run.stdout, /a\.test\.ts:2 \[narrativePhrases: goes\/leaves\]/)
     assert.doesNotMatch(run.stdout, /a\.test\.ts:1 /)
+  })
+})
+
+describe('function names', () => {
+  it('flags a third-person function name in Go and TypeScript', () => {
+    assertFlagged('f/a.go', 'package a\n\nfunc reads() {}\n', 'thirdPersonFunctions')
+    assertFlagged('f/a.ts', 'export function opens() {}\n', 'thirdPersonFunctions')
+  })
+  it('accepts an imperative function name', () => {
+    assertClean('f/b.go', 'package b\n\nfunc readVault() {}\n')
+    assertClean('f/b.ts', 'export function openVault() {}\n')
   })
 })

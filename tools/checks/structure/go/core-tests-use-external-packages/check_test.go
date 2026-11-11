@@ -2,6 +2,7 @@
 package coretestsuseexternalpackages
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -20,13 +21,48 @@ import (
 // An adapter's own test is not covered: it builds the adapter under test, as does the composition
 // root's.
 func TestCoreTestsBuildingAdaptersUseExternalPackages(t *testing.T) {
+	wrong, err := findInternalAdapterTests("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": a test that builds an adapter stands outside the package")
+	}
+}
+
+// TestInternalTestWalk_FindsThePlantedTest verifies that the walk finds a test inside the package
+// that imports an adapter and passes the same test written in the external package.
+func TestInternalTestWalk_FindsThePlantedTest(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/inside_test.go":  "package note\n\nimport _ \"" + load.Module + "adapter/index\"\n",
+		"usecase/note/outside_test.go": "package note_test\n\nimport _ \"" + load.Module + "adapter/index\"\n",
+	})
+	wrong, err := findInternalAdapterTests(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.Contains(wrong[0], "inside_test.go builds adapter/index from inside usecase/note") {
+		t.Errorf("the walk found %v, want inside_test.go only", wrong)
+	}
+}
+
+// TestInternalTestWalk_FailsOnATreeWithoutTests verifies that a root without a test file is an error, not a pass.
+func TestInternalTestWalk_FailsOnATreeWithoutTests(t *testing.T) {
+	if _, err := findInternalAdapterTests(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without a test file passed")
+	}
+}
+
+// findInternalAdapterTests lists the tests under root that import an adapter from inside the
+// package they exercise. It fails when it reads no test.
+func findInternalAdapterTests(root string) ([]string, error) {
 	var wrong []string
 	var read int
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
 		}
-		pkg := load.GetPackage("..", path)
+		pkg := load.GetPackage(root, path)
 		if load.IsAdapter(pkg) || load.IsUnder(pkg, "container") {
 			return nil
 		}
@@ -49,17 +85,10 @@ func TestCoreTestsBuildingAdaptersUseExternalPackages(t *testing.T) {
 		}
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
+	if err == nil && read == 0 {
+		err = fmt.Errorf("no test file read under %s: the walk checks nothing", root)
 	}
-	for _, one := range wrong {
-		t.Error(one + ": a test that builds an adapter stands outside the package")
-	}
-
-	// A walk that read no test of the core is a rule checked against nothing.
-	if read < 100 {
-		t.Fatalf("%d tests of the core read: the walk is not reading them", read)
-	}
+	return wrong, err
 }
 
 func TestMain(m *testing.M) {

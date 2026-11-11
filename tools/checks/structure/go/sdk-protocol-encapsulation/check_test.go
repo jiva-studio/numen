@@ -133,8 +133,8 @@ func main() {}
 	if !slices.Equal(got, want) {
 		t.Errorf("leaks %v, want %v", got, want)
 	}
-	if examined < 15 {
-		t.Errorf("%d exported identifiers examined, want at least 15", examined)
+	if examined != 17 {
+		t.Errorf("%d exported identifiers examined, want the 17 of the fixture", examined)
 	}
 }
 
@@ -171,8 +171,8 @@ func Convert(m gen.Message) gen.Message { return m }
 	if len(leaks) != 0 {
 		t.Errorf("leaks %v, want none", leaks)
 	}
-	if examined < 2 {
-		t.Errorf("%d exported identifiers examined, want at least 2", examined)
+	if examined != 2 {
+		t.Errorf("%d exported identifiers examined, want the 2 of the fixture", examined)
 	}
 }
 

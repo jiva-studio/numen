@@ -12,7 +12,7 @@ import (
 )
 
 type scanCommand struct {
-	scan func(ctx context.Context, rebuild bool) (Scan, error)
+	session Session
 }
 
 func (scanCommand) Name() string { return "scan" }
@@ -23,7 +23,7 @@ func (scanCommand) Synopsis() string {
                                                of every model except the one in use`
 }
 
-func (c scanCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
+func (c scanCommand) Run(ctx context.Context, term terminal, args []string) error {
 	rebuild, rest := splitRebuildFlag(args)
 	if len(rest) != 1 {
 		return errors.New("usage: numen-cli scan <vault> [--rebuild-index]")
@@ -32,11 +32,11 @@ func (c scanCommand) Run(ctx context.Context, term terminal, args []string) (err
 	// The vectors are made here too. The window does all three in the
 	// background; here they are waited for, which is this adapter's property
 	// and not the use case's.
-	open, err := c.scan(ctx, rebuild)
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{Rebuild: rebuild})
 	if err != nil {
 		return err
 	}
-	defer closeInto(&err, open.Close)
+	open := indexed.Scan
 	r := newReporter(term.out)
 	started := readClock(open.Now)
 	scanned, err := open.Scan.Execute(ctx, rest[0], getProgressReporting(r))
