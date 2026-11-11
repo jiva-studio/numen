@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, useId, useTemplateRef } from 'vue'
-import { createRefRegistry } from '@numen/ui'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
@@ -11,6 +10,7 @@ import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
+import { useNodeViews } from '../../model/useNodeViews'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
@@ -36,18 +36,13 @@ defineExpose({
   get svg() {
     return svg.value
   },
-  focusNode: (id: string) => views.get(id)?.focus(),
+  focusNode: (id: string) => focusNode(id),
 })
 
 /* --------------------------------- State ---------------------------------- */
 const svg = useTemplateRef<SVGSVGElement>('svg')
 
-const views = new Map<string, { focus: () => void }>()
-const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
-  const focus = view ? Reflect.get(view, 'focus') : undefined
-  if (view && typeof focus === 'function') views.set(id, { focus: () => focus.call(view) })
-  else views.delete(id)
-})
+const { holdNode, focusNode } = useNodeViews()
 
 const viewBox = computed(() => {
   const { width, height } = props.viewport

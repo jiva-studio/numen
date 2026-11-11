@@ -9,7 +9,7 @@ import { renderPreview, getUndeclaredSlots } from './fill'
 import {
   getDeclaredFields,
   HALVES,
-  createSealedMap,
+  getSealedMap,
   type Problems,
   type Half,
   type Objection,
@@ -85,8 +85,8 @@ export interface CardModelProblems {
 
 /** Nothing wrong with any template and nothing wrong with any field. */
 export const NO_CARD_MODEL_PROBLEMS: CardModelProblems = Object.freeze({
-  at: createSealedMap<string, readonly string[]>(),
-  fields: createSealedMap<string, readonly string[]>(),
+  at: getSealedMap<string, readonly string[]>(),
+  fields: getSealedMap<string, readonly string[]>(),
 })
 
 /** One field of a card model, as its row is drawn. */

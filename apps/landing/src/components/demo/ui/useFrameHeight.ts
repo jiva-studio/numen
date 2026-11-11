@@ -1,7 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { measureWindow } from '@numen/ui'
 import { getDraggedHeight, getTallest, LEAST } from '../lib/frame'
-import type { HeightStore } from '../model/heightStore'
+import { createHeightStore, type HeightStore } from '../model/heightStore'
 
 interface HeldBar {
   bar: HTMLElement
@@ -22,10 +22,11 @@ function findPane(root: HTMLElement | null): HTMLElement | null {
  * arrow keys, and which is remembered in the store. `media` is the player element.
  */
 export function useFrameHeight(
-  store: HeightStore,
+  givenStore: HeightStore | undefined,
   root: Readonly<Ref<HTMLElement | null>>,
   media: Readonly<Ref<HTMLElement | null>>,
 ) {
+  const store = givenStore ?? createHeightStore()
   /** How tall the player is drawn, remembered on this machine. */
   const tall = ref(store.read())
   const held = ref<HeldBar | null>(null)

@@ -41,9 +41,9 @@ onMounted(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-async function onSubmit(value: string): Promise<boolean> {
+function onSubmit(value: string): Promise<boolean> {
   const name = trimName(typedName.value)
-  if (name === '') return false
+  if (name === '') return Promise.resolve(false)
   return props.submit(name, value)
 }
 </script>

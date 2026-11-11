@@ -114,10 +114,14 @@ function watchBookLayout(
   onBeforeUnmount(() => doc.fonts?.removeEventListener?.('loadingdone', context.settleKept))
 }
 
-export interface BookSettlingOptions {
+interface BookElements {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
   readonly leaving: Readonly<ShallowRef<HTMLElement | null>>
+}
+
+export interface BookSettlingOptions {
+  readonly elements: BookElements
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
   readonly stoodFor: { value: StoodFor | null }
@@ -132,6 +136,8 @@ export interface BookSettlingOptions {
     readonly markCopy: (copy: HTMLElement) => void
     readonly unmarkCopy: (copy: HTMLElement) => void
     readonly isStood: { value: boolean }
+    readonly viewport: ShallowRef<{ width: number; height: number }>
+    readonly textSize: { value: number }
   }
   readonly turns: {
     readonly stand: (spread: number, how: 'smooth' | 'auto') => void
@@ -144,10 +150,6 @@ export interface BookSettlingOptions {
     readonly keepOffset: (pos: number) => void
     readonly getSpreadOf: (pos: number) => number
     readonly standing: { value: number }
-  }
-  readonly signals: {
-    readonly viewport: ShallowRef<{ width: number; height: number }>
-    readonly textSize: { value: number }
   }
 }
 
@@ -164,6 +166,8 @@ function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<
 }
 
 function createBookSettling(options: BookSettlingOptions) {
+  const { area, paper, leaving } = options.elements
+  const signals = { viewport: options.column.viewport, textSize: options.column.textSize }
   let entry: { way: BorderTurn['way']; leaving: LeavingSpread | undefined } | undefined
 
   const removeCopy = (copy: HTMLElement) => {
@@ -177,19 +181,19 @@ function createBookSettling(options: BookSettlingOptions) {
   }
 
   const prepareEntry = (led: BookLink | undefined) => {
-    const holder = options.leaving.value
+    const holder = leaving.value
     for (const copy of holder ? [...holder.children] : []) removeCopy(copy as HTMLElement)
     entry = undefined
     const way = options.takeBorderTurn()
     if (!way || led) return
-    const text = options.paper.value
+    const text = paper.value
     const isShown = holder && text && options.column.isStood.value
     entry = { way, leaving: isShown ? createLeaving(text, holder) : undefined }
   }
 
   const lay = (getKeep: () => number, led?: BookLink) => {
-    const box = options.area.value
-    const text = options.paper.value
+    const box = area.value
+    const text = paper.value
     if (!box || !text) return
     const keep = getKeep()
     options.column.readColumns(box, text)
@@ -208,13 +212,13 @@ function createBookSettling(options: BookSettlingOptions) {
     options.column.isStood.value = true
   }
 
-  let measuredSize = options.signals.viewport.value
+  let measuredSize = signals.viewport.value
   const settle = (getKeep: () => number, led?: BookLink) => {
     options.column.measure()
-    measuredSize = options.signals.viewport.value
+    measuredSize = signals.viewport.value
     if (!options.column.isMeasured.value) return
     onNextFrame(() => {
-      const text = options.paper.value
+      const text = paper.value
       const pending = text ? findPending(text) : []
       if (pending.length === 0) lay(getKeep, led)
       else whenArrived(pending, () => lay(getKeep, led))
@@ -245,7 +249,7 @@ function createBookSettling(options: BookSettlingOptions) {
     })
   }
   const settleResized = () => {
-    const { width, height } = options.signals.viewport.value
+    const { width, height } = signals.viewport.value
     if (!isResizeQueued && width === measuredSize.width && height === measuredSize.height) return
     framesSinceResize = 0
     if (isResizeQueued) return
@@ -253,7 +257,7 @@ function createBookSettling(options: BookSettlingOptions) {
     waitForSettledSize()
   }
 
-  watchBookLayout(options.props, options.signals, {
+  watchBookLayout(options.props, signals, {
     prepareEntry,
     settle,
     settleKept,
@@ -317,10 +321,8 @@ export function useBookLayout(options: BookLayoutOptions) {
   })
 
   const settling = createBookSettling({
-    area: options.area,
+    elements: { area: options.area, paper: options.paper, leaving: options.leaving },
     stoodFor,
-    paper: options.paper,
-    leaving: options.leaving,
     props: options.props,
     onMove: options.onMove,
     takeLed: options.takeLed,
@@ -334,9 +336,10 @@ export function useBookLayout(options: BookLayoutOptions) {
       markCopy: runMarks.markCopy,
       unmarkCopy: runMarks.unmarkCopy,
       isStood,
+      viewport,
+      textSize,
     },
     turns: { stand, enterSpread, getKeptOffset, keepOffset, getSpreadOf, standing },
-    signals: { viewport, textSize },
   })
 
   return {

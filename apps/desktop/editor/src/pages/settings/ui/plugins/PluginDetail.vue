@@ -51,8 +51,8 @@ function onRetry(): void {
   actions.retry()
 }
 
-async function onDeleteData(): Promise<void> {
-  await actions.deleteData()
+function onDeleteData(): void {
+  actions.deleteData()
 }
 </script>
 

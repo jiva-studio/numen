@@ -3,9 +3,10 @@
  * The words of a recording, one line to a moment. The line being spoken is marked, and a press on a line
  * goes to its moment.
  */
-import { nextTick, useTemplateRef, watch } from 'vue'
+import { useTemplateRef } from 'vue'
 import { clock } from '@numen/ui'
 import type { Cue } from '../lib/cues'
+import { useFollowedLine } from '../model/useFollowedLine'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ cues: readonly Cue[]; active: number; isFollowing: boolean }>()
@@ -16,19 +17,20 @@ const emit = defineEmits<{ seek: [ms: number] }>()
 const list = useTemplateRef<HTMLElement>('list')
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(
+useFollowedLine(
+  list,
   () => props.active,
-  async (index) => {
-    if (!props.isFollowing) return
-    await nextTick()
-    list.value?.children[index]?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-  },
+  () => props.isFollowing,
 )
 </script>
 
 <template>
   <ol ref="list" class="transcript">
-    <li v-for="(cue, index) in cues" :key="cue.from" :data-active="index === active ? '' : undefined">
+    <li
+      v-for="(cue, index) in cues"
+      :key="cue.from"
+      :data-active="index === active ? '' : undefined"
+    >
       <button type="button" class="transcript__line" @click="emit('seek', cue.from)">
         <time class="transcript__time">{{ clock(cue.from) }}</time>
         <span class="transcript__text">{{ cue.text }}</span>

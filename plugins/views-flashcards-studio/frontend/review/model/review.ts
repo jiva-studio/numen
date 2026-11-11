@@ -64,24 +64,15 @@ const reportSessionNotice = (
   }
 }
 
-interface ReviewActionDeps {
+interface SessionActionDeps {
   vault: string
-  vaultCount: ComputedRef<VaultCardsDue | null>
-  counts: VaultCounts
-  on: Ref<ReviewScreen>
   goTo: (screen: ReviewScreen) => void
-  reviewDays: ReturnType<typeof useReviewDays>
-  schedules: ReturnType<typeof useVaultPresets>
   state: ReturnType<typeof useReviewSession>
   agentPanel: { endConversation: () => void }
   showNotice: (text: string, severity: Severity) => void
-  reportError: (why: Caught) => void
-  goToVaults: () => void
 }
 
-function createReviewActions(deps: ReviewActionDeps) {
-  const readSchedules = () => deps.schedules.read(deps.vaultCount.value, deps.counts.day.value)
-
+function createSessionActions(deps: SessionActionDeps) {
   const openSession = async (deck: string, preset?: string) => {
     const report = await deps.state.opener.start(deps.vault, deck, preset)
     if (!report) return
@@ -93,11 +84,31 @@ function createReviewActions(deps: ReviewActionDeps) {
 
   const startPreset = (preset: string) => openSession('', preset)
 
+  const recordReview = async (how: Grade) => {
+    deps.agentPanel.endConversation()
+    await deps.state.answering.answer(how)
+  }
+
+  return { start, startPreset, recordReview }
+}
+
+interface NavigationActionDeps {
+  vault: string
+  counts: VaultCounts
+  on: Ref<ReviewScreen>
+  goTo: (screen: ReviewScreen) => void
+  reviewDays: ReturnType<typeof useReviewDays>
+  readSchedules: () => Promise<void>
+  reportError: (why: Caught) => void
+  goToVaults: () => void
+}
+
+function createNavigationActions(deps: NavigationActionDeps) {
   const leave = async () => {
     deps.goTo('decks')
     deps.reviewDays.read(deps.vault).catch(deps.reportError)
     await deps.counts.count()
-    readSchedules().catch(deps.reportError)
+    deps.readSchedules().catch(deps.reportError)
   }
 
   const goToVaults = () => {
@@ -105,19 +116,14 @@ function createReviewActions(deps: ReviewActionDeps) {
     deps.goToVaults()
   }
 
-  const recordReview = async (how: Grade) => {
-    deps.agentPanel.endConversation()
-    await deps.state.answering.answer(how)
-  }
-
   const refresh = async () => {
     if (deps.on.value === 'session') return
     await deps.counts.count()
     await deps.reviewDays.read(deps.vault)
-    await readSchedules()
+    await deps.readSchedules()
   }
 
-  return { readSchedules, start, startPreset, leave, goToVaults, recordReview, refresh }
+  return { leave, goToVaults, refresh }
 }
 
 function useChosenVault(deps: {
@@ -173,46 +179,65 @@ export const useReview = (deps: ReviewDeps) => {
     () => deps.counts.vaults.value.find((one) => one.identity.vault === deps.vault) ?? null,
   )
 
-  const actions = createReviewActions({
+  const readSchedules = () => schedules.read(vaultCount.value, deps.counts.day.value)
+  const sessionActions = createSessionActions({
     vault: deps.vault,
-    vaultCount,
+    goTo,
+    state,
+    agentPanel: panels.agentPanel,
+    showNotice: notices.showNotice,
+  })
+  const navigationActions = createNavigationActions({
+    vault: deps.vault,
     counts: deps.counts,
     on,
     goTo,
     reviewDays,
-    schedules,
-    state,
-    agentPanel: panels.agentPanel,
-    showNotice: notices.showNotice,
+    readSchedules,
     reportError: notices.reportError,
     goToVaults: deps.goToVaults,
   })
+  const actions = {
+    readSchedules,
+    start: sessionActions.start,
+    startPreset: sessionActions.startPreset,
+    leave: navigationActions.leave,
+    goToVaults: navigationActions.goToVaults,
+    recordReview: sessionActions.recordReview,
+    refresh: navigationActions.refresh,
+  }
 
   const { onKeyDown } = createReviewKeys({
-    getScreen: () => on.value,
-    getChosenVault: () => vaultCount.value,
-    getPresetsByDeck: () => schedules.byDeck.value,
-    isShown: () => state.cards.queue.isAnswerShown.value,
-    getShowing: () => panels.showing.value,
-    start: (deck) => {
-      actions.start(deck).catch(notices.reportError)
+    view: {
+      getScreen: () => on.value,
+      getChosenVault: () => vaultCount.value,
+      getPresetsByDeck: () => schedules.byDeck.value,
+      isShown: () => state.cards.queue.isAnswerShown.value,
+      getShowing: () => panels.showing.value,
     },
-    show: state.show,
-    answer: (how) => {
-      actions.recordReview(how).catch(notices.reportError)
+    actions: {
+      start: (deck) => {
+        actions.start(deck).catch(notices.reportError)
+      },
+      show: state.show,
+      answer: (how) => {
+        actions.recordReview(how).catch(notices.reportError)
+      },
+      takeBack: () => {
+        state.answering.takeBack().catch(notices.reportError)
+      },
+      leave: () => {
+        actions.leave().catch(notices.reportError)
+      },
+      goToVaults: actions.goToVaults,
+      scrollPage: (back) => notesPage.value?.scrollPage(back),
     },
-    takeBack: () => {
-      state.answering.takeBack().catch(notices.reportError)
+    panels: {
+      toggleAgent: panels.toggleAgent,
+      toggleNotes: panels.toggleNotes,
+      closeAgent: panels.agentPanel.closePanel,
+      closeNotes: panels.notesPanel.actions.closePanel,
     },
-    leave: () => {
-      actions.leave().catch(notices.reportError)
-    },
-    goToVaults: actions.goToVaults,
-    toggleAgent: panels.toggleAgent,
-    toggleNotes: panels.toggleNotes,
-    scrollPage: (back) => notesPage.value?.scrollPage(back),
-    closeAgent: panels.agentPanel.closePanel,
-    closeNotes: panels.notesPanel.actions.closePanel,
   })
 
   deps.counts.start()

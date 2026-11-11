@@ -4,9 +4,8 @@ import { Card } from './card'
 import { CutChoice } from './card-model-choice'
 import { Icon } from '../icon'
 import { Button } from '@numen/ui'
-import { DECK_WORDS, createRunEnd } from '../../../../lib/cards'
-import type { Run } from '../../../../lib/cards'
-import { createSealedMap, type InsertionPoint, type StepDirection } from '../../../../lib/cards'
+import { DECK_WORDS, getRunEndPoint } from '../../../../lib/cards'
+import { getSealedMap, type InsertionPoint, type StepDirection } from '../../../../lib/cards'
 import type { CardModel } from '../../../../lib/cards'
 import type { DeckRunProps } from './DeckRun.types'
 
@@ -28,7 +27,7 @@ const emit = defineEmits<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
+const NO_FIELDS: ReadonlyMap<string, readonly string[]> = getSealedMap()
 
 /* -------------------------------- Handlers -------------------------------- */
 const onRenameSection = (name: string): void => {
@@ -40,9 +39,6 @@ const onRemoveSection = (): void => {
   const section = props.run.section
   if (section) emit('remove-section', section.id)
 }
-
-/* --------------------------------- Helpers -------------------------------- */
-const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 </script>
 
 <template>
@@ -100,8 +96,8 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
       :aria-label="words.add"
       data-plus
       :data-plus-of="run.section?.id"
-      :data-before="getRunEnd(run) === at || undefined"
-      @dragover.stop="emit('drag-over', getRunEnd(run), $event)"
+      :data-before="getRunEndPoint(run.id) === at || undefined"
+      @dragover.stop="emit('drag-over', getRunEndPoint(run.id), $event)"
       @drop.stop="emit('drop')"
     >
       <Button

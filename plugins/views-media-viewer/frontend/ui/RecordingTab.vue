@@ -5,14 +5,14 @@
  *
  * Media plays through the window's single player, so the controls only report the user's actions.
  */
-import { computed, onUnmounted, watch } from 'vue'
+import { computed } from 'vue'
 import Player from './Player.vue'
 import VideoSurface from './VideoSurface.vue'
 import MediaLayout from './MediaLayout.vue'
 import { useTranscript, type TranscriptOptions } from '../model/transcript'
-import { isNotePath, type ReaderTabState, type Selector } from '@numen/plugin-sdk'
-import type { Recordings, TextRange } from '../types'
-import { createTimeSelector, getSelectorStart } from '../lib/place'
+import { useRecordingPlace } from '../model/useRecordingPlace'
+import { isNotePath, type ReaderTabState } from '@numen/plugin-sdk'
+import type { Recordings } from '../types'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -34,65 +34,7 @@ const { now, runs, isPlaying } = progress
 const { pageUrl } = tab.content
 /** Whether there is media to play: a note that names neither media nor a page draws no player. */
 const hasMedia = computed(() => url.value !== '' || !isNotePath(targetPath))
-
-const seekToSelector = (selector: Selector | null | undefined): number | null => {
-  const start = getSelectorStart(selector)
-  if (start !== null) tab.playback.controls.go(start)
-  return start
-}
-
-// The window sets a selector for a search hit and for the place saved before a restart. The one the
-// tab opens with is already stored by the window, so it is reported and only a later one is saved.
-const initialTime = seekToSelector(props.state?.selector)
-if (initialTime !== null) props.state?.reportPlace?.({ positionSeconds: initialTime / 1000 })
-
-/* --------------------------------- Hooks ---------------------------------- */
-const saveTime = (ms: number) => {
-  props.state?.savePlace?.(createTimeSelector(ms))
-  props.state?.reportPlace?.({ positionSeconds: Math.max(0, ms) / 1000 })
-}
-
-const seekToSpans = async (...spans: readonly TextRange[]) => {
-  const ms = await tab.navigation.seekToSpans(...spans)
-  if (ms !== null) saveTime(ms)
-}
-
-watch(
-  () => props.state?.selector,
-  (selector: Selector | null | undefined) => {
-    const start = seekToSelector(selector)
-    if (start !== null) saveTime(start)
-  },
-)
-
-// The window sets a new array on each request, so playback seeks to the same ranges again.
-watch(
-  () => props.state?.ranges,
-  (ranges) => {
-    if (ranges && ranges.length > 0) seekToSpans(...ranges).catch(tab.lifecycle.reportFailure)
-  },
-  { immediate: true },
-)
-
-const savePlace = () => {
-  if (isLoaded.value) saveTime(now.value)
-}
-
-// Saved when playback stops and every ten seconds of it, so a restart loses at most that much.
-watch(isPlaying, (playing) => {
-  if (!playing) savePlace()
-})
-watch(
-  () => Math.floor(now.value / 10_000),
-  () => {
-    if (isPlaying.value) savePlace()
-  },
-)
-
-onUnmounted(() => {
-  savePlace()
-  tab.lifecycle.close()
-})
+const place = useRecordingPlace(tab, () => props.state)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onPlay() {
@@ -104,8 +46,7 @@ function onPause() {
 }
 
 function onSeek(ms: number) {
-  tab.playback.controls.go(ms)
-  saveTime(ms)
+  place.seekTo(ms)
 }
 </script>
 

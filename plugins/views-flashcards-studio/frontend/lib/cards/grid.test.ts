@@ -1,7 +1,7 @@
 /** Where a card lands, and which runs draw a drop target of their own. */
 import { describe, expect, it } from 'vitest'
 import type { CardModel } from './card'
-import { createRunEnd, HEAD, type DeckCard, type DeckSection } from './deck'
+import { getRunEndPoint, HEAD, type DeckCard, type DeckSection } from './deck'
 import { getGrid, isMoved } from './grid'
 
 const CUTS: readonly CardModel[] = [{ name: 'Animal', fields: ['Name'] }]
@@ -64,16 +64,16 @@ describe('isMoved', () => {
   })
 
   it('moves nothing dropped at the end of the run it ends', () => {
-    expect(isMoved(RUNS, 'c', createRunEnd('roots'))).toBe(false)
-    expect(isMoved(RUNS, 'a', createRunEnd('roots'))).toBe(true)
+    expect(isMoved(RUNS, 'c', getRunEndPoint('roots'))).toBe(false)
+    expect(isMoved(RUNS, 'a', getRunEndPoint('roots'))).toBe(true)
   })
 
   it('moves a card dropped at the end of a run holding none', () => {
-    expect(isMoved(RUNS, 'a', createRunEnd('leaves'))).toBe(true)
+    expect(isMoved(RUNS, 'a', getRunEndPoint('leaves'))).toBe(true)
   })
 
   it('moves a card dropped at the end of a run that is not there', () => {
-    expect(isMoved(RUNS, 'a', createRunEnd('gone'))).toBe(true)
+    expect(isMoved(RUNS, 'a', getRunEndPoint('gone'))).toBe(true)
   })
 
   it('moves a card dropped before another card, or at the end of nothing', () => {

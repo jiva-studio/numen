@@ -44,7 +44,7 @@ function onActivateNode(node: string) {
 
 function onCreateNode(from: string, relation: PlexRelation, at?: { x: number; y: number }) {
   props.state.nodes
-    .createNode(from, relation, at ?? lastPointer.value)
+    .addNode(from, relation, at ?? lastPointer.value)
     .catch(props.state.reportFailure)
 }
 
