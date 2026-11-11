@@ -1,4 +1,4 @@
-# Comment placement check (`@numen/lint-comments`)
+# Comment placement check (`style/comments` of `tools/checks`)
 
 Rejects comments that repeat what a name and a type already state. The rule is §1 of `AGENTS.md`.
 
@@ -22,9 +22,9 @@ Go files are parsed with `go/ast` by `main.go` (standard library only); TypeScri
 ## Usage
 
 ```bash
-node tools/lint-comments/check.mjs                 # every tracked file (CI: make lint_comments)
-node tools/lint-comments/check.mjs --staged        # staged files (pre-commit hook)
-node tools/lint-comments/check.mjs a.go b.vue      # the files named
-node tools/lint-comments/check.mjs --fix a.go      # remove the reported comments
-npm test --prefix tools/lint-comments              # fixtures of both checkers
+node tools/checks/style/comments/check.mjs                 # every tracked file (CI: make lint_comments)
+node tools/checks/style/comments/check.mjs --staged        # staged files (pre-commit hook)
+node tools/checks/style/comments/check.mjs a.go b.vue      # the files named
+node tools/checks/style/comments/check.mjs --fix a.go      # remove the reported comments
+make checks_selftest ONLY=style/comments          # fixtures of both checkers
 ```

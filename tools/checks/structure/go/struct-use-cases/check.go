@@ -109,7 +109,10 @@ func getStructField(info *types.Info, literal *ast.CompositeLit, index int, elem
 		if !isIdent {
 			return nil
 		}
-		field, _ := info.Uses[key].(*types.Var)
+		field, isVar := info.Uses[key].(*types.Var)
+		if !isVar {
+			return nil
+		}
 		return field
 	}
 	if index < shape.NumFields() {

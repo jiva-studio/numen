@@ -2,6 +2,8 @@
 
 Checks over the whole repository that no single module's lint target covers: duplication, unused TypeScript and Vue code, and the plugin API types. Go complexity (`cyclop`, `gocognit`, `nestif`, `funlen`), interface size (`interfacebloat`) and unused parameters and results (`unparam`) are linters of `.golangci-structure.yml`, and ESLint and golangci-lint run in the lint target of each module.
 
+The rules for duplication and the API types are in `tools/checks/structure/ts/duplication` and `tools/checks/structure/ts/api-types` and are listed in the registry of `tools/checks`; this command runs them together with knip.
+
 ## Invariants Checked
 
 1. **Code Duplication (`jscpd`)**:
