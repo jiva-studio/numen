@@ -15,12 +15,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -253,7 +253,7 @@ func TestBudgetInternals(t *testing.T) {
 	day := review.Day{Starts: 0, In: time.UTC}
 
 	errLinks := errors.New("links failed")
-	readsErr := Presets{links: stubLinkQueries{linksErr: errLinks}}.OpenReads()
+	readsErr := presets.New(nil, nil, stubLinkQueries{linksErr: errLinks}, nil, nil, nil).OpenReads()
 	c1 := ReviewCard{ID: review.CardID{Card: "c1", Template: "T"}, Deck: "decks/A.md"}
 	c2 := ReviewCard{ID: review.CardID{Card: "c2", Template: "T"}, Deck: "decks/B.md"}
 	if _, err := getBudgets(ctx, v, budgetInputs{
@@ -273,9 +273,9 @@ func TestBudgetInternals(t *testing.T) {
 		"decks/A.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 		"decks/B.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 	})
-	presets := NewPresets(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
+	deckPresets := presets.New(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
 	b, err := getBudgets(ctx, env.Vault, budgetInputs{
-		reads:       presets.OpenReads(),
+		reads:       deckPresets.OpenReads(),
 		day:         day,
 		reviewCards: []ReviewCard{c1, c2},
 		schedules:   map[review.CardID]review.Schedule{},
@@ -299,7 +299,7 @@ func TestBudgetInternals(t *testing.T) {
 		"decks/A.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 		"decks/B.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 	})
-	presetsNear := NewPresets(envNear.Ports.Readers, envNear.Ports.Writers, envNear.Queries, envNear.Queries, scanOf(envNear), clock.NewFake(now)).WithDay(day)
+	presetsNear := presets.New(envNear.Ports.Readers, envNear.Ports.Writers, envNear.Queries, envNear.Queries, scanOf(envNear), clock.NewFake(now)).WithDay(day)
 	bNear, err := getBudgets(ctx, envNear.Vault, budgetInputs{
 		reads:       presetsNear.OpenReads(),
 		day:         day,
@@ -507,7 +507,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		t.Fatalf("unexpected getCardsDue: %+v", presetDue)
 	}
 
-	uNoNotes := NewCountCardsDue(ListReviewCards{}, Schedules{}, Presets{}, day, clock.NewFake(now))
+	uNoNotes := NewCountCardsDue(ListReviewCards{}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
 	gotNoNotes, err := uNoNotes.getPresets(ctx, v, nil, bDue, dueMap, newMap)
 	if err != nil || len(gotNoNotes) != 1 || gotNoNotes[0].Decks != 0 {
 		t.Fatalf("expected getPresets without notes to return out directly, got %+v, %v", gotNoNotes, err)
@@ -515,15 +515,15 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 
 	uDeckErr := NewCountCardsDue(ListReviewCards{
 		notes: stubNoteQueries{pathsErr: map[domain.NoteType]error{format.TypeDeck: errBoom}},
-	}, Schedules{}, Presets{}, day, clock.NewFake(now))
+	}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
 	if _, err := uDeckErr.getPresets(ctx, v, nil, bDue, dueMap, newMap); !errors.Is(err, errBoom) {
 		t.Fatalf("expected deck paths error from getPresets, got %v", err)
 	}
 
 	uForDeckErr := NewCountCardsDue(ListReviewCards{
 		notes: stubNoteQueries{paths: map[domain.NoteType][]string{format.TypeDeck: {"decks/A.md"}}},
-	}, Schedules{}, Presets{}, day, clock.NewFake(now))
-	readsLinkErr := Presets{links: stubLinkQueries{linksErr: errBoom}}.OpenReads()
+	}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
+	readsLinkErr := presets.New(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, nil).OpenReads()
 	if _, err := uForDeckErr.getPresets(ctx, v, readsLinkErr, bDue, dueMap, newMap); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetForDeck error from getPresets, got %v", err)
 	}
@@ -533,8 +533,8 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 			paths:    map[domain.NoteType][]string{format.TypeDeck: nil},
 			pathsErr: map[domain.NoteType]error{format.TypePreset: errBoom},
 		},
-	}, Schedules{}, Presets{}, day, clock.NewFake(now))
-	if _, err := uPresetPathsErr.getPresets(ctx, v, Presets{}.OpenReads(), bDue, dueMap, newMap); !errors.Is(err, errBoom) {
+	}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
+	if _, err := uPresetPathsErr.getPresets(ctx, v, presets.Presets{}.OpenReads(), bDue, dueMap, newMap); !errors.Is(err, errBoom) {
 		t.Fatalf("expected preset paths error from getPresets, got %v", err)
 	}
 
@@ -544,11 +544,8 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 				format.TypePreset: {"P.md", "Q.md"},
 			},
 		},
-	}, Schedules{}, Presets{}, day, clock.NewFake(now))
-	readsOpenErr := Presets{
-		readers: stubVaultReaders{openErr: errBoom},
-		now:     clock.NewFake(now),
-	}.OpenReads()
+	}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
+	readsOpenErr := presets.New(stubVaultReaders{openErr: errBoom}, nil, nil, nil, nil, clock.NewFake(now)).OpenReads()
 	if _, err := uPresetReadErr.getPresets(ctx, v, readsOpenErr, bDue, dueMap, newMap); !errors.Is(err, errBoom) {
 		t.Fatalf("expected read error for second preset Q.md after pointed P.md, got %v", err)
 	}
@@ -558,26 +555,26 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		"decks/A.md": "---\ntype: deck\n---\n\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Front\n\nhi\n",
 	})
 	rc := NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	presets := NewPresets(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
-	sched := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rc, presets)
-	dueUC := NewCountCardsDue(rc, sched, presets, day, clock.NewFake(now))
+	deckPresets := presets.New(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
+	sched := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rc, deckPresets)
+	dueUC := NewCountCardsDue(rc, sched, deckPresets, day, clock.NewFake(now))
 
 	if _, err := NewCountCardsDue(
 		NewListReviewCards(env.Ports.Readers, stubNoteQueries{hasErr: errBoom}, env.Queries),
-		sched, presets, day, clock.NewFake(now),
+		sched, deckPresets, day, clock.NewFake(now),
 	).readInputs(ctx, v); !errors.Is(err, errBoom) {
 		t.Fatalf("expected reviewCards error in readInputs, got %v", err)
 	}
 
 	if _, err := NewCountCardsDue(
 		rc,
-		NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), day, rc, presets),
-		presets, day, clock.NewFake(now),
+		NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), day, rc, deckPresets),
+		deckPresets, day, clock.NewFake(now),
 	).readInputs(ctx, env.Vault); !errors.Is(err, errBoom) {
 		t.Fatalf("expected log read error in readInputs, got %v", err)
 	}
 
-	badPresets := NewPresets(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
+	badPresets := presets.New(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
 	if _, err := NewCountCardsDue(
 		rc,
 		NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rc, badPresets),
@@ -595,7 +592,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		},
 	}
 	rcEmpty := NewListReviewCards(stubVaultReaders{openErr: errBoom}, notesWithBadPreset, nil)
-	presetsOpenFail := NewPresets(stubVaultReaders{openErr: errBoom}, nil, nil, notesWithBadPreset, nil, clock.NewFake(now))
+	presetsOpenFail := presets.New(stubVaultReaders{openErr: errBoom}, nil, nil, notesWithBadPreset, nil, clock.NewFake(now))
 	schedEmpty := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEmpty, presetsOpenFail)
 	if _, err := NewCountCardsDue(rcEmpty, schedEmpty, presetsOpenFail, day, clock.NewFake(now)).Execute(ctx, env.Vault); !errors.Is(err, errBoom) {
 		t.Fatalf("expected getPresets error in CountCardsDue.Execute, got %v", err)
@@ -658,7 +655,7 @@ func TestCardsDueCancellationPaths(t *testing.T) {
 		},
 		nil,
 	)
-	uCancelAfterRC := NewCountCardsDue(rcCancel, Schedules{}, Presets{}, day, clock.NewFake(now))
+	uCancelAfterRC := NewCountCardsDue(rcCancel, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
 	if _, err := uCancelAfterRC.readInputs(ctx1, v); !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled after reviewCards.Execute, got %v", err)
 	}
@@ -671,10 +668,10 @@ func TestCardsDueCancellationPaths(t *testing.T) {
 	)
 	schedCancel := NewSchedules(
 		stubLogStores{store: stubLogStore{}},
-		review.NewFSRS(), day, rcOk, Presets{},
+		review.NewFSRS(), day, rcOk, presets.Presets{},
 	)
 	schedCancel.Cache = &cancelingScheduleStore{cancel: cancel2}
-	uCancelAfterSched := NewCountCardsDue(rcOk, schedCancel, Presets{}, day, clock.NewFake(now))
+	uCancelAfterSched := NewCountCardsDue(rcOk, schedCancel, presets.Presets{}, day, clock.NewFake(now))
 	if _, err := uCancelAfterSched.readInputs(ctx2, v); !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled after getSchedulesCached, got %v", err)
 	}
@@ -823,7 +820,7 @@ func TestCountReviewsInternalsAndErrors(t *testing.T) {
 		stubLogStores{store: stubLogStore{}},
 		review.NewFSRS(), day,
 		NewListReviewCards(stubVaultReaders{}, stubNoteQueries{hasErr: errBoom}, nil),
-		Presets{links: stubLinkQueries{}},
+		presets.New(nil, nil, stubLinkQueries{}, nil, nil, nil),
 	)
 	uSchedFail := NewCountReviews(stubLogStores{store: stubLogStore{}}, schedFail, day, clock.NewFake(now))
 	if _, _, err := uSchedFail.getDueAndRetained(ctx, v, ReviewLog{}); !errors.Is(err, errBoom) {
@@ -846,7 +843,7 @@ func TestCountReviewsInternalsAndErrors(t *testing.T) {
 		readFn: func(_ context.Context, _ string) ([]byte, error) {
 			return append(slices.Clone(rawEasy), raw2...), nil
 		},
-	}}, review.NewFSRS(), day, ListReviewCards{}, Presets{})
+	}}, review.NewFSRS(), day, ListReviewCards{}, presets.Presets{})
 	uWithRetained := NewCountReviews(schedWithNew.logs, schedWithNew, day, clock.NewFake(now))
 	uWithRetained.Cache = &stubScheduleStore{readErr: errBoom}
 	counts, err := uWithRetained.Execute(ctx, v)
@@ -880,7 +877,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	day := review.Day{Starts: 0, In: time.UTC}
 	errBoom := errors.New("boom")
 
-	pc := NewProjectCurve(ListReviewCards{}, Schedules{}, Presets{}, day, clock.NewFake(now))
+	pc := NewProjectCurve(ListReviewCards{}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
 	if pc.Cores != 0 || pc.By != nil {
 		t.Fatalf("expected Cores=0 and By=nil from NewProjectCurve, got %+v", pc)
 	}
@@ -898,13 +895,13 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		stubNoteQueries{has: true, paths: map[domain.NoteType][]string{format.TypeDeck: {"decks/A.md"}}},
 		nil,
 	)
-	pcNoLinks := NewProjectCurve(rcDecks, Schedules{}, Presets{links: nil}, day, clock.NewFake(now))
+	pcNoLinks := NewProjectCurve(rcDecks, Schedules{}, presets.New(nil, nil, nil, nil, nil, nil), day, clock.NewFake(now))
 	decks1, err := pcNoLinks.getScheduledDecks(ctx, v, "P.md")
 	if err != nil || !slices.Equal(decks1, []string{"decks/A.md"}) {
 		t.Fatalf("expected all decks when links == nil, got %v, %v", decks1, err)
 	}
 	pcBacklinkErr := NewProjectCurve(
-		rcDecks, Schedules{}, Presets{links: stubLinkQueries{backlinksErr: errBoom}}, day, clock.NewFake(now),
+		rcDecks, Schedules{}, presets.New(nil, nil, stubLinkQueries{backlinksErr: errBoom}, nil, nil, nil), day, clock.NewFake(now),
 	)
 	if _, err := pcBacklinkErr.getScheduledDecks(ctx, v, "P.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected backlinks error, got %v", err)
@@ -915,7 +912,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	}
 
 	// Test readScheduledCards error, caching per deck, and continue on non-matching deck.
-	readsFail := Presets{links: stubLinkQueries{linksErr: errBoom}}.OpenReads()
+	readsFail := presets.New(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, nil).OpenReads()
 	c1 := ReviewCard{ID: review.CardID{Card: "c1", Template: "T"}, Deck: "decks/A.md"}
 	c2 := ReviewCard{ID: review.CardID{Card: "c2", Template: "T"}, Deck: "decks/A.md"}
 	c3 := ReviewCard{ID: review.CardID{Card: "c3", Template: "T"}, Deck: "decks/B.md"}
@@ -935,9 +932,9 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		"decks/B.md": "---\ntype: deck\nlinks:\n  - to: Q\n    role: ref\n    type: preset\n---\n" +
 			"\n## Three ^9z8y7x6w5v\n\n[[Term]]\n\n### Front\n\nc\n",
 	})
-	presets := NewPresets(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
+	deckPresets := presets.New(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
 	sc, err := pc.readScheduledCards(
-		ctx, env.Vault, presets.OpenReads(), "P.md",
+		ctx, env.Vault, deckPresets.OpenReads(), "P.md",
 		[]ReviewCard{c3, c1, c2},
 		map[review.CardID]review.Schedule{c1.ID: {Due: now.Add(-24 * time.Hour), Reps: 1}},
 	)
@@ -971,15 +968,15 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	// Test ProjectCurve.Execute error branches (log read error, assignment error, countPointingDecks error, simulation error)
 	// and Overdue / Unbegun population.
 	rcEnv := NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	schedLogErr := NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), day, rcEnv, presets)
-	if _, err := NewProjectCurve(rcEnv, schedLogErr, presets, day, clock.NewFake(now)).Execute(
+	schedLogErr := NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), day, rcEnv, deckPresets)
+	if _, err := NewProjectCurve(rcEnv, schedLogErr, deckPresets, day, clock.NewFake(now)).Execute(
 		ctx, env.Vault, "P.md", review.Defaults(),
 	); !errors.Is(err, errBoom) {
 		t.Fatalf("expected log error in ProjectCurve.Execute, got %v", err)
 	}
 
 	// Assignment error when path == "" (so getScheduledDecks doesn't use links) and presets.links fails on GetForDeck.
-	presetsLinkFail := NewPresets(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
+	presetsLinkFail := presets.New(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
 	schedLinkFail := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEnv, presetsLinkFail)
 	if _, err := NewProjectCurve(rcEnv, schedLinkFail, presetsLinkFail, day, clock.NewFake(now)).Execute(
 		ctx, env.Vault, "", review.Defaults(),
@@ -992,7 +989,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		"decks/Empty.md": "---\ntype: deck\n---\n",
 	})
 	rcEmptyDeck := NewListReviewCards(envEmptyDeck.Ports.Readers, envEmptyDeck.Queries, envEmptyDeck.Queries)
-	presetsEmptyFail := NewPresets(
+	presetsEmptyFail := presets.New(
 		envEmptyDeck.Ports.Readers, envEmptyDeck.Ports.Writers,
 		stubLinkQueries{linksErr: errBoom}, envEmptyDeck.Queries, scanOf(envEmptyDeck), clock.NewFake(now),
 	)
@@ -1006,8 +1003,8 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	// Canceled context triggers run.Curve error at line 155.
 	ctxCancel, cancel := context.WithCancel(ctx)
 	cancel()
-	schedEnv := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEnv, presets)
-	if _, err := NewProjectCurve(rcEnv, schedEnv, presets, day, clock.NewFake(now)).Execute(
+	schedEnv := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEnv, deckPresets)
+	if _, err := NewProjectCurve(rcEnv, schedEnv, deckPresets, day, clock.NewFake(now)).Execute(
 		ctxCancel, env.Vault, "P.md", review.Defaults(),
 	); !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled from run.Curve in ProjectCurve.Execute, got %v", err)
@@ -1023,7 +1020,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	gotCurve, err := NewProjectCurve(rcEnv, schedEnv, presets, day, clock.NewFake(now)).Execute(
+	gotCurve, err := NewProjectCurve(rcEnv, schedEnv, deckPresets, day, clock.NewFake(now)).Execute(
 		ctx, env.Vault, "P.md", review.Defaults(),
 	)
 	if err != nil {
@@ -1101,112 +1098,10 @@ func TestLogInternalsAndErrors(t *testing.T) {
 	}
 }
 
-func TestNeighborhoodInternalsAndErrors(t *testing.T) {
+func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 	ctx := t.Context()
 	v := domain.Vault{ID: "v1"}
 	errBoom := errors.New("boom")
-
-	if MostRead != 30 {
-		t.Fatalf("expected MostRead == 30, got %d", MostRead)
-	}
-
-	// Test ShowNeighborhood.Execute error branches: linked error, GetNotes error, GetTypes error,
-	// boundary len(out.Notes) == MostRead vs MostRead+1.
-	snLinkErr := NewShowNeighborhood(
-		note.NewShowLinks(stubLinkQueries{linksErr: errBoom}),
-		stubNoteQueries{},
-		note.NewRead(stubVaultReaders{}),
-	)
-	if _, err := snLinkErr.Execute(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected linked error, got %v", err)
-	}
-
-	linksOne := stubLinkQueries{
-		links: map[string][]domain.ResolvedLink{
-			"decks/A.md": {
-				{Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeNote, Value: "Note1.md"}}, To: "Note1.md", ToVault: v.ID},
-			},
-		},
-	}
-	snNotesErr := NewShowNeighborhood(
-		note.NewShowLinks(linksOne),
-		stubNoteQueries{notesErr: errBoom},
-		note.NewRead(stubVaultReaders{}),
-	)
-	if _, err := snNotesErr.Execute(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetNotes error, got %v", err)
-	}
-
-	snTypesErr := NewShowNeighborhood(
-		note.NewShowLinks(linksOne),
-		stubNoteQueries{typesErr: errBoom},
-		note.NewRead(stubVaultReaders{}),
-	)
-	if _, err := snTypesErr.Execute(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetTypes error, got %v", err)
-	}
-
-	// Test exactly MostRead (30) notes -> Unread == 0, and readBodies skipping empty Path before reading later note.
-	var thirtyLinks []domain.ResolvedLink
-	notesMap := make(map[string]domain.NoteRef, 30)
-	typesMap := make(map[string]domain.NoteType, 30)
-	thirtyLinks = append(thirtyLinks, domain.ResolvedLink{
-		Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Dangling"}},
-		To:   "",
-	})
-	for i := 1; i < 30; i++ {
-		p := "Note" + string(rune('A'+i)) + ".md"
-		thirtyLinks = append(thirtyLinks, domain.ResolvedLink{
-			Link:    domain.Link{Target: domain.Address{Scheme: domain.SchemeNote, Value: p}},
-			To:      p,
-			ToVault: v.ID,
-		})
-		notesMap[p] = domain.NoteRef{Path: p, Title: p}
-	}
-	readerOk := stubVaultReader{
-		statFn: func(_ context.Context, path string) (domain.FileStat, error) {
-			return domain.FileStat{Path: path, Kind: domain.KindNote, Size: 5}, nil
-		},
-		readFn: func(_ context.Context, _ string) ([]byte, error) {
-			return []byte("prose"), nil
-		},
-	}
-	snThirty := NewShowNeighborhood(
-		note.NewShowLinks(stubLinkQueries{links: map[string][]domain.ResolvedLink{"decks/A.md": thirtyLinks}}),
-		stubNoteQueries{notes: notesMap, types: typesMap},
-		note.NewRead(stubVaultReaders{reader: readerOk}),
-	)
-	gotThirty, err := snThirty.Execute(ctx, v, "decks/A.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(gotThirty.Notes) != 30 || gotThirty.Unread != 0 {
-		t.Fatalf("expected 30 notes and Unread=0, got len=%d Unread=%d", len(gotThirty.Notes), gotThirty.Unread)
-	}
-	if gotThirty.Notes[1].Body != "prose" {
-		t.Fatalf("expected second neighbor body read after dangling first neighbor, got %q", gotThirty.Notes[1].Body)
-	}
-
-	// Test getNeighbors duplicate backlinks & seen link, scheme Note vs Name vs http, and getNeighborTitle missing note.
-	neighbors := getNeighbors(v, "decks/A.md", note.Links{
-		Links: []domain.ResolvedLink{
-			{Link: domain.Link{Target: domain.Address{Scheme: "https", Value: "example.com"}}},
-			{Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeNote, Value: "N1.md"}}, To: "N1.md", ToVault: v.ID},
-			{Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeNote, Value: "N1.md"}}, To: "N1.md", ToVault: v.ID},
-		},
-		Backlinks: []domain.ResolvedLink{
-			{From: "N1.md"},
-			{Link: domain.Link{Label: "first"}, From: "N2.md"},
-			{Link: domain.Link{Label: "duplicate"}, From: "N2.md"},
-			{Link: domain.Link{Label: "after"}, From: "N3.md"},
-		},
-	})
-	if len(neighbors) != 3 || neighbors[0].Path != "N1.md" || neighbors[1].Path != "N2.md" || neighbors[1].Label != "first" || neighbors[2].Path != "N3.md" {
-		t.Fatalf("unexpected getNeighbors deduplication: %+v", neighbors)
-	}
-	if _, ok := getNeighborTitle(Neighbor{Path: "Gone.md"}, map[string]domain.NoteRef{}, map[string]domain.NoteType{}); ok {
-		t.Fatal("expected missing note in index to not be included")
-	}
 
 	// Test AssignCardIDs: WithIndex, nil notes, GetPathsOfType error, deck read error followed by valid deck.
 	indexed := false
@@ -1245,259 +1140,6 @@ func TestNeighborhoodInternalsAndErrors(t *testing.T) {
 	goodRaw := readVaultFile(t, env, "decks/Good.md")
 	if !strings.Contains(goodRaw, "^") {
 		t.Fatalf("expected decks/Good.md to receive card ID after skipping unreadable/non-deck notes, got %q", goodRaw)
-	}
-}
-
-func TestPresetsInternalsAndErrors(t *testing.T) {
-	ctx := t.Context()
-	v := domain.Vault{ID: "v1"}
-	now := time.Date(2026, 6, 10, 12, 0, 0, 0, time.UTC)
-	day := review.Day{Starts: 4 * time.Hour, In: time.UTC}
-	errBoom := errors.New("boom")
-
-	p0 := NewPresets(nil, nil, nil, nil, nil, clock.NewFake(now))
-	if p0.day.Starts != 0 || p0.day.In != nil {
-		t.Fatalf("expected zero day on NewPresets, got %+v", p0.day)
-	}
-	pDay := p0.WithDay(day)
-	if pDay.day.Starts != 4*time.Hour {
-		t.Fatalf("expected WithDay to set day, got %+v", pDay.day)
-	}
-
-	def := CreateDefaultPreset()
-	if def.FileStat.Size != 0 {
-		t.Fatalf("expected zero FileStat.Size on CreateDefaultPreset, got %d", def.FileStat.Size)
-	}
-
-	// Test getStopReasons returning both overall and today's stop reason.
-	pausedPreset := review.Defaults()
-	pausedPreset.Goal = review.GoalDate
-	pausedPreset.By = time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
-	overallStop, todayStop := pDay.getStopReasons(pausedPreset)
-	if overallStop != review.StoppedPastDay || todayStop != review.StoppedPastDay {
-		t.Fatalf("expected StoppedPastDay for both stop reasons, got %q, %q", overallStop, todayStop)
-	}
-
-	// Test List: GetPathsOfType error, empty paths, GetNotes error.
-	if _, err := NewPresets(nil, nil, nil, stubNoteQueries{
-		pathsErr: map[domain.NoteType]error{format.TypePreset: errBoom},
-	}, nil, nil).List(ctx, v); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetPathsOfType error in List, got %v", err)
-	}
-	emptyList, err := NewPresets(nil, nil, nil, stubNoteQueries{
-		paths: map[domain.NoteType][]string{format.TypePreset: nil},
-	}, nil, nil).List(ctx, v)
-	if err != nil || emptyList != nil {
-		t.Fatalf("expected nil, nil for empty preset paths, got %v, %v", emptyList, err)
-	}
-	if _, err := NewPresets(nil, nil, nil, stubNoteQueries{
-		paths:    map[domain.NoteType][]string{format.TypePreset: {"P.md"}},
-		notesErr: errBoom,
-	}, nil, nil).List(ctx, v); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetNotes error in List, got %v", err)
-	}
-
-	// Test GetForDeck error branches: links error, roleless problems error, readFirstLink error, multiple links delta.
-	if _, err := NewPresets(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected links error in GetForDeck, got %v", err)
-	}
-	pProbErr := NewPresets(nil, nil, stubLinkQueries{}, nil, nil, clock.NewFake(now))
-	pProbErr.Problems = stubProblemQueries{err: errBoom}
-	if _, err := pProbErr.GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected problems error in GetForDeck, got %v", err)
-	}
-	twoDangling := stubLinkQueries{
-		links: map[string][]domain.ResolvedLink{
-			"decks/A.md": {
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Missing1"}}, To: ""},
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Missing2"}}, To: ""},
-			},
-		},
-	}
-	gotDangling, err := NewPresets(nil, nil, twoDangling, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md")
-	if err != nil || len(gotDangling.Problems) != 2 || !strings.Contains(gotDangling.Problems[1], "scheduled by Missing1") {
-		t.Fatalf("expected two problems naming Missing1 as the scheduling preset, got %+v, %v", gotDangling.Problems, err)
-	}
-
-	twoResolved := stubLinkQueries{
-		links: map[string][]domain.ResolvedLink{
-			"decks/A.md": {
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "P"}}, To: "presets/P.md"},
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Q"}}, To: "presets/Q.md"},
-			},
-		},
-	}
-	if _, err := NewPresets(stubVaultReaders{openErr: errBoom}, nil, twoResolved, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected read error in readFirstLink, got %v", err)
-	}
-	readerPreset := stubVaultReader{
-		statFn: func(_ context.Context, path string) (domain.FileStat, error) {
-			return domain.FileStat{Path: path, Kind: domain.KindNote, Size: 20}, nil
-		},
-		readFn: func(_ context.Context, _ string) ([]byte, error) {
-			return []byte("---\ntype: preset\n---\n"), nil
-		},
-	}
-	gotTwoResolved, err := NewPresets(stubVaultReaders{reader: readerPreset}, nil, twoResolved, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md")
-	if err != nil || len(gotTwoResolved.Problems) != 1 || !strings.Contains(gotTwoResolved.Problems[0], "scheduled by presets/P.md") {
-		t.Fatalf("expected delta presets/P.md in multiple-presets problem, got %+v, %v", gotTwoResolved.Problems, err)
-	}
-
-	// Test Read / readPreset / parsePresetBytes branches:
-	// missing note (Size==0), Open error, Kind != KindNote, Size == MaxBytes vs MaxBytes+1,
-	// StatFile ErrNotExist but Read succeeds (!target && err == nil -> NotANote),
-	// invalid UTF-8 -> NotText, unreadable frontmatter -> Unreadable.
-	if _, err := NewPresets(stubVaultReaders{openErr: errBoom}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected Open error in Read, got %v", err)
-	}
-	readerMissing := stubVaultReader{
-		statFn: func(_ context.Context, _ string) (domain.FileStat, error) { return domain.FileStat{}, fs.ErrNotExist },
-		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, fs.ErrNotExist },
-	}
-	gotMissing, err := NewPresets(stubVaultReaders{reader: readerMissing}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
-	if err != nil || gotMissing.Outcome != note.Missing || gotMissing.FileStat.Size != 0 {
-		t.Fatalf("expected Missing with Size=0, got %+v, %v", gotMissing, err)
-	}
-	readerKindNotNote := stubVaultReader{
-		statFn: func(_ context.Context, path string) (domain.FileStat, error) {
-			return domain.FileStat{Path: path, Kind: "binary", Size: 10}, nil
-		},
-		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, nil },
-	}
-	gotNotNote, err := NewPresets(stubVaultReaders{reader: readerKindNotNote}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.bin")
-	if err != nil || gotNotNote.Outcome != note.NotANote || gotNotNote.FileStat.Path != "P.bin" {
-		t.Fatalf("expected NotANote with FileStat set, got %+v, %v", gotNotNote, err)
-	}
-	readerTooLarge := stubVaultReader{
-		statFn: func(_ context.Context, path string) (domain.FileStat, error) {
-			return domain.FileStat{Path: path, Kind: domain.KindNote, Size: note.MaxBytes + 1}, nil
-		},
-		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, nil },
-	}
-	gotTooLarge, err := NewPresets(stubVaultReaders{reader: readerTooLarge}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
-	if err != nil || gotTooLarge.Outcome != note.TooLarge {
-		t.Fatalf("expected TooLarge for MaxBytes+1, got %+v, %v", gotTooLarge, err)
-	}
-	readerExactMax := stubVaultReader{
-		statFn: func(_ context.Context, path string) (domain.FileStat, error) {
-			return domain.FileStat{Path: path, Kind: domain.KindNote, Size: note.MaxBytes}, nil
-		},
-		readFn: func(_ context.Context, _ string) ([]byte, error) { return []byte("---\ntype: preset\n---\n"), nil },
-	}
-	gotExactMax, err := NewPresets(stubVaultReaders{reader: readerExactMax}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
-	if err != nil || gotExactMax.Outcome != note.Ok {
-		t.Fatalf("expected Ok for exact MaxBytes, got %+v, %v", gotExactMax, err)
-	}
-	readerGhost := stubVaultReader{
-		statFn: func(_ context.Context, _ string) (domain.FileStat, error) { return domain.FileStat{}, fs.ErrNotExist },
-		readFn: func(_ context.Context, _ string) ([]byte, error) { return []byte("---\ntype: preset\n---\n"), nil },
-	}
-	gotGhost, err := NewPresets(stubVaultReaders{reader: readerGhost}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
-	if err != nil || gotGhost.Outcome != note.NotANote {
-		t.Fatalf("expected NotANote when StatFile says not exist but Read succeeds, got %+v, %v", gotGhost, err)
-	}
-	gotNotText, err := parsePresetBytes(PresetContents{Path: "P.md"}, domain.FileStat{}, []byte{0xff, 0xfe})
-	if err != nil || gotNotText.Outcome != note.NotText {
-		t.Fatalf("expected NotText for invalid UTF-8, got %+v, %v", gotNotText, err)
-	}
-	gotUnreadable, err := parsePresetBytes(PresetContents{Path: "P.md"}, domain.FileStat{}, []byte("---\n: : bad yaml\n---\n"))
-	if err != nil || gotUnreadable.Outcome != note.Unreadable {
-		t.Fatalf("expected Unreadable for broken frontmatter, got %+v, %v", gotUnreadable, err)
-	}
-
-	// Test getPresetAddress branches: notes == nil, Read error, pos.Outcome != note.Ok.
-	if _, err := (Presets{}).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, ErrNoPresets) {
-		t.Fatalf("expected ErrNoPresets when notes == nil, got %v", err)
-	}
-	if _, err := NewPresets(stubVaultReaders{openErr: errBoom}, nil, nil, stubNoteQueries{}, nil, clock.NewFake(now)).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, errBoom) {
-		t.Fatalf("expected Read error in getPresetAddress, got %v", err)
-	}
-	if _, err := NewPresets(stubVaultReaders{reader: readerTooLarge}, nil, nil, stubNoteQueries{}, nil, clock.NewFake(now)).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, ErrNotAPreset) {
-		t.Fatalf("expected ErrNotAPreset when Outcome is TooLarge, got %v", err)
-	}
-
-	// Test Save / save error branches: Lock error, release error, readers.Open error, StatFile error,
-	// Size == MaxBytes vs MaxBytes+1, expectedFp.IsZero(), Read error, writers.Open error.
-	validPreset := review.Defaults()
-	if _, err := NewPresets(nil, stubVaultWriters{lockErr: errBoom}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
-		t.Fatalf("expected lock error in Save, got %v", err)
-	}
-	if _, err := NewPresets(stubVaultReaders{openErr: errBoom}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
-		t.Fatalf("expected readers.Open error in Save, got %v", err)
-	}
-	if _, err := NewPresets(stubVaultReaders{reader: readerMissing}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrNoNote) {
-		t.Fatalf("expected ErrNoNote from StatFile in Save, got %v", err)
-	}
-	if _, err := NewPresets(stubVaultReaders{reader: readerTooLarge}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrTooLarge) {
-		t.Fatalf("expected ErrTooLarge in Save, got %v", err)
-	}
-	readerReadErr := stubVaultReader{
-		statFn: func(_ context.Context, path string) (domain.FileStat, error) {
-			return domain.FileStat{Path: path, Kind: domain.KindNote, Size: note.MaxBytes}, nil
-		},
-		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, fs.ErrNotExist },
-	}
-	if _, err := NewPresets(stubVaultReaders{reader: readerReadErr}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrNoNote) {
-		t.Fatalf("expected ErrNoNote from Read in Save, got %v", err)
-	}
-	if _, err := NewPresets(stubVaultReaders{reader: readerExactMax}, stubVaultWriters{openErr: errBoom}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
-		t.Fatalf("expected writers.Open error in Save, got %v", err)
-	}
-	var gotExpectedFp domain.FileStat
-	writerCheckFp := stubVaultWriter{
-		writeFn: func(_ context.Context, path string, data []byte, expected domain.FileStat) (domain.FileStat, error) {
-			gotExpectedFp = expected
-			return domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(data))}, nil
-		},
-	}
-	if _, err := NewPresets(
-		stubVaultReaders{reader: readerExactMax},
-		stubVaultWriters{writer: writerCheckFp, releaseErr: errBoom},
-		nil, nil,
-		func(_ context.Context, _ domain.Vault, _ []string) error { return nil },
-		nil,
-	).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
-		t.Fatalf("expected release error joined in Save, got %v", err)
-	}
-	if gotExpectedFp.Size != note.MaxBytes {
-		t.Fatalf("expected zero stat to default to on-disk FileStat (Size=%d), got %+v", note.MaxBytes, gotExpectedFp)
-	}
-
-	// Test writeSettings / writeByDate clearing by_date when p.By.IsZero(), and maps.Equal(p.Load, was.Load).
-	doc, err := markdown.Open([]byte("---\ntype: preset\ngoal: by_date\nby_date: 2026-07-01\n---\n"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	wasWithDate := review.Defaults()
-	wasWithDate.Goal = review.GoalDate
-	wasWithDate.By = time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC)
-	nowNoDate := review.Defaults()
-	if err := writeSettings(doc, nowNoDate, wasWithDate); err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(doc.Bytes()), "2026-07-01") {
-		t.Fatalf("expected by_date cleared when p.By is zero, got %q", string(doc.Bytes()))
-	}
-
-	// Test getDayEntries with non-day keys, unparsed day keys, duplicate day spellings ("Mon" vs "mon"), and full day names that are no longer day names.
-	entries := []string{"not-a-day", "tuesday", "tue", "Mon", "mon", "wed", "wednesday"}
-	readLoad := map[time.Weekday]int{time.Monday: 100, time.Wednesday: 50}
-	dayEntries := getDayEntries(entries, readLoad)
-	if dayEntries[time.Monday] != "mon" || dayEntries[time.Wednesday] != "wed" || len(dayEntries) != 2 {
-		t.Fatalf("unexpected getDayEntries: %+v", dayEntries)
-	}
-
-	// Test checkBounds / checkLoad with invalid Counts and out-of-range time.Weekday keys (< Sunday, > Saturday).
-	badCounts := review.Defaults()
-	badCounts.Counts = "invalid"
-	if err := checkBounds(badCounts); !errors.Is(err, ErrOutOfBounds) {
-		t.Fatalf("expected ErrOutOfBounds for invalid Counts, got %v", err)
-	}
-	if err := checkLoad(map[time.Weekday]int{time.Weekday(-1): 100}); !errors.Is(err, ErrOutOfBounds) {
-		t.Fatalf("expected ErrOutOfBounds for weekday < Sunday, got %v", err)
-	}
-	if err := checkLoad(map[time.Weekday]int{time.Weekday(7): 100}); !errors.Is(err, ErrOutOfBounds) {
-		t.Fatalf("expected ErrOutOfBounds for weekday > Saturday, got %v", err)
 	}
 }
 
@@ -1794,7 +1436,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	// getMark newline separator, Execute / GetFromLog errors, readRemembered branches, remember sorting.
 	loc := time.FixedZone("IST", 19800)
 	dayLoc := review.Day{Starts: 2 * time.Hour, In: loc}
-	sPlain := NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), dayLoc, ListReviewCards{}, Presets{})
+	sPlain := NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), dayLoc, ListReviewCards{}, presets.Presets{})
 	if !strings.HasSuffix(sPlain.getDayStartMark(), "\tIST") {
 		t.Fatalf("expected timezone name in getDayStartMark, got %q", sPlain.getDayStartMark())
 	}
@@ -1809,7 +1451,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	sNotCarried := NewSchedules(
 		stubLogStores{}, review.NewFSRS(), dayLoc,
 		NewListReviewCards(stubVaultReaders{}, stubNoteQueries{has: false}, nil),
-		Presets{links: stubLinkQueries{}},
+		presets.New(nil, nil, stubLinkQueries{}, nil, nil, nil),
 	)
 	if got, err := sNotCarried.getAssignment(ctx, v); err != nil || got.mark == "" {
 		t.Fatalf("expected plain assignment on ErrNotCarried, got %+v, %v", got, err)
@@ -1817,7 +1459,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	sHasErr := NewSchedules(
 		stubLogStores{store: stubLogStore{}}, review.NewFSRS(), dayLoc,
 		NewListReviewCards(stubVaultReaders{}, stubNoteQueries{hasErr: errBoom}, nil),
-		Presets{links: stubLinkQueries{}},
+		presets.New(nil, nil, stubLinkQueries{}, nil, nil, nil),
 	)
 	if _, err := sHasErr.getAssignment(ctx, v); !errors.Is(err, errBoom) {
 		t.Fatalf("expected error from getAssignment when reviewCards.Execute fails, got %v", err)
@@ -1833,7 +1475,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	}
 
 	secondLogFail := &countingLogStores{failOnCall: 2, err: errBoom, store: stubLogStore{}}
-	sReadFail := NewSchedules(secondLogFail, review.NewFSRS(), dayLoc, ListReviewCards{}, Presets{})
+	sReadFail := NewSchedules(secondLogFail, review.NewFSRS(), dayLoc, ListReviewCards{}, presets.Presets{})
 	if _, err := sReadFail.Execute(ctx, v); !errors.Is(err, errBoom) {
 		t.Fatalf("expected log.Read error in Schedules.Execute, got %v", err)
 	}
@@ -1841,13 +1483,13 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	if got, err := sPlain.getAssignmentFrom(ctx, v, nil, nil); err != nil || got.mark == "" {
 		t.Fatalf("expected plain assignment when reads is nil, got %+v, %v", got, err)
 	}
-	if got, err := sPlain.getAssignmentFrom(ctx, v, Presets{}.OpenReads(), nil); err != nil || got.mark == "" {
+	if got, err := sPlain.getAssignmentFrom(ctx, v, presets.Presets{}.OpenReads(), nil); err != nil || got.mark == "" {
 		t.Fatalf("expected plain assignment when reads.links is nil, got %+v, %v", got, err)
 	}
 	c1 := ReviewCard{ID: review.CardID{Card: "c1", Template: "T"}, Deck: "decks/A.md"}
 	c2 := ReviewCard{ID: review.CardID{Card: "c2", Template: "T"}, Deck: "decks/A.md"}
 	if _, err := sPlain.getAssignmentFrom(
-		ctx, v, Presets{links: stubLinkQueries{linksErr: errBoom}}.OpenReads(), []ReviewCard{c1},
+		ctx, v, presets.New(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, nil).OpenReads(), []ReviewCard{c1},
 	); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetForDeck error in getAssignmentFrom, got %v", err)
 	}
@@ -1861,11 +1503,11 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 			return []byte("---\ntype: preset\n---\n"), nil
 		},
 	}
-	readsOnce := NewPresets(
+	readsOnce := presets.New(
 		stubVaultReaders{reader: readerCount}, nil,
 		stubLinkQueries{
 			links: map[string][]domain.ResolvedLink{
-				"decks/A.md": {{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeNote, Value: "P.md"}}, To: "P.md"}},
+				"decks/A.md": {{Link: domain.Link{Type: presets.LinkType, Target: domain.Address{Scheme: domain.SchemeNote, Value: "P.md"}}, To: "P.md"}},
 			},
 		},
 		nil, nil, clock.NewFake(now),
@@ -1934,15 +1576,15 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	}
 
 	acFail := NewAssignCardIDs(nil, nil, stubNoteQueries{pathsErr: map[domain.NoteType]error{format.TypeDeck: errBoom}}, nil, nil, nil)
-	if _, err := NewSession(acFail, ListReviewCards{}, Schedules{}, Presets{}, dayLoc, clock.NewFake(now)).Execute(ctx, v, Scope{}); !errors.Is(err, errBoom) {
+	if _, err := NewSession(acFail, ListReviewCards{}, Schedules{}, presets.Presets{}, dayLoc, clock.NewFake(now)).Execute(ctx, v, Scope{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected cardIDs error in Session.Execute, got %v", err)
 	}
 	rcFail := NewListReviewCards(nil, stubNoteQueries{hasErr: errBoom}, nil)
-	if _, err := NewSession(AssignCardIDs{}, rcFail, Schedules{}, Presets{}, dayLoc, clock.NewFake(now)).Execute(ctx, v, Scope{}); !errors.Is(err, errBoom) {
+	if _, err := NewSession(AssignCardIDs{}, rcFail, Schedules{}, presets.Presets{}, dayLoc, clock.NewFake(now)).Execute(ctx, v, Scope{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected reviewCards error in Session.Execute, got %v", err)
 	}
 	rcEmptyOk := NewListReviewCards(stubVaultReaders{}, stubNoteQueries{has: true}, nil)
-	if _, err := NewSession(AssignCardIDs{}, rcEmptyOk, sPlain, Presets{}, dayLoc, clock.NewFake(now)).Execute(ctx, v, Scope{}); !errors.Is(err, errBoom) {
+	if _, err := NewSession(AssignCardIDs{}, rcEmptyOk, sPlain, presets.Presets{}, dayLoc, clock.NewFake(now)).Execute(ctx, v, Scope{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected log.Read error in Session.Execute, got %v", err)
 	}
 
@@ -1953,7 +1595,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 			"\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Front\n\nhi\n",
 	})
 	rcEnv := NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	presetsFail := NewPresets(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
+	presetsFail := presets.New(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
 	schedEnvFail := NewSchedules(env.Ports.Logs, review.NewFSRS(), dayLoc, rcEnv, presetsFail)
 	if _, err := NewSession(AssignCardIDs{}, rcEnv, schedEnvFail, presetsFail, dayLoc, clock.NewFake(now)).Execute(ctx, env.Vault, Scope{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected assignment error in Session.Execute, got %v", err)
@@ -1978,7 +1620,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 		t.Fatal(err)
 	}
 	rcTwo := NewListReviewCards(envTwo.Ports.Readers, envTwo.Queries, envTwo.Queries)
-	presetsTwo := NewPresets(envTwo.Ports.Readers, envTwo.Ports.Writers, envTwo.Queries, envTwo.Queries, scanOf(envTwo), clock.NewFake(now)).WithDay(dayLoc)
+	presetsTwo := presets.New(envTwo.Ports.Readers, envTwo.Ports.Writers, envTwo.Queries, envTwo.Queries, scanOf(envTwo), clock.NewFake(now)).WithDay(dayLoc)
 	schedTwo := NewSchedules(envTwo.Ports.Logs, review.NewFSRS(), dayLoc, rcTwo, presetsTwo)
 	sessTwo := NewSession(AssignCardIDs{}, rcTwo, schedTwo, presetsTwo, dayLoc, clock.NewFake(now))
 	resTwo, err := sessTwo.Execute(ctx, envTwo.Vault, Scope{Preset: "P.md", IsNamed: true})

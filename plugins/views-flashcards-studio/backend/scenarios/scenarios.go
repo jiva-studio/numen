@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -48,7 +49,7 @@ type Scenarios struct {
 	DeckEdit     deckedit.Scenarios
 	Flash        flashcards.Scenarios
 	Day          review.Day
-	Neighborhood flashcards.ShowNeighborhood
+	Neighborhood neighborhood.Show
 }
 
 // New builds the scenarios. A count of cores that is not positive is the cores the process may use.
@@ -87,7 +88,7 @@ func New(in Inputs) *Scenarios {
 	})
 	return &Scenarios{
 		Cards: set, DeckEdit: deckedit.NewScenarios(read, write), Flash: running, Day: running.Day,
-		Neighborhood: flashcards.NewShowNeighborhood(
+		Neighborhood: neighborhood.NewShow(
 			note.NewShowLinks(in.Links),
 			struct {
 				ports.NoteRefQueries

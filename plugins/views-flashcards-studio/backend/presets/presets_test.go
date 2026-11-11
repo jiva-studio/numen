@@ -1,8 +1,7 @@
-package flashcards_test
+package presets_test
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"reflect"
 	"slices"
 	"strings"
@@ -11,10 +10,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
@@ -98,75 +98,23 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	}
 }
 
-// A deleted preset note leaves the deck on the defaults, and the unresolved
-// address is reported as a problem on the deck.
-func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
-	t.Parallel()
-	s := openVault(t, map[string]string{
-		"Term.md":        term,
-		"Sanskrit.md":    preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
-		"decks/Roots.md": deckOf("Sanskrit", 20, 0),
-	})
-	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 2 {
-		t.Fatalf("under the preset the day was asked %d new cards, want 2", got)
-	}
-
-	remove(t, s, "Sanskrit.md")
-
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if target.Path != "" {
-		t.Errorf("read from %q", target.Path)
-	}
-	if !reflect.DeepEqual(target.Settings, review.Defaults()) {
-		t.Errorf("preset = %+v", target.Settings)
-	}
-	if len(target.Problems) != 1 || !strings.Contains(target.Problems[0], "Sanskrit") {
-		t.Errorf("problems = %v, want the one naming the note that is gone", target.Problems)
-	}
-	// The defaults are steered by their minutes, and twenty of them hold every
-	// card the deck has left.
-	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 20 {
-		t.Errorf("on the defaults the day was asked %d new cards, want 20", got)
-	}
-}
-
-// preset it is scheduled by.
-func TestSession_DeckWithTwoPresetsUsesFirstBudget(t *testing.T) {
-	t.Parallel()
-	s := openVault(t, map[string]string{
-		"Term.md":        term,
-		"Few.md":         preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
-		"Many.md":        preset("new_a_day: 9\nreviews_a_day: 0\nminutes_a_day: 0\n"),
-		"decks/Roots.md": deckNaming([]string{"Few", "Many"}, 20, 0),
-	})
-
-	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 2 {
-		t.Errorf("the day was asked %d new cards, want the two the first preset keeps", got)
-	}
-}
-
-// An index update that failed is not a write that failed. The file stat of the
-// file the write produced is returned with it, and the caller's next save lands
 // on that file.
 func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointing())
-	presets := flashcards.NewPresets(
+	busyPresets := presets.New(
 		s.env.Ports.Readers, s.env.Ports.Writers,
 		s.links, s.notes, busy, vaulttest.NewClock(),
 	)
 
-	target, err := presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	target, err := busyPresets.Read(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 	settings := target.Settings
 	settings.MinutesADay = 35
 
-	pos, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, target.FileStat)
+	pos, err := busyPresets.Save(t.Context(), s.vault, "Sanskrit.md", settings, target.FileStat)
 	if !errors.Is(err, note.ErrIndexOutdated) {
 		t.Fatalf("an index update that failed came back as %v", err)
 	}
@@ -175,7 +123,7 @@ func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	}
 
 	settings.MinutesADay = 40
-	if _, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, pos); err != nil &&
+	if _, err := busyPresets.Save(t.Context(), s.vault, "Sanskrit.md", settings, pos); err != nil &&
 		!errors.Is(err, note.ErrIndexOutdated) {
 		t.Fatalf("the next save failed: %v", err)
 	}
@@ -410,7 +358,7 @@ func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 	p := minutes()
 	p.Retention = 1.5
 	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{})
-	if !errors.Is(err, flashcards.ErrOutOfBounds) {
+	if !errors.Is(err, presets.ErrOutOfBounds) {
 		t.Fatalf("saving a retention of 1.5 said %v", err)
 	}
 	if target := read(t, s.vault, "Sanskrit.md"); target != was {
@@ -425,7 +373,7 @@ func TestANoteThatIsNotAPresetIsNotSaved(t *testing.T) {
 	was := read(t, s.vault, "Grammar.md")
 
 	_, err := s.presets.Save(t.Context(), s.vault, "Grammar.md", minutes(), domain.FileStat{})
-	if !errors.Is(err, flashcards.ErrNotAPreset) {
+	if !errors.Is(err, presets.ErrNotAPreset) {
 		t.Fatalf("saving into an ordinary note said %v", err)
 	}
 	if target := read(t, s.vault, "Grammar.md"); target != was {
@@ -848,7 +796,7 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 			was := read(t, s.vault, "Sanskrit.md")
 
 			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.FileStat{})
-			if !errors.Is(err, flashcards.ErrOutOfBounds) {
+			if !errors.Is(err, presets.ErrOutOfBounds) {
 				t.Fatalf("saving %s said %v", one.what, err)
 			}
 			if !strings.Contains(err.Error(), one.reason) {
@@ -916,11 +864,11 @@ func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosing())
 
-	blind := flashcards.NewPresets(
+	blind := presets.New(
 		s.env.Ports.Readers, s.env.Ports.Writers,
 		s.links, nil, s.scan, vaulttest.NewClock(),
 	)
-	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, flashcards.ErrNoPresets) {
+	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, presets.ErrNoPresets) {
 		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)
 	}
 }
@@ -1073,7 +1021,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	was := read(t, s.vault, "decks/Terms.md")
 
 	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.FileStat{})
-	if !errors.Is(err, flashcards.ErrNotAPreset) {
+	if !errors.Is(err, presets.ErrNotAPreset) {
 		t.Fatalf("err = %v", err)
 	}
 	if got := read(t, s.vault, "decks/Terms.md"); got != was {
@@ -1304,7 +1252,7 @@ func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	}
 	var out []string
 	for _, one := range found {
-		if one.Type == flashcards.LinkType {
+		if one.Type == presets.LinkType {
 			out = append(out, one.From)
 		}
 	}

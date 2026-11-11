@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/reloads"
@@ -27,7 +28,7 @@ type reviewHandler struct {
 	runs         *sessions.Registry
 	flash        func() *flashcards.Scenarios
 	day          func() *review.Day
-	neighborhood func() *flashcards.ShowNeighborhood
+	neighborhood func() *neighborhood.Show
 }
 
 func (b *Backend) newReviewHandler() *reviewHandler {
@@ -39,7 +40,7 @@ func (b *Backend) newReviewHandler() *reviewHandler {
 		runs:         b.runs,
 		flash:        func() *flashcards.Scenarios { return &b.scenarios().Flash },
 		day:          func() *review.Day { return &b.scenarios().Day },
-		neighborhood: func() *flashcards.ShowNeighborhood { return &b.scenarios().Neighborhood },
+		neighborhood: func() *neighborhood.Show { return &b.scenarios().Neighborhood },
 	}
 }
 

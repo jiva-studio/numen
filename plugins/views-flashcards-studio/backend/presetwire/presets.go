@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -38,7 +39,7 @@ func getBounds(b review.Bounds) *api.Bounds {
 }
 
 // ConvertPresetToWire is one preset as the schema carries it.
-func ConvertPresetToWire(p flashcards.PresetContents, title string) *api.Preset {
+func ConvertPresetToWire(p presets.Contents, title string) *api.Preset {
 	return &api.Preset{
 		Path:     p.Path,
 		Title:    title,
