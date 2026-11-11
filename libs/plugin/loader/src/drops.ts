@@ -17,12 +17,12 @@ export function createDropRegistry(): DropRegistry {
 
   const registerDropHandler = (pluginId: string, registration: DropRegistration): Disposable => {
     for (const type of registration.types) {
-      const taken = declared.find(
+      const holder = declared.find(
         (one) => one.pluginId !== pluginId && one.registration.types.includes(type),
       )
-      if (taken) {
+      if (holder) {
         throw new Error(
-          `Plugin "${pluginId}" registers a drop handler for "${type}", which plugin "${taken.pluginId}" already takes`,
+          `Plugin "${pluginId}" registers a drop handler for "${type}", which plugin "${holder.pluginId}" already takes`,
         )
       }
     }

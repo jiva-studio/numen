@@ -43,7 +43,7 @@ func TestReadManifest_DropHandlersNeedAFrontend(t *testing.T) {
 	}
 }
 
-func TestReadManifest_DropHandlersAreKept(t *testing.T) {
+func TestReadManifest_KeepsTheDropHandlers(t *testing.T) {
 	read, err := manifestjson.Read(strings.NewReader(dropHandlerHead + `[{"types":["text/uri-list","text/html"]}]}}`))
 
 	if err != nil {

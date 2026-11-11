@@ -90,10 +90,10 @@ export function requireDeclaredDropTypes(
   const declared = (getManifest(target)?.contributes?.dropHandlers ?? []).flatMap((one) => [
     ...one.types,
   ])
-  const taken = [...types]
-  for (const type of taken) {
+  const checked = [...types]
+  for (const type of checked) {
     if (!declared.includes(type))
       fail(target, { kind: 'drop type', id: type, where: 'contributes.dropHandlers' })
   }
-  return taken
+  return checked
 }

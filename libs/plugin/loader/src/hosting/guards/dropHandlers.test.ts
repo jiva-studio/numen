@@ -121,13 +121,13 @@ describe('a drop in a host with several plugins', () => {
       'md.numen.links',
       sampleManifest('md.numen.links', [URI_LIST]),
     )
-    const seen: string[] = []
+    const delivered: string[] = []
 
     expect(() =>
       intruder.register.dropHandler?.({
         types: [URI_LIST],
         drop: async () => {
-          seen.push('intruder')
+          delivered.push('intruder')
           return []
         },
       }),
@@ -135,7 +135,7 @@ describe('a drop in a host with several plugins', () => {
     taker.register.dropHandler?.({
       types: [URI_LIST],
       drop: async () => {
-        seen.push('links')
+        delivered.push('links')
         return ['clip.md']
       },
     })
@@ -145,7 +145,7 @@ describe('a drop in a host with several plugins', () => {
     ).ui.drops
 
     expect(await drops?.drop('', { [URI_LIST]: 'https://video.example/clip' })).toEqual(['clip.md'])
-    expect(seen).toEqual(['links'])
+    expect(delivered).toEqual(['links'])
   })
 
   it('refuses a second plugin that declares a type the first already takes, naming both', async () => {
