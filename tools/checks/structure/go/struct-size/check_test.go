@@ -187,9 +187,9 @@ func (Hider) Serve() {}
 	}
 	found, _ := getOversizedTypes(load.LoadFixture(t, dir), getLimit)
 	want := []string{
-		"hidden.go:11 hidden.Hider has 30 fields, more than 12",
-		"wiring.go:14 container.EmbeddingHolder has 15 fields, more than 12",
-		"wiring.go:20 container.Builder has 15 fields, more than 12",
+		"hidden.go:7 hidden.Hider has 30 fields, more than 12",
+		"wiring.go:13 container.EmbeddingHolder has 15 fields, more than 12",
+		"wiring.go:19 container.Builder has 15 fields, more than 12",
 	}
 	if got := load.FormatFindings(found); !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)
