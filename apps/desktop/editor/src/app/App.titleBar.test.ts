@@ -52,7 +52,7 @@ const hosts = { current: undefined as PluginHost | undefined }
 
 const mountWindow = async () => {
   const window = await mountPlainWindow()
-  hosts.current = getWindowParts(window).plugins.host.pluginHost
+  hosts.current = getWindowParts(window).pluginHost
   return window
 }
 

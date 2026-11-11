@@ -45,7 +45,8 @@ const setup = (keybindings: readonly DeclaredKeybinding[], takesKey = false) => 
   const onKeyDown = createKeyHandler({
     windowTabs: { panes: { onKeyPress: () => takesKey } },
     runApp: createAppKeyRunner({ ...calls, getTarget: () => TARGET }),
-    handleShortcut: (event, runApp) =>
+    getTarget: () => TARGET,
+    handleShortcut: (event, _getTarget, runApp) =>
       host.commands.handleShortcut(event, async () => ({}) as never, {
         target: {
           path: TARGET.path,

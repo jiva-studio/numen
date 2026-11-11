@@ -5,7 +5,7 @@
 import { defineComponent, h, reactive } from 'vue'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHost } from '@numen/plugin-loader'
-import type { createWindow } from '@/app/window/createWindow'
+import type { WindowParts } from '@/app/window/createWindow'
 import { mockVaultState } from '../answers'
 
 const NOTE_TAB = 'sample'
@@ -42,14 +42,15 @@ const noteTabKind: TabKindRegistration = {
   getOpenTab: (state) => ({ path: getPath(state) }),
 }
 
-type WindowParts = {
-  readonly plugins: { readonly host: ReturnType<typeof createWindow>['base']['plugins']['host'] }
-  readonly tabs: ReturnType<typeof createWindow>['base']['tabs']
+type NoteTabsWindow = {
+  readonly pluginHost: PluginHost
+  readonly tabs: Pick<WindowParts['tabs'], 'windowTabs'>
 }
 
 /** Makes the window open the notes of the vault in tabs of the sample kind. */
-export const registerNoteTabs = ({ plugins }: Pick<WindowParts, 'plugins'>): void => {
-  const host = plugins.host.pluginHost
+export const registerNoteTabs = ({
+  pluginHost: host,
+}: Pick<NoteTabsWindow, 'pluginHost'>): void => {
   mockVaultState.tabKind = NOTE_TAB
   host.lifecycle
     .createContext(
@@ -64,5 +65,7 @@ export const registerNoteTabs = ({ plugins }: Pick<WindowParts, 'plugins'>): voi
 }
 
 /** Opens a note in a tab of the sample kind and returns the id of the tab. */
-export const openNoteTab = ({ tabs }: Pick<WindowParts, 'tabs'>, path: string): Promise<string> =>
-  tabs.windowTabs.tabs.openTabOfKind(NOTE_TAB, path)
+export const openNoteTab = (
+  { tabs }: Pick<NoteTabsWindow, 'tabs'>,
+  path: string,
+): Promise<string> => tabs.windowTabs.tabs.openTabOfKind(NOTE_TAB, path)
