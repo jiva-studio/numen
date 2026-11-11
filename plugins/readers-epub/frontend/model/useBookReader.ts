@@ -247,6 +247,9 @@ export function useBookReader(
     navigation: nav,
     bookDocument,
     marks,
-    actions: { goToCfi, getCfi, focusSpans, reportFailure },
+    goToCfi,
+    getCfi,
+    focusSpans,
+    reportFailure,
   }
 }
