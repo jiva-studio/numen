@@ -23,9 +23,10 @@ type Machine interface {
 }
 
 // ProfileSource reads the model profiles. It returns the profiles it could read together with the
-// error that kept it from reading the shipped ones.
+// error that kept it from reading the shipped ones. A user file that cannot be read is skipped and
+// handed to report.
 type ProfileSource interface {
-	Load() (*model.Profiles, error)
+	Load(report func(file string, err error)) (*model.Profiles, error)
 }
 
 // Environment is what the process environment sets for the model.

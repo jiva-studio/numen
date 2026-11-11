@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/run"
 )
 
@@ -86,5 +85,5 @@ func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
 }
 
 func newTestRunner() *run.Runner {
-	return run.NewRunner(codexcli.Commands{}, process.Launcher{})
+	return run.NewRunner(codexcli.Commands{}, codexcli.Launcher{})
 }

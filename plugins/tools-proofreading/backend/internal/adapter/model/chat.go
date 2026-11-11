@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
-)
 
-const defaultModel = "openai/gpt-4o-mini"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/endpoint"
+)
 
 type chatCompletionMessage struct {
 	Role    string `json:"role"`
@@ -30,7 +30,7 @@ type chatCompletionResponse struct {
 	} `json:"choices"`
 }
 
-func resolveDirectBaseURL(cfg Endpoint) string {
+func resolveDirectBaseURL(cfg endpoint.Endpoint) string {
 	switch cfg.Provider {
 	case "openrouter":
 		if cfg.BaseURL != "" {
@@ -47,14 +47,14 @@ func resolveDirectBaseURL(cfg Endpoint) string {
 	}
 }
 
-func askDirectAPI(ctx context.Context, cfg Endpoint, instruction, prompt string) (answer string, err error) {
+func askDirectAPI(ctx context.Context, cfg endpoint.Endpoint, instruction, prompt string) (answer string, err error) {
 	baseURL := strings.TrimSuffix(resolveDirectBaseURL(cfg), "/")
 	if baseURL == "" {
 		return "", errors.New("service URL is not configured")
 	}
 	model := cfg.Model
 	if model == "" {
-		model = defaultModel
+		model = endpoint.DefaultModel
 	}
 	body, err := json.Marshal(chatCompletionRequest{
 		Model: model,
