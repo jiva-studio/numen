@@ -3,7 +3,11 @@
  * ways they are run.
  */
 import type { PluginHost } from '@numen/plugin-loader'
-import type { createCommandDeps, PaletteLists, PluginPaletteLists } from '@/features/command-palette'
+import type {
+  createCommandDeps,
+  PaletteLists,
+  PluginPaletteLists,
+} from '@/features/command-palette'
 import type { Command } from '@/entities/command'
 import {
   createCommandNoteReader,

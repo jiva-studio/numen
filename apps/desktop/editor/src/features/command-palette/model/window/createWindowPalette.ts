@@ -26,7 +26,7 @@ export interface PluginPaletteLists {
 }
 
 /** What the plugins add to the palettes: their lists, the commands they list and the commands they run. */
-export interface PluginPaletteParts {
+interface PluginPaletteParts {
   readonly lists: PluginPaletteLists
   readonly getCommands: () => readonly Command[]
   readonly pluginCommands: PluginCommandPort
