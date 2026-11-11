@@ -106,7 +106,7 @@ func (s *Service) WriteAppearance(
 }
 
 // keepaliveInterval is the interval between empty reports to the client of a watch.
-const keepaliveInterval = time.Second
+var keepaliveInterval = time.Second
 
 // WatchThemes notifies the client when the themes folder or the set of plugin
 // themes changes, until the client disconnects.
