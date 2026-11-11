@@ -195,8 +195,8 @@ func TestTheProgramOfTheConfiguredPathListsItsModels(t *testing.T) {
 			`echo '{"id":2,"result":{"data":[{"model":"m-custom","displayName":"Custom","isDefault":true}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
 	s := newAgentServer(false)
-	s.applyConfig(map[string]string{"executablePath": " " + script + " "})
-	s.applyConfig(map[string]string{"unrelated": "val"})
+	s.settings.Apply(map[string]string{"executablePath": " " + script + " "})
+	s.settings.Apply(map[string]string{"unrelated": "val"})
 
 	progs, err := s.GetPrograms(t.Context(), nil)
 	if err != nil || len(progs) != 1 || !progs[0].IsInstalled || len(progs[0].Models) != 1 ||
@@ -230,18 +230,5 @@ func TestAskReportsAProgramThatCannotBeStarted(t *testing.T) {
 	}
 	if len(steps) != 2 || steps[1].GetStopped() == "" {
 		t.Errorf("Ask when the start fails steps = %+v, want ModelStarted and Stopped", steps)
-	}
-}
-
-func TestProgramCommandFindsTheCommandOfAProgram(t *testing.T) {
-	cmds := []agentrun.ProgramCommand{
-		{Program: "other", Command: []string{"other-bin"}},
-		{Program: "codex", Command: []string{"codex-bin", "--arg"}},
-	}
-	if got := programCommand(cmds, "codex"); !slices.Equal(got, []string{"codex-bin", "--arg"}) {
-		t.Errorf("programCommand(codex) = %v", got)
-	}
-	if got := programCommand(cmds, "missing"); got != nil {
-		t.Errorf("programCommand(missing) = %v, want nil", got)
 	}
 }

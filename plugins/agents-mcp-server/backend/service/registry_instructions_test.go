@@ -65,7 +65,7 @@ func newReadTool(name string) *tools.ToolInfo {
 	}
 }
 
-func openSession(t *testing.T, srv *Server) string {
+func openSession(t *testing.T, srv *testServer) string {
 	t.Helper()
 	serverSide, clientSide := sdk.NewInMemoryTransports()
 	if _, err := srv.GetMCPServer().Connect(t.Context(), serverSide, nil); err != nil {
