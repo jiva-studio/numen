@@ -238,7 +238,6 @@ func mountServices(w *windowWiring) {
 	mountText(w)
 	mountPlugin(w)
 	mountCatalog(w)
-	return nil
 }
 
 func windowView(state *editor.State) windowsession.View {
