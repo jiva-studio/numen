@@ -14,14 +14,43 @@ import {
   type DeclaredSlotEntry,
   type PluginHost,
 } from '@numen/plugin-loader'
-import { runSupport } from '@/features/command-palette'
-import { createCommandRegistry, type CommandTarget } from '@/shared/model/command'
+import {
+  createCommandDeps,
+  createSearchRequests,
+  PALETTE_WORDS,
+  runSupport,
+  useSearch,
+  type NoteLookup,
+  type PaletteLists,
+  type SearchDeps,
+} from '@/features/command-palette'
+import {
+  createCommandRegistry,
+  type CommandRegistry,
+  type CommandTarget,
+  type Notes,
+  type RunSupport,
+} from '@/shared/model/command'
+import type { Command } from '@/entities/command'
+import type { SettingsStore } from '@/entities/settings'
+import type { WindowTabs } from '@/entities/tab'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import {
   createCommandNoteReader,
+  createPluginCommandPort,
+  createSearchMenu,
   createSlotCommandFinder,
   useDeclaredCommands,
+  usePluginCommands,
 } from '@/features/plugin-commands'
-import { createCommands, type CommandsDepsOptions } from '@/app/window/createCommands'
+import {
+  createCommandRuns,
+  createCommandSources,
+  createPaletteCommands,
+  createPaletteSwitching,
+} from '@/app/window/createCommands'
+import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
@@ -132,7 +161,114 @@ const createCore = () => {
   })
 }
 
-const toDeps = (options: object): CommandsDepsOptions => options as CommandsDepsOptions
+
+const toOptions = (options: object): ComposeOptions => options as ComposeOptions
+
+/** What the commands of the test window are made from. */
+interface ComposeOptions {
+  readonly core: SearchDeps
+  readonly words: typeof WORDS
+  readonly windowTabs: WindowTabs
+  readonly getTarget: () => CommandTarget
+  readonly knows: NoteLookup
+  readonly paletteLists: PaletteLists
+  readonly runs: RunSupport
+  readonly registry: CommandRegistry
+  readonly coverage: () => IndexCoverage
+  readonly reached: Notes
+  readonly settings: Pick<SettingsStore, 'read' | 'state'>
+  readonly writeMessage: MessageWriter
+  readonly pluginHost: PluginHost
+  readonly settingPalette: { getCommands(): readonly Command[]; choose(command: string, item: string): Promise<void> }
+  readonly declaredCommands: ReturnType<typeof useDeclaredCommands>
+  readonly readCommandNote: ReturnType<typeof createCommandNoteReader>
+  readonly emitEvent?: ((event: string) => void) | undefined
+}
+
+/** The palettes, the runs and the keys of the window made from the same slices the window uses. */
+function composeCommands(options: ComposeOptions, appCommands: readonly Command[]) {
+  const { pluginHost, registry, declaredCommands, writeMessage, settings, windowTabs, getTarget } =
+    options
+  const plugin = usePluginCommands(registry, options.readCommandNote, pluginHost, {
+    context: declaredCommands.whenContext,
+    getHandlers: () => declaredCommands.contributions.handlers.value,
+  })
+  const searchRequests = createSearchRequests()
+  const commandDeps = createCommandDeps({
+    windowTabs: options.windowTabs,
+    reached: options.reached,
+    settingPalette: options.settingPalette,
+    runs: options.runs,
+    registry,
+    writeMessage,
+    search: searchRequests.request,
+    emitEvent: options.emitEvent,
+  })
+  const palette = useSearch(
+    options.core,
+    { ...options.words, ...PALETTE_WORDS },
+    { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots), getTarget },
+  )
+  const sources = createCommandSources({
+    appCommands,
+    settingPalette: options.settingPalette,
+    declaredCommands,
+    pluginHost,
+    plugin,
+    getTarget,
+    commandDeps,
+  })
+  const commands = createPaletteCommands({
+    core: options.core,
+    words: options.words,
+    knows: options.knows,
+    getTarget,
+    paletteLists: options.paletteLists,
+    runs: options.runs,
+    sources,
+  })
+  const paletteSwitch = createPaletteSwitching({
+    declaredCommands,
+    writeMessage,
+    settings,
+    commands,
+    search: palette,
+    requests: searchRequests,
+  })
+  const pluginCommands = createPluginCommandPort(pluginHost, plugin.getCommandNote)
+  const runs = createCommandRuns({
+    commands,
+    paletteSwitch,
+    pluginCommands,
+    commandDeps,
+    writeMessage,
+    getTarget,
+  })
+  syncKeybindings(
+    pluginHost.keybindings,
+    declaredCommands.contributions.keybindings,
+    settings.state.plugins,
+  )
+  const onKeyDown = createKeyHandler({
+    windowTabs,
+    handleShortcut: (event, runApp) => pluginCommands.handleShortcut(event, getTarget, runApp),
+    runApp: createAppKeyRunner({
+      toggleSearch: paletteSwitch.toggleSearch,
+      toggleCommands: paletteSwitch.toggleCommands,
+      runCommand: runs.runCommand,
+      runWithValues: runs.runWithValues,
+      getTarget,
+    }),
+  })
+  return {
+    palette,
+    commands,
+    commandDeps,
+    pluginRuns: { items: sources.items, runCommandToEnd: runs.runCommandToEnd },
+    runChoice: runs.runChoice,
+    onKeyDown,
+  }
+}
 
 /** The commands of a window over the note, whose tab navigation is `parts.navigateTab`. */
 export function createRealWindow(parts: RealWindowParts) {
@@ -217,6 +353,6 @@ export function createRealWindow(parts: RealWindowParts) {
     WORDS,
   )
   registry.registerAll(features.handlers)
-  const used = createCommands(toDeps({ ...options, getAppCommands: () => features.commands }))
+  const used = composeCommands(toOptions(options), features.commands)
   return { pluginHost, messages, used }
 }

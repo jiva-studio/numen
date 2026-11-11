@@ -4,7 +4,7 @@
  * piece of code the palette does.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createWindowSettingsPart } from './windowSettings'
+import { createWindowSettingsPart } from '@/testing/windowSettings'
 import { WORDS } from '@/shared/ui/words'
 import {
   createSettingsStore,

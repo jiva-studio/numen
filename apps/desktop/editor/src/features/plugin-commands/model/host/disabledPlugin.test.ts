@@ -11,7 +11,7 @@ import type { JsonValue } from '@numen/plugin-loader'
 import { createMockCatalogEntry, createMockManifest } from '@numen/core-client/testing'
 import { answerTabKinds } from '@/testing/tabCatalog'
 import { createTestTabs } from '@/testing/tabs'
-import { createPluginSupport } from './createPluginSupport'
+import { createTestPluginSupport } from '@/testing/pluginSupport'
 
 const PLUGIN_ID = 'sample.decks'
 
@@ -48,7 +48,7 @@ const createWindow = () => {
       return Promise.resolve()
     },
   })
-  const support = createPluginSupport({
+  const support = createTestPluginSupport({
     windowTabs,
     tabOpeners: {
       registerExtensionReader: () => () => undefined,

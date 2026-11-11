@@ -100,7 +100,7 @@ describe('the facts of the window the conditions read', () => {
       }) as CommandTarget
     const read = (one: CommandTarget, isPaletteOpen: boolean) =>
       createWindowFacts({
-        getAppCommands: () => [],
+        appCommands: [],
         getTarget: () => one,
         isPaletteOpen: () => isPaletteOpen,
       }).getValues()

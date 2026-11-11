@@ -24,11 +24,12 @@ const createPlacement = (
   const line = place?.line
   const selector = place?.selector
   if (line === undefined && selector === undefined) return placement
-  return {
+  const at: { where: 'current' | 'split'; line?: number; selector?: Selector } = {
     where: placement,
-    ...(line === undefined ? {} : { line }),
-    ...(selector === undefined ? {} : { selector }),
   }
+  if (line !== undefined) at.line = line
+  if (selector !== undefined) at.selector = selector
+  return at
 }
 
 export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners): Notes => {

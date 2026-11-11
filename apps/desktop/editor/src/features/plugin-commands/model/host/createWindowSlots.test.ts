@@ -8,7 +8,7 @@ import { createWhenReader, SLOT, createSlotRegistry, type SlotItem } from '@nume
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import type { Command } from '@/entities/command'
 import { createAppCommands } from '@/testing/appCommands'
-import { createWindowSlots } from './windowSlots'
+import { createWindowSlots } from './createWindowSlots'
 
 const TIDE = 'org.example.tide'
 const HARBOR = 'org.example.harbor'

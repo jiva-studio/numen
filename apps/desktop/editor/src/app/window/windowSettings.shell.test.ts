@@ -5,7 +5,7 @@
  */
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createWindowSettingsPart } from './windowSettings'
+import { createWindowSettingsPart } from '@/testing/windowSettings'
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { WORDS } from '@/shared/ui/words'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'

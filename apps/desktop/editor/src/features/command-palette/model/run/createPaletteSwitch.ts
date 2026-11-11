@@ -7,6 +7,8 @@ export function createPaletteSwitch(
   search: Pick<SearchState, 'open' | 'setOpen'>,
 ) {
   return {
+    /** Whether the search or the commands are open. */
+    isOpen: (): boolean => commands.palette.open.value || search.open.value,
     /** Closes the commands and opens the search, or closes the search where it is open. */
     toggleSearch: (): void => {
       commands.palette.setOpen(false)

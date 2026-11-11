@@ -9,13 +9,9 @@ import {
   type PluginHostDeps,
   type WhenValues,
 } from '@numen/plugin-loader'
-import {
-  type DeclaredCommands,
-  type WindowFactsSource,
-  createSlotCommandFinder,
-  readSlotEntries,
-  getPaletteId,
-} from '@/features/plugin-commands'
+import { getPaletteId, type DeclaredCommands } from '../declaredCommands'
+import { createSlotCommandFinder, readSlotEntries } from '../pluginSlots'
+import type { WindowFactsSource } from './createWindowFacts'
 
 export interface WindowSlotsDeps {
   readonly declaredCommands: Pick<

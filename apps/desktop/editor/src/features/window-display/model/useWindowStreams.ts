@@ -2,7 +2,7 @@
  * Background streaming subscriptions for the window.
  */
 import type { Ref, ShallowRef } from 'vue'
-import { createFollower } from '@numen/ui'
+import type { createFollower } from '@numen/ui'
 import { watchEdits, type NoteEdit } from '@/entities/note'
 import { watchFocus, watchTasks, type Task } from '@/entities/window'
 import { watchVaultChanges, type VaultChange } from '@/entities/vault'
@@ -14,13 +14,14 @@ export interface VaultScan {
   readonly scan: { readonly error?: string | undefined; readonly isReady?: boolean | undefined }
 }
 
-export interface WindowStreamsDeps {
+/** Takes up a stream the same way each time it ends, or fails to open. */
+export type Follows = ReturnType<typeof createFollower>
+
+/** What the stream of the changes to the vault reaches. */
+export interface VaultStreamDeps {
+  readonly follows: Follows
   readonly listening: AbortController
-  readonly isOpen: () => boolean
-  readonly setLost: (response: string) => void
-  readonly wait: (ms: number) => Promise<void>
   readonly opening: Ref<string>
-  readonly tasks: ShallowRef<readonly Task[]>
   readonly isVaultSwapped: () => Promise<boolean>
   readonly reload: () => void
   readonly onVaultChanged: (
@@ -30,10 +31,38 @@ export interface WindowStreamsDeps {
   ) => Promise<void> | void
   readonly readInitialNote: () => Promise<string>
   readonly ask: () => Promise<VaultScan>
+}
+
+/** What the stream of the changes to the notes reaches. */
+export interface EditStreamDeps {
+  readonly follows: Follows
+  readonly listening: AbortController
   readonly reportChange: (edit: NoteEdit) => void
+}
+
+/** What the stream of the requests to show a note reaches. */
+export interface FocusStreamDeps {
+  readonly follows: Follows
+  readonly listening: AbortController
   readonly travelTo: (path: string) => Promise<void> | void
   readonly openFileAt: (path: string, spans: readonly TextRange[]) => void
   readonly activateTab: (id: string) => void
+}
+
+/** What the stream of the running tasks reaches. */
+export interface TaskStreamDeps {
+  readonly follows: Follows
+  readonly listening: AbortController
+  readonly tasks: ShallowRef<readonly Task[]>
+  readonly ask: () => Promise<VaultScan>
+}
+
+/** The streams the window follows, each read until the window closes. */
+export interface WindowStreams {
+  readonly follow: () => Promise<void>
+  readonly draw: () => Promise<void>
+  readonly watch: () => Promise<void>
+  readonly followTasks: () => Promise<void>
 }
 
 function isChangeEmpty(change: VaultChange): boolean {
@@ -45,12 +74,12 @@ function isChangeEmpty(change: VaultChange): boolean {
   )
 }
 
-async function reportVaultChange(change: VaultChange, deps: WindowStreamsDeps): Promise<void> {
+async function reportVaultChange(change: VaultChange, deps: VaultStreamDeps): Promise<void> {
   if (change.shouldReload) await deps.onVaultChanged([], change.renamed, [])
   else await deps.onVaultChanged(change.paths, change.renamed, change.versionPaths)
 }
 
-async function handleVaultChange(change: VaultChange, deps: WindowStreamsDeps): Promise<void> {
+async function handleVaultChange(change: VaultChange, deps: VaultStreamDeps): Promise<void> {
   if (isChangeEmpty(change)) return
   if (change.shouldReload && (await deps.isVaultSwapped())) {
     deps.reload()
@@ -74,7 +103,7 @@ async function attempt<T>(step: () => Promise<T>): Promise<boolean> {
 
 async function handleFocusChange(
   request: { path?: string; ranges: readonly TextRange[]; tabId?: string },
-  deps: Pick<WindowStreamsDeps, 'travelTo' | 'openFileAt' | 'activateTab'>,
+  deps: Pick<FocusStreamDeps, 'travelTo' | 'openFileAt' | 'activateTab'>,
 ): Promise<void> {
   if (request.tabId) {
     deps.activateTab(request.tabId)
@@ -91,42 +120,43 @@ async function handleFocusChange(
   deps.openFileAt(request.path, ranges)
 }
 
-export function createWindowStreams(deps: WindowStreamsDeps) {
-  const { listening, isOpen, setLost, wait, tasks, reportChange } = deps
-
-  /** Every stream is read the same way, and taken up again the same way. */
-  const follows = createFollower({
-    isOpen,
-    setLost,
-    wait,
-  })
-
-  const follow = () =>
-    follows(
-      () => watchVaultChanges(listening.signal),
+/** Follows the changes to the vault. */
+export function createVaultStream(deps: VaultStreamDeps): () => Promise<void> {
+  return () =>
+    deps.follows(
+      () => watchVaultChanges(deps.listening.signal),
       (change) => handleVaultChange(change, deps),
     )
+}
 
-  /** Follows the changes being made to notes. */
-  const draw = () =>
-    follows(
-      () => watchEdits(listening.signal),
+/** Follows the changes being made to notes. */
+export function createEditStream(deps: EditStreamDeps): () => Promise<void> {
+  return () =>
+    deps.follows(
+      () => watchEdits(deps.listening.signal),
       (response) => {
         // The stream opens with an empty message, which distinguishes an open
         // stream from one that never opened.
-        if (response.path) reportChange(response)
+        if (response.path) deps.reportChange(response)
       },
     )
+}
 
-  const watch = () =>
-    follows(
-      () => watchFocus(listening.signal),
+/** Follows the requests to show a note or a tab. */
+export function createFocusStream(deps: FocusStreamDeps): () => Promise<void> {
+  return () =>
+    deps.follows(
+      () => watchFocus(deps.listening.signal),
       (request) => handleFocusChange(request, deps),
     )
+}
 
-  const followTasks = () =>
-    follows(
-      () => watchTasks(listening.signal),
+/** Follows the running tasks, and asks for the vault again once they have all ended. */
+export function createTaskStream(deps: TaskStreamDeps): () => Promise<void> {
+  const { tasks } = deps
+  return () =>
+    deps.follows(
+      () => watchTasks(deps.listening.signal),
       async (list) => {
         const ran = tasks.value.length > 0
         tasks.value = list
@@ -134,11 +164,4 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
         await attempt(deps.ask)
       },
     )
-
-  return {
-    follow,
-    draw,
-    watch,
-    followTasks,
-  }
 }

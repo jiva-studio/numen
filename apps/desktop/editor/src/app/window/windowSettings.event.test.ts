@@ -10,8 +10,8 @@ import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entitie
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
-import { createPluginSupport } from '@/features/plugin-commands'
-import { createWindowSettingsPart } from './windowSettings'
+import { createTestPluginSupport } from '@/testing/pluginSupport'
+import { createWindowSettingsPart } from '@/testing/windowSettings'
 
 const file = { current: {} as Record<string, unknown> }
 
@@ -181,7 +181,7 @@ describe('a setting that changes', () => {
 
   it('calls the handler a plugin registered for the setting once with the new value', async () => {
     const { settings, feed, windowTabs } = create()
-    const support = createPluginSupport({
+    const support = createTestPluginSupport({
       windowTabs,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),
@@ -204,7 +204,7 @@ describe('a setting that changes', () => {
 
   it('does not call the handler of a plugin for a setting of another plugin', async () => {
     const { settings, feed, windowTabs } = create()
-    const support = createPluginSupport({
+    const support = createTestPluginSupport({
       windowTabs,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),

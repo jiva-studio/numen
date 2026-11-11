@@ -84,7 +84,7 @@ function createPaletteCommands(session: PaletteSession) {
 }
 
 export function createPalette(session: PaletteSession, view: ReturnType<typeof usePaletteView>) {
-  const { state, steps, on } = session
+  const { state, steps, on, choose } = session
   const { previewItem, setOpen, searchNames } = session.handlers
   const { startCommand, getObjection } = createPaletteCommands(session)
 
@@ -97,7 +97,7 @@ export function createPalette(session: PaletteSession, view: ReturnType<typeof u
   const chooseItem = (item: string, action: string): CommandInvocation | null => {
     const step = steps.here.value
     if (!step) return startCommand(action, on.value)
-    return steps.chooseInStep(
+    return choose(
       step,
       item,
       action,

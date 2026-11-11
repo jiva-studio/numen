@@ -1,9 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref, shallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { TASK_UNIT } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
-import { createWindowStreams, type WindowStreamsDeps } from './useWindowStreams'
+import { createFollower } from '@numen/ui'
+import {
+  createEditStream,
+  createFocusStream,
+  createTaskStream,
+  createVaultStream,
+} from './useWindowStreams'
+import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
+import type { TextRange } from '@/shared/lib/textRange'
 
 async function* yielding<T>(...items: T[]): AsyncIterable<T> {
   for (const item of items) yield item
@@ -79,6 +87,39 @@ const answer = (streams: Streams) => {
         ),
     },
   })
+}
+
+/** Everything the streams of the window are made over, as the tests set it. */
+interface WindowStreamsDeps {
+  readonly listening: AbortController
+  readonly isOpen: () => boolean
+  readonly setLost: (response: string) => void
+  readonly wait: (ms: number) => Promise<void>
+  readonly opening: Ref<string>
+  readonly tasks: ShallowRef<readonly Task[]>
+  readonly isVaultSwapped: () => Promise<boolean>
+  readonly reload: () => void
+  readonly onVaultChanged: (
+    paths: readonly string[],
+    renamed: readonly { from: string; to: string }[],
+    versionPaths: readonly string[],
+  ) => Promise<void> | void
+  readonly readInitialNote: () => Promise<string>
+  readonly ask: () => Promise<{ scan: { error?: string; isReady?: boolean } }>
+  readonly reportChange: (edit: NoteEdit) => void
+  readonly travelTo: (path: string) => Promise<void> | void
+  readonly openFileAt: (path: string, spans: readonly TextRange[]) => void
+  readonly activateTab: (id: string) => void
+}
+
+const createWindowStreams = (deps: WindowStreamsDeps) => {
+  const follows = createFollower({ isOpen: deps.isOpen, setLost: deps.setLost, wait: deps.wait })
+  return {
+    follow: createVaultStream({ ...deps, follows }),
+    draw: createEditStream({ ...deps, follows }),
+    watch: createFocusStream({ ...deps, follows }),
+    followTasks: createTaskStream({ ...deps, follows }),
+  }
 }
 
 const setup = (streams: Streams = {}, overrides: Partial<WindowStreamsDeps> = {}) => {

@@ -68,7 +68,7 @@ export const createUnavailableKind = (
   options?: UnavailableKindOptions,
   services: UnavailableServices = {},
 ): AnyTabKind => {
-  const placeholder: TabKind<UnavailableState> = {
+  const base: TabKind<UnavailableState> = {
     kind,
     open: (targetPath: string, _id: string, saved?: JsonValue): UnavailableState => ({
       kind,
@@ -85,13 +85,15 @@ export const createUnavailableKind = (
       options?.title ||
       getDeclaredTitle(state.lookup.value) ||
       kind,
-    ...(options?.icon ? { display: { icon: options.icon } } : {}),
     address: {
       getState: (state) => state.saved,
       getOpenTab: (state) => ({ path: state.targetPath }),
       identity: (targetPath: string) => targetPath,
     },
   }
+  const placeholder: TabKind<UnavailableState> = options?.icon
+    ? { ...base, display: { icon: options.icon } }
+    : base
   placeholders.add(placeholder)
   return placeholder
 }

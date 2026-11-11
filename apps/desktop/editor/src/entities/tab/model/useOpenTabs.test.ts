@@ -61,7 +61,7 @@ const create = (
     },
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
   return {
-    ...useOpenTabs({ windowTabs, isWriting, reportError: vi.fn(), writeOpenTabs }),
+    ...useOpenTabs({ windowTabs, isWriting, writeMessage: vi.fn(), writeOpenTabs }),
     writeOpenTabs,
     tabs,
   }
@@ -220,7 +220,7 @@ describe('the open tabs', () => {
       },
     } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
 
-    useOpenTabs({ windowTabs, reportError: vi.fn(), writeOpenTabs })
+    useOpenTabs({ windowTabs, writeMessage: vi.fn(), writeOpenTabs })
     expect(writeOpenTabs).toHaveBeenCalledTimes(1)
 
     tabs.value = [
@@ -257,7 +257,7 @@ describe('the open tabs', () => {
         groups: { handle: { front: () => null } },
         tabs: { tabs: ref([]), getTab: () => undefined },
       },
-      reportError: vi.fn(),
+      writeMessage: vi.fn(),
       writeOpenTabs: coreCalls.writeOpenTabs,
     } as unknown as Parameters<typeof useOpenTabs>[0]
 
