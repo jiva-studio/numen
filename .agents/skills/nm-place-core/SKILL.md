@@ -32,7 +32,7 @@ graph TD
 Dependencies point from the outside inward: `libs/note/domain` imports nothing of this repository, `libs/core/kernel/domain/<area>` imports only the standard library, `libs/note/domain` and itself, `port` and `usecase` import the domain and never an adapter, an adapter imports the core and never another adapter, and only `container` names a driven adapter next to the port it satisfies.
 
 - A domain type is a fact about notes, vaults, links or cards, with the rules that follow from the values alone, and it lives in `libs/note/domain`.
-- A concept of the core that is not about notes (settings, agent, theme, plugin information) is a small package `libs/core/kernel/domain/<area>`. Ports and use cases import it; a plugin and the SDK never do. The sentinel errors of an area are declared in its package. Timers and randomness are not restricted in Go; only the machine clock is (a port).
+- A concept of the core that is not about notes (settings, agent, theme, plugin information) is a small package `libs/core/kernel/domain/<area>`. Ports and use cases import it; a plugin and the SDK never do. The sentinel errors of an area are declared in its package. A use case may call `crypto/rand` and timers; only the machine clock stays behind a clock port.
 - A port is an interface a use case requires from the world outside the core, named after the need and declared by the code that calls it.
 - A use case is one business scenario: it takes ports and domain values, orchestrates them and returns a result, and it is the unit of work and of the transaction.
 - A driving adapter receives a request from a person or a program (CLI, window, a plugin calling the host), turns it into the arguments of a use case, calls the use case and turns the result back.
@@ -46,9 +46,9 @@ An adapter is driving or driven, never both. A package that would be both is spl
 
 - `libs/note/domain` holds entities, value objects, identifiers (`NoteID`, `VaultID`, `CardFaceID`), the errors that name a refusal, and the rules that need only those values. It does no I/O, reads no clock, and knows no storage and no wire format.
 - `libs/note/markdown`, `edit`, `textfile` and `ulid` hold the format of a note's file and the identifier scheme. They are pure and take time and entropy as arguments.
-- `libs/core/kernel/port/<name>port` holds interfaces of one to three methods; the types they exchange and the sentinel errors a caller tests with `errors.Is` are in `domain/<area>` or `libs/note/domain`. It holds no function that calls a method of an interface value, no default behaviour and no policy.
+- `libs/core/kernel/port/<name>port` holds the interfaces that several use cases share, at most five methods each and three where practical; the types they exchange and the sentinel errors a caller tests with `errors.Is` are in `domain/<area>` or `libs/note/domain`. It holds no function that calls a method of an interface value, no default behaviour and no policy.
 - `libs/core/kernel/domain/<area>` holds the core's own concepts that are not about notes, as small packages, with the errors of the area. It does no I/O and reads no clock.
-- `libs/core/kernel/usecase/<name>` holds one use case per file, its request and result types, the small interfaces only that use case consumes, and the policy of the scenario (order of steps, what is reported). It holds no `os`, no SQL, and no clock read.
+- `libs/core/kernel/usecase/<name>` holds the use cases of one bounded context, one per file, each isolated from the others, with its request and result types, the small interfaces only that use case consumes, and the policy of the scenario (order of steps, what is reported). It holds no `os`, no SQL, and no clock read.
 - `libs/core/kernel/adapter/*` and `libs/core/kernel/internal/adapter/*` hold technology: the settings file, SQL, directory watching, process management, toolkit calls. They hold no rule about what a note is.
 - `libs/core/kernel/container` holds wiring only: constructors called in order, ports bound to adapters, use cases created and passed on.
 
@@ -66,7 +66,7 @@ An adapter is driving or driven, never both. A package that would be both is spl
 | A new plugin host call (something a plugin asks of the core) | A method on a `host*` driving package of the plugin adapter that maps the call and calls a use case; the permission check of the host endpoint stays where it is | The plugin, through the SDK |
 | A new call from the core to a plugin | A port the use case declares, implemented by a `*bridge` driven package | The use case |
 | The current time | `machineport.Clock`; the use case calls `Now()` and passes the instant on | The use case; the domain receives the instant as an argument |
-| A new identifier | A one-method port that returns the identifier (`NoteIDs`), implemented with `ulid` in one adapter | The use case; the domain receives the identifier |
+| A new identifier | The use case calls `ulid` with `crypto/rand` and the instant from the clock port; the domain receives the identifier | The use case |
 | A new content type or reader | A row a plugin contributes to the content type table (`contenttypeport`); the core names no plugin | The existing file use cases |
 | A new window or entry point | A package in `apps/<app>/cmd` and `app` that calls `container`; its only logic is options and the toolkit | The user's launcher |
 | A result type that a use case and an adapter both name | A type in the use case package, or in `domain` when it is a fact about notes | Both import it from there |
@@ -75,7 +75,7 @@ An adapter is driving or driven, never both. A package that would be both is spl
 
 - The use case that needs a thing declares the interface: in the use case package when one use case package consumes it, in `port/<name>port` when several do. The adapter that satisfies it never names it, and no `var _ port.X = ...` line appears in an adapter.
 - The name states the need: `VaultReaders`, `Clock`, `Trash`, `FloorStore`. The technology (`SQLite`, `Fs`, `Os`) appears only in the adapter's package and type names.
-- A port has one to three methods. When a use case needs seven operations, it needs two or three ports of that size, and each use case takes the ones it calls. A longer method list is cut along the question each caller asks. A port has no type of its own: its types are in `domain/<area>` or `libs/note/domain`.
+- A port has at most five methods (the lint limit) and three where practical. When a use case needs seven operations, it needs two or three ports of that size, and each use case takes the ones it calls. A longer method list is cut along the question each caller asks. A port with one consumer lives in that use case's package; `port/<name>port/` keeps the interfaces several use cases share.
 - Every method is called from a use case. A method that only an adapter calls does not belong to the port.
 - Reading and writing are separate ports. A repository is a collection of aggregates (put one in, take one out, remove one); a question that spans many (matches, counts, summaries) is a query port.
 - A port names the core's own types: `domain` types and the core's identifiers, never a type of `internal/`, a wire message or a driver.
@@ -88,7 +88,7 @@ An adapter is driving or driven, never both. A package that would be both is spl
 
 - One scenario per type, one file named after the scenario, the type named with a base-form verb phrase: `CreateFolder`, `GetFolderEntries`, `FindNote`, `ParseAddress`.
 - Verbs: `Get` returns one result or many; `Find` is a lookup that may miss and says so in a boolean or a sentinel; `Create` builds; `Parse` turns text into a value; a change keeps its own verb (`Add`, `Edit`, `Remove`, `Write`). A predicate starts with `Is`, `Has` or `Can`.
-- The constructor is `NewX(collaborators...) (*X, error)`: it validates every required collaborator and stores them in unexported fields, so no half-built use case exists. The method is `Execute(ctx, ...)`.
+- The constructor `NewX(collaborators...)` takes its collaborators, stores them in unexported fields and returns the concrete type `*X`. It does not validate them and returns no error. A dependency that may be absent is an optional field or a separate type. No `With*` method changes a use case after construction. The method is `Execute(ctx, ...)`.
 - At most two return values (a result and an error). A larger result is a small struct named with a plain noun, declared in the use case package only when no domain or port type holds it.
 - A use case is created once, in `container`, not inside `Execute`, and a zero value is never used.
 - A use case calls a rule of the domain for a decision and a port for data; it holds the order of the steps and the failure handling.
