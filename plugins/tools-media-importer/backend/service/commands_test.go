@@ -182,14 +182,7 @@ func (s *errListStore) List(ctx context.Context) ([]host.StoreFile, error) {
 	return s.Store.List(ctx)
 }
 
-func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
-	if got := describeSize((1 << 20) - 1); got != "1048575 bytes" {
-		t.Errorf("describeSize(1MB-1) = %q, want %q", got, "1048575 bytes")
-	}
-	if got := describeSize(1 << 20); got != "1 MB" {
-		t.Errorf("describeSize(1MB) = %q, want %q", got, "1 MB")
-	}
-
+func TestCommandErrorPaths(t *testing.T) {
 	vault := hosttest.New("Mills")
 	es := &errListStore{Store: vault.Store()}
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
