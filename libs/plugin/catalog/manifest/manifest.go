@@ -23,7 +23,8 @@ const (
 	// installation.
 	PermissionVaultManage = "vault:manage"
 
-	// PermissionNetworkOutbound allows outbound network requests.
+	// PermissionNetworkOutbound allows a plugin to open external links in the system browser. It does not
+	// restrict network requests: a plugin is trusted code, and permissions are consent and API hygiene.
 	PermissionNetworkOutbound = "network:outbound"
 
 	// PermissionAIComplete allows asking the host for a model completion.

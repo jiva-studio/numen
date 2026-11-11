@@ -23,6 +23,7 @@ type Value = object | string | number | bigint | boolean | symbol | null | undef
 const READ = 'vault:read'
 const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
+/** Consent to open external links; it does not restrict the requests a plugin makes itself, as plugins are trusted code. */
 const NETWORK = 'network:outbound'
 
 /**
