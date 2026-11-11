@@ -21,7 +21,7 @@ import type { JsonValue } from '@/shared/api/json'
 import { getSettingCommandId, parseSettingCommandId } from '../lib/settingCommandId'
 
 /** The words a row is drawn with. */
-interface SettingWords {
+export interface SettingWords {
   readonly current: string
   readonly on: string
   readonly off: string

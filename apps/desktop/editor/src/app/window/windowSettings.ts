@@ -1,7 +1,7 @@
 /**
  * The settings of the window: the state its appearance and palette read, and the settings tab.
  */
-import { createWindowSettings, type SettingWords } from '@/features/settings-commands'
+import { createWindowSettings } from '@/features/settings-commands'
 import { createSettingsPage } from '@/pages/settings'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
@@ -11,7 +11,7 @@ type PageDeps = Parameters<typeof createSettingsPage>[0]
 
 export interface WindowSettingsDeps {
   readonly rest: SettingsStore
-  readonly words: SettingWords
+  readonly words: Parameters<typeof createWindowSettings>[0]['words']
   readonly log: MessageLog
   readonly windowTabs: WindowTabs
   readonly onSizeChanged: () => void
