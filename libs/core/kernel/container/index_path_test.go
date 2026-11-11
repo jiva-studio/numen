@@ -32,7 +32,7 @@ func TestOpenIndexOpensTheNamedDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer testsupport.Close(t, db)
-	if db.Path() != path {
-		t.Errorf("opened %q, want %q", db.Path(), path)
+	if db.File != path {
+		t.Errorf("opened %q, want %q", db.File, path)
 	}
 }

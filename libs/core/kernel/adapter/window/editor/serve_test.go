@@ -36,7 +36,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
@@ -52,7 +51,7 @@ func (noTabKinds) Execute(context.Context, domain.Vault, []string) (map[string]s
 	return map[string]string{}, nil
 }
 
-func bindNotes(services *Services, db *vaults.Index) {
+func bindNotes(services *Services, db *testIndex) {
 	refs, links := db.NoteQueries.NoteRefs, db.NoteQueries.Links
 	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
 	services.NoteCases.Headings = outline.NewListHeadings(db.NoteQueries.Headings)
@@ -175,7 +174,7 @@ func (failingWalkReader) WalkFiles(context.Context, func(domain.FileStat) error)
 type behind struct {
 	api         *Services
 	vault       domain.Vault
-	index       *vaults.Index
+	index       *testIndex
 	recordedVal <-chan window.Change
 }
 
@@ -274,7 +273,7 @@ func waitFor(t *testing.T, what string, is func() bool) {
 	t.Fatal(what)
 }
 
-func titleOf(t *testing.T, db *vaults.Index, v domain.Vault, path string) string {
+func titleOf(t *testing.T, db *testIndex, v domain.Vault, path string) string {
 	t.Helper()
 	found, err := db.NoteQueries.NoteRefs.GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {

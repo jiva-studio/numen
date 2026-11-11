@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
@@ -171,8 +170,8 @@ func onAList(t *testing.T) *onTheList {
 	list := vaultregistry.NewList(registry)
 	find := vaultregistry.NewFind(registry)
 	chooseFolder := picker.NewChooseFolder(f.dialog)
-	folderCheck := check.NewFolderCheck(vaultreader.Readers{})
-	remove := vaults.NewRemove(find, forget, erase)
+	folderCheck := vaultregistry.NewFolderCheck(vaultreader.Readers{})
+	remove := vaults.NewRemove(find.Execute, forget, erase)
 	handler := NewHandler(
 		f,
 		vaultlist.NewListVaults(list, folderCheck), vaultlist.NewAddVault(adding, folderCheck),

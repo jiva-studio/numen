@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -218,7 +219,7 @@ func problemsDeps(queries problemport.ProblemQueries) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		Problems: func(context.Context) (cli.Problems, error) {
-			return cli.Problems{Problems: vaults.NewStandardGetProblems(queries)}, nil
+			return cli.Problems{Problems: vaults.NewGetProblems(check.Standard(queries))}, nil
 		},
 	}
 }

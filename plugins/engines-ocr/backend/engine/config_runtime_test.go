@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 func TestResolveLibrary_OrdersSettingDirThenHost(t *testing.T) {
@@ -16,9 +17,9 @@ func TestResolveLibrary_OrdersSettingDirThenHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, cfg := range []struct {
-		Config
+		settings.Config
 		want string
-	}{{Config{Dir: dir}, pos}, {Config{Dir: dir, Runtime: "mine.so"}, "mine.so"}, {Config{Dir: t.TempDir()}, "/host/libonnxruntime.so"}} {
+	}{{settings.Config{Dir: dir}, pos}, {settings.Config{Dir: dir, Runtime: "mine.so"}, "mine.so"}, {settings.Config{Dir: t.TempDir()}, "/host/libonnxruntime.so"}} {
 		if got := onnx.ResolveLibrary(cfg.Runtime, cfg.Dir); got != cfg.want {
 			t.Errorf("%+v: runtime = %q, want %q", cfg.Config, got, cfg.want)
 		}

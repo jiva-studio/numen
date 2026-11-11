@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	transcription "github.com/jiva-studio/numen/plugins/engines-transcription"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 // Each model the manifest offers is one the engine provisions.
@@ -15,7 +15,7 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 		t.Fatal("the manifest offers no model")
 	}
 	for _, name := range models {
-		if _, ok := engine.FindModel(name); !ok {
+		if _, ok := settings.FindModel(name); !ok {
 			t.Errorf("the manifest offers %s, which the engine does not run", name)
 		}
 	}

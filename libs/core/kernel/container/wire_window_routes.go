@@ -73,7 +73,7 @@ func mountText(w *windowWiring) {
 
 func mountVaults(w *windowWiring) {
 	state := w.inst.State
-	registry, change := w.cases.Vaults.Registry, w.cases.Vaults.Change
+	registry, change := w.cases.Listing, w.cases.Vaults.Change
 	handler := vaults.NewHandler(
 		state,
 		vaultlist.NewListVaults(registry.List, registry.FolderCheck),
@@ -94,8 +94,8 @@ func mountSearch(w *windowWiring) {
 	finds := newSearch(searchOf(w.cfg), w.db, w.asking, state.ReportWordsAlone)
 	handler := windowsearch.NewHandler(
 		state,
-		search.NewFindNames(w.db.NoteQueries.NameMatches, w.tabKinds),
-		search.NewFindPassages(finds, w.db.NoteQueries.NoteRefs, w.db.NoteQueries.NoteTypes, w.tabKinds),
+		search.NewFindNames(w.db.NoteQueries(), w.tabKinds),
+		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
 	)
 	setPluginSearch(searchOf(w.cfg), w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
@@ -112,19 +112,19 @@ func getTabKindChooser(c pluginsWiring) file.TabKindChooser {
 func mountFile(w *windowWiring) {
 	state := w.inst.State
 	readers := vaultReaders(vaultOf(w.cfg))
-	fileKinds := file.NewGetFileKinds(readers, w.db.NoteQueries.NoteTypes)
+	fileKinds := file.NewGetFileKinds(readers, w.db.NoteQueries())
 	chooser := getTabKindChooser(plugins(w.cfg))
 	w.tabKinds = file.NewListTabKinds(fileKinds, chooser)
 	folders := filewindow.NewFolders(
 		editor.NewSession(state), state.Events,
-		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries.NoteTypes), w.tabKinds),
+		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), w.tabKinds),
 		file.NewListFileKinds(fileKinds, chooser),
 		file.NewCreateFolder(folderWriters(vaultOf(w.cfg))),
 	)
 	changes := filewindow.NewChanges(editor.NewSession(state), state.Writes, state.Notices, &w.cases.Vaults.Tree.Move, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.server = editor.NewFileServer(
-		state, &w.cases.Vaults.Registry.Find, file.NewOpenFile(readers), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)),
+		state, &w.cases.Listing.Find, file.NewOpenFile(readers), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)),
 	)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }
@@ -141,7 +141,7 @@ func mountWorkspace(w *windowWiring) error {
 	if err != nil {
 		return err
 	}
-	store := w.db.Stores.OpenTabs
+	store := w.db.OpenTabs()
 	handler := workspace.NewHandler(
 		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)
@@ -152,23 +152,23 @@ func mountWorkspace(w *windowWiring) error {
 
 func mountNote(w *windowWiring) {
 	state := w.inst.State
-	notes := w.cases.Notes
-	addresses := notewindow.NewAddresses(state, notes.Refer.GetLinkAddress)
+	notes, queries := w.cases.Notes, w.cases.Queries
+	addresses := notewindow.NewAddresses(state, queries.Refer.GetLinkAddress)
 	session := editor.NewSession(state)
 	save, create := note.NewSaveProse(&notes.Edit.Write, session, session), note.NewCreateNote(&notes.Edit.Create, session, session)
 	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &save, &create, &notes.Place.Rename)
 	outlining := notewindow.NewOutline(
 		state,
-		query.NewGetOpeningNote(w.db.NoteQueries.OpeningNote),
-		outline.NewGetNeighborhood(w.db.NoteQueries.Links, w.db.NoteQueries.NoteRefs, w.db.NoteQueries.NoteTypes, w.tabKinds),
-		outline.NewListHeadings(w.db.NoteQueries.Headings),
+		query.NewGetOpeningNote(w.db.NoteQueries()),
+		outline.NewGetNeighborhood(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
+		outline.NewListHeadings(w.db.NoteQueries()),
 	)
 	links := notewindow.NewLinks(
 		session, addresses,
-		query.NewResolveLinks(w.db.NoteQueries.Links), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &notes.Refer.Backlinks,
+		query.NewResolveLinks(w.db.NoteQueries()), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &queries.Refer.Backlinks,
 	)
 	connections := notewindow.NewConnections(
-		session, &notes.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
+		session, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
 	w.inst.Mount(editor.NewNoteRoute(state, handler))
@@ -236,12 +236,12 @@ func mountPlugin(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
 }
 
-func shareEditorWindow(c Config, db *vault.Index, opened *windowWiring) {
+func shareEditorWindow(c Config, db *Index, opened *windowWiring) {
 	view := GetWindowView(opened.inst)
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
 		&opened.inst.State.Runtime,
-		vaultFocusNote(vaultOf(c), db.NoteQueries.NoteRefs, view),
+		vaultFocusNote(vaultOf(c), db.NoteQueries(), view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),
@@ -253,8 +253,8 @@ func shareVaultList(c Config, opened *windowWiring) {
 	scenarios := opened.cases.Vaults
 	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.inst.State.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
-		Find:    scenarios.Registry.Find,
-		Missing: scenarios.Registry.FolderCheck,
+		Find:    opened.cases.Listing.Find,
+		Missing: opened.cases.Listing.FolderCheck,
 		Open:    opened.inst,
 	}))
 }
@@ -266,7 +266,7 @@ func mountVault(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getReadVault(cfg Config, db *vault.Index) indexing.OpenReading {
+func getReadVault(cfg Config, db *Index) indexing.OpenReading {
 	return func(
 		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 	) (indexing.ReadWholeVault, error) {
@@ -326,7 +326,7 @@ func getTriggerSource(c Config) windowsession.TriggerSource {
 	}
 }
 
-func startVault(c Config, db *vault.Index, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
+func startVault(c Config, db *Index, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
 	) windowsession.Started {

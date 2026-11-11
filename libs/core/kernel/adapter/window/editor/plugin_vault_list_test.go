@@ -28,11 +28,11 @@ import (
 const immediateBound = windowsession.FlushTimeout / 2
 
 func newPluginVaultList(f *showing) vaultapi.List {
-	scenarios := f.cases.Vaults
+	scenarios, listing := f.cases.Vaults, f.cases.Listing
 	return windowsession.NewPluginVaults(&f.installation.State.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
-		Find:    scenarios.Registry.Find,
-		Missing: scenarios.Registry.FolderCheck,
+		Find:    listing.Find,
+		Missing: listing.FolderCheck,
 		Open:    f.installation,
 	})
 }

@@ -202,7 +202,7 @@ func getErrorCode(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
 	case errors.Is(err, vaultdomain.ErrLastVault):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
-	case errors.Is(err, registry.ErrShowing):
+	case errors.Is(err, vaultdomain.ErrShowing):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
 	case errors.Is(err, registry.ErrUnknown), errors.Is(err, registry.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true

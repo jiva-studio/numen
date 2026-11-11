@@ -11,25 +11,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Scenarios covers the vaults an installation holds, the operations on them,
-// and the vault's own tree.
+// Scenarios covers the operations on the vaults an installation holds, and the vault's own tree.
 type Scenarios struct {
-	Registry   Listing
 	Change     Changing
 	Tree       Tree
 	RecordOpen RecordOpen
-}
-
-// Listing looks up the vaults on the list.
-type Listing struct {
-	List        registry.List
-	Find        registry.Find
-	FolderCheck check.FolderCheck
 }
 
 // Changing changes the list of vaults and the vaults on it.

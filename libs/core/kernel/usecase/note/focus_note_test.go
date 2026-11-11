@@ -30,7 +30,7 @@ func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}
-	focus := query.NewFocusNote(c.db.NoteQueries.NoteRefs, view)
+	focus := query.NewFocusNote(c.db.NoteQueries(), view)
 
 	ref, err := focus.Execute(t.Context(), c.vault, "Heat.md")
 	if err != nil {
@@ -45,7 +45,7 @@ func TestFocusingNothingOrANoteThatIsNotThereMovesNoFocus(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}
-	focus := query.NewFocusNote(c.db.NoteQueries.NoteRefs, view)
+	focus := query.NewFocusNote(c.db.NoteQueries(), view)
 
 	if _, err := focus.Execute(t.Context(), c.vault, ""); err == nil {
 		t.Error("no path was focused")

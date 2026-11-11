@@ -11,14 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // The tests of the worker read vaults into an index through the composition root, which imports
 // this package and so can only be imported by its external tests.
 func TestWorker(t *testing.T) {
-	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *vault.Index) {
+	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *indexing.WorkerIndex) {
 		t.Helper()
 		cfg := container.NewConfig(container.Config{
 			Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
@@ -35,6 +34,10 @@ func TestWorker(t *testing.T) {
 			request.ShouldRebuildIndex = rebuild
 			return container.ReadWholeVault(request, ctx, db, embedder, v)
 		}
-		return read, container.VaultReaders(cfg), db
+		index := &indexing.WorkerIndex{
+			Vaults: db.Vaults(), Notes: db.Notes(), FileStats: db.NoteQueries(),
+			Maintenance: db.Maintenance(), Progress: db.ChunkVectors(), Vectors: db, Closer: db,
+		}
+		return read, container.VaultReaders(cfg), index
 	})
 }

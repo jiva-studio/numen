@@ -37,4 +37,4 @@ func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, res
 // changes would be applied to a path the viewer does not show.
 // It is not called when no viewer renders the note. The returned error is the
 // failure to report.
-type TellMove func(ctx context.Context, went domain.Move) error
+type TellMove func(ctx context.Context, v domain.Vault, went domain.Move) error

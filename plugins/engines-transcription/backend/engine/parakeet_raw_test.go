@@ -12,11 +12,12 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/ortraw"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 func openCachedTranscriber(tb testing.TB) *Transcriber {
 	tb.Helper()
-	cfg := Defaults()
+	cfg := settings.Defaults()
 	cfg.ShouldDownload = false
 	if dir := os.Getenv("NUMEN_MODELS"); dir != "" {
 		cfg.Dir = dir

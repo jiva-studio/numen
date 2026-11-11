@@ -55,7 +55,7 @@ func openNoteWriter(c pluginsWiring, v domain.Vault) (hostvault.NoteWriter, erro
 }
 
 func installPluginVault(c pluginsWiring,
-	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	registry vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) error {
 	opened, err := pluginsOpenPluginVault(c, registry, db, current, completeHooks(c, db, hooks))
 	if err != nil {
@@ -66,20 +66,20 @@ func installPluginVault(c pluginsWiring,
 }
 
 func pluginsOpenPluginVault(c pluginsWiring,
-	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	registry vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) (*pluginvault.Access, error) {
 	cache, err := openPluginCache(c)
 	if err != nil {
 		return nil, err
 	}
-	refresh := c.MakeRefresh(db, db.Stores.Notes)
+	refresh := c.MakeRefresh(db, db.Notes())
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
 	scenarios := c.BuildNotes(db, index)
 	connections := hostvault.Connections{
-		Reader:  note.NewConnectionReader(scenarios),
+		Reader:  note.NewConnectionReader(query.NewGetConnection(db.NoteQueries())),
 		Writer:  note.NewConnectionWriter(scenarios),
 		Joiner:  note.NewConnectionJoiner(scenarios),
 		Creator: note.NewRelatedNoteCreator(scenarios),
@@ -105,11 +105,11 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Index:       index,
 		},
 		Lookups: hostvault.Lookups{
-			Notes:      db.NoteQueries.NoteRefs,
-			Types:      db.NoteQueries.NoteTypes,
-			NamedPaths: db.NoteQueries.NamedPaths,
-			TypedPaths: db.NoteQueries.TypedPaths,
-			Links:      db.NoteQueries.Links,
+			Notes:      db.NoteQueries(),
+			Types:      db.NoteQueries(),
+			NamedPaths: db.NoteQueries(),
+			TypedPaths: db.NoteQueries(),
+			Links:      db.NoteQueries(),
 		},
 		Connections: connections,
 		Arranger:    arranger,
@@ -127,12 +127,12 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	scenarios note.Scenarios, db *vault.Index, window note.Scenarios, current func() (domain.Vault, bool),
+	scenarios note.Scenarios, db *Index, window note.Scenarios, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(scenarios),
-		Checks:   getProblemChecks(vault.NewStandardGetProblems(db.NoteQueries.Problems)),
-		Problems: db.NoteQueries.Problems,
+		Checks:   getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
+		Problems: db.NoteProblems(),
 	}
 	if hasReaders(window) {
 		arranger.Window, arranger.WindowVault = getNoteChanges(window), current
@@ -140,9 +140,9 @@ func newArranger(
 	return arranger
 }
 
-func completeHooks(c pluginsWiring, db *vault.Index, hooks PluginVaultHooks) PluginVaultHooks {
+func completeHooks(c pluginsWiring, db *Index, hooks PluginVaultHooks) PluginVaultHooks {
 	if hooks.IndexState == nil {
-		hooks.IndexState = query.NewGetIndexState(db.NoteQueries.VaultHolds).Execute
+		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
 	if hooks.Moved == nil {
 		hooks.Moved = c.Moves

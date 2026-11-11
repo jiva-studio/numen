@@ -43,7 +43,7 @@ func TestAFilenameIsLeftOutOfTheNoteWhereTheTwoAreReportedApart(t *testing.T) {
 	t.Parallel()
 	raw := "---\ntitle: Old\n---\nA measure.\n"
 	c := openChanging(t, map[string]string{"Entropy.md": raw})
-	apart := c.renameApart().Move
+	apart := note.NewMove(c.moveApartDeps())
 
 	if err := apart.WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
 		t.Fatal(err)
@@ -87,7 +87,7 @@ func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
-	renaming := note.NewRename(c.move())
+	renaming := note.NewRename(c.moveDeps(), c.move())
 	if _, err := renaming.Execute(t.Context(), c.vault, "Old.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}

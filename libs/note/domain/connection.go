@@ -202,3 +202,17 @@ type RelatedNote struct {
 	Type   string
 	Marker LinkMarker
 }
+
+// FindSide returns the record that the note whose links these are writes about
+// the note at `to` in the vault, among the records of one type. It is nil when
+// the note writes none. Only roles a connection can carry count: a body
+// reference is not a record of the connection.
+func FindSide(links []ResolvedLink, vaultID VaultID, to, kind string) *Side {
+	for _, l := range links {
+		if l.ToVault != vaultID || l.To != to || l.Type != kind || !IsConnectionRole(l.Role) {
+			continue
+		}
+		return &Side{Role: l.Role, Type: l.Type, Why: l.Why, Label: l.Label, Marker: l.Marker}
+	}
+	return nil
+}

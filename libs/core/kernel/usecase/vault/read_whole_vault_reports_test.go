@@ -73,14 +73,14 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
-	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
-	embed := vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors)
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 	embed.Embedder = pointing{}
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 	var notes, books, made atomic.Int32
@@ -114,12 +114,12 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 	stopErr := errors.New("the notes cannot be taken out")
-	notes := vaults.NewScan(readers, db.Stores.Vaults, notRemoving{NoteRepository: db.Stores.Notes, err: stopErr}, db.NoteQueries.FileStats, db.Stores.Maintenance)
-	notes.Walks = db.Walks()
+	notes := vaults.NewScan(readers, db.Vaults(), notRemoving{NoteRepository: db.Notes(), err: stopErr}, db.NoteQueries(), db.Maintenance())
+	notes.Walks = &db.Walks
 	making := indexing.NewReadWholeVault(
 		notes,
-		filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: readers}),
-		vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors),
+		filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}),
+		vectors.NewEmbed(readers, db.Sources(), db.Sources()),
 	)
 
 	result, err := making.Execute(t.Context(), v)
@@ -140,8 +140,8 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	stopErr := errors.New("the books cannot be cut")
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, uncuttable{SourceBacklog: db.Source.SourceBacklog, err: stopErr}, db.Source.RemovalLookup, testsupport.Texts{Readers: readers}),
-		vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors),
+		filetext.NewIndex(readers, db.Sources(), db.Sources(), uncuttable{SourceBacklog: db.Sources(), err: stopErr}, db.Sources(), testsupport.Texts{Readers: readers}),
+		vectors.NewEmbed(readers, db.Sources(), db.Sources()),
 	)
 
 	if _, err := scanner(readers, db).Execute(t.Context(), v); err != nil {
@@ -162,15 +162,15 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
-	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 	stopErr := errors.New("the model has stopped")
-	embed := vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors)
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 	embed.Embedder = failing{err: stopErr}
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 
@@ -191,13 +191,13 @@ func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	stopErr := errors.New("the books cannot be cut")
-	uncutter := uncuttable{SourceBacklog: db.Source.SourceBacklog, err: stopErr, onUnchunked: cancel}
+	uncutter := uncuttable{SourceBacklog: db.Sources(), err: stopErr, onUnchunked: cancel}
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.Chunks.VectorQueries, db.Chunks.Vectors)
+	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources())
 	embed.Embedder = pointing{}
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, uncutter, db.Source.RemovalLookup, testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.Sources(), uncutter, db.Sources(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 
@@ -221,10 +221,10 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	db := openIndex(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	uncutter := uncuttable{SourceBacklog: db.Source.SourceBacklog, onRecipe: cancel}
-	books := filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, uncutter, db.Source.RemovalLookup, testsupport.Texts{Readers: readers})
+	uncutter := uncuttable{SourceBacklog: db.Sources(), onRecipe: cancel}
+	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), uncutter, db.Sources(), testsupport.Texts{Readers: readers})
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.Chunks.VectorQueries, db.Chunks.Vectors)
+	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources())
 	embed.Embedder = pointing{}
 	making := indexing.NewReadWholeVault(scanner(readers, db), books, embed)
 
@@ -259,8 +259,8 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	stopErr := errors.New("the vault cannot be read")
 	cutting := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(unreadable{err: stopErr}, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: unreadable{err: stopErr}}),
-		vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors),
+		filetext.NewIndex(unreadable{err: stopErr}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: unreadable{err: stopErr}}),
+		vectors.NewEmbed(readers, db.Sources(), db.Sources()),
 	)
 	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
 	if !errors.Is(err, stopErr) {

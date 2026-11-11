@@ -1,12 +1,14 @@
-package query
+// Package naming holds how a note is named: which of its title and its filename shows it, and
+// whether the two are kept as one name.
+package naming
 
-// NameSource is which of the two a note is shown by, and so which one naming it
+// Source is which of the two a note is shown by, and so which one naming it
 // writes.
-type NameSource string
+type Source string
 
 const (
-	ByFrontmatter NameSource = "frontmatter"
-	ByFilename    NameSource = "filename"
+	ByFrontmatter Source = "frontmatter"
+	ByFilename    Source = "filename"
 )
 
 // SyncTitleAndFilename is whether a note's title and its filename are kept as one name.
@@ -17,7 +19,7 @@ type SyncTitleAndFilename bool
 //
 // A note its filename names carries its name nowhere else, so its file moves
 // whatever this is set to and nothing is written into it.
-func (s SyncTitleAndFilename) GetRenameEffects(source NameSource) (moves, writes bool) {
+func (s SyncTitleAndFilename) GetRenameEffects(source Source) (moves, writes bool) {
 	if source == ByFilename {
 		return true, false
 	}

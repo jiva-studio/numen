@@ -15,10 +15,9 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
-func makeIndex(t *testing.T) *vault.Index {
+func makeIndex(t *testing.T) *container.Index {
 	t.Helper()
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
@@ -57,7 +56,7 @@ func TestAScanConsumesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 	db := makeIndex(t)
 
 	scan := container.Scan(container.NewConfig(container.Config{ShouldRebuildIndex: true}), db)
-	if scan.Walks != db.Walks() {
+	if scan.Walks != &db.Walks {
 		t.Error("the scan takes its turn from somebody other than the index it writes into")
 	}
 	if !scan.ShouldRebuildIndex {
@@ -131,9 +130,9 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	}
 }
 
-func unembeddedTo(t *testing.T, db *vault.Index, v domain.Vault, model embeddingport.Embedder) int {
+func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
 	t.Helper()
-	unembedded, _, err := db.Chunks.VectorQueries.GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,7 +185,7 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 	}
 }
 
-func makeSwitchedIndex(t *testing.T) (*vault.Index, domain.Vault) {
+func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
@@ -206,7 +205,7 @@ func makeSwitchedIndex(t *testing.T) (*vault.Index, domain.Vault) {
 // reports the error.
 func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
-	raw, err := sql.Open("sqlite", db.Path())
+	raw, err := sql.Open("sqlite", db.File)
 	if err != nil {
 		t.Fatal(err)
 	}

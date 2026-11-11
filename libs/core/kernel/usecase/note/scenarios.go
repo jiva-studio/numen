@@ -4,19 +4,16 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
-// Scenarios is everything that acts on the notes of a vault. The window and the
-// agent tools use the same set, so both enforce the same rules and a dependency
-// is configured once for both.
+// Scenarios is everything that changes the notes of a vault, grouped; the container builds each
+// use case on its own. The window and the agent tools use the same set, so both enforce the same
+// rules and a dependency is configured once for both.
 type Scenarios struct {
 	Edit    Editing
 	Place   Placing
 	Connect Connecting
 	Refer   Referring
-	Browse  Browsing
 }
 
 // Editing reads and changes the text of a note.
@@ -46,57 +43,19 @@ type Connecting struct {
 	CreateInRelation CreateInRelation
 }
 
-// Referring adds, lists and resolves the links of notes.
+// Referring adds the links of notes.
 type Referring struct {
-	AddLinks       AddLinks
-	Links          query.ShowLinks
-	Backlinks      query.GetBacklinks
-	ResolveLinks   *query.ResolveLinks
-	GetLinkAddress *query.GetLinkAddress
-}
-
-// Browsing answers questions about the notes of a vault.
-type Browsing struct {
-	Connection     query.GetConnection
-	GetTitles      query.GetTitles
-	GetTitle       *query.GetTitle
-	IsVaultIndexed *query.IsVaultIndexed
-}
-
-// MoveView tells the window that a note moved.
-type MoveView interface {
-	ShowMove(ctx context.Context, went domain.Move) error
-}
-
-// EditView tells the window that a change to a note is in progress.
-type EditView interface {
-	ShowEdit(ctx context.Context, response domain.Edit) error
-}
-
-// FollowMoves notifies a window of each note move, so a view showing a note under
-// its old name switches to the new name. Every build with a window
-// binds it.
-func (n Scenarios) FollowMoves(view MoveView) Scenarios {
-	mover := n.Place.Move
-	mover.Drawing = view.ShowMove
-	n.Place.Move, n.Place.Rename = mover, NewRename(mover)
-	return n
-}
-
-// ShowEdits notifies a window of each write in progress, so a user watching the
-// note sees the changing range.
-//
-// Only a caller other than the user binds it. The window's own writes are not
-// drawn, because the user is looking at the text they typed.
-func (n Scenarios) ShowEdits(view EditView) Scenarios {
-	tell := TellEdit(view.ShowEdit)
-	n.Edit.Write.Drawing, n.Edit.Replace.Drawing = tell, tell
-	return n
+	AddLinks AddLinks
 }
 
 // ConnectionReader reads one relationship between two notes.
 type ConnectionReader struct {
-	get query.GetConnection
+	get connectionGetting
+}
+
+// connectionGetting reads the records two notes write about each other.
+type connectionGetting interface {
+	Execute(ctx context.Context, v domain.Vault, a, b, kind string) (domain.Connection, error)
 }
 
 // ConnectionWriter saves and removes relationships between notes.
@@ -116,9 +75,9 @@ type RelatedNoteCreator struct {
 	create CreateInRelation
 }
 
-// NewConnectionReader takes the use case of a set of scenarios that reads a connection.
-func NewConnectionReader(n Scenarios) ConnectionReader {
-	return ConnectionReader{get: n.Browse.Connection}
+// NewConnectionReader takes the use case that reads a connection.
+func NewConnectionReader(get connectionGetting) ConnectionReader {
+	return ConnectionReader{get: get}
 }
 
 // NewConnectionWriter takes the use cases of a set of scenarios that write connections.

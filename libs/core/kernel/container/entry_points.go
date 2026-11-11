@@ -18,27 +18,27 @@ import (
 // the one shown last when none is named, and connects the plugins to the vault and the window. It returns the
 // window and the configuration with the text versions the plugins share.
 func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, Config, error) {
-	start := startup.OpenEditor[vaultregistry.Ports, *vault.Index, *windowWiring]{
+	start := startup.OpenEditor[vaultregistry.Ports, *Index, *windowWiring]{
 		OpenRegistry: c.registry,
-		OpenIndex:    func(ctx context.Context) (*vault.Index, error) { return OpenIndex(c, ctx) },
-		OpenTexts: func(db *vault.Index) error {
+		OpenIndex:    func(ctx context.Context) (*Index, error) { return OpenIndex(c, ctx) },
+		OpenTexts: func(db *Index) error {
 			versions, err := newTextVersions(vaultOf(c), db)
 			c.TextVersions = versions
 			return err
 		},
-		OpenWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index) (*windowWiring, error) {
+		OpenWindow: func(ctx context.Context, ports vaultregistry.Ports, db *Index) (*windowWiring, error) {
 			return openWindowWith(c, ctx, ports, WindowOpening{DB: db, Named: named, Out: out})
 		},
 		FollowVault: func(opened *windowWiring) {
 			setPluginVaultPath(plugins(c), opened.inst.State.GetCurrentVault().Path)
 		},
-		InstallVault: func(ports vaultregistry.Ports, db *vault.Index, opened *windowWiring) error {
+		InstallVault: func(ports vaultregistry.Ports, db *Index, opened *windowWiring) error {
 			return installPluginVault(plugins(c), ports, db, opened.inst.State.GetShownVault, PluginVaultHooks{
 				Written: opened.inst.State.Writes.NoteWritten,
 				Notes:   *opened.cases.Notes,
 			})
 		},
-		ShareWindow: func(db *vault.Index, opened *windowWiring) {
+		ShareWindow: func(db *Index, opened *windowWiring) {
 			shareVaultList(c, opened)
 			setPluginTexts(vaultOf(c))
 			shareEditorWindow(c, db, opened)
@@ -65,17 +65,17 @@ type Flashcards struct {
 func OpenFlashcards(c Config,
 	ctx context.Context, api *shell.API, out io.Writer, label string, notify func(message string),
 ) (Flashcards, error) {
-	start := startup.OpenFlashcards[vaultregistry.Ports, *vault.Index, *vault.OpenVaults[*vault.Index]]{
+	start := startup.OpenFlashcards[vaultregistry.Ports, *Index, *vault.OpenVaults[*Index]]{
 		Label:        label,
 		OpenRegistry: c.registry,
-		OpenIndex:    func(ctx context.Context) (*vault.Index, error) { return OpenIndex(c, ctx) },
-		OpenVaults:   func(db *vault.Index) *vault.OpenVaults[*vault.Index] { return openVaults(c, db, out, label) },
-		BindWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index, vaults *vault.OpenVaults[*vault.Index]) {
-			SetShellNotes(c, api, db, vaults.UpdateIndex)
+		OpenIndex:    func(ctx context.Context) (*Index, error) { return OpenIndex(c, ctx) },
+		OpenVaults:   func(db *Index) *vault.OpenVaults[*Index] { return openVaults(c, db, out, label) },
+		BindWindow: func(ctx context.Context, ports vaultregistry.Ports, db *Index, vaults *vault.OpenVaults[*Index]) {
+			SetShellNotes(api, db)
 			api.ListVaults = vaultregistry.NewList(ports.Vaults).Execute
 			BindVaultIndexer(c, ctx, api, vaults)
 		},
-		InstallVault: func(ports vaultregistry.Ports, db *vault.Index) error {
+		InstallVault: func(ports vaultregistry.Ports, db *Index) error {
 			return installPluginVault(plugins(c), ports, db, getNoShownVault,
 				PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves})
 		},

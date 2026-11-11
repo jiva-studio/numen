@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/ortraw"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 // Runtime is the ONNX Runtime a recording is transcribed through: the library, and the entry points
@@ -21,7 +22,7 @@ func NewRuntime() Runtime {
 }
 
 // Ready reports whether everything a transcription needs is already on this machine.
-func Ready(runtime Runtime, cfg Config) bool {
+func Ready(runtime Runtime, cfg settings.Config) bool {
 	if !runtime.library.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
 		return false
 	}
@@ -44,7 +45,7 @@ func Ready(runtime Runtime, cfg Config) bool {
 }
 
 // GetModelBytes is the size of the model files on this machine, and zero where any of them is not here.
-func GetModelBytes(cfg Config) int64 {
+func GetModelBytes(cfg settings.Config) int64 {
 	targets := []struct{ explicit, repo, envVar, fileName string }{
 		{cfg.Model.Encoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile},
 		{cfg.Model.Decoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_DECODER", decoderFile},

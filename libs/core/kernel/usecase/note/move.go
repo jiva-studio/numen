@@ -10,12 +10,12 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 // Move files a note somewhere else, which is also how it is renamed: a note is
@@ -31,15 +31,13 @@ type Move struct {
 	sources sourceport.SourceRepository
 	index   edit.IndexUpdater
 	now     machineport.Clock
-	Drawing TellMove
-	Sync    query.SyncSetting
+	drawing TellMove
+	sync    naming.SyncSetting
 }
 
-// NewMove returns a Move that files a note at another path. It takes the vault
-// readers and writers, the link queries that find links to the note, the name
-// queries that decide which name resolves to it, the index file registry, the
-// index updater that syncs the repaired notes with the index, and the clock.
-// MoveDeps is what NewMove takes.
+// MoveDeps is what NewMove takes: the vault readers and writers, the queries that find the links to a
+// note and the names that resolve to it, the index and its updater, and the clock. Drawing receives each
+// move when set, and Sync reports whether a title and a filename are kept as one name.
 type MoveDeps struct {
 	Readers vaultport.VaultReaders
 	Writers MoveWriting
@@ -48,12 +46,15 @@ type MoveDeps struct {
 	Sources sourceport.SourceRepository
 	Index   edit.IndexUpdater
 	Now     machineport.Clock
+	Drawing TellMove
+	Sync    naming.SyncSetting
 }
 
 func NewMove(d MoveDeps) Move {
 	return Move{
 		readers: d.Readers, writers: d.Writers, links: d.Links,
 		names: d.Names, sources: d.Sources, index: d.Index, now: d.Now,
+		drawing: d.Drawing, sync: d.Sync,
 	}
 }
 
@@ -107,8 +108,8 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 
 	// The file is at its new path and the index is in sync. A view still showing
 	// the old name refers to a path with no file.
-	if u.Drawing != nil {
-		if err := u.Drawing(ctx, domain.Move{From: from, To: to}); err != nil {
+	if u.drawing != nil {
+		if err := u.drawing(ctx, v, domain.Move{From: from, To: to}); err != nil {
 			return res, fmt.Errorf("the window cannot show the move of %s to %s: %w", from, to, err)
 		}
 	}

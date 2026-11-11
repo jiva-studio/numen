@@ -3,6 +3,8 @@ package engine
 import (
 	"context"
 	"image"
+
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 // mockName names the mock layout model, recogniser and origin.
@@ -33,7 +35,7 @@ func (MockRecogniser) Recognize(ctx context.Context, page image.Image) ([]Block,
 		bounds.Max.X-bounds.Dx()/10, bounds.Min.Y+bounds.Dy()/5,
 	)
 	return []Block{{
-		Label:     labelText,
+		Label:     settings.LabelText,
 		Text:      MockText,
 		IsHeading: false,
 		Depth:     0,

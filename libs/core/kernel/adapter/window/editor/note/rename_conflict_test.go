@@ -49,10 +49,11 @@ func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "Old.md"), []byte("---\ntitle: Old\n---\n\n# Old\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	rename := notecase.NewRename(notecase.NewMove(notecase.MoveDeps{
+	deps := notecase.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: staleNoteWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}},
 		Now: testsupport.NewClock(),
-	}))
+	}
+	rename := notecase.NewRename(deps, notecase.NewMove(deps))
 	session := openSession{vault: domain.Vault{ID: "v1", Name: "v1", Path: root}}
 	prose := NewProse(session, nil, nil, nil, nil, &rename)
 

@@ -6,6 +6,7 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -68,12 +69,12 @@ func (c Config) EnsureVault(root, name string, isRecordedOpened bool) (domain.Va
 }
 
 // OpenIndex opens the cache. The caller closes it.
-func OpenIndex(c Config, ctx context.Context) (*vault.Index, error) {
+func OpenIndex(c Config, ctx context.Context) (*Index, error) {
 	return openIndex(vaultOf(c), ctx)
 }
 
 // UpdateIndex updates the notes at the paths given up to date in the index.
-func UpdateIndex(c Config, db *vault.Index) edit.IndexUpdater {
+func UpdateIndex(c Config, db *Index) edit.IndexUpdater {
 	return updateIndex(vaultOf(c), db)
 }
 
@@ -82,24 +83,42 @@ func Moves(c Config, ctx context.Context) (<-chan struct{}, error) {
 	return vaultMoves(vaultOf(c), ctx)
 }
 
-// Notes builds everything that acts on the notes of a vault, against this
-// installation's vault readers and writers.
-func Notes(c Config, db *vault.Index, index edit.IndexUpdater) note.Scenarios {
-	return vaultNotes(vaultOf(c), db, index)
+// Notes builds everything that changes the notes of a vault, against this
+// installation's vault readers and writers. No view receives a move.
+func Notes(c Config, db *Index, index edit.IndexUpdater) note.Scenarios {
+	return vaultNotes(vaultOf(c), db, index, noteViews{})
+}
+
+// MoveView shows a window that a note moved.
+type MoveView interface {
+	ShowMove(ctx context.Context, went domain.Move) error
+}
+
+// NotesShowingMoves is Notes where each move of a note in the vault the window shows also reaches view, so a
+// view showing a note under its old name switches to the new name.
+func NotesShowingMoves(
+	c Config, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view MoveView,
+) note.Scenarios {
+	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: showMovesIn(showing, view)})
+}
+
+// Queries builds everything that answers a question about the notes of a vault.
+func Queries(db *Index) query.Scenarios {
+	return vaultQueries(db)
 }
 
 // VaultOpener is how this installation opens a vault, the way the settings say
 // one is read and watched.
-func VaultOpener(c Config, db *vault.Index) *vault.VaultOpener {
+func VaultOpener(c Config, db *Index) *vault.VaultOpener {
 	return vaultOpener(vaultOf(c), db)
 }
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
-func GetRefresh(c Config, db *vault.Index) vault.Refresh {
-	return makeRefresh(c, db, db.Stores.Notes)
+func GetRefresh(c Config, db *Index) vault.Refresh {
+	return makeRefresh(c, db, db.Notes())
 }
 
-func makeRefresh(c Config, db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
+func makeRefresh(c Config, db *Index, notes noteport.NoteRepository) vault.Refresh {
 	return vaultMakeRefresh(vaultOf(c), db, notes)
 }
 
@@ -116,9 +135,9 @@ type vaultWiring struct {
 	VaultLocks   *vaultwriter.Locks
 	Watches      *vaultwatch.Hub
 	ErrorHandler func(error)
-	SyncSetting  query.SyncSetting
+	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
-	SetNoteCut   func(*vault.Scan, *vault.Index)
+	SetNoteCut   func(*vault.Scan, *Index)
 }
 
 func vaultRegistry(c vaultWiring) (vaultregistry.Ports, error) {
@@ -182,26 +201,21 @@ func vaultHandleError(c vaultWiring, err error) {
 	}
 }
 
-func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, notes note.Move) vault.Scenarios {
+func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *Index, notes note.Move) vault.Scenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
-	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Stores.Vaults)
+	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	erase := vault.NewErase(vaultIdentity(c), vaultTrash(c), unregister)
 	find := vaultregistry.NewFind(registry.Lookup)
 	return vault.Scenarios{
-		Registry: vault.Listing{
-			List:        vaultregistry.NewList(registry.Vaults),
-			Find:        find,
-			FolderCheck: check.NewFolderCheck(vaultReaders(c)),
-		},
 		Change: vault.Changing{
 			Add:        newAddVault(c, registry),
-			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Stores.Vaults),
-			Remove:     vault.NewRemove(find, unregister, erase),
+			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
+			Remove:     vault.NewRemove(find.Execute, unregister, erase),
 			Unregister: unregister,
 			Erase:      erase,
 		},
 		Tree: vault.Tree{
-			Move:   vault.NewMove(vaultWriters(c), db.NoteQueries.Links, db.Source.SourcesUnder, db.Source.Sources, notes),
+			Move:   vault.NewMove(vaultWriters(c), db.NoteQueries(), db.Sources(), db.Sources(), notes),
 			Import: vault.NewImport(vaultWriters(c), getImportedFiles(c)),
 		},
 		RecordOpen: vault.NewRecordOpen(registry.Recorder),
@@ -221,5 +235,16 @@ func ensureVault(c vaultWiring, registry vaultregistry.Ports, request vaultregis
 }
 
 func getProblems(_ vaultWiring, problems problemport.ProblemQueries) *vault.GetProblems {
-	return vault.NewStandardGetProblems(problems)
+	if problems == nil {
+		return vault.NewGetProblems(check.Checks{})
+	}
+	return vault.NewGetProblems(check.Standard(problems))
+}
+
+func vaultListing(c vaultWiring, registry vaultregistry.Ports) vaultregistry.Listing {
+	return vaultregistry.Listing{
+		List:        vaultregistry.NewList(registry.Vaults),
+		Find:        vaultregistry.NewFind(registry.Lookup),
+		FolderCheck: vaultregistry.NewFolderCheck(vaultReaders(c)),
+	}
 }

@@ -127,8 +127,8 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		opening := vaultOpener(vaultOf(cfg), db)
 		broken := errors.New("index unavailable")
 		opening.Refresh = vault.NewRefresh(
-			vaultReaders(vaultOf(cfg)), db.Stores.Vaults, repositoryAnswering{err: broken},
-			db.Source.RemovalLookup, db.Source.Sources, cfg.Clock(),
+			vaultReaders(vaultOf(cfg)), db.Vaults(), repositoryAnswering{err: broken},
+			db.Sources(), db.Sources(), cfg.Clock(),
 		)
 		var received []error
 		opening.ErrorHandler = func(err error) { received = append(received, err) }
@@ -179,13 +179,13 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 	if err := vaultOpener(vaultOf(cfg), db).UpdateIndex(t.Context(), v, []string{"One.md"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := db.Ledger().Len(); got != 1 {
+	if got := db.Ledger.Len(); got != 1 {
 		t.Fatalf("the opener's refresh left %d notes in the index's ledger", got)
 	}
 	if err := updateIndex(vaultOf(cfg), db)(t.Context(), v, []string{"Two.md"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := db.Ledger().Len(); got != 2 {
+	if got := db.Ledger.Len(); got != 2 {
 		t.Errorf("the update left %d notes in the index's ledger", got)
 	}
 }

@@ -13,13 +13,19 @@ import (
 // removed one by one.
 var ErrFolder = errors.New("the path is a folder; pass the paths of the notes to remove")
 
+// noteRemoving is the removal of a note that RemoveNote guards.
+type noteRemoving interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error)
+	Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error)
+}
+
 // RemoveNote removes one note, to the trash or permanently, and rejects a folder.
 type RemoveNote struct {
-	remove  Remove
+	remove  noteRemoving
 	readers vaultport.VaultReaders
 }
 
-func NewRemoveNote(remove Remove, readers vaultport.VaultReaders) RemoveNote {
+func NewRemoveNote(remove noteRemoving, readers vaultport.VaultReaders) RemoveNote {
 	return RemoveNote{remove: remove, readers: readers}
 }
 

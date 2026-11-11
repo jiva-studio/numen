@@ -11,7 +11,7 @@ func TestGetSummaryCountsWhatTheIndexContains(t *testing.T) {
 	t.Parallel()
 	_, db, v := newRefresh(t, map[string]string{"A.md": "# A\n\n## One\n", "B.md": "# B\n"})
 
-	got, err := registry.NewGetSummary(db.NoteQueries.Summaries).Execute(t.Context(), v)
+	got, err := registry.NewGetSummary(db.NoteQueries()).Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -33,7 +33,7 @@ func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 		vaultreader.Readers{}
 }
 
-func openIndex(t *testing.T) *vaults.Index {
+func openIndex(t *testing.T) *container.Index {
 	t.Helper()
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: indexfile.Path(t)},
@@ -47,9 +47,9 @@ func openIndex(t *testing.T) *vaults.Index {
 
 func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.KindNote} }
 
-func searchNotes(t *testing.T, db *vaults.Index, v domain.Vault, query string) []string {
+func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	found, err := db.Chunks.Passages.FindLexical(t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
+	found, err := db.ChunkSearch().FindLexical(t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,15 +62,15 @@ func searchNotes(t *testing.T, db *vaults.Index, v domain.Vault, query string) [
 	return out
 }
 
-func scanner(readers vaultport.VaultReaders, db *vaults.Index) vaults.Scan {
+func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
 	scan := vaults.NewScan(
 		readers,
-		db.Stores.Vaults,
-		db.Stores.Notes,
-		db.NoteQueries.FileStats,
-		db.Stores.Maintenance,
+		db.Vaults(),
+		db.Notes(),
+		db.NoteQueries(),
+		db.Maintenance(),
 	)
-	scan.Walks = db.Walks()
+	scan.Walks = &db.Walks
 	return scan
 }
 
@@ -91,7 +91,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 		t.Errorf("first scan: %+v", res)
 	}
 
-	summary, err := db.NoteQueries.Summaries.GetSummary(ctx, v.ID)
+	summary, err := db.NoteQueries().GetSummary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 		t.Errorf("scan of a vault with a book in it: %+v", res)
 	}
 
-	summary, err := db.NoteQueries.Summaries.GetSummary(ctx, v.ID)
+	summary, err := db.NoteQueries().GetSummary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -417,7 +417,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		t.Errorf("the second vault indexed %d notes, want 2 — a shared path was taken for already known", result.Indexed)
 	}
 
-	stats, summaries := db.NoteQueries.FileStats, db.NoteQueries.Summaries
+	stats, summaries := db.NoteQueries(), db.NoteQueries()
 
 	recognized, err := stats.GetFileStats(ctx, first.ID)
 	if err != nil {
@@ -560,7 +560,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Errorf("removed %d notes, want 0", res.Removed)
 	}
 
-	recognized, err := db.NoteQueries.FileStats.GetFileStats(ctx, v.ID)
+	recognized, err := db.NoteQueries().GetFileStats(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -608,8 +608,8 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// Checks the order in which notes reach the index: the index contents
 	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Stores.Vaults, content, db.NoteQueries.FileStats, db.Stores.Maintenance)
-	scan.Walks = db.Walks()
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance())
+	scan.Walks = &db.Walks
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
@@ -642,7 +642,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 		t.Errorf("a canceled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
-	recognized, err := db.NoteQueries.FileStats.GetFileStats(t.Context(), v.ID)
+	recognized, err := db.NoteQueries().GetFileStats(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

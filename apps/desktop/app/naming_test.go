@@ -9,15 +9,15 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func waitForIndex(t *testing.T, notes *note.Scenarios, v domain.Vault, path string) {
+func waitForIndex(t *testing.T, queries *query.Scenarios, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		titles, err := notes.Browse.GetTitles.Execute(t.Context(), v, []string{path})
+		titles, err := queries.Browse.GetTitles.Execute(t.Context(), v, []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -33,7 +33,7 @@ func waitForIndex(t *testing.T, notes *note.Scenarios, v domain.Vault, path stri
 // case the window does, and the tools pass the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync     query.SyncTitleAndFilename
+		sync     naming.SyncTitleAndFilename
 		filename string
 	}{
 		"one name":   {sync: true, filename: "Disorder.md"},
@@ -56,9 +56,9 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			}
 			// The note is in the index before it is renamed. A rename racing the
 			// walk that first reads the file files it at two paths at once.
-			waitForIndex(t, cases.Notes, v, "Entropy.md")
+			waitForIndex(t, cases.Queries, v, "Entropy.md")
 
-			notes := cases.Notes.ShowEdits(container.GetWindowView(opened))
+			notes := cases.Notes
 			renamed, err := notes.Place.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)

@@ -44,11 +44,5 @@ func (u GetConnection) getSide(
 	if err != nil {
 		return nil, err
 	}
-	for _, l := range links {
-		if l.ToVault != v.ID || l.To != to || l.Type != kind || !domain.IsConnectionRole(l.Role) {
-			continue
-		}
-		return &domain.Side{Role: l.Role, Type: l.Type, Why: l.Why, Label: l.Label, Marker: l.Marker}, nil
-	}
-	return nil, nil
+	return domain.FindSide(links, v.ID, to, kind), nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/resample"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/signal"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/sound"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 func openTranscriber(t *testing.T) (*Transcriber, []byte) {
@@ -19,9 +20,9 @@ func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 		t.Skip("NUMEN_MODELS and NUMEN_RECORDING name no models and no recording")
 	}
 
-	cfg := Defaults()
+	cfg := settings.Defaults()
 	if name := os.Getenv("NUMEN_MODEL"); name != "" {
-		model, ok := FindModel(name)
+		model, ok := settings.FindModel(name)
 		if !ok {
 			t.Fatalf("NUMEN_MODEL names %s, which the engine does not run", name)
 		}
