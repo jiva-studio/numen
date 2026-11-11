@@ -5,7 +5,6 @@ package service
 
 import (
 	"context"
-	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -34,30 +33,30 @@ type Backend struct {
 	cfg    Config
 	runs   *sessions.Registry
 
-	scenariosStore atomic.Pointer[scenarios.Scenarios]
+	current *scenarios.Current
 }
 
-func (b *Backend) scenarios() *scenarios.Scenarios { return b.scenariosStore.Load() }
+func (b *Backend) scenarios() *scenarios.Scenarios { return b.current.Get() }
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
 	b := &Backend{
 		vaults: cfg.Vaults, ports: hostports.New(cfg.Vaults, cfg.Store), now: cfg.Now, cfg: cfg,
-		runs: sessions.NewRegistry(), scenariosStore: atomic.Pointer[scenarios.Scenarios]{},
+		runs: sessions.NewRegistry(), current: nil,
 	}
-	b.scenariosStore.Store(b.build(cfg.DayStart))
+	b.current = scenarios.NewCurrent(b.getInputs(cfg.DayStart))
 	return b
 }
 
-func (b *Backend) build(dayStart func() time.Duration) *scenarios.Scenarios {
-	return scenarios.New(scenarios.Inputs{
+func (b *Backend) getInputs(dayStart func() time.Duration) scenarios.Inputs {
+	return scenarios.Inputs{
 		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, Types: b.ports.Notes, CardModels: b.ports.Notes, Links: b.ports.Links,
 		Problems: b.ports.Problems, Logs: b.ports.Logs, Schedules: b.ports.Schedules,
 		Index: func(ctx context.Context, v domain.Vault, paths []string) error {
 			return b.vaults(v.ID).Index.Scan(ctx, paths)
 		},
 		DayStart: dayStart, Now: b.now, Cores: b.cfg.Cores, Scheduler: b.cfg.Scheduler,
-	})
+	}
 }
 
 func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
