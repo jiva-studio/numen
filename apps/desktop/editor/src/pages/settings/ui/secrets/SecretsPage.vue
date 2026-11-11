@@ -3,11 +3,12 @@
  * The page of secrets: every secret by group, in priority order, with the plugin declarations that
  * may read it. A value is entered here once and is never shown again.
  */
-import { nextTick, useTemplateRef } from 'vue'
+import { useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { PluginInfo, Secret } from '@/entities/settings'
 import type { Declaration, SecretSection as SectionData } from '../../lib/secretSections'
+import { runAfterRender } from '../../model/afterRender'
 import { useSecretsPage } from '../../model/useSecretsPage'
 import type { InstallationSecrets } from '../../types'
 import { WORDS as words } from '../../words'
@@ -26,19 +27,11 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const addGroupButton = useTemplateRef<InstanceType<typeof Button>>('addGroupButton')
-const {
-  credentialsPath,
-  drafts,
-  newGroup,
-  sections,
-  groups,
-  declarations,
-  deletion,
-  actions,
-} = useSecretsPage({
-  getSecrets: () => props.secrets,
-  getPlugins: () => props.plugins,
-})
+const { credentialsPath, drafts, newGroup, sections, groups, declarations, deletion, actions } =
+  useSecretsPage({
+    getSecrets: () => props.secrets,
+    getPlugins: () => props.plugins,
+  })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {
@@ -53,13 +46,8 @@ function onRenameGroup(section: SectionData, name: string): void {
   actions.renameGroup(section, name)
 }
 
-async function onCreate(
-  group: string,
-  name: string,
-  value: string,
-  draftId?: number,
-): Promise<boolean> {
-  return actions.createSecret(group, name, value, draftId)
+function onCreate(group: string, name: string, value: string, draftId?: number): Promise<boolean> {
+  return actions.saveSecret(group, name, value, draftId)
 }
 
 function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean): void {
@@ -70,14 +58,13 @@ function onAskDelete(secret: Secret, opener: HTMLElement): void {
   deletion.ask({ kind: 'secret', secret }, opener)
 }
 
-async function onAskDeleteGroup(section: SectionData, opener: HTMLElement): Promise<void> {
+function onAskDeleteGroup(section: SectionData, opener: HTMLElement): void {
   if (section.secrets.length > 0) {
     deletion.ask({ kind: 'group', section }, opener)
     return
   }
   drafts.removeEmptyGroup(section.group)
-  await nextTick()
-  ;(addGroupButton.value?.$el as HTMLElement | undefined)?.focus()
+  runAfterRender(() => (addGroupButton.value?.$el as HTMLElement | undefined)?.focus())
 }
 </script>
 

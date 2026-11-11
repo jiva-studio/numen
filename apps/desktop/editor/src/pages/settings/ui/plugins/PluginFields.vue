@@ -1,21 +1,17 @@
 <script setup lang="ts">
-import type { JsonValue } from '@/shared/api/json'
 /**
  * Declarative settings fields and secrets for a plugin: switches,
  * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
  * secret whose condition fails is not shown, and keeps its value.
  */
-import { ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
 import type { InstallationSettings, PluginFieldsHost, SecretChoices } from '../../types'
-import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
-import { createPluginSettings } from '../../model/createPluginSettings'
-import { createEnumFields, getValueInForce } from '../../lib/enums'
-import { appendPathEntry, createTextDrafts, removePathEntry } from '../../model/drafts'
+import type { PluginInfo } from '@/entities/settings'
+import { usePluginFields } from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -31,10 +27,17 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const pluginSettings = createPluginSettings(
-  () => props.settings,
-  () => props.plugin.id,
-)
+const {
+  enums,
+  values,
+  drafts,
+  paths,
+  setSetting: onSettingChange,
+} = usePluginFields({
+  getSettings: () => props.settings,
+  getHost: () => props.host,
+  getPlugin: () => props.plugin,
+})
 const {
   getEnumOptions,
   getEnumChoices,
@@ -42,68 +45,15 @@ const {
   getShownSettings,
   getTopSecrets,
   getSecretsAfter,
-} = createEnumFields(
-  () => props.plugin,
-  readSetting,
-  pluginSettings.isRequested,
-  () => props.settings.getPlatform(),
-)
-
-/** Why a path setting did not accept the path last chosen, by key. */
-const pathProblems = ref<Record<string, string>>({})
-const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onSettingChange(key: string, value: JsonValue): void {
-  pluginSettings.set(key, value)
-}
-
-async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
-  const pluginId = props.plugin.id
-  const previous = getStringSetting(setting.key, setting.default)
-  const problem = await props.host.choosePath(pluginId, setting.key)
-  if (props.plugin.id !== pluginId) return
-  pathProblems.value = { ...pathProblems.value, [setting.key]: problem }
-  if (problem === '' && previous !== '' && hasManyPaths(setting)) {
-    onSettingChange(setting.key, appendPathEntry(previous, getStringSetting(setting.key, '')))
-  }
-}
-
-function onPathClear(setting: PluginSettingInfo, targetPath?: string): void {
-  pathProblems.value = { ...pathProblems.value, [setting.key]: '' }
-  const current = getStringSetting(setting.key, setting.default)
-  onSettingChange(setting.key, removePathEntry(current, targetPath))
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function hasManyPaths(setting: PluginSettingInfo): boolean {
-  return setting.type === 'file' && setting.multiple === true
-}
-
-function readSetting(key: string): JsonValue | undefined {
-  return pluginSettings.get(key)
-}
-
-function getValue(key: string): JsonValue | undefined {
-  const setting = props.plugin.settings.find((one) => one.key === key)
-  if (!setting) return readSetting(key)
-  return getValueInForce(setting, readSetting, pluginSettings.isRequested)
-}
-
-function getBooleanSetting(key: string, fallback: JsonValue | undefined): boolean {
-  const val = getValue(key) ?? fallback
-  return typeof val === 'boolean' ? val : Boolean(fallback)
-}
-
-function getNumberSetting(key: string, fallback: JsonValue | undefined): number {
-  const val = getValue(key) ?? fallback
-  return typeof val === 'number' ? val : Number(fallback ?? 0)
-}
-
-function getStringSetting(key: string, fallback: JsonValue | undefined): string {
-  const val = getValue(key) ?? fallback
-  return typeof val === 'string' ? val : String(fallback ?? '')
-}
+} = enums
+const { getBooleanSetting, getNumberSetting, getStringSetting } = values
+const { getDraft, setDraft, writeDraft } = drafts
+const {
+  problems: pathProblems,
+  hasMany: hasManyPaths,
+  choose: onPathChoose,
+  clear: onPathClear,
+} = paths
 </script>
 
 <template>

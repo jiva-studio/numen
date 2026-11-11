@@ -1,7 +1,7 @@
 /**
  * The preset tab kind and the state of its tabs: a preset edited as its schedule settings.
  */
-import { shallowRef, type Component, type Ref } from 'vue'
+import { shallowRef, type Component } from 'vue'
 import { Gauge } from '@lucide/vue'
 import { ERRORS } from '../../lib/wire/errors'
 import {
@@ -69,17 +69,14 @@ function applyPathRenames(
 interface KindDeps {
   context: PresetStateContext
   open: Map<string, OpenPreset>
-  titles: Map<string, string>
-  bounds: Ref<SettingsBounds>
-  core: Presets
-  today: () => string
   states: WeakMap<PresetTabState, OpenPreset>
   flush: (state: PresetTabState) => Promise<void>
   component: Component
 }
 
 function createPresetKind(deps: KindDeps): { kind: TabKindRegistration<PresetTabState> } {
-  const { context, open, titles, bounds, core, today, states, flush, component } = deps
+  const { context, open, states, flush, component } = deps
+  const { titles, bounds, core, today } = context
   const getTitle = (path: string): string =>
     titles.get(path) || getFileName(path) || words.newPreset
 
@@ -165,10 +162,6 @@ export function usePresetTab(deps: PresetTabDeps) {
   const { kind } = createPresetKind({
     context,
     open,
-    titles,
-    bounds,
-    core,
-    today,
     states,
     flush: flushState,
     component,

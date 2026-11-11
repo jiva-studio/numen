@@ -4,71 +4,24 @@
  *
  * The notes are stacked vertically in one column for continuous reading.
  */
-import { nextTick, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
+import { useTemplateRef } from 'vue'
 import { Prose } from '@numen/ui'
 
 import { NoteHead } from './note-head'
 import { WORDS as words } from '../../lib/session/notesWords'
-import type { Neighbor } from '../../api/session/notes'
 import { getNoteKey, type NotesPanelState } from '../../model/session/notes'
+import { useNotesScroll } from '../../model/session/useNotesScroll'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ panel: NotesPanelState }>()
 
-defineExpose({ scrollPage })
+defineExpose({ scrollPage: (back?: boolean) => scrollPage(back) })
 
 /* --------------------------------- State ---------------------------------- */
 const NO_LINKS = Object.freeze([])
 
 const column = useTemplateRef<HTMLElement>('column')
-
-/**
- * Where each note was drawn, so the one a link named can be scrolled to. Read
- * only when a link is followed, so it is held outside the reactive graph.
- */
-const noteElements = new Map<string, HTMLElement>()
-
-/** How much of the panel one press of space moves it. */
-const STEP = 0.85
-
-/* --------------------------------- Hooks ---------------------------------- */
-// A link pressed in the card opens the panel on the note it names, so reading
-// starts at that note. The watcher waits for the notes: the panel opens while they
-// are still being requested, and a note cannot be scrolled to before it is
-// rendered.
-watch(
-  () =>
-    [
-      props.panel.view.open.value,
-      props.panel.view.col.value,
-      props.panel.content.notes.value,
-    ] as const,
-  async ([open, col, notes]) => {
-    if (!open || !col || !notes.length) return
-    await nextTick(() => {
-      const found = notes.find((one: Neighbor) => one.written === col || one.path === col)
-      if (found)
-        noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
-      props.panel.actions.read()
-    })
-  },
-  { immediate: true },
-)
-
-/* -------------------------------- Helpers --------------------------------- */
-const registerNoteElement = (
-  one: Neighbor,
-  element: Element | ComponentPublicInstance | null,
-): void => {
-  if (element instanceof HTMLElement) noteElements.set(getNoteKey(one), element)
-  else noteElements.delete(getNoteKey(one))
-}
-
-function scrollPage(back = false) {
-  const col = column.value
-  if (!col) return
-  col.scrollBy({ top: col.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
-}
+const { registerNoteElement, scrollPage } = useNotesScroll(props.panel, column)
 </script>
 
 <template>

@@ -10,14 +10,10 @@
  * `data-palette` names each part: `list`, `title`, `icon`, `name`, `detail`,
  * `hint` and `silence`. A group is drawn as a group and a row as an option.
  */
-import { nextTick, useTemplateRef, type VNode } from 'vue'
+import { useTemplateRef, type VNode } from 'vue'
 import { PaletteGroup } from './palette-group'
 import { listId, type PlacedGroup } from '../../lib/place'
-
-/** The handle of a rendered group, which can reveal one of its items. */
-interface PaletteGroupHandle {
-  readonly reveal: (item: string) => void
-}
+import { revealInGroups, type PaletteGroupHandle } from '../../model/revealInGroups'
 
 defineProps<{
   groups: readonly PlacedGroup[]
@@ -47,9 +43,8 @@ defineExpose({ reveal })
 /** The rendered groups, each with its rows. */
 const groupRefs = useTemplateRef<PaletteGroupHandle[]>('group')
 
-async function reveal(item: string): Promise<void> {
-  await nextTick()
-  for (const group of groupRefs.value ?? []) group.reveal(item)
+function reveal(item: string): Promise<void> {
+  return revealInGroups(groupRefs.value, item)
 }
 </script>
 

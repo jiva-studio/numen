@@ -19,7 +19,7 @@ import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
 import { BootstrapFailure } from '@/features/app-start'
 import { getUserAgent } from './window/getUserAgent'
-import { createWindow } from './window/createWindow'
+import { getWindowParts } from './getWindowParts'
 import { useWindowTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
 import { WORDS as words } from '@/shared/ui/words'
@@ -35,7 +35,7 @@ const unsaved = {
   later: words.later,
 }
 
-const parts = createWindow()
+const parts = getWindowParts()
 const { frame } = parts.base
 const { windowTabs } = parts.base.tabs
 const { tabLinks } = parts.base.tabs

@@ -59,3 +59,12 @@ export const canPointAt = (name: string, value: string): boolean => {
   if (name === 'src') return canShow(value)
   return true
 }
+
+/** The href as written when it holds an escape that cannot be decoded. */
+export const decodeHref = (href: string): string => {
+  try {
+    return decodeURIComponent(href)
+  } catch {
+    return href
+  }
+}

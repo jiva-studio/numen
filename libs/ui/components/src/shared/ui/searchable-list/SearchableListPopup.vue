@@ -4,18 +4,11 @@
  * inside the window, put away by a press outside it, a scroll, a resize and
  * Escape, and giving the keyboard back to what asked for it.
  */
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  shallowRef,
-  useTemplateRef,
-  watch,
-} from 'vue'
+import { computed, onBeforeUnmount, shallowRef, useTemplateRef } from 'vue'
 import { measureElementRect } from '@/shared/api/dom'
 import { useMenuDismissal, useMenuPlacement } from '../menu'
 import SearchableList from './SearchableList.vue'
+import { useListMeasure } from './useListMeasure'
 import type {
   SearchableListPopupProps,
   SearchableListProps,
@@ -69,24 +62,18 @@ const { setSize, menuStyle } = useMenuPlacement({
 /* --------------------------------- Hooks ---------------------------------- */
 const dismissal = useMenuDismissal(frame, () => emit('close'))
 
-onMounted(async () => {
-  frame.value = list.value?.$el ?? null
-  dismissal.listen()
-  await nextTick()
-  measure()
+useListMeasure({
+  mount: () => {
+    frame.value = list.value?.$el ?? null
+    dismissal.listen()
+  },
+  watched: [() => props.items, () => props.at, query],
+  measure,
 })
 
 onBeforeUnmount(() => {
   if (props.from?.isConnected) props.from.focus()
 })
-
-watch(
-  () => [props.items, props.at, query.value],
-  async () => {
-    await nextTick()
-    measure()
-  },
-)
 
 /* -------------------------------- Helpers --------------------------------- */
 function measure(): void {

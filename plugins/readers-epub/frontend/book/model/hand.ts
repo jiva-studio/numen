@@ -20,7 +20,7 @@ export interface BookPointerOptions {
  * `turn` performs the page turn in the requested direction, and `getEdge`
  * returns the near edge of the reading area, from which a press is measured.
  */
-export function createBookPointer(options: BookPointerOptions) {
+export function useBookPointer(options: BookPointerOptions) {
   /** The position where the pointer went down, while it is down. */
   let hand: number | undefined
 

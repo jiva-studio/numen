@@ -49,10 +49,9 @@ export function createWindowAliases(
 ): Record<string, string> {
   const resolve = (path: string) => fileURLToPath(new URL(path, root))
   const packages = Object.entries({ ...own, ...WINDOW_PACKAGES })
-  return {
-    '@': resolve('./src'),
-    ...Object.fromEntries(packages.map(([name, path]) => [name, resolve(path)])),
-  }
+  const aliases: Record<string, string> = { '@': resolve('./src') }
+  for (const [name, path] of packages) aliases[name] = resolve(path)
+  return aliases
 }
 
 /**

@@ -3,61 +3,37 @@
  * The settings tab: every numen.json setting the user can change, grouped by
  * the part of the application it governs.
  */
-import { computed, ref, watch } from 'vue'
 import type { SettingsTabState } from '../types'
-import type { PluginInfo } from '@/entities/settings'
+import { useSettingsTab } from '../model/useSettingsTab'
 import SystemDetail from './SystemDetail.vue'
 import SecretsPage from './secrets/SecretsPage.vue'
-import { createManagedFromEntries } from '../lib/pluginListing'
 import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const initialPluginId = props.state.initialPluginId
-const initialSearchQuery = props.state.initialSearchQuery
-const selectedPluginId = ref<string | null>(initialPluginId.value)
-
-const installation = props.state.installation
-const plugins = computed<readonly PluginInfo[]>(() => installation.plugin.plugins.value)
-const uninstalled = computed(() =>
-  createManagedFromEntries([], installation.plugin.catalog.value).find(
-    (one) => one.id === selectedPluginId.value,
-  ),
-)
-/**
- * The plugin of the open page, as the last read that match it gave it. A read that does not list
- * it, or lists nothing, does not close the page.
- */
-let lastSelected: PluginInfo | undefined
-const selectedPlugin = computed<PluginInfo | undefined>(() => {
-  const match = plugins.value.find((one) => one.id === selectedPluginId.value)
-  if (match) lastSelected = match
-  return match ?? (lastSelected?.id === selectedPluginId.value ? lastSelected : undefined)
-})
-
-/* --------------------------------- Hooks ---------------------------------- */
-watch(
-  () => initialPluginId.value,
-  (newId) => {
-    selectedPluginId.value = newId
-  },
-)
+const {
+  installation,
+  searchQuery: initialSearchQuery,
+  selectedPluginId,
+  plugins,
+  uninstalled,
+  selectedPlugin,
+  actions,
+} = useSettingsTab(props.state)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {
-  selectedPluginId.value = pluginId
-  initialPluginId.value = pluginId
+  actions.selectPlugin(pluginId)
 }
 
 function onUpdateQuery(query: string): void {
-  initialSearchQuery.value = query
+  actions.updateQuery(query)
 }
 
 function onBack(): void {
-  selectedPluginId.value = null
-  initialPluginId.value = null
+  actions.goBack()
 }
 </script>
 

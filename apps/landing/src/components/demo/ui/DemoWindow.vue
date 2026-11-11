@@ -3,14 +3,12 @@
  * The landing page's picture of the Numen window: the workspace of panes and tabs over fixed example
  * data. It reads and changes no vault.
  */
-import { onBeforeUnmount, ref } from 'vue'
-import { WorkspaceLayout, closeTab } from '@numen/workbench'
+import { WorkspaceLayout } from '@numen/workbench'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { ENTROPY_BODY } from '../lib/note'
-import { DEMO_TABS, PDF_TAB_PATH, createDemoWorkspace } from '../lib/tabs'
-import { createAgent } from '../model/agent'
-import { createPlayer } from '../model/player'
+import { PDF_TAB_PATH } from '../lib/tabs'
+import { useDemoWindow } from '../model/useDemoWindow'
 import AgentView from './AgentView.vue'
 import DeckView from './DeckView.vue'
 import FilesView from './FilesView.vue'
@@ -22,21 +20,15 @@ import RecordingView from './RecordingView.vue'
 import { getTabIcon } from './icons'
 
 /* --------------------------------- State ---------------------------------- */
-const agent = createAgent()
-const player = createPlayer()
-const workspace = ref(createDemoWorkspace())
-const tabs = ref(DEMO_TABS)
-
-onBeforeUnmount(player.pause)
+const { agent, player, workspace, tabs, actions } = useDemoWindow()
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose(id: string) {
-  workspace.value = closeTab(workspace.value, id)
-  tabs.value = tabs.value.filter((one) => one.id !== id)
+  actions.close(id)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-const getKind = (id: string) => tabs.value.find((one) => one.id === id)?.kind
+const getKind = (id: string) => actions.getKind(id)
 </script>
 
 <template>

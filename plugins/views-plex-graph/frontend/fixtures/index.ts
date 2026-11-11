@@ -66,10 +66,10 @@ const createNeighborhood = (
   lines: readonly Connection[] = [],
 ): Neighborhood => {
   const specs = neighbors.map((item) => (typeof item === 'string' ? { path: item } : item))
-  return {
+  const focusKind = types[focus]
+  const neighborhood: Neighborhood = {
     focus: { path: focus, title: focus.replace(/\.md$/, '') },
-    focusType: types[focus] ?? NOTE_TYPE,
-    ...(types[focus] ? { focusTabKind: types[focus] } : {}),
+    focusType: focusKind ?? NOTE_TYPE,
     related: specs.map((spec) => ({
       relation: spec.relation ?? 'child',
       path: spec.path,
@@ -79,6 +79,7 @@ const createNeighborhood = (
     })),
     connections: [...specs.map((spec) => createLine(focus, spec)), ...lines],
   }
+  return focusKind ? { ...neighborhood, focusTabKind: focusKind } : neighborhood
 }
 
 /** A plex standing on a note, which records every note it was sent to. `lines` join notes other than the focus. */
