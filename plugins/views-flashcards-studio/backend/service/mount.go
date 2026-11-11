@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
@@ -100,5 +99,5 @@ func (b *Backend) Handlers() rpc.Handlers {
 // they set. Calls already running finish under the settings they began under.
 func (b *Backend) Configure(values map[string]string) {
 	starts := settings.GetDayStart(values)
-	b.scenariosStore.Store(b.build(func() time.Duration { return starts }))
+	b.current.SetDayStart(starts)
 }
