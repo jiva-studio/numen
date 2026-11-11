@@ -7,7 +7,10 @@ import (
 )
 
 // Rename changes the name of a secret. Its id, value and permissions stay.
-type Rename struct{ operation }
+type Rename struct{ Operation }
+
+// NewRename makes the Rename use case over the operation.
+func NewRename(op Operation) *Rename { return &Rename{Operation: op} }
 
 // Execute renames the secret in the list; the key store is not touched.
 func (u *Rename) Execute(ctx context.Context, id, name string) error {

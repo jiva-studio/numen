@@ -18,8 +18,13 @@ type Listing struct {
 
 // List reads the secrets from the list, without their values.
 type List struct {
-	operation
+	Operation
 	credentialsPath func(ctx context.Context) string
+}
+
+// NewList makes the use case that reads the list; credentialsPath answers where the values are kept when it is a file.
+func NewList(op Operation, credentialsPath func(ctx context.Context) string) *List {
+	return &List{Operation: op, credentialsPath: credentialsPath}
 }
 
 // Execute returns the sections of the page and the menu of each declaration of the installed plugins.

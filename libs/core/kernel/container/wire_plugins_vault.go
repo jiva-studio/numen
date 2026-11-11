@@ -178,8 +178,21 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 	)
 }
 
-func openSecrets(c pluginsWiring) *secret.Secrets {
-	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, settingsadapter.CreateSecretID, c.CredentialsPath, c.settings.SecretGate)
+func openSecrets(c pluginsWiring) *SecretScenarios {
+	base := secret.NewOperation(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, c.settings.SecretGate)
+	return &SecretScenarios{
+		Items: SecretItems{
+			Create: secret.NewCreate(base, settingsadapter.CreateSecretID),
+			Rename: secret.NewRename(base),
+			Write:  secret.NewWrite(base),
+			Delete: secret.NewDelete(base),
+			Move:   secret.NewMove(base),
+		},
+		Groups: SecretGroups{Rename: secret.NewRenameGroup(base), Delete: secret.NewDeleteGroup(base)},
+		Access: SecretAccess{Allow: secret.NewAllow(base), Deny: secret.NewDeny(base), ListStates: secret.NewListStates(base)},
+		List:   secret.NewList(base, c.CredentialsPath),
+		Prune:  secret.NewPrune(base),
+	}
 }
 
 func setSecretSource(c pluginsWiring) {

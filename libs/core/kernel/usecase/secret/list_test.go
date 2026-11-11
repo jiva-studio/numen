@@ -31,7 +31,7 @@ func (s forbiddenStore) GetKey(_ context.Context, name string) (string, error) {
 
 func TestListReadsNoValueFromTheKeyStore(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Here", Group: "g"})
-	f.secrets = secret.NewSecrets(f.ledger, forbiddenStore{keys: f.keys, t: t}, f.plugins, nil, func(context.Context) string { return "/credentials.json" }, nil)
+	f.secrets = newSecrets(f.ledger, forbiddenStore{keys: f.keys, t: t}, f.plugins, nil, func(context.Context) string { return "/credentials.json" }, nil)
 
 	listing, err := f.secrets.List.Execute(t.Context())
 	if err != nil {

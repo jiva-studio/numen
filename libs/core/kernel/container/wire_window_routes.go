@@ -220,8 +220,12 @@ func mountSettings(w *windowWiring) {
 	var groups windowsettings.SecretGroups
 	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
 		secretLister = secrets.List.ListForSettings
-		items = windowsettings.NewSecretItems(secrets.Items)
-		groups = windowsettings.NewSecretGroups(secrets.Groups, secrets.Access)
+		items = windowsettings.NewSecretItems(
+			secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write, secrets.Items.Delete, secrets.Items.Move,
+		)
+		groups = windowsettings.NewSecretGroups(
+			secrets.Groups.Rename, secrets.Groups.Delete, secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates,
+		)
 	}
 	retry := openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)

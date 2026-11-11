@@ -19,12 +19,22 @@ var (
 	ErrKeyStore = errors.New("the key store failed")
 )
 
-// operation is what every use case of this package is built from.
-type operation struct {
+// Operation is what every use case of this package is built from: the list of secrets, the key store, the plugin
+// host, and the gate that keeps their updates apart.
+type Operation struct {
 	ledger  pluginport.SecretLedger
 	keys    pluginport.KeyStore
 	plugins pluginport.SecretPlugins
 	gate    *Gate
+}
+
+// NewOperation returns the ground of the use cases over the list, the key store and the plugin host. Use
+// cases that share a gate never change the key store and the list at once; a nil gate is a new one.
+func NewOperation(ledger pluginport.SecretLedger, keys pluginport.KeyStore, plugins pluginport.SecretPlugins, gate *Gate) Operation {
+	if gate == nil {
+		gate = NewGate()
+	}
+	return Operation{ledger: ledger, keys: keys, plugins: plugins, gate: gate}
 }
 
 // Gate serializes secret store updates, list writes, and plugin configuration refreshes.
@@ -57,7 +67,7 @@ func (g *Gate) Leave() {
 	}
 }
 
-func (o operation) apply(ctx context.Context, change func() (readers []string, err error)) error {
+func (o Operation) apply(ctx context.Context, change func() (readers []string, err error)) error {
 	if err := o.gate.Enter(ctx); err != nil {
 		return err
 	}
@@ -75,7 +85,7 @@ func newInvalidError(format string, args ...any) error {
 
 func newNotFoundError(id string) error { return fmt.Errorf("%w: %s", ErrNotFound, id) }
 
-func (o operation) setValue(ctx context.Context, id, value string) error {
+func (o Operation) setValue(ctx context.Context, id, value string) error {
 	if o.keys == nil {
 		return fmt.Errorf("%w: %w", ErrKeyStore, plugin.ErrNoKeyStore)
 	}
@@ -85,7 +95,7 @@ func (o operation) setValue(ctx context.Context, id, value string) error {
 	return nil
 }
 
-func (o operation) deleteValue(ctx context.Context, id string) error {
+func (o Operation) deleteValue(ctx context.Context, id string) error {
 	if o.keys == nil {
 		return nil
 	}
@@ -120,68 +130,4 @@ func listPluginIDs(allowed []plugin.DeclarationKey) []string {
 		}
 	}
 	return ids
-}
-
-// Secrets holds every use case on the list of secrets.
-type Secrets struct {
-	Items  Items
-	Groups Groups
-	Access Access
-	List   *List
-	Prune  *Prune
-}
-
-// Items are the use cases on one secret.
-type Items struct {
-	Create *Create
-	Rename *Rename
-	Write  *Write
-	Delete *Delete
-	Move   *Move
-}
-
-// Groups are the use cases on a group of secrets.
-type Groups struct {
-	Rename *RenameGroup
-	Delete *DeleteGroup
-}
-
-// Access are the use cases on what each plugin may read.
-type Access struct {
-	Allow      *Allow
-	Deny       *Deny
-	ListStates *ListStates
-}
-
-// NewSecrets returns the use cases over the list, the key store and the plugin host. newID makes
-// the id of a new secret and credentialsPath answers where the values are kept when it is a file.
-// Use cases that share a gate never change the key store and the list at once; a nil gate is a new one.
-func NewSecrets(
-	ledger pluginport.SecretLedger, keys pluginport.KeyStore, plugins pluginport.SecretPlugins,
-	newID func() (string, error), credentialsPath func(ctx context.Context) string, gate *Gate,
-) *Secrets {
-	if gate == nil {
-		gate = NewGate()
-	}
-	base := operation{ledger: ledger, keys: keys, plugins: plugins, gate: gate}
-	return &Secrets{
-		Items: Items{
-			Create: &Create{operation: base, newID: newID},
-			Rename: &Rename{operation: base},
-			Write:  &Write{operation: base},
-			Delete: &Delete{operation: base},
-			Move:   &Move{operation: base},
-		},
-		Groups: Groups{
-			Rename: &RenameGroup{operation: base},
-			Delete: &DeleteGroup{operation: base},
-		},
-		Access: Access{
-			Allow:      &Allow{operation: base},
-			Deny:       &Deny{operation: base},
-			ListStates: &ListStates{operation: base},
-		},
-		List:  &List{operation: base, credentialsPath: credentialsPath},
-		Prune: &Prune{operation: base},
-	}
 }

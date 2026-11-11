@@ -10,8 +10,13 @@ import (
 
 // Create adds a secret at the end of the list, which is the end of its group, and keeps its value in the key store.
 type Create struct {
-	operation
+	Operation
 	newID func() (string, error)
+}
+
+// NewCreate makes the use case that creates a secret; newID makes the id of the new one.
+func NewCreate(op Operation, newID func() (string, error)) *Create {
+	return &Create{Operation: op, newID: newID}
 }
 
 // Execute stores the value, then lists the secret, and returns its id. The value is stored first,
