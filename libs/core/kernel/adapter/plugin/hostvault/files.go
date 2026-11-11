@@ -24,7 +24,7 @@ type Files struct {
 	RangeReader file.Read
 	OpenWriter  func(v domain.Vault) (NoteWriter, error)
 	Index       func(ctx context.Context, v domain.Vault, paths []string) error
-	Locks vault.Locks
+	Locks       vault.Locks
 
 	session sessionAccess
 }
