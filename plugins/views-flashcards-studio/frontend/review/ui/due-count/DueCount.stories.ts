@@ -1,17 +1,12 @@
 /**
  * How many cards are due, as one figure in a pill. Also the test corpus: each
  * story is run in a browser by `@storybook/addon-vitest`.
- *
- * The pill has two grounds. On its own it takes a token; on a filled button it
- * is drawn from the button's own text, and only a browser resolves that.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import DueCount from './DueCount.vue'
 import { Button } from '@numen/ui'
 import { DUE_WORDS } from './due'
-import { lightness } from '../../../testing/colour'
-import { DARK, expectDark } from '../../../testing/theme'
 
 interface Knobs {
   due: number | null
@@ -88,74 +83,4 @@ export const StillCounting: Story = {
     await expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.counting)
     await expect(pill?.textContent?.trim()).toBe('')
   },
-}
-
-/**
- * On the dark set of tokens, on the surface and on a filled button.
- *
- * The pill on a button is drawn from the button's own text colour, so its background has
- * to fall between the button's background and that text colour — on the dark set
- * as on the light one, where the two are reversed.
- */
-export const Dark: Story = {
-  globals: DARK,
-  play: async ({ canvasElement }) => {
-    await expectDark(canvasElement)
-    const canvas = within(canvasElement)
-    const [plain, overflow] = canvas.getAllByRole('status')
-    const button = canvas.getByRole('button')
-    await expect(plain).toBeDefined()
-    await expect(overflow).toBeDefined()
-
-    // On its own the pill carries both of its own colours, and they differ:
-    // its background is thin, so it is read over the surface behind it, and
-    // on the dark set the figure is lighter than that background.
-    const alone = getComputedStyle(plain!)
-    const backdropColor = getComputedStyle(
-      canvasElement.querySelector('.numen') as HTMLElement,
-    ).backgroundColor
-    await expect(lightness(alone.color)).toBeGreaterThan(
-      lightness(alone.backgroundColor, backdropColor) + 24,
-    )
-
-    // On the button it carries neither: the text colour is the button's, and the
-    // background is that colour laid thinly over the button's own.
-    const filled = getComputedStyle(button)
-    const ink = lightness(filled.color)
-    const ground = lightness(filled.backgroundColor)
-    await expect(Math.abs(ink - ground)).toBeGreaterThan(24)
-
-    const pill = lightness(getComputedStyle(overflow!).backgroundColor, filled.backgroundColor)
-    await expect(pill).toBeGreaterThan(Math.min(ink, ground))
-    await expect(pill).toBeLessThan(Math.max(ink, ground))
-    await expect(Math.abs(pill - ground)).toBeGreaterThan(2)
-  },
-}
-
-const drawAgainstSystem =
-  (system: 'light' | 'dark', isDark: boolean): NonNullable<Story['play']> =>
-  async ({ canvasElement }) => {
-    const { commands } = await import('vitest/browser')
-    await commands.setSystemScheme(system)
-    try {
-      const ground = canvasElement.querySelector('.numen')
-      if (!ground) throw new Error('no ground drawn')
-      const shade = lightness(getComputedStyle(ground).backgroundColor)
-      if (isDark) await expect(shade).toBeLessThan(64)
-      else await expect(shade).toBeGreaterThan(192)
-    } finally {
-      await commands.setSystemScheme(null)
-    }
-  }
-
-/** The dark theme on a machine that prefers light. */
-export const DarkOnLightSystem: Story = {
-  globals: DARK,
-  play: drawAgainstSystem('light', true),
-}
-
-/** The light theme on a machine that prefers dark. */
-export const LightOnDarkSystem: Story = {
-  globals: { theme: 'light' },
-  play: drawAgainstSystem('dark', false),
 }

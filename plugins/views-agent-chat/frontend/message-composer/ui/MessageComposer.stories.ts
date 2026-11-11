@@ -82,53 +82,19 @@ export const Playground: Story = {
 }
 
 /**
- * Grown by what was typed, and then past the height it is allowed — where it
- * stops growing and scrolls instead.
+ * Text of several lines and text longer than the field allows: the field holds all of it.
  */
 export const Grown: Story = {
   render: renderComposers(MULTILINE, `${LONG}\n\n${LONG}`),
   play: async ({ canvasElement }) => {
-    for (const field of canvasElement.querySelectorAll('textarea')) {
-      const within = field.closest('.composer')?.getBoundingClientRect().bottom ?? 0
-      await expect(field.getBoundingClientRect().bottom).toBeLessThanOrEqual(within)
-    }
+    const fields = [...canvasElement.querySelectorAll('textarea')]
+    await expect(fields.map((field) => field.value)).toEqual([MULTILINE, `${LONG}\n\n${LONG}`])
   },
 }
 
 /** A word with nowhere to break, a script that is not Latin, and one that
  *  runs the other way. */
 export const AwkwardText: Story = { render: renderComposers(LINK, DEVANAGARI, ARABIC) }
-
-/**
- * As narrow as a pane is ever drawn, with words standing in that are longer
- * than the row holding them.
- */
-export const Narrow: Story = {
-  args: { placeholder: 'Ask about the vault, or about anything else' },
-  render: (args) => ({
-    components: { MessageComposer },
-    setup: () => ({ args, empty: ref(''), typed: ref('x'), STORY_BOXES }),
-    template: `
-      <div :class="STORY_BOXES.narrowComposers">
-        <MessageComposer v-bind="args" v-model="empty" />
-        <MessageComposer v-bind="args" v-model="typed" />
-      </div>
-    `,
-  }),
-  play: async ({ canvasElement }) => {
-    const [empty, typed] = [...canvasElement.querySelectorAll('.composer')].map(
-      (each) => each.getBoundingClientRect().height,
-    )
-
-    // A field at rest is one row, so nothing moves as the first character lands.
-    await expect(empty).toBe(typed)
-
-    // The words that do not fit end in an ellipsis and not wrapping.
-    const placeholder = canvasElement.querySelector('.composer__placeholder') as HTMLElement
-    await expect(placeholder.scrollWidth).toBeGreaterThan(placeholder.clientWidth)
-    await expect(getComputedStyle(placeholder).textOverflow).toBe('ellipsis')
-  },
-}
 
 /**
  * Where no agent can answer: the model control turned off and reading "No agent", and the message

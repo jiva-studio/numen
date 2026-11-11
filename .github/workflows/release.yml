@@ -460,10 +460,9 @@ jobs:
 
       - name: Install Flatpak dependencies
         run: |
-          sudo apt-get update
           # The builder hands what the desktop shows the window as to
           # appstream, which reads the drawing through a loader of its own.
-          sudo apt-get install -y flatpak flatpak-builder appstream librsvg2-common
+          .github/scripts/apt-retry.sh --update sudo apt-get install -y flatpak flatpak-builder appstream librsvg2-common
           flatpak remote-add --user --if-not-exists \
             flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
@@ -687,7 +686,7 @@ jobs:
           SHA256: 17debf797a6c737959bc588236e897936ffac1af5f7e515e674ab32f9edfe719
         run: |
           set -euo pipefail
-          sudo apt-get update && sudo apt-get install -y nsis
+          .github/scripts/apt-retry.sh --update sudo apt-get install -y nsis
           curl --proto '=https' --tlsv1.2 -sfSL "$WEBVIEW2" -o "$RUNNER_TEMP/webview2.exe"
           echo "$SHA256  $RUNNER_TEMP/webview2.exe" | sha256sum -c -
 

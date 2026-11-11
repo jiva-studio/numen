@@ -120,6 +120,7 @@ desktop:
   - *go_base
   - .github/actions/setup-webkit/**
   - .github/actions/cache-apt/**
+  - .github/scripts/apt-retry.sh
   - apps/desktop/**
   - tests/e2e/cli/**
   - '!apps/desktop/editor/**'
@@ -143,6 +144,7 @@ ui:
   - .github/actions/build-ui/**
   - .github/actions/setup-playwright/**
   - .github/actions/cache-apt/**
+  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - '!**/*.md'
 desktop_fe:
@@ -158,6 +160,7 @@ desktop_fe:
   - .github/actions/build-ui/**
   - .github/actions/setup-playwright/**
   - .github/actions/cache-apt/**
+  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
@@ -196,6 +199,7 @@ plugin_stories:
   - .github/actions/build-ui/**
   - .github/actions/setup-playwright/**
   - .github/actions/cache-apt/**
+  - .github/scripts/apt-retry.sh
   - .github/workflows/plugins.yml
   - plugins/*/frontend/**
   - tools/ci-stories/**

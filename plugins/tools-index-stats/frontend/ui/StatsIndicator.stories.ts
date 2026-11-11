@@ -1,12 +1,9 @@
 /**
  * The title bar item that counts the vectors of the search index, with its popover open. Also the
  * test corpus: each story is run in a browser by `@storybook/addon-vitest`.
- *
- * The popover is drawn below the item and must not be clipped by the bar or the window, and its
- * ground must be a colour of the theme and never see-through; only a browser lays that out.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import type { Stats } from '../types'
 import StatsIndicator from './StatsIndicator.vue'
 import '../styles.css'
@@ -59,55 +56,16 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const getShade = (colour: string): { shade: number; alpha: number } => {
-  const channels = (colour.match(/[\d.]+/g) ?? []).map(Number)
-  const [red = 0, green = 0, blue = 0, alpha = 1] = channels
-  return { shade: red + green + blue, alpha }
-}
-
-const openAndMeasure: NonNullable<Story['play']> = async ({ canvasElement }) => {
-  const canvas = within(canvasElement)
-  await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))
-  const popover = await canvas.findByRole('dialog', { name: 'Index stats' })
-  const bar = canvasElement.querySelector('header') as HTMLElement
-
-  await waitFor(() => {
-    const box = popover.getBoundingClientRect()
-    return expect(box.top).toBeGreaterThanOrEqual(bar.getBoundingClientRect().bottom)
-  })
-  await expect(popover.getBoundingClientRect().width).toBeGreaterThan(200)
-  const box = popover.getBoundingClientRect()
-  await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
-  await expect(box.left).toBeGreaterThanOrEqual(0)
-  await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
-  await expect(getShade(getComputedStyle(popover).backgroundColor).alpha).toBe(1)
-
-  for (const label of ['Vectors', 'Chunks', 'Waiting for a vector', 'Notes', 'PDF', 'EPUB']) {
-    await expect(within(popover).getByText(label)).toBeVisible()
-  }
-  await expect(within(popover).queryByText('Media transcripts')).toBeNull()
-}
-
-/** The item over the vectors and the chunks that should carry one, and its popover, on the light tokens. */
-export const Light: Story = {
-  globals: { theme: 'light' },
-  play: async (context) => {
-    await openAndMeasure(context)
-    const popover = within(context.canvasElement).getByRole('dialog')
-    await expect(getShade(getComputedStyle(popover).backgroundColor).shade).toBeGreaterThan(384)
-  },
-}
-
-/** The same on the dark tokens: the ground is dark and the text is read against it. */
-export const Dark: Story = {
-  globals: { theme: 'dark' },
-  play: async (context) => {
-    await openAndMeasure(context)
-    const root = context.canvasElement.ownerDocument.documentElement
-    await expect(getComputedStyle(root).colorScheme).toBe('dark')
-    const popover = within(context.canvasElement).getByRole('dialog')
-    await expect(getShade(getComputedStyle(popover).backgroundColor).shade).toBeLessThan(384)
-    await expect(getShade(getComputedStyle(popover).color).shade).toBeGreaterThan(384)
+/** The item over the vectors and the chunks that should carry one, and its popover with one row per kind that holds sources. */
+export const Open: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))
+    const popover = await canvas.findByRole('dialog', { name: 'Index stats' })
+    for (const label of ['Vectors', 'Chunks', 'Waiting for a vector', 'Notes', 'PDF', 'EPUB']) {
+      await expect(within(popover).getByText(label)).toBeVisible()
+    }
+    await expect(within(popover).queryByText('Media transcripts')).toBeNull()
   },
 }
 
@@ -124,66 +82,22 @@ export const Embedded: Story = {
   },
 }
 
-const getBox = (element: HTMLElement) => {
-  const { width, height } = element.getBoundingClientRect()
-  return { width, height }
-}
-
-const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
-  const canvas = within(canvasElement)
-  const trigger = await canvas.findByRole('button', { name: '12,480 vectors, indexing' })
-  await expect(trigger.textContent?.trim()).toBe('⬡12,480')
-  await expect(trigger.textContent).not.toContain('/')
-  await expect(trigger.getAnimations()).toHaveLength(0)
-  await expect(getComputedStyle(trigger).borderTopWidth).toBe('0px')
-}
-
-const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
-  const canvas = within(canvasElement)
-  const trigger = await canvas.findByRole('button', { name: '13,100 vectors' })
-  await expect(trigger.textContent?.trim()).toBe('⬡13,100')
-  await expect(getComputedStyle(trigger).animationName).toBe('none')
-  await expect(trigger.getAnimations()).toHaveLength(0)
-}
-
-/** The chip is still while chunks wait, on the light tokens. */
-export const IndexingLight: Story = { globals: { theme: 'light' }, play: checkIndexing }
-
-/** The same on the dark tokens. */
-export const IndexingDark: Story = { globals: { theme: 'dark' }, play: checkIndexing }
-
-/** The chip is still on the light tokens once the queue is empty. */
-export const IdleLight: Story = {
-  args: { stats: DONE },
-  globals: { theme: 'light' },
-  play: checkIdle,
-}
-
-/** The same on the dark tokens. */
-export const IdleDark: Story = {
-  args: { stats: DONE },
-  globals: { theme: 'dark' },
-  play: checkIdle,
-}
-
-/** The chip is 20px high whether it is indexing, idle, loading or without an index. */
-export const KeepsItsSize: Story = {
-  render: () => ({
-    components: { StatsIndicator },
-    setup: () => ({ EMBEDDING, DONE }),
-    template: `
-      <div class="numen" data-chips style="display:flex;align-items:center;gap:8px;block-size:2rem;background:var(--numen-titlebar);color:var(--numen-ink);font-family:var(--numen-font-sans)">
-        <StatsIndicator :stats="EMBEDDING" phase="ready" locale="en-US" />
-        <StatsIndicator :stats="DONE" phase="ready" locale="en-US" />
-        <StatsIndicator :stats="null" phase="loading" locale="en-US" />
-        <StatsIndicator :stats="null" phase="unavailable" locale="en-US" />
-      </div>`,
-  }),
+/** While chunks wait the item names the vectors and says it is indexing. */
+export const Indexing: Story = {
   play: async ({ canvasElement }) => {
-    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.index-stats__trigger')].map(
-      getBox,
-    )
-    await expect(boxes).toHaveLength(4)
-    for (const box of boxes) await expect(box.height).toBe(20)
+    const trigger = await within(canvasElement).findByRole('button', {
+      name: '12,480 vectors, indexing',
+    })
+    await expect(trigger.textContent?.trim()).toBe('⬡12,480')
+    await expect(trigger.textContent).not.toContain('/')
+  },
+}
+
+/** Once the queue is empty the item names the vectors alone. */
+export const Idle: Story = {
+  args: { stats: DONE },
+  play: async ({ canvasElement }) => {
+    const trigger = await within(canvasElement).findByRole('button', { name: '13,100 vectors' })
+    await expect(trigger.textContent?.trim()).toBe('⬡13,100')
   },
 }

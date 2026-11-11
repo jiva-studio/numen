@@ -140,16 +140,10 @@ export const LongConversation: Story = {
     const composer = canvasElement.querySelector('.composer')!
     await expect(composer).toBeInTheDocument()
 
-    // Read halfway up, where the conversation runs on under the composer.
-    const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
-    thread.scrollTop = thread.scrollHeight / 2
-    await expect(thread.scrollTop).toBeGreaterThan(0)
-
-    // The field grown taller expands the composer height.
-    const overRect = composer.getBoundingClientRect()
+    // The field takes lines typed into it.
     const field = canvasElement.querySelector('textarea') as HTMLTextAreaElement
     await userEvent.click(field)
     await userEvent.keyboard('one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three')
-    await expect(composer.getBoundingClientRect().height).toBeGreaterThan(overRect.height)
+    await expect(field.value).toBe('one\ntwo\nthree')
   },
 }

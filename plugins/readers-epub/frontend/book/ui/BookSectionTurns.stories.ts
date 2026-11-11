@@ -143,7 +143,7 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   const readState = () => {
     const paper = getPaper(canvasElement)
     const copies = getCopyHolder(canvasElement).childElementCount
-    return `${paper.style.translate}|${paper.scrollWidth}|${copies}`
+    return `${paper.getBoundingClientRect().left}|${paper.scrollWidth}|${copies}`
   }
   let last = readState()
   let stableFrameCount = 0
