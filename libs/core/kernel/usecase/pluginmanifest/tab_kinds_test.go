@@ -50,3 +50,39 @@ func TestListFrontendPluginIDs_ListsThePluginsWithAFrontendInOrder(t *testing.T)
 		t.Errorf("a host with no plugin lists %#v, want an empty list", got)
 	}
 }
+
+func TestListTabKinds_ExcludesAPluginWithATabKindOfAnEarlierPlugin(t *testing.T) {
+	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "", Rank: domain.RankDefault}
+	other := manifest.TabKind{Kind: "other", Title: "Other", Icon: "", When: "", Rank: domain.RankDefault}
+	host := &manifestHost{
+		plugins: []manifest.Discovered{
+			{Manifest: manifest.Manifest{ID: "org.example.cards", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
+			{Manifest: manifest.Manifest{ID: "org.example.copy", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{other, deck}}}},
+		},
+	}
+
+	entries := New(host).ListTabKinds()
+
+	if len(entries) != 1 || entries[0].PluginID != "org.example.cards" || entries[0].TabKind != deck {
+		t.Errorf("got %+v, want only the deck of the earlier plugin", entries)
+	}
+}
+
+func TestListTabKinds_ExcludesAPluginWhoseReaderDuplicatesATabKind(t *testing.T) {
+	kind := manifest.TabKind{Kind: "reader:pdf", Title: "PDF", Icon: "", When: "", Rank: domain.RankDefault}
+	host := &manifestHost{
+		plugins: []manifest.Discovered{
+			{Manifest: manifest.Manifest{ID: "org.example.pdf", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{kind}}}},
+			{Manifest: manifest.Manifest{ID: "org.example.fake", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{
+				TabKinds: []manifest.TabKind{{Kind: "fake", Title: "Fake", Icon: "", When: "", Rank: domain.RankDefault}},
+				Readers:  []manifest.Reader{{ID: "pdf", ContentTypes: nil, Rank: domain.RankDefault}},
+			}}},
+		},
+	}
+
+	entries := New(host).ListTabKinds()
+
+	if len(entries) != 1 || entries[0].PluginID != "org.example.pdf" {
+		t.Errorf("got %+v, want only the tab kind of the earlier plugin", entries)
+	}
+}

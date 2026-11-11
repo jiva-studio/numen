@@ -17,15 +17,48 @@ import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
 import type { PluginHostDeps } from './types'
 import type { PluginItemRegistration, RegisteredReader, RegisteredTabKind } from './registry'
 
+/** The entries that own the ids of the tabs a window holds: the tab kinds and the readers. */
+export interface TabKindOwners {
+  readonly readers: Map<string, RegisteredReader>
+  readonly tabKinds: Map<string, RegisteredTabKind>
+}
+
+function getReaderKindId(id: string): string {
+  return id.startsWith('reader:') ? id : `reader:${id}`
+}
+
+function requireFreeKind(
+  owners: TabKindOwners,
+  claim: { readonly pluginId: string; readonly what: 'reader' | 'tab kind'; readonly id: string },
+): void {
+  const { pluginId, what, id } = claim
+  const kindId = what === 'reader' ? getReaderKindId(id) : id
+  const sameId = (what === 'reader' ? owners.readers : owners.tabKinds).get(id)
+  const sameKind =
+    owners.tabKinds.get(kindId) ??
+    [...owners.readers.values()].find((one) => getReaderKindId(one.reg.id) === kindId)
+  const owner = sameId ?? sameKind
+  if (!owner) return
+  throw new Error(
+    owner.pluginId === pluginId
+      ? `Plugin "${pluginId}" registers the ${what} "${id}" twice`
+      : `Plugin "${pluginId}" registers the ${what} "${id}", which plugin "${owner.pluginId}" already registers`,
+  )
+}
+
+/**
+ * Registers a reader. It throws where the window already holds the tab kind of the reader for a plugin:
+ * the same tab kind, a reader of it, or the tab kind of that reader.
+ */
 export function registerReaderEntry(
   deps: PluginHostDeps,
-  readers: Map<string, RegisteredReader>,
+  owners: TabKindOwners,
   item: PluginItemRegistration<ReaderRegistration>,
 ): Disposable {
   const { pluginId, registration, getContext } = item
-  const kindId = registration.id.startsWith('reader:')
-    ? registration.id
-    : `reader:${registration.id}`
+  const { readers } = owners
+  requireFreeKind(owners, { pluginId, what: 'reader', id: registration.id })
+  const kindId = getReaderKindId(registration.id)
   const cleanups: (() => void)[] = [
     deps.registerKind(createReaderTabKind(pluginId, registration, getContext)),
   ]
@@ -74,30 +107,29 @@ function extractWhere(
 
 export function registerTabKindEntry(
   deps: PluginHostDeps,
-  tabKinds: Map<string, RegisteredTabKind>,
+  owners: TabKindOwners,
   item: PluginItemRegistration<TabKindRegistration>,
 ): Disposable {
   const { pluginId, registration, getContext } = item
+  const { tabKinds } = owners
+  requireFreeKind(owners, { pluginId, what: 'tab kind', id: registration.kind })
   const kind = isDeclaredTabKind(registration)
     ? createDeclaredTabKind(pluginId, registration)
     : createCustomTabKind(pluginId, registration, { ...deps, getContext })
   const cleanups: (() => void)[] = [deps.registerKind(kind)]
   if (deps.registerEditor) {
-    const unreg = deps.registerEditor(
-      registration.kind,
-      (path, _title, options) => {
-        const where = extractWhere(options)
-        if (where === 'split' && deps.openTabAdjacent) {
-          deps
-            .openTabAdjacent(registration.kind, path)
-            .catch((error: Caught) => reportError(deps, pluginId, error))
-        } else {
-          deps
-            .openTab(registration.kind, path)
-            .catch((error: Caught) => reportError(deps, pluginId, error))
-        }
-      },
-    )
+    const unreg = deps.registerEditor(registration.kind, (path, _title, options) => {
+      const where = extractWhere(options)
+      if (where === 'split' && deps.openTabAdjacent) {
+        deps
+          .openTabAdjacent(registration.kind, path)
+          .catch((error: Caught) => reportError(deps, pluginId, error))
+      } else {
+        deps
+          .openTab(registration.kind, path)
+          .catch((error: Caught) => reportError(deps, pluginId, error))
+      }
+    })
     if (typeof unreg === 'function') cleanups.push(unreg)
   }
   let isDisposed = false

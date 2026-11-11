@@ -187,6 +187,46 @@ func (s *pluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
 	return launch
 }
 
+func (s *pluginSet) refuseConflicts(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem) {
+	s.mu.RLock()
+	ordered := make([]manifest.Discovered, 0, len(s.builtIns)+len(discovered))
+	for id, builtIn := range s.builtIns {
+		if !slices.ContainsFunc(discovered, func(p manifest.Discovered) bool { return p.Manifest.ID == id }) {
+			ordered = append(ordered, builtIn.plugin)
+		}
+	}
+	s.mu.RUnlock()
+	byID := func(a, b manifest.Discovered) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) }
+	slices.SortFunc(ordered, byID)
+	sorted := slices.Clone(discovered)
+	slices.SortFunc(sorted, byID)
+	// Plugins linked into the binary come first, then the discovered ones, each group in the order of the
+	// ids: the first plugin to declare a tab kind, a reader or a type of dropped data keeps it.
+	conflicts := manifest.ListContributionConflicts(append(ordered, sorted...))
+	if len(conflicts) == 0 {
+		return discovered, problems
+	}
+	conflicting := make(map[string]bool, len(conflicts))
+	for _, conflict := range conflicts {
+		conflicting[conflict.PluginID] = true
+	}
+	accepted := make([]manifest.Discovered, 0, len(discovered))
+	for _, p := range discovered {
+		if !conflicting[p.Manifest.ID] {
+			accepted = append(accepted, p)
+		}
+	}
+	problems = slices.Clone(problems)
+	for _, conflict := range conflicts {
+		for _, p := range sorted {
+			if p.Manifest.ID == conflict.PluginID {
+				problems = append(problems, manifestjson.DiscoveryProblem{Dir: p.Dir, Err: conflict})
+			}
+		}
+	}
+	return accepted, problems
+}
+
 func (s *pluginSet) replaceDiscovered(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -245,6 +285,16 @@ func (s *pluginSet) addBuiltIn(p manifest.Discovered, serve func(vars map[string
 	id := p.Manifest.ID
 	if _, exists := s.builtIns[id]; exists {
 		return errBuiltInRegistered
+	}
+	others := make([]manifest.Discovered, 0, len(s.plugins))
+	for otherID, other := range s.plugins {
+		if otherID != id {
+			others = append(others, other)
+		}
+	}
+	slices.SortFunc(others, func(a, b manifest.Discovered) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
+	if conflicts := manifest.ListContributionConflicts(append(others, p)); len(conflicts) > 0 {
+		return conflicts[len(conflicts)-1]
 	}
 	s.builtIns[id] = builtInPlugin{plugin: p, serve: serve}
 	if _, registered := s.plugins[id]; !registered {
