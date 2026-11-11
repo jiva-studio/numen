@@ -1,7 +1,3 @@
-/**
- * What a keystroke does in the window: the current tab handles it when one is
- * open, and on the list of vaults a letter opens the vault at that position.
- */
 import { getVaultForKey } from '@numen/workbench'
 import type { Vault } from '@/entities/vault'
 import type { WindowTab } from '@/entities/tab'
@@ -12,6 +8,10 @@ export interface WindowKeysDeps {
   readonly openVault: (id: string) => void
 }
 
+/**
+ * What a keystroke does in the window: the current tab handles it when one is
+ * open, and on the list of vaults a letter opens the vault at that position.
+ */
 export const createWindowKeys = (deps: WindowKeysDeps) => (press: KeyboardEvent) => {
   const tab = deps.getTab()
   if (tab) {

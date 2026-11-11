@@ -7,7 +7,6 @@ interface Declarations {
   readers?: readonly string[]
   tabKinds?: readonly string[]
   commands?: readonly string[]
-  /** The full ids of the shared commands the plugin handles. */
   handlers?: readonly string[]
   settingsViews?: readonly string[]
   capabilities?: readonly string[]

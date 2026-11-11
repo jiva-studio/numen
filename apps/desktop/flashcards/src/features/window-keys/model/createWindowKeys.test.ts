@@ -1,7 +1,7 @@
 import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import type { WindowTab } from '@/entities/tab'
-import { createWindowKeys } from './windowKeys'
+import { createWindowKeys } from './createWindowKeys'
 
 const VAULTS = [
   { id: 'physics', name: 'Physics', path: '/vaults/Physics' },

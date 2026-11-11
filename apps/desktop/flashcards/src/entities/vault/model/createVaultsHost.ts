@@ -4,15 +4,15 @@
  */
 import { computed, watch, type Ref } from 'vue'
 import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
-import type { Vault } from '@/entities/vault'
+import type { Vault } from '../lib/vault'
 
-interface WindowVaultsDeps {
+interface VaultsHostDeps {
   readonly list: Readonly<Ref<readonly Vault[]>>
   readonly getTabVault: () => string | null
   readonly openTab: (vault: string) => void
 }
 
-export function createWindowVaults(deps: WindowVaultsDeps): VaultsHost {
+export function createVaultsHost(deps: VaultsHostDeps): VaultsHost {
   const state = computed<VaultsState>(() => {
     const vaults = deps.list.value.map(({ id, name }) => ({ id, name }))
     const tabVault = deps.getTabVault()

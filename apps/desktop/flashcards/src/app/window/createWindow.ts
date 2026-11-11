@@ -4,7 +4,7 @@
  * order they depend on each other: the notices and the tabs first, then the services made from
  * them, then the host the services are given to.
  */
-import { onMounted, onUnmounted } from 'vue'
+import { onUnmounted } from 'vue'
 import {
   createPluginLoader,
   createWindowHost,
@@ -14,17 +14,16 @@ import {
 import { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import { createWindowAgent } from '@/entities/agent'
 import { createWindowTabs } from '@/entities/tab'
-import { useVaults } from '@/entities/vault'
+import { createVaultsHost, useVaults } from '@/entities/vault'
 import { useAppearance } from '@/features/appearance'
 import { useAppStart } from '@/features/app-start'
 import { useExternalLinks } from '@/features/external-links'
+import { useWindowKeys } from '@/features/window-keys'
 import { useWindowTasks } from '@/features/window-tasks'
 import { formatError } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createShellHost } from '../plugins/host'
 import { createWindowCommands } from '../plugins/windowCommands'
-import { createWindowKeys } from '../plugins/windowKeys'
-import { createWindowVaults } from '../plugins/windowVaults'
 
 /** What the window is given: how a plugin module is fetched and imported. */
 export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
@@ -42,9 +41,9 @@ export function createWindow(deps: WindowDeps = {}) {
     getPlatform: () => frame.platform.value,
     services: {
       commands: createWindowCommands(),
-      vaults: createWindowVaults({
+      vaults: createVaultsHost({
         list: vaults,
-        getTabVault: () => tabs.tab.value?.vault ?? null,
+        getTabVault: () => tabs.tabVault.value,
         openTab: tabs.openTab,
       }),
       window: createWindowHost(frame, (error) =>
@@ -54,26 +53,17 @@ export function createWindow(deps: WindowDeps = {}) {
   })
   const loader = createPluginLoader({
     host,
-    ...(deps.fetch ? { fetch: deps.fetch } : {}),
-    ...(deps.dynamicImport ? { dynamicImport: deps.dynamicImport } : {}),
+    ...deps,
   })
   const start = useAppStart(loader)
-  const onKeyDown = createWindowKeys({
-    getTab: () => tabs.tab.value,
-    getVaults: () => (tabs.front.value ? vaults.value : []),
-    openVault: tabs.openTab,
-  })
+  useWindowKeys({ tabs, vaults })
   useWindowTasks(notices)
   useExternalLinks(notices)
   const appearance = useAppearance(notices)
 
-  onMounted(() => window.addEventListener('keydown', onKeyDown))
-  onUnmounted(() => {
-    window.removeEventListener('keydown', onKeyDown)
-    windowAgent.dispose()
-  })
+  onUnmounted(() => windowAgent.dispose())
 
-  usePluginStyles(() => (tabs.front.value ? [tabs.front.value] : []))
+  usePluginStyles(() => tabs.frontViews.value)
 
   return {
     tabs,

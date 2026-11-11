@@ -18,7 +18,9 @@ export interface WindowTab {
 export function createWindowTabs() {
   const views = shallowRef<readonly PluginView[]>([])
   const front = computed(() => findFrontView(views.value))
+  const frontViews = computed(() => (front.value ? [front.value] : []))
   const tab = shallowRef<WindowTab | null>(null)
+  const tabVault = computed(() => tab.value?.vault ?? null)
   let tabCount = 0
 
   /** The tab closed, by its identity, or whichever is open where none is named. */
@@ -57,5 +59,8 @@ export function createWindowTabs() {
     views.value = views.value.filter((one) => one.pluginId !== pluginId)
   }
 
-  return { tab, front, openTab, closeTab, addView, dropPlugin }
+  return { tab, tabVault, front, frontViews, openTab, closeTab, addView, dropPlugin }
 }
+
+/** The tabs of a window, as createWindowTabs makes them. */
+export type WindowTabs = ReturnType<typeof createWindowTabs>

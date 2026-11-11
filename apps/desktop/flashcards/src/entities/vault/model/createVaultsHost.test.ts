@@ -5,8 +5,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
 import type { VaultsState } from '@numen/plugin-loader'
-import type { Vault } from '@/entities/vault'
-import { createWindowVaults } from './windowVaults'
+import type { Vault } from '../lib/vault'
+import { createVaultsHost } from './createVaultsHost'
 
 const ROWS: readonly Vault[] = [
   { id: 'orchard', name: 'Orchard notes', path: '/vaults/Orchard notes' },
@@ -17,7 +17,7 @@ function setup(vault: string | null = null) {
   const list = shallowRef<readonly Vault[]>(ROWS)
   const tabVault = shallowRef<string | null>(vault)
   const openTab = vi.fn<(id: string) => void>()
-  const vaults = createWindowVaults({ list, getTabVault: () => tabVault.value, openTab })
+  const vaults = createVaultsHost({ list, getTabVault: () => tabVault.value, openTab })
   return { vaults, list, tabVault, openTab }
 }
 
