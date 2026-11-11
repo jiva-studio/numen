@@ -2,6 +2,7 @@ package adaptertechnology
 
 import (
 	"go/ast"
+	"go/token"
 	"go/types"
 	"slices"
 	"strings"
@@ -49,13 +50,48 @@ func isCallingTechnology(pkg *packages.Package) bool {
 			if !ok || found {
 				return !found
 			}
-			if fn, ok := getCalledObject(pkg.TypesInfo, call).(*types.Func); ok && fn.Pkg() != nil && isTechnologyCall(fn.Pkg().Path()) {
+			if fn, ok := getCalledObject(pkg.TypesInfo, call).(*types.Func); ok && fn.Pkg() != nil && (isTechnologyCall(fn.Pkg().Path()) || isConnectClientCall(pkg.Fset, fn)) {
 				found = true
 			}
 			return !found
 		})
 	}
 	return found
+}
+
+// isConnectClientCall reports whether fn calls across a process boundary through Connect: a method of the
+// connect.Client type, or a constructor or a method of a client generated into a *connect.go file. Handlers
+// and routes of the server side are not client calls.
+func isConnectClientCall(fset *token.FileSet, fn *types.Func) bool {
+	signature, ok := fn.Type().(*types.Signature)
+	if !ok {
+		return false
+	}
+	receiver := getReceiverName(signature)
+	if load.IsWithin(fn.Pkg().Path(), "connectrpc.com/connect") {
+		return receiver == "Client"
+	}
+	if !strings.HasSuffix(fset.Position(fn.Pos()).Filename, "connect.go") {
+		return false
+	}
+	if receiver == "" {
+		return strings.HasPrefix(fn.Name(), "New") && strings.HasSuffix(fn.Name(), "Client")
+	}
+	return strings.HasSuffix(receiver, "Client") || strings.HasSuffix(receiver, "client")
+}
+
+func getReceiverName(signature *types.Signature) string {
+	if signature.Recv() == nil {
+		return ""
+	}
+	receiver := signature.Recv().Type()
+	if pointer, ok := receiver.(*types.Pointer); ok {
+		receiver = pointer.Elem()
+	}
+	if named, ok := receiver.(*types.Named); ok {
+		return named.Obj().Name()
+	}
+	return ""
 }
 
 // isDrivenAdapter reports whether a package under adapter/ is a driven adapter: it is in internal/adapter, in
