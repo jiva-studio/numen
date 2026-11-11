@@ -53,7 +53,7 @@ func (d *DebugOptions) isServingHTTP() bool {
 func (d *DebugOptions) serveHTTP(
 	ctx context.Context,
 	cfg container.Config,
-	opened *editor.Installation,
+	opened *editor.OpenedWindow,
 	pages http.Handler,
 ) error {
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)

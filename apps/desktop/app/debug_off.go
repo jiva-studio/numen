@@ -26,7 +26,7 @@ func (d *DebugOptions) isServingHTTP() bool {
 }
 
 func (d *DebugOptions) serveHTTP(
-	context.Context, container.Config, *editor.Installation, http.Handler,
+	context.Context, container.Config, *editor.OpenedWindow, http.Handler,
 ) error {
 	return nil
 }

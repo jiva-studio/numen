@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"net/http"
@@ -68,12 +69,15 @@ type pageSet struct {
 	pluginDir func(id string) (string, bool)
 }
 
-// pageWindow is what the pages need of the window besides its gate: the vault it shows, where its work is
-// listed, and where recordings are played from.
+// pageWindow is what the pages and the installation need of the window besides its gate: the vault it
+// shows, where its work is listed, where recordings are played from, and the wait for its pages to write.
 type pageWindow interface {
 	shownVault
 	taskList
 	getPlayOrigins() []string
+	SetPlaying(playing *Loopback)
+	RemoveTask(id string)
+	WaitForFlush(ctx context.Context) bool
 }
 
 // statePages is the window of a State, as its pages see it.
@@ -84,6 +88,12 @@ type statePages struct {
 func (s statePages) GetCurrentVault() domain.Vault { return s.state.GetCurrentVault() }
 
 func (s statePages) AddTask(pos work.Task) { s.state.Window.AddTask(pos) }
+
+func (s statePages) RemoveTask(id string) { s.state.Window.RemoveTask(id) }
+
+func (s statePages) WaitForFlush(ctx context.Context) bool { return s.state.Window.WaitForFlush(ctx) }
+
+func (s statePages) SetPlaying(playing *Loopback) { s.state.Playing.Store(playing) }
 
 func (s statePages) getPlayOrigins() []string { return s.state.Playing.Load().getPlayOrigins() }
 

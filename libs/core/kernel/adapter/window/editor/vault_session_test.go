@@ -43,7 +43,7 @@ func noteNamed(title string) string {
 type showing struct {
 	client       questions
 	canvas       numenv1connect.WindowServiceClient
-	installation *editor.Installation
+	installation *editor.OpenedWindow
 	cases        *container.WindowUseCases
 	cfg          container.Config
 	first        domain.Vault
@@ -702,7 +702,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-func openInstallation(t *testing.T) (*editor.Installation, *container.Index) {
+func openInstallation(t *testing.T) (*editor.OpenedWindow, *container.Index) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
@@ -762,7 +762,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 // nothing is an installation holding no vault, the window it opens, and a
 // client asking about it the way the window does.
 type nothing struct {
-	installation *editor.Installation
+	installation *editor.OpenedWindow
 	vault        questions
 	canvas       numenv1connect.WindowServiceClient
 	holds        numenv1connect.VaultsServiceClient

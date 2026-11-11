@@ -73,7 +73,7 @@ func addVaultOf(t *testing.T, cfg container.Config, name string) domain.Vault {
 	return added
 }
 
-// The page is given the notes it answers about, the window it draws and the plugins' services it
+// The page is given whether a vault is indexed, the window it draws and the plugins' services it
 // forwards.
 func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	cfg, db, _, _, _ := makeWindow(t)
@@ -90,11 +90,35 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	for name, wired := range map[string]any{
 		"indexed": api.Ensure,
 		"window":  api.Window,
-		"links":   api.ResolveLinks,
 	} {
 		if reflect.ValueOf(wired).IsZero() {
 			t.Errorf("the page has no %s", name)
 		}
+	}
+}
+
+// The page resolves the links of a note against the vaults the application lists.
+func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
+	state := t.TempDir()
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
+	})
+	addVaultOf(t, cfg, "One")
+	api := makeWindowAPI(cfg)
+
+	started, err := container.OpenFlashcards(cfg, t.Context(), api, io.Discard, "flashcards", func(string) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		started.CloseVaults()
+		if err := started.CloseIndex(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	if api.ResolveLinks == nil {
+		t.Error("the page has no links")
 	}
 }
 

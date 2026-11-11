@@ -42,7 +42,7 @@ func openVault(t *testing.T, notes map[string]string) (questions, string) {
 }
 
 func openVaultWithWindow(t *testing.T, notes map[string]string) (
-	questions, numenv1connect.WindowServiceClient, string, *editor.Installation,
+	questions, numenv1connect.WindowServiceClient, string, *editor.OpenedWindow,
 ) {
 	t.Helper()
 	root := t.TempDir()
@@ -224,7 +224,7 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 	}
 }
 
-func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installation) {
+func mountQuestionsServices(mux *http.ServeMux, installation *editor.OpenedWindow) {
 	services := editor.ServicesOf(installation)
 	pages := installation.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName)
 	mux.Handle("/"+numenv1connect.VaultServiceName+"/", pages)
@@ -240,7 +240,7 @@ type going struct {
 	client       questions
 	configuring  numenv1connect.SettingsServiceClient
 	canvas       numenv1connect.WindowServiceClient
-	installation *editor.Installation
+	installation *editor.OpenedWindow
 	cases        *container.WindowUseCases
 	root         string
 	settings     string

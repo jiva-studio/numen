@@ -418,7 +418,7 @@ func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	}
 }
 
-func closeAsDesktopApp(ctx context.Context, o *editor.Installation) bool {
+func closeAsDesktopApp(ctx context.Context, o *editor.OpenedWindow) bool {
 	if o.FlushPending(ctx) {
 		return true
 	}

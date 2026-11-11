@@ -30,6 +30,7 @@ type windowWiring struct {
 	embedder embeddingport.Embedder
 	asking   embeddingport.Embedder
 	inst     *editor.Installation
+	state    *editor.State
 	tabKinds *file.ListTabKinds
 	server   *editor.FileServer
 	wrap     func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
@@ -38,7 +39,7 @@ type windowWiring struct {
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
-func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
+func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*editor.OpenedWindow, error) {
 	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return nil, err
@@ -73,7 +74,7 @@ type WindowUseCases struct {
 // OpenWindowWith is OpenWindow over a cache already open, for a caller that opened it itself, with the walk of
 // the vault put through Wrap, for a caller that holds one back or drives it. A nil Wrap leaves it as it is.
 // The window closes the cache.
-func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*editor.Installation, error) {
+func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*editor.OpenedWindow, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return nil, errors.Join(err, opening.DB.Close())
@@ -82,7 +83,11 @@ func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*edit
 	if err != nil {
 		return nil, err
 	}
-	return opened.inst, nil
+	return opened.getOpenedWindow(), nil
+}
+
+func (w *windowWiring) getOpenedWindow() *editor.OpenedWindow {
+	return &editor.OpenedWindow{Installation: w.inst, State: w.state}
 }
 
 func openWindowWith(c Config, ctx context.Context, ports registry.Ports, opening WindowOpening) (*windowWiring, error) {
@@ -134,12 +139,12 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		indexer: indexer, embedding: embedding, moves: &moves, current: current, out: out,
 		embedderError: why, closeEmbedder: closeEmbedder,
 	})
-	inst := editor.NewInstallation(state, editor.Lifecycle{
+	installed := editor.NewOpenedWindow(state, editor.Lifecycle{
 		Start: session.start, Show: session.show, OpenPlugin: session.openPlugin,
 		Flush: session.flush, Close: session.close,
 		NoteWritten: indexer.WakeNotes,
 	}, tools.importFiles, out)
-	w.inst = inst
+	w.inst, w.state = installed.Installation, installed.State
 	w.cases.ShowTab = tools.showTab
 
 	if err := startWindow(ctx, w, first); err != nil {
