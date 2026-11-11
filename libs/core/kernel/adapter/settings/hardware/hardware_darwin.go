@@ -7,10 +7,12 @@ import (
 	"runtime"
 
 	"golang.org/x/sys/unix"
+
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
-func readPlatformHardware() Specs {
-	var hw Specs
+func readPlatformHardware() settingsdomain.MachineSpecs {
+	var hw settingsdomain.MachineSpecs
 	if bytes, err := unix.SysctlUint64("hw.memsize"); err == nil {
 		hw.TotalRAMMB = int64(bytes / bytesPerMB)
 	}

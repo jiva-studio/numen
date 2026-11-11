@@ -23,7 +23,7 @@ func TestError_MessageContainsFound(t *testing.T) {
 		Paths: container.Paths{IndexPath: pos},
 	})
 
-	page, err := fatalReport{}.page(cfg, settings.GetTextScaleBounds().Check("appearance.textScale", 4))
+	page, err := fatalReport{}.page(cfg, container.CheckTextScale("appearance.textScale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,12 +141,12 @@ func getStoppings(t *testing.T) []stopping {
 			cfg: container.NewConfig(container.Config{
 				Paths: container.Paths{SettingsPath: unreadable},
 			}),
-			why: settings.GetTextScaleBounds().Check("appearance.textScale", 4),
+			why: container.CheckTextScale("appearance.textScale", 4),
 		},
 		{
 			name: "a size the command line does not take",
 			cfg:  container.NewConfig(container.Config{}),
-			why:  settings.GetTextScaleBounds().Check("-text-scale", 4),
+			why:  container.CheckTextScale("-text-scale", 4),
 		},
 	}
 }
@@ -294,12 +294,12 @@ func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
 // A number a size does not accept is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestSizeResponse_MatchingOffset(t *testing.T) {
-	file := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("appearance.textScale", 4))
+	file := getFatalReport(container.NewConfig(container.Config{}), container.CheckTextScale("appearance.textScale", 4))
 	if !strings.Contains(file.Remedy, "appearance.textScale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 
-	line := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("-text-scale", 4))
+	line := getFatalReport(container.NewConfig(container.Config{}), container.CheckTextScale("-text-scale", 4))
 	if !strings.Contains(line.Remedy, "-text-scale") {
 		t.Errorf("a size on the command line is answered with %q", line.Remedy)
 	}

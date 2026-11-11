@@ -207,7 +207,7 @@ describe('App', () => {
     const keyEvent = new KeyboardEvent('keydown', { key: 'a', cancelable: true })
     globalThis.dispatchEvent(keyEvent)
     expect(keyEvent.defaultPrevented).toBe(false)
-    expect(shell?.tab.value).toBeNull()
+    expect(shell?.tabs.tab.value).toBeNull()
   })
 
   it('records failed plugins, resolves links through the note service, and cleans up on unmount', async () => {
@@ -267,7 +267,7 @@ describe('App', () => {
     const keyAfterUnmount = new KeyboardEvent('keydown', { key: 'a', cancelable: true })
     globalThis.dispatchEvent(keyAfterUnmount)
     expect(keyAfterUnmount.defaultPrevented).toBe(false)
-    expect(shellDefault?.tab.value).toBeNull()
+    expect(shellDefault?.tabs.tab.value).toBeNull()
   })
 })
 
@@ -762,7 +762,7 @@ describe('the title bar of the flashcards window', () => {
     )
     await flushPromises()
 
-    expect(shell?.plugins.titleBarView.value?.pluginId).toBe('org.example.harbor')
+    expect(shell?.titleBarView.value?.pluginId).toBe('org.example.harbor')
     expect(
       shell?.notices.notices.value.some(
         (one) => one.severity === 'error' && one.text.includes('org.example.ledger'),

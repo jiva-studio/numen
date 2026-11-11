@@ -28,8 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
-// Registry opens the vault registry for this installation.
-func (c Config) Registry() (vaultregistry.Ports, error) {
+func (c Config) registry() (vaultregistry.Ports, error) {
 	return vaultRegistry(vaultOf(c))
 }
 
@@ -48,14 +47,24 @@ func VaultLocks(c Config) vaultport.VaultLocks {
 	return writeLocks(vaultOf(c))
 }
 
-// VaultIdentity provides vault identification.
-func VaultIdentity(c Config) vaultport.VaultIdentity {
-	return vaultIdentity(vaultOf(c))
+// AddVault registers a new vault in the registry with the given root path and name.
+func (c Config) AddVault(root, name string) (domain.Vault, error) {
+	ports, err := c.registry()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	return addVault(vaultOf(c), ports, root, name)
 }
 
-// AddVault registers a new vault in the registry with the given root path and name.
-func (c Config) AddVault(ports vaultregistry.Ports, root, name string) (domain.Vault, error) {
-	return addVault(vaultOf(c), ports, root, name)
+// EnsureVault has the folder at root on the list of vaults and returns its vault. A folder that is on the list is
+// returned as it is; otherwise it is added under name, and it is recorded as the vault opened last when
+// isRecordedOpened is set.
+func (c Config) EnsureVault(root, name string, isRecordedOpened bool) (domain.Vault, error) {
+	ports, err := c.registry()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	return ensureVault(vaultOf(c), ports, vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
 // OpenIndex opens the cache. The caller closes it.
@@ -185,7 +194,7 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, n
 			FolderCheck: check.NewFolderCheck(vaultReaders(c)),
 		},
 		Change: vault.Changing{
-			Add:        vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock),
+			Add:        newAddVault(c, registry),
 			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Stores.Vaults),
 			Remove:     vault.NewRemove(find, unregister, erase),
 			Unregister: unregister,
@@ -199,8 +208,16 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, n
 	}
 }
 
+func newAddVault(c vaultWiring, registry vaultregistry.Ports) vault.Add {
+	return vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock)
+}
+
 func addVault(c vaultWiring, registry vaultregistry.Ports, root, name string) (domain.Vault, error) {
-	return vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock).Execute(root, name)
+	return newAddVault(c, registry).Execute(root, name)
+}
+
+func ensureVault(c vaultWiring, registry vaultregistry.Ports, request vaultregistry.EnsureRequest) (domain.Vault, error) {
+	return vaultregistry.NewEnsureRegistered(vaultIdentity(c), registry.Lookup, newAddVault(c, registry), registry.Recorder).Execute(request)
 }
 
 func getProblems(_ vaultWiring, problems problemport.ProblemQueries) *vault.GetProblems {

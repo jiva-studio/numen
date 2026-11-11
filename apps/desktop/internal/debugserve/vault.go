@@ -31,17 +31,6 @@ func RegisterVault(cfg container.Config, vaultPath string) error {
 	if !info.IsDir() {
 		return nil
 	}
-	reg, err := cfg.Registry()
-	if err != nil {
-		return err
-	}
-	_, found, err := reg.Lookup.FindVault(abs)
-	if err != nil || found {
-		return err
-	}
-	v, err := cfg.AddVault(reg, abs, filepath.Base(abs))
-	if err != nil {
-		return err
-	}
-	return reg.Recorder.RecordOpened(v.ID)
+	_, err = cfg.EnsureVault(abs, filepath.Base(abs), true)
+	return err
 }

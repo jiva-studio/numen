@@ -28,9 +28,9 @@ const AsDesigned = 1
 
 // GetInterfaceScaleBounds and GetTextScaleBounds are the allowed range of each of the two scales,
 // as the declaration of the shell gives it.
-func GetInterfaceScaleBounds() Bounds { return getAppBounds(keyInterfaceScale) }
+func GetInterfaceScaleBounds() settings.Bounds { return getAppBounds(keyInterfaceScale) }
 
-func GetTextScaleBounds() Bounds { return getAppBounds(keyTextScale) }
+func GetTextScaleBounds() settings.Bounds { return getAppBounds(keyTextScale) }
 
 // DefaultTheme is this product's own palette, used by an installation with no
 // theme chosen. It is the default the declaration of the shell gives the theme.

@@ -4,7 +4,7 @@
  */
 import { getVaultForKey } from '@numen/workbench'
 import type { Vault } from '@/entities/vault'
-import type { WindowTab } from './host'
+import type { WindowTab } from '@/entities/tab'
 
 export interface WindowKeysDeps {
   readonly getTab: () => WindowTab | null
