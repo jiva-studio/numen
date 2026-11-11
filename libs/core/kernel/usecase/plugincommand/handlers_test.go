@@ -48,3 +48,20 @@ func TestRun_RefusesAHandlerWhoseConditionDoesNotHold(t *testing.T) {
 		t.Errorf("got %v, calls %+v", err, plugins.calls)
 	}
 }
+
+func TestListing_IncludesTheHandlersAndTheContentTypes(t *testing.T) {
+	plugins := &handlingPlugins{}
+	commands := plugincommand.NewCommands(plugins, plugins, getTypes(), nil, nil)
+
+	listing := commands.Listing.Execute()
+
+	if len(listing.Handlers) != 1 || listing.Handlers[0].PluginID != "md.numen.cards" || listing.Handlers[0].HasItems {
+		t.Errorf("handlers %+v, want the one of md.numen.cards without items", listing.Handlers)
+	}
+	if len(listing.ContentTypeByExtension) == 0 {
+		t.Error("the listing holds no content type")
+	}
+	if len(listing.Commands) != len(commands.List.ExecuteAll()) {
+		t.Errorf("%d commands listed, want %d", len(listing.Commands), len(commands.List.ExecuteAll()))
+	}
+}

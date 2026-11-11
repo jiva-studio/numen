@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// newFloorFixture holds four chunks whose similarity to the query is 0.2, 0.35, 0.5 and 0.8.
 func newFloorFixture() *nearestFake {
 	f := &nearestFake{}
 	f.holdsSimilarity("weak", 0.35)

@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
@@ -31,19 +30,36 @@ type Handler struct {
 // Values answers the reads and writes of the settings and the choice of a path. A value with no
 // use case set answers that the build serves no settings.
 type Values struct {
-	Get         *setting.Get
-	Write       *setting.WriteSettings
-	Watch       *setting.WatchSettingChanges
-	ChoosePath  *setting.ChoosePluginPath
-	ListSecrets *secret.List
+	get        *setting.GetWithSecrets
+	write      *setting.WriteSettings
+	watch      *setting.WatchSettingChanges
+	choosePath *setting.ChoosePluginPath
+}
+
+// NewValues is the part of SettingsService that reads and writes the settings and chooses a path.
+func NewValues(
+	get *setting.GetWithSecrets, write *setting.WriteSettings, watch *setting.WatchSettingChanges,
+	choosePath *setting.ChoosePluginPath,
+) Values {
+	return Values{get: get, write: write, watch: watch, choosePath: choosePath}
+}
+
+// NewHandler is the handler of SettingsService made of its parts.
+func NewHandler(values Values, folders PluginFolders, items SecretItems, groups SecretGroups) *Handler {
+	return &Handler{Values: values, PluginFolders: folders, SecretItems: items, SecretGroups: groups}
 }
 
 // PluginFolders answers the calls about the folders plugins keep in the shown vault and the start of
 // a plugin that failed to start.
 type PluginFolders struct {
-	Retry  *setting.RetryPlugin
-	Data   PluginData
-	Vaults VaultProvider
+	retry  *setting.RetryPlugin
+	data   PluginData
+	vaults VaultProvider
+}
+
+// NewPluginFolders is the part of SettingsService that answers about the folders of plugins in the shown vault.
+func NewPluginFolders(retry *setting.RetryPlugin, data PluginData, vaults VaultProvider) PluginFolders {
+	return PluginFolders{retry: retry, data: data, vaults: vaults}
 }
 
 // errNoSettings is what a build that serves no settings answers.
@@ -54,10 +70,10 @@ var errNoSettings = errors.New("this build serves no settings")
 func (h *Values) GetSettings(
 	ctx context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
-	if h.Get == nil {
+	if h.get == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	got, err := h.Get.Execute()
+	got, err := h.get.Execute(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -68,15 +84,9 @@ func (h *Values) GetSettings(
 		Plugins: NewWirePluginInfos(got.Plugins),
 		App:     newWirePluginSettings(got.App),
 	}
-	if h.ListSecrets != nil {
-		listing, err := h.ListSecrets.Execute(ctx)
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		reply.SecretSections = newWireSecretSections(listing.Sections)
-		reply.SecretMenus = newWireSecretMenus(listing.Menus)
-		reply.CredentialsPath = listing.CredentialsPath
-	}
+	reply.SecretSections = newWireSecretSections(got.Secrets.Sections)
+	reply.SecretMenus = newWireSecretMenus(got.Secrets.Menus)
+	reply.CredentialsPath = got.Secrets.CredentialsPath
 	return connect.NewResponse(reply), nil
 }
 
@@ -86,14 +96,14 @@ func (h *Values) GetSettings(
 func (h *Values) WriteSettings(
 	_ context.Context, r *connect.Request[v1.WriteSettingsRequest],
 ) (*connect.Response[v1.WriteSettingsResponse], error) {
-	if h.Write == nil {
+	if h.write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	content := make([]settingsdomain.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
 		content = append(content, settingsdomain.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	if err := h.Write.Execute(content); err != nil {
+	if err := h.write.Execute(content); err != nil {
 		if errors.Is(err, settingsdomain.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
@@ -204,10 +214,10 @@ func newWirePluginFailure(failure *plugin.Failure) *v1.PluginFailure {
 func (h *PluginFolders) RetryPlugin(
 	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
 ) (*connect.Response[v1.RetryPluginResponse], error) {
-	if h.Retry == nil {
+	if h.retry == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	failure, err := h.Retry.Execute(ctx, r.Msg.GetPluginId())
+	failure, err := h.retry.Execute(ctx, r.Msg.GetPluginId())
 	if err != nil {
 		var unavailable *plugin.UnavailableError
 		if errors.As(err, &unavailable) && unavailable.Reason == plugin.NotInstalled {
@@ -283,15 +293,18 @@ func newWireSecrets(target []manifest.SecretDeclaration) []*v1.SecretDeclaration
 	return secrets
 }
 
+// SetPathChooser sets the native dialog a path setting is chosen with, once the application has one.
+func (h *Values) SetPathChooser(choose *setting.ChoosePluginPath) { h.choosePath = choose }
+
 // ChoosePluginPath shows the machine's native picker for a plugin's path setting
 // and writes the chosen path. A path the setting does not accept returns the reason.
 func (h *Values) ChoosePluginPath(
 	ctx context.Context, r *connect.Request[v1.ChoosePluginPathRequest],
 ) (*connect.Response[v1.ChoosePluginPathResponse], error) {
-	if h.ChoosePath == nil {
+	if h.choosePath == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	chosen, err := h.ChoosePath.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetKey())
+	chosen, err := h.choosePath.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetKey())
 	reply := &v1.ChoosePluginPathResponse{Path: chosen.Path, IsChosen: chosen.IsChosen}
 	switch {
 	case errors.Is(err, settingsdomain.ErrNotASetting):
@@ -324,10 +337,10 @@ func newWireReaders(readers []plugin.ReaderInfo) []*v1.PluginReader {
 func (h *Values) WatchSettings(
 	ctx context.Context, _ *connect.Request[v1.WatchSettingsRequest], out *connect.ServerStream[v1.WatchSettingsResponse],
 ) error {
-	if h.Watch == nil {
+	if h.watch == nil {
 		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	changes, stop := h.Watch.Execute()
+	changes, stop := h.watch.Execute()
 	defer stop()
 	if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
 		return err

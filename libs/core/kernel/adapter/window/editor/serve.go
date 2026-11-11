@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -22,42 +21,74 @@ type PathDialog interface {
 	ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error)
 }
 
+// Starter opens the first vault of the window and the passes behind it.
+type Starter interface {
+	Execute(ctx context.Context, first domain.Vault)
+}
+
+// Shower puts a vault in the window. `open` is the plugin open whose lock the switch shares, nil for a
+// user switch.
+type Shower interface {
+	Execute(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error
+}
+
+// PluginOpener switches the window to a vault on behalf of a plugin, through the function given.
+type PluginOpener interface {
+	Execute(ctx context.Context, v domain.Vault, open func(context.Context, domain.Vault, *windowsession.PluginOpen) error) error
+}
+
+// Flusher has every page write what only it holds, and reports whether none holds work that needs
+// user confirmation.
+type Flusher interface {
+	Execute(ctx context.Context) bool
+}
+
+// Closer stops the passes behind the vault and closes what the window holds open.
+type Closer interface {
+	Execute(ctx context.Context) error
+}
+
+// Importer copies files dropped onto the window into a folder of the vault.
+type Importer interface {
+	Execute(ctx context.Context, v domain.Vault, into string, handles []string) (vaults.ImportResult, error)
+}
+
+// Lifecycle is what runs the window from its start to its close.
+type Lifecycle struct {
+	Start      Starter
+	Show       Shower
+	OpenPlugin PluginOpener
+	Flush      Flusher
+	Close      Closer
+}
+
 // Installation is a window put together and running: the pieces the services
 // of its routes and anything else working the same vault need.
-// What runs behind the vault is the window session; the installation maps the
+// What runs behind the vault is the lifecycle; the installation maps the
 // calls of the application onto it.
 type Installation struct {
 	State *State
 
-	notes  *note.Scenarios
-	vaults *vaults.Scenarios
-
-	session *windowsession.Scenarios
-	pages   pageSet
-	dialogs []func(dialog PathDialog)
-	out     io.Writer
+	lifecycle Lifecycle
+	imports   Importer
+	pages     pageSet
+	dialogs   []func(dialog PathDialog)
+	out       io.Writer
 }
 
 // errNoVault is returned for a vault query on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
-// NewInstallation makes the installation of a window over its state and the use cases of its session.
-// Nothing is served and no vault is open until Start.
-func NewInstallation(state *State, session *windowsession.Scenarios, out io.Writer) *Installation {
+// NewInstallation makes the installation of a window over its state, the lifecycle of what it shows and
+// the import of dropped files. Nothing is served and no vault is open until Start.
+func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io.Writer) *Installation {
 	return &Installation{
-		State:   state,
-		session: session,
-		pages:   pageSet{state: state},
-		out:     out,
+		State:     state,
+		lifecycle: lifecycle,
+		imports:   imports,
+		pages:     pageSet{state: state},
+		out:       out,
 	}
-}
-
-// UseScenarios sets the use cases the window works its notes and its vaults
-// through. They are built once: other components working the same vault, such
-// as agent tools, use these instances and build none of their own, so both
-// observe the same errors.
-func (o *Installation) UseScenarios(notes *note.Scenarios, target *vaults.Scenarios) {
-	o.notes, o.vaults = notes, target
 }
 
 // Mount adds the services the window answers through.
@@ -93,7 +124,7 @@ func (o *Installation) SetFolderDialog(dialog PathDialog) {
 // Start opens the first vault, follows the model of the embedder and serves
 // recordings over the loopback socket.
 func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer) error {
-	o.session.Start.Execute(ctx, first)
+	o.lifecycle.Start.Execute(ctx, first)
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,
@@ -111,24 +142,24 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 
 // Close shuts the door on every question, stops the passes behind the vault,
 // waits for them, and closes what the window holds open.
-func (o *Installation) Close() error { return o.session.Closing.Close.Execute(context.Background()) }
+func (o *Installation) Close() error { return o.lifecycle.Close.Execute(context.Background()) }
 
 // Show puts a vault in the window, in place of the current one or as the first. `open` is the plugin
 // open whose lock the switch shares, nil for a user switch.
 func (o *Installation) Show(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
-	return o.session.Switching.Show.Execute(ctx, v, open)
+	return o.lifecycle.Show.Execute(ctx, v, open)
 }
 
 // OpenPluginVault switches the window to the vault on behalf of a plugin, through State.OpenVault.
 func (o *Installation) OpenPluginVault(ctx context.Context, v domain.Vault) error {
-	return o.session.Switching.OpenPlugin.Execute(ctx, v, o.State.OpenVault)
+	return o.lifecycle.OpenPlugin.Execute(ctx, v, o.State.OpenVault)
 }
 
 // FlushPending has every page write what only it holds, then waits for the
 // writes already taken. It returns false when a page holds work that needs
 // user confirmation.
 func (o *Installation) FlushPending(ctx context.Context) bool {
-	return o.session.Closing.Flush.Execute(ctx)
+	return o.lifecycle.Flush.Execute(ctx)
 }
 
 // WaitForFlush waits for every page to write its pending data. The wait is on
@@ -136,13 +167,6 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 func (o *Installation) WaitForFlush(ctx context.Context) bool {
 	return o.State.Window.WaitForFlush(ctx)
 }
-
-// Notes returns the use cases this window works its vault through.
-// Other components working the same vault in this process, such as agent
-// tools, use the same instances and share error behavior and dependencies.
-// Operations on the list of vaults are in Vaults.
-// Activity from callers other than the user is rendered through Notes.Drawing.
-func (o *Installation) Notes() note.Scenarios { return *o.notes }
 
 const (
 	// applyingTheme is the task ID for a theme the settings name that the catalog does not have.
@@ -178,10 +202,6 @@ func (o *Installation) Report(messages []string) {
 	}
 }
 
-// Vaults returns the use cases that act on the list of vaults, built once.
-// Agent components use the same instances, so both observe the same errors.
-func (o *Installation) Vaults() *vaults.Scenarios { return o.vaults }
-
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "import files"
 
@@ -207,7 +227,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	pos := work.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
 	state.Window.AddTask(pos)
 
-	imported, err := o.vaults.Tree.Import.Execute(ctx, showing, into, paths)
+	imported, err := o.imports.Execute(ctx, showing, into, paths)
 	if direct := imported.DirectChildren(into); len(direct) > 0 {
 		state.Notices.ChangeEvents.publish(window.Change{Paths: direct})
 	}
@@ -223,6 +243,3 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	state.Window.RemoveTask(pos.ID)
 }
-
-// ShowTabs is the use case that asks the window to make an open tab the active one.
-func (o *Installation) ShowTabs() windowsession.ShowTab { return o.session.ShowTab }

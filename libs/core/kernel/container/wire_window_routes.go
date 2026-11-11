@@ -27,11 +27,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -71,11 +73,15 @@ func mountText(w *windowWiring) {
 
 func mountVaults(w *windowWiring) {
 	state := w.inst.State
-	list := w.vaults
-	handler := vaults.NewHandler(state, vaults.Uses{
-		List: list.Registry.List, Find: list.Registry.Find, FolderCheck: list.Registry.FolderCheck,
-		Add: list.Change.Add, Rename: list.Change.Rename, Remove: list.Change.Remove,
-	})
+	registry, change := w.cases.Vaults.Registry, w.cases.Vaults.Change
+	handler := vaults.NewHandler(
+		state,
+		vaultlist.NewListVaults(registry.List, registry.FolderCheck),
+		vaultlist.NewAddVault(change.Add, registry.FolderCheck),
+		vaultlist.NewRenameVault(registry.Find, change.Rename, registry.FolderCheck),
+		vaultlist.NewOpenVault(registry.Find, state),
+		change.Remove,
+	)
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetFolderChooser(picker.NewChooseFolder(dialog))
 	})
@@ -85,33 +91,40 @@ func mountVaults(w *windowWiring) {
 
 func mountSearch(w *windowWiring) {
 	state := w.inst.State
-	handler := windowsearch.NewHandler(state)
-	handler.GetNameMatches = search.NewGetNameMatches(w.db.NoteQueries.NameMatches)
-	handler.GetTitles = query.NewGetTitles(w.db.NoteQueries.NoteRefs)
-	handler.GetTypes = query.NewGetTypes(w.db.NoteQueries.NoteTypes)
-	handler.ListTabKinds = w.files.ListTabKinds
 	finds := newSearch(searchOf(w.cfg), w.db, w.asking, state.ReportWordsAlone)
-	handler.Finds = &finds
+	handler := windowsearch.NewHandler(
+		state,
+		search.NewFindNames(w.db.NoteQueries.NameMatches, w.tabKinds),
+		search.NewFindPassages(finds, w.db.NoteQueries.NoteRefs, w.db.NoteQueries.NoteTypes, w.tabKinds),
+	)
 	setPluginSearch(searchOf(w.cfg), w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
+func getTabKindChooser(c pluginsWiring) file.TabKindChooser {
+	if choose := openChooseTabKind(c); choose != nil {
+		return choose
+	}
+	return file.NoTabKinds{}
+}
+
 func mountFile(w *windowWiring) {
 	state := w.inst.State
 	readers := vaultReaders(vaultOf(w.cfg))
+	fileKinds := file.NewGetFileKinds(readers, w.db.NoteQueries.NoteTypes)
+	chooser := getTabKindChooser(plugins(w.cfg))
+	w.tabKinds = file.NewListTabKinds(fileKinds, chooser)
 	folders := filewindow.NewFolders(
 		editor.NewSession(state), state.Events,
-		file.NewGetFolderEntries(readers, w.db.NoteQueries.NoteTypes),
-		file.NewGetFileKinds(readers, w.db.NoteQueries.NoteTypes),
-		openChooseTabKind(plugins(w.cfg)),
+		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries.NoteTypes), w.tabKinds),
+		file.NewListFileKinds(fileKinds, chooser),
 		file.NewCreateFolder(folderWriters(vaultOf(w.cfg))),
 	)
-	changes := filewindow.NewChanges(editor.NewSession(state), state.Writes, state.Notices, &w.vaults.Tree.Move, &w.notes.Place.Remove, &w.notes.Place.EmptyTrash)
+	changes := filewindow.NewChanges(editor.NewSession(state), state.Writes, state.Notices, &w.cases.Vaults.Tree.Move, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
-	w.files = handler
 	w.server = editor.NewFileServer(
-		state, &w.vaults.Registry.Find, file.NewOpenFile(readers), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)),
+		state, &w.cases.Vaults.Registry.Find, file.NewOpenFile(readers), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)),
 	)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }
@@ -139,17 +152,16 @@ func mountWorkspace(w *windowWiring) error {
 
 func mountNote(w *windowWiring) {
 	state := w.inst.State
-	notes := w.notes
+	notes := w.cases.Notes
 	addresses := notewindow.NewAddresses(state, notes.Refer.GetLinkAddress)
 	session := editor.NewSession(state)
 	save, create := note.NewSaveProse(&notes.Edit.Write, session, session), note.NewCreateNote(&notes.Edit.Create, session, session)
 	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &save, &create, &notes.Place.Rename)
-	outline := notewindow.NewOutline(
-		state, w.files.ListTabKinds,
+	outlining := notewindow.NewOutline(
+		state,
 		query.NewGetOpeningNote(w.db.NoteQueries.OpeningNote),
-		query.NewGetTypes(w.db.NoteQueries.NoteTypes),
-		query.NewGetHeadings(w.db.NoteQueries.Headings),
-		&notes.Browse.Neighborhood,
+		outline.NewGetNeighborhood(w.db.NoteQueries.Links, w.db.NoteQueries.NoteRefs, w.db.NoteQueries.NoteTypes, w.tabKinds),
+		outline.NewListHeadings(w.db.NoteQueries.Headings),
 	)
 	links := notewindow.NewLinks(
 		session, addresses,
@@ -158,7 +170,7 @@ func mountNote(w *windowWiring) {
 	connections := notewindow.NewConnections(
 		session, &notes.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)
-	handler := notewindow.NewHandler(state.Notices, prose, outline, links, connections)
+	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
 	w.inst.Mount(editor.NewNoteRoute(state, handler))
 }
 
@@ -194,23 +206,26 @@ func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
 
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
-	handler := &windowsettings.Handler{}
-	handler.Get = openGetSettings(w.cfg, pluginsAgentProvider(plugins(w.cfg)))
-	handler.Values.Write = openWriteSettings(settingsOf(w.cfg))
-	handler.Watch = openWatchSettings(settingsOf(w.cfg))
-	handler.Retry = openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
+	var secretLister settings.SecretLister = settings.NoSecrets{}
+	var items windowsettings.SecretItems
+	var groups windowsettings.SecretGroups
 	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
-		handler.ListSecrets = secrets.List
-		handler.Create, handler.Rename, handler.SecretItems.Write = secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write
-		handler.Delete, handler.Move = secrets.Items.Delete, secrets.Items.Move
-		handler.RenameGroup, handler.DeleteGroup = secrets.Groups.Rename, secrets.Groups.Delete
-		handler.Allow, handler.Deny, handler.ListStates = secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates
+		secretLister = secrets.List
+		items = windowsettings.NewSecretItems(secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write, secrets.Items.Delete, secrets.Items.Move)
+		groups = windowsettings.NewSecretGroups(secrets.Groups.Rename, secrets.Groups.Delete, secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates)
 	}
+	retry := openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
+	folders := windowsettings.NewPluginFolders(retry, nil, nil)
 	if data := openPluginData(vaultOf(w.cfg)); data != nil {
-		handler.Data, handler.Vaults = data, state
+		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
+	values := windowsettings.NewValues(
+		settings.NewGetWithSecrets(openGetSettings(w.cfg, pluginsAgentProvider(plugins(w.cfg))), secretLister),
+		openWriteSettings(settingsOf(w.cfg)), openWatchSettings(settingsOf(w.cfg)), nil,
+	)
+	handler := windowsettings.NewHandler(values, folders, items, groups)
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
-		handler.ChoosePath = openChoosePluginPath(settingsOf(w.cfg), dialog)
+		handler.SetPathChooser(openChoosePluginPath(settingsOf(w.cfg), dialog))
 	})
 	path, served := windowsettings.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
@@ -221,26 +236,26 @@ func mountPlugin(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
 }
 
-func shareEditorWindow(c Config, db *vault.Index, opened *editor.Installation) {
-	view := GetWindowView(opened)
+func shareEditorWindow(c Config, db *vault.Index, opened *windowWiring) {
+	view := GetWindowView(opened.inst)
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
-		&opened.State.Runtime,
+		&opened.inst.State.Runtime,
 		vaultFocusNote(vaultOf(c), db.NoteQueries.NoteRefs, view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),
-		opened.ShowTabs(),
+		opened.cases.ShowTab,
 	))
 }
 
-func shareVaultList(c Config, opened *editor.Installation) {
-	scenarios := opened.Vaults()
-	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{
+func shareVaultList(c Config, opened *windowWiring) {
+	scenarios := opened.cases.Vaults
+	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.inst.State.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    scenarios.Registry.Find,
 		Missing: scenarios.Registry.FolderCheck,
-		Open:    opened,
+		Open:    opened.inst,
 	}))
 }
 

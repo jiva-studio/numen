@@ -3,13 +3,13 @@
 package note
 
 import (
-	"context"
 	"errors"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -102,26 +102,17 @@ func NewProse(
 // Outline answers what a note stands among: the note a vault opens on, its neighborhood and the
 // headings of notes.
 type Outline struct {
-	vault            Vault
-	findTabKinds     func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
-	getOpeningNote   *query.GetOpeningNote
-	getTypes         *query.GetTypes
-	getHeadings      *query.GetHeadings
-	showNeighborhood *query.ShowNeighborhood
+	vault           Vault
+	getOpeningNote  *query.GetOpeningNote
+	getNeighborhood *outline.GetNeighborhood
+	listHeadings    *outline.ListHeadings
 }
 
-// NewOutline is the part of NoteService that answers what a note stands among. findTabKinds finds
-// the kind of tab each note opens in.
+// NewOutline is the part of NoteService that answers what a note stands among.
 func NewOutline(
-	window Vault,
-	findTabKinds func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error),
-	opening *query.GetOpeningNote, types *query.GetTypes, headings *query.GetHeadings,
-	neighborhood *query.ShowNeighborhood,
+	window Vault, opening *query.GetOpeningNote, neighborhood *outline.GetNeighborhood, headings *outline.ListHeadings,
 ) *Outline {
-	return &Outline{
-		vault: window, findTabKinds: findTabKinds, getOpeningNote: opening, getTypes: types,
-		getHeadings: headings, showNeighborhood: neighborhood,
-	}
+	return &Outline{vault: window, getOpeningNote: opening, getNeighborhood: neighborhood, listHeadings: headings}
 }
 
 // Links writes the links of notes and answers where links land and which notes link to a note.

@@ -13,7 +13,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
@@ -610,8 +609,8 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	m := editor.ServicesOf(f.installation).FileMove().WithSources(stuck{editor.ServicesOf(f.installation).FileMove().Sources()})
-	editor.ServicesOf(f.installation).SetFileMove(&m)
+	m := f.cases.Vaults.Tree.Move.WithSources(stuck{f.cases.Vaults.Tree.Move.Sources()})
+	f.cases.Vaults.Tree.Move = m
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md",
@@ -633,7 +632,7 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	editor.ServicesOf(f.installation).NoteRename().Drawing = func(context.Context, domain.Move) error {
+	f.cases.Notes.Place.Rename.Drawing = func(context.Context, domain.Move) error {
 		return errors.New("the window would not show the move")
 	}
 
@@ -934,7 +933,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.installation.Notes().Browse.GetTitles.Execute(t.Context(), f.installation.State.GetCurrentVault(), []string{"Entropy.md"})
+	found, err := f.cases.Notes.Browse.GetTitles.Execute(t.Context(), f.installation.State.GetCurrentVault(), []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}

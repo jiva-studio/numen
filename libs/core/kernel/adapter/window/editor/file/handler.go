@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -73,25 +72,19 @@ func NewHandler(folders *Folders, changes *Changes) *Handler {
 
 // Folders lists what the folders of the vault hold and makes folders.
 type Folders struct {
-	vault            Vault
-	writes           Writes
-	events           Events
-	getFolderEntries *file.GetFolderEntries
-	getFileKinds     *file.GetFileKinds
-	chooseTabKind    *tabkind.Choose
-	createFolder     *file.CreateFolder
+	vault        Vault
+	writes       Writes
+	events       Events
+	listFolder   *file.ListFolder
+	listKinds    *file.ListFileKinds
+	createFolder *file.CreateFolder
 }
 
-// NewFolders is the part of FileService that lists and makes folders. choose may be nil, which
-// leaves every file without a kind of tab.
+// NewFolders is the part of FileService that lists and makes folders.
 func NewFolders(
-	session Session, events Events,
-	entries *file.GetFolderEntries, kinds *file.GetFileKinds, choose *tabkind.Choose, create *file.CreateFolder,
+	session Session, events Events, folder *file.ListFolder, kinds *file.ListFileKinds, create *file.CreateFolder,
 ) *Folders {
-	return &Folders{
-		vault: session, writes: session, events: events,
-		getFolderEntries: entries, getFileKinds: kinds, chooseTabKind: choose, createFolder: create,
-	}
+	return &Folders{vault: session, writes: session, events: events, listFolder: folder, listKinds: kinds, createFolder: create}
 }
 
 // Changes moves and removes the files of the vault.

@@ -45,6 +45,7 @@ type showing struct {
 	client       questions
 	canvas       numenv1connect.WindowServiceClient
 	installation *editor.Installation
+	cases        *container.WindowUseCases
 	cfg          container.Config
 	first        domain.Vault
 	second       domain.Vault
@@ -63,7 +64,7 @@ func openTwoVaults(t *testing.T) *showing {
 	first := newListedVault(t, cfg, registry, "one", map[string]string{entropy: noteNamed("Entropy")})
 	second := newListedVault(t, cfg, registry, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
-	installation, err := container.OpenWindow(cfg, t.Context(), "one", os.Stderr)
+	installation, cases, err := openRegistered(cfg, t.Context(), "one", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,6 +84,7 @@ func openTwoVaults(t *testing.T) *showing {
 		client:       newQuestionsClient(server.Client(), server.URL),
 		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
+		cases:        cases,
 		cfg:          cfg,
 		first:        first,
 		second:       second,
@@ -268,7 +270,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	again, err := container.OpenWindow(f.cfg, t.Context(), "", os.Stderr)
+	again, _, err := openRegistered(f.cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -554,7 +556,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	*editor.ServicesOf(f.installation).NoteWrite() = editor.ServicesOf(f.installation).NoteWrite().WithIndex(refuseToUpdate)
+	f.cases.Notes.Edit.Write = f.cases.Notes.Edit.Write.WithIndex(refuseToUpdate)
 	return f
 }
 
@@ -630,7 +632,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 
 	// The index stays behind until a later write updates it, and that write
 	// reports the state.
-	*editor.ServicesOf(f.installation).NoteWrite() = editor.ServicesOf(f.installation).NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
+	f.cases.Notes.Edit.Write = f.cases.Notes.Edit.Write.WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
 	save()
 	if offset := findUpdateIndexTask(t, f); offset != nil {
 		t.Errorf("the index came level and the user is still shown %+v", offset)
@@ -665,7 +667,7 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	*editor.ServicesOf(f.installation).NoteCreate() = editor.ServicesOf(f.installation).NoteCreate().WithIndex(refuseToUpdate)
+	f.cases.Notes.Edit.Create = f.cases.Notes.Edit.Create.WithIndex(refuseToUpdate)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -691,7 +693,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	*editor.ServicesOf(f.installation).FileRemove() = editor.ServicesOf(f.installation).FileRemove().WithIndex(refuseToUpdate)
+	f.cases.Notes.Place.Remove = f.cases.Notes.Place.Remove.WithIndex(refuseToUpdate)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -794,7 +796,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
+	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}

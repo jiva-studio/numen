@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/csp"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -367,7 +368,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	list := registry.NewList(b)
 	check := check.NewFolderCheck(vaultreader.Readers{})
 	api := newBareServices()
-	vaultsHandler := windowvaults.NewHandler(api.state, windowvaults.Uses{List: list, FolderCheck: check})
+	vaultsHandler := windowvaults.NewHandler(api.state, vaultlist.NewListVaults(list, check), nil, nil, nil, nil)
 	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.Gate.CountQuestions())
 	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
 	handler := api.NewHandler(http.NotFoundHandler())

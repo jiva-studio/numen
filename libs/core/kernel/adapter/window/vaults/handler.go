@@ -18,38 +18,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Window is the window the list is answered for: the vault it shows now and the switch to another.
+// Window is the window the list is answered for: the vault it shows now.
 type Window interface {
 	GetCurrentVault() domain.Vault
-	ShowVault(ctx context.Context, v domain.Vault) error
-}
-
-// Lister reads the vaults of the installation.
-type Lister interface {
-	Execute() ([]domain.Vault, error)
-}
-
-// Finder finds a vault of the installation by its id.
-type Finder interface {
-	Execute(nameOrPath string) (domain.Vault, error)
-}
-
-// FolderChecker reports whether the folder of a vault is gone.
-type FolderChecker interface {
-	Execute(v domain.Vault) bool
-}
-
-// Adder puts a folder on the list as a vault.
-type Adder interface {
-	Execute(path, name string) (domain.Vault, error)
-}
-
-// Renamer sets the display name of a vault.
-type Renamer interface {
-	Execute(ctx context.Context, v domain.Vault, name string) (domain.Vault, error)
 }
 
 // Remover takes a vault off the list, and trashes its folder when asked.
@@ -62,36 +37,29 @@ type FolderChooser interface {
 	Execute(ctx context.Context, title, startingAt string) (picker.PickedFolder, error)
 }
 
-// Handler answers about the vaults this installation holds.
-type Handler struct {
-	window      Window
-	list        Lister
-	find        Finder
-	folderCheck FolderChecker
-	add         Adder
-	rename      Renamer
-	remove      Remover
-
+// Dialog answers the request for the machine's native folder dialog, once the application has one.
+type Dialog struct {
 	chooseFolder atomic.Pointer[FolderChooser]
 }
 
-// Uses are the operations on the list of vaults that the service answers with.
-type Uses struct {
-	List        Lister
-	Find        Finder
-	FolderCheck FolderChecker
-	Add         Adder
-	Rename      Renamer
-	Remove      Remover
+// Handler answers about the vaults this installation holds.
+type Handler struct {
+	*Dialog
+	window Window
+	list   *vaultlist.ListVaults
+	add    *vaultlist.AddVault
+	rename *vaultlist.RenameVault
+	open   *vaultlist.OpenVault
+	remove Remover
 }
 
 // NewHandler is the handler of the vaults service of one window. The folder dialog is set after,
 // when the application has one.
-func NewHandler(current Window, uses Uses) *Handler {
-	return &Handler{
-		window: current, list: uses.List, find: uses.Find, folderCheck: uses.FolderCheck, add: uses.Add,
-		rename: uses.Rename, remove: uses.Remove,
-	}
+func NewHandler(
+	current Window, list *vaultlist.ListVaults, add *vaultlist.AddVault, rename *vaultlist.RenameVault,
+	open *vaultlist.OpenVault, remove Remover,
+) *Handler {
+	return &Handler{Dialog: &Dialog{}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
 }
 
 // NewRoute is where the vaults service answers: its path and the handler of its calls. Each call
@@ -101,7 +69,7 @@ func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Han
 }
 
 // SetFolderChooser sets the native folder dialog a client may ask for.
-func (s *Handler) SetFolderChooser(choose FolderChooser) { s.chooseFolder.Store(&choose) }
+func (s *Dialog) SetFolderChooser(choose FolderChooser) { s.chooseFolder.Store(&choose) }
 
 // ListVaults returns every vault of the installation. The active vault is
 // queried from the window.
@@ -115,13 +83,13 @@ func (s *Handler) ListVaults(
 	}
 	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(target))}
 	for _, v := range target {
-		out.Vaults = append(out.Vaults, s.convertVaultToWire(v))
+		out.Vaults = append(out.Vaults, convertVaultToWire(v))
 	}
 	return connect.NewResponse(out), nil
 }
 
 // ChooseFolder opens this machine's native folder dialog.
-func (s *Handler) ChooseFolder(
+func (s *Dialog) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
@@ -157,7 +125,7 @@ func (s *Handler) AddVault(
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
 	}
-	return connect.NewResponse(&v1.AddVaultResponse{Vault: s.convertVaultToWire(added)}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: convertVaultToWire(added)}), nil
 }
 
 // RenameVault sets the display name of a vault. The folder name on the
@@ -166,10 +134,7 @@ func (s *Handler) RenameVault(
 	ctx context.Context,
 	r *connect.Request[v1.RenameVaultRequest],
 ) (*connect.Response[v1.RenameVaultResponse], error) {
-	v, err := s.find.Execute(r.Msg.GetId())
-	if err == nil {
-		v, err = s.rename.Execute(ctx, v, r.Msg.GetName())
-	}
+	renamed, err := s.rename.Execute(ctx, r.Msg.GetId(), r.Msg.GetName())
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {
@@ -177,7 +142,7 @@ func (s *Handler) RenameVault(
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
 	}
-	return connect.NewResponse(&v1.RenameVaultResponse{Vault: s.convertVaultToWire(v)}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: convertVaultToWire(renamed)}), nil
 }
 
 // RemoveVault removes a vault from the list and the index, and moves its folder
@@ -202,10 +167,7 @@ func (s *Handler) OpenVault(
 	ctx context.Context,
 	r *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
-	v, err := s.find.Execute(r.Msg.GetId())
-	if err == nil {
-		err = s.window.ShowVault(ctx, v)
-	}
+	err := s.open.Execute(ctx, r.Msg.GetId())
 	if err == nil {
 		return connect.NewResponse(&v1.OpenVaultResponse{}), nil
 	}
@@ -221,10 +183,10 @@ func (s *Handler) OpenVault(
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
 
-func (s *Handler) convertVaultToWire(v domain.Vault) *v1.Vault {
+func convertVaultToWire(v vaultlist.Listed) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
-		IsMissing: s.folderCheck.Execute(v),
+		IsMissing: v.IsMissing,
 	}
 }
 

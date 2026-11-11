@@ -28,7 +28,7 @@ type VaultProvider interface {
 type Handler struct {
 	vaults   VaultProvider
 	list     plugincommand.List
-	types    plugincommand.ContentTypes
+	listing  plugincommand.ListCommands
 	run      plugincommand.Run
 	versions VersionItems
 }
@@ -36,7 +36,7 @@ type Handler struct {
 // NewHandler makes the handler over both scenarios, and the text versions a command with items runs
 // over; without them such a command lists and runs nothing.
 func NewHandler(vaults VaultProvider, commands plugincommand.Commands, versions VersionItems) *Handler {
-	return &Handler{vaults: vaults, list: commands.List, types: commands.ContentTypes, run: commands.Run, versions: versions}
+	return &Handler{vaults: vaults, list: commands.List, listing: commands.Listing, run: commands.Run, versions: versions}
 }
 
 // NewRoute is where CommandService is mounted, what the schema generated to answer it, and the
@@ -52,29 +52,26 @@ func NewRoute(options connect.HandlerOption, handler *Handler) (path string, ser
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
-	entries := h.list.ExecuteAll()
-	commands := make([]*v1.PluginCommand, 0, len(entries))
-	for _, one := range entries {
-		commands = append(commands, newWireCommand(h.list, one))
+	listing := h.listing.Execute()
+	commands := make([]*v1.PluginCommand, 0, len(listing.Commands))
+	for _, one := range listing.Commands {
+		commands = append(commands, newWireCommand(one))
 	}
-	slotEntries := h.list.ExecuteSlots()
-	slots := make([]*v1.PluginSlotEntry, 0, len(slotEntries))
-	for _, one := range slotEntries {
+	slots := make([]*v1.PluginSlotEntry, 0, len(listing.Slots))
+	for _, one := range listing.Slots {
 		slots = append(slots, newWireSlotEntry(one))
 	}
-	keybindings := newWireKeybindings(h.list.ExecuteKeybindings())
-	handlerEntries := h.list.ExecuteHandlers()
-	handlers := make([]*v1.PluginHandler, 0, len(handlerEntries))
-	for _, one := range handlerEntries {
+	handlers := make([]*v1.PluginHandler, 0, len(listing.Handlers))
+	for _, one := range listing.Handlers {
 		handlers = append(handlers, &v1.PluginHandler{
 			PluginId: one.PluginID,
 			Handler:  &v1.ManifestHandler{Command: one.Command.ID, Title: one.Command.Title, When: one.Command.When},
-			HasItems: h.list.HasItems(one.Command),
+			HasItems: one.HasItems,
 		})
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{
-		Commands: commands, Slots: slots, ContentTypeByExtension: h.types.Execute(), Handlers: handlers,
-		Keybindings: keybindings,
+		Commands: commands, Slots: slots, ContentTypeByExtension: listing.ContentTypeByExtension, Handlers: handlers,
+		Keybindings: newWireKeybindings(listing.Keybindings),
 	}), nil
 }
 
@@ -118,7 +115,7 @@ func getErrorCode(err error) v1.CommandErrorCode {
 	return v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
 }
 
-func newWireCommand(list plugincommand.List, entry plugin.CommandEntry) *v1.PluginCommand {
+func newWireCommand(entry plugincommand.ListedCommand) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
 		arguments = append(arguments, &v1.CommandArgument{
@@ -134,7 +131,7 @@ func newWireCommand(list plugincommand.List, entry plugin.CommandEntry) *v1.Plug
 		Icon:      entry.Command.Icon,
 		Arguments: arguments,
 		When:      entry.Command.When,
-		HasItems:  list.HasItems(entry.Command),
+		HasItems:  entry.HasItems,
 	}
 }
 

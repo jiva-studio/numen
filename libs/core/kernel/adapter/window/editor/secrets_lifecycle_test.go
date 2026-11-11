@@ -91,7 +91,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
-	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
+	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

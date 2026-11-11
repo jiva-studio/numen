@@ -96,7 +96,7 @@ func TestANearestSearchAsksTheCoarsePassForSeveralTimesTheLimit(t *testing.T) {
 	}
 }
 
-func TestANearestSearchCutsToTheLimitAndAsksForTheKindsOnly(t *testing.T) {
+func TestANearestSearchReturnsAtMostTheLimitAndPassesTheKinds(t *testing.T) {
 	f := &nearestFake{}
 	for i := range 5 {
 		f.holdsSimilarity(domain.ChunkID(fmt.Sprintf("c%d", i)), 0.9-float64(i)/10)

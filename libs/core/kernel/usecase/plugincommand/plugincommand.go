@@ -35,6 +35,7 @@ var (
 type Commands struct {
 	List         List
 	ContentTypes ContentTypes
+	Listing      ListCommands
 	Run          Run
 }
 
@@ -46,9 +47,11 @@ func NewCommands(
 	notes NoteReader, config pluginport.WhenConfig,
 ) Commands {
 	conditions := when.NewConditions()
+	list, contentTypes := List{commands: commands, conditions: conditions}, ContentTypes{types: types}
 	return Commands{
-		List:         List{commands: commands, conditions: conditions},
-		ContentTypes: ContentTypes{types: types},
+		List:         list,
+		ContentTypes: contentTypes,
+		Listing:      ListCommands{list: list, types: contentTypes},
 		Run:          Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions},
 	}
 }

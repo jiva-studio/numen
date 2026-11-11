@@ -27,13 +27,13 @@ import (
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.
 const immediateBound = windowsession.FlushTimeout / 2
 
-func newPluginVaultList(o *editor.Installation) vaultapi.List {
-	scenarios := o.Vaults()
-	return windowsession.NewPluginVaults(&o.State.Runtime, windowsession.VaultOps{
+func newPluginVaultList(f *showing) vaultapi.List {
+	scenarios := f.cases.Vaults
+	return windowsession.NewPluginVaults(&f.installation.State.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    scenarios.Registry.Find,
 		Missing: scenarios.Registry.FolderCheck,
-		Open:    o,
+		Open:    f.installation,
 	})
 }
 
@@ -149,7 +149,7 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	respondAsUser := sync.OnceFunc(func() { close(userResponded) })
 	t.Cleanup(respondAsUser)
 	page := f.startPromptingPage(t, stream, userResponded)
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 
 	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "the plugin's open while a page holds unsaved changes")
 	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
@@ -195,7 +195,7 @@ func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
@@ -241,7 +241,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 	case <-time.After(200 * time.Millisecond):
 	}
 
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 	select {
 	case err := <-callOpenVault(ctx, list, f.second.ID):
 		if !errors.Is(err, plugin.ErrUnsavedChanges) {
@@ -292,7 +292,7 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 		t.Fatal("the close never requested a flush from the page")
 	}
 
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 	openResult := callOpenVault(t.Context(), list, f.second.ID)
 
 	select {
@@ -326,7 +326,7 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
 	f.respondToFlushes(t, stream, flushRequest, release)
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 
 	first := callOpenVault(t.Context(), list, f.second.ID)
 	select {
@@ -364,7 +364,7 @@ func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 	err := list.OpenVault(t.Context(), f.second.ID)
 
 	if !errors.Is(err, vaultdomain.ErrUnreadable) {
@@ -392,7 +392,7 @@ func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitRespon
 
 func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, release chan struct{}) <-chan error {
 	t.Helper()
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 	openResult := callOpenVault(context.WithoutCancel(t.Context()), list, f.second.ID)
 	select {
 	case <-flushRequest:
@@ -519,7 +519,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 		close(release)
 		t.Fatal("the switch never requested a flush from the page")
 	}
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 	err := list.OpenVault(t.Context(), f.first.ID)
 	close(release)
 
@@ -603,7 +603,7 @@ func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 
 	stop := make(chan struct{})
 	var openers sync.WaitGroup
@@ -709,7 +709,7 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := watchFlushRequests(stream)
-	list := newPluginVaultList(f.installation)
+	list := newPluginVaultList(f)
 
 	ctx, hangUp := context.WithCancel(t.Context())
 	openResult := callOpenVault(ctx, list, f.second.ID)

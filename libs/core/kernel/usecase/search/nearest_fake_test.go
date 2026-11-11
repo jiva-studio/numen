@@ -23,8 +23,6 @@ type nearestFake struct {
 	enclosing  map[domain.ChunkID]domain.Passage
 }
 
-// holdsSimilarity makes the fake hold the chunk with a vector whose cosine similarity to
-// newVector(+1) is about the given value, and offers the chunk as a coarse candidate.
 func (f *nearestFake) holdsSimilarity(chunk domain.ChunkID, similarity float64) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

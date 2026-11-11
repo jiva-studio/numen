@@ -31,14 +31,14 @@ var errNoVault = errors.New("the window shows no vault")
 func (h *PluginFolders) GetPluginData(
 	ctx context.Context, r *connect.Request[v1.GetPluginDataRequest],
 ) (*connect.Response[v1.GetPluginDataResponse], error) {
-	if h.Data == nil || h.Vaults == nil {
+	if h.data == nil || h.vaults == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	v := h.Vaults.GetCurrentVault()
+	v := h.vaults.GetCurrentVault()
 	if v.ID == "" {
 		return connect.NewResponse(&v1.GetPluginDataResponse{}), nil
 	}
-	size, err := h.Data.GetPluginData(ctx, v, r.Msg.GetPluginId())
+	size, err := h.data.GetPluginData(ctx, v, r.Msg.GetPluginId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -52,14 +52,14 @@ func (h *PluginFolders) GetPluginData(
 func (h *PluginFolders) DeletePluginData(
 	ctx context.Context, r *connect.Request[v1.DeletePluginDataRequest],
 ) (*connect.Response[v1.DeletePluginDataResponse], error) {
-	if h.Data == nil || h.Vaults == nil {
+	if h.data == nil || h.vaults == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	v := h.Vaults.GetCurrentVault()
+	v := h.vaults.GetCurrentVault()
 	if v.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
-	if err := h.Data.DeletePluginData(ctx, v, r.Msg.GetPluginId()); err != nil {
+	if err := h.data.DeletePluginData(ctx, v, r.Msg.GetPluginId()); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.DeletePluginDataResponse{}), nil

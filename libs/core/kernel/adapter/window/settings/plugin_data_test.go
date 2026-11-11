@@ -49,7 +49,7 @@ func newFolders(t *testing.T, current shownVault) (*Handler, *textversion.Versio
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &Handler{PluginFolders: PluginFolders{Data: data, Vaults: current}}, versions
+	return NewHandler(Values{}, NewPluginFolders(nil, data, current), SecretItems{}, SecretGroups{}), versions
 }
 
 func TestDeletePluginDataEmptiesTheFolderOfTheShownVault(t *testing.T) {
@@ -82,7 +82,7 @@ func TestDeletePluginDataEmptiesTheFolderOfTheShownVault(t *testing.T) {
 
 func TestDeletePluginDataWithNoVaultShownIsRefused(t *testing.T) {
 	handler, versions := newFolders(t, shownVault{ID: "v1"})
-	handler.Vaults = shownVault{}
+	handler.vaults = shownVault{}
 
 	_, err := handler.DeletePluginData(t.Context(), connect.NewRequest(&v1.DeletePluginDataRequest{PluginId: transcription}))
 

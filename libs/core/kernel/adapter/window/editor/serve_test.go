@@ -32,6 +32,8 @@ import (
 	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -43,14 +45,19 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
+// noTabKinds gives no note a kind of tab.
+type noTabKinds struct{}
+
+func (noTabKinds) Execute(context.Context, domain.Vault, []string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
 func bindNotes(services *Services, db *vaults.Index) {
 	refs, links := db.NoteQueries.NoteRefs, db.NoteQueries.Links
-	neighborhood := query.NewShowNeighborhood(links, refs)
 	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
-	services.NoteCases.Types = query.NewGetTypes(db.NoteQueries.NoteTypes)
-	services.NoteCases.Headings = query.NewGetHeadings(db.NoteQueries.Headings)
+	services.NoteCases.Headings = outline.NewListHeadings(db.NoteQueries.Headings)
 	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
-	services.NoteCases.Neighborhood = &neighborhood
+	services.NoteCases.Neighborhood = outline.NewGetNeighborhood(links, refs, db.NoteQueries.NoteTypes, noTabKinds{})
 	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NoteQueries.NamedPaths)
 	services.UseNotes()
 }

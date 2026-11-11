@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
+func waitForIndex(t *testing.T, notes *note.Scenarios, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		titles, err := opened.Notes().Browse.GetTitles.Execute(t.Context(), v, []string{path})
+		titles, err := notes.Browse.GetTitles.Execute(t.Context(), v, []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -40,7 +40,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 		"told apart": {sync: false, filename: "Entropy.md"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			opened, cfg := windowOn(t)
+			opened, cfg, cases := windowWithCases(t)
 			response := fmt.Sprintf(`{"app":{"naming":{"syncTitleAndFilename":%v}}}`, bool(c.sync))
 			if err := os.WriteFile(
 				filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json"), []byte(response), 0o644,
@@ -56,9 +56,9 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			}
 			// The note is in the index before it is renamed. A rename racing the
 			// walk that first reads the file files it at two paths at once.
-			waitForIndex(t, opened, v, "Entropy.md")
+			waitForIndex(t, cases.Notes, v, "Entropy.md")
 
-			notes := opened.Notes().ShowEdits(container.GetWindowView(opened))
+			notes := cases.Notes.ShowEdits(container.GetWindowView(opened))
 			renamed, err := notes.Place.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)

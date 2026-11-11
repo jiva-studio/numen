@@ -124,7 +124,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	cfg := vaultConfig(t)
 	cfg.PluginHost = container.AdaptPluginHost(host)
 
-	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
+	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 
 // An installation with no model opens, and reports that by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
-	installation, err := container.OpenWindow(vaultConfig(t), t.Context(), "", os.Stderr)
+	installation, _, err := openRegistered(vaultConfig(t), t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

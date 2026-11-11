@@ -18,7 +18,7 @@ import (
 // the one shown last when none is named, and connects the plugins to the vault and the window. It returns the
 // window and the configuration with the text versions the plugins share.
 func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, Config, error) {
-	start := startup.OpenEditor[vaultregistry.Ports, *vault.Index, *editor.Installation]{
+	start := startup.OpenEditor[vaultregistry.Ports, *vault.Index, *windowWiring]{
 		OpenRegistry: c.Registry,
 		OpenIndex:    func(ctx context.Context) (*vault.Index, error) { return OpenIndex(c, ctx) },
 		OpenTexts: func(db *vault.Index) error {
@@ -26,26 +26,29 @@ func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*ed
 			c.TextVersions = versions
 			return err
 		},
-		OpenWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index) (*editor.Installation, error) {
-			return OpenWindowOver(c, ctx, ports, db, named, out)
+		OpenWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index) (*windowWiring, error) {
+			return openWindowOver(c, ctx, ports, db, named, out)
 		},
-		FollowVault: func(opened *editor.Installation) {
-			setPluginVaultPath(plugins(c), opened.State.GetCurrentVault().Path)
+		FollowVault: func(opened *windowWiring) {
+			setPluginVaultPath(plugins(c), opened.inst.State.GetCurrentVault().Path)
 		},
-		InstallVault: func(ports vaultregistry.Ports, db *vault.Index, opened *editor.Installation) error {
-			return installPluginVault(plugins(c), ports, db, opened.State.GetShownVault, PluginVaultHooks{
-				Written: opened.State.Writes.NoteWritten,
-				Notes:   opened.Notes(),
+		InstallVault: func(ports vaultregistry.Ports, db *vault.Index, opened *windowWiring) error {
+			return installPluginVault(plugins(c), ports, db, opened.inst.State.GetShownVault, PluginVaultHooks{
+				Written: opened.inst.State.Writes.NoteWritten,
+				Notes:   *opened.cases.Notes,
 			})
 		},
-		ShareWindow: func(db *vault.Index, opened *editor.Installation) {
+		ShareWindow: func(db *vault.Index, opened *windowWiring) {
 			shareVaultList(c, opened)
 			setPluginTexts(vaultOf(c))
 			shareEditorWindow(c, db, opened)
 		},
 	}
 	opened, err := start.Execute(ctx)
-	return opened, c, err
+	if err != nil {
+		return nil, c, err
+	}
+	return opened.inst, c, nil
 }
 
 // Flashcards is what the flashcards application closes when it ends: CloseVaults waits until nothing is still

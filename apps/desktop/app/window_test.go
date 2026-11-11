@@ -13,6 +13,12 @@ import (
 
 func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	t.Helper()
+	opened, cfg, _ := windowWithCases(t)
+	return opened, cfg
+}
+
+func windowWithCases(t *testing.T) (*editor.Installation, container.Config, *container.WindowUseCases) {
+	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
@@ -26,7 +32,14 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 		t.Fatal(err)
 	}
 
-	opened, err := container.OpenWindow(cfg, t.Context(), "one", io.Discard)
+	db, err := container.OpenIndex(cfg, t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := &container.WindowUseCases{}
+	opened, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{
+		Ports: registry, DB: db, Named: "one", Out: io.Discard, UseCases: cases,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +48,7 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 			t.Error(err)
 		}
 	})
-	return opened, cfg
+	return opened, cfg, cases
 }
 
 // TestTheWindowIsNamedAfterTheFileInFrontOfThePerson checks that the page

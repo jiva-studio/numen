@@ -27,15 +27,22 @@ func newSecretError(err error) error {
 // SecretItems answers the calls that change one secret. A value of it with no use case set answers
 // that the build serves no secrets.
 type SecretItems struct {
-	Create *secret.Create
-	Rename *secret.Rename
-	Write  *secret.Write
-	Delete *secret.Delete
-	Move   *secret.Move
+	create *secret.Create
+	rename *secret.Rename
+	write  *secret.Write
+	remove *secret.Delete
+	move   *secret.Move
+}
+
+// NewSecretItems is the part of SettingsService that changes one secret.
+func NewSecretItems(
+	create *secret.Create, rename *secret.Rename, write *secret.Write, remove *secret.Delete, move *secret.Move,
+) SecretItems {
+	return SecretItems{create: create, rename: rename, write: write, remove: remove, move: move}
 }
 
 func (h *SecretItems) check() error {
-	if h.Create == nil {
+	if h.create == nil {
 		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	return nil
@@ -44,15 +51,22 @@ func (h *SecretItems) check() error {
 // SecretGroups answers the calls that change the groups of secrets and who may read them. A value
 // of it with no use case set answers that the build serves no secrets.
 type SecretGroups struct {
-	RenameGroup *secret.RenameGroup
-	DeleteGroup *secret.DeleteGroup
-	Allow       *secret.Allow
-	Deny        *secret.Deny
-	ListStates  *secret.ListStates
+	renameGroup *secret.RenameGroup
+	deleteGroup *secret.DeleteGroup
+	allow       *secret.Allow
+	deny        *secret.Deny
+	listStates  *secret.ListStates
+}
+
+// NewSecretGroups is the part of SettingsService that changes the groups of secrets and who may read them.
+func NewSecretGroups(
+	rename *secret.RenameGroup, remove *secret.DeleteGroup, allow *secret.Allow, deny *secret.Deny, states *secret.ListStates,
+) SecretGroups {
+	return SecretGroups{renameGroup: rename, deleteGroup: remove, allow: allow, deny: deny, listStates: states}
 }
 
 func (h *SecretGroups) check() error {
-	if h.ListStates == nil {
+	if h.listStates == nil {
 		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	return nil
@@ -65,7 +79,7 @@ func (h *SecretItems) CreateSecret(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	id, err := h.Create.Execute(ctx, r.Msg.GetGroup(), r.Msg.GetName(), r.Msg.GetValue())
+	id, err := h.create.Execute(ctx, r.Msg.GetGroup(), r.Msg.GetName(), r.Msg.GetValue())
 	if err != nil {
 		return nil, newSecretError(err)
 	}
@@ -79,7 +93,7 @@ func (h *SecretItems) RenameSecret(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	if err := h.Rename.Execute(ctx, r.Msg.GetId(), r.Msg.GetName()); err != nil {
+	if err := h.rename.Execute(ctx, r.Msg.GetId(), r.Msg.GetName()); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.RenameSecretResponse{}), nil
@@ -92,7 +106,7 @@ func (h *SecretItems) WriteSecret(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	if err := h.Write.Execute(ctx, r.Msg.GetId(), r.Msg.GetValue()); err != nil {
+	if err := h.write.Execute(ctx, r.Msg.GetId(), r.Msg.GetValue()); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.WriteSecretResponse{}), nil
@@ -105,7 +119,7 @@ func (h *SecretItems) DeleteSecret(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	if err := h.Delete.Execute(ctx, r.Msg.GetId()); err != nil {
+	if err := h.remove.Execute(ctx, r.Msg.GetId()); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.DeleteSecretResponse{}), nil
@@ -118,7 +132,7 @@ func (h *SecretItems) MoveSecret(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	if err := h.Move.Execute(ctx, r.Msg.GetId(), r.Msg.GetBeforeId()); err != nil {
+	if err := h.move.Execute(ctx, r.Msg.GetId(), r.Msg.GetBeforeId()); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.MoveSecretResponse{}), nil
@@ -131,7 +145,7 @@ func (h *SecretGroups) RenameSecretGroup(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	if err := h.RenameGroup.Execute(ctx, r.Msg.GetGroup(), r.Msg.GetName()); err != nil {
+	if err := h.renameGroup.Execute(ctx, r.Msg.GetGroup(), r.Msg.GetName()); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.RenameSecretGroupResponse{}), nil
@@ -145,7 +159,7 @@ func (h *SecretGroups) AllowPluginSecret(
 		return nil, err
 	}
 	permission := plugin.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
-	if err := h.Allow.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
+	if err := h.allow.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.AllowPluginSecretResponse{}), nil
@@ -159,7 +173,7 @@ func (h *SecretGroups) DenyPluginSecret(
 		return nil, err
 	}
 	permission := plugin.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
-	if err := h.Deny.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
+	if err := h.deny.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.DenyPluginSecretResponse{}), nil
@@ -172,7 +186,7 @@ func (h *SecretGroups) DeleteSecretGroup(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	if err := h.DeleteGroup.Execute(ctx, r.Msg.GetGroup()); err != nil {
+	if err := h.deleteGroup.Execute(ctx, r.Msg.GetGroup()); err != nil {
 		return nil, newSecretError(err)
 	}
 	return connect.NewResponse(&v1.DeleteSecretGroupResponse{}), nil
@@ -185,7 +199,7 @@ func (h *SecretGroups) ListSecretStates(
 	if err := h.check(); err != nil {
 		return nil, err
 	}
-	states, err := h.ListStates.Execute(ctx)
+	states, err := h.listStates.Execute(ctx)
 	if err != nil {
 		return nil, newSecretError(err)
 	}

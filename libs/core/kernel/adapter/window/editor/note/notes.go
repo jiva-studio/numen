@@ -171,25 +171,11 @@ func (h *Outline) GetNeighborhood(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.showNeighborhood.Execute(ctx, showing, r.Msg.GetPath())
+	found, err := h.getNeighborhood.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-
-	// The note types are fetched once for the whole graph, so a client renders
-	// each plugin-typed note with its type.
-	paths := []string{found.Focus.Path}
-	for _, related := range found.Related {
-		paths = append(paths, related.Path)
-	}
-	types, err := h.getTypes.Execute(ctx, showing, paths)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	tabKinds, err := h.listTabKinds(ctx, showing, paths)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
+	types, tabKinds := found.Types, found.TabKinds
 
 	out := &v1.GetNeighborhoodResponse{
 		Focus:        convertNoteToWire(found.Focus),
@@ -323,20 +309,15 @@ func (h *Outline) ListHeadings(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.getHeadings.Execute(ctx, showing, paths)
+	found, err := h.listHeadings.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// In the order the filter named them.
 	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
-	for _, path := range paths {
-		headings, target := found[path]
-		if !target {
-			continue
-		}
-		one := &v1.NoteHeadings{Path: path, Headings: make([]*v1.Heading, 0, len(headings))}
-		for _, h := range headings {
+	for _, entry := range found {
+		one := &v1.NoteHeadings{Path: entry.Path, Headings: make([]*v1.Heading, 0, len(entry.Headings))}
+		for _, h := range entry.Headings {
 			one.Headings = append(one.Headings, &v1.Heading{
 				Text:  h.Text,
 				Line:  int32(h.Line),
@@ -445,11 +426,4 @@ func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,
 	}
-}
-
-func (h *Outline) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
-	if h.findTabKinds == nil {
-		return map[string]string{}, nil
-	}
-	return h.findTabKinds(ctx, v, paths)
 }

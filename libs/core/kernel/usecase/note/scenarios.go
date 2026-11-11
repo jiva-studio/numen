@@ -58,7 +58,6 @@ type Referring struct {
 // Browsing answers questions about the notes of a vault.
 type Browsing struct {
 	Connection     query.GetConnection
-	Neighborhood   query.ShowNeighborhood
 	GetTitles      query.GetTitles
 	GetTitle       *query.GetTitle
 	IsVaultIndexed *query.IsVaultIndexed

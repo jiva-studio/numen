@@ -71,7 +71,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		t.Fatal(err)
 	}
 
-	installation, err := container.OpenWindow(settings, t.Context(), "", os.Stderr)
+	installation, _, err := openRegistered(settings, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,6 +245,7 @@ type going struct {
 	configuring  numenv1connect.SettingsServiceClient
 	canvas       numenv1connect.WindowServiceClient
 	installation *editor.Installation
+	cases        *container.WindowUseCases
 	root         string
 	settings     string
 	order        *order
@@ -312,7 +313,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 		t.Fatal(err)
 	}
 
-	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
+	installation, cases, err := openRegistered(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -330,7 +331,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 		noIndex,
 		testsupport.NewClock(),
 	)
-	editor.ServicesOf(installation).SetNoteWrite(&writing)
+	cases.Notes.Edit.Write = writing
 
 	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
@@ -349,6 +350,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 		configuring:  numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
 		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
+		cases:        cases,
 		root:         root,
 		settings:     cfg.RegistryPath,
 		order:        recorded,

@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
@@ -58,26 +57,32 @@ func (t titles) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (m
 	return out, nil
 }
 
-func newHandler(vault domain.Vault, found names) *Handler {
-	handler := NewHandler(shownVault{v: vault})
-	handler.GetNameMatches = search.NewGetNameMatches(found)
-	handler.GetTitles = query.NewGetTitles(titles{})
-	handler.GetTypes = query.NewGetTypes(types{})
-	return handler
+// tabKinds is the kind of tab each note opens in, by path.
+type tabKinds map[string]string
+
+func (k tabKinds) Execute(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
+	out := map[string]string{}
+	for _, path := range paths {
+		if kind, ok := k[path]; ok {
+			out[path] = kind
+		}
+	}
+	return out, nil
+}
+
+func newHandler(vault domain.Vault, found names, kinds tabKinds) *Handler {
+	return NewHandler(
+		shownVault{v: vault},
+		search.NewFindNames(found, kinds),
+		search.NewFindPassages(search.Search{}, titles{}, types{}, kinds),
+	)
 }
 
 func TestSearchNamesAnswersTheTitleAndTheHeadingWithWhereTheyMatched(t *testing.T) {
 	handler := newHandler(domain.Vault{ID: "v1"}, names{
 		{Path: "Entropy.md", Title: "Entropy", Ranges: []domain.UnitRange{{Start: 0, End: 5}}},
 		{Path: "Heat.md", Title: "Heat", Type: "sample", Heading: "Heat and work", Line: 6},
-	})
-	handler.ListTabKinds = func(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
-		out := map[string]string{}
-		for _, path := range paths {
-			out[path] = "reader"
-		}
-		return out, nil
-	}
+	}, tabKinds{"Entropy.md": "reader", "Heat.md": "reader"})
 
 	answer, err := handler.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: ".md"}))
 
@@ -98,7 +103,7 @@ func TestSearchNamesAnswersTheTitleAndTheHeadingWithWhereTheyMatched(t *testing.
 }
 
 func TestSearchNamesInAWindowShowingNoVaultFindsNothing(t *testing.T) {
-	handler := newHandler(domain.Vault{}, names{{Path: "Entropy.md", Title: "Entropy"}})
+	handler := newHandler(domain.Vault{}, names{{Path: "Entropy.md", Title: "Entropy"}}, nil)
 
 	answer, err := handler.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "entropy"}))
 
@@ -112,7 +117,7 @@ func TestSearchNamesAsksForAtMostTheLimitOfTheWindow(t *testing.T) {
 	for i := range 30 {
 		all = append(all, domain.NameMatch{Path: "note-" + string(rune('a'+i)) + ".md"})
 	}
-	handler := newHandler(domain.Vault{ID: "v1"}, all)
+	handler := newHandler(domain.Vault{ID: "v1"}, all, nil)
 
 	byDefault, err := handler.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "note"}))
 	if err != nil {
@@ -129,7 +134,7 @@ func TestSearchNamesAsksForAtMostTheLimitOfTheWindow(t *testing.T) {
 }
 
 func TestSearchPassagesWithoutAModeIsRefused(t *testing.T) {
-	handler := newHandler(domain.Vault{ID: "v1"}, nil)
+	handler := newHandler(domain.Vault{ID: "v1"}, nil, nil)
 
 	_, err := handler.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{Query: "engine"}))
 

@@ -140,7 +140,6 @@ func vaultNotes(c vaultWiring, db *vault.Index, index edit.IndexUpdater) note.Sc
 		},
 		Browse: note.Browsing{
 			Connection:     query.NewGetConnection(links),
-			Neighborhood:   query.NewShowNeighborhood(links, refs),
 			GetTitles:      query.NewGetTitles(refs),
 			GetTitle:       query.NewGetTitle(refs),
 			IsVaultIndexed: query.NewIsVaultIndexed(db.NoteQueries.VaultHolds),

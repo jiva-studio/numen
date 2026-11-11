@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -172,7 +173,11 @@ func onAList(t *testing.T) *onTheList {
 	chooseFolder := picker.NewChooseFolder(f.dialog)
 	folderCheck := check.NewFolderCheck(vaultreader.Readers{})
 	remove := vaults.NewRemove(find, forget, erase)
-	handler := NewHandler(f, Uses{List: list, Find: find, FolderCheck: folderCheck, Add: adding, Rename: rename, Remove: remove})
+	handler := NewHandler(
+		f,
+		vaultlist.NewListVaults(list, folderCheck), vaultlist.NewAddVault(adding, folderCheck),
+		vaultlist.NewRenameVault(find, rename, folderCheck), vaultlist.NewOpenVault(find, f), remove,
+	)
 	handler.SetFolderChooser(chooseFolder)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))

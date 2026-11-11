@@ -27,9 +27,6 @@ type ranked struct {
 	similarity float64
 }
 
-// rankCandidates returns the candidates that hold a vector under the recipe and have a similarity
-// to the query of at least the floor, most similar first. Equal similarities keep the order of the
-// candidates.
 func rankCandidates(ctx context.Context, queries sourceport.NearestQueries, q source.StoredVectorQuery, query []float32, floor float64) ([]ranked, error) {
 	if len(q.Chunks) == 0 {
 		return nil, nil
@@ -42,22 +39,22 @@ func rankCandidates(ctx context.Context, queries sourceport.NearestQueries, q so
 	for i, id := range q.Chunks {
 		position[id] = i
 	}
-	kept := make([]ranked, 0, len(stored))
+	passing := make([]ranked, 0, len(stored))
 	for _, s := range stored {
 		if len(s.Vector) != len(query) {
 			return nil, fmt.Errorf("chunk %s holds %d dimensions where the query has %d", s.Chunk, len(s.Vector), len(query))
 		}
 		if similarity := vector.SimilarityBytes(query, s.Vector); similarity >= floor {
-			kept = append(kept, ranked{chunk: s.Chunk, similarity: similarity})
+			passing = append(passing, ranked{chunk: s.Chunk, similarity: similarity})
 		}
 	}
-	slices.SortFunc(kept, func(a, b ranked) int {
+	slices.SortFunc(passing, func(a, b ranked) int {
 		if c := cmp.Compare(b.similarity, a.similarity); c != 0 {
 			return c
 		}
 		return cmp.Compare(position[a.chunk], position[b.chunk])
 	})
-	return kept, nil
+	return passing, nil
 }
 
 // FindNearest finds the passages of a vault nearest a query vector.
@@ -73,6 +70,7 @@ func NewFindNearest(queries sourceport.NearestQueries) FindNearest {
 // Execute returns the passages enclosing the chunks of one vault nearest the query vector, nearest
 // first, at most `q.Limit` of them. The coarse pass keeps several times `q.Limit` candidates and
 // the full-precision vectors order them. A chunk below the similarity floor is not a result.
+// Chunks of equal similarity keep the order of the coarse pass.
 func (f FindNearest) Execute(ctx context.Context, vaultID domain.VaultID, q source.NearestQuery) ([]domain.Passage, error) {
 	if q.Limit <= 0 {
 		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", q.Limit)

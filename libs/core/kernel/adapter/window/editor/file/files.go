@@ -52,24 +52,14 @@ func (h *Folders) ListFiles(
 	if err != nil {
 		return nil, err
 	}
-	if h.getFolderEntries == nil {
+	if h.listFolder == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	listing, err := h.getFolderEntries.Execute(ctx, showing, r.Msg.GetPath())
+	listing, err := h.listFolder.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getListCode(err), err)
 	}
 
-	var notes []string
-	for _, one := range listing.Entries {
-		if one.Kind == domain.KindNote {
-			notes = append(notes, one.Path)
-		}
-	}
-	tabKinds, err := h.listTabKinds(ctx, showing, notes)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
 	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
 		out.Entries = append(out.Entries, &v1.Entry{
@@ -78,7 +68,7 @@ func (h *Folders) ListFiles(
 			IsFolder: one.IsFolder,
 			IsNote:   one.Kind == domain.KindNote,
 			Type:     convertNoteTypeToWire(listing.Types[one.Path]),
-			TabKind:  tabKinds[one.Path],
+			TabKind:  listing.TabKinds[one.Path],
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -96,7 +86,7 @@ func (h *Folders) ListFileKinds(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
-	if h.getFileKinds == nil {
+	if h.listKinds == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	paths, err := eachOnce(r.Msg.GetPaths())
@@ -109,18 +99,18 @@ func (h *Folders) ListFileKinds(
 			h.events.EmitFileEvent("onFile:" + ext)
 		}
 	}
-	listing, err := h.getFileKinds.Execute(ctx, showing, paths)
+	listing, err := h.listKinds.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
-		out.Kinds = append(out.Kinds, h.newWireFileKind(one, listing))
+		out.Kinds = append(out.Kinds, newWireFileKind(one, listing))
 	}
 	return connect.NewResponse(out), nil
 }
 
-func (h *Folders) newWireFileKind(one domain.Entry, listing file.Folder) *v1.FileKind {
+func newWireFileKind(one domain.Entry, listing file.FolderListing) *v1.FileKind {
 	kind := &v1.FileKind{
 		Path:   one.Path,
 		IsNote: one.Kind == domain.KindNote,
@@ -128,9 +118,7 @@ func (h *Folders) newWireFileKind(one domain.Entry, listing file.Folder) *v1.Fil
 	}
 	if properties, isNote := listing.Properties[one.Path]; isNote {
 		kind.Properties = newWireProperties(properties)
-		if h.chooseTabKind != nil {
-			kind.TabKind = h.chooseTabKind.Execute(one.Path, listing.Types[one.Path], properties)
-		}
+		kind.TabKind = listing.TabKinds[one.Path]
 	}
 	return kind
 }

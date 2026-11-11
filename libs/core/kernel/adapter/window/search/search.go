@@ -11,7 +11,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
@@ -21,19 +20,18 @@ type VaultProvider interface {
 	GetCurrentVault() domain.Vault
 }
 
+// Handler answers SearchService over the shown vault.
 type Handler struct {
 	numenv1connect.UnimplementedSearchServiceHandler
 
-	Vaults         VaultProvider
-	GetNameMatches *search.GetNameMatches
-	Finds          *search.Search
-	GetTitles      query.GetTitles
-	GetTypes       *query.GetTypes
-	ListTabKinds   func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
+	vaults       VaultProvider
+	findNames    *search.FindNames
+	findPassages *search.FindPassages
 }
 
-func NewHandler(vaults VaultProvider) *Handler {
-	return &Handler{Vaults: vaults}
+// NewHandler is the handler of SearchService over the names and the text of the shown vault.
+func NewHandler(vaults VaultProvider, names *search.FindNames, passages *search.FindPassages) *Handler {
+	return &Handler{vaults: vaults, findNames: names, findPassages: passages}
 }
 
 // errNoMode is a search that named no mode to ask it in.
@@ -53,25 +51,17 @@ const (
 func (h *Handler) SearchNames(
 	ctx context.Context, r *connect.Request[v1.SearchNamesRequest],
 ) (*connect.Response[v1.SearchNamesResponse], error) {
-	showing := h.Vaults.GetCurrentVault()
+	showing := h.vaults.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
-	found, err := h.GetNameMatches.Execute(ctx, showing, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	found, err := h.findNames.Execute(ctx, showing, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-
-	paths := make([]string, 0, len(found))
-	for _, m := range found {
-		paths = append(paths, m.Path)
-	}
-	tabKinds, err := h.listTabKinds(ctx, showing, paths)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found))}
-	for _, m := range found {
+	tabKinds := found.TabKinds
+	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found.Matches))}
+	for _, m := range found.Matches {
 		titled := &v1.NameMatch{
 			Note:    &v1.Note{Path: m.Path, Title: m.Title},
 			Ranges:  convertUnitRangesToWire(m.Ranges),
@@ -94,7 +84,7 @@ func (h *Handler) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
 ) (*connect.Response[v1.SearchPassagesResponse], error) {
 	query := r.Msg.GetQuery()
-	showing := h.Vaults.GetCurrentVault()
+	showing := h.vaults.GetCurrentVault()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
 		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}
@@ -104,37 +94,13 @@ func (h *Handler) SearchPassages(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
 
-	found, err := h.Finds.Execute(ctx, showing,
-		query, search.GetTypingParameters(mode, atMost(r.Msg.GetLimit())))
+	found, err := h.findPassages.Execute(ctx, showing, query, mode, atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// The note each passage was read from, resolved once for the whole response. A
-	// source that is not a note is absent, and a window offering to open notes
-	// offers none for it.
-	sources := getPassageSources(found)
-	noted, err := h.GetTitles.Execute(ctx, showing, sources)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	titles := make(map[string]domain.NoteRef, len(noted.Notes))
-	for _, ref := range noted.Notes {
-		titles[ref.Path] = ref
-	}
-	// Which of four each of those notes is, so a passage is drawn with the mark
-	// of the note it was read out of.
-	types, err := h.GetTypes.Execute(ctx, showing, sources)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	tabKinds, err := h.listTabKinds(ctx, showing, sources)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
-	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found))}
-	for _, p := range found {
+	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found.Passages))}
+	for _, p := range found.Passages {
 		// A passage is the whole window enclosing its hit, so what is drawn is the
 		// words about the first run that matched. A hit by meaning relies on no
 		// word, and the window opens where the chunk that matched begins.
@@ -149,21 +115,15 @@ func (h *Handler) SearchPassages(
 			Line:     int32(p.Line),
 			Selector: string(p.Selector),
 		}
-		if noteRef, target := titles[p.Source]; target {
+		// A source that is not a note is absent, and a window offering to open notes offers none for it.
+		if noteRef, target := found.Notes[p.Source]; target {
 			passage.Note = convertNoteToWire(noteRef)
-			passage.Type = convertNoteTypeToWire(types[p.Source])
-			passage.TabKind = tabKinds[p.Source]
+			passage.Type = convertNoteTypeToWire(found.Types[p.Source])
+			passage.TabKind = found.TabKinds[p.Source]
 		}
 		out.Found = append(out.Found, passage)
 	}
 	return connect.NewResponse(out), nil
-}
-
-func (h *Handler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
-	if h.ListTabKinds == nil {
-		return map[string]string{}, nil
-	}
-	return h.ListTabKinds(ctx, v, paths)
 }
 
 func convertNoteTypeToWire(noteType domain.NoteType) string {
@@ -199,19 +159,6 @@ func atMost(limit int32) int {
 		return mostFound
 	}
 	return min(int(limit), maxQueryLength)
-}
-
-func getPassageSources(found []domain.Passage) []string {
-	observed := make(map[string]bool, len(found))
-	out := make([]string, 0, len(found))
-	for _, p := range found {
-		if observed[p.Source] {
-			continue
-		}
-		observed[p.Source] = true
-		out = append(out, p.Source)
-	}
-	return out
 }
 
 func convertUnitRangesToWire(pos []domain.UnitRange) []*v1.Range {

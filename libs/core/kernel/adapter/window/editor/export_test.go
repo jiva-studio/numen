@@ -15,9 +15,9 @@ import (
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/outline"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
@@ -47,8 +47,6 @@ type Services struct {
 
 	server *FileServer
 
-	installation *Installation
-
 	resolve *file.ResolveAddress
 
 	NoteCases NoteUseCases
@@ -64,9 +62,8 @@ type NoteUseCases struct {
 	EditLinks      *note.EditLinks
 	GetLinkAddress *query.GetLinkAddress
 	OpeningNote    *query.GetOpeningNote
-	Types          *query.GetTypes
-	Headings       *query.GetHeadings
-	Neighborhood   *query.ShowNeighborhood
+	Headings       *outline.ListHeadings
+	Neighborhood   *outline.GetNeighborhood
 	ResolveLinks   *query.ResolveLinks
 }
 
@@ -78,7 +75,7 @@ func (s *Services) UseNotes() {
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
 		notewindow.NewProse(session, addresses, use.Read, saveProse(use.Write, session), createNote(use.Create, session), use.Rename),
-		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighborhood),
+		notewindow.NewOutline(s.state, use.OpeningNote, use.Neighborhood, use.Headings),
 		notewindow.NewLinks(session, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
 		notewindow.NewConnections(session, nil, nil, nil, nil, nil),
 	)
@@ -88,7 +85,7 @@ func createServices(state *State) *Services {
 	services := &Services{
 		state: state,
 		File: filewindow.NewHandler(
-			filewindow.NewFolders(NewSession(state), state.Events, nil, nil, nil, nil),
+			filewindow.NewFolders(NewSession(state), state.Events, nil, nil, nil),
 			filewindow.NewChanges(NewSession(state), state.Writes, state.Notices, nil, nil, nil),
 		),
 		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil), nil),
@@ -97,8 +94,8 @@ func createServices(state *State) *Services {
 		server:  NewFileServer(state, nil, nil, nil, nil),
 	}
 	services.Extra = []Route{
-		RouteOf(state, search.NewHandler(state), search.NewRoute),
-		RouteOf(state, &settings.Handler{}, settings.NewRoute),
+		RouteOf(state, search.NewHandler(state, nil, nil), search.NewRoute),
+		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}, settings.SecretItems{}, settings.SecretGroups{}), settings.NewRoute),
 		RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
 		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}
@@ -172,7 +169,7 @@ func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *fil
 
 // ServicesOf is the handlers a window answers through.
 func ServicesOf(o *Installation) *Services {
-	services := &Services{state: o.State, installation: o}
+	services := &Services{state: o.State}
 	for _, one := range o.pages.routes {
 		switch handler := one.service.(type) {
 		case *filewindow.Handler:
@@ -185,19 +182,6 @@ func ServicesOf(o *Installation) *Services {
 	}
 	return services
 }
-
-// The use cases the services of notes and files call, for the tests that wrap one in a fake. The
-// services hold pointers into the scenarios of the installation, so the one wrapped there is the
-// one they call.
-
-func (s *Services) NoteCreate() *note.Create { return &s.installation.notes.Edit.Create }
-func (s *Services) NoteWrite() *note.Write   { return &s.installation.notes.Edit.Write }
-func (s *Services) NoteRename() *note.Rename { return &s.installation.notes.Place.Rename }
-func (s *Services) FileRemove() *note.Remove { return &s.installation.notes.Place.Remove }
-func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Tree.Move }
-
-func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Tree.Move = *move }
-func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Edit.Write = *write }
 
 // ViewOf is the view of the window as the core asks it to show something.
 func ViewOf(state *State) windowsession.View {
