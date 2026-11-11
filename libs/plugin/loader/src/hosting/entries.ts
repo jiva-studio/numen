@@ -13,6 +13,7 @@ import type {
 } from '@numen/plugin-sdk'
 import { reportError } from './events'
 import { createReaderTabKind, createCustomTabKind } from './customTabKind'
+import { getReaderKindId } from './tabKinds'
 import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
 import type { PluginHostDeps } from './types'
 import type { PluginItemRegistration, RegisteredReader, RegisteredTabKind } from './registry'
@@ -23,9 +24,6 @@ export interface TabKindOwners {
   readonly tabKinds: Map<string, RegisteredTabKind>
 }
 
-function getReaderKindId(id: string): string {
-  return id.startsWith('reader:') ? id : `reader:${id}`
-}
 
 function requireFreeKind(
   owners: TabKindOwners,

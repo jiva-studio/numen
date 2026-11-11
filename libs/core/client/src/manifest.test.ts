@@ -9,13 +9,18 @@ describe('parseManifest', () => {
         name: 'Sample',
         version: '1.0.0',
         futureField: true,
-        contributes: { feature: 'Samples', tabKinds: [{ kind: 'sample' }] },
+        contributes: {
+          feature: 'Samples',
+          tabKinds: [{ kind: 'sample' }],
+          commands: [{ id: 'sample.run', title: 'Run', permission: 'vault:manage' }],
+        },
       }),
     )
 
     expect(answer.ok).toBe(true)
     if (!answer.ok) return
     expect(answer.value.contributes?.tabKinds[0]?.kind).toBe('sample')
+    expect(answer.value.contributes?.commands[0]?.permission).toBe('vault:manage')
   })
 
   it('reports a value of the wrong type', () => {

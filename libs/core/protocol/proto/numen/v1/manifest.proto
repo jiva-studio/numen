@@ -326,6 +326,7 @@ message ManifestCommand {
   // libs/core/protocol/when.json, such as "target.isNote". Empty is always. A command whose condition
   // names version.* offers one item per text version of a file for which it holds.
   string when = 11;
+  string permission = 12;
   reserved 10;
 }
 

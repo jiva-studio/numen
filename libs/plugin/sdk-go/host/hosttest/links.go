@@ -135,3 +135,75 @@ func (v *Vault) editLinks(
 	v.rescan(from)
 	return stat, nil
 }
+
+func (v *Vault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	notes := v.parsed()
+	n, ok := notes[from]
+	if !ok {
+		return nil, nil
+	}
+	out := make([]domain.ResolvedLink, 0, len(n.Links))
+	for _, l := range n.Links {
+		r := domain.ResolvedLink{Link: l, From: from}
+		v.resolve(notes, from, &r)
+		out = append(out, r)
+	}
+	return dedupe(out), nil
+}
+
+func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	return v.getBacklinks(v.parsed(), to), nil
+}
+
+func (v *Vault) getBacklinks(notes map[string]domain.Note, to string) []domain.ResolvedLink {
+	target, ok := notes[to]
+	if !ok {
+		return nil
+	}
+	base := notesdomain.FoldName(domain.Basename(to))
+	var out []domain.ResolvedLink
+	for _, from := range sortedPaths(notes) {
+		for _, l := range notes[from].Links {
+			mayReach := (l.Target.Scheme == domain.SchemeNote && target.ID != "" && l.Target.Value == target.ID) ||
+				(l.Target.Scheme == domain.SchemeName && notesdomain.FoldName(notesdomain.LinkName(l.Target.Value)) == base)
+			if !mayReach {
+				continue
+			}
+			r := domain.ResolvedLink{Link: l, From: from}
+			v.resolve(notes, from, &r)
+			if r.To == to && r.ToVault == v.vault.ID {
+				out = append(out, r)
+			}
+		}
+	}
+	return out
+}
+
+// ResolveLinks answers each written link by the links the note holds whose target is written so.
+func (v *Vault) ResolveLinks(ctx context.Context, from string, links []string) (map[string]domain.ResolvedLink, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	notes := v.parsed()
+	out := map[string]domain.ResolvedLink{}
+	for _, raw := range links {
+		r := domain.ResolvedLink{Link: domain.Link{Target: notesdomain.ParseAddress(raw)}, From: from}
+		v.resolve(notes, from, &r)
+		if r.To != "" {
+			out[raw] = r
+		}
+	}
+	return out, nil
+}

@@ -212,3 +212,64 @@ func (v *Vault) checkOverlap(root string) error {
 	}
 	return nil
 }
+
+// Beside links the vault with this one, so each lists the other and resolves it by
+// identity. Vaults linked to one vault are known to all vaults that know either.
+func (v *Vault) Beside(other *Vault) {
+	if v.world == other.world {
+		return
+	}
+	merged := v.world
+	for _, member := range other.world.members {
+		member.world = merged
+		merged.members = append(merged.members, member)
+	}
+}
+
+func (v *Vault) GetVault(ctx context.Context) (domain.Vault, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return domain.Vault{}, err
+	}
+	return v.vault, nil
+}
+
+func (v *Vault) GetVaults(ctx context.Context) ([]domain.Vault, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	out := []domain.Vault{}
+	if v.isShown {
+		out = append(out, v.vault)
+	}
+	for _, other := range v.world.members {
+		if other != v && other.isShown {
+			out = append(out, other.vault)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out, nil
+}
+
+// With returns the vault with the given identity, used as the shown vault is. The empty identity is
+// the vault itself.
+func (v *Vault) With(id domain.VaultID) *Vault {
+	if id == "" {
+		return v
+	}
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	return v.find(id)
+}
+
+func (v *Vault) find(id domain.VaultID) *Vault {
+	if v.vault.ID == id {
+		return v
+	}
+	for _, other := range v.world.members {
+		if other.vault.ID == id {
+			return other
+		}
+	}
+	return &Vault{unknown: true, world: v.world}
+}

@@ -180,7 +180,7 @@ function createHostContextBridge(
     events: createEventBridge(deps, registry),
     tabs: createTabBridge(deps),
     vault: createVaultServiceBridge(deps),
-    window: createWindowServiceBridge(deps, shared.slots),
+    window: createWindowServiceBridge(deps, shared.slots, registry.manifests),
   }
 }
 

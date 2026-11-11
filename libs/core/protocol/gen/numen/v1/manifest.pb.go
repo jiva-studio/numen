@@ -1892,6 +1892,7 @@ type ManifestCommand struct {
 	// libs/core/protocol/when.json, such as "target.isNote". Empty is always. A command whose condition
 	// names version.* offers one item per text version of a file for which it holds.
 	When          string `protobuf:"bytes,11,opt,name=when,proto3" json:"when,omitempty"`
+	Permission    string `protobuf:"bytes,12,opt,name=permission,proto3" json:"permission,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1957,6 +1958,13 @@ func (x *ManifestCommand) GetArguments() []*ManifestCommandArgument {
 func (x *ManifestCommand) GetWhen() string {
 	if x != nil {
 		return x.When
+	}
+	return ""
+}
+
+func (x *ManifestCommand) GetPermission() string {
+	if x != nil {
+		return x.Permission
 	}
 	return ""
 }
@@ -2245,13 +2253,16 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1d\n" +
-	"\vis_required\x18\x04 \x01(\bR\brequired\"\xa6\x01\n" +
+	"\vis_required\x18\x04 \x01(\bR\brequired\"\xc6\x01\n" +
 	"\x0fManifestCommand\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12?\n" +
 	"\targuments\x18\a \x03(\v2!.numen.v1.ManifestCommandArgumentR\targuments\x12\x12\n" +
-	"\x04when\x18\v \x01(\tR\x04whenJ\x04\b\n" +
+	"\x04when\x18\v \x01(\tR\x04when\x12\x1e\n" +
+	"\n" +
+	"permission\x18\f \x01(\tR\n" +
+	"permissionJ\x04\b\n" +
 	"\x10\v\"Y\n" +
 	"\x0eManifestReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +

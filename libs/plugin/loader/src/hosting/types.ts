@@ -48,6 +48,7 @@ export interface CommandDeclaration {
   readonly title: string
   readonly icon?: string
   readonly when?: string
+  readonly permission?: string
 }
 
 /** One handler of a shared command as a plugin manifest declares it under `contributes.handlers`. */
@@ -294,6 +295,7 @@ export interface ContextWindowHost {
   readonly getAgent: () => AgentHost | undefined
   readonly getCommands: () => CommandsHost | undefined
   readonly isCommandListed: (command: string) => boolean
+  readonly getCommandPermission?: (command: string) => string | undefined
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getTasks: (pluginId: string) => TaskHost | undefined

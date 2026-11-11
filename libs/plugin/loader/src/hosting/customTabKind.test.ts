@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
 import { createBufferedNoteState } from './customTabBuffer'
 import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
+import { getReaderKindId } from './tabKinds'
 import {
   attachPluginRoot,
   extractFilename,
@@ -79,6 +80,11 @@ describe('createPluginPaneWrapper', () => {
 })
 
 describe('createReaderTabKind', () => {
+  it('prefixes a reader id with reader: once', () => {
+    expect(getReaderKindId('epub')).toBe('reader:epub')
+    expect(getReaderKindId('reader:epub')).toBe('reader:epub')
+  })
+
   it('computes dynamic title and book target for epub reader', () => {
     const readerKind = createReaderTabKind('md.numen.readers.epub', {
       id: 'reader-epub',

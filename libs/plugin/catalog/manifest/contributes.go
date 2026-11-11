@@ -230,3 +230,71 @@ func (m Manifest) listDropHandlerIssues() []error {
 	}
 	return issues
 }
+
+// NoteType declares one type of note and how the index keeps the notes of it.
+type NoteType struct {
+	Type            string
+	Chunks          *bool
+	Headings        *[]int
+	IDHeadingLevels []int
+	IDPattern       string
+}
+
+func (m Manifest) listNoteTypeIssues() []error {
+	var issues []error
+	observed := map[string]bool{}
+	for _, declared := range m.Contributes.NoteTypes {
+		switch {
+		case !manifestSecretPattern.MatchString(declared.Type):
+			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidNoteType, declared.Type))
+		case observed[declared.Type]:
+			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidNoteType, declared.Type))
+		}
+		observed[declared.Type] = true
+		if _, err := regexp.Compile(declared.IDPattern); err != nil {
+			issues = append(issues, fmt.Errorf("%w: %q has an id pattern that is no pattern: %w", ErrInvalidNoteType, declared.Type, err))
+		}
+		levels := declared.IDHeadingLevels
+		if declared.Headings != nil {
+			levels = append(slices.Clone(*declared.Headings), levels...)
+		}
+		for _, level := range levels {
+			if level < 1 || level > 6 {
+				issues = append(issues, fmt.Errorf("%w: %q names heading level %d", ErrInvalidNoteType, declared.Type, level))
+			}
+		}
+	}
+	return issues
+}
+
+// GetProfile is how the index keeps the notes of the type.
+func (t NoteType) GetProfile() domain.NoteProfile {
+	profile := domain.DefaultProfile()
+	if t.Chunks != nil {
+		profile.HasChunks = *t.Chunks
+	}
+	if t.Headings != nil {
+		profile.HeadingLevels = slices.Clone(*t.Headings)
+		if profile.HeadingLevels == nil {
+			profile.HeadingLevels = []int{}
+		}
+	}
+	profile.IDHeadingLevels = slices.Clone(t.IDHeadingLevels)
+	if t.IDPattern != "" {
+		// listNoteTypeIssues rejects a pattern that does not compile.
+		if pattern, err := regexp.Compile("^(?:" + t.IDPattern + ")$"); err == nil {
+			profile.IDPattern = pattern
+		}
+	}
+	return profile
+}
+
+// GetNoteType is the declaration of a type of note the plugin gives meaning to.
+func (m Manifest) GetNoteType(noteType string) (NoteType, bool) {
+	for _, declared := range m.Contributes.NoteTypes {
+		if declared.Type == noteType {
+			return declared, true
+		}
+	}
+	return NoteType{}, false
+}
