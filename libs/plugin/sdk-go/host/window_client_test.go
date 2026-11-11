@@ -195,7 +195,7 @@ func TestThePermissionConstantsAreThePermissionStrings(t *testing.T) {
 		host.PermissionSearchPolicy:    "search:policy",
 		host.PermissionVaultManage:     "vault:manage",
 		host.PermissionWindowFocus:     "window:focus",
-		host.PermissionNetworkOutbound: "network:outbound",
+		host.PermissionLinkOpen: "link:open",
 	} {
 		if got != want {
 			t.Errorf("the permission constant is %q, want %q", got, want)

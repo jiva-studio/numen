@@ -267,15 +267,15 @@ func TestManifestListIssuesReportsASettingsViewOfNoFrontend(t *testing.T) {
 }
 
 func TestManifestNetworkAlias(t *testing.T) {
-	if got := manifest.NormalizePermission("network"); got != manifest.PermissionNetworkOutbound {
-		t.Errorf("got %q, want %q", got, manifest.PermissionNetworkOutbound)
+	if got := manifest.NormalizePermission("network"); got != manifest.PermissionLinkOpen {
+		t.Errorf("got %q, want %q", got, manifest.PermissionLinkOpen)
 	}
 	if got := manifest.NormalizePermission(manifest.PermissionVaultRead); got != manifest.PermissionVaultRead {
 		t.Errorf("got %q, want %q", got, manifest.PermissionVaultRead)
 	}
 
 	m := manifest.Manifest{Permissions: []string{"network"}}
-	if !m.HasPermission(manifest.PermissionNetworkOutbound) || !m.HasPermission("network") {
+	if !m.HasPermission(manifest.PermissionLinkOpen) || !m.HasPermission("network") {
 		t.Errorf("alias must hold both spellings")
 	}
 	if m.HasPermission(manifest.PermissionVaultRead) {

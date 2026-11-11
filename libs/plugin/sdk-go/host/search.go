@@ -28,14 +28,14 @@ var (
 // The permissions a plugin declares in its manifest. The search reads, the embedding included, need
 // PermissionIndexRead, and the search floor needs PermissionSearchPolicy. Adding, renaming, removing
 // and opening vaults needs PermissionVaultManage, every Window call needs PermissionWindowFocus, and a
-// external link opened in the system browser needs PermissionNetworkOutbound. Permissions are consent and
+// external link opened in the system browser needs PermissionLinkOpen. Permissions are consent and
 // API hygiene: a plugin is trusted code, and its own network requests are not gated.
 const (
 	PermissionIndexRead       = "index:read"
 	PermissionSearchPolicy    = "search:policy"
 	PermissionVaultManage     = "vault:manage"
 	PermissionWindowFocus     = "window:focus"
-	PermissionNetworkOutbound = "network:outbound"
+	PermissionLinkOpen = "link:open"
 )
 
 // The limits the host applies to a search call.
