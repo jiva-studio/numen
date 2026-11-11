@@ -191,13 +191,12 @@ const noBareLengthMessages = ruleMessages(NO_BARE_LENGTH, {
   pixelProperty: (length, prop) => `${length} on ${prop}: a size is not written in px; write it in rem or em (only a 1px border is px)`,
   pixelDeclaration: (length, prop) => `${length} in ${prop}: a custom property holds a size in rem or em; px stays out (only a 1px border is px)`,
   otherUnit: (length, prop) => `${length} on ${prop}: write the length in rem or em`,
-  offScale: (length, prop) => `${length} in ${prop}: a custom property outside the token files holds only a length a token file declares; take the token or declare the length there`,
 });
 
 /** The units of a length that does not follow the interface scale by itself: absolute and font-relative ones. Viewport and container units, percentages and `fr` are proportions and pass. */
 const LENGTH_UNITS = new Set(["px", "rem", "em", "ex", "ch", "cap", "ic", "lh", "rlh", "cm", "mm", "q", "in", "pt", "pc"]);
 
-/** The units a custom property may hold a length in: they follow the root font size. */
+/** The units that follow the root font size, written on a property or in a custom property. */
 const SCALED_UNITS = new Set(["rem", "em"]);
 
 /** The properties that draw a border line, whose width of exactly 1px is a hairline. */
@@ -217,39 +216,16 @@ function findLengths(value) {
   return lengths;
 }
 
-/** The `rem` and `em` lengths the declarations of the token files below a root hold, each as `<number><unit>`. */
-const lengthsByRoot = new Map();
-function readRootLengths(root) {
-  if (!lengthsByRoot.has(root)) {
-    const scale = new Set();
-    for (const file of findTokenFiles(root)) {
-      postcss.parse(fs.readFileSync(file, "utf8")).walkDecls((decl) => {
-        for (const length of findLengths(decl.value)) if (SCALED_UNITS.has(length.unit)) scale.add(`${length.number}${length.unit}`);
-      });
-    }
-    lengthsByRoot.set(root, scale);
-  }
-  return lengthsByRoot.get(root);
-}
-
-const noBareLength = (primary, secondary) => (root, result) => {
-  const isValid = validateOptions(
-    result,
-    NO_BARE_LENGTH,
-    { actual: primary },
-    { actual: secondary, possible: { root: [(value) => typeof value === "string"] }, optional: true },
-  );
-  if (!isValid) return;
-  const scale = readRootLengths(path.resolve(secondary?.root ?? process.cwd()));
+const noBareLength = (primary) => (root, result) => {
+  if (!validateOptions(result, NO_BARE_LENGTH, { actual: primary })) return;
   root.walkDecls((decl) => {
     const isCustomProperty = decl.prop.startsWith("--");
     for (const length of findLengths(decl.value)) {
       let message;
-      if (isCustomProperty) {
-        if (SCALED_UNITS.has(length.unit) && scale.has(`${length.number}${length.unit}`)) continue;
-        message = SCALED_UNITS.has(length.unit) ? noBareLengthMessages.offScale(length.text, decl.prop) : noBareLengthMessages.pixelDeclaration(length.text, decl.prop);
-      } else if (SCALED_UNITS.has(length.unit)) {
+      if (SCALED_UNITS.has(length.unit)) {
         continue;
+      } else if (isCustomProperty) {
+        message = length.unit === "px" ? noBareLengthMessages.pixelDeclaration(length.text, decl.prop) : noBareLengthMessages.otherUnit(length.text, decl.prop);
       } else if (length.unit === "px" && length.number === 1 && BORDER_LINE.test(decl.prop)) {
         continue;
       } else if (length.unit === "px") {

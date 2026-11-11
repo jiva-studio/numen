@@ -115,6 +115,35 @@ func TestSourceSizeRule_RejectsAWideLineInAnyNonGeneratedFile(t *testing.T) {
 	}
 }
 
+// A wide line that is only a string literal, a line inside a raw string literal, or a comment is not counted;
+// a code line that carries a wide literal as a call argument, an assignment or an operand still is.
+func TestSourceSizeRule_SkipsWideLiteralAndCommentLinesButNotCode(t *testing.T) {
+	long := strings.Repeat("x", 210)
+	dir := writeTree(t, map[string]string{
+		"m/go.mod": "module m\n",
+		"m/a.go": "package p\n\n" +
+			"var table = []string{\n\t\"" + long + "\",\n}\n" + // line 4: literal only
+			"var raw = `\n" + long + "\n`\n" + // line 7: inside a raw string
+			"// " + long + "\n" + // line 9: comment
+			"/*\n" + long + "\n*/\n" + // line 11: block comment
+			"var call = len(\"" + long + "\")\n" + // line 14: code with a literal argument
+			"var joined = \"" + long + "\" + \"y\"\n" + // line 15: code
+			"var _ = 1 // " + long + "\n", // line 16: code with a trailing comment
+	})
+	found, _, _, err := getOversizedSources(dir, []string{"m"}, getTreeLimits())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"m/a.go:14 is wider than 200 characters",
+		"m/a.go:15 is wider than 200 characters",
+		"m/a.go:16 is wider than 200 characters",
+	}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule rejects %v, want %v", found, want)
+	}
+}
+
 // A file that carries the generated header without a generator that writes it is hand-written: the header
 // does not exempt it from the limits.
 func TestSourceSizeRule_RejectsAGeneratedHeaderNoGeneratorProduces(t *testing.T) {

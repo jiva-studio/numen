@@ -78,6 +78,8 @@ func TestUseCasesImportOnlyDomainAndPorts(t *testing.T) {
 
 // A helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
 // whose methods change its state. A helper that does is an adapter or a use case under a helper's name.
+// A package of internal/testsupport implements ports and holds state by design: it may import ports and use
+// cases, and still reaches no technology.
 func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
@@ -152,7 +154,8 @@ var _ = os.Args
 var _ noteport.Reader
 var _ find.Find
 `,
-		"internal/testsupport/fake/fake.go": "package fake\n\nimport \"fixture/port/noteport\"\n\ntype Reader struct{}\n\nfunc (Reader) Read() string { return \"\" }\n\nvar _ noteport.Reader = Reader{}\n",
+		"internal/testsupport/fake/fake.go": "package fake\n\nimport \"fixture/port/noteport\"\n\ntype Reader struct{ n int }\n\nfunc (r *Reader) Read() string { r.n++; return \"\" }\n\nvar _ noteport.Reader = (*Reader)(nil)\n",
+		"internal/testsupport/tech/tech.go": "package tech\n\nimport \"os\"\n\nvar _ = os.Args\n",
 		"internal/csp/csp.go":               "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
 		"adapter/index/index.go":            "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
 	})
@@ -167,13 +170,13 @@ var _ find.Find
 		"internal/adapterlib/reach imports port/noteport: a helper depends on no port and no use case",
 		"internal/adapterlib/reach imports usecase/find: a helper depends on no port and no use case",
 		"internal/csp exports Mutable.Set, which changes the state of its receiver: a helper holds no state",
-		"internal/testsupport/fake imports port/noteport: a helper depends on no port and no use case",
+		"internal/testsupport/tech imports os: a helper reaches no technology",
 	}
 	if !slices.Equal(found, want) {
 		t.Errorf("the rule rejects\n%s\nwant\n%s", strings.Join(found, "\n"), strings.Join(want, "\n"))
 	}
-	if read != 5 {
-		t.Errorf("%d helper packages read, want 5", read)
+	if read != 6 {
+		t.Errorf("%d helper packages read, want 6", read)
 	}
 }
 

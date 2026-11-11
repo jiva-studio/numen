@@ -70,6 +70,9 @@ func countCodeLines(src []byte) int {
 	return len(lines)
 }
 
+// listWideLines returns the lines wider than limit that hold code. A line that holds only a comment, or only
+// one string literal (with the comma or bracket that closes it), or lies inside a raw string literal, is data
+// or prose that a reader skips: it is not listed. A call with a literal argument is code and is listed.
 func listWideLines(src []byte, limit int) []int {
 	var wide []int
 	for i, line := range strings.Split(string(src), "\n") {
@@ -77,7 +80,52 @@ func listWideLines(src []byte, limit int) []int {
 			wide = append(wide, i+1)
 		}
 	}
-	return wide
+	if len(wide) == 0 {
+		return nil
+	}
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(src))
+	var scan scanner.Scanner
+	scan.Init(file, src, nil, scanner.ScanComments)
+	occupants := map[int][]token.Token{}
+	for {
+		pos, tok, literal := scan.Scan()
+		if tok == token.EOF {
+			break
+		}
+		if tok == token.SEMICOLON && literal == "\n" {
+			continue
+		}
+		first := file.Line(pos)
+		last := first
+		if tok == token.STRING || tok == token.COMMENT {
+			last += strings.Count(literal, "\n")
+		}
+		for line := first; line <= last; line++ {
+			occupants[line] = append(occupants[line], tok)
+		}
+	}
+	var kept []int
+	for _, line := range wide {
+		if !isProse(occupants[line]) {
+			kept = append(kept, line)
+		}
+	}
+	return kept
+}
+
+func isProse(tokens []token.Token) bool {
+	prose := 0
+	for _, tok := range tokens {
+		switch tok {
+		case token.STRING, token.COMMENT:
+			prose++
+		case token.COMMA, token.RPAREN, token.RBRACE, token.SEMICOLON:
+		default:
+			return false
+		}
+	}
+	return prose == 1
 }
 
 // sizeLimits are the bounds getOversizedSources enforces.
