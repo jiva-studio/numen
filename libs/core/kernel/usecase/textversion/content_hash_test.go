@@ -1,12 +1,12 @@
 package textversion_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"io"
 	"io/fs"
 	"runtime"

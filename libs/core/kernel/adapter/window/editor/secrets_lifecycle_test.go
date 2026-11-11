@@ -91,7 +91,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	}
 	testsupport.CloseAfter(t, installation)
 
-	path, handler := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
+	path, handler := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation.Installation))
 	mux := http.NewServeMux()
 	mux.Handle(path, handler)
 	server := httptest.NewUnstartedServer(mux)

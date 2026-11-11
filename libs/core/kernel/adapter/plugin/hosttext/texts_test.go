@@ -1,10 +1,10 @@
 package hosttext_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"bytes"
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"io"
 	"io/fs"
 	"os"

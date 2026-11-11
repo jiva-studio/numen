@@ -42,7 +42,7 @@ func openVault(t *testing.T, notes map[string]string) (questions, string) {
 }
 
 func openVaultWithWindow(t *testing.T, notes map[string]string) (
-	questions, numenv1connect.WindowServiceClient, string, *editor.Installation,
+	questions, numenv1connect.WindowServiceClient, string, *container.OpenedWindow,
 ) {
 	t.Helper()
 	root := t.TempDir()
@@ -224,14 +224,14 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 	}
 }
 
-func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installation) {
-	services := editor.ServicesOf(installation)
+func mountQuestionsServices(mux *http.ServeMux, installation *container.OpenedWindow) {
+	services := editor.ServicesOf(installation.Installation, installation.State)
 	pages := installation.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName)
 	mux.Handle("/"+numenv1connect.VaultServiceName+"/", pages)
 	mux.Handle("/"+numenv1connect.WorkspaceServiceName+"/", pages)
 	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
 	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
-	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation)))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation.Installation)))
 }
 
 // going is one vault with everything a window has behind it, and a client
@@ -240,7 +240,7 @@ type going struct {
 	client       questions
 	configuring  numenv1connect.SettingsServiceClient
 	canvas       numenv1connect.WindowServiceClient
-	installation *editor.Installation
+	installation *container.OpenedWindow
 	cases        *container.WindowUseCases
 	root         string
 	settings     string
@@ -331,7 +331,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 	)
 	cases.Notes.Edit.Write = writing
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
+	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation.Installation))
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)

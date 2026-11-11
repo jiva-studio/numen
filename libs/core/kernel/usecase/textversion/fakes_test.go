@@ -1,8 +1,8 @@
 package textversion_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"slices"
 	"strings"
 	"sync"

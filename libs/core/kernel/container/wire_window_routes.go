@@ -41,13 +41,13 @@ import (
 func mountCatalog(w *windowWiring) {
 	if plugins := getPluginCatalog(plugins(w.cfg)); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins)
-		path, served := windowcatalog.NewRoute(handler, w.inst.State.Gate.CountQuestions())
+		path, served := windowcatalog.NewRoute(handler, w.state.Gate.CountQuestions())
 		w.inst.Mount(editor.NewRoute(path, served, handler))
 	}
 }
 
 func mountMedia(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(vaultOf(w.cfg))), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)))
 	handler := mediawindow.NewHandler(state, state, resolve)
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
@@ -60,21 +60,21 @@ func mountCommand(w *windowWiring) {
 		versions = menu
 	}
 	commands := newPluginCommands(p, p.PluginHost, versions)
-	handler := command.NewHandler(w.inst.State, commands.Listing, commands.RunCommand, commands.ListItems)
-	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.Gate.CountQuestions(), handler)))
+	handler := command.NewHandler(w.state, commands.Listing, commands.RunCommand, commands.ListItems)
+	w.inst.Mount(editor.NewRoute(command.NewRoute(w.state.Gate.CountQuestions(), handler)))
 }
 
 func mountText(w *windowWiring) {
-	handler := windowtext.NewHandler(w.inst.State, nil)
+	handler := windowtext.NewHandler(w.state, nil)
 	if text := openFileText(vaultOf(w.cfg)); text != nil {
-		handler = windowtext.NewHandler(w.inst.State, text)
+		handler = windowtext.NewHandler(w.state, text)
 	}
-	path, served := windowtext.NewRoute(handler, w.inst.State.Gate.CountQuestions())
+	path, served := windowtext.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountVaults(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	registry, change := w.cases.Listing, w.cases.Vaults.Change
 	handler := vaults.NewHandler(
 		state,
@@ -92,7 +92,7 @@ func mountVaults(w *windowWiring) {
 }
 
 func mountSearch(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	finds := newSearch(searchOf(w.cfg), w.db, w.asking, state.ReportWordsAlone)
 	handler := windowsearch.NewHandler(
 		state,
@@ -112,7 +112,7 @@ func getTabKindChooser(c pluginsWiring) file.TabKindChooser {
 }
 
 func mountFile(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	readers := vaultReaders(vaultOf(w.cfg))
 	fileKinds := file.NewGetFileKinds(readers, w.db.NoteQueries())
 	chooser := getTabKindChooser(plugins(w.cfg))
@@ -137,13 +137,13 @@ func mountFile(w *windowWiring) {
 }
 
 func mountWindowState(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	path, served := windowstate.NewRoute(state.Window, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, state.Window))
 }
 
 func mountWorkspace(w *windowWiring) error {
-	state := w.inst.State
+	state := w.state
 	links, err := workspace.NewLinks()
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func mountWorkspace(w *windowWiring) error {
 }
 
 func mountNote(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	notes, queries := w.cases.Notes, w.cases.Queries
 	writes := state.Writes
 	save, create := note.NewSaveProse(&notes.Edit.Write, writes, writes), note.NewCreateNote(&notes.Edit.Create, writes, writes)
@@ -184,10 +184,10 @@ func mountNote(w *windowWiring) {
 }
 
 func mountAgent(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	handler := &windowagent.Handler{
-		GetRoot:        func() string { return state.GetCurrentVault().Path },
-		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
+		GetRoot:  func() string { return state.GetCurrentVault().Path },
+		GetVault: func() domain.VaultID { return state.GetCurrentVault().ID },
 	}
 	if taking := getToolProvider(plugins(w.cfg)); taking != nil {
 		handler.Start = agent.NewStartTask(taking)
@@ -213,7 +213,7 @@ func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
 }
 
 func mountSettings(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	var secretLister settings.SecretLister
 	items, groups := &windowsettings.SecretItems{}, &windowsettings.SecretGroups{}
 	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
@@ -244,15 +244,15 @@ func mountSettings(w *windowWiring) {
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(plugins(w.cfg)), func(id string) (string, bool) { return getPluginDir(plugins(w.cfg), id) })
-	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
+	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.state.Gate.CountQuestions())))
 }
 
 func shareEditorWindow(c Config, db *Index, opened *windowWiring) {
-	view := windowView(opened.inst.State)
+	view := windowView(opened.state)
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
-		&opened.inst.State.Runtime,
-		&opened.inst.State.Tabs,
+		&opened.state.Runtime,
+		&opened.state.Tabs,
 		vaultFocusNote(vaultOf(c), db.NoteQueries(), view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
@@ -263,7 +263,7 @@ func shareEditorWindow(c Config, db *Index, opened *windowWiring) {
 
 func shareVaultList(c Config, opened *windowWiring) {
 	scenarios := opened.cases.Vaults
-	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.inst.State.Runtime, windowsession.VaultOps{
+	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.state.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    opened.cases.Listing.Find,
 		Missing: opened.cases.Listing.FolderCheck,
@@ -272,7 +272,7 @@ func shareVaultList(c Config, opened *windowWiring) {
 }
 
 func mountVault(w *windowWiring) {
-	state := w.inst.State
+	state := w.state
 	handler := windowvault.NewHandler(state, state.Notices)
 	path, served := windowvault.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))

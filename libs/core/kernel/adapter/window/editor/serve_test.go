@@ -868,10 +868,10 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
 	services.Mount(RouteOf(state, &windowagent.Handler{
-		Start:          agentuse.NewStartTask(agent),
-		End:            agentuse.NewEndConversation(agent),
-		GetRoot:        func() string { return state.GetCurrentVault().Path },
-		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
+		Start:    agentuse.NewStartTask(agent),
+		End:      agentuse.NewEndConversation(agent),
+		GetRoot:  func() string { return state.GetCurrentVault().Path },
+		GetVault: func() domain.VaultID { return state.GetCurrentVault().ID },
 	}, windowagent.NewRoute))
 	plugins := &testInterceptingPlugins{}
 	services.PluginServices = plugins

@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
@@ -53,7 +52,7 @@ func (d *DebugOptions) isServingHTTP() bool {
 func (d *DebugOptions) serveHTTP(
 	ctx context.Context,
 	cfg container.Config,
-	opened *editor.Installation,
+	opened *container.OpenedWindow,
 	pages http.Handler,
 ) error {
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)

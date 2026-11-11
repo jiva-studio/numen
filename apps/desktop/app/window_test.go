@@ -5,19 +5,18 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func windowOn(t *testing.T) (*editor.Installation, container.Config) {
+func windowOn(t *testing.T) (*container.OpenedWindow, container.Config) {
 	t.Helper()
 	opened, cfg, _ := windowWithCases(t)
 	return opened, cfg
 }
 
-func windowWithCases(t *testing.T) (*editor.Installation, container.Config, *container.WindowUseCases) {
+func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *container.WindowUseCases) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{

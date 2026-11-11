@@ -68,8 +68,6 @@ type Lifecycle struct {
 // What runs behind the vault is the lifecycle; the installation maps the
 // calls of the application onto it.
 type Installation struct {
-	State *State
-
 	lifecycle Lifecycle
 	imports   Importer
 	pages     pageSet
@@ -87,7 +85,6 @@ func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io
 		state.Writes.NotifyNoteWritten = lifecycle.NoteWritten
 	}
 	return &Installation{
-		State:     state,
 		lifecycle: lifecycle,
 		imports:   imports,
 		pages:     pageSet{gate: state.Gate, window: statePages{state: state}},
@@ -134,12 +131,12 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
 	onStop := func(why error) {
-		writeDiagnostic(o.State.Window.AddTask, o.out, "recordings will no longer play: %v\n", why)
+		writeDiagnostic(o.pages.window.AddTask, o.out, "recordings will no longer play: %v\n", why)
 	}
 	if playing, why := Listen(ctx, files, onStop); why != nil {
-		writeDiagnostic(o.State.Window.AddTask, o.out, "recordings will not play: %v\n", why)
+		writeDiagnostic(o.pages.window.AddTask, o.out, "recordings will not play: %v\n", why)
 	} else {
-		o.State.Playing.Store(playing)
+		o.pages.window.GetPlaying().Store(playing)
 	}
 	return nil
 }
@@ -169,7 +166,7 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 // WaitForFlush waits for every page to write its pending data. The wait is on
 // ctx ended or the vault was requested again.
 func (o *Installation) WaitForFlush(ctx context.Context) bool {
-	return o.State.Window.WaitForFlush(ctx)
+	return o.pages.window.WaitForFlush(ctx)
 }
 
 const (
@@ -186,16 +183,16 @@ const (
 // which says the theme the settings name is found now.
 func (o *Installation) RecordThemeWarning(message string) {
 	if message == "" {
-		o.State.Window.RemoveTask(applyingTheme)
+		o.pages.window.RemoveTask(applyingTheme)
 		return
 	}
-	o.State.Window.AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.pages.window.AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.State.Window.AddTask(work.Task{
+		o.pages.window.AddTask(work.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,
@@ -210,5 +207,5 @@ func (o *Installation) Report(messages []string) {
 // returns no value: results go to all listeners.
 // The watcher does not report images or archives, so Imports names what arrived itself.
 func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
-	o.imports.Execute(ctx, o.State.GetCurrentVault(), into, paths)
+	o.imports.Execute(ctx, o.pages.window.GetCurrentVault(), into, paths)
 }

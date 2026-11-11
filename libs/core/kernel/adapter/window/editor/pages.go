@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"net/http"
@@ -9,13 +10,14 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -68,12 +70,14 @@ type pageSet struct {
 	pluginDir func(id string) (string, bool)
 }
 
-// pageWindow is what the pages need of the window besides its gate: the vault it shows, where its work is
-// listed, and where recordings are played from.
+// pageWindow is what the pages and the installation need of the window besides its gate: the vault it
+// shows, where its work is listed, where recordings are played from, and the wait for its pages to write.
 type pageWindow interface {
 	shownVault
 	taskList
-	getPlayOrigins() []string
+	GetPlaying() *atomic.Pointer[Loopback]
+	RemoveTask(id string)
+	WaitForFlush(ctx context.Context) bool
 }
 
 // statePages is the window of a State, as its pages see it.
@@ -85,7 +89,11 @@ func (s statePages) GetCurrentVault() domain.Vault { return s.state.GetCurrentVa
 
 func (s statePages) AddTask(pos work.Task) { s.state.Window.AddTask(pos) }
 
-func (s statePages) getPlayOrigins() []string { return s.state.Playing.Load().getPlayOrigins() }
+func (s statePages) RemoveTask(id string) { s.state.Window.RemoveTask(id) }
+
+func (s statePages) WaitForFlush(ctx context.Context) bool { return s.state.Window.WaitForFlush(ctx) }
+
+func (s statePages) GetPlaying() *atomic.Pointer[Loopback] { return &s.state.Playing }
 
 // NewHandler puts the services in front of the pages, so a window and a browser
 // are served by one handler.
@@ -103,7 +111,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 
 	// The origin recordings play from is known once the socket it is served over is
 	// open, which precedes any page request.
-	played := s.window.getPlayOrigins()
+	played := s.window.GetPlaying().Load().getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.

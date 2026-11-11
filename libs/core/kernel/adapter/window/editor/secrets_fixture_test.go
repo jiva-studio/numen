@@ -298,7 +298,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	path, handler := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
+	path, handler := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation.Installation))
 	mux := http.NewServeMux()
 	mux.Handle(path, handler)
 	server := httptest.NewUnstartedServer(mux)

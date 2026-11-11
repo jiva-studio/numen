@@ -21,7 +21,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
@@ -39,7 +38,7 @@ type runningCore struct {
 	port   int
 	isDown atomic.Bool
 	stop   context.CancelFunc
-	opened *editor.Installation
+	opened *container.OpenedWindow
 	server *http.Server
 }
 
@@ -85,7 +84,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	if wrong := container.SetThemes(cfg, opened, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
+	if wrong := container.SetThemes(cfg, opened.Installation, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	listener, err := listenLocal(ctx)

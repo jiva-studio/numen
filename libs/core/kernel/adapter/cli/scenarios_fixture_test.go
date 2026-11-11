@@ -31,4 +31,3 @@ func newScenarios(
 		ListItems:  plugincommand.NewListItems(list, nil),
 	}
 }
-
