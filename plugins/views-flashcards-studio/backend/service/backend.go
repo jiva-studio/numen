@@ -28,7 +28,7 @@ type Config struct {
 
 // Backend answers the cards, the presets and the review.
 type Backend struct {
-	*session
+	*vaultSession
 	ports hostports.Ports
 	now   ports.Clock
 	cfg   Config
@@ -40,7 +40,7 @@ type Backend struct {
 func New(cfg Config) *Backend {
 	bound := hostports.New(cfg.Vaults, cfg.Store)
 	b := &Backend{
-		session: &session{vaults: cfg.Vaults, notes: bound.Notes}, ports: bound, now: cfg.Now, cfg: cfg,
+		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: bound.Notes}, ports: bound, now: cfg.Now, cfg: cfg,
 		runs: sessions.NewRegistry(), flash: nil,
 	}
 	b.flash = scenarios.NewCurrent(b.getFlashConfig())

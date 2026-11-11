@@ -21,7 +21,7 @@ import (
 
 // reviewHandler serves the review window.
 type reviewHandler struct {
-	*session
+	*vaultSession
 	now          ports.Clock
 	runs         *sessions.Registry
 	flash        func() *scenarios.Review
@@ -30,7 +30,7 @@ type reviewHandler struct {
 
 func (b *Backend) newReviewHandler() *reviewHandler {
 	return &reviewHandler{
-		session:      b.session,
+		vaultSession: b.vaultSession,
 		now:          b.now,
 		runs:         b.runs,
 		flash:        b.flash.Get,

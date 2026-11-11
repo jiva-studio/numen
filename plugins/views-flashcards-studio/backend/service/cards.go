@@ -15,14 +15,14 @@ import (
 
 // cardsHandler answers about the decks and card models a vault is arranged into.
 type cardsHandler struct {
-	*session
+	*vaultSession
 	cards cards.Scenarios
 }
 
 func (b *Backend) newCardsHandler() *cardsHandler {
 	return &cardsHandler{
-		session: b.session,
-		cards:   cards.NewScenarios(b.getCardsConfig()),
+		vaultSession: b.vaultSession,
+		cards:        cards.NewScenarios(b.getCardsConfig()),
 	}
 }
 
