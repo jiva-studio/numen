@@ -133,8 +133,9 @@ func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error
 	if err != nil {
 		return Result{}, err
 	}
-	defer r.release(key)
-	return r.runRecognition(ctx, req)
+	release := sync.OnceFunc(func() { r.release(key) })
+	defer release()
+	return r.runRecognition(ctx, req, release)
 }
 
 // Start claims the file and recognizes it in the background under ctx, and returns false when
@@ -155,9 +156,10 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 	runEnd := make(chan struct{})
 	go func() {
 		defer close(runEnd)
-		defer r.release(key)
+		release := sync.OnceFunc(func() { r.release(key) })
+		defer release()
 		// runRecognition reports a failure as the error of the task.
-		_, err := r.runRecognition(ctx, req)
+		_, err := r.runRecognition(ctx, req, release)
 		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect recognition state."
 		if err != nil && ctx.Err() == nil {
 			r.reportError("recognize "+req.Path, err)
@@ -253,10 +255,13 @@ func newTask(req Request) host.Task {
 	}
 }
 
-func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, error) {
+// runRecognition calls release before it reports how the task ended, so that whoever sees the task
+// end finds the file no longer running.
+func (r *Recognition) runRecognition(ctx context.Context, req Request, release func()) (Result, error) {
 	on := reach{vault: r.host.Vaults(req.Vault), store: r.host.Store(req.Vault), texts: r.host.Texts(req.Vault)}
 	task := newTask(req)
 	res, err := r.recognize(ctx, on, req, &task)
+	release()
 	if err != nil && ctx.Err() == nil && !isMissing(ctx, on.vault, req.Path) {
 		task.FailureReason = err.Error()
 		if reportErr := r.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {

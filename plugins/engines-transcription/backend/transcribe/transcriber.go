@@ -164,14 +164,16 @@ func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, pat
 }
 
 func (t *Transcriber) runTranscription(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
-	defer t.clearRunning(key)
+	defer t.wg.Done()
+	release := sync.OnceFunc(func() { t.unclaim(key) })
+	defer release()
 	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
 
 	if err := t.reportStart(ctx, vault, path); err != nil {
 		return err
 	}
-	return t.transcribe(ctx, vault, path, read)
+	return t.transcribe(ctx, vault, path, read, release)
 }
 
 func (t *Transcriber) reportStart(ctx context.Context, vault domain.VaultID, path string) error {
@@ -235,10 +237,14 @@ func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (
 }
 
 func (t *Transcriber) clearRunning(key string) {
+	t.unclaim(key)
+	t.wg.Done()
+}
+
+func (t *Transcriber) unclaim(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.running, key)
-	t.wg.Done()
 }
 
 func (t *Transcriber) isClosing() bool {
