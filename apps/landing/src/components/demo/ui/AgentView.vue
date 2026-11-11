@@ -3,9 +3,10 @@
  * A conversation with an agent: the questions, the lines about its work and its answers, and the field a
  * question is written in.
  */
-import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, Prose, type MenuItem } from '@numen/ui'
 import { MODEL_OPTIONS, type Agent } from '../model/agent'
+import { useThreadScroll } from '../model/useThreadScroll'
 import AgentCall from './AgentCall.vue'
 import AgentFoot from './AgentFoot.vue'
 
@@ -26,13 +27,7 @@ const items: readonly MenuItem[] = MODEL_OPTIONS.map((one) => ({
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(
-  () => props.agent.turns.value.length,
-  async () => {
-    await nextTick()
-    thread.value?.scrollTo({ top: thread.value.scrollHeight, behavior: 'smooth' })
-  },
-)
+useThreadScroll(thread, () => props.agent.turns.value.length)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKeydown(event: KeyboardEvent) {

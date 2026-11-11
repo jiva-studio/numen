@@ -12,6 +12,15 @@ import type { DeckTabState } from './tabState'
 /** The word deck tabs are filed under. */
 export const DECK = 'deck'
 
+/** The lists a deck tab loads when it opens and reloads when it is shown. */
+export interface DeckTabLists {
+  listCardModels(): Promise<void>
+  listPresets(): Promise<void>
+  listCardModelsAgain(): void
+  listPresetsAgain(): void
+  refreshDeckPreset(path: string): Promise<void>
+}
+
 /** What the deck tabs of a window hold, as the kind that draws them reads it. */
 export interface DeckTabsInside {
   readonly store: {
@@ -23,11 +32,7 @@ export interface DeckTabsInside {
   }
   readonly vaultAnswers: { getTitle(path: string): string }
   readonly createDeck: Cards['createDeck']
-  listCardModels(): Promise<void>
-  listPresets(): Promise<void>
-  listCardModelsAgain(): void
-  listPresetsAgain(): void
-  refreshDeckPreset(path: string): Promise<void>
+  readonly lists: DeckTabLists
   /** Shows the failure of an operation that runs in the background. */
   reportFailure(error: Caught): void
   createDeckTabState(id: string): DeckTabState
@@ -38,11 +43,7 @@ export function createDeckKind({
   store,
   vaultAnswers,
   createDeck,
-  listCardModels,
-  listPresets,
-  listCardModelsAgain,
-  listPresetsAgain,
-  refreshDeckPreset,
+  lists,
   reportFailure,
   createDeckTabState,
   component,
@@ -53,9 +54,9 @@ export function createDeckKind({
     icon: Layers,
     open: (path, id) => {
       store.open(id, path)
-      listCardModels().catch(reportFailure)
-      listPresets().catch(reportFailure)
-      refreshDeckPreset(path).catch(reportFailure)
+      lists.listCardModels().catch(reportFailure)
+      lists.listPresets().catch(reportFailure)
+      lists.refreshDeckPreset(path).catch(reportFailure)
       return createDeckTabState(id)
     },
     // A deck already open under the path is the tab of that path, wherever the file has since moved.
@@ -66,8 +67,8 @@ export function createDeckKind({
     getTitle: (one) => vaultAnswers.getTitle(store.getPath(one.id)),
     getMark: (one) => getMarkOf(one.data.note.value.state),
     onShow: () => {
-      listCardModelsAgain()
-      listPresetsAgain()
+      lists.listCardModelsAgain()
+      lists.listPresetsAgain()
     },
     getTarget: (one) => ({
       path: store.getPath(one.id),

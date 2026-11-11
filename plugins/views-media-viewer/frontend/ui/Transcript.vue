@@ -3,9 +3,8 @@
  * The transcript under the player, with the time of each line, or an empty-state
  * message when there is none. Clicking a time in the gutter plays from there.
  */
-import { computed, watch } from 'vue'
 import { LoadingIndicator } from '@numen/ui'
-import { createTimeGutter } from '../model/timeGutter'
+import { useTranscriptGutter } from '../model/useTranscriptGutter'
 import TranscriptText from './TranscriptText.vue'
 import { WORDS as words } from '../words'
 import type { TranscriptState } from '../model/transcript'
@@ -20,38 +19,12 @@ const props = withDefaults(
 )
 
 /* --------------------------------- State ---------------------------------- */
-const { failure, isPlaying: playbackIsPlaying } = props.state.playback.progress
-const { current, following, note, isLoading, error, isEditable } = props.state.content
-const { prose, typing } = props.state.draft
-const { timed, times: cueTimes, hasText } = props.state.lines
+const { failure } = props.state.playback.progress
+const { note, isLoading, error, isEditable } = props.state.content
+const { prose } = props.state.draft
+const { timed, hasText } = props.state.lines
 const { isStartable } = props.state.options
-const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
-
-/** The times in the editor's gutter, and the line being played. */
-const times = createTimeGutter((line) => props.state.navigation.goToLine(line))
-
-/* --------------------------------- Hooks ---------------------------------- */
-watch(
-  [cueTimes, current, following, isPlaying, typing],
-  ([timesValue, currentLine, isFollowing, isPlayingValue, isTyping]) => {
-    times.show({
-      times: timesValue,
-      current: currentLine,
-      isFollowing: isFollowing && isPlayingValue && !isTyping,
-    })
-  },
-  { immediate: true, flush: 'post' },
-)
-
-watch(
-  following,
-  (isFollowing, wasFollowing) => {
-    if (isFollowing && !wasFollowing && !isPlaying.value && !typing.value) {
-      times.centerCurrent()
-    }
-  },
-  { flush: 'post' },
-)
+const times = useTranscriptGutter(props.state, () => props.isPlaying)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onTranscribe() {

@@ -6,8 +6,7 @@
  *
  * It is drawn for the eye alone.
  */
-import { shallowRef, watch, type Component } from 'vue'
-import { findNamedIcon } from './icons'
+import { useNamedIcon } from './useNamedIcon'
 
 defineOptions({ inheritAttrs: false })
 
@@ -16,23 +15,8 @@ const props = defineProps<{
   name: string
 }>()
 
-/** The icon drawn for a name the set does not have. */
-const PLACEHOLDER_ICON = 'circle-question-mark'
-
 /* --------------------------------- State ---------------------------------- */
-const icon = shallowRef<Component | null>(null)
-
-/* --------------------------------- Hooks ---------------------------------- */
-watch(
-  () => props.name,
-  async (name) => {
-    icon.value = null
-    const found =
-      (await findNamedIcon(name)) ?? (name === '' ? null : await findNamedIcon(PLACEHOLDER_ICON))
-    if (props.name === name) icon.value = found
-  },
-  { immediate: true },
-)
+const icon = useNamedIcon(() => props.name)
 </script>
 
 <template>

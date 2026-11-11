@@ -7,11 +7,12 @@
  * which Enter chooses. Rows may be set under group names, and an action row may
  * stand first. A press outside it and Escape ask for it to be closed.
  */
-import { computed, nextTick, onMounted, provide, useId, useTemplateRef, watch } from 'vue'
+import { computed, provide, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '../menu'
 import SearchableListRows from './SearchableListRows.vue'
 import type { SearchableListProps, SearchableListSlots } from './SearchableList.types'
 import { LIST_CONTEXT } from './context'
+import { useListFocus } from './useListFocus'
 import { useListRows } from './useListRows'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -71,22 +72,13 @@ provide(LIST_CONTEXT, { slots, getQuery: () => queryText.value })
 /* --------------------------------- Hooks ---------------------------------- */
 useOutsidePress(frame, () => emit('close'))
 
-onMounted(async () => {
-  await nextTick()
-  input.value?.focus()
-  rowList.value?.scrollToActive()
-})
+useListFocus({ input, rowList, activeIndex, model })
 
 // A new item in force set from outside puts the keyboard back on it, over a row the pointer rests on.
 // A row chosen in the list is already the active row and stays it.
 watch(model, (next) => {
   const active = activeKey.value === null ? undefined : findRow(activeKey.value)
   if (active?.kind !== 'item' || active.item.id !== next) activeKey.value = null
-})
-
-watch([activeIndex, model], async () => {
-  await nextTick()
-  rowList.value?.scrollToActive()
 })
 
 /* -------------------------------- Handlers -------------------------------- */

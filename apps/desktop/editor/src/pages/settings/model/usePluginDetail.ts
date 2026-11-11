@@ -90,12 +90,18 @@ export function usePluginDetail(deps: PluginDetailDeps) {
     deps.getManager().retryPlugin(deps.getPlugin().id)
   }
 
-  async function deleteData(): Promise<void> {
-    const pluginId = deps.getPlugin().id
+  async function deletePluginData(pluginId: string): Promise<void> {
     const problem = await deps.getManager().files.deletePluginData(pluginId)
     if (deps.getPlugin().id !== pluginId) return
     deleteProblem.value = problem
     await readFileCount(pluginId)
+  }
+
+  function deleteData(): void {
+    const pluginId = deps.getPlugin().id
+    runInBackground(deletePluginData(pluginId), (error) => {
+      if (deps.getPlugin().id === pluginId) deleteProblem.value = formatError(error)
+    })
   }
 
   return {

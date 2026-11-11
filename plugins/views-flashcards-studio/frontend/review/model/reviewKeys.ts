@@ -15,42 +15,58 @@ import type { Preset } from '../lib/decks/types'
 /** The screens of the review, in the order the user visits them. */
 export type ReviewScreen = 'decks' | 'session'
 
-/** What the keys ask of the review: what it is showing, and what it can do. */
-export interface ReviewKeysDeps {
+/** What the review is showing. */
+export interface ReviewKeysView {
   readonly getScreen: () => ReviewScreen
   readonly getChosenVault: () => VaultCardsDue | null
   readonly getPresetsByDeck: () => ReadonlyMap<string, Preset>
   readonly isShown: () => boolean
   readonly getShowing: () => 'reading' | 'here' | 'asking'
+}
+
+/** What a key does to the session and to the screens. */
+export interface ReviewKeysActions {
   readonly start: (deck: string) => void
   readonly show: () => void
   readonly answer: (how: Grade) => void
   readonly takeBack: () => void
   readonly leave: () => void
   readonly goToVaults: () => void
+  readonly scrollPage: (back: boolean) => void
+}
+
+/** What a key does to the agent panel and the notes panel. */
+export interface ReviewKeysPanels {
   readonly toggleAgent: () => void
   readonly toggleNotes: () => void
-  readonly scrollPage: (back: boolean) => void
   readonly closeAgent: () => void
   readonly closeNotes: () => void
 }
 
+/** What the keys ask of the review: what it is showing, and what it can do. */
+export interface ReviewKeysDeps {
+  readonly view: ReviewKeysView
+  readonly actions: ReviewKeysActions
+  readonly panels: ReviewKeysPanels
+}
+
 const applyDeckKey = (press: KeyboardEvent, vault: VaultCardsDue, deps: ReviewKeysDeps) => {
+  const { view, actions } = deps
   const request = getPickerKeyIntent(press, vault.decks.length)
   if (!request) return
   press.preventDefault()
 
   switch (request.does) {
     case 'all':
-      if (vault.totals.due + vault.totals.new > 0) deps.start('')
+      if (vault.totals.due + vault.totals.new > 0) actions.start('')
       break
     case 'deck': {
       const deck = vault.decks[request.at]
-      if (deck && canStart(deck, deps.getPresetsByDeck())) deps.start(deck.deck)
+      if (deck && canStart(deck, view.getPresetsByDeck())) actions.start(deck.deck)
       break
     }
     case 'back':
-      deps.goToVaults()
+      actions.goToVaults()
       break
   }
 }
@@ -62,25 +78,25 @@ const applySessionIntent = (
 ) => {
   switch (intent.does) {
     case 'show':
-      deps.show()
+      deps.actions.show()
       break
     case 'answer':
-      deps.answer(intent.how)
+      deps.actions.answer(intent.how)
       break
     case 'takeBack':
-      deps.takeBack()
+      deps.actions.takeBack()
       break
     case 'leave':
-      deps.leave()
+      deps.actions.leave()
       break
     case 'ask':
-      deps.toggleAgent()
+      deps.panels.toggleAgent()
       break
     case 'read':
-      deps.toggleNotes()
+      deps.panels.toggleNotes()
       break
     case 'scroll':
-      deps.scrollPage(intent.back)
+      deps.actions.scrollPage(intent.back)
       break
     case 'shut':
       closeShownPanel()
@@ -90,15 +106,15 @@ const applySessionIntent = (
 
 export const createReviewKeys = (deps: ReviewKeysDeps) => {
   const closeShownPanel = () => {
-    if (deps.getShowing() === 'asking') deps.closeAgent()
-    else deps.closeNotes()
+    if (deps.view.getShowing() === 'asking') deps.panels.closeAgent()
+    else deps.panels.closeNotes()
   }
 
   const onSessionKey = (press: KeyboardEvent) => {
     const request = getSessionKeyIntent(press, {
-      isShown: deps.isShown(),
-      isAsking: deps.getShowing() === 'asking',
-      isNotesOpen: deps.getShowing() === 'reading',
+      isShown: deps.view.isShown(),
+      isAsking: deps.view.getShowing() === 'asking',
+      isNotesOpen: deps.view.getShowing() === 'reading',
     })
     if (!request) return
     if (shouldConsumeKey(request)) press.preventDefault()
@@ -107,9 +123,9 @@ export const createReviewKeys = (deps: ReviewKeysDeps) => {
 
   /** A key pressed while the review is in front, answered with whether the page is kept from it. */
   const onKeyDown = (press: KeyboardEvent): boolean => {
-    if (deps.getScreen() === 'session') onSessionKey(press)
+    if (deps.view.getScreen() === 'session') onSessionKey(press)
     else {
-      const vault = deps.getChosenVault()
+      const vault = deps.view.getChosenVault()
       if (vault) applyDeckKey(press, vault, deps)
     }
     return press.defaultPrevented

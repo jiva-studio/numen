@@ -4,7 +4,7 @@
  */
 import { onMounted, useTemplateRef } from 'vue'
 import type { Core } from '@/entities/core'
-import { useNote } from '../../model/useNote'
+import { useNoteSheet } from '../../model/useNoteSheet'
 import NoteBar from '../NoteBar/NoteBar.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -17,28 +17,21 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { prose, isReading, read, keep } = useNote(props.core, props.path)
 const editor = useTemplateRef<HTMLTextAreaElement>('editor')
-
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(async () => {
-  const answer = await read()
-  if (!answer.ok) {
-    emit('error', answer.error)
-    emit('close')
-    return
-  }
-  editor.value?.focus()
+const { prose, isReading, actions } = useNoteSheet({
+  core: props.core,
+  path: props.path,
+  focusEditor: () => editor.value?.focus(),
+  emitError: (message) => emit('error', message),
+  emitClose: () => emit('close'),
 })
 
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => actions.open())
+
 /* -------------------------------- Handlers -------------------------------- */
-async function onKeep() {
-  const answer = await keep()
-  if (!answer.ok) {
-    emit('error', answer.error)
-    return
-  }
-  emit('close')
+function onKeep() {
+  actions.save()
 }
 </script>
 

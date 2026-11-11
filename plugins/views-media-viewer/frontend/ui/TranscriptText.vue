@@ -2,9 +2,9 @@
 /**
  * The transcript's words as plain text, edited in place.
  */
-import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { useTemplateRef } from 'vue'
 import type { Extension } from '@codemirror/state'
-import { createTranscriptView, type TranscriptView } from '../model/transcriptView'
+import { useTranscriptEditor } from '../model/useTranscriptEditor'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -21,39 +21,10 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const host = useTemplateRef<HTMLElement>('host')
-let view: TranscriptView | null = null
-
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  if (!host.value) return
-  view = createTranscriptView({
-    parent: host.value,
-    text: props.modelValue,
-    isEditable: props.isEditable,
-    label: props.label,
-    extensions: props.extensions,
-    onChange: (text) => emit('update:modelValue', text),
-    onSave: () => emit('save'),
-  })
+useTranscriptEditor(host, props, {
+  change: (text) => emit('update:modelValue', text),
+  save: () => emit('save'),
 })
-
-onBeforeUnmount(() => {
-  view?.destroy()
-  view = null
-})
-
-watch(
-  () => props.modelValue,
-  (text) => view?.setText(text),
-)
-watch(
-  () => props.isEditable,
-  (isEditable) => view?.setEditable(isEditable),
-)
-watch(
-  () => props.extensions,
-  (extensions) => view?.setExtensions(extensions),
-)
 </script>
 
 <template>

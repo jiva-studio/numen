@@ -7,6 +7,7 @@
  */
 import { Button } from '@numen/ui'
 import type { ConflictPrompt } from '../model/flush'
+import { useConflictResolution } from '../model/useConflictResolution'
 
 /** The labels shown for the unsaved notes. */
 interface UnsavedChangesWords {
@@ -24,18 +25,7 @@ const props = defineProps<{
 }>()
 
 // --- State ---
-
-async function onKeep(conflict: ConflictPrompt) {
-  await conflict.keep()
-}
-
-async function onTake(conflict: ConflictPrompt) {
-  await conflict.take()
-}
-
-function onLater(conflict: ConflictPrompt) {
-  conflict.later()
-}
+const { keep: onKeep, take: onTake, later: onLater } = useConflictResolution()
 
 // --- Helpers ---
 </script>

@@ -34,7 +34,7 @@ const props = withDefaults(defineProps<TitleBarProps>(), {
   commands: () => [],
   status: () => [],
   canCreateVault: false,
-  listItems: async () => [],
+  listItems: () => Promise.resolve([]),
 })
 
 /* --------------------------------- Events --------------------------------- */

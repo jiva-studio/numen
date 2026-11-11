@@ -9,20 +9,17 @@
  * runs in this window.
  */
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
-import { reportFailure, win } from '@numen/ui'
+import { reportFailure, runInBackground, win } from '@numen/ui'
 import { getFrameOrigin, LEAST, readPlayerInfo, seekFrame } from '../lib/frame'
-import { createHeightStore, type HeightStore } from '../model/heightStore'
+import type { HeightStore } from '../model/heightStore'
 import { useFrameHeight } from './useFrameHeight'
 
-const props = withDefaults(
-  defineProps<{
-    embed: string
-    copy: string
-    words: { readonly playing: string; readonly taller: string }
-    store?: HeightStore
-  }>(),
-  { store: () => createHeightStore() },
-)
+const props = defineProps<{
+  embed: string
+  copy: string
+  words: { readonly playing: string; readonly taller: string }
+  store?: HeightStore
+}>()
 
 const emit = defineEmits<{
   'time-update': [ms: number]
@@ -68,7 +65,7 @@ function onWindowMessage(event: MessageEvent): void {
 function seek(ms: number): void {
   if (player.value) {
     player.value.currentTime = ms / 1000
-    player.value.play().catch(reportFailure)
+    runInBackground(player.value.play(), reportFailure)
     return
   }
   seekFrame(frame.value?.contentWindow, props.embed, ms)

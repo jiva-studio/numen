@@ -9,8 +9,7 @@ import type { WorkspaceLayoutProps } from './WorkspaceLayout.types'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
 import { findTopPanes, getStripEdge } from '../lib/edges'
 import { useTabDrag } from '../model/drag'
-import { TAB_HOSTS, createTabHosts } from '../model/hosts'
-import { createBrowserNodeIdFactory } from '../api/randomness'
+import { useBrowserNodeIds, useTabHosts } from '../model/useWorkspaceHosts'
 import { getSlotProps } from '../lib/slotBinding'
 import { activateTab, closeTab, focusPane, resizeBranch } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
@@ -58,10 +57,9 @@ const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id 
 
 const topPanes = computed(() => findTopPanes(workspace.value))
 
-const hosts = createTabHosts()
-provide(TAB_HOSTS, hosts)
+const hosts = useTabHosts()
 
-const createNodeId = createBrowserNodeIdFactory()
+const createNodeId = useBrowserNodeIds()
 
 const frame = useTemplateRef<HTMLElement>('frame')
 

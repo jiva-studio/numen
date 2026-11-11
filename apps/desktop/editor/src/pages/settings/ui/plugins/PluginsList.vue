@@ -3,12 +3,11 @@
  * The plugin list of the settings tab: the plugin manager drawn over the installation's plugins,
  * the catalog and the enabled settings.
  */
-import { computed, ref, watch } from 'vue'
 import { PluginsList as PluginsListView } from '@numen/plugin-manager'
-import { createManagedFromEntries } from '../../lib/pluginListing'
+import { usePluginsList } from '../../model/usePluginsList'
 import type { InstallationSettings } from '../../types'
 import type { CatalogEntry } from '@/entities/plugin'
-import { write, type PluginInfo } from '@/entities/settings'
+import type { PluginInfo } from '@/entities/settings'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -24,39 +23,17 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const searchQuery = ref(props.query)
-
-const managed = computed(() => createManagedFromEntries(props.plugins, props.catalog))
-
-const enabled = computed(() =>
-  Object.fromEntries(props.plugins.map((one) => [one.id, isPluginEnabled(one.id)])),
-)
-
-/* --------------------------------- Hooks ---------------------------------- */
-watch(
-  () => props.query,
-  (newQuery) => {
-    searchQuery.value = newQuery
-  },
-)
-
-watch(searchQuery, (newQuery) => {
-  if (props.query !== newQuery) emit('update:query', newQuery)
+const { searchQuery, managed, enabled, setEnabled: onTogglePlugin } = usePluginsList({
+  getSettings: () => props.settings,
+  getCatalog: () => props.catalog,
+  getQuery: () => props.query,
+  getPlugins: () => props.plugins,
+  updateQuery: (query) => emit('update:query', query),
 })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {
   emit('select-plugin', pluginId)
-}
-
-function onTogglePlugin(pluginId: string, isEnabled: boolean): void {
-  props.settings.write([{ at: [pluginId, 'enabled'], value: write(isEnabled) }])
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function isPluginEnabled(pluginId: string): boolean {
-  const val = props.settings.getSetting([pluginId, 'enabled'])
-  return typeof val === 'boolean' ? val : true
 }
 </script>
 

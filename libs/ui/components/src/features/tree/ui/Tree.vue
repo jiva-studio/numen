@@ -2,13 +2,12 @@
 import { computed, useTemplateRef } from 'vue'
 import { flatten, getMarkOf, type RowId } from '../lib/row'
 import { useRowDrag } from '../model/drag'
-import { createTreeGestures, createTreeRenaming } from '../model/gestures'
 import { useTreeLayout } from '../model/layout'
 import { useDrawnRows } from '../model/rows'
 import { useRowSelection } from '../model/selection'
+import { useRowRefs, useTreeGestures, useTreeRenaming } from '../model/useTree'
 import { browserClock } from '@/shared/api/clock'
 import { measureElementRect } from '@/shared/api/dom'
-import { createRefRegistry } from '@/shared/model/refs'
 import { DragPreview } from '@/shared/ui/drag-preview'
 import TreeRow from './TreeRow.vue'
 import type { TreeEvents, TreeProps, TreeSlots } from './Tree.types'
@@ -51,7 +50,7 @@ const rows = useDrawnRows(
   (index) => virtual.scrollToRow(index),
 )
 const { tabbed, setRowElement } = rows
-const { getRef: getRowRef } = createRefRegistry<RowId>(setRowElement)
+const { getRef: getRowRef } = useRowRefs(setRowElement)
 
 const selection = useRowSelection(
   () => visibleRows.value,
@@ -78,7 +77,7 @@ const drag = useRowDrag({
 })
 const { into, before, draggedIds, label, at: dropTarget } = drag
 
-const gestures = createTreeGestures({
+const gestures = useTreeGestures({
   getShownRows: () => visibleRows.value,
   getSelected: () => props.selected,
   rows,
@@ -100,7 +99,7 @@ const {
   onRowDoubleClick,
   onKeyDown,
 } = gestures
-const { onRename, onAbandon, onFieldBlur } = createTreeRenaming(renamingPath, rows, emit)
+const { onRename, onAbandon, onFieldBlur } = useTreeRenaming(renamingPath, rows, emit)
 
 /* -------------------------------- Helpers --------------------------------- */
 function getRowHeight(): number {

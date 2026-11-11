@@ -196,7 +196,7 @@ export interface PlexFailureReporter {
 
 export interface PlexNodeActions {
   activate(node: string): void
-  createNode(from: string, relation: PlexRelation, at?: { x: number; y: number }): Promise<void>
+  addNode(from: string, relation: PlexRelation, at?: { x: number; y: number }): Promise<void>
   joinNodes(from: string, to: string, relation: PlexRelation): Promise<void>
   dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void

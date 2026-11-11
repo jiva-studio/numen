@@ -1,6 +1,6 @@
 /** What a gesture in a deck does to the file, tested without a screen. */
 import { describe, expect, it } from 'vitest'
-import { HEAD as CARD_HEAD, createRunEnd as createCardRunEnd } from '../../../lib/cards'
+import { HEAD as CARD_HEAD, getRunEndPoint as getCardRunEndPoint } from '../../../lib/cards'
 import {
   addCard as addCardInternal,
   serializeBufferDeckToString,
@@ -464,7 +464,7 @@ describe('a card dragged among the sections', () => {
   it('remains last under the section it was dropped past the end of', () => {
     const card = createSectionedDeck()
     const roots = card.sections[0]?.id ?? ''
-    const moved = dropCard(card, LLAMA, createCardRunEnd(roots))
+    const moved = dropCard(card, LLAMA, getCardRunEndPoint(roots))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [ALPACA, roots],
       [LLAMA, roots],
@@ -473,7 +473,7 @@ describe('a card dragged among the sections', () => {
 
   it('remains last under no section where it was dropped past those before the first', () => {
     const card = createSectionedDeck()
-    const moved = dropCard(card, ALPACA, createCardRunEnd(CARD_HEAD))
+    const moved = dropCard(card, ALPACA, getCardRunEndPoint(CARD_HEAD))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, null],
       [ALPACA, null],
@@ -490,7 +490,7 @@ describe('a card dragged among the sections', () => {
     }
     const deckLost = { ...card, cards: [missing, card.cards[1]!] }
 
-    const moved = dropCard(deckLost, ALPACA, createCardRunEnd(CARD_HEAD))
+    const moved = dropCard(deckLost, ALPACA, getCardRunEndPoint(CARD_HEAD))
 
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, 'gone'],
@@ -500,7 +500,7 @@ describe('a card dragged among the sections', () => {
 
   it('leaves the deck as it was where the card already remains last under that heading', () => {
     const card = createSectionedDeck()
-    expect(dropCard(card, ALPACA, createCardRunEnd(card.sections[0]?.id ?? ''))).toStrictEqual(card)
+    expect(dropCard(card, ALPACA, getCardRunEndPoint(card.sections[0]?.id ?? ''))).toStrictEqual(card)
   })
 
   it('remains first and under no section where it was dropped at the head of the deck', () => {
@@ -796,7 +796,7 @@ describe('cards and sections standing among three headings', () => {
     it("stays before later sections' cards when the section it was dropped past has no cards", () => {
       const currentDeck = createThreeHeadingDeck()
       const roots = currentDeck.sections[0]?.id ?? ''
-      const moved = dropCard(removeCard(currentDeck, 'mb'), 'ma', createCardRunEnd(roots))
+      const moved = dropCard(removeCard(currentDeck, 'mb'), 'ma', getCardRunEndPoint(roots))
       expect(place(moved)).toStrictEqual([
         ['ma', roots],
         ['mc', currentDeck.sections[1]?.id],
@@ -806,7 +806,7 @@ describe('cards and sections standing among three headings', () => {
     it('remains after the last card of the section it was dropped past, ahead of later sections', () => {
       const currentDeck = createThreeHeadingDeck()
       const roots = currentDeck.sections[0]?.id ?? ''
-      const moved = dropCard(currentDeck, 'ma', createCardRunEnd(roots))
+      const moved = dropCard(currentDeck, 'ma', getCardRunEndPoint(roots))
       expect(place(moved)).toStrictEqual([
         ['mb', roots],
         ['ma', roots],
@@ -816,7 +816,7 @@ describe('cards and sections standing among three headings', () => {
 
     it('moves nothing where it was dropped past a section the deck does not hold', () => {
       const currentDeck = createThreeHeadingDeck()
-      expect(dropCard(currentDeck, 'ma', createCardRunEnd('ghost'))).toStrictEqual(currentDeck)
+      expect(dropCard(currentDeck, 'ma', getCardRunEndPoint('ghost'))).toStrictEqual(currentDeck)
     })
   })
 

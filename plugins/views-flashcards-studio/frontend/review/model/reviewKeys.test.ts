@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createReviewKeys } from './reviewKeys'
-import type { ReviewKeysDeps, ReviewScreen } from './reviewKeys'
+import type { ReviewKeysActions, ReviewKeysPanels, ReviewKeysView, ReviewScreen } from './reviewKeys'
 import type { VaultCardsDue } from '../lib/vault/types'
 
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
@@ -34,9 +34,9 @@ const createVault = (more: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
 const createKeys = (
   screen: ReviewScreen,
   vault: VaultCardsDue,
-  more: Partial<ReviewKeysDeps> = {},
+  more: Partial<ReviewKeysView & ReviewKeysActions & ReviewKeysPanels> = {},
 ) => {
-  const deps: ReviewKeysDeps = {
+  const deps: ReviewKeysView & ReviewKeysActions & ReviewKeysPanels = {
     getScreen: () => screen,
     getChosenVault: () => vault,
     getPresetsByDeck: () => new Map(),
@@ -55,7 +55,14 @@ const createKeys = (
     closeNotes: vi.fn(),
     ...more,
   }
-  return { ...createReviewKeys(deps), deps }
+  return {
+    ...createReviewKeys({
+      view: deps,
+      actions: deps,
+      panels: deps,
+    }),
+    deps,
+  }
 }
 
 describe('the keys of the decks screen', () => {

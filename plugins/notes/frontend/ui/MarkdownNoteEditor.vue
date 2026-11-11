@@ -6,9 +6,8 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from '../editor'
 import type { Extension } from '@codemirror/state'
 import type { EditorHandle, NoteTabState } from '@numen/plugin-sdk'
-import { createWikilinkExtension } from '../lib/wikilinks'
 import { editorPreferences } from '../model/preferences'
-import { getEditorLanguage, useMarkdownDocument } from '../model/useMarkdownDocument'
+import { getEditorExtensions, getEditorLanguage, useMarkdownDocument } from '../model/useMarkdownDocument'
 import { Button } from '@numen/ui'
 import { WORDS } from '../words'
 
@@ -76,12 +75,7 @@ const {
   setContent,
 } = useMarkdownDocument(props, emit, editorRef)
 
-/** The completion of wikilinks over the notes the host offers, unless the caller passes extensions. */
-const editorExtensions = computed(() => {
-  if (props.extensions) return props.extensions as Extension
-  const links = props.state?.wikilinks
-  return links ? createWikilinkExtension(links) : undefined
-})
+const editorExtensions = computed(() => getEditorExtensions(props))
 
 const editorLanguage = computed(() => getEditorLanguage(props))
 const fileConflict = computed(() => props.state?.fileConflict?.value ?? null)

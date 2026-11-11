@@ -73,12 +73,9 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
   const records = getRecords(connection)
   const labels = getEdgeLabels(records)
   const arrows = records.filter(isPointing).map((record) => record.end)
-  return {
-    from: token(connection.first),
-    to: token(connection.second),
-    ...(labels.length > 0 ? { labels } : {}),
-    ...(arrows.length > 0 ? { arrows } : {}),
-  }
+  const edge: PlexEdge = { from: token(connection.first), to: token(connection.second) }
+  const withLabels = labels.length > 0 ? { ...edge, labels } : edge
+  return arrows.length > 0 ? { ...withLabels, arrows } : withLabels
 }
 
 /**
