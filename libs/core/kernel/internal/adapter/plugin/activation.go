@@ -21,10 +21,15 @@ type activationPlugins interface {
 	getLaunch(p manifest.Discovered) supervision.Launch
 }
 
-// hostState says whether the host is shut down or in safe mode.
+// hostState reports whether the host is shut down or in safe mode.
 type hostState interface {
 	IsClosed() bool
 	IsSafeMode() bool
+}
+
+// enablementChecker says whether the settings of a plugin leave it enabled.
+type enablementChecker interface {
+	IsPluginEnabled(pluginID string) bool
 }
 
 // startHold holds the set of plugins against a scan of the folders while a plugin starts.
@@ -42,14 +47,15 @@ type configPusher interface {
 // Activation starts the process of a plugin when something asks for it, counts the callers that
 // hold it, and says which plugin a caller is.
 type Activation struct {
-	set       activationPlugins
-	scan      startHold
-	mode      hostState
-	sups      *supervision.Supervisors
-	processes *supervision.Processes
-	failures  *supervision.Failures
-	config    configPusher
-	clock     machineport.Clock
+	set        activationPlugins
+	enablement enablementChecker
+	scan       startHold
+	mode       hostState
+	sups       *supervision.Supervisors
+	processes  *supervision.Processes
+	failures   *supervision.Failures
+	config     configPusher
+	clock      machineport.Clock
 }
 
 // ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
@@ -119,12 +125,12 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 
 	sup := a.sups.Register(p)
 
-	v, release := a.set.view()
-	isEnabled, hasBackend := v.isEnabled(pluginID), v.hasBackend(p)
-	release()
-	if !isEnabled {
+	if !a.enablement.IsPluginEnabled(pluginID) {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled}
 	}
+	v, release := a.set.view()
+	hasBackend := v.hasBackend(p)
+	release()
 	if !hasBackend {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.WithoutBackend}
 	}

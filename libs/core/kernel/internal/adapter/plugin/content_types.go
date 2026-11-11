@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
 )
 
-// enabledPlugins lists the plugins that are enabled.
 type enabledPlugins interface {
 	listEnabled() []manifest.Discovered
 }

@@ -17,14 +17,13 @@ type NoteWriter interface {
 	Create(ctx context.Context, path string, content []byte) error
 }
 
-// Files reads and writes the files of the vault, holding its writers apart.
+// Files reads and writes the files of the vault. Locks, where set, holds the writers of the vault apart while a call writes.
 type Files struct {
 	Stat        *file.StatFile
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
 	OpenWriter  func(v domain.Vault) (NoteWriter, error)
 	Index       func(ctx context.Context, v domain.Vault, paths []string) error
-	// Locks holds the writers of the vault apart while a call writes. Nil holds none.
 	Locks vault.Locks
 
 	session sessionAccess

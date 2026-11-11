@@ -91,7 +91,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	config := newConfigPush(set, sups, errs.Report)
 	scan := &scanGate{}
 	activation := &Activation{
-		set: set, scan: scan, mode: mode, sups: sups, processes: processes, failures: failures, config: config, clock: clock,
+		set: set, enablement: registry, scan: scan, mode: mode, sups: sups, processes: processes, failures: failures, config: config, clock: clock,
 	}
 	events := newEvents(set, mode, sups, activation, clock)
 	listeners := &Listeners{

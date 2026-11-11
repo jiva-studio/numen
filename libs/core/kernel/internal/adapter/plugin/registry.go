@@ -29,7 +29,7 @@ type Registry struct {
 	readers  *contenttypes.Lookup
 }
 
-// safeModeReader says whether the host runs in safe mode.
+// safeModeReader reports whether the host runs in safe mode.
 type safeModeReader interface {
 	IsSafeMode() bool
 }

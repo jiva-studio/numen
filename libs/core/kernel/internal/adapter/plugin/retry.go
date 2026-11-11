@@ -20,7 +20,7 @@ type listenerRefresher interface {
 	RefreshListeners(ctx context.Context, pluginID string)
 }
 
-// registeredPlugins says whether the host knows a plugin, and names it.
+// registeredPlugins reports whether the host knows a plugin, and names it.
 type registeredPlugins interface {
 	isRegistered(pluginID string) bool
 	getName(pluginID string) string
