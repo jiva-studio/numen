@@ -21,46 +21,51 @@ type windowParts struct {
 	closeEmbedder func() error
 }
 
-// windowCases are the use cases of one window.
+// windowCases are the use cases that run a window from its start to its close.
 type windowCases struct {
-	start       windowsession.StartWindow
-	show        windowsession.ShowVault
-	openPlugin  windowsession.OpenPluginVault
-	flush       windowsession.FlushPending
-	close       windowsession.CloseWindow
+	start      windowsession.StartWindow
+	show       windowsession.ShowVault
+	openPlugin windowsession.OpenPluginVault
+	flush      windowsession.FlushPending
+	close      windowsession.CloseWindow
+}
+
+// windowTools are the use cases a window offers beside its lifecycle.
+type windowTools struct {
 	importFiles windowsession.ImportFiles
 	showTab     windowsession.ShowTab
 }
 
-func windowSession(w *windowWiring, state *editor.State, ctx context.Context, parts windowParts) windowCases {
+func windowSession(w *windowWiring, state *editor.State, ctx context.Context, parts windowParts) (windowCases, windowTools) {
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
-	runner := windowsession.NewPassRunner(
-		&state.Runtime, diag, ctx.Done(), newIndexSession(parts.indexer), getTextVersions(w.cfg),
-		&state.Notices.ChangeEvents, wrapPasses(w, startVault(w.cfg, w.db, parts.current)), getTriggerSource(w.cfg),
-		parts.indexer,
-	)
+	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
+		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(w.cfg), diag),
+		Passes:   wrapPasses(w, startVault(w.cfg, w.db, parts.current)), Triggers: getTriggerSource(w.cfg),
+	})
 	identity := vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg)))
 	session := windowsession.NewSession(&state.Runtime, parts.moves.RecordOpen, diag, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
-	rebuild := windowsession.NewRebuildSession(&state.Runtime, guard, session)
-	return windowCases{
-		start: windowsession.NewStartWindow(
-			diag, parts.embedderError, parts.embedding, parts.indexer, &state.Runtime, session, rebuild, w.cfg.ShouldRebuildIndex,
-		),
-		show: windowsession.NewShowVault(
-			&state.Runtime, guard, session, identity, state.Window, state.Writes, &state.Notices.ChangeEvents,
-		),
+	flush := windowsession.NewPageFlush(state.Window, state.Writes)
+	rebuild := windowsession.NewRebuildSession(guard, session)
+	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
+	cases := windowCases{
+		start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, w.cfg.ShouldRebuildIndex),
+		show:       windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents),
 		openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window),
-		flush:      windowsession.NewFlushPending(guard, state.Window, state.Writes),
+		flush:      windowsession.NewFlushPending(guard, flush),
 		close: windowsession.NewCloseWindow(
 			state.Gate, session,
 			windowsession.CloseFunc(state.ClosePlaying),
 			windowsession.CloseFunc(func(context.Context) error { return parts.closeEmbedder() }),
 			windowsession.CloseFunc(func(context.Context) error { return w.db.Close() }),
 		),
+	}
+	tools := windowTools{
 		importFiles: windowsession.NewImportFiles(
 			parts.moves.Tree.Import, state.Writes, state.Window, &state.Notices.ChangeEvents,
 		),
 		showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 	}
+	return cases, tools
 }

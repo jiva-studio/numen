@@ -66,7 +66,6 @@ type Closer interface {
 	Close(ctx context.Context) error
 }
 
-// CloseFunc is a Closer as a function.
 type CloseFunc func(ctx context.Context) error
 
 // Close calls f.
@@ -123,7 +122,6 @@ type VaultPasses interface {
 	Start(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) Started
 }
 
-// VaultPassesFunc is VaultPasses as a function.
 type VaultPassesFunc func(ctx context.Context, v domain.Vault, rebuild bool, report Reporters) Started
 
 // Start calls f.
@@ -145,7 +143,6 @@ type TriggerSource struct {
 	Watch func() (<-chan struct{}, func())
 }
 
-// currentVault is the vault the window shows.
 type currentVault interface {
 	GetCurrentVault() domain.Vault
 }

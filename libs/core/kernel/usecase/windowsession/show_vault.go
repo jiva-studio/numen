@@ -17,30 +17,22 @@ const FlushTimeout = 3 * time.Second
 // Nothing is torn down until the vault validates and every page has written its
 // pending state; a page awaiting confirmation aborts the swap.
 type ShowVault struct {
-	current  currentVault
 	guard    *Guard
 	identity IdentityCheck
-	pages    Pages
-	writes   Writes
+	flush    *PageFlush
 	changes  Changes
 	session  vaultSession
 }
 
-// NewShowVault makes the use case over the runtime, the guard and the session of the window, the check of
-// the identity of a vault, and the pages, writes and changes of the window.
-func NewShowVault(
-	runtime *Runtime, guard *Guard, session *Session, identity IdentityCheck, pages Pages, writes Writes,
-	changes Changes,
-) ShowVault {
-	return ShowVault{
-		current: runtime, guard: guard, identity: identity, pages: pages, writes: writes, changes: changes,
-		session: session,
-	}
+// NewShowVault makes the use case over the guard and the session of the window, the check of the
+// identity of a vault, the flush of the pages and the feed of the changes.
+func NewShowVault(guard *Guard, session *Session, identity IdentityCheck, flush *PageFlush, changes Changes) ShowVault {
+	return ShowVault{guard: guard, identity: identity, flush: flush, changes: changes, session: session}
 }
 
 // Execute shows v. `open` is the plugin open whose lock the switch shares, nil for a user switch.
 func (u ShowVault) Execute(ctx context.Context, v domain.Vault, open *PluginOpen) error {
-	if v.ID == u.current.GetCurrentVault().ID {
+	if v.ID == u.session.getCurrentVault().ID {
 		return nil
 	}
 	if err := u.identity.Execute(v); err != nil {
@@ -58,12 +50,12 @@ func (u ShowVault) Execute(ctx context.Context, v domain.Vault, open *PluginOpen
 	target, elapsed := context.WithTimeout(ctx, FlushTimeout)
 	defer elapsed()
 
-	if !flushPending(target, u.pages, u.writes) {
+	if !u.flush.Execute(target) {
 		return window.ErrAnswerPending
 	}
 	// A plugin's open canceled during the flush switches nothing.
 	if isInsidePluginOpen && ctx.Err() != nil {
-		u.writes.Open()
+		u.flush.ReopenWrites()
 		return context.Cause(ctx)
 	}
 
@@ -72,19 +64,11 @@ func (u ShowVault) Execute(ctx context.Context, v domain.Vault, open *PluginOpen
 	u.session.startVault(ctx, v, false)
 
 	// Writes are taken again: there is a vault to write in.
-	u.writes.Open()
+	u.flush.ReopenWrites()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	u.pages.CancelFlush()
+	u.flush.EndRound()
 	// Every page's held content was read from the previous vault.
 	u.changes.Publish(window.Change{ShouldReload: true})
 	return nil
-}
-
-func flushPending(ctx context.Context, pages Pages, writes Writes) bool {
-	if !pages.RequestFlush(ctx) {
-		return false
-	}
-	<-writes.Seal()
-	return true
 }

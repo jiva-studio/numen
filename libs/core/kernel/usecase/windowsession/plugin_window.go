@@ -18,7 +18,6 @@ type PassagesFocus interface {
 	FocusPassages(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error
 }
 
-// PassagesFocusFunc is PassagesFocus as a function.
 type PassagesFocusFunc func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error
 
 // FocusPassages calls f.
@@ -43,7 +42,6 @@ type PluginWindow struct {
 	tabs     TabShowing
 }
 
-// NewPluginWindow makes the window plugins move, over the runtime and the tab reports of the window.
 func NewPluginWindow(rt *Runtime, reports *TabReports, note NoteFocus, passages PassagesFocus, tabs TabShowing) PluginWindow {
 	return PluginWindow{current: rt, reports: reports, note: note, passages: passages, tabs: tabs}
 }

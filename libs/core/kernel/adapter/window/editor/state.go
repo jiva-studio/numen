@@ -134,10 +134,8 @@ func (s *State) ShowVault(ctx context.Context, v domain.Vault) error {
 	return s.OpenVault(ctx, v, nil)
 }
 
-// CanOpenTabWindow is whether the application opens a window for a tab.
 func (s *State) CanOpenTabWindow() bool { return s.DetachTab != nil }
 
-// OpenTabWindow opens a window of its own for a tab.
 func (s *State) OpenTabWindow(ctx context.Context, tab window.DetachedTab) error {
 	return s.DetachTab(ctx, tab)
 }

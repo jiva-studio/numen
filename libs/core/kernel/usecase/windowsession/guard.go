@@ -18,7 +18,6 @@ type Guard struct {
 	isClosing  bool
 	pluginOpen *PluginOpen
 
-	// switching serializes the vault switches and rebuilds of the window.
 	switching sync.Mutex
 }
 

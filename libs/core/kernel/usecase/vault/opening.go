@@ -77,7 +77,6 @@ func (o *VaultOpener) Begin(
 	return open
 }
 
-// OpenVault is one vault an application has opened.
 type OpenVault struct {
 	buffered     WriteRecorder
 	refresh      refreshing

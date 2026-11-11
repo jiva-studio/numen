@@ -16,7 +16,6 @@ type VaultFind interface {
 	Execute(id string) (domain.Vault, error)
 }
 
-// VaultRename renames a vault.
 type VaultRename interface {
 	Execute(ctx context.Context, v domain.Vault, name string) (domain.Vault, error)
 }
@@ -68,7 +67,6 @@ func (l PluginVaults) AddVault(_ context.Context, root, name string) (domain.Vau
 	return l.ops.Edit.Add.Execute(root, name)
 }
 
-// RenameVault renames the vault the id names.
 func (l PluginVaults) RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error) {
 	v, err := l.ops.Find.Execute(string(id))
 	if err != nil {

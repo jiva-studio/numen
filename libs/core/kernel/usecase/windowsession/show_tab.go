@@ -11,20 +11,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-// defaultTabBound is how long ShowTab waits when the bound is zero.
+// defaultTabBound is how long ShowTab waits when the timeout is zero.
 const defaultTabBound = 2 * time.Second
 
 // ShowTab asks the window to make an open tab the active one.
 type ShowTab struct {
 	reports  *TabReports
 	tabFront TabFront
-	bound    time.Duration
+	timeout  time.Duration
 }
 
 // NewShowTab makes the use case over the tab reports of the window and the front of its tabs. A zero
-// bound waits for defaultTabBound.
-func NewShowTab(reports *TabReports, tabFront TabFront, bound time.Duration) ShowTab {
-	return ShowTab{reports: reports, tabFront: tabFront, bound: bound}
+// timeout waits for defaultTabBound.
+func NewShowTab(reports *TabReports, tabFront TabFront, timeout time.Duration) ShowTab {
+	return ShowTab{reports: reports, tabFront: tabFront, timeout: timeout}
 }
 
 // Execute asks the window to make the open tab with the id the active one and returns the open tabs
@@ -40,7 +40,7 @@ func (u ShowTab) Execute(ctx context.Context, id string) (windowdomain.OpenTabs,
 	if open.ActiveID == id {
 		return open, nil
 	}
-	wait := cmp.Or(u.bound, defaultTabBound)
+	wait := cmp.Or(u.timeout, defaultTabBound)
 	bound, stop := context.WithTimeout(ctx, wait)
 	defer stop()
 	for {

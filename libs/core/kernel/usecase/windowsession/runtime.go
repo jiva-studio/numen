@@ -49,7 +49,6 @@ func (r *Runtime) GetCurrentVault() domain.Vault {
 	return domain.Vault{}
 }
 
-// SetVault sets the vault the window shows.
 func (r *Runtime) SetVault(v domain.Vault) { r.vault.Store(&v) }
 
 // IsReady is whether the first read of the vault is done.

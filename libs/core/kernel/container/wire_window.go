@@ -131,7 +131,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	listing := vaultListing(vaultOf(w.cfg), w.ports)
 	w.cases.Listing = &listing
 
-	session := windowSession(w, state, ctx, windowParts{
+	session, tools := windowSession(w, state, ctx, windowParts{
 		indexer: indexer, embedding: embedding, moves: &moves, current: current, out: out,
 		embedderError: why, closeEmbedder: closeEmbedder,
 	})
@@ -144,9 +144,9 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		Start: session.start, Show: session.show, OpenPlugin: session.openPlugin,
 		Flush: session.flush, Close: session.close,
 		OpenVault: switching.Execute, NoteWritten: indexer.WakeNotes,
-	}, session.importFiles, out)
+	}, tools.importFiles, out)
 	w.inst = inst
-	w.cases.ShowTab = session.showTab
+	w.cases.ShowTab = tools.showTab
 
 	if err := startWindow(ctx, w, first); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), w.db.Close())

@@ -48,10 +48,6 @@ type sessionOptions struct {
 	out       io.Writer
 }
 
-type noIdentity struct{}
-
-func (noIdentity) Execute(domain.Vault) error { return nil }
-
 type noRecord struct{}
 
 func (noRecord) Execute(domain.VaultID) error { return nil }
@@ -85,9 +81,9 @@ func (w wiring) startSession(
 	state.Writes.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
 	diag := windowsession.NewDiagnostics(opts.out, state.Window)
-	runner := windowsession.NewPassRunner(
-		&state.Runtime, diag, nil,
-		func() windowsession.IndexSession {
+	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
+		Failures: &state.Runtime, Diag: diag,
+		NewSession: func() windowsession.IndexSession {
 			indexed := worker.NewSession()
 			return windowsession.IndexSession{
 				Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
@@ -96,12 +92,13 @@ func (w wiring) startSession(
 				ReportVersionsChanged: indexed.ReportVersionsChanged,
 			}
 		},
-		nil, &state.Notices.ChangeEvents, windowsession.VaultPassesFunc(passes.StartVault), windowsession.TriggerSource{}, worker,
-	)
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, worker, nil, diag),
+		Passes:   windowsession.VaultPassesFunc(passes.StartVault),
+	})
 	session := windowsession.NewSession(&state.Runtime, noRecord{}, diag, nil, runner)
 	guard := &windowsession.Guard{}
-	rebuild := windowsession.NewRebuildSession(&state.Runtime, guard, session)
-	start := windowsession.NewStartWindow(diag, nil, nil, worker, &state.Runtime, session, rebuild, opts.rebuild)
+	rebuild := windowsession.NewRebuildSession(guard, session)
+	start := windowsession.NewStartWindow(diag, nil, windowsession.NewModelFollow(nil, worker, &state.Runtime, rebuild), session, opts.rebuild)
 	closeWindow := windowsession.NewCloseWindow(openDoor{}, session)
 	start.Execute(ctx, v)
 	return func() {

@@ -24,8 +24,6 @@ type OpenPluginVault struct {
 	pages    Pages
 }
 
-// NewOpenPluginVault makes the use case over the guard of the window, the check of the identity of a
-// vault and the pages of the window.
 func NewOpenPluginVault(guard *Guard, identity IdentityCheck, pages Pages) OpenPluginVault {
 	return OpenPluginVault{guard: guard, identity: identity, pages: pages}
 }

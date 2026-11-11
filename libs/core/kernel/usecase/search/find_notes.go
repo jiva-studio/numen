@@ -44,7 +44,6 @@ func clampWindowLimit(limit int) int {
 	return min(limit, maxWindowLimit)
 }
 
-// Execute finds at most `limit` names.
 func (u *FindNames) Execute(ctx context.Context, v domain.Vault, query string, limit int) (NameResults, error) {
 	found, err := u.matches.Execute(ctx, v, query, clampWindowLimit(limit))
 	if err != nil {

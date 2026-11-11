@@ -172,7 +172,7 @@ func mountNote(w *windowWiring) {
 	links := notewindow.NewLinks(
 		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &createRelated, &queries.Refer.Backlinks,
 	)
-	notes.Connect = notes.Connect.withWrites(writes, writes)
+	notes.Connect = trackConnections(notes.Connect, writes, writes)
 	connections := notewindow.NewConnections(
 		state, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)

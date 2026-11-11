@@ -13,6 +13,7 @@ type vaultSession interface {
 	startVault(ctx context.Context, v domain.Vault, rebuild bool)
 	stopVault()
 	resetStatus()
+	getCurrentVault() domain.Vault
 }
 
 // vaultRunner builds the passes behind one vault.
@@ -79,3 +80,5 @@ func (s *Session) resetStatus() {
 		s.diag.tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: s.embedderError.Error()})
 	}
 }
+
+func (s *Session) getCurrentVault() domain.Vault { return s.runtime.GetCurrentVault() }

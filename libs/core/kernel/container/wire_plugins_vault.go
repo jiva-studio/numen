@@ -248,7 +248,6 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-// GetFrontendPluginIDs lists the plugins that have a frontend.
 func GetFrontendPluginIDs(c Config) []string { return getFrontendPluginIDs(plugins(c)) }
 
 // GetPluginDir returns the folder of a plugin and whether the plugin is installed.

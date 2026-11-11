@@ -44,12 +44,11 @@ type NoteReferring struct {
 	AddLinks note.AddLinks
 }
 
-// withWrites returns the connecting use cases with every connection write tracked through gate and follow.
-func (c NoteConnecting) withWrites(gate note.WriteGate, follow note.IndexFollow) NoteConnecting {
+func trackConnections(c NoteConnecting, gate note.WriteGate, follow note.IndexFollow) NoteConnecting {
 	track := note.NewTrackWrites(gate, follow)
-	c.SaveConnection = c.SaveConnection.WithTrack(track)
-	c.RemoveSide = c.RemoveSide.WithTrack(track)
-	c.RemoveConnection = c.RemoveConnection.WithTrack(track)
-	c.Join = c.Join.WithTrack(track)
+	c.SaveConnection = note.TrackSaveConnection(c.SaveConnection, track)
+	c.RemoveSide = note.TrackRemoveSide(c.RemoveSide, track)
+	c.RemoveConnection = note.TrackRemoveConnection(c.RemoveConnection, track)
+	c.Join = note.TrackJoin(c.Join, track)
 	return c
 }

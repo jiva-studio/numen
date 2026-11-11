@@ -279,17 +279,22 @@ type Scenarios struct {
 // NewScenarios builds the use cases of the window the way the container does.
 func NewScenarios(rt *Runtime, tabs *TabReports, deps Deps) *Scenarios {
 	diag := NewDiagnostics(deps.Out, deps.Window.Tasks)
-	runner := NewPassRunner(rt, diag, deps.Closing, deps.Index.NewSession, deps.Vault.Texts, deps.Window.Changes,
-		deps.Vault.Passes, deps.Index.Triggers, deps.Index.Wake)
+	runner := NewPassRunner(PassRunnerConfig{
+		Failures: rt, Diag: diag, Closing: deps.Closing, NewSession: deps.Index.NewSession,
+		Reporter: NewChangeReporter(deps.Window.Changes, deps.Index.Wake, deps.Vault.Texts, diag),
+		Passes:   deps.Vault.Passes, Triggers: deps.Index.Triggers,
+	})
 	session := NewSession(rt, deps.Vault.Recorded, diag, deps.EmbedderError, runner)
 	guard := &Guard{}
+	flush := NewPageFlush(deps.Window.Pages, deps.Window.Writes)
 	var s Scenarios
-	s.Switching.Rebuild = NewRebuildSession(rt, guard, session)
-	s.Switching.Show = NewShowVault(rt, guard, session, deps.Vault.Identity, deps.Window.Pages, deps.Window.Writes, deps.Window.Changes)
+	s.Switching.Rebuild = NewRebuildSession(guard, session)
+	s.Switching.Show = NewShowVault(guard, session, deps.Vault.Identity, flush, deps.Window.Changes)
 	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages)
-	s.Closing.Flush = NewFlushPending(guard, deps.Window.Pages, deps.Window.Writes)
+	s.Closing.Flush = NewFlushPending(guard, flush)
 	s.Closing.Close = NewCloseWindow(deps.Shutdown.Door, session, deps.Shutdown.Closers...)
-	s.Start = NewStartWindow(diag, deps.EmbedderError, deps.Index.Model, deps.Index.Wake, rt, session, s.Switching.Rebuild, deps.IsRebuilding)
+	follow := NewModelFollow(deps.Index.Model, deps.Index.Wake, rt, s.Switching.Rebuild)
+	s.Start = NewStartWindow(diag, deps.EmbedderError, follow, session, deps.IsRebuilding)
 	s.ShowTab = NewShowTab(tabs, deps.Window.TabFront, deps.TabBound)
 	s.Import = NewImportFiles(deps.Vault.Import, deps.Window.Writes, deps.Window.Tasks, deps.Window.Changes)
 	return &s

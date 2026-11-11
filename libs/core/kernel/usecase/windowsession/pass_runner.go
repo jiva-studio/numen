@@ -2,16 +2,14 @@ package windowsession
 
 import (
 	"context"
-	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// failureSink takes what stopped the passes behind a vault.
-type failureSink interface {
+// FailureSink takes what stopped the passes behind a vault.
+type FailureSink interface {
 	SetError(why string)
 	SetWatchError(why string)
 }
@@ -19,26 +17,32 @@ type failureSink interface {
 // PassRunner starts the walk, the watch, the indexing and the triggers behind one vault, and hands the
 // run back as a value that ends them.
 type PassRunner struct {
-	failures   failureSink
+	failures   FailureSink
 	diag       *Diagnostics
 	closing    <-chan struct{}
 	newSession func() IndexSession
-	texts      TextVersions
-	changes    Changes
+	reporter   ChangeReporting
 	passes     VaultPasses
 	triggers   TriggerSource
-	wake       IndexWake
 }
 
-// NewPassRunner makes the runner over the passes of a vault. closing ends every run when it closes, texts,
-// wake and the open of the triggers may be nil.
-func NewPassRunner(
-	failures *Runtime, diag *Diagnostics, closing <-chan struct{}, newSession func() IndexSession,
-	texts TextVersions, changes Changes, passes VaultPasses, triggers TriggerSource, wake IndexWake,
-) *PassRunner {
+// PassRunnerConfig is what a PassRunner is made of. Closing ends every run when it closes. The open of
+// Triggers may be nil.
+type PassRunnerConfig struct {
+	Failures   FailureSink
+	Diag       *Diagnostics
+	Closing    <-chan struct{}
+	NewSession func() IndexSession
+	Reporter   ChangeReporting
+	Passes     VaultPasses
+	Triggers   TriggerSource
+}
+
+// NewPassRunner makes the runner over the passes of a vault.
+func NewPassRunner(cfg PassRunnerConfig) *PassRunner {
 	return &PassRunner{
-		failures: failures, diag: diag, closing: closing, newSession: newSession, texts: texts,
-		changes: changes, passes: passes, triggers: triggers, wake: wake,
+		failures: cfg.Failures, diag: cfg.Diag, closing: cfg.Closing, newSession: cfg.NewSession,
+		reporter: cfg.Reporter, passes: cfg.Passes, triggers: cfg.Triggers,
 	}
 }
 
@@ -58,9 +62,7 @@ func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool) *r
 	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := r.newSession()
-	if r.texts != nil {
-		r.texts.SetListener(versionChangeReporter{changes: r.changes, index: indexed})
-	}
+	r.reporter.listenVersions(indexed)
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
@@ -82,7 +84,7 @@ func (r *PassRunner) startIndexing(
 
 	triggerPasses := newTriggerPasses()
 	started := r.passes.Start(ctx, v, rebuild, Reporters{
-		Changed: r.newChangeReporter(triggerPasses, func(paths []string) { r.checkTexts(ctx, v, paths) }),
+		Changed: r.reporter.newChangeReporter(triggerPasses, func(paths []string) { r.reporter.checkTexts(ctx, v, paths) }),
 		Failed:  r.reportFailure,
 	})
 	if started.Unwatched != nil {
@@ -111,15 +113,6 @@ func (r *PassRunner) startIndexing(
 	return started, running.Wait
 }
 
-func (r *PassRunner) checkTexts(ctx context.Context, v domain.Vault, paths []string) {
-	if r.texts == nil {
-		return
-	}
-	if err := r.texts.ReportFilesChanged(ctx, v, paths); err != nil {
-		r.diag.say("check the text versions of %s: %v\n", v.Name, err)
-	}
-}
-
 func (r *PassRunner) reportFailure(err error) {
 	if err == nil {
 		r.failures.SetError("")
@@ -128,43 +121,10 @@ func (r *PassRunner) reportFailure(err error) {
 	r.failures.SetError(err.Error())
 }
 
-func (r *PassRunner) newChangeReporter(
-	triggers *triggerPasses, checkTexts func(paths []string),
-) func(paths, assets []string, reload bool) {
-	return func(paths, assets []string, reload bool) {
-		// A client shows every file in the vault, so an asset is reported as a note is.
-		changePaths := slices.Concat(paths, assets)
-		if reload {
-			triggers.requestAll()
-		} else {
-			triggers.requestPaths(changePaths)
-		}
-		r.changes.Publish(window.Change{Paths: changePaths, ShouldReload: reload})
-		checkTexts(changePaths)
-		if r.wake == nil {
-			return
-		}
-		r.wake.ClearSkips(changePaths)
-		if reload || len(assets) > 0 {
-			// A book added to an open vault is read without a request.
-			r.wake.WakeSources()
-		}
-		if len(paths) > 0 {
-			// A written note is chunked again, and its chunks need new vectors. The index
-			// determines which.
-			r.wake.WakeNotes()
-		}
-	}
-}
-
-// versionChangeReporter asks the index session to cut a file whose text versions changed, and
-// reports the file to the window.
-type versionChangeReporter struct {
-	changes Changes
-	index   IndexSession
-}
-
-func (r versionChangeReporter) ReportVersionsChanged(v domain.Vault, path string) {
-	r.index.ReportVersionsChanged(v, path)
-	r.changes.Publish(window.Change{VersionPaths: []string{path}})
+// ChangeReporting tells the window, the index and the text versions what the passes behind a vault
+// found changed. ChangeReporter is its implementation.
+type ChangeReporting interface {
+	listenVersions(indexed IndexSession)
+	checkTexts(ctx context.Context, v domain.Vault, paths []string)
+	newChangeReporter(triggers *triggerPasses, checkTexts func(paths []string)) func(paths, assets []string, reload bool)
 }

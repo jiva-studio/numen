@@ -369,26 +369,26 @@ func getLinkAddress(ctx context.Context, names edit.NameQueries, v domain.Vault,
 	return edit.GetAddress(ctx, names, v.ID, path)
 }
 
-// WithTrack returns the use case with its writes tracked through track.
-func (u SaveConnection) WithTrack(track TrackWrites) SaveConnection {
+// TrackSaveConnection returns u with its writes tracked through track.
+func TrackSaveConnection(u SaveConnection, track TrackWrites) SaveConnection {
 	u.editor.track = track
 	return u
 }
 
-// WithTrack returns the use case with its writes tracked through track.
-func (u RemoveConnection) WithTrack(track TrackWrites) RemoveConnection {
+// TrackRemoveConnection returns u with its writes tracked through track.
+func TrackRemoveConnection(u RemoveConnection, track TrackWrites) RemoveConnection {
 	u.editor.track = track
 	return u
 }
 
-// WithTrack returns the use case with its writes tracked through track.
-func (u RemoveSide) WithTrack(track TrackWrites) RemoveSide {
+// TrackRemoveSide returns u with its writes tracked through track.
+func TrackRemoveSide(u RemoveSide, track TrackWrites) RemoveSide {
 	u.editor.track = track
 	return u
 }
 
-// WithTrack returns the use case with its writes tracked through track.
-func (u Join) WithTrack(track TrackWrites) Join {
+// TrackJoin returns u with its writes tracked through track.
+func TrackJoin(u Join, track TrackWrites) Join {
 	u.editor.track = track
 	return u
 }

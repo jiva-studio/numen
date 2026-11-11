@@ -5,14 +5,13 @@ import "context"
 // RebuildSession builds the passes behind the open vault again, for a window whose notes must be cut
 // again.
 type RebuildSession struct {
-	current currentVault
 	guard   *Guard
 	session vaultSession
 }
 
-// NewRebuildSession makes the use case over the runtime, the guard and the session of the window.
-func NewRebuildSession(runtime *Runtime, guard *Guard, session *Session) RebuildSession {
-	return RebuildSession{current: runtime, guard: guard, session: session}
+// NewRebuildSession makes the use case over the guard and the session of the window.
+func NewRebuildSession(guard *Guard, session *Session) RebuildSession {
+	return RebuildSession{guard: guard, session: session}
 }
 
 // Execute stops the passes behind the vault and starts them again. A window that shows no vault or has
@@ -20,7 +19,7 @@ func NewRebuildSession(runtime *Runtime, guard *Guard, session *Session) Rebuild
 func (u RebuildSession) Execute(ctx context.Context) {
 	u.guard.switching.Lock()
 	defer u.guard.switching.Unlock()
-	current := u.current.GetCurrentVault()
+	current := u.session.getCurrentVault()
 	if current.ID == "" || u.guard.isClosed() {
 		return
 	}

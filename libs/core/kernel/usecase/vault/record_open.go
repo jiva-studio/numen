@@ -32,7 +32,6 @@ func (u RecordOpen) Execute(id domain.VaultID) error {
 	return u.recorder.RecordOpened(id)
 }
 
-// RecordOpenByName records the vault a person names as the vault opened last.
 type RecordOpenByName struct {
 	find   VaultFinding
 	record RecordOpen
@@ -55,12 +54,10 @@ func (u RecordOpenByName) ExecuteByName(nameOrPath string) (domain.Vault, error)
 	return v, nil
 }
 
-// WriteOpenTabs saves the open tabs of a vault.
 type WriteOpenTabs struct {
 	store windowport.OpenTabsStore
 }
 
-// NewWriteOpenTabs is the use case that saves open tabs in the store.
 func NewWriteOpenTabs(store windowport.OpenTabsStore) WriteOpenTabs {
 	return WriteOpenTabs{store: store}
 }
@@ -70,12 +67,10 @@ func (u WriteOpenTabs) Execute(ctx context.Context, v domain.Vault, open windowd
 	return u.store.WriteOpenTabs(ctx, v, open)
 }
 
-// ReadOpenTabs loads the open tabs of a vault.
 type ReadOpenTabs struct {
 	store windowport.OpenTabsStore
 }
 
-// NewReadOpenTabs is the use case that loads open tabs from the store.
 func NewReadOpenTabs(store windowport.OpenTabsStore) ReadOpenTabs {
 	return ReadOpenTabs{store: store}
 }
