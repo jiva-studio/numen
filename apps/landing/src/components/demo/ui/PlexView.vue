@@ -1,38 +1,11 @@
 <script setup lang="ts">
 /**
  * The note in focus with the notes around it: parents above, children below, jumps to the left and
- * siblings to the right, joined by lines that carry the words written on the link.
+ * siblings to the right, joined by lines that carry the words written on the link. The notes are fixed.
  */
-import { ref } from 'vue'
-import { Menu, type Position } from '@numen/ui'
-import { PLEX_MENU } from '../lib/menus'
-import { PLEX_HEIGHT, PLEX_WIDTH, type PlexLayout, type PlexNode } from '../lib/plexLayout'
-import { getCommandIcon } from './icons'
+import { PLEX_HEIGHT, PLEX_WIDTH, PLEX_LAYOUT, type PlexNode } from '../lib/plex'
 import PlexArrow from './PlexArrow.vue'
 import PlexEdgeView from './PlexEdgeView.vue'
-
-/* --------------------------------- Props ---------------------------------- */
-defineProps<{ layout: PlexLayout }>()
-
-/* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{
-  go: [path: string]
-  open: [path: string]
-  run: [command: string, path: string]
-}>()
-
-/* --------------------------------- State ---------------------------------- */
-const menu = ref<{ path: string; at: Position } | null>(null)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onOpenMenu(event: MouseEvent, node: PlexNode) {
-  menu.value = { path: node.path, at: { x: event.clientX, y: event.clientY } }
-}
-
-function onChooseItem(id: string) {
-  if (menu.value) emit('run', id, menu.value.path)
-  menu.value = null
-}
 
 /* -------------------------------- Helpers --------------------------------- */
 const getLabelId = (index: number): string => `plex-edge-${index}`
@@ -42,32 +15,46 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
 
 <template>
   <div class="plex">
-    <svg class="plex__canvas" :viewBox="`0 0 ${PLEX_WIDTH} ${PLEX_HEIGHT}`" role="img" aria-label="Plex">
+    <svg
+      class="plex__canvas"
+      :viewBox="`0 0 ${PLEX_WIDTH} ${PLEX_HEIGHT}`"
+      role="img"
+      aria-label="Plex"
+    >
       <PlexArrow />
 
-      <PlexEdgeView v-for="(edge, index) in layout.edges" :key="edge.id" :edge="edge" :label-id="getLabelId(index)" />
+      <PlexEdgeView
+        v-for="(edge, index) in PLEX_LAYOUT.edges"
+        :key="edge.id"
+        :edge="edge"
+        :label-id="getLabelId(index)"
+      />
 
       <g
-        v-for="node in layout.nodes"
+        v-for="node in PLEX_LAYOUT.nodes"
         :key="node.path"
         class="plex__node"
         :data-relation="node.relation"
-        @click="emit('go', node.path)"
-        @dblclick="emit('open', node.path)"
-        @contextmenu.prevent="onOpenMenu($event, node)"
       >
-        <rect class="plex__box" :x="getBoxX(node)" :y="getBoxY(node)" :width="node.width" :height="node.height" rx="8" />
-        <text class="plex__title" :x="node.x" :y="node.y" text-anchor="middle" dominant-baseline="central">
+        <rect
+          class="plex__box"
+          :x="getBoxX(node)"
+          :y="getBoxY(node)"
+          :width="node.width"
+          :height="node.height"
+          rx="8"
+        />
+        <text
+          class="plex__title"
+          :x="node.x"
+          :y="node.y"
+          text-anchor="middle"
+          dominant-baseline="central"
+        >
           {{ node.text }}
         </text>
       </g>
     </svg>
-
-    <Menu v-if="menu" :items="PLEX_MENU" :at="menu.at" is-open @choose="onChooseItem" @dismiss="menu = null">
-      <template #icon="{ id }">
-        <component :is="getCommandIcon(id)" v-if="getCommandIcon(id)" class="plex__icon" aria-hidden="true" />
-      </template>
-    </Menu>
   </div>
 </template>
 
@@ -87,7 +74,6 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
 }
 
 .plex__node {
-  cursor: pointer;
   --hue: var(--numen-relation-child);
 }
 
@@ -110,10 +96,6 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
   transition: fill var(--numen-motion-hover) var(--numen-easing);
 }
 
-.plex__node:hover .plex__box {
-  fill: color-mix(in oklab, var(--numen-raised), var(--hue) 10%);
-}
-
 .plex__title {
   fill: var(--numen-ink);
   font-size: var(--numen-font-size);
@@ -126,12 +108,5 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
 
 .plex__node[data-relation='focus'] .plex__title {
   fill: var(--numen-accent-ink);
-}
-
-.plex__icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
-  stroke-width: 1.875;
-  opacity: 0.75;
 }
 </style>

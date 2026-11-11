@@ -116,22 +116,22 @@ apps/desktop/flashcards/src/
 ├── main.ts                       entry: mounts app/
 ├── app/
 │   ├── App.vue                   the root: the chooser, or the plugin view for the chosen vault
-│   ├── window/                   createWindow(): creates the services; each model imports its own api
-│   ├── plugins/                  the window's LoaderHost for the target desktop.flashcards: tab kinds, slots, vaults, commands (none), agent
+│   ├── window/                   createWindow(): creates the notices, the tabs and the services in the order they depend on each other, then the host
+│   ├── plugins/                  the window's LoaderHost for the target desktop.flashcards: binds the tabs, slots, vaults, commands (none) and agent to the plugins
 │   └── app.css                   the entry style sheet
 ├── pages/
-│   └── vault-chooser/            the screen with the vaults to choose from: ui/, lib/ (rows, the key that opens a vault)
+│   └── vault-chooser/            the screen with the vaults to choose from: ui/ (VaultChooser.vue, MountedView.vue: renders a view a plugin declares into an element), lib/ (rows, the key that opens a vault)
 ├── features/
-│   ├── appearance/               choose a theme or mode from the palette and apply it: api/ (theme service), model/, lib/
+│   ├── app-start/                start the plugins the core lists and tell when the window can be drawn: model/               choose a theme or mode from the palette and apply it: api/ (theme service), model/, lib/
 │   ├── window-tasks/             show the background tasks of the core as notices: api/ (window service stream), model/
 │   └── external-links/           open an address that leads outside the window in the system browser: model/
 ├── entities/
 │   ├── vault/                    the vaults of the installation: api/ (vaults service), lib/ (VaultRow)
-│   ├── tab/                      the one tab the window shows, a plugin view opened on a vault: model/, lib/
+│   ├── tab/                      the tab kinds the plugins register and the one tab the window shows, a plugin view opened on a vault: model/ (open and close), lib/
+│   ├── plugin/                   the installed plugins and the slots their manifests declare: api/ (plugin catalog), model/
 │   └── agent/                    whether the agent is reachable: api/ (agent service), model/
 └── shared/
-    ├── api/                      clients.ts: the generated clients bound once; errors.ts: the error text helpers
-    └── ui/                       MountedView.vue: renders a view a plugin declares into an element
+    └── api/                      clients.ts: the generated clients bound once; errors.ts: the error text helpers
 ```
 
 `words.ts` and the version string belong to the slice that shows them; a string that two slices show is in `shared/config/`.

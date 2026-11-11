@@ -48,29 +48,24 @@ type windowWiring struct {
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
 func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
-	ports, err := c.Registry()
-	if err != nil {
-		return nil, err
-	}
 	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return nil, err
 	}
-	return OpenWindowOver(c, ctx, ports, db, named, out)
+	return OpenWindowOver(c, ctx, db, named, out)
 }
 
-// OpenWindowOver is OpenWindow over a registry and a cache already open, for a caller that opened
-// them itself. The window closes the cache.
+// OpenWindowOver is OpenWindow over a cache already open, for a caller that opened
+// it itself. The window closes the cache.
 func OpenWindowOver(c Config,
-	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
+	ctx context.Context, db *vault.Index, named string, out io.Writer,
 ) (*editor.Installation, error) {
-	return OpenWindowWith(c, ctx, WindowOpening{Ports: ports, DB: db, Named: named, Out: out})
+	return OpenWindowWith(c, ctx, WindowOpening{DB: db, Named: named, Out: out})
 }
 
-// WindowOpening is what OpenWindowWith opens a window over: the registry and the cache already open,
+// WindowOpening is what OpenWindowWith opens a window over: the cache already open,
 // the vault to show, where the window writes, and an optional function the walk of the vault goes through.
 type WindowOpening struct {
-	Ports registry.Ports
 	DB    *vault.Index
 	Named string
 	Out   io.Writer
@@ -80,7 +75,15 @@ type WindowOpening struct {
 // OpenWindowWith is OpenWindowOver with the walk of the vault put through Wrap, for a caller
 // that holds one back or drives it. A nil Wrap leaves it as it is.
 func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*editor.Installation, error) {
-	w := &windowWiring{cfg: c, ports: opening.Ports, db: opening.DB, wrap: opening.Wrap}
+	ports, err := c.registry()
+	if err != nil {
+		return nil, errors.Join(err, opening.DB.Close())
+	}
+	return openWindowWith(c, ctx, ports, opening)
+}
+
+func openWindowWith(c Config, ctx context.Context, ports registry.Ports, opening WindowOpening) (*editor.Installation, error) {
+	w := &windowWiring{cfg: c, ports: ports, db: opening.DB, wrap: opening.Wrap}
 	return openWindow(ctx, w, opening.Named, opening.Out)
 }
 

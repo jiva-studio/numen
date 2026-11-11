@@ -5,7 +5,7 @@
   "type": "module",
   "description": "The page the product is read about on. Knows nothing about a vault.",
   "scripts": {
-    "test": "node --test tools/demo-commands.test.mjs",
+    "test": "node --test tools/demo-fixtures.test.mjs",
     "predev": "npm run prebuild",
     "dev": "astro dev",
     "prebuild": "npm run build --prefix ../../libs/ui/components && npm run build --prefix ../../libs/ui/workbench",

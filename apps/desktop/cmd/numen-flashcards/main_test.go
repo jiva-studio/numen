@@ -44,10 +44,7 @@ func makeWindow(
 		}
 	})
 
-	target := []domain.Vault{
-		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
-		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
-	}
+	target := []domain.Vault{addVaultOf(t, cfg, "One"), addVaultOf(t, cfg, "Two")}
 	vaults := &vault.OpenVaults[*vault.Index]{
 		Opener: func(i *vault.Index) *vault.VaultOpener { return container.VaultOpener(cfg, i) }, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
@@ -56,13 +53,10 @@ func makeWindow(
 	return cfg, db, vaults, &shell.API{}, target
 }
 
-func vaultOf(t *testing.T, cfg container.Config) string {
+func addVaultOf(t *testing.T, cfg container.Config, name string) domain.Vault {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := container.VaultIdentity(cfg).EnsureIdentity(root, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
-		t.Fatal(err)
-	}
 	for name, body := range getNotes() {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -72,7 +66,11 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 			t.Fatal(err)
 		}
 	}
-	return root
+	added, err := cfg.AddVault(root, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return added
 }
 
 // The page is given the notes it answers about, the window it draws and the plugins' services it
@@ -158,15 +156,6 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 // requests it.
 func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	cfg, db, _, _, target := makeWindow(t)
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, v := range target {
-		if err := registry.Saver.Save(v); err != nil {
-			t.Fatal(err)
-		}
-	}
 	api := makeWindowAPI(cfg)
 	api.SetVaultIndexer(t.Context(), nil)
 
@@ -175,7 +164,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.PluginHost = host
-	if err := container.InstallPluginVault(cfg, registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
+	if err := container.InstallPluginVault(cfg, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		t.Fatal(err)
 	}
 	lent := cfg.PluginHost.Endpoint.GetPluginVault()

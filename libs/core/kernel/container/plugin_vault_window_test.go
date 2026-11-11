@@ -75,10 +75,6 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 		PluginHost: newExternalPluginHost(t, "md.numen.test", t.TempDir()),
 		Paths:      container.Paths{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -86,12 +82,8 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 	testsupport.CloseAfter(t, db)
 	rivers := testsupport.NewVault(t, map[string]string{"Danube.md": "# Danube\n\nA river.\n"})
 	other = testsupport.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n\nA deep lake.\n", "Lakes.md": "# Lakes\n"})
-	for _, v := range []domain.Vault{rivers, other} {
-		if err := registry.Saver.Save(v); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return other, func() (domain.Vault, bool) { return rivers, true }, windowVaults{cfg: cfg, registry: registry, db: db}
+	testsupport.SaveVaults(t, cfg.RegistryPath, rivers, other)
+	return other, func() (domain.Vault, bool) { return rivers, true }, windowVaults{cfg: cfg, db: db}
 }
 
 func TestWindowIgnoresPluginMoveInOtherVault(t *testing.T) {
@@ -146,10 +138,6 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 		PluginHost: newExternalPluginHost(t, "md.numen.test", t.TempDir()),
 		Paths:      container.Paths{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -157,11 +145,7 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	testsupport.CloseAfter(t, db)
 	rivers := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA river.\n"})
 	lakes := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA lake of the same name.\n"})
-	for _, v := range []domain.Vault{rivers, lakes} {
-		if err := registry.Saver.Save(v); err != nil {
-			t.Fatal(err)
-		}
-	}
+	testsupport.SaveVaults(t, cfg.RegistryPath, rivers, lakes)
 	var isSwitched atomic.Bool
 	current := func() (domain.Vault, bool) {
 		if isSwitched.Load() {
@@ -169,7 +153,7 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 		}
 		return rivers, true
 	}
-	assembly := windowVaults{cfg: cfg, registry: registry, db: db}
+	assembly := windowVaults{cfg: cfg, db: db}
 	refresh := assembly.GetRefresh()
 	window := &vaultMoveRecordingWindow{current: current}
 	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {

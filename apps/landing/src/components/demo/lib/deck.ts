@@ -1,9 +1,3 @@
-/** A kind of card: its name and the fields it is filled in. */
-export interface CardModel {
-  readonly name: string
-  readonly fields: readonly string[]
-}
-
 interface DeckField {
   readonly field: string
   readonly text: string
@@ -19,20 +13,6 @@ export interface DeckCard {
 export interface DeckSection {
   readonly id: string
   readonly name: string
-}
-
-export interface ReviewPreset {
-  readonly path: string
-  readonly name: string
-}
-
-export const CONCEPT_MODEL: CardModel = {
-  name: 'Concept',
-  fields: ['Concept', 'Formula', 'Meaning', 'Source'],
-}
-export const LAW_MODEL: CardModel = {
-  name: 'Law',
-  fields: ['Law', 'Statement', 'Consequence'],
 }
 
 export const INITIAL_CARDS: readonly DeckCard[] = [
@@ -96,8 +76,5 @@ export const INITIAL_SECTIONS: readonly DeckSection[] = [
   { id: 'erasure', name: 'Information & erasure' },
 ]
 
-export const PRESET_CHOICES: readonly ReviewPreset[] = [
-  { path: '', name: 'Defaults' },
-  { path: 'Physics.md', name: 'Physics' },
-  { path: 'Computation.md', name: 'Computation' },
-]
+/** The preset that schedules the reviews of the deck. */
+export const DECK_PRESET = 'Physics'

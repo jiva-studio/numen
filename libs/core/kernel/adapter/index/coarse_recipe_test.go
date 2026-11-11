@@ -2,9 +2,11 @@ package index
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -171,5 +173,18 @@ func TestAFreshIndexContainsTheRecipeTableAndNoRecipe(t *testing.T) {
 	db := openDB(t)
 	if _, recorded, err := coarseRecipe(t.Context(), db.write); err != nil || recorded {
 		t.Errorf("a fresh index records %v, %v", recorded, err)
+	}
+}
+
+func TestACoarseQueryTheVectorsOfAnotherRecipeCannotAnswerIsReportedAsThat(t *testing.T) {
+	db := openDB(t)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
+	if err := db.FitVectors(t.Context(), 384, narrowRecipe(384)); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := queriesOf(db).FindCoarseCandidates(t.Context(), getFirst().ID, sourcedomain.CoarseQuery{Recipe: testRecipe, Vector: getVectorForSeed(0x0f), Limit: 5})
+	if !errors.Is(err, sourcedomain.ErrOtherRecipe) {
+		t.Errorf("got %v, want the vectors to be reported as kept under another recipe", err)
 	}
 }

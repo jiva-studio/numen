@@ -8,8 +8,8 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
@@ -67,7 +66,7 @@ type searchWiring struct {
 	ServiceDir         string
 	ShouldRebuildIndex bool
 	Chunks             *note.ChunkTokens
-	ResolvedCompute    hardware.ResolvedCompute
+	ResolvedCompute    settingsdomain.ResolvedCompute
 	PluginHost         *PluginHost
 	Clock              machineport.Clock
 	VaultReaders       vaultport.VaultReaders
@@ -171,14 +170,14 @@ func indexTexts(c searchWiring, db *vault.Index, v domain.Vault) (filetext.Index
 
 func newSearch(c searchWiring, db *vault.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
 	policy := newFloorPolicy(c, db, asking, c.ErrorHandler)
-	searching := newSearchOver(c, db.Chunks.Passages, asking, errorHandler)
+	searching := newSearchOver(c, searchusecase.Index{Passages: db.Chunks.Passages, Nearest: db.Chunks.Nearest}, asking, errorHandler)
 	searching.Floor = policy.GetFloor
 	return searching
 }
 
-func newSearchOver(c searchWiring, passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
+func newSearchOver(c searchWiring, index searchusecase.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
 	policy := searchusecase.NewFloorPolicy(nil, getFloorHint(asking), nil)
-	searching := searchusecase.New(passages, c.VaultReaders, c.TextReaders, asking, newEmbedQueries(asking), errorHandler)
+	searching := searchusecase.New(index, c.VaultReaders, c.TextReaders, asking, newEmbedQueries(asking), errorHandler)
 	if workers := c.ResolvedCompute.Workers; workers > 0 {
 		searching.Extractors = workers
 	}
@@ -195,7 +194,7 @@ func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Emb
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
 		Samples:  db.Search.SearchSamples,
-		Nearest:  db.Search.Nearest,
+		Nearest:  searchusecase.NewGetBestSimilarity(db.Chunks.Nearest),
 		Progress: db.Chunks.Progress,
 		Stats:    hostsearch.NewStats(db.Chunks.Stats, c.Clock),
 		Policy:   newFloorPolicy(c, db, embedder, errorHandler),
