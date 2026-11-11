@@ -78,7 +78,7 @@ func (d stubSession) OpenIndexed(ctx context.Context, options cli.IndexOptions) 
 
 func (d stubSession) GetPluginCommands() cli.PluginCommands {
 	if d.PluginCommands == nil {
-		return cli.PluginCommands{}
+		return newNoPluginCommands()
 	}
 	return d.PluginCommands()
 }
