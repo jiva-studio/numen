@@ -972,9 +972,7 @@ func TestEnsureActive_PreservesPluginInUseDuringConcurrentEviction(t *testing.T)
 			t.Fatalf("round %d: a held plugin is in state %v", i, state)
 		}
 		host.Activation.Release("org.example.sample")
-		if i == 0 {
-			clock.Advance(1050 * time.Millisecond)
-		}
+		clock.Advance(1050 * time.Millisecond)
 	}
 	stopEvictor()
 	if evictions.Load() == 0 {
