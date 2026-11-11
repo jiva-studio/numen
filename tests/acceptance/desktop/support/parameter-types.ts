@@ -42,3 +42,9 @@ defineParameterType({
   regexp: /(?:[A-Za-z]+ ){0,2}tab/,
   transformer: (tab: string) => parseTabKind(tab),
 })
+
+defineParameterType({
+  name: 'text',
+  regexp: /recognized text|transcript/,
+  transformer: (text: string) => text,
+})

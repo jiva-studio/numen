@@ -1,19 +1,16 @@
+import type { TextKind } from '../drivers/rules.js'
 import { When } from '../support/bdd.js'
 
 When('the person recognizes the text of the file at {string}', async ({ person }, filePath: string) => {
   await person.text.recognize(filePath)
 })
 
-When('the person proofreads the recognition of the file at {string}', async ({ person }, filePath: string) => {
-  await person.text.proofread(filePath, 'recognized text')
-})
-
 When('the person transcribes the recording at {string}', async ({ person }, filePath: string) => {
   await person.text.transcribe(filePath)
 })
 
-When('the person proofreads the transcript of the recording at {string}', async ({ person }, filePath: string) => {
-  await person.text.proofread(filePath, 'transcript')
+When('the person proofreads the {text} of the file at {string}', async ({ person }, kind: TextKind, filePath: string) => {
+  await person.text.proofread(filePath, kind)
 })
 
 When('the person imports the link {string}', async ({ person }, address: string) => {

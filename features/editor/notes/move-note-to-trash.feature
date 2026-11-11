@@ -79,7 +79,7 @@ Feature: Move note to trash
       | path               | sample      |
       | assets/lecture.wav | lecture.wav |
     And the person transcribes the recording at "assets/lecture.wav"
-    And the person proofreads the transcript of the recording at "assets/lecture.wav"
+    And the person proofreads the transcript of the file at "assets/lecture.wav"
     And the person opens the folder at "assets"
     And the tab titled "Files" has "assets/lecture.wav"
     And the person searches the vault for "proofread"

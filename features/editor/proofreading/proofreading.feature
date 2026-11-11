@@ -12,7 +12,7 @@ Feature: Proofreading
         | path                      | sample             |
         | assets/pumped-storage.pdf | pumped-storage.pdf |
       And the person recognizes the text of the file at "assets/pumped-storage.pdf"
-      And the person proofreads the recognition of the file at "assets/pumped-storage.pdf"
+      And the person proofreads the recognized text of the file at "assets/pumped-storage.pdf"
 
     Scenario: The proofread text is found
       When the person searches the vault for "proofread"
@@ -29,7 +29,7 @@ Feature: Proofreading
         | path               | sample      |
         | assets/lecture.wav | lecture.wav |
       And the person transcribes the recording at "assets/lecture.wav"
-      And the person proofreads the transcript of the recording at "assets/lecture.wav"
+      And the person proofreads the transcript of the file at "assets/lecture.wav"
 
     Scenario: The transcript has the proofread text
       Then the tab at "assets/lecture.wav" has "[proofread]"

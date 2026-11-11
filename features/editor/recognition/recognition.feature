@@ -36,7 +36,7 @@ Feature: Recognition
       Then the search has the result "assets/flywheel.pdf" in the group "Text"
 
     Scenario: The proofread text is found
-      Given the person proofreads the recognition of the file at "assets/flywheel.pdf"
+      Given the person proofreads the recognized text of the file at "assets/flywheel.pdf"
       When the person disables the plugin "Document OCR"
       And the person searches the vault for "proofread"
       Then the search has the result "assets/flywheel.pdf" in the group "Text"
