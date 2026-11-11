@@ -20,7 +20,7 @@ import (
 )
 
 // CLISession is what one run of the command line opens: the index, the embedders and the plugin work of the
-// command it runs. The plugin work of the run reports into one list of tasks, and Close hands back the ones
+// command it runs. The plugin work of the run reports into one list of tasks, and Close returns the ones
 // that failed.
 type CLISession struct {
 	c       Config
