@@ -14,9 +14,9 @@ A red check is fixed in the code, not by changing the check or moving code out o
 - `plugins-use-main-entry`: a plugin that imports a deep path of the SDK or `@numen/ui` that is not a declared entry.
 - `plugins-frontend`, `plugins-isolation-capture`, `plugins-hold-no-schema`, `plugins-leakage`: a plugin frontend that imports through `@/**` or `@plugins/**`, one plugin that names another, a `.proto` file inside a plugin, a plugin that imports `libs/core/kernel`.
 - `every-path-has-a-layer`, `workspace-lists-every-module`, `all-ts-packages-eslint`: a module in no layer, a Go module missing from `go.work`, a TypeScript package with no ESLint configuration.
-- `desktop-editor-fsd`, `desktop-flashcards-fsd`: a window module that imports a higher FSD layer, a slice that imports a sibling slice, a slice reached other than through its `index.ts`.
+- `npm run lint` in `apps/desktop/editor`, `apps/desktop/flashcards` and `apps/mobile` (ESLint `boundaries/dependencies`): a window module that imports a higher FSD layer, a slice that imports a sibling slice, a slice reached other than through its `index.ts`.
 
-## Inside `@numen/ui` and `@numen/workbench` (`ui-components-lint`, `workbench-lint`)
+## Inside `@numen/ui` and `@numen/workbench` (`npm run lint` in `libs/ui/components` and `libs/ui/workbench`)
 
 - An import of any first-party package but `@numen/ui`, or of a path under `apps` or `libs`, in the sources and tests of the library. Stories and fixtures stand outside the layer order and carry the same import ban in a block of their own (`createStoryImportConfig` in `tools/lint-layers/layers.mjs`, self-tested by `layers.test.mjs`).
 - A layer that imports a higher layer, a slice that imports another slice, and an import of a slice by any file but its `index.ts`.

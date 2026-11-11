@@ -185,7 +185,7 @@ These places do not follow the target and are not models.
 
 Today, in `main`:
 
-- `ui-components-lint` and `workbench-lint`: an import of a domain or wire package in a component, a story or a fixture, `Date.now()`, `new Date()` and `performance.now()` outside the clock function, `Math.random()`, `setTimeout` and `setInterval` in a pure segment, a layer that imports a higher layer.
+- `npm run lint` in `libs/ui/components` and `libs/ui/workbench`: an import of a domain or wire package in a component, a story or a fixture, `Date.now()`, `new Date()` and `performance.now()` outside the clock function, `Math.random()`, `setTimeout` and `setInterval` in a pure segment, a layer that imports a higher layer.
 - `styles-use-tokens` (stylelint): a colour literal, a `--numen-` declaration outside the token and theme files, a `var()` with a fallback, an undeclared `--numen-` token.
 - `no-suppressions`: `eslint-disable`, `@ts-ignore` and the like.
 - `numen/no-style-declaration-read` (ESLint, typed): a read of `getComputedStyle(...)` or `element.style` in a story, a test or a fixture.

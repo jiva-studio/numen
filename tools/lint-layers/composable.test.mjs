@@ -108,13 +108,13 @@ function findTypedReports(source) {
 
 describe("the composable return size rule with type information", () => {
   it("counts the properties of a returned call result", () => {
-    const source = ["const big = () => ({ a: 1, b: 2, c: 3, d: 4 })", "function useA() {", "  return big()", "}"].join("\n");
+    const source = ["const big = () => ({ a: () => 1, b: () => 2, c: () => 3, d: () => 4 })", "function useA() {", "  return big()", "}"].join("\n");
     assert.deepEqual(findTypedReports(source), ["3 tooManyReturnedProperties"]);
   });
 
   it("counts the properties of a value typed by an interface or a return type annotation", () => {
     const source = [
-      "interface Api { a: number; b: number; c: number; d: number }",
+      "interface Api { a(): void; b(): void; c(): void; d(): void }",
       "declare const api: Api",
       "function useA(): Api { return api }",
       "const useB = () => api",
@@ -123,18 +123,47 @@ describe("the composable return size rule with type information", () => {
   });
 
   it("counts a factory that spreads by the type of what it returns, and fails a composable that spreads", () => {
-    const source = ["const base = { a: 1, b: 2, c: 3 }", "const createA = () => ({ ...base, d: 4 })", "const useB = () => ({ ...base })"].join("\n");
+    const source = ["const base = { a: () => 1, b: () => 2, c: () => 3 }", "const createA = () => ({ ...base, d: () => 4 })", "const useB = () => ({ ...base })"].join("\n");
     assert.deepEqual(findTypedReports(source), ["2 tooManyReturnedProperties", "2 spreadOfInput", "3 spreadInReturn"]);
   });
 
   it("counts the members of an inline, an interface and an alias input type", () => {
-    assert.deepEqual(findTypedReports("const createA = (deps: { a: 1; b: 2; c: 3; d: 4 }) => ({ a: 1 })"), ["1 tooManyInputProperties"]);
-    const alias = ["type Deps = { a: 1; b: 2; c: 3; d: 4 }", "const createA = (deps: Deps) => ({ a: 1 })"].join("\n");
+    assert.deepEqual(findTypedReports("const createA = (deps: { a: () => 1; b: () => 2; c: () => 3; d: () => 4 }) => ({ a: 1 })"), ["1 tooManyInputProperties"]);
+    const alias = ["type Deps = { a: () => 1; b: () => 2; c: () => 3; d: () => 4 }", "const createA = (deps: Deps) => ({ a: 1 })"].join("\n");
     assert.deepEqual(findTypedReports(alias), ["2 tooManyInputProperties"]);
   });
 
+  it("passes a words constant and a plain data record as an input or a returned value", () => {
+    const words = "interface Words { a: string; b: string; c: string; d: string; e: string }";
+    assert.deepEqual(findTypedReports([words, "const createA = (words: Words) => ({ a: 1 })"].join("\n")), []);
+    const record = "interface Entry { a: string; b: { c: number; d: string[] }; e: boolean; f: null; g: 1 | 2 }";
+    assert.deepEqual(findTypedReports([record, "const createA = (record: Entry) => ({ a: 1 })"].join("\n")), []);
+    assert.deepEqual(findTypedReports([words, "declare const words: Words", "const createB = () => words"].join("\n")), []);
+    assert.deepEqual(findTypedReports([words, "const createC = (words: Words) => ({ a: words, b: words, c: words, d: words })"].join("\n")), []);
+  });
+
+  it("does not count the data members of a bag that holds a few dependencies", () => {
+    const source = [
+      "interface Deps { read(): void; write(): void; a: string; b: string; c: string; d: string; e: number }",
+      "const createA = (deps: Deps) => ({ a: 1 })",
+    ].join("\n");
+    assert.deepEqual(findTypedReports(source), []);
+  });
+
+  it("fails a bag of nine dependencies, whatever else it holds", () => {
+    const members = Array.from({ length: 9 }, (_, index) => `d${index}(): void`).join("; ");
+    assert.deepEqual(findTypedReports(`interface Deps { ${members} }\nconst createA = (deps: Deps) => ({ a: 1 })`), ["2 tooManyInputProperties"]);
+    const mixed = `interface Deps { ${members}; words: { a: string } }\nconst createB = ({ d0, d1 }: Deps) => ({ a: 1 })`;
+    assert.deepEqual(findTypedReports(mixed), ["2 tooManyInputProperties"]);
+  });
+
+  it("counts a service or a library type as a dependency, not as data", () => {
+    const members = ["a: Map<string, string>", "b: Promise<void>", "c: Date", "d: () => void"].join("; ");
+    assert.deepEqual(findTypedReports(`interface Deps { ${members} }\nconst createA = (deps: Deps) => ({ a: 1 })`), ["2 tooManyInputProperties"]);
+  });
+
   it("counts the members of a declared input type", () => {
-    const source = ["interface Deps { a: 1; b: 2; c: 3; d: 4 }", "declare const deps: Deps", "const createA = (input: Deps) => ({ a: 1 })"].join("\n");
+    const source = ["interface Deps { a: () => 1; b: () => 2; c: () => 3; d: () => 4 }", "declare const deps: Deps", "const createA = (input: Deps) => ({ a: 1 })"].join("\n");
     assert.deepEqual(findTypedReports(source), ["3 tooManyInputProperties"]);
   });
 

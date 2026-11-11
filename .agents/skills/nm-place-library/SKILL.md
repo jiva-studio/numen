@@ -38,7 +38,7 @@ graph TD
     Plugin --> UI
 ```
 
-An arrow is a permitted import; the package matrix (`PACKAGE_DEPENDENCIES` in `tools/lint-layers/checks/libraries.mjs`) and `dependency-graph` hold it. Libraries never import an application, and a window imports every library except `@numen/plugin-sdk` and `@numen/protocol`.
+An arrow is a permitted import; the package matrix (`packages` in `tools/lint-layers/library-matrix.json`) and `dependency-graph` hold it. Libraries never import an application, and a window imports every library except `@numen/plugin-sdk` and `@numen/protocol`.
 
 | Library | Holds |
 | --- | --- |

@@ -4,7 +4,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 
 ## Layers and slices
 
-- `desktop-editor-fsd`, `desktop-flashcards-fsd` and `mobile-fsd` (ESLint `boundaries/dependencies` from `tools/lint-layers/layers.mjs`): a file imports a layer above its own; a file in a slice layer imports a sibling slice; a layer above a slice layer imports anything of the slice except its `index.ts`; the window imports a plugin.
+- `npm run lint` in the editor, the flashcards window and mobile (ESLint `boundaries/dependencies` from `tools/lint-layers/layers.mjs`): a file imports a layer above its own; a file in a slice layer imports a sibling slice; a layer above a slice layer imports anything of the slice except its `index.ts`; the window imports a plugin.
 - `boundaries/no-unknown-files`: a file under `src/` that is in no layer.
 - `every-path-has-a-layer`: a module of the repository that is in no layer.
 - `dependency-graph`, rule `no-cross-slice-entry`: an `@x` cross-import.

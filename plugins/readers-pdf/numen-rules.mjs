@@ -59,6 +59,9 @@ function isBoundToPart(variable) {
   return callee.type === 'Identifier' && isPartName(callee.name)
 }
 
+// The primitive types that hold data, by the name TypeScript prints for them; the literal types are found by the type itself.
+const DATA_TYPE_NAMES = new Set(['string', 'number', 'boolean', 'bigint', 'undefined', 'null', 'void', 'never', 'true', 'false'])
+
 const maxComposableReturnProperties = {
   meta: {
     type: 'problem',
@@ -106,37 +109,64 @@ const maxComposableReturnProperties = {
         : null
     }
 
-    // The property count of a value that is no object literal, read from its type. A type declared in a
-    // declaration file (a Ref, a Promise, an array) is not a bag of the function's own and counts nothing.
-    function countTypeProperties(argument) {
-      if (!checker) return 0
+    // True when a value holds data only: primitives, and objects and arrays declared in the project whose
+    // members are data in turn. A words constant and a plain record are data; a service, a callback and a
+    // type from a declaration file (a Ref, a Map, a Date) are not.
+    function isPlainData(type, node, seen = new Set()) {
+      if (type.isLiteral() || DATA_TYPE_NAMES.has(checker.typeToString(type))) return true
+      if (type.isUnionOrIntersection()) return type.types.every((one) => isPlainData(one, node, seen))
+      if (seen.has(type)) return true
+      seen.add(type)
+      if (checker.isArrayType(type) || checker.isTupleType(type)) {
+        return checker.getTypeArguments(type).every((one) => isPlainData(one, node, seen))
+      }
+      if (type.getCallSignatures().length > 0 || type.getConstructSignatures().length > 0) return false
+      const declarations = type.getSymbol()?.getDeclarations() ?? []
+      if (declarations.length === 0 || declarations.some((one) => one.getSourceFile().isDeclarationFile)) return false
+      return type.getProperties().every((one) => isPlainData(checker.getTypeOfSymbolAtLocation(one, node), node, seen))
+    }
+
+    // The properties of the project's own object type that are no plain data, or null when there is no such type.
+    // A record of data only counts none: it is not a bag of dependencies. A type declared in a declaration file
+    // (a Ref, a Promise, an array) is not a bag of the function's own either.
+    function countDependencyProperties(argument) {
+      if (!checker) return null
       const tsNode = services.esTreeNodeToTSNodeMap.get(argument)
-      if (!tsNode) return 0
+      if (!tsNode) return null
       const type = checker.getNonNullableType(checker.getTypeAtLocation(tsNode))
       const members = type.isUnion() ? type.types : [type]
-      let most = 0
+      let most = null
       for (const member of members) {
-        const symbol = member.getSymbol()
-        const declarations = symbol?.getDeclarations() ?? []
+        const declarations = member.getSymbol()?.getDeclarations() ?? []
         const isOwn = declarations.length > 0 && declarations.every((one) => !one.getSourceFile().isDeclarationFile)
         if (!isOwn || checker.isArrayType(member) || checker.isTupleType(member)) continue
         if (member.getCallSignatures().length > 0) continue
-        most = Math.max(most, member.getProperties().length)
+        const count = member.getProperties().filter((one) => !isPlainData(checker.getTypeOfSymbolAtLocation(one, tsNode), tsNode)).length
+        most = Math.max(most ?? 0, count)
       }
       return most
+    }
+
+    // True when the value of a property is plain data, which no count of dependencies includes.
+    function isDataValue(value) {
+      if (!checker) return false
+      const tsNode = services.esTreeNodeToTSNodeMap.get(value)
+      return tsNode ? isPlainData(checker.getTypeAtLocation(tsNode), tsNode) : false
+    }
+
+    function countTypeProperties(argument) {
+      return countDependencyProperties(argument) ?? 0
     }
 
     // The members of a parameter that is an object pattern, an inline type literal or a type declared in the
     // file, or else the properties of its type when type information is available.
     function countInputProperties(param) {
       const target = param.type === 'AssignmentPattern' ? param.left : param
+      const counted = countDependencyProperties(target)
+      if (counted !== null) return counted
       if (target.type === 'ObjectPattern') return target.properties.length
       const annotation = target.typeAnnotation?.typeAnnotation
       if (annotation?.type === 'TSTypeLiteral') return annotation.members.length
-      if (checker) {
-        const counted = countTypeProperties(target)
-        if (counted > 0) return counted
-      }
       if (annotation?.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') return 0
       const declaration = findVariable(context, annotation, annotation.typeName.name)?.defs[0]?.node
       if (declaration?.type === 'TSInterfaceDeclaration') return declaration.body.body.length
@@ -200,7 +230,7 @@ const maxComposableReturnProperties = {
       if (node) {
         for (const prop of node.properties) {
           if (prop.type === 'Property') {
-            count++
+            if (!isDataValue(prop.value)) count++
           } else if (prop.type === 'SpreadElement') {
             // A composable names every property it returns; a factory that spreads a part it built is counted by its type, and one that spreads a value it did not build is reported.
             if (fnName.startsWith('use')) {
