@@ -5,7 +5,6 @@
  * them, then the host the services are given to.
  */
 import { onUnmounted } from 'vue'
-import { loadWailsRuntime } from '@/features/external-links'
 import {
   createPluginLoader,
   createWindowHost,
@@ -19,7 +18,7 @@ import { createWindowTabs } from '@/entities/tab'
 import { createVaultsHost, useVaults } from '@/entities/vault'
 import { useAppearance } from '@/features/appearance'
 import { useAppStart } from '@/features/app-start'
-import { useExternalLinks } from '@/features/external-links'
+import { loadWailsRuntime, useExternalLinks } from '@/features/external-links'
 import { useWindowKeys } from '@/features/window-keys'
 import { useWindowTasks } from '@/features/window-tasks'
 import { formatError } from '@/shared/api/errors'
