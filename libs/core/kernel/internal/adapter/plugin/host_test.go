@@ -179,7 +179,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 
 func TestHostEvictLoopTeardown(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	if !host.Teardown.stopper.IsEvicting() {
+	if !host.Teardown.IsEvicting() {
 		t.Fatal("expected evict loop to be running")
 	}
 
@@ -188,7 +188,7 @@ func TestHostEvictLoopTeardown(t *testing.T) {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if host.Teardown.stopper.IsEvicting() {
+	if host.Teardown.IsEvicting() {
 		t.Fatal("expected evict loop to be stopped after TeardownAll")
 	}
 

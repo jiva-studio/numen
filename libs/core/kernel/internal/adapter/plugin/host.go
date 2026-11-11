@@ -34,14 +34,25 @@ type Host struct {
 	Mode         *Mode
 }
 
+// toolActivator starts a plugin for the catalog of tools and holds it.
+type toolActivator interface {
+	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
+	Release(pluginID string)
+}
+
+// pluginInfoLister lists the plugins the host knows.
+type pluginInfoLister interface {
+	GetPluginInfos() []plugindomain.Info
+}
+
 // ToolHost is what the catalog of tools starts plugins and lists them through.
 type ToolHost struct {
-	activation *Activation
-	registry   *Registry
+	activation toolActivator
+	registry   pluginInfoLister
 }
 
 // NewToolHost returns the host the catalog of tools works over.
-func NewToolHost(activation *Activation, registry *Registry) ToolHost {
+func NewToolHost(activation toolActivator, registry pluginInfoLister) ToolHost {
 	return ToolHost{activation: activation, registry: registry}
 }
 
@@ -75,33 +86,37 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	})
 	processes := supervision.NewProcesses(sups, clock, errs.Report, services, files)
 	stopper := supervision.NewStopper(sups, processes, services, clock, errs.Report)
+	evictor := supervision.NewEvictor(stopper)
 
-	config := newConfigPush(registry, sups, errs.Report)
+	config := newConfigPush(set, sups, errs.Report)
+	scan := &scanGate{}
 	activation := &Activation{
-		registry: registry, mode: mode, sups: sups, processes: processes, failures: failures, config: config, clock: clock,
+		set: set, enablement: registry, scan: scan, mode: mode, sups: sups, processes: processes, failures: failures, config: config, clock: clock,
 	}
-	events := newEvents(registry, mode, sups, activation, clock)
+	events := newEvents(set, mode, sups, activation, clock)
 	listeners := &Listeners{
-		registry: registry, mode: mode, sups: sups, activator: activation, failures: failures, clock: clock,
+		set: set, mode: mode, sups: sups, activator: activation, failures: failures, clock: clock,
 		report: errs.Report, bindings: make(map[string]map[string]listenerBinding),
 	}
 
 	return &Host{
 		Registry: registry,
 		Discovery: &Discovery{
-			registry: registry, mode: mode, sups: sups, stopper: stopper, listeners: listeners,
+			set: set, registrar: set, scan: scan, mode: mode, sups: sups, stopper: stopper, listeners: listeners,
 			storage: files, scans: config, report: errs.Report, dirs: dirs, target: target,
 		},
-		Activation:   activation,
-		Retry:        newRetry(registry, failures, activation, listeners),
-		Processes:    processes,
-		Teardown:     newTeardown(mode, sups, stopper, events, listeners, errs.Report),
+		Activation: activation,
+		Retry:      newRetry(set, failures, activation, listeners),
+		Processes:  processes,
+		Teardown: &Teardown{
+			mode: mode, sups: sups, stopper: stopper, evictor: evictor, events: events, listeners: listeners, report: errs.Report,
+		},
 		Failures:     failures,
-		Settings:     newSettings(values, registry, listeners, config, errs.Report),
+		Settings:     newSettings(values, set, listeners, config, errs.Report),
 		Config:       config,
 		Listeners:    listeners,
 		Services:     services,
-		ContentTypes: newContentTypes(registry, readers),
+		ContentTypes: newContentTypes(set, readers),
 		Storage:      files,
 		Events:       events,
 		Mode:         mode,

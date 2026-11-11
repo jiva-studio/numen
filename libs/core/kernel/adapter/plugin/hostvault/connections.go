@@ -33,7 +33,7 @@ type Connections struct {
 	Joiner  connectionJoiner
 	Creator relatedNoteCreator
 
-	session *Session
+	session sessionAccess
 }
 
 func (c Connections) openConnections(isMissing bool) (domain.Vault, error) {

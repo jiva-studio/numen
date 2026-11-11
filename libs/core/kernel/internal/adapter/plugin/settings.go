@@ -38,11 +38,19 @@ type profilePusher interface {
 	SetPerformanceProfile(ctx context.Context, profile string)
 }
 
+// settingPlugins is what the settings read of the set of plugins.
+type settingPlugins interface {
+	getPluginSettings(pluginID string) map[string]any
+	getRequirementIDs(pluginID string) []string
+	listEnabled() []manifest.Discovered
+	getKnown(pluginID string) (manifest.Discovered, bool)
+}
+
 // Settings keeps in memory the values the user stores for the settings of the plugins. Writing a
 // value to disk, and what follows from a change, are not done here.
 type Settings struct {
 	values    *settingValues
-	registry  *Registry
+	set       settingPlugins
 	listeners portChecker
 	profile   profilePusher
 	report    func(error)
@@ -51,8 +59,8 @@ type Settings struct {
 	persist plugindomain.PersistHandler
 }
 
-func newSettings(values *settingValues, registry *Registry, listeners portChecker, profile profilePusher, report func(error)) *Settings {
-	return &Settings{values: values, registry: registry, listeners: listeners, profile: profile, report: report}
+func newSettings(values *settingValues, set settingPlugins, listeners portChecker, profile profilePusher, report func(error)) *Settings {
+	return &Settings{values: values, set: set, listeners: listeners, profile: profile, report: report}
 }
 
 // SetPersistHandler registers a callback that writes plugin settings changes into core configuration.
@@ -78,7 +86,7 @@ func (s *Settings) SetPerformanceProfile(ctx context.Context, profile string) {
 
 // GetPluginSettings returns resolved settings for a plugin with defaults overlaid by stored values.
 func (s *Settings) GetPluginSettings(pluginID string) map[string]any {
-	return s.registry.set.getPluginSettings(pluginID)
+	return s.set.getPluginSettings(pluginID)
 }
 
 // GetPluginConfigJSON returns serialized JSON configuration for the specified plugin.
@@ -93,9 +101,9 @@ func (s *Settings) GetPluginConfigJSON(pluginID string) (string, error) {
 // ReplaceSetting stores the value of one setting in memory. It returns the value it replaced, whether
 // there was one, and whether the dependencies the plugin declares are others now.
 func (s *Settings) ReplaceSetting(pluginID, key string, value any) (previous any, hadPrevious, changesDependencies bool) {
-	before := s.registry.set.getRequirementIDs(pluginID)
+	before := s.set.getRequirementIDs(pluginID)
 	previous, hadPrevious = s.values.replace(pluginID, key, value)
-	return previous, hadPrevious, !slices.Equal(before, s.registry.set.getRequirementIDs(pluginID))
+	return previous, hadPrevious, !slices.Equal(before, s.set.getRequirementIDs(pluginID))
 }
 
 // RestoreSetting puts back the value ReplaceSetting replaced, or removes the setting where there was none.
@@ -127,7 +135,7 @@ func (s *Settings) FillGeneratedSettings() {
 func (s *Settings) storeGeneratedSettings() ([]generatedSetting, []error) {
 	var filled []generatedSetting
 	var failed []error
-	for _, p := range s.registry.set.listEnabled() {
+	for _, p := range s.set.listEnabled() {
 		for _, one := range p.Manifest.Settings {
 			if one.Generate != manifest.SettingGenerateToken {
 				continue
@@ -167,7 +175,7 @@ func (s *Settings) CheckPluginSetting(pluginID, key string, value any) error {
 	if err := s.listeners.checkPort(context.Background(), pluginID, key, value); err != nil {
 		return err
 	}
-	p, ok := s.registry.set.getKnown(pluginID)
+	p, ok := s.set.getKnown(pluginID)
 	if !ok {
 		return nil
 	}

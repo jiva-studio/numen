@@ -12,17 +12,22 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
+// pluginViews reads the set of plugins.
+type pluginViews interface {
+	view() (setView, func())
+}
+
 // Events sends the events of the application to the plugins that declare an activation event for them.
 type Events struct {
-	registry  *Registry
-	mode      *Mode
+	set       pluginViews
+	mode      safeModeReader
 	sups      *supervision.Supervisors
 	activator pluginActivator
 	bus       *eventbus.Bus
 }
 
-func newEvents(registry *Registry, mode *Mode, sups *supervision.Supervisors, activator pluginActivator, clock machineport.Clock) *Events {
-	e := &Events{registry: registry, mode: mode, sups: sups, activator: activator}
+func newEvents(set pluginViews, mode safeModeReader, sups *supervision.Supervisors, activator pluginActivator, clock machineport.Clock) *Events {
+	e := &Events{set: set, mode: mode, sups: sups, activator: activator}
 	e.bus = eventbus.New(e, clock, 50*time.Millisecond, 250*time.Millisecond)
 	return e
 }
@@ -48,7 +53,7 @@ func (e *Events) closeBus(ctx context.Context) error {
 }
 
 func (e *Events) listActivatedBy(event string) []string {
-	v, release := e.registry.set.view()
+	v, release := e.set.view()
 	defer release()
 	candidates := make([]string, 0)
 	for _, p := range v.enabled() {

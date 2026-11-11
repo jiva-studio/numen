@@ -21,9 +21,9 @@ func riverFiles() map[string]string {
 }
 
 func TestReadRangeReturnsTheTextOfTheRangeAndTheFileStat(t *testing.T) {
-	access, _ := diskVault(t, riverFiles())
+	access, _ := diskVault(t, riverFiles(), diskHooks{})
 
-	got, err := access.Access().Files.ReadRange(t.Context(), "Rivers.txt", 4, 6)
+	got, err := access.Files.ReadRange(t.Context(), "Rivers.txt", 4, 6)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,9 +37,9 @@ func TestReadRangeReturnsTheTextOfTheRangeAndTheFileStat(t *testing.T) {
 }
 
 func TestReadRangeMovesStartInsideCharacterToNextCharacter(t *testing.T) {
-	access, _ := diskVault(t, riverFiles())
+	access, _ := diskVault(t, riverFiles(), diskHooks{})
 
-	got, err := access.Access().Files.ReadRange(t.Context(), "Nandu.txt", 1, 4)
+	got, err := access.Files.ReadRange(t.Context(), "Nandu.txt", 1, 4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,10 +50,10 @@ func TestReadRangeMovesStartInsideCharacterToNextCharacter(t *testing.T) {
 }
 
 func TestReadRangeOmitsACharacterTheRangeEndsInside(t *testing.T) {
-	access, _ := diskVault(t, riverFiles())
+	access, _ := diskVault(t, riverFiles(), diskHooks{})
 
 	// "Ñandú" is Ñ (2 bytes), a, n, d, ú (2 bytes): the four bytes from 2 end inside ú.
-	got, err := access.Access().Files.ReadRange(t.Context(), "Nandu.txt", 2, 4)
+	got, err := access.Files.ReadRange(t.Context(), "Nandu.txt", 2, 4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,10 +64,10 @@ func TestReadRangeOmitsACharacterTheRangeEndsInside(t *testing.T) {
 }
 
 func TestReadRangeOfZeroOrOverMaxReads16000Bytes(t *testing.T) {
-	access, _ := diskVault(t, riverFiles())
+	access, _ := diskVault(t, riverFiles(), diskHooks{})
 
 	for _, length := range []int{0, 16000, 16001, 50000} {
-		got, err := access.Access().Files.ReadRange(t.Context(), "gauge.log", 0, length)
+		got, err := access.Files.ReadRange(t.Context(), "gauge.log", 0, length)
 		if err != nil {
 			t.Errorf("a read of %d bytes failed: %v", length, err)
 			continue
@@ -79,32 +79,35 @@ func TestReadRangeOfZeroOrOverMaxReads16000Bytes(t *testing.T) {
 }
 
 func TestReadRangeOfBytesThatAreNotUTF8IsNotText(t *testing.T) {
-	access, _ := diskVault(t, riverFiles())
+	access, _ := diskVault(t, riverFiles(), diskHooks{})
 
-	_, err := access.Access().Files.ReadRange(t.Context(), "sonar.bin", 0, 6)
+	_, err := access.Files.ReadRange(t.Context(), "sonar.bin", 0, 6)
 
 	if !errors.Is(err, plugin.ErrNotText) {
 		t.Errorf("a range of bytes that are not UTF-8 was read with %v, want ErrNotText", err)
 	}
-	if got, err := access.Access().Files.ReadRange(t.Context(), "sonar.bin", 4, 2); err != nil || got.Text != "cd" {
+	if got, err := access.Files.ReadRange(t.Context(), "sonar.bin", 4, 2); err != nil || got.Text != "cd" {
 		t.Errorf("a range of UTF-8 bytes of the same file was read as %q (%v), want \"cd\"", got.Text, err)
 	}
 }
 
 func TestReadRangeOfAFolderOrAMissingPathIsNotExist(t *testing.T) {
-	access, _ := diskVault(t, riverFiles())
+	access, _ := diskVault(t, riverFiles(), diskHooks{})
 
 	for _, path := range []string{"notes", "Volga.txt", "notes/Volga.md"} {
-		if _, err := access.Access().Files.ReadRange(t.Context(), path, 0, 10); !errors.Is(err, fs.ErrNotExist) {
+		if _, err := access.Files.ReadRange(t.Context(), path, 0, 10); !errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("a ranged read of %s was %v, want fs.ErrNotExist", path, err)
 		}
 	}
 }
 
 func TestReadRangeWithoutAVaultReturnsErrNoVault(t *testing.T) {
-	access := Vault{Session: Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }}}
+	access := NewAccess(
+		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
+		Files{}, Lookups{}, Connections{}, Arranger{}, Stores{},
+	)
 
-	if _, err := access.Access().Files.ReadRange(t.Context(), "Rivers.txt", 0, 10); !errors.Is(err, plugin.ErrNoVault) {
+	if _, err := access.Files.ReadRange(t.Context(), "Rivers.txt", 0, 10); !errors.Is(err, plugin.ErrNoVault) {
 		t.Errorf("a ranged read with no vault was %v, want plugin.ErrNoVault", err)
 	}
 }

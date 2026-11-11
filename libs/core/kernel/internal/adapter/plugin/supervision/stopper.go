@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
@@ -21,32 +20,31 @@ const (
 // IdleThreshold is how long a plugin without a lease may stay idle before the host stops it.
 const IdleThreshold = 180 * time.Second
 
-// Stopper stops the processes of the plugins: one on request, the idle ones on a timer, and the ones
+// stdinHolder closes the pipes the starts of the processes hold open.
+type stdinHolder interface {
+	CloseStdin(pluginID string, pid int)
+	CloseAllStdins() error
+}
+
+// serviceEndpoint forgets what the host endpoint holds for a plugin, and closes the endpoint.
+type serviceEndpoint interface {
+	ClearPlugin(pluginID string)
+	CloseHostEndpoint(ctx context.Context) error
+}
+
+// Stopper stops the processes of the plugins: one on request, the idle ones when asked, and the ones
 // that still run when the host shuts down.
 type Stopper struct {
 	sups      *Supervisors
-	processes *Processes
-	services  *Services
+	processes stdinHolder
+	services  serviceEndpoint
 	clock     machineport.Clock
 	report    func(error)
-
-	evictMu        sync.Mutex
-	evictTicker    *time.Ticker
-	evictDone      chan struct{}
-	evictWg        sync.WaitGroup
-	isEvictStopped bool
 }
 
-// NewStopper returns the stopper of the processes the supervisors track, which stops the idle ones
-// on a timer until StopEvicting.
-func NewStopper(sups *Supervisors, processes *Processes, services *Services, clock machineport.Clock, report func(error)) *Stopper {
-	s := &Stopper{
-		sups: sups, processes: processes, services: services, clock: clock, report: report,
-		evictTicker: time.NewTicker(evictInterval),
-		evictDone:   make(chan struct{}),
-	}
-	s.startEvictLoop()
-	return s
+// NewStopper returns the stopper of the processes the supervisors track.
+func NewStopper(sups *Supervisors, processes stdinHolder, services serviceEndpoint, clock machineport.Clock, report func(error)) *Stopper {
+	return &Stopper{sups: sups, processes: processes, services: services, clock: clock, report: report}
 }
 
 // StopPlugin stops the process of the plugin, if one runs, and forgets its endpoint.
@@ -88,40 +86,6 @@ func (s *Stopper) EvictTargets(ctx context.Context, targets []Target, gracePerio
 		evicted = append(evicted, target.ID)
 	}
 	return evicted
-}
-
-func (s *Stopper) startEvictLoop() {
-	s.evictWg.Go(func() {
-		for {
-			select {
-			case <-s.evictDone:
-				return
-			case <-s.evictTicker.C:
-				ctx, cancel := context.WithTimeout(context.Background(), evictTimeout)
-				_ = s.EvictIdle(ctx, IdleThreshold, stopPluginGracePeriod)
-				cancel()
-			}
-		}
-	})
-}
-
-// StopEvicting ends the timer that stops the idle plugins.
-func (s *Stopper) StopEvicting() {
-	s.evictMu.Lock()
-	if !s.isEvictStopped {
-		s.isEvictStopped = true
-		s.evictTicker.Stop()
-		close(s.evictDone)
-	}
-	s.evictMu.Unlock()
-	s.evictWg.Wait()
-}
-
-// IsEvicting reports whether the timer that stops the idle plugins runs.
-func (s *Stopper) IsEvicting() bool {
-	s.evictMu.Lock()
-	defer s.evictMu.Unlock()
-	return !s.isEvictStopped
 }
 
 // TakeRunning returns, as targets to stop, the plugins whose supervisor is not dormant, and forgets

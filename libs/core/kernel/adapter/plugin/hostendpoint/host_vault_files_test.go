@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
@@ -68,12 +69,12 @@ func (d *diskVaults) getScanned() [][]string {
 	return slices.Clone(d.scanned)
 }
 
-func (d *diskVaults) access(t *testing.T) hostvault.Vault {
+func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 	t.Helper()
 	readers := vaultreader.Readers{}
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
-	return hostvault.Vault{
-		Session: hostvault.Session{
+	return hostvault.NewAccess(
+		hostvault.Session{
 			Current: func() (domain.Vault, bool) {
 				d.mu.Lock()
 				defer d.mu.Unlock()
@@ -109,7 +110,7 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 			},
 			Moved: func(context.Context) (<-chan struct{}, error) { return d.moves, nil },
 		},
-		Files: hostvault.Files{
+		hostvault.Files{
 			Stat:        file.NewStatFile(readers),
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
@@ -120,10 +121,11 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 				d.scanned = append(d.scanned, slices.Clone(paths))
 				return nil
 			},
+			Locks: hold.NewLocks(writers, testsupport.GetMachine(), hold.LockHold),
 		},
-		Stores: hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
-		Locks:  hold.NewLocks(writers, testsupport.GetMachine(), hold.LockHold),
-	}
+		hostvault.Lookups{}, hostvault.Connections{}, hostvault.Arranger{},
+		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
+	)
 }
 
 func compareIDs(a, b domain.VaultID) int {
@@ -149,7 +151,7 @@ func newDiskVaults(t *testing.T, files map[string]string) (*diskVaults, numenv1c
 		watcher: channelWatcher{changes: make(chan []string, 4), loss: make(chan struct{})},
 		moves:   make(chan struct{}, 4),
 	}
-	return disk, openReadEndpoint(t, disk.access(t).Access())
+	return disk, openReadEndpoint(t, disk.access(t))
 }
 
 func TestTheVaultTheWindowShowsIsNamed(t *testing.T) {

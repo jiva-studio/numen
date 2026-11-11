@@ -23,22 +23,22 @@ type listenerControl interface {
 	closeAll()
 }
 
+// evictionTimer ends the timer that stops the idle plugins.
+type evictionTimer interface {
+	Stop()
+	IsRunning() bool
+}
+
 // Teardown stops the processes of the plugins: one on request, the idle ones on a timer, all of them
 // when the host enters safe mode, and all of them when the host shuts down.
 type Teardown struct {
 	mode      *Mode
 	sups      *supervision.Supervisors
 	stopper   *supervision.Stopper
+	evictor   evictionTimer
 	events    eventCloser
 	listeners listenerControl
 	report    func(error)
-}
-
-func newTeardown(
-	mode *Mode, sups *supervision.Supervisors, stopper *supervision.Stopper, events eventCloser,
-	listeners listenerControl, report func(error),
-) *Teardown {
-	return &Teardown{mode: mode, sups: sups, stopper: stopper, events: events, listeners: listeners, report: report}
 }
 
 // StopPlugin stops the process of the plugin, if one runs, and forgets its endpoint.
@@ -66,7 +66,7 @@ func (t *Teardown) SetSafeMode(enabled bool) {
 
 // TeardownAll shuts down all active plugin processes.
 func (t *Teardown) TeardownAll(ctx context.Context, gracePeriod time.Duration) error {
-	t.stopper.StopEvicting()
+	t.evictor.Stop()
 
 	firstErr := t.events.closeBus(ctx)
 
@@ -78,4 +78,9 @@ func (t *Teardown) TeardownAll(ctx context.Context, gracePeriod time.Duration) e
 		firstErr = err
 	}
 	return firstErr
+}
+
+// IsEvicting reports whether the idle plugins are stopped on a timer.
+func (t *Teardown) IsEvicting() bool {
+	return t.evictor.IsRunning()
 }

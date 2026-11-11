@@ -1,11 +1,10 @@
-package lifecycle
+package security
 
 import (
 	"slices"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -13,11 +12,12 @@ import (
 type Permissions struct {
 	mu        sync.Mutex
 	granted   []string
-	validator security.VaultPathValidator
+	validator VaultPathValidator
 }
 
-func newPermissions() Permissions {
-	return Permissions{validator: security.NewVaultPathValidator()}
+// NewPermissions returns the permissions of a plugin that holds none.
+func NewPermissions() Permissions {
+	return Permissions{validator: NewVaultPathValidator()}
 }
 
 // Set stores the security permissions declared by the plugin.
