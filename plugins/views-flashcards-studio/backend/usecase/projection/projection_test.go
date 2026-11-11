@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review/projection"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 // A projection reports the returning share for the requested days only and holds no value for

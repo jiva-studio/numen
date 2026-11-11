@@ -7,9 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 // Curve is the simulated progression of a preset across its target range.

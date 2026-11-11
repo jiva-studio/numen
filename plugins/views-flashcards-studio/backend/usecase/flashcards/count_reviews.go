@@ -5,9 +5,9 @@ import (
 	"maps"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cachefile"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cachefile"
 )
 
 // countedVersion is the shape of the cache file. A cache of another shape is

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
 )
 
 // model is a model whose reply is computed from the prompt by its script, and
@@ -60,7 +59,7 @@ func TestProofreadScan_PromptsPerPageAndOrdersCorrections(t *testing.T) {
 	if got.uncorrected != 0 || !got.isDone {
 		t.Errorf("result %+v", got)
 	}
-	if len(m.prompts) != 2 || m.instructions[0] != prompt.ScanInstruction {
+	if len(m.prompts) != 2 || m.instructions[0] != numbered.ScanInstruction {
 		t.Errorf("asked %d times under %q", len(m.prompts), m.instructions)
 	}
 }
@@ -120,7 +119,7 @@ func TestProofreadSpeech_UsesSpeechInstruction(t *testing.T) {
 	if !got.isDone || got.next != 3 || got.uncorrected != 0 {
 		t.Errorf("result %+v", got)
 	}
-	if len(m.prompts) != 1 || m.instructions[0] != prompt.SpeechInstruction {
+	if len(m.prompts) != 1 || m.instructions[0] != numbered.SpeechInstruction {
 		t.Fatalf("asked %d times under %q", len(m.prompts), m.instructions)
 	}
 	if !strings.HasPrefix(m.prompts[0], "The speech opens: word 0 word 1 word 2\n\n") {

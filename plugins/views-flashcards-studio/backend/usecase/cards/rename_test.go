@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
@@ -227,7 +226,7 @@ func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
 	if len(deck.Cards) != 1 {
 		t.Fatalf("cards = %+v", deck.Cards)
 	}
-	if !cardid.IsValid(deck.Cards[0].CardID) {
+	if !format.IsValidID(deck.Cards[0].CardID) {
 		t.Errorf("card id = %q, want the card given one", deck.Cards[0].CardID)
 	}
 	if deck.Cards[0].Heading != "Llama" {

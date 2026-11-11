@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
@@ -163,7 +162,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 		t.Fatalf("cards = %+v", deck.Cards)
 	}
 	for _, card := range deck.Cards {
-		if !cardid.IsValid(card.CardID) {
+		if !format.IsValidID(card.CardID) {
 			t.Errorf("%q carries %q, which is no card id", card.Heading, card.CardID)
 		}
 	}
@@ -205,7 +204,7 @@ func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
 		t.Errorf("a bare break was written into a file of carriage returns: %q", got)
 	}
-	if !cardid.IsValid(readDeck(t, vs, "decks/Crlf.md").Cards[0].CardID) {
+	if !format.IsValidID(readDeck(t, vs, "decks/Crlf.md").Cards[0].CardID) {
 		t.Errorf("no card id was written: %q", got)
 	}
 }
@@ -293,7 +292,7 @@ func TestACardWhoseCardModelCannotBeReadIsNotReprojected(t *testing.T) {
 	if deck.Cards[0].Heading != "Whatever a person typed" {
 		t.Errorf("heading = %q, want it left as it stands", deck.Cards[0].Heading)
 	}
-	if !cardid.IsValid(deck.Cards[0].CardID) {
+	if !format.IsValidID(deck.Cards[0].CardID) {
 		t.Errorf("card id = %q", deck.Cards[0].CardID)
 	}
 }

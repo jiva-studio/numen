@@ -12,11 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 func getPointing() map[string]string {

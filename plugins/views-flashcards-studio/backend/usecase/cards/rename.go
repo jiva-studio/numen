@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
@@ -291,7 +290,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 		return 0, err
 	}
 	// gomutants:disable-next-line BRANCH_IF reason="DeckFile.Whole does not fail on a deck that already passed OpenDeck and RenameField."
-	if _, err := f.Whole(delta, cardid.New); err != nil {
+	if _, err := f.Whole(delta, createCardID); err != nil {
 		return 0, err
 	}
 	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {

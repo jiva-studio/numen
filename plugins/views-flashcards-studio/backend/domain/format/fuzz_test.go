@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 )
 
@@ -52,7 +51,7 @@ func FuzzWhole(f *testing.F) {
 				len(was.Cards), len(now.Cards), body, out)
 		}
 		for i, card := range now.Cards {
-			if !cardid.IsValid(card.CardID) {
+			if !IsValidID(card.CardID) {
 				t.Fatalf("the card standing at %d carries %q, which is no card id\n now %q",
 					i, card.CardID, out)
 			}
@@ -82,10 +81,10 @@ func FuzzWhole(f *testing.F) {
 	})
 }
 
-func createIDs() func() cardid.ID {
+func createIDs() func() ID {
 	pos := 0
-	return func() cardid.ID {
+	return func() ID {
 		pos++
-		return cardid.ID(fmt.Sprintf("%010d", pos))
+		return ID(fmt.Sprintf("%010d", pos))
 	}
 }

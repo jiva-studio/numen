@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
@@ -83,7 +82,7 @@ func (u Write) createWholeBody(
 	if err != nil {
 		return "", nil, err
 	}
-	whole, provided := format.Whole(body, delta, cardid.New)
+	whole, provided := format.Whole(body, delta, createCardID)
 	return whole, provided, nil
 }
 

@@ -17,10 +17,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 func newStudiedNotes(cards int) map[string]string {

@@ -8,7 +8,6 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 )
 
@@ -44,8 +43,8 @@ func TestADeckContainingNoCardOfAMarkReturnsSo(t *testing.T) {
 
 func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
 	deck := format.Deck{Cards: []format.Card{
-		{CardID: cardid.ID("aaaaaaaaaa"), Heading: "ant"},
-		{CardID: cardid.ID("aaaaaaaaaa"), Heading: "bee"},
+		{CardID: ID("aaaaaaaaaa"), Heading: "ant"},
+		{CardID: ID("aaaaaaaaaa"), Heading: "bee"},
 	}}
 
 	if _, err := deck.Card("aaaaaaaaaa"); !errors.Is(err, format.ErrTwoCards) {

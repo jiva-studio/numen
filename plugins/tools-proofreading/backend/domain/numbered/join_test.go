@@ -1,13 +1,11 @@
-package reply
+package numbered
 
 import (
 	"testing"
-
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
-func makeBrokenBatch() numbered.Batch {
-	return numbered.Batch{Number: 1, IsJoinable: true, Lines: []numbered.Line{
+func makeBrokenBatch() Batch {
+	return Batch{Number: 1, IsJoinable: true, Lines: []Line{
 		{Number: 4, Last: 4, Text: "Krishna is Raj. Krishna is"},
 		{Number: 5, Last: 5, Text: "connected with Raj Dila."},
 		{Number: 6, Last: 6, Text: "Sure."},
@@ -101,7 +99,7 @@ func TestGetFixedLines_RejectsReplyOfOnlyMarks(t *testing.T) {
 }
 
 func TestARunContainsEverySentenceItsLinesCarry(t *testing.T) {
-	batch := numbered.Batch{Number: 1, IsJoinable: true, Lines: []numbered.Line{
+	batch := Batch{Number: 1, IsJoinable: true, Lines: []Line{
 		{Number: 4, Last: 4, Text: "we should go. And then"},
 		{Number: 5, Last: 5, Text: "the next day he left."},
 	}}

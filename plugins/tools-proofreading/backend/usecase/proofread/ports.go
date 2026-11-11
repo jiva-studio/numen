@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/reply"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // Host provides the host services a proofreading uses: the store folder for corrected texts, the
@@ -48,6 +48,6 @@ func DefaultConfig() Config {
 		BatchSize:       DefaultBatchSize,
 		Overlap:         DefaultOverlap,
 		InFlight:        DefaultInFlight,
-		MaxEditDistance: reply.MaxEditDistance,
+		MaxEditDistance: numbered.MaxEditDistance,
 	}
 }

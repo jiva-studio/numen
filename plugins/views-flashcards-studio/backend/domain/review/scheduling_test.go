@@ -148,12 +148,12 @@ func getScheduling() []string {
 }
 
 // A day is chosen in one function, and a caller wanting one evaluates to it. The
-// walk is over this package's own files, because AssignDueDay is where a day is
-// decided and the deciding is all here.
+// walk is over this package and the projection, because AssignDueDay is where a day is
+// decided and the deciding is all there.
 func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 	var calls []string
 	read, declared := 0, 0
-	for _, dir := range []string{".", "projection"} {
+	for _, dir := range []string{".", "../../usecase/projection"} {
 		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)

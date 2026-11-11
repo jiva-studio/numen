@@ -2,15 +2,13 @@ package format
 
 import (
 	"slices"
-
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 )
 
 // CardID is a card id given to a card that carried none, and where that card
 // written a card learns from this what to address it by.
 type CardID struct {
 	Card   int
-	CardID cardid.ID
+	CardID ID
 }
 
 // Whole is a deck's body with every card made whole: a card carrying no card id is given one,
@@ -19,7 +17,7 @@ type CardID struct {
 // card model is not in cardModels, or declares no field, or writes no heading for its first
 // field keeps its heading, but is still given a card id. The body has normalized line endings.
 func Whole(
-	body string, cardModels map[string]CardModel, createID func() cardid.ID,
+	body string, cardModels map[string]CardModel, createID func() ID,
 ) (string, []CardID) {
 	raw := []byte(body)
 	deck, spans := readDeck(createEmptyStat(), raw)

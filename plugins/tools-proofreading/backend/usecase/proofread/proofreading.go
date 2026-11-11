@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/segments"
 )
 
 var (
@@ -90,7 +89,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	}
 	defer func() { err = errors.Join(err, turn.Release()) }()
 
-	lines := segments.ReadLines(parts)
+	lines := numbered.ReadLines(parts)
 	task.TotalCount, task.CompletedCount = int64(len(lines)), 0
 	if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 		return Result{}, err
@@ -99,7 +98,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if err != nil {
 		return Result{}, err
 	}
-	corrected := segments.ApplyCorrections(parts, corrections)
+	corrected := numbered.ApplyCorrections(parts, corrections)
 
 	key := getVersionKey(source.GetID())
 	if err := host.WriteText(ctx, store, getFileName(key), corrected); err != nil {
@@ -157,10 +156,10 @@ func ReadParts(ctx context.Context, texts Texts, version domain.TextVersion) ([]
 func (p *Proofreading) correct(
 	ctx context.Context, parts []domain.TextSegment, lines []numbered.Line, task *host.Task,
 ) ([]numbered.Line, int, error) {
-	if segments.IsTimed(parts) {
+	if numbered.IsTimed(parts) {
 		return p.correctSpeech(ctx, lines, task)
 	}
-	return p.correctScan(ctx, segments.ReadPages(parts, lines), task)
+	return p.correctScan(ctx, numbered.ReadPages(parts, lines), task)
 }
 
 func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line, task *host.Task) ([]numbered.Line, int, error) {

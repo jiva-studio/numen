@@ -1,14 +1,12 @@
 // Package prompt builds the text and the instructions the model is asked about.
-package prompt
+package numbered
 
 import (
 	"strconv"
 	"strings"
-
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
-func BuildPrompt(batch numbered.Batch) string {
+func BuildPrompt(batch Batch) string {
 	var out strings.Builder
 	if batch.Context != "" {
 		out.WriteString(batch.Context)
@@ -18,9 +16,9 @@ func BuildPrompt(batch numbered.Batch) string {
 		if i > 0 {
 			out.WriteString(" ")
 		}
-		out.WriteString(numbered.Opens)
+		out.WriteString(Opens)
 		out.WriteString(strconv.Itoa(line.Number))
-		out.WriteString(numbered.Closes)
+		out.WriteString(Closes)
 		out.WriteString(line.Text)
 	}
 	return out.String()

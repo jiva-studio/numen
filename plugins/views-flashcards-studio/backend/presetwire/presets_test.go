@@ -7,8 +7,8 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 // Settings that name no rule count by the default rule at its default value.

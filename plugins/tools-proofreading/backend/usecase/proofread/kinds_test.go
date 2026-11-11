@@ -8,8 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/segments"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 func TestGetProofreadKindsAcceptsEveryKind(t *testing.T) {
@@ -20,7 +19,7 @@ func TestGetProofreadKindsAcceptsEveryKind(t *testing.T) {
 	}
 }
 
-func encodeSelector(t *testing.T, selector segments.Selector) domain.Selector {
+func encodeSelector(t *testing.T, selector numbered.Selector) domain.Selector {
 	t.Helper()
 	encoded, err := selector.Encode()
 	if err != nil {
@@ -32,7 +31,7 @@ func encodeSelector(t *testing.T, selector segments.Selector) domain.Selector {
 func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	s := newScene(t)
 	s.run.kinds = map[domain.TextKind]bool{"subtitle": true}
-	cue := encodeSelector(t, segments.Selector{T: []float64{0, 1}})
+	cue := encodeSelector(t, numbered.Selector{T: []float64{0, 1}})
 	subtitle := s.hold(t, speechID, talkPath, "subtitle", "subtitle", "the recording", []domain.TextSegment{
 		{Text: "a flywheel spinnig\n", Selector: cue},
 	})
@@ -52,7 +51,7 @@ func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	if live.Kind != ProofreadingKind || len(parts) != 1 || parts[0].Text != "a flywheel spinning\n" {
 		t.Errorf("the live version %+v reads %+v", live, parts)
 	}
-	if instruction := s.model.instructions[0]; instruction != prompt.SpeechInstruction {
+	if instruction := s.model.instructions[0]; instruction != numbered.SpeechInstruction {
 		t.Errorf("timed text was not asked about as speech: %q", instruction)
 	}
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 )
 
 // ErrNoSuchCard is returned when a change addresses a card id that no card of
@@ -82,7 +81,7 @@ func (f *DeckFile) Deck(ref domain.FileStat) Deck {
 // Whole makes every card of the file whole and reports the card ids it gave, which
 // is what Whole does to a body. The file keeps its own line endings.
 func (f *DeckFile) Whole(
-	cardModels map[string]CardModel, createID func() cardid.ID,
+	cardModels map[string]CardModel, createID func() ID,
 ) ([]CardID, error) {
 	body, provided := Whole(markdown.Normalize(f.doc.Body()), cardModels, createID)
 	if err := f.doc.SetBody(body); err != nil {
@@ -95,7 +94,7 @@ func (f *DeckFile) Whole(
 // contain is added at the end of the card, and the fields it contains keep their order. A card
 // id carried by two cards addresses neither: the result is ErrTwoCards. Writing the first field
 // rewrites the heading, which is done where the deck is made whole, not here.
-func (f *DeckFile) SetValue(card cardid.ID, field, value string) error {
+func (f *DeckFile) SetValue(card ID, field, value string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
 	if err != nil {
@@ -116,7 +115,7 @@ func (f *DeckFile) SetValue(card cardid.ID, field, value string) error {
 // RemoveValue removes one field from a card: its heading line and its value. The other fields
 // keep their order, and a card with no heading for that field yields ErrNoSuchValue. Removing
 // the first field rewrites the heading, which is done where the deck is made whole, not here.
-func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
+func (f *DeckFile) RemoveValue(card ID, field string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
 	if err != nil {
@@ -148,7 +147,7 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 // SetCardModel sets the card model link of a card. A card without a link
 // receives the link as the paragraph after its heading, and the values it
 // contains keep their position.
-func (f *DeckFile) SetCardModel(card cardid.ID, name string) error {
+func (f *DeckFile) SetCardModel(card ID, name string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
 	if err != nil {
@@ -163,7 +162,7 @@ func (f *DeckFile) SetCardModel(card cardid.ID, name string) error {
 
 // RemoveCard removes a card from the deck: its heading, its card model link
 // and every value. The content before and after the card is unchanged.
-func (f *DeckFile) RemoveCard(card cardid.ID) error {
+func (f *DeckFile) RemoveCard(card ID) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
 	if err != nil {
@@ -184,7 +183,7 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 	return f.doc.SpliceBody(head, to, content)
 }
 
-func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
+func (f *DeckFile) getCardSpan(body []byte, card ID) (cardSpan, error) {
 	_, spans := readDeck(createEmptyStat(), body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
 	pos := -1

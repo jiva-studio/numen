@@ -1,34 +1,34 @@
-package cardid_test
+package format_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 )
 
 func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 
-	minted := cardid.New()
-	if len(minted) != cardid.Length {
-		t.Errorf("id = %q, %d characters, want %d", minted, len(minted), cardid.Length)
+	minted := format.CreateID(readTestEntropy)
+	if len(minted) != format.IDLength {
+		t.Errorf("id = %q, %d characters, want %d", minted, len(minted), format.IDLength)
 	}
 	for _, c := range minted {
 		if !strings.ContainsRune(alphabet, c) {
 			t.Errorf("id = %q, and %q is outside the alphabet", minted, c)
 		}
 	}
-	if !cardid.IsValid(minted) {
+	if !format.IsValidID(minted) {
 		t.Errorf("a minted identifier is not one: %q", minted)
 	}
 }
 
 // Generated identifiers are distinct, so two of them are two cards.
 func TestTwoIdentifiersDiffer(t *testing.T) {
-	observed := map[cardid.ID]bool{}
+	observed := map[format.ID]bool{}
 	for range 100 {
-		minted := cardid.New()
+		minted := format.CreateID(readTestEntropy)
 		if observed[minted] {
 			t.Fatalf("%q was minted twice", minted)
 		}
@@ -39,7 +39,7 @@ func TestTwoIdentifiersDiffer(t *testing.T) {
 // An identifier is read as one only at that length and in that alphabet.
 // Anything else is not one, and the card carrying it is given one.
 func TestWhatIsNotAnIdentifier(t *testing.T) {
-	for name, s := range map[string]cardid.ID{
+	for name, s := range map[string]format.ID{
 		"nothing":       "",
 		"too short":     "k7m2xq9fz",
 		"too long":      "k7m2xq9fzpp",
@@ -56,7 +56,7 @@ func TestWhatIsNotAnIdentifier(t *testing.T) {
 		"an apostrophe": "k7m2xq9fz'",
 	} {
 		t.Run(name, func(t *testing.T) {
-			if cardid.IsValid(s) {
+			if format.IsValidID(s) {
 				t.Errorf("%q reads as an identifier", s)
 			}
 		})
@@ -76,7 +76,7 @@ func TestIsValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 		"too short":  "012345678",
 	} {
 		want := name == "first zero"
-		if cardid.IsValid(cardid.ID(s)) != want {
+		if format.IsValidID(format.ID(s)) != want {
 			t.Errorf("%s: %q got %v, want %v", name, s, !want, want)
 		}
 	}
@@ -88,7 +88,7 @@ func TestEveryCharacterOfTheAlphabetIsMinted(t *testing.T) {
 
 	observed := map[rune]bool{}
 	for range 3000 {
-		minted := cardid.New()
+		minted := format.CreateID(readTestEntropy)
 		for _, c := range minted {
 			observed[c] = true
 		}

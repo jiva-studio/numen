@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/model"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/usecase/proofread"
@@ -216,7 +215,7 @@ func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
 	if gotModel != "google/gemini-2.5-flash" {
 		t.Errorf("model = %q, want google/gemini-2.5-flash", gotModel)
 	}
-	if gotSystem != prompt.ScanInstruction {
+	if gotSystem != numbered.ScanInstruction {
 		t.Errorf("system instruction mismatch")
 	}
 }

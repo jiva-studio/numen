@@ -11,7 +11,6 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 )
 
 // The three heading levels a deck spends. A value may hold a heading below
@@ -71,7 +70,7 @@ const NoSection = -1
 // Card is one filled-in set of a card model's fields.
 type Card struct {
 	Heading       string
-	CardID        cardid.ID
+	CardID        ID
 	CardModelLink string
 	Preamble      string
 	Section       int
@@ -109,7 +108,7 @@ func (c Card) Value(field string) (string, bool) {
 // yields ErrNoSuchCard, and a deck holding two yields ErrTwoCards: both are
 // reported, and choosing automatically between them would guess which one the
 // author meant.
-func (d Deck) Card(carried cardid.ID) (Card, error) {
+func (d Deck) Card(carried ID) (Card, error) {
 	found := Card{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial found Card is overwritten before Card returns on success."
 		Heading: "", CardID: "", CardModelLink: "", Preamble: "", Section: 0, Values: nil,

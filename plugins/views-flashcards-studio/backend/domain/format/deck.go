@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 )
 
 // ReadDeck reads the body of a note as a deck, whichever note it is given: the frontmatter key
@@ -41,7 +40,7 @@ func isDeckHeadingLevel(level int) bool { return level == SectionLevel || level 
 // cardSpan is where one card and each of its values stand in the body.
 type cardSpan struct {
 	name     string
-	cardID   cardid.ID
+	cardID   ID
 	head     int
 	from     int
 	end      int
@@ -187,7 +186,7 @@ func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
 }
 
 func findDuplicateCardIDs(cs []Card) []Problem {
-	carried := map[cardid.ID]int{}
+	carried := map[ID]int{}
 	for _, c := range cs {
 		if c.CardID != "" {
 			carried[c.CardID]++

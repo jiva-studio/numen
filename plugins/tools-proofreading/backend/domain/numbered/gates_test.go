@@ -1,13 +1,11 @@
-package reply
+package numbered
 
 import (
 	"testing"
-
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
-func batch() numbered.Batch {
-	return numbered.Batch{Number: 7, Lines: []numbered.Line{
+func batch() Batch {
+	return Batch{Number: 7, Lines: []Line{
 		{Number: 10, Text: "the Sodërby gardin hcdge. "},
 		{Number: 11, Text: "Sodërby Tradgard's Ordbok "},
 		{Number: 12, Text: "TRADGARD ORDBOK "},
@@ -17,11 +15,11 @@ func batch() numbered.Batch {
 }
 
 func TestGetFixedLines_RejectsReplyContainingMarker(t *testing.T) {
-	reply := "10|the " + numbered.Opens + "12" + numbered.Closes + "Södërby garden hedge."
+	reply := "10|the " + Opens + "12" + Closes + "Södërby garden hedge."
 
 	fixed, _, replyVal := GetFixedLines(batch(), reply, MaxEditDistance)
 	if replyVal {
-		t.Errorf("a reply carrying %s was taken as an answer", numbered.Opens)
+		t.Errorf("a reply carrying %s was taken as an answer", Opens)
 	}
 	if fixed != nil {
 		t.Errorf("a rejected batch gave back %v", fixed)
@@ -190,7 +188,7 @@ func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
 
 // A line whose own text opens with digits is a row whose number was left out.
 func TestGetFixedLines_RejectsRowWhenNumberIsTextDigits(t *testing.T) {
-	dated := numbered.Batch{Number: 3, Lines: []numbered.Line{
+	dated := Batch{Number: 3, Lines: []Line{
 		{Number: 1, Text: "1 January 1970 was a Thursday"},
 	}}
 

@@ -1,11 +1,9 @@
-package prompt
-
-import "github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+package numbered
 
 // ScanInstruction is the model prompt for proofreading a scan.
 const ScanInstruction = `You are proofreading text a machine read off the pages of a printed book.
 
-The text is one page as prose, with every printed line numbered: ` + numbered.Opens + `12` + numbered.Closes + ` opens the
+The text is one page as prose, with every printed line numbered: ` + Opens + `12` + Closes + ` opens the
 line numbered 12, and that line runs to the next mark.
 
 Answer with the lines you would put right, one to a line:
@@ -17,7 +15,7 @@ Answer with the lines you would put right, one to a line:
 - Every word stays in the line it is in. Nothing moves from one line to
   another, and nothing is added that the page does not print.
 - A line is answered for once.
-- Do not write ` + numbered.Opens + ` or ` + numbered.Closes + ` in your answer.
+- Do not write ` + Opens + ` or ` + Closes + ` in your answer.
 - Do not translate, rephrase, repunctuate or improve a line that was read
   correctly.
 - A line you would leave alone is a line you do not answer with. A page you
@@ -26,7 +24,7 @@ Answer with the lines you would put right, one to a line:
 // SpeechInstruction is the model prompt for proofreading a transcript.
 const SpeechInstruction = `You are proofreading text a machine heard in a recording.
 
-The text is speech as prose, with every stretch of it numbered: ` + numbered.Opens + `12` + numbered.Closes + ` opens the
+The text is speech as prose, with every stretch of it numbered: ` + Opens + `12` + Closes + ` opens the
 line numbered 12, and that line runs to the next mark.
 
 What the recording holds is before the first mark: how the speech opens,
@@ -55,7 +53,7 @@ as the first and the last of them:
   right or leave it as it is, and do the same with it every time it is said.
 - Nothing is added that was not said, and no word moves to a line outside the
   run it is answered in.
-- Do not write ` + numbered.Opens + ` or ` + numbered.Closes + ` in your answer.
+- Do not write ` + Opens + ` or ` + Closes + ` in your answer.
 - Do not translate, rephrase, summarize or improve speech that was heard
   correctly. Every hesitation, repetition and false start that was transcribed
   stays.

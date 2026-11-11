@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/segments"
 )
 
 const (
@@ -76,7 +75,7 @@ func (s *scene) hold(t *testing.T, owner, path, key string, kind domain.TextKind
 func (s *scene) holdScan(t *testing.T) domain.TextVersion {
 	t.Helper()
 	rect := [][4]float32{{0.1, 0.1, 0.9, 0.2}}
-	first, second := encodeSelector(t, segments.Selector{Page: 1, Boxes: rect}), encodeSelector(t, segments.Selector{Page: 2, Boxes: rect})
+	first, second := encodeSelector(t, numbered.Selector{Page: 1, Boxes: rect}), encodeSelector(t, numbered.Selector{Page: 2, Boxes: rect})
 	return s.hold(t, ocrID, scanPath, "recognition", kindRecognition, "the scan", []domain.TextSegment{
 		{Text: "A flywheel keeps energy ", Heading: "Storage", Selector: first},
 		{Text: "in a rotor spinnig in a vacum.\n\n", Selector: first},
@@ -88,7 +87,7 @@ func (s *scene) holdTalk(t *testing.T, lines ...string) domain.TextVersion {
 	t.Helper()
 	parts := make([]domain.TextSegment, len(lines))
 	for i, line := range lines {
-		parts[i] = domain.TextSegment{Text: line + "\n", Selector: encodeSelector(t, segments.Selector{T: []float64{float64(i), float64(i + 1)}})}
+		parts[i] = domain.TextSegment{Text: line + "\n", Selector: encodeSelector(t, numbered.Selector{T: []float64{float64(i), float64(i + 1)}})}
 	}
 	return s.hold(t, speechID, talkPath, "heard", kindTranscript, "the recording", parts)
 }

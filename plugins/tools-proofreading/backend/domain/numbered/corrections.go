@@ -1,16 +1,15 @@
-package segments
+package numbered
 
 import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // ApplyCorrections puts the corrected lines in the place of the segments they cover. A line that
 // joins a run makes one segment that takes the selector of the whole run.
-func ApplyCorrections(parts []domain.TextSegment, corrections []numbered.Line) []domain.TextSegment {
-	byLine := make(map[int]numbered.Line, len(corrections))
+func ApplyCorrections(parts []domain.TextSegment, corrections []Line) []domain.TextSegment {
+	byLine := make(map[int]Line, len(corrections))
 	for _, line := range corrections {
 		byLine[line.Number] = line
 	}

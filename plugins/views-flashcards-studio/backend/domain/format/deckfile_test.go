@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 )
 
@@ -111,7 +110,7 @@ const (
 	compost = "zpqrstvwxy"
 )
 
-func setValue(t *testing.T, raw string, card cardid.ID, field, value string) string {
+func setValue(t *testing.T, raw string, card ID, field, value string) string {
 	t.Helper()
 	f, err := format.OpenDeck([]byte(raw))
 	if err != nil {
@@ -169,7 +168,7 @@ func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
 	}
 }
 
-func removeValue(t *testing.T, raw string, card cardid.ID, field string) string {
+func removeValue(t *testing.T, raw string, card ID, field string) string {
 	t.Helper()
 	f, err := format.OpenDeck([]byte(raw))
 	if err != nil {
@@ -673,8 +672,8 @@ func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n" +
 		"\n## Vicuña\n\n[[Animal]]\n\n### Name\n\nVicuña\n"
-	ids := []cardid.ID{"zpqrstvwxy", "m9n8b7v6c5"}
-	createID := func() cardid.ID {
+	ids := []ID{"zpqrstvwxy", "m9n8b7v6c5"}
+	createID := func() ID {
 		out := ids[0]
 		ids = ids[1:]
 		return out
@@ -784,7 +783,7 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 				t.Fatalf("change: %v", err)
 			}
 			content := file.Body()
-			for _, cardID := range []cardid.ID{alpaca, vicuna} {
+			for _, cardID := range []ID{alpaca, vicuna} {
 				was := cardRun(t, getRough(), cardID)
 				if !strings.Contains(content, was) {
 					t.Errorf("the card of %s was rewritten\n was %q\n now %q",
@@ -795,7 +794,7 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 	}
 }
 
-func cardRun(t *testing.T, body string, card cardid.ID) string {
+func cardRun(t *testing.T, body string, card ID) string {
 	t.Helper()
 	from := strings.Index(body, "## "+getCardHeading(t, body, card))
 	if from < 0 {
@@ -808,7 +807,7 @@ func cardRun(t *testing.T, body string, card cardid.ID) string {
 	return rest
 }
 
-func getCardHeading(t *testing.T, body string, card cardid.ID) string {
+func getCardHeading(t *testing.T, body string, card ID) string {
 	t.Helper()
 	for line := range strings.SplitSeq(markdown.Normalize(body), "\n") {
 		if strings.HasPrefix(line, "## ") && strings.HasSuffix(line, "^"+string(card)) {
@@ -863,7 +862,7 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 	raw := "---\ntype: deck\n\n# Fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
 		"## Bare\n\n[[Animal]]\n\n### Name\n\nBare\n"
 	cardModels := map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}}
-	createID := func() cardid.ID { return "m9n8b7v6c5" }
+	createID := func() ID { return "m9n8b7v6c5" }
 
 	for name, change := range map[string]func(*format.DeckFile) error{
 		"whole": func(f *format.DeckFile) error {
@@ -916,7 +915,7 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 func TestDeckFileWholeWritesTheMarksItProduces(t *testing.T) {
 	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
 	provided, err := f.Whole(map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}},
-		func() cardid.ID { return "m9n8b7v6c5" })
+		func() ID { return "m9n8b7v6c5" })
 	if err != nil {
 		t.Fatalf("whole: %v", err)
 	}
@@ -1480,7 +1479,7 @@ func wholeAnimals() map[string]format.CardModel {
 	return map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}}
 }
 
-func createWholeID() cardid.ID { return "zpqrstvwxy" }
+func createWholeID() ID { return "zpqrstvwxy" }
 
 // A heading that has fallen out of step with the card's first field is written
 // again from the first line of that field, with the card id the card carries.

@@ -1,16 +1,14 @@
-package prompt
+package numbered
 
 import (
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // The digest precedes the first line of the question, and the lines follow it
 // unchanged.
 func TestTheDigestExistsBeforeTheFirstLine(t *testing.T) {
-	batch := numbered.Batch{Number: 0, IsJoinable: true, Context: "The speech opens: Ganaka spoke.", Lines: []numbered.Line{
+	batch := Batch{Number: 0, IsJoinable: true, Context: "The speech opens: Ganaka spoke.", Lines: []Line{
 		{Number: 0, Text: "Ganaka spoke"},
 		{Number: 1, Text: "to the assembly."},
 	}}
@@ -19,16 +17,16 @@ func TestTheDigestExistsBeforeTheFirstLine(t *testing.T) {
 	if !strings.HasPrefix(request, "The speech opens: Ganaka spoke.\n\n") {
 		t.Fatalf("the question is %q", request)
 	}
-	if !strings.HasSuffix(request, numbered.Opens+"0"+numbered.Closes+"Ganaka spoke "+
-		numbered.Opens+"1"+numbered.Closes+"to the assembly.") {
+	if !strings.HasSuffix(request, Opens+"0"+Closes+"Ganaka spoke "+
+		Opens+"1"+Closes+"to the assembly.") {
 		t.Errorf("the question is %q", request)
 	}
 }
 
 // A batch without a digest is the lines alone.
 func TestABatchWithNoDigestIsTheLinesAlone(t *testing.T) {
-	batch := numbered.Batch{Number: 0, Lines: []numbered.Line{{Number: 0, Text: "Ganaka spoke"}}}
-	if request := BuildPrompt(batch); request != numbered.Opens+"0"+numbered.Closes+"Ganaka spoke" {
+	batch := Batch{Number: 0, Lines: []Line{{Number: 0, Text: "Ganaka spoke"}}}
+	if request := BuildPrompt(batch); request != Opens+"0"+Closes+"Ganaka spoke" {
 		t.Errorf("the question is %q", request)
 	}
 }
@@ -57,8 +55,8 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 		for _, word := range []string{
 			"12|the corrected line",
 			"A line you would leave alone is a line you do not answer with.",
-			numbered.Opens,
-			numbered.Closes,
+			Opens,
+			Closes,
 		} {
 			if !strings.Contains(one, word) {
 				t.Errorf("an instruction does not say %q", word)

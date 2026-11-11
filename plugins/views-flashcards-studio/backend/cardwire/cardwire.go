@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 )
@@ -204,7 +203,7 @@ func newCards(cs []*api.Card) []format.Card {
 	for _, c := range cs {
 		card := format.Card{
 			Heading:       c.Heading,
-			CardID:        cardid.ID(c.CardID),
+			CardID:        format.ID(c.CardID),
 			Section:       sectionOf(c.SectionIndex),
 			CardModelLink: c.CardModelLink,
 			Preamble:      c.Preamble,

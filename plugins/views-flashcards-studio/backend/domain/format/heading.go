@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 )
 
 // HeadingRunes is how many characters a card's heading is cut to. It is counted
@@ -20,7 +19,7 @@ const caret = "^"
 // card id it carries. A card id is the last token, separated from the text by one space, and
 // only at the length and in the alphabet card ids are written in. Anything else at the end is
 // heading text.
-func ReadHeading(heading string) (text string, carried cardid.ID) {
+func ReadHeading(heading string) (text string, carried ID) {
 	pos := strings.LastIndex(heading, " ")
 	last := heading
 	// gomutants:disable-next-line INTEGER_DECREMENT reason="strings.LastIndex returns -1 when not found and >= 0 when found."
@@ -28,18 +27,18 @@ func ReadHeading(heading string) (text string, carried cardid.ID) {
 		last = heading[pos+1:]
 	}
 	content, found := strings.CutPrefix(last, caret)
-	if !found || !cardid.IsValid(cardid.ID(content)) {
+	if !found || !IsValidID(ID(content)) {
 		return heading, ""
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="When pos == 0, heading[:0] is the empty string."
 	if pos < 0 {
-		return "", cardid.ID(content)
+		return "", ID(content)
 	}
-	return heading[:pos], cardid.ID(content)
+	return heading[:pos], ID(content)
 }
 
 // WriteHeading is the heading a card of this text and this card id is placed under.
-func WriteHeading(text string, carried cardid.ID) string {
+func WriteHeading(text string, carried ID) string {
 	switch {
 	case carried == "":
 		return text

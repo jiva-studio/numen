@@ -5,8 +5,6 @@ import (
 	"sort"
 
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/reply"
 )
 
 // textResult is what proofreading a request came to.
@@ -19,13 +17,13 @@ type textResult struct {
 
 func getScanDistance(maxDistance float64) float64 {
 	if maxDistance <= 0 {
-		return reply.MaxEditDistance
+		return numbered.MaxEditDistance
 	}
 	return maxDistance
 }
 
 func proofreadScan(ctx context.Context, ask AskModel, pages []numbered.Batch, maxDistance float64) (textResult, error) {
-	answers, err := askBatches(ctx, ask, prompt.ScanInstruction, pages, getScanDistance(maxDistance))
+	answers, err := askBatches(ctx, ask, numbered.ScanInstruction, pages, getScanDistance(maxDistance))
 	if err != nil {
 		return textResult{}, err
 	}
@@ -67,20 +65,20 @@ func proofreadSpeech(
 	about := numbered.DescribeSpeech(cues)
 
 	main := setContext(numbered.SpeechBatches(window, size, overlap), about)
-	answers, err := askBatches(ctx, ask, prompt.SpeechInstruction, main, 0)
+	answers, err := askBatches(ctx, ask, numbered.SpeechInstruction, main, 0)
 	if err != nil {
 		return textResult{}, err
 	}
-	_, past := reply.GatherAnswers(answers)
+	_, past := numbered.GatherAnswers(answers)
 	batchedContext := setContext(numbered.CutBatches(window, size, overlap, past), about)
-	more, err := askBatches(ctx, ask, prompt.SpeechInstruction, batchedContext, 0)
+	more, err := askBatches(ctx, ask, numbered.SpeechInstruction, batchedContext, 0)
 	if err != nil {
 		return textResult{}, err
 	}
 	answers = append(answers, more...)
 
-	placed, _ := reply.GatherAnswers(answers)
-	out := textResult{corrections: reply.SortLines(placed), uncorrected: 0, next: 0, isDone: false}
+	placed, _ := numbered.GatherAnswers(answers)
+	out := textResult{corrections: numbered.SortLines(placed), uncorrected: 0, next: 0, isDone: false}
 	for _, one := range answers {
 		if !one.IsAnswer {
 			out.uncorrected++
@@ -110,14 +108,14 @@ func getLineIndex(lines []numbered.Line, number int) int {
 
 func askBatches(
 	ctx context.Context, ask AskModel, instruction string, batches []numbered.Batch, maxDistance float64,
-) ([]reply.Answer, error) {
-	out := make([]reply.Answer, 0, len(batches))
+) ([]numbered.Answer, error) {
+	out := make([]numbered.Answer, 0, len(batches))
 	for _, batch := range batches {
-		text, err := ask(ctx, instruction, prompt.BuildPrompt(batch))
+		text, err := ask(ctx, instruction, numbered.BuildPrompt(batch))
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, reply.ReadAnswer(batch, text, maxDistance))
+		out = append(out, numbered.ReadAnswer(batch, text, maxDistance))
 	}
 	return out, nil
 }

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 )
 
@@ -396,7 +395,7 @@ func TestAFieldThatIsNotAWordIsSkippedAndTheFieldsAfterItStand(t *testing.T) {
 func TestReadHeading(t *testing.T) {
 	for name, one := range map[string]struct {
 		heading, text string
-		cardID        cardid.ID
+		cardID        ID
 	}{
 		"a text and a card id": {
 			"Compost, what is it made of ^k7m2xq9fzp", "Compost, what is it made of", "k7m2xq9fzp",
@@ -431,7 +430,7 @@ func TestReadHeading(t *testing.T) {
 func TestWriteHeading(t *testing.T) {
 	for name, one := range map[string]struct {
 		text   string
-		cardID cardid.ID
+		cardID ID
 		want   string
 	}{
 		"both":         {"Compost", "k7m2xq9fzp", "Compost ^k7m2xq9fzp"},

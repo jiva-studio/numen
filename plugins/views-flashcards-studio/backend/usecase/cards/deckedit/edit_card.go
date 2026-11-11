@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 )
 
@@ -22,7 +21,7 @@ func (u EditCard) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardID, cardModel string, values []format.Value,
 ) (EditResult, error) {
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
-		card := cardid.ID(cardID)
+		card := format.ID(cardID)
 		if _, err := findCard(contents.Body.Cards, cardID); err != nil {
 			return err
 		}
