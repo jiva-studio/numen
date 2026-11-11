@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // API is what the page may ask of the window itself.
@@ -28,7 +28,7 @@ type API struct {
 	GetPluginDir         func(id string) (string, bool)
 	PluginServices       PluginServices
 	Agent                numenv1connect.AgentServiceHandler
-	ListVaults           func() ([]domain.Vault, error)
+	Vaults               *registry.List
 	ResolveLinks         *query.ResolveLinks
 
 	subscribers changeSubscribers

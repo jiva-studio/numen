@@ -10,12 +10,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/packagecache"
 )
 
@@ -49,8 +51,7 @@ func GetConfigFor(target string) container.Config {
 	host.SetStorage(cacheRoot, dataRoot)
 	cfg := container.NewConfig(container.Config{
 		PluginHost:    host,
-		PluginDirs:    dirs,
-		PluginCatalog: getCatalogConfig(target, dirs),
+		PluginCatalog: getCatalogConfig(target, dirs, host),
 		KeyStore:      getKeyStore(),
 		Resources:     container.NewResources(),
 	})
@@ -71,8 +72,9 @@ func getKeyStore() *keychain.Store {
 
 func getDevPluginsDirs() []string { return []string{"plugins"} }
 
-func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
-	config := catalog.Config{Target: target, Sources: []catalog.Source{getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
+func getCatalogConfig(target string, pluginDirs []string, host *container.PluginHost) catalog.Config {
+	local := localsource.New(slices.Clone(pluginDirs), localsource.SettingsFunc(host.Runtime.IsPluginEnabled))
+	config := catalog.Config{Target: target, Sources: []catalog.Source{local, getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
 	if configDir, err := os.UserConfigDir(); err == nil {
 		config.InstallDir = filepath.Join(configDir, "numen", "plugins")
 	}

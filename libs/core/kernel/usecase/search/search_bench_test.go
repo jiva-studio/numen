@@ -104,7 +104,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: dbPath},
 	})
-	cfg.Chunks.Set(maxTokens)
+	cfg.Resources.Chunks.Set(maxTokens)
 	db, err := container.OpenIndex(cfg, ctx)
 	if err != nil {
 		b.Fatal(err)

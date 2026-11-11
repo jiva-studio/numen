@@ -37,3 +37,10 @@ func (l vaultList) ListVaults(
 	}
 	return connect.NewResponse(out), nil
 }
+
+func (a *API) listVaults() func() ([]domain.Vault, error) {
+	if a.Vaults == nil {
+		return nil
+	}
+	return a.Vaults.Execute
+}

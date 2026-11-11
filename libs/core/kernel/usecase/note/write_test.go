@@ -188,17 +188,17 @@ func TestWrite_SmallerWriterLimitRejectsDefaultAllowed(t *testing.T) {
 	}
 }
 
-func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
+func TestAWriteUsesThePortsItIsGiven(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	updated := 0
-	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, testsupport.NewClock()).
-		WithReaders(vaultreader.Readers{}).
-		WithWriters(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}).
-		WithIndex(func(context.Context, domain.Vault, []string) error {
+	w := note.NewWrite(
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		func(context.Context, domain.Vault, []string) error {
 			updated++
 			return nil
-		})
+		}, testsupport.NewClock(),
+	)
 
 	if _, err := w.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", domain.FileStat{}); err != nil {
 		t.Fatal(err)
@@ -207,7 +207,7 @@ func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 		t.Errorf("the note was not written:\n%s", body)
 	}
 	if updated != 1 {
-		t.Errorf("the replaced index was called %d times, want 1", updated)
+		t.Errorf("the index was called %d times, want 1", updated)
 	}
 }
 

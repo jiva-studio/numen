@@ -12,10 +12,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // Settings reads the settings file; an unconfigured installation returns the default settings.
@@ -29,7 +32,7 @@ func DefaultSettings() settingsadapter.File { return defaultSettings() }
 
 // Themes returns the themes service the window offers.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
-	return settingsThemes(settingsOf(c), say)
+	return settingsThemes(settingsOf(c), Scales{}, say)
 }
 
 // The methods below are the wiring the tests of this package reach from outside it.
@@ -78,3 +81,24 @@ func (c Config) VaultWatcher() vaultport.VaultWatcher { return vaultWatcher(vaul
 
 // AbsentBinding is the binding of a plugin host that runs nothing.
 func AbsentBinding() pluginport.PluginBinding { return bridge.AbsentRuntime{} }
+
+// NotesShowingMoves is Notes where each move of a note in the vault the window shows also reaches view, so a
+// view showing a note under its old name switches to the new name.
+func NotesShowingMoves(
+	c Config, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
+) note.Scenarios {
+	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: note.OpenGate{}})
+}
+
+func embedderReady(c searchWiring) bool {
+	_, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)
+	return err == nil
+}
+
+func notifyHost(c settingsWiring, batch []settingsdomain.Setting) { notifyPlugins(c).Execute(batch) }
+
+func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File, error) {
+	return settingsStore(c).ReadUncheckedAt(path)
+}
+
+func fileMovers(c vaultWiring) vaultport.FileMovers { return vaultWriters(c) }

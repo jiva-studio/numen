@@ -38,17 +38,17 @@ func getShownVault(window Vault) (domain.Vault, error) {
 
 // Handler answers NoteService. Each question it answers is held by one of the parts it is made of.
 type Handler struct {
-	*Prose
-	*Outline
-	*Links
-	*Connections
+	proseCalls
+	outlineCalls
+	linksCalls
+	connectionsCalls
 
 	edits Edits
 }
 
 // NewHandler is the handler of NoteService made of its parts.
 func NewHandler(edits Edits, prose *Prose, outline *Outline, links *Links, connections *Connections) *Handler {
-	return &Handler{Prose: prose, Outline: outline, Links: links, Connections: connections, edits: edits}
+	return &Handler{proseCalls: prose, outlineCalls: outline, linksCalls: links, connectionsCalls: connections, edits: edits}
 }
 
 // Prose reads, writes, creates and renames notes.

@@ -46,17 +46,17 @@ type ReadWholeVault struct {
 	vectors VectorEmbedder
 
 	Unembedded error
+}
 
-	OnVaultFound func(domain.Vault, error)
-
-	OnNotesProgress func(vaultreading.ScanResult)
-
-	OnTextsProgress func(vaultreading.IndexResult)
-
+// Reporting is what one read reports to its caller, and the sources it leaves out. A nil function
+// reports nothing and leaves out nothing. OnVaultFound receives the vault and the reason it is not embedded.
+type Reporting struct {
+	OnVaultFound      func(domain.Vault, error)
+	OnNotesProgress   func(vaultreading.ScanResult)
+	OnTextsProgress   func(vaultreading.IndexResult)
 	OnVectorsProgress func(vaultreading.EmbedResult)
-
-	IsTextSkipped   func(path string) bool
-	IsVectorSkipped func(path, hash string) bool
+	IsTextSkipped     func(path string) bool
+	IsVectorSkipped   func(path, hash string) bool
 }
 
 // NewReadWholeVault is the three passes, in the order they stand in: the notes
@@ -70,14 +70,10 @@ func NewReadWholeVaultByName(find VaultFinding, prepare VaultPreparing) ReadWhol
 	return ReadWholeVault{find: find, prepare: prepare}
 }
 
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u ReadWholeVault) WithFind(find VaultFinding) ReadWholeVault {
-	u.find = find
-	return u
-}
-
 // ExecuteByName resolves the vault and reads the whole vault.
-func (u ReadWholeVault) ExecuteByName(ctx context.Context, nameOrPath string) (domain.Vault, ReadWholeVaultResult, error) {
+func (u ReadWholeVault) ExecuteByName(
+	ctx context.Context, nameOrPath string, reporting Reporting,
+) (domain.Vault, ReadWholeVaultResult, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, ReadWholeVaultResult{}, err
@@ -91,18 +87,12 @@ func (u ReadWholeVault) ExecuteByName(ctx context.Context, nameOrPath string) (d
 		if prepared.Unembedded == nil {
 			prepared.Unembedded = u.Unembedded
 		}
-		prepared.OnVaultFound = u.OnVaultFound
-		prepared.OnNotesProgress = u.OnNotesProgress
-		prepared.OnTextsProgress = u.OnTextsProgress
-		prepared.OnVectorsProgress = u.OnVectorsProgress
-		prepared.IsTextSkipped = u.IsTextSkipped
-		prepared.IsVectorSkipped = u.IsVectorSkipped
 		runner = prepared
 	}
-	if runner.OnVaultFound != nil {
-		runner.OnVaultFound(v, runner.Unembedded)
+	if reporting.OnVaultFound != nil {
+		reporting.OnVaultFound(v, runner.Unembedded)
 	}
-	res, err := runner.Execute(ctx, v)
+	res, err := runner.Execute(ctx, v, reporting)
 	return v, res, err
 }
 
@@ -115,16 +105,16 @@ type ReadWholeVaultResult struct {
 }
 
 // Execute reads the whole vault, in the order the three passes stand in.
-func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault) (ReadWholeVaultResult, error) {
+func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault, reporting Reporting) (ReadWholeVaultResult, error) {
 	var out ReadWholeVaultResult
 
-	notes, err := u.notes.ScanWithProgress(ctx, v, u.OnNotesProgress)
+	notes, err := u.notes.ScanWithProgress(ctx, v, reporting.OnNotesProgress)
 	out.Notes = notes
 	if err != nil {
 		return out, fmt.Errorf("reading the notes of %s: %w", v.Name, err)
 	}
 
-	texts, read := u.IndexTexts(ctx, v)
+	texts, read := u.IndexTexts(ctx, v, reporting)
 	out.Texts = texts
 	// A context that has ended ends the whole pass, and what stopped the texts
 	// is what stopped it.
@@ -132,14 +122,14 @@ func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault) (ReadWholeV
 		return out, read
 	}
 
-	vectors, made := u.MakeVectors(ctx, v)
+	vectors, made := u.MakeVectors(ctx, v, reporting)
 	out.Vectors = vectors
 	return out, errors.Join(read, made)
 }
 
 // IndexTexts cuts the live text version of every file of the vault that has one.
-func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (vaultreading.IndexResult, error) {
-	res, err := u.texts.IndexWithProgress(ctx, v, u.OnTextsProgress, u.IsTextSkipped)
+func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault, reporting Reporting) (vaultreading.IndexResult, error) {
+	res, err := u.texts.IndexWithProgress(ctx, v, reporting.OnTextsProgress, reporting.IsTextSkipped)
 	if err != nil {
 		return res, fmt.Errorf("indexing the file texts of %s: %w", v.Name, err)
 	}
@@ -147,8 +137,8 @@ func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (vaultre
 }
 
 // MakeVectors embeds every chunk that lacks a vector.
-func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (vaultreading.EmbedResult, error) {
-	res, err := u.vectors.EmbedWithProgress(ctx, v, u.OnVectorsProgress, u.IsVectorSkipped)
+func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault, reporting Reporting) (vaultreading.EmbedResult, error) {
+	res, err := u.vectors.EmbedWithProgress(ctx, v, reporting.OnVectorsProgress, reporting.IsVectorSkipped)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)
 	}

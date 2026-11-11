@@ -47,8 +47,8 @@ type producer struct {
 	isSkipped       func(path, hash string) bool
 }
 
-func newProducer(u Embed) producer {
-	return producer{chunks: u.chunks, vectors: u.vectors, batchCharacters: u.BatchCharacters, isSkipped: u.IsSkipped}
+func newProducer(u Embed, isSkipped func(path, hash string) bool) producer {
+	return producer{chunks: u.chunks, vectors: u.vectors, batchCharacters: u.BatchCharacters, isSkipped: isSkipped}
 }
 
 func (u producer) produceBatches(

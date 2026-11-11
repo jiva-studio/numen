@@ -96,7 +96,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	texts, cancel := newTaskCancel(ctx)
 	defer cancel.stop()
 	var current currentSources
-	making.OnTextsProgress = func(res vaultreading.IndexResult) {
+	reporting := Reporting{IsTextSkipped: p.worker.skips.isTextSkipped, OnTextsProgress: func(res vaultreading.IndexResult) {
 		if res.CurrentSource != "" {
 			current.set([]string{res.CurrentSource})
 		}
@@ -108,10 +108,10 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 			Total:  int64(res.Seen),
 			Cancel: cancel.request,
 		})
-	}
+	}}
 
 	events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, Cancel: cancel.request})
-	res, read := making.IndexTexts(texts, p.v)
+	res, read := making.IndexTexts(texts, p.v, reporting)
 	switch {
 	case read == nil:
 		if res.Extracted > 0 {
@@ -257,16 +257,16 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	items, cancel := newTaskCancel(items)
 	defer cancel.stop()
 	var current currentSources
-	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
+	reporting := Reporting{IsVectorSkipped: p.worker.skips.isVectorSkipped, OnVectorsProgress: func(res vaultreading.EmbedResult) {
 		current.set(getEmbeddingSources(res))
 		pos := work.Task{ID: work.MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {
 			pos.Count, pos.Total = int64(res.Embedded), plan.getTotal(res)
 		}
 		events.ReportTask(pos)
-	}
+	}}
 
-	switch res, err := making.MakeVectors(items, p.v); {
+	switch res, err := making.MakeVectors(items, p.v, reporting); {
 	case err == nil:
 		p.worker.skips.setSkippedChunks(res.Skipped, plan.generation)
 		events.FinishTask(work.MakingVectors)

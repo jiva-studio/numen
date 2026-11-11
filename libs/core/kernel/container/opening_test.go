@@ -29,7 +29,7 @@ func getNote() map[string]string {
 func TestANoteSavedBelowTheWalkIsReadAgain(t *testing.T) {
 	cfg, db, v := openVault(t, getNote())
 	opening := container.VaultOpener(cfg, db)
-	open := opening.Begin(t.Context(), v)
+	open := opening.Begin(t.Context(), v, nil, nil)
 
 	// Written through UpdateIndex while the walk is running, as the window does when
 	// the user saves.
@@ -55,7 +55,7 @@ func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 
 	target := makeGatedReaders()
 	opening := cfg.VaultOpenerWith(db, target, cfg.VaultWatcher())
-	open := opening.Begin(t.Context(), v)
+	open := opening.Begin(t.Context(), v, nil, nil)
 
 	// The first walk completes, and the second is held while it carries the
 	// note's old bytes.
@@ -95,7 +95,7 @@ func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 // A vault that cannot be watched is still opened, and the error is reported.
 func TestAVaultThatCannotBeWatchedIsOpenedAndReturnsSo(t *testing.T) {
 	cfg, db, v := openVault(t, getNote())
-	open := cfg.VaultOpenerWith(db, container.VaultReaders(cfg), refusing{}).Begin(t.Context(), v)
+	open := cfg.VaultOpenerWith(db, container.VaultReaders(cfg), refusing{}).Begin(t.Context(), v, nil, nil)
 
 	if open.GetUnwatchedReason() == nil {
 		t.Fatal("a vault nobody can follow says nothing about it")
@@ -120,9 +120,8 @@ func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
 	changesCh := make(chan vault.VaultChanges, 8)
-	opening.Told = func(m vault.VaultChanges) { changesCh <- m }
 
-	open := opening.Begin(t.Context(), v)
+	open := opening.Begin(t.Context(), v, func(m vault.VaultChanges) { changesCh <- m }, nil)
 	go open.Run(t.Context())
 
 	walked := make(chan error, 1)

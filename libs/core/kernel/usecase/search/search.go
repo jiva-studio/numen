@@ -109,12 +109,6 @@ func NewByName(find VaultFinding, prepare VaultPreparing) Search {
 	return Search{find: find, prepare: prepare}
 }
 
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u Search) WithFind(find VaultFinding) Search {
-	u.find = find
-	return u
-}
-
 // ExecuteByName resolves the vault and runs the search.
 func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p Parameters) ([]domain.Passage, error) {
 	if err := ctx.Err(); err != nil {

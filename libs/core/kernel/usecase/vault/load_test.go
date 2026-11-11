@@ -57,7 +57,7 @@ func TestLoad(t *testing.T) {
 		db.Vaults(),
 		db.Notes(),
 		db.NoteQueries(),
-		db.Maintenance(),
+		db.Maintenance(), nil,
 	)
 
 	coldStart := testsupport.GetMachine().Now()

@@ -132,7 +132,10 @@ func TestCreatingInAVaultThatWillNotOpenForWritingMakesNothing(t *testing.T) {
 func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
-	create := c.create().WithIndex(func(context.Context, domain.Vault, []string) error { return errDiskGone })
+	create := note.NewCreate(
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(),
+		func(context.Context, domain.Vault, []string) error { return errDiskGone }, testsupport.NewClock(),
+	)
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 

@@ -59,9 +59,9 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	}
 
 	settings := container.NewConfig(container.Config{
-		TextReaders: testsupport.Texts{Readers: vaultreader.Readers{}},
-		Paths:       container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
+	settings.Resources.TextReaders = testsupport.Texts{Readers: vaultreader.Readers{}}
 	if _, err := settings.AddVault(root, "watched"); err != nil {
 		t.Fatal(err)
 	}
@@ -244,6 +244,8 @@ type going struct {
 	root         string
 	settings     string
 	order        *order
+	cfg          container.Config
+	index        *container.Index
 }
 
 // order is a record of the moments a test is asking about the sequence of.
@@ -304,7 +306,11 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		t.Fatal(err)
 	}
 
-	installation, cases, err := openRegistered(cfg, t.Context(), "", os.Stderr)
+	index, err := container.OpenIndex(cfg, t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	installation, cases, err := openOver(cfg, t.Context(), index, "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -345,6 +351,8 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		root:         root,
 		settings:     cfg.RegistryPath,
 		order:        recorded,
+		cfg:          cfg,
+		index:        index,
 	}
 }
 

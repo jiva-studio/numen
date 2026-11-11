@@ -27,7 +27,7 @@ func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {
 		"Two.md":     "---\ntitle: Two\n---\n\n# Two\n",
 		"sub/Six.md": "---\ntitle: Six\n---\n\n# Six\n",
 	})
-	open := container.VaultOpener(cfg, db).Begin(t.Context(), v)
+	open := container.VaultOpener(cfg, db).Begin(t.Context(), v, nil, nil)
 
 	got, err := open.Read(t.Context(), nil)
 	if err != nil {
@@ -42,7 +42,7 @@ func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {
 func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
 	cfg, db, v := openVault(t, getNote())
 	broken := errors.New("the disk is gone")
-	open := cfg.VaultOpenerWith(db, unopenable{err: broken}, cfg.VaultWatcher()).Begin(t.Context(), v)
+	open := cfg.VaultOpenerWith(db, unopenable{err: broken}, cfg.VaultWatcher()).Begin(t.Context(), v, nil, nil)
 
 	got, err := open.Read(t.Context(), nil)
 	if !errors.Is(err, broken) {
@@ -56,7 +56,7 @@ func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
 // A vault that cannot be watched has nothing to run, and running it returns.
 func TestRunningAVaultThatCannotBeWatchedReturns(t *testing.T) {
 	cfg, db, v := openVault(t, getNote())
-	open := cfg.VaultOpenerWith(db, container.VaultReaders(cfg), refusing{}).Begin(t.Context(), v)
+	open := cfg.VaultOpenerWith(db, container.VaultReaders(cfg), refusing{}).Begin(t.Context(), v, nil, nil)
 
 	isDone := make(chan struct{})
 	go func() {
@@ -91,11 +91,9 @@ func TestVaultOpener_ReportsFollowErrorsAndEnd(t *testing.T) {
 	watcher := makeWatcher()
 	opening := cfg.VaultOpenerWith(db, container.VaultReaders(cfg), watcher)
 	received := make(chan error, 4)
-	opening.ErrorHandler = func(err error) { received <- err }
 	changesCh := make(chan vault.VaultChanges, 4)
-	opening.Told = func(m vault.VaultChanges) { changesCh <- m }
 
-	open := opening.Begin(t.Context(), v)
+	open := opening.Begin(t.Context(), v, func(m vault.VaultChanges) { changesCh <- m }, func(err error) { received <- err })
 	go open.Run(t.Context())
 
 	watcher.lostChan <- struct{}{}
@@ -226,7 +224,7 @@ func TestAWalkThatStopsReturnsHowManyNotesItHadRead(t *testing.T) {
 		notes[name+".md"] = "---\ntitle: " + name + "\n---\n\n# " + name + "\n"
 	}
 	cfg, db, v := openVault(t, notes)
-	open := container.VaultOpener(cfg, db).Begin(t.Context(), v)
+	open := container.VaultOpener(cfg, db).Begin(t.Context(), v, nil, nil)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 

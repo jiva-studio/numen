@@ -15,14 +15,8 @@ type EmptyTrash struct {
 	gate    WriteGate
 }
 
-func NewEmptyTrash(writers vaultport.TrashEmptiers) EmptyTrash {
-	return EmptyTrash{writers: writers, gate: openWriteGate{}}
-}
-
-// WithWriteGate returns EmptyTrash gated by gate.
-func (u EmptyTrash) WithWriteGate(gate WriteGate) EmptyTrash {
-	u.gate = gate
-	return u
+func NewEmptyTrash(writers vaultport.TrashEmptiers, gate WriteGate) EmptyTrash {
+	return EmptyTrash{writers: writers, gate: gate}
 }
 
 // Execute deletes the trash content permanently and returns the paths it could

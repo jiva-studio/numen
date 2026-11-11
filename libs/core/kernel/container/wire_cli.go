@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -15,45 +16,50 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
+func openCLIRename(c Config, ctx context.Context, ports registry.Ports, find vault.VaultFinding) (cli.Renaming, error) {
+	db, err := openIndex(vaultOf(c), ctx)
+	if err != nil {
+		return cli.Renaming{}, err
+	}
+	rename := vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())
+	return cli.Renaming{Rename: vault.NewRenameByName(find, rename), Close: db.Close}, nil
+}
+
+func openCLIUnregister(c Config, ctx context.Context, ports registry.Ports, find vault.VaultFinding) (cli.Unregistering, error) {
+	db, err := openIndex(vaultOf(c), ctx)
+	if err != nil {
+		return cli.Unregistering{}, err
+	}
+	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
+	return cli.Unregistering{Unregister: vault.NewUnregisterByName(find, unregister), Close: db.Close}, nil
+}
+
+func openCLIErase(c Config, ctx context.Context, ports registry.Ports, find vault.VaultFinding) (cli.Erasing, error) {
+	db, err := openIndex(vaultOf(c), ctx)
+	if err != nil {
+		return cli.Erasing{}, err
+	}
+	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
+	erase := vault.NewErase(vaultIdentity(vaultOf(c)), vaultTrash(vaultOf(c)), unregister)
+	return cli.Erasing{Erase: vault.NewEraseByName(find, erase), Close: db.Close}, nil
+}
+
 func openCLIVaults(c Config) (cli.Vaults, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return cli.Vaults{}, err
 	}
 	find := registry.NewFind(ports.Lookup).Execute
-	unregister := func(db *Index) vault.Unregister {
-		return vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults()).WithFind(find)
-	}
 	return cli.Vaults{
 		Add:        vault.NewAdd(vaultIdentity(vaultOf(c)), ports.Vaults, ports.Lookup, ports.Saver, c.Clock()),
 		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(vaultOf(c))),
-		RecordOpen: vault.NewRecordOpen(ports.Recorder).WithFind(find),
-		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
-			return openWithIndex(c, ctx, func(db *Index) cli.Renaming {
-				return cli.Renaming{Rename: vault.NewRename(ports.Vaults, ports.Saver, db.Vaults()).WithFind(find), Close: db.Close}
-			})
-		},
+		RecordOpen: vault.NewRecordOpenByName(find, vault.NewRecordOpen(ports.Recorder)),
+		OpenRename: func(ctx context.Context) (cli.Renaming, error) { return openCLIRename(c, ctx, ports, find) },
 		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
-			return openWithIndex(c, ctx, func(db *Index) cli.Unregistering {
-				return cli.Unregistering{Unregister: unregister(db), Close: db.Close}
-			})
+			return openCLIUnregister(c, ctx, ports, find)
 		},
-		OpenErase: func(ctx context.Context) (cli.Erasing, error) {
-			return openWithIndex(c, ctx, func(db *Index) cli.Erasing {
-				erase := vault.NewErase(vaultIdentity(vaultOf(c)), vaultTrash(vaultOf(c)), unregister(db)).WithFind(find)
-				return cli.Erasing{Erase: erase, Close: db.Close}
-			})
-		},
+		OpenErase: func(ctx context.Context) (cli.Erasing, error) { return openCLIErase(c, ctx, ports, find) },
 	}, nil
-}
-
-func openWithIndex[T any](c Config, ctx context.Context, build func(db *Index) T) (T, error) {
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		var none T
-		return none, err
-	}
-	return build(db), nil
 }
 
 func openCLILinks(c Config, ctx context.Context) (cli.Links, error) {
@@ -61,10 +67,12 @@ func openCLILinks(c Config, ctx context.Context) (cli.Links, error) {
 	if err != nil {
 		return cli.Links{}, err
 	}
+	db, err := openIndex(vaultOf(c), ctx)
+	if err != nil {
+		return cli.Links{}, err
+	}
 	find := registry.NewFind(ports.Lookup).Execute
-	return openWithIndex(c, ctx, func(db *Index) cli.Links {
-		return cli.Links{Show: Queries(db).Refer.Links.WithFind(find), Close: db.Close}
-	})
+	return cli.Links{Show: query.NewShowLinksByName(find, Queries(db).Refer.Links), Close: db.Close}, nil
 }
 
 func openCLIScan(c Config, ctx context.Context, rebuild bool) (cli.Scan, error) {
@@ -163,10 +171,14 @@ func openCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
 	if err != nil {
 		return cli.Problems{}, err
 	}
+	db, err := openIndex(vaultOf(c), ctx)
+	if err != nil {
+		return cli.Problems{}, err
+	}
 	find := registry.NewFind(ports.Lookup).Execute
-	return openWithIndex(c, ctx, func(db *Index) cli.Problems {
-		return cli.Problems{Problems: getProblems(vaultOf(c), db.NoteProblems()).WithFind(find), Close: db.Close}
-	})
+	return cli.Problems{
+		Problems: vault.NewGetProblemsByName(find, getProblems(vaultOf(c), db.NoteProblems())), Close: db.Close,
+	}, nil
 }
 
 func getCLIPluginCommands(c Config) cli.PluginCommands {
@@ -178,7 +190,8 @@ func getCLIPluginCommands(c Config) cli.PluginCommands {
 		return registry.NewFind(ports.Lookup).Execute(nameOrPath)
 	}
 	return cli.PluginCommands{
-		List: getPluginCommands(plugins(c)).List.WithFind(find),
+		List:   getPluginCommands(plugins(c)).List,
+		ByName: plugincommand.NewRunByName(find),
 		Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
 			return openPluginCommands(c, ctx, v)
 		},

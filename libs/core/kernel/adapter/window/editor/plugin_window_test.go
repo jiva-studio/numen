@@ -77,7 +77,7 @@ func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan do
 
 func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
-	state := NewState(run.NewTasks())
+	state := NewState(run.NewTasks(), nil, nil)
 	state.Runtime.SetVault(testsupport.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Grey Heron\nHerons fish at dusk.\n",

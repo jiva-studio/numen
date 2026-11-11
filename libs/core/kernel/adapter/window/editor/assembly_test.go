@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math"
 	"slices"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -142,14 +141,10 @@ func (w readingParts) cutNotes() chunking.CutNotes {
 func (w readingParts) setNoteCut(scan *vault.Scan, db *testIndex) {
 	scan.Cut = w.cutNotes()
 	scan.ShouldRecut = w.chunks.Get() > 0
-	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
-		recipes := []string{recipe, filetext.Index{Sizes: scan.Cut.Sizes}.Recipe()}
-		return db.Source.SourceBacklog.GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
-	}
 }
 
 func (w readingParts) scan(db *testIndex, rebuild bool) vault.Scan {
-	scan := vault.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance)
+	scan := vault.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = rebuild
@@ -172,7 +167,7 @@ func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) 
 func (w readingParts) OpenVaultWith(
 	db *testIndex, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *vault.VaultOpener {
-	scan := vault.NewScan(walking, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance)
+	scan := vault.NewScan(walking, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
 	buffered := &indexnote.Buffered{NoteRepository: db.Stores.Notes}
@@ -183,7 +178,7 @@ func (w readingParts) OpenVaultWith(
 func (w readingParts) ReadWholeVault(
 	ctx context.Context, db *testIndex, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
-	fit := vectors.NewFitIndex(db.VectorIndex())
+	fit := vectors.NewFitIndex(db.VectorIndex(), nil)
 	fit.ShouldRebuildIndex = rebuild
 	if err := fit.Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
@@ -191,14 +186,9 @@ func (w readingParts) ReadWholeVault(
 	if _, err := w.GetVaultReaders().Open(v); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	texts := filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts)
-	cutter := w.cutNotes()
-	texts.Sizes = cutter.Sizes
-	texts.Legibility = cutter.Legibility
-	texts.ShouldRebuildIndex = rebuild
 	refresh := w.GetRefresh(db)
 	refresh.Force = true
-	texts.ReadNote = func(ctx context.Context, v domain.Vault, path string) error {
+	readNote := func(ctx context.Context, v domain.Vault, path string) error {
 		res, err := refresh.Execute(ctx, v, []string{path})
 		if err != nil {
 			return err
@@ -208,6 +198,11 @@ func (w readingParts) ReadWholeVault(
 		}
 		return nil
 	}
+	texts := filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts, nil, readNote)
+	cutter := w.cutNotes()
+	texts.Sizes = cutter.Sizes
+	texts.Legibility = cutter.Legibility
+	texts.ShouldRebuildIndex = rebuild
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{}, derivedCoreFolder)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err

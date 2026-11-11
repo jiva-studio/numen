@@ -13,7 +13,7 @@ import (
 func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 	v := testsupport.NewVault(t, nil)
 
-	if err := file.NewCreateFolder(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}).Execute(t.Context(), v, "a/b/c"); err != nil {
+	if err := file.NewCreateFolder(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, file.OpenGate{}).Execute(t.Context(), v, "a/b/c"); err != nil {
 		t.Fatal(err)
 	}
 	if info, err := os.Stat(filepath.Join(v.Path, "a", "b", "c")); err != nil || !info.IsDir() {

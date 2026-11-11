@@ -113,13 +113,7 @@ func (w *Worker) ClearSkips(paths []string) { w.skips.clear(paths) }
 func (w *Worker) openReading(
 	ctx context.Context, v domain.Vault, rebuild bool,
 ) (ReadWholeVault, error) {
-	making, err := w.reading(ctx, w.embedder, v, rebuild)
-	if err != nil {
-		return making, err
-	}
-	making.IsTextSkipped = w.skips.isTextSkipped
-	making.IsVectorSkipped = w.skips.isVectorSkipped
-	return making, nil
+	return w.reading(ctx, w.embedder, v, rebuild)
 }
 
 // taskCancel ends the context of one pass, and records whether a person asked

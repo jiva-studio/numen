@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
 )
@@ -104,9 +106,14 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 	host := newPluginHost(t, "desktop.editor", dir)
 	host.Configuration.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
 	cfg := NewConfig(Config{
-		PluginHost:    host,
-		PluginDirs:    []string{dir},
-		PluginCatalog: catalog.Config{Target: "desktop.editor", Sources: []catalog.Source{indexsource.New(nil, []string{availableDir})}, InstallDir: "", CacheDir: ""},
+		PluginHost: host,
+		PluginCatalog: catalog.Config{
+			Target: "desktop.editor", InstallDir: "", CacheDir: "",
+			Sources: []catalog.Source{
+				localsource.New([]string{dir}, localsource.SettingsFunc(host.Runtime.IsPluginEnabled)),
+				indexsource.New(nil, []string{availableDir}),
+			},
+		},
 	})
 
 	service := getPluginCatalog(plugins(cfg))

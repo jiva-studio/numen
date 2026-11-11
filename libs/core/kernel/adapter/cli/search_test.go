@@ -43,7 +43,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 		Vaults: createVaultList(newVault(folder)),
 		Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
-				Search: search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil).WithFind(registry.NewFind(singleVaultList{newVault(folder)}).Execute),
+				Search: search.NewByName(registry.NewFind(singleVaultList{newVault(folder)}).Execute, preparing(search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil))),
 				Words:  words,
 			}, nil
 		},
@@ -74,7 +74,7 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		"the list of vaults cannot be opened": {
 			Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
 				return cli.Search{
-					Search: search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil).WithFind(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }),
+					Search: search.NewByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil))),
 				}, nil
 			},
 		},

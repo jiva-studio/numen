@@ -119,21 +119,18 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 
-	container.BindVaultIndexer(cfg, t.Context(), api, vaults)
+	api.SetVaultIndexer(t.Context(), vaults.IndexVault)
 
-	if vaults.RecordVault == nil {
-		t.Fatal("a vault updated is recorded nowhere")
-	}
 	moved, err := api.WatchMoves(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	vaults.RecordVault(target[0])
+	api.ReportVaultRead(target[0])
 	select {
 	case <-moved:
 	case <-time.After(time.Second):
-		t.Error("RecordVault did not report a change")
+		t.Error("a vault read did not report a change")
 	}
 
 	for {

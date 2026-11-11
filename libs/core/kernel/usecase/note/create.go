@@ -36,12 +36,6 @@ func NewCreate(
 	return Create{writers: writers, names: names, index: index, now: now}
 }
 
-// WithIndex replaces the index function.
-func (u Create) WithIndex(index edit.IndexUpdater) Create {
-	u.index = index
-	return u
-}
-
 // NewNote is what to make. CreateNote resolves Named into Links.
 type NewNote struct {
 	Title string

@@ -23,7 +23,6 @@ type NoteLinks struct {
 
 // ShowLinks gathers them for one note.
 type ShowLinks struct {
-	find  VaultFinding
 	links noteport.LinkQueries
 }
 
@@ -33,19 +32,24 @@ func NewShowLinks(links noteport.LinkQueries) ShowLinks {
 	return ShowLinks{links: links}
 }
 
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u ShowLinks) WithFind(find VaultFinding) ShowLinks {
-	u.find = find
-	return u
+// ShowLinksByName gathers the links of one note of the vault a person names.
+type ShowLinksByName struct {
+	find VaultFinding
+	show ShowLinks
+}
+
+// NewShowLinksByName creates the use case that resolves the vault with find and gathers the links with show.
+func NewShowLinksByName(find VaultFinding, show ShowLinks) ShowLinksByName {
+	return ShowLinksByName{find: find, show: show}
 }
 
 // ExecuteByName resolves the vault and gathers the links for one note.
-func (u ShowLinks) ExecuteByName(ctx context.Context, nameOrPath, path string) (NoteLinks, error) {
+func (u ShowLinksByName) ExecuteByName(ctx context.Context, nameOrPath, path string) (NoteLinks, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {
 		return NoteLinks{}, err
 	}
-	return u.Execute(ctx, v, path)
+	return u.show.Execute(ctx, v, path)
 }
 
 func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (NoteLinks, error) {

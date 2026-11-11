@@ -34,24 +34,6 @@ func NewWrite(
 	return Write{readers: readers, writers: writers, index: index, now: now}
 }
 
-// WithReaders replaces the vault readers.
-func (u Write) WithReaders(readers vaultport.VaultReaders) Write {
-	u.readers = readers
-	return u
-}
-
-// WithWriters replaces the vault writers.
-func (u Write) WithWriters(writers NoteWriting) Write {
-	u.writers = writers
-	return u
-}
-
-// WithIndex replaces the index function.
-func (u Write) WithIndex(index edit.IndexUpdater) Write {
-	u.index = index
-	return u
-}
-
 // Execute writes body to the note at path.
 // FileStat, when set, is the file state the caller expects on disk. A note
 // changed since it was read is left unchanged and port.ErrStale is returned:

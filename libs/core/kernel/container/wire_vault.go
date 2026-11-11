@@ -3,10 +3,9 @@ package container
 import (
 	"context"
 
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -86,20 +85,7 @@ func Moves(c Config, ctx context.Context) (<-chan struct{}, error) {
 // Notes builds everything that changes the notes of a vault, against this
 // installation's vault readers and writers. No view receives a move.
 func Notes(c Config, db *Index, index edit.IndexUpdater) note.Scenarios {
-	return vaultNotes(vaultOf(c), db, index, noteViews{})
-}
-
-// MoveView shows a window that a note moved.
-type MoveView interface {
-	ShowMove(ctx context.Context, went domain.Move) error
-}
-
-// NotesShowingMoves is Notes where each move of a note in the vault the window shows also reaches view, so a
-// view showing a note under its old name switches to the new name.
-func NotesShowingMoves(
-	c Config, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view MoveView,
-) note.Scenarios {
-	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: showMovesIn(showing, view)})
+	return vaultNotes(vaultOf(c), db, index, noteViews{Writes: note.OpenGate{}})
 }
 
 // Queries builds everything that answers a question about the notes of a vault.
@@ -137,7 +123,7 @@ type vaultWiring struct {
 	ErrorHandler func(error)
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
-	SetNoteCut   func(*vault.Scan, *Index)
+	SetNoteCut   func(*vault.Scan)
 }
 
 func vaultRegistry(c vaultWiring) (vaultregistry.Ports, error) {
@@ -169,8 +155,6 @@ func noteWriters(c vaultWiring) vaultport.NoteWriters { return vaultWriters(c) }
 
 func folderWriters(c vaultWiring) vaultport.FolderWriters { return vaultWriters(c) }
 
-func fileMovers(c vaultWiring) vaultport.FileMovers { return vaultWriters(c) }
-
 func writeLocks(c vaultWiring) vaultport.VaultLocks { return vaultWriters(c) }
 
 func getImportedFiles(_ vaultWiring) sourceport.ImportedFiles {
@@ -192,12 +176,6 @@ func vaultTrash(c vaultWiring) machineport.Trash {
 func vaultOptions(c vaultWiring) vaultconfig.Options {
 	return vaultconfig.Options{
 		ServiceDir: c.ServiceDir,
-	}
-}
-
-func vaultHandleError(c vaultWiring, err error) {
-	if c.ErrorHandler != nil {
-		c.ErrorHandler(err)
 	}
 }
 

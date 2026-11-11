@@ -32,7 +32,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 		db.Vaults(),
 		db.Notes(),
 		db.NoteQueries(),
-		db.Maintenance(),
+		db.Maintenance(), nil,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -267,7 +267,7 @@ func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 		db.Vaults(),
 		db.Notes(),
 		db.NoteQueries(),
-		db.Maintenance(),
+		db.Maintenance(), nil,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)

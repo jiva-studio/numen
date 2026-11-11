@@ -42,7 +42,7 @@ func scanFor(db *container.Index) vaults.Scan {
 		db.Vaults(),
 		db.Notes(),
 		db.NoteQueries(),
-		db.Maintenance(),
+		db.Maintenance(), nil,
 	)
 }
 

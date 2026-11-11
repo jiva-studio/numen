@@ -106,7 +106,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				prep, err := newProducer(embed).prepareBatch(b.Context(), model, passages, texts)
+				prep, err := newProducer(embed, nil).prepareBatch(b.Context(), model, passages, texts)
 				if err != nil {
 					b.Fatal(err)
 				}

@@ -163,11 +163,11 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 
 	got := NewConfig(Config{}).SetSettings(response)
 
-	if got.Hardware.LogicalCPUs < 1 {
-		t.Errorf("the hardware was not detected: %+v", got.Hardware)
+	if got.GetMachine().Hardware.LogicalCPUs < 1 {
+		t.Errorf("the hardware was not detected: %+v", got.GetMachine().Hardware)
 	}
-	if got.ResolvedCompute.Profile != settingsdomain.ProfileEco || got.ResolvedCompute.Workers != 1 {
-		t.Errorf("the compute plan is %+v", got.ResolvedCompute)
+	if got.GetMachine().ResolvedCompute.Profile != settingsdomain.ProfileEco || got.GetMachine().ResolvedCompute.Workers != 1 {
+		t.Errorf("the compute plan is %+v", got.GetMachine().ResolvedCompute)
 	}
 }
 

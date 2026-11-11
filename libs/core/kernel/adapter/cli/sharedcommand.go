@@ -67,7 +67,7 @@ func (c sharedCommand) Run(ctx context.Context, term terminal, args []string) er
 	if wanted == 2 {
 		path = positional[1]
 	}
-	result, err := list.RunSharedInVault(ctx, commands.Open, positional[0], handlers, picked, plugin.CommandCall{
+	result, err := commands.ByName.ExecuteSharedByName(ctx, commands.Open, positional[0], handlers, picked, plugin.CommandCall{
 		Path: path, Arguments: arguments,
 	})
 	if errors.As(err, new(*plugincommand.SeveralHandlersError)) {

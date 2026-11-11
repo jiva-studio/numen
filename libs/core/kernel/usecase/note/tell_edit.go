@@ -38,3 +38,19 @@ func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, res
 // It is not called when no viewer renders the note. The returned error is the
 // failure to report.
 type TellMove func(ctx context.Context, v domain.Vault, went domain.Move) error
+
+// MoveView shows a window that a note moved.
+type MoveView interface {
+	ShowMove(ctx context.Context, went domain.Move) error
+}
+
+// NewTellMoveInShownVault tells view the moves of notes in the vault showing names, and the moves in no
+// other vault.
+func NewTellMoveInShownVault(showing func() (domain.Vault, bool), view MoveView) TellMove {
+	return func(ctx context.Context, v domain.Vault, went domain.Move) error {
+		if current, isShowing := showing(); !isShowing || current.ID != v.ID {
+			return nil
+		}
+		return view.ShowMove(ctx, went)
+	}
+}
