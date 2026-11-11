@@ -230,13 +230,13 @@ func NewRenameNote(rename *Rename, gate WriteGate, follow IndexFollow) RenameNot
 // Execute renames the note at path to title and reports whether the index did not follow. It fails
 // with window.ErrClosing once the window is closing.
 func (u RenameNote) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, bool, error) {
-	var renamed RenameResult
+	var result RenameResult
 	isIndexOutdated, err := u.track.Execute(ctx, func(ctx context.Context) error {
 		var renameErr error
-		renamed, renameErr = u.rename.Execute(ctx, v, path, title)
+		result, renameErr = u.rename.Execute(ctx, v, path, title)
 		return renameErr
 	})
-	return renamed, isIndexOutdated, err
+	return result, isIndexOutdated, err
 }
 
 // RemoveFile moves a file or a folder of the vault to the trash as a write of the window.

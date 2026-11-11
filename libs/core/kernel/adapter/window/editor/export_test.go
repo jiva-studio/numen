@@ -214,8 +214,8 @@ func renameNote(rename *note.Rename, writes *Writes) *note.RenameNote {
 	if rename == nil {
 		return nil
 	}
-	renamed := note.NewRenameNote(rename, writes, writes)
-	return &renamed
+	renameUseCase := note.NewRenameNote(rename, writes, writes)
+	return &renameUseCase
 }
 
 func writeLink(links *note.EditLinks, names edit.NameQueries, writes *Writes) *note.WriteLink {
