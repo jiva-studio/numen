@@ -214,14 +214,3 @@ func describeRole(role adapterRole) []string {
 	}
 	return kinds
 }
-
-func checkDrivingFunctionCallsOneUseCase(t *testing.T, adapters []*packages.Package) {
-	t.Helper()
-	found, functions := load.ListManyUseCaseCalls(adapters, load.CoreImportPath)
-	for _, one := range found {
-		t.Errorf("%s %s: a driving adapter calls one use case", one.Position, one.Name)
-	}
-	if functions == 0 {
-		t.Fatalf("%d driving-adapter functions reach a use case: the walk is not reading them", functions)
-	}
-}

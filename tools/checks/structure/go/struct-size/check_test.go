@@ -91,6 +91,52 @@ type Plain struct{ a, b int }
 	}
 }
 
+// A type that groups its ports into sub-structs of its package counts their leaf fields, however deep the
+// grouping goes; a struct of another package that a field holds stays one field.
+func TestStructSizeRule_CountsLeafFieldsOfNamedStructFields(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"domain/domain.go": `package domain
+
+type Note struct{ ID, Title, Body, Path string }
+`,
+		"usecase/session/session.go": `package session
+
+import "fixture/domain"
+
+type WindowPorts struct{ a, b, c int }
+
+type VaultPorts struct {
+	d    int
+	Deep DeepPorts
+}
+
+type DeepPorts struct{ e, f int }
+
+type Deps struct {
+	Window WindowPorts
+	Vault  *VaultPorts
+	Note   domain.Note
+	out    int
+}
+
+type Tree struct {
+	Next *Tree
+	a    int
+}
+
+type Flat struct{ a, b, c int }
+`,
+	})
+	getLimit := func(path string) (structLimit, bool) {
+		return structLimit{methods: 100, fields: 5}, strings.HasPrefix(path, "fixture/usecase")
+	}
+	found, _ := getOversizedTypes(load.LoadFixture(t, dir), getLimit)
+	want := []string{"session.go:14 session.Deps has 8 fields, more than 5"}
+	if got := load.FormatFindings(found); !slices.Equal(got, want) {
+		t.Errorf("the rule rejects %v, want %v", got, want)
+	}
+}
+
 func TestNoTypeExceedsItsLayersSize(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")

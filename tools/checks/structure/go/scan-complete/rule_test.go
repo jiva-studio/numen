@@ -22,7 +22,7 @@ func getHelperPackages() map[string]string {
 		"internal/csp":        "builds the content security policy string of a window",
 		"internal/testonly":   "the grant that only tests may hold",
 		"internal/text":       "byte-range arithmetic over text",
-		"internal/vector":     "quantises a vector to bytes and bits",
+		"internal/vector":     "quantizes a vector to bytes and bits",
 	}
 }
 

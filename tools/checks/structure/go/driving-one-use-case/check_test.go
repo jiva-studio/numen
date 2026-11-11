@@ -9,6 +9,24 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
+// A function of a driving adapter reaches one use case: two are a scenario, which belongs in a use case. An
+// adapter drives the core when it imports a use case package. A use case is reached through a field of its type,
+// through an interface with an Execute method, through a function field of the signature of an Execute
+// method, and through an Execute method taken as a value.
+func TestDrivingFunctionCallsOneUseCase(t *testing.T) {
+	if testing.Short() {
+		t.Skip("loads and type-checks libs/core/kernel")
+	}
+	pkgs := load.GetModulePackages(t, load.Workspace(t, "libs/core/kernel"), "libs/core/kernel")
+	found, functions := load.ListManyUseCaseCalls(pkgs, load.CoreImportPath)
+	for _, one := range found {
+		t.Errorf("%s %s: a driving adapter calls one use case", one.Position, one.Name)
+	}
+	if functions == 0 {
+		t.Fatalf("%d driving-adapter functions reach a use case: the walk is not reading them", functions)
+	}
+}
+
 func TestDrivingCallRule_RejectsAFunctionCallingTwoUseCases(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"usecase/find/find.go": "package find\n\ntype Find struct{}\n\nfunc (Find) Execute() {}\n\ntype Save struct{}\n\nfunc (Save) Execute() {}\n",
@@ -52,6 +70,89 @@ func hand(...any) {}
 	}
 	if functions != 8 {
 		t.Errorf("%d functions reach a use case, want 8", functions)
+	}
+}
+
+// The driving adapters are the packages that import a use case package, not a list of folders; the use cases
+// a function reaches count through a field that holds a function of an Execute signature and through an
+// Execute method taken as a value, and a callback of another signature is no use case.
+func TestDrivingCallRule_CountsUseCasesReachedAsFunctionValues(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/note.go": `package note
+
+import "context"
+
+type Open struct{}
+
+func (Open) Execute(ctx context.Context, id string) (string, error) { return id, nil }
+
+type Close struct{}
+
+func (Close) Execute(ctx context.Context, id string) error { return nil }
+`,
+		"adapter/anywhere/deep/deep.go": `package deep
+
+import (
+	"context"
+
+	"fixture/usecase/note"
+)
+
+type Handler struct {
+	open     func(ctx context.Context, id string) (string, error)
+	close    func(ctx context.Context, id string) error
+	onChange func(id string)
+	opening  note.Open
+}
+
+func (h *Handler) Function() {
+	_, _ = h.open(context.Background(), "a")
+	_ = h.close(context.Background(), "a")
+}
+
+func (h *Handler) Callback() {
+	h.onChange("a")
+	_ = h.close(context.Background(), "a")
+}
+
+func (h *Handler) Value() {
+	var closing note.Close
+	run(closing.Execute, h.opening.Execute)
+}
+
+func (h *Handler) Method() {
+	_ = note.Open.Execute
+	_ = note.Close.Execute
+}
+
+func (h *Handler) Local() {
+	var closing note.Close
+	_ = closing.Execute(context.Background(), "a")
+	_ = closing.Execute(context.Background(), "b")
+}
+
+func run(...any) {}
+`,
+		"adapter/free/free.go": `package free
+
+import "context"
+
+type Handler struct {
+	open  func(ctx context.Context, id string) (string, error)
+	close func(ctx context.Context, id string) error
+}
+
+func (h *Handler) Both() { _, _ = h.open(context.Background(), ""); _ = h.close(context.Background(), "") }
+`,
+	})
+	found, _ := load.ListManyUseCaseCalls(load.LoadFixture(t, dir), "fixture")
+	want := []string{
+		"deep.go:16 Function calls close, open",
+		"deep.go:26 Value calls note.Close.Execute, opening",
+		"deep.go:31 Method calls note.Close.Execute, note.Open.Execute",
+	}
+	if !slices.Equal(load.FormatFindings(found), want) {
+		t.Errorf("the rule refuses %v, want %v", load.FormatFindings(found), want)
 	}
 }
 

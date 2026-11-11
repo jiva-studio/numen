@@ -4,6 +4,7 @@ package scancomplete
 import (
 	"os"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
@@ -73,6 +74,129 @@ func TestUseCasesImportOnlyDomainAndPorts(t *testing.T) {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
 	checkUseCasesImportOnlyDomainAndPorts(t, load.Workspace(t, "libs/core/kernel"))
+}
+
+// A helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
+// whose methods change its state. A helper that does is an adapter or a use case under a helper's name.
+func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
+	if testing.Short() {
+		t.Skip("loads and type-checks the modules of the workspace")
+	}
+	pkgs := load.GetModulePackages(t, load.Workspace(t, "libs/core/kernel"), "libs/core/kernel")
+	helpers := getHelperPackages()
+	found, read := getHelperFindings(pkgs, load.CoreImportPath, helpers)
+	for _, one := range found {
+		t.Error(one)
+	}
+	for _, one := range getHelperReasonFindings(pkgs, load.CoreImportPath, helpers) {
+		t.Error(one)
+	}
+	if read < 10 {
+		t.Fatalf("%d helper packages read: the rule is checked against nothing", read)
+	}
+}
+
+// The rule refuses a helper that imports a port, a use case or a technology package and one that exports a type
+// whose method assigns to a field, increments, deletes from a map or writes through its receiver; it lets
+// through a pure function, a method that only reads, and a type of another layer.
+func TestHelperRule_RejectsAHelperWithStateOrOutsideImports(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface{ Read() string }\n",
+		"usecase/find/find.go":      "package find\n\ntype Find struct{}\n",
+		"internal/adapterlib/pure/p.go": `package pure
+
+func Add(a, b int) int { return a + b }
+
+type Range struct{ A, B int }
+
+func (r Range) Len() int { return r.B - r.A }
+
+func (r *Range) Size() int {
+	local := r.B
+	local++
+	return local
+}
+`,
+		"internal/adapterlib/bus/bus.go": `package bus
+
+type Bus struct {
+	subscribers map[string]int
+	count       int
+	last        *int
+}
+
+func (b *Bus) Subscribe(id string) { b.subscribers[id] = 1 }
+func (b *Bus) Count()              { b.count++ }
+func (b *Bus) Forget(id string)    { delete(b.subscribers, id) }
+func (b *Bus) Peek() int           { return b.count }
+func (b *Bus) Store(v int)         { *b.last = v }
+
+type Reset struct{ n int }
+
+func (r *Reset) Zero() { *r = Reset{} }
+
+type hidden struct{ n int }
+
+func (h *hidden) Add() { h.n++ }
+`,
+		"internal/adapterlib/reach/reach.go": `package reach
+
+import (
+	"os"
+
+	"fixture/port/noteport"
+	"fixture/usecase/find"
+)
+
+var _ = os.Args
+var _ noteport.Reader
+var _ find.Find
+`,
+		"internal/testsupport/fake/fake.go": "package fake\n\nimport \"fixture/port/noteport\"\n\ntype Reader struct{}\n\nfunc (Reader) Read() string { return \"\" }\n\nvar _ noteport.Reader = Reader{}\n",
+		"internal/csp/csp.go":               "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
+		"adapter/index/index.go":            "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
+	})
+	found, read := getHelperFindings(load.LoadFixture(t, dir), "fixture", map[string]string{"internal/csp": "builds the policy"})
+	want := []string{
+		"internal/adapterlib/bus exports Bus.Count, which changes the state of its receiver: a helper holds no state",
+		"internal/adapterlib/bus exports Bus.Forget, which changes the state of its receiver: a helper holds no state",
+		"internal/adapterlib/bus exports Bus.Store, which changes the state of its receiver: a helper holds no state",
+		"internal/adapterlib/bus exports Bus.Subscribe, which changes the state of its receiver: a helper holds no state",
+		"internal/adapterlib/bus exports Reset.Zero, which changes the state of its receiver: a helper holds no state",
+		"internal/adapterlib/reach imports os: a helper reaches no technology",
+		"internal/adapterlib/reach imports port/noteport: a helper depends on no port and no use case",
+		"internal/adapterlib/reach imports usecase/find: a helper depends on no port and no use case",
+		"internal/csp exports Mutable.Set, which changes the state of its receiver: a helper holds no state",
+		"internal/testsupport/fake imports port/noteport: a helper depends on no port and no use case",
+	}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule rejects\n%s\nwant\n%s", strings.Join(found, "\n"), strings.Join(want, "\n"))
+	}
+	if read != 5 {
+		t.Errorf("%d helper packages read, want 5", read)
+	}
+}
+
+// A reason that shares no word with the name, the documentation and the exported identifiers of its package
+// describes another package, or none.
+func TestHelperRule_RejectsAReasonThatNamesNothingOfThePackage(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"internal/ranges/ranges.go": "// Package ranges works on byte ranges of text.\npackage ranges\n\nfunc Overlap() {}\n",
+		"internal/colors/colors.go": "package colors\n\nfunc MixHue() {}\n",
+	})
+	helpers := map[string]string{
+		"internal/ranges":  "byte-range arithmetic over text",
+		"internal/colors":  "a reason that is a sentence",
+		"internal/missing": "gone",
+	}
+	got := getHelperReasonFindings(load.LoadFixture(t, dir), "fixture", helpers)
+	want := []string{
+		"the helper internal/missing is not a package of the kernel",
+		"the reason of the helper internal/colors names nothing the package declares or documents: a reason that is a sentence",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("the rule rejects %v, want %v", got, want)
+	}
 }
 
 func TestMain(m *testing.M) {

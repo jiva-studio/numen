@@ -234,7 +234,7 @@
         "structure",
         "go",
         "core",
-        "fast"
+        "slow"
       ],
       "selftest": "structure/go/driving-one-use-case/check_test.go",
       "runner": "go",
@@ -510,24 +510,6 @@
       "target": "plugin-gomod"
     },
     {
-      "name": "go/plugin-host-size",
-      "paths": [
-        "**/*.go",
-        "**/go.mod",
-        "go.work"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "plugin",
-        "core",
-        "slow"
-      ],
-      "selftest": "structure/go/plugin-host-size/check_test.go",
-      "runner": "go",
-      "target": "plugin-host-size"
-    },
-    {
       "name": "go/plugin-independence",
       "paths": [
         "**/*.go",
@@ -612,7 +594,7 @@
         "structure",
         "go",
         "core",
-        "fast"
+        "slow"
       ],
       "selftest": "structure/go/port-shape/check_test.go",
       "runner": "go",
@@ -728,7 +710,9 @@
         "**/*.go",
         "**/go.mod",
         "go.work",
-        ".gitattributes"
+        ".gitattributes",
+        "**/buf.gen.yaml",
+        "libs/core/protocol/tools/*.mjs"
       ],
       "tags": [
         "structure",

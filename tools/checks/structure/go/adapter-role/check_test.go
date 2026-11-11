@@ -25,14 +25,6 @@ func TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort(t *testing.T) {
 	t.Run("ADrivingAdapterReferencesNoPort", func(t *testing.T) {
 		checkDrivingAdapterReferencesNoPort(t, adapters, roles)
 	})
-	// A driving adapter maps a request, calls one use case and maps the result. A function that reaches the
-	// fields of two use cases, itself or through the functions of its package, decides between them or
-	// sequences them, which is a scenario and belongs in a use case. A use case reaches the adapter through a
-	// field of a type a use case package declares or of an interface with an Execute method; a use case passed
-	// in as a function value, or through a field that is not a use case, is not seen.
-	t.Run("ADrivingFunctionCallsOneUseCase", func(t *testing.T) {
-		checkDrivingFunctionCallsOneUseCase(t, adapters)
-	})
 }
 
 // A package is classified by what it references and what it implements, a pointer receiver included;

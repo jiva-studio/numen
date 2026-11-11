@@ -75,7 +75,7 @@ func getOversizedTypes(pkgs []*packages.Package, getLimit func(path string) (str
 				methods := types.NewMethodSet(types.NewPointer(named)).Len()
 				fields := 0
 				if st, ok := named.Underlying().(*types.Struct); ok {
-					fields = countStructFields(st, map[*types.Struct]bool{})
+					fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{})
 				}
 				if methods > limit.methods {
 					found = append(found, load.NewFinding(pkg.Fset, spec.Name.Pos(),
@@ -135,15 +135,16 @@ func checkNoTypeExceedsItsLayersSize(t *testing.T, workspace load.WorkspacePacka
 	}
 }
 
-func countStructFields(shape *types.Struct, visited map[*types.Struct]bool) int {
-	if visited[shape] {
+func countStructFields(shape *types.Struct, home *types.Package, visiting map[*types.Struct]bool) int {
+	if visiting[shape] {
 		return 0
 	}
-	visited[shape] = true
+	visiting[shape] = true
+	defer delete(visiting, shape)
 	count := 0
 	for field := range shape.Fields() {
-		if inner, ok := getEmbeddedStruct(field); ok {
-			count += countStructFields(inner, visited)
+		if inner, ok := getGroupedStruct(field, home); ok {
+			count += countStructFields(inner, home, visiting)
 			continue
 		}
 		count++
@@ -151,16 +152,13 @@ func countStructFields(shape *types.Struct, visited map[*types.Struct]bool) int 
 	return count
 }
 
-func getEmbeddedStruct(field *types.Var) (*types.Struct, bool) {
-	if !field.Embedded() {
-		return nil, false
-	}
+func getGroupedStruct(field *types.Var, home *types.Package) (*types.Struct, bool) {
 	t := field.Type()
 	if pointer, ok := types.Unalias(t).(*types.Pointer); ok {
 		t = pointer.Elem()
 	}
 	named, ok := types.Unalias(t).(*types.Named)
-	if !ok {
+	if !ok || !field.Embedded() && named.Obj().Pkg() != home {
 		return nil, false
 	}
 	shape, ok := named.Underlying().(*types.Struct)
