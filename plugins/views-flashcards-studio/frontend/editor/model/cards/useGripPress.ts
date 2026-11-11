@@ -5,12 +5,11 @@ import { win } from '@numen/ui'
 const WORKED = 'input, textarea, button, a, select, [contenteditable]'
 
 export interface GripPress {
-  /** False from a press on something worked until the pointer is released. */
   readonly isDraggable: Readonly<Ref<boolean>>
   readonly press: (event: PointerEvent) => void
 }
 
-/** Lets a press on something worked inside a draggable strip have the press, and makes the strip draggable again on release. */
+/** Lets a press on something worked inside a draggable strip have the press: the strip is not draggable from that press until the pointer is released. */
 export function useGripPress(): GripPress {
   const isDraggable = shallowRef(true)
 
