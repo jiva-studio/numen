@@ -20,9 +20,9 @@ import (
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -46,7 +46,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 		writeFile(t, filepath.Join(pluginsDir, dir, "manifest.json"), body)
 	}
 
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", pluginsDir)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", pluginsDir)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost(host),
+		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
 		KeyStore:   keys,
 		Paths:      container.Paths{SettingsPath: file, IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(configDir, "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
 	})
@@ -120,9 +120,9 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	return w
 }
 
-func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.KeyStore) *plugin.Host {
+func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.KeyStore) *pluginhost.Host {
 	t.Helper()
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.flashcards", pluginsDir)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.flashcards", pluginsDir)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.K
 	})
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost(host),
+		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
 		KeyStore:   keys,
 		Paths:      container.Paths{SettingsPath: file, IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(configDir, "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
 	})

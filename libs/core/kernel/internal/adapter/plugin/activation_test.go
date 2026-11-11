@@ -1,9 +1,10 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"os"
 	"testing"
@@ -17,11 +18,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func newDiscoveredHost(t *testing.T) *Host {
+func newDiscoveredHost(t *testing.T) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -62,7 +63,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	}
 }
 
-func failLaunching(launches *int) supervision.Launcher {
+func failLaunchingCounting(launches *int) supervision.Launcher {
 	return func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		*launches++
 		return nil, nil, errors.New("exec format error")
@@ -72,7 +73,7 @@ func failLaunching(launches *int) supervision.Launcher {
 func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 	host := newDiscoveredHost(t)
 	launches := 0
-	host.Processes.SetLauncher(failLaunching(&launches))
+	host.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 3 {
 		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
@@ -90,7 +91,7 @@ func TestAFailedStartIsReportedEachTimeAndShownWithItsReason(t *testing.T) {
 	var notified []string
 	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure.PluginID) })
 	launches := 0
-	host.Processes.SetLauncher(failLaunching(&launches))
+	host.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 2 {
 		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {

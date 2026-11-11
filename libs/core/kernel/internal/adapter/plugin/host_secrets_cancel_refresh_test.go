@@ -1,8 +1,9 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"testing"
 	"time"
@@ -126,14 +127,14 @@ func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefreshConfiguresThePlugin(t *testing.T) {
 	c := newCancelSetup(t)
 	calls := c.probe.count()
-	if err := c.host.Config.delivery.Lock(t.Context()); err != nil {
+	if err := plugin.GetDelivery(c.host.Config).Lock(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	isLocked := true
 	unlock := func() {
 		if isLocked {
 			isLocked = false
-			c.host.Config.delivery.Unlock()
+			plugin.GetDelivery(c.host.Config).Unlock()
 		}
 	}
 	defer unlock()
@@ -143,7 +144,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	activation := make(chan error, 1)
 	go func() { activation <- activate(ctx) }()
 	wiretest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return c.host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
+		return plugin.GetDelivery(c.host.Config).IsAwaitingFirstConfigure(secretPluginID)
 	})
 	cancel()
 	select {
@@ -154,7 +155,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	case <-time.After(delivery.ConfigureTimeout):
 		t.Fatal("the activation still waits for the lock after its context ended")
 	}
-	if c.host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID) {
+	if plugin.GetDelivery(c.host.Config).IsAwaitingFirstConfigure(secretPluginID) {
 		t.Error("the plugin still awaits a Configure that will not be sent")
 	}
 

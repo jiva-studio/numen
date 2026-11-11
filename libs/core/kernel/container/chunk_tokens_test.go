@@ -18,9 +18,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -60,7 +60,7 @@ func (*chunkingPlugin) EmbedBatch(
 	return connect.NewResponse(&v1.EmbedBatchResponse{Vectors: vectors}), nil
 }
 
-func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.Host, *chunkingPlugin) {
+func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *pluginhost.Host, *chunkingPlugin) {
 	t.Helper()
 	reporter := &chunkingPlugin{}
 	reporter.tokens.Store(tokens)
@@ -81,7 +81,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost(host),
+		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
 		Paths:      container.Paths{ServiceDir: ".numen"},
 	}), host, reporter
 }

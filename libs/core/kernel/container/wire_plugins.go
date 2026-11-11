@@ -153,13 +153,13 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
-// AdaptPluginHost lends the capabilities of host, a plugin host the caller made, to the container. The
+// AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made, to the container. The
 // tests of packages outside the container use it to run a window over a host they hold.
-func AdaptPluginHost(host *plugin.Host) *PluginHost {
+func AdaptPluginHost(host *PluginRoles) *PluginHost {
 	return adaptPluginHost(host)
 }
 
-func adaptPluginHost(host *plugin.Host) *PluginHost {
+func adaptPluginHost(host *PluginRoles) *PluginHost {
 	return &PluginHost{
 		Runtime: PluginRuntime{
 			Activator:          host.Activation,
@@ -168,7 +168,7 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 			PluginLister:       host.Registry,
 			PluginResolver:     host.Registry,
 			PluginEventEmitter: host.Events,
-			PluginBinding:      host.Binding(),
+			PluginBinding:      plugin.NewBinding(host.Teardown, host.Mode),
 			ClientLookup:       host.Activation.ClientLookup(),
 			TextPlugins:        host.Registry,
 			PluginFailures:     host.Failures,
@@ -194,12 +194,12 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 			Secrets: host.Config, Infos: host.Registry, Checks: host.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
-		SetStorage:          func(cacheRoot, dataRoot string) { host.SetStorage(cacheRoot, dataRoot, newDependencyRegistry) },
+		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 	}
 }
 
-func lendHostEndpoint(host *plugin.Host) *hostendpoint.Services {
+func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,

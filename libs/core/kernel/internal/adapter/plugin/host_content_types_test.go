@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"reflect"
@@ -10,11 +10,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
-func newReaderHost(manifests ...catalogmanifest.Manifest) *Host {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+func newReaderHost(manifests ...catalogmanifest.Manifest) *pluginhost.Host {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
@@ -29,7 +31,7 @@ func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...doma
 	}}
 }
 
-func getReaders(host *Host) map[string][]plugindomain.ReaderInfo {
+func getReaders(host *pluginhost.Host) map[string][]plugindomain.ReaderInfo {
 	out := map[string][]plugindomain.ReaderInfo{}
 	for _, info := range host.Registry.GetPluginInfos() {
 		out[info.ID] = info.Readers
@@ -52,7 +54,7 @@ func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 		t.Fatalf("readers = %+v; want %+v", got, want)
 	}
 
-	host.Settings.SetSettings(map[string]map[string]any{"org.example.a": {settingEnabled: false}})
+	host.Settings.SetSettings(map[string]map[string]any{"org.example.a": {plugin.SettingEnabled: false}})
 	if got := getReaders(host)["org.example.b"]; !reflect.DeepEqual(got, []plugindomain.ReaderInfo{{ID: "pdf", Extensions: []string{"pdf"}}}) {
 		t.Fatalf("with the lower id disabled, readers = %+v", got)
 	}

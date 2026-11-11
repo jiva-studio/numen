@@ -1,10 +1,11 @@
-package plugin
+package plugin_test
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 const linkedPlugin = "md.numen.sample"
@@ -46,7 +47,7 @@ func TestRestoreSettingReplacesTheValueOrRemovesTheSetting(t *testing.T) {
 }
 
 func TestAFailedStartForAListenerIsReportedOnlyOnce(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	failure := errors.New("exec format error")
 
 	if host.Failures.MarkTargetResult("md.numen.sample", failure) {

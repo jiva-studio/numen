@@ -49,7 +49,7 @@ type settingPlugins interface {
 // Settings keeps in memory the values the user stores for the settings of the plugins. Writing a
 // value to disk, and what follows from a change, are not done here.
 type Settings struct {
-	values    *settingValues
+	values    *SettingValues
 	set       settingPlugins
 	listeners portChecker
 	profile   profilePusher
@@ -59,8 +59,18 @@ type Settings struct {
 	persist plugindomain.PersistHandler
 }
 
-func newSettings(values *settingValues, set settingPlugins, listeners portChecker, profile profilePusher, report func(error)) *Settings {
-	return &Settings{values: values, set: set, listeners: listeners, profile: profile, report: report}
+// SettingsDeps are what Settings reads, checks ports with and pushes the performance profile through.
+type SettingsDeps struct {
+	Values    *SettingValues
+	Set       settingPlugins
+	Listeners portChecker
+	Profile   profilePusher
+	Report    func(error)
+}
+
+// NewSettings creates the settings with no value stored.
+func NewSettings(d SettingsDeps) *Settings {
+	return &Settings{values: d.Values, set: d.Set, listeners: d.Listeners, profile: d.Profile, report: d.Report}
 }
 
 // SetPersistHandler registers a callback that writes plugin settings changes into core configuration.

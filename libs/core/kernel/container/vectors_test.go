@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -68,11 +68,11 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	cfg.PluginHost = container.AdaptPluginHost(host)
+	cfg.PluginHost = container.AdaptPluginHost((*container.PluginRoles)(host))
 
 	if !cfg.EmbedderReady() {
 		t.Error("embedder is not ready when embedding plugin is present")
@@ -108,7 +108,7 @@ func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
 	}
 }
 
-func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
+func writeEmbeddingPlugin(t *testing.T, manifest string) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	pDir := filepath.Join(tmp, "embeddings")
@@ -118,7 +118,7 @@ func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
-	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})
+	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))})
 
 	if cfg.EmbedderReady() {
 		t.Error("a plugin without the embedding capability is the provider")
@@ -158,7 +158,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 	}`)
 	host.Settings.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
 	cfg, vault := makeScannedVault(t)
-	cfg.PluginHost = container.AdaptPluginHost(host)
+	cfg.PluginHost = container.AdaptPluginHost((*container.PluginRoles)(host))
 
 	embedder, closer, why := cfg.Embedder(t.Context())
 	if why != nil || embedder != nil {

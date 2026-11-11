@@ -1,14 +1,16 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
 	"sync"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 // cancelSetup is a host whose sends wait for the lock, with the store and the list a change would touch.
 type cancelSetup struct {
-	host   *Host
+	host   *pluginhost.Host
 	probe  *configured
 	store  *keys
 	source *listing

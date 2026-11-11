@@ -29,9 +29,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -208,7 +208,7 @@ type testPlugin struct {
 	mount        func(mux *http.ServeMux)
 }
 
-func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
+func hostOver(t *testing.T, plugins ...testPlugin) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	ports := map[string]int{}
@@ -246,7 +246,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 		ports[one.id] = addr.Port
 	}
 
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func toolsAt(id string, permissions []string, tools *toolPlugin) testPlugin {
 	}
 }
 
-func vaultAndCards(t *testing.T, agent *toolAgent) (*plugin.Host, *toolPlugin, *toolPlugin) {
+func vaultAndCards(t *testing.T, agent *toolAgent) (*pluginhost.Host, *toolPlugin, *toolPlugin) {
 	t.Helper()
 	vault := &toolPlugin{tools: []*v1.PluginTool{
 		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),
@@ -321,7 +321,7 @@ func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 		{name: "card_current_get", arguments: `{}`},
 	}}
 	host, vault, cards := vaultAndCards(t, agent)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	requestContext := map[string]string{cardKey: "c-7"}
 	steps := runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Context: requestContext})
@@ -396,7 +396,7 @@ func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 			mount: func(mux *http.ServeMux) { mux.Handle(numenv1connect.NewPluginToolServiceHandler(undeclared)) },
 		},
 	)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 
@@ -412,7 +412,7 @@ func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 func TestARunWithNoToolPluginIsGivenNoEndpoint(t *testing.T) {
 	agent := &toolAgent{}
 	host := hostOver(t, agentAt(agent))
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 
@@ -425,7 +425,7 @@ func TestARunWithNoToolPluginIsGivenNoEndpoint(t *testing.T) {
 func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
 	agent := &toolAgent{}
 	host, _, _ := vaultAndCards(t, agent)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 
@@ -442,7 +442,7 @@ func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
 func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 	agent := &toolAgent{}
 	host, _, _ := vaultAndCards(t, agent)
-	run, err := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})).GetAgent().
+	run, err := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))})).GetAgent().
 		StartRun(t.Context(), agentdomain.Task{Question: "q", Agent: "alpha"})
 	if err != nil {
 		t.Fatal(err)
@@ -472,7 +472,7 @@ func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
 	agent := &toolAgent{calls: []toolCall{{name: "card_current_get", arguments: `{}`}}}
 	host, _, cards := vaultAndCards(t, agent)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Vault: "v-garden"})
 
@@ -513,7 +513,7 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	container.AdaptPluginHost(host).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	container.AdaptPluginHost((*container.PluginRoles)(host)).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -574,7 +574,7 @@ func TestAnInAppRunOfAnAgentPluginWithVaultReadListsNoReadWriteTool(t *testing.T
 		toolsAt(vaultPlugin, []string{"vault:read", "vault:write"}, vault),
 		toolsAt(cardPlugin, []string{"vault:read", "vault:write"}, cards),
 	)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	steps := runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 

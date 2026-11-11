@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
@@ -17,11 +17,13 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 
@@ -185,7 +187,7 @@ func (c *configured) last(t *testing.T) *v1.ConfigureRequest {
 	return c.calls[len(c.calls)-1]
 }
 
-func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured) {
+func newSecretHost(t *testing.T, store pluginport.KeyStore) (*pluginhost.Host, *configured) {
 	t.Helper()
 	probe := &configured{}
 	mux := http.NewServeMux()
@@ -193,7 +195,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -537,17 +539,15 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 		pruned = append(pruned, declared)
 		return nil
 	}})
-	host.Config.hasScanned = true
+	plugin.SetScanned(host.Config)
 
-	host.Config.pruneSecretPermissions()
+	plugin.PruneSecretPermissions(host.Config)
 	if len(pruned) != 1 || len(pruned[0]) != 1 || pruned[0][0].Plugin != secretPluginID {
 		t.Fatalf("pruned with %v, want the declarations of the installed plugin", pruned)
 	}
 
-	host.Registry.set.mu.Lock()
-	host.Registry.set.problems = append(host.Registry.set.problems, manifestjson.DiscoveryProblem{Dir: "/plugins/broken", Err: errors.New("unreadable")})
-	host.Registry.set.mu.Unlock()
-	host.Config.pruneSecretPermissions()
+	plugin.AddProblem(host.Registry, manifestjson.DiscoveryProblem{Dir: "/plugins/broken", Err: errors.New("unreadable")})
+	plugin.PruneSecretPermissions(host.Config)
 	if len(pruned) != 1 {
 		t.Errorf("a scan with a problem pruned again: %v", pruned)
 	}
@@ -558,7 +558,7 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	host.Config.SetSecretSource(allowOne(secretPluginID))
-	host.Config.delivery.AwaitFirstConfigure(secretPluginID)
+	plugin.GetDelivery(host.Config).AwaitFirstConfigure(secretPluginID)
 
 	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)

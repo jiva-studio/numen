@@ -6,13 +6,13 @@ type Binding struct {
 	mode     *Mode
 }
 
+// NewBinding creates the binding of the teardown and the mode of a host.
+func NewBinding(teardown *Teardown, mode *Mode) Binding {
+	return Binding{teardown: teardown, mode: mode}
+}
+
 // SetSafeMode enables or disables safe recovery mode. Entering it stops every running plugin.
 func (b Binding) SetSafeMode(enabled bool) { b.teardown.SetSafeMode(enabled) }
 
 // SetVaultPath sets the active vault root path for path traversal checks.
 func (b Binding) SetVaultPath(path string) { b.mode.SetVaultPath(path) }
-
-// Binding returns the binding of the host to the mode and the vault.
-func (h *Host) Binding() Binding {
-	return Binding{teardown: h.Teardown, mode: h.Mode}
-}

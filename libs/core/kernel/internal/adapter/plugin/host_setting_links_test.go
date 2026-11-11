@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"errors"
@@ -7,10 +7,12 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
-func newLinkedHost(t *testing.T) *Host {
+func newLinkedHost(t *testing.T) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	dir := filepath.Join(tmp, "sample")
@@ -32,7 +34,7 @@ func newLinkedHost(t *testing.T) *Host {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +46,7 @@ func newLinkedHost(t *testing.T) *Host {
 func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	host := newLinkedHost(t)
 	getIDs := func() []string {
-		return host.Registry.set.getRequirementIDs("md.numen.sample")
+		return plugin.GetRequirementIDs(host.Registry, "md.numen.sample")
 	}
 	if got := getIDs(); !slices.Equal(got, []string{"large-weights"}) {
 		t.Errorf("requirements = %v, want the large weights", got)
@@ -82,10 +84,10 @@ func TestCheckPluginSettingAcceptsPathsOfItsType(t *testing.T) {
 	}{
 		{"dictionary", "", nil},
 		{"dictionary", text, nil},
-		{"dictionary", model, errNotAccepted},
-		{"dictionary", tmp, errNotAFile},
-		{"dictionary", filepath.Join(tmp, "absent.txt"), errPathNotFound},
-		{"dictionary", 3.0, errPathNotFound},
+		{"dictionary", model, plugin.ErrNotAccepted},
+		{"dictionary", tmp, plugin.ErrNotAFile},
+		{"dictionary", filepath.Join(tmp, "absent.txt"), plugin.ErrPathNotFound},
+		{"dictionary", 3.0, plugin.ErrPathNotFound},
 		{"model", "anything", nil},
 	} {
 		err := host.Settings.CheckPluginSetting("md.numen.sample", tc.key, tc.value)

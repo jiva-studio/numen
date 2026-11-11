@@ -20,9 +20,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -95,7 +95,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	serverPort := serverAddress.Port
 
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	})
 
 	cfg := vaultConfig(t)
-	cfg.PluginHost = container.AdaptPluginHost(host)
+	cfg.PluginHost = container.AdaptPluginHost((*container.PluginRoles)(host))
 
 	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)
 	if err != nil {

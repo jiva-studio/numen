@@ -49,6 +49,25 @@ type Listeners struct {
 	bindings map[string]map[string]listenerBinding
 }
 
+// ListenersDeps are what Listeners reads, starts a plugin through and reports to.
+type ListenersDeps struct {
+	Set         listenedPlugins
+	Mode        hostState
+	Supervisors *supervision.Supervisors
+	Activation  pluginActivator
+	Failures    *supervision.Failures
+	Clock       machineport.Clock
+	Report      func(error)
+}
+
+// NewListeners creates the listeners with no port bound.
+func NewListeners(d ListenersDeps) *Listeners {
+	return &Listeners{
+		set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation, failures: d.Failures, clock: d.Clock,
+		report: d.Report, bindings: make(map[string]map[string]listenerBinding),
+	}
+}
+
 // listenerBinding is a bound listener port and the proxy that forwards its connections.
 type listenerBinding struct {
 	port  int

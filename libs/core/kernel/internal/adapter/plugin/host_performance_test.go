@@ -1,6 +1,9 @@
-package plugin
+package plugin_test
 
-import "testing"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"testing"
+)
 
 // A running plugin receives the profile in its Configure call, and a change of the profile pushes
 // a new call without a restart.
@@ -33,7 +36,7 @@ func TestTheSameProfileAgainConfiguresNoPlugin(t *testing.T) {
 // A plugin that starts later receives the profile in its first Configure call.
 func TestAPluginConfiguredLaterReceivesTheProfile(t *testing.T) {
 	host, probe := newSecretHost(t, nil)
-	host.Config.performance = "eco"
+	plugin.SetPerformance(host.Config, "eco")
 
 	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)

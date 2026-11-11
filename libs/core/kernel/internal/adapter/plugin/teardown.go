@@ -41,6 +41,25 @@ type Teardown struct {
 	report    func(error)
 }
 
+// TeardownDeps are what a Teardown stops and closes.
+type TeardownDeps struct {
+	Mode        *Mode
+	Supervisors *supervision.Supervisors
+	Stopper     *supervision.Stopper
+	Evictor     *supervision.Evictor
+	Events      eventCloser
+	Listeners   listenerControl
+	Report      func(error)
+}
+
+// NewTeardown creates the teardown of the plugins.
+func NewTeardown(d TeardownDeps) *Teardown {
+	return &Teardown{
+		mode: d.Mode, sups: d.Supervisors, stopper: d.Stopper, evictor: d.Evictor, events: d.Events, listeners: d.Listeners,
+		report: d.Report,
+	}
+}
+
 // StopPlugin stops the process of the plugin, if one runs, and forgets its endpoint.
 func (t *Teardown) StopPlugin(ctx context.Context, pluginID string) error {
 	return t.stopper.StopPlugin(ctx, pluginID)

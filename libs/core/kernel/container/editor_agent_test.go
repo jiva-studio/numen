@@ -17,7 +17,7 @@ import (
 // plugin it was started in when another call finishes it.
 func TestEditorAgent_EndsConversationStartedInEarlierCall(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	runTask(t, assembly.GetAgent(), agent.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
 	if err := assembly.GetAgent().EndConversation(t.Context(), "c-1"); err != nil {
@@ -33,7 +33,7 @@ func TestEditorAgent_EndsConversationStartedInEarlierCall(t *testing.T) {
 // goes straight to its plugin without listing the programs a second time.
 func TestEditorSettingsShareAgentRouter(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	if _, err := assembly.OpenGetSettings().Execute(); err != nil {
 		t.Fatal(err)
@@ -60,7 +60,7 @@ func TestEditorSettings_ReportsLatePrograms(t *testing.T) {
 	}
 	assembly := newEditorServices(
 		container.NewConfig(container.Config{
-			PluginHost: container.AdaptPluginHost(host),
+			PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
 			Paths:      container.Paths{SettingsPath: settingsFile},
 		}),
 	)
