@@ -9,7 +9,7 @@ import (
 func TestGetTitleAnswersTheTitleOfTheNoteAtAPath(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	title := query.NewGetTitle(c.db.NoteQueries.NoteRefs)
+	title := query.NewGetTitle(c.db.NoteQueries())
 
 	if got := title.Execute(t.Context(), c.vault, "Heat.md"); got == "" {
 		t.Error("a note in the index has no title")

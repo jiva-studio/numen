@@ -12,12 +12,7 @@ import (
 )
 
 func getUseCaseName(pkg string) (name string, isUseCase bool) {
-	rest, found := strings.CutPrefix(pkg, "usecase/")
-	if !found {
-		return "", false
-	}
-	name, _, _ = strings.Cut(rest, "/")
-	return name, true
+	return strings.CutPrefix(pkg, "usecase/")
 }
 
 func getSharedPackagesOfUseCases() map[string]string {
@@ -45,7 +40,8 @@ func getUseCaseEdgeRefusal(from, to string) string {
 	return "a use case imports no other use case"
 }
 
-// No use case imports another use case; a package below a use case is that use case. A use case imports
+// No use case imports another use case. Every package under usecase, nested ones included, is a use case
+// of its own: it imports neither its parent, nor its child, nor a sibling. A use case imports
 // from internal/ only the packages of getSharedPackagesOfUseCases.
 //
 // Test files are not walked.
@@ -93,15 +89,36 @@ func TestNoUseCaseImportsAnotherUseCase(t *testing.T) {
 	if importsRead < 50 {
 		t.Fatalf("%d edges of this module read: the walk is not reading the use cases", importsRead)
 	}
-	folders, err := os.ReadDir("../usecase")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, folder := range folders {
-		if name := folder.Name(); folder.IsDir() && !visited[name] {
+	for _, name := range getUseCasesWithSource(t) {
+		if !visited[name] {
 			t.Errorf("usecase/%s has no file the walk read: the rule stops at that use case", name)
 		}
 	}
+}
+
+func getUseCasesWithSource(t *testing.T) []string {
+	t.Helper()
+	var names []string
+	err := filepath.WalkDir("../usecase", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || !entry.IsDir() || path == "../usecase" {
+			return err
+		}
+		files, err := os.ReadDir(path)
+		if err != nil {
+			return err
+		}
+		for _, file := range files {
+			if name := file.Name(); !file.IsDir() && strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go") {
+				names = append(names, strings.TrimPrefix(filepath.ToSlash(path), "../usecase/"))
+				break
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return names
 }
 
 // The edge rule is called directly on imports between use cases and imports within one.
@@ -127,10 +144,17 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 		{"usecase/note", "usecase/search", true},
 		{"usecase/note", "usecase/vectors", true},
 
-		// A package under a use case is that use case.
+		// A package under a use case is a use case of its own: parent, child and sibling are refused, and
+		// a package imports itself.
 		{"usecase/note/sub", "usecase/vault", true},
 		{"usecase/vault/sub", "usecase/note", true},
-		{"usecase/note/sub", "usecase/note", false},
+		{"usecase/note/sub", "usecase/note", true},
+		{"usecase/note", "usecase/note/sub", true},
+		{"usecase/vault/registry", "usecase/vault/check", true},
+		{"usecase/vault", "usecase/vault/registry/deep", true},
+		{"usecase/note/query", "usecase/note/query", false},
+		{"usecase/note", "usecase/note", false},
+		{"usecase/notebook", "usecase/note", true},
 
 		// Shared packages: the listed ones are allowed, every other package under internal/ is refused.
 		{"usecase/vectors", "internal/vector", false},

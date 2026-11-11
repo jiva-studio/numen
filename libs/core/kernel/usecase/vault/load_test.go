@@ -54,10 +54,10 @@ func TestLoad(t *testing.T) {
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
-		db.Stores.Vaults,
-		db.Stores.Notes,
-		db.NoteQueries.FileStats,
-		db.Stores.Maintenance,
+		db.Vaults(),
+		db.Notes(),
+		db.NoteQueries(),
+		db.Maintenance(),
 	)
 
 	coldStart := testsupport.GetMachine().Now()
@@ -77,7 +77,7 @@ func TestLoad(t *testing.T) {
 	}
 	t.Logf("warm scan: %s — this is what a startup pays", getElapsed(warmStart))
 
-	size, err := os.Stat(db.Path())
+	size, err := os.Stat(db.File)
 	if err == nil {
 		t.Logf("index: %.1f MB for %d notes", float64(size.Size())/(1<<20), notes)
 	}
@@ -94,7 +94,7 @@ func TestLoad(t *testing.T) {
 	})
 }
 
-func measureUnderLoad(t *testing.T, db *vaults.Index, v domain.Vault, scan vaults.Scan, query string) {
+func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
 	t.Helper()
 	const (
 		readers  = 4
@@ -119,7 +119,7 @@ func measureUnderLoad(t *testing.T, db *vaults.Index, v domain.Vault, scan vault
 	latencies := make([][]time.Duration, readers)
 	for i := range readers {
 		readWg.Go(func() {
-			queries := db.Chunks.Passages
+			queries := db.ChunkSearch()
 			deadline := testsupport.GetMachine().Now().Add(duration)
 			for testsupport.GetMachine().Now().Before(deadline) && ctx.Err() == nil {
 				started := testsupport.GetMachine().Now()

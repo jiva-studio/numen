@@ -3,6 +3,7 @@ package vault_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"os"
 	"path/filepath"
 	"slices"
@@ -60,7 +61,7 @@ func (s *sometimes) Open(v domain.Vault) (vaultport.VaultReader, error) {
 // kept level with it, and what the following reported.
 type followed struct {
 	vault domain.Vault
-	index *vaults.Index
+	index *container.Index
 	moved <-chan vaults.VaultChanges
 }
 
@@ -75,7 +76,7 @@ func newFollowed(t *testing.T, notes map[string]string, watcher *manualWatcher) 
 	moved := make(chan vaults.VaultChanges, 8)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.GetMachine()),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
 		scanner(vaultreader.Readers{}, db),
 	)
 	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
@@ -206,7 +207,7 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(readers, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.GetMachine()),
+		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
 		scanner(vaultreader.Readers{}, db),
 	)
 	follow.ErrorHandler = func(err error) { reported <- err }
@@ -268,7 +269,7 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	db := openIndex(t)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.GetMachine()),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
 		scanner(vaultreader.Readers{}, db),
 	)
 	started, err := follow.Begin(t.Context(), v)
@@ -306,7 +307,7 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.GetMachine()),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
 		scanner(readers, db),
 	)
 	follow.ErrorHandler = func(err error) { reported <- err }

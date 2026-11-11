@@ -2,6 +2,7 @@ package vault_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"math"
 	"os"
 	"path/filepath"
@@ -31,19 +32,19 @@ func newOrchardVault(t *testing.T) domain.Vault {
 	})
 }
 
-func scanAt(db *vaults.Index, tokens int) vaults.Scan {
+func scanAt(db *container.Index, tokens int) vaults.Scan {
 	scan := scanner(vaultreader.Readers{}, db)
 	scan.Cut = chunking.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
-		return db.Source.SourceBacklog.GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
+		return db.Sources().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
 	}
 	return scan
 }
 
-func getNotesWithOtherChunking(t *testing.T, db *vaults.Index, v domain.Vault, tokens int) []string {
+func getNotesWithOtherChunking(t *testing.T, db *container.Index, v domain.Vault, tokens int) []string {
 	t.Helper()
-	paths, err := db.Source.SourceBacklog.GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{chunking.NewCutNotes(tokens).Recipe()}, 100)
+	paths, err := db.Sources().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{chunking.NewCutNotes(tokens).Recipe()}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,8 +159,8 @@ func (r recipeless) Save(ctx context.Context, v domain.VaultID, notes []domain.N
 func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
-	old := vaults.NewScan(vaultreader.Readers{}, db.Stores.Vaults, recipeless{db.Stores.Notes}, db.NoteQueries.FileStats, db.Stores.Maintenance)
-	old.Walks = db.Walks()
+	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance())
+	old.Walks = &db.Walks
 	old.Cut = chunking.NewCutNotes(512)
 	runScan(t, old, v)
 	if got := getNotesWithOtherChunking(t, db, v, 512); len(got) != 3 {
@@ -184,8 +185,8 @@ func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) 
 	runScan(t, scanAt(db, 256), v)
 
 	content := &groupedWrites{}
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Stores.Vaults, content, db.NoteQueries.FileStats, db.Stores.Maintenance)
-	scan.Walks = db.Walks()
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), db.Maintenance())
+	scan.Walks = &db.Walks
 	scan.Cut = chunking.NewCutNotes(512)
 	scan.ShouldRecut = true
 	scan.GetOtherRecipePaths = scanAt(db, 512).GetOtherRecipePaths

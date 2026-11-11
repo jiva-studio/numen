@@ -8,7 +8,7 @@
  * with a search line over it, and may take what is typed as the value.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { measureElementRect } from '@/shared/lib/dom'
+import { measureElementRect } from '@/shared/api/dom'
 import { Menu, type MenuItem } from '../menu'
 import { SearchableListPopup, filterItems } from '../searchable-list'
 import type { Position } from '@/shared/lib/math/geometry'

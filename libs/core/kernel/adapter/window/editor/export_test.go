@@ -190,14 +190,16 @@ func ServicesOf(o *Installation) *Services {
 // services hold pointers into the scenarios of the installation, so the one wrapped there is the
 // one they call.
 
-func (s *Services) NoteCreate() *note.Create { return &s.installation.notes.Edit.Create }
-func (s *Services) NoteWrite() *note.Write   { return &s.installation.notes.Edit.Write }
-func (s *Services) NoteRename() *note.Rename { return &s.installation.notes.Place.Rename }
-func (s *Services) FileRemove() *note.Remove { return &s.installation.notes.Place.Remove }
-func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Tree.Move }
+func (s *Services) NoteCreate() *note.Create { return &s.installation.scenarios.Notes.Edit.Create }
+func (s *Services) NoteWrite() *note.Write   { return &s.installation.scenarios.Notes.Edit.Write }
+func (s *Services) NoteRename() *note.Rename { return &s.installation.scenarios.Notes.Place.Rename }
+func (s *Services) FileRemove() *note.Remove { return &s.installation.scenarios.Notes.Place.Remove }
+func (s *Services) FileMove() *vaults.Move   { return &s.installation.scenarios.Vaults.Tree.Move }
 
-func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Tree.Move = *move }
-func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Edit.Write = *write }
+func (s *Services) SetFileMove(move *vaults.Move) { s.installation.scenarios.Vaults.Tree.Move = *move }
+func (s *Services) SetNoteWrite(write *note.Write) {
+	s.installation.scenarios.Notes.Edit.Write = *write
+}
 
 // ViewOf is the view of the window as the core asks it to show something.
 func ViewOf(state *State) windowsession.View {

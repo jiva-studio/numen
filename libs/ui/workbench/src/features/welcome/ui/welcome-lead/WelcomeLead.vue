@@ -7,7 +7,7 @@
  */
 import { Glyph } from '../glyph'
 import { WelcomeRow } from '../welcome-row'
-import type { WelcomeAction } from '../../lib/welcome'
+import type { WelcomeAction } from '../../model/welcome'
 
 withDefaults(
   defineProps<{

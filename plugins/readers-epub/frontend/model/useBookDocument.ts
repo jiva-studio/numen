@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage, type TextRange } from '@numen/plugin-sdk'
-import { resolveImageUrls } from '../lib/markup'
+import { resolveImageUrls } from '../api/markup'
 import type { Books, SpineDocument } from '../types'
 
 export type MessageWriter = (text: string, tone?: 'info' | 'error') => void

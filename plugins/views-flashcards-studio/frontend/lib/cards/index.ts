@@ -1,4 +1,4 @@
-/** The pure part of the flashcards editors: card models, decks, field order, the grid and safe markup. */
+/** The pure part of the flashcards editors: card models, decks, field order, the grid and the rules of safe markup. */
 export {
   CARD_MODEL_WORDS,
   type CardModelProblems,
@@ -55,4 +55,4 @@ export {
   STEP_KEYS,
   type StepDirection,
 } from './order'
-export { safe, scheme } from './safe'
+export { scheme } from './links'

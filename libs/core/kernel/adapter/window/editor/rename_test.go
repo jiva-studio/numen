@@ -17,9 +17,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -81,7 +84,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 // applies the one setting to all three.
 func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync   query.SyncTitleAndFilename
+		sync   naming.SyncTitleAndFilename
 		posVal string
 		called string
 	}{
@@ -633,9 +636,9 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	editor.ServicesOf(f.installation).NoteRename().Drawing = func(context.Context, domain.Move) error {
-		return errors.New("the window would not show the move")
-	}
+	*editor.ServicesOf(f.installation).NoteRename() = note.NewRename(note.MoveDeps{
+		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, Now: testsupport.NewClock(),
+	}, failingAfterMove{f.installation.Scenarios().Notes.Place.Move})
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",
@@ -934,7 +937,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.installation.Notes().Browse.GetTitles.Execute(t.Context(), f.installation.State.GetCurrentVault(), []string{"Entropy.md"})
+	found, err := f.installation.Scenarios().Queries.Browse.GetTitles.Execute(t.Context(), f.installation.State.GetCurrentVault(), []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1646,4 +1649,15 @@ func TestRenameTitledNoteOntoTakenNameFailsAndWritesNothing(t *testing.T) {
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
 		t.Errorf("the note already there was written:\n%s", now)
 	}
+}
+
+// failingAfterMove files the note and then fails, as a step after the move does.
+type failingAfterMove struct{ note.Move }
+
+func (m failingAfterMove) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
+	moved, err := m.Move.Execute(ctx, v, from, to)
+	if err != nil {
+		return moved, err
+	}
+	return moved, errors.New("a step after the move failed")
 }

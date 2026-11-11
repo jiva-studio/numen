@@ -14,7 +14,7 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { DESIGNED, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Sizes, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
-import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
+import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../api/head'
 import { createAppearancePreview } from './preview'
 
 export interface WindowAppearanceDeps {

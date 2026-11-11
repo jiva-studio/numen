@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"hash/fnv"
+	"io"
 	"math/rand/v2"
 	"strings"
 	"sync"
@@ -19,6 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func getBefore() []string {
@@ -57,14 +61,14 @@ func findTask(t *testing.T, r *recorder, id string) *work.Task {
 }
 
 func newPass(
-	made reading, db *vault.Index, events Events, embedder embeddingport.Embedder, recipe string,
+	made reading, db *WorkerIndex, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
 ) *pass {
 	worker := NewWorker(Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
 		VectorCounts: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
-			return db.Chunks.Progress.GetProgress(ctx, v.ID, recipe)
+			return db.Progress.GetProgress(ctx, v.ID, recipe)
 		},
 		Events: events,
 		Quiet:  time.Hour,
@@ -73,24 +77,24 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-func cut(t *testing.T, made reading, db *vault.Index, v domain.Vault) {
+func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
 	t.Helper()
 
 	scan := vault.NewScan(
 		made.GetVaultReaders(),
-		db.Stores.Vaults,
-		db.Stores.Notes,
-		db.NoteQueries.FileStats,
-		db.Stores.Maintenance,
+		db.Vaults,
+		db.Notes,
+		db.FileStats,
+		db.Maintenance,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func fit(t *testing.T, db *vault.Index, model embeddingport.Embedder) {
+func fit(t *testing.T, db *WorkerIndex, model embeddingport.Embedder) {
 	t.Helper()
-	if err := db.VectorIndex().FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
+	if err := db.Vectors.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -237,7 +241,7 @@ func testBooksThatCouldNotBeReadStayInTheList(t *testing.T, openReading openFunc
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	events := newRecorder()
 	// The index queried for pending vectors is closed, so the query fails.
-	if err := db.Close(); err != nil {
+	if err := db.Closer.Close(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -354,7 +358,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	p.worker.read = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +385,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	again := newPass(made, db, events, model.fakeEmbedder, model.GetModel().Recipe(), v)
 	again.embed(t.Context())
 
-	target, embedded, err = db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err = db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -404,7 +408,7 @@ func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) 
 	p.worker.sources = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -436,7 +440,7 @@ func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	p.worker.notes = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -499,7 +503,7 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 	<-p.worker.read
 	p.embedRecognized(t.Context())
 
-	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -516,7 +520,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
-	unembedded, _, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	unembedded, _, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,7 +533,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 	<-p.worker.read
 	p.embedRecognized(t.Context())
 
-	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -604,4 +608,15 @@ func testCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openF
 	if pos := findTask(t, events, work.MakingVectors); pos != nil {
 		t.Errorf("the canceled pass is still listed: %+v", *pos)
 	}
+}
+
+// WorkerIndex is the part of an open index the tests of the worker read and write.
+type WorkerIndex struct {
+	Vaults      vaultport.VaultRepository
+	Notes       noteport.NoteRepository
+	FileStats   noteport.FileStats
+	Maintenance indexport.IndexMaintenance
+	Progress    indexport.IndexProgress
+	Vectors     embeddingport.VectorIndex
+	Closer      io.Closer
 }

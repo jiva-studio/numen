@@ -21,7 +21,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 type benchEmbedder struct {
@@ -84,7 +83,7 @@ func generateDeterministicVector(text string, dims int) []float32 {
 
 type benchCorpus struct {
 	vault      domain.Vault
-	db         *vaults.Index
+	db         *container.Index
 	searchMock search.Search
 	mockModel  embeddingport.Embedder
 	passages   sourceport.PassageQueries
@@ -112,10 +111,10 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	}
 	testsupport.CloseAfter(b, db)
 
-	if err := db.Stores.Vaults.Register(ctx, v.ID); err != nil {
+	if err := db.Vaults().Register(ctx, v.ID); err != nil {
 		b.Fatal(err)
 	}
-	if err := db.VectorIndex().FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
+	if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 		b.Fatal(err)
 	}
 
@@ -135,7 +134,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	searchMock := container.NewSearch(cfg, db, mock, nil)
 
-	passages := db.Chunks.Passages
+	passages := db.ChunkSearch()
 	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
 	if err != nil {
 		b.Fatal(err)
@@ -299,7 +298,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := search.NewFindNearest(c.db.Chunks.Nearest).Execute(ctx, c.vault.ID, source.NearestQuery{Recipe: c.recipe, Vector: c.queryVec, Limit: 20, Floor: 0.1})
+					res, err := search.NewFindNearest(c.db.ChunkSearch()).Execute(ctx, c.vault.ID, source.NearestQuery{Recipe: c.recipe, Vector: c.queryVec, Limit: 20, Floor: 0.1})
 					if err != nil {
 						b.Fatal(err)
 					}

@@ -141,24 +141,12 @@ func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 	}
 }
 
-// Every port an index answers is there to be used.
-func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
-	_, db, _ := openVault(t, getNote())
-
-	if db.Chunks.Vectors == nil || db.Chunks.VectorQueries == nil || db.Source.Sources == nil || db.Source.RemovalLookup == nil {
-		t.Error("a port of the index answers nothing")
-	}
-}
-
-// An index serves every port it names and returns the path of its file.
-func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
+// An index returns the path of its file.
+func TestAnIndexReturnsWhereItsFileIs(t *testing.T) {
 	cfg, db, _ := openVault(t, getNote())
 
-	if db.Path() != cfg.IndexPath {
-		t.Errorf("the index is at %q, not %q", db.Path(), cfg.IndexPath)
-	}
-	if db.Stores.Notes == nil || db.Chunks.Progress == nil || db.NoteQueries.Links == nil || db.NoteQueries.Problems == nil {
-		t.Error("a port of the index answers nothing")
+	if db.File != cfg.IndexPath {
+		t.Errorf("the index is at %q, not %q", db.File, cfg.IndexPath)
 	}
 }
 
@@ -166,13 +154,13 @@ func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
 func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
 	_, db, _ := openVault(t, getNote())
 
-	if err := db.VectorIndex().Compact(t.Context()); err != nil {
+	if err := db.Compact(t.Context()); err != nil {
 		t.Fatalf("an open index rejected: %v", err)
 	}
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.VectorIndex().Compact(t.Context()); err == nil {
+	if err := db.Compact(t.Context()); err == nil {
 		t.Error("a closed index made room")
 	}
 }

@@ -7,8 +7,8 @@ import (
 	pathpkg "path"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // UntitledName is the title of a note before the person has named it.
@@ -21,14 +21,20 @@ const MaxUntitledAttempts = 100
 // CreateInRelation creates a note joined to an existing one. The new note writes
 // the record about From, with the inverse role, and is filed in the folder of From.
 type CreateInRelation struct {
-	create    Create
-	addresses *query.GetLinkAddress
+	create noteCreating
+	names  edit.NameQueries
+}
+
+// noteCreating is the creation of a note that CreateInRelation joins to another.
+type noteCreating interface {
+	Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error)
+	ExecuteUntitled(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error)
 }
 
 // NewCreateInRelation builds the use case over the creation of a note and the
 // address under which a link names the note it is related to.
-func NewCreateInRelation(create Create, addresses *query.GetLinkAddress) CreateInRelation {
-	return CreateInRelation{create: create, addresses: addresses}
+func NewCreateInRelation(create noteCreating, names edit.NameQueries) CreateInRelation {
+	return CreateInRelation{create: create, names: names}
 }
 
 // Execute creates the note. An untitled note takes the lowest free number; a
@@ -38,7 +44,7 @@ func (u CreateInRelation) Execute(ctx context.Context, v domain.Vault, in domain
 		return CreateResult{}, fmt.Errorf("%w: %q of %q", domain.ErrNotCreatable, in.Role, in.From)
 	}
 	inverse, _ := domain.GetInverseRole(in.Role)
-	target, err := u.addresses.Execute(ctx, v, in.From)
+	target, err := getLinkAddress(ctx, u.names, v, in.From)
 	if err != nil {
 		return CreateResult{}, err
 	}

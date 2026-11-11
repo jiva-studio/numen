@@ -7,7 +7,7 @@ import type { VNode } from 'vue'
 import { FolderRoot } from '@lucide/vue'
 import { WelcomeRow } from '../../welcome-row'
 import { vaultLetter } from '../../../lib/letters'
-import type { VaultRow } from '../../../lib/welcome'
+import type { VaultRow } from '../../../model/welcome'
 import type { Keystroke } from '@numen/ui'
 
 defineProps<{

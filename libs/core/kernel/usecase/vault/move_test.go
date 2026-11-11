@@ -3,18 +3,19 @@ package vault_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -23,7 +24,7 @@ import (
 // filing is a scanned vault whose files can be moved about, with the index kept
 // up to date as a real caller keeps it.
 type filing struct {
-	db      *vaults.Index
+	db      *container.Index
 	vault   domain.Vault
 	index   func(ctx context.Context, v domain.Vault, paths []string) error
 	readers *countingReaders
@@ -38,7 +39,7 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefresh(readers, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.NewClock())
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
 	return filing{
 		db:      db,
 		vault:   v,
@@ -55,25 +56,25 @@ func (f filing) move() vaults.Move { return f.newMove(true) }
 
 func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
-func (f filing) newMove(preserved query.SyncTitleAndFilename) vaults.Move {
+func (f filing) newMove(preserved naming.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: f.db.NoteQueries.Links, Names: f.db.NoteQueries.NamedPaths, Sources: f.db.Source.Sources, Index: f.index, Now: testsupport.NewClock(),
+		Links: f.db.NoteQueries(), Names: f.db.NoteQueries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
+		Sync: func() naming.SyncTitleAndFilename { return preserved },
+		Drawing: func(_ context.Context, _ domain.Vault, went domain.Move) error {
+			*f.went = append(*f.went, went)
+			return nil
+		},
 	})
-	notes.Sync = func() query.SyncTitleAndFilename { return preserved }
-	notes.Drawing = func(_ context.Context, went domain.Move) error {
-		*f.went = append(*f.went, went)
-		return nil
-	}
 	return vaults.NewMove(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		f.db.NoteQueries.Links, f.db.Source.SourcesUnder, f.db.Source.Sources, notes,
+		f.db.NoteQueries(), f.db.Sources(), f.db.Sources(), notes,
 	)
 }
 
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
-	found, err := f.db.NoteQueries.Links.GetLinks(t.Context(), f.vault.ID, in)
+	found, err := f.db.NoteQueries().GetLinks(t.Context(), f.vault.ID, in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +137,7 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 
 func (f filing) sources(t *testing.T, path string) []string {
 	t.Helper()
-	found, err := f.db.Source.SourcesUnder.GetSourcesUnder(t.Context(), f.vault.ID, path)
+	found, err := f.db.Sources().GetSourcesUnder(t.Context(), f.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +227,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 
 	// The chunks are still the source's, so a search answers with the note at
 	// the path it is filed under now.
-	searching := search.New(search.Index{Passages: f.db.Chunks.Passages}, vaultreader.Readers{}, nil, nil, nil, nil)
+	searching := search.New(search.Index{Passages: f.db.ChunkSearch()}, vaultreader.Readers{}, nil, nil, nil, nil)
 	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)

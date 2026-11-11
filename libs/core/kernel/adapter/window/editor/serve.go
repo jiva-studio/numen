@@ -9,7 +9,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -29,8 +31,7 @@ type PathDialog interface {
 type Installation struct {
 	State *State
 
-	notes  *note.Scenarios
-	vaults *vaults.Scenarios
+	scenarios *Scenarios
 
 	session *windowsession.Scenarios
 	pages   pageSet
@@ -52,13 +53,18 @@ func NewInstallation(state *State, session *windowsession.Scenarios, out io.Writ
 	}
 }
 
-// UseScenarios sets the use cases the window works its notes and its vaults
-// through. They are built once: other components working the same vault, such
-// as agent tools, use these instances and build none of their own, so both
-// observe the same errors.
-func (o *Installation) UseScenarios(notes *note.Scenarios, target *vaults.Scenarios) {
-	o.notes, o.vaults = notes, target
+// Scenarios are the use cases of the window, grouped. They are built once: other components working the
+// same vault, such as agent tools, use these instances and build none of their own, so both observe the
+// same errors.
+type Scenarios struct {
+	Notes   *note.Scenarios
+	Queries *query.Scenarios
+	Vaults  *vaults.Scenarios
+	Listing *registry.Listing
 }
+
+// UseScenarios sets the use cases the window works its notes and its vaults through.
+func (o *Installation) UseScenarios(scenarios *Scenarios) { o.scenarios = scenarios }
 
 // Mount adds the services the window answers through.
 func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.routes, routes...) }
@@ -137,12 +143,8 @@ func (o *Installation) WaitForFlush(ctx context.Context) bool {
 	return o.State.Window.WaitForFlush(ctx)
 }
 
-// Notes returns the use cases this window works its vault through.
-// Other components working the same vault in this process, such as agent
-// tools, use the same instances and share error behavior and dependencies.
-// Operations on the list of vaults are in Vaults.
-// Activity from callers other than the user is rendered through Notes.Drawing.
-func (o *Installation) Notes() note.Scenarios { return *o.notes }
+// Scenarios returns the use cases this window works its vault through.
+func (o *Installation) Scenarios() *Scenarios { return o.scenarios }
 
 const (
 	// applyingTheme is the task ID for a theme the settings name that the catalog does not have.
@@ -178,10 +180,6 @@ func (o *Installation) Report(messages []string) {
 	}
 }
 
-// Vaults returns the use cases that act on the list of vaults, built once.
-// Agent components use the same instances, so both observe the same errors.
-func (o *Installation) Vaults() *vaults.Scenarios { return o.vaults }
-
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "import files"
 
@@ -207,7 +205,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	pos := work.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
 	state.Window.AddTask(pos)
 
-	imported, err := o.vaults.Tree.Import.Execute(ctx, showing, into, paths)
+	imported, err := o.scenarios.Vaults.Tree.Import.Execute(ctx, showing, into, paths)
 	if direct := imported.DirectChildren(into); len(direct) > 0 {
 		state.Notices.ChangeEvents.publish(window.Change{Paths: direct})
 	}

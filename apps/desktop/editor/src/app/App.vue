@@ -18,6 +18,7 @@ import CoreFailureNotice from './CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
+import { getUserAgent } from './window/getUserAgent'
 import BootstrapFailure from './bootstrap/BootstrapFailure.vue'
 import { createWindow } from './window/createWindow'
 import { useWindowTabMenu } from '@/entities/tab'
@@ -163,6 +164,7 @@ function onShowTab(id: string) {
           :plugin-ways="pluginWays"
           :run-command="runCommand"
           :open-current-vault="openCurrentVault"
+          :agent="getUserAgent()"
         />
         <div v-else />
       </template>

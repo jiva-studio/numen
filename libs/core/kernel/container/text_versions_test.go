@@ -22,7 +22,7 @@ const (
 	talkPath    = "talks/Morning talk.mp3"
 )
 
-func putTranscript(t *testing.T, db *vault.Index, v domain.Vault, words string) domain.TextVersion {
+func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain.TextVersion {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(v.Path, talkPath))
 	if err != nil {
@@ -40,7 +40,7 @@ func putTranscript(t *testing.T, db *vault.Index, v domain.Vault, words string) 
 		Path: talkPath, PluginID: transcriber, Key: "talk", Kind: "transcript", File: "talk.jsonl",
 		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 5, 1, 8, 0, 0, 0, time.UTC),
 	}
-	repo, err := db.TextVersions.OpenVersionWriter(v)
+	repo, err := db.Versions.OpenVersionWriter(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func putTranscript(t *testing.T, db *vault.Index, v domain.Vault, words string) 
 	return version
 }
 
-func readIntoIndex(t *testing.T, cfg Config, db *vault.Index, v domain.Vault) {
+func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
 	t.Helper()
 	if _, err := searchScan(searchOf(cfg), db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -130,10 +130,10 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	}
 	cfg.TextVersions = versions
 	readIntoIndex(t, cfg, db, v)
-	if _, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
+	if _, err := db.DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.VectorIndex().Compact(t.Context()); err != nil {
+	if err := db.Compact(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,7 +169,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, cfg, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(fileMovers(vaultOf(cfg)), db.NoteQueries.Links, db.Source.SourcesUnder, db.Source.Sources, note.Move{})
+	move := vault.NewMove(fileMovers(vaultOf(cfg)), db.NoteQueries(), db.Sources(), db.Sources(), note.Move{})
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	}
 }
 
-func newTalkIndex(t *testing.T) (Config, *vault.Index, domain.Vault, domain.TextVersion) {
+func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersion) {
 	t.Helper()
 	v := newTalkVault(t)
 	cfg := NewConfig(Config{
@@ -211,9 +211,9 @@ func newTalkIndex(t *testing.T) (Config, *vault.Index, domain.Vault, domain.Text
 	return cfg, db, v, version
 }
 
-func refreshPaths(t *testing.T, cfg Config, db *vault.Index, v domain.Vault, paths ...string) {
+func refreshPaths(t *testing.T, cfg Config, db *Index, v domain.Vault, paths ...string) {
 	t.Helper()
-	if _, err := makeRefresh(cfg, db, db.Stores.Notes).Execute(t.Context(), v, paths); err != nil {
+	if _, err := makeRefresh(cfg, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -310,7 +310,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		Path: talkPath, PluginID: other, Key: "notes", Kind: "subtitles", File: "notes.jsonl",
 		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
 	}
-	repo, err := db.TextVersions.OpenVersionWriter(v)
+	repo, err := db.Versions.OpenVersionWriter(v)
 	if err != nil {
 		t.Fatal(err)
 	}

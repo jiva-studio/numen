@@ -417,9 +417,9 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 			<-mendMayWrite
 		}},
 		Writers: vaultwriter.VaultWriters{Locks: locks},
-		Links:   c.db.NoteQueries.Links,
-		Names:   c.db.NoteQueries.NamedPaths,
-		Sources: c.db.Source.Sources,
+		Links:   c.db.NoteQueries(),
+		Names:   c.db.NoteQueries(),
+		Sources: c.db.Sources(),
 		Index:   c.index,
 		Now:     testsupport.NewClock(),
 	})
@@ -612,7 +612,7 @@ func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 	}
 
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, c.db.Stores.Vaults, c.db.Stores.Notes, c.db.Source.RemovalLookup, c.db.Source.Sources, testsupport.NewClock())
+		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.Sources(), c.db.Sources(), testsupport.NewClock())
 	res, err := refresh.Execute(t.Context(), c.vault, []string{".photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)

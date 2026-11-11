@@ -9,7 +9,7 @@ import type { VNode } from 'vue'
  */
 import { WelcomeLead } from '../welcome-lead'
 import { WelcomeVaults } from '../welcome-vaults'
-import type { FooterEntry, VaultRow, WelcomeAction } from '../../lib/welcome'
+import type { FooterEntry, VaultRow, WelcomeAction } from '../../model/welcome'
 
 withDefaults(
   defineProps<{

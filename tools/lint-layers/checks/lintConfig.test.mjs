@@ -4,6 +4,7 @@ import {
   SCRIPT_STRICT_RULES,
   STRICT_RULES,
   findStrictRuleGaps,
+  listLibProbes,
   listLintedPackages,
   pickProbeFiles,
   pickScriptProbeFiles,
@@ -126,4 +127,22 @@ test("script probes are the first source and the first test, never a config", ()
     "tools",
   );
   assert.deepEqual(probes, ["tools/a/a.mjs", "tools/a/a.test.mjs"]);
+});
+
+test("a lib segment is probed once per package, at its first source file, and tests and stories are not sources", () => {
+  const tracked = [
+    "apps/desktop/editor/eslint.config.js",
+    "apps/desktop/editor/src/entities/tab/lib/a.test.ts",
+    "apps/desktop/editor/src/entities/tab/lib/b.ts",
+    "apps/desktop/editor/src/entities/tab/lib/c.ts",
+    "plugins/notes/eslint.config.js",
+    "plugins/notes/frontend/editor/lib/x.stories.ts",
+    "plugins/notes/frontend/editor/lib/y.ts",
+    "plugins/engines-ocr/eslint.config.js",
+    "plugins/engines-ocr/frontend/ui/z.ts",
+  ];
+  assert.deepEqual(Array.from(listLibProbes(tracked)), [
+    ["apps/desktop/editor", "apps/desktop/editor/src/entities/tab/lib/b.ts"],
+    ["plugins/notes", "plugins/notes/frontend/editor/lib/y.ts"],
+  ]);
 });

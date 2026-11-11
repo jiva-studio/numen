@@ -4,7 +4,7 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import MenuRow from './MenuRow.vue'
-import { getNow, measureElementRect, measureRect } from '@/shared/lib/dom'
+import { getNow, measureElementRect, measureRect } from '@/shared/api/dom'
 import type { Position } from '@/shared/lib/math/geometry'
 import { useMenuDismissal } from './interaction/menuDismissal'
 import { useMenuLifecycle } from './interaction/useMenuLifecycle'

@@ -4,7 +4,7 @@
  * under its name.
  */
 import { computed, useTemplateRef } from 'vue'
-import { measureElementRect } from '@/shared/lib/dom'
+import { measureElementRect } from '@/shared/api/dom'
 import SearchableListOption from './SearchableListOption.vue'
 import { getHeadings, type ListRow } from './rows'
 

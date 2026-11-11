@@ -11,7 +11,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import { Bot, FolderPlus, Settings, SquarePen, Waypoints } from '@lucide/vue'
 import WelcomePage from './WelcomePage.vue'
-import type { FooterEntry, VaultRow, WelcomeAction } from '../lib/welcome'
+import type { FooterEntry, VaultRow, WelcomeAction } from '../model/welcome'
 
 /** The ways in the editor's window offers, in the order it offers them. */
 const WAYS: readonly WelcomeAction[] = [

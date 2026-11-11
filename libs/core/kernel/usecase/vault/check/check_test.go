@@ -29,13 +29,13 @@ func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vaul
 	testsupport.CloseAfter(t, db)
 
 	scan := vaults.NewScan(
-		vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes,
-		db.NoteQueries.FileStats, db.Stores.Maintenance,
+		vaultreader.Readers{}, db.Vaults(), db.Notes(),
+		db.NoteQueries(), db.Maintenance(),
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return check.Standard(db.NoteQueries.Problems), v
+	return check.Standard(db.NoteProblems()), v
 }
 
 func run(t *testing.T, l check.Checks, v domain.Vault, named ...domain.Check) []domain.VaultProblem {

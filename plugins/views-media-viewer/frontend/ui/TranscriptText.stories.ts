@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
 import { EditorView } from '@codemirror/view'
 import TranscriptText from './TranscriptText.vue'
-import { createTimeGutter } from '../lib/timeGutter'
+import { createTimeGutter } from '../model/timeGutter'
 
 /* Two paragraphs that wrap over several rows in the measure the story sets, each with a time. */
 const FIRST =

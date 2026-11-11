@@ -10,7 +10,7 @@ import (
 func TestGetNamedPathsAnswersEveryNoteFiledBelowAName(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"a/Heat.md": "# Heat\n", "b/Heat.md": "# Heat\n", "Cold.md": "# Cold\n"})
-	u := query.NewGetNamedPaths(c.db.NoteQueries.NamedPaths)
+	u := query.NewGetNamedPaths(c.db.NoteQueries())
 
 	got, err := u.Execute(t.Context(), c.vault, "Heat")
 	if err != nil {

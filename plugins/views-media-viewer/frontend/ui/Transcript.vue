@@ -5,7 +5,7 @@
  */
 import { computed, watch } from 'vue'
 import { LoadingIndicator } from '@numen/ui'
-import { createTimeGutter } from '../lib/timeGutter'
+import { createTimeGutter } from '../model/timeGutter'
 import TranscriptText from './TranscriptText.vue'
 import { WORDS as words } from '../words'
 import type { TranscriptState } from '../model/transcript'
