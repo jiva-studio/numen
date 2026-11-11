@@ -165,10 +165,11 @@ func (r *Reader) Read() string { r.n++; return "" }
 
 var _ noteport.Reader = (*Reader)(nil)
 `,
-		"internal/testsupport/tech/tech.go":  "package tech\n\nimport \"os\"\n\nvar _ = os.Args\n",
-		"internal/csp/csp.go":                "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
-		"adapter/index/index.go":             "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
-		"internal/adapterlib/state/state.go": "package state\n\nimport (\n\t\"os\"\n\n\t\"fixture/port/noteport\"\n)\n\ntype Hub struct{ n int }\n\nfunc (h *Hub) Add() { h.n++ }\n\nvar _ = os.Args\nvar _ noteport.Reader\n",
+		"internal/testsupport/tech/tech.go": "package tech\n\nimport \"os\"\n\nvar _ = os.Args\n",
+		"internal/csp/csp.go":               "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
+		"adapter/index/index.go":            "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
+		"internal/adapterlib/state/state.go": "package state\n\nimport (\n\t\"os\"\n\n\t\"fixture/port/noteport\"\n)\n\n" +
+			"type Hub struct{ n int }\n\nfunc (h *Hub) Add() { h.n++ }\n\nvar _ = os.Args\nvar _ noteport.Reader\n",
 		"internal/adapterlib/reach/reach.go": "package reach\n\nimport (\n\t_ \"fixture/adapter/index\"\n\t_ \"fixture/internal/adapter/clock\"\n\t_ \"fixture/usecase/find\"\n)\n",
 		"internal/adapter/clock/clock.go":    "package clock\n\nfunc Now() int { return 0 }\n",
 	})
@@ -176,11 +177,6 @@ var _ noteport.Reader = (*Reader)(nil)
 		"internal/csp": "builds the policy", "internal/vector": "vectors", "internal/text": "text", "internal/chunking": "chunks",
 	})
 	want := []string{
-		"internal/text exports Bus.Count, which changes the state of its receiver: a helper holds no state",
-		"internal/text exports Bus.Forget, which changes the state of its receiver: a helper holds no state",
-		"internal/text exports Bus.Store, which changes the state of its receiver: a helper holds no state",
-		"internal/text exports Bus.Subscribe, which changes the state of its receiver: a helper holds no state",
-		"internal/text exports Reset.Zero, which changes the state of its receiver: a helper holds no state",
 		"internal/adapterlib/reach imports adapter/index: shared adapter code depends on no other adapter",
 		"internal/adapterlib/reach imports internal/adapter/clock: shared adapter code depends on no other adapter",
 		"internal/adapterlib/reach imports usecase/find: shared adapter code depends on no use case",
@@ -189,6 +185,11 @@ var _ noteport.Reader = (*Reader)(nil)
 		"internal/chunking imports usecase/find: a helper depends on no port and no use case",
 		"internal/csp exports Mutable.Set, which changes the state of its receiver: a helper holds no state",
 		"internal/testsupport/tech imports os: a helper reaches no technology",
+		"internal/text exports Bus.Count, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Forget, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Store, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Subscribe, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Reset.Zero, which changes the state of its receiver: a helper holds no state",
 	}
 	if !slices.Equal(found, want) {
 		t.Errorf("the rule rejects\n%s\nwant\n%s", strings.Join(found, "\n"), strings.Join(want, "\n"))

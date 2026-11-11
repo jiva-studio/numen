@@ -229,8 +229,10 @@ func listLiteralAssignmentLines(items []scanned) map[int]bool {
 		}
 	}
 	flush()
-	for line := range blocked {
-		delete(covered, line)
+	for line, isBlocked := range blocked {
+		if isBlocked {
+			delete(covered, line)
+		}
 	}
 	return covered
 }
