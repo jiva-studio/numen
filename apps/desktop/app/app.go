@@ -224,7 +224,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 
 type shownInstallation struct {
 	pages  http.Handler
-	opened *editor.OpenedWindow
+	opened *container.OpenedWindow
 }
 
 func openInstallation(
@@ -242,7 +242,7 @@ func openInstallation(
 }
 
 func makeApplication(
-	opened *editor.OpenedWindow, pages http.Handler, shutdownSeq *shutdown.Sequence,
+	opened *container.OpenedWindow, pages http.Handler, shutdownSeq *shutdown.Sequence,
 	going *vaultFlush, windowVis visibility,
 ) *application.App {
 	return application.New(application.Options{
@@ -260,11 +260,11 @@ func makeApplication(
 	})
 }
 
-func makeWindow(app *application.App, opened *editor.OpenedWindow) *application.WebviewWindow {
+func makeWindow(app *application.App, opened *container.OpenedWindow) *application.WebviewWindow {
 	return app.Window.NewWithOptions(getMainWindowOptions(opened))
 }
 
-func getMainWindowOptions(opened *editor.OpenedWindow) application.WebviewWindowOptions {
+func getMainWindowOptions(opened *container.OpenedWindow) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
 		Width:          1280,
@@ -283,7 +283,7 @@ func getSecondaryWindowURL(tab windowdomain.DetachedTab) string {
 }
 
 func makeSecondaryWindow(
-	app *application.App, opened *editor.OpenedWindow, tab windowdomain.DetachedTab,
+	app *application.App, opened *container.OpenedWindow, tab windowdomain.DetachedTab,
 ) *application.WebviewWindow {
 	return app.Window.NewWithOptions(getSecondaryWindowOptions(opened, tab))
 }
@@ -294,7 +294,7 @@ const (
 	secondaryWindowHeight = 860
 )
 
-func getSecondaryWindowOptions(opened *editor.OpenedWindow, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
+func getSecondaryWindowOptions(opened *container.OpenedWindow, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
@@ -325,7 +325,7 @@ type windowHooks struct {
 // by connectWindow, so it does nothing until then.
 type windowFrame struct {
 	window *application.WebviewWindow
-	opened *editor.OpenedWindow
+	opened *container.OpenedWindow
 	detach func(tab windowdomain.DetachedTab) error
 }
 
@@ -343,7 +343,7 @@ func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab)
 }
 
 func detachTab(
-	ctx context.Context, app *application.App, opened *editor.OpenedWindow, hooks windowHooks, tab windowdomain.DetachedTab,
+	ctx context.Context, app *application.App, opened *container.OpenedWindow, hooks windowHooks, tab windowdomain.DetachedTab,
 ) error {
 	hooks.tracker.addWindow()
 	secWindow := makeSecondaryWindow(app, opened, tab)
@@ -365,7 +365,7 @@ func detachTab(
 var errNoWindow = errors.New("the application has no window to open")
 
 func connectWindow(
-	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.OpenedWindow,
+	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *container.OpenedWindow,
 	frame *windowFrame, hooks windowHooks,
 ) {
 	opened.SetFolderDialog(folderdialog.New(window))
@@ -379,7 +379,7 @@ func connectWindow(
 	})
 }
 
-func importDroppedFiles(ctx context.Context, opened *editor.OpenedWindow, event *application.WindowEvent) {
+func importDroppedFiles(ctx context.Context, opened *container.OpenedWindow, event *application.WindowEvent) {
 	landed := event.Context().DropTargetDetails()
 	if landed == nil {
 		return

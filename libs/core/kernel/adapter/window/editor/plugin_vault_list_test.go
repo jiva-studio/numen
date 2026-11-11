@@ -16,6 +16,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -41,7 +42,7 @@ func (f *showing) bindVaultSwitch(t *testing.T) {
 	t.Helper()
 	show := switchFunc(f.installation.Show)
 	f.installation.State.Switch = show
-	f.installation.WrapPluginSwitch(t, func(windowsession.VaultSwitch) windowsession.VaultSwitch { return show })
+	editor.WrapPluginSwitch(t, f.installation.State, func(windowsession.VaultSwitch) windowsession.VaultSwitch { return show })
 }
 
 func (f *showing) respondToFlushes(
@@ -418,7 +419,7 @@ func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	}
 }
 
-func closeAsDesktopApp(ctx context.Context, o *editor.OpenedWindow) bool {
+func closeAsDesktopApp(ctx context.Context, o *container.OpenedWindow) bool {
 	if o.FlushPending(ctx) {
 		return true
 	}

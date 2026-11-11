@@ -21,7 +21,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
@@ -39,7 +38,7 @@ type runningCore struct {
 	port   int
 	isDown atomic.Bool
 	stop   context.CancelFunc
-	opened *editor.OpenedWindow
+	opened *container.OpenedWindow
 	server *http.Server
 }
 

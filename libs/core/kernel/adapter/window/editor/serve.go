@@ -63,13 +63,6 @@ type Lifecycle struct {
 	NoteWritten func()
 }
 
-// OpenedWindow is an installation with the state it was put together over. The state is what the services
-// mounted on the installation work through; the installation drives the window through its pages only.
-type OpenedWindow struct {
-	*Installation
-	State *State
-}
-
 // Installation is a window put together and running: the pieces the services
 // of its routes and anything else working the same vault need.
 // What runs behind the vault is the lifecycle; the installation maps the
@@ -85,20 +78,17 @@ type Installation struct {
 // errNoVault is returned for a vault query on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
-// NewOpenedWindow makes the installation of a window over its state, the lifecycle of what it shows and
+// NewInstallation makes the installation of a window over its state, the lifecycle of what it shows and
 // the import of dropped files. Nothing is served and no vault is open until Start.
-func NewOpenedWindow(state *State, lifecycle Lifecycle, imports Importer, out io.Writer) *OpenedWindow {
+func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io.Writer) *Installation {
 	if lifecycle.NoteWritten != nil {
 		state.Writes.NotifyNoteWritten = lifecycle.NoteWritten
 	}
-	return &OpenedWindow{
-		Installation: &Installation{
-			lifecycle: lifecycle,
-			imports:   imports,
-			pages:     pageSet{gate: state.Gate, window: statePages{state: state}},
-			out:       out,
-		},
-		State: state,
+	return &Installation{
+		lifecycle: lifecycle,
+		imports:   imports,
+		pages:     pageSet{gate: state.Gate, window: statePages{state: state}},
+		out:       out,
 	}
 }
 

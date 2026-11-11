@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -53,7 +54,7 @@ func TestVaultSwitchAfterPluginOpenFailsDuringUserClose(t *testing.T) {
 	var mu sync.Mutex
 	var pluginOpenCtx context.Context
 	var finishedOpen *windowsession.PluginOpen
-	f.installation.WrapPluginSwitch(t, func(windowsession.VaultSwitch) windowsession.VaultSwitch {
+	editor.WrapPluginSwitch(t, f.installation.State, func(windowsession.VaultSwitch) windowsession.VaultSwitch {
 		return switchFunc(func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
 			mu.Lock()
 			if pluginOpenCtx == nil {

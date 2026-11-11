@@ -7,7 +7,6 @@ import (
 	"flag"
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
@@ -26,7 +25,7 @@ func (d *DebugOptions) isServingHTTP() bool {
 }
 
 func (d *DebugOptions) serveHTTP(
-	context.Context, container.Config, *editor.OpenedWindow, http.Handler,
+	context.Context, container.Config, *container.OpenedWindow, http.Handler,
 ) error {
 	return nil
 }

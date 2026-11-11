@@ -152,7 +152,7 @@ func (s *Services) Mount(route Route) {
 }
 
 // HandlerOf is the handler of the type the installation mounted.
-func HandlerOf[T any](o *OpenedWindow) T {
+func HandlerOf[T any](o *Installation) T {
 	for _, one := range o.pages.routes {
 		if handler, ok := one.service.(T); ok {
 			return handler
@@ -176,8 +176,8 @@ func (s *Services) findVaults(find file.VaultFinder) {
 }
 
 // ServicesOf is the handlers a window answers through.
-func ServicesOf(o *OpenedWindow) *Services {
-	services := &Services{state: o.State}
+func ServicesOf(o *Installation, state *State) *Services {
+	services := &Services{state: state}
 	for _, one := range o.pages.routes {
 		switch handler := one.service.(type) {
 		case *filewindow.Handler:
@@ -230,9 +230,9 @@ func writeLink(links *note.EditLinks, names edit.NameQueries, writes *wire.Write
 }
 
 // WrapPluginSwitch replaces the switch the window opens a vault through with the one wrap returns.
-func (o *OpenedWindow) WrapPluginSwitch(tb testing.TB, wrap func(next windowsession.VaultSwitch) windowsession.VaultSwitch) {
+func WrapPluginSwitch(tb testing.TB, state *State, wrap func(next windowsession.VaultSwitch) windowsession.VaultSwitch) {
 	tb.Helper()
-	o.State.Switch = wrap(o.State.Switch)
+	state.Switch = wrap(state.Switch)
 }
 
 func newEmptyCommandHandler(state *State) *command.Handler {

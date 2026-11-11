@@ -20,7 +20,7 @@ import (
 // around the editor, or nil.
 func OpenEditor(
 	c Config, ctx context.Context, named string, out io.Writer, frame editor.Frame,
-) (*editor.OpenedWindow, Config, error) {
+) (*OpenedWindow, Config, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return nil, c, err
@@ -34,7 +34,7 @@ func OpenEditor(
 
 func openEditorTexts(
 	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, opening WindowOpening,
-) (*editor.OpenedWindow, Config, error) {
+) (*OpenedWindow, Config, error) {
 	versions, err := newTextVersions(vaultOf(c), db)
 	if err != nil {
 		return nil, c, errors.Join(err, db.Close())
@@ -47,7 +47,7 @@ func openEditorTexts(
 	return connectEditor(c, ports, db, opened)
 }
 
-func connectEditor(c Config, ports vaultregistry.Ports, db *Index, opened *windowWiring) (*editor.OpenedWindow, Config, error) {
+func connectEditor(c Config, ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, Config, error) {
 	state := opened.state
 	setPluginVaultPath(plugins(c), state.GetCurrentVault().Path)
 	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: *opened.cases.Notes}
@@ -57,7 +57,7 @@ func connectEditor(c Config, ports vaultregistry.Ports, db *Index, opened *windo
 	shareVaultList(c, opened)
 	setPluginTexts(vaultOf(c))
 	shareEditorWindow(c, db, opened)
-	return opened.getOpenedWindow(), c, nil
+	return getOpenedWindow(opened), c, nil
 }
 
 // Flashcards is what the flashcards application closes when it ends: CloseVaults waits until nothing is still
