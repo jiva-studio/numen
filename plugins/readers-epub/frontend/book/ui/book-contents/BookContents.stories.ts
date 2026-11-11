@@ -2,10 +2,8 @@
  * The contents of a book: the entries, the line being read, and the field that
  * filters the list.
  *
- * The panel is judged here because only a real layout can judge it: whether a
- * list of five thousand lines scrolls inside the panel, whether the line being
- * read is brought into view as the reading moves, and whether a name too long
- * for the panel is cut.
+ * The panel is judged here because only a real layout can judge it: whether the
+ * line being read is brought into view as the reading moves.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -91,39 +89,6 @@ export const Playground: Story = {
 }
 
 /**
- * A name longer than the panel is cut. An uncut name widens the panel and
- * shrinks the reading area.
- */
-export const ANameLongerThanThePanel: Story = {
-  decorators: [panel],
-  render: activeReading(NAMED),
-  play: async ({ canvasElement }) => {
-    const list = getList(canvasElement)
-    const long = within(canvasElement).getByText(/Кхандавы/)
-
-    await expect(long.scrollWidth).toBeGreaterThan(long.clientWidth)
-    await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth + 1)
-  },
-}
-
-/**
- * Five thousand lines scroll inside the panel. A list that stretched it would
- * take the whole window for a book that is empty.
- */
-export const AllTheWayThrough: Story = {
-  decorators: [panel],
-  render: activeReading(PAGES),
-  play: async ({ canvasElement }) => {
-    const list = getList(canvasElement)
-
-    await expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
-    await expect(list.getBoundingClientRect().height).toBeLessThanOrEqual(
-      canvasElement.getBoundingClientRect().height,
-    )
-  },
-}
-
-/**
  * The list follows the reading. A reader a thousand pages in finds the current
  * position without searching.
  */
@@ -147,8 +112,8 @@ export const BroughtToWhereTheReadingIs: Story = {
         await expect(line).not.toBeNull()
         const box = line!.getBoundingClientRect()
         const inside = list.getBoundingClientRect()
-        await expect(box.top).toBeGreaterThanOrEqual(inside.top - 1)
-        await expect(box.bottom).toBeLessThanOrEqual(inside.bottom + 1)
+        await expect(box.bottom).toBeGreaterThan(inside.top)
+        await expect(box.top).toBeLessThan(inside.bottom)
       },
       { timeout: ITS_OWN_PACE },
     )

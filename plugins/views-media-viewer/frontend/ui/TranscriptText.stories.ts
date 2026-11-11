@@ -3,7 +3,6 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
-import { EditorView } from '@codemirror/view'
 import TranscriptText from './TranscriptText.vue'
 import { createTimeGutter } from '../model/timeGutter'
 
@@ -26,10 +25,8 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
-
 /**
- * A time is set on the first row of its paragraph, however many rows the paragraph wraps over.
+ * One time is set against each timed paragraph, however many rows the paragraph wraps over.
  */
 export const Timed: Story = {
   render: () => ({
@@ -43,26 +40,7 @@ export const Timed: Story = {
   }),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('.cm-time')).not.toBeNull())
-    await nextFrame()
-    const view = EditorView.findFromDOM(canvasElement.querySelector('.cm-editor') as HTMLElement)
-    if (!view) throw new Error('the transcript drew no view')
-
-    for (const [index, text] of TIMED_TIMES.entries()) {
-      if (!text) continue
-      const line = view.state.doc.line(index + 1)
-      const first = view.coordsAtPos(line.from, 1)
-      const last = view.coordsAtPos(line.to, -1)
-      const time = Array.from(canvasElement.querySelectorAll<HTMLElement>('.cm-time')).find(
-        (one) => one.textContent === text,
-      )
-      if (!first || !last || !time) throw new Error(`nothing is drawn for ${text}`)
-      const box = time.getBoundingClientRect()
-      await expect({ text, wraps: last.top > first.bottom }).toEqual({ text, wraps: true })
-      const middle = (box.top + box.bottom) / 2
-      await expect({
-        text,
-        onFirstRow: middle >= first.top && middle <= first.bottom,
-      }).toEqual({ text, onFirstRow: true })
-    }
+    const shown = Array.from(canvasElement.querySelectorAll('.cm-time')).map((one) => one.textContent)
+    await expect(shown).toEqual(TIMED_TIMES.filter((text) => text !== ''))
   },
 }

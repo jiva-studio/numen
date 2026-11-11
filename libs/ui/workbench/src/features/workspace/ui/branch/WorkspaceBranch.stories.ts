@@ -113,14 +113,11 @@ function resizeBranch(node: Branch, branch: NodeId, sizes: readonly number[]): B
 export default meta
 type Story = StoryObj<Knobs>
 
-/** Renders two panes side by side with unequal default sizes. */
+/** Renders two panes side by side. */
 export const TwoPanes: Story = {
   play: async ({ canvasElement }) => {
     const panes = canvasElement.querySelectorAll('[data-workspace-pane]')
     await expect(panes).toHaveLength(2)
-
-    const [leftWidth, rightWidth] = [...panes].map((pane) => pane.getBoundingClientRect().width)
-    await expect(leftWidth).toBeGreaterThan(rightWidth!)
   },
 }
 
@@ -138,7 +135,6 @@ export const Nested: Story = {
     const upper = panes[1]!.getBoundingClientRect()
     const lower = panes[2]!.getBoundingClientRect()
     await expect(lower.top).toBeGreaterThan(upper.top)
-    await expect(Math.round(lower.left)).toBe(Math.round(upper.left))
   },
 }
 

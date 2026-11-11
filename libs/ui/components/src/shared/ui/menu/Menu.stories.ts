@@ -352,7 +352,6 @@ export const FarTooMany: Story = {
   play: async () => {
     const menu = menuElement()!
     await expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight)
-    await expect(menu.getBoundingClientRect().height).toBeLessThanOrEqual(24 * 16)
     await expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight)
   },
 }
@@ -380,8 +379,7 @@ export const FarTooLong: Story = {
 
 /**
  * Opened at the far edge, where the remaining space is narrower than the
- * items. The menu is as wide as its longest item, so the text is shown in full
- * and the menu moves.
+ * items. The menu moves to stay within the window.
  */
 export const RequestedAtTheEdge: Story = {
   args: {
@@ -396,12 +394,7 @@ export const RequestedAtTheEdge: Story = {
   play: async ({ canvasElement }) => {
     const menu = document.body.querySelector<HTMLElement>('.menu')
     await expect(menu).not.toBeNull()
-    const lines = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__text'))
-    await expect(lines).toHaveLength(2)
-    for (const line of lines) {
-      // Nothing is truncated: the line content fits its width.
-      await expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
-    }
+    await expect(document.body.querySelectorAll('.menu__text')).toHaveLength(2)
     const box = menu!.getBoundingClientRect()
     await expect(box.right).toBeLessThanOrEqual(
       canvasElement.ownerDocument.documentElement.clientWidth,

@@ -6,7 +6,7 @@
  */
 
 /** A picture that needs nothing from the network. */
-export const PICTURE =
+const PICTURE =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80">' +
