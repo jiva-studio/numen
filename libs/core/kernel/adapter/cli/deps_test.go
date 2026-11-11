@@ -93,7 +93,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Search{}, err
 			}
 			return cli.Search{
-				Search: search.New(db.ChunkSearch(), vaultreader.Readers{Options: options},
+				Search: search.New(search.Index{Passages: db.ChunkSearch(), Nearest: db.ChunkSearch()}, vaultreader.Readers{Options: options},
 					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, nil, errorHandler),
 				Close: db.Close,
 			}, nil

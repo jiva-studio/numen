@@ -101,7 +101,7 @@ type stubNearest struct {
 	recipes []string
 }
 
-func (n *stubNearest) GetBestSimilarity(_ context.Context, _ domain.VaultID, recipe string, _ []float32) (float64, error) {
+func (n *stubNearest) Execute(_ context.Context, _ domain.VaultID, recipe string, _ []float32) (float64, error) {
 	n.recipes = append(n.recipes, recipe)
 	return n.best, nil
 }

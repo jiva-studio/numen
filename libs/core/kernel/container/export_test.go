@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -55,8 +54,8 @@ func (c Config) GetSettingsAgent() agentport.Agent { return getSettingsAgent(plu
 
 func (c Config) Models() func() []settingsdomain.Model { return models(c) }
 
-func (c Config) NewSearchOver(passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), passages, asking, errorHandler)
+func (c Config) NewSearchOver(index searchusecase.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
+	return newSearchOver(searchOf(c), index, asking, errorHandler)
 }
 
 func (c Config) OpenGetSettings(provider agentport.AgentProvider) *settings.Get {

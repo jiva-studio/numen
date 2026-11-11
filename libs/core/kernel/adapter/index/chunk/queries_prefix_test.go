@@ -80,7 +80,7 @@ func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 	source{path: "notes/far.md", kind: "note", hash: "h-far", large: "large far", smalls: []string{"first far"}}.save(t, db)
 	embed(t, db, vaultA, "notes/far.md", 0x0F)
 
-	got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+	got, err := queriesOf(db).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil {
@@ -90,14 +90,14 @@ func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 		t.Errorf("one passage under notes/ is %v, want the note although 24 nearer chunks lie elsewhere", getSources(got))
 	}
 
-	kinded, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+	kinded, err := queriesOf(db).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil || len(kinded) != 1 {
 		t.Errorf("a prefix with a kind found %d, %v", len(kinded), err)
 	}
 
-	none, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+	none, err := queriesOf(db).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Limit: 3, Floor: -1, PathPrefix: "elsewhere/",
 	})
 	if err != nil || len(none) != 0 {
@@ -115,7 +115,7 @@ func TestFindNearestWithinPathPrefixFindsAPathThatIsNotUTF8(t *testing.T) {
 	}
 
 	for prefix, want := range map[string]string{"notes/": "notes/\xff.md", "\xff": "\xff\xff.md"} {
-		got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+		got, err := queriesOf(db).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 			Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1, PathPrefix: prefix,
 		})
 		if err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/launch"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
@@ -113,7 +114,7 @@ type toolFixture struct {
 	recogniser   blockingRecogniser
 	openCount    atomic.Int32
 	recognitions *recognition.Recognition
-	tools        *Tools
+	launcher     *launch.Launcher
 	registry     *tools.Registry
 }
 
@@ -166,9 +167,9 @@ func newToolFixture(t *testing.T) *toolFixture {
 		recognitions.SetCompilationCache(compilation)
 	}
 	s.recognitions = recognitions
-	s.tools = NewTools(recognitions)
-	t.Cleanup(s.tools.Close)
-	s.registry, err = s.tools.Registry()
+	s.launcher = launch.New(recognitions, PluginID)
+	t.Cleanup(s.launcher.Close)
+	s.registry, err = newToolRegistry(s.launcher)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +289,7 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 
 	close(s.recogniser.release)
 	s.waitFinished(t, want.TaskID)
-	s.tools.Close()
+	s.launcher.Close()
 
 	if !hasRecognition(t, s.texts, scanPath) {
 		t.Error("the recognition ended and the scan has no text version")
@@ -359,7 +360,7 @@ func (s *toolFixture) putRecognition(t *testing.T) domain.TextVersion {
 func (s *toolFixture) checkNoRun(t *testing.T) {
 	t.Helper()
 	close(s.recogniser.release)
-	s.tools.Close()
+	s.launcher.Close()
 	if reported, turns := s.queue.calls.getCounts(); reported != 0 || turns != 0 {
 		t.Errorf("a run reported %d tasks and requested %d turns, want none", reported, turns)
 	}
@@ -478,7 +479,7 @@ func TestRecognitionCreateOfALiveProofreadOfTheScanStartsTheRun(t *testing.T) {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
 	}
 	close(s.recogniser.release)
-	s.tools.Close()
+	s.launcher.Close()
 }
 
 func TestRecognitionCreateRejectsACallWithoutAVault(t *testing.T) {
@@ -509,7 +510,7 @@ func TestRecognitionCreateRecognisesInTheNamedVault(t *testing.T) {
 	}
 	close(s.recogniser.release)
 	s.waitFinished(t, out.TaskID)
-	s.tools.Close()
+	s.launcher.Close()
 
 	if !hasRecognition(t, s.chemTexts, chemistryScan) {
 		t.Error("Chemistry has no text version of its scan")
@@ -558,7 +559,7 @@ func TestRecognitionCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	close(s.recogniser.release)
 	s.waitFinished(t, first.TaskID)
 	s.waitFinished(t, second.TaskID)
-	s.tools.Close()
+	s.launcher.Close()
 
 	if !hasRecognition(t, s.texts, scanPath) || !hasRecognition(t, s.chemTexts, scanPath) {
 		t.Error("one of the two vaults has no recognition after both runs ended")
@@ -659,9 +660,9 @@ func (s *toolFixture) countReads(t *testing.T) *readCounts {
 		t.Fatal(err)
 	}
 	s.recognitions = recognitions
-	s.tools = NewTools(recognitions)
-	t.Cleanup(s.tools.Close)
-	s.registry, err = s.tools.Registry()
+	s.launcher = launch.New(recognitions, PluginID)
+	t.Cleanup(s.launcher.Close)
+	s.registry, err = newToolRegistry(s.launcher)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -33,10 +33,6 @@ func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, sourc
 	return nil, a.err
 }
 
-func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, source.NearestQuery) ([]domain.Passage, error) {
-	return nil, a.err
-}
-
 func newVault(folder string) domain.Vault {
 	return domain.Vault{ID: "vlt-search", Name: "shelf", Path: folder}
 }
@@ -46,7 +42,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 		Vaults: createVaultList(newVault(folder)),
 		Search: func(context.Context, domain.Vault, window.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
-				Search: search.New(index, vaultreader.Readers{}, nil, nil, nil, nil),
+				Search: search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil),
 				Words:  words,
 			}, nil
 		},
