@@ -1,32 +1,23 @@
 /**
  * The palettes of the window: what they share, and what the plugins add to the commands they list.
  */
-import type { PluginHost } from '@numen/plugin-loader'
 import {
   createCommandDeps,
   createNoteLookup,
   createSearchRequests,
   createWindowPalette,
   runSupport,
-  type PaletteLists,
-  type PluginPaletteLists,
 } from '@/features/command-palette'
 import { getVaultList } from '@/features/window-display'
-import type { Command } from '@/entities/command'
 import {
-  createCommandNoteReader,
-  createItemLists,
-  createPluginCommandPort,
-  usePluginCommands,
   watchCommandLists,
-  type DeclaredCommands,
 } from '@/features/plugin-commands'
 import { createCommandIconFinder, createSearchMenu } from '@/features/plugin-host'
-import type { CommandRegistry, CommandTarget, Notes } from '@/shared/model/command'
+import type { CommandRegistry, Notes } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
-import { createCommandSources } from './createCommandSources'
 import { createHostConnection } from './createHostConnection'
+import { createPluginPalette } from './createPluginPalette'
 import type { createWindowBase } from './createWindowBase'
 import type { createWindowPlugins } from './createWindowPlugins'
 
@@ -39,7 +30,7 @@ export interface PaletteBaseDeps {
   readonly writeMessage: MessageWriter
 }
 
-export function createPaletteBase(deps: PaletteBaseDeps) {
+function createPaletteBase(deps: PaletteBaseDeps) {
   const searchRequests = createSearchRequests()
   return {
     searchRequests,
@@ -52,57 +43,6 @@ export function createPaletteBase(deps: PaletteBaseDeps) {
       writeMessage: deps.writeMessage,
       search: searchRequests.request,
     }),
-  }
-}
-
-/** What the commands of the plugins add to the palettes. */
-export interface PluginPaletteDeps {
-  readonly pluginHost: PluginHost
-  readonly declaredCommands: DeclaredCommands
-  readonly itemLists: Parameters<typeof createCommandNoteReader>[0]
-  readonly commandDeps: ReturnType<typeof createPaletteBase>['commandDeps']
-  readonly registry: CommandRegistry
-  readonly appCommands: readonly Command[]
-  readonly getTarget: () => CommandTarget
-  readonly windowSettings: {
-    readonly settingPalette: { readonly getCommands: () => readonly Command[] }
-    readonly paletteLists: PaletteLists
-  }
-}
-
-export function createPluginPalette(deps: PluginPaletteDeps) {
-  const { pluginHost, declaredCommands, commandDeps, getTarget, windowSettings } = deps
-  const plugin = usePluginCommands(
-    deps.registry,
-    createCommandNoteReader(deps.itemLists),
-    pluginHost,
-    {
-      context: declaredCommands.whenContext,
-      getHandlers: () => declaredCommands.contributions.handlers.value,
-    },
-  )
-  const sources = createCommandSources({
-    appCommands: deps.appCommands,
-    settingPalette: windowSettings.settingPalette,
-    declaredCommands,
-    pluginHost,
-    plugin,
-    getTarget,
-    commandDeps,
-  })
-  const lists: PluginPaletteLists = createItemLists(sources.items, {
-    paletteLists: windowSettings.paletteLists,
-    getTarget,
-    runs: commandDeps.runSupport,
-  })
-  return {
-    sources,
-    pluginWays: plugin.pluginWays,
-    plugin: {
-      lists,
-      getCommands: () => sources.paletteCommands.listCommands(),
-      pluginCommands: createPluginCommandPort(pluginHost, plugin.getCommandNote),
-    },
   }
 }
 

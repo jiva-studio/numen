@@ -20,20 +20,12 @@ import RecordingView from './RecordingView.vue'
 import { getTabIcon } from './icons'
 
 /* --------------------------------- State ---------------------------------- */
-const { agent, player, workspace, tabs, actions } = useDemoWindow()
-
-/* -------------------------------- Handlers -------------------------------- */
-function onClose(id: string) {
-  actions.close(id)
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-const getKind = (id: string) => actions.getKind(id)
+const { agent, player, workspace, tabs, close, getKind } = useDemoWindow()
 </script>
 
 <template>
   <div class="demo-window numen" tabindex="-1" @contextmenu.prevent>
-    <WorkspaceLayout v-model="workspace" :tabs="tabs" :minimum="140" @close="onClose">
+    <WorkspaceLayout v-model="workspace" :tabs="tabs" :minimum="140" @close="close">
       <template #icon="{ id }">
         <component :is="getTabIcon(getKind(id) ?? 'note')" class="tab-icon" />
       </template>
