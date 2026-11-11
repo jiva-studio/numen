@@ -17,7 +17,6 @@ import (
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
@@ -103,19 +102,3 @@ func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File,
 }
 
 func fileMovers(c vaultWiring) vaultport.FileMovers { return vaultWriters(c) }
-
-// OpenWindowHoldingWalk is OpenWindowWith where the walk of the vault goes through hold.
-func OpenWindowHoldingWalk(
-	c Config, ctx context.Context, opening WindowOpening,
-	hold func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc,
-) (*OpenedWindow, error) {
-	return openWindowOver(c, ctx, opening, windowReading{passes: hold, switching: keepSwitch})
-}
-
-// OpenWindowSwitchingThrough is OpenWindowWith where every switch of the vault goes through wrap.
-func OpenWindowSwitchingThrough(
-	c Config, ctx context.Context, opening WindowOpening,
-	wrap func(windowsession.VaultSwitch) windowsession.VaultSwitch,
-) (*OpenedWindow, error) {
-	return openWindowOver(c, ctx, opening, windowReading{passes: keepPasses, switching: wrap})
-}

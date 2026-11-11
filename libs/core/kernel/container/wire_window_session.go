@@ -22,8 +22,6 @@ type windowParts struct {
 	out           io.Writer
 	embedderError error
 	closeEmbedder func() error
-	passes        func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
-	switching     func(windowsession.VaultSwitch) windowsession.VaultSwitch
 }
 
 // windowCases are the use cases that run a window from its start to its close.
@@ -64,7 +62,7 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
-		Passes:   parts.passes(startVault(a, parts.db, parts.current)), Triggers: getTriggerSource(a),
+		Passes:   startVault(a, parts.db, parts.current), Triggers: getTriggerSource(a),
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.moves.RecordOpen, diag, parts.embedderError, runner)
@@ -73,11 +71,11 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
-	switching := parts.switching(startup.SwitchVault[*windowsession.PluginOpen]{
+	switching := startup.SwitchVault[*windowsession.PluginOpen]{
 		Show:        show.Execute,
 		FollowVault: func(path string) { setPluginVaultPath(a, path) },
 		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
-	})
+	}
 	return windowSession{
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, c.ShouldRebuildIndex),

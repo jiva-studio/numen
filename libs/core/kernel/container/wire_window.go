@@ -82,32 +82,16 @@ type WindowUseCases struct {
 // OpenWindowWith is OpenWindow over a cache already open, for a caller that opened it itself. The window
 // closes the cache.
 func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
-	return openWindowOver(c, ctx, opening, windowReading{passes: keepPasses, switching: keepSwitch})
-}
-
-func openWindowOver(c Config, ctx context.Context, opening WindowOpening, reading windowReading) (*OpenedWindow, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return nil, errors.Join(err, opening.DB.Close())
 	}
-	opened, err := openWindowWith(c, ctx, ports, opening, reading)
+	opened, err := openWindowWith(c, ctx, ports, opening, nil)
 	if err != nil {
 		return nil, err
 	}
 	return getOpenedWindow(opened), nil
 }
-
-// windowReading is what an open of a window is given besides the window: the text versions its plugins
-// share, or none, and the functions the walk of the vault and the switch of the vault go through.
-type windowReading struct {
-	texts     *TextVersions
-	passes    func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
-	switching func(windowsession.VaultSwitch) windowsession.VaultSwitch
-}
-
-func keepPasses(passes windowsession.VaultPassesFunc) windowsession.VaultPassesFunc { return passes }
-
-func keepSwitch(switching windowsession.VaultSwitch) windowsession.VaultSwitch { return switching }
 
 // OpenedWindow is an editor window opened: the installation that serves it and the state its services work
 // through.
@@ -127,13 +111,13 @@ type windowBuilt struct {
 }
 
 func openWindowWith(
-	c Config, ctx context.Context, ports registry.Ports, opening WindowOpening, reading windowReading,
+	c Config, ctx context.Context, ports registry.Ports, opening WindowOpening, texts *TextVersions,
 ) (*windowWiring, error) {
 	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(opening.Named)
 	if err != nil {
 		return nil, errors.Join(err, opening.DB.Close())
 	}
-	built := buildWindow(ctx, c, ports, opening, reading)
+	built := buildWindow(ctx, c, ports, opening, texts)
 	if opening.UseCases != nil {
 		*opening.UseCases = built.wiring.cases
 	}
@@ -144,9 +128,9 @@ func openWindowWith(
 }
 
 func buildWindow(
-	ctx context.Context, c Config, ports registry.Ports, opening WindowOpening, reading windowReading,
+	ctx context.Context, c Config, ports registry.Ports, opening WindowOpening, texts *TextVersions,
 ) windowBuilt {
-	a := assemble(c, reading.texts)
+	a := assemble(c, texts)
 	db := opening.DB
 
 	// One task list serves every operation and the window that displays it.
@@ -172,7 +156,7 @@ func buildWindow(
 
 	session := newWindowSession(c, a, state, ctx, windowParts{
 		db: db, indexer: indexer, embedding: embedding, moves: cases.Vaults, current: current, out: opening.Out,
-		embedderError: why, closeEmbedder: closeEmbedder, passes: reading.passes, switching: reading.switching,
+		embedderError: why, closeEmbedder: closeEmbedder,
 	})
 	cases.ShowTab = session.tools.showTab
 	inst := editor.NewInstallation(state, editor.Lifecycle{

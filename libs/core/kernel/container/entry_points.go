@@ -38,7 +38,7 @@ func openEditorTexts(
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
-	opened, err := openWindowWith(c, ctx, ports, opening, windowReading{texts: texts, passes: keepPasses, switching: keepSwitch})
+	opened, err := openWindowWith(c, ctx, ports, opening, texts)
 	if err != nil {
 		return nil, err
 	}

@@ -92,3 +92,36 @@ func (f switchFunc) Execute(ctx context.Context, v domain.Vault, open *PluginOpe
 func openVia(w *testWindow, show func(context.Context, domain.Vault, *PluginOpen) error) OpenPluginVault {
 	return NewOpenPluginVault(w.scenarios.guard, w.scenarios.identity, w.pages, switchFunc(show))
 }
+
+// A switch given a plugin open that has ended takes the exclusion like any other switch: during the
+// close by the user it is rejected, and the close completes.
+func TestASwitchUnderAnEndedPluginOpenFailsDuringTheClose(t *testing.T) {
+	w := newTestWindow(t, nil)
+	w.open(t, garden())
+	var recordedCtx context.Context
+	var recordedOpen *PluginOpen
+	record := func(ctx context.Context, v domain.Vault, open *PluginOpen) error {
+		recordedCtx, recordedOpen = ctx, open
+		return w.scenarios.Switching.Show.Execute(ctx, v, open)
+	}
+	if err := openVia(w, record).Execute(t.Context(), studio()); err != nil {
+		t.Fatal(err)
+	}
+
+	w.pages.holdNextFlush()
+	closed := make(chan bool, 1)
+	go func() { closed <- w.scenarios.Closing.Flush.Execute(t.Context()) }()
+	w.pages.waitHeld(t)
+	err := w.scenarios.Switching.Show.Execute(recordedCtx, garden(), recordedOpen)
+	w.pages.release()
+
+	if err == nil {
+		t.Error("a switch under the ended plugin open ran during the close")
+	}
+	if !<-closed {
+		t.Error("the close did not complete")
+	}
+	if got := w.rt.GetCurrentVault(); got.ID != studio().ID {
+		t.Errorf("the window shows %q, want %q", got.ID, studio().ID)
+	}
+}
