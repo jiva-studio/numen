@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-
 // FindContentHash returns the stored hash and stat for the file at the path, and
 // false when no row exists.
 func (r *Repository) FindContentHash(ctx context.Context, vaultID domain.VaultID, path string) (text.ContentHash, bool, error) {
