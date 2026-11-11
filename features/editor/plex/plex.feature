@@ -77,16 +77,20 @@ Feature: Plex
 
     Scenario: The plex is an action of a found note
       When the person searches the vault for "Quay"
-      Then the search result "Quay" in the group "Names" has the following actions:
+      Then the search result "Quay" in the group "Names" contains the following actions:
         | action            |
         | Open note         |
         | Show note in plex |
 
-    Scenario: A found note without the plex is only opened
+    Scenario: A found note without the plex has one action
       Given the person disables the plugin "Plex Graph"
       When the person searches the vault for "Quay"
-      Then the search result "Quay" in the group "Names" has the following actions:
+      Then the search result "Quay" in the group "Names" has only the following actions:
         | action    |
         | Open note |
-      When the person chooses the search result "Quay" in the group "Names"
+
+    Scenario: A found note without the plex is opened
+      Given the person disables the plugin "Plex Graph"
+      When the person searches the vault for "Quay"
+      And the person chooses the search result "Quay" in the group "Names"
       Then the tab at "notes/Quay.md" is active

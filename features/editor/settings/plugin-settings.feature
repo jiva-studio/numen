@@ -26,19 +26,19 @@ Feature: Plugin settings
 
     Scenario: The files of a custom model are asked for
       When the person sets the setting "Model" of the plugin "Document OCR" to "Custom model"
-      Then the page "Document OCR" has "Model file"
-      And the page "Document OCR" has "Character dictionary"
+      Then the settings of the plugin "Document OCR" have the field "Model file"
+      And the settings of the plugin "Document OCR" have the field "Character dictionary"
 
     Scenario: The files of a custom model are not asked for
-      Then the page "Document OCR" does not have "Model file"
+      Then the settings of the plugin "Document OCR" do not have the field "Model file"
 
     Scenario: The address of a custom service is asked for
       When the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
-      Then the page "Vector Embeddings" has "Service URL"
+      Then the settings of the plugin "Vector Embeddings" have the field "Service URL"
 
     Scenario: The address of a service is kept when another provider is chosen
       Given the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
-      And the person types "http://127.0.0.1:9/v1" in the setting "Service URL" of the plugin "Vector Embeddings"
+      And the person sets the setting "Service URL" of the plugin "Vector Embeddings" to "http://127.0.0.1:9/v1"
       And the person sets the setting "Provider" of the plugin "Vector Embeddings" to "OpenAI"
       When the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
       Then the setting "Service URL" of the plugin "Vector Embeddings" is "http://127.0.0.1:9/v1"

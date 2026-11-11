@@ -11,11 +11,11 @@ Feature: Plex headings
     And the person runs the command "Show note in plex" on the note tab titled "Heat"
 
   Scenario: The headings of a note are shown
-    When the person points at the note titled "Heat" in the plex
-    Then the plex shows the heading "First law" under the note titled "Heat"
+    When the person hovers over the note titled "Heat" in the plex
+    Then the plex has the heading "First law" under the note titled "Heat"
 
   Scenario: The headings of a note are left out
     Given the person runs the command "Nest headings under notes"
     And the person picks "Off"
-    When the person points at the note titled "Heat" in the plex
-    Then the plex does not show the heading "First law" under the note titled "Heat"
+    When the person hovers over the note titled "Heat" in the plex
+    Then the plex does not have the heading "First law" under the note titled "Heat"

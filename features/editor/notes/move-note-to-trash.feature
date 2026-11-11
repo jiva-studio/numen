@@ -73,3 +73,18 @@ Feature: Move note to trash
     And the person opens the note titled "Tide table"
     When the person runs the command "Move note to trash" on the tab titled "Tide table"
     Then the note titled "Harbour log" on disk has "See [[Tide table]] for tides."
+
+  Scenario: A recording leaves the file tree and the search
+    Given the vault has the following:
+      | path               | sample      |
+      | assets/lecture.wav | lecture.wav |
+    And the person transcribes the recording at "assets/lecture.wav"
+    And the person proofreads the transcript of the recording at "assets/lecture.wav"
+    And the person opens the folder at "assets"
+    And the tab titled "Files" has "assets/lecture.wav"
+    And the person searches the vault for "proofread"
+    And the search has the result "assets/lecture.wav" in the group "Text"
+    When the person runs the command "Move note to trash" on the file at "assets/lecture.wav"
+    And the person searches the vault for "proofread"
+    Then the tab titled "Files" does not have "assets/lecture.wav"
+    And the search does not have the result "assets/lecture.wav" in the group "Text"

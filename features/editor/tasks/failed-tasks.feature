@@ -14,5 +14,5 @@ Feature: Failed tasks
   Scenario: A Custom channel with no release feed address is a failed task
     Given the application "editor" starts
     And the person sets the setting "Channel" of the plugin "Update Notifier" to "Custom"
-    When the application "editor" starts
+    When the person restarts the application
     Then the task list has the failed task "release feed address"

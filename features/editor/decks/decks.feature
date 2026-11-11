@@ -45,12 +45,16 @@ Feature: Decks
 
     Scenario: A value of a card is saved
       Given the person opens the file at "cards/Shore birds.md"
-      When the person writes "about 1.2 m at the shoulder" in the field "Height" of the card "Card 1" of the Deck tab titled "Shore birds"
+      When the person writes "1.2 m" in the field "Height" of the card "Card 1" of the Deck tab titled "Shore birds"
       Then the vault contains the following:
-        | path                 | text                        |
-        | cards/Shore birds.md | about 1.2 m at the shoulder |
+        | path                 | text  |
+        | cards/Shore birds.md | 1.2 m |
+
+    Scenario: A saved value is shown after the application starts again
+      Given the person opens the file at "cards/Shore birds.md"
+      And the person writes "1.2 m" in the field "Height" of the card "Card 1" of the Deck tab titled "Shore birds"
       When the application "editor" starts
-      Then the Deck tab titled "Shore birds" has "about 1.2 m at the shoulder" in the field "Height" of the card "Card 1"
+      Then the Deck tab titled "Shore birds" has "1.2 m" in the field "Height" of the card "Card 1"
       And the Deck tab titled "Shore birds" has "about 30 cm" in the field "Height" of the card "Card 2"
 
     Scenario: A removed deck closes its tab

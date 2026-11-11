@@ -22,7 +22,7 @@ Feature: Ask agent
       Then the Agent tab titled "Agent" has "Summarize thermodynamics principles"
       And the Agent tab titled "Agent" has "The agent answered."
       And the Agent tab titled "Agent" does not have "No messages yet"
-      And the composer of the agent has ""
+      And the composer of the agent is empty
 
   Rule: The agent works with notes
 

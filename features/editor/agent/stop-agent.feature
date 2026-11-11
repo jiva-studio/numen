@@ -5,7 +5,7 @@ Feature: Stop agent
     Given the empty vault "Test"
     And the application "editor" starts
     And the person runs the command "Open agent chat"
-    And the agent holds its answers
+    And the model of the agent is paused
 
   Scenario: The agent is working
     When the person sends the message "Which pear trees grow in the east orchard?" to the agent
@@ -14,13 +14,13 @@ Feature: Stop agent
 
   Scenario: The answer ends the wait
     Given the person sends the message "Which pear trees grow in the east orchard?" to the agent
-    When another program lets the agent answer
+    When another program resumes the model of the agent
     Then the Agent tab titled "Agent" has "The agent answered."
     And the composer of the agent does not have the button "Stop the agent"
     And the composer of the agent cannot send
 
   Scenario: The agent is stopped
     Given the person sends the message "Count the apple trees by the gate" to the agent
-    When the person stops the agent
+    When the person clicks the button "Stop the agent" in the composer of the agent
     Then the composer of the agent does not have the button "Stop the agent"
     And the composer of the agent cannot send

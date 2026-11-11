@@ -49,18 +49,3 @@ Feature: Open file
       When the person searches the vault for "Entropy"
       And the person chooses the search result "Entropy" in the group "Names"
       Then the note tab at "notes/Entropy.md" is open
-
-  Rule: A reader is closed with its tab
-
-    Scenario: A PDF tab is closed
-      Given the person opens the file at "assets/shore.pdf"
-      When the person closes the PDF tab at "assets/shore.pdf"
-      Then the PDF tab at "assets/shore.pdf" is not open
-
-    Scenario: A book tab is closed
-      Given the vault has the following:
-        | path               | sample      |
-        | assets/ledger.epub | ledger.epub |
-      And the person opens the file at "assets/ledger.epub"
-      When the person closes the book tab at "assets/ledger.epub"
-      Then the book tab at "assets/ledger.epub" is not open

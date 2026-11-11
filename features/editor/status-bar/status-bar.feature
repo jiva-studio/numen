@@ -8,10 +8,10 @@ Feature: Status bar
   Rule: The bar is a plugin
 
     Scenario: The bar is off at the start
-      Then the plugin "Status bar" is off
+      Then the plugin "Status bar" is disabled
       And the window does not have the status bar
 
     Scenario: The bar shows after the plugin is turned on
       When the person enables the plugin "Status bar"
-      Then the plugin "Status bar" is on
+      Then the plugin "Status bar" is enabled
       And the window has the status bar
