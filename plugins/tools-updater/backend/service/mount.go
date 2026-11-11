@@ -3,8 +3,8 @@ package service
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/feed"
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/updates"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/internal/adapter/feed"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/usecase/updates"
 )
 
 func mount(s *server.Server, fetcher updates.Fetcher) error {

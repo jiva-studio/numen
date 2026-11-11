@@ -1,0 +1,518 @@
+package cards_test
+
+import (
+	"context"
+	"errors"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
+)
+
+func getAnimals() map[string]string {
+	return map[string]string{
+		"Animal.md": "---\n" +
+			"type: card-model\n" +
+			"mine: keep me verbatim\n" +
+			"fields:\n" +
+			"  - Name\n" +
+			"  - Height\n" +
+			"  - Life span\n" +
+			"---\n" +
+			"\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Height\n---\n" +
+			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
+		"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +
+			"\nCards I am learning.\n" +
+			"\n# The ones with fur\n" +
+			"\nThe section says something of its own.\n" +
+			"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+			"\n### Height\n\nabout 45\"\n" +
+			"\n### Life span\n\nabout 20 years\n" +
+			"\n## Gloss ^zpqrstvwxy\n\n[[Term]]\n\n### Height\n\nnot a length at all\n" +
+			"\n### Word\n\nGloss\n",
+		"decks/Birds.md": "---\ntype: deck\n---\n" +
+			"\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n",
+		"Weather.md": "# Weather\n\nNo card in here.\n",
+	}
+}
+
+func getMinerals() map[string]string {
+	return map[string]string{
+		"Mineral.md": "---\ntype: card-model\nfields:\n  - Sample\n  - Height\n---\n" +
+			"\n## Spot it\n\n### Front\n\n{{Sample}}\n\n### Back\n\n{{Height}}\n",
+		// A card of this vault's own card model, and a card naming the other
+		// vault's by the name it is filed under there.
+		"decks/Quartz.md": "---\ntype: deck\n---\n" +
+			"\n## Quartz ^m9n8b7v6c5\n\n[[Mineral]]\n\n### Sample\n\nQuartz\n" +
+			"\n### Height\n\na crystal habit\n" +
+			"\n## Llama ^q1w2e3r4t5\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
+			"\n### Name\n\nLlama\n",
+	}
+}
+
+// vaulted is two vaults on disk, and the ports every scenario is built out of.
+type vaulted struct {
+	first   domain.Vault
+	second  domain.Vault
+	hosts   map[domain.VaultID]*hosttest.Vault
+	ports   hostports.Ports
+	queries vaulttest.Queries
+}
+
+func newVaults(t *testing.T) vaulted {
+	t.Helper()
+	first, second := vaulttest.New(t, getAnimals()), vaulttest.New(t, getMinerals())
+	first.Host.Beside(second.Host)
+	return vaulted{
+		first: first.Vault, second: second.Vault, ports: first.Ports, queries: first.Queries,
+		hosts: map[domain.VaultID]*hosttest.Vault{first.Vault.ID: first.Host, second.Vault.ID: second.Host},
+	}
+}
+
+func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
+	t.Helper()
+	return func(_ context.Context, v domain.Vault, _ []string) error {
+		vs.hosts[v.ID].Reindex()
+		return nil
+	}
+}
+
+func indexNothing(context.Context, domain.Vault, []string) error { return nil }
+
+func read(t *testing.T, v domain.Vault, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
+}
+
+func write(t *testing.T, v domain.Vault, path, raw string) {
+	t.Helper()
+	pos := filepath.Join(v.Path, filepath.FromSlash(path))
+	if err := os.MkdirAll(filepath.Dir(pos), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(pos, []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A deck read and saved with the prose it was read with is unchanged. Any
+// difference would produce a spurious diff on every save.
+func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
+	vs := newVaults(t)
+	before := read(t, vs.first, "decks/Mammals.md")
+
+	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Mammals.md")
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if got.Outcome != note.Ok || got.Type != format.TypeDeck {
+		t.Fatalf("outcome = %q, type = %q", got.Outcome, got.Type)
+	}
+	if len(got.Body.Cards) != 2 || got.Body.Preamble != "\nCards I am learning.\n\n" {
+		t.Fatalf("deck = %+v", got.Body)
+	}
+
+	w := cards.NewWrite(
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
+		vaulttest.NewClock())
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.FileStat); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if after := read(t, vs.first, "decks/Mammals.md"); after != before {
+		t.Errorf("the file changed\n was %q\n now %q", before, after)
+	}
+}
+
+// Every field is placed under a heading of its own, the first included, so a card
+// writing the first field twice is the one fault a card writing any field twice
+// is, and it is reported once.
+func TestACardWritingItsFirstFieldTwiceIsOneFieldSavedTwice(t *testing.T) {
+	vs := newVaults(t)
+	content := read(t, vs.first, "decks/Mammals.md")
+	replaced := strings.Replace(content,
+		"### Name\n\nLlama\n",
+		"### Name\n\nLlama\n\n### Name\n\nLlama, a second time\n", 1)
+	if replaced == content {
+		t.Fatal("the fixture is not what this test writes into")
+	}
+	if err := os.WriteFile(
+		filepath.Join(vs.first.Path, "decks", "Mammals.md"), []byte(replaced), 0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	u := cards.NewRead(vs.ports.Readers, vs.queries)
+	got, err := u.Deck(t.Context(), vs.first, "decks/Mammals.md")
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+
+	var filed []format.Problem
+	for _, p := range got.Body.Problems {
+		if p.Fault == format.FaultTwoValues {
+			filed = append(filed, p)
+		}
+	}
+	if len(filed) != 1 {
+		t.Fatalf("problems = %+v, want the one card that writes it twice", got.Body.Problems)
+	}
+	if filed[0].Card != 0 || filed[0].Field != "Name" {
+		t.Errorf("problem = %+v, want it against the first card and Name", filed[0])
+	}
+
+	// Both cards are kept, and the first is used for the lookup.
+	if target, ok := got.Body.Cards[0].Value("Name"); !ok || target != "Llama" {
+		t.Errorf("Name = %q, want the first", target)
+	}
+	if len(got.Body.Cards) != 2 {
+		t.Errorf("cards = %+v", got.Body.Cards)
+	}
+}
+
+// A card's wikilink may resolve to a note that is not a card model; then no
+// template renders the card and the fields it requires are unknown. The deck
+// reports a problem against that card.
+func TestACardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
+	vs := newVaults(t)
+	write(t, vs.first, "decks/Loose.md", "---\ntype: deck\n---\n"+
+		"\n## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n"+
+		"\n## Rain\n\n[[Weather]]\n\n### Height\n\nno card model says what this is\n")
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	u := cards.NewRead(vs.ports.Readers, vs.queries)
+	got, err := u.Deck(t.Context(), vs.first, "decks/Loose.md")
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+
+	var filed []format.Problem
+	for _, p := range got.Body.Problems {
+		if p.Fault == format.FaultNotACardModel {
+			filed = append(filed, p)
+		}
+	}
+	if len(filed) != 1 {
+		t.Fatalf("problems = %+v, want the one card naming a note that is not a card model", got.Body.Problems)
+	}
+	if filed[0].Card != 1 {
+		t.Errorf("problem = %+v, want it against the second card", filed[0])
+	}
+	if !strings.Contains(filed[0].Detail, "Weather") {
+		t.Errorf("the note was not named: %q", filed[0].Detail)
+	}
+	// The values are read either way.
+	if target, ok := got.Body.Cards[1].Value("Height"); !ok || target == "" {
+		t.Errorf("the card was not read: %+v", got.Body.Cards[1])
+	}
+}
+
+func prose(t *testing.T, raw string) string {
+	t.Helper()
+	_, body, found := strings.Cut(raw, "---\n")
+	if !found {
+		return raw
+	}
+	_, body, found = strings.Cut(body, "---\n")
+	if !found {
+		t.Fatal("no frontmatter in the fixture")
+	}
+	return body
+}
+
+// The size is read from the file metadata before the file is opened, so a deck
+// over the limit is rejected without reading any of its bytes.
+func TestADeckOverTheBoundIsNotRead(t *testing.T) {
+	vs := newVaults(t)
+	path := filepath.Join(vs.first.Path, "decks", "Mammals.md")
+	if err := os.Truncate(path, cards.MaxBytes+1); err != nil {
+		t.Fatal(err)
+	}
+
+	counted := &counting{VaultReaders: vs.ports.Readers}
+	got, err := cards.NewRead(counted, nil).Deck(t.Context(), vs.first, "decks/Mammals.md")
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if got.Outcome != note.TooLarge {
+		t.Fatalf("outcome = %q, want it rejected", got.Outcome)
+	}
+	if counted.reads != 0 {
+		t.Errorf("the file was opened %d times", counted.reads)
+	}
+	if len(got.Body.Problems) != 1 || got.Body.Problems[0].Fault != format.FaultTooLarge {
+		t.Errorf("problems = %+v", got.Body.Problems)
+	}
+	if !strings.Contains(got.Body.Problems[0].Detail, "8388608") {
+		t.Errorf("the bound was not said: %q", got.Body.Problems[0].Detail)
+	}
+}
+
+// A card model is a note and is bounded as one, which is a different number.
+func TestACardModelIsBoundedAsANote(t *testing.T) {
+	vs := newVaults(t)
+	if cards.MaxBytes == note.MaxBytes {
+		t.Fatal("a deck and a note are bounded the same")
+	}
+	if err := os.Truncate(filepath.Join(vs.first.Path, "Animal.md"), note.MaxBytes+1); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "Animal.md")
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if got.Outcome != note.TooLarge {
+		t.Errorf("outcome = %q, want it rejected", got.Outcome)
+	}
+}
+
+// A deck that changed since it was read is not overwritten: a concurrent edit
+// of the file takes precedence over a caller holding an outdated read.
+func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
+	vs := newVaults(t)
+	w := cards.NewWrite(
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
+		vaulttest.NewClock())
+
+	first, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Birds.md",
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.FileStat); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	content := read(t, vs.first, "decks/Birds.md")
+
+	// The same file stat again is an outdated read of a file that has since changed.
+	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.FileStat)
+	if !errors.Is(err, ports.ErrStale) {
+		t.Fatalf("write = %v, want it rejected", err)
+	}
+	if after := read(t, vs.first, "decks/Birds.md"); after != content {
+		t.Errorf("the file was written over\n was %q\n now %q", content, after)
+	}
+}
+
+// A deck and a card model are created with the key that identifies their type,
+// so each has that type for every reader of the vault before a card is
+// written into it.
+func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
+	vs := newVaults(t)
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
+
+	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Path: "decks"})
+	if err != nil {
+		t.Fatalf("make a deck: %v", err)
+	}
+	if deck.Path != "decks/Birds of prey.md" {
+		t.Errorf("path = %q", deck.Path)
+	}
+	if got := read(t, vs.first, deck.Path); !strings.Contains(got, "type: deck\n") {
+		t.Errorf("no stamp: %q", got)
+	}
+
+	cardModel, err := u.CardModel(t.Context(), vs.first, cards.New{
+		Title: "Bird", Fields: []string{"Wingspan", "Call"},
+	})
+	if err != nil {
+		t.Fatalf("make a card model: %v", err)
+	}
+	got := read(t, vs.first, cardModel.Path)
+	if !strings.Contains(got, "type: card-model\n") || !strings.Contains(got, "fields:\n  - Wingspan\n  - Call\n") {
+		t.Errorf("card model written wrong: %q", got)
+	}
+
+	types, err := vs.queries.GetTypes(t.Context(), vs.first.ID, []string{deck.Path, cardModel.Path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if types[deck.Path] != format.TypeDeck || types[cardModel.Path] != format.TypeCardModel {
+		t.Errorf("the index does not hold them as what they are: %v", types)
+	}
+}
+
+// A preset is created with the key that identifies its type and none of its
+// settings.
+func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
+	vs := newVaults(t)
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
+
+	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Path: "presets"})
+	if err != nil {
+		t.Fatalf("make a preset: %v", err)
+	}
+	if made.Path != "presets/Prosody.md" {
+		t.Errorf("path = %q", made.Path)
+	}
+	got := read(t, vs.first, made.Path)
+	if !strings.Contains(got, "type: preset\n") {
+		t.Errorf("no stamp: %q", got)
+	}
+	for _, key := range []string{"goal:", "minutes_a_day:", "fields:"} {
+		if strings.Contains(got, key) {
+			t.Errorf("the file names %s: %q", key, got)
+		}
+	}
+
+	types, err := vs.queries.GetTypes(t.Context(), vs.first.ID, []string{made.Path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if types[made.Path] != format.TypePreset {
+		t.Errorf("the index does not hold it as what it is: %v", types)
+	}
+}
+
+// A card model's first field is what its cards are named by, so a card model is made
+// with one and nothing is written where there is none.
+func TestACardModelIsMadeWithAFirstField(t *testing.T) {
+	vs := newVaults(t)
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
+
+	if _, err := u.CardModel(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
+		err, cards.ErrNoFields,
+	) {
+		t.Fatalf("make a card model of no fields = %v, want it rejected", err)
+	}
+	if _, err := os.Stat(filepath.Join(vs.first.Path, "Bird.md")); !errors.Is(err, os.ErrNotExist) {
+		t.Error("the file was written anyway")
+	}
+
+	// A deck declares none, and is made all the same.
+	if _, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Buntings", Path: "decks"}); err != nil {
+		t.Errorf("make a deck: %v", err)
+	}
+}
+
+// The card model selection lists the card models of the requested vault and
+// no other vault's.
+func TestTheCardModelsOfOneVaultAreListed(t *testing.T) {
+	vs := newVaults(t)
+	u := cards.NewList(vs.ports.Readers, vs.queries)
+
+	got, target, err := u.Execute(t.Context(), vs.first, 0)
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	var paths []string
+	for _, s := range got {
+		paths = append(paths, s.Path)
+	}
+	if !slices.Equal(paths, []string{"Animal.md", "Term.md"}) {
+		t.Fatalf("card models = %v", paths)
+	}
+	if target != 2 {
+		t.Errorf("held = %d, want the two the vault holds", target)
+	}
+	if !slices.Equal(got[0].Fields, []string{"Name", "Height", "Life span"}) {
+		t.Errorf("fields = %v", got[0].Fields)
+	}
+	if got[0].Title != "Animal" {
+		t.Errorf("title = %q", got[0].Title)
+	}
+
+	other, _, err := u.Execute(t.Context(), vs.second, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(other) != 1 || other[0].Path != "Mineral.md" {
+		t.Errorf("the other vault's card models = %+v", other)
+	}
+}
+
+// A truncated list opens no file for the card models it omits, and the total
+// still reports how many the vault holds.
+func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
+	vs := newVaults(t)
+	counted := &counting{VaultReaders: vs.ports.Readers}
+
+	got, target, err := (cards.NewList(counted, vs.queries)).
+		Execute(t.Context(), vs.first, 1)
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if len(got) != 1 || got[0].Path != "Animal.md" {
+		t.Fatalf("card models = %+v, want the one asked for", got)
+	}
+	if target != 2 {
+		t.Errorf("held = %d, want the two the vault holds", target)
+	}
+	if counted.reads != 1 {
+		t.Errorf("%d files were opened, want the one that was answered with", counted.reads)
+	}
+}
+
+// counting is a reader that counts how many times a file was opened, so a test
+// can assert which files were not read.
+type counting struct {
+	ports.VaultReaders
+	reads int
+}
+
+func (c *counting) Open(v domain.Vault) (ports.VaultReader, error) {
+	reader, err := c.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return &countingReader{VaultReader: reader, on: c}, nil
+}
+
+type countingReader struct {
+	ports.VaultReader
+	on *counting
+}
+
+func (r *countingReader) Read(ctx context.Context, path string) ([]byte, error) {
+	r.on.reads++
+	return r.VaultReader.Read(ctx, path)
+}
+
+// refusing is a writer that will not write one path, which is the deck a rename
+// cannot reach.
+type refusing struct {
+	ports.VaultWriters
+	path string
+}
+
+var errRefused = errors.New("the filesystem rejected this file")
+
+func (w refusing) Open(v domain.Vault) (ports.VaultWriter, error) {
+	writer, err := w.VaultWriters.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return refusingWriter{VaultWriter: writer, path: w.path}, nil
+}
+
+type refusingWriter struct {
+	ports.VaultWriter
+	path string
+}
+
+func (w refusingWriter) Write(
+	ctx context.Context, path string, content []byte, stat domain.FileStat,
+) (domain.FileStat, error) {
+	if path == w.path {
+		return domain.FileStat{}, errRefused
+	}
+	return w.VaultWriter.Write(ctx, path, content, stat)
+}

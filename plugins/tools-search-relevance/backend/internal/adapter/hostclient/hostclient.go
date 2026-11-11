@@ -5,8 +5,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/calibration"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/calibration"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 // OpenFromEnv builds the host clients from the process environment.
@@ -26,7 +27,7 @@ func OpenFromEnv() (calibration.Hosts, error) {
 				return relevance.Search{Index: on, Policy: on}
 			},
 			Vaults: notes,
-			Store:  func(id domain.VaultID) relevance.Folder { return store.With(id) },
+			Store:  func(id domain.VaultID) relevance.Records { return floorrecords.New(store.With(id)) },
 		},
 		Queue: host.NewQueueClient(endpoint),
 	}, nil

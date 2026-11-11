@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/enumtest"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 // Every value of every enum this package converts maps to a value.

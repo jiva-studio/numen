@@ -12,13 +12,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/neighborhood"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/reloads"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/sessions"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/vaultcount"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/vaultcount"
 )
 
 func formatTime(t time.Time) string {

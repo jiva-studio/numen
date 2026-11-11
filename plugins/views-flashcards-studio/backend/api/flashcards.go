@@ -170,7 +170,7 @@ type GetDeckNeighborhoodRequest struct {
 // GetDeckNeighborhoodResponse is the response of the GetDeckNeighborhood method.
 type GetDeckNeighborhoodResponse struct {
 	Notes  []*DeckNeighbor `json:"notes"`
-	Unread int32            `json:"unread"`
+	Unread int32           `json:"unread"`
 }
 
 // DeckNeighbor is a note a deck links to or is linked from. Address is the link target as the deck spells it.
