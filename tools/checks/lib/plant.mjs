@@ -14,7 +14,7 @@ export function listTrackedFiles(root) {
  * installed `node_modules`, so a check can run on a tree that holds nothing else. Returns the folder.
  */
 export function plantTree(root, patterns) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "checks-tree-"));
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "checks-tree-")));
   for (const file of listTrackedFiles(root)) {
     if (!isMatching(file, patterns)) continue;
     const source = path.join(root, file);
