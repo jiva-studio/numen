@@ -13,7 +13,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - `package-matrix`, `protocol-declared-only-by-clients`, `core-client-private`: a window or library declaring a package its row does not allow; a package other than `@numen/core-client` and `@numen/plugin-sdk` declaring `@numen/protocol`; a plugin relying on `@numen/core-client`.
 - `core-client-only-in-api`: a window file outside an `api` segment and `main.ts` importing `@numen/core-client`.
 - `shared-serves-several-slices`: a file of `shared` that one slice imports.
-- `app-is-composition`: a file of `app` over 300 lines, named `use<Name>` or exporting a `use<Name>` composable.
+- `app-is-composition`: a file of `app` over 300 lines, named `use<Name>` or exporting a `use<Name>` composable, calling `watch`, `addEventListener` or a timer, holding a `switch`, more than one decision (`if`, `?:`, loop, `catch`) in a function or more than three in a file.
 - `no-component-below-ui`: a `.vue` file in a `lib`, `api` or `model` segment.
 
 ## Segments and components

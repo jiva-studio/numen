@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { APP_MAX_LINES, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findDeepSliceImports, findLateBindings, findPageImports, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
+import { APP_MAX_LINES, findAppLogic, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findDeepSliceImports, findLateBindings, findPageImports, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
 
 /** A module of the resolved graph with local imports `{ specifier: resolvedPath }`. */
 function moduleOf(source, imports = {}) {
@@ -247,5 +247,74 @@ describe("the deep import rule of the test support", () => {
 
   it("passes the index of a slice and a shared file", () => {
     assert.deepEqual(at("import { a } from \"@/entities/settings\"\nimport { b } from \"@/shared/api/errors\""), []);
+  });
+});
+
+describe("the logic rule of the app layer", () => {
+  const symbols = (text, file = `${WINDOW}/app/window/createWindow.ts`) =>
+    findAppLogic([{ file, text }]).findings.map((one) => `${one.line} ${one.symbol}`);
+
+  it("fails a watcher, a listener and a timer, however the call is written", () => {
+    assert.deepEqual(
+      symbols(
+        [
+          "watch(() => a, run);",
+          "watchEffect(run);",
+          "globalThis.addEventListener('pagehide', run);",
+          "window.removeEventListener('keydown', run);",
+          "setTimeout(run, 10);",
+          "globalThis.clearTimeout(timer);",
+          "setInterval(run, 10);",
+        ].join("\n"),
+      ),
+      [
+        "1 calls watch",
+        "2 calls watchEffect",
+        "3 calls addEventListener",
+        "4 calls removeEventListener",
+        "5 calls setTimeout",
+        "6 calls clearTimeout",
+        "7 calls setInterval",
+      ],
+    );
+  });
+
+  it("finds a call in a component script and in a nested function", () => {
+    const text = "<script setup lang=\"ts\">\nconst start = () => () => watch(a, b)\n</script>";
+    assert.deepEqual(symbols(text, `${WINDOW}/app/App.vue`), ["2 calls watch"]);
+  });
+
+  it("fails a switch", () => {
+    assert.deepEqual(symbols("switch (kind) { default: break }"), ["1 a switch"]);
+  });
+
+  it("allows one decision in a function and fails the second", () => {
+    assert.deepEqual(symbols("const a = (x) => (x ? 1 : 2);"), []);
+    assert.deepEqual(symbols("const a = (x) => {\n  if (x) return 1;\n  return x ? 2 : 3;\n};"), [
+      "3 more than 1 decision in a function",
+    ]);
+  });
+
+  it("counts a loop and a catch as decisions", () => {
+    assert.deepEqual(symbols("const a = (xs) => {\n  for (const x of xs) run(x);\n  try { run(1) } catch { run(2) }\n};"), [
+      "3 more than 1 decision in a function",
+    ]);
+  });
+
+  it("counts the decisions of each function apart", () => {
+    assert.deepEqual(symbols("const a = (x) => (x ? 1 : 2);\nconst b = (x) => (x ? 1 : 2);\nconst c = (x) => (x ? 1 : 2);"), []);
+  });
+
+  it("fails a file whose functions take more than the file bound together", () => {
+    const text = [1, 2, 3, 4].map((n) => `const f${n} = (x) => (x ? 1 : 2);`).join("\n");
+    assert.deepEqual(symbols(text), ["1 4 decisions, at most 3 are allowed in a file of app"]);
+  });
+
+  it("leaves tests, stories and the testing folder out of what it reads", () => {
+    const { findings, read } = findAppLogic(
+      ["a.test.ts", "a.stories.ts"].map((name) => ({ file: `${WINDOW}/app/${name}`, text: "watch(a, b);" })),
+    );
+    assert.deepEqual(findings, []);
+    assert.equal(read, 0);
   });
 });

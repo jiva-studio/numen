@@ -196,7 +196,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `story-files-lint-storybook-recommended`: a story file of `@numen/ui` and `@numen/workbench` resolves every rule of the recommended config of `eslint-plugin-storybook` at the severity the plugin gives it, and `storybook/csf-component` is off.
 - `core-client-only-in-api`: a window imports `@numen/core-client` only from an `api` segment and from its entry `src/main.ts`.
 - `shared-serves-several-slices`: a shipped file of a window's `shared` layer is imported, directly or through other shared files, from more than one slice; a file one slice uses belongs in that slice.
-- `app-is-composition`: a shipped file of a window's `app` layer is at most 300 lines, is not named `use<Name>` and exports no `use<Name>` composable; state and behavior belong to a slice, `app` creates, connects and orders.
+- `app-is-composition`: a shipped file of a window's `app` layer is at most 300 lines, is not named `use<Name>` and exports no `use<Name>` composable, starts no watcher, listener or timer, holds no `switch` and takes at most one decision (`if`, `?:`, loop, `catch`) in a function and three in a file; state and behavior belong to a slice, `app` creates, connects and orders.
 - `desktop-editor-fsd`: the FSD layer hierarchy of the editor (§4).
 - `desktop-flashcards-fsd`: the FSD layer hierarchy of the flashcards window (§4).
 

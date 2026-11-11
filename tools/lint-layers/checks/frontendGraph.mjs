@@ -187,6 +187,84 @@ export function findAppOverreach(files, maxLines = APP_MAX_LINES) {
   return { findings, read: shipped.length };
 }
 
+/** The most decisions one function of the app layer takes: an `if`, a `?:`, a loop or a `catch`. */
+export const APP_MAX_DECISIONS_PER_FUNCTION = 1;
+
+/** The most decisions the functions of one file of the app layer take together. */
+export const APP_MAX_DECISIONS_PER_FILE = 3;
+
+/** The calls that start a watcher, a listener or a timer, which belong to the slice that owns what they watch. */
+const APP_FORBIDDEN_CALLS = new Set([
+  "watch",
+  "watchEffect",
+  "watchPostEffect",
+  "watchSyncEffect",
+  "addEventListener",
+  "removeEventListener",
+  "setTimeout",
+  "setInterval",
+  "clearTimeout",
+  "clearInterval",
+  "requestAnimationFrame",
+]);
+
+const isFunctionNode = (node) =>
+  ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node) || ts.isMethodDeclaration(node);
+
+/** Whether a node is a point where the code takes one way or another over a value. */
+function isDecision(node) {
+  if (ts.isIfStatement(node) || ts.isConditionalExpression(node) || ts.isCatchClause(node)) return true;
+  return ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node) || ts.isWhileStatement(node) || ts.isDoStatement(node);
+}
+
+/** The name a call is made by: `watch` for `watch(...)` and `globalThis.addEventListener(...)`. */
+function getCalledName(call) {
+  const callee = call.expression;
+  if (ts.isIdentifier(callee)) return callee.text;
+  if (ts.isPropertyAccessExpression(callee)) return callee.name.text;
+  return undefined;
+}
+
+/**
+ * What the `app` layer of a window must not hold: a watcher, a listener or a timer, which a slice
+ * owns, and code that decides over values (more than one `if`, `?:`, loop or `catch` in a function,
+ * or more than a few in a file) or switches over them. `app` creates, connects and orders slices; a
+ * rule over data belongs to the slice that owns the data.
+ *
+ * @param {Array<{ file: string, text: string }>} files The files under `app/`, with their text
+ * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
+ */
+export function findAppLogic(files) {
+  const findings = [];
+  const shipped = files.filter((one) => !isNotShipped(one.file));
+  for (const { file, text } of shipped) {
+    const source = ts.createSourceFile(file, readScriptText(file, text), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const lineOf = (node) => source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+    let total = 0;
+    const visit = (node, owner) => {
+      if (ts.isCallExpression(node)) {
+        const name = getCalledName(node);
+        if (name && APP_FORBIDDEN_CALLS.has(name)) findings.push({ file, line: lineOf(node), symbol: `calls ${name}` });
+      }
+      if (ts.isSwitchStatement(node)) findings.push({ file, line: lineOf(node), symbol: "a switch" });
+      if (isDecision(node)) {
+        total += 1;
+        owner.decisions += 1;
+        if (owner.decisions === APP_MAX_DECISIONS_PER_FUNCTION + 1) {
+          findings.push({ file, line: lineOf(node), symbol: `more than ${APP_MAX_DECISIONS_PER_FUNCTION} decision in a function` });
+        }
+      }
+      const next = isFunctionNode(node) ? { decisions: 0 } : owner;
+      ts.forEachChild(node, (child) => visit(child, next));
+    };
+    visit(source, { decisions: 0 });
+    if (total > APP_MAX_DECISIONS_PER_FILE) {
+      findings.push({ file, line: 1, symbol: `${total} decisions, at most ${APP_MAX_DECISIONS_PER_FILE} are allowed in a file of app` });
+    }
+  }
+  return { findings, read: shipped.length };
+}
+
 /** The text of the script of a source file: the file itself, or the script blocks of a component. */
 function readScriptText(file, text) {
   if (!file.endsWith(".vue")) return text;
@@ -389,13 +467,14 @@ export function verifyAppIsComposition() {
   const findings = [];
   let read = 0;
   for (const root of listWindows(REPO_ROOT)) {
-    const one = findAppOverreach(listAppFiles(root));
-    findings.push(...one.findings);
+    const files = listAppFiles(root);
+    const one = findAppOverreach(files);
+    findings.push(...one.findings, ...findAppLogic(files).findings);
     read += one.read;
   }
-  // 38 on the tree when the floor was set; the floor is that count less 5%.
+  // 22 on the tree when the floor was set; the floor is that count less 5%.
   requireMatches("Source files of the app layers", read, 20);
-  failOnFindings("The app layer of a window holds more than composition", findings);
+  failOnFindings("The app layer of a window holds more than composition: a long file, a composable, a watcher, a listener, a timer or code that decides over values", findings);
 }
 
 export function verifyAppBindsInOrder() {
@@ -436,7 +515,7 @@ export const FRONTEND_GRAPH_VERIFIERS = [
     id: "app-is-composition",
     scope: "apps",
     module: "boundary",
-    name: "The app Layer of a Window Holds Short Files and No Composable",
+    name: "The app Layer of a Window Holds Short Files, No Composable, No Watcher, Listener or Timer and Little Branching",
     run: verifyAppIsComposition,
   },
   {
