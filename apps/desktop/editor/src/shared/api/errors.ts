@@ -18,6 +18,3 @@ export { ReportedError } from '@numen/core-client'
 
 /** The sentence of each error a vault operation answers with. */
 export { ERRORS } from '@numen/core-client'
-
-/** The code the window words for a code given as text, and `unreadable` for one it has no words for. */
-export { getKnownErrorCode } from '@numen/core-client'
