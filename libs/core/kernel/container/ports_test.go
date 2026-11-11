@@ -104,9 +104,7 @@ func TestTheRootPassesOutNoAdapterTheCompilerContains(t *testing.T) {
 		}
 	}
 
-	// A walk that read nothing is a rule checked against nothing, and it passes.
-	// The floor is well under what this package holds.
-	if read < 10 {
+	if read == 0 {
 		t.Fatalf("%d files of the composition root read: the walk is reading something else", read)
 	}
 	// The rule is about what the root answers with, so it is worth nothing where

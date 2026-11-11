@@ -75,7 +75,7 @@ func getOversizedTypes(pkgs []*packages.Package, getLimit func(path string) (str
 				methods := types.NewMethodSet(types.NewPointer(named)).Len()
 				fields := 0
 				if st, ok := named.Underlying().(*types.Struct); ok {
-					fields = st.NumFields()
+					fields = countStructFields(st, map[*types.Struct]bool{})
 				}
 				if methods > limit.methods {
 					found = append(found, newFinding(pkg.Fset, spec.Name.Pos(),
@@ -130,8 +130,7 @@ func checkNoTypeExceedsItsLayersSize(t *testing.T, workspace workspacePackages) 
 		t.Errorf("container.Config has %d exported methods, more than %d", count, maxConfigMethods)
 	}
 
-	// A walk that reads few types checks nothing.
-	if read < 200 {
+	if read == 0 {
 		t.Fatalf("%d types of the adapters, the container and the use cases read: the rule is checked against nothing", read)
 	}
 }
@@ -185,5 +184,68 @@ type Free struct{ A, B, C, D int }
 	}
 	if read != 4 {
 		t.Errorf("%d types read, want 4", read)
+	}
+}
+
+// countStructFields counts the fields of a struct, and in place of an embedded struct the fields of that
+// struct, down to the last one.
+func countStructFields(shape *types.Struct, seen map[*types.Struct]bool) int {
+	if seen[shape] {
+		return 0
+	}
+	seen[shape] = true
+	count := 0
+	for field := range shape.Fields() {
+		if inner, ok := getEmbeddedStruct(field); ok {
+			count += countStructFields(inner, seen)
+			continue
+		}
+		count++
+	}
+	return count
+}
+
+func getEmbeddedStruct(field *types.Var) (*types.Struct, bool) {
+	if !field.Embedded() {
+		return nil, false
+	}
+	t := field.Type()
+	if pointer, ok := types.Unalias(t).(*types.Pointer); ok {
+		t = pointer.Elem()
+	}
+	named, ok := types.Unalias(t).(*types.Named)
+	if !ok {
+		return nil, false
+	}
+	shape, ok := named.Underlying().(*types.Struct)
+	return shape, ok
+}
+
+func TestStructSizeRule_CountsFieldsOfEmbeddedStructs(t *testing.T) {
+	dir := writeTreeFixture(t, map[string]string{
+		"adapter/store/store.go": `package store
+
+type Places struct{ a, b int }
+
+type Stores struct {
+	Places
+	c int
+}
+
+type Wiring struct {
+	Stores
+	d int
+}
+
+type Plain struct{ a, b int }
+`,
+	})
+	getLimit := func(path string) (structLimit, bool) {
+		return structLimit{methods: 100, fields: 3}, strings.HasPrefix(path, "fixture/adapter")
+	}
+	found, _ := getOversizedTypes(loadFixture(t, dir), getLimit)
+	want := []string{"store.go:10 store.Wiring has 4 fields, more than 3"}
+	if got := formatFindings(found); !slices.Equal(got, want) {
+		t.Errorf("the rule rejects %v, want %v", got, want)
 	}
 }

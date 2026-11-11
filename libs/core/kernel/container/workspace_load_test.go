@@ -93,6 +93,22 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkThePluginAdapterHasNoGodStruct(t, workspace)
 	})
+	t.Run("TheContainerAssignsNoCapturedVariable", func(t *testing.T) {
+		t.Parallel()
+		checkTheContainerAssignsNoCapturedVariable(t, workspace)
+	})
+	t.Run("TheContainerDeclaresNoGenericFunction", func(t *testing.T) {
+		t.Parallel()
+		checkTheContainerDeclaresNoGenericFunction(t, workspace)
+	})
+	t.Run("NoUseCaseHasAMutatingWithMethod", func(t *testing.T) {
+		t.Parallel()
+		checkNoUseCaseHasAMutatingWithMethod(t, workspace)
+	})
+	t.Run("NoFunctionFieldIsAssignedAfterConstruction", func(t *testing.T) {
+		t.Parallel()
+		checkNoFunctionFieldIsAssignedAfterConstruction(t, workspace)
+	})
 }
 
 func loadWorkspace(t *testing.T) workspacePackages {

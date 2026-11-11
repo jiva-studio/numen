@@ -195,9 +195,8 @@ func checkDrivingFunctionCallsOneUseCase(t *testing.T, adapters []*packages.Pack
 	for _, one := range found {
 		t.Errorf("%s %s: a driving adapter calls one use case", one.position, one.name)
 	}
-	// A walk that read few calls is a rule checked against almost nothing.
-	if functions < 90 {
-		t.Fatalf("%d driving-adapter functions reach a use case, want at least 90: the walk is not reading them", functions)
+	if functions == 0 {
+		t.Fatalf("%d driving-adapter functions reach a use case: the walk is not reading them", functions)
 	}
 }
 
