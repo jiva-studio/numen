@@ -198,7 +198,7 @@ func (w readingParts) ReadWholeVault(
 		}
 		return nil
 	}
-	texts := filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts, nil, readNote)
+	texts := filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts).WithHandlers(nil, readNote)
 	cutter := w.cutNotes()
 	texts.Sizes = cutter.Sizes
 	texts.Legibility = cutter.Legibility
