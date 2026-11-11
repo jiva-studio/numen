@@ -38,6 +38,7 @@ func newPluginVaultList(f *showing) vaultapi.List {
 }
 
 func (f *showing) bindVaultSwitch(t *testing.T) {
+	t.Helper()
 	show := switchFunc(f.installation.Show)
 	f.installation.State.Switch = show
 	f.installation.WrapPluginSwitch(t, func(windowsession.VaultSwitch) windowsession.VaultSwitch { return show })
