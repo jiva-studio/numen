@@ -154,7 +154,16 @@ var _ = os.Args
 var _ noteport.Reader
 var _ find.Find
 `,
-		"internal/testsupport/fake/fake.go": "package fake\n\nimport \"fixture/port/noteport\"\n\ntype Reader struct{ n int }\n\nfunc (r *Reader) Read() string { r.n++; return \"\" }\n\nvar _ noteport.Reader = (*Reader)(nil)\n",
+		"internal/testsupport/fake/fake.go": `package fake
+
+import "fixture/port/noteport"
+
+type Reader struct{ n int }
+
+func (r *Reader) Read() string { r.n++; return "" }
+
+var _ noteport.Reader = (*Reader)(nil)
+`,
 		"internal/testsupport/tech/tech.go": "package tech\n\nimport \"os\"\n\nvar _ = os.Args\n",
 		"internal/csp/csp.go":               "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
 		"adapter/index/index.go":            "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
