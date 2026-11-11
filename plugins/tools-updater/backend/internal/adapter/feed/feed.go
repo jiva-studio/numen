@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
 
 // requestTimeout bounds one fetch of the manifest, connection and body included.

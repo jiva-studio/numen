@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/updates"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/usecase/updates"
 )
 
 func newCheckHandler(checker *updates.Checker) func(context.Context, api.CheckRequest) (api.Status, error) {

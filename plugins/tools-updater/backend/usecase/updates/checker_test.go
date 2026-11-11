@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
 
 var errOffline = errors.New("offline")

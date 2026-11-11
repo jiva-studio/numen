@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
 
 // ErrNotConfigured is a check before the host supplied the settings.

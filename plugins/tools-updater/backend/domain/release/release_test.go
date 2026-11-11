@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
 
 func TestParseBuildReadsPlainNumbersAndStamps(t *testing.T) {
