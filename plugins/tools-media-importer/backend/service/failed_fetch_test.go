@@ -10,8 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // captionlessSites is the fake sites where the captions of the video cannot be fetched, while
@@ -65,7 +66,7 @@ func newFixtureWithSites(t *testing.T, fetcher link.Fetcher) *importFixture {
 func TestURLImportCopiesAVideoWhoseCaptionsFailed(t *testing.T) {
 	release := make(chan struct{})
 	close(release)
-	s := newFixtureWithSites(t, captionlessSites{fakeSites{video: download.NewMock(), release: release}})
+	s := newFixtureWithSites(t, captionlessSites{fakeSites{video: download.NewMock(webpage.New()), release: release}})
 
 	out := s.importURL(t, "Mills", importArguments{URL: videoAddress, DownloadVideo: true})
 	s.links.Wait()
@@ -86,7 +87,7 @@ func TestURLImportCopiesAVideoWhoseCaptionsFailed(t *testing.T) {
 func TestURLImportOfAddressWithNoContentReportsNoTitle(t *testing.T) {
 	release := make(chan struct{})
 	close(release)
-	s := newFixtureWithSites(t, emptiedSites{fakeSites{video: download.NewMock(), release: release}, &atomic.Int32{}})
+	s := newFixtureWithSites(t, emptiedSites{fakeSites{video: download.NewMock(webpage.New()), release: release}, &atomic.Int32{}})
 
 	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "first"})
 	if first.Title != articleTitle || first.Bytes == 0 {

@@ -9,12 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/model"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/model"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
 // Mount registers the handlers and the agent tool transcript_create on s over the host the process

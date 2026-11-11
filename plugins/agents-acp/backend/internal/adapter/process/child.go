@@ -12,7 +12,7 @@ import (
 	"syscall"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/acp"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
 )
 
 const (

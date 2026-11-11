@@ -3,9 +3,8 @@
  * The contents of the book, standing over the page it is read on. A pointer
  * landing outside it and the Escape key both put it away.
  */
-import { onBeforeUnmount, watch } from 'vue'
-import { win } from '@numen/ui'
 import { BookContents } from '../../book'
+import { useWindowEscape } from '../../model/useWindowEscape'
 import type { ContentsEntry } from '../../types'
 import { WORDS as words } from '../../words'
 
@@ -18,36 +17,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{ go: [offset: number]; dismiss: []; escape: [] }>()
 
-/* --------------------------------- State ---------------------------------- */
-let detach: (() => void) | null = null
-
 /* --------------------------------- Hooks ---------------------------------- */
-watch(
+useWindowEscape(
   () => props.isOpen,
-  (isOpen) => {
-    if (!isOpen) return cleanupWindowListeners()
-    win.addEventListener('keydown', onWindowKey, true)
-    detach = () => win.removeEventListener('keydown', onWindowKey, true)
-  },
+  () => emit('escape'),
 )
-
-onBeforeUnmount(cleanupWindowListeners)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectEntry(offset: number) {
   emit('go', offset)
-}
-
-function onWindowKey(event: KeyboardEvent) {
-  if (event.key !== 'Escape') return
-  event.preventDefault()
-  emit('escape')
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function cleanupWindowListeners() {
-  detach?.()
-  detach = null
 }
 </script>
 

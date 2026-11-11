@@ -4,6 +4,7 @@ import { ErrorMessage } from '../../error-message'
 import { CardHeader } from '../../card-header'
 import { RemoveButton } from '../../remove-button'
 import { CardValue } from './card-value'
+import { useCardModelTitle } from '../../../../model/cards/useCardModelTitle'
 import { DECK_WORDS, type CardWords } from '../../../../../lib/cards'
 import type { PlacedFieldValue, Tile } from '../../../../../lib/cards'
 import { getSealedMap, type StepDirection } from '../../../../../lib/cards'
@@ -32,7 +33,10 @@ const uid = useId()
 
 const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
-const cardModelTitle = computed(() => props.tile.cardModel ?? props.words.unknown(null))
+const cardModelTitle = useCardModelTitle(
+  () => props.tile.cardModel,
+  () => props.words.unknown,
+)
 
 /* -------------------------------- Helpers --------------------------------- */
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`

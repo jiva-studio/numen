@@ -175,7 +175,7 @@ func TestRecognitionCreateReturnsTheTaskIDKey(t *testing.T) {
 	if want := "recognize:Physics:" + scanPath; answer["taskId"] != want {
 		t.Errorf("taskId = %v, want %s", answer["taskId"], want)
 	}
-	close(s.recogniser.release)
+	close(s.recognizer.release)
 	s.waitFinished(t, "recognize:Physics:"+scanPath)
 
 	schema := getToolSchema(t, s.registry, "recognition_create", true)

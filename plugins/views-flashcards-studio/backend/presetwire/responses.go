@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/filewire"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 // NewDeckPresetResponse answers the read of the preset a deck is scheduled by. The title is looked

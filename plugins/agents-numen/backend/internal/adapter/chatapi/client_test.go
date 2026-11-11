@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/chatapi"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/settings"
 )
 
 func TestTemperatureAndMaxTokensOfTheSettingsAreSentWithTheRequest(t *testing.T) {

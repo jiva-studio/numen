@@ -6,7 +6,12 @@ import type { PluginHost } from '@numen/plugin-loader'
 import type { Command } from '@/entities/command'
 import type { CommandDeps, CommandTarget } from '@/shared/model/command'
 import { createInvocationRunner, createVaultOpener } from '@/features/command-palette'
-import { createWindowCommands, getAppCommandIds, type HostPort } from '@/features/plugin-commands'
+import {
+  createWindowCommands,
+  getAppCommandIds,
+  getListedCommandIds,
+  type HostPort,
+} from '@/features/plugin-commands'
 import type { createCommandRuns, createCommandSources } from './createCommands'
 
 /** What the commands a plugin reads and runs are made from. */
@@ -27,7 +32,7 @@ export function createHostConnection(deps: HostConnectionDeps) {
   const appIds = getAppCommandIds(deps.appCommands)
   const windowCommands = createWindowCommands({
     getAppIds: () => appIds,
-    getPluginIds: () => deps.pluginHost.commands.getPaletteCommands().map((one) => one.id),
+    getPluginIds: () => getListedCommandIds(deps.pluginHost),
     runCommandToEnd: deps.runCommandToEnd,
     listItems: items.listCommandItems,
     runWithItem: items.runWithItem,

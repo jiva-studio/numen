@@ -2,47 +2,25 @@
 /**
  * Displays the vault file tree and handles file navigation and organisation gestures.
  */
-import { computed, onMounted, onUnmounted, type Component } from 'vue'
+import { computed } from 'vue'
 import { Menu, Tree } from '@numen/ui'
-import type { Position, RowMarker } from '@numen/ui'
+import type { Position } from '@numen/ui'
 
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
 import { getDragTypes, readDroppedData } from '../lib/drag'
+import { useFilesTabView } from '../model/useFilesTabView'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: FilesTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-/**
- * The mark the window's drag and drop reads: the attribute it looks a target
- * up by, carrying the folder a file dropped there is filed in.
- */
-const dropTarget = computed<RowMarker>(() => ({
-  attribute: 'data-file-drop-target',
-  getAttributeValue: (row: string | null) => props.state.transfer.getFolderFor(row),
-}))
-
 const rows = computed(() => getRows(props.state.list.queries.rows.value))
 
-/** The row whose name is in a field, which the tree opens and closes itself. */
-const renamingPath = computed({
-  get: () => props.state.renaming.path.value,
-  set: (row: string | null) => props.state.renaming.setPath(row),
-})
-
-/** The menu items for the row the menu was opened on, or for no row. */
-const items = computed(() =>
-  props.state.menu.getItems(props.state.menu.request.value?.path ?? null),
+const { dropTarget, renamingPath, items, getRowIcon, getItemIcon } = useFilesTabView(
+  () => props.state,
 )
-
-/* --------------------------------- Hooks ---------------------------------- */
-const refreshTree = () => {
-  props.state.list.sync.refresh().catch(props.state.reportFailure)
-}
-onMounted(() => globalThis.addEventListener('focus', refreshTree))
-onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDragOver(event: DragEvent) {
@@ -104,15 +82,6 @@ function onChooseMenuItem(id: string) {
 
 function onDismissMenu() {
   props.state.menu.dismiss()
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getRowIcon(id: string, isOpen: boolean): Component {
-  return props.state.entries.getEntryIcon(props.state.list.queries.getEntryAt(id), isOpen)
-}
-
-function getItemIcon(id: string): Component | null {
-  return props.state.menu.getIcon(id)
 }
 </script>
 

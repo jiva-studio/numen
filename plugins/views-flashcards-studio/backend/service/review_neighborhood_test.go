@@ -14,9 +14,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/neighborhood"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 func getJoined() map[string]string {

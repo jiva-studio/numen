@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/updates"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/usecase/updates"
 )
 
 func newStatusHandler(checker *updates.Checker) func(context.Context, api.GetStatusRequest) (api.Status, error) {

@@ -14,8 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // The fake pages the importer's tool is tested against, in addition to videoAddress.
@@ -134,7 +135,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 
-	sites := fakeSites{video: download.NewMock(), release: release}
+	sites := fakeSites{video: download.NewMock(webpage.New()), release: release}
 	hosted := link.Host{
 		Vaults: textVault{
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},

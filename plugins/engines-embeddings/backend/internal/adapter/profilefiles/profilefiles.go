@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // Directory is a folder of user profile files. An empty path names no folder.

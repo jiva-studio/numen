@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/window"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/window"
 )
 
 func addNoteFocus(registry *tools.Registry, control window.Control) error {

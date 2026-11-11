@@ -17,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 // PluginID is the id of the plugin in its manifest.

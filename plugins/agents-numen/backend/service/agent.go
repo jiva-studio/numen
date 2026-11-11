@@ -5,11 +5,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/answer"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/catalog"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/chatapi"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/vaulttools"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/settings"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/answer"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/catalog"
 )
 
 // agent is numen's own agent: it works a task by calling an OpenAI-compatible chat API and calling

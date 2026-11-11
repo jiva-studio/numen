@@ -14,6 +14,7 @@ import { useViewport } from '@numen/ui'
 import { onNextFrame } from '@numen/ui'
 import { usePanScroll } from '../model/scroll'
 import { useRowLayout } from '../model/useRowLayout'
+import { usePageImageUrl } from '../model/usePageImageUrl'
 import { useRowRestore } from '../model/useRowRestore'
 import { READER_WORDS, getFitZoom, getTurnTarget } from '../lib/strip'
 import type { ReaderProps } from './Reader.types'
@@ -93,6 +94,8 @@ const { measure, isPutting } = useRowRestore({
   scroll: scroll.moves,
 })
 
+const getImageUrl = usePageImageUrl({ getPicture: () => props.picture, drawnWidth, sharpPages })
+
 /* -------------------------------- Handlers -------------------------------- */
 const onScroll = () => {
   if (isPutting() || !scroll.moves.isStill()) return
@@ -105,10 +108,6 @@ const onKey = (event: KeyboardEvent): boolean => {
   emit('go', to)
   return true
 }
-
-/* --------------------------------- Helpers -------------------------------- */
-const getImageUrl = (page: number) =>
-  drawnWidth.value > 0 && sharpPages.value.has(page) ? props.picture(page) : ''
 </script>
 
 <template>

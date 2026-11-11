@@ -7,6 +7,7 @@
  */
 import { computed } from 'vue'
 import { Skeleton } from '@numen/ui'
+import { useDueText } from '../../model/useDueText'
 import { DUE_WORDS, type DueWords } from './due'
 
 const props = withDefaults(
@@ -19,10 +20,15 @@ const props = withDefaults(
   { isBare: false, isOnButton: false, words: () => DUE_WORDS },
 )
 
+const text = useDueText(
+  () => props.due,
+  () => props.words.formatDue,
+)
+
 /** What it is read out as, where that is not what it draws. */
 const label = computed(() => {
   if (props.due === null) return props.words.counting
-  return props.isBare ? props.words.formatDue(props.due) : undefined
+  return props.isBare ? (text.value ?? undefined) : undefined
 })
 </script>
 
@@ -39,7 +45,7 @@ const label = computed(() => {
          whether the figure has landed or not. -->
     <Skeleton v-if="due === null" wide="0.8rem" high="0.7em" is-pill />
     <template v-else-if="isBare">{{ due }}</template>
-    <template v-else>{{ words.formatDue(due) }}</template>
+    <template v-else>{{ text }}</template>
   </span>
 </template>
 

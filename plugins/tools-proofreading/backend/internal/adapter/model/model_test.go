@@ -8,8 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 func TestAskSendsTheQuestionWithTheProofreadingPurpose(t *testing.T) {
@@ -86,8 +85,8 @@ func TestAskWithoutAServiceURLFails(t *testing.T) {
 
 func TestTheMockAnswersTheSameQuestionTheSameWay(t *testing.T) {
 	question := &ai.Question{Messages: []ai.Message{
-		{Role: "system", Text: prompt.SpeechInstruction},
-		{Role: "user", Text: "What it holds\n\n" + prompt.BuildPrompt(numbered.Batch{Lines: []numbered.Line{{Number: 4, Text: "one"}, {Number: 5, Text: "two"}}})},
+		{Role: "system", Text: numbered.SpeechInstruction},
+		{Role: "user", Text: "What it holds\n\n" + numbered.BuildPrompt(numbered.Batch{Lines: []numbered.Line{{Number: 4, Text: "one"}, {Number: 5, Text: "two"}}})},
 	}}
 
 	first, err := CompleteMock(t.Context(), question)

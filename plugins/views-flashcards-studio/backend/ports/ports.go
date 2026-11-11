@@ -8,11 +8,12 @@ package ports
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 var (
@@ -27,6 +28,12 @@ var (
 	// ErrLockedByAnother is what a name gets when a program outside this one has the file.
 	ErrLockedByAnother = errors.New("the file is held by another program")
 )
+
+// IsNotExist reports whether err says that a file is not there.
+func IsNotExist(err error) bool { return errors.Is(err, fs.ErrNotExist) }
+
+// IsPermission reports whether err says that the host refuses access to a file.
+func IsPermission(err error) bool { return errors.Is(err, fs.ErrPermission) }
 
 // Clock gets what time it is. A use case that takes none has none.
 type Clock interface {

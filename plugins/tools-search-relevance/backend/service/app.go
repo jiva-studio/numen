@@ -9,17 +9,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/calibration"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/floorwire"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/hostclient"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/calibration"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 // PluginID is the identity the manifest gives the plugin.
 const PluginID = "md.numen.tools.search.relevance"
-
-// errNotMounted is a call that reached the app before it was mounted.
-var errNotMounted = floorwire.ErrNotMounted
 
 // Hosts is what the plugin works through the host.
 type Hosts = calibration.Hosts
