@@ -39,6 +39,7 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `plugin-config-golden-parity`: every plugin carries byte-identical copies of `plugins/.example/eslint.config.js`, `numen-rules.mjs`, `tsconfig.json` and `Makefile`, and of the root `.golangci.yml`.
    - `plugin-backend-layers`: Plugin Backend Internal Hexagonal Layer Direction.
    - `plugin-service-size`: the non-test code of a plugin's `backend/service` is at most 600 lines; the rule fails when it reads fewer than 15 services.
+   - `plugin-service-imports`: a non-test file of a plugin's `backend/service` imports no machine access (`os`, `os/exec`, `runtime`, `io/fs`, `net`, `database/sql`, `syscall`) and no `sync` or `sync/atomic`; the rule fails when it reads fewer than 62 files.
    - `plugins-use-main-entry`: a plugin names `@numen/plugin-sdk` and `@numen/ui` through the main entry. A deep path must be an entry the package declares in `exports`, and it passes only as the `testing` entry, as a stylesheet, or from a build configuration file (`*.config.ts`). The exports are read from the `package.json` of each package, and the rule fails when it reads fewer than 100 references.
 3. **Applications (`apps`)**:
    - `core-client-only-in-api`: in every application that declares `@numen/core-client` and is cut into layers (an entry `src/main.ts` and an `app` layer), only the entry and the shipped files of an `api` segment import `@numen/core-client`, read from the resolved import graph.
