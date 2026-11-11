@@ -12,9 +12,10 @@ import (
 )
 
 type fakeLocks struct {
-	mu      sync.Mutex
-	count   int
-	maximum int
+	mu       sync.Mutex
+	count    int
+	maximum  int
+	released chan struct{}
 }
 
 func (l *fakeLocks) Lock(_ context.Context, _ domain.Vault) (func(), error) {
@@ -26,6 +27,9 @@ func (l *fakeLocks) Lock(_ context.Context, _ domain.Vault) (func(), error) {
 		l.mu.Lock()
 		l.count--
 		l.mu.Unlock()
+		if l.released != nil {
+			l.released <- struct{}{}
+		}
 	}, nil
 }
 
@@ -54,18 +58,16 @@ func TestAHoldIsReleasedByItsID(t *testing.T) {
 }
 
 func TestAHoldThatEndedIsReleasedWithoutTheHolder(t *testing.T) {
-	locks := &fakeLocks{}
+	locks := &fakeLocks{released: make(chan struct{}, 1)}
 	hold := hold.NewLocks(locks, 20*time.Millisecond)
 
 	if _, err := hold.Execute(t.Context(), domain.Vault{}); err != nil {
 		t.Fatal(err)
 	}
-	if locks.getCount() != 1 {
-		t.Fatalf("count %d locks after the hold began, want 1", locks.getCount())
-	}
-	deadline := time.Now().Add(5 * time.Second)
-	for locks.getCount() != 0 && time.Now().Before(deadline) {
-		time.Sleep(5 * time.Millisecond)
+	select {
+	case <-locks.released:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the hold was not released after it ended")
 	}
 	if locks.getCount() != 0 {
 		t.Errorf("count %d locks after the hold ended, want 0", locks.getCount())
