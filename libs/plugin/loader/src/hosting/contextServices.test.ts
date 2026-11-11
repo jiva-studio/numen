@@ -28,6 +28,10 @@ const LISTED_COMMANDS = [
   'md.numen.engines.transcription:transcript.create',
 ]
 
+const COMMAND_PERMISSIONS: Readonly<Record<string, string>> = {
+  'md.numen.other:vault.archive': 'vault:manage',
+}
+
 const createServices = () => {
   const workspace = {
     files: { open: vi.fn() },
@@ -83,7 +87,9 @@ const createServices = () => {
       getAgent: () => agent,
       getWorkspace: () => workspace,
       getCommands: () => commands,
-      isCommandListed: (command) => LISTED_COMMANDS.includes(command),
+      isCommandListed: (command) =>
+        LISTED_COMMANDS.includes(command) || command in COMMAND_PERMISSIONS,
+      getCommandPermission: (command) => COMMAND_PERMISSIONS[command],
     },
   })
   return { host, workspace, notes, relations, files, agent, buffers, commands }
@@ -407,6 +413,20 @@ describe('a command a plugin runs over the vault', () => {
     await expect(context.ui.commands!.run('app:note.trash', target)).rejects.toThrowError(
       'lacks required permission "vault:write" for commands.run',
     )
+  })
+
+  it('checks the permission a command declares before running it', async () => {
+    const withoutManage = createContext(['vault:write'])
+    await expect(
+      withoutManage.context.ui.commands!.run('md.numen.other:vault.archive', target),
+    ).rejects.toThrowError('lacks required permission "vault:manage" for commands.run')
+    expect(withoutManage.commands.getRuns()).toStrictEqual([])
+
+    const withManage = createContext(['vault:write', 'vault:manage'])
+    await withManage.context.ui.commands!.run('md.numen.other:vault.archive', target)
+    expect(withManage.commands.getRuns()).toStrictEqual([
+      { command: 'md.numen.other:vault.archive', target, itemId: undefined },
+    ])
   })
 
   it('reads the commands of the window and their items with no permission', () => {

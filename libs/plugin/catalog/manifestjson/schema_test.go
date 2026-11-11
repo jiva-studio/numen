@@ -39,6 +39,7 @@ const everyFieldManifest = `{
 	"settingsViews": [{"id": "v", "title": "V"}],
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
 		"when": "target.contentType.startsWith('audio/')",
+		"permission": "vault:read",
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false},
 			{"name": "m", "title": "M", "type": "number", "required": true}]}],
 		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge", "when": "target.noteType == 'full'", "rank": "alternate"}], "feature": "full tabs", "category": "views",

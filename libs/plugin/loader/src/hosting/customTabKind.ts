@@ -27,7 +27,14 @@ import {
   type Unvalidated,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '../styles'
-import type { AnyTabKind, OpenTab, TabKind, TabKindAddress, TabKindDisplay } from './tabKinds'
+import {
+  getReaderKindId,
+  type AnyTabKind,
+  type OpenTab,
+  type TabKind,
+  type TabKindAddress,
+  type TabKindDisplay,
+} from './tabKinds'
 import {
   attachPluginRoot,
   extractFilename,
@@ -140,9 +147,7 @@ export function createReaderTabKind(
   registration: ReaderRegistration,
   getContext?: () => PluginContext | undefined,
 ): AnyTabKind {
-  const kindId = registration.id.startsWith('reader:')
-    ? registration.id
-    : `reader:${registration.id}`
+  const kindId = getReaderKindId(registration.id)
   const display: TabKindDisplay<ReaderState> = {
     onShow: (state) => {
       state.measure()

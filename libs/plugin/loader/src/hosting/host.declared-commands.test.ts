@@ -191,4 +191,42 @@ describe('the commands a plugin declares in its manifest', () => {
     expect(first).not.toHaveBeenCalled()
     expect(second).toHaveBeenCalledTimes(1)
   })
+
+  it('checks the permission a command declares when another plugin runs it', async () => {
+    const run = vi.fn(async () => '')
+    const { host } = createHost(
+      [declare({ id: 'tree.prune', permission: 'vault:manage' }), declare({ id: 'tree.open' })],
+      {
+        getCommands: () => ({
+          getIds: () => ['md.tree:tree.prune', 'md.tree:tree.open'],
+          watch: () => ({ dispose: () => undefined }),
+          listItems: async () => [],
+          run,
+        }),
+        getSlotEntries: () => [
+          { pluginId: 'md.tree', slot: 'titleBar.commands', command: 'tree.prune' },
+          { pluginId: 'md.tree', slot: 'titleBar.commands', command: 'tree.open' },
+        ],
+      },
+    )
+
+    const writerOnly = host.lifecycle.createContext(
+      'md.caller.writer',
+      createMockManifest('md.caller.writer', { permissions: ['vault:write'] }),
+    )
+    await writerOnly.ui.commands!.run('md.tree:tree.open', note)
+    expect(run).toHaveBeenCalledWith('md.tree:tree.open', note)
+
+    await expect(writerOnly.ui.commands!.run('md.tree:tree.prune', note)).rejects.toThrowError(
+      'Plugin "md.caller.writer" lacks required permission "vault:manage" for commands.run',
+    )
+    expect(run).toHaveBeenCalledTimes(1)
+
+    const manager = host.lifecycle.createContext(
+      'md.caller.manager',
+      createMockManifest('md.caller.manager', { permissions: ['vault:write', 'vault:manage'] }),
+    )
+    await manager.ui.commands!.run('md.tree:tree.prune', note)
+    expect(run).toHaveBeenCalledWith('md.tree:tree.prune', note)
+  })
 })

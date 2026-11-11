@@ -1,5 +1,6 @@
 import type { CommandsHost } from '@numen/plugin-sdk'
 import { getCommandOwner } from '../../commandId'
+import type { RequirePermission } from './permission'
 
 /**
  * The commands of the application that plugins run without a slot listing them, because a plugin
@@ -14,6 +15,8 @@ const RUNNABLE_APP_COMMANDS: ReadonlySet<string> = new Set([
 export interface CommandRunPolicy {
   readonly pluginId: string
   readonly isListed: (command: string) => boolean
+  readonly getPermission?: (command: string) => string | undefined
+  readonly checkPermission?: RequirePermission
 }
 
 /**
@@ -29,13 +32,23 @@ export function limitCommands(commands: CommandsHost, policy: CommandRunPolicy):
     getIds: () => commands.getIds(),
     watch: (handler) => commands.watch(handler),
     listItems: (command, target) => commands.listItems(command, target),
-    run: (...args) =>
-      canRun(args[0])
-        ? commands.run(...args)
-        : Promise.reject(
-            new Error(
-              `Plugin "${policy.pluginId}" runs the command "${args[0]}", which it does not own and no slot lists`,
-            ),
+    run: (...args) => {
+      if (!canRun(args[0])) {
+        return Promise.reject(
+          new Error(
+            `Plugin "${policy.pluginId}" runs the command "${args[0]}", which it does not own and no slot lists`,
           ),
+        )
+      }
+      const permission = policy.getPermission?.(args[0])
+      if (permission) {
+        try {
+          policy.checkPermission?.(permission, 'commands.run')
+        } catch (error) {
+          return Promise.reject(error)
+        }
+      }
+      return commands.run(...args)
+    },
   }
 }

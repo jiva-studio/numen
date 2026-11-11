@@ -386,11 +386,12 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 	var out []manifest.Command
 	for _, one := range wire {
 		out = append(out, manifest.Command{
-			ID:        one.GetId(),
-			Title:     one.GetTitle(),
-			Icon:      one.GetIcon(),
-			When:      one.GetWhen(),
-			Arguments: newCommandArguments(one.GetArguments()),
+			ID:         one.GetId(),
+			Title:      one.GetTitle(),
+			Icon:       one.GetIcon(),
+			When:       one.GetWhen(),
+			Permission: one.GetPermission(),
+			Arguments:  newCommandArguments(one.GetArguments()),
 		})
 	}
 	return out

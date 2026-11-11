@@ -41,11 +41,12 @@ const CommandArgumentVersion = "version-id"
 
 // Command is one command a manifest declares, which the plugin's backend runs.
 type Command struct {
-	ID        string
-	Title     string
-	Icon      string
-	When      string
-	Arguments []CommandArgument
+	ID         string
+	Title      string
+	Icon       string
+	When       string
+	Permission string
+	Arguments  []CommandArgument
 }
 
 // CommandArgument is one argument a command takes.
@@ -81,6 +82,7 @@ func (m Manifest) listCommandIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidCommand, command.ID))
 		}
 		issues = append(issues, listCommandWhenIssues(command)...)
+		issues = append(issues, m.listCommandPermissionIssues(command)...)
 		issues = append(issues, listCommandArgumentIssues(command)...)
 	}
 	return issues
@@ -116,4 +118,17 @@ func listCommandArgumentIssues(command Command) []error {
 		}
 	}
 	return issues
+}
+
+func (m Manifest) listCommandPermissionIssues(command Command) []error {
+	if command.Permission == "" {
+		return nil
+	}
+	if !slices.Contains(PluginPermissions(), command.Permission) {
+		return []error{fmt.Errorf("%w: %q: %w: %s", ErrInvalidCommand, command.ID, ErrInvalidPermission, command.Permission)}
+	}
+	if !m.HasPermission(command.Permission) {
+		return []error{fmt.Errorf("%w: %q: %w: %s is missing from permissions", ErrInvalidCommand, command.ID, ErrInvalidPermission, command.Permission)}
+	}
+	return nil
 }

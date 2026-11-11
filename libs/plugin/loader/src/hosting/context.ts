@@ -98,7 +98,11 @@ function createVault(pluginId: string, host: PluginContextHost, add: Track): Plu
   })
 }
 
-function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mountView'> {
+function createUi(
+  pluginId: string,
+  host: PluginContextHost,
+  check: RequirePermission,
+): Omit<PluginUi, 'mountView'> {
   const { window: ui, views } = host
   const commands = ui.getCommands()
   return {
@@ -107,7 +111,12 @@ function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mo
       window: ui.getWindow(),
       commands:
         commands &&
-        limitCommands(commands, { pluginId, isListed: (one) => ui.isCommandListed(one) }),
+        limitCommands(commands, {
+          pluginId,
+          isListed: (one) => ui.isCommandListed(one),
+          getPermission: (one) => ui.getCommandPermission?.(one),
+          checkPermission: check,
+        }),
       drops: views.drops,
     }),
     slots: ui.getSlots(),
@@ -121,7 +130,9 @@ function createUiService(
   guards: { readonly guard: RegistrationGuard; readonly check: RequirePermission },
 ): PluginUi {
   return {
-    ...guardService(createUi(pluginId, host), SERVICE_RULES.ui, { check: guards.check }),
+    ...guardService(createUi(pluginId, host, guards.check), SERVICE_RULES.ui, {
+      check: guards.check,
+    }),
     mountView: createMountView(host, guards.guard),
   }
 }
