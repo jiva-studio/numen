@@ -37,10 +37,10 @@ func newPluginVaultList(f *showing) vaultapi.List {
 	})
 }
 
-func (f *showing) bindVaultSwitch() {
+func (f *showing) bindVaultSwitch(t *testing.T) {
 	show := switchFunc(f.installation.Show)
 	f.installation.State.Switch = show
-	f.installation.WrapPluginSwitch(func(windowsession.VaultSwitch) windowsession.VaultSwitch { return show })
+	f.installation.WrapPluginSwitch(t, func(windowsession.VaultSwitch) windowsession.VaultSwitch { return show })
 }
 
 func (f *showing) respondToFlushes(
@@ -142,7 +142,7 @@ func requireUnsavedChanges(t *testing.T, openResult <-chan error, action string)
 
 func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	userResponded := make(chan struct{})
@@ -191,7 +191,7 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 
 func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
@@ -221,7 +221,7 @@ func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 // plugin's open that starts in that wait returns ErrUnsavedChanges and does not end the user's flush.
 func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	userResponded := make(chan struct{})
@@ -272,7 +272,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 
 func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -320,7 +320,7 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 
 func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -359,7 +359,7 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 
 func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	if err := os.RemoveAll(f.second.Path); err != nil {
 		t.Fatal(err)
 	}
@@ -429,7 +429,7 @@ func closeAsDesktopApp(ctx context.Context, o *editor.Installation) bool {
 
 func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	openResult := startPluginOpen(t, f, watchFlushRequests(stream), nil)
@@ -444,7 +444,7 @@ func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
 
 func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -475,7 +475,7 @@ func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
 
 func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -505,7 +505,7 @@ func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 
 func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -599,7 +599,7 @@ func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStream
 // completes within its bound and no plugin open blocks the window.
 func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
@@ -661,7 +661,7 @@ func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 // one succeeds and the plugin open is canceled.
 func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -705,7 +705,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 // unavailable and does not change the vault of the window.
 func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := watchFlushRequests(stream)

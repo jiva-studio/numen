@@ -2,6 +2,7 @@ package editor
 
 import (
 	"net/http"
+	"testing"
 
 	"connectrpc.com/connect"
 
@@ -227,10 +228,10 @@ func writeLink(links *note.EditLinks, names edit.NameQueries, writes *Writes) *n
 }
 
 // WrapPluginSwitch replaces the switch the window opens a vault for a plugin through with the one wrap returns.
-func (o *Installation) WrapPluginSwitch(wrap func(next windowsession.VaultSwitch) windowsession.VaultSwitch) {
+func (o *Installation) WrapPluginSwitch(tb testing.TB, wrap func(next windowsession.VaultSwitch) windowsession.VaultSwitch) {
 	open, isOpen := o.lifecycle.OpenPlugin.(windowsession.OpenPluginVault)
 	if !isOpen {
-		panic("the plugin open of the window is not a windowsession.OpenPluginVault")
+		tb.Fatal("the plugin open of the window is not a windowsession.OpenPluginVault")
 	}
 	open.Switch = wrap(open.Switch)
 	o.lifecycle.OpenPlugin = open

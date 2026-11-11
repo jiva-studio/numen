@@ -16,7 +16,7 @@ import (
 // unsaved. A plugin's open after that shows the vault.
 func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindVaultSwitch()
+	f.bindVaultSwitch(t)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	userResponded := make(chan struct{})
@@ -53,7 +53,7 @@ func TestVaultSwitchAfterPluginOpenFailsDuringUserClose(t *testing.T) {
 	var mu sync.Mutex
 	var pluginOpenCtx context.Context
 	var finishedOpen *windowsession.PluginOpen
-	f.installation.WrapPluginSwitch(func(windowsession.VaultSwitch) windowsession.VaultSwitch {
+	f.installation.WrapPluginSwitch(t, func(windowsession.VaultSwitch) windowsession.VaultSwitch {
 		return switchFunc(func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
 			mu.Lock()
 			if pluginOpenCtx == nil {
