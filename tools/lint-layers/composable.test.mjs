@@ -71,7 +71,7 @@ describe("the composable return size rule", () => {
   });
 
   it("fails a group named for what it wraps, whatever it holds", () => {
-    assert.deepEqual(findReports("function useA() { return { actions: { open: 1, save: 2 }, a: 1 } }"), ["1 wrapperGroup"]);
+    assert.deepEqual(findReports("function useA() { return { services: { open: 1, save: 2 }, a: 1 } }"), ["1 wrapperGroup"]);
     assert.deepEqual(findReports("function createA() { return { parts: { x: 1, y: 2 } } }"), ["1 wrapperGroup"]);
     assert.deepEqual(findReports("function useA() { return { drafts: { open: 1, save: 2 }, a: 1 } }"), []);
   });

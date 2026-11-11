@@ -63,7 +63,7 @@ function isBoundToPart(variable) {
 const DATA_TYPE_NAMES = new Set(['string', 'number', 'boolean', 'bigint', 'undefined', 'null', 'void', 'never', 'true', 'false'])
 
 // The names of a group that only wraps what a function returns; a group takes the name of the thing it holds.
-const WRAPPER_GROUP_NAMES = new Set(['base', 'parts', 'services', 'actions', 'frame', 'helpers', 'utils', 'deps'])
+const WRAPPER_GROUP_NAMES = new Set(['base', 'parts', 'services', 'frame', 'helpers', 'utils', 'deps'])
 
 const maxComposableReturnProperties = {
   meta: {
