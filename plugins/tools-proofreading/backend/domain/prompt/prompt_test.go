@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // The digest precedes the first line of the question, and the lines follow it

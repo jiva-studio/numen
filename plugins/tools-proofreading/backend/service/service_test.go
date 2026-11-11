@@ -15,11 +15,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/model"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/settings"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/proofread"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/usecase/proofread"
 )
 
 const (

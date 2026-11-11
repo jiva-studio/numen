@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // ReadLines numbers the segments from 1 as lines, without the white space around their words.

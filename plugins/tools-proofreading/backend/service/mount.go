@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/model"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/settings"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/proofread"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/usecase/proofread"
 )
 
 // PluginID is the identity the manifest gives the plugin.

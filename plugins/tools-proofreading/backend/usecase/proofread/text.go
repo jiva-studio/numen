@@ -4,9 +4,9 @@ import (
 	"context"
 	"sort"
 
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/reply"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/reply"
 )
 
 // textResult is what proofreading a request came to.

@@ -1,6 +1,6 @@
 package prompt
 
-import "github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+import "github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 
 // ScanInstruction is the model prompt for proofreading a scan.
 const ScanInstruction = `You are proofreading text a machine read off the pages of a printed book.

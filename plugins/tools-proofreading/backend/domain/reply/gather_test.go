@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 func gatherReplies(requested []numbered.Batch, replies map[int]string, maxDistance float64) (map[int]numbered.Line, []int) {

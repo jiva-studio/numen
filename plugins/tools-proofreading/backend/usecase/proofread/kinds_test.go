@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/segments"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/segments"
 )
 
 func TestGetProofreadKindsAcceptsEveryKind(t *testing.T) {

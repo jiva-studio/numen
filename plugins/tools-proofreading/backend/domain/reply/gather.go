@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // Answer is what the model's reply to one batch came to: the corrections the

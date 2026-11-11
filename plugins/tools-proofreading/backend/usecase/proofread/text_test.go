@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/prompt"
 )
 
 // model is a model whose reply is computed from the prompt by its script, and
