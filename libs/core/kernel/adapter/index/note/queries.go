@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
