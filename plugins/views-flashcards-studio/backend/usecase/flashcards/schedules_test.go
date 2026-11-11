@@ -328,7 +328,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), getToday(),
 		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
-		presets.New(nil, nil, nil, nil, nil, vaulttest.NewClock()).WithDay(getToday()),
+		presets.New(presets.Config{Now: vaulttest.NewClock(), Day: getToday()}),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -935,11 +935,14 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	)
 
 	looks := map[string]int{}
-	deckPresets := presets.New(
-		s.env.Ports.Readers, s.env.Ports.Writers,
-		lookups{LinkQueries: s.links, looks: looks},
-		s.notes, s.scan, vaulttest.NewClock(),
-	)
+	deckPresets := presets.New(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Writers: s.env.Ports.Writers,
+		Links:   lookups{LinkQueries: s.links, looks: looks},
+		Notes:   s.notes,
+		Index:   s.scan,
+		Now:     vaulttest.NewClock(),
+	})
 
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), standings, deckPresets)
 	counter := flashcards.NewCountCardsDue(standings, schedules, deckPresets, getToday(), clock.NewFake(getSaturday()))
@@ -970,10 +973,15 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	deckPresets := presets.New(
-		counting{VaultReaders: s.env.Ports.Readers, reads: reads},
-		s.env.Ports.Writers, s.links, s.notes, s.scan, vaulttest.NewClock(),
-	)
+	deckPresets := presets.New(presets.Config{
+		Readers: counting{VaultReaders: s.env.Ports.Readers, reads: reads},
+		Writers: s.env.Ports.Writers,
+		Links:   s.links,
+		Notes:   s.notes,
+		Index:   s.scan,
+		Now:     vaulttest.NewClock(),
+	})
+
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), s.standings, deckPresets)
 	counter := flashcards.NewCountCardsDue(s.standings, schedules, deckPresets, getToday(), clock.NewFake(getSaturday()))
 

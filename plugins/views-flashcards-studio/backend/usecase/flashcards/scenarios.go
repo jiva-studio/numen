@@ -78,12 +78,10 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 		cfg.Readers, cfg.Writers, cfg.Notes, cfg.Links, updateIndex, cfg.Now,
 	)
 
-	deckPresets := presets.New(
-		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, updateIndex, cfg.Now,
-	).WithDay(cfg.Day)
-	// A link the index does not carry is accounted for in what parsing turned
-	// up.
-	deckPresets.Problems = cfg.Problems
+	deckPresets := presets.New(presets.Config{
+		Readers: cfg.Readers, Writers: cfg.Writers, Links: cfg.Links, Notes: cfg.Notes,
+		Problems: cfg.Problems, Index: updateIndex, Now: cfg.Now, Day: cfg.Day,
+	})
 
 	// Each card is scheduled at the retention target of its own preset.
 	var defaultScheduler review.Scheduler = review.NewFSRS()

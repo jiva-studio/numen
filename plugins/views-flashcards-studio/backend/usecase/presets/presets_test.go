@@ -102,10 +102,14 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointing())
-	busyPresets := presets.New(
-		s.env.Ports.Readers, s.env.Ports.Writers,
-		s.links, s.notes, busy, vaulttest.NewClock(),
-	)
+	busyPresets := presets.New(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Writers: s.env.Ports.Writers,
+		Links:   s.links,
+		Notes:   s.notes,
+		Index:   busy,
+		Now:     vaulttest.NewClock(),
+	})
 
 	target, err := busyPresets.Read(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {
@@ -864,10 +868,14 @@ func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getChoosing())
 
-	blind := presets.New(
-		s.env.Ports.Readers, s.env.Ports.Writers,
-		s.links, nil, s.scan, vaulttest.NewClock(),
-	)
+	blind := presets.New(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Writers: s.env.Ports.Writers,
+		Links:   s.links,
+		Index:   s.scan,
+		Now:     vaulttest.NewClock(),
+	})
+
 	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, presets.ErrNoPresets) {
 		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)
 	}

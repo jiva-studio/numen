@@ -23,13 +23,13 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	day := review.Day{Starts: 4 * time.Hour, In: time.UTC}
 	errBoom := errors.New("boom")
 
-	p0 := New(nil, nil, nil, nil, nil, clock.NewFake(now))
+	p0 := New(Config{Now: clock.NewFake(now)})
 	if p0.day.Starts != 0 || p0.day.In != nil {
 		t.Fatalf("expected zero day on New, got %+v", p0.day)
 	}
-	pDay := p0.WithDay(day)
+	pDay := New(Config{Now: clock.NewFake(now), Day: day})
 	if pDay.day.Starts != 4*time.Hour {
-		t.Fatalf("expected WithDay to set day, got %+v", pDay.day)
+		t.Fatalf("expected New to set day, got %+v", pDay.day)
 	}
 
 	def := CreateDefault()
@@ -47,30 +47,42 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 
 	// Test List: GetPathsOfType error, empty paths, GetNotes error.
-	if _, err := New(nil, nil, nil, stubNoteQueries{
-		pathsErr: map[domain.NoteType]error{format.TypePreset: errBoom},
-	}, nil, nil).List(ctx, v); !errors.Is(err, errBoom) {
+	if _, err := New(Config{
+		Notes: stubNoteQueries{
+			pathsErr: map[domain.NoteType]error{format.TypePreset: errBoom},
+		},
+	}).
+		List(ctx, v); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetPathsOfType error in List, got %v", err)
 	}
-	emptyList, err := New(nil, nil, nil, stubNoteQueries{
-		paths: map[domain.NoteType][]string{format.TypePreset: nil},
-	}, nil, nil).List(ctx, v)
+	emptyList, err := New(Config{
+		Notes: stubNoteQueries{
+			paths: map[domain.NoteType][]string{format.TypePreset: nil},
+		},
+	}).
+		List(ctx, v)
 	if err != nil || emptyList != nil {
 		t.Fatalf("expected nil, nil for empty preset paths, got %v, %v", emptyList, err)
 	}
-	if _, err := New(nil, nil, nil, stubNoteQueries{
-		paths:    map[domain.NoteType][]string{format.TypePreset: {"P.md"}},
-		notesErr: errBoom,
-	}, nil, nil).List(ctx, v); !errors.Is(err, errBoom) {
+	if _, err := New(Config{
+		Notes: stubNoteQueries{
+			paths:    map[domain.NoteType][]string{format.TypePreset: {"P.md"}},
+			notesErr: errBoom,
+		},
+	}).
+		List(ctx, v); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetNotes error in List, got %v", err)
 	}
 
 	// Test GetForDeck error branches: links error, roleless problems error, readFirstLink error, multiple links delta.
-	if _, err := New(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
+	if _, err := New(Config{Links: stubLinkQueries{linksErr: errBoom}, Now: clock.NewFake(now)}).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected links error in GetForDeck, got %v", err)
 	}
-	pProbErr := New(nil, nil, stubLinkQueries{}, nil, nil, clock.NewFake(now))
-	pProbErr.Problems = stubProblemQueries{err: errBoom}
+	pProbErr := New(Config{
+		Links:    stubLinkQueries{},
+		Problems: stubProblemQueries{err: errBoom},
+		Now:      clock.NewFake(now),
+	})
 	if _, err := pProbErr.GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected problems error in GetForDeck, got %v", err)
 	}
@@ -82,7 +94,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 			},
 		},
 	}
-	gotDangling, err := New(nil, nil, twoDangling, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md")
+	gotDangling, err := New(Config{Links: twoDangling, Now: clock.NewFake(now)}).GetForDeck(ctx, v, "decks/A.md")
 	if err != nil || len(gotDangling.Problems) != 2 || !strings.Contains(gotDangling.Problems[1], "scheduled by Missing1") {
 		t.Fatalf("expected two problems naming Missing1 as the scheduling preset, got %+v, %v", gotDangling.Problems, err)
 	}
@@ -95,7 +107,11 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 			},
 		},
 	}
-	if _, err := New(stubVaultReaders{openErr: errBoom}, nil, twoResolved, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{openErr: errBoom},
+		Links:   twoResolved,
+		Now:     clock.NewFake(now),
+	}).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected read error in readFirstLink, got %v", err)
 	}
 	readerPreset := stubVaultReader{
@@ -106,7 +122,11 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 			return []byte("---\ntype: preset\n---\n"), nil
 		},
 	}
-	gotTwoResolved, err := New(stubVaultReaders{reader: readerPreset}, nil, twoResolved, nil, nil, clock.NewFake(now)).GetForDeck(ctx, v, "decks/A.md")
+	gotTwoResolved, err := New(Config{
+		Readers: stubVaultReaders{reader: readerPreset},
+		Links:   twoResolved,
+		Now:     clock.NewFake(now),
+	}).GetForDeck(ctx, v, "decks/A.md")
 	if err != nil || len(gotTwoResolved.Problems) != 1 || !strings.Contains(gotTwoResolved.Problems[0], "scheduled by presets/P.md") {
 		t.Fatalf("expected delta presets/P.md in multiple-presets problem, got %+v, %v", gotTwoResolved.Problems, err)
 	}
@@ -115,14 +135,17 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	// missing note (Size==0), Open error, Kind != KindNote, Size == MaxBytes vs MaxBytes+1,
 	// StatFile ErrNotExist but Read succeeds (!target && err == nil -> NotANote),
 	// invalid UTF-8 -> NotText, unreadable frontmatter -> Unreadable.
-	if _, err := New(stubVaultReaders{openErr: errBoom}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md"); !errors.Is(err, errBoom) {
+	if _, err := New(Config{Readers: stubVaultReaders{openErr: errBoom}, Now: clock.NewFake(now)}).Read(ctx, v, "P.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected Open error in Read, got %v", err)
 	}
 	readerMissing := stubVaultReader{
 		statFn: func(_ context.Context, _ string) (domain.FileStat, error) { return domain.FileStat{}, fs.ErrNotExist },
 		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, fs.ErrNotExist },
 	}
-	gotMissing, err := New(stubVaultReaders{reader: readerMissing}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
+	gotMissing, err := New(Config{
+		Readers: stubVaultReaders{reader: readerMissing},
+		Now:     clock.NewFake(now),
+	}).Read(ctx, v, "P.md")
 	if err != nil || gotMissing.Outcome != note.Missing || gotMissing.FileStat.Size != 0 {
 		t.Fatalf("expected Missing with Size=0, got %+v, %v", gotMissing, err)
 	}
@@ -132,7 +155,10 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 		},
 		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, nil },
 	}
-	gotNotNote, err := New(stubVaultReaders{reader: readerKindNotNote}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.bin")
+	gotNotNote, err := New(Config{
+		Readers: stubVaultReaders{reader: readerKindNotNote},
+		Now:     clock.NewFake(now),
+	}).Read(ctx, v, "P.bin")
 	if err != nil || gotNotNote.Outcome != note.NotANote || gotNotNote.FileStat.Path != "P.bin" {
 		t.Fatalf("expected NotANote with FileStat set, got %+v, %v", gotNotNote, err)
 	}
@@ -142,7 +168,10 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 		},
 		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, nil },
 	}
-	gotTooLarge, err := New(stubVaultReaders{reader: readerTooLarge}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
+	gotTooLarge, err := New(Config{
+		Readers: stubVaultReaders{reader: readerTooLarge},
+		Now:     clock.NewFake(now),
+	}).Read(ctx, v, "P.md")
 	if err != nil || gotTooLarge.Outcome != note.TooLarge {
 		t.Fatalf("expected TooLarge for MaxBytes+1, got %+v, %v", gotTooLarge, err)
 	}
@@ -152,7 +181,10 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 		},
 		readFn: func(_ context.Context, _ string) ([]byte, error) { return []byte("---\ntype: preset\n---\n"), nil },
 	}
-	gotExactMax, err := New(stubVaultReaders{reader: readerExactMax}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
+	gotExactMax, err := New(Config{
+		Readers: stubVaultReaders{reader: readerExactMax},
+		Now:     clock.NewFake(now),
+	}).Read(ctx, v, "P.md")
 	if err != nil || gotExactMax.Outcome != note.Ok {
 		t.Fatalf("expected Ok for exact MaxBytes, got %+v, %v", gotExactMax, err)
 	}
@@ -160,7 +192,10 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 		statFn: func(_ context.Context, _ string) (domain.FileStat, error) { return domain.FileStat{}, fs.ErrNotExist },
 		readFn: func(_ context.Context, _ string) ([]byte, error) { return []byte("---\ntype: preset\n---\n"), nil },
 	}
-	gotGhost, err := New(stubVaultReaders{reader: readerGhost}, nil, nil, nil, nil, clock.NewFake(now)).Read(ctx, v, "P.md")
+	gotGhost, err := New(Config{
+		Readers: stubVaultReaders{reader: readerGhost},
+		Now:     clock.NewFake(now),
+	}).Read(ctx, v, "P.md")
 	if err != nil || gotGhost.Outcome != note.NotANote {
 		t.Fatalf("expected NotANote when StatFile says not exist but Read succeeds, got %+v, %v", gotGhost, err)
 	}
@@ -177,26 +212,43 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	if _, err := (Presets{}).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, ErrNoPresets) {
 		t.Fatalf("expected ErrNoPresets when notes == nil, got %v", err)
 	}
-	if _, err := New(stubVaultReaders{openErr: errBoom}, nil, nil, stubNoteQueries{}, nil, clock.NewFake(now)).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, errBoom) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{openErr: errBoom},
+		Notes:   stubNoteQueries{},
+		Now:     clock.NewFake(now),
+	}).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected Read error in getPresetAddress, got %v", err)
 	}
-	if _, err := New(stubVaultReaders{reader: readerTooLarge}, nil, nil, stubNoteQueries{}, nil, clock.NewFake(now)).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, ErrNotAPreset) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{reader: readerTooLarge},
+		Notes:   stubNoteQueries{},
+		Now:     clock.NewFake(now),
+	}).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, ErrNotAPreset) {
 		t.Fatalf("expected ErrNotAPreset when Outcome is TooLarge, got %v", err)
 	}
 
 	// Test Save / save error branches: Lock error, release error, readers.Open error, StatFile error,
 	// Size == MaxBytes vs MaxBytes+1, expectedFp.IsZero(), Read error, writers.Open error.
 	validPreset := review.Defaults()
-	if _, err := New(nil, stubVaultWriters{lockErr: errBoom}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
+	if _, err := New(Config{Writers: stubVaultWriters{lockErr: errBoom}}).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected lock error in Save, got %v", err)
 	}
-	if _, err := New(stubVaultReaders{openErr: errBoom}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{openErr: errBoom},
+		Writers: stubVaultWriters{},
+	}).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected readers.Open error in Save, got %v", err)
 	}
-	if _, err := New(stubVaultReaders{reader: readerMissing}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrNoNote) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{reader: readerMissing},
+		Writers: stubVaultWriters{},
+	}).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrNoNote) {
 		t.Fatalf("expected ErrNoNote from StatFile in Save, got %v", err)
 	}
-	if _, err := New(stubVaultReaders{reader: readerTooLarge}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrTooLarge) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{reader: readerTooLarge},
+		Writers: stubVaultWriters{},
+	}).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("expected ErrTooLarge in Save, got %v", err)
 	}
 	readerReadErr := stubVaultReader{
@@ -205,10 +257,16 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 		},
 		readFn: func(_ context.Context, _ string) ([]byte, error) { return nil, fs.ErrNotExist },
 	}
-	if _, err := New(stubVaultReaders{reader: readerReadErr}, stubVaultWriters{}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrNoNote) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{reader: readerReadErr},
+		Writers: stubVaultWriters{},
+	}).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, note.ErrNoNote) {
 		t.Fatalf("expected ErrNoNote from Read in Save, got %v", err)
 	}
-	if _, err := New(stubVaultReaders{reader: readerExactMax}, stubVaultWriters{openErr: errBoom}, nil, nil, nil, nil).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{reader: readerExactMax},
+		Writers: stubVaultWriters{openErr: errBoom},
+	}).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected writers.Open error in Save, got %v", err)
 	}
 	var gotExpectedFp domain.FileStat
@@ -218,13 +276,12 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 			return domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(data))}, nil
 		},
 	}
-	if _, err := New(
-		stubVaultReaders{reader: readerExactMax},
-		stubVaultWriters{writer: writerCheckFp, releaseErr: errBoom},
-		nil, nil,
-		func(_ context.Context, _ domain.Vault, _ []string) error { return nil },
-		nil,
-	).Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
+	if _, err := New(Config{
+		Readers: stubVaultReaders{reader: readerExactMax},
+		Writers: stubVaultWriters{writer: writerCheckFp, releaseErr: errBoom},
+		Index:   func(_ context.Context, _ domain.Vault, _ []string) error { return nil },
+	}).
+		Save(ctx, v, "P.md", validPreset, domain.FileStat{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected release error joined in Save, got %v", err)
 	}
 	if gotExpectedFp.Size != note.MaxBytes {
