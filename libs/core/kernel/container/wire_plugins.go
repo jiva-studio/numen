@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -45,7 +44,7 @@ func openPluginCommands(c Config, ctx context.Context, v domain.Vault) (pluginco
 	return getPluginCommands(plugins(c)).Run, closeAfterWork(ctx, work, db.Close), nil
 }
 
-func openedPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, error) {
+func openedPluginWork(c Config, db *Index, v domain.Vault) (Config, error) {
 	opened, _, err := openPluginWork(c, db, v)
 	return opened, err
 }
@@ -56,7 +55,7 @@ func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func()
 	}
 }
 
-func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.PluginWork, error) {
+func openPluginWork(c Config, db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
 	setPluginVaultPath(plugins(c), v.Path)
 	versions, err := newTextVersions(vaultOf(c), db)
 	if err != nil {
@@ -71,7 +70,7 @@ func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.Plu
 	return c, work, nil
 }
 
-func installCurrentVault(c Config, db *vault.Index, v domain.Vault) error {
+func installCurrentVault(c Config, db *Index, v domain.Vault) error {
 	registry, err := c.registry()
 	if err != nil {
 		return err
@@ -88,7 +87,7 @@ func GetPluginServices(c Config) editor.PluginServices {
 // InstallPluginVault lets the plugins work through the host the vaults of the installation and the index that
 // holds them: the one current names, else the one a call names by identity.
 func InstallPluginVault(c Config,
-	db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) error {
 	vaults, err := c.registry()
 	if err != nil {

@@ -6,8 +6,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -33,9 +33,9 @@ func TestConvertNoteTypeToWire_MapsPlainNoteToEmpty(t *testing.T) {
 }
 
 func TestEveryNamingIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.NameSource]query.NameSource{
-		v1.NameSource_NAME_SOURCE_FRONTMATTER: query.ByFrontmatter,
-		v1.NameSource_NAME_SOURCE_FILENAME:    query.ByFilename,
+	testsupport.CheckProduced(t, map[v1.NameSource]naming.Source{
+		v1.NameSource_NAME_SOURCE_FRONTMATTER: naming.ByFrontmatter,
+		v1.NameSource_NAME_SOURCE_FILENAME:    naming.ByFilename,
 	}, newWireNameSource)
 }
 

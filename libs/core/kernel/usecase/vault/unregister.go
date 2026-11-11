@@ -8,7 +8,6 @@ import (
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 // Unregister takes a vault off the list this installation keeps, and out of the
@@ -50,25 +49,28 @@ func keepTheLastVault(vaults vaultport.VaultList, v domain.Vault) error {
 	return nil
 }
 
+// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
+type VaultFinding func(nameOrPath string) (domain.Vault, error)
+
 // Remove takes the vault named by an identity off the list, and moves its
 // folder to the trash when requested. The current vault is kept.
 type Remove struct {
-	find       registry.Find
+	find       VaultFinding
 	unregister Unregister
 	erase      Erase
 }
 
-func NewRemove(find registry.Find, unregister Unregister, erase Erase) Remove {
+func NewRemove(find VaultFinding, unregister Unregister, erase Erase) Remove {
 	return Remove{find: find, unregister: unregister, erase: erase}
 }
 
 func (u Remove) Execute(ctx context.Context, id string, showing domain.VaultID, trash bool) error {
-	v, err := u.find.Execute(id)
+	v, err := u.find(id)
 	if err != nil {
 		return err
 	}
 	if v.ID == showing {
-		return domain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", v.Name), registry.ErrShowing)
+		return domain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", v.Name), vaultdomain.ErrShowing)
 	}
 	if trash {
 		_, err = u.erase.Execute(ctx, v)

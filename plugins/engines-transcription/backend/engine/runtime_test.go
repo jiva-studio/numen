@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 func TestResolveLibrary_ModelsDirPrecedesHostRuntime(t *testing.T) {
@@ -15,10 +16,10 @@ func TestResolveLibrary_ModelsDirPrecedesHostRuntime(t *testing.T) {
 	if err := os.WriteFile(library, nil, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if got := onnx.ResolveLibrary((Config{Dir: models}).Runtime, (Config{Dir: models}).Dir); got != library {
+	if got := onnx.ResolveLibrary((settings.Config{Dir: models}).Runtime, (settings.Config{Dir: models}).Dir); got != library {
 		t.Errorf("with a library in dir, runtime = %q", got)
 	}
-	if got := onnx.ResolveLibrary((Config{Dir: models, Runtime: "set.so"}).Runtime, (Config{Dir: models, Runtime: "set.so"}).Dir); got != "set.so" {
+	if got := onnx.ResolveLibrary((settings.Config{Dir: models, Runtime: "set.so"}).Runtime, (settings.Config{Dir: models, Runtime: "set.so"}).Dir); got != "set.so" {
 		t.Errorf("with a runtime setting, runtime = %q", got)
 	}
 }

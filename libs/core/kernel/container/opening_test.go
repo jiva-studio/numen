@@ -310,7 +310,7 @@ func (refusing) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 	return nil, nil, os.ErrPermission
 }
 
-func openVault(t *testing.T, notes map[string]string) (container.Config, *vault.Index, domain.Vault) {
+func openVault(t *testing.T, notes map[string]string) (container.Config, *container.Index, domain.Vault) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
@@ -332,10 +332,10 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 	}
 }
 
-func titleOf(t *testing.T, db *vault.Index, v domain.Vault, path string) string {
+func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
 
-	target, err := db.NoteQueries.NoteRefs.GetNotes(t.Context(), v.ID, []string{path})
+	target, err := db.NoteQueries().GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

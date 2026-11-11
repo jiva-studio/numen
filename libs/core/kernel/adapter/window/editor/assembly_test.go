@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"fmt"
+	"io"
 	"math"
 	"slices"
 
@@ -12,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
@@ -25,8 +25,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -63,38 +65,67 @@ func newReadingParts(indexPath string, shouldRebuildIndex bool, texts textdomain
 }
 
 // OpenIndex opens the cache. The caller closes it.
-func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
+func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 	db, err := index.Open(ctx, w.indexPath)
 	if err != nil {
 		return nil, err
 	}
 	queries := db.NoteQueries()
-	return vault.NewIndex(vault.IndexPorts{
-		Closer: db,
-		File:   w.indexPath,
-		Stores: vault.IndexStores{
-			Vaults: db.Vaults(), Notes: db.Notes(), OpenTabs: db.OpenTabs(), Maintenance: db.Maintenance(),
-		},
-		NoteQueries: vault.IndexNoteQueries{
-			FileStats: queries, NameMatches: queries, Headings: queries, Summaries: queries, NoteTypes: queries,
-			TypedPaths: queries, VaultHolds: queries, NoteRefs: queries, OpeningNote: queries, NamedPaths: queries,
-			Links: queries, Problems: db.NoteProblems(),
-		},
-		Chunks: vault.IndexChunks{
-			Passages: db.ChunkSearch(), Nearest: db.ChunkSearch(), Progress: db.ChunkVectors(), Stats: db.ChunkVectors(),
-			Index:   db,
-			Vectors: db.Sources(), VectorQueries: db.Sources(),
-		},
-		Source: vault.IndexSources{
-			Sources: db.Sources(), SourcesUnder: db.Sources(), RemovalLookup: db.Sources(),
-			SourceRecords: db.Sources(), SourceBacklog: db.Sources(),
-		},
-		Search: vault.IndexSearch{
-			SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
-		},
-		TextVersions: version.NewIndexVersions(db.TextVersions()),
-	}), nil
+	target := &testIndex{closer: db, vectors: db, ledger: vault.NewLedger()}
+	target.Stores.Vaults, target.Stores.Notes, target.Stores.Maintenance = db.Vaults(), db.Notes(), db.Maintenance()
+	target.NoteQueries.FileStats, target.NoteQueries.Headings, target.NoteQueries.Links = queries, queries, queries
+	target.NoteQueries.NamedPaths, target.NoteQueries.NoteRefs, target.NoteQueries.NoteTypes = queries, queries, queries
+	target.NoteQueries.OpeningNote = queries
+	target.Chunks.Passages, target.Chunks.Nearest, target.Chunks.Progress = db.ChunkSearch(), db.ChunkSearch(), db.ChunkVectors()
+	target.Chunks.Vectors, target.Chunks.VectorQueries = db.Sources(), db.Sources()
+	target.Source.Sources, target.Source.SourceRecords, target.Source.SourceBacklog = db.Sources(), db.Sources(), db.Sources()
+	target.Source.RemovalLookup = db.Sources()
+	return target, nil
 }
+
+// testIndex is the part of an open index the tests of the window read and write.
+type testIndex struct {
+	closer  io.Closer
+	vectors embeddingport.VectorIndex
+	walks   vault.Walks
+	ledger  *vault.Ledger
+
+	Stores struct {
+		Vaults      vaultport.VaultRepository
+		Notes       noteport.NoteRepository
+		Maintenance indexport.IndexMaintenance
+	}
+	NoteQueries struct {
+		FileStats   noteport.FileStats
+		Headings    noteport.Headings
+		Links       noteport.LinkQueries
+		NamedPaths  noteport.NamedPaths
+		NoteRefs    noteport.NoteRefs
+		NoteTypes   noteport.NoteTypes
+		OpeningNote noteport.OpeningNote
+	}
+	Chunks struct {
+		Passages      sourceport.PassageQueries
+		Nearest       sourceport.NearestQueries
+		Progress      indexport.IndexProgress
+		Vectors       embeddingport.VectorRepository
+		VectorQueries embeddingport.VectorQueries
+	}
+	Source struct {
+		Sources       sourceport.SourceRepository
+		SourceRecords sourceport.SourceRecords
+		SourceBacklog sourceport.SourceBacklog
+		RemovalLookup sourceport.RemovalLookup
+	}
+}
+
+func (i *testIndex) Close() error { return i.closer.Close() }
+
+func (i *testIndex) Walks() *vault.Walks { return &i.walks }
+
+func (i *testIndex) Ledger() *vault.Ledger { return i.ledger }
+
+func (i *testIndex) VectorIndex() embeddingport.VectorIndex { return i.vectors }
 
 // GetVaultReaders opens vaults for reading.
 func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultreader.Readers{} }
@@ -108,7 +139,7 @@ func (w readingParts) cutNotes() chunking.CutNotes {
 	return chunking.NewCutNotes(w.chunks.Get())
 }
 
-func (w readingParts) setNoteCut(scan *vault.Scan, db *vault.Index) {
+func (w readingParts) setNoteCut(scan *vault.Scan, db *testIndex) {
 	scan.Cut = w.cutNotes()
 	scan.ShouldRecut = w.chunks.Get() > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
@@ -117,7 +148,7 @@ func (w readingParts) setNoteCut(scan *vault.Scan, db *vault.Index) {
 	}
 }
 
-func (w readingParts) scan(db *vault.Index, rebuild bool) vault.Scan {
+func (w readingParts) scan(db *testIndex, rebuild bool) vault.Scan {
 	scan := vault.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance)
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
@@ -126,11 +157,11 @@ func (w readingParts) scan(db *vault.Index, rebuild bool) vault.Scan {
 }
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
-func (w readingParts) GetRefresh(db *vault.Index) vault.Refresh {
+func (w readingParts) GetRefresh(db *testIndex) vault.Refresh {
 	return w.makeRefresh(db, db.Stores.Notes)
 }
 
-func (w readingParts) makeRefresh(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
+func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(w.GetVaultReaders(), db.Stores.Vaults, notes, db.Source.RemovalLookup, db.Source.Sources, clock.System{})
 	refresh.Cut = w.cutNotes()
 	refresh.Ledger = db.Ledger()
@@ -139,7 +170,7 @@ func (w readingParts) makeRefresh(db *vault.Index, notes noteport.NoteRepository
 
 // OpenVaultWith is how a vault is opened over the readers and the watcher given.
 func (w readingParts) OpenVaultWith(
-	db *vault.Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
+	db *testIndex, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *vault.VaultOpener {
 	scan := vault.NewScan(walking, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance)
 	w.setNoteCut(&scan, db)
@@ -150,7 +181,7 @@ func (w readingParts) OpenVaultWith(
 
 // ReadWholeVault reads the notes, cuts the file texts and makes the vectors of a vault.
 func (w readingParts) ReadWholeVault(
-	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, db *testIndex, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	fit := vectors.NewFitIndex(db.VectorIndex())
 	fit.ShouldRebuildIndex = rebuild

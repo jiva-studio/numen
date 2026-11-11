@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
@@ -77,9 +77,9 @@ type wiring struct {
 
 func (f filing) wiring() wiring {
 	return wiring{
-		links:   f.db.NoteQueries.Links,
-		queries: f.db.Source.SourcesUnder,
-		sources: f.db.Source.Sources,
+		links:   f.db.NoteQueries(),
+		queries: f.db.Sources(),
+		sources: f.db.Sources(),
 		writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		index:   f.index,
 	}
@@ -88,19 +88,19 @@ func (f filing) wiring() wiring {
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: w.links, Names: f.db.NoteQueries.NamedPaths, Sources: f.db.Source.Sources, Index: w.index, Now: testsupport.NewClock(),
+		Links: w.links, Names: f.db.NoteQueries(), Sources: f.db.Sources(), Index: w.index, Now: testsupport.NewClock(),
+		Sync: func() naming.SyncTitleAndFilename { return true },
+		Drawing: func(_ context.Context, _ domain.Vault, went domain.Move) error {
+			*f.went = append(*f.went, went)
+			return nil
+		},
 	})
-	notes.Sync = func() query.SyncTitleAndFilename { return true }
-	notes.Drawing = func(_ context.Context, went domain.Move) error {
-		*f.went = append(*f.went, went)
-		return nil
-	}
 	return vaults.NewMove(w.writers, w.links, w.queries, w.sources, notes)
 }
 
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Source.Sources, f.db.Source.SourceRecords, f.db.Source.SourceBacklog, f.db.Source.RemovalLookup, testsupport.Texts{Readers: vaultreader.Readers{}})
+	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.Sources(), f.db.Sources(), f.db.Sources(), testsupport.Texts{Readers: vaultreader.Readers{}})
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestMove_QueriesBacklinksForNotesInFolderOnly(t *testing.T) {
 	})
 	testsupport.WriteBook(t, f.vault.Path, "physics/A Book.epub")
 	f.recordBooks(t)
-	watched := &watchedLinks{LinkQueries: f.db.NoteQueries.Links}
+	watched := &watchedLinks{LinkQueries: f.db.NoteQueries()}
 	w := f.wiring()
 	w.links = watched
 
@@ -217,7 +217,7 @@ func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the links cannot be read")
 	w := f.wiring()
-	w.links = &watchedLinks{LinkQueries: f.db.NoteQueries.Links, backlinksErr: cannot}
+	w.links = &watchedLinks{LinkQueries: f.db.NoteQueries(), backlinksErr: cannot}
 
 	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {
@@ -394,7 +394,7 @@ func TestANoteThatCannotBeSettledIsAnErrorAfterTheFileLanded(t *testing.T) {
 	})
 	cannot := errors.New("the links cannot be read")
 	w := f.wiring()
-	w.links = &watchedLinks{LinkQueries: f.db.NoteQueries.Links, linksErr: cannot}
+	w.links = &watchedLinks{LinkQueries: f.db.NoteQueries(), linksErr: cannot}
 
 	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if !errors.Is(err, cannot) {
@@ -410,7 +410,7 @@ func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the other index cannot be written")
-	other := unfiling{SourceRepository: f.db.Source.Sources, err: cannot}
+	other := unfiling{SourceRepository: f.db.Sources(), err: cannot}
 
 	provided := f.move().WithSources(other)
 	if _, ok := provided.Sources().(unfiling); !ok {

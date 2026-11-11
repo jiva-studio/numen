@@ -8,13 +8,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/environment"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/remote"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 func newEmbeddingServer() *Server {
@@ -22,9 +23,10 @@ func newEmbeddingServer() *Server {
 		Machine:     process.Process{},
 		Profiles:    profilefiles.GetDefaultDirectory(),
 		Environment: environment.Variables{},
-		OpenLocal: func(context.Context, engine.ModelInfo, engine.LocalModel) (loading.Embedder, error) {
-			return engine.MockEmbedder{}, nil
+		OpenLocal: func(context.Context, model.ModelInfo, model.LocalModel) (loading.Embedder, error) {
+			return mockembedder.Embedder{}, nil
 		},
+		NewMock:      func(logPath string) loading.Embedder { return mockembedder.Embedder{LogPath: logPath} },
 		FetchVectors: remote.FetchVectors,
 		Report:       console.Report,
 	})
@@ -42,8 +44,8 @@ func (s *Server) updateConfig(values map[string]string, secrets server.Secrets) 
 }
 
 func isPrecondition(err error) bool {
-	var refusal PreconditionError
-	return errors.As(err, &refusal)
+	var failure PreconditionError
+	return errors.As(err, &failure)
 }
 
 func encodeJSON(tb testing.TB, w io.Writer, value any) {

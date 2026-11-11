@@ -16,7 +16,7 @@ import (
 
 func (f filing) title(t *testing.T, path string) string {
 	t.Helper()
-	displayed, err := f.db.NoteQueries.NoteRefs.GetNotes(t.Context(), f.vault.ID, []string{path})
+	displayed, err := f.db.NoteQueries().GetNotes(t.Context(), f.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,9 +1,11 @@
-package models
+package service
 
 import (
 	"context"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/models"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
 )
 
@@ -38,4 +40,21 @@ func (r recording) GetSegments(ctx context.Context, from, count int) ([]transcri
 		segments[i] = transcribe.Audio(one)
 	}
 	return segments, nil
+}
+
+func (r recognizer) Close() error {
+	return r.port.Close()
+}
+
+func newOpener(runtime engine.Runtime, isMock bool) models.Opener {
+	return func(ctx context.Context, cfg settings.Config) (models.Model, error) {
+		if isMock {
+			return recognizer{port: engine.NewMockTranscriber()}, nil
+		}
+		port, err := engine.Open(ctx, runtime, cfg)
+		if err != nil {
+			return nil, err
+		}
+		return recognizer{port: port}, nil
+	}
 }

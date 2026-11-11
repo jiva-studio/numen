@@ -1,4 +1,6 @@
-package engine
+// Package mockembedder answers with vectors computed from the words of a text, with no model. Automated
+// tests select it.
+package mockembedder
 
 import (
 	"context"
@@ -12,13 +14,8 @@ import (
 	"slices"
 	"strings"
 	"unicode"
-)
 
-// The width of a mock vector: a part every text shares, and a part its words
-// are placed in.
-const (
-	mockSharedDimensions = 64
-	mockWordDimensions   = 2048
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // mockTermDimensions is how many dimensions of the word part one term takes,
@@ -30,38 +27,11 @@ const mockTermDimensions = 4
 // cosine of their word counts.
 const mockShare = 0.9
 
-// MockEmbedder answers with vectors computed from the words of a text, with no
+// Embedder answers with vectors computed from the words of a text, with no
 // model. A word listed in getConcept counts as its concept, so a text is near a
 // question that names the concept by another word.
-type MockEmbedder struct {
+type Embedder struct {
 	LogPath string
-}
-
-// GetMockModel returns the identity of the vectors MockEmbedder answers with.
-func GetMockModel() ModelInfo {
-	return ModelInfo{
-		Name:           "mock-embedding",
-		Dimensions:     mockSharedDimensions + mockWordDimensions,
-		MaxTokens:      512,
-		Pooling:        PoolMean,
-		From:           "mock",
-		Concurrency:    1,
-		FloorHint:      0,
-		MinChunkLength: 0,
-		ChunkTokens:    0,
-		Handling:       getMockHandling(),
-	}
-}
-
-// Prefixes of the mock model, those of a model that tells a question from a passage. The mock
-// vector does not depend on them, so a test can read what was sent without the search changing.
-const (
-	MockQueryPrefix    = "query: "
-	MockDocumentPrefix = "passage: "
-)
-
-func getMockHandling() Handling {
-	return Handling{QueryPrefix: MockQueryPrefix, DocumentPrefix: MockDocumentPrefix, File: "", Normalise: true, ExtraInputs: nil}
 }
 
 // MockHoldWord is the word that makes a mock call run until its context ends.
@@ -70,7 +40,7 @@ const MockHoldWord = "numenmockhold"
 
 // Embed returns one unit vector per text. A batch with a text that contains
 // MockHoldWord returns only when ctx ends, with its error.
-func (m MockEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+func (m Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	m.record(texts)
 	if slices.ContainsFunc(texts, isHeld) {
 		<-ctx.Done()
@@ -84,13 +54,13 @@ func (m MockEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, e
 }
 
 func stripMockPrefix(text string) string {
-	if rest, ok := strings.CutPrefix(text, MockQueryPrefix); ok {
+	if rest, ok := strings.CutPrefix(text, model.MockQueryPrefix); ok {
 		return rest
 	}
-	return strings.TrimPrefix(text, MockDocumentPrefix)
+	return strings.TrimPrefix(text, model.MockDocumentPrefix)
 }
 
-func (m MockEmbedder) record(texts []string) {
+func (m Embedder) record(texts []string) {
 	if m.LogPath == "" {
 		return
 	}
@@ -118,10 +88,10 @@ func isHeld(text string) bool {
 }
 
 // Concurrency is how many batches the mock runs in parallel.
-func (MockEmbedder) Concurrency() int { return 1 }
+func (Embedder) Concurrency() int { return 1 }
 
 // Close releases nothing.
-func (MockEmbedder) Close() error { return nil }
+func (Embedder) Close() error { return nil }
 
 func embedMock(text string) []float32 {
 	counts := map[string]int{}
@@ -136,18 +106,18 @@ func embedMock(text string) []float32 {
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="sorting terms fixes float addition order across map iterations"
 	slices.Sort(terms)
 
-	v := make([]float32, mockSharedDimensions+mockWordDimensions)
+	v := make([]float32, model.MockSharedDimensions+model.MockWordDimensions)
 	var squares float64
 	for _, term := range terms {
 		n := counts[term]
-		addTerm(v[mockSharedDimensions:], term, float64(n))
+		addTerm(v[model.MockSharedDimensions:], term, float64(n))
 		squares += float64(n * n)
 	}
-	shared := float32(mockShare * math.Sqrt(squares) / math.Sqrt(mockSharedDimensions))
-	for i := range mockSharedDimensions {
+	shared := float32(mockShare * math.Sqrt(squares) / math.Sqrt(model.MockSharedDimensions))
+	for i := range model.MockSharedDimensions {
 		v[i] = shared
 	}
-	return Normalise(v)
+	return model.Normalise(v)
 }
 
 func addTerm(v []float32, term string, weight float64) {

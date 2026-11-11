@@ -40,7 +40,7 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	env := process.Process{}
-	holder := engines.NewHolder(env.GetConfig(), engines.NewOpener(engine.NewLibrary(), env.IsMockML), env)
+	holder := engines.NewHolder(env.GetConfig(), newOpener(engine.NewLibrary(), env.IsMockML), env)
 	return mount(s, recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: func(id domain.VaultID) recognition.Folder { return store.With(id) }, Texts: func(id domain.VaultID) host.TextVersions { return texts.With(id) }, Queue: queue}, holder)
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
@@ -82,11 +83,11 @@ type tokenOutput struct {
 
 func pool(kind string, out tokenOutput, isNormalised bool) ([][]float32, error) {
 	switch kind {
-	case PoolMean:
+	case model.PoolMean:
 		return meanPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalised), nil
-	case PoolCLS:
+	case model.PoolCLS:
 		return headPool(out.flat, out.rows, out.seq, out.dimensions, isNormalised), nil
-	case PoolLast:
+	case model.PoolLast:
 		return lastPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalised), nil
 	}
 	return nil, fmt.Errorf("a per-token output cannot be pooled as %q: the model answers one vector per text only as an output named sentence_embedding", kind)

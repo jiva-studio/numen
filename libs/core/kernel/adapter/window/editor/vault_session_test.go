@@ -25,7 +25,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -701,7 +700,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-func openInstallation(t *testing.T) (*editor.Installation, *vaults.Index) {
+func openInstallation(t *testing.T) (*editor.Installation, *container.Index) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
@@ -743,7 +742,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save failed: %v", rejected)
 	}
 
-	found, err := db.Chunks.Passages.FindLexical(
+	found, err := db.ChunkSearch().FindLexical(
 		t.Context(), installation.State.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)

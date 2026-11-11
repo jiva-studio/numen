@@ -20,7 +20,7 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   domain.ErrOverlaps,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: vaultdomain.ErrNameTaken,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaultdomain.ErrLastVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    registry.ErrShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    vaultdomain.ErrShowing,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  registry.ErrUnknown,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   machine.ErrNoTrash,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    window.ErrAnswerPending,

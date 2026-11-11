@@ -171,3 +171,22 @@ func TestCheckAcyclicHandlesVisitedErrorsAndPairDirections(t *testing.T) {
 		t.Errorf("got %v, want %v", err, wantErr)
 	}
 }
+
+func TestFindSide(t *testing.T) {
+	links := []domain.ResolvedLink{
+		{Link: domain.Link{Role: domain.RoleRef}, ToVault: "v1", To: "Delta.md"},
+		{Link: domain.Link{Role: domain.RoleParent, Type: "river", Why: "flows into"}, ToVault: "v2", To: "Delta.md"},
+		{Link: domain.Link{Role: domain.RoleParent, Type: "lake"}, ToVault: "v1", To: "Delta.md"},
+		{Link: domain.Link{Role: domain.RoleParent, Type: "river", Why: "flows into", Label: "feeds"}, ToVault: "v1", To: "Delta.md"},
+	}
+	got := domain.FindSide(links, "v1", "Delta.md", "river")
+	if got == nil || got.Role != domain.RoleParent || got.Why != "flows into" || got.Label != "feeds" {
+		t.Errorf("side = %+v", got)
+	}
+	if side := domain.FindSide(links, "v1", "Delta.md", ""); side != nil {
+		t.Errorf("a body reference is not a side: %+v", side)
+	}
+	if side := domain.FindSide(links, "v1", "Marsh.md", "river"); side != nil {
+		t.Errorf("another note: %+v", side)
+	}
+}

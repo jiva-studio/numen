@@ -1,4 +1,4 @@
-package vault_test
+package registry_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -15,7 +15,7 @@ import (
 // not about the row.
 func TestAFolderThatHasMissingIsMissing(t *testing.T) {
 	t.Parallel()
-	check := check.NewFolderCheck(vaultreader.Readers{})
+	check := registry.NewFolderCheck(vaultreader.Readers{})
 
 	pos := filepath.Join(t.TempDir(), "one")
 	if err := os.Mkdir(pos, 0o700); err != nil {
@@ -42,7 +42,7 @@ func TestAPathContainingAFileIsMissingToo(t *testing.T) {
 	if err := os.WriteFile(pos, []byte("not a vault"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	check := check.NewFolderCheck(vaultreader.Readers{})
+	check := registry.NewFolderCheck(vaultreader.Readers{})
 	if !check.Execute(domain.Vault{ID: "one", Name: "one", Path: pos}) {
 		t.Error("a file where a vault's folder was is not missing")
 	}

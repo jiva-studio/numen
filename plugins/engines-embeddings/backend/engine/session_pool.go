@@ -2,12 +2,10 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"sync"
-)
 
-// ErrClosed is the error of a batch that meets a closed embedder.
-var ErrClosed = errors.New("the embedder is closed")
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+)
 
 // sessionPool lends a session to at most lanes callers at a time.
 type sessionPool[S any] struct {
@@ -44,13 +42,13 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	select {
 	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-		return zero, ErrClosed
+		return zero, loading.ErrClosed
 	default:
 	}
 	select {
 	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-		return zero, ErrClosed
+		return zero, loading.ErrClosed
 	case <-canceled:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, ctx.Err()
@@ -59,7 +57,7 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 		case <-p.stop:
 			p.idle <- s
 			// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-			return zero, ErrClosed
+			return zero, loading.ErrClosed
 		default:
 			return s, nil
 		}

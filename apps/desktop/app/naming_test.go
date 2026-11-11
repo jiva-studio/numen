@@ -9,15 +9,14 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		titles, err := opened.Notes().Browse.GetTitles.Execute(t.Context(), v, []string{path})
+		titles, err := opened.Scenarios().Queries.Browse.GetTitles.Execute(t.Context(), v, []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -33,7 +32,7 @@ func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, pat
 // case the window does, and the tools pass the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync     query.SyncTitleAndFilename
+		sync     naming.SyncTitleAndFilename
 		filename string
 	}{
 		"one name":   {sync: true, filename: "Disorder.md"},
@@ -58,7 +57,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			// walk that first reads the file files it at two paths at once.
 			waitForIndex(t, opened, v, "Entropy.md")
 
-			notes := opened.Notes().ShowEdits(container.GetWindowView(opened))
+			notes := opened.Scenarios().Notes
 			renamed, err := notes.Place.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)

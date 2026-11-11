@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -12,7 +13,7 @@ import (
 func newRemove(registry *appstate.VaultRegistry) (vaults.Remove, *bin, *indexRows) {
 	erase, trash, index, _ := newErase(registry)
 	return vaults.NewRemove(
-		vaultregistry.NewFind(registry),
+		vaultregistry.NewFind(registry).Execute,
 		vaults.NewUnregister(registry, registry, index),
 		erase,
 	), trash, index
@@ -56,7 +57,7 @@ func TestRemoveKeepsTheVaultInFrontOfThePerson(t *testing.T) {
 
 	for _, trashed := range []bool{false, true} {
 		err := remove.Execute(t.Context(), string(showing.ID), showing.ID, trashed)
-		if !errors.Is(err, vaultregistry.ErrShowing) {
+		if !errors.Is(err, vaultdomain.ErrShowing) {
 			t.Fatalf("error is %v, want ErrShowing", err)
 		}
 	}

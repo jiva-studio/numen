@@ -1,9 +1,9 @@
-package note_test
+package naming_test
 
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 )
 
 // One rule answers for both halves of a name, at either setting and for each of
@@ -11,22 +11,22 @@ import (
 func TestWhatARenameRestoresIntoLine(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		sync      query.SyncTitleAndFilename
-		delta     query.NameSource
+		sync      naming.SyncTitleAndFilename
+		delta     naming.Source
 		isMoving  bool
 		isWriting bool
 	}{
 		"one name, a title in the frontmatter": {
-			sync: true, delta: query.ByFrontmatter, isMoving: true, isWriting: true,
+			sync: true, delta: naming.ByFrontmatter, isMoving: true, isWriting: true,
 		},
 		"one name, and the filename determines the title": {
-			sync: true, delta: query.ByFilename, isMoving: true, isWriting: false,
+			sync: true, delta: naming.ByFilename, isMoving: true, isWriting: false,
 		},
 		"told apart, a title in the frontmatter": {
-			sync: false, delta: query.ByFrontmatter, isMoving: false, isWriting: false,
+			sync: false, delta: naming.ByFrontmatter, isMoving: false, isWriting: false,
 		},
 		"told apart, and the filename determines the title": {
-			sync: false, delta: query.ByFilename, isMoving: true, isWriting: false,
+			sync: false, delta: naming.ByFilename, isMoving: true, isWriting: false,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -44,13 +44,13 @@ func TestWhatARenameRestoresIntoLine(t *testing.T) {
 // A requested setting returns the value it was configured with, in either state.
 func TestNaming_ReturnsRequestedSetting(t *testing.T) {
 	t.Parallel()
-	for name, want := range map[string]query.SyncTitleAndFilename{"one name": true, "told apart": false} {
-		ask := query.SyncSetting(func() query.SyncTitleAndFilename { return want })
+	for name, want := range map[string]naming.SyncTitleAndFilename{"one name": true, "told apart": false} {
+		ask := naming.SyncSetting(func() naming.SyncTitleAndFilename { return want })
 		if got := ask.GetSetting(); got != want {
 			t.Errorf("%s: got %v", name, got)
 		}
 	}
-	var unasked query.SyncSetting
+	var unasked naming.SyncSetting
 	if !unasked.GetSetting() {
 		t.Error("nothing asked keeps the two one name")
 	}

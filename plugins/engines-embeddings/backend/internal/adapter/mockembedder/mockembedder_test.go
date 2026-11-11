@@ -1,4 +1,4 @@
-package engine
+package mockembedder
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // floor is the cosine a passage must reach to answer a search by meaning.
@@ -28,7 +30,7 @@ func TestMockEmbedderBlocksABatchWithTheHoldWordUntilCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	ended := make(chan error, 1)
 	go func() {
-		_, err := MockEmbedder{}.Embed(ctx, []string{"a note", "a Note with NumenMockHold in it"})
+		_, err := Embedder{}.Embed(ctx, []string{"a note", "a Note with NumenMockHold in it"})
 		ended <- err
 	}()
 
@@ -42,7 +44,7 @@ func TestMockEmbedderBlocksABatchWithTheHoldWordUntilCancel(t *testing.T) {
 		t.Errorf("the held batch ended with %v, want context.Canceled", err)
 	}
 
-	vectors, err := MockEmbedder{}.Embed(t.Context(), []string{"a note"})
+	vectors, err := Embedder{}.Embed(t.Context(), []string{"a note"})
 	if err != nil || len(vectors) != 1 {
 		t.Errorf("a batch without the hold word answered %d vectors and %v", len(vectors), err)
 	}
@@ -81,26 +83,26 @@ func TestAMockVectorIsUnitLengthAndTheSameEveryTime(t *testing.T) {
 	if got := math.Sqrt(cosine(first, first)); math.Abs(got-1) > 1e-5 {
 		t.Errorf("length %.6f, want 1", got)
 	}
-	if len(first) != GetMockModel().Dimensions {
-		t.Errorf("got %d dimensions, want %d", len(first), GetMockModel().Dimensions)
+	if len(first) != model.GetMockModel().Dimensions {
+		t.Errorf("got %d dimensions, want %d", len(first), model.GetMockModel().Dimensions)
 	}
 }
 
 func TestGetMockModelAndEmbedderDetails(t *testing.T) {
-	info := GetMockModel()
-	if info.Dimensions != 2112 || info.MaxTokens != 512 || info.Pooling != PoolMean || info.From != "mock" {
-		t.Errorf("GetMockModel() = %+v", info)
+	info := model.GetMockModel()
+	if info.Dimensions != 2112 || info.MaxTokens != 512 || info.Pooling != model.PoolMean || info.From != "mock" {
+		t.Errorf("model.GetMockModel() = %+v", info)
 	}
 	if info.Concurrency != 1 || info.FloorHint != 0 || info.MinChunkLength != 0 {
-		t.Errorf("GetMockModel() limits = %+v", info)
+		t.Errorf("model.GetMockModel() limits = %+v", info)
 	}
-	if info.Handling.QueryPrefix != MockQueryPrefix || info.Handling.DocumentPrefix != MockDocumentPrefix || !info.Handling.Normalise {
-		t.Errorf("GetMockModel() handling = %+v", info.Handling)
+	if info.Handling.QueryPrefix != model.MockQueryPrefix || info.Handling.DocumentPrefix != model.MockDocumentPrefix || !info.Handling.Normalise {
+		t.Errorf("model.GetMockModel() handling = %+v", info.Handling)
 	}
 
 	logFile := filepath.Join(t.TempDir(), "mock.jsonl")
-	m := MockEmbedder{LogPath: logFile}
-	vectors, err := m.Embed(t.Context(), []string{MockQueryPrefix + "boat", MockDocumentPrefix + "ferry"})
+	m := Embedder{LogPath: logFile}
+	vectors, err := m.Embed(t.Context(), []string{model.MockQueryPrefix + "boat", model.MockDocumentPrefix + "ferry"})
 	if err != nil || len(vectors) != 2 {
 		t.Fatalf("Embed() = %d vectors, %v", len(vectors), err)
 	}
@@ -118,7 +120,7 @@ func TestGetMockModelAndEmbedderDetails(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Stderr = w
-	(MockEmbedder{}).record([]string{"quiet"})
+	(Embedder{}).record([]string{"quiet"})
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}

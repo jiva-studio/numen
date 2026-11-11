@@ -10,7 +10,7 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
@@ -167,7 +167,7 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 		case had && !holds:
 			rt.Fatalf("a rename took the identifier out of %q", now)
 		}
-		if out.By == query.ByFilename && now != raw {
+		if out.By == naming.ByFilename && now != raw {
 			rt.Fatalf("a rename by the filename wrote into the note: %q", now)
 		}
 	})

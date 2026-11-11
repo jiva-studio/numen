@@ -26,7 +26,7 @@ func newWiring(indexPath string, shouldRebuild bool, texts textdomain.Readers) w
 	return wiring{reading: newReadingParts(indexPath, shouldRebuild, texts)}
 }
 
-func (w wiring) openIndex(t *testing.T) *vaults.Index {
+func (w wiring) openIndex(t *testing.T) *testIndex {
 	t.Helper()
 	db, err := w.reading.OpenIndex(t.Context())
 	if err != nil {
@@ -36,7 +36,7 @@ func (w wiring) openIndex(t *testing.T) *vaults.Index {
 	return db
 }
 
-func (w wiring) readVault(db *vaults.Index) indexing.OpenReading {
+func (w wiring) readVault(db *testIndex) indexing.OpenReading {
 	return testPasses{wiring: w, db: db}.ReadWholeVault
 }
 
@@ -61,7 +61,7 @@ type openDoor struct{}
 func (openDoor) Close() {}
 
 func (w wiring) startSession(
-	t *testing.T, ctx context.Context, db *vaults.Index, state *State, v domain.Vault,
+	t *testing.T, ctx context.Context, db *testIndex, state *State, v domain.Vault,
 	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher, opts sessionOptions,
 ) (end func()) {
 	t.Helper()
@@ -117,7 +117,7 @@ func (w wiring) startSession(
 
 type testPasses struct {
 	wiring
-	db      *vaults.Index
+	db      *testIndex
 	readers vaultport.VaultReaders
 	watcher vaultport.VaultWatcher
 }

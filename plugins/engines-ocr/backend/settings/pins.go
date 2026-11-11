@@ -1,4 +1,4 @@
-package engine
+package settings
 
 // The models the defaults fetch, each at a fixed revision.
 const (

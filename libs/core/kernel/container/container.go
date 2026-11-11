@@ -243,7 +243,7 @@ func vaultOf(c Config) vaultWiring {
 	s := searchOf(c)
 	v.SyncSetting = syncSetting(settingsOf(c))
 	v.CutNotes = cutNotes(s)
-	v.SetNoteCut = func(scan *vault.Scan, db *vault.Index) { setNoteCut(s, scan, db) }
+	v.SetNoteCut = func(scan *vault.Scan, db *Index) { setNoteCut(s, scan, db) }
 	return v
 }
 
@@ -287,10 +287,10 @@ func plugins(c Config) pluginsWiring {
 			NoteWriters:  noteWriters(v),
 			VaultLocks:   writeLocks(v),
 			VaultWatcher: vaultWatcher(v),
-			MakeRefresh: func(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
+			MakeRefresh: func(db *Index, notes noteport.NoteRepository) vault.Refresh {
 				return vaultMakeRefresh(vaultOf(c), db, notes)
 			},
-			BuildNotes: func(db *vault.Index, index edit.IndexUpdater) note.Scenarios { return Notes(c, db, index) },
+			BuildNotes: func(db *Index, index edit.IndexUpdater) note.Scenarios { return Notes(c, db, index) },
 			Moves:      func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) },
 		},
 		ErrorHandler: func(err error) { handleError(c, err) },

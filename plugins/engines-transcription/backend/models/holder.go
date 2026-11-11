@@ -6,48 +6,52 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
 )
 
-// Opener opens the model the configuration names.
-type Opener func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error)
-
-// NewOpener returns an opener of the Parakeet model on runtime.
-func NewOpener(runtime engine.Runtime) Opener {
-	return func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
-		return engine.Open(ctx, runtime, cfg)
-	}
+// Model is an open transcription model.
+type Model interface {
+	transcribe.Recognizer
+	Close() error
 }
+
+// Opener opens the model the configuration names.
+type Opener func(ctx context.Context, cfg settings.Config) (Model, error)
 
 // Holder keeps the open model.
 type Holder struct {
 	mu      sync.Mutex
-	cfg     engine.Config
-	isMock  bool
+	cfg     settings.Config
 	open    Opener
-	current engine.TranscriberPort
+	current Model
 }
 
-// NewHolder returns a holder that opens the model with open for cfg, or the mock model while isMock holds.
-func NewHolder(cfg engine.Config, isMock bool, open Opener) *Holder {
-	return &Holder{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: open, current: nil}
+// NewHolder returns a holder that opens the model with open for cfg.
+func NewHolder(cfg settings.Config, open Opener) *Holder {
+	return &Holder{mu: sync.Mutex{}, cfg: cfg, open: open, current: nil}
 }
 
 // GetRecognizer returns the open model for the transcription use case and opens it first when there is none.
 func (h *Holder) GetRecognizer(ctx context.Context) (transcribe.Recognizer, error) {
-	port, err := h.get(ctx)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.current != nil {
+		return h.current, nil
+	}
+	loaded, err := h.open(context.WithoutCancel(ctx), h.cfg)
 	if err != nil {
 		return nil, err
 	}
-	return recognizer{port: port}, nil
+	h.current = loaded
+	return h.current, nil
 }
 
 // UpdateSettings applies the plugin settings to the configuration the model opens with.
 func (h *Holder) UpdateSettings(values map[string]string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	if model, ok := engine.FindModel(values["model"]); ok {
+	if model, ok := settings.FindModel(values["model"]); ok {
 		h.cfg.Model = model
 	}
 }
@@ -62,22 +66,4 @@ func (h *Holder) Close() error {
 	err := h.current.Close()
 	h.current = nil
 	return err
-}
-
-func (h *Holder) get(ctx context.Context) (engine.TranscriberPort, error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.current != nil {
-		return h.current, nil
-	}
-	if h.isMock {
-		h.current = engine.NewMockTranscriber()
-		return h.current, nil
-	}
-	loaded, err := h.open(context.WithoutCancel(ctx), h.cfg)
-	if err != nil {
-		return nil, err
-	}
-	h.current = loaded
-	return h.current, nil
 }

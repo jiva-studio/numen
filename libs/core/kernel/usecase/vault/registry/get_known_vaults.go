@@ -3,7 +3,6 @@ package registry
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -26,13 +25,13 @@ type KnownVault struct {
 type GetKnownVaults struct {
 	vaults  vaultport.VaultList
 	last    vaultport.LastVault
-	folders check.FolderCheck
+	folders FolderCheck
 }
 
 // NewGetKnownVaults is what the list and the last vault are read out of and what a vault's folder is
 // opened through.
 func NewGetKnownVaults(vaults vaultport.VaultList, last vaultport.LastVault, readers vaultport.VaultReaders) GetKnownVaults {
-	return GetKnownVaults{vaults: vaults, last: last, folders: check.NewFolderCheck(readers)}
+	return GetKnownVaults{vaults: vaults, last: last, folders: NewFolderCheck(readers)}
 }
 
 // Execute returns the list. showing is the vault in use; the empty identity

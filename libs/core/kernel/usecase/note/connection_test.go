@@ -3,6 +3,7 @@ package note_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"strings"
 	"testing"
 
@@ -21,38 +22,38 @@ const (
 	entropyNote = "---\ntitle: Entropy\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRD\n---\n# Entropy\n"
 )
 
-func (c changing) addresses() *query.GetLinkAddress {
-	return query.NewGetLinkAddress(c.db.NoteQueries.NamedPaths)
+func (c changing) addresses() edit.NameQueries {
+	return c.db.NoteQueries()
 }
 
 func (c changing) saveConnection() note.SaveConnection {
 	return note.NewSaveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries.Links, c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
 }
 
 func (c changing) saveConnectionWith(writers note.NoteWriting) note.SaveConnection {
 	return note.NewSaveConnection(
-		vaultreader.Readers{}, writers, c.index, testsupport.NewClock(), c.db.NoteQueries.Links, c.addresses())
+		vaultreader.Readers{}, writers, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
 }
 
 func (c changing) removeConnection() note.RemoveConnection {
 	return note.NewRemoveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries.Links, c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
 }
 
 func (c changing) removeSide() note.RemoveSide {
 	return note.NewRemoveSide(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries.Links, c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
 }
 
 func (c changing) join() note.Join {
 	return note.NewJoin(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries.Links, c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
 }
 
 func (c changing) connection(t *testing.T, a, b string) domain.Connection {
 	t.Helper()
-	got, err := query.NewGetConnection(c.db.NoteQueries.Links).Execute(t.Context(), c.vault, a, b, "")
+	got, err := query.NewGetConnection(c.db.NoteQueries()).Execute(t.Context(), c.vault, a, b, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +137,7 @@ func TestSavingAConnectionKeepsTheTypeAndTheReasonItIsGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := query.NewGetConnection(c.db.NoteQueries.Links).Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", "requires")
+	got, err := query.NewGetConnection(c.db.NoteQueries()).Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", "requires")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -499,7 +500,7 @@ func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 		"Idea.md": "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n    marker: arrow\n---\n# Idea\n",
 	})
 
-	got, err := query.NewGetBacklinks(c.db.NoteQueries.Links).Execute(t.Context(), c.vault, "Area.md")
+	got, err := query.NewGetBacklinks(c.db.NoteQueries()).Execute(t.Context(), c.vault, "Area.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -520,7 +521,7 @@ func TestTheNeighborhoodCarriesTheMarkerOfEachRecord(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	got, err := query.NewShowNeighborhood(db.NoteQueries.Links, db.NoteQueries.NoteRefs).Execute(t.Context(), v, "Heat.md")
+	got, err := query.NewShowNeighborhood(db.NoteQueries(), db.NoteQueries()).Execute(t.Context(), v, "Heat.md")
 	if err != nil {
 		t.Fatal(err)
 	}

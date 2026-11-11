@@ -1,9 +1,13 @@
 package engine
 
-import "os"
+import (
+	"os"
+
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
+)
 
 // IsFetched reports whether one recogniser model file is on this machine.
-func IsFetched(cfg Config, model RecogniserModel) bool {
+func IsFetched(cfg settings.Config, model settings.RecogniserModel) bool {
 	if model.Path != "" {
 		return isPresent(model.Path)
 	}

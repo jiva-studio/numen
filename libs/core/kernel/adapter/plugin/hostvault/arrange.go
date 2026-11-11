@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 // NoteChanges has the use cases that rename, move and remove the notes of a vault, repairing the
@@ -45,22 +45,7 @@ func (a Arranger) getChanges(v domain.Vault) NoteChanges {
 	if current, isShowing := a.WindowVault(); !isShowing || current.ID != v.ID {
 		return a.Notes
 	}
-	changes := a.Window
-	changes.Move.Drawing = a.notifyWindowIfCurrent(v, changes.Move.Drawing)
-	changes.Rename.Move.Drawing = a.notifyWindowIfCurrent(v, changes.Rename.Move.Drawing)
-	return changes
-}
-
-func (a Arranger) notifyWindowIfCurrent(v domain.Vault, draw note.TellMove) note.TellMove {
-	if draw == nil {
-		return nil
-	}
-	return func(ctx context.Context, move domain.Move) error {
-		if current, isShowing := a.WindowVault(); !isShowing || current.ID != v.ID {
-			return nil
-		}
-		return draw(ctx, move)
-	}
+	return a.Window
 }
 
 func (a Arranger) RenameNote(ctx context.Context, path, title string) (string, bool, *domain.MoveResult, error) {
@@ -72,7 +57,7 @@ func (a Arranger) RenameNote(ctx context.Context, path, title string) (string, b
 	if rename.Moved != nil || err == nil {
 		a.session.notifyFileWritten()
 	}
-	return rename.Path, rename.By == query.ByFilename, rename.Moved, err
+	return rename.Path, rename.By == naming.ByFilename, rename.Moved, err
 }
 
 func (a Arranger) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {

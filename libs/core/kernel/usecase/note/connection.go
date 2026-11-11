@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 func getConnectionRoles() [3]domain.LinkRole {
@@ -29,20 +28,18 @@ type noteChange struct {
 // connectionEditor writes the records of a connection into the notes that hold
 // them. A write either leaves every note changed or none.
 type connectionEditor struct {
-	readers   vaultport.VaultReaders
-	writers   NoteWriting
-	index     edit.IndexUpdater
-	now       machineport.Clock
-	links     noteport.LinkQueries
-	addresses *query.GetLinkAddress
-
-	connections query.GetConnection
+	readers vaultport.VaultReaders
+	writers NoteWriting
+	index   edit.IndexUpdater
+	now     machineport.Clock
+	links   noteport.LinkQueries
+	names   edit.NameQueries
 }
 
 func (e connectionEditor) getAddresses(
 	ctx context.Context, v domain.Vault, from, to string,
 ) ([]domain.Address, error) {
-	canonical, err := e.addresses.Execute(ctx, v, to)
+	canonical, err := getLinkAddress(ctx, e.names, v, to)
 	if err != nil {
 		return nil, err
 	}
@@ -221,14 +218,14 @@ type SaveConnection struct {
 }
 
 // NewSaveConnection builds the use case over the vault, the index that is brought
-// index updater after a write, the link queries, and the clock.
+// index updater after a write, the link queries, and the clock. Where no name queries are given, a link
+// names a note by its basename.
 func NewSaveConnection(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) SaveConnection {
 	return SaveConnection{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,
-		connections: query.NewGetConnection(links),
+		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
 	}}
 }
 
@@ -258,11 +255,10 @@ type RemoveConnection struct {
 // NewSaveConnection.
 func NewRemoveConnection(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) RemoveConnection {
 	return RemoveConnection{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,
-		connections: query.NewGetConnection(links),
+		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
 	}}
 }
 
@@ -290,11 +286,10 @@ type RemoveSide struct {
 // NewSaveConnection.
 func NewRemoveSide(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) RemoveSide {
 	return RemoveSide{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,
-		connections: query.NewGetConnection(links),
+		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
 	}}
 }
 
@@ -319,11 +314,10 @@ type Join struct {
 // NewJoin builds the use case over the same collaborators as NewSaveConnection.
 func NewJoin(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) Join {
 	return Join{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,
-		connections: query.NewGetConnection(links),
+		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
 	}}
 }
 
@@ -334,11 +328,11 @@ func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side
 	if err := c.Validate(); err != nil {
 		return err
 	}
-	existing, err := u.editor.connections.Execute(ctx, v, from, to, side.Type)
+	links, err := u.editor.links.GetLinks(ctx, v.ID, to)
 	if err != nil {
 		return err
 	}
-	c.BA = existing.BA
+	c.BA = domain.FindSide(links, v.ID, from, side.Type)
 	if err := u.editor.check(ctx, v, c); err != nil {
 		return err
 	}
@@ -347,4 +341,11 @@ func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side
 		return err
 	}
 	return u.editor.apply(ctx, v, []noteChange{change})
+}
+
+func getLinkAddress(ctx context.Context, names edit.NameQueries, v domain.Vault, path string) (domain.Address, error) {
+	if names == nil {
+		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(path)}, nil
+	}
+	return edit.GetAddress(ctx, names, v.ID, path)
 }
