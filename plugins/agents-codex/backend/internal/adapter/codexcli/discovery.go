@@ -1,5 +1,5 @@
 // Package codexcli reaches the Codex CLI and its files on this machine: it finds the program, lists the
-// models it offers, reads its configuration and builds the command lines of a run.
+// models it offers, reads its configuration and builds the command lines of a run and starts the program in a process group of its own.
 package codexcli
 
 import (

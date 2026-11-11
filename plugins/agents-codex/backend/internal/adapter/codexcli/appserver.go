@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/agentmodel"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/process"
 )
 
 // codexMethodKey is the member of a JSON-RPC request that names the method.
@@ -36,8 +35,8 @@ func askCodexModels(ctx context.Context, command []string) (models []agentmodel.
 	running, stop := context.WithCancel(ctx)
 	defer stop()
 	cmd := exec.CommandContext(running, name, slices.Concat(args, []string{"app-server"})...)
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="process.Supervise sets OS process-group attributes for child cleanup."
-	process.Supervise(cmd)
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
+	Supervise(cmd)
 	in, err := cmd.StdinPipe()
 	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdinPipe cannot fail on an unstarted exec.Cmd"
 	if err != nil {
@@ -54,7 +53,7 @@ func askCodexModels(ctx context.Context, command []string) (models []agentmodel.
 	defer func() {
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="Closing child pipes in defer is best-effort cleanup after reading models."
 		closeErr := errors.Join(in.Close(), out.Close())
-		waitErr := process.WaitForExit(cmd, stop)
+		waitErr := WaitForExit(cmd, stop)
 		// gomutants:disable-next-line BRANCH_IF reason="WaitForExit after Start returns only OS wait errors that are covered by isStopped."
 		if isStopped(waitErr) {
 			waitErr = nil
