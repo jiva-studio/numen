@@ -7,7 +7,6 @@ export interface Turn {
   readonly text: string
   readonly subject?: string
   readonly aside?: string
-  readonly canOpen?: boolean
 }
 
 export interface ModelOption {
@@ -30,7 +29,6 @@ const createDid = (id: string, text: string, subject: string, aside: string): Tu
   text,
   subject,
   aside,
-  canOpen: true,
 })
 
 const INITIAL_TURNS: readonly Turn[] = [
@@ -51,22 +49,23 @@ const INITIAL_TURNS: readonly Turn[] = [
   ),
 ]
 
+/** The note the canned answer is about. */
+const FOCUS_TITLE = 'Entropy'
+
 /** How long the agent takes to answer, in milliseconds. */
 const ANSWER_DELAY = 450
 
 /** The conversation of the agent tab. The agent answers one canned line; the demo has no model behind it. */
-export function createAgent(getFocusTitle: () => string) {
+export function createAgent() {
   const turns = ref<readonly Turn[]>(INITIAL_TURNS)
   const draft = ref('')
   const isWorking = ref(false)
-  /** Counts the requests to put the cursor in the composer. */
-  const focusCount = ref(0)
   const selected = ref(MODEL_OPTIONS[0] as ModelOption)
 
   function submit(prompt: string) {
     const text = prompt.trim()
     if (!text || isWorking.value) return
-    const title = getFocusTitle()
+    const title = FOCUS_TITLE
     const id = String(turns.value.length + 1)
     draft.value = ''
     turns.value = [...turns.value, createAsked(`${id}-q`, text), createDid(`${id}-tool`, 'note search', title, '3 passages')]
@@ -93,7 +92,7 @@ export function createAgent(getFocusTitle: () => string) {
     selected.value = MODEL_OPTIONS.find((one) => one.modelId === modelId) ?? selected.value
   }
 
-  return { turns, draft, isWorking, selected, focusCount, submit, select, setDraft }
+  return { turns, draft, isWorking, selected, submit, select, setDraft }
 }
 
 export type Agent = ReturnType<typeof createAgent>

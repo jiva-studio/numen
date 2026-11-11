@@ -1,44 +1,52 @@
+import { branch, pane, type Tab, type Workspace } from '@numen/workbench'
+import { BOLTZMANN_PATH } from './documents'
+
+export type TabKind = 'files' | 'plex' | 'agent' | 'note' | 'pdf' | 'recording' | 'link' | 'deck'
+
 export const FILES_TAB = 'files'
-export const PLEX_TAB = 'plex:main'
-export const AGENT_TAB = 'agent:main'
-export const PRIMARY_NOTE_TAB = 'note:1'
+export const PLEX_TAB = 'plex'
+export const AGENT_TAB = 'agent'
+export const NOTE_TAB = 'note'
+export const PDF_TAB = 'pdf'
+export const RECORDING_TAB = 'recording'
+export const LINK_TAB = 'link'
+export const DECK_TAB = 'deck'
 
-export const RECORDING_PATH = 'lectures/Lecture 4.mp3'
-export const YOUTUBE_LINK_PATH = 'lectures/Feynman 1964.md'
-export const DECK_PATH = 'decks/Thermodynamics.md'
-
-export type TabKind = 'files' | 'plex' | 'agent' | 'note' | 'reader:pdf' | 'recording' | 'link' | 'deck'
-
-const PREFIX_KINDS: readonly (readonly [string, TabKind])[] = [
-  ['note:', 'note'],
-  ['reader:pdf:', 'reader:pdf'],
-  ['recording:', 'recording'],
-  ['link:', 'link'],
-  ['deck:', 'deck'],
+/** The tabs the window opens with, and the kind each one draws. */
+export const DEMO_TABS: readonly (Tab & { readonly kind: TabKind })[] = [
+  { id: FILES_TAB, kind: 'files', title: 'Files' },
+  { id: PLEX_TAB, kind: 'plex', title: 'Entropy' },
+  { id: AGENT_TAB, kind: 'agent', title: 'Agent' },
+  { id: NOTE_TAB, kind: 'note', title: 'Entropy' },
+  { id: PDF_TAB, kind: 'pdf', title: 'Boltzmann 1877' },
+  { id: RECORDING_TAB, kind: 'recording', title: 'Lecture 4' },
+  { id: LINK_TAB, kind: 'link', title: 'Feynman 1964' },
+  { id: DECK_TAB, kind: 'deck', title: 'Thermodynamics' },
 ]
 
-/** The kind of a tab, read off its id: the three tools have an id each, the rest start with their kind. */
-export function getKindOfTab(id: string): TabKind | undefined {
-  if (id === FILES_TAB) return 'files'
-  if (id === PLEX_TAB) return 'plex'
-  if (id === AGENT_TAB) return 'agent'
-  return PREFIX_KINDS.find(([prefix]) => id.startsWith(prefix))?.[1]
-}
+/** The paper the pdf tab shows. */
+export const PDF_TAB_PATH = BOLTZMANN_PATH
 
-/** Whether the tab follows a vault path another tab moves to. */
-export function isTabLinkable(id: string): boolean {
-  const kind = getKindOfTab(id)
-  return kind === 'files' || kind === 'plex' || kind === 'note'
+/** The panes the window opens with: the files, the plex and the note tabs, and the agent. */
+export function createDemoWorkspace(): Workspace {
+  return {
+    root: branch(
+      'root',
+      [
+        pane('main', [FILES_TAB]),
+        branch(
+          'middle',
+          [
+            pane('map', [PLEX_TAB]),
+            pane('note', [NOTE_TAB, PDF_TAB, RECORDING_TAB, LINK_TAB, DECK_TAB], NOTE_TAB),
+          ],
+          [0.52, 0.48],
+        ),
+        pane('aside', [AGENT_TAB]),
+      ],
+      [0.22, 0.5, 0.28],
+    ),
+    axis: 'horizontal',
+    focus: 'map',
+  }
 }
-
-/** Whether the tab shows a file and not a tool. */
-export function isContentTab(id: string): boolean {
-  const kind = getKindOfTab(id)
-  return kind !== undefined && kind !== 'files' && kind !== 'plex' && kind !== 'agent'
-}
-
-export const getPdfTabId = (path: string): string => `reader:pdf:${path}`
-export const getRecordingTabId = (path: string): string => `recording:${path}`
-export const getLinkTabId = (path: string): string => `link:${path}`
-export const getDeckTabId = (path: string): string => `deck:${path}`
-export const getPdfPathOfTab = (id: string): string => id.slice('reader:pdf:'.length)

@@ -1,85 +1,49 @@
 <script setup lang="ts">
 /**
- * The folders and files of the demo vault: a tree that opens, selects and renames in place, and the menu
- * of a row.
+ * The folders and files of the vault the demo draws: a tree whose folders open and close and whose rows
+ * are selected, and which changes nothing.
  */
-import { computed } from 'vue'
-import { Menu, Tree, type Position } from '@numen/ui'
-import type { DropTarget, Files } from '../model/files'
-import type { Vault } from '../model/vault'
-import { getCommandIcon, getEntryIcon } from './icons'
-
-/* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ files: Files; vault: Vault }>()
-
-/* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{
-  run: [command: string, target: { path: string; others: readonly string[] }]
-}>()
+import { ref } from 'vue'
+import { Tree, type Row } from '@numen/ui'
+import { FILE_ROWS, SELECTED_ROW } from '../lib/files'
+import { getRowIcon } from './icons'
 
 /* --------------------------------- State ---------------------------------- */
-const renaming = computed({
-  get: () => props.files.state.renaming.value,
-  set: (row: string | null) => {
-    props.files.edits.setRenaming(row)
-  },
-})
-const items = computed(() => props.files.menus.getMenuItems(props.files.state.menu.value?.path ?? null))
+const getFolders = (rows: readonly Row[]): string[] =>
+  rows.flatMap((row) => (row.hasChildren ? [row.id, ...getFolders(row.rows)] : []))
+const open = ref<readonly string[]>(['', ...getFolders(FILE_ROWS)])
+const selected = ref<readonly string[]>([SELECTED_ROW])
 
 /* -------------------------------- Handlers -------------------------------- */
-function onOpenMenu(row: string | null, at: Position) {
-  props.files.menus.openMenu(row, at)
+function onOpen(folder: string) {
+  open.value = [...open.value, folder]
 }
 
-function onChooseItem(id: string) {
-  emit('run', id, props.files.menus.getMenuTarget())
-  props.files.menus.closeMenu()
+function onClose(folder: string) {
+  open.value = open.value.filter((one) => one !== folder)
 }
 
-function onMoveRows(rows: readonly string[], target: DropTarget) {
-  props.files.edits.moveRows(rows, target)
+function onSelect(rows: readonly string[]) {
+  selected.value = rows
 }
-
-/* -------------------------------- Helpers --------------------------------- */
-const getRowIcon = (id: string, isOpen: boolean) =>
-  getEntryIcon(props.vault.read.getEntryAt(id), isOpen)
 </script>
 
 <template>
   <div class="files">
     <Tree
-      v-model:renaming-path="renaming"
       class="files__tree"
       name="Files"
-      :rows="files.state.rows.value"
-      :open="files.state.openRows.value"
-      :selected="files.state.selected.value"
-      @open="files.tree.openFolder"
-      @close="files.tree.closeFolder"
-      @select="files.tree.select"
-      @activate="files.tree.activate"
-      @rename="files.edits.rename"
-      @move="onMoveRows"
-      @remove="files.edits.remove"
-      @menu="onOpenMenu"
+      :rows="FILE_ROWS"
+      :open="open"
+      :selected="selected"
+      @open="onOpen"
+      @close="onClose"
+      @select="onSelect"
     >
       <template #icon="{ id, isOpen }">
         <component :is="getRowIcon(id, isOpen)" class="files__icon" aria-hidden="true" />
       </template>
     </Tree>
-
-    <Menu
-      v-if="files.state.menu.value"
-      :items="items"
-      :at="files.state.menu.value.at"
-      is-open
-      @choose="onChooseItem"
-      @dismiss="files.menus.closeMenu"
-    >
-      <template #icon="{ id }">
-        <component :is="getCommandIcon(id)" v-if="getCommandIcon(id)" class="files__icon" aria-hidden="true" />
-      </template>
-    </Menu>
   </div>
 </template>
 

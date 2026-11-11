@@ -7,8 +7,6 @@ const LEADING = 27
 
 const DOCS_BY_PATH: ReadonlyMap<string, PdfDoc> = new Map(Object.entries(PDF_DOCS))
 
-export const hasPdfDoc = (path: string): boolean => DOCS_BY_PATH.has(path)
-
 export const getPdfDoc = (path: string): PdfDoc => DOCS_BY_PATH.get(path) ?? PDF_DOCS[BOLTZMANN_PATH]
 
 function escapeXml(line: string): string {
