@@ -55,7 +55,7 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
     writeNote: deps.writeNote,
     resolveLink: deps.resolveLink,
   })
-  const given: readonly (HostParts | undefined)[] = [
+  const optionalParts: readonly (HostParts | undefined)[] = [
     deps.notices ? createNoticeParts({ queue: deps.notices }) : undefined,
     deps.slots,
     deps.handlers,
@@ -67,7 +67,7 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
     parts: [
       createVaultServiceParts({ getServices }),
       createTaskServiceParts({ getServices }),
-      ...given.filter((one) => one !== undefined),
+      ...optionalParts.filter((one) => one !== undefined),
       named,
     ],
     ...pickDefined({
