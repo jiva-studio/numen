@@ -2,12 +2,12 @@ package run
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/codexevent"
 )
 
 type reader struct {
@@ -54,8 +54,7 @@ func scanOutput(
 ) bool {
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		var event map[string]any
-		if err := json.Unmarshal(line, &event); err == nil {
+		if event, ok := codexevent.DecodeLine(line); ok {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
 			r.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text + "\n"}})

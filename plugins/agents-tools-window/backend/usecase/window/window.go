@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -127,6 +126,6 @@ func isNotePath(filePath string) bool {
 }
 
 func getTitle(filePath string) string {
-	base := filepath.Base(filePath)
-	return strings.TrimSuffix(base, filepath.Ext(base))
+	base := path.Base(filePath)
+	return strings.TrimSuffix(base, path.Ext(base))
 }

@@ -5,7 +5,6 @@ package runs
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -204,8 +203,7 @@ func scanOutput(
 ) bool {
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		var event map[string]any
-		if err := json.Unmarshal(line, &event); err == nil {
+		if event, ok := events.DecodeLine(line); ok {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
 			r.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text + "\n"}})

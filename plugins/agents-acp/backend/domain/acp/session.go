@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/agents"
 )
 
 const (
@@ -73,13 +72,13 @@ type Session struct {
 }
 
 // Open starts the agent and opens a session with it.
-func Open(ctx context.Context, launcher Launcher, agent agents.Agent, tools Tools) (*Session, error) {
-	proc, err := launcher.Launch(ctx, agent.Program, agent.Command)
+func Open(ctx context.Context, launcher Launcher, program string, command []string, tools Tools) (*Session, error) {
+	proc, err := launcher.Launch(ctx, program, command)
 	if err != nil {
 		return nil, err
 	}
 	s := &Session{
-		proc: proc, program: agent.Program, nextID: 0, id: "", canClose: false, hasHTTPServers: false,
+		proc: proc, program: program, nextID: 0, id: "", canClose: false, hasHTTPServers: false,
 		tools:  tools,
 		models: nil, current: "", modelOption: "",
 		thoughtOption: "", thoughtLevels: nil, thoughtCurrent: "",

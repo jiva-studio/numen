@@ -96,7 +96,7 @@ func (l *Lister) getListing(ctx context.Context, agent agents.Agent) acp.Listing
 func (l *Lister) ReadListing(ctx context.Context, agent agents.Agent) (listing acp.Listing, err error) {
 	asking, stop := context.WithTimeout(ctx, listLimit)
 	defer stop()
-	session, err := acp.Open(asking, l.launcher, agent, acp.Tools{URL: "", Token: "", Names: nil})
+	session, err := acp.Open(asking, l.launcher, agent.Program, agent.Command, acp.Tools{URL: "", Token: "", Names: nil})
 	if err != nil {
 		return acp.Listing{}, err
 	}

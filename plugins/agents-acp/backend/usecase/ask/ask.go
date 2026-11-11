@@ -72,7 +72,7 @@ func (a *Asker) Execute(ctx context.Context, task *agentrun.Request, send func(*
 }
 
 func (a *Asker) answer(ctx context.Context, agent agents.Agent, q question) (text string, err error) {
-	session, err := acp.Open(ctx, a.launcher, agent, q.tools)
+	session, err := acp.Open(ctx, a.launcher, agent.Program, agent.Command, q.tools)
 	if err != nil {
 		return "", err
 	}
