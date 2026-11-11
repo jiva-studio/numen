@@ -21,7 +21,7 @@ type TextStores struct {
 
 // Open is the version files of one vault.
 func (s TextStores) Open(v domain.Vault) (textport.TextFiles, error) {
-	return textFiles{vault: v, stores: PluginStores{Options: s.Options}}, nil
+	return textFiles{vault: v, stores: PluginStores(s)}, nil
 }
 
 type textFiles struct {
