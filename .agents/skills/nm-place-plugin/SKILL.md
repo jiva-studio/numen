@@ -148,7 +148,7 @@ A component of general use belongs in `@numen/ui` (what plugins need goes into `
 
 ## Permissions
 
-A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `network:outbound`, `ai:complete`, `index:read`, `search:policy`, `window:focus`. It declares the permission for the calls it makes and no more. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-claude/manifest_permissions_test.go`).
+A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `network:outbound` (opening external links only), `ai:complete`, `index:read`, `search:policy`, `window:focus`. It declares the permission for the calls it makes and no more. Plugins are trusted code: permissions are consent and API hygiene, not a sandbox, and `network:outbound` gates only `openExternal`. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-claude/manifest_permissions_test.go`).
 
 The host checks both sides. For a backend, the host endpoint authenticates the bearer token (`NUMEN_PLUGIN_TOKEN`) as a plugin id and checks the permission of that plugin's manifest on each call (`authorize` in `libs/core/kernel/adapter/plugin/hostendpoint/host_endpoint.go`; `libs/core/kernel/internal/adapter/plugin/host_permission_test.go` tests it for any client). For a frontend, `libs/plugin/loader/src/hosting/context.ts` wraps each service of the context so that a call without the permission throws (`requirePerm`).
 

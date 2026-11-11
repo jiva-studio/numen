@@ -40,6 +40,16 @@ export interface RegistrationDeps extends RegistrationGuard {
   readonly slotView: (registration: SlotViewRegistration) => Disposable
 }
 
+/**
+ * One copy of a registration, taken before anything is checked: a getter on the object a plugin passes
+ * cannot answer the check and the host differently. The tab placement is the one nested object the host reads.
+ */
+function takeSnapshot<Registration extends object>(reg: Registration): Registration {
+  const snapshot: Registration & { placement?: object } = { ...reg }
+  if (snapshot.placement) snapshot.placement = { ...snapshot.placement }
+  return snapshot
+}
+
 /** The registrations of a plugin, tracked; the permissions they need come from the table of the services. */
 export function createRegistrations(
   pluginId: string,
@@ -50,28 +60,30 @@ export function createRegistrations(
   const permissions = target.manifest?.permissions ?? []
   return {
     reader: (reg: ReaderRegistration) => {
-      // Copied once: a getter on the registration cannot answer the check and the host differently.
-      const snapshot = { ...reg }
+      const snapshot = takeSnapshot(reg)
       requireDeclaredReader(target, snapshot.id)
       return add(host.registration.registerReader(pluginId, snapshot))
     },
     settingsView: (reg: SettingsViewRegistration) => {
-      requireDeclaredSettingsView(target, reg.id)
-      return add(host.registration.registerSettingsView(pluginId, reg))
+      const snapshot = takeSnapshot(reg)
+      requireDeclaredSettingsView(target, snapshot.id)
+      return add(host.registration.registerSettingsView(pluginId, snapshot))
     },
     slotView,
     tabKind: <State extends object>(reg: TabKindRegistration<State>) => {
-      const snapshot = { ...reg }
+      const snapshot = takeSnapshot(reg)
       requireDeclaredTabKind(target, snapshot.kind)
       return add(host.registration.registerTabKind(pluginId, snapshot))
     },
     command: (reg: CommandRegistration) => {
-      requireDeclaredCommand(target, reg.id, isSharedCommand(reg.id))
-      return add(host.registration.registerCommand(pluginId, reg))
+      const snapshot = takeSnapshot(reg)
+      requireDeclaredCommand(target, snapshot.id, isSharedCommand(snapshot.id))
+      return add(host.registration.registerCommand(pluginId, snapshot))
     },
     agentProvider: (reg: AgentProviderRegistration) => {
-      requireDeclaredAgentProvider(target, reg.id)
-      return add(host.registration.registerAgentProvider(pluginId, reg))
+      const snapshot = takeSnapshot(reg)
+      requireDeclaredAgentProvider(target, snapshot.id)
+      return add(host.registration.registerAgentProvider(pluginId, snapshot))
     },
     view: (reg: ViewRegistration) => {
       // Read once: a getter on the registration cannot answer the check and the registry differently.

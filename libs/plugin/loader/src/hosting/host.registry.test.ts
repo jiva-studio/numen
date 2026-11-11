@@ -429,32 +429,38 @@ describe('a reader opened at a selector', () => {
   })
 })
 
-describe('agent providers of different plugins', () => {
-  it('stay apart when two plugins register the same id', () => {
+describe('an agent provider id another plugin registers', () => {
+  const register = (host: ReturnType<typeof createPluginHost>, pluginId: string, name: string) => {
+    host.lifecycle.registerManifest(
+      pluginId,
+      createMockManifest(pluginId, {
+        permissions: ['vault:read'],
+        capabilities: ['ai.agent.provider'],
+      }),
+    )
+    return host.lifecycle
+      .createContext(pluginId)
+      .register.agentProvider({ id: 'agent', name, createAgent: vi.fn() })
+  }
+  const list = (host: ReturnType<typeof createPluginHost>) =>
+    host.registered.getRegisteredAgentProviders().map((one) => [one.pluginId, one.reg.name])
+
+  it('is refused, and the first plugin keeps it', () => {
     const host = createPluginHost(createDeps())
-    const register = (pluginId: string, name: string) => {
-      host.lifecycle.registerManifest(
-        pluginId,
-        createMockManifest(pluginId, {
-          permissions: ['vault:read'],
-          capabilities: ['ai.agent.provider'],
-        }),
-      )
-      return host.lifecycle
-        .createContext(pluginId)
-        .register.agentProvider({ id: 'agent', name, createAgent: vi.fn() })
-    }
-    const list = () =>
-      host.registered.getRegisteredAgentProviders().map((one) => [one.pluginId, one.reg.name])
+    register(host, 'first.plugin', 'First')
 
-    const first = register('first.plugin', 'First')
-    register('second.plugin', 'Second')
-    expect(list()).toStrictEqual([
-      ['first.plugin', 'First'],
-      ['second.plugin', 'Second'],
-    ])
+    expect(() => register(host, 'second.plugin', 'Second')).toThrowError(
+      'Plugin "second.plugin" registers the agent provider "agent", which plugin "first.plugin" already registers',
+    )
+    expect(list(host)).toStrictEqual([['first.plugin', 'First']])
+  })
 
-    first.dispose()
-    expect(list()).toStrictEqual([['second.plugin', 'Second']])
+  it('is free again once its owner disposes the registration', () => {
+    const host = createPluginHost(createDeps())
+    register(host, 'first.plugin', 'First').dispose()
+
+    register(host, 'second.plugin', 'Second')
+
+    expect(list(host)).toStrictEqual([['second.plugin', 'Second']])
   })
 })

@@ -19,7 +19,7 @@ backend/
 - `release` is the domain. `release/evaluate.go:3-6` imports `strconv` and `strings`; the rules of comparing builds are testable with no network.
 - `feed` is the adapter to the machine. It imports the domain it fills (`feed/feed.go:13`) and nothing of `service`.
 - A handler (`updater.check`, `service.go`) decodes `api.CheckRequest`, validates it into a domain value (`newCurrent`), asks the adapter, and converts the domain result into `api.Status` (`newStatus`, `newUpdate`).
-- The permission is `network:outbound` (`manifest.json:17`), the only host capability the plugin uses; it reads no vault.
+- The permission is `network:outbound` (`manifest.json:17`, consent to open external links; it does not gate the requests of the backend), the only host capability the plugin uses; it reads no vault.
 - The setting `channel` and `endpoint` are read in `SetUpdateConfig` (`service.go:151`), and the manifest declares them.
 
 Placing a new feature here: a new rule about builds goes in `release`; a new source of manifests goes in a new adapter package (or `feed`) behind `Fetcher`; a new message goes in `api` and in the fixtures of `testdata/api/`.
