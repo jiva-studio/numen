@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -80,7 +81,7 @@ func (c Config) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watch
 func (c Config) VaultWatcher() vaultport.VaultWatcher { return vaultWatcher(vaultOf(c)) }
 
 // AbsentBinding is the binding of a plugin host that runs nothing.
-func AbsentBinding() pluginport.PluginBinding { return bridge.AbsentRuntime{} }
+func AbsentBinding() pluginport.PluginBinding { return absent.Runtime{} }
 
 // NotesShowingMoves is Notes where each move of a note in the vault the window shows also reaches view, so a
 // view showing a note under its old name switches to the new name.

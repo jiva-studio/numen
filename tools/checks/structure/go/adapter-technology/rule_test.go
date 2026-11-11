@@ -15,6 +15,7 @@ import (
 func getTechnologyFreeAdapters() map[string]string {
 	return map[string]string{
 		"internal/adapter/clock": "the machine clock itself, read through the time package",
+		"internal/adapter/plugin/absent": "the stand-in of a plugin host that runs nothing: it answers unavailable and wraps no technology",
 	}
 }
 
@@ -103,8 +104,6 @@ func isDrivenAdapter(pkg *packages.Package, rel string, ports []load.PortInterfa
 	return load.GetImplementation(pkg, ports).Name != ""
 }
 
-// getAdapterFamily is the folder of the adapters that belong together, internal/adapter/<technology>, for a package nested
-// below it, and empty for any other package.
 func getAdapterFamily(rel string) string {
 	parts := strings.Split(rel, "/")
 	if len(parts) < 4 || !load.IsWithin(rel, "internal/adapter") {
@@ -113,9 +112,6 @@ func getAdapterFamily(rel string) string {
 	return strings.Join(parts[:3], "/")
 }
 
-// getSharedPlumbing lists the packages nested in an adapter family that another package of the same family imports and
-// that implement no port. They hold what the adapters of the family share, such as a lease or a null object, and
-// are no adapter of a technology themselves.
 func getSharedPlumbing(pkgs []*packages.Package, root string, ports []load.PortInterface) map[string]bool {
 	shared := map[string]bool{}
 	for _, pkg := range pkgs {

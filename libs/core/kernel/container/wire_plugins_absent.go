@@ -6,13 +6,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHost {
-	runtime, settings := bridge.AbsentRuntime{Reason: reason, Cause: cause}, bridge.AbsentSettings{}
+	runtime, settings := absent.Runtime{Reason: reason, Cause: cause}, absent.Settings{}
 	return &PluginHost{
 		Runtime: PluginRuntime{
 			Activator: runtime, PluginRetrier: runtime, PluginDiscoverer: runtime, PluginLister: runtime,

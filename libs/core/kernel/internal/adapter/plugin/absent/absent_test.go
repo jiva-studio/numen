@@ -1,4 +1,4 @@
-package bridge
+package absent
 
 import (
 	"errors"
@@ -7,9 +7,9 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func TestAbsentRuntimeAnswersUnavailableForItsReason(t *testing.T) {
+func TestRuntimeAnswersUnavailableForItsReason(t *testing.T) {
 	cause := errors.New("safe mode")
-	runtime := AbsentRuntime{Reason: plugindomain.Disabled, Cause: cause}
+	runtime := Runtime{Reason: plugindomain.Disabled, Cause: cause}
 
 	_, err := runtime.ResolveCapability("embedding")
 	var unavailable *plugindomain.UnavailableError
@@ -22,8 +22,8 @@ func TestAbsentRuntimeAnswersUnavailableForItsReason(t *testing.T) {
 	}
 }
 
-func TestAbsentRuntimeHasNoPlugin(t *testing.T) {
-	runtime := AbsentRuntime{Reason: plugindomain.NotInstalled}
+func TestRuntimeHasNoPlugin(t *testing.T) {
+	runtime := Runtime{Reason: plugindomain.NotInstalled}
 
 	if len(runtime.GetPluginInfos()) != 0 || runtime.IsPluginEnabled("ocr") || runtime.IsEnabled("ocr") {
 		t.Error("an absent runtime lists or enables a plugin")
@@ -32,7 +32,7 @@ func TestAbsentRuntimeHasNoPlugin(t *testing.T) {
 		t.Error("an absent runtime found a plugin")
 	}
 	runtime.WatchPluginConfig("ocr", func() {})()
-	if err := (AbsentSettings{}).TeardownAll(t.Context(), 0); err != nil {
+	if err := (Settings{}).TeardownAll(t.Context(), 0); err != nil {
 		t.Errorf("TeardownAll = %v", err)
 	}
 }
