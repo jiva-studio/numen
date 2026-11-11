@@ -50,7 +50,7 @@ func (c changing) search() search.Search {
 }
 
 func (c changing) create() note.Create {
-	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock())
+	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock(), note.OpenGate{})
 }
 
 func (c changing) moveDeps() note.MoveDeps {
@@ -64,7 +64,9 @@ func (c changing) move() note.Move { return note.NewMove(c.moveDeps()) }
 
 func (c changing) remove() note.Remove {
 	return note.NewRemove(
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index)
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index,
+		note.OpenGate{},
+	)
 }
 
 func (c changing) newEditLinks() note.EditLinks {
@@ -500,7 +502,9 @@ func TestWrite_RejectsStaleEdit(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
+		note.OpenGate{},
+	)
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {
@@ -532,7 +536,9 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
+		note.OpenGate{},
+	)
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {

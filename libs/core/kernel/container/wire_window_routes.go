@@ -124,8 +124,9 @@ func mountFile(w *windowWiring) {
 		file.NewCreateFolder(folderWriters(vaultOf(w.cfg)), state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
-	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes, state.Writes)
-	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &w.cases.Notes.Place.EmptyTrash)
+	changes := filewindow.NewChanges(
+		state, state.Notices, &moveFile, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash, state.Writes,
+	)
 	handler := filewindow.NewHandler(folders, changes)
 	w.server = editor.NewFileServer(
 		state,
@@ -161,21 +162,19 @@ func mountNote(w *windowWiring) {
 	state := w.state
 	notes, queries := w.cases.Notes, w.cases.Queries
 	writes := state.Writes
-	save, create := note.NewSaveProse(&notes.Edit.Write, writes, writes), note.NewCreateNote(&notes.Edit.Create, writes, writes)
-	rename := note.NewRenameNote(&notes.Place.Rename, writes, writes)
-	prose := notewindow.NewProse(state, &notes.Edit.Read, &save, &create, &rename)
+	prose := notewindow.NewProse(
+		state, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename, writes,
+	)
 	outlining := notewindow.NewOutline(
 		state,
 		query.NewGetOpeningNote(w.db.NoteQueries()),
 		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
-	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), writes, writes)
-	createRelated := note.NewCreateRelatedNote(notes.Connect.CreateInRelation, writes, writes)
+	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), writes)
 	links := notewindow.NewLinks(
-		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &createRelated, &queries.Refer.Backlinks,
+		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
 	)
-	notes.Connect = trackConnections(notes.Connect, writes, writes)
 	connections := notewindow.NewConnections(
 		state, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)

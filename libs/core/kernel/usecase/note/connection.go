@@ -34,22 +34,34 @@ type connectionEditor struct {
 	now     machineport.Clock
 	links   noteport.LinkQueries
 	names   edit.NameQueries
-	track   TrackWrites
+	gate    WriteGate
+	follow  IndexFollow
 }
 
-func newConnectionEditor(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
-) connectionEditor {
+// ConnectionDeps are what the use cases that write connections work over. A write passes Gate. Where Follow
+// is nil the index is taken to follow every write. Where Names is nil, a link names a note by its basename.
+type ConnectionDeps struct {
+	Readers vaultport.VaultReaders
+	Writers NoteWriting
+	Index   edit.IndexUpdater
+	Now     machineport.Clock
+	Links   noteport.LinkQueries
+	Names   edit.NameQueries
+	Gate    WriteGate
+	Follow  IndexFollow
+}
+
+func newConnectionEditor(d ConnectionDeps) connectionEditor {
 	return connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
-		track: NewTrackWrites(OpenGate{}, noIndexFollow{}),
+		readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, links: d.Links, names: d.Names,
+		gate: d.Gate, follow: d.Follow,
 	}
 }
 
+// run is a write of a connection. A write that reached the vault while the index did not follow is a success.
 func (e connectionEditor) run(ctx context.Context, write func(ctx context.Context) error) error {
-	isIndexOutdated, err := e.track.Execute(ctx, write)
-	if isIndexOutdated {
+	_, err := writeUnder(e.gate, func() (struct{}, error) { return struct{}{}, write(ctx) })
+	if e.follow != nil && e.follow.IsIndexOutdated(err) {
 		return nil
 	}
 	return err
@@ -236,14 +248,9 @@ type SaveConnection struct {
 	editor connectionEditor
 }
 
-// NewSaveConnection builds the use case over the vault, the index that is brought
-// index updater after a write, the link queries, and the clock. Where no name queries are given, a link
-// names a note by its basename.
-func NewSaveConnection(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
-) SaveConnection {
-	return SaveConnection{editor: newConnectionEditor(readers, writers, index, now, links, names)}
+// NewSaveConnection builds the use case over d.
+func NewSaveConnection(d ConnectionDeps) SaveConnection {
+	return SaveConnection{editor: newConnectionEditor(d)}
 }
 
 // Execute replaces the records of both notes. A side that is nil is removed from
@@ -270,13 +277,9 @@ type RemoveConnection struct {
 	editor connectionEditor
 }
 
-// NewRemoveConnection builds the use case over the same collaborators as
-// NewSaveConnection.
-func NewRemoveConnection(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
-) RemoveConnection {
-	return RemoveConnection{editor: newConnectionEditor(readers, writers, index, now, links, names)}
+// NewRemoveConnection builds the use case over d.
+func NewRemoveConnection(d ConnectionDeps) RemoveConnection {
+	return RemoveConnection{editor: newConnectionEditor(d)}
 }
 
 // Execute removes the records of the type from both notes. The empty type names the
@@ -301,13 +304,9 @@ type RemoveSide struct {
 	editor connectionEditor
 }
 
-// NewRemoveSide builds the use case over the same collaborators as
-// NewSaveConnection.
-func NewRemoveSide(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
-) RemoveSide {
-	return RemoveSide{editor: newConnectionEditor(readers, writers, index, now, links, names)}
+// NewRemoveSide builds the use case over d.
+func NewRemoveSide(d ConnectionDeps) RemoveSide {
+	return RemoveSide{editor: newConnectionEditor(d)}
 }
 
 // Execute removes the records of the type that `from` writes about `to`.
@@ -330,12 +329,9 @@ type Join struct {
 	editor connectionEditor
 }
 
-// NewJoin builds the use case over the same collaborators as NewSaveConnection.
-func NewJoin(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
-) Join {
-	return Join{editor: newConnectionEditor(readers, writers, index, now, links, names)}
+// NewJoin builds the use case over d.
+func NewJoin(d ConnectionDeps) Join {
+	return Join{editor: newConnectionEditor(d)}
 }
 
 // Execute makes `from` write `side` about `to`. The record of `to` about `from` is
@@ -367,28 +363,4 @@ func getLinkAddress(ctx context.Context, names edit.NameQueries, v domain.Vault,
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(path)}, nil
 	}
 	return edit.GetAddress(ctx, names, v.ID, path)
-}
-
-// TrackSaveConnection returns u with its writes tracked through track.
-func TrackSaveConnection(u SaveConnection, track TrackWrites) SaveConnection {
-	u.editor.track = track
-	return u
-}
-
-// TrackRemoveConnection returns u with its writes tracked through track.
-func TrackRemoveConnection(u RemoveConnection, track TrackWrites) RemoveConnection {
-	u.editor.track = track
-	return u
-}
-
-// TrackRemoveSide returns u with its writes tracked through track.
-func TrackRemoveSide(u RemoveSide, track TrackWrites) RemoveSide {
-	u.editor.track = track
-	return u
-}
-
-// TrackJoin returns u with its writes tracked through track.
-func TrackJoin(u Join, track TrackWrites) Join {
-	u.editor.track = track
-	return u
 }

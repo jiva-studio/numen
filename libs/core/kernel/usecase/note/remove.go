@@ -31,15 +31,17 @@ type Remove struct {
 	links   noteport.LinkQueries
 	queries sourceport.SourcesUnder
 	index   edit.IndexUpdater
+	gate    WriteGate
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
 // within, the links that pointed at it, what the index holds about the files
-// under it, and what updates the index for the path it left.
+// under it, and what updates the index for the path it left, and the gate a removal passes.
 func NewRemove(
 	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index edit.IndexUpdater,
+	gate WriteGate,
 ) Remove {
-	return Remove{writers: writers, links: links, queries: queries, index: index}
+	return Remove{writers: writers, links: links, queries: queries, index: index, gate: gate}
 }
 
 type RemoveResult struct {
@@ -50,7 +52,12 @@ type RemoveResult struct {
 
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
+// It fails with window.ErrClosing once the window is closing.
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+	return writeUnder(u.gate, func() (RemoveResult, error) { return u.trash(ctx, v, path) })
+}
+
+func (u Remove) trash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
 	went, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
