@@ -2,7 +2,6 @@ package settings_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
