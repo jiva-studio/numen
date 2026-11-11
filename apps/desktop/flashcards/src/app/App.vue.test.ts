@@ -5,7 +5,7 @@ import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client
 import { installCoreHandlers } from '@numen/core-client/testing'
 import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-loader'
 import type { VaultRow } from '@numen/workbench'
-import App from './App.vue'
+import { createRoot } from './createRoot'
 import { createWindow } from './window/createWindow'
 
 // jsdom draws no layout, and the palette scrolls the highlighted row into view.
@@ -165,7 +165,7 @@ describe('App', () => {
     wire.getPlugins.mockRejectedValueOnce(new Error('the window is gone'))
     wire.listVaults.mockResolvedValueOnce({ vaults: [] })
 
-    const window = mount(App)
+    const window = mount(createRoot())
     mounted.push(window)
     await flushPromises()
 
@@ -274,7 +274,7 @@ describe('App', () => {
 describe('the window over a plugin that draws the review', () => {
   /** The window drawn over the plugin, as the page draws it. */
   const mountWindow = async (listVaults?: () => Promise<readonly VaultRow[]>) => {
-    const window = mount(App, { props: { deps: createDeps(listVaults) }, attachTo: document.body })
+    const window = mount(createRoot(createDeps(listVaults)), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
     return { window }
@@ -486,7 +486,7 @@ describe('the appearance palette', () => {
     wire.getPlugins.mockResolvedValue({
       plugins: [{ id: 'org.example.themes', name: 'Sample Themes' }],
     })
-    const window = mount(App, { attachTo: document.body })
+    const window = mount(createRoot(), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
     globalThis.dispatchEvent(

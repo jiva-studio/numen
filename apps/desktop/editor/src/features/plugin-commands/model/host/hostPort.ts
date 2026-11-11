@@ -1,4 +1,4 @@
-import { shallowRef, watch } from 'vue'
+import { shallowRef, watch, type Component } from 'vue'
 import type { CommandsHost } from '@numen/plugin-loader'
 import type { CommandTarget, VaultRef } from '@/shared/model/command'
 
@@ -11,6 +11,7 @@ interface HostCommandPort {
   readonly isPaletteOpen: () => boolean
   readonly runInvocation: (id: string, target: CommandTarget, name: string) => Promise<void>
   readonly openVault: (vault: VaultRef) => Promise<void>
+  readonly getCommandIcon: (id: string) => Component | undefined
 }
 
 /**
@@ -56,6 +57,7 @@ export function createHostPort(): HostPort {
     isPaletteOpen: () => read().isPaletteOpen(),
     runInvocation: (id, target, name) => read().runInvocation(id, target, name),
     openVault: (vault) => read().openVault(vault),
+    getCommandIcon: (id) => connected.value?.getCommandIcon(id),
     connect: (port: HostCommandPort): void => {
       if (connected.value !== undefined) {
         throw new Error('The plugin host command port is connected already')

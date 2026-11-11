@@ -11,9 +11,8 @@ import { createPluginHost, type DeclaredSlotEntry, type PluginHost } from '@nume
 import {
   createCommandDeps,
   createSearchRequests,
-  PALETTE_WORDS,
+  createWindowPalette,
   runSupport,
-  useSearch,
   type NoteLookup,
   type PaletteLists,
   type SearchDeps,
@@ -26,24 +25,18 @@ import {
   type RunSupport,
 } from '@/shared/model/command'
 import type { Command } from '@/entities/command'
+import type { FileKind } from '@/entities/file'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import {
-  createCommandNoteReader,
-  createPluginCommandPort,
   createSearchMenu,
   createWindowSlots,
   useDeclaredCommands,
-  usePluginCommands,
+  watchCommandLists,
 } from '@/features/plugin-commands'
-import {
-  createCommandRuns,
-  createCommandSources,
-  createPaletteCommands,
-  createPaletteSwitching,
-} from '@/app/window/createCommands'
+import { createPluginPalette } from '@/app/window/createWindowPalettes'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
@@ -157,7 +150,6 @@ const toOptions = (options: object): ComposeOptions => options as ComposeOptions
 /** What the commands of the test window are made from. */
 interface ComposeOptions {
   readonly core: SearchDeps
-  readonly words: typeof WORDS
   readonly windowTabs: WindowTabs
   readonly getTarget: () => CommandTarget
   readonly knows: NoteLookup
@@ -174,17 +166,15 @@ interface ComposeOptions {
     choose(command: string, item: string): Promise<void>
   }
   readonly declaredCommands: ReturnType<typeof useDeclaredCommands>
-  readonly readCommandNote: ReturnType<typeof createCommandNoteReader>
+  readonly itemLists: {
+    fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
+  }
   readonly emitEvent?: ((event: string) => void) | undefined
 }
 
 function composeCommands(options: ComposeOptions, appCommands: readonly Command[]) {
   const { pluginHost, registry, declaredCommands, writeMessage, settings, windowTabs, getTarget } =
     options
-  const plugin = usePluginCommands(registry, options.readCommandNote, pluginHost, {
-    context: declaredCommands.whenContext,
-    getHandlers: () => declaredCommands.contributions.handlers.value,
-  })
   const searchRequests = createSearchRequests()
   const commandDeps = createCommandDeps({
     windowTabs: options.windowTabs,
@@ -196,46 +186,38 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     search: searchRequests.request,
     emitEvent: options.emitEvent,
   })
-  const palette = useSearch(
-    options.core,
-    { ...options.words, ...PALETTE_WORDS },
-    { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots), getTarget },
-  )
-  const sources = createCommandSources({
-    appCommands,
-    settingPalette: options.settingPalette,
-    declaredCommands,
+  const pluginPalette = createPluginPalette({
     pluginHost,
-    plugin,
-    getTarget,
-    commandDeps,
-  })
-  const commands = createPaletteCommands({
-    core: options.core,
-    words: options.words,
-    knows: options.knows,
-    getTarget,
-    paletteLists: options.paletteLists,
-    runs: options.runs,
-    sources,
-  })
-  const paletteSwitch = createPaletteSwitching({
     declaredCommands,
-    writeMessage,
-    settings,
-    commands,
-    search: palette,
-    requests: searchRequests,
-  })
-  const pluginCommands = createPluginCommandPort(pluginHost, plugin.getCommandNote)
-  const runs = createCommandRuns({
-    commands,
-    paletteSwitch,
-    pluginCommands,
+    itemLists: options.itemLists,
     commandDeps,
-    writeMessage,
+    appCommands,
     getTarget,
+    settingPalette: options.settingPalette,
+    paletteLists: options.paletteLists,
   })
+  const { search, commands, paletteSwitch, runs } = createWindowPalette({
+    commandDeps,
+    runs: options.runs,
+    getTarget,
+    writeMessage,
+    getCommands: () => pluginPalette.sources.paletteCommands.listCommands(),
+    knows: options.knows,
+    lists: pluginPalette.lists,
+    pluginCommands: pluginPalette.pluginCommands,
+    searchRequests,
+    searchOptions: { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots) },
+    getVaultList: options.core.vaults,
+  })
+  watchCommandLists(
+    {
+      declaredCommands,
+      writeMessage,
+      plugins: settings.state.plugins,
+      getCommittedSetting: settings.read.getCommittedSetting,
+    },
+    commands.palette.open,
+  )
   syncKeybindings(
     pluginHost.keybindings,
     declaredCommands.contributions.keybindings,
@@ -243,7 +225,8 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
   )
   const onKeyDown = createKeyHandler({
     windowTabs,
-    handleShortcut: (event, runApp) => pluginCommands.handleShortcut(event, getTarget, runApp),
+    getTarget,
+    handleShortcut: pluginPalette.pluginCommands.handleShortcut,
     runApp: createAppKeyRunner({
       toggleSearch: paletteSwitch.toggleSearch,
       toggleCommands: paletteSwitch.toggleCommands,
@@ -253,10 +236,10 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     }),
   })
   return {
-    palette,
+    palette: search,
     commands,
     commandDeps,
-    pluginRuns: { items: sources.items, runCommandToEnd: runs.runCommandToEnd },
+    pluginRuns: { items: pluginPalette.sources.items, runCommandToEnd: runs.runCommandToEnd },
     runChoice: runs.runChoice,
     onKeyDown,
   }
@@ -274,7 +257,6 @@ export function createRealWindow(parts: RealWindowParts) {
   const options = {
     core: createCore(),
     emitEvent: parts.emitEvent,
-    words: WORDS,
     windowTabs: {
       panes: { onKeyPress: () => false, requestClose: () => undefined },
       tabs: {
@@ -303,7 +285,7 @@ export function createRealWindow(parts: RealWindowParts) {
     pluginHost,
     settingPalette: { getCommands: () => [], choose: () => Promise.resolve() },
     declaredCommands,
-    readCommandNote: createCommandNoteReader({ fileKinds: () => Promise.resolve(new Map()) }),
+    itemLists: { fileKinds: () => Promise.resolve(new Map()) },
   }
   const noLinks = {
     tabs: [],

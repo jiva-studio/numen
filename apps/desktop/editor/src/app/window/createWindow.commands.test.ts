@@ -44,9 +44,9 @@ describe('a command run through the palette of the window', () => {
 describe('the files a plugin is provided', () => {
   it('run their commands with the dependencies of the window', async () => {
     const window = await mountWindow()
-    const { plugins } = getWindowParts(window)
+    const { pluginHost } = getWindowParts(window)
 
-    await plugins.host.pluginHost.contextHost.vault.getFiles()?.createFolder('Zoology')
+    await pluginHost.contextHost.vault.getFiles()?.createFolder('Zoology')
 
     expect(requests.folders).toStrictEqual(['Zoology'])
   })

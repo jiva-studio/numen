@@ -75,3 +75,6 @@ export function createWindow(deps: WindowDeps = {}) {
     appearance,
   }
 }
+
+/** What the component that draws the window is given. */
+export type WindowParts = ReturnType<typeof createWindow>
