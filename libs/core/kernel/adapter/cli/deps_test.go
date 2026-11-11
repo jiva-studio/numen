@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -87,8 +88,8 @@ func (d stubSession) Close() ([]string, error) {
 	if d.closes == nil {
 		return d.failures, nil
 	}
-	for i := len(d.closes.fns) - 1; i >= 0; i-- {
-		err = errors.Join(err, d.closes.fns[i]())
+	for _, closeOne := range slices.Backward(d.closes.fns) {
+		err = errors.Join(err, closeOne())
 	}
 	return d.failures, err
 }

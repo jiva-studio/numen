@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
@@ -95,8 +96,8 @@ func (s *CLISession) GetPluginCommands() cli.PluginCommands {
 // that failed, one line each.
 func (s *CLISession) Close() ([]string, error) {
 	var err error
-	for i := len(s.closers) - 1; i >= 0; i-- {
-		err = errors.Join(err, s.closers[i]())
+	for _, closeOne := range slices.Backward(s.closers) {
+		err = errors.Join(err, closeOne())
 	}
 	return listFailedTasks(s.tasks.List()), err
 }
