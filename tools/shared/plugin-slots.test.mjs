@@ -173,7 +173,7 @@ const readStringLiterals = (file) => {
   return literals
 }
 
-/** The member names of a TypeScript interface declaration in `file`. */
+/** The member names of a TypeScript interface declaration in `file`, with those of the interfaces it extends in the same file. */
 const readInterfaceFields = (file, name) => {
   const sourceFile = ts.createSourceFile(
     file,
@@ -181,14 +181,26 @@ const readInterfaceFields = (file, name) => {
     ts.ScriptTarget.Latest,
     true,
   )
-  for (const statement of sourceFile.statements) {
-    if (ts.isInterfaceDeclaration(statement) && statement.name.text === name) {
-      return statement.members
-        .map((member) => (member.name && ts.isIdentifier(member.name) ? member.name.text : ''))
-        .filter(Boolean)
+  const interfaces = new Map(
+    sourceFile.statements
+      .filter((statement) => ts.isInterfaceDeclaration(statement))
+      .map((statement) => [statement.name.text, statement]),
+  )
+  const collect = (interfaceName, seen) => {
+    const declaration = interfaces.get(interfaceName)
+    if (!declaration || seen.has(interfaceName)) {
+      return []
     }
+    seen.add(interfaceName)
+    const own = declaration.members
+      .map((member) => (member.name && ts.isIdentifier(member.name) ? member.name.text : ''))
+      .filter(Boolean)
+    const inherited = (declaration.heritageClauses ?? [])
+      .flatMap((clause) => clause.types)
+      .flatMap((type) => collect(type.expression.getText(sourceFile), seen))
+    return [...own, ...inherited]
   }
-  return []
+  return collect(name, new Set())
 }
 
 test('neither the host module nor the window names a plugin', () => {
