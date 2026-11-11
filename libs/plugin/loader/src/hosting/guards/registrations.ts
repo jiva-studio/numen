@@ -40,17 +40,17 @@ export interface RegistrationDeps extends RegistrationGuard {
   readonly slotView: (registration: SlotViewRegistration) => Disposable
 }
 
-/**
- * One copy of a registration, taken before anything is checked: a getter on the object a plugin passes
- * cannot answer the check and the host differently. The tab placement is the one nested object the host reads.
- */
 function takeSnapshot<Registration extends object>(reg: Registration): Registration {
   const snapshot: Registration & { placement?: object } = { ...reg }
   if (snapshot.placement) snapshot.placement = { ...snapshot.placement }
   return snapshot
 }
 
-/** The registrations of a plugin, tracked; the permissions they need come from the table of the services. */
+/**
+ * The registrations of a plugin, tracked; the permissions they need come from the table of the services.
+ * Each registration is copied once before it is checked, so a getter on it cannot answer the check and the
+ * host differently; the tab placement is the one nested object the host reads.
+ */
 export function createRegistrations(
   pluginId: string,
   host: PluginContextHost,

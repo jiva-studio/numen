@@ -68,7 +68,10 @@ describe('RED UNTIL FIXED: a registration whose getter answers differently on ea
       dispose: vi.fn(),
     }))
     const host = createTestContextHost({ registration: { registerAgentProvider: registered } })
-    const manifest = createMockManifest('md.numen.sample', { capabilities: ['ai.agent.provider'] })
+    const manifest = createMockManifest('md.numen.sample', {
+      permissions: ['vault:read'],
+      capabilities: ['ai.agent.provider'],
+    })
     const context = createPluginContext('md.numen.sample', host, manifest)
     const readId = createFlippingId('sample-agent', 'other-agent')
 
