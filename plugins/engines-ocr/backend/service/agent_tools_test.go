@@ -116,6 +116,8 @@ type toolFixture struct {
 	recognitions *recognition.Recognition
 	launcher     *launch.Launcher
 	registry     *tools.Registry
+	// ended holds the tasks that ended before a wait asked for them.
+	ended map[string]bool
 }
 
 // chemistryScan is the scan stored only in the vault Chemistry.
@@ -141,6 +143,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 	chemTexts.File(chemistryScan, raw)
 
 	s := &toolFixture{
+		ended: map[string]bool{},
 		vault: vault, texts: texts, chemistry: chemistry, chemTexts: chemTexts,
 		queue: recordingQueue{Queue: hosttest.NewQueue(), doneCh: make(chan string, 64), calls: &queueCalls{}},
 		recogniser: blockingRecogniser{
@@ -226,12 +229,10 @@ func (s *toolFixture) waitStarted(t *testing.T) {
 func (s *toolFixture) waitFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
-	for {
+	for !s.ended[id] {
 		select {
 		case got := <-s.queue.doneCh:
-			if got == id {
-				return
-			}
+			s.ended[got] = true
 		case <-deadline:
 			t.Fatalf("the task %s did not end within %v; tasks %+v", id, workDeadline, s.queue.ListTasks())
 		}
