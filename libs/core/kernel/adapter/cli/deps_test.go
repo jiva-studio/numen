@@ -62,7 +62,6 @@ type closeList struct{ fns []func() error }
 
 func (l *closeList) add(closer func() error) { l.fns = append(l.fns, closer) }
 
-// session is d as the session a run is given.
 func (d stubSession) session() cli.Session {
 	return cli.Session{
 		OpenVaults: d.OpenVaults, OpenIndexed: d.OpenIndexed, GetPluginCommands: d.GetPluginCommands, Close: d.Close,
@@ -177,7 +176,6 @@ func (p vaultParts) build() cli.Vaults {
 	}
 }
 
-// indexedOver is what renames, forgets and erases a vault over rows.
 func (p vaultParts) indexedOver(rows vaultport.VaultRepository) cli.Indexed {
 	find := registry.NewFind(p.ports.Lookup).Execute
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)

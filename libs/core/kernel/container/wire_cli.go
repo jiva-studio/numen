@@ -57,7 +57,6 @@ func openCLIVaults(c Config) (cli.Vaults, error) {
 	}, nil
 }
 
-// openCLIIndexed opens the index, which closeCLI closes, and returns the use cases over it.
 func openCLIIndexed(r *cliRun, ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
 	c := r.c
 	c.ShouldRebuildIndex = options.Rebuild
@@ -127,7 +126,6 @@ func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
 	}
 }
 
-// openCLIEmbedder opens the embedder of the plugins a, which closeCLI closes, and returns why there is none.
 func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (embeddingport.Embedder, error) {
 	embedder, closeEmbedder, why := searchEmbedder(a.search, ctx)
 	if closeEmbedder != nil {
