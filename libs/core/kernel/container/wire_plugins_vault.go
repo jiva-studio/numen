@@ -103,7 +103,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
 			Index:       index,
-			Locks:       hold.NewLocks(writeLocks(c.vault), clock.System{}, hold.LockHold),
+			Locks:       hold.NewLocks(writeLocks(c.vault), hold.LockHold),
 		},
 		hostvault.Lookups{
 			Notes:      db.NoteQueries(),
