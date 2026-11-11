@@ -73,14 +73,14 @@ function isSameWord(a, b) {
 
 /** How many words of a comment, stop words left out, the names already hold. */
 export function countRestatement(comment, names) {
-  const known = new Set(names.flatMap((name) => splitWords(name).map(stem)))
+  const nameWords = new Set(names.flatMap((name) => splitWords(name).map(stem)))
   let matched = 0
   let total = 0
   for (const word of splitWords(comment)) {
     if (STOP_WORDS.has(word)) continue
     total += 1
     const stemmed = stem(word)
-    if ([...known].some((name) => isSameWord(stemmed, name))) matched += 1
+    if ([...nameWords].some((name) => isSameWord(stemmed, name))) matched += 1
   }
   return { matched, total, isRestating: total > 0 && matched * 100 >= RESTATE_THRESHOLD_PERCENT * total }
 }

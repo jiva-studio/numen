@@ -93,12 +93,12 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 	documented := getDocumentedStructs(file)
 	var findings []Finding
 	var cuts []span
-	done := map[*ast.CommentGroup]bool{}
+	reported := map[*ast.CommentGroup]bool{}
 	report := func(group *ast.CommentGroup, message string) {
-		if group == nil || done[group] {
+		if group == nil || reported[group] {
 			return
 		}
-		done[group] = true
+		reported[group] = true
 		reported := false
 		for _, c := range group.List {
 			if directive.MatchString(c.Text) {
@@ -219,12 +219,12 @@ func removeSpans(src []byte, cuts []span) []byte {
 // previous declaration and this one that starts with the name, even with a blank line between.
 func reportRestating(fset *token.FileSet, file *ast.File, report func(*ast.CommentGroup, string)) {
 	pkg := file.Name.Name
-	seen := map[*ast.CommentGroup]bool{}
+	checked := map[*ast.CommentGroup]bool{}
 	check := func(group *ast.CommentGroup, kind, name string, names []string) {
-		if group == nil || seen[group] || hasMarker(group) {
+		if group == nil || checked[group] || hasMarker(group) {
 			return
 		}
-		seen[group] = true
+		checked[group] = true
 		text := stripComment(group)
 		if matched, total, ok := isRestating(text, names); ok {
 			report(group, fmt.Sprintf("doc comment on %s %s restates its name and signature (%d of %d words); say the fact the name and type cannot show", kind, name, matched, total))

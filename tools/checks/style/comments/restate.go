@@ -89,10 +89,10 @@ func isSameWord(commentWord, nameWord string) bool {
 
 // restatement counts the words of a comment, stop words left out, and how many of them the names already hold.
 func restatement(comment string, names []string) (matched, total int) {
-	known := map[string]bool{}
+	nameWords := map[string]bool{}
 	for _, name := range names {
 		for _, word := range splitWords(name) {
-			known[stem(word)] = true
+			nameWords[stem(word)] = true
 		}
 	}
 	for _, word := range splitWords(comment) {
@@ -101,7 +101,7 @@ func restatement(comment string, names []string) (matched, total int) {
 		}
 		total++
 		stemmed := stem(word)
-		for name := range known {
+		for name := range nameWords {
 			if isSameWord(stemmed, name) {
 				matched++
 				break
