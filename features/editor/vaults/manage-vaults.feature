@@ -42,5 +42,5 @@ Feature: Manage vaults
       When the person runs the command "Remove vault from list" with:
         | Search vaults | Test |
         | Confirm       | Remove |
-      Then the task list has the failed task "the open vault cannot be removed"
+      Then the window shows the message "the open vault cannot be removed"
       And the window has the vault "Test"

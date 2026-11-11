@@ -58,7 +58,7 @@ Feature: Import link
       Given the person imports the link "http://numen.dev/tides"
       When the person runs the command "Import link" with:
         | Web address | tides |
-      Then the task list has the failed task "not a web address"
+      Then the window shows the message "not a web address"
       And the vault has the following links:
         | address                |
         | http://numen.dev/tides |
