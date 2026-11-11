@@ -60,3 +60,11 @@ func findCodexIn(places []string, customPath ...string) string {
 	}
 	return "codex"
 }
+
+// Installation checks for the Codex CLI on this machine.
+type Installation struct{}
+
+// IsInstalled reports whether the CLI is runnable, at path when given, or where it is found.
+func (Installation) IsInstalled(path string) bool {
+	return IsCodexInstalled(path)
+}

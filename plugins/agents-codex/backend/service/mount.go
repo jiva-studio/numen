@@ -11,7 +11,7 @@ import (
 func Mount(s *server.Server) error {
 	agent := newAgentServer(true)
 	s.OnClose(agent.Close)
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.applyConfig(values) })
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.settings.Apply(values) })
 	s.Register(agentrun.NewHandler(agent, agent, s.HandlerOptions()...))
 	return nil
 }

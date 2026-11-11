@@ -175,3 +175,17 @@ func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *age
 	}
 	reportExit(r, scanErr, waitErr, stderr.String())
 }
+
+// Ask runs req and sends the steps of the run. A run that cannot start ends with a stopped step.
+func (r *Runner) Ask(ctx context.Context, reg *agentrun.Registry, req *agentrun.Request, customPath string, send func(*agentrun.Response) error) error {
+	if err := send(&agentrun.Response{Step: &agentrun.ModelStartedStep{}}); err != nil {
+		return err
+	}
+	work, err := r.Start(ctx, reg, req, customPath)
+	if err != nil {
+		return send(&agentrun.Response{
+			Step: &agentrun.StoppedStep{Stopped: err.Error()},
+		})
+	}
+	return agentrun.ForwardResponses(ctx, work, send)
+}
