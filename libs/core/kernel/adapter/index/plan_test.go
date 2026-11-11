@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-// getStatements reads the SQL files that sit beside the repository in the folder.
 func getStatements(folder string) map[string]string {
 	return sqlfile.Load(os.DirFS(folder), "sql").All()
 }

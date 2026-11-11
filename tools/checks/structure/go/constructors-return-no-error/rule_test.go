@@ -11,7 +11,6 @@ import (
 	"testing"
 )
 
-// listFallibleConstructors lists the exported functions of a file named New... that answer with an error.
 func listFallibleConstructors(fset *token.FileSet, file *ast.File) []string {
 	var found []string
 	for _, declaration := range file.Decls {
@@ -28,8 +27,6 @@ func listFallibleConstructors(fset *token.FileSet, file *ast.File) []string {
 	return found
 }
 
-// getFallibleConstructors walks the Go files under the roots, leaving out tests and generated files, and lists
-// each constructor that answers with an error, with the path of its file.
 func getFallibleConstructors(t *testing.T, roots ...string) (findings []string, files int) {
 	t.Helper()
 	for _, root := range roots {

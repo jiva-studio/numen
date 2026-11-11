@@ -64,7 +64,6 @@ func (s *Services) SetPluginVault(access *vault.Access) {
 // GetPluginVault returns the vault exposed to plugins, or nil.
 func (s *Services) GetPluginVault() *vault.Access { return s.get().access }
 
-// SetPluginTexts sets the text versions the plugins work through the host.
 func (s *Services) SetPluginTexts(texts TextVersions) {
 	s.change(func(set *lentSet) { set.texts = texts })
 }
@@ -85,7 +84,6 @@ func (s *Services) SetPluginVaultList(list vault.List) {
 	s.change(func(set *lentSet) { set.vaultList = list })
 }
 
-// GetPluginVaultList returns the list of vaults exposed to plugins, or nil.
 func (s *Services) GetPluginVaultList() vault.List { return s.get().vaultList }
 
 // SetPluginSearch sets the search index and the search floor the plugins work through the host.
