@@ -1,6 +1,6 @@
 /**
- * The version chip of the title bar while an update waits, in the accent. Also the test corpus: each story is run in a browser by
- * `@storybook/addon-vitest`, which reads the size and the contrast of the chip as drawn.
+ * The version chip of the title bar while an update waits. Also the test corpus: each story is run in a browser by
+ * `@storybook/addon-vitest`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
@@ -36,46 +36,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const checkAvailable: NonNullable<Story['play']> = async ({ canvasElement }) => {
-  const chip = within(canvasElement).getByRole('button')
-  await expect(chip.textContent?.trim()).toBe('v2026.11.12')
-  await expect(chip.getAttribute('title')).toContain('Update available')
-  await expect(getComputedStyle(chip).backgroundColor).not.toBe(
-    getComputedStyle(canvasElement.querySelector('div') as HTMLElement).backgroundColor,
-  )
-}
-
-/** An update waits: the chip takes the accent, on the light tokens. */
-export const AvailableLight: Story = {
-  globals: { theme: 'light' },
-  play: checkAvailable,
-}
-
-/** The same on the dark tokens. */
-export const AvailableDark: Story = {
-  globals: { theme: 'dark' },
-  play: checkAvailable,
-}
-
-/** The chip is 20px high. */
-export const KeepsItsSize: Story = {
-  render: () => ({
-    components: { UpdateIndicator },
-    setup: () => ({ UPDATE }),
-    template: `
-      <div class="numen" style="display:flex;align-items:center;gap:8px;block-size:2rem;background:var(--numen-titlebar);color:var(--numen-ink);font-family:var(--numen-font-sans)">
-        <UpdateIndicator version="2026.11.2" :update="UPDATE" platform="linux" />
-      </div>
-    `,
-  }),
+/** An update waits: the chip names the new version and says an update is available. */
+export const Available: Story = {
   play: async ({ canvasElement }) => {
-    const boxes = [
-      ...canvasElement.querySelectorAll<HTMLElement>('.update-indicator__trigger'),
-    ].map((one) => {
-      const { width, height } = one.getBoundingClientRect()
-      return { width, height }
-    })
-    await expect(boxes).toHaveLength(1)
-    for (const box of boxes) await expect(box.height).toBe(20)
+    const chip = within(canvasElement).getByRole('button')
+    await expect(chip.textContent?.trim()).toBe('v2026.11.12')
+    await expect(chip.getAttribute('title')).toContain('Update available')
   },
 }

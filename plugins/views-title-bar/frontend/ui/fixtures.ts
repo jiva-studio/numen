@@ -1,7 +1,4 @@
-/** Vault names that are awkward on purpose, and the globals of a story drawn dark. Not shipped. */
-
-/** The globals a story carries to be drawn in the dark set of tokens. */
-export const DARK = { theme: 'dark' } as const
+/** Vault names that are awkward on purpose. Not shipped. */
 
 export const RUSSIAN =
   'В сарае на краю участка лежат лопаты, лейки и мешок с семенами. Ключ от ' +

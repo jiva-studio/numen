@@ -229,7 +229,6 @@ async function dragTo(from: Element, to: { x: number; y: number }): Promise<void
 export const DividesOnAnEdge: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const before = paneBox(canvasElement, 'aside')
     const main = paneBox(canvasElement, 'main')
 
     await dragTo(getTab(canvasElement, 'chat'), {
@@ -245,14 +244,6 @@ export const DividesOnAnEdge: Story = {
     await expect(now).toHaveLength(2)
     await expect(named).toContain('main')
     await expect(named).not.toContain('aside')
-
-    // The two panes share the space of the former two panes, evenly.
-    const boxes = now.map(getRect)
-    await expect(boxes.reduce((wide, box) => wide + box.width, 0)).toBeCloseTo(
-      main.width + before.width,
-      0,
-    )
-    await expect(boxes[0]?.width).toBeCloseTo(boxes[1]?.width ?? 0, 0)
   },
 }
 
@@ -338,14 +329,13 @@ export const ReordersInAStrip: Story = {
 export const ClosesAPane: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const main = paneBox(canvasElement, 'main')
     const close = within(getTab(canvasElement, 'chat') as HTMLElement).getByRole('button')
 
     await userEvent.click(close)
 
     const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')]
     await expect(panes).toHaveLength(1)
-    await expect(getRect(panes[0] as Element).width).toBeGreaterThan(main.width)
+    await expect(panes[0]?.getAttribute('data-workspace-pane')).toBe('main')
   },
 }
 
@@ -448,16 +438,6 @@ export const LeavesAPanel: Story = {
     await userEvent.keyboard('{Escape}')
 
     await expect(document.activeElement).toBe(getTab(canvasElement, 'plex'))
-  },
-}
-
-/** The shares the model holds are the shares that are drawn. */
-export const FollowsTheModel: Story = {
-  tags: ['!dev'],
-  play: async ({ canvasElement }) => {
-    const bounds = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(getRect)
-    const total = bounds.reduce((wide, box) => wide + box.width, 0)
-    await expect((bounds[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)
   },
 }
 

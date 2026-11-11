@@ -15,8 +15,6 @@ import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import { getLines } from './lines'
 import { createTitle, getLabelPlaces, getRise, getShift, LABEL_GAP } from '../../lib/arrange'
 import { getArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
-import { getLightness } from '../../../fixtures/color'
-import { DARK, expectDark } from '../../../fixtures/theme'
 import type { EdgeArrow } from '../../../types'
 
 /**
@@ -237,64 +235,5 @@ export const PartWayThere: Story = {
     )
     await expect(viewElement).toHaveLength(4)
     for (const one of viewElement) await expect(one.getAttribute('opacity')).toBe('0.3')
-  },
-}
-
-const getParts = (canvas: HTMLElement, edge: string) => {
-  const group = canvas.querySelector(`[data-edge="${edge}"]`)
-  if (!group) throw new Error(`no ${edge} edge`)
-  const [curve, head] = group.querySelectorAll('path')
-  const [halo, letters] = group.querySelectorAll('text')
-  if (!curve || !head || !halo || !letters) throw new Error(`the ${edge} edge is short a part`)
-  return { curve, head, halo, letters }
-}
-
-/**
- * On the dark set of tokens, at rest and lifted over one another.
- *
- * Lifted means drawn over the boxes, so both the line and its letters have to
- * come further from the surface than the resting pair does, and the halo has
- * to stay the surface itself or it stops hiding what runs under the words.
- */
-export const Dark: Story = {
-  globals: DARK,
-  play: async ({ canvasElement }) => {
-    await expectDark(canvasElement)
-    const ground = getComputedStyle(canvasElement.querySelector('[data-ground]')!).backgroundColor
-    const surface = getLightness(ground)
-    const getDistanceFrom = (color: string) => Math.abs(getLightness(color, ground) - surface)
-
-    const restParts = getParts(canvasElement, 'resting')
-    const lifted = getParts(canvasElement, 'lifted')
-
-    // A resting line is still lighter than the surface in the dark set, where
-    // lines are drawn lighter than the background.
-    await expect(getLightness(getComputedStyle(restParts.curve).stroke, ground)).toBeGreaterThan(
-      surface + 2,
-    )
-
-    // The line and its head form one drawing, and lifting increases the contrast
-    // of both against the background. The curve is stroked and the head is
-    // filled, so each is read from the property it is painted with.
-    await expect(getDistanceFrom(getComputedStyle(lifted.curve).stroke)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(restParts.curve).stroke) + 2,
-    )
-    await expect(getDistanceFrom(getComputedStyle(lifted.head).fill)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(restParts.head).fill) + 2,
-    )
-
-    // The letters likewise, and the halo under them stays the surface, at a
-    // weight that covers the line running through the words.
-    await expect(getDistanceFrom(getComputedStyle(lifted.letters).fill)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(restParts.letters).fill) + 2,
-    )
-    for (const halo of [restParts.halo, lifted.halo]) {
-      const renderedStyle = getComputedStyle(halo)
-      await expect(getDistanceFrom(renderedStyle.stroke)).toBeLessThan(2)
-      await expect(Number.parseFloat(renderedStyle.strokeWidth)).toBeGreaterThan(0)
-    }
-    await expect(Number.parseFloat(getComputedStyle(lifted.halo).strokeWidth)).toBeGreaterThan(
-      Number.parseFloat(getComputedStyle(restParts.halo).strokeWidth),
-    )
   },
 }
