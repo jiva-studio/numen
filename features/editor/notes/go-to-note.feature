@@ -11,12 +11,12 @@ Feature: Go to note
 
   Scenario: The note is opened by its title
     When the person runs the command "Go to note" with:
-      | Note | Entropy |
+      | Search notes | Entropy |
     Then the note tab at "notes/Entropy.md" is active
 
   Scenario: The note is shown in the plex with its parent
     Given the person runs the command "Go to note" with:
-      | Note | Entropy |
+      | Search notes | Entropy |
     When the person runs the command "Show note in plex"
     Then the plex has the focus note titled "Entropy"
     And the plex has the parent note titled "Thermodynamics"

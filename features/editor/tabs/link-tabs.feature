@@ -10,7 +10,7 @@ Feature: Link tabs
     And the application "editor" starts
     And the person opens the note titled "Weir notes"
     And the person runs the command "Link with tab" on the tab titled "Files" with:
-      | Item | Weir notes |
+      | Search | Weir notes |
     When the person opens the file at "notes/Flume notes.md"
     Then the tab at "notes/Flume notes.md" is active
     And the tab titled "Weir notes" is not open

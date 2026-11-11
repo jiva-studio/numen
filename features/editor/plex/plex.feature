@@ -49,7 +49,7 @@ Feature: Plex
         | path             | text                                                                     |
         | notes/Entropy.md | # Entropy\n\nA measure of uncertainty. To Jaynes it is a property of the description. |
       When the person runs the command "Go to note" with:
-        | Note | Entropy |
+        | Search notes | Entropy |
       And the person runs the command "Show note in plex"
       Then the plex has the focus note titled "Entropy"
 
@@ -63,7 +63,7 @@ Feature: Plex
       And the person opens the note titled "Weir notes"
       And the person runs the command "Show note in plex" on the note tab titled "Thermodynamics"
       And the person runs the command "Link with tab" on the Plex tab titled "Thermodynamics" with:
-        | Item | Weir notes |
+        | Search | Weir notes |
       When the person clicks the note titled "Entropy" in the plex
       Then the tab at "notes/Entropy.md" is active
       And the tab titled "Weir notes" is not open

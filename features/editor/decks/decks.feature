@@ -14,20 +14,20 @@ Feature: Decks
 
     Scenario: A deck is made at the top
       When the person runs the command "Create deck" with:
-        | Name | Rivers |
+        | Title | Rivers |
       Then the Deck tab titled "Rivers" is active
       And the vault contains the file at "Rivers.md"
       And the Files tab titled "Files" has "Rivers.md"
 
     Scenario: A deck is made in a folder
       When the person runs the command "Create deck" on the folder at "Glaciers" with:
-        | Name | Moraines |
+        | Title | Moraines |
       Then the vault contains the file at "Glaciers/Moraines.md"
       And the Deck tab at "Glaciers/Moraines.md" is active
 
     Scenario: A card model is made in a folder
       When the person runs the command "Create card model" on the folder at "Glaciers" with:
-        | Name | Ice cores |
+        | Title | Ice cores |
       Then the vault contains the file at "Glaciers/Ice cores.md"
       And the Card Model tab at "Glaciers/Ice cores.md" is active
 

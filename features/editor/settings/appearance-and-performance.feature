@@ -9,19 +9,19 @@ Feature: Appearance and performance settings
 
     Scenario: The performance profile is kept
       When the person runs the command "Performance profile" with:
-        | Item | Eco |
+        | Performance profile | Eco |
       And the application "editor" restarts
       Then the setting "Performance profile" is "Eco"
 
     Scenario: Dark is kept
       When the person runs the command "Light or dark" with:
-        | Item | Dark |
+        | Light or dark | Dark |
       And the application "editor" restarts
       Then the setting "Light or dark" is "Dark"
 
     Scenario: A theme is kept
       When the person runs the command "Theme" with:
-        | Item | Dracula |
+        | Theme | Dracula |
       And the application "editor" restarts
       Then the setting "Theme" is "Dracula"
 

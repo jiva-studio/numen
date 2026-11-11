@@ -15,7 +15,7 @@ Feature: Plex headings
     Then the plex has the heading "First law" under the note titled "Heat"
 
   Scenario: The headings of a note are left out
-    Given the person runs the command "Nest headings under notes" with:
-      | Item | Off |
+    Given the person runs the command "Plex Graph: Nest headings under notes" with:
+      | Nest headings under notes | Off |
     When the person hovers over the note titled "Heat" in the plex
     Then the plex does not have the heading "First law" under the note titled "Heat"
