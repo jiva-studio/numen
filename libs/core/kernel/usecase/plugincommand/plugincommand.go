@@ -33,10 +33,11 @@ var (
 
 // Commands is the scenarios over the commands the plugins declare.
 type Commands struct {
-	List         List
-	ContentTypes ContentTypes
-	Listing      ListCommands
-	Run          Run
+	List       List
+	Listing    ListCommands
+	Run        Run
+	RunCommand RunCommand
+	ListItems  ListItems
 }
 
 // NewCommands makes the scenarios over the commands and the backends that run them, which may be nothing, the table that gives a
@@ -48,12 +49,12 @@ func NewCommands(
 ) Commands {
 	conditions := when.NewConditions()
 	list, contentTypes := List{commands: commands, conditions: conditions}, ContentTypes{types: types}
+	commandRun := Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions}
 	return Commands{
-		List:         list,
-		ContentTypes: contentTypes,
-		Listing:      ListCommands{list: list, types: contentTypes},
-		Run:          Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions},
-	}
+		List:    list,
+		Listing: ListCommands{list: list, types: contentTypes},
+		Run:     commandRun,
+	}.WithVersions(nil)
 }
 
 // List lists the commands the enabled plugins declare.

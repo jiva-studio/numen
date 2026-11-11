@@ -62,18 +62,21 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		http.Error(w, "not a file of a plugin", http.StatusBadRequest)
 		return
 	}
-	target, ok := l.files.findVault(vaultID)
-	if !ok {
-		http.Error(w, errNoVaultNamed, http.StatusNotFound)
-		return
-	}
-	if l.files.openPluginFile == nil {
+	if l.files.open == nil {
 		refuse(w, errNoVault)
 		return
 	}
-	opened, err := l.files.openPluginFile.Execute(r.Context(), target, pluginID, path)
+	opened, err := l.files.open.ExecutePluginFile(r.Context(), l.files.state.GetCurrentVault(), vaultID, pluginID, path)
+	if errors.Is(err, file.ErrNoVaultNamed) {
+		http.Error(w, errNoVaultNamed, http.StatusNotFound)
+		return
+	}
 	if errors.Is(err, fs.ErrNotExist) {
 		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	if errors.Is(err, file.ErrNoPluginFiles) {
+		refuse(w, errNoVault)
 		return
 	}
 	if err != nil {
@@ -92,8 +95,8 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 	w.Header().Set("Cache-Control", immutable)
 	w.Header().Set("Content-Security-Policy", pluginPagePolicy(frames))
 	w.Header().Set("Referrer-Policy", pluginPageReferrer)
-	if named := getMediaType(l.files.mediaTypes, path); named != "" {
-		w.Header().Set("Content-Type", named)
+	if opened.MediaType != "" {
+		w.Header().Set("Content-Type", opened.MediaType)
 	}
 	http.ServeContent(w, r, path, time.Time{}, opened.Body)
 }

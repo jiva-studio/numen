@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -50,7 +48,7 @@ type Closer interface {
 
 // Importer copies files dropped onto the window into a folder of the vault.
 type Importer interface {
-	Execute(ctx context.Context, v domain.Vault, into string, handles []string) (vaults.ImportResult, error)
+	Execute(ctx context.Context, v domain.Vault, into string, paths []string)
 }
 
 // Lifecycle is what runs the window from its start to its close.
@@ -202,44 +200,11 @@ func (o *Installation) Report(messages []string) {
 	}
 }
 
-// importingFiles is what a drop is called in the list of what is being done.
-const importingFiles = "import files"
-
 // Imports copies files dropped onto the window into a folder of the vault; the
 // root is the empty path.
 // It runs where the drop reached the application, off the page's thread, and
 // returns no value: results go to all listeners.
 // The watcher does not report images or archives, so Imports names what arrived itself.
 func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
-	state := o.State
-	if len(paths) == 0 {
-		return
-	}
-	showing := state.GetCurrentVault()
-	if showing.ID == "" {
-		return
-	}
-	if !state.Writes.BeginWrite() {
-		return
-	}
-	defer state.Writes.FinishWrite()
-
-	pos := work.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
-	state.Window.AddTask(pos)
-
-	imported, err := o.imports.Execute(ctx, showing, into, paths)
-	if direct := imported.DirectChildren(into); len(direct) > 0 {
-		state.Notices.ChangeEvents.publish(window.Change{Paths: direct})
-	}
-	if err != nil {
-		pos.Error = err.Error()
-		state.Window.AddTask(pos)
-		return
-	}
-	if failureText := imported.DescribeFailures(); failureText != "" {
-		pos.Error = failureText
-		state.Window.AddTask(pos)
-		return
-	}
-	state.Window.RemoveTask(pos.ID)
+	o.imports.Execute(ctx, o.State.GetCurrentVault(), into, paths)
 }

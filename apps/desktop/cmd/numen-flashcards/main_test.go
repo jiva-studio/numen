@@ -88,7 +88,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 		t.Error("the page forwards no services")
 	}
 	for name, wired := range map[string]any{
-		"indexed": api.IsVaultIndexed,
+		"indexed": api.Ensure,
 		"window":  api.Window,
 		"links":   api.ResolveLinks,
 	} {

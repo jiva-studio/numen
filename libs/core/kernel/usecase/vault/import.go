@@ -3,61 +3,14 @@ package vault
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// ImportFailure is one file that stayed outside the vault, by the name it
-// carries on this machine and by what stopped it.
-type ImportFailure struct {
-	Name string
-	Why  error
-}
-
-// ImportResult is what a drop came to: what the vault now holds, and what it
-// does not.
-type ImportResult struct {
-	Imported []string
-	Errors   []ImportFailure
-}
-
-// namedInAFailureText is how many of the files that stayed outside are named
-// before the rest are counted.
-const namedInAFailureText = 3
-
-// DirectChildren returns the imported paths that sit directly in the folder
-// into; the root is the empty path.
-func (r ImportResult) DirectChildren(into string) []string {
-	children := make([]string, 0, len(r.Imported))
-	for _, imported := range r.Imported {
-		if path.Dir(imported) == into || (into == "" && !strings.Contains(imported, "/")) {
-			children = append(children, imported)
-		}
-	}
-	return children
-}
-
-// DescribeFailures returns one line naming the first files that stayed outside
-// and counting the rest; it is empty when nothing failed.
-func (r ImportResult) DescribeFailures() string {
-	if len(r.Errors) == 0 {
-		return ""
-	}
-	messages := make([]string, 0, namedInAFailureText)
-	for _, one := range r.Errors[:min(len(r.Errors), namedInAFailureText)] {
-		messages = append(messages, fmt.Sprintf("%s: %v", one.Name, one.Why))
-	}
-	if rest := len(r.Errors) - len(messages); rest > 0 {
-		messages = append(messages, fmt.Sprintf("and %d more", rest))
-	}
-	return strings.Join(messages, "; ")
-}
 
 // Import copies files from this machine into a folder of the vault.
 //
@@ -82,16 +35,16 @@ func (u Import) Execute(
 	v domain.Vault,
 	into string,
 	handles []string,
-) (ImportResult, error) {
+) (vaultdomain.ImportResult, error) {
 	if len(handles) == 0 {
-		return ImportResult{}, nil
+		return vaultdomain.ImportResult{}, nil
 	}
 	writer, err := u.writers.OpenFolderWriter(v)
 	if err != nil {
-		return ImportResult{}, err
+		return vaultdomain.ImportResult{}, err
 	}
 
-	var result ImportResult
+	var result vaultdomain.ImportResult
 
 	for _, handle := range handles {
 		if err := ctx.Err(); err != nil {
@@ -99,7 +52,7 @@ func (u Import) Execute(
 		}
 		name := u.files.GetName(handle)
 		if err := u.bring(ctx, writer, v, handle, path.Join(into, name), &result); err != nil {
-			result.Errors = append(result.Errors, ImportFailure{Name: name, Why: err})
+			result.Errors = append(result.Errors, vaultdomain.ImportFailure{Name: name, Why: err})
 		}
 	}
 	return result, nil
@@ -110,7 +63,7 @@ func (u Import) bring(
 	writer vaultport.FolderWriter,
 	v domain.Vault,
 	from, to string,
-	result *ImportResult,
+	result *vaultdomain.ImportResult,
 ) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -135,7 +88,7 @@ func (u Import) importFolder(
 	writer vaultport.FolderWriter,
 	v domain.Vault,
 	from, to string,
-	result *ImportResult,
+	result *vaultdomain.ImportResult,
 ) error {
 	// would be copied to.
 	if u.files.HasHandle(from, v.Path) {
@@ -151,14 +104,14 @@ func (u Import) importFolder(
 	}
 	for _, one := range entries {
 		if err := u.bring(ctx, writer, v, one.Handle, path.Join(to, one.Name), result); err != nil {
-			result.Errors = append(result.Errors, ImportFailure{Name: one.Name, Why: err})
+			result.Errors = append(result.Errors, vaultdomain.ImportFailure{Name: one.Name, Why: err})
 		}
 	}
 	return nil
 }
 
 func (u Import) importFile(
-	ctx context.Context, writer vaultport.FolderWriter, from, to string, result *ImportResult,
+	ctx context.Context, writer vaultport.FolderWriter, from, to string, result *vaultdomain.ImportResult,
 ) (err error) {
 	file, err := u.files.Open(ctx, from)
 	if err != nil {

@@ -83,13 +83,15 @@ func (h *Prose) CreateNote(
 	if err != nil {
 		return nil, err
 	}
-	links, err := h.addresses.getLinks(ctx, r.Msg.GetLinks())
+	links, err := newNamedLinks(r.Msg.GetLinks())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Links: links}
+	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Named: links}
 	made, indexOutdated, err := h.create.Execute(ctx, showing, creating)
 	switch {
+	case errors.Is(err, note.ErrInvalidLink):
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	case errors.Is(err, windowdomain.ErrClosing):
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	case errors.Is(err, domain.ErrNoFreeName):
@@ -122,19 +124,17 @@ func (h *Links) WriteLink(
 	if err != nil {
 		return nil, err
 	}
-	link, err := h.addresses.toDomainLink(ctx, r.Msg.GetLink())
+	link, err := newNamedLink(r.Msg.GetLink())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
-	// at the moment it is made.
-	if _, err := h.editLinks.Add(
-		ctx, showing, r.Msg.GetPath(), domain.FileStat{}, link,
-	); err != nil {
+	if err := h.writeLink.Execute(ctx, showing, r.Msg.GetPath(), link); err != nil {
+		switch {
+		case errors.Is(err, note.ErrInvalidLink):
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		case errors.Is(err, windowdomain.ErrClosing):
+			return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+		}
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -215,13 +215,10 @@ func (h *Links) ResolveAddresses(
 	return connect.NewResponse(out), nil
 }
 
-func (a *Addresses) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
-	if len(links) == 0 {
-		return nil, nil
-	}
-	out := make([]domain.Link, 0, len(links))
+func newNamedLinks(links []*v1.Link) ([]note.NamedLink, error) {
+	out := make([]note.NamedLink, 0, len(links))
 	for _, l := range links {
-		link, err := a.toDomainLink(ctx, l)
+		link, err := newNamedLink(l)
 		if err != nil {
 			return nil, err
 		}
@@ -230,29 +227,19 @@ func (a *Addresses) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Li
 	return out, nil
 }
 
-func (a *Addresses) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
+func newNamedLink(l *v1.Link) (note.NamedLink, error) {
 	role, ok := wire.ConvertRoleFromWire(l.GetRole())
 	if !ok {
-		return domain.Link{}, fmt.Errorf("no link has the role %v", l.GetRole())
+		return note.NamedLink{}, fmt.Errorf("no link has the role %v", l.GetRole())
 	}
 	if l.GetTo() == "" {
-		return domain.Link{}, errors.New("a link needs a note to go to")
+		return note.NamedLink{}, errors.New("a link needs a note to go to")
 	}
 	marker, ok := wire.ConvertMarkerFromWire(l.GetMarker())
 	if !ok {
-		return domain.Link{}, fmt.Errorf("no link has the marker %v", l.GetMarker())
+		return note.NamedLink{}, fmt.Errorf("no link has the marker %v", l.GetMarker())
 	}
-	target, err := a.getAddress(ctx, l.GetTo())
-	if err != nil {
-		return domain.Link{}, err
-	}
-	return domain.Link{
-		Target: target, Role: role, Type: l.GetType(), Why: l.GetNote(), Label: l.GetLabel(), Marker: marker,
-	}, nil
-}
-
-func (a *Addresses) getAddress(ctx context.Context, to string) (domain.Address, error) {
-	return a.get.Execute(ctx, a.vault.GetCurrentVault(), to)
+	return note.NamedLink{To: l.GetTo(), Role: role, Type: l.GetType(), Why: l.GetNote(), Label: l.GetLabel(), Marker: marker}, nil
 }
 
 func convertNoteToWire(n domain.NoteRef) *v1.Note {

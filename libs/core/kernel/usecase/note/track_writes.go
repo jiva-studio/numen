@@ -2,6 +2,9 @@ package note
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"slices"
 	"strings"
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
@@ -93,7 +96,14 @@ func NewCreateNote(create *Create, gate WriteGate, follow IndexFollow) CreateNot
 
 // Execute creates the note. A note that is on disk is answered with where it is, whether or not the index
 // followed.
+// A link that names no note, or one with no address, is ErrInvalidLink and nothing is created.
 func (u CreateNote) Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, bool, error) {
+	links, err := resolveNamedLinks(ctx, u.create.names, v, in.Named)
+	if err != nil {
+		return CreateResult{}, false, err
+	}
+	in.Links = append(slices.Clone(in.Links), links...)
+	in.Named = nil
 	var made CreateResult
 	isIndexOutdated, err := u.track.Execute(ctx, func(ctx context.Context) error {
 		var createErr error
@@ -102,6 +112,95 @@ func (u CreateNote) Execute(ctx context.Context, v domain.Vault, in NewNote) (Cr
 		} else {
 			made, createErr = u.create.Execute(ctx, v, in)
 		}
+		return createErr
+	})
+	return made, isIndexOutdated, err
+}
+
+// ErrInvalidLink is a link that names no note to go to, or whose target has no address.
+var ErrInvalidLink = errors.New("the link does not name a note")
+
+// NamedLink is a link to the note at a path of the vault, written as the name of the note or the address
+// that the index says is unique.
+type NamedLink struct {
+	To     string
+	Role   domain.LinkRole
+	Type   string
+	Why    string
+	Label  string
+	Marker domain.LinkMarker
+}
+
+func resolveNamedLink(ctx context.Context, names edit.NameQueries, v domain.Vault, link NamedLink) (domain.Link, error) {
+	if link.To == "" {
+		return domain.Link{}, fmt.Errorf("%w: a link needs a note to go to", ErrInvalidLink)
+	}
+	target, err := getLinkAddress(ctx, names, v, link.To)
+	if err != nil {
+		return domain.Link{}, fmt.Errorf("%w: %w", ErrInvalidLink, err)
+	}
+	return domain.Link{
+		Target: target, Role: link.Role, Type: link.Type, Why: link.Why, Label: link.Label, Marker: link.Marker,
+	}, nil
+}
+
+func resolveNamedLinks(ctx context.Context, names edit.NameQueries, v domain.Vault, links []NamedLink) ([]domain.Link, error) {
+	out := make([]domain.Link, 0, len(links))
+	for _, one := range links {
+		link, err := resolveNamedLink(ctx, names, v, one)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, link)
+	}
+	return out, nil
+}
+
+// WriteLink writes one link into a note as a write of the window: what is already written there is
+// kept, and the note at the other end is left alone.
+type WriteLink struct {
+	links EditLinks
+	names edit.NameQueries
+	track TrackWrites
+}
+
+// NewWriteLink returns the use case over the editing of links and the names that give a link its address.
+func NewWriteLink(links EditLinks, names edit.NameQueries, gate WriteGate, follow IndexFollow) WriteLink {
+	return WriteLink{links: links, names: names, track: NewTrackWrites(gate, follow)}
+}
+
+// Execute writes the link into the note at from. A link that names no note, or one with no address, is
+// ErrInvalidLink and nothing is written. It fails with window.ErrClosing once the window is closing.
+func (u WriteLink) Execute(ctx context.Context, v domain.Vault, from string, link NamedLink) error {
+	resolved, err := resolveNamedLink(ctx, u.names, v, link)
+	if err != nil {
+		return err
+	}
+	_, err = u.track.Execute(ctx, func(ctx context.Context) error {
+		_, addErr := u.links.Add(ctx, v, from, domain.FileStat{}, resolved)
+		return addErr
+	})
+	return err
+}
+
+// CreateRelatedNote creates a note joined to an existing one as a write of the window.
+type CreateRelatedNote struct {
+	create CreateInRelation
+	track  TrackWrites
+}
+
+// NewCreateRelatedNote returns the use case over the creation of a note in relation to another.
+func NewCreateRelatedNote(create CreateInRelation, gate WriteGate, follow IndexFollow) CreateRelatedNote {
+	return CreateRelatedNote{create: create, track: NewTrackWrites(gate, follow)}
+}
+
+// Execute creates the note; see CreateInRelation. A note that is on disk is answered with where it is,
+// whether or not the index followed. It fails with window.ErrClosing once the window is closing.
+func (u CreateRelatedNote) Execute(ctx context.Context, v domain.Vault, in domain.RelatedNote) (CreateResult, bool, error) {
+	var made CreateResult
+	isIndexOutdated, err := u.track.Execute(ctx, func(ctx context.Context) error {
+		var createErr error
+		made, createErr = u.create.Execute(ctx, v, in)
 		return createErr
 	})
 	return made, isIndexOutdated, err

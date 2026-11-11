@@ -10,8 +10,8 @@ package shell
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -20,7 +20,8 @@ import (
 
 // API is what the page may ask of the window itself.
 type API struct {
-	IsVaultIndexed       *query.IsVaultIndexed
+	Ensure               *indexing.EnsureIndexed
+	Runs                 indexing.Runs
 	Themes               numenv1connect.ThemeServiceHandler
 	Window               *wire.Window
 	GetFrontendPluginIDs func() []string
@@ -29,8 +30,6 @@ type API struct {
 	Agent                numenv1connect.AgentServiceHandler
 	ListVaults           func() ([]domain.Vault, error)
 	ResolveLinks         *query.ResolveLinks
-
-	indexRuns indexRuns
 
 	subscribers changeSubscribers
 }
@@ -50,7 +49,3 @@ func NewWindow(name string, tasks *run.Tasks) *wire.Window {
 	}
 	return &wire.Window{Name: name, Tasks: tasks}
 }
-
-func (a *API) reportTask(task work.Task) { a.Window.AddTask(task) }
-
-func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }

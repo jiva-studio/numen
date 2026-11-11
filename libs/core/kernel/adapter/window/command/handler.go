@@ -26,17 +26,15 @@ type VaultProvider interface {
 
 // Handler answers CommandService over the scenarios of the plugin commands, run over the shown vault.
 type Handler struct {
-	vaults   VaultProvider
-	list     plugincommand.List
-	listing  plugincommand.ListCommands
-	run      plugincommand.Run
-	versions VersionItems
+	vaults     VaultProvider
+	listing    plugincommand.ListCommands
+	runCommand plugincommand.RunCommand
+	listItems  plugincommand.ListItems
 }
 
-// NewHandler makes the handler over both scenarios, and the text versions a command with items runs
-// over; without them such a command lists and runs nothing.
-func NewHandler(vaults VaultProvider, commands plugincommand.Commands, versions VersionItems) *Handler {
-	return &Handler{vaults: vaults, list: commands.List, listing: commands.Listing, run: commands.Run, versions: versions}
+// NewHandler makes the handler over the scenarios of the commands.
+func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler {
+	return &Handler{vaults: vaults, listing: commands.Listing, runCommand: commands.RunCommand, listItems: commands.ListItems}
 }
 
 // NewRoute is where CommandService is mounted, what the schema generated to answer it, and the
@@ -75,23 +73,18 @@ func (h *Handler) ListCommands(
 	}), nil
 }
 
-// RunPluginCommand runs one of them: a command with version items over the version its item_id names,
-// and any other command with the item_id passed to its plugin. A call
-// that is not a command, matches none, fails, or is routed to no plugin is answered with an error
-// code and a user-readable message.
+// RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to no
+// plugin is answered with an error code and a user-readable message.
 func (h *Handler) RunPluginCommand(
 	ctx context.Context, r *connect.Request[v1.RunPluginCommandRequest],
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {
-	result, isItemRun, err := h.runWithArgument(ctx, r.Msg)
-	if !isItemRun {
-		result, err = h.run.Execute(ctx, h.vaults.GetCurrentVault(), plugin.CommandCall{
-			PluginID:  r.Msg.GetPluginId(),
-			Command:   r.Msg.GetCommand(),
-			Path:      r.Msg.GetPath(),
-			Arguments: r.Msg.GetArguments(),
-			ItemID:    r.Msg.GetItemId(),
-		})
-	}
+	result, err := h.runCommand.Execute(ctx, h.vaults.GetCurrentVault(), plugin.CommandCall{
+		PluginID:  r.Msg.GetPluginId(),
+		Command:   r.Msg.GetCommand(),
+		Path:      r.Msg.GetPath(),
+		Arguments: r.Msg.GetArguments(),
+		ItemID:    r.Msg.GetItemId(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, connect.NewError(connect.CodeCanceled, ctxErr)

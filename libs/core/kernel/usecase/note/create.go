@@ -42,12 +42,13 @@ func (u Create) WithIndex(index edit.IndexUpdater) Create {
 	return u
 }
 
-// NewNote is what to make.
+// NewNote is what to make. CreateNote resolves Named into Links.
 type NewNote struct {
 	Title string
 	Body  string
 	Path  string
 	Links []domain.Link
+	Named []NamedLink
 }
 
 // CreateResult is the note that now exists.

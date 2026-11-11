@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -169,16 +170,12 @@ func (h *Links) CreateRelatedNote(
 	if !ok {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no link has this marker"))
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
-	made, err := h.createInRelation.Execute(ctx, showing, domain.RelatedNote{
+	made, indexOutdated, err := h.createRelated.Execute(ctx, showing, domain.RelatedNote{
 		From: r.Msg.GetFrom(), Role: role, Title: r.Msg.GetTitle(), Type: r.Msg.GetType(), Marker: marker,
 	})
-	indexOutdated := h.writes.IsIndexOutdated(err)
 	switch {
+	case errors.Is(err, windowdomain.ErrClosing):
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	case made.Path != "":
 		return connect.NewResponse(&v1.CreateRelatedNoteResponse{Path: made.Path, IsIndexOutdated: indexOutdated}), nil
 	case errors.Is(err, domain.ErrNoFreeName):

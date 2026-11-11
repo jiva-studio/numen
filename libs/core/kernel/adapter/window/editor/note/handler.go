@@ -66,36 +66,21 @@ func NewHandler(edits Edits, prose *Prose, outline *Outline, links *Links, conne
 	return &Handler{Prose: prose, Outline: outline, Links: links, Connections: connections, edits: edits}
 }
 
-// Addresses turns the links a request names into the addresses of notes in the shown vault.
-type Addresses struct {
-	vault Vault
-	get   *query.GetLinkAddress
-}
-
-// NewAddresses is the addresses of the vault the window shows.
-func NewAddresses(window Vault, get *query.GetLinkAddress) *Addresses {
-	return &Addresses{vault: window, get: get}
-}
-
 // Prose reads, writes, creates and renames notes.
 type Prose struct {
-	vault     Vault
-	writes    Writes
-	addresses *Addresses
-	read      *note.Read
-	save      *note.SaveProse
-	create    *note.CreateNote
-	rename    *note.Rename
+	vault  Vault
+	writes Writes
+	read   *note.Read
+	save   *note.SaveProse
+	create *note.CreateNote
+	rename *note.Rename
 }
 
 // NewProse is the part of NoteService that reads and changes the prose of notes.
 func NewProse(
-	session Session, addresses *Addresses,
-	read *note.Read, save *note.SaveProse, create *note.CreateNote, rename *note.Rename,
+	session Session, read *note.Read, save *note.SaveProse, create *note.CreateNote, rename *note.Rename,
 ) *Prose {
-	return &Prose{
-		vault: session, writes: session, addresses: addresses, read: read, save: save, create: create, rename: rename,
-	}
+	return &Prose{vault: session, writes: session, read: read, save: save, create: create, rename: rename}
 }
 
 // Outline answers what a note stands among: the note a vault opens on, its neighborhood and the
@@ -116,24 +101,19 @@ func NewOutline(
 
 // Links writes the links of notes and answers where links land and which notes link to a note.
 type Links struct {
-	vault            Vault
-	writes           Writes
-	addresses        *Addresses
-	resolveLinks     *query.ResolveLinks
-	editLinks        *note.EditLinks
-	createInRelation *note.CreateInRelation
-	getBacklinks     *query.GetBacklinks
+	vault         Vault
+	resolveLinks  *query.ResolveLinks
+	writeLink     *note.WriteLink
+	createRelated *note.CreateRelatedNote
+	getBacklinks  *query.GetBacklinks
 }
 
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
-	session Session, addresses *Addresses,
-	resolve *query.ResolveLinks, edit *note.EditLinks, create *note.CreateInRelation, backlinks *query.GetBacklinks,
+	window Vault,
+	resolve *query.ResolveLinks, write *note.WriteLink, create *note.CreateRelatedNote, backlinks *query.GetBacklinks,
 ) *Links {
-	return &Links{
-		vault: session, writes: session, addresses: addresses, resolveLinks: resolve, editLinks: edit,
-		createInRelation: create, getBacklinks: backlinks,
-	}
+	return &Links{vault: window, resolveLinks: resolve, writeLink: write, createRelated: create, getBacklinks: backlinks}
 }
 
 // Connections reads and changes the relationship between two notes.

@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -46,6 +47,10 @@ type Services struct {
 
 	server *FileServer
 
+	readers     vaultport.VaultReaders
+	pluginFiles *file.OpenPluginFile
+	mediaTypes  *file.GetMediaType
+
 	resolve *file.ResolveAddress
 
 	NoteCases NoteUseCases
@@ -54,28 +59,27 @@ type Services struct {
 // NoteUseCases are the use cases a test gives the notes service. A use case left nil is one the
 // test does not call.
 type NoteUseCases struct {
-	Read           *note.Read
-	Write          *note.Write
-	Create         *note.Create
-	Rename         *note.Rename
-	EditLinks      *note.EditLinks
-	GetLinkAddress *query.GetLinkAddress
-	OpeningNote    *query.GetOpeningNote
-	Headings       *query.ListHeadings
-	Neighborhood   *query.GetNeighborhoodView
-	ResolveLinks   *query.ResolveLinks
+	Read         *note.Read
+	Write        *note.Write
+	Create       *note.Create
+	Rename       *note.Rename
+	EditLinks    *note.EditLinks
+	Names        edit.NameQueries
+	OpeningNote  *query.GetOpeningNote
+	Headings     *query.ListHeadings
+	Neighborhood *query.GetNeighborhoodView
+	ResolveLinks *query.ResolveLinks
 }
 
 // UseNotes builds the notes service over NoteCases.
 func (s *Services) UseNotes() {
 	use := s.NoteCases
 	session := NewSession(s.state)
-	addresses := notewindow.NewAddresses(s.state, use.GetLinkAddress)
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
-		notewindow.NewProse(session, addresses, use.Read, saveProse(use.Write, session), createNote(use.Create, session), use.Rename),
+		notewindow.NewProse(session, use.Read, saveProse(use.Write, session), createNote(use.Create, session), use.Rename),
 		notewindow.NewOutline(s.state, use.OpeningNote, use.Neighborhood, use.Headings),
-		notewindow.NewLinks(session, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
+		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, session), nil, nil),
 		notewindow.NewConnections(session, nil, nil, nil, nil, nil),
 	)
 }
@@ -87,10 +91,10 @@ func createServices(state *State) *Services {
 			filewindow.NewFolders(NewSession(state), state.Events, nil, nil, nil),
 			filewindow.NewChanges(NewSession(state), state.Writes, state.Notices, nil, nil, nil),
 		),
-		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil), nil),
-		Media:   mediawindow.NewHandler(state, state, nil, nil),
+		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil)),
+		Media:   mediawindow.NewHandler(state, state, nil),
 		Plugin:  numenv1connect.UnimplementedPluginServiceHandler{},
-		server:  NewFileServer(state, nil, nil, nil, nil),
+		server:  NewFileServer(state, nil),
 	}
 	services.Extra = []Route{
 		RouteOf(state, search.NewHandler(state, nil, nil), search.NewRoute),
@@ -158,12 +162,14 @@ func HandlerOf[T any](o *Installation) T {
 func (s *Services) openPlaying(playing *Loopback) { s.state.Playing.Store(playing) }
 
 func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
-	s.server.openFile = file.NewOpenFile(readers)
-	s.server.openPluginFile = openPluginFile
-	s.server.mediaTypes = mediaTypes
-	s.resolve = file.NewResolveAddress(file.NewStatFile(readers), openPluginFile)
-	s.Media = mediawindow.NewHandler(
-		s.state, s.state, s.resolve, mediaTypes)
+	s.readers, s.pluginFiles, s.mediaTypes = readers, openPluginFile, mediaTypes
+	s.findVaults(nil)
+	s.resolve = file.NewResolveAddress(file.NewStatFile(readers), openPluginFile, mediaTypes)
+	s.Media = mediawindow.NewHandler(s.state, s.state, s.resolve)
+}
+
+func (s *Services) findVaults(find file.VaultFinder) {
+	s.server.open = file.NewOpenVaultFile(find, file.NewOpenFile(s.readers), s.pluginFiles, s.mediaTypes)
 }
 
 // ServicesOf is the handlers a window answers through.
@@ -202,4 +208,12 @@ func createNote(create *note.Create, session Session) *note.CreateNote {
 	}
 	made := note.NewCreateNote(create, session, session)
 	return &made
+}
+
+func writeLink(links *note.EditLinks, names edit.NameQueries, session Session) *note.WriteLink {
+	if links == nil {
+		return nil
+	}
+	linking := note.NewWriteLink(*links, names, session, session)
+	return &linking
 }

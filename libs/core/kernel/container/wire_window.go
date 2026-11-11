@@ -147,7 +147,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
 		},
 		Vault: windowsession.VaultPorts{
-			Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: wrapPasses(w, startVault(w.cfg, w.db, current)),
+			Import: moves.Tree.Import, Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: wrapPasses(w, startVault(w.cfg, w.db, current)),
 			Texts: getTextVersions(w.cfg),
 		},
 		Index: windowsession.IndexPorts{
@@ -169,7 +169,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.Start, Show: session.Switching.Show, OpenPlugin: session.Switching.OpenPlugin,
 		Flush: session.Closing.Flush, Close: session.Closing.Close,
-	}, moves.Tree.Import, out)
+	}, session.Import, out)
 	w.inst = inst
 	w.cases.ShowTab = session.ShowTab
 

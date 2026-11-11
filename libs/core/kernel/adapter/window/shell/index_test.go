@@ -111,24 +111,6 @@ func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
 	}
 }
 
-// A vault forgotten after a clean indexing is claimable again.
-func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
-	r := &indexRuns{}
-	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
-
-	r.record(getUnread(), nil)
-	if read, _, _, _ := r.tryStart(getUnread()); read != nil {
-		t.Fatalf("a vault indexed clean was claimed before it was forgotten")
-	}
-
-	r.clear(getUnread().ID)
-
-	read, _, _, _ := r.tryStart(getUnread())
-	if read == nil {
-		t.Fatalf("a vault forgotten after a clean indexing was not claimable again")
-	}
-}
-
 // The list of work is answered whether or not the window keeps one, so the page
 // has one thing to listen to.
 func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
@@ -148,48 +130,6 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	}
 	if response := stream.Msg().GetTasks(); len(response) != 0 {
 		t.Errorf("a window doing nothing said %+v", response)
-	}
-}
-
-// A vault is claimed by one indexer at a time: the claim that begins an indexing
-// reports it is underway, a claim while it runs reports so and begins nothing, a
-// failed indexing returns why and begins nothing, and a vault indexed cleanly
-// begins nothing and is not underway.
-func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
-	r := &indexRuns{}
-	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
-	v := domain.Vault{ID: "one"}
-
-	read, limit, underway, reason := r.tryStart(v)
-	if read == nil || limit == nil || !underway || reason != "" {
-		t.Fatalf("the first claim came back %v %v %v %q", read != nil, limit != nil, underway, reason)
-	}
-
-	read, _, underway, reason = r.tryStart(v)
-	if read != nil || !underway || reason != "" {
-		t.Errorf("a claim while it ran came back %v %v %q", read != nil, underway, reason)
-	}
-
-	r.record(v, errors.New("the folder is not there"))
-	read, _, underway, reason = r.tryStart(v)
-	if read != nil || underway || reason != "the folder is not there" {
-		t.Errorf("a claim after a failure came back %v %v %q", read != nil, underway, reason)
-	}
-
-	r.clear(v.ID)
-	r.record(v, nil)
-	read, _, underway, reason = r.tryStart(v)
-	if read != nil || underway || reason != "" {
-		t.Errorf("a claim after a clean indexing came back %v %v %q", read != nil, underway, reason)
-	}
-}
-
-// A window that reads nothing claims nothing.
-func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
-	r := &indexRuns{}
-	read, _, underway, reason := r.tryStart(domain.Vault{ID: "one"})
-	if read != nil || underway || reason != "" {
-		t.Errorf("the claim came back %v %v %q", read != nil, underway, reason)
 	}
 }
 

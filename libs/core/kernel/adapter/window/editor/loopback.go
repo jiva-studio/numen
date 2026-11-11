@@ -16,18 +16,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // FileServer answers with one file of one vault, as it is read.
 type FileServer struct {
-	state          *State
-	find           *registry.Find
-	openFile       *file.OpenFile
-	openPluginFile *file.OpenPluginFile
-	mediaTypes     *file.GetMediaType
+	state *State
+	open  *file.OpenVaultFile
 }
 
 // Loopback is a socket on the loopback address that serves the vault's files.
@@ -150,16 +146,15 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	target, ok := h.findVault(id)
-	if !ok {
-		http.Error(w, errNoVaultNamed, http.StatusNotFound)
-		return
-	}
-	if h.openFile == nil {
+	if h.open == nil {
 		refuse(w, errNoVault)
 		return
 	}
-	opened, err := h.openFile.Execute(r.Context(), target, targetPath, named)
+	opened, err := h.open.Execute(r.Context(), h.state.GetCurrentVault(), id, targetPath, named)
+	if errors.Is(err, file.ErrNoVaultNamed) {
+		http.Error(w, errNoVaultNamed, http.StatusNotFound)
+		return
+	}
 	if err != nil {
 		refuse(w, err)
 		return
@@ -167,31 +162,10 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 	defer closeAndReport(h.state.Window.AddTask, opened.Body)
 
 	w.Header().Set("Cache-Control", immutable)
-	if named := getMediaType(h.mediaTypes, opened.Path); named != "" {
-		w.Header().Set("Content-Type", named)
+	if opened.MediaType != "" {
+		w.Header().Set("Content-Type", opened.MediaType)
 	}
 	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
-}
-
-func getMediaType(types *file.GetMediaType, path string) string {
-	if types == nil {
-		return ""
-	}
-	return types.Execute(path)
-}
-
-func (h *FileServer) findVault(id string) (domain.Vault, bool) {
-	if showing := h.state.GetCurrentVault(); string(showing.ID) == id {
-		return showing, true
-	}
-	if h.find == nil {
-		return domain.Vault{}, false
-	}
-	one, err := h.find.Execute(id)
-	if err != nil {
-		return domain.Vault{}, false
-	}
-	return one, true
 }
 
 func (l *Loopback) getPlayOrigins() []string {

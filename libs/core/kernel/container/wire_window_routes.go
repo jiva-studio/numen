@@ -47,17 +47,17 @@ func mountCatalog(w *windowWiring) {
 
 func mountMedia(w *windowWiring) {
 	state := w.inst.State
-	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(vaultOf(w.cfg))), openPluginFile(vaultOf(w.cfg)))
-	handler := mediawindow.NewHandler(state, state, resolve, getMediaType(vaultOf(w.cfg)))
+	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(vaultOf(w.cfg))), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)))
+	handler := mediawindow.NewHandler(state, state, resolve)
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
 }
 
 func mountCommand(w *windowWiring) {
-	var versions command.VersionItems
+	commands := getPluginCommands(plugins(w.cfg))
 	if menu := openVersionItems(plugins(w.cfg)); menu != nil {
-		versions = menu
+		commands = commands.WithVersions(menu)
 	}
-	handler := command.NewHandler(w.inst.State, getPluginCommands(plugins(w.cfg)), versions)
+	handler := command.NewHandler(w.inst.State, commands)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.Gate.CountQuestions(), handler)))
 }
 
@@ -123,7 +123,10 @@ func mountFile(w *windowWiring) {
 	changes := filewindow.NewChanges(editor.NewSession(state), state.Writes, state.Notices, &w.cases.Vaults.Tree.Move, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.server = editor.NewFileServer(
-		state, &w.cases.Listing.Find, file.NewOpenFile(readers), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)),
+		state,
+		file.NewOpenVaultFile(
+			&w.cases.Listing.Find, file.NewOpenFile(readers), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)),
+		),
 	)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }
@@ -152,19 +155,19 @@ func mountWorkspace(w *windowWiring) error {
 func mountNote(w *windowWiring) {
 	state := w.inst.State
 	notes, queries := w.cases.Notes, w.cases.Queries
-	addresses := notewindow.NewAddresses(state, queries.Refer.GetLinkAddress)
 	session := editor.NewSession(state)
 	save, create := note.NewSaveProse(&notes.Edit.Write, session, session), note.NewCreateNote(&notes.Edit.Create, session, session)
-	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &save, &create, &notes.Place.Rename)
+	prose := notewindow.NewProse(session, &notes.Edit.Read, &save, &create, &notes.Place.Rename)
 	outlining := notewindow.NewOutline(
 		state,
 		query.NewGetOpeningNote(w.db.NoteQueries()),
 		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
+	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), session, session)
+	createRelated := note.NewCreateRelatedNote(notes.Connect.CreateInRelation, session, session)
 	links := notewindow.NewLinks(
-		session, addresses,
-		query.NewResolveLinks(w.db.NoteQueries()), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &queries.Refer.Backlinks,
+		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &createRelated, &queries.Refer.Backlinks,
 	)
 	connections := notewindow.NewConnections(
 		session, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,

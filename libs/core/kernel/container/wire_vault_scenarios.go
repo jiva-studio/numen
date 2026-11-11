@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -120,10 +121,9 @@ func vaultQueries(db *Index) query.Scenarios {
 	links, refs := db.NoteQueries(), db.NoteQueries()
 	return query.Scenarios{
 		Refer: query.Referring{
-			Links:          query.NewShowLinks(links),
-			Backlinks:      query.NewGetBacklinks(links),
-			ResolveLinks:   query.NewResolveLinks(links),
-			GetLinkAddress: query.NewGetLinkAddress(db.NoteQueries()),
+			Links:        query.NewShowLinks(links),
+			Backlinks:    query.NewGetBacklinks(links),
+			ResolveLinks: query.NewResolveLinks(links),
 		},
 		Browse: query.Browsing{
 			Connection:     query.NewGetConnection(links),
@@ -230,7 +230,8 @@ func openVaults(c Config, db *Index, out io.Writer, label string) *vault.OpenVau
 // resolves to.
 func SetShellNotes(api *shell.API, db *Index) {
 	queries := vaultQueries(db)
-	api.IsVaultIndexed, api.ResolveLinks = queries.Browse.IsVaultIndexed, queries.Refer.ResolveLinks
+	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, queries.Browse.IsVaultIndexed, api.Window, api)
+	api.ResolveLinks = queries.Refer.ResolveLinks
 }
 
 // BindVaultIndexer has a shell read a vault into the index through vaults, and report a change each

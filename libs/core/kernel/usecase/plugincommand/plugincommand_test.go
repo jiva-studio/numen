@@ -174,7 +174,7 @@ func TestAnInstallationWithNoPluginHostListsNoCommandAndRunsNone(t *testing.T) {
 }
 
 func TestTheContentTypesAreListedByExtension(t *testing.T) {
-	got := plugincommand.NewCommands(newDeclared(), newDeclared(), getTypes(), nil, nil).ContentTypes.Execute()
+	got := plugincommand.NewCommands(newDeclared(), newDeclared(), getTypes(), nil, nil).Listing.Execute().ContentTypeByExtension
 
 	want := map[string]string{"pdf": "application/pdf", "epub": "application/epub+zip", "mp3": "audio/mpeg", "wav": "audio/vnd.wave"}
 	if !maps.Equal(got, want) {

@@ -29,8 +29,8 @@ func (window) GetPluginFileAddress(_ domain.Vault, address file.Address, _ int64
 }
 
 func newHandler(open window) *mediawindow.Handler {
-	resolve := file.NewResolveAddress(file.NewStatFile(vaultreader.Readers{}), nil)
-	return mediawindow.NewHandler(open, open, resolve, nil)
+	resolve := file.NewResolveAddress(file.NewStatFile(vaultreader.Readers{}), nil, nil)
+	return mediawindow.NewHandler(open, open, resolve)
 }
 
 func TestAFileOfTheShownVaultIsPlayedFromTheSocket(t *testing.T) {

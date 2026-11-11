@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
 // versionItems offers two versions of every file, the first live, and records each run.
@@ -26,11 +25,11 @@ type versionItems struct {
 	deleted []string
 }
 
-func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path string, _ plugin.CommandEntry) ([]textversion.VersionItem, error) {
+func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path string, _ plugin.CommandEntry) ([]text.VersionItem, error) {
 	if path == "gone.mp3" {
 		return nil, errors.New("gone.mp3 is not in the vault")
 	}
-	return []textversion.VersionItem{
+	return []text.VersionItem{
 		{Version: "org.example.ears/ears", Kind: "transcript", IsLive: true},
 		{Version: "org.example.ears/older", Kind: "transcript"},
 	}, nil
@@ -47,7 +46,7 @@ func (v *versionItems) RunVersionItem(
 }
 
 func newItemsHandler(items *versionItems) *command.Handler {
-	return command.NewHandler(shownVault{}, plugincommand.NewCommands(conditionalCommands{}, conditionalCommands{}, fileTypes{}, nil, nil), items)
+	return command.NewHandler(shownVault{}, plugincommand.NewCommands(conditionalCommands{}, conditionalCommands{}, fileTypes{}, nil, nil).WithVersions(items))
 }
 
 func TestListCommands_ListsACommandWithItemsAndMarksIt(t *testing.T) {
@@ -166,7 +165,7 @@ func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 
 func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *testing.T) {
 	plugins := &runRecorded{}
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(plugins, plugins, fileTypes{}, nil, nil), &versionItems{})
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(plugins, plugins, fileTypes{}, nil, nil).WithVersions(&versionItems{}))
 
 	res, err := handler.RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
 		PluginId: "md.numen.tools.updater", Command: "updater.check", ItemId: "beta",
@@ -235,7 +234,7 @@ func (comparingCommands) ListCommands() []plugin.CommandEntry {
 // brokenComparison lists the versions of versionItems, and fails for proofreading.compare.
 type brokenComparison struct{ versionItems }
 
-func (b *brokenComparison) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry) ([]textversion.VersionItem, error) {
+func (b *brokenComparison) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry) ([]text.VersionItem, error) {
 	if entry.Command.ID == "proofreading.compare" {
 		return nil, errors.New("the comparison cannot read the versions")
 	}
@@ -243,7 +242,7 @@ func (b *brokenComparison) ListVersionItems(ctx context.Context, v domain.Vault,
 }
 
 func TestListCommandItems_AnswersTheOtherListsWhereOneCommandFails(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(comparingCommands{}, comparingCommands{}, fileTypes{}, nil, nil), &brokenComparison{})
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(comparingCommands{}, comparingCommands{}, fileTypes{}, nil, nil).WithVersions(&brokenComparison{}))
 
 	res, err := handler.ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
 		Path: "talks/a.mp3",

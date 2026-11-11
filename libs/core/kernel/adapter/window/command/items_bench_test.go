@@ -33,7 +33,7 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 		b.Fatal(err)
 	}
 	commands := plugincommand.NewCommands(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.ContentTypes, nil, nil)
-	return command.NewHandler(shownVault{}, commands, &versionItems{})
+	return command.NewHandler(shownVault{}, commands.WithVersions(&versionItems{}))
 }
 
 func BenchmarkListCommandItems_OfASharedCommandOverTheRepositoryPlugins(b *testing.B) {

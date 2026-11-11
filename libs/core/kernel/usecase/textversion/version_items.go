@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -52,21 +51,12 @@ func (u *VersionItems) findLiveVersion(ctx context.Context, v domain.Vault, path
 	return u.versions.Texts.live.find(ctx, v, path, versions, contentHash)
 }
 
-// VersionItem is a text version of a file that a command with items offers to run over.
-type VersionItem struct {
-	Version    domain.TextVersionID
-	Kind       string
-	IsLive     bool
-	PluginID   string
-	CreateTime time.Time
-}
-
-func listVersionItems(condition when.Condition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
-	var items []VersionItem
+func listVersionItems(condition when.Condition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []text.VersionItem {
+	var items []text.VersionItem
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
 		if condition.Evaluate(target.WithVersion(string(version.Kind), isLive).Get()) == when.True {
-			items = append(items, VersionItem{
+			items = append(items, text.VersionItem{
 				Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive,
 				PluginID: version.PluginID, CreateTime: version.CreateTime,
 			})
@@ -77,7 +67,7 @@ func listVersionItems(condition when.Condition, target plugin.TargetValues, vers
 
 // ListVersionItems lists the text versions of the file at the path over which the when condition of
 // the command holds; a command whose condition names no version.* variable has none.
-func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry) ([]VersionItem, error) {
+func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry) ([]text.VersionItem, error) {
 	condition, err := u.conditions.Parse(entry.Command.When)
 	if err != nil || !condition.HasItems() {
 		return nil, err
@@ -95,8 +85,8 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 }
 
 // ListEveryVersion lists every text version of the file at the path, as the items of the application
-// command DeleteCommand.
-func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]VersionItem, error) {
+// command text.DeleteCommand.
+func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]text.VersionItem, error) {
 	versions, err := getVersions(ctx, u.versions.stores, v, path)
 	if err != nil {
 		return nil, err
@@ -105,10 +95,10 @@ func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, pat
 	if err != nil {
 		return nil, err
 	}
-	items := make([]VersionItem, 0, len(versions))
+	items := make([]text.VersionItem, 0, len(versions))
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
-		items = append(items, VersionItem{
+		items = append(items, text.VersionItem{
 			Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive,
 			PluginID: version.PluginID, CreateTime: version.CreateTime,
 		})
@@ -122,10 +112,6 @@ func (u *VersionItems) DeleteVersion(ctx context.Context, v domain.Vault, path s
 	return u.versions.DeleteVersion(ctx, v, path, version)
 }
 
-// DeleteCommand is the application command that deletes a text version of a file. The core serves
-// it with no plugin: its items are every version of the file.
-const DeleteCommand = "app:version.delete"
-
 // RunVersionItem runs the command of the entry over the version of the file at the path, which it gets
 // as its argument version-id. A version the command does not offer over the file now, or a command
 // without items, is ErrInvalidVersion.
@@ -136,7 +122,7 @@ func (u *VersionItems) RunVersionItem(
 	if err != nil {
 		return plugin.CommandResult{}, err
 	}
-	if !slices.ContainsFunc(items, func(item VersionItem) bool { return item.Version == version }) {
+	if !slices.ContainsFunc(items, func(item text.VersionItem) bool { return item.Version == version }) {
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s offers no version %q over %s",
 			text.ErrInvalidVersion, entry.Command.ID, entry.PluginID, version, path)
 	}

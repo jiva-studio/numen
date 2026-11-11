@@ -31,3 +31,16 @@ type File struct {
 	Segments []domain.TextSegment
 	TextHash string
 }
+
+// VersionItem is a text version of a file that a command with items offers to run over.
+type VersionItem struct {
+	Version    domain.TextVersionID
+	Kind       string
+	IsLive     bool
+	PluginID   string
+	CreateTime time.Time
+}
+
+// DeleteCommand is the application command that deletes a text version of a file. The core serves
+// it with no plugin: its items are every version of the file.
+const DeleteCommand = "app:version.delete"

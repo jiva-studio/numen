@@ -9,10 +9,9 @@ type Scenarios struct {
 
 // Referring lists and resolves the links of notes.
 type Referring struct {
-	Links          ShowLinks
-	Backlinks      GetBacklinks
-	ResolveLinks   *ResolveLinks
-	GetLinkAddress *GetLinkAddress
+	Links        ShowLinks
+	Backlinks    GetBacklinks
+	ResolveLinks *ResolveLinks
 }
 
 // Browsing answers questions about the notes of a vault.

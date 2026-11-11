@@ -22,6 +22,10 @@ type Pages interface {
 
 // Writes is the writes taken and not yet finished.
 type Writes interface {
+	// BeginWrite registers a write and reports false once the window is closing, when nothing may be written.
+	BeginWrite() bool
+	// FinishWrite ends a write that BeginWrite registered.
+	FinishWrite()
 	// Seal refuses new writes and answers with what closes once the writes taken have finished.
 	Seal() <-chan struct{}
 	// Open accepts writes again.
@@ -154,6 +158,7 @@ type WindowPorts struct {
 
 // VaultPorts are what starts and records the vault the window shows.
 type VaultPorts struct {
+	Import   FileImport
 	Identity IdentityCheck
 	Recorded OpenRecord
 	Passes   VaultPasses

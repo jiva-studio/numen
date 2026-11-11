@@ -38,12 +38,11 @@ type Handler struct {
 	vault          Vault
 	addresses      Addresses
 	resolveAddress *file.ResolveAddress
-	mediaTypes     *file.GetMediaType
 }
 
 // NewHandler is the handler of MediaService over the use cases that find a file.
-func NewHandler(window Vault, addresses Addresses, resolve *file.ResolveAddress, types *file.GetMediaType) *Handler {
-	return &Handler{vault: window, addresses: addresses, resolveAddress: resolve, mediaTypes: types}
+func NewHandler(window Vault, addresses Addresses, resolve *file.ResolveAddress) *Handler {
+	return &Handler{vault: window, addresses: addresses, resolveAddress: resolve}
 }
 
 // ResolveAddress returns the loopback address of the bytes of the file at the address and the media
@@ -73,7 +72,7 @@ func (h *Handler) ResolveAddress(
 	}
 	return connect.NewResponse(&v1.ResolveAddressResponse{
 		Src:       src,
-		MediaType: getMediaType(h.mediaTypes, resolved.Address.Path),
+		MediaType: resolved.MediaType,
 	}), nil
 }
 
@@ -86,11 +85,4 @@ func getListCode(err error) connect.Code {
 	default:
 		return connect.CodeInternal
 	}
-}
-
-func getMediaType(types *file.GetMediaType, path string) string {
-	if types == nil {
-		return ""
-	}
-	return types.Execute(path)
 }

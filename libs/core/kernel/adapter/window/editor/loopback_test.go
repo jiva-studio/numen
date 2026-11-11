@@ -140,7 +140,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	target := api.state.GetCurrentVault()
 	find := registry.NewFind(lockedVaults{target})
-	api.server.find = &find
+	api.findVaults(&find)
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.

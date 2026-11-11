@@ -14,12 +14,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
-func (v *versionItems) ListEveryVersion(context.Context, domain.Vault, string) ([]textversion.VersionItem, error) {
-	return []textversion.VersionItem{
+func (v *versionItems) ListEveryVersion(context.Context, domain.Vault, string) ([]text.VersionItem, error) {
+	return []text.VersionItem{
 		{Version: "org.example.ears/ears", Kind: "transcript", IsLive: true},
 		{Version: "org.example.viewer/edit-1", Kind: "transcript"},
 	}, nil
@@ -77,9 +77,9 @@ func TestRunPluginCommand_OfDeleteTextNeedsAnItem(t *testing.T) {
 // namedVersions offers the versions of two plugins, one declaring the names of its kinds.
 type namedVersions struct{ versionItems }
 
-func (namedVersions) ListEveryVersion(context.Context, domain.Vault, string) ([]textversion.VersionItem, error) {
+func (namedVersions) ListEveryVersion(context.Context, domain.Vault, string) ([]text.VersionItem, error) {
 	made := time.Date(2026, time.November, 8, 10, 0, 0, 0, time.UTC)
-	return []textversion.VersionItem{
+	return []text.VersionItem{
 		{Version: "org.example.ears/ears", PluginID: "org.example.ears", Kind: "transcript", IsLive: true, CreateTime: made},
 		{Version: "org.example.viewer/edit-1", PluginID: "org.example.viewer", Kind: "edit", CreateTime: made},
 	}, nil
@@ -95,7 +95,7 @@ func (namingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListCommandItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(namingPlugins{}, namingPlugins{}, fileTypes{}, nil, nil), &namedVersions{})
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(namingPlugins{}, namingPlugins{}, fileTypes{}, nil, nil).WithVersions(&namedVersions{}))
 
 	list := listItemsOfOne(t, handler, "", "app:version.delete", "talks/a.mp3")
 

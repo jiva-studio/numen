@@ -38,7 +38,7 @@ func (keyBindingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListCommands_ListsTheKeybindingsOfEnabledPlugins(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(keyBindingPlugins{}, keyBindingPlugins{}, nil, nil, nil), nil)
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(keyBindingPlugins{}, keyBindingPlugins{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {

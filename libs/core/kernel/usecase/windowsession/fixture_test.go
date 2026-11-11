@@ -55,6 +55,10 @@ type writeSet struct {
 	reopened int
 }
 
+func (w *writeSet) BeginWrite() bool { return true }
+
+func (w *writeSet) FinishWrite() {}
+
 func (w *writeSet) Seal() <-chan struct{} {
 	w.mu.Lock()
 	defer w.mu.Unlock()
