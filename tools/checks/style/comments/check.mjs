@@ -29,8 +29,6 @@ function isGenerated(text) {
   return GENERATED.test(text.split('\n').slice(0, 20).join('\n'))
 }
 
-const RULES = JSON.parse(fs.readFileSync(path.join(HERE, 'restate.json'), 'utf8'))
-
 // The threshold, the stop words and the synonyms are in restate.json, which restate.go reads as well.
 const RESTATE = JSON.parse(fs.readFileSync(path.join(HERE, 'restate.json'), 'utf8'))
 

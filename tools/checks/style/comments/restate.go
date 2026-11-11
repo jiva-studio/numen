@@ -15,13 +15,15 @@ var restateJSON []byte
 // check.mjs reads as well.
 type restateRules struct {
 	ThresholdPercent int                 `json:"thresholdPercent"`
-	StopWords        string              `json:"stopWords"`
+	MinPrefixLength  int                 `json:"minPrefixLength"`
+	StopWords        []string            `json:"stopWords"`
 	Synonyms         map[string][]string `json:"synonyms"`
 }
 
 var (
 	rules                   = readRestateRules()
 	restateThresholdPercent = rules.ThresholdPercent
+	minPrefixLength         = rules.MinPrefixLength
 	stopWords               = toSet(rules.StopWords)
 	synonyms                = invertSynonyms(rules.Synonyms)
 )
@@ -46,9 +48,9 @@ func invertSynonyms(groups map[string][]string) map[string]string {
 	return inverted
 }
 
-func toSet(words string) map[string]bool {
+func toSet(words []string) map[string]bool {
 	set := map[string]bool{}
-	for _, word := range strings.Fields(words) {
+	for _, word := range words {
 		set[word] = true
 	}
 	return set
@@ -101,12 +103,12 @@ func stem(word string) string {
 }
 
 // isSameWord reports whether a word of a comment is a word of a name: equal, or one is the start of the other
-// (`window` and the package name `windowsession`) when both have four letters or more.
+// (`window` and the package name `windowsession`) when both have `minPrefixLength` letters or more.
 func isSameWord(commentWord, nameWord string) bool {
 	if commentWord == nameWord {
 		return true
 	}
-	if len(commentWord) < 4 || len(nameWord) < 4 {
+	if len(commentWord) < minPrefixLength || len(nameWord) < minPrefixLength {
 		return false
 	}
 	return strings.HasPrefix(nameWord, commentWord) || strings.HasPrefix(commentWord, nameWord)
