@@ -169,8 +169,18 @@ func vaultMakeRefresh(c vaultWiring, db *Index, notes noteport.NoteRepository) v
 	return refresh
 }
 
-func newTextVersions(c vaultWiring, db *Index) (*textversion.Versions, error) {
-	return textversion.NewVersions(db.Versions, derivedfile.TextStores{Options: vaultOptions(c)}, c.RunningHost.Runtime, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
+func newTextVersions(c vaultWiring, db *Index) (*TextVersions, error) {
+	stores, files, readers := db.Versions, derivedfile.TextStores{Options: vaultOptions(c)}, vaultReaders(c)
+	texts, err := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), c.Clock)
+	if err != nil {
+		return nil, err
+	}
+	changes := textversion.NewChanges(texts)
+	versions, err := textversion.NewVersions(stores, files, c.RunningHost.Runtime, c.Clock, changes)
+	if err != nil {
+		return nil, err
+	}
+	return &TextVersions{Versions: versions, Texts: texts, Changes: changes}, nil
 }
 
 func getTextReaders(c vaultWiring) textdomain.Readers {
@@ -188,14 +198,14 @@ func setPluginTexts(c vaultWiring) {
 		c.PluginHost.Endpoint.SetPluginTexts(nil)
 		return
 	}
-	c.PluginHost.Endpoint.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
+	c.PluginHost.Endpoint.SetPluginTexts(hosttext.NewTexts(c.TextVersions.Versions, c.TextVersions.Texts))
 }
 
 func openPluginData(c vaultWiring) *textversion.PluginData {
 	if c.TextVersions == nil {
 		return nil
 	}
-	data, err := textversion.NewPluginData(c.TextVersions, derivedfile.PluginStores{Options: vaultOptions(c)})
+	data, err := textversion.NewPluginData(c.TextVersions.Versions, derivedfile.PluginStores{Options: vaultOptions(c)})
 	if err != nil {
 		c.ErrorHandler(err)
 		return nil
@@ -207,7 +217,7 @@ func openFileText(c vaultWiring) *textversion.FileText {
 	if c.TextVersions == nil {
 		return nil
 	}
-	text, err := textversion.NewFileText(c.TextVersions)
+	text, err := textversion.NewFileText(c.TextVersions.Texts, c.TextVersions.Versions)
 	if err != nil {
 		c.ErrorHandler(err)
 		return nil

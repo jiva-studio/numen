@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
 // repositoryPlugins is the plugins folder of the repository.
@@ -32,8 +31,8 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 	if err := host.Discovery.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := plugincommand.NewCommands(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.ContentTypes, nil, nil)
-	return command.NewHandler(shownVault{}, commands.WithVersions(&versionItems{}))
+	commands := newScenarios(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.ContentTypes, nil, nil)
+	return newHandler(commands.withVersions(&versionItems{}))
 }
 
 func BenchmarkListCommandItems_OfASharedCommandOverTheRepositoryPlugins(b *testing.B) {

@@ -19,36 +19,36 @@ import (
 // enabled plugins whose condition names version.* offer as their items, and
 // the run of such a command over one of them.
 type VersionItems struct {
-	versions   *Versions
+	texts      itemTexts
+	versions   versionRemover
 	run        CommandRun
 	types      contenttypeport.ContentTypeTable
 	conditions *when.Conditions
 }
 
+// itemTexts finds the versions of a file and which one is live.
+type itemTexts interface {
+	FindLive(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, domain.TextVersion, bool, error)
+}
+
+// versionRemover deletes a version of a file.
+type versionRemover interface {
+	DeleteVersion(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID) error
+}
+
 // NewVersionItems returns the version items of the vault files, run with run and using the table
 // to find the type of a file.
-func NewVersionItems(versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) (*VersionItems, error) {
-	if versions == nil || run == nil || types == nil {
-		return nil, errors.New("version items: text versions, the run of commands and content type table are required")
+func NewVersionItems(texts *Texts, versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) (*VersionItems, error) {
+	if texts == nil || versions == nil || run == nil || types == nil {
+		return nil, errors.New("version items: texts, text versions, the run of commands and content type table are required")
 	}
-	return &VersionItems{versions: versions, run: run, types: types, conditions: when.NewConditions()}, nil
+	return &VersionItems{texts: texts, versions: versions, run: run, types: types, conditions: when.NewConditions()}, nil
 }
 
 // CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
 // and its arguments.
 type CommandRun interface {
 	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
-}
-
-func (u *VersionItems) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
-	if len(versions) == 0 {
-		return domain.TextVersion{}, false, nil
-	}
-	contentHash, err := u.versions.Texts.GetContentHash(ctx, v, path)
-	if err != nil {
-		return domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
-	}
-	return u.versions.Texts.live.find(ctx, v, path, versions, contentHash)
 }
 
 func listVersionItems(condition when.Condition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []text.VersionItem {
@@ -72,11 +72,7 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 	if err != nil || !condition.HasItems() {
 		return nil, err
 	}
-	versions, err := getVersions(ctx, u.versions.stores, v, path)
-	if err != nil {
-		return nil, err
-	}
-	live, hasLive, err := u.findLiveVersion(ctx, v, path, versions)
+	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}
@@ -87,11 +83,7 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 // ListEveryVersion lists every text version of the file at the path, as the items of the application
 // command text.DeleteCommand.
 func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]text.VersionItem, error) {
-	versions, err := getVersions(ctx, u.versions.stores, v, path)
-	if err != nil {
-		return nil, err
-	}
-	live, hasLive, err := u.findLiveVersion(ctx, v, path, versions)
+	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}

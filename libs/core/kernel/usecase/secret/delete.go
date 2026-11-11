@@ -9,7 +9,10 @@ import (
 )
 
 // Delete removes a secret with its value and its permissions.
-type Delete struct{ operation }
+type Delete struct{ Operation }
+
+// NewDelete makes the Delete use case over the operation.
+func NewDelete(op Operation) *Delete { return &Delete{Operation: op} }
 
 // Execute removes the entry first and then the value, and configures the plugins that could read it.
 // When the value cannot be removed the entry returns to its place with its permissions, so the

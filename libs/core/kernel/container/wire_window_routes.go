@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -53,11 +54,13 @@ func mountMedia(w *windowWiring) {
 }
 
 func mountCommand(w *windowWiring) {
-	commands := getPluginCommands(plugins(w.cfg))
-	if menu := openVersionItems(plugins(w.cfg)); menu != nil {
-		commands = commands.WithVersions(menu)
+	p := plugins(w.cfg)
+	var versions plugincommand.VersionItems
+	if menu := openVersionItems(p); menu != nil {
+		versions = menu
 	}
-	handler := command.NewHandler(w.inst.State, commands)
+	commands := newPluginCommands(p, p.PluginHost, versions)
+	handler := command.NewHandler(w.inst.State, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.Gate.CountQuestions(), handler)))
 }
 
@@ -185,7 +188,6 @@ func mountAgent(w *windowWiring) {
 	handler := &windowagent.Handler{
 		GetRoot:        func() string { return state.GetCurrentVault().Path },
 		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
-		GetUnreachable: state.Unreachable.Why,
 	}
 	if taking := getToolProvider(plugins(w.cfg)); taking != nil {
 		handler.Start = agent.NewStartTask(taking)
@@ -213,12 +215,15 @@ func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	var secretLister settings.SecretLister
-	var items windowsettings.SecretItems
-	var groups windowsettings.SecretGroups
+	items, groups := &windowsettings.SecretItems{}, &windowsettings.SecretGroups{}
 	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
 		secretLister = secrets.List.ListForSettings
-		items = windowsettings.NewSecretItems(secrets.Items)
-		groups = windowsettings.NewSecretGroups(secrets.Groups, secrets.Access)
+		items = windowsettings.NewSecretItems(
+			secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write, secrets.Items.Delete, secrets.Items.Move,
+		)
+		groups = windowsettings.NewSecretGroups(
+			secrets.Groups.Rename, secrets.Groups.Delete, secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates,
+		)
 	}
 	retry := openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)

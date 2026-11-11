@@ -30,7 +30,7 @@ func TestTwoOperationsNeverInterleaveTheirChanges(t *testing.T) {
 		plugin.Secret{ID: "s00000002", Name: "Two", Group: "g"},
 	)
 	store := blockingStore{keys: f.keys, entered: make(chan string, 2), release: make(chan struct{})}
-	f.secrets = secret.NewSecrets(f.ledger, store, f.plugins, nil, nil, nil)
+	f.secrets = newSecrets(f.ledger, store, f.plugins, nil, nil, nil)
 
 	var group sync.WaitGroup
 	for _, id := range []string{"s00000001", "s00000002"} {
@@ -67,7 +67,7 @@ func TestGateBlocksUntilPluginsAreConfigured(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "One", Group: "g"})
 	gate := secret.NewGate()
 	blocker := &refreshBlocker{entered: make(chan struct{}, 2), release: make(chan struct{})}
-	f.secrets = secret.NewSecrets(f.ledger, f.keys, blocker, nil, nil, gate)
+	f.secrets = newSecrets(f.ledger, f.keys, blocker, nil, nil, gate)
 
 	first := make(chan error, 1)
 	go func() { first <- f.secrets.Items.Rename.Execute(t.Context(), "s00000001", "Office") }()
@@ -101,7 +101,7 @@ func TestCanceledWaitOnGateChangesNothing(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "One", Group: "g"})
 	gate := secret.NewGate()
 	store := blockingStore{keys: f.keys, entered: make(chan string, 1), release: make(chan struct{})}
-	f.secrets = secret.NewSecrets(f.ledger, store, f.plugins, nil, nil, gate)
+	f.secrets = newSecrets(f.ledger, store, f.plugins, nil, nil, gate)
 
 	holder := make(chan error, 1)
 	go func() { holder <- f.secrets.Items.Write.Execute(t.Context(), "s00000001", "value") }()
@@ -134,7 +134,7 @@ func TestCreateRollsBackValueWhenListWriteFailsAfterCancel(t *testing.T) {
 	store := keys{}
 	failing := &failingLedger{}
 	canceling := cancelOnSet{keys: store, cancel: cancel}
-	use := secret.NewSecrets(failing, canceling, &plugins{}, func() (string, error) { return "s00000001", nil }, nil, nil)
+	use := newSecrets(failing, canceling, &plugins{}, func() (string, error) { return "s00000001", nil }, nil, nil)
 
 	if _, err := use.Items.Create.Execute(ctx, "g", "N", "value"); !errors.Is(err, errDisk) {
 		t.Fatalf("error = %v", err)

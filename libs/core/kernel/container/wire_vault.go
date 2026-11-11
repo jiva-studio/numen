@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -116,7 +115,7 @@ type vaultWiring struct {
 	Clock        machineport.Clock
 	PluginHost   *PluginHost
 	RunningHost  *PluginHost
-	TextVersions *textversion.Versions
+	TextVersions *TextVersions
 	TextReaders  textdomain.Readers
 	VaultLocks   *vaultwriter.Locks
 	Watches      *vaultwatch.Hub

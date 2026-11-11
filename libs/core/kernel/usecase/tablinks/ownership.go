@@ -19,15 +19,15 @@ func (o *ownership) setOwner(windowID string, tab tablink.Tab) {
 	if !isKnown || previous.WindowID == windowID {
 		return
 	}
-	if pending, ok := s.transit.moves[tab.ID]; ok && pending.targetWindowID != windowID {
+	if pending, ok := s.transit.getMove(tab.ID); ok && pending.targetWindowID != windowID {
 		s.transit.endMove(tab.ID, pending, tablink.MoveErrorCancelled)
 	}
-	if pending, ok := s.transit.detaches[tab.ID]; ok {
+	if pending, ok := s.transit.getDetach(tab.ID); ok {
 		outcome := tablink.MoveErrorCancelled
 		if pending.windowID == windowID {
 			// The window that read the detach still calls Accept.
 			outcome = tablink.MoveErrorNone
-			s.expiries.recordAccepted(pending.id, windowID)
+			s.expiries.recordAccepted(s, pending.id, windowID)
 		}
 		s.transit.endDetach(tab.ID, pending, outcome)
 	}
@@ -41,7 +41,7 @@ func (o *ownership) acceptTab(windowID string, tab tablink.Tab) bool {
 	case !isKnown:
 		s.roster.order = append(s.roster.order, tab.ID)
 	case previous.WindowID == windowID:
-	case s.roster.presence.isLive(previous.WindowID):
+	case s.roster.windows[previous.WindowID].isLive():
 		return false
 	}
 	o.setOwner(windowID, tab)
@@ -54,7 +54,7 @@ func (o *ownership) takeTab(windowID, tabID string) {
 	if !isKnown {
 		return
 	}
-	s.expiries.keepAcceptingWindow(windowID)
+	s.expiries.keepAcceptingWindow(s, windowID)
 	o.setOwner(windowID, tab)
 	s.roster.addToWindow(windowID, tabID)
 	s.publishSnapshot()
@@ -63,12 +63,13 @@ func (o *ownership) takeTab(windowID, tabID string) {
 func (o *ownership) moveClaimedTabs(ownerID string) {
 	s := o.state
 	for _, claimerID := range s.roster.listClaimers() {
-		s.roster.claims[claimerID] = slices.DeleteFunc(s.roster.claims[claimerID], func(tab tablink.Tab) bool {
+		claimer := s.roster.windows[claimerID]
+		claimer.claims = slices.DeleteFunc(claimer.claims, func(tab tablink.Tab) bool {
 			if s.roster.tabs[tab.ID].WindowID != ownerID {
 				return false
 			}
 			o.setOwner(claimerID, tab)
-			s.roster.windows[claimerID] = append(s.roster.windows[claimerID], tab.ID)
+			s.roster.setTabIDs(claimerID, append(s.roster.tabIDsOf(claimerID), tab.ID))
 			return true
 		})
 	}

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -44,7 +43,7 @@ func (menuPlugins) RunCommand(context.Context, plugin.CommandCall) (plugin.Comma
 }
 
 func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
-	commands := plugincommand.NewCommands(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
+	commands := newScenarios(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
 
 	entries := commands.List.ExecuteSlots()
 
@@ -63,7 +62,7 @@ func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
 }
 
 func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
-	commands := plugincommand.NewCommands(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
+	commands := newScenarios(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
 
 	entries := commands.List.ExecuteSlots()
 
@@ -77,7 +76,7 @@ func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
 }
 
 func TestTheWindowListsNoMenuEntriesWhereThereIsNoPluginHost(t *testing.T) {
-	commands := plugincommand.NewCommands(nil, nil, getTypes(), nil, nil)
+	commands := newScenarios(nil, nil, getTypes(), nil, nil)
 
 	if entries := commands.List.ExecuteSlots(); len(entries) != 0 {
 		t.Errorf("the window lists %+v", entries)

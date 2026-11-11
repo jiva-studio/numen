@@ -16,8 +16,8 @@ import (
 // when the changes cannot be determined the vault is scanned again.
 type Follow struct {
 	watcher vaultport.VaultWatcher
-	refresh refreshing
-	scan    scanning
+	refresh Refreshing
+	scan    Scanning
 
 	changed      func(VaultChanges)
 	errorHandler window.ErrorHandler
@@ -27,7 +27,7 @@ type Follow struct {
 // files, the scan used when the changes cannot be determined, and what receives the changes and the errors;
 // a nil one receives nothing. Refresh and scan run from Run, which the caller starts without waiting on.
 func NewFollow(
-	watcher vaultport.VaultWatcher, refresh Refresh, scan Scan, changed func(VaultChanges), errorHandler window.ErrorHandler,
+	watcher vaultport.VaultWatcher, refresh Refreshing, scan Scanning, changed func(VaultChanges), errorHandler window.ErrorHandler,
 ) Follow {
 	return Follow{watcher: watcher, refresh: refresh, scan: scan, changed: changed, errorHandler: errorHandler}
 }
@@ -112,12 +112,12 @@ func (f *Watch) handleError(err error) {
 	}
 }
 
-// refreshing brings the named files of a vault up to date.
-type refreshing interface {
+// Refreshing brings the named files of a vault up to date.
+type Refreshing interface {
 	Execute(ctx context.Context, v domain.Vault, paths []string) (RefreshResult, error)
 }
 
-// scanning reads a whole vault into the index.
-type scanning interface {
+// Scanning reads a whole vault into the index.
+type Scanning interface {
 	Execute(ctx context.Context, v domain.Vault) (vaultreading.ScanResult, error)
 }

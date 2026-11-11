@@ -872,7 +872,6 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 		End:            agentuse.NewEndConversation(agent),
 		GetRoot:        func() string { return state.GetCurrentVault().Path },
 		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
-		GetUnreachable: state.Unreachable.Why,
 	}, windowagent.NewRoute))
 	plugins := &testInterceptingPlugins{}
 	services.PluginServices = plugins

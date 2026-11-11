@@ -9,43 +9,29 @@ type expiry struct {
 	hasAccepted bool
 }
 
-// presence is which windows are watching, and the windows whose last watch ended and wait out the grace
-// period.
-type presence struct {
-	watches  map[string][]*Watch
-	removals map[string]*expiry
+func (e *windowEntry) hasWatch() bool { return e != nil && len(e.watches) > 0 }
+
+func (e *windowEntry) isLive() bool {
+	return e.hasWatch() || (e != nil && e.removal != nil && e.removal.hasAccepted)
 }
 
-func newPresence() *presence {
-	return &presence{watches: map[string][]*Watch{}, removals: map[string]*expiry{}}
+func (e *windowEntry) isEmpty() bool {
+	return !e.isReported && !e.isListed && len(e.claims) == 0 && len(e.watches) == 0 && e.removal == nil
 }
 
-func (p *presence) hasWatch(windowID string) bool { return len(p.watches[windowID]) > 0 }
-
-func (p *presence) isLive(windowID string) bool {
-	if p.hasWatch(windowID) {
+func (e *windowEntry) removeWatch(w *Watch) bool {
+	if e == nil {
 		return true
 	}
-	pending, ok := p.removals[windowID]
-	return ok && pending.hasAccepted
+	e.watches = slices.DeleteFunc(e.watches, func(one *Watch) bool { return one == w })
+	return len(e.watches) == 0
 }
 
-func (p *presence) addWatch(w *Watch) {
-	p.watches[w.windowID] = append(p.watches[w.windowID], w)
-}
-
-func (p *presence) removeWatch(w *Watch) bool {
-	rest := slices.DeleteFunc(p.watches[w.windowID], func(one *Watch) bool { return one == w })
-	if len(rest) > 0 {
-		p.watches[w.windowID] = rest
-		return false
+func (e *windowEntry) cancelWatches() {
+	if e == nil {
+		return
 	}
-	delete(p.watches, w.windowID)
-	return true
-}
-
-func (p *presence) cancelWatches(windowID string) {
-	for _, w := range p.watches[windowID] {
+	for _, w := range e.watches {
 		if !w.isCancelled {
 			w.isCancelled = true
 			close(w.stop)
@@ -63,7 +49,7 @@ type Watch struct {
 	stop        chan struct{}
 	isCancelled bool
 	unsubscribe func()
-	windows     *Windows
+	host        shared
 }
 
 // Close ends the watch. When the window has no other watch, the pending moves
@@ -73,15 +59,16 @@ type Watch struct {
 // period.
 func (w *Watch) Close() {
 	w.unsubscribe()
-	s := w.windows.state
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if !s.roster.presence.removeWatch(w) {
+	s, release := w.host.hold()
+	defer release()
+	if !s.roster.windows[w.windowID].removeWatch(w) {
 		return
 	}
 	s.transit.endMovesInto(w.windowID)
-	delete(s.roster.claims, w.windowID)
+	if entry := s.roster.windows[w.windowID]; entry != nil {
+		entry.claims = nil
+	}
 	s.owners.moveClaimedTabs(w.windowID)
 	s.publishSnapshot()
-	s.expiries.scheduleWindowRemoval(w.windowID)
+	s.expiries.scheduleWindowRemoval(s, w.windowID)
 }

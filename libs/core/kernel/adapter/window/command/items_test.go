@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
 // versionItems offers two versions of every file, the first live, and records each run.
@@ -46,7 +45,7 @@ func (v *versionItems) RunVersionItem(
 }
 
 func newItemsHandler(items *versionItems) *command.Handler {
-	return command.NewHandler(shownVault{}, plugincommand.NewCommands(conditionalCommands{}, conditionalCommands{}, fileTypes{}, nil, nil).WithVersions(items))
+	return newHandler(newScenarios(conditionalCommands{}, conditionalCommands{}, fileTypes{}, nil, nil).withVersions(items))
 }
 
 func TestListCommands_ListsACommandWithItemsAndMarksIt(t *testing.T) {
@@ -165,7 +164,7 @@ func TestRunPluginCommand_RunsACommandWithItemsOverTheItemPicked(t *testing.T) {
 
 func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *testing.T) {
 	plugins := &runRecorded{}
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(plugins, plugins, fileTypes{}, nil, nil).WithVersions(&versionItems{}))
+	handler := newHandler(newScenarios(plugins, plugins, fileTypes{}, nil, nil).withVersions(&versionItems{}))
 
 	res, err := handler.RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
 		PluginId: "md.numen.tools.updater", Command: "updater.check", ItemId: "beta",
@@ -242,7 +241,7 @@ func (b *brokenComparison) ListVersionItems(ctx context.Context, v domain.Vault,
 }
 
 func TestListCommandItems_AnswersTheOtherListsWhereOneCommandFails(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(comparingCommands{}, comparingCommands{}, fileTypes{}, nil, nil).WithVersions(&brokenComparison{}))
+	handler := newHandler(newScenarios(comparingCommands{}, comparingCommands{}, fileTypes{}, nil, nil).withVersions(&brokenComparison{}))
 
 	res, err := handler.ListCommandItems(t.Context(), connect.NewRequest(&v1.ListCommandItemsRequest{
 		Path: "talks/a.mp3",

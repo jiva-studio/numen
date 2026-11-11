@@ -29,7 +29,7 @@ func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
 			Arguments: []manifest.CommandArgument{{Name: "address", Title: "Web address", Type: "string", IsRequired: true}},
 		}},
 	}}
-	commands := plugincommand.NewCommands(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),

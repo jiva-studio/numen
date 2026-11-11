@@ -13,7 +13,10 @@ type State struct {
 }
 
 // ListStates reads which secrets have a value.
-type ListStates struct{ operation }
+type ListStates struct{ Operation }
+
+// NewListStates makes the ListStates use case over the operation.
+func NewListStates(op Operation) *ListStates { return &ListStates{Operation: op} }
 
 // Execute returns the state of every secret in list order. It reads the key store once for each
 // secret, so only the page of secrets calls it. A secret whose value cannot be read has none; a

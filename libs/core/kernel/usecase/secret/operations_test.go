@@ -74,7 +74,7 @@ type fixture struct {
 	ledger  *ledger
 	plugins *plugins
 	keys    keys
-	secrets *secret.Secrets
+	secrets *secrets
 }
 
 func newFixture(list ...plugin.Secret) fixture {
@@ -84,7 +84,7 @@ func newFixture(list ...plugin.Secret) fixture {
 		counter++
 		return "s0000000" + string(rune('0'+counter)), nil
 	}
-	f.secrets = secret.NewSecrets(f.ledger, f.keys, f.plugins, newID, func(context.Context) string { return "/credentials.json" }, nil)
+	f.secrets = newSecrets(f.ledger, f.keys, f.plugins, newID, func(context.Context) string { return "/credentials.json" }, nil)
 	return f
 }
 
@@ -139,7 +139,7 @@ func (failingStore) SetKey(context.Context, string, string) error { return errLo
 
 func TestCreateWithFailingStoreRedactsValueAndSkipsWrite(t *testing.T) {
 	f := newFixture()
-	f.secrets = secret.NewSecrets(f.ledger, failingStore{keys{}}, f.plugins, func() (string, error) { return "s00000001", nil }, nil, nil)
+	f.secrets = newSecrets(f.ledger, failingStore{keys{}}, f.plugins, func() (string, error) { return "s00000001", nil }, nil, nil)
 
 	_, err := f.secrets.Items.Create.Execute(t.Context(), "g", "N", "value-that-must-stay-secret")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) || strings.Contains(err.Error(), "value-that-must-stay-secret") {
@@ -297,7 +297,7 @@ func TestDeleteWithFailingStoreRestoresEntryAndSkipsRefresh(t *testing.T) {
 	}
 	f := newFixture(list...)
 	f.keys["secret/s00000002"] = "invented-value"
-	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
+	f.secrets = newSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
 
 	err := f.secrets.Items.Delete.Execute(t.Context(), "s00000002")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {

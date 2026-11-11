@@ -8,6 +8,13 @@ import (
 // maxColorIndex is the number of group colors; groups past it share colors.
 const maxColorIndex = 4
 
+type linkGroups interface {
+	find(tabID string) *Group
+	remove(tabID string) bool
+	join(sourceID, targetID string) bool
+	snapshot() []Group
+}
+
 // groupSet is the link groups of the tabs.
 type groupSet struct {
 	groups []*Group

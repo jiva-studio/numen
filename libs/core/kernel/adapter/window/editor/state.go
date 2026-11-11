@@ -25,8 +25,8 @@ type State struct {
 	Runtime windowsession.Runtime
 	Tabs    windowsession.TabReports
 
-	Gate    *Gate
-	Writes  *Writes
+	Gate    *wire.Gate
+	Writes  *wire.Writes
 	Notices *Notices
 	Events  *Events
 
@@ -37,7 +37,6 @@ type State struct {
 
 	DetachTab func(context.Context, window.DetachedTab) error
 
-	Unreachable wire.Reason
 
 	Window *wire.Window
 
@@ -65,8 +64,8 @@ type Frame interface {
 func NewState(tasks *run.Tasks, frame Frame, emit func(event string)) *State {
 	tasked := &wire.Window{Name: wire.Editor, Tasks: tasks}
 	state := &State{
-		Gate:    &Gate{},
-		Writes:  &Writes{window: tasked},
+		Gate:    &wire.Gate{},
+		Writes:  wire.NewWrites(tasked),
 		Notices: newNotices(),
 		Events:  &Events{Emit: emit},
 		Window:  tasked,

@@ -62,7 +62,7 @@ func findTask(t *testing.T, r *recorder, id string) *work.Task {
 func newPass(
 	made reading, db *WorkerIndex, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
-) *pass {
+) *testPass {
 	worker := NewWorker(Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
@@ -73,7 +73,7 @@ func newPass(
 		Quiet:  time.Hour,
 		After:  time.After,
 	})
-	return &pass{worker: worker, session: worker.NewSession(), v: v}
+	return &testPass{pass: worker.newPass(worker.NewSession(), v, false), worker: worker}
 }
 
 func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
@@ -354,7 +354,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
-	p.worker.read = model.wake
+	p.worker.wakes.read = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -404,7 +404,7 @@ func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) 
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
-	p.worker.sources = model.wake
+	p.worker.wakes.sources = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -436,7 +436,7 @@ func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
-	p.worker.notes = model.wake
+	p.worker.wakes.notes = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -463,7 +463,7 @@ func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {
 	for range 3 {
 		worker.WakeNotes()
 	}
-	if got := len(worker.notes); got != 1 {
+	if got := len(worker.wakes.notes); got != 1 {
 		t.Errorf("%d wakes are waiting, want 1", got)
 	}
 }
@@ -478,7 +478,7 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 	session.ReportVersionsChanged(v, "talks/a.mp3")
 
 	select {
-	case <-worker.read:
+	case <-worker.wakes.read:
 	default:
 		t.Fatal("a change of versions woke nothing")
 	}
@@ -499,7 +499,7 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "books/scan.pdf")
-	<-p.worker.read
+	<-p.worker.wakes.read
 	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -529,7 +529,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "Note.md")
-	<-p.worker.read
+	<-p.worker.wakes.read
 	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -618,4 +618,10 @@ type WorkerIndex struct {
 	Progress    indexport.IndexProgress
 	Vectors     embeddingport.VectorIndex
 	Closer      io.Closer
+}
+
+// testPass is a pass with the worker it runs for, which a test reaches into.
+type testPass struct {
+	*pass
+	worker *Worker
 }
