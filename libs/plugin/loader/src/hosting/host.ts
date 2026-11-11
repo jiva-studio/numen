@@ -32,7 +32,6 @@ import {
   disposePluginEntry,
   setStarting,
   type HostRegistry,
-  type RegisteredAgentProvider,
 } from './registry'
 import { createVaultServiceBridge, createWindowServiceBridge } from './bridge/services'
 import type {
@@ -94,28 +93,6 @@ function createRegistrationBridge(
         pluginId,
         reg: registration,
       }),
-    // Stryker disable all: agentProviders map is internal state for future host provider lookup
-    registerAgentProvider: (pluginId, registration) => {
-      const owner = [...registry.agentProviders.values()].find(
-        (one) => one.reg.id === registration.id && one.pluginId !== pluginId,
-      )
-      if (owner) {
-        throw new Error(
-          `Plugin "${pluginId}" registers the agent provider "${registration.id}", which plugin "${owner.pluginId}" already registers`,
-        )
-      }
-      const entry = { pluginId, reg: registration }
-      const key = getEntryKey(pluginId, registration.id)
-      registry.agentProviders.set(key, entry)
-      return {
-        dispose: () => {
-          if (registry.agentProviders.get(key) === entry) {
-            registry.agentProviders.delete(key)
-          }
-        },
-      }
-    },
-    // Stryker restore all
   }
 }
 
@@ -207,10 +184,6 @@ function createRegisteredApi(registry: HostRegistry) {
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
-    /** The agent providers of every plugin, each with the plugin that registered it. */
-    getRegisteredAgentProviders: (): RegisteredAgentProvider[] => [
-      ...registry.agentProviders.values(),
-    ],
   }
 }
 
@@ -297,7 +270,6 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     commands: shallowRef(new Map()),
     handlers: shallowRef(new Map()),
     settingsViews: shallowRef(new Map()),
-    agentProviders: new Map(),
     contexts: new Map(),
     manifests: new Map(),
     activated: shallowRef(new Set()),

@@ -122,46 +122,70 @@ export interface TabPlacement {
   readonly order: number
 }
 
-// TabKindRegistration registers a workspace tab kind. A registration that
-// declares open owns the content of its tabs; one that does not displays the
-// note at the path its tab opens on. A kind that declares getState has its
-// tabs reopened after a restart with the saved state.
-export interface TabKindRegistration<State extends object = object> {
+// TabKindIdentity names a tab kind and the tab an opened path resolves to.
+export interface TabKindIdentity<State extends object = object> {
   kind: string
-  component: Component
+  // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
+  identity?(this: void, targetPath: string): string
   title?: string
-  onClose?(this: void, state: State, id: string): boolean
+  getTitle?(this: void, state: State): string
+}
+
+// TabKindPresentation is how the tabs of a kind look and where they open.
+export interface TabKindPresentation<State extends object = object> {
+  component: Component
+  icon?: Component
+  placement?: TabPlacement
+  isTool?: boolean
+  // The one word its tabs carry beside their title, and nothing where a tab carries none.
+  getMark?(this: void, state: State): string | undefined
+}
+
+// TabKindLifecycle is what a tab holds from its opening to its end.
+export interface TabKindLifecycle<State extends object = object> {
   // What the tab `id` holds, made as it opens on `at`, inside the tab's effect scope. `saved` is
   // what getState returned for the tab before a restart, and absent for a new tab.
   open?(targetPath: string, id: string, saved?: JsonValue): State
   // The JSON value the window keeps for the tab and passes to open after a restart.
   getState?(this: void, state: State): JsonValue
-  getTitle?(this: void, state: State): string
-  // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
-  identity?(this: void, targetPath: string): string
   onShow?(this: void, state: State, id: string): void
+  onClose?(this: void, state: State, id: string): boolean
+  // The window is going; what the tab holds is released without asking.
+  onDestroy?(this: void, state: State, id: string): void
+}
+
+// TabKindInput is what a tab receives from the window.
+export interface TabKindInput<State extends object = object> {
   // The tab is handed text meant for it, such as a question the window puts to it.
   receiveText?(this: void, state: State, text: string): void
   // A key struck while the tab is in front, answered with whether the tab took it.
   onKeyPress?(this: void, state: State, event: KeyboardEvent): boolean
+  // The tab moves to a vault path a tab linked to it moved to. A kind that declares it can be linked.
+  navigate?(this: void, state: State, path: string, title: string): void | Promise<void>
+}
+
+// TabKindFiles is how a tab relates to the files it shows and edits.
+export interface TabKindFiles<State extends object = object> {
   getTarget?(this: void, state: State): TabTarget
   // Returns the file the tab shows, and the place its reader last reported, left out when it reported none.
   getOpenTab?(this: void, state: State): { readonly path: string; readonly place?: TabPlace }
-  // The window is going; what the tab holds is released without asking.
-  onDestroy?(this: void, state: State, id: string): void
-  // The tab moves to a vault path a tab linked to it moved to. A kind that declares it can be linked.
-  navigate?(this: void, state: State, path: string, title: string): void | Promise<void>
-  isTool?: boolean
-  // The one word its tabs carry beside their title, and nothing where a tab carries none.
-  getMark?(this: void, state: State): string | undefined
   isAsking?(this: void, state: State): boolean
   // Writes what the tab holds out to its file, and answers once nothing is on its way.
   flushPending?(this: void, state: State): Promise<void>
   // A file made in a folder under a name, as the file this kind edits.
   createFile?(this: void, folder: string, name: string): Promise<Result<{ path: string }, string>>
-  icon?: Component
-  placement?: TabPlacement
 }
+
+// TabKindRegistration registers a workspace tab kind, as the union of its hook groups. A
+// registration that declares open owns the content of its tabs; one that does not displays the
+// note at the path its tab opens on. A kind that declares getState has its tabs reopened after a
+// restart with the saved state.
+export interface TabKindRegistration<State extends object = object>
+  extends TabKindIdentity<State>,
+    TabKindPresentation<State>,
+    TabKindLifecycle<State>,
+    TabKindInput<State>,
+    TabKindFiles<State> {}
 
 // CommandNote is what a command runs over, as its handler gets it: the target of the run, the note
 // in front where the run names none, and the type the vault files it as. Its path is empty where
@@ -182,14 +206,6 @@ export interface CommandRegistration {
     values?: Readonly<Record<string, string>>,
   ) => void | Promise<void>
   listItems?: (target: CommandTarget) => readonly CommandItem[] | Promise<readonly CommandItem[]>
-}
-
-// AgentProviderRegistration registers an AI agent provider.
-export interface AgentProviderRegistration {
-  id: string
-  name: string
-  createAgent: () => AgentPort
-  capabilities?: string[]
 }
 
 // PluginLifecycle declares the activation and teardown hooks.
@@ -225,7 +241,7 @@ export interface PluginIdentity {
   readonly subscriptions: Subscriptions
   readonly app: AppInfo
   // Opens an http or https address in the system browser. Any other address fails; a plugin without
-  // the permission network:outbound (consent to open external links; it does not restrict requests the
+  // the permission link:open (consent to open external links; it does not restrict requests the
   // plugin makes itself) is refused.
   openExternal(url: string): Promise<Result<null>>
   hasPermission?(permission: string): boolean
@@ -242,7 +258,6 @@ export interface PluginRegistrations {
   slotView(registration: SlotViewRegistration): Disposable
   tabKind<State extends object>(registration: TabKindRegistration<State>): Disposable
   command(registration: CommandRegistration): Disposable
-  agentProvider(registration: AgentProviderRegistration): Disposable
   // Declares a view other plugins mount by its capability.
   view(registration: ViewRegistration): Disposable
   // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.

@@ -4,7 +4,6 @@
  */
 import { createMockManifest } from '@numen/core-client/testing'
 import type {
-  AgentProviderRegistration,
   CommandRegistration,
   SettingsViewRegistration,
 } from '@numen/plugin-sdk'
@@ -60,29 +59,5 @@ describe('RED UNTIL FIXED: a registration whose getter answers differently on ea
     })
 
     expect(registered.mock.results[0]?.value.id).toBe('general')
-  })
-
-  it('registers an agent provider under the id the plugin gave on the first read', () => {
-    const registered = vi.fn((_pluginId: string, registration: AgentProviderRegistration) => ({
-      id: registration.id,
-      dispose: vi.fn(),
-    }))
-    const host = createTestContextHost({ registration: { registerAgentProvider: registered } })
-    const manifest = createMockManifest('md.numen.sample', {
-      permissions: ['vault:read'],
-      capabilities: ['ai.agent.provider'],
-    })
-    const context = createPluginContext('md.numen.sample', host, manifest)
-    const readId = createFlippingId('sample-agent', 'other-agent')
-
-    context.register.agentProvider({
-      get id() {
-        return readId()
-      },
-      name: 'Sample',
-      createAgent: vi.fn() as never,
-    })
-
-    expect(registered.mock.results[0]?.value.id).toBe('sample-agent')
   })
 })

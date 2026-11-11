@@ -43,6 +43,11 @@ function requireFreeKind(
   )
 }
 
+/** Undoes the steps of a registration that failed, the last first. */
+function undoSteps(steps: readonly (() => void)[]): void {
+  for (const undo of [...steps].reverse()) undo()
+}
+
 /**
  * Registers a reader. It throws where the window already holds the tab kind of the reader for a plugin:
  * the same tab kind, a reader of it, or the tab kind of that reader.
@@ -56,30 +61,34 @@ export function registerReaderEntry(
   const { readers } = owners
   requireFreeKind(owners, { pluginId, what: 'reader', id: registration.id })
   const kindId = getReaderKindId(registration.id)
-  const cleanups: (() => void)[] = [
-    deps.registerKind(createReaderTabKind(pluginId, registration, getContext)),
-  ]
-  for (const ext of deps.getReaderExtensions?.(pluginId, registration.id) ?? []) {
-    cleanups.push(
-      deps.registerExtensionReader(
-        ext,
-        (path, selector, ranges) => {
-          deps
-            .openTab(kindId, path)
-            .then((tabId) => {
-              if ((!selector && !ranges) || !deps.getTabState) return
-              const state = deps.getTabState(tabId) as
-                { selector: Selector | null; ranges: readonly TextRange[] | null } | undefined
-              if (!state) return
-              // A new object each time, so a reader watching it moves to the same place again.
-              if (selector) state.selector = { ...selector }
-              if (ranges) state.ranges = [...ranges]
-            })
-            .catch((error: Caught) => reportError(deps, pluginId, error))
-        },
-        registration.icon,
-      ),
-    )
+  const cleanups: (() => void)[] = []
+  try {
+    cleanups.push(deps.registerKind(createReaderTabKind(pluginId, registration, getContext)))
+    for (const ext of deps.getReaderExtensions?.(pluginId, registration.id) ?? []) {
+      cleanups.push(
+        deps.registerExtensionReader(
+          ext,
+          (path, selector, ranges) => {
+            deps
+              .openTab(kindId, path)
+              .then((tabId) => {
+                if ((!selector && !ranges) || !deps.getTabState) return
+                const state = deps.getTabState(tabId) as
+                  { selector: Selector | null; ranges: readonly TextRange[] | null } | undefined
+                if (!state) return
+                // A new object each time, so a reader watching it moves to the same place again.
+                if (selector) state.selector = { ...selector }
+                if (ranges) state.ranges = [...ranges]
+              })
+              .catch((error: Caught) => reportError(deps, pluginId, error))
+          },
+          registration.icon,
+        ),
+      )
+    }
+  } catch (error) {
+    undoSteps(cleanups)
+    throw error
   }
   let isDisposed = false
   const entry: RegisteredReader = {
@@ -113,21 +122,27 @@ export function registerTabKindEntry(
   const kind = isDeclaredTabKind(registration)
     ? createDeclaredTabKind(pluginId, registration)
     : createCustomTabKind(pluginId, registration, { ...deps, getContext })
-  const cleanups: (() => void)[] = [deps.registerKind(kind)]
-  if (deps.registerEditor) {
-    const unreg = deps.registerEditor(registration.kind, (path, _title, options) => {
-      const where = extractWhere(options)
-      if (where === 'split' && deps.openTabAdjacent) {
-        deps
-          .openTabAdjacent(registration.kind, path)
-          .catch((error: Caught) => reportError(deps, pluginId, error))
-      } else {
-        deps
-          .openTab(registration.kind, path)
-          .catch((error: Caught) => reportError(deps, pluginId, error))
-      }
-    })
-    if (typeof unreg === 'function') cleanups.push(unreg)
+  const cleanups: (() => void)[] = []
+  try {
+    cleanups.push(deps.registerKind(kind))
+    if (deps.registerEditor) {
+      const unreg = deps.registerEditor(registration.kind, (path, _title, options) => {
+        const where = extractWhere(options)
+        if (where === 'split' && deps.openTabAdjacent) {
+          deps
+            .openTabAdjacent(registration.kind, path)
+            .catch((error: Caught) => reportError(deps, pluginId, error))
+        } else {
+          deps
+            .openTab(registration.kind, path)
+            .catch((error: Caught) => reportError(deps, pluginId, error))
+        }
+      })
+      if (typeof unreg === 'function') cleanups.push(unreg)
+    }
+  } catch (error) {
+    undoSteps(cleanups)
+    throw error
   }
   let isDisposed = false
   const entry: RegisteredTabKind = {
