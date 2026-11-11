@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 // ErrNotStarted is a call that reached the calibration before Start.

@@ -1,4 +1,6 @@
-package relevance
+// Package floorrecords keeps the records of the floors as JSON files in the plugin's folder of the
+// store of a vault.
+package floorrecords
 
 import (
 	"context"
@@ -10,16 +12,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
-
-// Record is what the plugin keeps for one vault under one recipe: the floor a person set, if any, and
-// the last measurement. The statistics of a measurement are kept here and nowhere else.
-type Record struct {
-	Recipe      string
-	IsManual    bool
-	ManualFloor float64
-	Calibration *Calibration
-}
 
 // Folder is the part of the plugin's folder in the store of a vault that the records use.
 type Folder interface {
@@ -27,21 +21,13 @@ type Folder interface {
 	Write(ctx context.Context, name string, content []byte) error
 }
 
-// Records keeps the record of each recipe of one vault.
-type Records interface {
-	// Read returns the record kept for the recipe, and false where none is kept.
-	Read(ctx context.Context, recipe string) (Record, bool, error)
-	// Write keeps the record, replacing the one kept for its recipe.
-	Write(ctx context.Context, record Record) error
-}
-
 // storeRecords keeps one JSON file for each recipe in the plugin's folder of the vault's store.
 type storeRecords struct {
 	store Folder
 }
 
-// NewRecords returns the records kept in the store folder.
-func NewRecords(store Folder) Records {
+// New returns the records kept in the store folder.
+func New(store Folder) relevance.Records {
 	return storeRecords{store: store}
 }
 
@@ -68,24 +54,24 @@ func getRecordName(recipe string) string {
 	return "floor-" + hex.EncodeToString(sum[:8]) + ".json"
 }
 
-func (r storeRecords) Read(ctx context.Context, recipe string) (Record, bool, error) {
+func (r storeRecords) Read(ctx context.Context, recipe string) (relevance.Record, bool, error) {
 	raw, err := r.store.Read(ctx, getRecordName(recipe))
 	if errors.Is(err, host.ErrNotExist) {
-		return Record{}, false, nil
+		return relevance.Record{}, false, nil
 	}
 	if err != nil {
-		return Record{}, false, fmt.Errorf("read the record of the floor: %w", err)
+		return relevance.Record{}, false, fmt.Errorf("read the record of the floor: %w", err)
 	}
 	var file recordFile
 	if err := json.Unmarshal(raw, &file); err != nil {
-		return Record{}, false, fmt.Errorf("decode the record of the floor: %w", err)
+		return relevance.Record{}, false, fmt.Errorf("decode the record of the floor: %w", err)
 	}
 	if file.Recipe != recipe {
-		return Record{}, false, nil
+		return relevance.Record{}, false, nil
 	}
-	record := Record{Recipe: file.Recipe, IsManual: file.IsManual, ManualFloor: file.ManualFloor, Calibration: nil}
+	record := relevance.Record{Recipe: file.Recipe, IsManual: file.IsManual, ManualFloor: file.ManualFloor, Calibration: nil}
 	if c := file.Calibration; c != nil {
-		record.Calibration = &Calibration{
+		record.Calibration = &relevance.Calibration{
 			Floor: c.Floor, Median: c.Median, Spread: c.Spread, Histogram: c.Histogram,
 			QueryCount: c.QueryCount, PassageCount: c.PassageCount,
 			CalibratedTime: time.Unix(c.CalibratedAt, 0).UTC(),
@@ -94,7 +80,7 @@ func (r storeRecords) Read(ctx context.Context, recipe string) (Record, bool, er
 	return record, true, nil
 }
 
-func (r storeRecords) Write(ctx context.Context, record Record) error {
+func (r storeRecords) Write(ctx context.Context, record relevance.Record) error {
 	file := recordFile{Recipe: record.Recipe, IsManual: record.IsManual, ManualFloor: record.ManualFloor, Calibration: nil}
 	if c := record.Calibration; c != nil {
 		file.Calibration = &calibrationFile{

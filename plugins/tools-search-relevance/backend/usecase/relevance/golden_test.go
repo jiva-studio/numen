@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 // goldenFixture is a sample vault and the calibration the calibration of the core measured on it

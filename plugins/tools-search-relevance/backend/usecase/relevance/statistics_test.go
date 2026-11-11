@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 func TestSummarizeAKnownDistribution(t *testing.T) {

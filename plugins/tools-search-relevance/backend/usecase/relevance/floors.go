@@ -48,11 +48,11 @@ type ProbeResult struct {
 }
 
 // Host is the part of the host the floors work through: the search index, the notes of the vault and
-// the plugin's own folder.
+// the records the plugin keeps in its own folder.
 type Host struct {
 	Search func(domain.VaultID) Search
 	Vaults func(domain.VaultID) host.NoteLookup
-	Store  func(domain.VaultID) Folder
+	Store  func(domain.VaultID) Records
 }
 
 // Search is the calls the floors make on the search of one vault, each through the narrow interface it needs.
@@ -82,7 +82,7 @@ type scope struct {
 }
 
 func (f *Floors) open(vault domain.VaultID) scope {
-	return scope{search: f.host.Search(vault), notes: f.host.Vaults(vault), records: NewRecords(f.host.Store(vault))}
+	return scope{search: f.host.Search(vault), notes: f.host.Vaults(vault), records: f.host.Store(vault)}
 }
 
 // Get returns the floor in force for the vault. An installation with no model has the default floor.

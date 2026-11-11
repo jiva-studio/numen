@@ -1,5 +1,4 @@
-// Package floorwire converts between the search relevance domain values and the JSON messages of api.
-package floorwire
+package service
 
 import (
 	"context"
@@ -8,18 +7,18 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/calibration"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/calibration"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
-// ErrNotMounted is a call that reached the service before it was mounted.
-var ErrNotMounted = server.NewAPIError(server.CodeUnavailable, "the plugin is not ready")
+// errNotMounted is a call that reached the service before it was mounted.
+var errNotMounted = server.NewAPIError(server.CodeUnavailable, "the plugin is not ready")
 
-// ConvertError translates a domain or host error into the corresponding APIError.
-func ConvertError(err error) error {
+// convertError translates a domain or host error into the corresponding APIError.
+func convertError(err error) error {
 	switch {
 	case errors.Is(err, calibration.ErrNotStarted):
-		return ErrNotMounted
+		return errNotMounted
 	case errors.Is(err, host.ErrInvalidFloor):
 		return server.NewAPIError(server.CodeInvalidArgument, err.Error())
 	case errors.Is(err, relevance.ErrRecipeChanged), errors.Is(err, host.ErrRecipeMismatch), errors.Is(err, host.ErrNoVault):
@@ -35,8 +34,8 @@ func ConvertError(err error) error {
 	}
 }
 
-// ConvertState converts a floor state into its wire message.
-func ConvertState(state relevance.State) api.GetFloorResponse {
+// convertState converts a floor state into its wire message.
+func convertState(state relevance.State) api.GetFloorResponse {
 	out := api.GetFloorResponse{
 		Floor:          state.Floor,
 		Source:         convertSource(state.Source),
@@ -59,16 +58,16 @@ func ConvertState(state relevance.State) api.GetFloorResponse {
 	return out
 }
 
-// ConvertCalibrate converts a calibration outcome and state into its wire message.
-func ConvertCalibrate(outcome relevance.Outcome, state relevance.State) api.CalibrateFloorResponse {
+// convertCalibrate converts a calibration outcome and state into its wire message.
+func convertCalibrate(outcome relevance.Outcome, state relevance.State) api.CalibrateFloorResponse {
 	return api.CalibrateFloorResponse{
 		Outcome: convertOutcome(outcome),
-		State:   ConvertState(state),
+		State:   convertState(state),
 	}
 }
 
-// ConvertProbe converts a probe result into its wire message.
-func ConvertProbe(result relevance.ProbeResult) api.ProbeFloorResponse {
+// convertProbe converts a probe result into its wire message.
+func convertProbe(result relevance.ProbeResult) api.ProbeFloorResponse {
 	return api.ProbeFloorResponse{
 		BestSimilarity: result.BestSimilarity,
 		Floor:          result.Floor,

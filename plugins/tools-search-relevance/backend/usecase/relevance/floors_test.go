@@ -9,7 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 func newFloors(t *testing.T, hint float64) (*relevance.Floors, *hosttest.Search, *hosttest.Vault) {
@@ -223,7 +224,7 @@ func TestTheRecordsAreStoredPerVaultAndPerRecipe(t *testing.T) {
 
 func TestAnUnreadableRecordIsAnErrorAndNotAnEmptyOne(t *testing.T) {
 	floors, _, vault := newFloors(t, 0.4)
-	records := relevance.NewRecords(vault.Store())
+	records := floorrecords.New(vault.Store())
 	if _, found, err := records.Read(t.Context(), modelRecipe); err != nil || found {
 		t.Fatalf("empty store gave found=%v, err=%v", found, err)
 	}
@@ -250,7 +251,7 @@ func TestAnUnreadableRecordIsAnErrorAndNotAnEmptyOne(t *testing.T) {
 	if err := records.Write(t.Context(), relevance.Record{Recipe: modelRecipe, ManualFloor: math.NaN()}); err == nil || errors.Unwrap(err) == nil {
 		t.Errorf("a NaN floor write gave %v", err)
 	}
-	unknownRecords := relevance.NewRecords(vault.Store().With("biology"))
+	unknownRecords := floorrecords.New(vault.Store().With("biology"))
 	if _, found, err := unknownRecords.Read(t.Context(), modelRecipe); !errors.Is(err, host.ErrUnknownVault) || found {
 		t.Errorf("unknown vault read gave found=%v, err=%v", found, err)
 	}
@@ -438,7 +439,7 @@ func TestACallOnAnUnknownVaultIsRefused(t *testing.T) {
 func TestGetAndEnsureIgnoreNonPositiveStoredFloors(t *testing.T) {
 	for _, calFloor := range []float64{0, -0.5} {
 		floors, _, vault := newFloors(t, 0.4)
-		records := relevance.NewRecords(vault.Store())
+		records := floorrecords.New(vault.Store())
 		if err := records.Write(t.Context(), relevance.Record{
 			Recipe:      modelRecipe,
 			Calibration: &relevance.Calibration{Floor: calFloor},
@@ -503,7 +504,7 @@ func TestGetAndEnsureIgnoreNonPositiveStoredFloors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			floors, search, vault := newFloors(t, 0.4)
-			if err := relevance.NewRecords(vault.Store()).Write(t.Context(), tc.record); err != nil {
+			if err := floorrecords.New(vault.Store()).Write(t.Context(), tc.record); err != nil {
 				t.Fatal(err)
 			}
 			if err := floors.Ensure(t.Context(), ""); err != nil {
@@ -612,9 +613,9 @@ func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
 				return relevance.Search{Index: s, Policy: s}
 			},
 			Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) },
-			Store: func(id domain.VaultID) relevance.Folder {
+			Store: func(id domain.VaultID) relevance.Records {
 				st.Store = vault.Store().With(id)
-				return st
+				return floorrecords.New(st)
 			},
 		}, newClock())
 	}
@@ -731,6 +732,6 @@ func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
 	}
 }
 
-func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Folder {
-	return func(id domain.VaultID) relevance.Folder { return vault.Store().With(id) }
+func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Records {
+	return func(id domain.VaultID) relevance.Records { return floorrecords.New(vault.Store().With(id)) }
 }
