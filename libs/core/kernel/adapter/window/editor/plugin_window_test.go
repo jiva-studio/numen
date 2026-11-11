@@ -79,7 +79,7 @@ func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Grey Heron\nHerons fish at dusk.\n",
 	}))
-	line, unsubscribe := state.Notices.Places.subscribe()
+	line, unsubscribe := state.Notices.Places.Subscribe()
 	t.Cleanup(unsubscribe)
 	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, ViewOf(state)), limit), line
 }

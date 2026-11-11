@@ -14,7 +14,7 @@ import (
 type windowParts struct {
 	indexer       *indexing.Worker
 	embedding     *indexing.Embedding
-	moves         *vault.Scenarios
+	moves         *VaultScenarios
 	current       *vault.CurrentRefresh
 	out           io.Writer
 	embedderError error

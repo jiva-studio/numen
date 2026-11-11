@@ -19,8 +19,8 @@ var errPluginCleared = errors.New("the plugin's work was cleared")
 // PluginWork is the lock and the list of tasks the core's own work uses, as
 // the plugins use them. It is safe to use from several goroutines.
 type PluginWork struct {
-	lock    *Lock
-	tasks   *Tasks
+	lock    leasing
+	tasks   taskList
 	getName func(pluginID string) string
 
 	mu      sync.Mutex
@@ -227,7 +227,7 @@ func readUnit(unit plugin.TaskUnit) work.Unit {
 
 // Lease is a plugin's hold on the lock.
 type Lease struct {
-	lock    *Lock
+	lock    leasing
 	release func()
 	forget  func()
 	once    sync.Once
@@ -249,3 +249,15 @@ func (t *Lease) WatchWaiting() <-chan struct{} { return t.lock.WatchWaiting() }
 
 // WatchEnd returns a channel closed once the lease is over.
 func (t *Lease) WatchEnd() <-chan struct{} { return t.end }
+
+// leasing hands out the lock the work of the core and of the plugins shares.
+type leasing interface {
+	Acquire(ctx context.Context, isUserStarted bool, onWaiting func()) (release func(), err error)
+	WatchWaiting() <-chan struct{}
+}
+
+// taskList is the list of tasks the plugins add theirs to.
+type taskList interface {
+	Set(task work.Task)
+	Remove(id string)
+}

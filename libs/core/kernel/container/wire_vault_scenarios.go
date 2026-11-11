@@ -72,7 +72,7 @@ type noteViews struct {
 	Writes note.WriteGate
 }
 
-func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) note.Scenarios {
+func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteScenarios {
 	names, links := db.NoteQueries(), db.NoteQueries()
 	indexed := db.Sources()
 	readers := vaultReaders(c)
@@ -92,29 +92,29 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 	remove := note.NewRemove(writers, links, indexed, index)
 	create := note.NewCreate(writers, names, index, now)
 
-	return note.Scenarios{
-		Edit: note.Editing{
+	return NoteScenarios{
+		Edit: NoteEditing{
 			Read:    note.NewRead(readers),
 			Write:   note.NewWrite(readers, writers, index, now),
 			Create:  create,
 			Replace: note.NewReplace(readers, writers, index, now),
 			Linking: linking,
 		},
-		Place: note.Placing{
+		Place: NotePlacing{
 			Move:       mover,
 			Rename:     note.NewRename(moveDeps, mover),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
 			EmptyTrash: note.NewEmptyTrash(writers, views.Writes),
 		},
-		Connect: note.Connecting{
+		Connect: NoteConnecting{
 			SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, names),
 			RemoveSide:       note.NewRemoveSide(readers, writers, index, now, links, names),
 			RemoveConnection: note.NewRemoveConnection(readers, writers, index, now, links, names),
 			Join:             note.NewJoin(readers, writers, index, now, links, names),
 			CreateInRelation: note.NewCreateInRelation(create, names),
 		},
-		Refer: note.Referring{AddLinks: note.NewAddLinks(linking)},
+		Refer: NoteReferring{AddLinks: note.NewAddLinks(linking)},
 	}
 }
 

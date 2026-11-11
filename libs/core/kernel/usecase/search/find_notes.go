@@ -72,7 +72,7 @@ type PassageResults struct {
 
 // FindPassages searches the text of a vault in one mode and resolves the notes the passages were read from.
 type FindPassages struct {
-	finds    Search
+	finds    passageFinding
 	notes    noteport.NoteRefs
 	types    noteport.NoteTypes
 	tabKinds TabKinds
@@ -116,4 +116,9 @@ func getPassageSources(found []domain.Passage) []string {
 		out = append(out, p.Source)
 	}
 	return out
+}
+
+// passageFinding searches the text of a vault.
+type passageFinding interface {
+	Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error)
 }

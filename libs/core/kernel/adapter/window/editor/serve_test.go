@@ -211,7 +211,7 @@ func openingWith(
 		api.state.Runtime.RecordModel(embedder.GetModel().String(), "")
 		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Chunks.Progress)
 	}
-	line, isDone := api.state.Notices.ChangeEvents.subscribe()
+	line, isDone := api.state.Notices.ChangeEvents.Subscribe()
 	t.Cleanup(isDone)
 
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{

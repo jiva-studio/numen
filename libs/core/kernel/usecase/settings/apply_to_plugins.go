@@ -12,10 +12,10 @@ import (
 type ApplyToPlugins struct {
 	codec     settingsport.ValueCodec
 	config    settingsport.PluginConfig
-	write     *WriteSettings
-	notify    *NotifyPlugins
+	write     settingsWriting
+	notify    pluginNotifying
 	subscribe settingsport.ChangeSubscriber
-	hosts     *HostSubscriptions
+	hosts     hostSubscribing
 	setup     func()
 }
 
@@ -25,10 +25,10 @@ type ApplyToPlugins struct {
 type ApplyToPluginsDeps struct {
 	Codec     settingsport.ValueCodec
 	Config    settingsport.PluginConfig
-	Write     *WriteSettings
-	Notify    *NotifyPlugins
+	Write     settingsWriting
+	Notify    pluginNotifying
 	Subscribe settingsport.ChangeSubscriber
-	Hosts     *HostSubscriptions
+	Hosts     hostSubscribing
 	Setup     func()
 }
 
@@ -60,4 +60,19 @@ func (u *ApplyToPlugins) persist(pluginID, key string, value any) error {
 		return err
 	}
 	return u.write.Execute([]settingsdomain.Setting{{Path: []string{pluginID, key}, JSON: raw}})
+}
+
+// settingsWriting saves settings.
+type settingsWriting interface {
+	Execute(entries []settingsdomain.Setting) error
+}
+
+// pluginNotifying delivers a batch of setting changes to the plugins that watch them.
+type pluginNotifying interface {
+	Execute(batch []settingsdomain.Setting)
+}
+
+// hostSubscribing delivers the setting changes to a host once.
+type hostSubscribing interface {
+	Subscribe(host any, subscribe settingsport.ChangeSubscriber, deliver func([]settingsdomain.Setting))
 }

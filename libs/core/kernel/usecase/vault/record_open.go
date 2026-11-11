@@ -14,22 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Scenarios covers the operations on the vaults an installation holds, and the vault's own tree.
-type Scenarios struct {
-	Change     Changing
-	Tree       Tree
-	RecordOpen RecordOpen
-}
-
-// Changing changes the list of vaults and the vaults on it.
-type Changing struct {
-	Add        Add
-	Rename     Rename
-	Remove     Remove
-	Unregister Unregister
-	Erase      Erase
-}
-
 // Tree moves and imports the files of a vault.
 type Tree struct {
 	Move   Move

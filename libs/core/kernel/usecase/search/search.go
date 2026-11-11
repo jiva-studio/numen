@@ -100,7 +100,7 @@ type Search struct {
 	texts        textdomain.Readers
 	Floor        FloorSource
 	errorHandler window.ErrorHandler
-	cache        *QueryCache
+	cache        queryCaching
 	Extractors   int
 }
 
@@ -340,4 +340,10 @@ func GetTypingParameters(mode Mode, limit int) Parameters {
 	case Hybrid:
 	}
 	return p
+}
+
+// queryCaching keeps the vectors of the queries embedded before.
+type queryCaching interface {
+	Get(recipe, query string) ([]float32, bool)
+	Put(recipe, query string, vector []float32)
 }

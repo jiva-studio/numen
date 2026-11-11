@@ -62,25 +62,42 @@ func (o *VaultOpener) Begin(
 ) *OpenVault {
 	scan := o.GetScan()
 	follow := NewFollow(o.watcher, o.Refresh, scan, changed, errorHandler)
-	watching, err := follow.Begin(ctx, v)
-	return &OpenVault{
-		opening:   o,
-		vault:     v,
-		scan:      scan,
-		follow:    follow,
-		watching:  watching,
-		unwatched: err,
+	open := &OpenVault{
+		buffered:     o.Buffered,
+		refresh:      o.Refresh,
+		scan:         scan,
+		vault:        v,
+		errorHandler: errorHandler,
 	}
+	watching, err := follow.Begin(ctx, v)
+	if err == nil {
+		open.watching = watching
+	}
+	open.unwatched = err
+	return open
 }
 
 // OpenVault is one vault an application has opened.
 type OpenVault struct {
-	opening   *VaultOpener
-	vault     domain.Vault
-	scan      Scan
-	follow    Follow
-	watching  *Watch
-	unwatched error
+	buffered     WriteRecorder
+	refresh      refreshing
+	scan         progressScanning
+	vault        domain.Vault
+	errorHandler window.ErrorHandler
+	watching     runner
+	unwatched    error
+}
+
+// progressScanning reads a whole vault into the index and reports its progress.
+type progressScanning interface {
+	ScanWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult),
+	) (vaultreading.ScanResult, error)
+}
+
+// runner acts on what a watch collects.
+type runner interface {
+	Run(ctx context.Context)
 }
 
 // GetUnwatchedReason is why the vault is not being followed, and nothing while it is.
@@ -88,7 +105,7 @@ func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 
 // Read traverses the vault into the index and returns the number of notes it holds.
 func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
-	o.opening.Buffered.StartRecording()
+	o.buffered.StartRecording()
 
 	var onProgress func(vaultreading.ScanResult)
 	if during != nil {
@@ -96,11 +113,11 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	res, err := o.scan.ScanWithProgress(ctx, o.vault, onProgress)
 
-	recSession := o.opening.Buffered.StopRecording()
+	recSession := o.buffered.StopRecording()
 	if err != nil {
 		return res.Notes, err
 	}
-	if _, err := o.opening.Refresh.Execute(ctx, o.vault, recSession); err != nil {
+	if _, err := o.refresh.Execute(ctx, o.vault, recSession); err != nil {
 		o.handleError(err)
 	}
 	return res.Notes, nil
@@ -115,7 +132,13 @@ func (o *OpenVault) Run(ctx context.Context) {
 }
 
 func (o *OpenVault) handleError(err error) {
-	if o.follow.errorHandler != nil {
-		o.follow.errorHandler(err)
+	if o.errorHandler != nil {
+		o.errorHandler(err)
 	}
+}
+
+// UpdateIndex updates the index for the named notes.
+func (o *OpenVault) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
+	_, err := o.refresh.Execute(ctx, v, paths)
+	return err
 }
