@@ -29,7 +29,7 @@ func (e *SeveralHandlersError) Error() string {
 // pick, in the order of the plugins' ids.
 func (u List) ListBackendHandlers() []plugin.CommandEntry {
 	handlers := slices.DeleteFunc(u.ExecuteHandlers(), func(one plugin.CommandEntry) bool {
-		return !hasBackend(u.commands, one.PluginID) || hasItems(u.conditions, one.Command)
+		return !u.commands.GetParts(one.PluginID).HasBackend || hasItems(u.conditions, one.Command)
 	})
 	return slices.SortedStableFunc(slices.Values(handlers), func(a, b plugin.CommandEntry) int {
 		return strings.Compare(a.PluginID, b.PluginID)

@@ -46,13 +46,7 @@ type Versions interface {
 
 // Triggers runs the triggers over the files of a vault. One pass over a vault runs at a time.
 type Triggers struct {
-	plugins  Plugins
-	run      CommandRun
-	readers  vaultport.VaultReaders
-	notes    NoteReader
-	types    contenttypeport.ContentTypeTable
-	versions Versions
-	config   pluginport.WhenConfig
+	deps TriggersDeps
 
 	conditions *when.Conditions
 	mu         sync.Mutex
@@ -73,10 +67,7 @@ type TriggersDeps struct {
 
 // NewTriggers makes the use case.
 func NewTriggers(deps TriggersDeps) *Triggers {
-	return &Triggers{
-		plugins: deps.Plugins, run: deps.Run, readers: deps.Readers, notes: deps.Notes, types: deps.Types,
-		versions: deps.Versions, config: deps.Config, conditions: when.NewConditions(),
-	}
+	return &Triggers{deps: deps, conditions: when.NewConditions()}
 }
 
 // ExecuteAll runs every trigger over each file of the vault where its condition and the condition of
@@ -117,11 +108,11 @@ func (u *Triggers) execute(
 	if len(triggers) == 0 {
 		return nil
 	}
-	reader, err := u.readers.Open(v)
+	reader, err := u.deps.Readers.Open(v)
 	if err != nil {
 		return err
 	}
-	p := &pass{types: u.types, run: u.run, notes: u.notes, versions: u.versions, vault: v, list: triggers, config: u.config.GetWhenConfig(), skipped: map[string]bool{}}
+	p := &pass{types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers, config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}}
 	err = walk(reader, func(stat domain.FileStat) error {
 		if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
 			return nil
@@ -144,11 +135,11 @@ type trigger struct {
 
 func (u *Triggers) readTriggers() []trigger {
 	handlers := map[[2]string]string{}
-	for _, entry := range u.plugins.ListHandlers() {
+	for _, entry := range u.deps.Plugins.ListHandlers() {
 		handlers[[2]string{entry.PluginID, entry.Command.ID}] = entry.Command.When
 	}
 	var out []trigger
-	for _, entry := range u.plugins.ListTriggers() {
+	for _, entry := range u.deps.Plugins.ListTriggers() {
 		handlerWhen, isHandled := handlers[[2]string{entry.PluginID, entry.Trigger.Command}]
 		if !isHandled {
 			continue
