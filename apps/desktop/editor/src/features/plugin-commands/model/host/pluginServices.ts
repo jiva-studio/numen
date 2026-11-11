@@ -159,10 +159,7 @@ export interface AgentHostDeps {
   readonly window: { readonly vault: { readonly unreachable: Readonly<Ref<string>> } }
   readonly settings: {
     readonly rest: {
-      readonly read: Pick<
-        SettingsStore['read'],
-        'getSetting' | 'getModelsAt'
-      >
+      readonly read: Pick<SettingsStore['read'], 'getSetting' | 'getModelsAt'>
       readonly write: Pick<SettingsStore['write'], 'writeSetting'>
     }
   }

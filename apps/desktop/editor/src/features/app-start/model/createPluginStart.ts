@@ -6,7 +6,7 @@ import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 
 /** The plugins the settings name, as the window reads them. */
-export type SettingPlugins = () => readonly { readonly id: string; readonly hasFrontend: boolean }[]
+type SettingPlugins = () => readonly { readonly id: string; readonly hasFrontend: boolean }[]
 
 export interface PluginStartDeps {
   readonly pluginLoader: PluginLoader

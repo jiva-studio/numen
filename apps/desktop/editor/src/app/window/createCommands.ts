@@ -38,7 +38,10 @@ export interface CommandSourcesDeps {
   readonly settingPalette: { readonly getCommands: () => readonly Command[] }
   readonly declaredCommands: DeclaredCommands
   readonly pluginHost: Pick<PluginHost, 'commands'>
-  readonly plugin: Pick<ReturnType<typeof usePluginCommands>, 'getPaletteEntries' | 'getCommandNote'>
+  readonly plugin: Pick<
+    ReturnType<typeof usePluginCommands>,
+    'getPaletteEntries' | 'getCommandNote'
+  >
   readonly getTarget: () => CommandTarget
   readonly commandDeps: CommandDeps
 }

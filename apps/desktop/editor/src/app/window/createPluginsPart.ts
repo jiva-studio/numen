@@ -100,7 +100,9 @@ export interface PluginBackgroundTasksDeps {
   readonly log: MessageLog
   readonly notices: NoticeQueue
   readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks'>
-  readonly windowSettings: { readonly appearance: { readonly state: { readonly lost: Readonly<Ref<string>> } } }
+  readonly windowSettings: {
+    readonly appearance: { readonly state: { readonly lost: Readonly<Ref<string>> } }
+  }
   readonly writeMessage: MessageWriter
   readonly openSettings: (pluginId?: string) => void
 }
@@ -149,7 +151,7 @@ export function createWindowOwnedServices(deps: WindowOwnedServicesDeps) {
 }
 
 /** What the services a plugin is given are read through: the notes, the notices and the services. */
-export interface PluginServicesAccess {
+interface PluginServicesAccess {
   readonly getServices: () => PluginServices
   readonly notices: NoticeQueue
   readonly pluginNotes: PluginNotes

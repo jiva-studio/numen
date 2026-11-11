@@ -3,11 +3,7 @@
  * services of the window and the notices. Each part is made from what it reads of the
  * window and holds the host dependencies of one concern.
  */
-import {
-  createPluginNotices,
-  createPluginTasks,
-  type PluginHostDeps,
-} from '@numen/plugin-loader'
+import { createPluginNotices, createPluginTasks, type PluginHostDeps } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'

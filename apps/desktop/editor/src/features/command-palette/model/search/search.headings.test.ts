@@ -52,8 +52,7 @@ function createHeldVault() {
   return { palette, names, passages }
 }
 
-const getIds = (palette: ReturnType<typeof useSearch>) =>
-  palette.groups.value.map((one) => one.id)
+const getIds = (palette: ReturnType<typeof useSearch>) => palette.groups.value.map((one) => one.id)
 
 describe('the headings of the search groups', () => {
   it('draws no group while the questions are out', async () => {

@@ -9,8 +9,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   createPluginHost,
-  createWhenReader,
-  getWhenValues,
   type DeclaredSlotEntry,
   type PluginHost,
 } from '@numen/plugin-loader'
@@ -40,7 +38,7 @@ import {
   createCommandNoteReader,
   createPluginCommandPort,
   createSearchMenu,
-  createSlotCommandFinder,
+  createWindowSlots,
   useDeclaredCommands,
   usePluginCommands,
 } from '@/features/plugin-commands'
@@ -125,25 +123,22 @@ const toSlotEntries = (manifests: readonly PluginManifest[]): DeclaredSlotEntry[
     }),
   )
 
-const createHost = (parts: RealWindowParts): PluginHost => {
-  const whenReader = createWhenReader()
-  const getValues = (target: Parameters<typeof getWhenValues>[0]['target']) =>
-    getWhenValues({ window: windowValues, target, contentTypes: {} })
+const createHost = (
+  parts: RealWindowParts,
+  declaredCommands: ReturnType<typeof useDeclaredCommands>,
+): PluginHost => {
   const entries = toSlotEntries(parts.manifests)
+  const slots = createWindowSlots({
+    declaredCommands,
+    facts: { getAppCommands: () => createAppCommands(), getValues: () => windowValues },
+    writeIssue: () => undefined,
+  })
   const host = createPluginHost({
+    ...slots.hostDeps,
     registerKind: () => () => undefined,
     registerExtensionReader: () => () => undefined,
     openTab: () => Promise.resolve('tab-1'),
-    getSlotWhenValues: getValues,
     getSlotEntries: () => entries,
-    createSlotCommandFinder: () =>
-      createSlotCommandFinder({
-        getPluginCommands: () => [],
-        getDeclaredCommands: () => [],
-        getEditorCommands: () => createAppCommands(),
-        getWhenValues: getValues,
-        whenReader,
-      }),
   })
   for (const manifest of parts.manifests) {
     host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
@@ -160,7 +155,6 @@ const createCore = () => {
     get: (target, name: string) => target[name] ?? (() => Promise.resolve([])),
   })
 }
-
 
 const toOptions = (options: object): ComposeOptions => options as ComposeOptions
 
@@ -179,13 +173,15 @@ interface ComposeOptions {
   readonly settings: Pick<SettingsStore, 'read' | 'state'>
   readonly writeMessage: MessageWriter
   readonly pluginHost: PluginHost
-  readonly settingPalette: { getCommands(): readonly Command[]; choose(command: string, item: string): Promise<void> }
+  readonly settingPalette: {
+    getCommands(): readonly Command[]
+    choose(command: string, item: string): Promise<void>
+  }
   readonly declaredCommands: ReturnType<typeof useDeclaredCommands>
   readonly readCommandNote: ReturnType<typeof createCommandNoteReader>
   readonly emitEvent?: ((event: string) => void) | undefined
 }
 
-/** The palettes, the runs and the keys of the window made from the same slices the window uses. */
 function composeCommands(options: ComposeOptions, appCommands: readonly Command[]) {
   const { pluginHost, registry, declaredCommands, writeMessage, settings, windowTabs, getTarget } =
     options
@@ -273,8 +269,12 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
 /** The commands of a window over the note, whose tab navigation is `parts.navigateTab`. */
 export function createRealWindow(parts: RealWindowParts) {
   const messages: string[] = []
-  const pluginHost = createHost(parts)
   const registry = createCommandRegistry()
+  const declaredCommands = useDeclaredCommands({
+    registry,
+    list: () => Promise.resolve({ commands: [], slots: [] }),
+  })
+  const pluginHost = createHost(parts, declaredCommands)
   const options = {
     core: createCore(),
     emitEvent: parts.emitEvent,
@@ -306,10 +306,7 @@ export function createRealWindow(parts: RealWindowParts) {
     writeMessage: (text: string) => messages.push(text),
     pluginHost,
     settingPalette: { getCommands: () => [], choose: () => Promise.resolve() },
-    declaredCommands: useDeclaredCommands({
-      registry,
-      list: () => Promise.resolve({ commands: [], slots: [] }),
-    }),
+    declaredCommands,
     readCommandNote: createCommandNoteReader({ fileKinds: () => Promise.resolve(new Map()) }),
   }
   const noLinks = {

@@ -6,7 +6,12 @@ import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { formatError } from '@/shared/api/errors'
 import { createNotes } from '@/features/command-palette'
 import { createNoteEditors } from '@/features/file-conflict'
-import { createTabNavigation, createTabSync, type FileOpeners, type WindowTabs } from '@/entities/tab'
+import {
+  createTabNavigation,
+  createTabSync,
+  type FileOpeners,
+  type WindowTabs,
+} from '@/entities/tab'
 import { useVaults } from '@/entities/vault'
 import { syncTabPath, type TabLinksState } from '@/features/tab-linking'
 import { createDisplayOptions, getVaultList, useWindowDisplay } from '@/features/window-display'

@@ -5,7 +5,12 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { getVaultForKey, type Tab, type WelcomeAction } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
-import { createInvocation, runInvocation, type Commands, type SearchState } from '@/features/command-palette'
+import {
+  createInvocation,
+  runInvocation,
+  type Commands,
+  type SearchState,
+} from '@/features/command-palette'
 import {
   COMMAND,
   createRowKeys,

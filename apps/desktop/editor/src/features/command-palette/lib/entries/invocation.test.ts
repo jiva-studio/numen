@@ -16,7 +16,9 @@ const TARGET: CommandTarget = {
 
 describe('an invocation made from a target', () => {
   it('is marked over a named target where a place named the target', () => {
-    expect(createInvocation('x', { ...TARGET, isTargetNamed: true }).target.isTargetNamed).toBe(true)
+    expect(createInvocation('x', { ...TARGET, isTargetNamed: true }).target.isTargetNamed).toBe(
+      true,
+    )
   })
 
   it('is over a folder where the target is one', () => {

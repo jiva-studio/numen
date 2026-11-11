@@ -41,9 +41,7 @@ const createWindow = (answers: Answers = {}) => {
     installCoreHandlers({
       moveFile: (request: { from: string; to: string }) => {
         actions.push(`move ${request.from} ${request.to}`)
-        return (
-          answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
-        )
+        return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
       },
       listFiles: (request: { path: string }) => {
         actions.push(`listNames ${request.path || '—'}`)

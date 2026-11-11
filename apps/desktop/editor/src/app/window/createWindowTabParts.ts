@@ -17,7 +17,11 @@ import {
   type TabLinksState,
   type TabReports,
 } from '@/features/tab-linking'
-import { createMoveAcceptor, createMovedTabStarter, createWindowTabMover } from '@/features/tab-move'
+import {
+  createMoveAcceptor,
+  createMovedTabStarter,
+  createWindowTabMover,
+} from '@/features/tab-move'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 
 /** What the tabs of the window use of the tabs, the links and the notes. */

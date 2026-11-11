@@ -13,6 +13,7 @@ import {
 } from '@numen/plugin-loader'
 import { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import { createWindowAgent } from '@/entities/agent'
+import { createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
 import { createVaultsHost, useVaults } from '@/entities/vault'
 import { useAppearance } from '@/features/appearance'
@@ -23,7 +24,6 @@ import { useWindowTasks } from '@/features/window-tasks'
 import { formatError } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createShellHost } from '../plugins/host'
-import { createWindowCommands } from '../plugins/windowCommands'
 
 /** What the window is given: how a plugin module is fetched and imported. */
 export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>

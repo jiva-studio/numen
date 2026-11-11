@@ -38,7 +38,6 @@ interface HitSpot {
   length: number
 }
 
-
 /** One item as it is drawn, beside at its current position and what it offers. */
 export interface SearchRow {
   item: PaletteItem
@@ -141,11 +140,14 @@ function getNoteHit(
   }
 }
 
-function createNotePassageHit(
-  one: Passage,
-  note: ReturnType<typeof createNoteActions>,
-): SearchHit {
-  const spot = { path: one.path, title: one.title, line: one.line, start: one.start, length: one.length }
+function createNotePassageHit(one: Passage, note: ReturnType<typeof createNoteActions>): SearchHit {
+  const spot = {
+    path: one.path,
+    title: one.title,
+    line: one.line,
+    start: one.start,
+    length: one.length,
+  }
   return getNoteHit(spot, note, one)
 }
 

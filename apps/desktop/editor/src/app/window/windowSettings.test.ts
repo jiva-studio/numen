@@ -70,10 +70,7 @@ const createSettings = (
   const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = createWindowSettingsPart({
-    rest: createSettingsStore(
-      SETTINGS_WORDS,
-      (text, level) => writerFns.configured?.(text, level),
-    ),
+    rest: createSettingsStore(SETTINGS_WORDS, (text, level) => writerFns.configured?.(text, level)),
     words: WORDS,
     log,
     windowTabs,
@@ -357,9 +354,9 @@ describe('the settings tab', () => {
       vi.advanceTimersByTime(1500)
 
       expect(installation.settings.getSetting(['app', 'performance', 'profile'])).toBe('eco')
-      expect(installation.settings.getModels(['indexing', 'embedding', 'model', 'name'])).toStrictEqual([
-        model(),
-      ])
+      expect(
+        installation.settings.getModels(['indexing', 'embedding', 'model', 'name']),
+      ).toStrictEqual([model()])
       expect(core.updateSettings).toHaveBeenCalledWith(edits)
       expect(core.getSettings).toHaveBeenCalledTimes(1)
       settings.close()

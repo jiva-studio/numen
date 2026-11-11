@@ -4,7 +4,12 @@
  */
 import { readDetachedTab } from '@/features/tab-move'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
-import { createAppKeyRunner, createKeyHandler, syncKeybindings, useAppHotkeys } from '@/features/hotkeys'
+import {
+  createAppKeyRunner,
+  createKeyHandler,
+  syncKeybindings,
+  useAppHotkeys,
+} from '@/features/hotkeys'
 import type { WindowFoundation } from './createWindowFoundation'
 import type { WindowFeatures } from './createWindowFeatures'
 import type { WindowPalettes } from './createWindowPalettes'

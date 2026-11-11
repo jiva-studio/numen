@@ -15,7 +15,7 @@ export interface VaultScan {
 }
 
 /** Takes up a stream the same way each time it ends, or fails to open. */
-export type Follows = ReturnType<typeof createFollower>
+type Follows = ReturnType<typeof createFollower>
 
 /** What the stream of the changes to the vault reaches. */
 export interface VaultStreamDeps {

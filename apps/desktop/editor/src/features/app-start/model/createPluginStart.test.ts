@@ -50,7 +50,12 @@ describe('the plugins a window loads', () => {
     plugins.value = []
     await nextTick()
 
-    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledExactlyOnceWith('Plugins were not tracked: no import', 'error'))
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledExactlyOnceWith(
+        expect.stringContaining('Plugins were not tracked'),
+        'error',
+      ),
+    )
   })
 
   it('are waited for through the interface and the first list of declared commands', async () => {

@@ -44,7 +44,10 @@ const createWindow = (answers: Answers = {}, withHold = false) => {
         calls.push(`open ${request.id}`)
         return answers.opened ?? {}
       },
-      chooseFolder: () => ({ isChosen: answers.chose !== '', path: answers.chose ?? '/vaults/Heat' }),
+      chooseFolder: () => ({
+        isChosen: answers.chose !== '',
+        path: answers.chose ?? '/vaults/Heat',
+      }),
       addVault: (request: { path: string; name: string }) => {
         calls.push(`add ${request.path}`)
         return answers.added ?? { vault: wireVault('heat', 'Heat') }

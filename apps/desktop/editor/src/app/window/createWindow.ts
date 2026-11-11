@@ -2,7 +2,7 @@
  * The window composed: the services that read the vault, the commands, the kinds of tab and the
  * plugins, made in the order each needs the one before.
  */
-import { createNoteKindReader } from '@/features/plugin-commands'
+import { createFileMakers, createNoteKindReader } from '@/features/plugin-commands'
 import { createSettingsPage } from '@/pages/settings'
 import { createHostConnection } from './createHostConnection'
 import { createWindowFeatures } from './createWindowFeatures'
@@ -65,7 +65,10 @@ export const createWindow = () => {
       runChoice: palettes.commandRuns.runChoice,
     },
   }
-  const kinds = { findFileIcon: (path: string) => tabOpeners.findFileIcon(path) }
+  const kinds = {
+    findFileIcon: (path: string) => tabOpeners.findFileIcon(path),
+    made: createFileMakers({ tabOpeners, windowTabs, writeMessage: foundation.writeMessage }),
+  }
   const frameServices = {
     slots: pluginHost.slots,
     windowCommands,

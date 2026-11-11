@@ -94,4 +94,3 @@ export interface Command {
    */
   listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
-

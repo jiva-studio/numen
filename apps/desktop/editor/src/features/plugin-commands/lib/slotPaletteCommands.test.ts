@@ -53,6 +53,8 @@ describe('the rows of the slot palette.note', () => {
     const [row] = createSlotPaletteCommands([entry({})], createEmptyWhenContext())
 
     expect(row?.isAvailable(target({}), {} as never)).toBe(true)
-    expect(row?.isAvailable(target({ path: 'scan.pdf', file: 'scan.pdf' }), {} as never)).toBe(false)
+    expect(row?.isAvailable(target({ path: 'scan.pdf', file: 'scan.pdf' }), {} as never)).toBe(
+      false,
+    )
   })
 })

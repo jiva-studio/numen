@@ -64,10 +64,7 @@ interface StartDisplayDeps {
   isOpen: () => boolean
 }
 
-function startStreams(
-  streams: WindowStreams,
-  health: DisplayHealth,
-): void {
+function startStreams(streams: WindowStreams, health: DisplayHealth): void {
   const onError = (error: Caught) => {
     health.failure.value = formatError(error)
   }
