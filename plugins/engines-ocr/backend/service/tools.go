@@ -29,7 +29,6 @@ type RecognitionCreateOutput struct {
 	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version that is read: the recognized text, or a version made from it such as a proofread"`
 }
 
-// newToolRegistry registers and returns the recognition tool.
 func newToolRegistry(launcher *launch.Launcher) (*tools.Registry, error) {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{

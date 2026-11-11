@@ -30,7 +30,6 @@ type Outcome struct {
 	TaskID string
 	Path   string
 	State  string
-	// Version is the id of the live text version, set with the state done.
 	Version string
 }
 
