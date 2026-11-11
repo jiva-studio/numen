@@ -69,11 +69,14 @@ type WindowOpening struct {
 
 // WindowUseCases are the use cases of notes and vaults a window works through.
 type WindowUseCases struct {
-	Notes   *NoteScenarios
-	Queries *query.Scenarios
-	Listing *registry.Listing
-	Vaults  *VaultScenarios
-	ShowTab windowsession.ShowTab
+	Notes *NoteScenarios
+	// PluginNotes are the note use cases the plugins work through in the window: they pass no gate and report no
+	// write to the window.
+	PluginNotes *NoteScenarios
+	Queries     *query.Scenarios
+	Listing     *registry.Listing
+	Vaults      *VaultScenarios
+	ShowTab     windowsession.ShowTab
 }
 
 // OpenWindowWith is OpenWindow over a cache already open, for a caller that opened it itself. The window
@@ -193,12 +196,23 @@ func newWindowUseCases(
 ) WindowUseCases {
 	notes := vaultNotes(
 		a.vault, db, vault.NewUpdateIndex(current.Get).Execute,
-		noteViews{Moves: note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)), Writes: state.Writes},
+		noteViews{
+			Moves:  note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)),
+			Writes: state.Writes,
+			Follow: state.Writes,
+		},
 	)
 	queries := vaultQueries(db)
+	pluginNotes := vaultNotes(
+		a.vault, db, vault.NewUpdateIndex(current.Get).Execute,
+		noteViews{
+			Moves:  note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)),
+			Writes: note.OpenGate{},
+		},
+	)
 	moves := vaultVaults(a.vault, ports, db, notes.Place.Move)
 	listing := vaultListing(a.vault, ports)
-	return WindowUseCases{Notes: &notes, Queries: &queries, Listing: &listing, Vaults: &moves}
+	return WindowUseCases{Notes: &notes, Queries: &queries, PluginNotes: &pluginNotes, Listing: &listing, Vaults: &moves}
 }
 
 func newTabKinds(a pluginsWiring, db *Index) tabKinds {

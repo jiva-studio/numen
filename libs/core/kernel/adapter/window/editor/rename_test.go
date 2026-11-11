@@ -641,7 +641,9 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 	waitForScan(t, f)
 	f.cases.Notes.Place.Rename = note.NewRename(note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, Now: testsupport.NewClock(),
-	}, failingAfterMove{f.cases.Notes.Place.Move})
+	}, failingAfterMove{f.cases.Notes.Place.Move},
+		note.OpenGate{},
+	)
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",

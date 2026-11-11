@@ -48,7 +48,7 @@ func openEditorTexts(
 func connectEditor(ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
 	state, a := opened.state, opened.a
 	setPluginVaultPath(a, state.GetCurrentVault().Path)
-	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: *opened.cases.Notes}
+	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: *opened.cases.PluginNotes}
 	if err := installPluginVault(a, ports, db, state.GetShownVault, hooks); err != nil {
 		return nil, err
 	}

@@ -43,12 +43,3 @@ type NoteConnecting struct {
 type NoteReferring struct {
 	AddLinks note.AddLinks
 }
-
-func trackConnections(c NoteConnecting, gate note.WriteGate, follow note.IndexFollow) NoteConnecting {
-	track := note.NewTrackWrites(gate, follow)
-	c.SaveConnection = note.TrackSaveConnection(c.SaveConnection, track)
-	c.RemoveSide = note.TrackRemoveSide(c.RemoveSide, track)
-	c.RemoveConnection = note.TrackRemoveConnection(c.RemoveConnection, track)
-	c.Join = note.TrackJoin(c.Join, track)
-	return c
-}
