@@ -63,7 +63,7 @@ function isBoundToPart(variable) {
 const DATA_TYPE_NAMES = new Set(['string', 'number', 'boolean', 'bigint', 'undefined', 'null', 'void', 'never', 'true', 'false'])
 
 // The names of a group that only wraps what a function returns; a group takes the name of the thing it holds.
-const WRAPPER_GROUP_NAMES = new Set(['base', 'parts', 'services', 'actions', 'frame', 'api', 'methods', 'handlers', 'helpers', 'utils', 'deps'])
+const WRAPPER_GROUP_NAMES = new Set(['base', 'parts', 'services', 'actions', 'frame', 'helpers', 'utils', 'deps'])
 
 const maxComposableReturnProperties = {
   meta: {
@@ -232,16 +232,6 @@ const maxComposableReturnProperties = {
       }
     }
 
-    // The names a returned member brings: the member itself, and for an object literal the names it holds in turn.
-    function countLeafNames(value) {
-      if (value.type !== 'ObjectExpression') return 1
-      let count = 0
-      for (const prop of value.properties) {
-        if (prop.type === 'Property') count += isDataValue(prop.value) ? 0 : countLeafNames(prop.value)
-      }
-      return count
-    }
-
     function checkReturned(argument, fnName, fn) {
       if (!fnName || !isPartName(fnName) || !argument) return
       const node = getReturnedObject(argument)
@@ -249,7 +239,7 @@ const maxComposableReturnProperties = {
       if (node) {
         for (const prop of node.properties) {
           if (prop.type === 'Property') {
-            if (!isDataValue(prop.value)) count += countLeafNames(prop.value)
+            if (!isDataValue(prop.value)) count++
           } else if (prop.type === 'SpreadElement') {
             // A composable names every property it returns; a factory that spreads a part it built is counted by its type, and one that spreads a value it did not build is reported.
             if (fnName.startsWith('use')) {

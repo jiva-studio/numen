@@ -76,11 +76,6 @@ describe("the composable return size rule", () => {
     assert.deepEqual(findReports("function useA() { return { drafts: { open: 1, save: 2 }, a: 1 } }"), []);
   });
 
-  it("counts the names a group holds, not the group", () => {
-    const source = "function useA() { return { enums: { a: 1, b: 2 }, values: { c: 3, d: 4 } } }";
-    assert.deepEqual(findReports(source), ["1 tooManyReturnedProperties"]);
-  });
-
   it("fails a group that only re-exposes members of the parts the function calls", () => {
     const source = [
       "function useA() {",

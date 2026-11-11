@@ -1,6 +1,5 @@
 import { formatCommandId } from '@numen/plugin-loader'
-import type { DeclaredCommand } from '../api/declaredCommands'
 
 /** What the palette files a declared command under. */
-export const getPaletteId = (command: DeclaredCommand): string =>
+export const getPaletteId = (command: { readonly pluginId: string; readonly id: string }): string =>
   formatCommandId(command.pluginId, command.id)
