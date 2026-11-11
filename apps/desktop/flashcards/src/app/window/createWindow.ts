@@ -5,7 +5,7 @@
  * them, then the host the services are given to.
  */
 import { onUnmounted } from 'vue'
-import { loadWailsRuntime } from '@/shared/api/wailsRuntime'
+import { loadWailsRuntime } from '@/features/external-links'
 import {
   createPluginLoader,
   createWindowHost,

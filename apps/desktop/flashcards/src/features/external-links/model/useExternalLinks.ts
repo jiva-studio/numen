@@ -4,7 +4,7 @@
  */
 import { onMounted, onUnmounted } from 'vue'
 import { interceptExternalLinks } from '@numen/ui'
-import { openExternalUrl } from '@/shared/api/wailsRuntime'
+import { openExternalUrl } from '../api/wailsRuntime'
 import type { NoticeQueue } from '@numen/workbench'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
