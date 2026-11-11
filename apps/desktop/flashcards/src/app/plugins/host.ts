@@ -31,21 +31,22 @@ import type { createWindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'
 
 /** The commands, the vaults and the window the plugins read. */
-export interface ShellServices {
+interface ShellServices {
   readonly commands: CommandsHost
   readonly vaults: VaultsHost
   readonly window: WindowHost
 }
 
-/** What the host is made from: the tabs and notices it registers into, and the services it offers. */
-export interface ShellHostDeps {
+/**
+ * What the host is made from: the tabs and notices it registers into, the services it offers (a plugin
+ * gets none that is missing), the agent where the window has one, and the platform the plugins read,
+ * Windows where none is given, as the frame reports without the Wails runtime.
+ */
+interface ShellHostDeps {
   readonly tabs: Pick<ReturnType<typeof createWindowTabs>, 'addView' | 'closeTab' | 'dropPlugin'>
   readonly notices: NoticeQueue
-  /** The services the plugins read; a plugin gets none that is missing. */
   readonly services?: Partial<ShellServices>
-  /** The agent the plugins are given where the window has one. */
   readonly agent?: AgentHost
-  /** The platform plugins read: Windows where none is given, as the frame reports without the Wails runtime. */
   readonly getPlatform?: () => WindowPlatform
 }
 

@@ -8,7 +8,6 @@ import { useAppStart, type PluginStarter } from './useAppStart'
 let restoreCore: () => void
 const getPlugins = vi.fn()
 
-/** A loader whose steps the test settles. */
 const createLoader = () => {
   const calls: string[] = []
   let settleInterface: () => void = () => undefined

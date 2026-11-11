@@ -6,13 +6,12 @@ import type { AgentHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { TARGET } from '@/shared/lib/window'
 import { createNoticeQueue } from '@numen/workbench'
 import { createWindowTabs } from '@/entities/tab'
-import { createShellHost as createHost, type ShellServices } from './host'
+import { createShellHost as createHost } from './host'
 import { createWindowCommands } from './windowCommands'
 
-/** The host over the tabs and notices it registers into, which the tests read. */
 const createShellHost = (
   agent?: AgentHost,
-  services: Partial<ShellServices> = {},
+  services: Parameters<typeof createHost>[0]['services'] = {},
   getPlatform?: () => 'windows' | 'darwin',
 ) => {
   const tabs = createWindowTabs()

@@ -10,7 +10,7 @@ import { getRowIcon } from './icons'
 
 /* --------------------------------- State ---------------------------------- */
 const getFolders = (rows: readonly Row[]): string[] =>
-  rows.flatMap((row) => (row.hasChildren ? [row.id, ...getFolders(row.rows)] : []))
+  rows.flatMap((row) => (row.hasChildren ? [row.id, ...getFolders(row.rows ?? [])] : []))
 const open = ref<readonly string[]>(['', ...getFolders(FILE_ROWS)])
 const selected = ref<readonly string[]>([SELECTED_ROW])
 

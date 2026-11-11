@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { onScopeDispose } from 'vue'
 import { createWindowTabs } from './createWindowTabs'
 
-/** A kind placed in the main pane that records when its tab is released and destroyed. */
 const createKind = (kind: string, order: number) => {
   const released: string[] = []
   const destroyed: string[] = []
@@ -20,7 +19,7 @@ const createKind = (kind: string, order: number) => {
 }
 
 describe('createWindowTabs', () => {
-  it('puts in front the main-pane kind of the lowest order and falls back when it goes', () => {
+  it('puts in front the main-pane kind of the lowest order and falls back when its plugin is dropped', () => {
     const tabs = createWindowTabs()
     const late = tabs.addView({
       pluginId: 'md.numen.a',

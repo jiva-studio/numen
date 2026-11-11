@@ -21,18 +21,18 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { front, tab, openTab, vaults, plugins, mountView, appearance } = createWindow(props.deps)
+const { front, tab, openTab, vaults, plugins, titleBarView, mountView, appearance } = createWindow(props.deps)
 </script>
 
 <template>
   <!-- The window is drawn once the plugins have started or the wait for them has passed, so the
        layout does not move when the bar is drawn. -->
   <LoadingIndicator v-if="!plugins.isStarted.value" class="starting" :label="WORDS.appName" />
-  <SlotViewHost v-else :view="plugins.titleBarView.value" />
+  <SlotViewHost v-else :view="titleBarView.value" />
   <main
     v-if="plugins.isStarted.value"
     class="window"
-    :class="{ 'window--below-bar': plugins.titleBarView.value }"
+    :class="{ 'window--below-bar': titleBarView.value }"
   >
     <component
       :is="tab.view.registration.component as Component"
