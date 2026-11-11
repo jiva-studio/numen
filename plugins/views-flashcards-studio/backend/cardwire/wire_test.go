@@ -7,9 +7,8 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 )
 
 func requireEqual(t *testing.T, got, want any) {
@@ -93,7 +92,7 @@ func TestADeckGoesOutWithItsSectionsCardsAndValues(t *testing.T) {
 		Preamble: "above", Tail: "below",
 		Sections: []format.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
 		Cards: []format.Card{
-			{Heading: "h1", CardID: cardid.ID("m1"), Section: format.NoSection, CardModelLink: "basic", Preamble: "c1",
+			{Heading: "h1", CardID: format.ID("m1"), Section: format.NoSection, CardModelLink: "basic", Preamble: "c1",
 				Values: []format.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
 			{Heading: "h2", Section: 1, CardModelLink: "other"},
 		},
@@ -130,7 +129,7 @@ func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
 		Preamble: "above", Tail: "below",
 		Sections: []format.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
 		Cards: []format.Card{
-			{Heading: "h1", CardID: cardid.ID("m1"), Section: 1, CardModelLink: "basic", Preamble: "c1",
+			{Heading: "h1", CardID: format.ID("m1"), Section: 1, CardModelLink: "basic", Preamble: "c1",
 				Values: []format.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
 			{Heading: "h2", Section: format.NoSection},
 		},

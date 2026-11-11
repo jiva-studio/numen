@@ -11,10 +11,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // The handler a host that links the plugin in answers the importer API with the token it was

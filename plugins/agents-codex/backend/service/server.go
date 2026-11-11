@@ -5,12 +5,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/modellist"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/programs"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/run"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/settings"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/modellist"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/programs"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/run"
 )
 
 type agentServer struct {

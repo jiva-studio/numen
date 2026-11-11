@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/serving"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
 func updateConfig(model *serving.Server) func(values map[string]string, secrets server.Secrets) {

@@ -5,7 +5,6 @@
  * added to the SDK fails the typecheck until it states its permission or why it needs none.
  */
 import type {
-  Caught,
   PluginEvents,
   PluginIdentity,
   PluginRegistrations,
@@ -276,17 +275,8 @@ export interface Guard {
   readonly path?: string
 }
 
-function requireAll(
-  rule: Rule,
-  operation: string,
-  check: RequirePermission,
-): { readonly error: Caught } | undefined {
-  try {
-    for (const permission of rule.permissions) check(permission, operation)
-  } catch (error) {
-    return { error }
-  }
-  return undefined
+function requireAll(rule: Rule, operation: string, check: RequirePermission): void {
+  for (const permission of rule.permissions) check(permission, operation)
 }
 
 function guardMember(
@@ -300,18 +290,20 @@ function guardMember(
     return {
       enumerable: true,
       value: (...args: never[]) => {
-        const failure = requireAll(rule, operation, check)
-        if (failure === undefined) return Reflect.apply(service[key] as () => Value, service, args)
-        if (rule.isAsync) return Promise.reject(failure.error)
-        throw failure.error
+        try {
+          requireAll(rule, operation, check)
+        } catch (error) {
+          if (rule.isAsync) return Promise.reject(error)
+          throw error
+        }
+        return Reflect.apply(service[key] as () => Value, service, args)
       },
     }
   }
   return {
     enumerable: true,
     get: () => {
-      const failure = requireAll(rule, operation, check)
-      if (failure !== undefined) throw failure.error
+      requireAll(rule, operation, check)
       return service[key]
     },
   }

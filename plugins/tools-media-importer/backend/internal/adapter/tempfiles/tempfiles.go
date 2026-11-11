@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // Files reads and writes temporary files and directories on the machine.
@@ -60,4 +61,9 @@ func (Files) WithTempDir(pattern string, fn func(dir string) error) (err error) 
 	}
 	defer func() { err = errors.Join(err, os.RemoveAll(dir)) }()
 	return fn(dir)
+}
+
+// Join joins the path of a directory and the name of a file in it with the separator of the machine.
+func (Files) Join(dir, name string) string {
+	return filepath.Join(dir, name)
 }

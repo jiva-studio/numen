@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
 // floor is the cosine a passage must reach to answer a search by meaning.

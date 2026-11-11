@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 // TestMain makes the folder the pools of the tests keep the compiled PDFium in.

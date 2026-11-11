@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/linkimport"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/linkimport"
 )
 
 // The instruction sentences of url_import: when to call it and what it returns.

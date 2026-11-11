@@ -6,7 +6,7 @@
  * what it renders, and neither do these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
+import { expect, fn, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Tree from './Tree.vue'
 import type { Row, RowId } from '../lib/row'
@@ -152,6 +152,8 @@ interface Knobs {
   name: string
   renamingPath: RowId | null
   selected: readonly RowId[]
+  onOpen?: (row: RowId) => void
+  onClose?: (row: RowId) => void
   rows?: never
   open?: never
   counted?: never
@@ -203,9 +205,11 @@ const meta: Meta<Knobs> = {
         renamingPath,
         onOpen: (row: RowId) => {
           open.value = [...open.value, row]
+          args.onOpen?.(row)
         },
         onClose: (row: RowId) => {
           open.value = open.value.filter((each) => each !== row)
+          args.onClose?.(row)
         },
         onSelect: (picked: readonly RowId[]) => {
           selected.value = picked
@@ -334,6 +338,24 @@ export const WalksWithTheKeyboard: Story = {
     await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
     await expect(getDrawnRows(canvasElement)).not.toContain('friday')
     await expect(document.activeElement).toBe(getRow(canvasElement, 'plans'))
+  },
+}
+
+/** Opening a folder and shutting it again each emit the folder. */
+export const EmitsOpenAndClose: Story = {
+  tags: ['!dev'],
+  args: { onOpen: fn(), onClose: fn() },
+  play: async ({ canvasElement, args }) => {
+    getRow(canvasElement, 'plans').focus()
+
+    await userEvent.keyboard('{ArrowRight}')
+    await expect(args.onOpen).toHaveBeenCalledTimes(1)
+    await expect(args.onOpen).toHaveBeenCalledWith('plans')
+    await expect(args.onClose).not.toHaveBeenCalled()
+
+    await userEvent.keyboard('{ArrowLeft}')
+    await expect(args.onClose).toHaveBeenCalledTimes(1)
+    await expect(args.onClose).toHaveBeenCalledWith('plans')
   },
 }
 

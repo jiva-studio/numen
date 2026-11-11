@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/settings"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 )
 
 // Chat asks a model for the next message of a conversation. Stream passes the reply text to emit as it

@@ -6,9 +6,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/editpreview"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/preview"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/window"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/editpreview"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/window"
 )
 
 // Host provides the vault and its window to the window tools. A nil field means the host offers

@@ -9,11 +9,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostclient"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/scenarios"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/sessions"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/scenarios"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 )
 
 // Config is what the backend is made from.

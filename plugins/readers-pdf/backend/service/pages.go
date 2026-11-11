@@ -2,11 +2,11 @@ package service
 
 import (
 	"errors"
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
 // pagesPattern is the route under the plugin route that serves the page images.
@@ -16,11 +16,13 @@ const pagesPattern = "pages/{page}"
 // PageServer draws the pages of the PDF files in a vault as JPEG images.
 type PageServer struct {
 	reader *document.Reader
+	report func(what string, err error)
 }
 
-// NewPageServer returns a PageServer that draws the pages reader reads.
-func NewPageServer(reader *document.Reader) *PageServer {
-	return &PageServer{reader: reader}
+// NewPageServer returns a PageServer that draws the pages reader reads. A failure to write a page goes to
+// report.
+func NewPageServer(reader *document.Reader, report func(what string, err error)) *PageServer {
+	return &PageServer{reader: reader, report: report}
 }
 
 // ServeHTTP answers a request for one page: the index is the path value "page", counted from zero,
@@ -41,7 +43,7 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	if _, err := w.Write(image); err != nil {
-		log.Printf("readers-pdf: write the page %d of %s: %v", page.Index, page.Path, err)
+		s.report(fmt.Sprintf("write the page %d of %s", page.Index, page.Path), err)
 	}
 }
 

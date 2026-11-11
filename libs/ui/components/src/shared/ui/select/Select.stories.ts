@@ -9,7 +9,7 @@
  * document and not off the canvas.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
+import { expect, fn, userEvent } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Select from './Select.vue'
 import { CYRILLIC_CHOICES, LONG_CHOICES, UNBROKEN_CHOICES } from '@/shared/fixtures/prose'
@@ -19,6 +19,7 @@ interface Knobs {
   chosen: string
   isDisabled: boolean
   width: string
+  onChange?: (value: string) => void
 }
 
 const getChoice = (line: string, pos: number) => {
@@ -52,12 +53,16 @@ const meta: Meta<Knobs> = {
           .filter((line) => line.length > 0)
           .map(getChoice),
       )
-      const selected = ref(args.chosen)
-      return { args, choices, chosen: selected }
+      const current = ref(args.chosen)
+      const onChange = (value: string): void => {
+        current.value = value
+        args.onChange?.(value)
+      }
+      return { args, choices, current, onChange }
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
-        <Select v-model="chosen" aria-label="How large it is drawn" :choices="choices" :is-disabled="args.isDisabled" />
+        <Select :model-value="current" aria-label="How large it is drawn" :choices="choices" :is-disabled="args.isDisabled" @update:model-value="onChange" />
       </div>
     `,
   }),
@@ -186,6 +191,18 @@ export const OneStopOnTheWayRound: Story = {
     await userEvent.keyboard('{ArrowDown}{Enter}')
     await expect(control(canvasElement).textContent).toContain('Medium')
     await expect(document.activeElement).toBe(control(canvasElement))
+  },
+}
+
+/** Choosing an option hands on its id. */
+export const HandsOnTheChosenOption: Story = {
+  args: { onChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    await openSelect(canvasElement)
+    await userEvent.click(rows()[2]!)
+    await expect(args.onChange).toHaveBeenCalledTimes(1)
+    await expect(args.onChange).toHaveBeenCalledWith('large')
+    await expect(control(canvasElement).textContent).toContain('Large')
   },
 }
 

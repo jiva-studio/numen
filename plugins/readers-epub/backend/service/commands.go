@@ -6,7 +6,7 @@ import (
 	"path"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/texts"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/texts"
 )
 
 func newCommands(writer *texts.Writer) (*command.Registry, error) {

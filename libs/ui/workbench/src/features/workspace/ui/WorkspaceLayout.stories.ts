@@ -6,7 +6,7 @@
  * its contents, and neither do these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import TabStub from '../fixtures/TabStub.vue'
@@ -58,6 +58,8 @@ interface Knobs {
   edge: number
   threshold: number
   marks: Readonly<Record<string, string>>
+  onActivate?: (tab: string) => void
+  onClose?: (tab: string, hold: () => void) => void
   tabs?: never
   naming?: never
   modelValue?: never
@@ -103,6 +105,8 @@ const meta: Meta<Knobs> = {
           :edge="args.edge"
           :threshold="args.threshold"
           :naming="() => 'made-' + Math.random().toString(36).slice(2, 8)"
+          @activate="args.onActivate?.($event)"
+          @close="(tab, hold) => args.onClose?.(tab, hold)"
         >
           <template #tab="{ id }"><TabStub :name="id" /></template>
         </WorkspaceLayout>
@@ -342,6 +346,34 @@ export const ClosesAPane: Story = {
     const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')]
     await expect(panes).toHaveLength(1)
     await expect(getRect(panes[0] as Element).width).toBeGreaterThan(main.width)
+  },
+}
+
+/** Pressing a close button emits the tab with a way to hold it open. */
+export const EmitsTheTabToClose: Story = {
+  tags: ['!dev'],
+  args: { onClose: fn() },
+  play: async ({ canvasElement, args }) => {
+    const close = within(getTab(canvasElement, 'chat') as HTMLElement).getByRole('button')
+
+    await userEvent.click(close)
+
+    await expect(args.onClose).toHaveBeenCalledTimes(1)
+
+    await expect(args.onClose).toHaveBeenCalledWith('chat', expect.any(Function))
+  },
+}
+
+/** Pressing a tab emits it as the one to show. */
+export const EmitsTheTabPressed: Story = {
+  tags: ['!dev'],
+  args: { arrangement: 'crowded', onActivate: fn() },
+  play: async ({ canvasElement, args }) => {
+    await userEvent.click(getTab(canvasElement, 'three'))
+
+    await expect(args.onActivate).toHaveBeenCalledTimes(1)
+
+    await expect(args.onActivate).toHaveBeenCalledWith('three')
   },
 }
 

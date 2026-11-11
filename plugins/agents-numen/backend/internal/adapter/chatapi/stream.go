@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/settings"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 )
 
 // MaxStreamedCalls is the highest index plus one a streamed tool call may have.

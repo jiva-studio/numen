@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/catalog"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/toolset"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/executable"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/toolconfig"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/ports"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/programs"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/run"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/settings"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/toolset"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/usecase/catalog"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/usecase/programs"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/usecase/run"
 )
 
 // agent answers the calls of the agent service with the use cases of the plugin.

@@ -5,10 +5,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/acp"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/agents"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/ask"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/programs"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/agents"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/ask"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/programs"
 )
 
 type agentServer struct {

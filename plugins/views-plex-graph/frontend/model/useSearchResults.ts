@@ -42,7 +42,7 @@ function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
 }
 
 export function useSearchResults<T>(
-  search: (query: string) => Promise<readonly T[]>,
+  getSearch: () => (query: string) => Promise<readonly T[]>,
   options: DebouncedSearchOptions = {},
 ) {
   const results = shallowRef<readonly T[]>([])
@@ -60,7 +60,7 @@ export function useSearchResults<T>(
       },
       run: async (query, mine) => {
         try {
-          const found = await search(query)
+          const found = await getSearch()(query)
           if (mine.isCurrent) results.value = found
         } catch {
           if (mine.isCurrent) results.value = []

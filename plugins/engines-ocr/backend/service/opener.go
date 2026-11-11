@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engines"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/engines"
 )
 
 func newOpener(library *onnx.Library, isMock func() bool) engines.Opener {
-	return func(ctx context.Context, cfg settings.Config) (engines.Recogniser, error) {
+	return func(ctx context.Context, cfg settings.Config) (engines.Recognizer, error) {
 		if isMock() {
-			return engine.MockRecogniser{}, nil
+			return engine.MockRecognizer{}, nil
 		}
 		return engine.Open(ctx, library, cfg)
 	}

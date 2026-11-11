@@ -12,10 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // ConvertOutcome is the ErrorCode of a read that did not return the note, and false for a read that did.

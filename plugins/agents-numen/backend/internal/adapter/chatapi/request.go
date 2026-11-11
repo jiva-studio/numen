@@ -2,7 +2,7 @@ package chatapi
 
 import (
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/settings"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 )
 
 // reasoningRequest is the reasoning object of a request.

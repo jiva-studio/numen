@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {

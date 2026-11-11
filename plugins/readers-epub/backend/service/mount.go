@@ -5,9 +5,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/books"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/adapter/hostclient"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/texts"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/texts"
 )
 
 // Mount registers the plugin's services on s, reporting text versions to the host the environment
@@ -38,7 +38,7 @@ func mount(s *server.Server, connected *hostclient.Host) error {
 	if err := mountMethods(s, reader); err != nil {
 		return err
 	}
-	s.RegisterRoute(entriesPattern, NewEntryServer(reader))
+	s.RegisterRoute(entriesPattern, NewEntryServer(reader, connected.ReportError))
 	commands, err := newCommands(writer)
 	// gomutants:disable-next-line BRANCH_IF reason="registering one static command id on a new registry cannot fail"
 	if err != nil {

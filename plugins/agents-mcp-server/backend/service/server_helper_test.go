@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/hostserver"
 	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/exposetools"
+	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/hostserver"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

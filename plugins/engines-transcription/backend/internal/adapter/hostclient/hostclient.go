@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
 // VaultReader is what the plugin reads of a vault: its files and its name.

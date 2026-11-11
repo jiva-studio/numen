@@ -7,10 +7,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardwire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/filewire"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 )
 
 // cardsHandler answers about the decks and card models a vault is arranged into.

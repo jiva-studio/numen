@@ -5,9 +5,10 @@
  * drags the window.
  */
 import type { Component } from 'vue'
-import type { SlotCommand, SlotItem } from '@numen/plugin-sdk'
+import type { SlotCommand } from '@numen/plugin-sdk'
 import { formatShortcut } from '../lib/shortcut'
 import { formatTooltip } from '../lib/title'
+import { useIsDrawn } from '../model/useIsDrawn'
 import TitleBarMenuButton from './TitleBarMenuButton.vue'
 import type { TitleBarSlotProps } from './TitleBarSlot.types'
 
@@ -24,6 +25,12 @@ const emit = defineEmits<{
   ): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
+const isDrawn = useIsDrawn(
+  () => props.getKey,
+  () => props.hidden,
+)
+
 /* -------------------------------- Handlers -------------------------------- */
 function onRunCommand(
   command: string,
@@ -38,10 +45,6 @@ function onRunCommand(
 /* -------------------------------- Helpers --------------------------------- */
 function getTooltip(entry: SlotCommand): string {
   return formatTooltip(entry.title, formatShortcut(entry.shortcut, props.platform))
-}
-
-function isDrawn(entry: SlotItem): boolean {
-  return !props.hidden.has(props.getKey(entry))
 }
 </script>
 

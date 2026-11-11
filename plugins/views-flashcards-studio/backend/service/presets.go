@@ -7,11 +7,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/filewire"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 // presetsHandler answers about the presets decks are scheduled by.

@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/arguments"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/environment"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/environment"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 

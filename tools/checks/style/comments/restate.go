@@ -10,7 +10,13 @@ import (
 // signature of the declaration already hold, from which the comment is refused.
 const restateThresholdPercent = 80
 
-var stopWords = toSet("a an the of to for in is are was were be been by that which and or with from on as it its this these those at if when then into each one any does do has have whose whether so not than there their can will may")
+var stopWords = toSet(
+	"a an the of to for in is are was were be " +
+		"been by that which and or with from on as it its " +
+		"this these those at if when then into each one any does " +
+		"do has have whose whether so not than there their can will " +
+		"may",
+)
 
 // synonyms maps verbs that mean the same operation in a name and in a sentence to one word, so that
 // `GetPlugin finds no plugin` and `SetVault stores the vault` are read as what they say.
