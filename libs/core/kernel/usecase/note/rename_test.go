@@ -23,7 +23,7 @@ import (
 )
 
 func (c changing) rename() note.Rename {
-	return note.NewRename(c.moveDeps(), c.move())
+	return note.NewRename(c.moveDeps(), c.move(), note.OpenGate{})
 }
 
 func (c changing) moveApartDeps() note.MoveDeps {
@@ -34,7 +34,7 @@ func (c changing) moveApartDeps() note.MoveDeps {
 
 func (c changing) renameApart() note.Rename {
 	deps := c.moveApartDeps()
-	return note.NewRename(deps, note.NewMove(deps))
+	return note.NewRename(deps, note.NewMove(deps), note.OpenGate{})
 }
 
 func (c changing) title(t *testing.T, path string) string {
@@ -345,7 +345,7 @@ func TestRename_ReturnsMoveWhenFollowUpFails(t *testing.T) {
 		Links: c.db.NoteQueries(), Names: c.db.NoteQueries(),
 		Sources: sulking{SourceRepository: c.db.Sources(), moveError: sulk}, Index: c.index, Now: testsupport.NewClock(),
 	}
-	rename := note.NewRename(deps, note.NewMove(deps))
+	rename := note.NewRename(deps, note.NewMove(deps), note.OpenGate{})
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {
@@ -488,7 +488,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
-	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index)
+	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index, note.OpenGate{})
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
