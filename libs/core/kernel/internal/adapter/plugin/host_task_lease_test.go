@@ -15,7 +15,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
@@ -148,7 +148,7 @@ func TestARunningQueueTurnBlocksIdleEviction(t *testing.T) {
 	}
 
 	closeStream()
-	plugintest.WaitUntil(t, "the plugin is evictable after its turn", func() bool {
+	wiretest.WaitUntil(t, "the plugin is evictable after its turn", func() bool {
 		return len(w.listEvicted(t)) == 1
 	})
 }
@@ -157,7 +157,7 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 	w := newTaskHost(t)
 	w.reportTask(t, "scan.sample", 0, 4)
 
-	plugintest.KillProcess(t, w.process)
+	wiretest.KillProcess(t, w.process)
 	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
 
 	if _, err := w.host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {

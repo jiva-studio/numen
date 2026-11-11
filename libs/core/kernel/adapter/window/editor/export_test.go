@@ -225,3 +225,10 @@ func writeLink(links *note.EditLinks, names edit.NameQueries, writes *Writes) *n
 	linking := note.NewWriteLink(*links, names, writes, writes)
 	return &linking
 }
+
+// WrapPluginSwitch replaces the switch the window opens a vault for a plugin through with the one wrap returns.
+func (o *Installation) WrapPluginSwitch(wrap func(next windowsession.VaultSwitch) windowsession.VaultSwitch) {
+	open := o.lifecycle.OpenPlugin.(windowsession.OpenPluginVault)
+	open.Switch = wrap(open.Switch)
+	o.lifecycle.OpenPlugin = open
+}

@@ -29,10 +29,10 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -52,13 +52,13 @@ func launchProcess(cmd *exec.Cmd, fallback int) supervision.Launcher {
 		if port == 0 {
 			port = fallback
 		}
-		return cmd.Process, plugintest.GetReadyOutput(port), nil
+		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	}
 }
 
 func launchProcessAt(cmd *exec.Cmd, port int) supervision.Launcher {
 	return func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
-		return cmd.Process, plugintest.GetReadyOutput(port), nil
+		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	}
 }
 
@@ -68,7 +68,7 @@ func serveLifecycle(t *testing.T, handler numenv1connect.PluginLifecycleServiceH
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(handler))
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
-	return plugintest.GetPort(t, srv)
+	return wiretest.GetPort(t, srv)
 }
 
 func createNamedTestPlugin(t *testing.T, dir, id string) {
@@ -97,7 +97,7 @@ func createNamedTestPlugin(t *testing.T, dir, id string) {
 
 func TestHostDiscoveryAndLookup(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
@@ -119,8 +119,8 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 
 func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	tmp := t.TempDir()
-	pingPort := plugintest.ServeHostPing(t)
-	plugintest.CreateTestPluginTree(t, tmp)
+	pingPort := wiretest.ServeHostPing(t)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
@@ -128,7 +128,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	host.Processes.SetLauncher(launchProcess(cmd, pingPort))
 
@@ -235,8 +235,8 @@ func TestIsWhitelistedEnv(t *testing.T) {
 
 func TestHostEmitEventActivation(t *testing.T) {
 	tmp := t.TempDir()
-	pingPort := plugintest.ServeHostPing(t)
-	plugintest.CreateTestPluginTree(t, tmp)
+	pingPort := wiretest.ServeHostPing(t)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
@@ -244,7 +244,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	host.Processes.SetLauncher(launchProcess(cmd, pingPort))
 
@@ -275,12 +275,12 @@ func TestHostEmitEventActivation(t *testing.T) {
 
 func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 	tmp := t.TempDir()
-	pingPort := plugintest.ServeHostPing(t)
-	plugintest.CreateTestPluginTree(t, tmp)
+	pingPort := wiretest.ServeHostPing(t)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	pr, pw, err := os.Pipe()
 	if err != nil {
@@ -333,12 +333,12 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 
 func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	tmp := t.TempDir()
-	pingPort := plugintest.ServeHostPing(t)
+	pingPort := wiretest.ServeHostPing(t)
 	createNamedTestPlugin(t, tmp, "test.concurrent")
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	var launchCount atomic.Int32
 	launchStarted := make(chan struct{})
@@ -355,7 +355,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 		if actualPort == 0 {
 			actualPort = pingPort
 		}
-		return cmd.Process, plugintest.GetReadyOutput(actualPort), nil
+		return cmd.Process, wiretest.GetReadyOutput(actualPort), nil
 	})
 
 	const numGoroutines = 8
@@ -406,16 +406,16 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 
 func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	tmp := t.TempDir()
-	slowPort := plugintest.ServeHostPing(t)
-	fastPort := plugintest.ServeHostPing(t)
+	slowPort := wiretest.ServeHostPing(t)
+	fastPort := wiretest.ServeHostPing(t)
 	createNamedTestPlugin(t, tmp, "plugin.slow")
 	createNamedTestPlugin(t, tmp, "plugin.fast")
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
-	cmdSlow := plugintest.StartSleepProcess(t)
+	cmdSlow := wiretest.StartSleepProcess(t)
 
-	cmdFast := plugintest.StartSleepProcess(t)
+	cmdFast := wiretest.StartSleepProcess(t)
 
 	slowStarted := make(chan struct{})
 	slowAllowHandshake := make(chan struct{})
@@ -428,13 +428,13 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 			if actualPort == 0 {
 				actualPort = slowPort
 			}
-			return cmdSlow.Process, plugintest.GetReadyOutput(actualPort), nil
+			return cmdSlow.Process, wiretest.GetReadyOutput(actualPort), nil
 		}
 		actualPort := port
 		if actualPort == 0 {
 			actualPort = fastPort
 		}
-		return cmdFast.Process, plugintest.GetReadyOutput(actualPort), nil
+		return cmdFast.Process, wiretest.GetReadyOutput(actualPort), nil
 	})
 
 	var slowWg sync.WaitGroup
@@ -538,12 +538,12 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 
 func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	tmp := t.TempDir()
-	pingPort := plugintest.ServeHostPing(t)
+	pingPort := wiretest.ServeHostPing(t)
 	createNamedTestPlugin(t, tmp, "test.cancel")
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	launchStarted := make(chan struct{})
 	allowHandshake := make(chan struct{})
@@ -555,7 +555,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 		if actualPort == 0 {
 			actualPort = pingPort
 		}
-		return cmd.Process, plugintest.GetReadyOutput(actualPort), nil
+		return cmd.Process, wiretest.GetReadyOutput(actualPort), nil
 	})
 
 	var wg sync.WaitGroup
@@ -621,7 +621,7 @@ func (c *testCloser) getIsClosed() bool {
 }
 
 type testLifecycleHandler struct {
-	servetest.PluginLifecycle
+	wiretest.PluginLifecycle
 	mu             sync.Mutex
 	shutdownCalled bool
 	timeoutSecs    int32
@@ -651,7 +651,7 @@ func (h *testLifecycleHandler) isShutdownCalled() bool {
 
 func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	clock := testsupport.NewClock()
 	host := newDiscoveredHostAt(t, clock, tmp)
@@ -659,10 +659,10 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	handler := &testLifecycleHandler{}
 	serverPort := serveLifecycle(t, handler)
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	handler.onShutdown = func() {
-		plugintest.Kill(t, cmd)
+		wiretest.Kill(t, cmd)
 	}
 
 	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
@@ -710,17 +710,17 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
 	handler := &testLifecycleHandler{}
 	serverPort := serveLifecycle(t, handler)
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	handler.onShutdown = func() {
-		plugintest.Kill(t, cmd)
+		wiretest.Kill(t, cmd)
 	}
 
 	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
@@ -753,7 +753,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 
 func TestHostEvictIdleNonBlocking(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	clock := testsupport.NewClock()
 	host := newDiscoveredHostAt(t, clock, tmp)
@@ -761,14 +761,14 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	handler := &testLifecycleHandler{}
 	serverPort := serveLifecycle(t, handler)
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	rpcReceived := make(chan struct{})
 	releaseShutdown := make(chan struct{})
 	handler.onShutdown = func() {
 		close(rpcReceived)
 		<-releaseShutdown
-		plugintest.Kill(t, cmd)
+		wiretest.Kill(t, cmd)
 	}
 
 	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
@@ -808,27 +808,27 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 
 func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Process) supervision.Launcher {
 	t.Helper()
-	pingPort := plugintest.ServeHostPing(t)
+	pingPort := wiretest.ServeHostPing(t)
 	var mu sync.Mutex
 	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
+		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
+		t.Cleanup(func() { wiretest.KillProcess(t, cmd.Process) })
 		mu.Lock()
 		if procs != nil {
 			*procs = append(*procs, cmd.Process)
 		}
 		mu.Unlock()
 		started.Add(1)
-		return cmd.Process, plugintest.GetReadyOutput(pingPort), nil
+		return cmd.Process, wiretest.GetReadyOutput(pingPort), nil
 	}
 }
 
 func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 	var started atomic.Int32
 	var procs []*os.Process
@@ -839,8 +839,8 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	sup := supervisorOf(host, "org.example.sample")
-	plugintest.KillProcess(t, procs[0])
-	plugintest.WaitUntil(t, "the crashed plugin to become dormant", func() bool {
+	wiretest.KillProcess(t, procs[0])
+	wiretest.WaitUntil(t, "the crashed plugin to become dormant", func() bool {
 		_, hasEndpoint := host.Registry.sups.GetEndpoint("org.example.sample")
 		return sup.GetState() == lifecycle.StateDormant && !hasEndpoint
 	})
@@ -886,7 +886,7 @@ func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
 
 func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 	var started atomic.Int32
 	var procs []*os.Process
@@ -932,7 +932,7 @@ func TestProcessExitDropsEndpoint(t *testing.T) {
 
 func TestEnsureActive_PreservesPluginInUseDuringConcurrentEviction(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	clock := testsupport.NewClock()
 	host := newDiscoveredHostAt(t, clock, tmp)
 	var started atomic.Int32
@@ -1004,7 +1004,7 @@ func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
 
 func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
@@ -1112,7 +1112,7 @@ func TestHost_ListsPluginsInIDOrder(t *testing.T) {
 
 func TestHostEvictIdleKeepsAPluginIdleForLessThanTheThreshold(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
@@ -1142,7 +1142,7 @@ func TestHostEvictIdleKeepsAPluginIdleForLessThanTheThreshold(t *testing.T) {
 }
 
 // TestHelperProcessIdles is the body of the child process the launcher starts; it does nothing in a normal run.
-func TestHelperProcessIdles(t *testing.T) { plugintest.IdleChild(t) }
+func TestHelperProcessIdles(t *testing.T) { wiretest.IdleChild(t) }
 
 // runningPlugin is a plugin that the test host treats as running.
 type runningPlugin struct {

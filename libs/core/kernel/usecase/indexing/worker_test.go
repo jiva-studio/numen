@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -150,7 +149,7 @@ func testAPassThatCouldNotEmbedStaysInTheList(t *testing.T, openReading openFunc
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 
@@ -171,7 +170,7 @@ func testAPassThatEmbeddedPreservesTheList(t *testing.T, openReading openFunc) {
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 
@@ -221,7 +220,7 @@ func testIndexingNamesTheSourceItIsOn(t *testing.T, openReading openFunc) {
 	made, db := openReading(t)
 	fit(t, db, watching)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
@@ -238,7 +237,7 @@ func testIndexingNamesTheSourceItIsOn(t *testing.T, openReading openFunc) {
 func testBooksThatCouldNotBeReadStayInTheList(t *testing.T, openReading openFunc) {
 	t.Helper()
 	made, db := openReading(t)
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	events := newRecorder()
 	// The index queried for pending vectors is closed, so the query fails.
 	if err := db.Closer.Close(); err != nil {
@@ -298,7 +297,7 @@ func testIndexingIsNeverAWordWithNothingBelowIt(t *testing.T, openReading openFu
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	overVal := &overheard{fakeEmbedder: model, tasks: events.tasks}
@@ -351,7 +350,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
@@ -401,7 +400,7 @@ func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) 
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
@@ -433,7 +432,7 @@ func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
@@ -495,7 +494,7 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
@@ -518,7 +517,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	unembedded, _, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
@@ -574,7 +573,7 @@ func testCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openF
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	ended := make(chan struct{})

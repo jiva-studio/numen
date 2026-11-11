@@ -1,4 +1,4 @@
-package servetest
+package wiretest
 
 import (
 	"context"

@@ -11,7 +11,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -20,7 +20,7 @@ import (
 func newDiscoveredHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -34,11 +34,11 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	policy.Timeout = 50 * time.Millisecond
 	host.Processes.SetActivationPolicy(policy)
 
-	cmd := plugintest.NewIdleCommand(t.Context())
+	cmd := wiretest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
-	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
+	t.Cleanup(func() { wiretest.KillProcess(t, cmd.Process) })
 	silent, writer := io.Pipe()
 	t.Cleanup(func() {
 		if err := writer.Close(); err != nil {

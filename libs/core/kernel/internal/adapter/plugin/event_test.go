@@ -24,9 +24,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -70,7 +69,7 @@ func (r *eventRecorder) getEvents() []string {
 func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	t.Helper()
 	mux := http.NewServeMux()
-	servetest.HandlePluginLifecycle(mux)
+	wiretest.HandlePluginLifecycle(mux)
 	if recorder != nil {
 		mux.Handle(numenv1connect.NewPluginEventServiceHandler(recorder))
 	}
@@ -103,11 +102,11 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 		mu.Lock()
 		defer mu.Unlock()
 		for _, proc := range procs {
-			plugintest.KillProcess(t, proc)
+			wiretest.KillProcess(t, proc)
 		}
 	})
 	host.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
+		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}

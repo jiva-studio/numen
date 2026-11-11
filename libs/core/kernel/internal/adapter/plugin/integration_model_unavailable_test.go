@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
@@ -52,7 +52,7 @@ func (h *stubModelHost) GetVaultPath() string                    { return "" }
 func newDownModelHost(t *testing.T) *stubModelHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
-	serverPort := plugintest.GetPort(t, server)
+	serverPort := wiretest.GetPort(t, server)
 	server.Close()
 	return &stubModelHost{endpoint: transport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
@@ -63,7 +63,7 @@ func newSilentModelHost(t *testing.T) *stubModelHost {
 		<-r.Context().Done()
 	}))
 	t.Cleanup(server.Close)
-	return &stubModelHost{endpoint: transport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server)}}
+	return &stubModelHost{endpoint: transport.Endpoint{Host: "127.0.0.1", Port: wiretest.GetPort(t, server)}}
 }
 
 type modelOpener struct {

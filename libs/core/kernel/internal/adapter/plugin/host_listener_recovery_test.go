@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -52,17 +52,17 @@ func TestTheReleaseOfAStoppedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 
 func startKillableLauncher(t *testing.T, echoPort int) (supervision.Launcher, func() []*os.Process) {
 	t.Helper()
-	ready := "NUMEN_READY port=" + strconv.Itoa(plugintest.ServeHostPing(t)) + " listener.mcp=" + strconv.Itoa(echoPort)
+	ready := "NUMEN_READY port=" + strconv.Itoa(wiretest.ServeHostPing(t)) + " listener.mcp=" + strconv.Itoa(echoPort)
 	var mu sync.Mutex
 	var procs []*os.Process
 	launcher := func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
+		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
 		t.Cleanup(func() {
-			plugintest.KillProcess(t, cmd.Process)
-			plugintest.ReapProcess(t, cmd.Process)
+			wiretest.KillProcess(t, cmd.Process)
+			wiretest.ReapProcess(t, cmd.Process)
 		})
 		mu.Lock()
 		procs = append(procs, cmd.Process)
@@ -88,7 +88,7 @@ func TestTheReleaseOfACrashedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 	if err := getProcesses()[0].Kill(); err != nil {
 		t.Fatal(err)
 	}
-	plugintest.WaitUntil(t, "the crashed plugin to stop", func() bool {
+	wiretest.WaitUntil(t, "the crashed plugin to stop", func() bool {
 		status, _ := host.Registry.GetPluginStatus(listenerPlugin)
 		return !status.IsActive
 	})

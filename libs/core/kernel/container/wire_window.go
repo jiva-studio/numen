@@ -161,7 +161,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
 	}
 	session.Switching.OpenPlugin.Switch = switching
-	state.OpenVault = switching.Execute
+	state.Switch = switching
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.Start, Show: session.Switching.Show, OpenPlugin: session.Switching.OpenPlugin,
 		Flush: session.Closing.Flush, Close: session.Closing.Close,

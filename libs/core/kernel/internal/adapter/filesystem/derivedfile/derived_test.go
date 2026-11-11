@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -405,7 +405,7 @@ func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
 	}
 	defer func() {
 		testsupport.Close(t, stdin)
-		plugintest.Wait(t, child)
+		wiretest.Wait(t, child)
 	}()
 
 	// The child may print other lines first; the loop waits for the claim line.

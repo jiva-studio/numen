@@ -4,12 +4,12 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
 
 func waitForCount(t *testing.T, got *atomic.Int32, want int32) {
 	t.Helper()
-	plugintest.WaitUntil(t, "the watcher to run", func() bool { return got.Load() >= want })
+	wiretest.WaitUntil(t, "the watcher to run", func() bool { return got.Load() >= want })
 }
 
 // A function registered for a plugin runs each time the plugin has been given its configuration.

@@ -29,7 +29,8 @@ type State struct {
 	Notices *Notices
 	Events  *Events
 
-	OpenVault func(context.Context, domain.Vault, *windowsession.PluginOpen) error
+	// Switch shows a vault as a user switch.
+	Switch windowsession.VaultSwitch
 
 	NotifyOpenTabs func(window.OpenTabs)
 
@@ -130,7 +131,7 @@ func (s *State) ShowOpenTabs() {
 
 // ShowVault shows another vault in the window, as a user switch.
 func (s *State) ShowVault(ctx context.Context, v domain.Vault) error {
-	return s.OpenVault(ctx, v, nil)
+	return s.Switch.Execute(ctx, v, nil)
 }
 
 // CanOpenTabWindow is whether the application opens a window for a tab.

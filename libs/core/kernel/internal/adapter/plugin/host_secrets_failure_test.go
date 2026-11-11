@@ -19,7 +19,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -140,9 +140,9 @@ func prepareActivation(t *testing.T, host *Host, dormant bool) func() error {
 func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx context.Context) error {
 	t.Helper()
 	port := endpointOf(host, secretPluginID).Port
-	sleeper := plugintest.StartSleepProcess(t).Process
+	sleeper := wiretest.StartSleepProcess(t).Process
 	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
-		return sleeper, plugintest.GetReadyOutput(port), nil
+		return sleeper, wiretest.GetReadyOutput(port), nil
 	})
 	p := getRawPlugin(host, secretPluginID)
 	p.Manifest.Backend = manifest.Backend{Entrypoint: "bin/plugin"}
@@ -172,7 +172,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	putSupervisor(host, pluginID, sup)
-	putEndpoint(host, pluginID, transport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"})
+	putEndpoint(host, pluginID, transport.Endpoint{Host: "127.0.0.1", Port: wiretest.GetPort(t, server), Token: "second"})
 	source.allow(pluginID)
 	return probe
 }
@@ -497,7 +497,7 @@ func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
-	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
+	wiretest.WaitUntil(t, "the activation waits for its Configure", func() bool {
 		return host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
 	})
 	source.rename("Renamed")

@@ -22,8 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
@@ -125,13 +124,13 @@ func TestEmbedderBridge(t *testing.T) {
 	mockServer.minChunk.Store(40)
 	mockServer.handling.Store("1a2b3c4d")
 	mux := http.NewServeMux()
-	servetest.HandlePluginLifecycle(mux)
+	wiretest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	serverPort := plugintest.GetPort(t, server)
+	serverPort := wiretest.GetPort(t, server)
 
 	tmp := t.TempDir()
 	pDir := filepath.Join(tmp, "embeddings")
@@ -156,7 +155,7 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))

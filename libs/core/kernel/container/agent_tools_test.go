@@ -30,8 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -236,7 +235,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 			t.Fatal(err)
 		}
 		mux := http.NewServeMux()
-		servetest.HandlePluginLifecycle(mux)
+		wiretest.HandlePluginLifecycle(mux)
 		one.mount(mux)
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
@@ -260,7 +259,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() { plugintest.Kill(t, cmd) })
+		t.Cleanup(func() { wiretest.Kill(t, cmd) })
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
 	return host

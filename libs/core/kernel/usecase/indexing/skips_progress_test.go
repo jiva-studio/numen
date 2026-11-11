@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 )
 
 // progressLog is a recorder that also keeps every report of the vector pass.
@@ -51,7 +50,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 
-	v := vaultfixture.NewVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
+	v := made.newVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
 	heldChunks, _, err := db.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {

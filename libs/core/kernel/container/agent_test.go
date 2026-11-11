@@ -26,8 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -136,7 +135,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 	ports := map[string]int{}
 	for id, served := range servers {
 		mux := http.NewServeMux()
-		servetest.HandlePluginLifecycle(mux)
+		wiretest.HandlePluginLifecycle(mux)
 		mux.Handle(numenv1connect.NewAgentServiceHandler(served))
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
@@ -160,7 +159,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() { plugintest.Kill(t, cmd) })
+		t.Cleanup(func() { wiretest.Kill(t, cmd) })
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))), nil
 	})
 	return host

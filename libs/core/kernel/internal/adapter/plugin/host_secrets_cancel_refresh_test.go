@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
 
 func getOperationNames() []string {
@@ -142,7 +142,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	ctx, cancel := context.WithCancel(t.Context())
 	activation := make(chan error, 1)
 	go func() { activation <- activate(ctx) }()
-	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
+	wiretest.WaitUntil(t, "the activation waits for its Configure", func() bool {
 		return c.host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
 	})
 	cancel()

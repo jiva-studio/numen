@@ -19,8 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -32,7 +31,7 @@ const chunkEmbeddingPluginID = "md.numen.embeddings"
 
 // chunkingPlugin is an embedding plugin that reports the chunk size in tokens it is given.
 type chunkingPlugin struct {
-	servetest.PluginLifecycle
+	wiretest.PluginLifecycle
 	tokens atomic.Int32
 }
 
@@ -70,7 +69,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(reporter))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	port := plugintest.GetPort(t, server)
+	port := wiretest.GetPort(t, server)
 
 	root := t.TempDir()
 	dir := filepath.Join(root, "embeddings")
@@ -86,9 +85,9 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		return cmd.Process, plugintest.GetReadyOutput(port), nil
+		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return container.NewConfig(container.Config{
 		PluginHost: container.AdaptPluginHost(host),
@@ -158,7 +157,7 @@ func TestAChangeOfTheChunkSizeOfThePluginReachesTheCell(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	plugintest.WaitUntil(t, "the cell to hold the new chunk size", func() bool { return cfg.Resources.Chunks.Get() == 128 })
+	wiretest.WaitUntil(t, "the cell to hold the new chunk size", func() bool { return cfg.Resources.Chunks.Get() == 128 })
 }
 
 func TestWithNoEmbeddingPluginNotesAreChunkedAtTheDefaultLimit(t *testing.T) {

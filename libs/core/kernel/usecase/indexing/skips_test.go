@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 )
 
 func getHeldWords() []string {
@@ -79,7 +78,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 
-	v := vaultfixture.NewVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
+	v := made.newVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
 	heldChunks, _, err := db.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {

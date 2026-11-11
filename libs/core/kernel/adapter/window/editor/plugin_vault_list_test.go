@@ -38,9 +38,9 @@ func newPluginVaultList(f *showing) vaultapi.List {
 }
 
 func (f *showing) bindVaultSwitch() {
-	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
-		return f.installation.Show(ctx, v, open)
-	}
+	show := switchFunc(f.installation.Show)
+	f.installation.State.Switch = show
+	f.installation.WrapPluginSwitch(func(windowsession.VaultSwitch) windowsession.VaultSwitch { return show })
 }
 
 func (f *showing) respondToFlushes(
@@ -484,7 +484,7 @@ func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 	openResult := startPluginOpen(t, f, flushRequest, release)
 
 	switchCh := make(chan error, 1)
-	go func() { switchCh <- f.installation.State.OpenVault(t.Context(), f.second, nil) }()
+	go func() { switchCh <- f.installation.State.Switch.Execute(t.Context(), f.second, nil) }()
 	select {
 	case err := <-switchCh:
 		close(release)
@@ -635,7 +635,7 @@ func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 			target = f.first
 		}
 		switchResult := make(chan error, 1)
-		go func() { switchResult <- f.installation.State.OpenVault(t.Context(), target, nil) }()
+		go func() { switchResult <- f.installation.State.Switch.Execute(t.Context(), target, nil) }()
 		select {
 		case err := <-switchResult:
 			if err != nil {
@@ -673,7 +673,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	defer cancel()
 	switchCh := make(chan error, 1)
 	closed := make(chan bool, 1)
-	go func() { switchCh <- f.installation.State.OpenVault(ctx, f.second, nil) }()
+	go func() { switchCh <- f.installation.State.Switch.Execute(ctx, f.second, nil) }()
 	go func() { closed <- closeAsDesktopApp(ctx, f.installation) }()
 	select {
 	case err := <-openResult:

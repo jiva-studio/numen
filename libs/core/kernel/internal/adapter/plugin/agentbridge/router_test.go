@@ -19,8 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -83,11 +82,11 @@ func newProviderHost(t *testing.T, handlers map[string]numenv1connect.AgentServi
 	for id, handler := range handlers {
 		writeAgentProvider(t, dir, id)
 		mux := http.NewServeMux()
-		servetest.HandlePluginLifecycle(mux)
+		wiretest.HandlePluginLifecycle(mux)
 		mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
-		ports[id] = plugintest.GetPort(t, server)
+		ports[id] = wiretest.GetPort(t, server)
 	}
 
 	inner := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", dir)
@@ -102,7 +101,7 @@ func newProviderHost(t *testing.T, handlers map[string]numenv1connect.AgentServi
 	}
 	processes := map[string]*os.Process{}
 	for id := range handlers {
-		processes[id] = plugintest.StartSleepProcess(t).Process
+		processes[id] = wiretest.StartSleepProcess(t).Process
 	}
 	inner.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		host.mu.Lock()

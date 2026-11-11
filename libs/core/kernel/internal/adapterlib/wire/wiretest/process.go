@@ -1,4 +1,4 @@
-package plugintest
+package wiretest
 
 import (
 	"errors"

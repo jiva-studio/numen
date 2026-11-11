@@ -12,7 +12,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -243,11 +243,11 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
-	cmd := plugintest.NewIdleCommand(t.Context())
+	cmd := wiretest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start process: %v", err)
 	}
-	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
+	t.Cleanup(func() { wiretest.KillProcess(t, cmd.Process) })
 	sup := lifecycle.New(nil)
 	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetMachine().Now()); err != nil {
 		t.Fatalf("attach: %v", err)

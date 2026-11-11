@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -63,8 +63,8 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatal("BeginDeactivation took a plugin that has a consumer")
 	}
 
-	plugintest.Kill(t, cmd)
-	plugintest.ReapProcess(t, cmd.Process)
+	wiretest.Kill(t, cmd)
+	wiretest.ReapProcess(t, cmd.Process)
 }
 
 func TestSupervisorTeardownNotRunning(t *testing.T) {
@@ -181,7 +181,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 	}
 	exited := sup.GetExitSignal()
 
-	plugintest.Kill(t, cmd)
+	wiretest.Kill(t, cmd)
 
 	select {
 	case <-exited:
@@ -281,7 +281,7 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 	defer func() {
-		plugintest.KillProcess(t, cmd.Process)
+		wiretest.KillProcess(t, cmd.Process)
 	}()
 	sup := New(nil)
 	now := testsupport.GetEpoch()
@@ -307,7 +307,7 @@ func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 	defer func() {
-		plugintest.KillProcess(t, cmd.Process)
+		wiretest.KillProcess(t, cmd.Process)
 	}()
 	sup := New(nil)
 	now := testsupport.GetEpoch()

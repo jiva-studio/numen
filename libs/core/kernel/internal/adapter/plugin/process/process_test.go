@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 )
 
@@ -241,8 +241,8 @@ func TestProcessLimits(t *testing.T) {
 		t.Fatalf("failed to start sleep: %v", err)
 	}
 	defer func() {
-		plugintest.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
+		wiretest.Kill(t, cmd)
+		wiretest.ReapProcess(t, cmd.Process)
 	}()
 
 	t.Run("apply valid limits", func(t *testing.T) {

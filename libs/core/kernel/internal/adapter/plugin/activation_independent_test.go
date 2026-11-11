@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -42,7 +42,7 @@ func writeSecondPlugin(t *testing.T, dir string) {
 // fail, while it waits, and so does everything that reads what the host knows.
 func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
+	wiretest.CreateTestPluginTree(t, tmp)
 	writeSecondPlugin(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
@@ -53,7 +53,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start the silent process: %v", err)
 	}
-	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
+	t.Cleanup(func() { wiretest.KillProcess(t, cmd.Process) })
 	silent, writer := io.Pipe()
 	t.Cleanup(func() {
 		if err := writer.Close(); err != nil {

@@ -18,8 +18,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
@@ -583,13 +583,13 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
 			vault, vaults := numenv1connect.NewVaultServiceHandler(windowvault.NewHandler(state, state.Notices))
-			mux.Handle(vault, servetest.NewRootedHandler(vaults, entered, returned))
+			mux.Handle(vault, wiretest.NewRootedHandler(vaults, entered, returned))
 			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(newWorkspace(t, state))
-			mux.Handle(standing, servetest.NewRootedHandler(workspace, entered, returned))
+			mux.Handle(standing, wiretest.NewRootedHandler(workspace, entered, returned))
 			filed, notes := numenv1connect.NewNoteServiceHandler(services.Note)
-			mux.Handle(filed, servetest.NewRootedHandler(notes, entered, returned))
+			mux.Handle(filed, wiretest.NewRootedHandler(notes, entered, returned))
 			rendered, itself := numenv1connect.NewWindowServiceHandler(state.Window)
-			mux.Handle(rendered, servetest.NewRootedHandler(itself, entered, returned))
+			mux.Handle(rendered, wiretest.NewRootedHandler(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 

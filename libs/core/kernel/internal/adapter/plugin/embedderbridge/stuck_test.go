@@ -22,8 +22,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -52,7 +51,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 	stuck := &stuckModelServer{release: make(chan struct{})}
 	defer close(stuck.release)
 	mux := http.NewServeMux()
-	servetest.HandlePluginLifecycle(mux)
+	wiretest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stuck))
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -76,10 +75,10 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		plugintest.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
+		wiretest.Kill(t, cmd)
+		wiretest.ReapProcess(t, cmd.Process)
 	}()
-	port := plugintest.GetPort(t, server)
+	port := wiretest.GetPort(t, server)
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
