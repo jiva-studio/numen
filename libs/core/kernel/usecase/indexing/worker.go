@@ -130,9 +130,19 @@ func (w *Worker) notifyVectorsReady(ctx context.Context, v domain.Vault) {
 // wakeups are the signals that something arrived for a pass to do. Each is held until a pass takes it, and
 // several of the same kind are one.
 type wakeups interface {
+	wakeSignals
+	wakeWaits
+}
+
+// wakeSignals leave a wake held.
+type wakeSignals interface {
 	wakeSources()
 	wakeNotes()
 	wakeRead()
+}
+
+// wakeWaits wait for a wake.
+type wakeWaits interface {
 	sourcesWoken() <-chan struct{}
 	notesWoken() <-chan struct{}
 	readWoken() <-chan struct{}

@@ -20,14 +20,29 @@ type pass struct {
 
 // passWorker is what a pass takes from the worker it runs for.
 type passWorker interface {
+	passEnvironment
+	vectorWork
+	readingOpener
+}
+
+// passEnvironment is where a pass reports, what it leaves out, and what wakes or delays it.
+type passEnvironment interface {
 	getEvents() Events
 	getSkips() skipping
 	getWakes() wakeups
-	openReading(ctx context.Context, v domain.Vault, rebuild bool) (ReadWholeVault, error)
-	planVectors(ctx context.Context, v domain.Vault) vectorPlan
-	hasEmbedder() bool
 	waitQuiet() <-chan time.Time
+}
+
+// vectorWork is the embedding a pass does for a vault.
+type vectorWork interface {
+	hasEmbedder() bool
+	planVectors(ctx context.Context, v domain.Vault) vectorPlan
 	notifyVectorsReady(ctx context.Context, v domain.Vault)
+}
+
+// readingOpener opens the passes over a vault.
+type readingOpener interface {
+	openReading(ctx context.Context, v domain.Vault, rebuild bool) (ReadWholeVault, error)
 }
 
 func (p *pass) run(ctx context.Context, read ReadNotes) {

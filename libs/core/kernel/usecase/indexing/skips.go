@@ -99,14 +99,24 @@ func (c *skipSet) getSkippedChunks() int64 {
 	return c.chunks
 }
 
-// skipping tells which sources a person canceled the indexing of.
+// skipping tells which sources a person canceled the indexing of, and records one more.
 type skipping interface {
-	addVectors(path string)
-	addTexts(path string)
+	skipReads
+	skipWrites
+}
+
+// skipReads tells whether a source is skipped.
+type skipReads interface {
 	isVectorSkipped(path, hash string) bool
 	isTextSkipped(path string) bool
-	clear(paths []string)
 	getGeneration() uint64
-	setSkippedChunks(n int, generation uint64)
 	getSkippedChunks() int64
+}
+
+// skipWrites records the sources a person canceled, and forgets them again.
+type skipWrites interface {
+	addVectors(path string)
+	addTexts(path string)
+	setSkippedChunks(n int, generation uint64)
+	clear(paths []string)
 }
