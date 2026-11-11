@@ -63,10 +63,7 @@ function decodeHref(href: string): string {
 
 <template>
   <article class="card" @click="onClick" @pointerdown="onPointerDown">
-    <div
-      v-markup="frontHtml"
-      class="prose prose-sm prose-numen numen max-w-none break-words"
-    ></div>
+    <div v-markup="frontHtml" class="prose prose-sm prose-numen numen max-w-none break-words"></div>
     <div v-if="isShown" class="card__rule" />
     <div
       v-if="isShown"

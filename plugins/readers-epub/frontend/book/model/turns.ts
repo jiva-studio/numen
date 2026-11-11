@@ -68,12 +68,7 @@ function stopTurn(text: HTMLElement): void {
   runningTurns.delete(text)
 }
 
-function translatePaper(
-  text: HTMLElement,
-  to: string,
-  duration: number,
-  onEnd?: () => void,
-): void {
+function translatePaper(text: HTMLElement, to: string, duration: number, onEnd?: () => void): void {
   if (runningTurns.get(text)?.to === to) return
   stopTurn(text)
   const from = Number.parseFloat(text.style.translate)
@@ -158,7 +153,12 @@ export function useBookTurns(options: BookTurnsOptions) {
     translatePaper(text, `${rest}px 0`, getDuration(text))
     if (!leaving) return
     leaving.copy.style.translate = `${from}px 0`
-    translatePaper(leaving.copy, `${leaving.target - step}px 0`, getDuration(leaving.copy), leaving.remove)
+    translatePaper(
+      leaving.copy,
+      `${leaving.target - step}px 0`,
+      getDuration(leaving.copy),
+      leaving.remove,
+    )
   }
 
   const announce = () => {

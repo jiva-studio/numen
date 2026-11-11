@@ -6,7 +6,7 @@ import type { CommandTarget, VaultRef } from '@/entities/command'
  * The command operations the plugin host delegates to the window's command palettes once the
  * palettes are composed with the host.
  */
-export interface HostCommandPort {
+interface HostCommandPort {
   readonly commands: CommandsHost
   readonly isPaletteOpen: () => boolean
   readonly runInvocation: (id: string, target: CommandTarget, name: string) => Promise<void>
