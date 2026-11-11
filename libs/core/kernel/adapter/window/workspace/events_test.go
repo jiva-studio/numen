@@ -11,10 +11,7 @@ import (
 
 // A watch that reads late receives the last sync of each group.
 func TestSlowWatchReceivesLastSyncOfEachGroup(t *testing.T) {
-	links, err := tablinks.New(LinkGrace, scheduleNothing, newLinkEvents())
-	if err != nil {
-		t.Fatal(err)
-	}
+	links := tablinks.New(LinkGrace, scheduleNothing, newLinkEvents())
 	watch := links.Windows.Watch("window-a")
 	defer watch.Close()
 	const groups = 20

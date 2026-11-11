@@ -16,10 +16,7 @@ import (
 
 func newRetryHandler(t *testing.T, retry func(context.Context, string) (*plugin.Failure, error)) *Handler {
 	t.Helper()
-	useCase, err := setting.NewRetryPlugin(retry)
-	if err != nil {
-		t.Fatal(err)
-	}
+	useCase := setting.NewRetryPlugin(retry)
 	return NewHandler(Values{}, NewPluginFolders(useCase, nil, nil), &SecretItems{}, &SecretGroups{})
 }
 

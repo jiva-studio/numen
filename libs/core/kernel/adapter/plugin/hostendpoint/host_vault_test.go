@@ -270,7 +270,7 @@ func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1con
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
+	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))

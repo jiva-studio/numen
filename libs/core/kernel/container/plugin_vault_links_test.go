@@ -36,7 +36,7 @@ func openWindowScenarios(assembly windowVaults) (container.PluginVaultHooks, *wi
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	})
-	return container.PluginVaultHooks{Notes: scenarios}, index
+	return container.PluginVaultHooks{Notes: &scenarios}, index
 }
 
 func statFile(t *testing.T, shared *vaultapi.Access, path string) domain.FileStat {

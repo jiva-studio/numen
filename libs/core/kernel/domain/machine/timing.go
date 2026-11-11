@@ -9,7 +9,3 @@ import (
 // context ends. A scenario that waits is handed one, and the composition root
 // binds it to the machine's timers.
 type Wait func(ctx context.Context, d time.Duration) error
-
-// Delay calls f once after d and returns a cancel function. The cancel function
-// reports whether it stopped f before f began.
-type Delay func(d time.Duration, f func()) (cancel func() bool)

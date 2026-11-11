@@ -57,7 +57,7 @@ func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fake
 	hostCallers.vault = vaultOf(brokenVault{vault})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
+	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))

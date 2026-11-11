@@ -37,7 +37,7 @@ func (e *searchEndpoint) begin(header http.Header, permission string, needsVault
 	if _, err := e.endpoint.Authorize(header.Get("Authorization"), permission); err != nil {
 		return searchCall{}, err
 	}
-	call := searchCall{search: e.endpoint.callers.Search.GetPluginSearch()}
+	call := searchCall{search: e.endpoint.callers.Lent.GetPluginSearch()}
 	if call.search == nil || !needsVault {
 		return call, nil
 	}

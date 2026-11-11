@@ -40,9 +40,9 @@ func (s *Server) Open(ctx context.Context) (int, error) {
 }
 
 func (s *Server) hasServices() bool {
-	return s.callers.Completion.GetCompleter() != nil || s.callers.Vault.GetPluginVault() != nil ||
-		s.callers.Dependencies.GetDependencies() != nil || s.callers.Work.GetPluginWork() != nil ||
-		s.callers.Search.GetPluginSearch() != nil
+	return s.callers.Lent.GetCompleter() != nil || s.callers.Lent.GetPluginVault() != nil ||
+		s.callers.Dependencies() != nil || s.callers.Lent.GetPluginWork() != nil ||
+		s.callers.Lent.GetPluginSearch() != nil
 }
 
 // GetPort returns the port the server serves on, or 0 while it is not open.
@@ -75,7 +75,7 @@ func (s *Server) ClearPlugin(pluginID string) {
 	if endpoint != nil {
 		endpoint.ClearPluginTasks(pluginID)
 	}
-	if work := s.callers.Work.GetPluginWork(); work != nil {
+	if work := s.callers.Lent.GetPluginWork(); work != nil {
 		work.ClearPlugin(pluginID)
 	}
 }
