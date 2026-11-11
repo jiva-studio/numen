@@ -101,12 +101,12 @@ jobs:
         run: |
           set -euo pipefail
           # The text checks sit in tools/checks, and in tools/lint-narrative on a main from before that move.
-          paths=".agents .claude/skills AGENTS.md tools/shared/tools.mjs"
+          paths=(.agents .claude/skills AGENTS.md tools/shared/tools.mjs)
           for tool in tools/checks tools/lint-narrative; do
-            if git cat-file -e "origin/main:$tool" 2>/dev/null; then paths="$paths $tool"; fi
+            if git cat-file -e "origin/main:$tool" 2>/dev/null; then paths+=("$tool"); fi
           done
           rm -rf .agents .claude/skills tools/checks tools/lint-narrative
-          git restore --source=origin/main --worktree -- $paths
+          git restore --source=origin/main --worktree -- "${paths[@]}"
 
       - if: env.MODE == 'full'
         uses: ./.github/actions/setup-go
