@@ -49,6 +49,7 @@ function linkInstalledPackages(root, dir) {
     }
     fs.mkdirSync(path.join(target, name));
     for (const own of fs.readdirSync(path.join(modules, name))) {
+      if (!fs.existsSync(path.join(modules, name, own))) continue;
       const folder = path.relative(root, fs.realpathSync(path.join(modules, name, own)));
       if (fs.existsSync(path.join(dir, folder))) fs.symlinkSync(path.join(dir, folder), path.join(target, name, own));
     }
