@@ -100,8 +100,8 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-// A run with no item, as numen-cli makes, downloads the video.
 func getMedia(item string) (download.Media, error) {
+	// A run with no item, as numen-cli makes, downloads the video.
 	media, isKnown := download.ParseMedia(item)
 	if !isKnown {
 		return "", fmt.Errorf("%w: %s offers no item %q", command.ErrBadArguments, commandDownloadMedia, item)
