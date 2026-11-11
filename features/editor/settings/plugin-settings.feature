@@ -14,7 +14,7 @@ Feature: Plugin settings
 
     Scenario: A model is shown with its languages
       Then the setting "Model" of the plugin "Audio/Video Transcription" is "Parakeet TDT 0.6B v3"
-      And the setting "Model" of the plugin "Audio/Video Transcription" offers "25 European languages"
+      And the setting "Model" of the plugin "Audio/Video Transcription" has the option "25 European languages"
 
     Scenario: A model is kept when the Settings tab is closed
       Given the person sets the setting "Model" of the plugin "Audio/Video Transcription" to "Parakeet TDT 0.6B v2"

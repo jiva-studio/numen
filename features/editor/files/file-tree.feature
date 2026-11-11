@@ -20,21 +20,26 @@ Feature: File tree
       And the tab at "notes/Quay.md" is not open
       And the note titled "Jetty" links to the note at "daily/Quay.md"
 
-    Scenario: A folder is made
+    Scenario: A folder is made in a folder
       Given the vault has the following:
         | path       | text |
         | Saltworks/ |      |
-      When the person runs the command "Create folder" on the folder at "Saltworks"
-      And the person names it "Brine tanks"
+      When the person runs the command "Create folder" on the folder at "Saltworks" with:
+        | Name | Brine tanks |
       Then the vault contains the folder at "Saltworks/Brine tanks"
+
+    Scenario: A folder is made with the palette command
+      When the person runs the command "Create folder" with:
+        | Name | Saltworks |
+      Then the vault contains the folder at "Saltworks"
 
     Scenario: A note is renamed
       Given the vault has the following:
         | path                | text                    |
         | notes/Brine pump.md | The pump runs at night. |
       And the person opens the note titled "Brine pump"
-      When the person runs the command "Rename" on the file at "notes/Brine pump.md"
-      And the person names it "Brine pumps.md"
+      When the person runs the command "Rename" on the file at "notes/Brine pump.md" with:
+        | Name | Brine pumps.md |
       Then the tab at "notes/Brine pumps.md" is open
       And the tab at "notes/Brine pump.md" is not open
 

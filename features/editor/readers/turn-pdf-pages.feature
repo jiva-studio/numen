@@ -15,7 +15,7 @@ Feature: Turn PDF pages
 
   Scenario: A typed page stays after the application starts again
     Given the person goes to page "12" in the PDF tab at "assets/pages.pdf"
-    When the application "editor" starts
+    When the application "editor" restarts
     Then the PDF tab at "assets/pages.pdf" is at page "12"
 
   Scenario: The next page button turns the page

@@ -23,10 +23,10 @@ Feature: Move note to trash
     And the person opens the note titled "Harbour log"
     And the person opens the note titled "Tide table"
     And the person runs the command "Show note in plex" on the tab titled "Harbour log"
-    And the plex has the note titled "Tide table" as the "child"
+    And the plex has the child note titled "Tide table"
     When the person runs the command "Move note to trash" on the tab titled "Tide table"
-    Then the plex has the note titled "Harbour log" as the "focus"
-    And the plex does not have the note titled "Tide table" as the "child"
+    Then the plex has the focus note titled "Harbour log"
+    And the plex does not have the child note titled "Tide table"
 
   Scenario: The note leaves the search
     Given the vault has the following:

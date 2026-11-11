@@ -1,26 +1,24 @@
 Feature: Stop agent
-  A person sees that the agent is working and can stop it.
+  A person stops the agent before it answers.
 
   Background:
     Given the empty vault "Test"
+    And the environment is set to the following:
+      | agent | slow |
     And the application "editor" starts
     And the person runs the command "Open agent chat"
-    And the model of the agent is paused
 
-  Scenario: The agent is working
-    When the person sends the message "Which pear trees grow in the east orchard?" to the agent
-    Then the composer of the agent has the button "Stop the agent"
-    And the Agent tab titled "Agent" does not have "The agent answered."
-
-  Scenario: The answer ends the wait
-    Given the person sends the message "Which pear trees grow in the east orchard?" to the agent
-    When another program resumes the model of the agent
-    Then the Agent tab titled "Agent" has "The agent answered."
-    And the composer of the agent does not have the button "Stop the agent"
-    And the composer of the agent cannot send
-
-  Scenario: The agent is stopped
+  Scenario: A stopped agent does not answer
     Given the person sends the message "Count the apple trees by the gate" to the agent
-    When the person clicks the button "Stop the agent" in the composer of the agent
-    Then the composer of the agent does not have the button "Stop the agent"
-    And the composer of the agent cannot send
+    When the person stops the agent
+    And the environment is set to the following:
+      | agent | normal |
+    Then the Agent tab titled "Agent" does not have "The agent answered."
+
+  Scenario: A person asks again after the stop
+    Given the person sends the message "Count the apple trees by the gate" to the agent
+    And the person stops the agent
+    When the person sends the message "Count the pear trees by the gate" to the agent
+    And the environment is set to the following:
+      | agent | normal |
+    Then the Agent tab titled "Agent" has "The agent answered."

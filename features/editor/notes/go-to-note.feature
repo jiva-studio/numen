@@ -10,13 +10,13 @@ Feature: Go to note
     And the application "editor" starts
 
   Scenario: The note is opened by its title
-    When the person runs the command "Go to note"
-    And the person picks "Entropy"
+    When the person runs the command "Go to note" with:
+      | Note | Entropy |
     Then the note tab at "notes/Entropy.md" is active
 
   Scenario: The note is shown in the plex with its parent
-    Given the person runs the command "Go to note"
-    And the person picks "Entropy"
+    Given the person runs the command "Go to note" with:
+      | Note | Entropy |
     When the person runs the command "Show note in plex"
-    Then the plex has the note titled "Entropy" as the "focus"
-    And the plex has the note titled "Thermodynamics" as the "parent"
+    Then the plex has the focus note titled "Entropy"
+    And the plex has the parent note titled "Thermodynamics"

@@ -13,8 +13,8 @@ Feature: Title bar buttons
       Then the Files tab titled "Files" is open
 
     Scenario: A note is made with its button
-      When the person clicks the button "Create note" in the title bar
-      And the person names it "Brine log"
+      When the person clicks the button "Create note" in the title bar with:
+        | Name | Brine log |
       Then the vault contains the note titled "Brine log"
       And the note tab titled "Brine log" is active
 

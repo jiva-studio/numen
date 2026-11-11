@@ -3,9 +3,10 @@ Feature: Cancel a task
 
   Background:
     Given the empty vault "Test"
-    And the embedding model is paused
+    And the environment is set to the following:
+      | embedding model | slow |
     And the vault has the following:
-      | path                | text                 |
+      | path                | text                      |
       | notes/Tide clock.md | The clock is by the quay. |
     And the application "editor" starts
     And the person opens the task list

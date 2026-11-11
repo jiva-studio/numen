@@ -24,7 +24,7 @@ Feature: Import link
       Given the person downloads the text of the link "http://numen.dev/one"
       And the tab for the web address "http://numen.dev/one" has "Tidal mills store water."
       When the person deletes the text of the link "http://numen.dev/one"
-      And the application "editor" starts
+      And the application "editor" restarts
       Then the tab for the web address "http://numen.dev/one" does not have "Tidal mills store water."
 
   Rule: A link has one note
