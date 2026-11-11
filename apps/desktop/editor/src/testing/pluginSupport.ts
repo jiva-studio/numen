@@ -53,8 +53,8 @@ const NO_PLATFORM: WindowPlatform = 'windows'
 const ignoreError = (): void => undefined
 
 export function createTestPluginSupport(deps: TestPluginSupportDeps) {
-  const given: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
-  const services = given as PluginServices
+  const partialServices: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
+  const services = partialServices as PluginServices
   const named: HostParts = pickDefined({
     getCommandDeclarations: deps.getCommandDeclarations,
     reportCommandIssue: deps.reportCommandIssue,

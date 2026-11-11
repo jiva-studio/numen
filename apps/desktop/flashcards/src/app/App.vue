@@ -17,7 +17,6 @@ import { WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The window made by `createWindow`. */
   parts: WindowParts
 }>()
 

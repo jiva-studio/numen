@@ -24,7 +24,6 @@ import { WORDS as note } from '@/entities/note'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  /** The window made by `createWindow`. */
   parts: WindowParts
 }>()
 

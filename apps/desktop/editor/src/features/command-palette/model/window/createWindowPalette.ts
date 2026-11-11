@@ -28,7 +28,6 @@ export interface PluginPaletteLists {
 /** What the plugins add to the palettes: their lists, the commands they list and the commands they run. */
 export interface PluginPaletteParts {
   readonly lists: PluginPaletteLists
-  /** The commands the palette of the commands lists, before the empty ones are left out. */
   readonly getCommands: () => readonly Command[]
   readonly pluginCommands: PluginCommandPort
 }
@@ -41,7 +40,6 @@ export interface WindowPaletteDeps {
   readonly plugin: PluginPaletteParts
   readonly searchRequests: ReturnType<typeof createSearchRequests>
   readonly searchOptions: Pick<SearchOptions, 'coverage' | 'menu'>
-  /** The vaults the installation holds. */
   readonly getVaultList: CommandsDeps['vaults']
 }
 
