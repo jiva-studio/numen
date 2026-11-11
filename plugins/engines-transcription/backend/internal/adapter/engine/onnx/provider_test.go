@@ -46,22 +46,16 @@ func TestParseComputeUnitsIgnoresCase(t *testing.T) {
 }
 
 func TestGetDefaultThreadsIsAtMostEight(t *testing.T) {
-	prev := runtime.GOMAXPROCS(4)
-	defer runtime.GOMAXPROCS(prev)
-	if got := GetDefaultThreads(); got != 4 {
-		t.Errorf("GetDefaultThreads() with GOMAXPROCS=4 = %d, want 4", got)
-	}
-	if got := GetDefaultThreads(); got != 4 {
-		t.Errorf("second GetDefaultThreads() with GOMAXPROCS=4 = %d, want 4", got)
-	}
-
-	runtime.GOMAXPROCS(8)
+	prev := runtime.GOMAXPROCS(12)
+	t.Cleanup(func() { runtime.GOMAXPROCS(prev) })
 	if got := GetDefaultThreads(); got != 8 {
-		t.Errorf("GetDefaultThreads() with GOMAXPROCS=8 = %d, want 8", got)
+		t.Errorf("GetDefaultThreads() at GOMAXPROCS=12 = %d, want 8", got)
 	}
-
-	runtime.GOMAXPROCS(16)
 	if got := GetDefaultThreads(); got != 8 {
-		t.Errorf("GetDefaultThreads() with GOMAXPROCS=16 = %d, want 8", got)
+		t.Errorf("second GetDefaultThreads() at GOMAXPROCS=12 = %d, want 8", got)
+	}
+	runtime.GOMAXPROCS(3)
+	if got := GetDefaultThreads(); got != 3 {
+		t.Errorf("GetDefaultThreads() at GOMAXPROCS=3 = %d, want 3", got)
 	}
 }

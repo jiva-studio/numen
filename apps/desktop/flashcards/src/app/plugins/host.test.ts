@@ -54,7 +54,7 @@ const createMockWindowHost = (): WindowHost => ({
 const withVault = (id: string) =>
   createMockManifest(id, {
     name: id,
-    permissions: ['vault:read', 'vault:write', 'network:outbound'],
+    permissions: ['vault:read', 'vault:write', 'link:open'],
     viewCapabilities: [CONVERSATION, VAULT_SUMMARY],
     tabKinds: ['unplaced', 'second', 'default-zero', 'negative', 'review', 'fallback', 'stateless'],
     readers: ['document'],
@@ -250,7 +250,6 @@ describe('createShellHost', () => {
 
     context.register.reader?.({ id: 'document' } as never).dispose()
     context.register.command?.({ id: 'open' } as never).dispose()
-    context.register.agentProvider?.({ id: 'helper' } as never).dispose()
     context.register.settingsView?.({ id: 'floor' } as never).dispose()
     expect(context.settings.get?.('key')).toBeUndefined()
     context.settings.onChange?.('key', () => undefined).dispose()

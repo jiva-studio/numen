@@ -38,7 +38,7 @@ func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T)
 	if !slices.Equal(shape.Targets, []string{"desktop.editor"}) {
 		t.Errorf("targets = %v", shape.Targets)
 	}
-	if !slices.Equal(shape.Permissions, []string{"network:outbound"}) {
+	if !slices.Equal(shape.Permissions, []string{"link:open"}) {
 		t.Errorf("permissions = %v", shape.Permissions)
 	}
 	if !slices.Equal(shape.Services, []string{"md.numen.tools.updater"}) {

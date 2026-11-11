@@ -133,7 +133,7 @@ func createHints(spec Spec) Hints {
 		ReadOnly:    spec.Effect == ReadOnly,
 		Destructive: spec.Effect == ReadWrite && spec.Step == Remove,
 		Idempotent:  spec.Effect == ReadOnly,
-		OpenWorld:   slices.Contains(spec.Requires, host.PermissionNetworkOutbound),
+		OpenWorld:   slices.Contains(spec.Requires, host.PermissionLinkOpen),
 	}
 }
 

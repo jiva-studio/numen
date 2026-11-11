@@ -24,7 +24,6 @@ const declaring = (pluginId: string) =>
     readers: ['pdf', 'reader:bin', 'unprefixed', 'raw', 'none', `${pluginId}.reader`],
     tabKinds: ['custom', 'sample', `${pluginId}.kind`],
     settingsViews: ['floor'],
-    capabilities: ['ai.agent.provider'],
   })
 
 const COMPONENT_A = { name: 'A' }
@@ -74,7 +73,6 @@ describe('registrations of a plugin', () => {
       host.lifecycle.registerManifest(pluginId, declaring(pluginId))
       const ctx = host.lifecycle.createContext(pluginId)
       ctx.register.command({ id: `${pluginId}.count`, handler })
-      ctx.register.agentProvider({ id: `${pluginId}.agent`, name: pluginId, createAgent: vi.fn() })
       ctx.register.reader({ id: `${pluginId}.reader`, title: pluginId, component: STUB_COMPONENT })
       ctx.register.tabKind({ kind: `${pluginId}.kind`, component: {} })
     }
@@ -133,7 +131,6 @@ describe('registrations of a plugin', () => {
           commands: { value: new Map() },
           handlers: { value: new Map() },
           settingsViews: { value: new Map() },
-          agentProviders: new Map(),
           contexts: new Map(),
           manifests: new Map(),
           activated: { value: new Set() },
@@ -429,38 +426,43 @@ describe('a reader opened at a selector', () => {
   })
 })
 
-describe('an agent provider id another plugin registers', () => {
-  const register = (host: ReturnType<typeof createPluginHost>, pluginId: string, name: string) => {
-    host.lifecycle.registerManifest(
-      pluginId,
-      createMockManifest(pluginId, {
-        permissions: ['vault:read'],
-        capabilities: ['ai.agent.provider'],
+describe('a registration that fails after its tab kind was registered', () => {
+  it('leaves no tab kind of a tab kind whose editor registration throws', () => {
+    const unregisterKind = vi.fn()
+    const host = createPluginHost(
+      createDeps({
+        registerKind: vi.fn(() => unregisterKind),
+        registerEditor: () => {
+          throw new Error('editor refused')
+        },
       }),
     )
-    return host.lifecycle
-      .createContext(pluginId)
-      .register.agentProvider({ id: 'agent', name, createAgent: vi.fn() })
-  }
-  const list = (host: ReturnType<typeof createPluginHost>) =>
-    host.registered.getRegisteredAgentProviders().map((one) => [one.pluginId, one.reg.name])
+    const context = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
 
-  it('is refused, and the first plugin keeps it', () => {
-    const host = createPluginHost(createDeps())
-    register(host, 'first.plugin', 'First')
-
-    expect(() => register(host, 'second.plugin', 'Second')).toThrowError(
-      'Plugin "second.plugin" registers the agent provider "agent", which plugin "first.plugin" already registers',
+    expect(() => context.register.tabKind({ kind: 'sample', component: {} })).toThrowError(
+      'editor refused',
     )
-    expect(list(host)).toStrictEqual([['first.plugin', 'First']])
+    expect(unregisterKind).toHaveBeenCalledTimes(1)
+    expect(host.registered.getRegisteredTabKinds()).toHaveLength(0)
   })
 
-  it('is free again once its owner disposes the registration', () => {
-    const host = createPluginHost(createDeps())
-    register(host, 'first.plugin', 'First').dispose()
+  it('leaves no tab kind of a reader whose extension registration throws', () => {
+    const unregisterKind = vi.fn()
+    const host = createPluginHost(
+      createDeps({
+        registerKind: vi.fn(() => unregisterKind),
+        getReaderExtensions: () => ['bin'],
+        registerExtensionReader: () => {
+          throw new Error('extension refused')
+        },
+      }),
+    )
+    const context = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
 
-    register(host, 'second.plugin', 'Second')
-
-    expect(list(host)).toStrictEqual([['second.plugin', 'Second']])
+    expect(() => context.register.reader({ id: 'raw', component: STUB_COMPONENT })).toThrowError(
+      'extension refused',
+    )
+    expect(unregisterKind).toHaveBeenCalledTimes(1)
+    expect(host.registered.getRegisteredReaders()).toHaveLength(0)
   })
 })

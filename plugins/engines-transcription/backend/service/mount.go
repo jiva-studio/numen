@@ -44,8 +44,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 
 func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) error {
 	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock))
-	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer)
-	transcriber.SetReport(process.Process{}.ReportError)
+	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, process.Process{}.ReportError)
 	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })
 	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { holder.UpdateSettings(values) })
 	commands, err := newCommands(transcriber)

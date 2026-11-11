@@ -69,7 +69,7 @@
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "permissions": ["vault:read", "vault:write", "link:open"],
   "services": ["md.numen.tools.media.importer"],
   "backend": {
     "entrypoint": "bin/tools-media-importer"

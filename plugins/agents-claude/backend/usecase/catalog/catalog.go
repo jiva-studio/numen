@@ -21,11 +21,15 @@ type Catalog struct {
 	report func(error)
 }
 
-// New creates a catalog that asks lister for the models. An async catalog answers with no model
+// New creates a catalog that asks lister for the models and passes report the listing errors when
+// List falls back. An async catalog answers with no model
 // while the first list loads, and the fallback models once that load has failed.
-func New(lister ports.ModelLister, isAsync bool, extra ...cache.Option) (*Catalog, error) {
+func New(lister ports.ModelLister, report func(error), isAsync bool, extra ...cache.Option) (*Catalog, error) {
 	if lister == nil {
 		return nil, errors.New("catalog: the model lister is required")
+	}
+	if report == nil {
+		return nil, errors.New("catalog: the report function is required")
 	}
 	return &Catalog{
 		lister: lister,
@@ -37,13 +41,8 @@ func New(lister ports.ModelLister, isAsync bool, extra ...cache.Option) (*Catalo
 				cache.WithAsync(isAsync),
 			}, extra)...,
 		),
-		report: nil,
+		report: report,
 	}, nil
-}
-
-// SetReport sets the callback that receives listing errors when List falls back.
-func (c *Catalog) SetReport(report func(error)) {
-	c.report = report
 }
 
 // Get returns the models the program on the command line lists.
@@ -74,10 +73,7 @@ func (c *Catalog) List(ctx context.Context, command string, extra, env []string)
 		list, err = c.Get(ctx, slices.Concat([]string{command}, extra), env)
 	}
 	if err != nil {
-		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Diagnostic error reporting does not affect the returned fallback models."
-		if c.report != nil {
-			c.report(err)
-		}
+		c.report(err)
 		list = model.GetFallback()
 	}
 	out := make([]*reasoning.Model, 0, len(list))

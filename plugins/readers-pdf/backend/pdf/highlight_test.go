@@ -18,6 +18,12 @@ import (
 // test binary.
 const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
+// failOnReport fails the test with a background failure of the pool.
+func failOnReport(tb testing.TB) func(string, error) {
+	tb.Helper()
+	return func(what string, err error) { tb.Errorf("%s: %v", what, err) }
+}
+
 func newCompilation(tb testing.TB) wazero.CompilationCache {
 	tb.Helper()
 	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
@@ -34,8 +40,7 @@ func newCompilation(tb testing.TB) wazero.CompilationCache {
 
 func newWorkers(tb testing.TB) *Workers {
 	tb.Helper()
-	workers := NewWorkers()
-	workers.SetCompilationCache(newCompilation(tb))
+	workers := NewWorkers(Options{Report: failOnReport(tb), CompilationCache: newCompilation(tb), AfterFunc: nil, Workers: 0, IdleWorkers: 0})
 	tb.Cleanup(func() {
 		if err := workers.Close(); err != nil {
 			tb.Error(err)

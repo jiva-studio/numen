@@ -56,7 +56,7 @@ func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
 	texts.File("books/atlas.epub", raw)
 	texts.SetStore(pluginID, atlas.Store())
 	queue := hosttest.NewQueue()
-	server := NewWriter(vaults, textsOf(texts), storeOf(atlas), queue)
+	server := NewWriter(vaults, textsOf(texts), storeOf(atlas), queue, noReport)
 	t.Cleanup(server.Close)
 	held, err := queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {

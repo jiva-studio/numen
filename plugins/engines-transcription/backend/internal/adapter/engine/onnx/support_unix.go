@@ -5,9 +5,9 @@ package onnx
 import "github.com/ebitengine/purego"
 
 func preloadCppRuntime() {
-	// gomutants:disable-next-line RANGE_BREAK reason="preloading libstdc++.so is an environment-dependent side effect for Linux dynamic linkers"
+	// gomutants:disable-next-line RANGE_BREAK reason="Preloading shared libraries into the global linker namespace is a platform side effect."
 	for _, p := range FindInstalled("libstdc++.so", "*-gcc-*-lib") {
-		// gomutants:disable-next-line INVERT_BITWISE,CONDITIONALS_NEGATION,BRANCH_IF reason="preloading libstdc++.so is an environment-dependent side effect for Linux dynamic linkers"
+		// gomutants:disable-next-line INVERT_BITWISE,CONDITIONALS_NEGATION,BRANCH_IF reason="Preloading shared libraries into the global linker namespace is a platform side effect."
 		if _, err := purego.Dlopen(p, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 			return
 		}

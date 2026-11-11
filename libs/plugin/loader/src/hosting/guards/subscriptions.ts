@@ -33,6 +33,6 @@ export function createSubscriptionList(): SubscriptionList {
 
 /** Disposes what a plugin subscribed, the last added first, including what the disposals add. */
 export function disposeSubscriptions(view: Subscriptions): void {
-  const items = listsByView.get(view) ?? (Array.isArray(view) ? (view as Disposable[]) : undefined)
+  const items = listsByView.get(view)
   while (items !== undefined && items.length > 0) items.pop()?.dispose()
 }

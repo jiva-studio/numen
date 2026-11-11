@@ -21,7 +21,6 @@ const lockName = ".lock"
 // the key is part of the path. The folder is readable by this user alone and is created when absent.
 func GetCoreMLCacheDir(modelPath string) (string, error) {
 	root, err := cache.GetSharedDirOrPluginDir()
-	// gomutants:disable-next-line BRANCH_IF reason="propagates cache directory resolution failure when OS cache dir is unavailable"
 	if err != nil {
 		return "", err
 	}
@@ -30,11 +29,11 @@ func GetCoreMLCacheDir(modelPath string) (string, error) {
 		return "", err
 	}
 	dir := filepath.Join(root, coreMLFolder, key)
-	// gomutants:disable-next-line INTEGER_INCREMENT reason="os.Chmod on line 36 enforces 0o700 permissions after MkdirAll"
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="os.Chmod sets the final 0700 permissions on the directory immediately after creation."
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
-	// gomutants:disable-next-line BRANCH_IF reason="chmod on directory owned by current process cannot fail"
+	// gomutants:disable-next-line BRANCH_IF reason="os.Chmod on a directory just created by os.MkdirAll only fails on a concurrent filesystem change."
 	if err := os.Chmod(dir, 0o700); err != nil {
 		return "", err
 	}
@@ -61,12 +60,11 @@ func findCoreMLCacheDir(modelPath string) (string, bool) {
 // it held anything. The caller holds the lock of the folder.
 func DeleteCoreMLCache(modelPath string) bool {
 	dir, dirErr := GetCoreMLCacheDir(modelPath)
-	// gomutants:disable-next-line BRANCH_IF reason="os.ReadDir on empty dir also fails and returns false"
 	if dirErr != nil {
 		return false
 	}
 	entries, err := os.ReadDir(dir)
-	// gomutants:disable-next-line BRANCH_IF reason="reading directory just verified by GetCoreMLCacheDir cannot fail"
+	// gomutants:disable-next-line BRANCH_IF reason="When os.ReadDir fails, entries is empty and the loop below returns false."
 	if err != nil {
 		return false
 	}
@@ -75,7 +73,6 @@ func DeleteCoreMLCache(modelPath string) bool {
 		if entry.Name() == lockName {
 			continue
 		}
-		// gomutants:disable-next-line BRANCH_IF reason="removing entries inside owned 0o700 cache directory cannot fail"
 		if os.RemoveAll(filepath.Join(dir, entry.Name())) != nil {
 			return false
 		}

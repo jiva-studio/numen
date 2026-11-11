@@ -93,7 +93,7 @@ func TestPluginValidate_AllowedPermissionsAndNetworkAlias(t *testing.T) {
   "id": "md.numen.valid",
   "name": "Valid",
   "version": "1.0.0",
-  "permissions": ["vault:read", "vault:write", "network", "network:outbound"]
+  "permissions": ["vault:read", "vault:write", "network", "link:open"]
 }`
 	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)

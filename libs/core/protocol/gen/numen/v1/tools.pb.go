@@ -471,7 +471,7 @@ type ToolHints struct {
 	Destructive bool `protobuf:"varint,2,opt,name=destructive,proto3" json:"destructive,omitempty"`
 	// A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
 	Idempotent bool `protobuf:"varint,3,opt,name=idempotent,proto3" json:"idempotent,omitempty"`
-	// The tool reaches outside the machine: requires contains network:outbound.
+	// The tool reaches outside the machine: requires contains link:open.
 	OpenWorld     bool `protobuf:"varint,4,opt,name=open_world,json=openWorld,proto3" json:"open_world,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
