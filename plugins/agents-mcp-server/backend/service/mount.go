@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/hostserver"
 	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/exposetools"
 )
 
@@ -17,11 +18,7 @@ func Mount(s *server.Server) error {
 		client = tools.NewClient(endpoint)
 	}
 
-	cfg := readConfig(nil)
-	srv, err := NewServer(cfg, client)
-	if err != nil {
-		return err
-	}
+	srv := newEndpoint("", client)
 
 	s.OnClose(func() error {
 		// gomutants:disable-next-line RETURN_ERROR_NIL reason="loopback listener shutdown within the timeout does not error"
@@ -29,16 +26,16 @@ func Mount(s *server.Server) error {
 	})
 
 	s.SetConfigure(func(ctx context.Context, values map[string]string, _ server.Secrets) error {
-		if !srv.aggregator.HasClient() {
+		if !srv.host.Aggregator.HasClient() {
 			if endpoint, err := hostcall.FromVars(values); err == nil {
-				srv.aggregator.SetClient(tools.NewClient(endpoint))
+				srv.host.Aggregator.SetClient(tools.NewClient(endpoint))
 			} else if endpoint, err := hostcall.FromEnv(); err == nil {
-				srv.aggregator.SetClient(tools.NewClient(endpoint))
+				srv.host.Aggregator.SetClient(tools.NewClient(endpoint))
 			}
 		}
 
-		srv.SetToken(readConfig(values).Token)
-		reportSyncError(srv.aggregator.SyncTools(ctx))
+		srv.SetToken(hostserver.ParseSettings(values).Token)
+		srv.host.Sync(ctx)
 		return nil
 	})
 
