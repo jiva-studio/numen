@@ -2,7 +2,7 @@
  * Pure mutation operations for deck cards.
  */
 import { HEAD as CARD_HEAD, getRunEnd, type InsertionPoint } from '../../../lib/cards'
-import { generateId, type IdMaker } from '../../../lib/identity'
+import type { IdMaker } from '../../../lib/identity'
 import { getFileStem } from '@numen/plugin-sdk'
 import type { BufferCard, BufferDeck } from './types'
 import type { Value } from '../../../types'
@@ -11,7 +11,7 @@ export interface AddCardOptions {
   cardModelPath: string
   values: readonly Value[]
   section?: string | null
-  generateCardId?: IdMaker
+  generateCardId: IdMaker
 }
 
 /**
@@ -20,7 +20,7 @@ export interface AddCardOptions {
  * of the cards standing before the first of them.
  */
 export const addCard = (deck: BufferDeck, title: string, options: AddCardOptions): BufferDeck => {
-  const { cardModelPath, values, section = null, generateCardId = generateId } = options
+  const { cardModelPath, values, section = null, generateCardId } = options
   const ranks = new Map<string | null, number>(deck.sections.map((each, index) => [each.id, index]))
   const rank = (id: string | null): number => ranks.get(id) ?? -1
   const mine = rank(section)

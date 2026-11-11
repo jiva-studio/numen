@@ -5,5 +5,3 @@
 
 /** An identity something is drawn under. */
 export type IdMaker = () => string
-
-export const generateId: IdMaker = () => crypto.randomUUID()

@@ -30,13 +30,13 @@ const addCard = (
   cardModelPath: string,
   values: AddCardOptions['values'],
   section: string | null = null,
-  generateCardId?: AddCardOptions['generateCardId'],
+  generateCardId: AddCardOptions['generateCardId'] = createIds(),
 ) =>
   addCardInternal(deck, title, {
     cardModelPath,
     values,
     section,
-    ...(generateCardId ? { generateCardId } : {}),
+    generateCardId,
   })
 
 const replaceCardValue = (

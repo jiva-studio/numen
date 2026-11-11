@@ -7,12 +7,9 @@ import type { JsonValue } from '@/shared/api/json'
 import { closeTab, openTabAdjacent, paneById } from '@numen/workbench'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
-import { generateId } from '../lib/workspace'
 import { createRestoreFailedKind } from './restoreFailed'
 import { createUnavailableKind, isUnavailableKind, type UnavailableState } from './unavailable'
 import { getTabPath, omitEntry, openInScope, showTab, type TabStore } from './tabStore'
-
-const generatePaneId = () => crypto.randomUUID()
 
 const destroyTab = (one: WindowTab, id: string): void => {
   const events = one.kind.events
@@ -149,7 +146,9 @@ export function createTabOpeners(store: TabStore) {
 
   const getCandidateId = (one: AnyTabKind, kind: string, targetPath: string, wantedId: string) =>
     wantedId ||
-    (one.address?.identity ? `${kind}:${one.address.identity(targetPath)}` : generateId(kind))
+    (one.address?.identity
+      ? `${kind}:${one.address.identity(targetPath)}`
+      : store.ids.createTabId(kind))
 
   const createTabNow = (kind: string, targetPath: string, wantedId = ''): string => {
     const one = getKind(kind)
@@ -158,7 +157,7 @@ export function createTabOpeners(store: TabStore) {
     const candidateId = getCandidateId(one, kind, targetPath, wantedId)
     const existing = store.open.value.get(candidateId)
     if (existing && (!targetPath || !getTabPath(existing))) return candidateId
-    const id = existing ? generateId(kind) : candidateId
+    const id = existing ? store.ids.createTabId(kind) : candidateId
     const scope = effectScope(true)
     const state = openInScope(scope, () => one.open(targetPath, id))
     store.scopes.set(id, scope)
@@ -184,7 +183,7 @@ export function createTabOpeners(store: TabStore) {
       const id = createTabNow(kind, target)
       store.layout.value = openTabAdjacent(store.layout.value, id, {
         side: 'right',
-        createId: generatePaneId,
+        createId: store.ids.createPaneId,
       })
       resolve(id)
     })

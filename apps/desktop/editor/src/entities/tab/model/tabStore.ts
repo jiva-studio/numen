@@ -6,6 +6,7 @@ import { ref, shallowRef, type EffectScope, type Ref, type ShallowRef } from 'vu
 import { openTab, pane } from '@numen/workbench'
 import type { Workspace } from '@numen/workbench'
 import type { AnyTabKind, WindowTab } from '../lib/kinds'
+import { browserTabIds, type TabIds } from '../api/tabIds'
 import type { PlaceholderPanes, UnavailableServices } from './unavailable'
 
 /**
@@ -20,11 +21,13 @@ export interface TabStore {
   readonly drop: (id: string) => void
   readonly unavailable: UnavailableServices
   readonly panes: PlaceholderPanes
+  readonly ids: TabIds
 }
 
 export function createTabStore(
   panes: PlaceholderPanes,
   unavailable: UnavailableServices,
+  ids: TabIds = browserTabIds,
 ): TabStore {
   const scopes = new Map<string, EffectScope>()
   const drop = (id: string) => {
@@ -40,6 +43,7 @@ export function createTabStore(
     drop,
     unavailable,
     panes,
+    ids,
   }
 }
 

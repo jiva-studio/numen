@@ -203,7 +203,10 @@ async function dragFromAway(
     axis === 'x'
       ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
       : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
-  await sweep(from, axis === 'x' ? { x: from.x + distance, y: from.y } : { x: from.x, y: from.y + distance })
+  await sweep(
+    from,
+    axis === 'x' ? { x: from.x + distance, y: from.y } : { x: from.x, y: from.y + distance },
+  )
 }
 
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {

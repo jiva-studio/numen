@@ -2,6 +2,7 @@
  * Wire adapters and vault communication for flashcard card model tabs.
  */
 import { asFailure, asValue, type MessageWriter, type PathRename } from '@numen/plugin-sdk'
+import { generateId } from '../../../api/identity'
 import { ERRORS } from '../../../lib/wire/errors'
 import type { NoteBaseline } from '../../lib/buffer/types'
 import { getFailureCode } from '../../../lib/failures'
@@ -133,7 +134,7 @@ function createCardModelReader(
     })
     titles.set(path, cardModelData.title)
     return asValue({
-      body: serializeCardModel(createBufferCardModel(cardModelData)),
+      body: serializeCardModel(createBufferCardModel(cardModelData, generateId)),
       at: answer.value.at,
     })
   }

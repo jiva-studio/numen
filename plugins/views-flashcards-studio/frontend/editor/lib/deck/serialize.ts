@@ -1,7 +1,7 @@
 /**
  * Serialization and conversion between vault deck data and buffer deck models.
  */
-import { generateId, type IdMaker } from '../../../lib/identity'
+import type { IdMaker } from '../../../lib/identity'
 import { NO_DECK, type BufferDeck } from './types'
 import type { VaultCard, VaultDeck, VaultSection } from '../../../types'
 
@@ -10,7 +10,7 @@ import type { VaultCard, VaultDeck, VaultSection } from '../../../types'
  */
 export const deserializeVaultDeck = (
   readItem: VaultDeck,
-  generateBufferId: IdMaker = generateId,
+  generateBufferId: IdMaker,
 ): BufferDeck => {
   const cardIdCounts = new Map<string, number>()
   for (const card of readItem.cards)

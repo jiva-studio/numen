@@ -12,6 +12,7 @@ import {
   type Caught,
 } from '@numen/plugin-sdk'
 import { openNotes } from '../buffer/notes'
+import { generateId } from '../../../api/identity'
 import { getFailureCode } from '../../../lib/failures'
 import type { Presets } from '../../../lib/presets'
 import { createDeckAnswers } from './answers'
@@ -117,7 +118,7 @@ function createDeckNotePort(
         title: readItem.title,
       })
       return asValue({
-        body: serializeBufferDeckToString(deserializeVaultDeck(readItem)),
+        body: serializeBufferDeckToString(deserializeVaultDeck(readItem, generateId)),
         at: answer.value.at,
       })
     },

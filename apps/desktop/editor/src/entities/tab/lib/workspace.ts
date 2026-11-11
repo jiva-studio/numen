@@ -12,14 +12,6 @@ export const NOTE = 'note'
 export const SETTINGS = 'settings'
 
 /**
- * The identity given to a tab or conversation when none can be found for it: the
- * kind's name plus a value unique to this window and to any window opened after it.
- * The agent keeps a conversation under each name it receives, and a name maps to one
- * of them.
- */
-export const generateId = (kind: string): string => `${kind}:${crypto.randomUUID()}`
-
-/**
  * The main tabs, and one pane along the trailing edge holding the aside tabs, the first
  * of each in front. The user starts in the main pane. Where one side is empty, the
  * other fills the window.

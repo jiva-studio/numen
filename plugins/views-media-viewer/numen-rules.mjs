@@ -824,7 +824,7 @@ export default {
           domMember: 'A pure segment does not build, query or listen to the DOM: "{{ name }}".',
           port: 'A pure segment does not import the platform port "{{ name }}"; take it as a parameter.',
           clock: 'A pure segment does not read the clock; take the time as a parameter.',
-          random: 'A pure segment does not draw random numbers; take them as a parameter.',
+          random: 'A pure segment does not draw random numbers or identities; take them as a parameter.',
         },
       },
       create(context) {
@@ -869,6 +869,15 @@ export default {
             }
             if (isGlobalName(node.object, 'Date') && property === 'now') context.report({ node, messageId: 'clock' })
             if (isGlobalName(node.object, 'Math') && property === 'random') context.report({ node, messageId: 'random' })
+            const isCrypto =
+              isGlobalName(node.object, 'crypto') ||
+              (node.object.type === 'MemberExpression' &&
+                isGlobalName(node.object.object, 'globalThis') &&
+                !node.object.computed &&
+                node.object.property.name === 'crypto')
+            if (isCrypto && (property === 'randomUUID' || property === 'getRandomValues')) {
+              context.report({ node, messageId: 'random' })
+            }
           },
           NewExpression(node) {
             if (isGlobalName(node.callee, 'Date') && node.arguments.length === 0) {

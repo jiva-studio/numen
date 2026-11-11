@@ -7,7 +7,7 @@
  * the fields and the templates a file is written from, is done here.
  */
 import { orderNames, reorderFields, type InsertionPoint } from '../../../lib/cards'
-import { generateId, type IdMaker } from '../../../lib/identity'
+import type { IdMaker } from '../../../lib/identity'
 import type { Surrounds, VaultTemplate, VaultCardModel } from '../../../types'
 
 /** One template as the window holds it: the file's content, under its own identity. */
@@ -31,7 +31,7 @@ const NO_CARD_MODEL: BufferCardModel = { fields: [], preamble: '', templates: []
 /** A card model as the vault read it, each template under an identity this window mints. */
 export const createBufferCardModel = (
   readItem: VaultCardModel,
-  generateTemplateId: IdMaker = generateId,
+  generateTemplateId: IdMaker,
 ): BufferCardModel => ({
   fields: readItem.fields,
   preamble: readItem.preamble,
@@ -129,7 +129,7 @@ export const moveTemplate = (
 export const addTemplate = (
   cardModel: BufferCardModel,
   name: string,
-  generateTemplateId: IdMaker = generateId,
+  generateTemplateId: IdMaker,
 ): BufferCardModel => ({
   ...cardModel,
   templates: [

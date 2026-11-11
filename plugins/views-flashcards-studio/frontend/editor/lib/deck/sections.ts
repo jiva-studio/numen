@@ -1,14 +1,14 @@
 /**
  * Pure mutation operations for deck sections.
  */
-import { generateId, type IdMaker } from '../../../lib/identity'
+import type { IdMaker } from '../../../lib/identity'
 import type { BufferDeck } from './types'
 
 /** A section made at the end of the deck, holding no card. */
 export const addSection = (
   deck: BufferDeck,
   name: string,
-  generateSectionId: IdMaker = generateId,
+  generateSectionId: IdMaker,
 ): BufferDeck => ({
   ...deck,
   sections: [...deck.sections, { id: generateSectionId(), name, preamble: '' }],

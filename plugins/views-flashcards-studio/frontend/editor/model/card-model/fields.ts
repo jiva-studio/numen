@@ -16,6 +16,7 @@ import {
   writeTemplate,
   type BufferCardModel,
 } from '../../lib/card-model/card-model'
+import { generateId } from '../../../api/identity'
 import { createMarks, areMarksEqual, type Marks } from '../../../lib/marks'
 import type { DeckProblem } from '../../../types'
 
@@ -46,7 +47,8 @@ function createCardModelActions(
         applyCardModel(id, moveField(getCardModel(id), field, target)),
     },
     templates: {
-      addTemplate: (name: string) => applyCardModel(id, addTemplate(getCardModel(id), name)),
+      addTemplate: (name: string) =>
+        applyCardModel(id, addTemplate(getCardModel(id), name, generateId)),
       renameTemplate: (template: string, name: string) =>
         applyCardModel(id, renameTemplate(getCardModel(id), template, name)),
       removeTemplate: (template: string) =>

@@ -44,6 +44,21 @@ describe("the pure segment rule", () => {
     assert.deepEqual(findReports("export const a = (ms: number) => new Date(ms)"), []);
   });
 
+  it("fails an identity drawn from crypto, also through globalThis", () => {
+    const source = [
+      "export const a = () => crypto.randomUUID()",
+      "export const b = (bytes: Uint8Array) => crypto.getRandomValues(bytes)",
+      "export const c = () => globalThis.crypto.randomUUID()",
+      "export const d = typeof crypto.randomUUID",
+    ].join("\n");
+    assert.deepEqual(findReports(source), ["1", "2", "3", "4"]);
+    const given = [
+      "export const a = (crypto: { randomUUID: () => string }) => crypto.randomUUID()",
+      "export const b = (bytes: Uint8Array) => bytes.length",
+    ].join("\n");
+    assert.deepEqual(findReports(given), []);
+  });
+
   it("fails DOM types, however the element is named", () => {
     const source = [
       "export const a = (element: HTMLElement) => element.id",

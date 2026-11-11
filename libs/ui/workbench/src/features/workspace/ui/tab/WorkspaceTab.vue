@@ -41,7 +41,6 @@ const onPointerDown = (event: PointerEvent) => {
 function onContextMenu(event: MouseEvent): void {
   emit('menu', { x: event.clientX, y: event.clientY })
 }
-
 </script>
 
 <template>

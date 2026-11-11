@@ -12,6 +12,7 @@ import {
   renameSection,
   type BufferDeck,
 } from '../../lib/deck/deck'
+import { generateId } from '../../../api/identity'
 import type { CardModelSummary, Value } from '../../../types'
 
 export interface DeckTabActionDeps {
@@ -30,6 +31,7 @@ export function createDeckTabActions(id: string, deps: DeckTabActionDeps) {
           cardModelPath: findCardModelPath(getCardModelChoices(), cardModel),
           values,
           section,
+          generateCardId: generateId,
         }),
       ),
     removeCard: (card: string) => updateDeck(id, removeCard(getDeck(id), card)),
@@ -37,7 +39,7 @@ export function createDeckTabActions(id: string, deps: DeckTabActionDeps) {
       updateDeck(id, dropCard(getDeck(id), card, target)),
     writeCardField: (...[card, field, index, text]: [string, string, number, string]) =>
       updateDeck(id, replaceCardValue(getDeck(id), card, { field, index, text })),
-    addSection: (name: string) => updateDeck(id, addSection(getDeck(id), name)),
+    addSection: (name: string) => updateDeck(id, addSection(getDeck(id), name, generateId)),
     renameSection: (section: string, name: string) =>
       updateDeck(id, renameSection(getDeck(id), section, name)),
     removeSection: (section: string) => updateDeck(id, removeSection(getDeck(id), section)),
