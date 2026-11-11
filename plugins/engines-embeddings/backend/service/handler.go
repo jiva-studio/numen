@@ -6,8 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/serving"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
 // handler answers the calls of the embedding service with the model server.

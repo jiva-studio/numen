@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/launch"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 // A recognition the palette command runs is a recognition of the file in progress. A tool call for

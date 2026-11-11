@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	ocr "github.com/jiva-studio/numen/plugins/engines-ocr"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {

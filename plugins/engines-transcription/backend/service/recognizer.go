@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/model"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/model"
 )
 
 func newOpener(runtime engine.Runtime, isMock bool) model.Opener {

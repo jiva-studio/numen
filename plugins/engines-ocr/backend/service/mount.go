@@ -10,11 +10,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engines"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/launch"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/engines"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 // PluginID is the identity the manifest gives the plugin.
@@ -42,11 +43,12 @@ func Mount(s *server.Server) error {
 	env := process.Process{}
 	holder := engines.NewHolder(env.GetConfig(), newOpener(engine.NewLibrary(), env.IsMockML), env)
 	return mount(s, recognition.Host{
-		Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) },
-		Store:  func(id domain.VaultID) recognition.Folder { return store.With(id) },
-		Texts:  func(id domain.VaultID) host.TextVersions { return texts.With(id) },
-		Queue:  queue,
-		Report: env.ReportError,
+		Vaults:    func(id domain.VaultID) recognition.Files { return vault.With(id) },
+		Store:     func(id domain.VaultID) recognition.Folder { return store.With(id) },
+		Texts:     func(id domain.VaultID) host.TextVersions { return texts.With(id) },
+		Queue:     queue,
+		Documents: document.NewReader(),
+		Report:    env.ReportError,
 	}, holder)
 }
 

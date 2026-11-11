@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
 // Variables are the variables of the process environment, read as they are when asked.

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/texts"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/texts"
 )
 
 // Host is the clients of the host the plugin works through.

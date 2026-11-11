@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
 // DocumentServer answers the document methods of the plugin API. Each call works the vault its Numen-Vault

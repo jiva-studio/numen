@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 )
 
 // EnvMockML names the variable that has the plugin hear every recording with the mock model.

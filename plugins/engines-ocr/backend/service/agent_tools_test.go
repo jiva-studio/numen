@@ -17,9 +17,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/launch"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 const (
@@ -123,7 +124,7 @@ const chemistryScan = "papers/titration.pdf"
 
 func newToolFixture(t *testing.T) *toolFixture {
 	t.Helper()
-	raw, err := os.ReadFile("../document/testdata/scan.pdf")
+	raw, err := os.ReadFile("../internal/adapter/document/testdata/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,8 +148,9 @@ func newToolFixture(t *testing.T) *toolFixture {
 			startCh: make(chan struct{}), startOnce: &sync.Once{}, release: make(chan struct{}),
 		},
 	}
+	documents := document.NewReader()
 	recognitions, err := recognition.New(
-		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: foldersOf(vault.Store()), Texts: textsOf(texts), Queue: s.queue},
+		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: foldersOf(vault.Store()), Texts: textsOf(texts), Queue: s.queue, Documents: documents},
 		func(context.Context) (recognition.Recogniser, error) {
 			s.openCount.Add(1)
 			return s.recogniser, nil
@@ -164,7 +166,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 				t.Error(err)
 			}
 		})
-		recognitions.SetCompilationCache(compilation)
+		documents.SetCompilationCache(compilation)
 	}
 	s.recognitions = recognitions
 	s.launcher = launch.New(recognitions, PluginID)
@@ -649,7 +651,7 @@ func (s *toolFixture) countReads(t *testing.T) *readCounts {
 			Vaults: func(id domain.VaultID) recognition.Files { return counted.With(id) }, Store: func(id domain.VaultID) recognition.Folder {
 				return countingStore{Folder: s.vault.Store().With(id), counts: counts}
 			},
-			Texts: textsOf(s.texts), Queue: s.queue,
+			Texts: textsOf(s.texts), Queue: s.queue, Documents: document.NewReader(),
 		},
 		func(context.Context) (recognition.Recogniser, error) {
 			s.openCount.Add(1)

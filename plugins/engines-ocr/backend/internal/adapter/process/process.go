@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 )
 
 // EnvMockML names the variable that has the plugin read every page with the mock recogniser.

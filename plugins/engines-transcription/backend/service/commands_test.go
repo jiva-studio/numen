@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
 func TestTheHandlerOfCreateTextAnswersWhileTheTaskTranscribes(t *testing.T) {

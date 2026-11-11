@@ -3,8 +3,8 @@ package service
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
 )
 
 func TestOpenerReturnsMockRecogniser(t *testing.T) {

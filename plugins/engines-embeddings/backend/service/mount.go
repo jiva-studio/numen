@@ -7,17 +7,17 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/remote"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/serving"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
 func newLocalModelOpener(library *onnx.Library) serving.OpenEmbedder {
