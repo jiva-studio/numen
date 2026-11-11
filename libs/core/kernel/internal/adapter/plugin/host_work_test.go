@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -18,7 +18,7 @@ const workingPlugin = "org.example.sample"
 // workingHost is a running host whose plugin has a task listed and holds the
 // lock.
 type workingHost struct {
-	host    *pluginhost.Host
+	host    *container.PluginRoles
 	process *os.Process
 	tasks   *run.Tasks
 	lease   *run.Lease

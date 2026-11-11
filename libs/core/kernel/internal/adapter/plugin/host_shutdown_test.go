@@ -3,9 +3,9 @@ package plugin_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"os"
 	"sync/atomic"
@@ -21,7 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func newRunningHost(t *testing.T) (*pluginhost.Host, <-chan struct{}) {
+func newRunningHost(t *testing.T) (*container.PluginRoles, <-chan struct{}) {
 	t.Helper()
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
@@ -148,7 +148,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 // ResolveCapability reports why no plugin responds: none declares the
 // capability, or those that do are disabled or turned off by safe mode.
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
 		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}})
 	}
@@ -197,7 +197,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // A plugin EnsureActive cannot start is distinguished from one that is absent
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	setPlugin(host, "md.numen.a", manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}})
 	if err := setEnabled(t.Context(), host, "md.numen.a", false); err != nil {
 		t.Fatal(err)
@@ -215,7 +215,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 }
 
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
 		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
 	}
@@ -242,7 +242,7 @@ func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 }
 
 func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 	cmd := wiretest.NewIdleCommand(t.Context())

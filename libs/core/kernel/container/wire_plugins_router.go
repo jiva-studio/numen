@@ -110,11 +110,17 @@ var errSafeMode = errors.New("numen is running in safe mode")
 // provider NUMEN_ONNX_PROVIDER names (auto when unset). The host is returned also when the discovery of the
 // plugins failed, with the failure.
 func NewPluginHost(target string, dirs ...string) (*PluginHost, error) {
-	host := newPluginRoles(clock.System{}, target, dirs)
+	host, err := OpenPluginRoles(target, dirs...)
+	return adaptPluginHost(host), err
+}
+
+// OpenPluginRoles creates the roles of a plugin host as NewPluginHost does and returns them, for a caller that holds
+// the roles. The roles are returned also when the discovery of the plugins failed, with the failure.
+func OpenPluginRoles(target string, dirs ...string) (*PluginRoles, error) {
+	host := NewPluginRoles(clock.System{}, target, dirs...)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Services.SetDependencies(newDependencyRegistry(""))
-	err := host.Discovery.Discover()
-	return adaptPluginHost(host), err
+	return host, host.Discovery.Discover()
 }
 
 func setPluginVaultPath(c pluginsWiring, path string) {

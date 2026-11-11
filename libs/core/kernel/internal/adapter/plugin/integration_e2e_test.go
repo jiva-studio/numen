@@ -1,6 +1,7 @@
 package plugin_test
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"os"
 	"path/filepath"
@@ -22,7 +23,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 		t.Skipf("Embeddings binary not found at %s; skipping real process E2E test", embeddingsBin)
 	}
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", pluginsDir)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", pluginsDir)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
