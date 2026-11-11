@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/plugins/engines-embeddings
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/getcharzp/onnxruntime_purego v1.25.0

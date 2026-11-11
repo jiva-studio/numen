@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/plugins/tools-media-importer
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/go-shiori/go-readability v0.0.0-20251205110129-5db1dc9836f0

@@ -31,7 +31,12 @@ import {
   rectangularSelection,
 } from '@codemirror/view'
 import { follow } from '../lib/extensions/address'
-import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from '../lib/change/change'
+import {
+  pendingChange,
+  changeMarks,
+  createPacePlugin,
+  type EditorChange,
+} from '../lib/change/change'
 import { highlighting } from '../lib/config/highlight'
 import { LANGUAGES } from '../lib/config/languages'
 import { live, sourceWikilinks, wholeLines } from './live/live'

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.index.stats",
   "name": "Index stats",
-  "version": "2026.11.12",
+  "version": "2026.11.11",
   "protocol": 1,
   "description": "Shows in the title bar how many vectors the search index holds",
   "targets": ["desktop.editor"],

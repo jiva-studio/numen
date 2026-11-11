@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/libs/note
 
-go 1.26.10
+go 1.26.11
 
 require (
 	golang.org/x/text v0.43.0

@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/plugins/engines-transcription
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/ebitengine/purego v0.11.2

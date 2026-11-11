@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/plugins/engines-ocr
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d

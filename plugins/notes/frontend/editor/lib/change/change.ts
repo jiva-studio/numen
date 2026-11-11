@@ -236,5 +236,4 @@ class Pace {
   }
 }
 
-export const createPacePlugin = (clock: Clock) =>
-  ViewPlugin.define((view) => new Pace(view, clock))
+export const createPacePlugin = (clock: Clock) => ViewPlugin.define((view) => new Pace(view, clock))

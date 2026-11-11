@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/plugins/tools-proofreading
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0

@@ -8,7 +8,14 @@ import type { ChangeDesc, EditorState } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { listen } from './cells'
-import { readCell, readTable, getRows, type Cell, type Row, type Table } from '../../lib/table/table'
+import {
+  readCell,
+  readTable,
+  getRows,
+  type Cell,
+  type Row,
+  type Table,
+} from '../../lib/table/table'
 
 class Grid extends WidgetType {
   constructor(

@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/apps/mobile
 
-go 1.26.10
+go 1.26.11
 
 require (
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0

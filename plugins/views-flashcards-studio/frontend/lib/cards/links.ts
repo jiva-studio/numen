@@ -19,12 +19,12 @@ const stripControls = (url: string): string =>
 export const scheme = (url: string): string | null =>
   /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(stripControls(url))?.[0].toLowerCase() ?? null
 
-export const canLinkTo = (url: string): boolean => {
+const canLinkTo = (url: string): boolean => {
   const named = scheme(url)
   return named === null || SCHEMES.has(named)
 }
 
-export const canShow = (url: string): boolean => {
+const canShow = (url: string): boolean => {
   const cleaned = stripControls(url)
   if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
   // An address starting with two slashes names a host and inherits the window's

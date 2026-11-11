@@ -13,7 +13,12 @@ import { findChild } from '../../lib/extensions/address'
 import { getGrid } from '../table/grid'
 import { BULLET, HEADING, HIDDEN, INLINE, line, mark, CARET_ONLY } from '../../lib/live/styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
-import { drawWikilink, findDrawnWikilinks, isLinkSelected, isWithin } from '../../lib/live/wikilinks'
+import {
+  drawWikilink,
+  findDrawnWikilinks,
+  isLinkSelected,
+  isWithin,
+} from '../../lib/live/wikilinks'
 import type { Wikilink } from '../../lib/extensions/wikilink'
 
 /** The nodes the markdown parser makes of the inner brackets of a wikilink. */
