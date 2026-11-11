@@ -17,7 +17,10 @@ function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
 const READ_WRITE = createMockManifest('p', {
   name: 'P',
   version: '1',
-  permissions: ['vault:read', 'vault:write'],
+  permissions: ['vault:read', 'vault:write', 'network:outbound'],
+  commands: ['run', 'summary', 'rich', 'fail-quietly'],
+  tabKinds: ['tree-kind'],
+  readers: ['pdf'],
 })
 
 describe('the plugin context events', () => {
@@ -100,7 +103,7 @@ describe('command handlers', () => {
     )
     host.keybindings.registerKeybindings('cmd.plugin', [{ key: 'ctrl+shift+x', command: 'run' }])
     const fault = new Error('boom')
-    host.lifecycle.createContext('cmd.plugin').register.command({
+    host.lifecycle.createContext('cmd.plugin', READ_WRITE).register.command({
       id: 'run',
       handler: async () => {
         throw fault
@@ -126,7 +129,7 @@ describe('command handlers', () => {
       }),
     )
     const fault = new Error('sync boom')
-    host.lifecycle.createContext('cmd.plugin').register.command({
+    host.lifecycle.createContext('cmd.plugin', READ_WRITE).register.command({
       id: 'run',
       handler: () => {
         throw fault
@@ -171,7 +174,9 @@ describe('a command over a note', () => {
       }),
     )
     const handler = vi.fn()
-    host.lifecycle.createContext('cmd.plugin').register.command({ id: 'summary', handler })
+    host.lifecycle
+      .createContext('cmd.plugin', READ_WRITE)
+      .register.command({ id: 'summary', handler })
 
     await host.commands.executeCommand('cmd.plugin:summary', NOTE)
 
@@ -198,7 +203,9 @@ describe('a command over a note', () => {
       { key: 'ctrl+shift+y', command: 'summary' },
     ])
     const handler = vi.fn()
-    host.lifecycle.createContext('cmd.plugin').register.command({ id: 'summary', handler })
+    host.lifecycle
+      .createContext('cmd.plugin', READ_WRITE)
+      .register.command({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, shiftKey: true })
 
     const NO_NOTE = { path: '', title: '', isFolder: false, others: [], tab: '' }

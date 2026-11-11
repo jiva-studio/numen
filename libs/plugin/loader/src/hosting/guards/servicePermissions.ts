@@ -7,6 +7,7 @@
 import type {
   Caught,
   PluginEvents,
+  PluginIdentity,
   PluginRegistrations,
   PluginSettings,
   PluginTabs,
@@ -22,6 +23,7 @@ type Value = object | string | number | bigint | boolean | symbol | null | undef
 const READ = 'vault:read'
 const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
+const NETWORK = 'network:outbound'
 
 /**
  * How a refusal of a rule reaches the caller: a sync member throws, an async member rejects, and a
@@ -85,6 +87,7 @@ export type RulesOf<S> = {
 
 /** The parts of a plugin context that offer services. */
 export interface GuardedParts {
+  readonly plugin: Pick<PluginIdentity, 'openExternal'>
   readonly register: PluginRegistrations
   readonly settings: PluginSettings
   readonly events: PluginEvents
@@ -95,6 +98,9 @@ export interface GuardedParts {
 }
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
+  plugin: {
+    openExternal: requirePermissionsAsync(NETWORK),
+  },
   register: {
     reader: requireNothing('a reader names the extensions the manifest of the plugin declares'),
     settingsView: requireNothing('the view draws the settings of the plugin itself'),

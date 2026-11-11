@@ -1,6 +1,7 @@
 /** The keys of the plugin host. Every plugin and command here is invented. */
 import { describe, expect, it, vi } from 'vitest'
 import { parseManifest } from '@numen/core-client'
+import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import { getTargetValues } from '../when'
 import type { CommandDeclaration, PluginHostDeps } from './types'
@@ -26,6 +27,10 @@ const LEDGER: CommandDeclaration = {
   title: 'Open ledger',
 }
 
+const LEDGER_MANIFEST = createMockManifest('org.example.ledger', {
+  commands: ['ledger.open', 'ledger.find'],
+})
+
 function create(
   declarations: CommandDeclaration[] = [LEDGER],
   extra: Partial<PluginHostDeps> = {},
@@ -43,7 +48,7 @@ function create(
     ...extra,
   })
   const handler = vi.fn()
-  if (manifest) host.lifecycle.registerManifest('org.example.ledger', manifest)
+  host.lifecycle.registerManifest('org.example.ledger', manifest ?? LEDGER_MANIFEST)
   host.lifecycle
     .createContext('org.example.ledger')
     .register.command({ id: 'ledger.open', handler })
