@@ -154,7 +154,7 @@ func indexTexts(
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders).WithHandlers(c.ErrorHandler, readNote)
+	index := filetext.NewHandlingIndex(filetext.NewIndex(c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders), c.ErrorHandler, readNote)
 	cutter := cutNotes(c)
 	index.Sizes = cutter.Sizes
 	index.Legibility = cutter.Legibility
