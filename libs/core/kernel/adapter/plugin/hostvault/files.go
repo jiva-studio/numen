@@ -24,7 +24,7 @@ type Files struct {
 	OpenWriter  func(v domain.Vault) (NoteWriter, error)
 	Index       func(ctx context.Context, v domain.Vault, paths []string) error
 
-	session *Session
+	session sessionAccess
 }
 
 func (f Files) openWriter() (NoteWriter, error) {

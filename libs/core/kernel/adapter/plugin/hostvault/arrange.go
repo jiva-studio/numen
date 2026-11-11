@@ -31,7 +31,7 @@ type Arranger struct {
 	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
 	Problems    problemQueries
 
-	session *Session
+	session sessionAccess
 }
 
 type problemQueries interface {

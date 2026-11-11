@@ -36,7 +36,7 @@ type Lookups struct {
 	TypedPaths typedPaths
 	Links      linkQueries
 
-	session *Session
+	session sessionAccess
 }
 
 // GetNotes returns the refs of the notes at the paths.

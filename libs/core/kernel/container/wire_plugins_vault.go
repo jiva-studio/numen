@@ -87,9 +87,8 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	}
 	arranger := newArranger(scenarios, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
-	vaults := hostvault.Vault{
-		Locks: hold.NewLocks(writeLocks(c.vault), clock.System{}, hold.LockHold),
-		Session: hostvault.Session{
+	return hostvault.NewAccess(
+		hostvault.Session{
 			Current:    current,
 			Vaults:     registry.Vaults.List,
 			Find:       vaultregistry.NewFindByID(registry.Lookup).Execute,
@@ -98,23 +97,23 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Moved:      hooks.Moved,
 			Written:    hooks.Written,
 		},
-		Files: hostvault.Files{
+		hostvault.Files{
 			Stat:        file.NewStatFile(vaultReaders(c.vault)),
 			ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
 			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
 			Index:       index,
 		},
-		Lookups: hostvault.Lookups{
+		hostvault.Lookups{
 			Notes:      db.NoteQueries(),
 			Types:      db.NoteQueries(),
 			NamedPaths: db.NoteQueries(),
 			TypedPaths: db.NoteQueries(),
 			Links:      db.NoteQueries(),
 		},
-		Connections: connections,
-		Arranger:    arranger,
-		Stores: hostvault.Stores{
+		connections,
+		arranger,
+		hostvault.Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},
@@ -123,8 +122,8 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			},
 			Cache: cache,
 		},
-	}
-	return vaults.Access(), nil
+		hold.NewLocks(writeLocks(c.vault), clock.System{}, hold.LockHold),
+	), nil
 }
 
 func newArranger(
