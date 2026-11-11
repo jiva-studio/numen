@@ -139,6 +139,27 @@ func NewRefresh(
 	}
 }
 
+// RefreshDeps are what NewRefreshFrom builds a Refresh over: the collaborators of NewRefresh, the sizes the notes are
+// cut at, and the ledger the refreshes of one index share.
+type RefreshDeps struct {
+	Readers vaultport.VaultReaders
+	Vaults  vaultport.VaultRepository
+	Notes   noteport.NoteRepository
+	Queries sourceport.RemovalLookup
+	Sources sourceport.SourceRepository
+	Now     machineport.Clock
+	Cut     chunking.CutNotes
+	Ledger  *Ledger
+}
+
+// NewRefreshFrom creates a Refresh that cuts notes at deps.Cut and records recent notes in deps.Ledger.
+func NewRefreshFrom(deps RefreshDeps) Refresh {
+	return Refresh{
+		readers: deps.Readers, vaults: deps.Vaults, notes: deps.Notes, queries: deps.Queries, sources: deps.Sources,
+		now: deps.Now, Cut: deps.Cut, Ledger: deps.Ledger,
+	}
+}
+
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
 // are now different from what was shown, and the ones that could not be read.
 type RefreshResult struct {

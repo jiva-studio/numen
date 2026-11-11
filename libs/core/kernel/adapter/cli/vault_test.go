@@ -67,21 +67,17 @@ func (b brokenRegistry) RecordOpened(id domain.VaultID) error {
 func (s *session) runBroken(adjust func(*vaultParts), args ...string) (string, error) {
 	s.t.Helper()
 	var out bytes.Buffer
-	err := cli.Run(s.t.Context(), &out, &s.reply, append(s.base, args...), func(where cli.Locations) cli.Deps {
-		provided := s.deps(where)
-		provided.Vaults = func() (cli.Vaults, error) {
-			parts := s.parts(where)
-			adjust(&parts)
-			return parts.build(), nil
-		}
-		return provided
+	err := cli.Run(s.t.Context(), &out, &s.reply, append(s.base, args...), func(where cli.Locations) cli.Session {
+		parts := s.parts(where)
+		adjust(&parts)
+		return s.depsOver(where, parts)
 	})
 	return out.String(), err
 }
 
 func TestVaultCommand_RequiresSubcommand(t *testing.T) {
 	t.Parallel()
-	_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, "vault")
+	_, err := runWithDeps(stubSession{Vaults: createVaultList(getNotebook())}, "vault")
 	if err == nil || !strings.Contains(err.Error(), "usage:\n  numen-cli vault add <path>") {
 		t.Errorf("vault with no command answered %v", err)
 	}
@@ -96,7 +92,7 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 		"usage: numen-cli vault erase <vault> [--yes]":      {"vault", "erase"},
 		"usage: numen-cli vault open <vault>":               {"vault", "open"},
 	} {
-		out, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
+		out, err := runWithDeps(stubSession{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || err.Error() != usage {
 			t.Errorf("%v answered %v, want %q", args, err, usage)
 		}
@@ -108,7 +104,10 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 
 func TestAVaultCommandReturnsWhatWentWrongOpeningTheList(t *testing.T) {
 	t.Parallel()
-	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }}
+	provided := stubSession{
+		Vaults:  func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
+		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused },
+	}
 	for _, args := range [][]string{
 		{"vault", "add", "somewhere"},
 		{"vault", "list"},
@@ -140,7 +139,7 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsSaved(t *testing.T) {
 	testsupport.CloseAfter(t, file)
 
 	wasOpened := false
-	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { wasOpened = true; return cli.Vaults{}, errRefused }}
+	provided := stubSession{Vaults: func() (cli.Vaults, error) { wasOpened = true; return cli.Vaults{}, errRefused }}
 	for _, args := range [][]string{
 		{"vault", "add", "--no-such-flag"},
 		{"vault", "add", "somewhere", "--no-such-flag"},
