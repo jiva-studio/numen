@@ -43,8 +43,8 @@ func TestADeckContainingNoCardOfAMarkReturnsSo(t *testing.T) {
 
 func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
 	deck := format.Deck{Cards: []format.Card{
-		{CardID: ID("aaaaaaaaaa"), Heading: "ant"},
-		{CardID: ID("aaaaaaaaaa"), Heading: "bee"},
+		{CardID: format.ID("aaaaaaaaaa"), Heading: "ant"},
+		{CardID: format.ID("aaaaaaaaaa"), Heading: "bee"},
 	}}
 
 	if _, err := deck.Card("aaaaaaaaaa"); !errors.Is(err, format.ErrTwoCards) {

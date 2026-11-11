@@ -51,7 +51,7 @@ func FuzzWhole(f *testing.F) {
 				len(was.Cards), len(now.Cards), body, out)
 		}
 		for i, card := range now.Cards {
-			if !IsValidID(card.CardID) {
+			if !format.IsValidID(card.CardID) {
 				t.Fatalf("the card standing at %d carries %q, which is no card id\n now %q",
 					i, card.CardID, out)
 			}
@@ -81,10 +81,10 @@ func FuzzWhole(f *testing.F) {
 	})
 }
 
-func createIDs() func() ID {
+func createIDs() func() format.ID {
 	pos := 0
-	return func() ID {
+	return func() format.ID {
 		pos++
-		return ID(fmt.Sprintf("%010d", pos))
+		return format.ID(fmt.Sprintf("%010d", pos))
 	}
 }

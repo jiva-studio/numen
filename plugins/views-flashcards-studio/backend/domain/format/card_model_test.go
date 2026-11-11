@@ -395,7 +395,7 @@ func TestAFieldThatIsNotAWordIsSkippedAndTheFieldsAfterItStand(t *testing.T) {
 func TestReadHeading(t *testing.T) {
 	for name, one := range map[string]struct {
 		heading, text string
-		cardID        ID
+		cardID        format.ID
 	}{
 		"a text and a card id": {
 			"Compost, what is it made of ^k7m2xq9fzp", "Compost, what is it made of", "k7m2xq9fzp",
@@ -430,7 +430,7 @@ func TestReadHeading(t *testing.T) {
 func TestWriteHeading(t *testing.T) {
 	for name, one := range map[string]struct {
 		text   string
-		cardID ID
+		cardID format.ID
 		want   string
 	}{
 		"both":         {"Compost", "k7m2xq9fzp", "Compost ^k7m2xq9fzp"},
