@@ -33,8 +33,7 @@ func OpenEditor(
 func openEditorTexts(
 	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, opening WindowOpening,
 ) (*OpenedWindow, error) {
-	texts := newTextVersions(vaultOf(c), db)
-	opened, err := openWindowWith(c, ctx, ports, opening, texts)
+	opened, err := openWindowWith(c, ctx, ports, opening, newTextVersions(vaultOf(c), db))
 	if err != nil {
 		return nil, err
 	}

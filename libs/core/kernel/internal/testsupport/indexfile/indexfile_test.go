@@ -44,7 +44,7 @@ func TestACopyIsAMigratedIndex(t *testing.T) {
 func TestCopiesAreIndependent(t *testing.T) {
 	t.Parallel()
 
-	one, err := index.Open(t.Context(), indexfile.Path(t), indexfile.SkipFlush())
+	one, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
 	if err != nil {
 		t.Fatal(err)
 	}

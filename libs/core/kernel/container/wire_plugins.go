@@ -41,8 +41,7 @@ func openPluginWork(
 	c Config, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
 ) (pluginsWiring, *run.PluginWork, error) {
 	setPluginVaultPath(plugins(c), v.Path)
-	texts := newTextVersions(vaultOf(c), db)
-	a := assemble(c, texts)
+	a := assemble(c, newTextVersions(vaultOf(c), db))
 	if err := installCurrentVault(a, c, db, v); err != nil {
 		return pluginsWiring{}, nil, err
 	}

@@ -9,16 +9,12 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 )
-
-// SkipFlush is what a test opens an index with. Nothing a test binary writes
-// outlives the run, so no index it opens waits for the disk.
-func SkipFlush() index.Option { return index.Unsynchronized() }
 
 func newMigrated() *vaultfixture.Template {
 	return vaultfixture.NewTemplate(func(ctx context.Context, path string) error {
-		db, err := index.Open(ctx, path, SkipFlush())
+		db, err := index.Open(ctx, path, index.Unsynchronized())
 		if err != nil {
 			return err
 		}
