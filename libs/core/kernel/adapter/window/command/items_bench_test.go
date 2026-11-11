@@ -2,6 +2,7 @@ package command_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"testing"
 
@@ -21,7 +22,7 @@ const repositoryPlugins = "../../../../../../../plugins"
 
 func newRepositoryHandler(b *testing.B) *command.Handler {
 	b.Helper()
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)
 	b.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(b.Context()), 0); err != nil {
 			b.Error(err)
