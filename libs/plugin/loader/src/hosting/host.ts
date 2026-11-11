@@ -96,6 +96,14 @@ function createRegistrationBridge(
       }),
     // Stryker disable all: agentProviders map is internal state for future host provider lookup
     registerAgentProvider: (pluginId, registration) => {
+      const owner = [...registry.agentProviders.values()].find(
+        (one) => one.reg.id === registration.id && one.pluginId !== pluginId,
+      )
+      if (owner) {
+        throw new Error(
+          `Plugin "${pluginId}" registers the agent provider "${registration.id}", which plugin "${owner.pluginId}" already registers`,
+        )
+      }
       const entry = { pluginId, reg: registration }
       const key = getEntryKey(pluginId, registration.id)
       registry.agentProviders.set(key, entry)

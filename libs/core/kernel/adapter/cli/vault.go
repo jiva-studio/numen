@@ -24,43 +24,55 @@ const vaultUsage = `usage:
   numen-cli vault erase <vault> [--yes]
   numen-cli vault open <vault>`
 
-func runVaultCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+// vaultCommand dispatches `vault` to the subcommand named by its first argument.
+type vaultCommand struct {
+	subcommands []command
+}
+
+func newVaultCommand(deps Deps) vaultCommand {
+	return vaultCommand{subcommands: []command{
+		addVaultCommand{vaults: deps.Vaults},
+		listVaultsCommand{vaults: deps.Vaults},
+		renameVaultCommand{vaults: deps.Vaults},
+		removeVaultCommand{vaults: deps.Vaults},
+		eraseVaultCommand{vaults: deps.Vaults},
+		openVaultCommand{vaults: deps.Vaults},
+	}}
+}
+
+func (vaultCommand) Name() string { return "vault" }
+
+func (c vaultCommand) Synopsis() string {
+	lines := make([]string, len(c.subcommands))
+	for i, sub := range c.subcommands {
+		lines[i] = sub.Synopsis()
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (c vaultCommand) Run(ctx context.Context, term terminal, args []string) error {
 	if len(args) == 0 {
 		return errors.New(vaultUsage)
 	}
-	subcommand, ok := getVaultSubcommands()[args[0]]
-	if !ok {
-		return fmt.Errorf("unknown vault command %q", args[0])
+	for _, sub := range c.subcommands {
+		if sub.Name() == args[0] {
+			return sub.Run(ctx, term, args[1:])
+		}
 	}
-	return subcommand(ctx, out, deps, args[1:])
+	return fmt.Errorf("unknown vault command %q", args[0])
 }
 
-type vaultSubcommand func(ctx context.Context, out io.Writer, deps Deps, args []string) error
-
-func getVaultSubcommands() map[string]vaultSubcommand {
-	return map[string]vaultSubcommand{
-		"add": func(_ context.Context, out io.Writer, deps Deps, args []string) error {
-			return addVault(out, deps, args)
-		},
-		"list": func(_ context.Context, out io.Writer, deps Deps, _ []string) error {
-			return listVaults(out, deps)
-		},
-		"rename": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
-			return renameVault(ctx, deps, out, args)
-		},
-		"remove": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
-			return removeVaultFromList(ctx, deps, out, args)
-		},
-		"erase": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
-			return eraseVault(ctx, deps, out, args)
-		},
-		"open": func(_ context.Context, out io.Writer, deps Deps, args []string) error {
-			return openVault(out, deps, args)
-		},
-	}
+type addVaultCommand struct {
+	vaults func() (Vaults, error)
 }
 
-func addVault(out io.Writer, deps Deps, args []string) error {
+func (addVaultCommand) Name() string { return "add" }
+
+func (addVaultCommand) Synopsis() string {
+	return "  numen-cli vault add <path> [--name <name>]   add a folder to the vault list"
+}
+
+func (c addVaultCommand) Run(_ context.Context, term terminal, args []string) error {
 	fs := flag.NewFlagSet("vault add", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	name := fs.String("name", "", "name for this vault (default: the folder name)")
@@ -72,7 +84,7 @@ func addVault(out io.Writer, deps Deps, args []string) error {
 		return errors.New("usage: numen-cli vault add <path> [--name <name>]")
 	}
 
-	vaults, err := deps.Vaults()
+	vaults, err := c.vaults()
 	if err != nil {
 		return err
 	}
@@ -85,13 +97,23 @@ func addVault(out io.Writer, deps Deps, args []string) error {
 		return err
 	}
 
-	r := newReporter(out)
+	r := newReporter(term.out)
 	r.Printf("added %s\n  path %s\n  id   %s\n", v.Name, v.Path, v.ID)
 	return r.Err()
 }
 
-func listVaults(out io.Writer, deps Deps) error {
-	vaults, err := deps.Vaults()
+type listVaultsCommand struct {
+	vaults func() (Vaults, error)
+}
+
+func (listVaultsCommand) Name() string { return "list" }
+
+func (listVaultsCommand) Synopsis() string {
+	return "  numen-cli vault list                         show the vaults this installation knows"
+}
+
+func (c listVaultsCommand) Run(_ context.Context, term terminal, _ []string) error {
+	vaults, err := c.vaults()
 	if err != nil {
 		return err
 	}
@@ -101,7 +123,7 @@ func listVaults(out io.Writer, deps Deps) error {
 	if err != nil {
 		return err
 	}
-	r := newReporter(out)
+	r := newReporter(term.out)
 	if len(recognized) == 0 {
 		r.Println("no vaults yet — add one with: numen-cli vault add <path>")
 		return r.Err()
@@ -121,11 +143,21 @@ func listVaults(out io.Writer, deps Deps) error {
 	return r.Err()
 }
 
-func renameVault(ctx context.Context, deps Deps, out io.Writer, args []string) (err error) {
+type renameVaultCommand struct {
+	vaults func() (Vaults, error)
+}
+
+func (renameVaultCommand) Name() string { return "rename" }
+
+func (renameVaultCommand) Synopsis() string {
+	return "  numen-cli vault rename <vault> <new name>    change the name of a vault"
+}
+
+func (c renameVaultCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli vault rename <vault> <new name>")
 	}
-	vaults, err := deps.Vaults()
+	vaults, err := c.vaults()
 	if err != nil {
 		return err
 	}
@@ -139,16 +171,26 @@ func renameVault(ctx context.Context, deps Deps, out io.Writer, args []string) (
 	if err != nil {
 		return err
 	}
-	r := newReporter(out)
+	r := newReporter(term.out)
 	r.Printf("renamed %s to %s\n  the folder is still %s\n", renamed.PreviousName, renamed.Vault.Name, renamed.Vault.Path)
 	return r.Err()
 }
 
-func removeVaultFromList(ctx context.Context, deps Deps, out io.Writer, args []string) (err error) {
+type removeVaultCommand struct {
+	vaults func() (Vaults, error)
+}
+
+func (removeVaultCommand) Name() string { return "remove" }
+
+func (removeVaultCommand) Synopsis() string {
+	return "  numen-cli vault remove <vault>               take a vault off the list, leaving its folder"
+}
+
+func (c removeVaultCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault remove <vault>")
 	}
-	vaults, err := deps.Vaults()
+	vaults, err := c.vaults()
 	if err != nil {
 		return err
 	}
@@ -162,7 +204,7 @@ func removeVaultFromList(ctx context.Context, deps Deps, out io.Writer, args []s
 	if err != nil {
 		return err
 	}
-	r := newReporter(out)
+	r := newReporter(term.out)
 	r.Printf("forgot %s\n  the folder is still %s, and adding it again brings back the same vault\n",
 		v.Name, v.Path)
 	return r.Err()
@@ -176,7 +218,17 @@ func (c eraseConfirmation) ConfirmErase(v domain.Vault) (bool, error) {
 	return confirmErase(c.out, v)
 }
 
-func eraseVault(ctx context.Context, deps Deps, out io.Writer, args []string) (err error) {
+type eraseVaultCommand struct {
+	vaults func() (Vaults, error)
+}
+
+func (eraseVaultCommand) Name() string { return "erase" }
+
+func (eraseVaultCommand) Synopsis() string {
+	return "  numen-cli vault erase <vault> [--yes]        remove it and move its folder to the trash"
+}
+
+func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
 	fs := flag.NewFlagSet("vault erase", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	yes := fs.Bool("yes", false, "erase without asking")
@@ -187,7 +239,7 @@ func eraseVault(ctx context.Context, deps Deps, out io.Writer, args []string) (e
 	if len(rest) != 1 {
 		return errors.New("usage: numen-cli vault erase <vault> [--yes]")
 	}
-	vaults, err := deps.Vaults()
+	vaults, err := c.vaults()
 	if err != nil {
 		return err
 	}
@@ -199,7 +251,7 @@ func eraseVault(ctx context.Context, deps Deps, out io.Writer, args []string) (e
 
 	var confirm vault.EraseConfirmation
 	if !*yes {
-		confirm = eraseConfirmation{out: out}
+		confirm = eraseConfirmation{out: term.out}
 	}
 	res, err := erasing.Erase.ExecuteByName(ctx, rest[0], confirm)
 	if errors.Is(err, machine.ErrNoTrash) {
@@ -213,7 +265,7 @@ func eraseVault(ctx context.Context, deps Deps, out io.Writer, args []string) (e
 	if res.IsTrashed {
 		went = fmt.Sprintf("%s went to the trash", res.Vault.Path)
 	}
-	r := newReporter(out)
+	r := newReporter(term.out)
 	r.Printf("erased %s\n  %s\n", res.Vault.Name, went)
 	return r.Err()
 }
@@ -232,11 +284,21 @@ func confirmErase(out io.Writer, v domain.Vault) (bool, error) {
 	return strings.EqualFold(strings.TrimSpace(answer), "yes"), nil
 }
 
-func openVault(out io.Writer, deps Deps, args []string) error {
+type openVaultCommand struct {
+	vaults func() (Vaults, error)
+}
+
+func (openVaultCommand) Name() string { return "open" }
+
+func (openVaultCommand) Synopsis() string {
+	return "  numen-cli vault open <vault>                 set the vault the next window opens"
+}
+
+func (c openVaultCommand) Run(_ context.Context, term terminal, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault open <vault>")
 	}
-	vaults, err := deps.Vaults()
+	vaults, err := c.vaults()
 	if err != nil {
 		return err
 	}
@@ -244,7 +306,7 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	r := newReporter(out)
+	r := newReporter(term.out)
 	r.Printf("the next window opens %s\n  path %s\n", v.Name, v.Path)
 	return r.Err()
 }

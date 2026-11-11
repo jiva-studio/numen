@@ -34,7 +34,7 @@ Core rules:
 - **Decide placement first.** If the component names a domain term or needs a wire type, stop and report with the drawing vocabulary you propose; do not build it in `@numen/ui`.
 - **List the states and behaviors before the first line of code**, from the props, events and slots: the ordinary content, each value that changes what is drawn, the data edge cases, and each behavior a person performs. The list is the first thing you return.
 - **Build the pure logic first** as a module beside the component with its own unit test; the `.vue` file only wires.
-- **Draw with tokens.** No colour, font or duration literal, no `dark:`, no palette class. Add a token to `tokens.css` and `theme.css` when two components need the value; a dimension of one component is a local custom property in `rem` or `em`; no `px` for a size except a 1px hairline, no bare length on a property.
+- **Draw with tokens.** No colour, font or duration literal, no `dark:`, no palette class. Add a token to `tokens.css` and `theme.css` when two components need the value; a length is a `rem` or `em` literal on the property or a token; `px` only for a 1px hairline.
 - **Write the stories.** One story per state and one `play` function per behavior, driven with `userEvent`, found by role and name, spying through `fn()` on the emitted events only. Fixtures are invented and general; none comes from a vault or a wire type.
 - **Test no pixel, gap, scale or contrast ratio, and take no picture.** A story proves behavior: open, close, flip, move.
 - **The clock, the viewport, randomness and identifiers are parameters** with browser defaults.

@@ -73,7 +73,7 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 | Pure logic (parsing, formatting, scheduling, geometry)                               | Backend: a package named after what it computes, importing nothing of the plugin. Frontend: the `lib` segment of the slice                                                                                                                |
 | A message between frontend and backend                                               | A struct in `backend/api`, a type in the `api` segment of the frontend, and a JSON fixture in `testdata/api/` that the tests of both sides read                                                                                           |
 | A clock, the process environment, a network or file access | An adapter in `backend/internal/adapter/<technology>`, a method of a type that implements an interface the consuming package declares                                                                                                     |
-| A stylesheet                                                                         | `frontend/styles.css` using the tokens of `@numen/ui`; no literal colour or duration; sizes in `rem`/`em` (a local custom property for one component), no `px` except a 1px hairline                                                                                                                                              |
+| A stylesheet                                                                         | `frontend/styles.css` using the tokens of `@numen/ui`; no literal colour or duration; sizes as `rem`/`em` literals or tokens, no `px` except a 1px hairline                                                                                                                                              |
 | A text shown to a person                                                             | `frontend/words.ts` (or the words module of the slice); a component receives text, it does not compose it                                                                                                                                 |
 
 ## The backend
@@ -93,6 +93,8 @@ backend/
 └── internal/adapter/<technology>/  # what touches the machine or the host: host, process, http, clock, filesystem
 ```
 
+A small plugin is `main.go`, `service/` and one package named after what the plugin computes. It has no `ports/`, `<usecase>/` or `<domain>/` package until a second consumer needs one. This tier is the start of every backend; the layout above is what it grows into. The rule for machine access is the same in both tiers: exec, environment, files, network and the clock are touched only in `internal/adapter/<technology>`.
+
 The imports point inward and nowhere else.
 
 - `service` imports everything below it and is imported by `main` only. It is the one package that knows both the SDK `server` package and the plugin's adapters. It converts between `api` messages and domain values.
@@ -102,7 +104,7 @@ The imports point inward and nowhere else.
 - `api` imports nothing of the plugin.
 - A package named `service` or `engine` is outer; inner packages never import it.
 
-The consumer declares an interface: one to five methods, in the vocabulary of the use case, accepted as a parameter and satisfied by a concrete type that a constructor returns. A constructor validates its dependencies. Time and identifiers arrive as parameters. The machine clock is read only in a method `Now() time.Time` of a type implementing a declared clock interface (`clock.System` of the SDK is one). Cancellation and `ctx` follow `.agents/rules/coding-style-backend.md`.
+The consumer declares an interface: one to five methods, in the vocabulary of the use case, accepted as a parameter and satisfied by a concrete type that a constructor returns. Time and identifiers arrive as parameters. The machine clock is read only in a method `Now() time.Time` of a type implementing a declared clock interface (`clock.System` of the SDK is one). Cancellation and `ctx` follow `.agents/rules/coding-style-backend.md`.
 
 A backend with an engine of its own (a PDF, OCR or ONNX runtime) keeps the engine in a package named after what it computes (`pdf`, `recognition`), outside `service`; `service` calls it through an interface the service declares. The engine's helpers are packages named after what they compute, below or beside it.
 
@@ -148,7 +150,7 @@ A component of general use belongs in `@numen/ui` (what plugins need goes into `
 
 ## Permissions
 
-A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `network:outbound`, `ai:complete`, `index:read`, `search:policy`, `window:focus`. It declares the permission for the calls it makes and no more. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-claude/manifest_permissions_test.go`).
+A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `network:outbound` (opening external links only), `ai:complete`, `index:read`, `search:policy`, `window:focus`. It declares the permission for the calls it makes and no more. Plugins are trusted code: permissions are consent and API hygiene, not a sandbox, and `network:outbound` gates only `openExternal`. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-claude/manifest_permissions_test.go`).
 
 The host checks both sides. For a backend, the host endpoint authenticates the bearer token (`NUMEN_PLUGIN_TOKEN`) as a plugin id and checks the permission of that plugin's manifest on each call (`authorize` in `libs/core/kernel/adapter/plugin/hostendpoint/host_endpoint.go`; `libs/core/kernel/internal/adapter/plugin/host_permission_test.go` tests it for any client). For a frontend, `libs/plugin/loader/src/hosting/context.ts` wraps each service of the context so that a call without the permission throws (`requirePerm`).
 

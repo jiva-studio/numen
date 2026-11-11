@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -24,7 +25,7 @@ type Scenarios struct {
 	Record        Record
 	Counted       CountReviews
 	GetReviewDays GetReviewDays
-	Presets       Presets
+	Presets       presets.Presets
 	Curves        ProjectCurve
 	Day           review.Day
 }
@@ -80,12 +81,12 @@ func NewScenarios(cfg Config) Scenarios {
 	}
 	day := review.Day{Starts: starts, In: nil}
 
-	presets := NewPresets(
+	deckPresets := presets.New(
 		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, updateIndex, cfg.Now,
 	).WithDay(day)
 	// A link the index does not carry is accounted for in what parsing turned
 	// up.
-	presets.Problems = cfg.Problems
+	deckPresets.Problems = cfg.Problems
 
 	// Each card is scheduled at the retention target of its own preset.
 	var defaultScheduler review.Scheduler = review.NewFSRS()
@@ -94,7 +95,7 @@ func NewScenarios(cfg Config) Scenarios {
 		defaultScheduler = cfg.Scheduler.CreateScheduler(review.Defaults().Retention)
 		createScheduler = cfg.Scheduler.CreateScheduler
 	}
-	schedules := NewSchedules(cfg.Logs, defaultScheduler, day, reviewCards, presets)
+	schedules := NewSchedules(cfg.Logs, defaultScheduler, day, reviewCards, deckPresets)
 	schedules.Cache = cfg.Schedules
 	schedules.Report = cfg.Report
 	if createScheduler != nil {
@@ -105,7 +106,7 @@ func NewScenarios(cfg Config) Scenarios {
 	counted.Cache = cfg.DayCounts
 	counted.Report = cfg.Report
 
-	curves := NewProjectCurve(reviewCards, schedules, presets, day, cfg.Now)
+	curves := NewProjectCurve(reviewCards, schedules, deckPresets, day, cfg.Now)
 	curves.Cores = cfg.Cores
 	if createScheduler != nil {
 		curves.By = createScheduler
@@ -115,13 +116,13 @@ func NewScenarios(cfg Config) Scenarios {
 		ReviewCards:   reviewCards,
 		AssignCardIDs: assigning,
 		Schedules:     schedules,
-		CardsDue:      NewCountCardsDue(reviewCards, schedules, presets, day, cfg.Now),
-		Session:       NewSession(assigning, reviewCards, schedules, presets, day, cfg.Now),
+		CardsDue:      NewCountCardsDue(reviewCards, schedules, deckPresets, day, cfg.Now),
+		Session:       NewSession(assigning, reviewCards, schedules, deckPresets, day, cfg.Now),
 		Log:           Log{Stores: cfg.Logs},
 		Record:        NewRecord(cfg.Now),
 		Counted:       counted,
 		GetReviewDays: NewGetReviewDays(counted),
-		Presets:       presets,
+		Presets:       deckPresets,
 		Curves:        curves,
 		Day:           day,
 	}

@@ -68,7 +68,7 @@ Where a piece of Go code goes and how a port, a use case and an adapter are shap
 - **The plugin adapter (`libs/core/kernel/internal/adapter/plugin`) has two kinds of package, distinguished by name.** A package ending in `bridge` calls a plugin for the core (`agentbridge`, `agenttoolsbridge`, `themebridge`); a package starting with `host` handles the calls a plugin makes to the core (`hostendpoint`, `hosttext`, `hostvault`). `bridge`, `transport` and `manifestfile` are shared. The use case `pluginmanifest` lists what the manifests declare without calling a plugin, and the driving host packages live under `adapter/plugin`, so the plugin adapter imports none of them: the container gives it the endpoint through the port `HostEndpoint`. Neither side imports the other, bridges import no other bridge, no package below `internal/adapter/plugin` imports the root `plugin` package, and nothing in `internal/adapter/plugin` imports a sibling adapter. `.golangci.yml` (`plugin-*` depguard rules) and `container/plugin_adapter_layers_test.go` enforce this.
 - **A use case is one business scenario**, and it defines the boundary of one unit of work, which is the transaction boundary.
 - **Use cases are isolated.** No use case imports another, and each package below `usecase/`, nested ones included, is a use case of its own. What two share is a rule in the domain or a port both consume.
-- **A port has one to three methods** and no type of its own: its types and the sentinel errors of an area are in `libs/core/kernel/domain/<area>` or `libs/note/domain`.
+- **A port has at most five methods** (the lint limit) and three where practical. A port with one consumer is declared in that use case's package; `libs/core/kernel/port/<name>port` keeps the interfaces several use cases share.
 - **A `domain/<area>` package of the core imports the standard library, `libs/note/domain`, `libs/plugin/catalog/manifest` and other domain packages**, and no other layer of the core and no third-party code. The manifest is a library of the plugin contract that never imports the kernel.
 - **The window adapter is cut by wire service.** One adapter type per RPC service, each built from the use cases it calls; no object holds every use case or every service, and no struct holds more than five use cases.
 - **A repository is a collection**: put an aggregate in, take one out, remove one. Searches and counts are separate queries, not methods on the repository.
@@ -84,8 +84,8 @@ $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{fe
 - **Slice isolation**: A slice does not import from a sibling slice on the same layer. Shared code is in a lower layer. There is no `@x` cross-import; `dependency-graph` fails on one. A slice is imported from a higher layer only through its `index.ts`.
 - **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
 - **Segments**: Inside a slice the direction is `ui` → `model` → `api` → `lib`.
-- **Calls to the core**: The `model` of a slice imports its own `api` directly. `provide`/`inject` carries no RPC call; a component takes props only and emits events.
-- **Commands**: A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type.
+- **Calls to the core**: The `model` of a slice imports its own `api` directly. A component takes props only and emits events.
+- **Commands**: A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type and, for now, the palette engine (registry, steps, values, keys), which moves to `shared` in a later package.
 
 Component architecture enforces separation of concerns:
 
@@ -93,7 +93,7 @@ Component architecture enforces separation of concerns:
 - **Presentational views**: Views receive precomputed data and render elements without executing business calculations in templates.
 - **Platform capabilities as ports**: Clocks, `requestAnimationFrame`, viewport geometry, and media preferences are taken as parameters (§5), with browser defaults supplied by the caller.
 - **Design tokens**: Styling is exclusively driven by design tokens defined in `src/tokens/`.
-- **Lengths**: A dimension that belongs to one component is a local custom property in `rem` or `em`. No `px` for a size, except a 1px hairline border; no bare length on a property.
+- **Lengths**: A length is a `rem` or `em` literal on the property or a token; a local custom property is optional. `px` only for a 1px hairline border.
 
 ## 5. Determinism
 

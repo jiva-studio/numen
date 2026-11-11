@@ -3,16 +3,25 @@ package cli
 import (
 	"context"
 	"errors"
-	"io"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
+type problemsCommand struct {
+	problems func(ctx context.Context) (Problems, error)
+}
+
+func (problemsCommand) Name() string { return "problems" }
+
+func (problemsCommand) Synopsis() string {
+	return "  numen-cli problems <vault> [<check>...]      list notes with broken links, invalid frontmatter or ambiguous links"
+}
+
+func (c problemsCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
 	if len(args) < 1 {
 		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}
-	open, err := deps.Problems(ctx)
+	open, err := c.problems(ctx)
 	if err != nil {
 		return err
 	}
@@ -27,7 +36,7 @@ func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []st
 	if err != nil {
 		return err
 	}
-	r := newReporter(out)
+	r := newReporter(term.out)
 	if len(report.Found) == 0 {
 		r.Println("nothing to report")
 		return r.Err()

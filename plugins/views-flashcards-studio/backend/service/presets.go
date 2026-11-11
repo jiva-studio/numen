@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/filewire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 )
 
@@ -19,7 +20,7 @@ type presetsHandler struct {
 	createCardNote  func(context.Context, func(domain.Vault, cards.New) (cards.CreateNoteResult, error), string, string) (cards.CreateNoteResult, api.ErrorCode, bool, error)
 	newTitler       func(context.Context, domain.Vault) func(string) string
 	create          func() cards.Create
-	presets         func() flashcards.Presets
+	presets         func() presets.Presets
 	curves          func() flashcards.ProjectCurve
 }
 
@@ -29,7 +30,7 @@ func (b *Backend) newPresetsHandler() *presetsHandler {
 		createCardNote:  b.createCardNote,
 		newTitler:       b.newTitler,
 		create:          func() cards.Create { return b.scenarios().Cards.Create },
-		presets:         func() flashcards.Presets { return b.scenarios().Flash.Presets },
+		presets:         func() presets.Presets { return b.scenarios().Flash.Presets },
 		curves:          func() flashcards.ProjectCurve { return b.scenarios().Flash.Curves },
 	}
 }

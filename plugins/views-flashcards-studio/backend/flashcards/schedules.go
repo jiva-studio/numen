@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -54,7 +55,7 @@ type Schedules struct {
 	scheduler   review.Scheduler
 	day         review.Day
 	reviewCards ListReviewCards
-	presets     Presets
+	presets     presets.Presets
 	At          func(retention float64) review.Scheduler
 }
 
@@ -67,7 +68,7 @@ func NewSchedules(
 	scheduler review.Scheduler,
 	day review.Day,
 	reviewCards ListReviewCards,
-	presets Presets,
+	presets presets.Presets,
 ) Schedules {
 	return Schedules{
 		logs: logs, Cache: nil, Report: nil, scheduler: scheduler,
@@ -81,7 +82,7 @@ func (u Schedules) ReviewCards() ListReviewCards {
 }
 
 // Presets returns the Presets Schedules resolves presets through.
-func (u Schedules) Presets() Presets {
+func (u Schedules) Presets() presets.Presets {
 	return u.presets
 }
 
@@ -114,7 +115,7 @@ func (u Schedules) getDayStartMark() string {
 }
 
 func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignment, error) {
-	if u.presets.links == nil || u.reviewCards.notes == nil {
+	if !u.presets.HasLinks() || u.reviewCards.notes == nil {
 		return u.createPlainAssignment(), nil
 	}
 	reviewCards, err := u.reviewCards.Execute(ctx, v)
@@ -128,10 +129,10 @@ func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignmen
 }
 
 func (u Schedules) getAssignmentFrom(
-	ctx context.Context, v domain.Vault, reads *PresetReads, reviewCards []ReviewCard,
+	ctx context.Context, v domain.Vault, reads *presets.Reads, reviewCards []ReviewCard,
 ) (assignment, error) {
 	out := u.createPlainAssignment()
-	if reads == nil || reads.links == nil {
+	if reads == nil || !reads.HasLinks() {
 		return out, nil
 	}
 

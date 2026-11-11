@@ -130,8 +130,8 @@ A component draws with design tokens and declares none.
 
 - Colours, radii, durations, fonts and the spacing steps that exist as tokens are used through the token: a Tailwind name from `theme.css` (`bg-surface`, `text-ink`) or `var(--numen-surface)` in a scoped block. No hex, no `rgb()`, no named colour, no `var()` fallback, no Tailwind palette class, no `dark:` variant.
 - Tokens are declared in `src/shared/tokens/tokens.css` and nowhere else; a component never declares a `--numen-` property. A new value that two components use is a new token, added with its Tailwind name in `theme.css`.
-- What scales with the interface is in `rem` or `em`. No `px` for a size, with one exception, a 1px hairline border; no bare length on a property (`padding: 0.375rem`).
-- A dimension that belongs to one component only (a row height, an indent) is a local custom property named for the part (`--row`, `--indent`) in `rem` or `em`, declared in that component's block. It is not a token until a second component needs it.
+- What scales with the interface is in `rem` or `em`. A `rem` or `em` literal sits directly on the property (`padding: 0.375rem`); `px` only for a 1px hairline border.
+- A dimension that belongs to one component only (a row height, an indent) may be a local custom property named for the part (`--row`, `--indent`) in `rem` or `em`, declared in that component's block. It is not a token until a second component needs it.
 - The theme is chosen by `color-scheme` on the root: the tokens are `light-dark()` pairs. The component root carries the class `numen`.
 - Pure geometry and arithmetic are computed in a `.ts` module beside the component, not in the template or in a `computed`.
 

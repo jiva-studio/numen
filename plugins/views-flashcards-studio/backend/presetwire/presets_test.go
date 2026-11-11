@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
@@ -96,7 +96,7 @@ func TestConvertCurveToWireCopiesBacklogAndConvertSettingsFromWireHandlesNil(t *
 	if bounds == nil || bounds.MinutesADay == nil || bounds.NewADay == nil {
 		t.Fatalf("got bounds %+v, want non-nil bounds", bounds)
 	}
-	wirePreset := ConvertPresetToWire(flashcards.PresetContents{Path: "Preset.md"}, "My Preset")
+	wirePreset := ConvertPresetToWire(presets.Contents{Path: "Preset.md"}, "My Preset")
 	if wirePreset == nil || wirePreset.Title != "My Preset" {
 		t.Fatalf("got preset %+v, want My Preset", wirePreset)
 	}

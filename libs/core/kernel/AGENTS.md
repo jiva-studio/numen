@@ -65,9 +65,9 @@ outside `port/`.
 | The core probes no value for another interface                                                | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface`                                       |
 | A port names no type from `internal/`                                                         | `TestNoPortNamesATypeFromInternal`                                                         |
 
-The target shape, which the packages of the refactor reach: the core's own concepts are small packages `domain/<area>` that import the standard library, `libs/note/domain`, `libs/plugin/catalog/manifest` and themselves, and that no plugin and not the SDK imports; a port has one to three methods and no type of its own; the window adapter is one adapter type per RPC service, with no object that holds them all; no struct holds more than five use cases.
+The target shape, which the packages of the refactor reach: the core's own concepts are small packages `domain/<area>` that import the standard library, `libs/note/domain`, `libs/plugin/catalog/manifest` and themselves, and that no plugin and not the SDK imports; a port has at most five methods and three where practical, lives in the package of its one consumer and in `port/<name>port` when several use cases share it; the window adapter is one adapter type per RPC service, with no object that holds them all; no struct holds more than five use cases.
 
-A `domain/<area>` package takes the value types, constants and sentinel errors of its area. An alias of an interface stays in its `*contract` package until the change that puts a use case in front of that interface deletes alias and importers together.
+A `domain/<area>` package takes the value types, constants and sentinel errors of its area.
 
 No type is named by a gerund or a participle.
 
@@ -75,9 +75,10 @@ A concept is named with the standard term of its field.
 
 ## Constructors
 
-A use case is created with everything it needs, or it is not created. The constructor
-takes the collaborators, returns an error for what it cannot create, and stores
-them in unexported fields — so no half-built use case exists for a method to check.
+A use case is created with everything it needs. The constructor takes the
+collaborators, stores them in unexported fields and returns the concrete type. It
+does not validate them and returns no error. No `With*` method changes a use case
+after construction.
 
 | The rule                                                                                 | The test                                     |
 | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
@@ -85,8 +86,8 @@ them in unexported fields — so no half-built use case exists for a method to c
 
 No use case exposes a collaborator.
 
-A dependency that may genuinely be absent is not stored as nil in a field: the
-composition root decides it explicitly — `ProofreadingConfig.Recognition`
+A dependency that may be absent is an optional field or a separate type, and the
+composition root decides it explicitly: `ProofreadingConfig.Recognition`
 returns a boolean flag (e.g. `isConfigured`), so a window that cannot proofread never receives a
 proofreading dependency.
 

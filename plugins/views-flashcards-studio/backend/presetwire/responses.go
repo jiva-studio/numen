@@ -9,12 +9,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/filewire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 )
 
 // NewDeckPresetResponse answers the read of the preset a deck is scheduled by. The title is looked
 // up only for a preset that was read.
 func NewDeckPresetResponse(
-	found flashcards.PresetContents, err error, title func(path string) string,
+	found presets.Contents, err error, title func(path string) string,
 ) (*api.GetDeckPresetResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
@@ -36,7 +37,7 @@ func NewDeckPresetResponse(
 // NewReadPresetResponse answers the read of a preset. The title is looked up only for a preset that
 // was read.
 func NewReadPresetResponse(
-	found flashcards.PresetContents, err error, title func(path string) string,
+	found presets.Contents, err error, title func(path string) string,
 ) (*api.ReadPresetResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
@@ -55,7 +56,7 @@ func NewReadPresetResponse(
 
 // NewVaultDeckPresetResponse answers the read of the preset a deck of a named vault is scheduled by.
 func NewVaultDeckPresetResponse(
-	found flashcards.PresetContents, err error, title func(path string) string,
+	found presets.Contents, err error, title func(path string) string,
 ) (*api.GetVaultDeckPresetResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
@@ -70,7 +71,7 @@ func NewVaultDeckPresetResponse(
 }
 
 // NewListResponse is every preset the vault holds, by path and by what it is called.
-func NewListResponse(found []flashcards.PresetSummary, err error) (*api.ListPresetsResponse, error) {
+func NewListResponse(found []presets.Summary, err error) (*api.ListPresetsResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
 	}
@@ -83,7 +84,7 @@ func NewListResponse(found []flashcards.PresetSummary, err error) (*api.ListPres
 
 // NewScheduleDeckResponse answers the end of the assignment of a deck to a preset.
 func NewScheduleDeckResponse(pos domain.FileStat, err error) (*api.ScheduleDeckResponse, error) {
-	out, err := filewire.ConvertWrite(pos, err, filewire.Reason{Err: flashcards.ErrNotAPreset, Code: api.ErrorCodeNotAPreset})
+	out, err := filewire.ConvertWrite(pos, err, filewire.Reason{Err: presets.ErrNotAPreset, Code: api.ErrorCodeNotAPreset})
 	if err != nil {
 		return nil, err
 	}
@@ -93,10 +94,10 @@ func NewScheduleDeckResponse(pos domain.FileStat, err error) (*api.ScheduleDeckR
 // NewWritePresetResponse answers the end of the write of settings into a preset. A value outside
 // what a preset may hold is the client's to correct.
 func NewWritePresetResponse(pos domain.FileStat, err error) (*api.WritePresetResponse, error) {
-	if errors.Is(err, flashcards.ErrOutOfBounds) {
+	if errors.Is(err, presets.ErrOutOfBounds) {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	out, err := filewire.ConvertWrite(pos, err, filewire.Reason{Err: flashcards.ErrNotAPreset, Code: api.ErrorCodeNotAPreset})
+	out, err := filewire.ConvertWrite(pos, err, filewire.Reason{Err: presets.ErrNotAPreset, Code: api.ErrorCodeNotAPreset})
 	if err != nil {
 		return nil, err
 	}
