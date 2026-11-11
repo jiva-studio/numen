@@ -1,26 +1,27 @@
 /**
  * The assembled window: the plugins of its target, loaded over HTTP and activated; the vaults the
- * user chooses from; and the tab the window opens on the chosen vault.
+ * user chooses from; and the tab the window opens on the chosen vault. The parts are made in the
+ * order they depend on each other: the notices and the tabs first, then the services made from
+ * them, then the host the services are given to.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import {
-  INTERFACE_WAIT_MS,
   createPluginLoader,
   createWindowHost,
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
-import { useWindowFrame, type WindowFrame } from '@numen/workbench'
-import { runInBackground } from '@numen/ui'
+import { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import { createWindowAgent } from '@/entities/agent'
-import { listPlugins } from '@/entities/plugin'
+import { createWindowTabs } from '@/entities/tab'
 import { useVaults } from '@/entities/vault'
 import { useAppearance } from '@/features/appearance'
+import { useAppStart } from '@/features/app-start'
 import { useExternalLinks } from '@/features/external-links'
 import { useWindowTasks } from '@/features/window-tasks'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import { createShellHost, createShellPort, type ShellServices } from '../plugins/host'
+import { createShellHost } from '../plugins/host'
 import { createWindowCommands } from '../plugins/windowCommands'
 import { createWindowKeys } from '../plugins/windowKeys'
 import { createWindowVaults } from '../plugins/windowVaults'
@@ -28,101 +29,58 @@ import { createWindowVaults } from '../plugins/windowVaults'
 /** What the window is given: how a plugin module is fetched and imported. */
 export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
 
-function createServices(
-  window: Pick<ReturnType<typeof createShellHost>, 'tab' | 'openTab' | 'notices'> & {
-    readonly vaults: ReturnType<typeof useVaults>['vaults']
-    readonly frame: WindowFrame
-  },
-): ShellServices {
-  const { tab, notices, frame } = window
-  return {
-    commands: createWindowCommands(),
-    vaults: createWindowVaults({
-      list: window.vaults,
-      getTabVault: () => tab.value?.vault ?? null,
-      openTab: window.openTab,
-    }),
-    window: createWindowHost(frame, (error) =>
-      notices.show(WINDOW_SOURCE, formatError(error), 'error'),
-    ),
-  }
-}
-
 export function createWindow(deps: WindowDeps = {}) {
-  const windowAgent = createWindowAgent()
-  const port = createShellPort()
+  const notices = createNoticeQueue()
+  const tabs = createWindowTabs()
   const frame = useWindowFrame()
-  const { host, front, tab, openTab, notices, mountView, titleBarView } = createShellHost(
-    windowAgent.agent,
-    port.getServices,
-    () => frame.platform.value,
-  )
+  const windowAgent = createWindowAgent()
+  const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
+  const { host, mountView, titleBarView } = createShellHost({
+    tabs,
+    notices,
+    agent: windowAgent.agent,
+    getPlatform: () => frame.platform.value,
+    services: {
+      commands: createWindowCommands(),
+      vaults: createWindowVaults({
+        list: vaults,
+        getTabVault: () => tabs.tab.value?.vault ?? null,
+        openTab: tabs.openTab,
+      }),
+      window: createWindowHost(frame, (error) =>
+        notices.show(WINDOW_SOURCE, formatError(error), 'error'),
+      ),
+    },
+  })
   const loader = createPluginLoader({
     host,
     ...(deps.fetch ? { fetch: deps.fetch } : {}),
     ...(deps.dynamicImport ? { dynamicImport: deps.dynamicImport } : {}),
   })
-  const isLoading = ref(true)
-  const listError = ref('')
-  const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
-  port.open(createServices({ vaults, tab, openTab, notices, frame }))
+  const start = useAppStart(loader)
   const onKeyDown = createWindowKeys({
-    getTab: () => tab.value,
-    getVaults: () => (front.value ? vaults.value : []),
-    openVault: openTab,
+    getTab: () => tabs.tab.value,
+    getVaults: () => (tabs.front.value ? vaults.value : []),
+    openVault: tabs.openTab,
   })
   useWindowTasks(notices)
   useExternalLinks(notices)
   const appearance = useAppearance(notices)
 
-  /**
-   * True once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed since the
-   * window mounted: the window is drawn then.
-   */
-  const isStarted = ref(false)
-  let startTimer: ReturnType<typeof setTimeout> | undefined
-  const onStarted = (): void => {
-    isStarted.value = true
-    clearTimeout(startTimer)
-  }
-
-  onMounted(async () => {
-    window.addEventListener('keydown', onKeyDown)
-    startTimer = setTimeout(onStarted, INTERFACE_WAIT_MS)
-    runInBackground(loader.status.waitForInterface().then(onStarted), () => undefined)
-    try {
-      await loader.trackPlugins((await listPlugins()).map((one) => one.id))
-      await loader.start()
-    } catch (error) {
-      listError.value = formatError(error)
-    } finally {
-      isLoading.value = false
-      onStarted()
-    }
-  })
+  onMounted(() => window.addEventListener('keydown', onKeyDown))
   onUnmounted(() => {
-    clearTimeout(startTimer)
     window.removeEventListener('keydown', onKeyDown)
-    loader.close().catch((error: Caught) => {
-      listError.value = formatError(error)
-    })
     windowAgent.dispose()
   })
 
-  /** Why the window draws no view: the plugins could not be listed, or each one failed to start. */
-  const failures = computed<readonly string[]>(() => [
-    ...(listError.value ? [listError.value] : []),
-    ...loader.status.getFailedPlugins().map((one) => `${one.id}: ${one.error}`),
-  ])
-
-  usePluginStyles(() => (front.value ? [front.value] : []))
+  usePluginStyles(() => (tabs.front.value ? [tabs.front.value] : []))
 
   return {
-    front,
-    tab,
-    openTab,
+    front: tabs.front,
+    tab: tabs.tab,
+    openTab: tabs.openTab,
     vaults: { list: vaults, isListing },
-    plugins: { failures, isLoading, isStarted, titleBarView },
+    plugins: { ...start, titleBarView },
     notices,
     mountView,
     appearance,

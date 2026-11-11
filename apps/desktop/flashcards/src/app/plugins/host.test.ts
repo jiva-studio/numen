@@ -4,8 +4,35 @@ import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-
 import { createMockManifest } from '@numen/core-client/testing'
 import type { AgentHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { TARGET } from '@/shared/lib/window'
-import { createShellHost, createShellPort } from './host'
+import { createNoticeQueue } from '@numen/workbench'
+import { createWindowTabs } from '@/entities/tab'
+import { createShellHost as createHost, type ShellServices } from './host'
 import { createWindowCommands } from './windowCommands'
+
+/** The host over the tabs and notices it registers into, which the tests read. */
+const createShellHost = (
+  agent?: AgentHost,
+  services: Partial<ShellServices> = {},
+  getPlatform?: () => 'windows' | 'darwin',
+) => {
+  const tabs = createWindowTabs()
+  const notices = createNoticeQueue()
+  const host = createHost({
+    tabs,
+    notices,
+    services,
+    ...(agent ? { agent } : {}),
+    ...(getPlatform ? { getPlatform } : {}),
+  })
+  return {
+    ...host,
+    notices,
+    front: tabs.front,
+    tab: tabs.tab,
+    openTab: tabs.openTab,
+    closeTab: tabs.closeTab,
+  }
+}
 
 const NOTHING = { dispose: () => undefined }
 
@@ -45,7 +72,7 @@ describe('createShellHost', () => {
     let platform: 'windows' | 'darwin' = 'windows'
     const { host } = createShellHost(
       undefined,
-      () => ({}),
+      {},
       () => platform,
     )
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
@@ -121,7 +148,7 @@ describe('createShellHost', () => {
       vaults: createMockVaultsHost(),
       window: createMockWindowHost(),
     }
-    const { host } = createShellHost(undefined, () => services)
+    const { host } = createShellHost(undefined, services)
 
     const bar = host.createContext('org.example.ledger', withVault('org.example.ledger'))
     const cards = host.createContext('md.numen.cards', withVault('md.numen.cards'))
@@ -132,24 +159,10 @@ describe('createShellHost', () => {
     expect(cards.ui.commands?.getIds()).toStrictEqual(services.commands.getIds())
   })
 
-  it('gives a plugin the vaults and the window the window offers after the host was made', () => {
-    const port = createShellPort()
-    const { host } = createShellHost(undefined, port.getServices)
-    const vaults = createMockVaultsHost()
-    const window = createMockWindowHost()
-
-    port.open({ commands: createWindowCommands(), vaults, window })
-
-    const ledger = host.createContext('org.example.ledger', withVault('org.example.ledger'))
-    expect(ledger.vault.vaults?.getState()).toStrictEqual(vaults.getState())
-    const tide = host.createContext('org.example.tide', withVault('org.example.tide'))
-    expect(tide.ui.window?.getState()).toStrictEqual(window.getState())
-  })
-
   it('refuses the vaults to a plugin without vault:read and switching to one without vault:manage', async () => {
     const vaults = createMockVaultsHost()
     const switchTo = vi.spyOn(vaults, 'switchTo')
-    const { host } = createShellHost(undefined, () => ({ vaults }))
+    const { host } = createShellHost(undefined, { vaults })
     const noGrants = host.createContext(
       'org.example.bare',
       createMockManifest('org.example.bare', { name: 'Bare' }),
