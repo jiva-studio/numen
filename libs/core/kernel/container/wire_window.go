@@ -32,7 +32,7 @@ type windowWiring struct {
 	state     *editor.State
 	kinds     tabKinds
 	server    *editor.FileServer
-	switching userSwitch
+	switching windowsession.UserSwitch
 	cases     WindowUseCases
 }
 
@@ -117,12 +117,12 @@ func openWindowWith(
 	if err != nil {
 		return nil, errors.Join(err, opening.DB.Close())
 	}
-	built := buildWindow(ctx, c, ports, opening, texts)
-	shareUseCases(opening, built.wiring.cases)
-	if err := startWindow(ctx, built.wiring, first); err != nil {
-		return nil, errors.Join(err, built.closeEmbedder(), opening.DB.Close())
+	window := buildWindow(ctx, c, ports, opening, texts)
+	shareUseCases(opening, window.wiring.cases)
+	if err := startWindow(ctx, window.wiring, first); err != nil {
+		return nil, errors.Join(err, window.closeEmbedder(), opening.DB.Close())
 	}
-	return built.wiring, nil
+	return window.wiring, nil
 }
 
 func shareUseCases(opening WindowOpening, cases WindowUseCases) {
@@ -219,13 +219,17 @@ func newFileServer(a pluginsWiring, state *editor.State, cases WindowUseCases) *
 }
 
 func startWindow(ctx context.Context, w *windowWiring, first domain.Vault) error {
-	mountServices(w)
+	if err := mountServices(w); err != nil {
+		return err
+	}
 	return w.inst.Start(ctx, first, w.server)
 }
 
-func mountServices(w *windowWiring) {
+func mountServices(w *windowWiring) error {
 	mountVault(w)
-	mountWorkspace(w)
+	if err := mountWorkspace(w); err != nil {
+		return err
+	}
 	mountWindowState(w)
 	mountFile(w)
 	mountNote(w)
@@ -238,6 +242,7 @@ func mountServices(w *windowWiring) {
 	mountText(w)
 	mountPlugin(w)
 	mountCatalog(w)
+	return nil
 }
 
 func windowView(state *editor.State) windowsession.View {

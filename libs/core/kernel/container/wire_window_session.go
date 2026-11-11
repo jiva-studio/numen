@@ -43,17 +43,7 @@ type windowTools struct {
 type windowSession struct {
 	cases      windowCases
 	tools      windowTools
-	userSwitch userSwitch
-}
-
-// userSwitch shows a vault as a person asks for it.
-type userSwitch struct {
-	switching windowsession.VaultSwitch
-}
-
-// ShowVault shows v in the window and points the plugins at it.
-func (u userSwitch) ShowVault(ctx context.Context, v domain.Vault) error {
-	return u.switching.Execute(ctx, v, nil)
+	userSwitch windowsession.UserSwitch
 }
 
 func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
@@ -90,6 +80,6 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 		},
-		userSwitch: userSwitch{switching: switching},
+		userSwitch: windowsession.NewUserSwitch(switching),
 	}
 }
