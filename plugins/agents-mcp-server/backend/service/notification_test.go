@@ -47,7 +47,7 @@ func (f *fakeToolClient) InvokeTool(_ context.Context, call tools.Call) (*tools.
 		},
 	}, nil
 }
-func connectInMemory(t *testing.T, srv *Server, opts *sdk.ClientOptions) *sdk.ClientSession {
+func connectInMemory(t *testing.T, srv *testServer, opts *sdk.ClientOptions) *sdk.ClientSession {
 	t.Helper()
 	serverSide, clientSide := sdk.NewInMemoryTransports()
 	if _, err := srv.GetMCPServer().Connect(t.Context(), serverSide, nil); err != nil {
@@ -65,7 +65,7 @@ func connectInMemory(t *testing.T, srv *Server, opts *sdk.ClientOptions) *sdk.Cl
 // 10ms after the last change of the tools.
 const listChangedDelay = 500 * time.Millisecond
 
-func connectCountingNotifications(t *testing.T, srv *Server) (*sdk.ClientSession, <-chan struct{}) {
+func connectCountingNotifications(t *testing.T, srv *testServer) (*sdk.ClientSession, <-chan struct{}) {
 	t.Helper()
 	notifications := make(chan struct{}, 64)
 	opts := &sdk.ClientOptions{

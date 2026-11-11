@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
@@ -15,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/model"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/proofread"
 )
 
@@ -40,7 +40,7 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	complete := model.Completer(ai.Complete)
-	if model.IsMockEnabled(os.Getenv(model.EnvMockML)) {
+	if model.IsMockSelected() {
 		complete = model.CompleteMock
 	}
 	return mount(s, openHostAt(endpoint), complete, nil)
@@ -76,22 +76,22 @@ func mount(s *server.Server, h proofread.Host, complete model.Completer, vars ma
 	if h.Store == nil || h.Texts == nil || h.Queue == nil {
 		return errIncompleteHost
 	}
-	current := newSettings()
+	current := settings.NewStore()
 	if len(vars) > 0 {
-		current.updateConfig(vars, nil)
+		current.Update(vars, nil)
 	}
 	run := newProofreading(h, complete, current)
 	commands, err := newCommands(run)
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(current.updateConfig)
+	s.SetUpdateConfig(current.Update)
 	command.Mount(s, commands)
 	return nil
 }
 
-func newProofreading(h proofread.Host, complete model.Completer, current *settings) *proofread.Proofreading {
-	return proofread.New(h, proofread.GetProofreadKinds(), model.NewAsk(complete, current.getEndpoint), current.getRunConfig)
+func newProofreading(h proofread.Host, complete model.Completer, current *settings.Store) *proofread.Proofreading {
+	return proofread.New(h, proofread.GetProofreadKinds(), model.NewAsk(complete, current.GetEndpoint), current.GetRunConfig)
 }
 
 func newCommands(run *proofread.Proofreading) (*command.Registry, error) {

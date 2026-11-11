@@ -32,9 +32,9 @@ type RangeError struct {
 func (e *RangeError) Error() string { return e.Message }
 
 // GetHighlights places each range of the file's live text version on the pages and returns the
-// boxes of each range, in the order of the ranges. A file with no live version, or a version
-// without places, has no boxes.
-func (r *Reader) GetHighlights(ctx context.Context, vault domain.VaultID, path string, ranges []domain.ByteRange) ([][]pdf.HighlightBox, error) {
+// places of each range, in the order of the ranges. A file with no live version, or a version
+// without places, has no places.
+func (r *Reader) GetHighlights(ctx context.Context, vault domain.VaultID, path string, ranges []domain.ByteRange) ([][]Place, error) {
 	if _, err := r.files(vault).StatFile(ctx, path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
 		return nil, err
 	}
@@ -46,9 +46,9 @@ func (r *Reader) GetHighlights(ctx context.Context, vault domain.VaultID, path s
 	if err != nil {
 		return nil, fmt.Errorf("%w %s: %w", ErrText, path, err)
 	}
-	out := make([][]pdf.HighlightBox, 0, len(ranges))
+	out := make([][]Place, 0, len(ranges))
 	for _, run := range ranges {
-		out = append(out, textlayer.GetBoxes(text, pdf.ByteRange{Start: run.Start, End: run.End}))
+		out = append(out, GetPlaces(textlayer.GetBoxes(text, pdf.ByteRange{Start: run.Start, End: run.End})))
 	}
 	return out, nil
 }

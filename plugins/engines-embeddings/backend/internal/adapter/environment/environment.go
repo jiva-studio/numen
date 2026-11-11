@@ -7,24 +7,16 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
-// Overrides is what the variables set; a field that is empty or zero is not set.
-type Overrides struct {
-	Model      string
-	Repository string
-	Dir        string
-	File       string
-	Pooling    string
-	Runtime    string
-	Dimensions int
-	MaxTokens  int
-	Threads    int
-}
+// Variables are the variables of the process environment, read as they are when asked.
+type Variables struct{}
 
-// GetOverrides reads the variables as they are now.
-func GetOverrides() Overrides {
-	return Overrides{
+// GetOverrides returns what the variables set for the model and the runtime.
+func (Variables) GetOverrides() engine.Overrides {
+	return engine.Overrides{
 		Model:      os.Getenv("NUMEN_EMBEDDING_MODEL"),
 		Repository: os.Getenv("NUMEN_EMBEDDING_REPO"),
 		Dir:        os.Getenv("NUMEN_EMBEDDING_DIR"),
@@ -38,7 +30,7 @@ func GetOverrides() Overrides {
 }
 
 // GetServiceURL is the address of the embedding service that variable names.
-func GetServiceURL() string {
+func (Variables) GetServiceURL() string {
 	return os.Getenv("NUMEN_EMBEDDING_URL")
 }
 
@@ -70,19 +62,19 @@ const (
 )
 
 // IsMockModel returns whether the variables ask for the mock model.
-func IsMockModel() bool {
+func (Variables) IsMockModel() bool {
 	return os.Getenv(envMockModel) == "true"
 }
 
 // GetMockLogPath is the file the mock model appends the texts it is given to; it is empty when the
 // variable is not set.
-func GetMockLogPath() string {
+func (Variables) GetMockLogPath() string {
 	return os.Getenv(envMockLog)
 }
 
 // WaitMockOpenHold waits as long as the variable names, as a model that is still downloading. It
 // ends early with the error of ctx.
-func WaitMockOpenHold(ctx context.Context) error {
+func (Variables) WaitMockOpenHold(ctx context.Context) error {
 	// gomutants:disable-next-line INVERT_LOGICAL,EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="0ms timeout completes immediately without blocking"
 	held, err := strconv.Atoi(os.Getenv(envMockOpenHold))
 	if err != nil || held <= 0 {
