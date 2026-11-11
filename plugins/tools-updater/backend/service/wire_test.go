@@ -102,7 +102,6 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	}
 }
 
-
 func TestACheckOfAnUnknownBuildIsAnInvalidArgument(t *testing.T) {
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, &fakeFetcher{manifest: newManifest()})
