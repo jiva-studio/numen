@@ -43,12 +43,6 @@ func NewAssignCardIDs(
 	}
 }
 
-// WithIndex returns a copy of AssignCardIDs with the given index function.
-func (u AssignCardIDs) WithIndex(index func(ctx context.Context, v domain.Vault, paths []string) error) AssignCardIDs {
-	u.index = index
-	return u
-}
-
 // AssignCardIDsResult is what the assigning of card ids came to: the decks it could not write.
 type AssignCardIDsResult struct {
 	Unwritten []string

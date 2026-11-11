@@ -7,11 +7,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/scenarios"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/vaultcount"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
@@ -21,14 +21,13 @@ import (
 
 // reviewHandler serves the review window.
 type reviewHandler struct {
-	vaults       func(domain.VaultID) hostports.Vault
+	vaults       func(domain.VaultID) ports.HostVault
 	getVault     func(context.Context, string) (domain.Vault, error)
 	newTitler    func(context.Context, domain.Vault) func(string) string
 	now          ports.Clock
 	runs         *sessions.Registry
-	flash        func() *flashcards.Scenarios
-	day          func() *review.Day
-	neighborhood func() *neighborhood.Show
+	flash        func() *scenarios.Review
+	neighborhood neighborhood.Show
 }
 
 func (b *Backend) newReviewHandler() *reviewHandler {
@@ -38,9 +37,8 @@ func (b *Backend) newReviewHandler() *reviewHandler {
 		newTitler:    b.newTitler,
 		now:          b.now,
 		runs:         b.runs,
-		flash:        func() *flashcards.Scenarios { return &b.scenarios().Flash },
-		day:          func() *review.Day { return &b.scenarios().Day },
-		neighborhood: func() *neighborhood.Show { return &b.scenarios().Neighborhood },
+		flash:        b.flash.Get,
+		neighborhood: neighborhood.NewShow(note.NewShowLinks(b.ports.Links), b.ports.Notes, note.NewRead(b.ports.Readers)),
 	}
 }
 
@@ -54,7 +52,7 @@ func (h *reviewHandler) WatchCardsDue(
 		return apierror.NewInternal(err)
 	}
 	sendVaults := func() error {
-		return send(reviewwire.NewVaultsResponse(recognized, h.day().GetName(h.now.Now())))
+		return send(reviewwire.NewVaultsResponse(recognized, h.flash().Day.GetName(h.now.Now())))
 	}
 	return vaultcount.Watch(ctx, recognized, h.countVault,
 		func(one *api.VaultCardsDue) error {
@@ -64,7 +62,7 @@ func (h *reviewHandler) WatchCardsDue(
 }
 
 func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.VaultCardsDue {
-	counted := vaultcount.Count(ctx, h.vaults(v.ID).Index, h.flash().CardsDue, v)
+	counted := vaultcount.Count(ctx, h.vaults(v.ID).Index, h.flash().Counts.CardsDue, v)
 	return reviewwire.NewVaultCardsDue(counted, h.newTitler(ctx, v))
 }
 
@@ -76,11 +74,11 @@ func (h *reviewHandler) StartSession(ctx context.Context, req *api.StartSessionR
 		return nil, err
 	}
 	flash := h.flash()
-	session, err := flash.Session.Execute(ctx, v, reviewwire.NewScope(req))
+	session, err := flash.Reviews.Session.Execute(ctx, v, reviewwire.NewScope(req))
 	if err != nil {
 		return nil, reviewwire.NewSessionError(err)
 	}
-	run, err := h.runs.Open(ctx, flash.Log, v, h.now.Now())
+	run, err := h.runs.Open(ctx, flash.Reviews.Log, v, h.now.Now())
 	if err != nil {
 		return nil, apierror.NewInternal(err)
 	}
@@ -92,7 +90,7 @@ func (h *reviewHandler) RecordReview(ctx context.Context, req *api.RecordReviewR
 	if err != nil {
 		return nil, err
 	}
-	answer, err := h.runs.RecordAnswer(ctx, h.flash().Record, sessions.AnswerRequest{
+	answer, err := h.runs.RecordAnswer(ctx, h.flash().Reviews.Record, sessions.AnswerRequest{
 		Vault:    v.ID,
 		Run:      req.Run,
 		Card:     review.CardID{Card: req.CardID, Template: req.Template},
@@ -110,7 +108,7 @@ func (h *reviewHandler) UndoReview(ctx context.Context, req *api.UndoReviewReque
 	if err != nil {
 		return nil, err
 	}
-	if err := h.runs.UndoAnswer(ctx, h.flash().Record, v.ID, req.Run, req.Answer); err != nil {
+	if err := h.runs.UndoAnswer(ctx, h.flash().Reviews.Record, v.ID, req.Run, req.Answer); err != nil {
 		return nil, reviewwire.NewUndoError(err)
 	}
 	return &api.UndoReviewResponse{}, nil
@@ -123,7 +121,7 @@ func (h *reviewHandler) GetVaultDeckPreset(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Presets.GetForDeck(ctx, v, req.Deck)
+	found, err := h.flash().Schedules.Presets.GetForDeck(ctx, v, req.Deck)
 	return presetwire.NewVaultDeckPresetResponse(found, err, h.newTitler(ctx, v))
 }
 
@@ -132,7 +130,7 @@ func (h *reviewHandler) ListReviewDays(ctx context.Context, req *api.ListReviewD
 	if err != nil {
 		return nil, err
 	}
-	counts, err := h.flash().GetReviewDays.Execute(ctx, v, req.From, req.To)
+	counts, err := h.flash().Counts.GetReviewDays.Execute(ctx, v, req.From, req.To)
 	return reviewwire.NewDaysResponse(counts, err)
 }
 
@@ -145,7 +143,7 @@ func (h *reviewHandler) GetDeckNeighborhood(
 	if err != nil {
 		return nil, err
 	}
-	joined, err := h.neighborhood().Execute(ctx, v, req.Deck)
+	joined, err := h.neighborhood.Execute(ctx, v, req.Deck)
 	return reviewwire.NewNeighborhoodResponse(joined, err)
 }
 
@@ -153,7 +151,7 @@ func (h *reviewHandler) WatchReloads(
 	ctx context.Context, _ *api.WatchReloadsRequest, send func(*api.WatchReloadsResponse) error,
 ) error {
 	err := reloads.WatchTicks(ctx, h.vaults("").Index,
-		func() { h.flash().ReviewCards.InvalidateAll() },
+		func() { h.flash().Reviews.ReviewCards.InvalidateAll() },
 		func(reload bool) error { return send(&api.WatchReloadsResponse{Reload: reload}) })
 	return reviewwire.NewWatchError(err)
 }

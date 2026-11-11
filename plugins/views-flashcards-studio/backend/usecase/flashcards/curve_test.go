@@ -1345,7 +1345,7 @@ func (r closingReader) Read(ctx context.Context, path string) ([]byte, error) {
 // A deck that could not be read contributes no review card, and a request that
 // was canceled read none of them. A curve over no cards is not the answer to
 // what the preset holds.
-func TestProjectCurve_ErrorsOnCancelledContext(t *testing.T) {
+func TestProjectCurve_ErrorsOnCanceledContext(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 30)
 	ctx, cancel := context.WithCancel(t.Context())

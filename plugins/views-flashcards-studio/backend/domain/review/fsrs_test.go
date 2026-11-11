@@ -21,13 +21,13 @@ func TestTheBetterACardWasRecalledTheLongerItIsLeft(t *testing.T) {
 
 	// A card already in review, so the four ratings are distinguished by their effect
 	// on a scheduled card and not by the first learning steps.
-	learnt := delta.Next(delta.Next(review.Schedule{}, when, review.Good),
+	learned := delta.Next(delta.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
-	later := learnt.Due
+	later := learned.Due
 
 	var last time.Time
 	for _, r := range []review.Rating{review.Again, review.Hard, review.Good, review.Easy} {
-		due := delta.Next(learnt, later, r).Due
+		due := delta.Next(learned, later, r).Due
 		if !due.After(last) {
 			t.Errorf("%v is due %v, which is no later than the answer before it at %v", r, due, last)
 		}
@@ -40,18 +40,18 @@ func TestACardThatWasNotRecalledIsALapse(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime(t, "2026-08-29T09:00:00Z")
 
-	learnt := delta.Next(delta.Next(review.Schedule{}, when, review.Good),
+	learned := delta.Next(delta.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
-	if learnt.Lapses != 0 {
-		t.Fatalf("a card answered well twice has %d lapses", learnt.Lapses)
+	if learned.Lapses != 0 {
+		t.Fatalf("a card answered well twice has %d lapses", learned.Lapses)
 	}
 
-	cleared := delta.Next(learnt, learnt.Due, review.Again)
+	cleared := delta.Next(learned, learned.Due, review.Again)
 	if cleared.Lapses != 1 {
 		t.Errorf("a card that did not come back has %d lapses, want 1", cleared.Lapses)
 	}
-	if cleared.Reps != learnt.Reps+1 {
-		t.Errorf("answers counted %d, want %d", cleared.Reps, learnt.Reps+1)
+	if cleared.Reps != learned.Reps+1 {
+		t.Errorf("answers counted %d, want %d", cleared.Reps, learned.Reps+1)
 	}
 }
 

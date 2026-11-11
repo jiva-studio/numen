@@ -70,7 +70,7 @@ func (t *Tools) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutcome
 	var added deckedit.AddedCard
 	content, err := t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 		var err error
-		added, err = t.deckedit.AddCard.Execute(ctx, v, pos, in.CardModel, values(in.Values), in.SectionIndex)
+		added, err = t.deckCards.AddCard.Execute(ctx, v, pos, in.CardModel, values(in.Values), in.SectionIndex)
 		return added.EditResult, err
 	})
 	if err != nil {
@@ -110,7 +110,7 @@ func (t *Tools) writeCardEdit(ctx context.Context, in cardEditInput) (WriteOutco
 		return WriteOutcome{}, err
 	}
 	return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-		return t.deckedit.EditCard.Execute(ctx, v, pos, in.CardID, in.CardModel, values(in.Values))
+		return t.deckCards.EditCard.Execute(ctx, v, pos, in.CardID, in.CardModel, values(in.Values))
 	})
 }
 
@@ -135,7 +135,7 @@ func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardValueRemoveInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-			return t.deckedit.RemoveCardValue.Execute(ctx, v, pos, in.CardID, in.Field)
+			return t.deckCards.RemoveCardValue.Execute(ctx, v, pos, in.CardID, in.Field)
 		})
 	})
 }
@@ -159,7 +159,7 @@ func (t *Tools) addCardRemove(registry *tools.Registry) error {
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardRemoveInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-			return t.deckedit.RemoveCard.Execute(ctx, v, pos, in.CardID)
+			return t.deckCards.RemoveCard.Execute(ctx, v, pos, in.CardID)
 		})
 	})
 }
@@ -182,7 +182,7 @@ func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionAddInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-			return t.deckedit.AddSection.Execute(ctx, v, pos, in.Name)
+			return t.deckSections.AddSection.Execute(ctx, v, pos, in.Name)
 		})
 	})
 }
@@ -206,7 +206,7 @@ func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionRenameInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-			return t.deckedit.RenameSection.Execute(ctx, v, pos, in.SectionIndex, in.Name)
+			return t.deckSections.RenameSection.Execute(ctx, v, pos, in.SectionIndex, in.Name)
 		})
 	})
 }
@@ -230,7 +230,7 @@ func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionRemoveInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-			return t.deckedit.RemoveSection.Execute(ctx, v, pos, in.SectionIndex)
+			return t.deckSections.RemoveSection.Execute(ctx, v, pos, in.SectionIndex)
 		})
 	})
 }

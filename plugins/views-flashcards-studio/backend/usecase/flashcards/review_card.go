@@ -64,13 +64,6 @@ func NewListReviewCards(
 	return ListReviewCards{readers: readers, notes: notes, links: links, cache: newCardCache(), Cores: 0, MaxCards: 0}
 }
 
-// WithReaders returns a copy of ListReviewCards with the given VaultReaders.
-func (u ListReviewCards) WithReaders(readers ports.VaultReaders) ListReviewCards {
-	u.readers = readers
-	u.cache = newCardCache()
-	return u
-}
-
 // ErrNotCarried is what a vault the index does not carry gets. It is the signal
 // to read that vault, and a window holding one reads it.
 var ErrNotCarried = errors.New("the index does not contain this vault yet")
@@ -227,7 +220,10 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 	}
 	// A card whose card model is not one is a card no review card shows. It is a problem
 	// against the deck, and it is settled in a window.
-	out := cardModelRead{cardModel: format.CardModel{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Fields: nil, Preamble: "", Tail: "", Templates: nil, Problems: nil}, stat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, isWhole: false}
+	out := cardModelRead{
+		cardModel: format.CardModel{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Fields: nil, Preamble: "", Tail: "", Templates: nil, Problems: nil},
+		stat:      domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, isWhole: false,
+	}
 	one, err := m.read.CardModel(ctx, v, path)
 	if err == nil && one.Outcome == note.Ok && one.Type == format.TypeCardModel {
 		out = cardModelRead{cardModel: one.Body, stat: one.FileStat, isWhole: true}

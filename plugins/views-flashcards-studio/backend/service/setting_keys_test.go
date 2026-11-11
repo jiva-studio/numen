@@ -19,7 +19,7 @@ func newConfiguredBackend(t *testing.T, values map[string]string) *Backend {
 func TestDayStartIsReadFromTheCamelCaseKey(t *testing.T) {
 	b := newConfiguredBackend(t, map[string]string{"dayStartTime": "06:30"})
 
-	if got, want := b.scenarios().Day.Starts, 6*time.Hour+30*time.Minute; got != want {
+	if got, want := b.flash.Get().Day.Starts, 6*time.Hour+30*time.Minute; got != want {
 		t.Errorf("day starts %v past midnight, want %v", got, want)
 	}
 }
@@ -27,7 +27,7 @@ func TestDayStartIsReadFromTheCamelCaseKey(t *testing.T) {
 func TestDayStartIsNotReadFromTheSnakeCaseKey(t *testing.T) {
 	b := newConfiguredBackend(t, map[string]string{"day_start_time": "06:30"})
 
-	if got := b.scenarios().Day.Starts; got != review.DayStartTime {
+	if got := b.flash.Get().Day.Starts; got != review.DayStartTime {
 		t.Errorf("day starts %v past midnight, want the default %v", got, review.DayStartTime)
 	}
 }

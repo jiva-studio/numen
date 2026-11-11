@@ -1,100 +1,54 @@
-// Package scenarios builds everything the plugin does to the cards of a vault, from the ports the
-// host answers and the settings in force.
+// Package scenarios holds the review scenarios in force. The settings can change the day a review
+// begins, and the scenarios are built again for it.
 package scenarios
 
 import (
-	"context"
 	"runtime"
+	"sync/atomic"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
-// The names the schedules and the days counted are kept under in the cache the host holds.
-const (
-	schedulesCache = "schedules"
-	daysCache      = "days"
-)
-
-// Inputs is what the scenarios are built against. Index brings the notes a window wrote up to date
-// in the index, which is the host's.
-type Inputs struct {
-	Readers    ports.VaultReaders
-	Writers    ports.VaultWriters
-	Notes      flashcards.Notes
-	Types      ports.NoteTypeQueries
-	CardModels cards.CardModelQueries
-	Links      ports.LinkQueries
-	Problems   ports.ProblemQueries
-	Logs       ports.LogStores
-	Schedules  func(name string) ports.ScheduleStore
-	Report     func(what string, err error)
-	Index      func(ctx context.Context, v domain.Vault, paths []string) error
-	DayStart   func() time.Duration
-	Now        ports.Clock
-	Cores      int
-	Scheduler  ports.ScheduleAlgorithm
+// Review is everything the plugin does for a session of review, built for one day start.
+type Review struct {
+	Reviews   flashcards.ReviewScenarios
+	Schedules flashcards.ScheduleScenarios
+	Counts    flashcards.CountScenarios
+	Day       review.Day
 }
 
-// Scenarios is everything the plugin does to the cards of a vault.
-type Scenarios struct {
-	Cards        cards.Scenarios
-	DeckEdit     deckedit.Scenarios
-	Flash        flashcards.Scenarios
-	Day          review.Day
-	Neighborhood neighborhood.Show
+// Current holds the review scenarios in force. Calls already running finish under the scenarios they
+// began under.
+type Current struct {
+	config flashcards.Config
+	active atomic.Pointer[Review]
 }
 
-// New builds the scenarios. A count of cores that is not positive is the cores the process may use.
-func New(in Inputs) *Scenarios {
-	cores := in.Cores
-	if cores <= 0 {
+// NewCurrent builds the review scenarios from the config and holds them. A count of cores that is not
+// positive is the cores the process may use.
+func NewCurrent(cfg flashcards.Config) *Current {
+	if cfg.Cores <= 0 {
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Any non-positive argument queries GOMAXPROCS without changing it."
-		cores = runtime.GOMAXPROCS(0)
+		cfg.Cores = runtime.GOMAXPROCS(0)
 	}
-	read := cards.NewRead(in.Readers, in.Links)
-	write := cards.NewWrite(in.Readers, in.Writers, in.Links, in.Index, in.Now)
-	set := cards.Scenarios{
-		Read:        read,
-		List:        cards.NewList(in.Readers, in.CardModels),
-		Write:       write,
-		Create:      cards.NewCreate(in.Writers, in.Index, in.Now),
-		RenameField: cards.NewRenameField(in.Readers, in.Writers, in.Notes, in.Links, in.Index, in.Now),
-		BoundedRenameField: cards.NewRenameField(
-			in.Readers, in.Writers, in.Notes, in.Links, in.Index, in.Now).WithMaxDecks(cards.MaxDecksPerRename),
-	}
-	running := flashcards.NewScenarios(flashcards.Config{
-		Readers:   in.Readers,
-		Writers:   in.Writers,
-		Notes:     in.Notes,
-		Links:     in.Links,
-		Problems:  in.Problems,
-		Index:     in.Index,
-		Logs:      in.Logs,
-		Schedules: in.Schedules(schedulesCache),
-		DayCounts: in.Schedules(daysCache),
-		Report:    in.Report,
-		DayStart:  in.DayStart,
-		Now:       in.Now,
-		Cores:     cores,
-		Scheduler: in.Scheduler,
-	})
-	return &Scenarios{
-		Cards: set, DeckEdit: deckedit.NewScenarios(read, write), Flash: running, Day: running.Day,
-		Neighborhood: neighborhood.NewShow(
-			note.NewShowLinks(in.Links),
-			struct {
-				ports.NoteRefQueries
-				ports.NoteTypeQueries
-			}{in.Notes, in.Types},
-			note.NewRead(in.Readers),
-		),
-	}
+	c := &Current{config: cfg, active: atomic.Pointer[Review]{}}
+	c.active.Store(build(cfg))
+	return c
+}
+
+// Get returns the review scenarios in force.
+func (c *Current) Get() *Review { return c.active.Load() }
+
+// SetDayStart builds the review scenarios again with the time past midnight at which a day of review begins.
+func (c *Current) SetDayStart(starts time.Duration) {
+	cfg := c.config
+	cfg.Day = review.Day{Starts: starts, In: nil}
+	c.active.Store(build(cfg))
+}
+
+func build(cfg flashcards.Config) *Review {
+	reviews, schedules, counts := flashcards.NewScenarios(cfg)
+	return &Review{Reviews: reviews, Schedules: schedules, Counts: counts, Day: cfg.Day}
 }

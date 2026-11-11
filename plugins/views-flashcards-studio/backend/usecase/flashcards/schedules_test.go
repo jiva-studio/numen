@@ -93,7 +93,7 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 
 // The cache is written in one order whatever order the schedules were worked
 // out in, so two machines that answered the same cards hold the same file and a
-// synchroniser has nothing to reconcile.
+// synchronizer has nothing to reconcile.
 func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
@@ -490,14 +490,13 @@ func (m *mockAlgorithm) CreateScheduler(retention float64) review.Scheduler {
 
 func TestScheduleAlgorithmPluggable(t *testing.T) {
 	algo := &mockAlgorithm{}
-	scenarios := flashcards.NewScenarios(flashcards.Config{
+	flashcards.NewScenarios(flashcards.Config{
 		Scheduler: algo,
 	})
 
 	if len(algo.calledWith) == 0 {
 		t.Fatal("expected scheduler algorithm CreateScheduler to be called")
 	}
-	_ = scenarios
 }
 
 // A warm request over a vault of two hundred cards answered over thirty days.

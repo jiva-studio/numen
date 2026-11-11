@@ -99,7 +99,7 @@ func (t *Tools) renameCardField(ctx context.Context, in fieldRenameInput) (field
 	if err != nil {
 		return fieldRenameOutput{}, err
 	}
-	renamed, err := t.cards.BoundedRenameField.Execute(ctx, v, cards.Rename{
+	renamed, err := t.bounded.Execute(ctx, v, cards.Rename{
 		CardModel: in.Path, From: in.From, To: in.To, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
 	})
 	if err != nil {

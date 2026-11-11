@@ -295,7 +295,7 @@ func TestAMarkSavedThroughTheAppIsActiveInTheNextRequest(t *testing.T) {
 	}
 	s := openVault(t, notes)
 	reviewCards := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
-	assigning := s.assigning.WithIndex(func(ctx context.Context, v domain.Vault, paths []string) error {
+	assigning := s.newAssigning(func(ctx context.Context, v domain.Vault, paths []string) error {
 		reviewCards.Invalidate(v.ID, paths...)
 		return s.scan(ctx, v, paths)
 	})
@@ -987,7 +987,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	}
 }
 
-// One identifier is one answer, however many files carry it. A synchroniser
+// One identifier is one answer, however many files carry it. A synchronizer
 // that meets a conflict leaves a second copy of a run next to the first, and the
 // day counts the answer once.
 func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
@@ -1320,7 +1320,7 @@ func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 func TestADeckSavedWithNoIndexUpdateIsNotNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getHandwritten())
-	assigning := s.assigning.WithIndex(busy)
+	assigning := s.newAssigning(busy)
 
 	assigned, err := assigning.Execute(t.Context(), s.vault)
 	if err != nil {

@@ -2,12 +2,36 @@ package api
 
 // GetErrorCodeValues returns every ErrorCode except the unspecified value.
 func GetErrorCodeValues() []ErrorCode {
-	return []ErrorCode{ErrorCodeNotFound, ErrorCodeNotANote, ErrorCodeNotText, ErrorCodeTooLarge, ErrorCodeBodyUnwritable, ErrorCodeUnreadable, ErrorCodeAlreadyExists, ErrorCodeInvalidName, ErrorCodeNotACardModel, ErrorCodeNotADeck, ErrorCodeDeckTooLarge, ErrorCodeNotAPreset, ErrorCodeConflict}
+	return []ErrorCode{
+		ErrorCodeNotFound,
+		ErrorCodeNotANote,
+		ErrorCodeNotText,
+		ErrorCodeTooLarge,
+		ErrorCodeBodyUnwritable,
+		ErrorCodeUnreadable,
+		ErrorCodeAlreadyExists,
+		ErrorCodeInvalidName,
+		ErrorCodeNotACardModel,
+		ErrorCodeNotADeck,
+		ErrorCodeDeckTooLarge,
+		ErrorCodeNotAPreset,
+		ErrorCodeConflict,
+	}
 }
 
 // GetProblemKindValues returns every ProblemKind except the unspecified value.
 func GetProblemKindValues() []ProblemKind {
-	return []ProblemKind{ProblemKindFieldDeclaredTwice, ProblemKindCardModelWithoutFields, ProblemKindTemplateMissingASide, ProblemKindPlaceholderUndeclared, ProblemKindCardWithoutACardModel, ProblemKindCardModelIsNotOne, ProblemKindFieldWrittenTwice, ProblemKindFieldNotRenamed, ProblemKindCardIDCarriedTwice}
+	return []ProblemKind{
+		ProblemKindFieldDeclaredTwice,
+		ProblemKindCardModelWithoutFields,
+		ProblemKindTemplateMissingASide,
+		ProblemKindPlaceholderUndeclared,
+		ProblemKindCardWithoutACardModel,
+		ProblemKindCardModelIsNotOne,
+		ProblemKindFieldWrittenTwice,
+		ProblemKindFieldNotRenamed,
+		ProblemKindCardIDCarriedTwice,
+	}
 }
 
 // GetGoalValues returns every Goal except the unspecified value.

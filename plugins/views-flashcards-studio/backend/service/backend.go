@@ -5,12 +5,14 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/scenarios"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
@@ -18,9 +20,8 @@ import (
 
 // Config is what the backend is made from.
 type Config struct {
-	Vaults    func(domain.VaultID) hostports.Vault
-	Store     func(domain.VaultID) hostports.Folder
-	DayStart  func() time.Duration
+	Vaults    func(domain.VaultID) ports.HostVault
+	Store     func(domain.VaultID) ports.HostFolder
 	Now       ports.Clock
 	Cores     int
 	Scheduler ports.ScheduleAlgorithm
@@ -28,36 +29,26 @@ type Config struct {
 
 // Backend answers the cards, the presets and the review.
 type Backend struct {
-	vaults func(domain.VaultID) hostports.Vault
+	vaults func(domain.VaultID) ports.HostVault
 	ports  hostports.Ports
 	now    ports.Clock
 	cfg    Config
 	runs   *sessions.Registry
-
-	current *scenarios.Current
+	flash  *scenarios.Current
 }
-
-func (b *Backend) scenarios() *scenarios.Scenarios { return b.current.Get() }
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
 	b := &Backend{
 		vaults: cfg.Vaults, ports: hostports.New(cfg.Vaults, cfg.Store), now: cfg.Now, cfg: cfg,
-		runs: sessions.NewRegistry(), current: nil,
+		runs: sessions.NewRegistry(), flash: nil,
 	}
-	b.current = scenarios.NewCurrent(b.getInputs(cfg.DayStart))
+	b.flash = scenarios.NewCurrent(b.getFlashConfig())
 	return b
 }
 
-func (b *Backend) getInputs(dayStart func() time.Duration) scenarios.Inputs {
-	return scenarios.Inputs{
-		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, Types: b.ports.Notes, CardModels: b.ports.Notes, Links: b.ports.Links,
-		Problems: b.ports.Problems, Logs: b.ports.Logs, Schedules: b.ports.Schedules, Report: hostclient.ReportError,
-		Index: func(ctx context.Context, v domain.Vault, paths []string) error {
-			return b.vaults(v.ID).Index.Scan(ctx, paths)
-		},
-		DayStart: dayStart, Now: b.now, Cores: b.cfg.Cores, Scheduler: b.cfg.Scheduler,
-	}
+func (b *Backend) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
+	return b.vaults(v.ID).Index.Scan(ctx, paths)
 }
 
 func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
@@ -89,4 +80,22 @@ func (b *Backend) getTitle(ctx context.Context, v domain.Vault, path string) str
 
 func (b *Backend) newTitler(ctx context.Context, v domain.Vault) func(path string) string {
 	return func(path string) string { return b.getTitle(ctx, v, path) }
+}
+
+// getFlashConfig is what the review is built over; the host's cache keeps the schedules and the days counted.
+func (b *Backend) getFlashConfig() flashcards.Config {
+	return flashcards.Config{
+		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, Links: b.ports.Links,
+		Problems: b.ports.Problems, Index: b.updateIndex, Logs: b.ports.Logs,
+		Schedules: b.ports.Schedules("schedules"), DayCounts: b.ports.Schedules("days"),
+		Report: hostclient.ReportError, Day: review.Day{Starts: 0, In: nil}, Now: b.now, Cores: b.cfg.Cores,
+		Scheduler: b.cfg.Scheduler,
+	}
+}
+
+func (b *Backend) getCardsConfig() cards.Config {
+	return cards.Config{
+		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, CardModels: b.ports.Notes, Links: b.ports.Links,
+		Index: b.updateIndex, Now: b.now,
+	}
 }

@@ -38,12 +38,6 @@ func NewWrite(
 	return Write{readers: readers, writers: writers, links: links, index: index, now: now}
 }
 
-// WithIndex replaces the index function.
-func (u Write) WithIndex(index note.IndexUpdater) Write {
-	u.index = index
-	return u
-}
-
 // WriteResult is the file stat of a written deck, which is what the caller presents at its next write,
 // and the card id every card that carried none was given.
 type WriteResult struct {
