@@ -300,7 +300,7 @@ func TestAChangedLimitAppliesToTheNextQuestions(t *testing.T) {
 	block := newBlocker()
 	config := completion.Config{Default: completion.Route{Concurrency: 1}}
 	blocked := &programs{answer: block.answer}
-	router, err := completion.NewRouter(func() completion.Config { return config }, blocked, agentcase.NewAnswer(blocked))
+	router := completion.NewRouter(func() completion.Config { return config }, blocked, agentcase.NewAnswer(blocked))
 	var wg sync.WaitGroup
 	// One question holds the only place under the limit of one.
 	wg.Go(func() {

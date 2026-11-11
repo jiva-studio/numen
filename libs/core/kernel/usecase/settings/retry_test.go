@@ -11,7 +11,7 @@ import (
 
 func TestARetryPluginPassesTheIdToTheRetrier(t *testing.T) {
 	var got string
-	retry, err := settings.NewRetryPlugin(func(_ context.Context, id string) (*plugin.Failure, error) {
+	retry := settings.NewRetryPlugin(func(_ context.Context, id string) (*plugin.Failure, error) {
 		got = id
 		return &plugin.Failure{PluginID: id}, nil
 	})

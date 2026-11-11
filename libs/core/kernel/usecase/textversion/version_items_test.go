@@ -202,6 +202,9 @@ func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing
 	s.runEntry(t, ocr)
 
 	items, err := menu.ListVersionItems(t.Context(), s.vault, scanPath, deleteText)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(items) != 2 {
 		t.Fatalf("the handler offers %+v, want the versions of both plugins", items)
 	}
