@@ -86,7 +86,7 @@ func (u ListItems) newList(versions []text.VersionItem, err error) ItemList {
 	}
 	items := make([]Item, 0, len(versions))
 	for _, one := range versions {
-		parts := getParts(u.list.commands, one.PluginID)
+		parts := u.list.commands.GetParts(one.PluginID)
 		items = append(items, Item{ID: string(one.Version), Title: getVersionTitle(one, parts), Detail: getVersionDetail(one, parts)})
 	}
 	return ItemList{Items: items}

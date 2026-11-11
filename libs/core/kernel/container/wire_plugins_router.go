@@ -30,7 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-func newCompletionRouter(c pluginsWiring) (*completion.Router, error) {
+func newCompletionRouter(c pluginsWiring) *completion.Router {
 	provider := pluginsAgentProvider(c)
 	programs := completion.NewPrograms(provider, func() completion.AgentSettings { return completionAgentSettings(c) })
 	return completion.NewRouter(
@@ -42,12 +42,7 @@ func newCompletionRouter(c pluginsWiring) (*completion.Router, error) {
 }
 
 func setCompleter(c pluginsWiring) {
-	router, err := newCompletionRouter(c)
-	if err != nil {
-		c.settings.ErrorHandler(err)
-		return
-	}
-	c.RunningHost.Endpoint.SetCompleter(router)
+	c.RunningHost.Endpoint.SetCompleter(newCompletionRouter(c))
 }
 
 func getSettingsAgent(c pluginsWiring) agentport.Agent {

@@ -211,12 +211,7 @@ func watchPluginChanges(c pluginsWiring) (<-chan struct{}, func()) {
 }
 
 func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
-	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
-	if err != nil {
-		c.settings.ErrorHandler(err)
-		return nil
-	}
-	return choose
+	return tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
 }
 
 func openVersionItems(c pluginsWiring) *textversion.VersionItems {
@@ -224,12 +219,7 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 		return nil
 	}
 	run := newPluginCommands(c, c.RunningHost, nil).Run
-	items, err := textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.RunningHost.Watch)
-	if err != nil {
-		c.settings.ErrorHandler(err)
-		return nil
-	}
-	return items
+	return textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.RunningHost.Watch)
 }
 
 func openTriggers(c pluginsWiring) *trigger.Triggers {

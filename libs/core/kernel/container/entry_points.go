@@ -35,11 +35,7 @@ func OpenEditor(
 func openEditorTexts(
 	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, opening WindowOpening,
 ) (*OpenedWindow, Config, error) {
-	versions, err := newTextVersions(vaultOf(c), db)
-	if err != nil {
-		return nil, c, errors.Join(err, db.Close())
-	}
-	c.TextVersions = versions
+	c.TextVersions = newTextVersions(vaultOf(c), db)
 	opened, err := openWindowWith(c, ctx, ports, opening)
 	if err != nil {
 		return nil, c, err

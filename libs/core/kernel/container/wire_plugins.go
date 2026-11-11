@@ -57,11 +57,7 @@ func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func()
 
 func openPluginWork(c Config, db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
 	setPluginVaultPath(plugins(c), v.Path)
-	versions, err := newTextVersions(vaultOf(c), db)
-	if err != nil {
-		return c, nil, err
-	}
-	c.TextVersions = versions
+	c.TextVersions = newTextVersions(vaultOf(c), db)
 	if err := installCurrentVault(c, db, v); err != nil {
 		return c, nil, err
 	}

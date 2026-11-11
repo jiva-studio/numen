@@ -105,10 +105,7 @@ func mountSearch(w *windowWiring) {
 }
 
 func getTabKindChooser(c pluginsWiring) file.TabKindChooser {
-	if choose := openChooseTabKind(c); choose != nil {
-		return choose
-	}
-	return file.NoTabKinds{}
+	return openChooseTabKind(c)
 }
 
 func mountFile(w *windowWiring) {
@@ -142,19 +139,15 @@ func mountWindowState(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, state.Window))
 }
 
-func mountWorkspace(w *windowWiring) error {
+func mountWorkspace(w *windowWiring) {
 	state := w.state
-	links, err := workspace.NewLinks()
-	if err != nil {
-		return err
-	}
+	links := workspace.NewLinks()
 	store := w.db.OpenTabs()
 	handler := workspace.NewHandler(
 		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)
 	path, served := workspace.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
-	return nil
 }
 
 func mountNote(w *windowWiring) {

@@ -87,10 +87,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	cfg.TextVersions = versions
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
@@ -125,10 +122,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	cfg.TextVersions = versions
 	readIntoIndex(t, cfg, db, v)
 	if _, err := db.DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
@@ -161,10 +155,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	cfg.TextVersions = versions
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, cfg, db, v)
@@ -202,10 +193,7 @@ func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersio
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	cfg.TextVersions = versions
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, cfg, db, v)
@@ -365,9 +353,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.TextVersions, err = newTextVersions(vaultOf(cfg), db); err != nil {
-		t.Fatal(err)
-	}
+	cfg.TextVersions = newTextVersions(vaultOf(cfg), db)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, cfg, db, v)
 	if err := db.Close(); err != nil {
@@ -383,9 +369,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	if cfg.TextVersions, err = newTextVersions(vaultOf(cfg), db); err != nil {
-		t.Fatal(err)
-	}
+	cfg.TextVersions = newTextVersions(vaultOf(cfg), db)
 	readIntoIndex(t, cfg, db, v)
 
 	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))

@@ -2,7 +2,6 @@ package textversion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 
@@ -38,11 +37,8 @@ type versionRemover interface {
 
 // NewVersionItems returns the version items of the vault files, run with run and using the table
 // to find the type of a file.
-func NewVersionItems(texts *Texts, versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) (*VersionItems, error) {
-	if texts == nil || versions == nil || run == nil || types == nil {
-		return nil, errors.New("version items: texts, text versions, the run of commands and content type table are required")
-	}
-	return &VersionItems{texts: texts, versions: versions, run: run, types: types, conditions: when.NewConditions()}, nil
+func NewVersionItems(texts *Texts, versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) *VersionItems {
+	return &VersionItems{texts: texts, versions: versions, run: run, types: types, conditions: when.NewConditions()}
 }
 
 // CommandRun runs a command of a plugin checked against its declaration: its backend, its condition

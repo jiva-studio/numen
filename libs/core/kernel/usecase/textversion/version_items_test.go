@@ -148,10 +148,7 @@ func liveOfKinds(kinds ...string) string {
 func newMenu(t *testing.T, s *scene, entries ...plugin.CommandEntry) (*textversion.VersionItems, *commands) {
 	t.Helper()
 	recorder := &commands{all: entries}
-	menu, err := textversion.NewVersionItems(s.versions.Texts, s.versions.Versions, recorder, getPdfTypes())
-	if err != nil {
-		t.Fatal(err)
-	}
+	menu := textversion.NewVersionItems(s.versions.Texts, s.versions.Versions, recorder, getPdfTypes())
 	return menu, recorder
 }
 
@@ -195,19 +192,6 @@ func TestFileMenuRejectsAVersionTheCommandDoesNotList(t *testing.T) {
 	}
 }
 
-func TestNewFileMenuRequiresVersionsCommandsAndTypes(t *testing.T) {
-	s := newScene(t)
-	if _, err := textversion.NewVersionItems(nil, nil, &commands{}, getPdfTypes()); err == nil {
-		t.Error("version items were made without versions")
-	}
-	if _, err := textversion.NewVersionItems(s.versions.Texts, s.versions.Versions, nil, getPdfTypes()); err == nil {
-		t.Error("version items were made without commands")
-	}
-	if _, err := textversion.NewVersionItems(s.versions.Texts, s.versions.Versions, &commands{}, nil); err == nil {
-		t.Error("version items were made without a content type table")
-	}
-}
-
 func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing.T) {
 	s := newScene(t)
 	deleteText := plugin.CommandEntry{PluginID: ocr, Command: manifest.Command{
@@ -218,9 +202,6 @@ func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing
 	s.runEntry(t, ocr)
 
 	items, err := menu.ListVersionItems(t.Context(), s.vault, scanPath, deleteText)
-	if err != nil {
-		t.Fatal(err)
-	}
 	if len(items) != 2 {
 		t.Fatalf("the handler offers %+v, want the versions of both plugins", items)
 	}

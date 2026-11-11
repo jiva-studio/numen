@@ -31,10 +31,7 @@ func entry(pluginID, kind, when string, rank domain.HandlerRank) plugin.TabKindE
 
 func newChoose(t *testing.T, kinds declared, config pluginport.WhenConfig) *tabkind.Choose {
 	t.Helper()
-	choose, err := tabkind.NewChoose(kinds, notes{}, config)
-	if err != nil {
-		t.Fatal(err)
-	}
+	choose := tabkind.NewChoose(kinds, notes{}, config)
 	return choose
 }
 
@@ -75,15 +72,6 @@ func TestChoose_ReturnsNoKindWhenNoConditionMatches(t *testing.T) {
 
 	if got := choose.Execute("plain.md", domain.TypeNote, nil); got != "" {
 		t.Errorf("kind = %q, want none", got)
-	}
-}
-
-func TestNewChooseNeedsTheTabKindsAndTheContentTypes(t *testing.T) {
-	if _, err := tabkind.NewChoose(nil, notes{}, nil); err == nil {
-		t.Error("a choice was made without tab kinds")
-	}
-	if _, err := tabkind.NewChoose(getKinds(), nil, nil); err == nil {
-		t.Error("a choice was made without a content type table")
 	}
 }
 

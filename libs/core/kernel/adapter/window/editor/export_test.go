@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -21,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
@@ -236,7 +239,25 @@ func WrapPluginSwitch(tb testing.TB, state *State, wrap func(next windowsession.
 }
 
 func newEmptyCommandHandler(state *State) *command.Handler {
-	list := plugincommand.NewList(nil, when.NewConditions())
-	run := plugincommand.NewRun(nil, nil, nil, nil, nil, when.NewConditions())
-	return command.NewHandler(state, plugincommand.NewListCommands(list, nil), plugincommand.NewRunCommand(list, run, nil), plugincommand.NewListItems(list, nil))
+	list := plugincommand.NewList(noCommands{}, when.NewConditions())
+	run := plugincommand.NewRun(noCommands{}, noCommands{}, noContentTypes{}, nil, nil, when.NewConditions())
+	return command.NewHandler(state, plugincommand.NewListCommands(list, noContentTypes{}), plugincommand.NewRunCommand(list, run, nil), plugincommand.NewListItems(list, nil))
 }
+
+// noCommands is a plugin host with no plugin.
+type noCommands struct{}
+
+func (noCommands) ListCommands() []plugin.CommandEntry       { return nil }
+func (noCommands) ListSlots() []plugin.SlotEntry             { return nil }
+func (noCommands) ListKeybindings() []plugin.KeybindingEntry { return nil }
+func (noCommands) ListHandlers() []plugin.CommandEntry       { return nil }
+func (noCommands) GetParts(string) plugin.Parts              { return plugin.Parts{} }
+func (noCommands) RunCommand(context.Context, plugin.CommandCall) (plugin.CommandResult, error) {
+	return plugin.CommandResult{}, domain.ErrUnavailable
+}
+
+// noContentTypes is a table that gives no file a type.
+type noContentTypes struct{}
+
+func (noContentTypes) GetContentType(string) domain.ContentType   { return domain.UnknownContentType }
+func (noContentTypes) ListExtensions(domain.ContentType) []string { return nil }

@@ -12,10 +12,7 @@ import (
 )
 
 var (
-	errNoConfig   = errors.New("a router needs the settings to read")
-	errNoPrograms = errors.New("a router needs the programs to ask")
-	errNoAnswerer = errors.New("a router needs the answerer of the questions")
-	errNoMessage  = errors.New("the question holds no message to answer")
+	errNoMessage = errors.New("the question holds no message to answer")
 )
 
 // Answerer sends the agent one question and returns its reply.
@@ -47,17 +44,8 @@ type Router struct {
 
 // NewRouter returns a router reading the settings at every question, so a default
 // edited in the settings applies to the next one.
-func NewRouter(config func() Config, programs ProgramSource, answerer Answerer) (*Router, error) {
-	if config == nil {
-		return nil, errNoConfig
-	}
-	if programs == nil {
-		return nil, errNoPrograms
-	}
-	if answerer == nil {
-		return nil, errNoAnswerer
-	}
-	return &Router{config: config, programs: programs, answerer: answerer, limits: newLimits()}, nil
+func NewRouter(config func() Config, programs ProgramSource, answerer Answerer) *Router {
+	return &Router{config: config, programs: programs, answerer: answerer, limits: newLimits()}
 }
 
 // Complete answers the question of a plugin by the default agent and model. The
