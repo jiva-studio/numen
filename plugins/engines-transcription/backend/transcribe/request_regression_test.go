@@ -1,6 +1,8 @@
 package transcribe
 
 import (
+	"context"
+	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -64,4 +66,42 @@ func TestTranscriptCreateOverAStalePartialRecordReturnsTheVersion(t *testing.T) 
 		listing, err := s.texts.ListVersions(t.Context(), lecture)
 		t.Errorf("after the run, transcript_create returned %+v, want done; the lecture lists %+v (%v)", second, listing, err)
 	}
+}
+
+// holdingFinishQueue holds FinishTask until the test lets it go, after it has told the test that
+// the task is ending.
+type holdingFinishQueue struct {
+	host.Queue
+	ending chan struct{}
+	let    chan struct{}
+}
+
+func (q holdingFinishQueue) FinishTask(ctx context.Context, id string) error {
+	close(q.ending)
+	<-q.let
+	return q.Queue.FinishTask(ctx, id)
+}
+
+func TestTranscriptCreateWhenTheTaskEndsReturnsTheVersion(t *testing.T) {
+	s := newRequestFixture(t)
+	close(s.blocking.release)
+	queue := holdingFinishQueue{Queue: s.queue, ending: make(chan struct{}), let: make(chan struct{})}
+	letGo := sync.OnceFunc(func() { close(queue.let) })
+	t.Cleanup(letGo)
+	transcriber := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
+		storesOf(s.store), textsOf(s.texts), queue, func(context.Context) (Recognizer, error) { return s.blocking, nil })
+	t.Cleanup(transcriber.Close)
+	requests := NewRequests(transcriber, func(id domain.VaultID) Vault { return s.vault.With(id) })
+	first, err := requests.Create(t.Context(), "Lectures", lecture)
+	if err != nil || first.State != stateStarted {
+		t.Fatalf("the first request returned %+v, %v, want started", first, err)
+	}
+	<-queue.ending
+
+	second, err := requests.Create(t.Context(), "Lectures", lecture)
+
+	if err != nil || second.State != stateDone || second.Version == "" {
+		t.Errorf("a request while the task ends returned %+v, %v, want done with the version", second, err)
+	}
+	letGo()
 }
