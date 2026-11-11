@@ -111,7 +111,10 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     view: requireNothing(
       'the manifest must list the kind and the plugin hold what the kind hands its views: checked in viewPermissions',
     ),
-    dropHandler: requireNothing('a handler takes dropped data and reads nothing of the vault'),
+    dropHandler: explain(
+      requirePermissions(READ),
+      'dropped data is user content, and the handler receives it and the folder it was dropped into',
+    ),
   },
   settings: {
     get: requireNothing('it reads the settings of the plugin itself'),

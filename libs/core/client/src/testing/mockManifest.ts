@@ -8,18 +8,20 @@ interface Declarations {
   tabKinds?: readonly string[]
   commands?: readonly string[]
   handlers?: readonly string[]
+  dropTypes?: readonly string[]
   settingsViews?: readonly string[]
   capabilities?: readonly string[]
 }
 
 function createContributes(fields: Declarations & { viewCapabilities?: readonly string[] }) {
-  const { readers = [], tabKinds = [], commands = [], handlers = [] } = fields
+  const { readers = [], tabKinds = [], commands = [], handlers = [], dropTypes = [] } = fields
   return {
     ...(fields.viewCapabilities ? { viewCapabilities: [...fields.viewCapabilities] } : {}),
     readers: readers.map((id) => ({ id })),
     tabKinds: tabKinds.map((kind) => ({ kind })),
     commands: commands.map((id) => ({ id })),
     handlers: handlers.map((command) => ({ command })),
+    ...(dropTypes.length > 0 ? { dropHandlers: [{ types: [...dropTypes] }] } : {}),
   }
 }
 

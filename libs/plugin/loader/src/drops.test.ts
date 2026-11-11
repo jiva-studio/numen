@@ -23,6 +23,22 @@ describe('createDropRegistry', () => {
     expect(calls).toEqual(['talks https://video.example/clip'])
   })
 
+  it('refuses a type another plugin already takes, and takes it again after that plugin is disposed', async () => {
+    const drops = createDropRegistry()
+    const first = drops.registerDropHandler('md.numen.links', {
+      types: [URI_LIST],
+      drop: async () => ['links.md'],
+    })
+
+    expect(() =>
+      drops.registerDropHandler('md.numen.other', { types: [URI_LIST, 'text/plain'], drop: async () => [] }),
+    ).toThrowError('Plugin "md.numen.other" registers a drop handler for "text/uri-list", which plugin "md.numen.links" already takes')
+    expect(drops.canDrop(['text/plain'])).toBe(false)
+    first.dispose()
+    drops.registerDropHandler('md.numen.other', { types: [URI_LIST], drop: async () => ['other.md'] })
+    expect(await drops.drop('', { [URI_LIST]: 'x' })).toEqual(['other.md'])
+  })
+
   it('returns no paths after dispose or for an unregistered or empty type', async () => {
     const drops = createDropRegistry()
     const registered = drops.registerDropHandler('md.numen.links', {

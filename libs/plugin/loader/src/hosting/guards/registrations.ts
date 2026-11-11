@@ -19,6 +19,7 @@ import type { PluginContextHost } from '../types'
 import {
   requireDeclaredAgentProvider,
   requireDeclaredCommand,
+  requireDeclaredDropTypes,
   requireDeclaredReader,
   requireDeclaredSettingsView,
   requireDeclaredTabKind,
@@ -75,7 +76,12 @@ export function createRegistrations(
       requireViewRegistration(capability, target)
       return add(host.views.registerView(pluginId, { capability, component }, permissions))
     },
-    dropHandler: (reg: DropRegistration) => add(host.views.registerDropHandler(pluginId, reg)),
+    dropHandler: (reg: DropRegistration) => {
+      // Read once: the types checked are the types registered, and a later change to either is not seen.
+      const { types, drop } = reg
+      const declared = requireDeclaredDropTypes(target, types)
+      return add(host.views.registerDropHandler(pluginId, { types: declared, drop }))
+    },
   }
 }
 

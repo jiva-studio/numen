@@ -493,7 +493,15 @@ describe('createPluginHost', () => {
   it('routes a drop to the handler another plugin registered until it is disposed', async () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
-    host.lifecycle.createContext('md.numen.links').register.dropHandler?.({
+    host.lifecycle
+      .createContext(
+        'md.numen.links',
+        createMockManifest('md.numen.links', {
+          permissions: ['vault:read'],
+          dropTypes: ['text/uri-list'],
+        }),
+      )
+      .register.dropHandler?.({
       types: ['text/uri-list'],
       drop: async (folder, data) => [`${folder}/${data['text/uri-list']}.md`],
     })

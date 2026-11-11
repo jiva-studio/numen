@@ -180,6 +180,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Keybindings:  newKeybindings(wire.GetKeybindings()),
 
 		ViewCapabilities: wire.GetViewCapabilities(),
+		DropHandlers:     newDropHandlers(wire.GetDropHandlers()),
 	}, nil
 }
 
@@ -533,6 +534,14 @@ func newListeners(wire []*v1.ManifestListener) []manifest.Listener {
 			PortSetting: one.GetPortSetting(),
 			Protocol:    one.GetProtocol(),
 		})
+	}
+	return out
+}
+
+func newDropHandlers(wire []*v1.ManifestDropHandler) []manifest.DropHandler {
+	var out []manifest.DropHandler
+	for _, one := range wire {
+		out = append(out, manifest.DropHandler{Types: one.GetTypes()})
 	}
 	return out
 }

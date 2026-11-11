@@ -6,6 +6,7 @@ const AGENT_PROVIDER_CAPABILITY = 'ai.agent.provider'
 /** The parts of a manifest that declare what a plugin registers. */
 interface DeclaringManifest {
   readonly permissions?: readonly string[] | undefined
+        readonly dropHandlers?: readonly { readonly types: readonly string[] }[] | undefined
   readonly capabilities?: readonly string[] | undefined
   readonly settingsViews?: readonly { readonly id: string }[] | undefined
   readonly contributes?:
@@ -18,7 +19,7 @@ interface DeclaringManifest {
     | undefined
 }
 
-type Registration = 'reader' | 'tab kind' | 'command' | 'settings view' | 'agent provider'
+type Registration = 'drop type' | 'reader' | 'tab kind' | 'command' | 'settings view' | 'agent provider'
 
 interface Undeclared {
   readonly kind: Registration
@@ -78,4 +79,20 @@ export function requireDeclaredAgentProvider(target: PermissionTarget, id: strin
   if (!(getManifest(target)?.capabilities ?? []).includes(AGENT_PROVIDER_CAPABILITY)) {
     fail(target, { kind: 'agent provider', id, where: 'capabilities' })
   }
+}
+
+/** Checks every type of a drop handler against the manifest, and answers the types it read. */
+export function requireDeclaredDropTypes(
+  target: PermissionTarget,
+  types: readonly string[],
+): readonly string[] {
+  const declared = (getManifest(target)?.contributes?.dropHandlers ?? []).flatMap((one) => [
+    ...one.types,
+  ])
+  const taken = [...types]
+  for (const type of taken) {
+    if (!declared.includes(type))
+      fail(target, { kind: 'drop type', id: type, where: 'contributes.dropHandlers' })
+  }
+  return taken
 }

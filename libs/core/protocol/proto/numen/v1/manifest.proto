@@ -79,6 +79,16 @@ message ManifestContributes {
   // kind the application defines (conversation, note-editor, vault-summary) or a kind named after the
   // plugin id. The frontend registers a view only for a kind listed here.
   repeated string view_capabilities = 20;
+  // drop_handlers are the kinds of dropped data the plugin's frontend takes. The frontend registers a
+  // drop handler only for types listed here.
+  repeated ManifestDropHandler drop_handlers = 21;
+}
+
+// ManifestDropHandler lists data types of a drag from outside the window, such as text/uri-list, that a
+// plugin takes. Dropped data is user content: the plugin needs vault:read to register the handler.
+message ManifestDropHandler {
+  // types are the data types the handler takes, each declared by one plugin only.
+  repeated string types = 1;
 }
 
 // ManifestKeybinding binds a key to a command, optionally with values for its arguments, under a

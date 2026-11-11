@@ -46,6 +46,12 @@ type Contributes struct {
 	Listeners        []Listener
 	Keybindings      []Keybinding
 	ViewCapabilities []string
+	DropHandlers     []DropHandler
+}
+
+// DropHandler lists the data types of a drag from outside the window that the plugin's frontend takes.
+type DropHandler struct {
+	Types []string
 }
 
 // TextKind is the readable name of one kind of text version the plugin makes.
@@ -110,6 +116,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listListenerIssues()...)
 	issues = append(issues, m.listKeybindingIssues()...)
 	issues = append(issues, m.listViewCapabilityIssues()...)
+	issues = append(issues, m.listDropHandlerIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 
@@ -199,4 +206,27 @@ func (m Manifest) isViewCapabilityAllowed(capability string) bool {
 	}
 	rest, isOwn := strings.CutPrefix(capability, m.ID+".")
 	return isOwn && rest != "" && tabKindPattern.MatchString(rest)
+}
+
+func (m Manifest) listDropHandlerIssues() []error {
+	var issues []error
+	if len(m.Contributes.DropHandlers) > 0 && !m.HasFrontend() {
+		issues = append(issues, fmt.Errorf("%w: the plugin declares drop handlers and has no frontend to register them", ErrInvalidContribution))
+	}
+	observed := map[string]bool{}
+	for _, handler := range m.Contributes.DropHandlers {
+		if len(handler.Types) == 0 {
+			issues = append(issues, fmt.Errorf("%w: a drop handler lists no types", ErrInvalidContribution))
+		}
+		for _, dropType := range handler.Types {
+			switch {
+			case strings.TrimSpace(dropType) == "" || dropType != strings.TrimSpace(dropType):
+				issues = append(issues, fmt.Errorf("%w: drop type %q is empty or has surrounding space", ErrInvalidContribution, dropType))
+			case observed[dropType]:
+				issues = append(issues, fmt.Errorf("%w: drop type %q is declared twice", ErrInvalidContribution, dropType))
+			}
+			observed[dropType] = true
+		}
+	}
+	return issues
 }
