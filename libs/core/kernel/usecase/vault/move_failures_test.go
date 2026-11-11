@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -159,7 +160,7 @@ func TestMove_QueriesBacklinksForNotesInFolderOnly(t *testing.T) {
 		"physics/heat/Heat.md": "# Heat\n",
 		"physics/Carnot.md":    "# Carnot\n",
 	})
-	testsupport.WriteBook(t, f.vault.Path, "physics/A Book.epub")
+	vaultfixture.WriteBook(t, f.vault.Path, "physics/A Book.epub")
 	f.recordBooks(t)
 	watched := &watchedLinks{LinkQueries: f.db.NoteQueries()}
 	w := f.wiring()
@@ -185,7 +186,7 @@ func TestEveryNoteOfAFolderIsReportedWhereItWent(t *testing.T) {
 		"physics/heat/Heat.md": "# Heat\n",
 		"physics/Carnot.md":    "# Carnot\n",
 	})
-	testsupport.WriteBook(t, f.vault.Path, "physics/A Book.epub")
+	vaultfixture.WriteBook(t, f.vault.Path, "physics/A Book.epub")
 	f.recordBooks(t)
 
 	moved, err := f.moveOver(f.wiring()).Execute(t.Context(), f.vault, "physics", "science/physics")

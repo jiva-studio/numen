@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
@@ -19,7 +20,7 @@ import (
 
 func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
-	v := testsupport.NewVault(t, notes)
+	v := vaultfixture.NewVault(t, notes)
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: indexfile.Path(t)},
 	}), t.Context())

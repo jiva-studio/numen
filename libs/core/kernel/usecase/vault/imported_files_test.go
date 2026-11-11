@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
@@ -59,7 +59,7 @@ func (handedOver) HasHandle(string, string) bool { return false }
 // accesses the filesystem directly cannot be bound on a phone at all.
 func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	handed := handedOver{
 		names: map[string]string{
 			"content://held/1": "scans",

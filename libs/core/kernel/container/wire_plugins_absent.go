@@ -7,7 +7,7 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
@@ -23,7 +23,7 @@ func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHo
 			PluginSettingDeclarer: settings, SecretConfigurator: settings, SettingsPush: settings,
 			SettingChecker: settings, PersistHook: settings,
 		},
-		Watch:               PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: sharedmimeinfo.Open()},
+		Watch:               PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},
 		Endpoint:            hostendpoint.NewServices(),
 		ApplySetting:        func(context.Context, string, string, any) error { return nil },
 		Views:               PluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},

@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -18,7 +19,7 @@ import (
 
 func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
 	t.Helper()
-	v := testsupport.NewVault(t, notes)
+	v := vaultfixture.NewVault(t, notes)
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: indexfile.Path(t)},
 	}), t.Context())
@@ -212,7 +213,7 @@ func TestANameNeverPreservesItsVault(t *testing.T) {
 	db, first := newIndexedVault(t, map[string]string{
 		"source.md": "Points at [[Entropy]].\n",
 	})
-	addVault(t, db, testsupport.NewVault(t, map[string]string{"Entropy.md": "# Elsewhere\n"}))
+	addVault(t, db, vaultfixture.NewVault(t, map[string]string{"Entropy.md": "# Elsewhere\n"}))
 
 	c := links(t, db, first, "source.md")
 	if c.Links[0].To != "" {
@@ -228,7 +229,7 @@ func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 	db, first := newIndexedVault(t, map[string]string{
 		"source.md": "---\nlinks:\n  - to: \"note://" + id + "\"\n    role: jump\n---\n\nbody\n",
 	})
-	other := addVault(t, db, testsupport.NewVault(t, map[string]string{
+	other := addVault(t, db, vaultfixture.NewVault(t, map[string]string{
 		"elsewhere.md": "---\nid: " + id + "\n---\n\n# In the other vault\n",
 	}))
 
@@ -322,7 +323,7 @@ func TestBacklinksNeverCrossVaults(t *testing.T) {
 		"target.md": "# Target\n",
 		"source.md": "Points at [[target]].\n",
 	})
-	second := addVault(t, db, testsupport.NewVault(t, map[string]string{
+	second := addVault(t, db, vaultfixture.NewVault(t, map[string]string{
 		"target.md":    "# A different target\n",
 		"elsewhere.md": "Points at [[target]].\n",
 	}))

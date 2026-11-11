@@ -10,8 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -28,7 +29,7 @@ func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain
 	if err != nil {
 		t.Fatal(err)
 	}
-	files, err := textfiles.Stores{}.Open(v)
+	files, err := derivedfile.TextStores{}.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +67,7 @@ func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
 
 func newTalkVault(t *testing.T) domain.Vault {
 	t.Helper()
-	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n\nA short note.\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"Note.md": "# Note\n\nA short note.\n"})
 	if err := os.MkdirAll(filepath.Join(v.Path, "talks"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +295,7 @@ func (c cutOnChange) ReportVersionsChanged(v domain.Vault, path string) {
 func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	cfg, db, v, _ := newTalkIndex(t)
 	const other = "org.example.subtitles"
-	files, err := textfiles.Stores{}.Open(v)
+	files, err := derivedfile.TextStores{}.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}

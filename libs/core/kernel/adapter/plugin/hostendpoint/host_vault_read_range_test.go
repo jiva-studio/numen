@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
@@ -63,7 +63,7 @@ func openReadEndpoint(t *testing.T, access *vaultapi.Access) numenv1connect.Host
 
 func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"Rivers.txt":      "the Danube flows east",
 		"Nandu.txt":       "Ñandú runs along the Paraná",
 		"gauge.log":       strings.Repeat("level 7\n", 2500),

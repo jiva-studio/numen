@@ -18,6 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 )
 
 // testArea is the one folder of the service folder the stores of these tests answer for.
@@ -404,7 +405,7 @@ func TestClaimName_RejectsClaimFromOtherProcess(t *testing.T) {
 	}
 	defer func() {
 		testsupport.Close(t, stdin)
-		testsupport.Wait(t, child)
+		plugintest.Wait(t, child)
 	}()
 
 	// The child may print other lines first; the loop waits for the claim line.

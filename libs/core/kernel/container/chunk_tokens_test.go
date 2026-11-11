@@ -19,7 +19,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -30,7 +32,7 @@ const chunkEmbeddingPluginID = "md.numen.embeddings"
 
 // chunkingPlugin is an embedding plugin that reports the chunk size in tokens it is given.
 type chunkingPlugin struct {
-	testsupport.PluginLifecycle
+	servetest.PluginLifecycle
 	tokens atomic.Int32
 }
 
@@ -218,7 +220,7 @@ func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	cfg, _, _ := openChunkingConfig(t, 300)
 	openEmbedder(t, cfg)
 	db := makeIndex(t)
-	v := testsupport.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 	const limit = 600
 
 	if got := container.Scan(cfg, db).Cut.Sizes.Limit; got != limit {
@@ -245,7 +247,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	cfg, _, _ := openChunkingConfig(t, 300)
 	openEmbedder(t, cfg)
 	db := makeIndex(t)
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":  "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 	})
@@ -294,7 +296,7 @@ func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 func TestANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
 	db := makeIndex(t)
 	cfg := container.NewConfig(container.Config{})
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"Hedge.md":   "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":    "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 		"Compost.md": "# Compost\n\nThe compost heap sits behind the shed.\n",

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -300,7 +300,7 @@ func TestANeighborhoodStaysInsideItsVault(t *testing.T) {
 		shared:    "---\ntitle: Entropy here\nid: 01M02ACGM0FYMSXNDP29C90JN1\n---\n\n# Entropy here\n",
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"note://01M02ACGM0FYMSXNDP29C90JN2\"\n    role: child\n---\n\n# Area\n",
 	})
-	addVault(t, db, testsupport.NewVault(t, map[string]string{
+	addVault(t, db, vaultfixture.NewVault(t, map[string]string{
 		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
 	}))
 

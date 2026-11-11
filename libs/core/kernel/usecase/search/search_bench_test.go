@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
@@ -96,7 +97,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	b.Helper()
 	ctx := b.Context()
 
-	v := testsupport.GenerateVault(b, notes)
+	v := vaultfixture.GenerateVault(b, notes)
 	const maxTokens = 256
 	model := embedding.Model{Name: "bench", Dimensions: 384, MaxTokens: maxTokens, Pooling: "mean"}
 

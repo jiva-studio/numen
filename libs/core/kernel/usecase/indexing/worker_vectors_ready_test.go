@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -26,7 +26,7 @@ func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder,
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
@@ -90,7 +90,7 @@ func testAWorkerWithoutAListenerEmbedsAsBefore(t *testing.T, openReading openFun
 	made, db := openReading(t)
 	model := &fakeEmbedder{dims: 64}
 	fit(t, db, model)
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := vaultfixture.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 

@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
@@ -111,7 +111,7 @@ var errSafeMode = errors.New("numen is running in safe mode")
 // plugins failed, with the failure.
 func NewPluginHost(target string, dirs ...string) (*PluginHost, error) {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
-	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Services.SetDependencies(newDependencyRegistry(""))
 	err := host.Discovery.Discover()
 	return adaptPluginHost(host), err

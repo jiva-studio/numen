@@ -3,33 +3,31 @@
 package pluginhost
 
 import (
-	"fmt"
-	"os"
+	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 )
 
 // Open returns a plugin host for the target that has discovered the plugins in dirs.
-func Open(target string, dirs ...string) *plugin.Host {
+func Open(tb testing.TB, target string, dirs ...string) *plugin.Host {
+	tb.Helper()
 	host := plugin.NewHost(clock.System{}, target, dirs...)
-	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Services.SetDependencies(dependencies())
 	if err := host.Discovery.Discover(); err != nil {
-		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
+		tb.Logf("discover plugins: %v", err)
 	}
 	return host
 }
 
 func dependencies() *provision.Registry {
 	runtimeConfig := onnxruntime.FromEnvironment(clock.System{})
-	if models := os.Getenv(onnxruntime.EnvDir); models != "" {
-		runtimeConfig.Dir = models
-	}
+	runtimeConfig.Dir = onnxruntime.GetModelsDir(runtimeConfig.Dir)
 	return provision.NewRegistry(
 		onnxruntime.NewONNXProvisioner(runtimeConfig),
 		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),

@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 )
 
 func waitForCount(t *testing.T, got *atomic.Int32, want int32) {

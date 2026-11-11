@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -25,7 +25,7 @@ import (
 
 func newOrchardVault(t *testing.T) domain.Vault {
 	t.Helper()
-	return testsupport.NewVault(t, map[string]string{
+	return vaultfixture.NewVault(t, map[string]string{
 		"Hedge.md":   "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":    "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 		"Compost.md": "# Compost\n\nThe compost heap sits behind the shed.\n",
@@ -189,7 +189,7 @@ func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testin
 func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) {
 	t.Parallel()
 	const notes = 600
-	v, db := testsupport.GenerateVault(t, notes), openIndex(t)
+	v, db := vaultfixture.GenerateVault(t, notes), openIndex(t)
 	runScan(t, scanAt(db, 256), v)
 
 	content := &groupedWrites{}

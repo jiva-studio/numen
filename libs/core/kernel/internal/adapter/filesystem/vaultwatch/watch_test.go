@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -265,7 +266,7 @@ func TestABookAppearingIsReported(t *testing.T) {
 	// The folder is part of the watch before the book arrives, and the book is
 	// built whole outside the vault and moved in, so it arrives in one event.
 	staged := t.TempDir()
-	testsupport.WriteBook(t, staged, "Dropped.epub")
+	vaultfixture.WriteBook(t, staged, "Dropped.epub")
 	if err := os.Rename(filepath.Join(staged, "Dropped.epub"), filepath.Join(root, "library", "Dropped.epub")); err != nil {
 		t.Fatal(err)
 	}

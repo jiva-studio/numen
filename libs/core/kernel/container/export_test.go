@@ -47,7 +47,7 @@ func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() er
 
 func (c Config) EmbedderReady() bool { return embedderReady(searchOf(c)) }
 
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
+func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.WatchedEmbedder, closer func() error, why error) {
 	return searchEmbedders(searchOf(c), ctx, tasks)
 }
 

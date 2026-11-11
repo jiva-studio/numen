@@ -14,7 +14,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 )
 
 func (w *window) awaitIDs(t *testing.T, pluginID, name string, want ...string) {

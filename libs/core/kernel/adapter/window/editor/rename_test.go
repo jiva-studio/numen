@@ -14,6 +14,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
@@ -1142,7 +1143,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 		"physics/Heat.md":    "# Heat\n",
 		"physics/Entropy.md": "# Entropy\n",
 	})
-	testsupport.WriteBook(t, f.root, "library/A Book.epub")
+	vaultfixture.WriteBook(t, f.root, "library/A Book.epub")
 
 	root := getEntries(t, f, "")
 	want := []string{"library", "physics", "alpha.md", "Notes.txt", "Zeta.md"}
@@ -1217,7 +1218,7 @@ func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 func TestEverythingTheVaultContainsMoves(t *testing.T) {
 	const picture = "\x89PNG\r\n\x1a\n"
 	f := openWindow(t, nil, map[string]string{"Diagram.png": picture})
-	testsupport.WriteBook(t, f.root, "A Book.epub")
+	vaultfixture.WriteBook(t, f.root, "A Book.epub")
 	waitForScan(t, f)
 
 	for _, one := range []struct{ from, to string }{

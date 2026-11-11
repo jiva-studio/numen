@@ -24,9 +24,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
@@ -69,7 +70,7 @@ func (r *eventRecorder) getEvents() []string {
 func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	t.Helper()
 	mux := http.NewServeMux()
-	testsupport.HandlePluginLifecycle(mux)
+	servetest.HandlePluginLifecycle(mux)
 	if recorder != nil {
 		mux.Handle(numenv1connect.NewPluginEventServiceHandler(recorder))
 	}
@@ -90,7 +91,7 @@ func newEventHost(t *testing.T, manifests map[string]catalogmanifest.Manifest, p
 func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *Host {
 	t.Helper()
 	host := NewHost(clock, "desktop.editor")
-	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id
 		manifest.Backend = catalogmanifest.Backend{Entrypoint: "bin/plugin"}

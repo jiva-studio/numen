@@ -23,7 +23,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -51,7 +52,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 	stuck := &stuckModelServer{release: make(chan struct{})}
 	defer close(stuck.release)
 	mux := http.NewServeMux()
-	testsupport.HandlePluginLifecycle(mux)
+	servetest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stuck))
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -75,7 +76,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		testsupport.Kill(t, cmd)
+		plugintest.Kill(t, cmd)
 		plugintest.ReapProcess(t, cmd.Process)
 	}()
 	port := plugintest.GetPort(t, server)

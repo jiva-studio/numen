@@ -29,7 +29,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetFrontendPluginIDs})
 	agentRoute, agentServed := numenv1connect.NewAgentServiceHandler(a.getAgent())
 	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.listVaults()})
-	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks, list: a.listVaults()})
+	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks})
 	routes := []route{{windowRoute, window}, {pluginsRoute, plugins}}
 	if a.Themes != nil {
 		themesRoute, themes := numenv1connect.NewThemeServiceHandler(a.Themes)

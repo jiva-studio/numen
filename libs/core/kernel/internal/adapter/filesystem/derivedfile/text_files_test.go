@@ -1,4 +1,4 @@
-package textfiles_test
+package derivedfile_test
 
 import (
 	"errors"
@@ -9,14 +9,14 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 )
 
 const plugin = "org.example.transcription"
 
 func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 	root := t.TempDir()
-	files, err := textfiles.Stores{}.Open(domain.Vault{ID: "v", Path: root})
+	files, err := derivedfile.TextStores{}.Open(domain.Vault{ID: "v", Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 }
 
 func TestReadTextFileRejectsANameOutsideThePluginFolder(t *testing.T) {
-	files, err := textfiles.Stores{}.Open(domain.Vault{ID: "v", Path: t.TempDir()})
+	files, err := derivedfile.TextStores{}.Open(domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}

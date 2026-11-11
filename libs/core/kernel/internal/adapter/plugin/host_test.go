@@ -30,9 +30,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -122,7 +123,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	plugintest.CreateTestPluginTree(t, tmp)
 
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -238,7 +239,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	plugintest.CreateTestPluginTree(t, tmp)
 
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -620,7 +621,7 @@ func (c *testCloser) getIsClosed() bool {
 }
 
 type testLifecycleHandler struct {
-	testsupport.PluginLifecycle
+	servetest.PluginLifecycle
 	mu             sync.Mutex
 	shutdownCalled bool
 	timeoutSecs    int32
@@ -661,7 +662,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	cmd := plugintest.StartSleepProcess(t)
 
 	handler.onShutdown = func() {
-		testsupport.Kill(t, cmd)
+		plugintest.Kill(t, cmd)
 	}
 
 	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
@@ -719,7 +720,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	cmd := plugintest.StartSleepProcess(t)
 
 	handler.onShutdown = func() {
-		testsupport.Kill(t, cmd)
+		plugintest.Kill(t, cmd)
 	}
 
 	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
@@ -767,7 +768,7 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	handler.onShutdown = func() {
 		close(rpcReceived)
 		<-releaseShutdown
-		testsupport.Kill(t, cmd)
+		plugintest.Kill(t, cmd)
 	}
 
 	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))

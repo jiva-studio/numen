@@ -6,6 +6,8 @@
 package container
 
 import (
+	"context"
+
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -60,6 +62,9 @@ type Config struct {
 	PluginCatalog catalog.Config
 
 	KeyStore pluginport.KeyStore
+
+	// Credentials locates the file KeyStore keeps its values in; none for a store without one.
+	Credentials pluginport.CredentialsLocator
 
 	TextVersions *textversion.Versions
 
@@ -231,7 +236,7 @@ func plugins(c Config) pluginsWiring {
 			RunningHost:     c.runningHost(),
 			PluginCatalog:   c.PluginCatalog,
 			KeyStore:        c.KeyStore,
-			CredentialsPath: secret.GetCredentialsPath(c.KeyStore),
+			CredentialsPath: c.getCredentialsPath(),
 		},
 		settings: settingsOf(c),
 		vault:    vaultOf(c),
@@ -240,4 +245,11 @@ func plugins(c Config) pluginsWiring {
 
 func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	return getAgentPrograms(plugins(c), provider, target)
+}
+
+func (c Config) getCredentialsPath() func(ctx context.Context) string {
+	if c.Credentials == nil {
+		return nil
+	}
+	return c.Credentials.GetCredentialsPath
 }

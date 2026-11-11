@@ -106,7 +106,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.Open("desktop.editor", tmp)
+	host := pluginhost.Open(t, "desktop.editor", tmp)
 	cfg := NewConfig(Config{PluginHost: AdaptPluginHost(host)})
 
 	setPluginVaultPath(plugins(cfg), "vault")

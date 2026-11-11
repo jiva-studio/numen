@@ -112,7 +112,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
-	embedding := indexing.NewEmbedding(embedder, w.db.ChunkVectors())
+	embedding := indexing.NewEmbedding(embedder, embedder, w.db.ChunkVectors())
 	state := editor.NewState(tasks, w.frame, func(event string) { emitPluginEvent(plugins(w.cfg), event) })
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(w, state, embedding, out)
@@ -160,10 +160,12 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		FollowVault: func(path string) { setPluginVaultPath(plugins(w.cfg), path) },
 		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
 	}
+	session.Switching.OpenPlugin.Switch = switching
+	state.OpenVault = switching.Execute
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.Start, Show: session.Switching.Show, OpenPlugin: session.Switching.OpenPlugin,
 		Flush: session.Closing.Flush, Close: session.Closing.Close,
-		OpenVault: switching.Execute, NoteWritten: indexer.WakeNotes,
+		NoteWritten: indexer.WakeNotes,
 	}, session.Import, out)
 	w.inst = inst
 	w.cases.ShowTab = session.ShowTab

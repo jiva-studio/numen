@@ -1,4 +1,5 @@
-package testsupport
+// Package servetest holds the HTTP handlers tests mount in place of a window and of a plugin.
+package servetest
 
 import (
 	"context"

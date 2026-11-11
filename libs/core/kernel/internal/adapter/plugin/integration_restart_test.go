@@ -22,7 +22,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -65,7 +66,7 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(plugin))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(restartedTools{plugin: plugin}))
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(testsupport.PluginLifecycle{}))
+	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(servetest.PluginLifecycle{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return plugin, server

@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
@@ -41,7 +41,7 @@ func readArrived(t *testing.T, root, path string) string {
 // source files stay in place.
 func TestFilesAreBroughtIntoTheFolderTheyWereReleasedOver(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	from := createOutsideFolder(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
@@ -71,7 +71,7 @@ func TestFilesAreBroughtIntoTheFolderTheyWereReleasedOver(t *testing.T) {
 // still a folder.
 func TestAFolderIsBroughtInWhole(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	from := createOutsideFolder(t, map[string]string{
 		"scans/Cover.png":       "PNG",
 		"scans/pages/One.png":   "ONE",
@@ -108,7 +108,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 // resolve; that file is skipped and the rest are copied.
 func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})
+	v := vaultfixture.NewVault(t, map[string]string{"Cover.png": "MINE"})
 	from := createOutsideFolder(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
@@ -137,7 +137,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 // the disk lasted.
 func TestAFolderContainingTheVaultIsRefused(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{filepath.Dir(v.Path)})

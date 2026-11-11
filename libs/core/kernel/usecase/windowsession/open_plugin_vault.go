@@ -13,20 +13,26 @@ import (
 // errNoVaultSwitch is returned when the window build binds no vault switch.
 var errNoVaultSwitch = errors.New("the window cannot switch vaults")
 
-// OpenPluginVault rejects a vault whose folder is not the vault, then switches the window through the
-// switch it is given, which flushes the pages first.
+// OpenPluginVault rejects a vault whose folder is not the vault, then switches the window through its
+// switch, which flushes the pages first.
 // It runs under the lock of a close and a vault switch and never ends their
 // flush request; a close, a quit, a user vault switch or the end of the call
 // cancels it with ErrUnavailable. An open ASKING prompt returns ErrUnsavedChanges without a flush.
 type OpenPluginVault struct {
 	life *lifecycle
+
+	// Switch shows the vault in the window. A window with none cannot open a vault for a plugin.
+	Switch VaultSwitch
 }
 
-// Execute opens v on behalf of a plugin. show switches the window and is nil for a window that cannot.
-func (u OpenPluginVault) Execute(
-	ctx context.Context, v domain.Vault, show func(context.Context, domain.Vault, *PluginOpen) error,
-) error {
-	if show == nil {
+// VaultSwitch shows a vault in the window. `open` is the plugin open whose lock the switch shares.
+type VaultSwitch interface {
+	Execute(ctx context.Context, v domain.Vault, open *PluginOpen) error
+}
+
+// Execute opens v on behalf of a plugin.
+func (u OpenPluginVault) Execute(ctx context.Context, v domain.Vault) error {
+	if u.Switch == nil {
 		return errNoVaultSwitch
 	}
 	deps := u.life.deps
@@ -41,7 +47,7 @@ func (u OpenPluginVault) Execute(
 	if deps.Window.Pages.IsQuestionOpen() {
 		return plugin.ErrUnsavedChanges
 	}
-	err = show(ctx, v, open)
+	err = u.Switch.Execute(ctx, v, open)
 	switch {
 	case err == nil:
 		return nil

@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -45,7 +46,7 @@ func (c *countedMeasurements) ReportChanges(context.Context) error { c.n++; retu
 func TestNotesAreSavedInGroups(t *testing.T) {
 	t.Parallel()
 	const notes = 600
-	v := testsupport.GenerateVault(t, notes)
+	v := vaultfixture.GenerateVault(t, notes)
 	content := &groupedWrites{}
 	db := openIndex(t)
 
@@ -125,7 +126,7 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 // indexed, however many notes were parsed into it.
 func TestAFailedWriteCountsNothing(t *testing.T) {
 	t.Parallel()
-	v := testsupport.GenerateVault(t, 10)
+	v := vaultfixture.GenerateVault(t, 10)
 	writeErr := errors.New("disk full")
 	db := openIndex(t)
 
@@ -149,7 +150,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 // scanned at every startup and must not pay for it.
 func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 

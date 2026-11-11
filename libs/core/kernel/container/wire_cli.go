@@ -92,11 +92,8 @@ func openCLIScan(c Config, ctx context.Context, rebuild bool) (cli.Scan, error) 
 		return prepareCLIScan(indexingCfg, ctx, db, v, &closeEmbedder)
 	}
 	return cli.Scan{
-		Read: indexing.NewReadWholeVaultByName(find, prepare),
-		Summary: func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error) {
-			return db.NoteQueries().GetSummary(ctx, v.ID)
-		},
-		Now: c.Clock().Now,
+		Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, prepare), db.NoteQueries()),
+		Now:  c.Clock().Now,
 		Close: func() error {
 			return errors.Join(closeIfOpen(closeEmbedder), db.Close())
 		},

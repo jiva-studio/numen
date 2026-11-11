@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
@@ -221,7 +221,7 @@ func TestAFolderIsMade(t *testing.T) {
 // A note kept as a link to another file in the vault is a link after a write,
 // and the file at the other end holds the new bytes.
 func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{"notes/Real.md": "# Entropy\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"notes/Real.md": "# Entropy\n"})
 	link := filepath.Join(v.Path, "Entropy.md")
 	if err := os.Symlink(filepath.Join("notes", "Real.md"), link); err != nil {
 		t.Fatal(err)
@@ -292,8 +292,8 @@ func TestStatingAFileOpensNothing(t *testing.T) {
 // affect another.
 func TestLock_AllowsOneWriterPerVault(t *testing.T) {
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
-	here := testsupport.NewVault(t, nil)
-	elsewhere := testsupport.NewVault(t, nil)
+	here := vaultfixture.NewVault(t, nil)
+	elsewhere := vaultfixture.NewVault(t, nil)
 
 	release, err := writers.Lock(t.Context(), here)
 	if err != nil {

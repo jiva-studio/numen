@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/fs"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"slices"
 	"sync"
 	"time"
@@ -154,7 +154,7 @@ type reader struct {
 func (r reader) Read(_ context.Context, path string) ([]byte, error) {
 	raw, ok := r.files[path]
 	if !ok {
-		return nil, fs.ErrNotExist
+		return nil, edit.ErrNotExist
 	}
 	return raw, nil
 }
@@ -162,7 +162,7 @@ func (r reader) Read(_ context.Context, path string) ([]byte, error) {
 func (r reader) Open(_ context.Context, path string) (io.ReadSeekCloser, error) {
 	raw, ok := r.files[path]
 	if !ok {
-		return nil, fs.ErrNotExist
+		return nil, edit.ErrNotExist
 	}
 	return memoryFile{bytes.NewReader(raw)}, nil
 }
@@ -170,7 +170,7 @@ func (r reader) Open(_ context.Context, path string) (io.ReadSeekCloser, error) 
 func (r reader) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	raw, ok := r.files[path]
 	if !ok {
-		return domain.FileStat{}, fs.ErrNotExist
+		return domain.FileStat{}, edit.ErrNotExist
 	}
 	return domain.FileStat{
 		Path: path, Kind: domain.KindFile, Size: int64(len(raw)), ModTime: time.Date(2026, 2, 1, 8, 0, 0, 0, time.UTC),

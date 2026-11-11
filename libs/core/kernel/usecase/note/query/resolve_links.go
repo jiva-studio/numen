@@ -19,7 +19,7 @@ func NewResolveLinks(links noteport.LinkQueries) *ResolveLinks {
 
 // Execute resolves each address as written, and omits an address that resolves to nothing.
 func (u *ResolveLinks) Execute(
-	ctx context.Context, v domain.Vault, from string, targets []string,
+	ctx context.Context, vaultID domain.VaultID, from string, targets []string,
 ) (map[string]domain.ResolvedLink, error) {
-	return u.links.ResolveLinks(ctx, v.ID, from, targets)
+	return u.links.ResolveLinks(ctx, vaultID, from, targets)
 }

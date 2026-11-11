@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -23,7 +23,7 @@ import (
 
 func openFileRead(t *testing.T, files map[string]string) (file.Read, domain.Vault) {
 	t.Helper()
-	return file.Read{Readers: vaultreader.Readers{}}, testsupport.NewVault(t, files)
+	return file.Read{Readers: vaultreader.Readers{}}, vaultfixture.NewVault(t, files)
 }
 
 func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length int) file.ReadResult {

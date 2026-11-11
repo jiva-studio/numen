@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -63,7 +63,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatal("BeginDeactivation took a plugin that has a consumer")
 	}
 
-	testsupport.Kill(t, cmd)
+	plugintest.Kill(t, cmd)
 	plugintest.ReapProcess(t, cmd.Process)
 }
 
@@ -181,7 +181,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 	}
 	exited := sup.GetExitSignal()
 
-	testsupport.Kill(t, cmd)
+	plugintest.Kill(t, cmd)
 
 	select {
 	case <-exited:

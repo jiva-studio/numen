@@ -24,7 +24,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -190,7 +191,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 	t.Helper()
 
 	mux := http.NewServeMux()
-	testsupport.HandlePluginLifecycle(mux)
+	servetest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)

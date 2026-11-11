@@ -87,11 +87,9 @@ type Erasing struct {
 
 // Scan is one vault made searchable.
 type Scan struct {
-	Read       indexing.ReadWholeVault
-	Summary    func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error)
-	Now        func() time.Time
-	Unembedded error
-	Close      func() error
+	Scan  indexing.ScanVault
+	Now   func() time.Time
+	Close func() error
 }
 
 // Search is one question answered.

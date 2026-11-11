@@ -27,6 +27,8 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -134,7 +136,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 	ports := map[string]int{}
 	for id, served := range servers {
 		mux := http.NewServeMux()
-		testsupport.HandlePluginLifecycle(mux)
+		servetest.HandlePluginLifecycle(mux)
 		mux.Handle(numenv1connect.NewAgentServiceHandler(served))
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
@@ -158,7 +160,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() { testsupport.Kill(t, cmd) })
+		t.Cleanup(func() { plugintest.Kill(t, cmd) })
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))), nil
 	})
 	return host

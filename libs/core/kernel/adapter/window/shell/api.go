@@ -29,7 +29,7 @@ type API struct {
 	PluginServices       PluginServices
 	Agent                numenv1connect.AgentServiceHandler
 	Vaults               *registry.List
-	ResolveLinks         *query.ResolveLinks
+	ResolveLinks         *query.ResolveVaultLinks
 
 	subscribers changeSubscribers
 }

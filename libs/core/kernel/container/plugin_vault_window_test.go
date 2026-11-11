@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -80,8 +81,8 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	rivers := testsupport.NewVault(t, map[string]string{"Danube.md": "# Danube\n\nA river.\n"})
-	other = testsupport.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n\nA deep lake.\n", "Lakes.md": "# Lakes\n"})
+	rivers := vaultfixture.NewVault(t, map[string]string{"Danube.md": "# Danube\n\nA river.\n"})
+	other = vaultfixture.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n\nA deep lake.\n", "Lakes.md": "# Lakes\n"})
 	testsupport.SaveVaults(t, cfg.RegistryPath, rivers, other)
 	return other, func() (domain.Vault, bool) { return rivers, true }, windowVaults{cfg: cfg, db: db}
 }
@@ -143,8 +144,8 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	rivers := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA river.\n"})
-	lakes := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA lake of the same name.\n"})
+	rivers := vaultfixture.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA river.\n"})
+	lakes := vaultfixture.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA lake of the same name.\n"})
 	testsupport.SaveVaults(t, cfg.RegistryPath, rivers, lakes)
 	var isSwitched atomic.Bool
 	current := func() (domain.Vault, bool) {

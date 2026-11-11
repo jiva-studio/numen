@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -78,7 +78,7 @@ func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan do
 func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
 	state := NewState(run.NewTasks(), nil, nil)
-	state.Runtime.SetVault(testsupport.NewVault(t, map[string]string{
+	state.Runtime.SetVault(vaultfixture.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Grey Heron\nHerons fish at dusk.\n",
 	}))

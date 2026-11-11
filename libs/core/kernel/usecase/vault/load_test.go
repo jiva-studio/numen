@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -41,7 +42,7 @@ func TestLoad(t *testing.T) {
 	ctx := t.Context()
 
 	generating := testsupport.GetMachine().Now()
-	v := testsupport.GenerateVault(t, notes)
+	v := vaultfixture.GenerateVault(t, notes)
 	t.Logf("generated %d notes in %s", notes, getElapsed(generating))
 
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
@@ -90,7 +91,7 @@ func TestLoad(t *testing.T) {
 		measureUnderLoad(t, db, v, scan, "entropy observer")
 	})
 	t.Run("rare term while a scan runs", func(t *testing.T) {
-		measureUnderLoad(t, db, v, scan, testsupport.RareTerm)
+		measureUnderLoad(t, db, v, scan, vaultfixture.RareTerm)
 	})
 }
 

@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -257,7 +257,7 @@ func (d dirReaders) Open(domain.Vault) (vaultport.VaultReader, error) {
 
 // A file of a folder the vault ignores has no index row; its versions still have a live one.
 func TestListVersionsOfAPDFInAnIgnoredFolderListsItsLiveVersion(t *testing.T) {
-	root := testsupport.CopyVault(t)
+	root := vaultfixture.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(mapsPath))
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		t.Fatal(err)

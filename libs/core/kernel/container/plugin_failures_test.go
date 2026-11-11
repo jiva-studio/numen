@@ -35,7 +35,7 @@ func newFailingConfig(t *testing.T) Config {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(sampleManifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.Open("desktop.editor", root)
+	host := pluginhost.Open(t, "desktop.editor", root)
 	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})

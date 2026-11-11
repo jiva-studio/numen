@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -23,7 +24,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	v := testsupport.NewVault(t, notes)
+	v := vaultfixture.NewVault(t, notes)
 	testsupport.SaveVaults(t, cfg.RegistryPath, v)
 	return v, func() (domain.Vault, bool) { return v, true }, windowVaults{cfg: cfg, db: db}
 }

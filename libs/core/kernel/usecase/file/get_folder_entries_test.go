@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -27,7 +27,7 @@ func (q *typed) GetTypes(_ context.Context, _ domain.VaultID, paths []string) (m
 }
 
 func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"samples/spanish.md": "# spanish\n",
 		"samples/ideas.md":   "# ideas\n",
 		"samples/talk.mp3":   "sound",
@@ -52,7 +52,7 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 }
 
 func TestAFolderListsWithoutAnIndex(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{"a.md": "# a\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# a\n"})
 
 	listing, err := file.NewGetFolderEntries(vaultreader.Readers{}, nil).Execute(t.Context(), v, "")
 	if err != nil || len(listing.Entries) == 0 || len(listing.Types) != 0 {
@@ -61,7 +61,7 @@ func TestAFolderListsWithoutAnIndex(t *testing.T) {
 }
 
 func TestAFolderThatIsNotThereIsNotListed(t *testing.T) {
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 
 	if _, err := file.NewGetFolderEntries(vaultreader.Readers{}, nil).Execute(t.Context(), v, "nowhere"); err == nil {
 		t.Fatal("a folder that is not there was listed")
@@ -69,7 +69,7 @@ func TestAFolderThatIsNotThereIsNotListed(t *testing.T) {
 }
 
 func TestAnIndexThatCannotAnswerFailsTheListing(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{"a.md": "# a\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# a\n"})
 	failure := errors.New("index closed")
 
 	_, err := file.NewGetFolderEntries(vaultreader.Readers{}, &typed{err: failure}).Execute(t.Context(), v, "")
@@ -86,7 +86,7 @@ func (unopenable) Open(domain.Vault) (vaultport.VaultReader, error) {
 }
 
 func TestAVaultThatCannotBeOpenedIsNotAFolderThatIsMissing(t *testing.T) {
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 
 	_, err := file.NewGetFolderEntries(unopenable{}, nil).Execute(t.Context(), v, "")
 	if err == nil || errors.Is(err, fs.ErrNotExist) {

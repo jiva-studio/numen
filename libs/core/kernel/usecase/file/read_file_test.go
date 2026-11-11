@@ -8,12 +8,12 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 func TestAWholeFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{"samples/A.md": "body"})
+	v := vaultfixture.NewVault(t, map[string]string{"samples/A.md": "body"})
 	u := file.NewReadFile(vaultreader.Readers{})
 
 	content, stat, err := u.Execute(t.Context(), v, "samples/A.md")
@@ -34,7 +34,7 @@ func TestAWholeFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testin
 }
 
 func TestAFileThatIsNotThereIsNotReadAsAWholeFile(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{"samples/A.md": "body"})
+	v := vaultfixture.NewVault(t, map[string]string{"samples/A.md": "body"})
 	u := file.NewReadFile(vaultreader.Readers{})
 
 	_, _, err := u.Execute(t.Context(), v, "gone.md")

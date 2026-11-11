@@ -20,7 +20,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/servetest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -82,7 +83,7 @@ func newProviderHost(t *testing.T, handlers map[string]numenv1connect.AgentServi
 	for id, handler := range handlers {
 		writeAgentProvider(t, dir, id)
 		mux := http.NewServeMux()
-		testsupport.HandlePluginLifecycle(mux)
+		servetest.HandlePluginLifecycle(mux)
 		mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)

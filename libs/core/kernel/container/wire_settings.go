@@ -14,9 +14,8 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
@@ -340,7 +339,7 @@ func CheckTextScale(name string, scale float64) error {
 }
 
 func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sources {
-	return themeusecase.Sources{Presets: files, Own: files, Plugins: themebridge.Open(c.PluginHost.Runtime)}
+	return themeusecase.Sources{Presets: files, Own: files, Plugins: themefiles.NewPluginThemes(c.PluginHost.Runtime)}
 }
 
 func openThemeFiles(c settingsWiring) (themefiles.Files, error) {

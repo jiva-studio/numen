@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -321,7 +322,7 @@ func openVault(t *testing.T, notes map[string]string) (container.Config, *contai
 	}
 	testsupport.CloseAfter(t, db)
 
-	return cfg, db, testsupport.NewVault(t, notes)
+	return cfg, db, vaultfixture.NewVault(t, notes)
 }
 
 func write(t *testing.T, v domain.Vault, path, body string) {

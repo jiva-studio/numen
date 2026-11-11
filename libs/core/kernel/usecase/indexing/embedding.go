@@ -16,12 +16,14 @@ var ErrNoProgress = errors.New("index progress is unknown")
 // under its model. Either may be missing: a window without an embedder indexes words alone.
 type Embedding struct {
 	embedder embeddingport.Embedder
+	watcher  embeddingport.ModelWatcher
 	progress indexport.IndexProgress
 }
 
-// NewEmbedding returns the embedding of an embedder and the count of what it has embedded.
-func NewEmbedding(embedder embeddingport.Embedder, progress indexport.IndexProgress) *Embedding {
-	return &Embedding{embedder: embedder, progress: progress}
+// NewEmbedding returns the embedding of an embedder, the watcher of its model and the count of what it has
+// embedded. An embedder that never changes its model has no watcher.
+func NewEmbedding(embedder embeddingport.Embedder, watcher embeddingport.ModelWatcher, progress indexport.IndexProgress) *Embedding {
+	return &Embedding{embedder: embedder, watcher: watcher, progress: progress}
 }
 
 // GetEmbedder returns the embedder, and none for a window without one.
@@ -53,23 +55,14 @@ func (e *Embedding) CountProgress(ctx context.Context, vaultID domain.VaultID, r
 // HasProgress reports whether the embedded chunks can be counted.
 func (e *Embedding) HasProgress() bool { return e != nil && e.progress != nil }
 
-// modelWatcher is an embedder that reports a change of its model.
-type modelWatcher interface {
-	OnModelChange(fn func())
-}
-
 // OnModelChange calls fn each time the model of the embedder changes, with whether the change moved
 // the size of a chunk. An embedder that never changes its model calls nothing.
 func (e *Embedding) OnModelChange(fn func(isChunkSizeChanged bool)) {
-	if e == nil || e.embedder == nil {
-		return
-	}
-	watcher, ok := e.embedder.(modelWatcher)
-	if !ok {
+	if e == nil || e.embedder == nil || e.watcher == nil {
 		return
 	}
 	chunkTokens := e.embedder.GetModel().ChunkTokens
-	watcher.OnModelChange(func() {
+	e.watcher.OnModelChange(func() {
 		tokens := e.embedder.GetModel().ChunkTokens
 		changed := tokens != chunkTokens
 		chunkTokens = tokens

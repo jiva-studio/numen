@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
@@ -17,7 +17,7 @@ import (
 
 func openNoteRead(t *testing.T, notes map[string]string) (note.Read, domain.Vault) {
 	t.Helper()
-	return note.NewRead(vaultreader.Readers{}), testsupport.NewVault(t, notes)
+	return note.NewRead(vaultreader.Readers{}), vaultfixture.NewVault(t, notes)
 }
 
 func read(t *testing.T, u note.Read, v domain.Vault, path string) edit.Contents {
