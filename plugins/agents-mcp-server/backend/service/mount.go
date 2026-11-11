@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/hostserver"
 	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/exposetools"
+	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/hostserver"
 )
 
 // Mount registers the plugin's services and handlers on the plugin server.

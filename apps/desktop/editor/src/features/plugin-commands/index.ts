@@ -30,6 +30,7 @@ export {
 export { createPluginCatalog } from './model/host/createPluginCatalog'
 export { createPluginReports } from './model/host/createPluginReports'
 export { getAppCommandIds } from './model/host/getAppCommandIds'
+export { getListedCommandIds, isCommandListed } from './model/host/listedCommands'
 export { createWindowFacts } from './model/host/createWindowFacts'
 export { createWindowSlots } from './model/host/createWindowSlots'
 export { createNoteKindReader } from './model/host/createNoteKindReader'

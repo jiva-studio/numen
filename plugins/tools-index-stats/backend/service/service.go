@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/indexstats"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/internal/adapter/machine"
+	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/usecase/indexstats"
 )
 
 func getStats(stats *indexstats.Stats) func(context.Context, api.GetStatsRequest) (api.Stats, error) {

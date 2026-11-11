@@ -9,8 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
 
 func TestEnvironmentSanitization(t *testing.T) {
@@ -242,8 +241,8 @@ func TestProcessLimits(t *testing.T) {
 		t.Fatalf("failed to start sleep: %v", err)
 	}
 	defer func() {
-		testsupport.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
+		wiretest.Kill(t, cmd)
+		wiretest.ReapProcess(t, cmd.Process)
 	}()
 
 	t.Run("apply valid limits", func(t *testing.T) {

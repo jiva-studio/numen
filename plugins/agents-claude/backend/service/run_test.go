@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/environment"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/environment"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/hostenv"
 )
 

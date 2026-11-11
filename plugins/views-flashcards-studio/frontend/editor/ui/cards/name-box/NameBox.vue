@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NameEntryState } from '../../../model/cards/nameEntry'
+import { useObjection } from '../../../model/cards/useObjection'
 import type { Objection } from '../../../../lib/cards'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -12,7 +13,11 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isInvalid = computed<boolean>(() => props.naming.getObjection(props.targetId) !== null)
+const objection = useObjection(
+  () => props.naming,
+  () => props.targetId,
+)
+const isInvalid = computed<boolean>(() => objection.value !== null)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInput(event: Event): void {

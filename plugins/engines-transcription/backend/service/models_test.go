@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	transcription "github.com/jiva-studio/numen/plugins/engines-transcription"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 )
 
 // Each model the manifest offers is one the engine provisions.

@@ -6,7 +6,7 @@ import (
 	"path"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 func newCommands(texts *extract.Writer) (*command.Registry, error) {

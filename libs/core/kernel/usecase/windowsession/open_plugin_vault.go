@@ -22,17 +22,16 @@ type OpenPluginVault struct {
 	guard    *Guard
 	identity IdentityCheck
 	pages    Pages
+	switcher VaultSwitch
 }
 
-func NewOpenPluginVault(guard *Guard, identity IdentityCheck, pages Pages) OpenPluginVault {
-	return OpenPluginVault{guard: guard, identity: identity, pages: pages}
+func NewOpenPluginVault(guard *Guard, identity IdentityCheck, pages Pages, switcher VaultSwitch) OpenPluginVault {
+	return OpenPluginVault{guard: guard, identity: identity, pages: pages, switcher: switcher}
 }
 
-// Execute opens v on behalf of a plugin. show switches the window and is nil for a window that cannot.
-func (u OpenPluginVault) Execute(
-	ctx context.Context, v domain.Vault, show func(context.Context, domain.Vault, *PluginOpen) error,
-) error {
-	if show == nil {
+// Execute opens v on behalf of a plugin. A nil switcher is a window that cannot switch vaults.
+func (u OpenPluginVault) Execute(ctx context.Context, v domain.Vault) error {
+	if u.switcher == nil {
 		return errNoVaultSwitch
 	}
 	if err := u.identity.Execute(v); err != nil {
@@ -46,7 +45,7 @@ func (u OpenPluginVault) Execute(
 	if u.pages.IsQuestionOpen() {
 		return plugin.ErrUnsavedChanges
 	}
-	err = show(ctx, v, open)
+	err = u.switcher.Execute(ctx, v, open)
 	switch {
 	case err == nil:
 		return nil
@@ -59,4 +58,9 @@ func (u OpenPluginVault) Execute(
 		return plugin.ErrUnsavedChanges
 	}
 	return err
+}
+
+// VaultSwitch shows a vault in the window. `open` is the plugin open whose lock the switch shares.
+type VaultSwitch interface {
+	Execute(ctx context.Context, v domain.Vault, open *PluginOpen) error
 }

@@ -271,9 +271,11 @@ type Scenarios struct {
 		Flush FlushPending
 		Close CloseWindow
 	}
-	Start   StartWindow
-	ShowTab ShowTab
-	Import  ImportFiles
+	guard    *Guard
+	identity IdentityCheck
+	Start    StartWindow
+	ShowTab  ShowTab
+	Import   ImportFiles
 }
 
 // NewScenarios builds the use cases of the window the way the container does.
@@ -290,7 +292,8 @@ func NewScenarios(rt *Runtime, tabs *TabReports, deps Deps) *Scenarios {
 	var s Scenarios
 	s.Switching.Rebuild = NewRebuildSession(guard, session)
 	s.Switching.Show = NewShowVault(guard, session, deps.Vault.Identity, flush, deps.Window.Changes)
-	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages)
+	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages, nil)
+	s.guard, s.identity = guard, deps.Vault.Identity
 	s.Closing.Flush = NewFlushPending(guard, flush)
 	s.Closing.Close = NewCloseWindow(deps.Shutdown.Door, session, deps.Shutdown.Closers...)
 	follow := NewModelFollow(deps.Index.Model, deps.Index.Wake, rt, s.Switching.Rebuild)

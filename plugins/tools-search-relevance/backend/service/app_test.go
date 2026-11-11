@@ -18,8 +18,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/service"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 const (
@@ -394,6 +395,6 @@ func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
 	}
 }
 
-func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Folder {
-	return func(id domain.VaultID) relevance.Folder { return vault.Store().With(id) }
+func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Records {
+	return func(id domain.VaultID) relevance.Records { return floorrecords.New(vault.Store().With(id)) }
 }

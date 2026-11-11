@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -71,7 +72,7 @@ func TestAScanConsumesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 
 func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	db := makeIndex(t)
-	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n"})
 	target := container.NewConfig(container.Config{
 		ShouldRebuildIndex: true,
 		Paths:              container.Paths{ServiceDir: ".numen"},
@@ -91,7 +92,7 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 
 func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	db := makeIndex(t)
-	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n"})
 	model := unit{"first"}
 
 	made, err := container.Embed(container.NewConfig(container.Config{
@@ -141,7 +142,7 @@ func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embed
 func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
-	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
 	target := container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
 	})
@@ -187,7 +188,7 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	t.Helper()
 	db := makeIndex(t)
-	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	v := vaultfixture.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
 	whole, err := container.ReadWholeVault(container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
 	}), t.Context(), db, unit{"first"}, v)

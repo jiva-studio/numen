@@ -13,8 +13,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
 
 func TestConfigureSysProcAttrOnLinux(t *testing.T) {
@@ -37,8 +36,8 @@ func TestLinuxProcessLimitsRLIMIT_ASNotSet(t *testing.T) {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 	defer func() {
-		testsupport.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
+		wiretest.Kill(t, cmd)
+		wiretest.ReapProcess(t, cmd.Process)
 	}()
 
 	limits := Limits{CPULimitSeconds: 10}

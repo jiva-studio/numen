@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"
+	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
 
 // fakeFetcher answers every request with one manifest or one error, and records the endpoints requested.

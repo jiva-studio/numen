@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { Icon } from '../../icon'
 import { NameBox } from '../../name-box'
 import { CardRow } from '../../card-row'
 import { Button } from '@numen/ui'
 import type { NameEntryState } from '../../../../model/cards/nameEntry'
+import { useObjection, useObjectionMessage } from '../../../../model/cards/useObjection'
 import {
   parseStepKey,
   STEP_KEYS,
@@ -39,12 +39,12 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const objections = computed(() => props.naming.getObjection(props.row.field))
+const objections = useObjection(
+  () => props.naming,
+  () => props.row.field,
+)
 
-const says = computed(() => {
-  const objection = objections.value
-  return objection === null ? null : props.words.objection(objection)
-})
+const says = useObjectionMessage(objections, () => props.words.objection)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGripKey(event: KeyboardEvent): void {

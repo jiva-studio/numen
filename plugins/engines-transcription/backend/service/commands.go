@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
 func newCommands(transcriber *transcribe.Transcriber) (*command.Registry, error) {

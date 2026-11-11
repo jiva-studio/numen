@@ -3,7 +3,6 @@ package shell
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"connectrpc.com/connect"
 
@@ -21,8 +20,7 @@ var errNoVault = errors.New("this window shows no vault, so a request names the 
 // NoteService belongs to the editor.
 type noteLinks struct {
 	numenv1connect.UnimplementedNoteServiceHandler
-	resolve *query.ResolveLinks
-	list    func() ([]domain.Vault, error)
+	resolve *query.ResolveVaultLinks
 }
 
 func (l noteLinks) ResolveAddresses(
@@ -32,22 +30,15 @@ func (l noteLinks) ResolveAddresses(
 	if named == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoVault)
 	}
-	if l.resolve == nil || l.list == nil {
+	if l.resolve == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("this window resolves no links"))
 	}
-	vaults, err := l.list()
+	out, err := wire.ResolveAddresses(ctx, l.resolve, domain.VaultID(named), r.Msg)
+	if errors.Is(err, query.ErrUnknownVault) {
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	for _, v := range vaults {
-		if string(v.ID) != named {
-			continue
-		}
-		out, err := wire.ResolveAddresses(ctx, l.resolve, v, r.Msg)
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(out), nil
-	}
-	return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("no vault %q", named))
+	return connect.NewResponse(out), nil
 }

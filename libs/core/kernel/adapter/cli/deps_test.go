@@ -80,10 +80,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			embed.Texts = testsupport.Texts{Readers: readers}
 
 			return cli.Scan{
-				Read: indexing.NewReadWholeVaultByName(find, preparingRead(indexing.NewReadWholeVault(notes, books, embed))),
-				Summary: func(ctx context.Context, v domain.Vault) (domain.VaultSummary, error) {
-					return db.NoteQueries().GetSummary(ctx, v.ID)
-				},
+				Scan:  indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, preparingRead(indexing.NewReadWholeVault(notes, books, embed))), db.NoteQueries()),
 				Now:   clockOf(s.parts(where).now),
 				Close: db.Close,
 			}, nil

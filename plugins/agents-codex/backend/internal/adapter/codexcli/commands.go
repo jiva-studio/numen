@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/run"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/run"
 )
 
 // Commands builds the command lines of a Codex run.

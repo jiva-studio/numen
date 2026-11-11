@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/endpoint"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/settings"
 )
 
 // DefaultBaseURL is the chat API base URL used when the settings specify none.

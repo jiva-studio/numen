@@ -26,8 +26,8 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -116,7 +116,7 @@ func (k *secretKeys) snapshot() map[string]string {
 
 // probe is a plugin that records the Configure calls it receives.
 type probe struct {
-	testsupport.PluginLifecycle
+	wiretest.PluginLifecycle
 	mu       sync.Mutex
 	calls    []*v1.ConfigureRequest
 	failure  error
@@ -264,15 +264,15 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	ports := map[string]int{}
 	processes := map[string]*os.Process{}
 	for id, one := range probes {
-		processes[id] = plugintest.StartSleepProcess(t).Process
+		processes[id] = wiretest.StartSleepProcess(t).Process
 		mux := http.NewServeMux()
 		mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(one))
 		server := httptest.NewServer(mux)
 		t.Cleanup(server.Close)
-		ports[id] = plugintest.GetPort(t, server)
+		ports[id] = wiretest.GetPort(t, server)
 	}
 	host.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		return processes[p.Manifest.ID], plugintest.GetReadyOutput(ports[p.Manifest.ID]), nil
+		return processes[p.Manifest.ID], wiretest.GetReadyOutput(ports[p.Manifest.ID]), nil
 	})
 
 	configDir := t.TempDir()
@@ -320,7 +320,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 		if _, err := host.Activation.EnsureActive(t.Context(), id); err != nil {
 			t.Fatal(err)
 		}
-		plugintest.WaitUntil(t, id+" is configured", func() bool { return probes[id].count() > 0 })
+		wiretest.WaitUntil(t, id+" is configured", func() bool { return probes[id].count() > 0 })
 	}
 	return w
 }

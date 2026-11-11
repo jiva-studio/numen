@@ -13,8 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // videoAddress is an address the mock downloader takes for a video site.
@@ -28,7 +29,7 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	texts.SetStore(PluginID, store)
 	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	links := link.New(hosted,
-		func() link.Fetcher { return download.NewMock() },
+		func() link.Fetcher { return download.NewMock(webpage.New()) },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	return links, store, hosted

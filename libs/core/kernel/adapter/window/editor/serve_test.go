@@ -17,6 +17,8 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -192,7 +194,7 @@ func openingWith(
 ) *behind {
 	t.Helper()
 
-	v := testsupport.NewVault(t, notes)
+	v := vaultfixture.NewVault(t, notes)
 	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), false, nil)
 	db := wired.openIndex(t)
 
@@ -209,13 +211,13 @@ func openingWith(
 			t.Fatal(err)
 		}
 		api.state.Runtime.RecordModel(embedder.GetModel().String(), "")
-		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Chunks.Progress)
+		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, nil, db.Chunks.Progress)
 	}
 	line, isDone := api.state.Notices.ChangeEvents.Subscribe()
 	t.Cleanup(isDone)
 
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
-		embedding: indexing.NewEmbedding(embedder, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
+		embedding: indexing.NewEmbedding(embedder, nil, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
 	})
 	t.Cleanup(end)
 
@@ -490,8 +492,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		dropped = "library/Another Book.epub"
 	)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	testsupport.WriteBook(t, v.Path, target)
+	v := vaultfixture.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	vaultfixture.WriteBook(t, v.Path, target)
 
 	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), true, testsupport.Texts{Readers: vaultreader.Readers{}})
 	db := wired.openIndex(t)
@@ -514,7 +516,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	// A second book is added to the vault and the watch reports it, which runs
 	// another pass over an already-read library.
-	testsupport.WriteBook(t, v.Path, dropped)
+	vaultfixture.WriteBook(t, v.Path, dropped)
 	sendChange(t, watcher, dropped)
 
 	waitFor(t, "the book dropped into the vault was never taken apart", func() bool {
@@ -581,13 +583,13 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
 			vault, vaults := numenv1connect.NewVaultServiceHandler(windowvault.NewHandler(state, state.Notices))
-			mux.Handle(vault, testsupport.NewRootedHandler(vaults, entered, returned))
+			mux.Handle(vault, wiretest.NewRootedHandler(vaults, entered, returned))
 			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(newWorkspace(t, state))
-			mux.Handle(standing, testsupport.NewRootedHandler(workspace, entered, returned))
+			mux.Handle(standing, wiretest.NewRootedHandler(workspace, entered, returned))
 			filed, notes := numenv1connect.NewNoteServiceHandler(services.Note)
-			mux.Handle(filed, testsupport.NewRootedHandler(notes, entered, returned))
+			mux.Handle(filed, wiretest.NewRootedHandler(notes, entered, returned))
 			rendered, itself := numenv1connect.NewWindowServiceHandler(state.Window)
-			mux.Handle(rendered, testsupport.NewRootedHandler(itself, entered, returned))
+			mux.Handle(rendered, wiretest.NewRootedHandler(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 

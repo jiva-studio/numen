@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -30,7 +30,7 @@ const (
 
 // configurable is a plugin that takes its configuration.
 type configurable struct {
-	testsupport.PluginLifecycle
+	wiretest.PluginLifecycle
 }
 
 func (configurable) Configure(
@@ -48,7 +48,7 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mock))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	port := plugintest.GetPort(t, server)
+	port := wiretest.GetPort(t, server)
 
 	root := t.TempDir()
 	for id, capability := range map[string]string{embeddingPluginID: `"capabilities": ["embedding"],`, otherPluginID: ""} {
@@ -66,9 +66,9 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		return cmd.Process, plugintest.GetReadyOutput(port), nil
+		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 
 	bridge, err := Open(t.Context(), pluginhost.Join(host))
@@ -84,7 +84,7 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 
 func settle(t *testing.T, bridge *Embedder, mock *mockEmbeddingServer, readsBefore int32) {
 	t.Helper()
-	plugintest.WaitUntil(t, "a read of the model after the plugin was configured", func() bool {
+	wiretest.WaitUntil(t, "a read of the model after the plugin was configured", func() bool {
 		return mock.getModelCalls.Load() != readsBefore
 	})
 	bridge.announceMu.Lock()

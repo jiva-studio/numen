@@ -14,13 +14,13 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
 
 func (w *window) awaitIDs(t *testing.T, pluginID, name string, want ...string) {
 	t.Helper()
 	var got []string
-	plugintest.WaitUntil(t, pluginID+" receives "+strings.Join(want, ",")+" for "+name, func() bool {
+	wiretest.WaitUntil(t, pluginID+" receives "+strings.Join(want, ",")+" for "+name, func() bool {
 		got = w.probes[pluginID].ids(t, name)
 		return slices.Equal(got, want) || (len(got) == 0 && len(want) == 0)
 	})
@@ -185,7 +185,7 @@ func TestOnlyTheActiveDeclarationsAreDelivered(t *testing.T) {
 	}
 
 	w.setProvider(t, "custom")
-	plugintest.WaitUntil(t, "the declaration for custom is delivered", func() bool {
+	wiretest.WaitUntil(t, "the declaration for custom is delivered", func() bool {
 		entry, found := w.probes[alphaID].entry(t, "apiKey")
 		return found && entry.GetGroup() == ""
 	})
@@ -272,7 +272,7 @@ func TestAHandEditedEntryOfAPluginThatIsNotInstalledIsDropped(t *testing.T) {
 		}
 		return secrets
 	})
-	plugintest.WaitUntil(t, "the invalid permissions are dropped", func() bool {
+	wiretest.WaitUntil(t, "the invalid permissions are dropped", func() bool {
 		return len(w.find(t, x).GetAllowed()) == 0
 	})
 	if !strings.Contains(w.readFile(t), "md.numen.test.absent") {
@@ -394,7 +394,7 @@ func TestOperationsOnOnePluginAreSerialized(t *testing.T) {
 	}
 	group.Wait()
 
-	plugintest.WaitUntil(t, "the last Configure reflects every operation", func() bool {
+	wiretest.WaitUntil(t, "the last Configure reflects every operation", func() bool {
 		got := w.probes[alphaID].ids(t, "apiKey")
 		return len(got) == count
 	})

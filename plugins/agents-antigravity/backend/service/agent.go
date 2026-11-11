@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/catalog"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/internal/adapter/antigravity"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/runs"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/settings"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/catalog"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
 )
 
 type agentServer struct {

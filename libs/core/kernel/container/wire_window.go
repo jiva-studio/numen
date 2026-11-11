@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/startup"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -112,7 +111,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
-	embedding := indexing.NewEmbedding(embedder, w.db.ChunkVectors())
+	embedding := indexing.NewEmbedding(embedder, embedder, w.db.ChunkVectors())
 	state := editor.NewState(tasks, w.frame, func(event string) { emitPluginEvent(plugins(w.cfg), event) })
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(w, state, embedding, out)
@@ -135,15 +134,10 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		indexer: indexer, embedding: embedding, moves: &moves, current: current, out: out,
 		embedderError: why, closeEmbedder: closeEmbedder,
 	})
-	switching := startup.SwitchVault[*windowsession.PluginOpen]{
-		Show:        session.show.Execute,
-		FollowVault: func(path string) { setPluginVaultPath(plugins(w.cfg), path) },
-		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
-	}
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.start, Show: session.show, OpenPlugin: session.openPlugin,
 		Flush: session.flush, Close: session.close,
-		OpenVault: switching.Execute, NoteWritten: indexer.WakeNotes,
+		NoteWritten: indexer.WakeNotes,
 	}, tools.importFiles, out)
 	w.inst = inst
 	w.cases.ShowTab = tools.showTab

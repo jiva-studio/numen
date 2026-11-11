@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
@@ -34,7 +34,7 @@ func newHandler(open window) *mediawindow.Handler {
 }
 
 func TestAFileOfTheShownVaultIsPlayedFromTheSocket(t *testing.T) {
-	open := window{vault: testsupport.NewVault(t, map[string]string{"clips/tide.mp3": "sound"})}
+	open := window{vault: vaultfixture.NewVault(t, map[string]string{"clips/tide.mp3": "sound"})}
 
 	answer, err := newHandler(open).ResolveAddress(
 		t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: "clips/tide.mp3"}))
@@ -57,7 +57,7 @@ func TestAWindowShowingNoVaultResolvesNothing(t *testing.T) {
 }
 
 func TestAnAddressOutsideTheVaultIsRefused(t *testing.T) {
-	open := window{vault: testsupport.NewVault(t, nil)}
+	open := window{vault: vaultfixture.NewVault(t, nil)}
 
 	_, err := newHandler(open).ResolveAddress(
 		t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: "../secret.mp3"}))

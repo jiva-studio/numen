@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -93,7 +93,7 @@ func aFolderOfTwo() handedOver {
 // Nothing passed is nothing done, whether or not the vault can be written.
 func TestNothingHandedOverIsNothingCompleted(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	bring := vaults.NewImport(unwritable{err: errors.New("the vault cannot be written")}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", nil)
@@ -108,7 +108,7 @@ func TestNothingHandedOverIsNothingCompleted(t *testing.T) {
 // A vault that cannot be written takes nothing, and the caller receives the reason.
 func TestAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	cannot := errors.New("the vault cannot be written")
 	bring := vaults.NewImport(unwritable{err: cannot}, aFolderOfTwo())
 
@@ -124,7 +124,7 @@ func TestAVaultThatCannotBeSavedIsAnError(t *testing.T) {
 // A drop that was canceled ends, and nothing is reported as a file that failed.
 func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, aFolderOfTwo())
@@ -142,7 +142,7 @@ func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 // outside.
 func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
@@ -168,7 +168,7 @@ func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 // A handle that cannot be read stays outside under the error it gave.
 func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	removed := errors.New("the file is gone")
 	machine := flawed{
 		handedOver: handedOver{names: map[string]string{"content://held/9": "Gone.png"}},
@@ -191,7 +191,7 @@ func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 // A folder whose name a file of the vault already carries stays outside whole.
 func TestAFolderOntoAFileOfTheSameNameStaysOutside(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, map[string]string{"scans": "a file"})
+	v := vaultfixture.NewVault(t, map[string]string{"scans": "a file"})
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, aFolderOfTwo())
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
@@ -210,7 +210,7 @@ func TestAFolderOntoAFileOfTheSameNameStaysOutside(t *testing.T) {
 // named with the error.
 func TestAFolderThatCannotBeListedIsNamedWithTheError(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	unlistable := errors.New("the folder cannot be listed")
 	machine := flawed{
 		handedOver: aFolderOfTwo(),
@@ -231,7 +231,7 @@ func TestAFolderThatCannotBeListedIsNamedWithTheError(t *testing.T) {
 // named under its own name.
 func TestOneFileOfAFolderThatCannotBeReadIsNamedAndTheRestArrive(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	denied := errors.New("the file is not readable")
 	machine := flawed{
 		handedOver: aFolderOfTwo(),
@@ -257,7 +257,7 @@ func TestOneFileOfAFolderThatCannotBeReadIsNamedAndTheRestArrive(t *testing.T) {
 // A file entry of a folder that cannot be examined is named under its own name.
 func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	removed := errors.New("the entry is gone")
 	machine := flawed{
 		handedOver: aFolderOfTwo(),
@@ -293,7 +293,7 @@ func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
 // vault would do with them.
 func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
 	bring := vaults.NewImport(ignoringContext{vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}}, machine)
@@ -312,7 +312,7 @@ func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 // rest is not tried.
 func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
@@ -329,7 +329,7 @@ func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
 // Something that is neither a file nor a folder is excluded and reported.
 func TestSomethingNeitherFileNorFolderStaysOutside(t *testing.T) {
 	isolateHome(t)
-	v := testsupport.NewVault(t, nil)
+	v := vaultfixture.NewVault(t, nil)
 	machine := flawed{
 		handedOver: handedOver{names: map[string]string{"content://held/7": "Socket"}},
 		neither:    map[string]bool{"content://held/7": true},

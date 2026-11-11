@@ -1,2 +1,2 @@
-// Package plugintest holds the fixtures the tests of the plugin adapter share: a plugin tree on disk, a child process that idles and servers that answer pings and agent calls.
+// Package plugintest holds the stand-ins the tests of the plugin adapter hand to a bridge in place of the plugin host.
 package plugintest

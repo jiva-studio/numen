@@ -6,11 +6,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/linkimport"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/linkimport"
 )
 
 // linkServer serves the importer API over the links of the vault the host shows.

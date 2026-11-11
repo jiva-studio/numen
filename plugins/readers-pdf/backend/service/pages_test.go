@@ -13,8 +13,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
 func newLinkedPages(t *testing.T, files *hosttest.Vault) *httptest.Server {
@@ -23,7 +23,7 @@ func newLinkedPages(t *testing.T, files *hosttest.Vault) *httptest.Server {
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
 	}, func(s *server.Server) error {
-		s.RegisterRoute(pagesPattern, NewPageServer(newReader(t, files, hosttest.NewTexts("vault", testsupport.PluginID))))
+		s.RegisterRoute(pagesPattern, NewPageServer(newReader(t, files, hosttest.NewTexts("vault", testsupport.PluginID)), func(string, error) {}))
 		return nil
 	})
 	if err != nil {
@@ -173,7 +173,7 @@ func TestPageRouteDrawsAPageNoLargerThanTheMostPixels(t *testing.T) {
 
 func TestPageServerServeHTTPCanceledAndHeaders(t *testing.T) {
 	vault := newTestdataVault(t)
-	srv := NewPageServer(newReader(t, vault, hosttest.NewTexts("vault", testsupport.PluginID)))
+	srv := NewPageServer(newReader(t, vault, hosttest.NewTexts("vault", testsupport.PluginID)), func(string, error) {})
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf&wide=100", nil)
 	req.SetPathValue("page", "0")
 	rec := httptest.NewRecorder()

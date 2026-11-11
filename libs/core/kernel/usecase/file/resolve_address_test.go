@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -43,7 +43,7 @@ func (s clipStore) Open(_ context.Context, name string) (io.ReadSeekCloser, int6
 
 func newResolveAddress(t *testing.T) (*file.ResolveAddress, domain.Vault) {
 	t.Helper()
-	v := testsupport.NewVault(t, map[string]string{"talks/river.mp3": "sound"})
+	v := vaultfixture.NewVault(t, map[string]string{"talks/river.mp3": "sound"})
 	stores := clipStores{"org.example.links": {"river.mp4": "a clip"}}
 	return file.NewResolveAddress(file.NewStatFile(vaultreader.Readers{}), file.NewOpenPluginFile(stores), nil), v
 }

@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/books"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
 )
 
 func serveEntries(t *testing.T) (*http.ServeMux, *books.Reader) {
@@ -22,7 +22,7 @@ func serveEntries(t *testing.T) (*http.ServeMux, *books.Reader) {
 	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return current.With(id) })
 	t.Cleanup(reader.Close)
 	mux := http.NewServeMux()
-	mux.Handle("GET /"+entriesPattern, NewEntryServer(reader))
+	mux.Handle("GET /"+entriesPattern, NewEntryServer(reader, func(string, error) {}))
 	return mux, reader
 }
 

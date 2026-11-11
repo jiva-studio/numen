@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -142,19 +142,19 @@ func serveEcho(t *testing.T) int {
 
 func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken string) supervision.Launcher {
 	t.Helper()
-	pingPort := plugintest.ServeHostPing(t)
+	pingPort := wiretest.ServeHostPing(t)
 	ready := fmt.Sprintf("NUMEN_READY port=%d", pingPort)
 	if listenerToken != "" {
 		ready += " " + listenerToken
 	}
 	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
+		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
 		t.Cleanup(func() {
-			plugintest.KillProcess(t, cmd.Process)
-			plugintest.ReapProcess(t, cmd.Process)
+			wiretest.KillProcess(t, cmd.Process)
+			wiretest.ReapProcess(t, cmd.Process)
 		})
 		started.Add(1)
 		return cmd.Process, io.NopCloser(strings.NewReader(ready + "\n")), nil
@@ -208,7 +208,7 @@ func newListenerHost(t *testing.T) listenerHost {
 func waitForFailure(t *testing.T, host *Host) PluginStatus {
 	t.Helper()
 	var status PluginStatus
-	plugintest.WaitUntil(t, "the plugin to be failed", func() bool {
+	wiretest.WaitUntil(t, "the plugin to be failed", func() bool {
 		var ok bool
 		status, ok = host.Registry.GetPluginStatus(listenerPlugin)
 		return ok && status.Failed
@@ -296,7 +296,7 @@ func TestIdleEvictionStopsThePluginOnlyAfterTheConnectionCloses(t *testing.T) {
 	if err := conn.Close(); err != nil {
 		t.Fatal(err)
 	}
-	plugintest.WaitUntil(t, "the idle plugin to be evicted", func() bool {
+	wiretest.WaitUntil(t, "the idle plugin to be evicted", func() bool {
 		return slices.Contains(w.host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond), listenerPlugin)
 	})
 
@@ -318,12 +318,12 @@ func TestDisabledPluginListenerPortRejectsConnections(t *testing.T) {
 	if err := setEnabled(t.Context(), w.host, listenerPlugin, false); err != nil {
 		t.Fatal(err)
 	}
-	plugintest.WaitUntil(t, "the port of the disabled plugin to close", func() bool { return !isPortOpen(t, w.port) })
+	wiretest.WaitUntil(t, "the port of the disabled plugin to close", func() bool { return !isPortOpen(t, w.port) })
 
 	if err := setEnabled(t.Context(), w.host, listenerPlugin, true); err != nil {
 		t.Fatal(err)
 	}
-	plugintest.WaitUntil(t, "the port of the enabled plugin to be bound", func() bool { return isPortOpen(t, w.port) })
+	wiretest.WaitUntil(t, "the port of the enabled plugin to be bound", func() bool { return isPortOpen(t, w.port) })
 }
 
 func TestAPluginDisabledInTheSettingsHasNoBoundListenerPort(t *testing.T) {
@@ -334,7 +334,7 @@ func TestAPluginDisabledInTheSettingsHasNoBoundListenerPort(t *testing.T) {
 
 	w.host.Settings.SetSettings(map[string]map[string]any{listenerPlugin: {"enabled": false}})
 
-	plugintest.WaitUntil(t, "the port of the disabled plugin to close", func() bool { return !isPortOpen(t, w.port) })
+	wiretest.WaitUntil(t, "the port of the disabled plugin to close", func() bool { return !isPortOpen(t, w.port) })
 }
 
 func TestTheHostBindsTheDefaultOfThePortSetting(t *testing.T) {
@@ -359,8 +359,8 @@ func TestTheHostBindsTheStoredValueOfThePortSetting(t *testing.T) {
 				w.host.Settings.SetSettings(settings)
 			}
 
-			plugintest.WaitUntil(t, "the stored port to be bound", func() bool { return isPortOpen(t, stored) })
-			plugintest.WaitUntil(t, "the default port to be closed", func() bool { return !isPortOpen(t, w.port) })
+			wiretest.WaitUntil(t, "the stored port to be bound", func() bool { return isPortOpen(t, stored) })
+			wiretest.WaitUntil(t, "the default port to be closed", func() bool { return !isPortOpen(t, w.port) })
 			if reply := sendLine(t, connectListener(t, stored), "stored"); reply != "stored" {
 				t.Errorf("reply = %q, want the echo of the line", reply)
 			}
@@ -381,8 +381,8 @@ func TestAChangedPortSettingBindsTheNewPortAndClosesTheOldOne(t *testing.T) {
 			}
 			next := changePortToFree(t, w.host, change)
 
-			plugintest.WaitUntil(t, "the new port to be bound", func() bool { return isPortOpen(t, next) })
-			plugintest.WaitUntil(t, "the old port to be closed", func() bool { return !isPortOpen(t, w.port) })
+			wiretest.WaitUntil(t, "the new port to be bound", func() bool { return isPortOpen(t, next) })
+			wiretest.WaitUntil(t, "the old port to be closed", func() bool { return !isPortOpen(t, w.port) })
 			if reply := sendLine(t, connectListener(t, next), "moved"); reply != "moved" {
 				t.Errorf("reply = %q, want the echo of the line", reply)
 			}
@@ -500,7 +500,7 @@ func TestTeardownAllClosesTheListenerPort(t *testing.T) {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	plugintest.WaitUntil(t, "the listener port to close", func() bool { return !isPortOpen(t, w.port) })
+	wiretest.WaitUntil(t, "the listener port to close", func() bool { return !isPortOpen(t, w.port) })
 }
 
 func writeFixedPortListenerPlugin(t *testing.T, root string, port int) {

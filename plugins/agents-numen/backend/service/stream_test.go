@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/answer"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/chatapi"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/answer"
 )
 
 func TestStream_EmitsReplyChunksInOrder(t *testing.T) {

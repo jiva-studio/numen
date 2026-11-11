@@ -4,8 +4,9 @@
  * inside the window, put away by a press outside it, a scroll, a resize and
  * Escape, and giving the keyboard back to what asked for it.
  */
-import { computed, onBeforeUnmount, shallowRef, useTemplateRef } from 'vue'
+import { computed, shallowRef, useTemplateRef } from 'vue'
 import { measureElementRect } from '@/shared/api/dom'
+import { useFocusReturn } from '@/shared/model/useFocusReturn'
 import { useMenuDismissal, useMenuPlacement } from '../menu'
 import SearchableList from './SearchableList.vue'
 import { useListMeasure } from './useListMeasure'
@@ -71,9 +72,7 @@ useListMeasure({
   measure,
 })
 
-onBeforeUnmount(() => {
-  if (props.from?.isConnected) props.from.focus()
-})
+useFocusReturn(() => props.from)
 
 /* -------------------------------- Helpers --------------------------------- */
 function measure(): void {

@@ -6,8 +6,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/startup"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // windowParts are what the use cases of one window are built over besides its state.
@@ -48,11 +50,18 @@ func windowSession(w *windowWiring, state *editor.State, ctx context.Context, pa
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(state.Window, state.Writes)
 	rebuild := windowsession.NewRebuildSession(guard, session)
+	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
+	switching := startup.SwitchVault[*windowsession.PluginOpen]{
+		Show:        show.Execute,
+		FollowVault: func(path string) { setPluginVaultPath(plugins(w.cfg), path) },
+		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
+	}
+	state.Switch = switching
 	cases := windowCases{
 		start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, w.cfg.ShouldRebuildIndex),
-		show:       windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents),
-		openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window),
+		show:       show,
+		openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window, state.GetVaultSwitch()),
 		flush:      windowsession.NewFlushPending(guard, flush),
 		close: windowsession.NewCloseWindow(
 			state.Gate, session,

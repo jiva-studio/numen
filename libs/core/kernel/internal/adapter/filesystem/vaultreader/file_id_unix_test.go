@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 const chartPath = "library/chart.pdf"
@@ -54,7 +54,7 @@ func writeFixture(t *testing.T, path, content string) {
 }
 
 func TestStatReportsTheInodeOfTheFile(t *testing.T) {
-	root := testsupport.CopyVault(t)
+	root := vaultfixture.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(chartPath))
 	writeFixture(t, target, "%PDF chart of the harbor")
 
@@ -65,7 +65,7 @@ func TestStatReportsTheInodeOfTheFile(t *testing.T) {
 }
 
 func TestAFileReplacedAtTheSamePathHasAnotherFileID(t *testing.T) {
-	root := testsupport.CopyVault(t)
+	root := vaultfixture.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(chartPath))
 	writeFixture(t, target, "%PDF chart of the harbor")
 	before := statFixture(t, root)

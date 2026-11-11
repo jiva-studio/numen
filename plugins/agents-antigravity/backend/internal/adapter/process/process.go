@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/runs"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
 )
 
 // waitDelay is how long the pipes of a killed child are waited for.

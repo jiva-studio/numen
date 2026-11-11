@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -25,7 +26,7 @@ import (
 
 func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
 	t.Helper()
-	v := testsupport.NewVault(t, notes)
+	v := vaultfixture.NewVault(t, notes)
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -70,7 +71,7 @@ func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []s
 // note is findable either way.
 func TestANoteIsIndexedInAVaultNothingHasWalked(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 	db := openIndex(t)
@@ -141,7 +142,7 @@ func TestARefreshDoesNotAcceptABookForARemovedNote(t *testing.T) {
 	refresh, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
-	testsupport.WriteBook(t, v.Path, "library/A Book.epub")
+	vaultfixture.WriteBook(t, v.Path, "library/A Book.epub")
 
 	res, err := refresh.Execute(t.Context(), v, []string{"library/A Book.epub", "Note.md"})
 	if err != nil {
@@ -172,7 +173,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
 	const book = "library/A Book.epub"
-	testsupport.WriteBook(t, v.Path, book)
+	vaultfixture.WriteBook(t, v.Path, book)
 	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
 		Source: domain.Source{
 			FileStat:    domain.FileStat{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
@@ -304,7 +305,7 @@ func TestARefreshWritesInGroups(t *testing.T) {
 		paths = append(paths, path)
 	}
 
-	v := testsupport.NewVault(t, notes)
+	v := vaultfixture.NewVault(t, notes)
 	db := openIndex(t)
 	content := &countingNotes{}
 	refresh := vaults.NewRefresh(
@@ -387,7 +388,7 @@ const settledNote = "---\ntitle: Note\n---\n\n# Note\n\nentropy\n"
 
 func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *container.Index, domain.Vault) {
 	t.Helper()
-	v := testsupport.NewVault(t, notes)
+	v := vaultfixture.NewVault(t, notes)
 	for name := range notes {
 		backdate(t, v, name)
 	}
@@ -494,7 +495,7 @@ func TestForceSavesANoteTheIndexContainsAsItIs(t *testing.T) {
 
 func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
+	v := vaultfixture.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -589,7 +590,7 @@ func (c tickingClock) Now() time.Time { return c.start.Add(time.Duration(c.tick.
 
 func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 	t.Parallel()
-	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
+	v := vaultfixture.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)

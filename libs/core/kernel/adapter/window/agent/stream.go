@@ -16,16 +16,11 @@ import (
 	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 )
 
-func streamTask(
+func streamRun(
 	ctx context.Context,
-	start *agentuse.StartTask,
-	task agentdomain.Task,
+	work agentuse.Run,
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) (err error) {
-	work, err := start.Execute(ctx, task)
-	if err != nil {
-		return connect.NewError(connect.CodeInternal, err)
-	}
 	defer func() { err = errors.Join(err, work.Stop()) }()
 
 	repeat := time.NewTicker(wire.ResendInterval)

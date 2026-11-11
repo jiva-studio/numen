@@ -3,13 +3,14 @@
  * PDF document viewer tab component.
  * Renders document pages, toolbar controls, and text highlights.
  */
-import { onMounted, onUnmounted, useTemplateRef, type ComponentPublicInstance } from 'vue'
+import { useTemplateRef, type ComponentPublicInstance } from 'vue'
 import { LoadingIndicator } from '@numen/ui'
 import { Reader } from '../reader'
 import { WORDS as words } from '../words'
 import type { ReaderTabState } from '@numen/plugin-sdk'
 import type { Documents } from '../types'
 import { useOpenDocument } from '../model/useOpenDocument'
+import { useReaderAttachment } from '../model/useReaderAttachment'
 import { useReaderTabSync } from '../model/useReaderTabSync'
 import { readerPreferences } from '../model/preferences'
 import { isPageHandle } from '../model/useDocumentTab'
@@ -33,18 +34,14 @@ useReaderTabSync(
 )
 
 /* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  rootElement.value?.focus()
-  props.state.attachReader?.({
+useReaderAttachment(
+  () => props.state,
+  {
     focus: () => rootElement.value?.focus(),
     measure: () => activeState.measure(),
-  })
-})
-
-onUnmounted(() => {
-  props.state.attachReader?.(null)
-  activeState.document.close()
-})
+  },
+  () => activeState.document.close(),
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGoToPage(page: number) {

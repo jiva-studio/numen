@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
 func newConfiguredBackend(t *testing.T, values map[string]string) *Backend {

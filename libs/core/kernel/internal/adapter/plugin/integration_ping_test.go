@@ -18,19 +18,19 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) supervision.Launcher {
 	t.Helper()
-	pingPort := plugintest.ServePing(t, protocol)
+	pingPort := wiretest.ServePing(t, protocol)
 	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
+		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
-		t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
+		t.Cleanup(func() { wiretest.KillProcess(t, cmd.Process) })
 		*procs = append(*procs, cmd.Process)
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", pingPort))), nil
 	}
@@ -92,7 +92,7 @@ func TestEnsureActive_ActivatesPluginWithHostProtocol(t *testing.T) {
 
 func TestCheckPluginProtocol_RejectsUnsupportedProtocol(t *testing.T) {
 	newer := manifest.ProtocolVersion + 1
-	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
+	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: wiretest.ServePing(t, int32(newer)), Token: ""}
 	declared := manifest.Manifest{ID: "md.numen.newer", Protocol: newer}
 
 	err := transport.CheckPluginProtocol(t.Context(), transport.NewClients().Get(endpoint), declared, endpoint)

@@ -3,8 +3,9 @@
  * The picture of a video: the window's one media element, drawn here while this tab holds the
  * player, and given back to the player when it does not.
  */
-import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
+import { useTemplateRef } from 'vue'
 import type { Player } from '../model/player'
+import { useVideoSurface } from '../model/useVideoSurface'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -16,19 +17,11 @@ const props = defineProps<{
 const surface = useTemplateRef<HTMLElement>('surface')
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(
-  [() => props.isShown, surface],
-  ([isShown, container]) => {
-    if (!container) return
-    if (isShown) props.player.surface.attach(container)
-    else props.player.surface.release(container)
-  },
-  { immediate: true, flush: 'post' },
+useVideoSurface(
+  surface,
+  () => props.isShown,
+  () => props.player.surface,
 )
-
-onBeforeUnmount(() => {
-  if (surface.value) props.player.surface.release(surface.value)
-})
 </script>
 
 <template>

@@ -265,7 +265,7 @@ func TestABookAppearingIsReported(t *testing.T) {
 	// The folder is part of the watch before the book arrives, and the book is
 	// built whole outside the vault and moved in, so it arrives in one event.
 	staged := t.TempDir()
-	testsupport.WriteBook(t, staged, "Dropped.epub")
+	vaultfixture.WriteBook(t, staged, "Dropped.epub")
 	if err := os.Rename(filepath.Join(staged, "Dropped.epub"), filepath.Join(root, "library", "Dropped.epub")); err != nil {
 		t.Fatal(err)
 	}
