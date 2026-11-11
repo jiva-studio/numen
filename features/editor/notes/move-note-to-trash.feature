@@ -14,6 +14,8 @@ Feature: Move note to trash
     And the tab titled "Files" has "notes/Tide table.md"
     When the person runs the command "Move note to trash" on the tab titled "Tide table"
     Then the tab titled "Files" does not have "notes/Tide table.md"
+    And the tab at "notes/Tide table.md" is not open
+    And the vault does not contain the file at "notes/Tide table.md"
 
   Scenario: The note leaves the plex
     Given the vault has the following:

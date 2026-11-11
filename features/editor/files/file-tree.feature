@@ -43,15 +43,6 @@ Feature: File tree
       Then the tab at "notes/Brine pumps.md" is open
       And the tab at "notes/Brine pump.md" is not open
 
-    Scenario: A note is removed
-      Given the vault has the following:
-        | path               | text                      |
-        | notes/Mill race.md | The race feeds the wheel. |
-      And the person opens the note titled "Mill race"
-      When the person runs the command "Move note to trash" on the file at "notes/Mill race.md"
-      Then the tab at "notes/Mill race.md" is not open
-      And the vault does not contain the file at "notes/Mill race.md"
-
   Rule: The file tree shows files
 
     Scenario: A folder is opened
