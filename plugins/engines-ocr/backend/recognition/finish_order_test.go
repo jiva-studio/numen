@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
-// holdingFinishQueue holds FinishTask until the test lets it go, after it has told the test that
+// holdingFinishQueue holds FinishTask until the test releases it, after it has told the test that
 // the task is ending.
 type holdingFinishQueue struct {
 	host.Queue
