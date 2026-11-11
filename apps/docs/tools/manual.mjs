@@ -445,7 +445,7 @@ const kindOf = (given) => {
 
 /**
  * The comment lines over a type. A settings type carries the line
- * `//numen:settings`: tools/lint-comments keeps the comments on its fields,
+ * `//numen:settings`: tools/checks/style/comments keeps the comments on its fields,
  * which this reads as the descriptions of the keys.
  */
 const SETTINGS_MARKER = '//numen:settings'

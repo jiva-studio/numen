@@ -1,6 +1,6 @@
 # The checks that bound window code
 
-Each entry names a check or a lint rule and what it forbids. The verifiers run with `node tools/lint-layers/check.mjs` (`--list` prints them); the ESLint rules run with `npm run lint` in the window. `.agents/rules/architecture.md` §10 is the list of the verifiers.
+Each entry names a check or a lint rule and what it forbids. The verifiers run with `make checks TAGS=window` (`make checks LIST=1` prints them); the ESLint rules run with `npm run lint` in the window. `.agents/rules/architecture.md` §10 is the list of the verifiers.
 
 ## Layers and slices
 

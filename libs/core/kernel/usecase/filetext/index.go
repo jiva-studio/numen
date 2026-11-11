@@ -41,8 +41,8 @@ type Index struct {
 // NewIndex creates an Index from the vault readers, the source repository
 // that stores sources and chunks, the queries that report which sources the
 // index records, which still need text and the text kept for the ones that left,
-// and the text readers. Nil texts means no file has text. A nil errorHandler ignores the errors a pass reports,
-// and a nil readNote reads no note again before it is cut.
+// and the text readers. Nil texts means no file has text. The result ignores the errors a pass
+// reports and reads no note again before it is cut; NewHandlingIndex adds both.
 func NewIndex(
 	readers vaultport.VaultReaders,
 	sources sourceport.SourceRepository,
@@ -50,13 +50,18 @@ func NewIndex(
 	backlog sourceport.SourceBacklog,
 	lookup sourceport.RemovalLookup,
 	texts text.Readers,
-	errorHandler window.ErrorHandler,
-	readNote func(ctx context.Context, v domain.Vault, path string) error,
 ) Index {
 	return Index{
-		readers: readers, sources: sources, texts: texts, errorHandler: errorHandler, readNote: readNote,
+		readers: readers, sources: sources, texts: texts,
 		queries: sourceQueries{records: records, backlog: backlog, lookup: lookup},
 	}
+}
+
+// NewHandlingIndex returns base with errorHandler receiving the errors a pass reports and readNote called
+// to read a note again before it is cut. A nil errorHandler or readNote does neither.
+func NewHandlingIndex(base Index, errorHandler window.ErrorHandler, readNote func(ctx context.Context, v domain.Vault, path string) error) Index {
+	base.errorHandler, base.readNote = errorHandler, readNote
+	return base
 }
 
 // IndexWithProgress runs Execute with onProgress reporting each step when

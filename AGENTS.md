@@ -88,7 +88,7 @@ type Spec struct {
 - `//numen:api`: a type of the plugin SDK; plugin authors read the field comments in the SDK documentation.
 - `//numen:settings`: a settings type; `apps/docs/tools/manual.mjs` writes the field comments into the settings reference and refuses a settings type without the marker.
 
-`tools/lint-comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on staged files in the pre-commit hook, on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
+`tools/checks/style/comments/check.mjs` rejects the rest in Go, TypeScript and Vue: on staged files in the pre-commit hook, on every file in CI (`make lint_comments`). `--fix` removes the reported comments.
 
 ---
 
@@ -361,8 +361,8 @@ To keep code readable, pseudo-literary prose, Anglish idioms, irregular past par
 5. **Fake turn casts**: Never write `voice: 'said'`, `state: 'done'`, or `as unknown as Turn`. Adhere strictly to the domain types `voice: 'asked' | 'answered'` and `TurnState: 'settled' | 'arriving' | 'failed'`.
 6. **Forbidden error terminology**: Never use `refused` or `refusal`. Always use `error` or `errorCode`.
 7. **Narrative comments & docstrings**: Do not write biblical or Saxon idioms (`hands back`, `comes to`, `stands on`, `where it sits`, `what holds here`). Write plain, technical engineering English.
-8. **Personification and metaphor in prose a person reads**: A task title, notice, error, manifest `title` or `description`, Markdown document or test title states the operation or the fact in standard engineering terms. A window does not `wear` a theme, a plugin does not `speak` a protocol, a page does not `hand over` a value; a task is titled `Apply theme`, not `Wearing a theme`, and its detail reads `Theme not found: dracula`. `tools/lint-narrative/scan.mjs` rejects these families (`wear`/`dress`, `hand over`/`hand back`, `speaks`, `breathe`/`eat`, `lit up`, `bring level`, `stands`/`sits` at a place, `nowhere to put`) in Markdown, comments, test titles, Go and TypeScript string literals and `manifest.json`; words inside backticks are quoted, not checked.
-9. **Test titles and comments**: name the subject, a standard verb and concrete nouns. `tools/lint-narrative/scan.mjs` category 24 checks the lines a change adds. Examples:
+8. **Personification and metaphor in prose a person reads**: A task title, notice, error, manifest `title` or `description`, Markdown document or test title states the operation or the fact in standard engineering terms. A window does not `wear` a theme, a plugin does not `speak` a protocol, a page does not `hand over` a value; a task is titled `Apply theme`, not `Wearing a theme`, and its detail reads `Theme not found: dracula`. `tools/checks/style/names/check.mjs` rejects these families (`wear`/`dress`, `hand over`/`hand back`, `speaks`, `breathe`/`eat`, `lit up`, `bring level`, `stands`/`sits` at a place, `nowhere to put`) in Markdown, comments, test titles, Go and TypeScript string literals and `manifest.json`; words inside backticks are quoted, not checked.
+9. **Test titles and comments**: name the subject, a standard verb and concrete nouns. `tools/checks/style/names/check.mjs` category 24 checks the lines a change adds. Examples:
    - `it('releases pointer capture when the scope is disposed')`
    - `it('clears the interval on dispose')`
    - `it('keeps its position when the list has one item')`
@@ -402,7 +402,7 @@ The plugin model, the SDK rules and the import rules for windows, plugins and li
 10. Checks are structural. Use an off-the-shelf tool with configuration where one exists (dependency-cruiser, depguard and gomodguard, golangci-lint linters, stylelint). Write a check by hand only over syntax trees, import graphs and type information. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
 11. Checks never get weaker: no exclusion and no workaround that bypasses a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
 12. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
-13. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
+13. Do the work first. Run the heavy checks (`make checks` in full, tests across modules, linters) once at the end; while working run `make checks CHANGED=1`.
 14. Commit messages carry no `Co-Authored-By` line and no session trailer.
 15. Write comments and docs in plain technical English (§1, §13).
 16. A failing check is fixed in the code it reports. The check stays as it is, and the code changes until it passes:

@@ -494,7 +494,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes(),
 				db.NoteQueries(), db.Maintenance(), nil)
-			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}, nil, nil)
+			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {

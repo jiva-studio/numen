@@ -49,42 +49,6 @@ func (s stubVaultReader) Read(ctx context.Context, path string) ([]byte, error) 
 	return s.readFn(ctx, path)
 }
 
-type stubVaultWriters struct {
-	openErr    error
-	lockErr    error
-	releaseErr error
-	writer     ports.VaultWriter
-}
-
-func (s stubVaultWriters) Open(_ domain.Vault) (ports.VaultWriter, error) {
-	if s.openErr != nil {
-		return nil, s.openErr
-	}
-	return s.writer, nil
-}
-
-func (s stubVaultWriters) Lock(_ context.Context, _ domain.Vault) (func() error, error) {
-	if s.lockErr != nil {
-		return nil, s.lockErr
-	}
-	return func() error { return s.releaseErr }, nil
-}
-
-type stubVaultWriter struct {
-	writeFn func(ctx context.Context, path string, data []byte, expected domain.FileStat) (domain.FileStat, error)
-}
-
-func (s stubVaultWriter) Create(context.Context, string, []byte) error { return nil }
-
-func (s stubVaultWriter) Write(
-	ctx context.Context, path string, data []byte, expected domain.FileStat,
-) (domain.FileStat, error) {
-	if s.writeFn != nil {
-		return s.writeFn(ctx, path, data, expected)
-	}
-	return domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(data))}, nil
-}
-
 type stubLinkQueries struct {
 	linksErr     error
 	backlinksErr error

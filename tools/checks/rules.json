@@ -1,0 +1,1530 @@
+{
+  "tags": {
+    "structure": "a rule about how the code is arranged: layers, imports, sizes, ports, registrations",
+    "style": "a rule about how code, names, comments and spelling are written",
+    "docs": "a rule about the documents of the repository",
+    "go": "reads or checks Go code",
+    "ts": "reads or checks TypeScript, Vue or JavaScript code",
+    "window": "applies to the frontend of a window (apps/)",
+    "plugin": "applies to plugins",
+    "core": "applies to the Go kernel",
+    "library": "applies to the libraries (libs/)",
+    "fast": "takes a few seconds; runs on every commit",
+    "slow": "takes tens of seconds or more; type-checks the workspace or starts a linter or bundler",
+    "needs-nix": "needs a tool of the nix shell: golangci-lint, buf",
+    "security": "guards an isolation boundary between plugins, or between a plugin and the core",
+    "gate": "wide paths; runs whenever anything in its area changes, and before every merge"
+  },
+  "checks": [
+    {
+      "name": "go/adapter-role",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/adapter-role/check_test.go",
+      "runner": "go",
+      "target": "adapter-role"
+    },
+    {
+      "name": "go/adapter-technology",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/adapter-technology/check_test.go",
+      "runner": "go",
+      "target": "adapter-technology"
+    },
+    {
+      "name": "go/adapters-claim-no-ports",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/adapters-claim-no-ports/check_test.go",
+      "runner": "go",
+      "target": "adapters-claim-no-ports"
+    },
+    {
+      "name": "go/clock-port",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/clock-port/check_test.go",
+      "runner": "go",
+      "target": "clock-port"
+    },
+    {
+      "name": "go/composition-root",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/composition-root/check_test.go",
+      "runner": "go",
+      "target": "composition-root"
+    },
+    {
+      "name": "go/container-closures",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/container-closures/check_test.go",
+      "runner": "go",
+      "target": "container-closures"
+    },
+    {
+      "name": "go/container-downcast",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/container-downcast/check_test.go",
+      "runner": "go",
+      "target": "container-downcast"
+    },
+    {
+      "name": "go/core-reexport",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/core-reexport/check_test.go",
+      "runner": "go",
+      "target": "core-reexport"
+    },
+    {
+      "name": "go/core-tests-use-external-packages",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/core-tests-use-external-packages/check_test.go",
+      "runner": "go",
+      "target": "core-tests-use-external-packages"
+    },
+    {
+      "name": "go/direction",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow",
+        "gate"
+      ],
+      "selftest": "structure/go/direction/check_test.go",
+      "runner": "go",
+      "target": "direction"
+    },
+    {
+      "name": "go/domain-layer",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/go/domain-layer/check_test.go",
+      "runner": "go",
+      "target": "domain-layer"
+    },
+    {
+      "name": "go/driving-calls",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        ".golangci*.yml"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/driving-calls/check_test.go",
+      "runner": "go",
+      "target": "driving-calls"
+    },
+    {
+      "name": "go/driving-one-use-case",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/driving-one-use-case/check_test.go",
+      "runner": "go",
+      "target": "driving-one-use-case"
+    },
+    {
+      "name": "go/exhaustruct-include",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        ".golangci*.yml"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/exhaustruct-include/check_test.go",
+      "runner": "go",
+      "target": "exhaustruct-include"
+    },
+    {
+      "name": "go/handler-separation",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/handler-separation/check_test.go",
+      "runner": "go",
+      "target": "handler-separation"
+    },
+    {
+      "name": "go/identities",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/identities/check_test.go",
+      "runner": "go",
+      "target": "identities"
+    },
+    {
+      "name": "go/instants",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/instants/check_test.go",
+      "runner": "go",
+      "target": "instants"
+    },
+    {
+      "name": "go/interface-size",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        ".golangci*.yml"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "library",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/interface-size/check_test.go",
+      "runner": "go",
+      "target": "interface-size"
+    },
+    {
+      "name": "go/json-keys",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/json-keys/check_test.go",
+      "runner": "go",
+      "target": "json-keys"
+    },
+    {
+      "name": "go/layers",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast",
+        "gate"
+      ],
+      "selftest": "structure/go/layers/check_test.go",
+      "runner": "go",
+      "target": "layers"
+    },
+    {
+      "name": "go/lint-config",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        ".golangci*.yml",
+        "plugins/*/.golangci*.yml"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/lint-config/check_test.go",
+      "runner": "go",
+      "target": "lint-config"
+    },
+    {
+      "name": "go/loggers",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/loggers/check_test.go",
+      "runner": "go",
+      "target": "loggers"
+    },
+    {
+      "name": "go/machine-access",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/machine-access/check_test.go",
+      "runner": "go",
+      "target": "machine-access"
+    },
+    {
+      "name": "go/machine-clock",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/machine-clock/check_test.go",
+      "runner": "go",
+      "target": "machine-clock"
+    },
+    {
+      "name": "go/mutable-use-case",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/mutable-use-case/check_test.go",
+      "runner": "go",
+      "target": "mutable-use-case"
+    },
+    {
+      "name": "go/plugin-adapter-layers",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "fast"
+      ],
+      "selftest": "structure/go/plugin-adapter-layers/check_test.go",
+      "runner": "go",
+      "target": "plugin-adapter-layers"
+    },
+    {
+      "name": "go/plugin-boundary",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "core",
+        "security",
+        "slow"
+      ],
+      "selftest": "structure/go/plugin-boundary/check_test.go",
+      "runner": "go",
+      "target": "plugin-boundary"
+    },
+    {
+      "name": "go/plugin-gomod",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        "plugins/*/go.mod"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/go/plugin-gomod/check_test.go",
+      "runner": "go",
+      "target": "plugin-gomod"
+    },
+    {
+      "name": "go/plugin-host-size",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/plugin-host-size/check_test.go",
+      "runner": "go",
+      "target": "plugin-host-size"
+    },
+    {
+      "name": "go/plugin-independence",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        ".golangci*.yml",
+        "plugins/*/.golangci*.yml",
+        "plugins/*/go.mod"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "security",
+        "fast"
+      ],
+      "selftest": "structure/go/plugin-independence/check_test.go",
+      "runner": "go",
+      "target": "plugin-independence"
+    },
+    {
+      "name": "go/plugin-isolation-packages",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "security",
+        "slow"
+      ],
+      "selftest": "structure/go/plugin-isolation-packages/check_test.go",
+      "runner": "go",
+      "target": "plugin-isolation-packages"
+    },
+    {
+      "name": "go/plugin-sdk",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/go/plugin-sdk/check_test.go",
+      "runner": "go",
+      "target": "plugin-sdk"
+    },
+    {
+      "name": "go/port-calls",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/port-calls/check_test.go",
+      "runner": "go",
+      "target": "port-calls"
+    },
+    {
+      "name": "go/port-shape",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/port-shape/check_test.go",
+      "runner": "go",
+      "target": "port-shape"
+    },
+    {
+      "name": "go/ports",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/ports/check_test.go",
+      "runner": "go",
+      "target": "ports"
+    },
+    {
+      "name": "go/ports-referenced",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/ports-referenced/check_test.go",
+      "runner": "go",
+      "target": "ports-referenced"
+    },
+    {
+      "name": "go/scan-complete",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/scan-complete/check_test.go",
+      "runner": "go",
+      "target": "scan-complete"
+    },
+    {
+      "name": "go/schema-driving",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/schema-driving/check_test.go",
+      "runner": "go",
+      "target": "schema-driving"
+    },
+    {
+      "name": "go/sdk-protocol-encapsulation",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        "libs/plugin/sdk-go/**/*.go"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/sdk-protocol-encapsulation/check_test.go",
+      "runner": "go",
+      "target": "sdk-protocol-encapsulation"
+    },
+    {
+      "name": "go/serialization",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/serialization/check_test.go",
+      "runner": "go",
+      "target": "serialization"
+    },
+    {
+      "name": "go/source-size",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        ".gitattributes"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "library",
+        "plugin",
+        "fast"
+      ],
+      "selftest": "structure/go/source-size/check_test.go",
+      "runner": "go",
+      "target": "source-size"
+    },
+    {
+      "name": "go/spelling",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "style",
+        "go",
+        "core",
+        "library",
+        "plugin",
+        "fast"
+      ],
+      "selftest": "structure/go/spelling/check_test.go",
+      "runner": "go",
+      "target": "spelling"
+    },
+    {
+      "name": "go/struct-context",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/struct-context/check_test.go",
+      "runner": "go",
+      "target": "struct-context"
+    },
+    {
+      "name": "go/struct-size",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/struct-size/check_test.go",
+      "runner": "go",
+      "target": "struct-size"
+    },
+    {
+      "name": "go/struct-use-cases",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/struct-use-cases/check_test.go",
+      "runner": "go",
+      "target": "struct-use-cases"
+    },
+    {
+      "name": "go/transports",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/transports/check_test.go",
+      "runner": "go",
+      "target": "transports"
+    },
+    {
+      "name": "go/use-case-fields",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/use-case-fields/check_test.go",
+      "runner": "go",
+      "target": "use-case-fields"
+    },
+    {
+      "name": "go/usecase-edges",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/usecase-edges/check_test.go",
+      "runner": "go",
+      "target": "usecase-edges"
+    },
+    {
+      "name": "go/usecases-import-no-os",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/usecases-import-no-os/check_test.go",
+      "runner": "go",
+      "target": "usecases-import-no-os"
+    },
+    {
+      "name": "go/window-adapter-session",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/window-adapter-session/check_test.go",
+      "runner": "go",
+      "target": "window-adapter-session"
+    },
+    {
+      "name": "go/wiring-only",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/wiring-only/check_test.go",
+      "runner": "go",
+      "target": "wiring-only"
+    },
+    {
+      "name": "go/wiring-package",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/wiring-package/check_test.go",
+      "runner": "go",
+      "target": "wiring-package"
+    },
+    {
+      "name": "ts/app-logic",
+      "paths": [
+        "apps/**/*.ts",
+        "apps/**/*.vue",
+        "apps/**/index.ts",
+        "apps/**/package.json",
+        "libs/**/*.ts",
+        "libs/**/*.vue",
+        "libs/**/index.ts",
+        "libs/**/package.json",
+        "plugins/**/*.ts",
+        "plugins/**/*.vue",
+        "plugins/**/index.ts",
+        "plugins/**/package.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "window",
+        "fast"
+      ],
+      "selftest": "structure/ts/app-logic/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/app-logic/check.mjs",
+      "export": "APP_LOGIC_VERIFIERS"
+    },
+    {
+      "name": "ts/core-client",
+      "paths": [
+        "apps/**/package.json",
+        "libs/**/package.json",
+        "plugins/**/package.json",
+        "tests/**/package.json",
+        "tools/**/package.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/ts/core-client/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/core-client/check.mjs",
+      "export": "CORE_CLIENT_VERIFIERS"
+    },
+    {
+      "name": "ts/dependency-graph",
+      "paths": [
+        "apps/**/*.{ts,vue,json,js,mjs}",
+        "apps/**/package.json",
+        "apps/**/tsconfig.json",
+        "libs/**/*.{ts,vue,json,js,mjs}",
+        "libs/**/package.json",
+        "libs/**/tsconfig.json",
+        "package.json",
+        "plugins/**/*.{ts,vue,json,js,mjs}",
+        "plugins/**/package.json",
+        "plugins/**/tsconfig.json",
+        "tools/checks/lib/*.mjs",
+        "tools/checks/structure/ts/*/check.mjs",
+        "tools/checks/structure/ts/libraries/library-matrix.json",
+        "tools/lint-layers/dependency-cruiser.mjs",
+        "tools/shared/*.mjs",
+        "tsconfig.base.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "window",
+        "plugin",
+        "slow",
+        "gate"
+      ],
+      "selftest": "structure/ts/dependency-graph/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/dependency-graph/check.mjs",
+      "export": "DEPENDENCY_VERIFIERS"
+    },
+    {
+      "name": "ts/discipline",
+      "paths": [
+        "**"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "gate",
+        "fast"
+      ],
+      "selftest": "structure/ts/discipline/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/discipline/check.mjs",
+      "export": "DISCIPLINE_VERIFIERS"
+    },
+    {
+      "name": "ts/frontend-graph",
+      "paths": [
+        "apps/**/*.ts",
+        "apps/**/*.vue",
+        "apps/**/*.{ts,vue,json,js,mjs}",
+        "apps/**/index.ts",
+        "apps/**/package.json",
+        "apps/**/tsconfig.json",
+        "libs/**/*.{ts,vue,json,js,mjs}",
+        "libs/**/package.json",
+        "libs/**/tsconfig.json",
+        "package.json",
+        "plugins/**/*.{ts,vue,json,js,mjs}",
+        "plugins/**/package.json",
+        "plugins/**/tsconfig.json",
+        "tools/checks/lib/*.mjs",
+        "tools/checks/structure/ts/*/check.mjs",
+        "tools/checks/structure/ts/libraries/library-matrix.json",
+        "tools/lint-layers/dependency-cruiser.mjs",
+        "tools/shared/*.mjs",
+        "tsconfig.base.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "window",
+        "fast"
+      ],
+      "selftest": "structure/ts/frontend-graph/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/frontend-graph/check.mjs",
+      "export": "FRONTEND_GRAPH_VERIFIERS"
+    },
+    {
+      "name": "ts/frontend-layout",
+      "paths": [
+        "apps/**",
+        "libs/**",
+        "plugins/**"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "window",
+        "plugin",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/ts/frontend-layout/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/frontend-layout/check.mjs",
+      "export": "FRONTEND_LAYOUT_VERIFIERS"
+    },
+    {
+      "name": "ts/libraries",
+      "paths": [
+        "libs/**/*.go",
+        "libs/**/go.mod",
+        "libs/**/package.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "gate",
+        "fast"
+      ],
+      "selftest": "structure/ts/libraries/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/libraries/check.mjs",
+      "export": "LIBRARY_VERIFIERS"
+    },
+    {
+      "name": "ts/lint-config",
+      "paths": [
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "slow",
+        "gate"
+      ],
+      "selftest": "structure/ts/lint-config/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/lint-config/check.mjs",
+      "export": "LINT_CONFIG_VERIFIERS"
+    },
+    {
+      "name": "ts/plugins",
+      "paths": [
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        ".golangci*.yml",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "libs/**/.golangci*.yml",
+        "libs/plugin/**",
+        "libs/ui/**",
+        "plugins/**",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "plugins/*/.golangci*.yml",
+        "plugins/*/Makefile",
+        "plugins/.example/**",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "plugin",
+        "security",
+        "slow"
+      ],
+      "selftest": "structure/ts/plugins/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/plugins/check.mjs",
+      "export": "PLUGIN_VERIFIERS"
+    },
+    {
+      "name": "ts/registrations",
+      "paths": [
+        "libs/**/*.ts"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "plugin",
+        "fast"
+      ],
+      "selftest": "structure/ts/registrations/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/registrations/check.mjs",
+      "export": "REGISTRATION_VERIFIERS"
+    },
+    {
+      "name": "ts/sdk-protocol",
+      "paths": [
+        "libs/**",
+        "libs/**/*.ts",
+        "libs/**/index.ts",
+        "libs/**/package.json",
+        "libs/**/tsconfig.json",
+        "package.json",
+        "tsconfig.base.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/ts/sdk-protocol/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/sdk-protocol/check.mjs",
+      "export": "SDK_VERIFIERS"
+    },
+    {
+      "name": "ts/stories",
+      "paths": [
+        "libs/**/*.ts",
+        "libs/**/*.vue",
+        "libs/**/index.ts",
+        "libs/**/vite.config.ts"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/ts/stories/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/stories/check.mjs",
+      "export": "STORY_VERIFIERS"
+    },
+    {
+      "name": "ts/story-lint",
+      "paths": [
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "slow"
+      ],
+      "selftest": "structure/ts/story-lint/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/story-lint/check.mjs",
+      "export": "STORY_LINT_VERIFIERS"
+    },
+    {
+      "name": "ts/styles",
+      "paths": [
+        "**/*.{css,vue}",
+        "apps/**/*.css",
+        "apps/**/*.vue",
+        "libs/**/*.css",
+        "libs/**/*.vue",
+        "package.json",
+        "plugins/**/*.css",
+        "plugins/**/*.vue",
+        "stylelint.config.mjs",
+        "tools/lint-layers/stylelint-plugin.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "library",
+        "window",
+        "fast"
+      ],
+      "selftest": "structure/ts/styles/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/styles/check.mjs",
+      "export": "STYLE_VERIFIERS"
+    },
+    {
+      "name": "ts/ts-packages-eslint",
+      "paths": [
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "fast"
+      ],
+      "selftest": "structure/ts/ts-packages-eslint/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/ts-packages-eslint/check.mjs",
+      "export": "FRONTEND_VERIFIERS"
+    },
+    {
+      "name": "ts/typecheck-scope",
+      "paths": [
+        "**"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "fast"
+      ],
+      "selftest": "structure/ts/typecheck-scope/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/typecheck-scope/check.mjs",
+      "export": "TYPECHECK_SCOPE_VERIFIERS"
+    },
+    {
+      "name": "docs/paths-exist",
+      "paths": [
+        "**"
+      ],
+      "tags": [
+        "docs",
+        "ts",
+        "fast"
+      ],
+      "selftest": "docs/paths-exist/check.test.mjs",
+      "runner": "verifiers",
+      "module": "docs/paths-exist/check.mjs",
+      "export": "DOCUMENT_VERIFIERS"
+    },
+    {
+      "name": "ts/api-types",
+      "paths": [
+        "libs/plugin/sdk-go/**/*.go",
+        "libs/plugin/sdk-ts/**/*.ts",
+        "libs/core/protocol/**/*.go",
+        "libs/core/client/**/*.ts"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "plugin",
+        "fast"
+      ],
+      "selftest": "structure/ts/api-types/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/lint-quality/check.mjs",
+        "--check=api-types"
+      ]
+    },
+    {
+      "name": "ts/duplication",
+      "paths": [
+        "libs/**/*.{ts,vue,go}",
+        "apps/**/*.{ts,vue,go}",
+        "plugins/**/*.{ts,vue,go}"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "slow"
+      ],
+      "selftest": "structure/ts/duplication/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/lint-quality/check.mjs",
+        "--check=duplication"
+      ]
+    },
+    {
+      "name": "style/comments",
+      "paths": [
+        "**/*.{ts,vue,go}"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "style/comments/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/checks/style/comments/check.mjs"
+      ],
+      "selftestCmd": [
+        "sh",
+        "-c",
+        "node --test tools/checks/style/comments/check.test.mjs && cd tools/checks/style/comments && GOWORK=off go test ./..."
+      ]
+    },
+    {
+      "name": "style/names",
+      "paths": [
+        "**/*.{ts,vue,go,md,json}"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "docs",
+        "fast"
+      ],
+      "selftest": "style/names/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/checks/style/names/check.mjs",
+        ".",
+        "--check"
+      ]
+    },
+    {
+      "name": "eslint/script-rules",
+      "paths": [
+        "tools/lint-layers/base-eslint.mjs",
+        "tools/lint-layers/numen-rules.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "../lint-layers/scriptRules.test.mjs",
+      "runner": "eslint"
+    },
+    {
+      "name": "eslint/no-unknown",
+      "paths": [
+        "tools/lint-layers/base-eslint.mjs",
+        "tools/lint-layers/numen-rules.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "../lint-layers/noUnknown.test.mjs",
+      "runner": "eslint"
+    },
+    {
+      "name": "eslint/pure-segment",
+      "paths": [
+        "tools/lint-layers/base-eslint.mjs",
+        "tools/lint-layers/numen-rules.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "../lint-layers/pureSegment.test.mjs",
+      "runner": "eslint"
+    },
+    {
+      "name": "eslint/composable",
+      "paths": [
+        "tools/lint-layers/base-eslint.mjs",
+        "tools/lint-layers/numen-rules.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "../lint-layers/composable.test.mjs",
+      "runner": "eslint"
+    },
+    {
+      "name": "eslint/clock",
+      "paths": [
+        "tools/lint-layers/base-eslint.mjs",
+        "tools/lint-layers/numen-rules.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "../lint-layers/clock.test.mjs",
+      "runner": "eslint"
+    },
+    {
+      "name": "eslint/layers",
+      "paths": [
+        "tools/lint-layers/layers.mjs",
+        "tools/lint-layers/base-eslint.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "fast"
+      ],
+      "selftest": "../lint-layers/layers.test.mjs",
+      "runner": "eslint"
+    },
+    {
+      "name": "stylelint/style-declaration",
+      "paths": [
+        "tools/lint-layers/stylelint-plugin.mjs",
+        "stylelint.config.mjs"
+      ],
+      "tags": [
+        "style",
+        "ts",
+        "window",
+        "library",
+        "fast"
+      ],
+      "selftest": "../lint-layers/styleDeclaration.test.mjs",
+      "runner": "stylelint"
+    },
+    {
+      "name": "registry",
+      "paths": [
+        "tools/checks/**"
+      ],
+      "tags": [
+        "structure",
+        "gate",
+        "slow"
+      ],
+      "selftest": "registry.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "--test",
+        "tools/checks/registry.test.mjs",
+        "tools/checks/lib/graph.test.mjs",
+        "tools/checks/lib/golangci.test.mjs"
+      ]
+    }
+  ]
+}

@@ -52,7 +52,7 @@ jobs:
       - name: Lint the core libraries
         run: |
           set -euo pipefail
-          for module in libs/core/kernel libs/note libs/plugin/catalog libs/core/protocol; do
+          for module in libs/core/kernel libs/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
             echo "::group::$module"
             (
               cd "$module"
@@ -138,6 +138,36 @@ jobs:
             (cd "$module" && go test ${RACE:+"$RACE"} ./...)
             echo "::endgroup::"
           done
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-key: ${{ steps.go.outputs.cache-key }}
+
+  # The structural checks of the Go code type-check every module of the workspace, so they run once, on
+  # one machine, and not on each platform of the core tests.
+  structure:
+    name: Structure Checks
+    if: inputs.core
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: libs/core/kernel/go.mod
+          cache-key: structure-checks
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - name: Run the Go checks
+        run: make checks TAGS=go
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
