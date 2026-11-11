@@ -113,7 +113,7 @@ func TestUserProfileAddsAModel(t *testing.T) {
 	).WithUserProfiles(
 		"/data/profiles",
 		[]UserFile{{Path: "mine.json", Data: []byte(
-			`{"id":"owner/my-model","title":"Mine","dims":256,"maxTokens":2048,`+
+			`{"id":"owner/my-model","title":"Mine","dims":256,"maxTokens":2048,` +
 				`"pooling":"last","queryPrefix":"q: ","onnxFile":"onnx/model.onnx","extraInputs":["position_ids"]}`,
 		)}},
 		func(file string, _ error) { reported = append(reported, file) },

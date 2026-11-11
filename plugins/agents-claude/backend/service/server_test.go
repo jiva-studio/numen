@@ -233,8 +233,8 @@ func TestAskAgentWithMockScript(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh", "cat << 'JSONEOF'\n"+
 		"{\"type\":\"system\",\"subtype\":\"status\",\"status\":\"requesting\"}\n"+
 		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"tool_use\",\"id\":\"call_1\",\"name\":\"mcp__numen__note_search\"}}}\n"+
-		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"" +
-			"{\\\"query\\\":\\\"algebra\\\",\\\"path\\\":\\\"notes/math.md\\\"}\"}}}\n"+
+		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\""+
+		"{\\\"query\\\":\\\"algebra\\\",\\\"path\\\":\\\"notes/math.md\\\"}\"}}}\n"+
 		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_stop\"}}\n"+
 		"{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\"}]}}\n"+
 		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Algebra notes found.\"}}}\n"+

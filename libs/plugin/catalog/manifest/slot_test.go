@@ -169,7 +169,7 @@ func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
 		"an argument the command does not take":  `[{"slot":"titleBar.commands","command":"app:file.open","values":{"where":"split"}}]`,
 		"a value the argument does not allow":    `[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"aside"}}]`,
 		"values for a command without arguments": `[{"slot":"titleBar.commands","command":"app:settings.open","values":{"placement":"split"}}]`,
-		"the same values twice in a slot":        `[{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}},` +
+		"the same values twice in a slot": `[{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}},` +
 			`{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}}]`,
 	}
 	for name, slots := range invalid {

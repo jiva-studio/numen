@@ -3,7 +3,7 @@ package service
 // The instruction sentences of the vault tools. A sentence about several tools is attached to each
 // of them, and the host lists it once.
 const (
-	noteLinkSentence    = "Link each note you mention by its title where you mention it, for example [[Tidal pools]], " +
+	noteLinkSentence = "Link each note you mention by its title where you mention it, for example [[Tidal pools]], " +
 		"not in a list at the end; when several notes share a title, link the note as [[note://<identifier>]]."
 	passageLinkSentence = "Link each passage of a book, a PDF or a recording that you cite where you cite it, as a markdown link to the `uri` that library_search returns for it, not in a list at the end, for example [the harbor chapter](numen:library%2FA%20Sea%20Atlas.pdf?start=40120&length=980)."
 	noFileLinkSentence  = "Never use file:// links for notes or books."
