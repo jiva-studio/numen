@@ -35,26 +35,9 @@ func (l *fakeLocks) getCount() int {
 	return l.count
 }
 
-type steppedClock struct {
-	mu  sync.Mutex
-	now time.Time
-}
-
-func (c *steppedClock) Now() time.Time {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.now
-}
-
-func (c *steppedClock) advance(d time.Duration) {
-	c.mu.Lock()
-	c.now = c.now.Add(d)
-	c.mu.Unlock()
-}
-
 func TestAHoldIsReleasedByItsID(t *testing.T) {
 	locks := &fakeLocks{}
-	hold := hold.NewLocks(locks, &steppedClock{now: time.Unix(1000, 0)}, hold.LockHold)
+	hold := hold.NewLocks(locks, hold.LockHold)
 
 	id, err := hold.Execute(t.Context(), domain.Vault{})
 	if err != nil {
@@ -72,19 +55,18 @@ func TestAHoldIsReleasedByItsID(t *testing.T) {
 
 func TestAHoldThatEndedIsReleasedWithoutTheHolder(t *testing.T) {
 	locks := &fakeLocks{}
-	clock := &steppedClock{now: time.Unix(1000, 0)}
-	hold := hold.NewLocks(locks, clock, time.Hour)
+	hold := hold.NewLocks(locks, 20*time.Millisecond)
 
 	if _, err := hold.Execute(t.Context(), domain.Vault{}); err != nil {
 		t.Fatal(err)
 	}
-	clock.advance(time.Hour - time.Second)
-	hold.ReleaseExpired()
 	if locks.getCount() != 1 {
-		t.Fatalf("a hold with a second left was released: count %d", locks.getCount())
+		t.Fatalf("count %d locks after the hold began, want 1", locks.getCount())
 	}
-	clock.advance(time.Second)
-	hold.ReleaseExpired()
+	deadline := time.Now().Add(5 * time.Second)
+	for locks.getCount() != 0 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
 	if locks.getCount() != 0 {
 		t.Errorf("count %d locks after the hold ended, want 0", locks.getCount())
 	}
