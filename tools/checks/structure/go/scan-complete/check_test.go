@@ -101,9 +101,22 @@ func TestHelperPackagesAreLeaves(t *testing.T) {
 // through a pure function, a method that only reads, and a type of another layer.
 func TestHelperRule_RejectsAHelperThatHoldsStateOrReachesOut(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
-		"port/noteport/noteport.go":     "package noteport\n\ntype Reader interface{ Read() string }\n",
-		"usecase/find/find.go":          "package find\n\ntype Find struct{}\n",
-		"internal/adapterlib/pure/p.go": "package pure\n\nfunc Add(a, b int) int { return a + b }\n\ntype Range struct{ A, B int }\n\nfunc (r Range) Len() int { return r.B - r.A }\n\nfunc (r *Range) Size() int { local := r.B; local++; return local }\n",
+		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface{ Read() string }\n",
+		"usecase/find/find.go":      "package find\n\ntype Find struct{}\n",
+		"internal/adapterlib/pure/p.go": `package pure
+
+func Add(a, b int) int { return a + b }
+
+type Range struct{ A, B int }
+
+func (r Range) Len() int { return r.B - r.A }
+
+func (r *Range) Size() int {
+	local := r.B
+	local++
+	return local
+}
+`,
 		"internal/adapterlib/bus/bus.go": `package bus
 
 type Bus struct {

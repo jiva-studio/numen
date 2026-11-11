@@ -125,7 +125,22 @@ func TestSpellingRule_FindsBritishWords(t *testing.T) {
 // import and a generated file, and lets through a word that the allow-list names for the file.
 func TestSpellingRule_ReadsIdentifiersCommentsAndStrings(t *testing.T) {
 	dict := readDictionary(t)
-	src := plant("package a\n\nimport col·ourLib \"example.com/col·our\"\n\n// Ana·lyse the input.\nfunc isCan·celled() string {\n\t/* the\n\tgr·ey zone */\n\treturn \"fav·ourite\" + `\nlic·ence`\n}\n\nvar _ = col·ourLib.X\n")
+	src := plant(strings.Join([]string{
+		"package a",
+		"",
+		`import col·ourLib "example.com/col·our"`,
+		"",
+		"// Ana·lyse the input.",
+		"func isCan·celled() string {",
+		"\t/* the",
+		"\tgr·ey zone */",
+		"\treturn \"fav·ourite\" + `",
+		"lic·ence`",
+		"}",
+		"",
+		"var _ = col·ourLib.X",
+		"",
+	}, "\n"))
 	found, err := listHits("a.go", "a.go", src, dict, nil)
 	if err != nil {
 		t.Fatal(err)
