@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testonly"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -218,7 +217,7 @@ func embedAtWidth(t *testing.T, db *DB, vault domain.Vault, dims int) {
 // connection, and keeps everything else it is opened with.
 func TestAnIndexOpenedToSkipTheFlushDoesNotWaitForTheDisk(t *testing.T) {
 	ctx := t.Context()
-	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"), SkipFlush(testonly.NewGrant()))
+	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"), Unsynchronized())
 	if err != nil {
 		t.Fatal(err)
 	}

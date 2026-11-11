@@ -27,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testonly"
 )
 
 // DB owns the connections.
@@ -73,10 +72,9 @@ type Option func(*settings)
 // reads them.
 type settings struct{ synchronous string }
 
-// SkipFlush opens an index that does not wait for the disk. WAL, the single
-// writer and the busy timeout stay as they are; only the moment of the flush
-// moves. The grant is obtainable only inside this module.
-func SkipFlush(testonly.Grant) Option {
+// Unsynchronized opens an index that does not wait for the disk on a commit. WAL, the single
+// writer and the busy timeout stay as they are; only the moment of the flush moves.
+func Unsynchronized() Option {
 	return func(s *settings) { s.synchronous = unsynchronized }
 }
 

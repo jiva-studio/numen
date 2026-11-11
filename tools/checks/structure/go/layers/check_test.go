@@ -201,7 +201,6 @@ func TestLayerRule_RefusesForbiddenEdges(t *testing.T) {
 
 		// Fixtures build the real adapters.
 		{"internal/testsupport", "adapter/index", false},
-		{"internal/testonly", "container", false},
 
 		// The composition root does none of the core's work.
 		{"container", "internal/adapterlib/wire", true},
