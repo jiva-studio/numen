@@ -6,7 +6,6 @@ const AGENT_PROVIDER_CAPABILITY = 'ai.agent.provider'
 /** The parts of a manifest that declare what a plugin registers. */
 interface DeclaringManifest {
   readonly permissions?: readonly string[] | undefined
-        readonly dropHandlers?: readonly { readonly types: readonly string[] }[] | undefined
   readonly capabilities?: readonly string[] | undefined
   readonly settingsViews?: readonly { readonly id: string }[] | undefined
   readonly contributes?:
@@ -15,6 +14,7 @@ interface DeclaringManifest {
         readonly tabKinds?: readonly { readonly kind: string }[] | undefined
         readonly commands?: readonly { readonly id: string }[] | undefined
         readonly handlers?: readonly { readonly command: string }[] | undefined
+        readonly dropHandlers?: readonly { readonly types: readonly string[] }[] | undefined
       }
     | undefined
 }
