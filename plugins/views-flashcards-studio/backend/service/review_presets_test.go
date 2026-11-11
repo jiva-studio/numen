@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 )
 
 func getElsewhere() map[string]string {
@@ -140,7 +140,7 @@ func (brokenPresetLinks) GetLinks(context.Context, domain.VaultID, string) ([]do
 // defaults.
 func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 	handler, target := newAPI(t, getPointed())
-	handler.flash().Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, nil).WithDay(*handler.day())
+	handler.flash().Presets = presets.New(nil, nil, brokenPresetLinks{}, nil, nil, nil).WithDay(*handler.day())
 
 	_, err := handler.GetVaultDeckPreset(t.Context(),
 		&api.GetVaultDeckPresetRequest{Vault: string(target[0].ID), Deck: "decks/Words.md"})

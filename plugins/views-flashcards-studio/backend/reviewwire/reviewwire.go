@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/reloads"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -228,7 +229,7 @@ func sortReviewDays(days []*api.ReviewDay) []*api.ReviewDay {
 }
 
 // NewNeighborhoodResponse is what a deck is linked to.
-func NewNeighborhoodResponse(joined flashcards.Neighborhood, err error) (*api.GetDeckNeighborhoodResponse, error) {
+func NewNeighborhoodResponse(joined neighborhood.Neighborhood, err error) (*api.GetDeckNeighborhoodResponse, error) {
 	if err != nil {
 		return nil, apierror.NewInternal(err)
 	}

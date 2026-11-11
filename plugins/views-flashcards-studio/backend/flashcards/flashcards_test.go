@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -39,7 +40,7 @@ type vaulted struct {
 	vault     domain.Vault
 	env       vaulttest.Env
 	standings flashcards.ListReviewCards
-	presets   flashcards.Presets
+	presets   presets.Presets
 	assigning flashcards.AssignCardIDs
 	schedules flashcards.Schedules
 	counted   flashcards.CountReviews
@@ -59,13 +60,13 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 
 	logs := env.Ports.Logs
 	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	presets := flashcards.NewPresets(
+	deckPresets := presets.New(
 		env.Ports.Readers, env.Ports.Writers,
 		env.Queries, env.Queries, scanned, vaulttest.NewClock())
-	presets.Problems = env.Queries
+	deckPresets.Problems = env.Queries
 	// Each card is scheduled with the share of cards its own preset specifies, as
 	// the application builds it.
-	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), getToday(), standings, presets)
+	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), getToday(), standings, deckPresets)
 	schedules.Cache = env.Ports.Schedules("schedules")
 
 	counted := flashcards.NewCountReviews(logs, schedules, getToday(), vaulttest.NewClock())
@@ -75,7 +76,7 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 		vault:     env.Vault,
 		env:       env,
 		standings: standings,
-		presets:   presets,
+		presets:   deckPresets,
 		assigning: flashcards.NewAssignCardIDs(
 			env.Ports.Readers, env.Ports.Writers,
 			env.Queries, env.Queries, scanned, vaulttest.NewClock()),
@@ -169,7 +170,7 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now ports.Clock) flashcards.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		flashcards.NewPresets(nil, nil, nil, nil, nil, vaulttest.NewClock()).WithDay(day), day, vaulttest.NewClock(),
+		presets.New(nil, nil, nil, nil, nil, vaulttest.NewClock()).WithDay(day), day, vaulttest.NewClock(),
 	)
 }
 

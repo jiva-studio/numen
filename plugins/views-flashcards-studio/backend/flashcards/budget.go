@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
@@ -33,7 +34,7 @@ type allowance struct {
 
 // budgetInputs is what the daily budgets are calculated from.
 type budgetInputs struct {
-	reads       *PresetReads
+	reads       *presets.Reads
 	day         review.Day
 	reviewCards []ReviewCard
 	schedules   map[review.CardID]review.Schedule
@@ -101,7 +102,7 @@ type presetSurvey struct {
 }
 
 func readPresetSurvey(
-	ctx context.Context, v domain.Vault, reads *PresetReads, reviewCards []ReviewCard,
+	ctx context.Context, v domain.Vault, reads *presets.Reads, reviewCards []ReviewCard,
 	schedules map[review.CardID]review.Schedule, out *budgets,
 ) (presetSurvey, error) {
 	sv := presetSurvey{

@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
@@ -1144,7 +1145,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 		}},
 	} {
 		_, err := s.curves(getNoon()).Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
-		if !errors.Is(err, flashcards.ErrOutOfBounds) {
+		if !errors.Is(err, presets.ErrOutOfBounds) {
 			t.Errorf("%s draws a curve, and answered %v", one.named, err)
 		}
 	}

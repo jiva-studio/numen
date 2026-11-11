@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -42,14 +43,14 @@ type Session struct {
 	cardIDs     AssignCardIDs
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     Presets
+	presets     presets.Presets
 	day         review.Day
 	now         ports.Clock
 }
 
 // NewSession constructs a Session from its dependencies.
 func NewSession(
-	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets Presets,
+	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets presets.Presets,
 	day review.Day, now ports.Clock,
 ) Session {
 	return Session{
