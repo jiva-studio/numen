@@ -18,10 +18,10 @@ var errNoVaultSwitch = errors.New("the window cannot switch vaults")
 // It runs under the lock of a close and a vault switch and never ends their
 // flush request; a close, a quit, a user vault switch or the end of the call
 // cancels it with ErrUnavailable. An open ASKING prompt returns ErrUnsavedChanges without a flush.
+// A window built with no Switch cannot open a vault for a plugin.
 type OpenPluginVault struct {
 	life *lifecycle
 
-	// Switch shows the vault in the window. A window with none cannot open a vault for a plugin.
 	Switch VaultSwitch
 }
 
@@ -30,7 +30,6 @@ type VaultSwitch interface {
 	Execute(ctx context.Context, v domain.Vault, open *PluginOpen) error
 }
 
-// Execute opens v on behalf of a plugin.
 func (u OpenPluginVault) Execute(ctx context.Context, v domain.Vault) error {
 	if u.Switch == nil {
 		return errNoVaultSwitch

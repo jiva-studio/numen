@@ -63,7 +63,6 @@ type Config struct {
 
 	KeyStore pluginport.KeyStore
 
-	// Credentials locates the file KeyStore keeps its values in; none for a store without one.
 	Credentials pluginport.CredentialsLocator
 
 	TextVersions *textversion.Versions

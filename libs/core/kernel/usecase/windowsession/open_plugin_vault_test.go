@@ -89,7 +89,6 @@ func (f switchFunc) Execute(ctx context.Context, v domain.Vault, open *PluginOpe
 	return f(ctx, v, open)
 }
 
-// openVia returns the plugin open of the window with show as its vault switch.
 func openVia(w *testWindow, show func(context.Context, domain.Vault, *PluginOpen) error) OpenPluginVault {
 	w.scenarios.Switching.OpenPlugin.Switch = switchFunc(show)
 	return w.scenarios.Switching.OpenPlugin
