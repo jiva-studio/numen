@@ -191,11 +191,11 @@ func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
 
 func TestThePermissionConstantsAreThePermissionStrings(t *testing.T) {
 	for got, want := range map[string]string{
-		host.PermissionIndexRead:       "index:read",
-		host.PermissionSearchPolicy:    "search:policy",
-		host.PermissionVaultManage:     "vault:manage",
-		host.PermissionWindowFocus:     "window:focus",
-		host.PermissionLinkOpen: "link:open",
+		host.PermissionIndexRead:    "index:read",
+		host.PermissionSearchPolicy: "search:policy",
+		host.PermissionVaultManage:  "vault:manage",
+		host.PermissionWindowFocus:  "window:focus",
+		host.PermissionLinkOpen:     "link:open",
 	} {
 		if got != want {
 			t.Errorf("the permission constant is %q, want %q", got, want)

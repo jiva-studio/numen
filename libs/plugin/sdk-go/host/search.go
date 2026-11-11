@@ -31,11 +31,11 @@ var (
 // external link opened in the system browser needs PermissionLinkOpen. Permissions are consent and
 // API hygiene: a plugin is trusted code, and its own network requests are not gated.
 const (
-	PermissionIndexRead       = "index:read"
-	PermissionSearchPolicy    = "search:policy"
-	PermissionVaultManage     = "vault:manage"
-	PermissionWindowFocus     = "window:focus"
-	PermissionLinkOpen = "link:open"
+	PermissionIndexRead    = "index:read"
+	PermissionSearchPolicy = "search:policy"
+	PermissionVaultManage  = "vault:manage"
+	PermissionWindowFocus  = "window:focus"
+	PermissionLinkOpen     = "link:open"
 )
 
 // The limits the host applies to a search call.
