@@ -3,114 +3,155 @@ package container
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func openCLIRename(c Config, ctx context.Context, ports registry.Ports, find vault.VaultFinding) (cli.Renaming, error) {
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		return cli.Renaming{}, err
-	}
-	rename := vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())
-	return cli.Renaming{Rename: vault.NewRenameByName(find, rename), Close: db.Close}, nil
+// CLISession is what one run of the command line opens: the index, the embedders and the plugin work of the
+// command it runs. The plugin work of the run reports into one list of tasks, and Close hands back the ones
+// that failed.
+type CLISession struct {
+	c       Config
+	tasks   *run.Tasks
+	models  *run.Lock
+	closers []func() error
 }
 
-func openCLIUnregister(c Config, ctx context.Context, ports registry.Ports, find vault.VaultFinding) (cli.Unregistering, error) {
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		return cli.Unregistering{}, err
-	}
-	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
-	return cli.Unregistering{Unregister: vault.NewUnregisterByName(find, unregister), Close: db.Close}, nil
+// OpenCLI returns the session of one run of the command line over the installation c describes. It opens
+// nothing: each command opens what it works over.
+func OpenCLI(c Config) *CLISession {
+	return &CLISession{c: c, tasks: run.NewTasks(), models: &run.Lock{}}
 }
 
-func openCLIErase(c Config, ctx context.Context, ports registry.Ports, find vault.VaultFinding) (cli.Erasing, error) {
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		return cli.Erasing{}, err
-	}
-	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
-	erase := vault.NewErase(vaultIdentity(vaultOf(c)), vaultTrash(vaultOf(c)), unregister)
-	return cli.Erasing{Erase: vault.NewEraseByName(find, erase), Close: db.Close}, nil
-}
-
-func openCLIVaults(c Config) (cli.Vaults, error) {
-	ports, err := c.registry()
+// OpenVaults returns the use cases over the list of vaults.
+func (s *CLISession) OpenVaults() (cli.Vaults, error) {
+	a := plugins(s.c)
+	ports, err := s.c.registry()
 	if err != nil {
 		return cli.Vaults{}, err
 	}
 	find := registry.NewFind(ports.Lookup).Execute
 	return cli.Vaults{
-		Add:        vault.NewAdd(vaultIdentity(vaultOf(c)), ports.Vaults, ports.Lookup, ports.Saver, c.Clock()),
-		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(vaultOf(c))),
+		Add:        vault.NewAdd(vaultIdentity(a.vault), ports.Vaults, ports.Lookup, ports.Saver, s.c.Clock()),
+		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(a.vault)),
 		RecordOpen: vault.NewRecordOpenByName(find, vault.NewRecordOpen(ports.Recorder)),
-		OpenRename: func(ctx context.Context) (cli.Renaming, error) { return openCLIRename(c, ctx, ports, find) },
-		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
-			return openCLIUnregister(c, ctx, ports, find)
-		},
-		OpenErase: func(ctx context.Context) (cli.Erasing, error) { return openCLIErase(c, ctx, ports, find) },
 	}, nil
 }
 
-func openCLILinks(c Config, ctx context.Context) (cli.Links, error) {
+// OpenIndexed opens the index, which Close closes, and returns the use cases over it.
+func (s *CLISession) OpenIndexed(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+	c := s.c
+	c.ShouldRebuildIndex = options.Rebuild
+	a := plugins(c)
 	ports, err := c.registry()
 	if err != nil {
-		return cli.Links{}, err
+		return cli.Indexed{}, err
 	}
-	db, err := openIndex(vaultOf(c), ctx)
+	db, err := openIndex(a.vault, ctx)
 	if err != nil {
-		return cli.Links{}, err
+		return cli.Indexed{}, err
 	}
+	s.closers = append(s.closers, db.Close)
 	find := registry.NewFind(ports.Lookup).Execute
-	return cli.Links{Show: query.NewShowLinksByName(find, Queries(db).Refer.Links), Close: db.Close}, nil
-}
-
-func openCLIScan(c Config, ctx context.Context, rebuild bool) (cli.Scan, error) {
-	ports, err := c.registry()
-	if err != nil {
-		return cli.Scan{}, err
-	}
-	indexingCfg := c
-	indexingCfg.ShouldRebuildIndex = rebuild
-	db, err := openIndex(vaultOf(indexingCfg), ctx)
-	if err != nil {
-		return cli.Scan{}, err
-	}
-	var closeEmbedder func() error
-	find := registry.NewFind(ports.Lookup).Execute
-	prepare := func(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
-		return prepareCLIScan(indexingCfg, ctx, db, v, &closeEmbedder)
-	}
-	return cli.Scan{
-		Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, prepare), db.NoteQueries()),
-		Now:  c.Clock().Now,
-		Close: func() error {
-			return errors.Join(closeIfOpen(closeEmbedder), db.Close())
+	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
+	over := cliOver{session: s, config: c, db: db}
+	return cli.Indexed{
+		Rename:     vault.NewRenameByName(find, vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())),
+		Unregister: vault.NewUnregisterByName(find, unregister),
+		Erase:      vault.NewEraseByName(find, vault.NewErase(vaultIdentity(a.vault), vaultTrash(a.vault), unregister)),
+		Scan: cli.Scan{
+			Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, over.prepareScan), db.NoteQueries()),
+			Now:  c.Clock().Now,
 		},
+		Search: cli.Search{
+			Search: searchusecase.NewByName(find, over.searchPreparing(options.ErrorHandler).prepare),
+		},
+		Links:    query.NewShowLinksByName(find, Queries(db).Refer.Links),
+		Problems: vault.NewGetProblemsByName(find, getProblems(a.vault, db.NoteProblems())),
 	}, nil
 }
 
-func prepareCLIScan(
-	c Config, ctx context.Context, db *Index, v domain.Vault, closeEmbedder *func() error,
-) (indexing.ReadWholeVault, error) {
-	opened, err := openedPluginWork(c, db, v)
+// GetPluginCommands returns the commands the enabled plugins declare, and what runs one over a vault.
+func (s *CLISession) GetPluginCommands() cli.PluginCommands {
+	return cli.PluginCommands{
+		List:   getPluginCommands(plugins(s.c)).List,
+		ByName: plugincommand.NewRunByName(s.findVault),
+		Open:   s.openPluginCommands,
+	}
+}
+
+// Close closes what the run opened, the embedders before the index, and returns the tasks of the plugin work
+// that failed, one line each.
+func (s *CLISession) Close() ([]string, error) {
+	var err error
+	for i := len(s.closers) - 1; i >= 0; i-- {
+		err = errors.Join(err, s.closers[i]())
+	}
+	return listFailedTasks(s.tasks.List()), err
+}
+
+func (s *CLISession) findVault(nameOrPath string) (domain.Vault, error) {
+	ports, err := s.c.registry()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	return registry.NewFind(ports.Lookup).Execute(nameOrPath)
+}
+
+func (s *CLISession) openPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
+	db, err := openIndex(vaultOf(s.c), ctx)
+	if err != nil {
+		return plugincommand.Run{}, nil, err
+	}
+	_, pluginWork, err := openPluginWork(s.c, db, v, s.tasks, s.models)
+	if err != nil {
+		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
+	}
+	return getPluginCommands(plugins(s.c)).Run, closeAfterWork(ctx, pluginWork, db.Close), nil
+}
+
+func listFailedTasks(tasks []work.Task) []string {
+	var failed []string
+	for _, task := range tasks {
+		if task.Error != "" {
+			failed = append(failed, fmt.Sprintf("%s: %s: %s", getTaskOwner(task), task.Title, task.Error))
+		}
+	}
+	return failed
+}
+
+func getTaskOwner(task work.Task) string {
+	if task.PluginName != "" {
+		return task.PluginName
+	}
+	return task.PluginID
+}
+
+// cliOver is the index one command of a run works over, with the configuration it was opened under.
+type cliOver struct {
+	session *CLISession
+	config  Config
+	db      *Index
+}
+
+func (o cliOver) prepareScan(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
+	opened, err := o.openPluginWork(v)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	var embedder embeddingport.Embedder
-	var why error
-	embedder, *closeEmbedder, why = searchEmbedder(searchOf(opened), ctx)
-	read, err := ReadWholeVault(opened, ctx, db, embedder, v)
+	embedder, why := o.session.openEmbedder(opened, ctx)
+	read, err := readWholeVault(opened.search, ctx, o.db, embedder, v, vaultMakeRefresh(opened.vault, o.db, o.db.Notes()))
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -118,103 +159,39 @@ func prepareCLIScan(
 	return read, nil
 }
 
-func openCLISearch(c Config,
-	ctx context.Context, errorHandler window.ErrorHandler,
-) (cli.Search, error) {
-	ports, err := c.registry()
-	if err != nil {
-		return cli.Search{}, err
-	}
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		return cli.Search{}, err
-	}
-	var closeEmbedder func() error
-	find := registry.NewFind(ports.Lookup).Execute
-	prepare := func(ctx context.Context, v domain.Vault) (searchusecase.Search, error) {
-		return prepareCLISearch(c, ctx, db, v, errorHandler, &closeEmbedder)
-	}
-	return cli.Search{
-		Search: searchusecase.NewByName(find, prepare),
-		Close: func() error {
-			return errors.Join(closeIfOpen(closeEmbedder), db.Close())
-		},
-	}, nil
+func (o cliOver) openPluginWork(v domain.Vault) (pluginsWiring, error) {
+	opened, _, err := openPluginWork(o.config, o.db, v, o.session.tasks, o.session.models)
+	return opened, err
 }
 
-func prepareCLISearch(
-	c Config, ctx context.Context, db *Index, v domain.Vault,
-	errorHandler window.ErrorHandler, closeEmbedder *func() error,
-) (searchusecase.Search, error) {
-	asking, err := openedPluginWork(c, db, v)
+// cliSearching prepares the search of one vault over the index of a run, and tells errorHandler that the search
+// runs on words alone.
+type cliSearching struct {
+	over         cliOver
+	errorHandler func(error)
+}
+
+func (o cliOver) searchPreparing(errorHandler func(error)) cliSearching {
+	return cliSearching{over: o, errorHandler: errorHandler}
+}
+
+func (p cliSearching) prepare(ctx context.Context, v domain.Vault) (searchusecase.Search, error) {
+	asking, err := p.over.openPluginWork(v)
 	if err != nil {
 		return searchusecase.Search{}, err
 	}
-	var embedder embeddingport.Embedder
-	var why error
-	embedder, *closeEmbedder, why = searchEmbedder(searchOf(asking), ctx)
-	reportSearchFallback(errorHandler, why)
-	return newSearch(searchOf(asking), db, embedder, errorHandler), nil
+	embedder, why := p.over.session.openEmbedder(asking, ctx)
+	if why != nil && p.errorHandler != nil {
+		p.errorHandler(why)
+	}
+	return newSearch(asking.search, p.over.db, embedder, p.errorHandler), nil
 }
 
-func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
-	if err != nil && errorHandler != nil {
-		errorHandler(err)
+// openEmbedder opens the embedder of the plugins a, which Close closes, and returns why there is none.
+func (s *CLISession) openEmbedder(a pluginsWiring, ctx context.Context) (embeddingport.Embedder, error) {
+	embedder, closeEmbedder, why := searchEmbedder(a.search, ctx)
+	if closeEmbedder != nil {
+		s.closers = append(s.closers, closeEmbedder)
 	}
-}
-
-func openCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
-	ports, err := c.registry()
-	if err != nil {
-		return cli.Problems{}, err
-	}
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		return cli.Problems{}, err
-	}
-	find := registry.NewFind(ports.Lookup).Execute
-	return cli.Problems{
-		Problems: vault.NewGetProblemsByName(find, getProblems(vaultOf(c), db.NoteProblems())), Close: db.Close,
-	}, nil
-}
-
-func getCLIPluginCommands(c Config) cli.PluginCommands {
-	find := func(nameOrPath string) (domain.Vault, error) {
-		ports, err := c.registry()
-		if err != nil {
-			return domain.Vault{}, err
-		}
-		return registry.NewFind(ports.Lookup).Execute(nameOrPath)
-	}
-	return cli.PluginCommands{
-		List:   getPluginCommands(plugins(c)).List,
-		ByName: plugincommand.NewRunByName(find),
-		Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-			return openPluginCommands(c, ctx, v)
-		},
-	}
-}
-
-func closeIfOpen(closeFn func() error) error {
-	if closeFn == nil {
-		return nil
-	}
-	return closeFn()
-}
-
-// OpenCLI returns what the command line calls to reach the vaults, the scan, the search, the links, the
-// problems and the plugin commands of the installation c describes.
-func OpenCLI(c Config) cli.Deps {
-	return cli.Deps{
-		Vaults: func() (cli.Vaults, error) { return openCLIVaults(c) },
-		Links:  func(ctx context.Context) (cli.Links, error) { return openCLILinks(c, ctx) },
-		Scan: func(ctx context.Context, rebuild bool) (cli.Scan, error) {
-			return openCLIScan(c, ctx, rebuild)
-		},
-		Search: func(ctx context.Context, errorHandler window.ErrorHandler) (cli.Search, error) {
-			return openCLISearch(c, ctx, errorHandler)
-		},
-		Problems:       func(ctx context.Context) (cli.Problems, error) { return openCLIProblems(c, ctx) },
-		PluginCommands: func() cli.PluginCommands { return getCLIPluginCommands(c) },
-	}
+	return embedder, why
 }

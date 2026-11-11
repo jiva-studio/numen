@@ -30,9 +30,6 @@ type State struct {
 	Notices *Notices
 	Events  *Events
 
-	// Switch shows a vault as a user switch.
-	Switch windowsession.VaultSwitch
-
 	NotifyOpenTabs func(window.OpenTabs)
 
 	DetachTab func(context.Context, window.DetachedTab) error
@@ -128,11 +125,6 @@ func (s *State) ShowOpenTabs() {
 	}
 }
 
-// ShowVault shows another vault in the window, as a user switch.
-func (s *State) ShowVault(ctx context.Context, v domain.Vault) error {
-	return s.Switch.Execute(ctx, v, nil)
-}
-
 func (s *State) CanOpenTabWindow() bool { return s.DetachTab != nil }
 
 func (s *State) OpenTabWindow(ctx context.Context, tab window.DetachedTab) error {
@@ -152,16 +144,4 @@ func (s *State) GetMediaAddress(v domain.Vault, stat domain.FileStat) string {
 // while the socket does not answer.
 func (s *State) GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string {
 	return s.Playing.Load().PluginFileAddress(v, address, size)
-}
-
-// GetVaultSwitch returns the switch of the window as it is when a vault is switched, so a plugin's open
-// goes through whatever Switch holds then.
-func (s *State) GetVaultSwitch() windowsession.VaultSwitch { return vaultSwitch{state: s} }
-
-type vaultSwitch struct {
-	state *State
-}
-
-func (v vaultSwitch) Execute(ctx context.Context, target domain.Vault, open *windowsession.PluginOpen) error {
-	return v.state.Switch.Execute(ctx, target, open)
 }

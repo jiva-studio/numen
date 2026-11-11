@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
@@ -13,7 +12,7 @@ import (
 const excerptRunes = 160
 
 type searchCommand struct {
-	search func(ctx context.Context, errorHandler window.ErrorHandler) (Search, error)
+	session Session
 }
 
 func (searchCommand) Name() string { return "search" }
@@ -22,7 +21,7 @@ func (searchCommand) Synopsis() string {
 	return "  numen-cli search <vault> <query>             full-text search within one vault"
 }
 
-func (c searchCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
+func (c searchCommand) Run(ctx context.Context, term terminal, args []string) error {
 	if len(args) < 2 {
 		return errors.New("usage: numen-cli search <vault> <query>")
 	}
@@ -31,11 +30,11 @@ func (c searchCommand) Run(ctx context.Context, term terminal, args []string) (e
 	// words alone, which is reported through the error handler.
 	diagnostics := newReporter(term.errOut)
 	errorHandler := func(err error) { diagnostics.Printf("search by words only: %v\n", err) }
-	open, err := c.search(ctx, errorHandler)
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{ErrorHandler: errorHandler})
 	if err != nil {
 		return err
 	}
-	defer closeInto(&err, open.Close)
+	open := indexed.Search
 	if open.Words != nil {
 		diagnostics.Printf("search by words only: %v\n", open.Words)
 	}

@@ -51,12 +51,12 @@ func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain
 	return version
 }
 
-func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
+func readIntoIndex(t *testing.T, a pluginsWiring, db *Index, v domain.Vault) {
 	t.Helper()
-	if _, err := searchScan(searchOf(cfg), db).Execute(t.Context(), v); err != nil {
+	if _, err := searchScan(a.search, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := indexTexts(searchOf(cfg), db, v, nil)
+	extract, err := indexTexts(a.search, db, v, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,11 +91,11 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.TextVersions = versions
+	a := assemble(cfg, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
-	readIntoIndex(t, cfg, db, v)
-	found, err := newSearch(searchOf(cfg), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	readIntoIndex(t, a, db, v)
+	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,8 +129,8 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.TextVersions = versions
-	readIntoIndex(t, cfg, db, v)
+	a := assemble(cfg, versions)
+	readIntoIndex(t, a, db, v)
 	if _, err := db.DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
 		t.Fatal(err)
 	}
@@ -165,12 +165,12 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.TextVersions = versions
+	a := assemble(cfg, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
-	readIntoIndex(t, cfg, db, v)
+	readIntoIndex(t, a, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(fileMovers(vaultOf(cfg)), db.NoteQueries(), db.Sources(), db.Sources(), note.Move{})
+	move := vault.NewMove(fileMovers(a.vault), db.NoteQueries(), db.Sources(), db.Sources(), note.Move{})
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	}
 }
 
-func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersion) {
+func newTalkIndex(t *testing.T) (pluginsWiring, *Index, domain.Vault, domain.TextVersion) {
 	t.Helper()
 	v := newTalkVault(t)
 	cfg := NewConfig(Config{
@@ -206,41 +206,41 @@ func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersio
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.TextVersions = versions
+	a := assemble(cfg, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
-	readIntoIndex(t, cfg, db, v)
-	return cfg, db, v, version
+	readIntoIndex(t, a, db, v)
+	return a, db, v, version
 }
 
-func refreshPaths(t *testing.T, cfg Config, db *Index, v domain.Vault, paths ...string) {
+func refreshPaths(t *testing.T, a pluginsWiring, db *Index, v domain.Vault, paths ...string) {
 	t.Helper()
-	if _, err := makeRefresh(cfg, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
+	if _, err := vaultMakeRefresh(a.vault, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestRenamingAFileOnDiskMovesItsTextVersions(t *testing.T) {
-	cfg, db, v, version := newTalkIndex(t)
+	a, db, v, version := newTalkIndex(t)
 	const renamed = "talks/Heron talk.mp3"
 	if err := os.Rename(filepath.Join(v.Path, talkPath), filepath.Join(v.Path, renamed)); err != nil {
 		t.Fatal(err)
 	}
 
-	refreshPaths(t, cfg, db, v, talkPath, renamed)
-	readIntoIndex(t, cfg, db, v)
+	refreshPaths(t, a, db, v, talkPath, renamed)
+	readIntoIndex(t, a, db, v)
 
 	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))
 	if err != nil {
 		t.Fatal(err)
 	}
-	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
+	listing, err := a.vault.TextVersions.Texts.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(listing.Versions) != 1 || listing.Live != version.GetID() || listing.Versions[0].Path != renamed {
 		t.Fatalf("after the rename on disk the talk has %+v, want its transcript live at the new path", listing)
 	}
-	found, err := newSearch(searchOf(cfg), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +250,7 @@ func TestRenamingAFileOnDiskMovesItsTextVersions(t *testing.T) {
 }
 
 func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
-	cfg, db, v, version := newTalkIndex(t)
+	a, db, v, version := newTalkIndex(t)
 	raw, err := os.ReadFile(filepath.Join(v.Path, talkPath))
 	if err != nil {
 		t.Fatal(err)
@@ -259,16 +259,16 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	refreshPaths(t, cfg, db, v, talkPath)
+	refreshPaths(t, a, db, v, talkPath)
 
-	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
+	listing, err := a.vault.TextVersions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(listing.Versions) != 1 || listing.Versions[0].GetID() != version.GetID() {
 		t.Fatalf("after the delete the talk's path has %+v, want its transcript to stay", listing)
 	}
-	found, err := newSearch(searchOf(cfg), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +293,7 @@ func (c cutOnChange) ReportVersionsChanged(v domain.Vault, path string) {
 }
 
 func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
-	cfg, db, v, _ := newTalkIndex(t)
+	a, db, v, _ := newTalkIndex(t)
 	const other = "org.example.subtitles"
 	files, err := derivedfile.TextStores{}.Open(v)
 	if err != nil {
@@ -318,12 +318,12 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err := repo.SaveVersion(t.Context(), subtitles); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := indexTexts(searchOf(cfg), db, v, nil)
+	extract, err := indexTexts(a.search, db, v, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.TextVersions.Changes.SetListener(cutOnChange{t: t, extract: extract})
-	data := openPluginData(vaultOf(cfg))
+	a.vault.TextVersions.Changes.SetListener(cutOnChange{t: t, extract: extract})
+	data := openPluginData(a.vault)
 
 	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {
 		t.Fatal(err)
@@ -335,18 +335,18 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(v.Path, ".numen", other, "notes.jsonl")); err != nil {
 		t.Fatalf("the other plugin's file is gone: %v", err)
 	}
-	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
+	listing, err := a.vault.TextVersions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
 	if err != nil || len(listing.Versions) != 1 || listing.Live != subtitles.GetID() {
 		t.Fatalf("after the delete the talk has %+v (%v), want the other plugin's version alone and live", listing, err)
 	}
-	found, err := newSearch(searchOf(cfg), db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	found, err := newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) != 0 {
 		t.Fatalf("found %+v, want the deleted transcript out of the index", found)
 	}
-	found, err = newSearch(searchOf(cfg), db, nil, nil).Execute(t.Context(), v, "kingfisher", search.Parameters{})
+	found, err = newSearch(a.search, db, nil, nil).Execute(t.Context(), v, "kingfisher", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -365,11 +365,13 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.TextVersions, err = newTextVersions(vaultOf(cfg), db); err != nil {
+	texts, err := newTextVersions(vaultOf(cfg), db)
+	if err != nil {
 		t.Fatal(err)
 	}
+	a := assemble(cfg, texts)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
-	readIntoIndex(t, cfg, db, v)
+	readIntoIndex(t, a, db, v)
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -383,16 +385,18 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	if cfg.TextVersions, err = newTextVersions(vaultOf(cfg), db); err != nil {
+	texts, err = newTextVersions(vaultOf(cfg), db)
+	if err != nil {
 		t.Fatal(err)
 	}
-	readIntoIndex(t, cfg, db, v)
+	a = assemble(cfg, texts)
+	readIntoIndex(t, a, db, v)
 
 	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))
 	if err != nil {
 		t.Fatal(err)
 	}
-	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
+	listing, err := a.vault.TextVersions.Texts.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}

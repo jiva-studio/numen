@@ -40,16 +40,7 @@ func openIndex(c vaultWiring, ctx context.Context) (*Index, error) {
 }
 
 func updateIndex(c vaultWiring, db *Index) edit.IndexUpdater {
-	refresh := vault.NewRefresh(
-		vaultReaders(c),
-		db.Vaults(),
-		db.Notes(),
-		db.Sources(),
-		db.Sources(),
-		c.Clock,
-	)
-	refresh.Cut = c.CutNotes
-	refresh.Ledger = db.Ledger
+	refresh := vaultMakeRefresh(c, db, db.Notes())
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
@@ -163,10 +154,10 @@ func vaultOpenerWith(c vaultWiring,
 }
 
 func vaultMakeRefresh(c vaultWiring, db *Index, notes noteport.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefresh(vaultReaders(c), db.Vaults(), notes, db.Sources(), db.Sources(), c.Clock)
-	refresh.Cut = c.CutNotes
-	refresh.Ledger = db.Ledger
-	return refresh
+	return vault.NewRefreshFrom(vault.RefreshDeps{
+		Readers: vaultReaders(c), Vaults: db.Vaults(), Notes: notes, Queries: db.Sources(), Sources: db.Sources(),
+		Now: c.Clock, Cut: c.CutNotes, Ledger: db.Ledger,
+	})
 }
 
 func newTextVersions(c vaultWiring, db *Index) (*TextVersions, error) {
@@ -233,9 +224,9 @@ func getMediaType(_ vaultWiring) *file.GetMediaType {
 	return file.NewGetMediaType(contenttype.Open())
 }
 
-func openVaults(c Config, db *Index, out io.Writer, label string, record func(domain.Vault)) *vault.OpenVaults[*Index] {
+func openVaults(c vaultWiring, db *Index, out io.Writer, label string, record func(domain.Vault)) *vault.OpenVaults[*Index] {
 	return &vault.OpenVaults[*Index]{
-		Opener: func(i *Index) *vault.VaultOpener { return vaultOpener(vaultOf(c), i) }, Index: db, Out: out, Label: label,
+		Opener: func(i *Index) *vault.VaultOpener { return vaultOpener(c, i) }, Index: db, Out: out, Label: label,
 		RecordVault: record,
 	}
 }
