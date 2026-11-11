@@ -56,7 +56,7 @@ func TestWindowsWorkingAtOnceLeaveNothingBehind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers}
+	r := &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: tabs.Links.state.peek(), watches: map[string]*Watch{}}
 
 	var working sync.WaitGroup
 	for index := range windows {

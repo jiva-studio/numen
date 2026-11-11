@@ -20,6 +20,28 @@ func newPresence() *presence {
 	return &presence{watches: map[string][]*Watch{}, removals: map[string]*expiry{}}
 }
 
+// windowPresence is which windows are watched, and the removal that waits for a window nobody watches.
+type windowPresence interface {
+	watchBook
+	removalBook
+}
+
+// watchBook is the watches of the windows.
+type watchBook interface {
+	hasWatch(windowID string) bool
+	isLive(windowID string) bool
+	addWatch(w *Watch)
+	removeWatch(w *Watch) bool
+	cancelWatches(windowID string)
+}
+
+// removalBook is the removals of the windows that nobody watches.
+type removalBook interface {
+	getRemoval(windowID string) (*expiry, bool)
+	setRemoval(windowID string, pending *expiry)
+	deleteRemoval(windowID string)
+}
+
 func (p *presence) hasWatch(windowID string) bool { return len(p.watches[windowID]) > 0 }
 
 func (p *presence) isLive(windowID string) bool {
@@ -44,6 +66,15 @@ func (p *presence) removeWatch(w *Watch) bool {
 	return true
 }
 
+func (p *presence) getRemoval(windowID string) (*expiry, bool) {
+	pending, ok := p.removals[windowID]
+	return pending, ok
+}
+
+func (p *presence) setRemoval(windowID string, pending *expiry) { p.removals[windowID] = pending }
+
+func (p *presence) deleteRemoval(windowID string) { delete(p.removals, windowID) }
+
 func (p *presence) cancelWatches(windowID string) {
 	for _, w := range p.watches[windowID] {
 		if !w.isCancelled {
@@ -63,7 +94,7 @@ type Watch struct {
 	stop        chan struct{}
 	isCancelled bool
 	unsubscribe func()
-	windows     *Windows
+	host        shared
 }
 
 // Close ends the watch. When the window has no other watch, the pending moves
@@ -73,9 +104,8 @@ type Watch struct {
 // period.
 func (w *Watch) Close() {
 	w.unsubscribe()
-	s := w.windows.state
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s, release := w.host.hold()
+	defer release()
 	if !s.roster.presence.removeWatch(w) {
 		return
 	}

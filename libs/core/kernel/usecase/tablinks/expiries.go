@@ -9,47 +9,67 @@ import (
 // MoveTimeout is how long a move waits for the target window to accept the tab.
 const MoveTimeout = 10 * time.Second
 
+// expiryTimers are the timers of the state.
+type expiryTimers interface {
+	windowTimers
+	transferTimers
+}
+
+// windowTimers are the timers that remove a window nobody watches.
+type windowTimers interface {
+	scheduleWindowRemoval(windowID string)
+	cancelWindowRemoval(windowID string)
+	keepAcceptingWindow(windowID string)
+}
+
+// transferTimers are the timers of the moves and detaches, and of the memory of an accepted move.
+type transferTimers interface {
+	scheduleMove(tabID string, pending *move)
+	scheduleDetach(tabID string, pending *detach)
+	recordAccepted(moveID, windowID string)
+}
+
 // expiries are the timers of the state: the removal of a window, a move, a detach and the memory of an
 // accepted move. Each run takes the lock of the state and does nothing when its entry has been replaced.
 type expiries struct {
-	state    *state
+	host     shared
 	grace    time.Duration
 	schedule Schedule
 }
 
 func (e *expiries) scheduleWindowRemoval(windowID string) {
 	pending := &expiry{}
-	e.state.roster.presence.removals[windowID] = pending
+	e.host.peek().roster.presence.setRemoval(windowID, pending)
 	pending.cancel = e.schedule(e.grace, func() { e.expireWindow(windowID, pending) })
 }
 
 func (e *expiries) cancelWindowRemoval(windowID string) {
-	if pending, ok := e.state.roster.presence.removals[windowID]; ok {
+	presence := e.host.peek().roster.presence
+	if pending, ok := presence.getRemoval(windowID); ok {
 		pending.cancel()
-		delete(e.state.roster.presence.removals, windowID)
+		presence.deleteRemoval(windowID)
 	}
 }
 
 func (e *expiries) expireWindow(windowID string, pending *expiry) {
-	s := e.state
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.roster.presence.removals[windowID] != pending {
+	s, release := e.host.hold()
+	defer release()
+	if current, _ := s.roster.presence.getRemoval(windowID); current != pending {
 		return
 	}
-	delete(s.roster.presence.removals, windowID)
+	s.roster.presence.deleteRemoval(windowID)
 	s.removeWindow(windowID)
 }
 
 func (e *expiries) keepAcceptingWindow(windowID string) {
-	p := e.state.roster.presence
+	p := e.host.peek().roster.presence
 	if p.hasWatch(windowID) {
 		return
 	}
-	pending, ok := p.removals[windowID]
+	pending, ok := p.getRemoval(windowID)
 	if !ok {
 		e.scheduleWindowRemoval(windowID)
-		pending = p.removals[windowID]
+		pending, _ = p.getRemoval(windowID)
 	}
 	pending.hasAccepted = true
 }
@@ -59,10 +79,9 @@ func (e *expiries) scheduleMove(tabID string, pending *move) {
 }
 
 func (e *expiries) expireMove(tabID string, pending *move) {
-	s := e.state
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.transit.moves[tabID] == pending {
+	s, release := e.host.hold()
+	defer release()
+	if current, _ := s.transit.getMove(tabID); current == pending {
 		s.transit.endMove(tabID, pending, tablink.MoveErrorTimeout)
 	}
 }
@@ -72,10 +91,9 @@ func (e *expiries) scheduleDetach(tabID string, pending *detach) {
 }
 
 func (e *expiries) expireDetach(tabID string, pending *detach) {
-	s := e.state
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.transit.detaches[tabID] != pending {
+	s, release := e.host.hold()
+	defer release()
+	if current, _ := s.transit.getDetach(tabID); current != pending {
 		return
 	}
 	s.transit.endDetach(tabID, pending, tablink.MoveErrorTimeout)
@@ -83,12 +101,12 @@ func (e *expiries) expireDetach(tabID string, pending *detach) {
 }
 
 func (e *expiries) recordAccepted(moveID, windowID string) {
-	e.state.transit.accepted[moveID] = windowID
+	e.host.peek().transit.putAccepted(moveID, windowID)
 	e.schedule(e.grace, func() { e.forgetAccepted(moveID) })
 }
 
 func (e *expiries) forgetAccepted(moveID string) {
-	e.state.mu.Lock()
-	defer e.state.mu.Unlock()
-	delete(e.state.transit.accepted, moveID)
+	s, release := e.host.hold()
+	defer release()
+	s.transit.deleteAccepted(moveID)
 }

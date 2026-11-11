@@ -27,7 +27,7 @@ func New(grace time.Duration, schedule Schedule, events Events) (*Tabs, error) {
 		transit: newTransit(),
 	}
 	s.owners = &ownership{state: s}
-	s.expiries = &expiries{state: s, grace: grace, schedule: schedule}
+	s.expiries = &expiries{host: s, grace: grace, schedule: schedule}
 	return &Tabs{Links: &Links{state: s}, Windows: &Windows{state: s}, Transfers: &Transfers{state: s}}, nil
 }
 
@@ -36,10 +36,24 @@ type state struct {
 	mu       sync.Mutex
 	events   Events
 	roster   *roster
-	transit  *transit
+	transit  transitBook
 	owners   *ownership
-	expiries *expiries
+	expiries expiryTimers
 }
+
+// shared is the state of the use cases, which they take under its lock. hold waits for the lock and returns
+// the state with the function that gives it back; peek returns the state to code that holds the lock already.
+type shared interface {
+	hold() (*state, func())
+	peek() *state
+}
+
+func (s *state) hold() (*state, func()) {
+	s.mu.Lock()
+	return s, s.mu.Unlock
+}
+
+func (s *state) peek() *state { return s }
 
 func (s *state) snapshot() Snapshot {
 	return Snapshot{
@@ -69,7 +83,7 @@ func (s *state) removeWindow(windowID string) {
 }
 
 func (s *state) forgetTab(tabID string) {
-	if _, ok := s.transit.detaches[tabID]; ok {
+	if _, ok := s.transit.getDetach(tabID); ok {
 		return
 	}
 	s.dropTab(tabID)

@@ -15,8 +15,8 @@ type roster struct {
 	info        map[string]Window
 	windowOrder []string
 	claims      map[string][]tablink.Tab
-	groups      *groupSet
-	presence    *presence
+	groups      linkGroups
+	presence    windowPresence
 }
 
 func newRoster() *roster {
