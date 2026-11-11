@@ -35,15 +35,15 @@ function createSettingValues(
   }
 
   return {
-    getBooleanSetting(key: string, fallback: JsonValue | undefined): boolean {
+    getBooleanSetting: (key: string, fallback: JsonValue | undefined): boolean => {
       const val = getValue(key) ?? fallback
       return typeof val === 'boolean' ? val : Boolean(fallback)
     },
-    getNumberSetting(key: string, fallback: JsonValue | undefined): number {
+    getNumberSetting: (key: string, fallback: JsonValue | undefined): number => {
       const val = getValue(key) ?? fallback
       return typeof val === 'number' ? val : Number(fallback ?? 0)
     },
-    getStringSetting(key: string, fallback: JsonValue | undefined): string {
+    getStringSetting: (key: string, fallback: JsonValue | undefined): string => {
       const val = getValue(key) ?? fallback
       return typeof val === 'string' ? val : String(fallback ?? '')
     },
@@ -84,7 +84,7 @@ export function usePluginFields(deps: PluginFieldsDeps) {
   const paths = {
     problems,
     hasMany: hasManyPaths,
-    choose(setting: PluginSettingInfo): void {
+    choose: (setting: PluginSettingInfo): void => {
       const pluginId = deps.getPlugin().id
       runInBackground(choosePathNow(setting), (error) => {
         if (deps.getPlugin().id === pluginId) {
@@ -92,7 +92,7 @@ export function usePluginFields(deps: PluginFieldsDeps) {
         }
       })
     },
-    clear(setting: PluginSettingInfo, targetPath?: string): void {
+    clear: (setting: PluginSettingInfo, targetPath?: string): void => {
       problems.value = { ...problems.value, [setting.key]: '' }
       const current = values.getStringSetting(setting.key, setting.default)
       pluginSettings.set(setting.key, removePathEntry(current, targetPath))

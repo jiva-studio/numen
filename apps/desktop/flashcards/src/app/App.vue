@@ -13,7 +13,7 @@ import { LoadingIndicator } from '@numen/ui'
 import { APPEARANCE_WORDS } from '@/features/appearance'
 import { VaultChooser } from '@/pages/vault-chooser'
 import type { WindowDeps } from './window/createWindow'
-import { useWindow } from './useWindow'
+import { getWindowParts } from './getWindowParts'
 import { WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -22,7 +22,7 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { tabs, vaults, plugins, titleBarView, mountView, appearance } = useWindow(props.deps)
+const { tabs, vaults, plugins, titleBarView, mountView, appearance } = getWindowParts(props.deps)
 const { front, tab, openTab } = tabs
 </script>
 

@@ -19,8 +19,8 @@ import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
 import { BootstrapFailure } from '@/features/app-start'
 import { getUserAgent } from './window/getUserAgent'
-import { useWindow } from './useWindow'
-import { useWindowTabMenu } from '@/entities/tab'
+import { getWindowParts } from './getWindowParts'
+import { getWindowPartsTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
 import { WORDS as words } from '@/shared/ui/words'
 import { WINDOW_WORDS } from './window/words'
@@ -35,7 +35,7 @@ const unsaved = {
   later: words.later,
 }
 
-const parts = useWindow()
+const parts = getWindowParts()
 const { frame } = parts.base
 const { windowTabs } = parts.base.tabs
 const { tabLinks } = parts.base.tabs
@@ -63,7 +63,7 @@ const { vaultList } = parts.services.vaults
 const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = parts.bootstrap
 const { isReady: isLayoutReady } = parts.tabs.layout
 
-const tabMenu = useWindowTabMenu({
+const tabMenu = getWindowPartsTabMenu({
   moveCommand: COMMAND.moveTabToWindow,
   windowTabs,
   onHighlight: highlightWindow,

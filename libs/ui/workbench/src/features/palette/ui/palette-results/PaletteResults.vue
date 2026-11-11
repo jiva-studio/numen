@@ -13,7 +13,7 @@
 import { useTemplateRef, type VNode } from 'vue'
 import { PaletteGroup } from './palette-group'
 import { listId, type PlacedGroup } from '../../lib/place'
-import { useGroupReveal, type PaletteGroupHandle } from '../../model/useGroupReveal'
+import { revealInGroups, type PaletteGroupHandle } from '../../model/revealInGroups'
 
 defineProps<{
   groups: readonly PlacedGroup[]
@@ -38,12 +38,14 @@ defineSlots<{
   icon(props: { id: string }): VNode[]
 }>()
 
+defineExpose({ reveal })
+
 /** The rendered groups, each with its rows. */
 const groupRefs = useTemplateRef<PaletteGroupHandle[]>('group')
 
-const { reveal } = useGroupReveal(groupRefs)
-
-defineExpose({ reveal })
+function reveal(item: string): Promise<void> {
+  return revealInGroups(groupRefs.value, item)
+}
 </script>
 
 <template>

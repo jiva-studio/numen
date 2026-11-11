@@ -1,16 +1,13 @@
 import { provide } from 'vue'
 import { createBrowserNodeIdFactory } from '../api/randomness'
-import type { createNodeIdFactory } from '../lib/identity'
-import { TAB_HOSTS, createTabHosts, type TabHosts } from './hosts'
+import { TAB_HOSTS, createTabHosts } from './hosts'
 
-/** Makes the elements tab content is drawn into and offers them to the panes below. */
-export function useTabHosts(): TabHosts {
+/**
+ * The elements tab content is drawn into, offered to the panes below, and the node identities the
+ * window's own randomness makes.
+ */
+export function useWorkspaceHosts() {
   const hosts = createTabHosts()
   provide(TAB_HOSTS, hosts)
-  return hosts
-}
-
-/** The node identities the window's own randomness makes. */
-export function useBrowserNodeIds(): ReturnType<typeof createNodeIdFactory> {
-  return createBrowserNodeIdFactory()
+  return { hosts, createNodeId: createBrowserNodeIdFactory() }
 }

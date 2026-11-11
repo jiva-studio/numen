@@ -12,6 +12,23 @@ interface RowHandle {
 const isRowHandle = (value: Unvalidated): value is RowHandle =>
   typeof value === 'object' && value !== null && 'element' in value
 
+/** The rows as rendered, keyed by the action each represents, and the scroll that shows one. */
+function createActionRows(getActiveActionId: () => string) {
+  const actionRows = new Map<string, RowHandle>()
+
+  async function reveal(): Promise<void> {
+    await nextTick()
+    actionRows.get(getActiveActionId())?.element?.scrollIntoView({ block: 'nearest' })
+  }
+
+  function holdRow(action: string, row: Element | ComponentPublicInstance | null): void {
+    if (isRowHandle(row)) actionRows.set(action, row)
+    else actionRows.delete(action)
+  }
+
+  return { reveal, holdRow }
+}
+
 /** The state and handlers of the action panel: its search, the action it is on, and its keyboard. */
 export function useActionPanel(options: {
   getActions: () => readonly PaletteAction[]
@@ -42,8 +59,7 @@ export function useActionPanel(options: {
    */
   let pointerPosition = { x: -1, y: -1 }
 
-  /** The rows as rendered, keyed by the action each represents. */
-  const actionRows = new Map<string, RowHandle>()
+  const { reveal, holdRow } = createActionRows(() => activeActionId.value)
 
   /** A fresh list keeps the action the panel was on, wherever the words put it. */
   watch(actions, (now) => {
@@ -107,16 +123,6 @@ export function useActionPanel(options: {
 
   function goTo(to: number): void {
     activeActionId.value = actions.value[to]?.action.id ?? ''
-  }
-
-  async function reveal(): Promise<void> {
-    await nextTick()
-    actionRows.get(activeActionId.value)?.element?.scrollIntoView({ block: 'nearest' })
-  }
-
-  function holdRow(action: string, row: Element | ComponentPublicInstance | null): void {
-    if (isRowHandle(row)) actionRows.set(action, row)
-    else actionRows.delete(action)
   }
 
   return {

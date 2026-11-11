@@ -5,7 +5,7 @@
  * The README and the file count are read for the plugin shown; an answer for another plugin is
  * dropped.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import { createRequestGuard, runInBackground } from '@numen/ui'
 import type { PluginInfo } from '@/entities/settings'
 import { formatError } from '@/shared/api/errors'
@@ -19,6 +19,27 @@ export interface PluginDetailDeps {
   readonly getSettings: () => InstallationSettings
   readonly getManager: () => InstallationPlugin
   readonly getPlugin: () => PluginInfo
+}
+
+/** Deletes the vault data of the shown plugin in the background, then reads the file count again. */
+function createDataDeletion(
+  deps: PluginDetailDeps,
+  deleteProblem: Ref<string>,
+  readFileCount: (pluginId: string) => Promise<void>,
+): () => void {
+  async function deletePluginData(pluginId: string): Promise<void> {
+    const problem = await deps.getManager().files.deletePluginData(pluginId)
+    if (deps.getPlugin().id !== pluginId) return
+    deleteProblem.value = problem
+    await readFileCount(pluginId)
+  }
+
+  return () => {
+    const pluginId = deps.getPlugin().id
+    runInBackground(deletePluginData(pluginId), (error) => {
+      if (deps.getPlugin().id === pluginId) deleteProblem.value = formatError(error)
+    })
+  }
 }
 
 export function usePluginDetail(deps: PluginDetailDeps) {
@@ -90,19 +111,7 @@ export function usePluginDetail(deps: PluginDetailDeps) {
     deps.getManager().retryPlugin(deps.getPlugin().id)
   }
 
-  async function deletePluginData(pluginId: string): Promise<void> {
-    const problem = await deps.getManager().files.deletePluginData(pluginId)
-    if (deps.getPlugin().id !== pluginId) return
-    deleteProblem.value = problem
-    await readFileCount(pluginId)
-  }
-
-  function deleteData(): void {
-    const pluginId = deps.getPlugin().id
-    runInBackground(deletePluginData(pluginId), (error) => {
-      if (deps.getPlugin().id === pluginId) deleteProblem.value = formatError(error)
-    })
-  }
+  const deleteData = createDataDeletion(deps, deleteProblem, readFileCount)
 
   return {
     managed,

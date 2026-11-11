@@ -1,7 +1,7 @@
 /**
  * The preset tab kind and the state of its tabs: a preset edited as its schedule settings.
  */
-import { shallowRef, type Component, type Ref } from 'vue'
+import { shallowRef, type Component } from 'vue'
 import { Gauge } from '@lucide/vue'
 import { ERRORS } from '../../lib/wire/errors'
 import {

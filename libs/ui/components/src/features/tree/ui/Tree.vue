@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { computed, useTemplateRef } from 'vue'
-import { flatten, getMarkOf, type RowId } from '../lib/row'
-import { useRowDrag } from '../model/drag'
-import { useTreeLayout } from '../model/layout'
-import { useDrawnRows } from '../model/rows'
-import { useRowSelection } from '../model/selection'
-import { useRowRefs, useTreeGestures, useTreeRenaming } from '../model/useTree'
+import { useTemplateRef } from 'vue'
+import { getMarkOf, type RowId } from '../lib/row'
+import { useTree } from '../model/useTree'
 import { browserClock } from '@/shared/api/clock'
-import { measureElementRect } from '@/shared/api/dom'
 import { DragPreview } from '@/shared/ui/drag-preview'
 import TreeRow from './TreeRow.vue'
 import type { TreeEvents, TreeProps, TreeSlots } from './Tree.types'
@@ -35,61 +30,16 @@ const list = useTemplateRef<HTMLElement>('list')
 
 const box = useTemplateRef<HTMLElement>('box')
 
-const visibleRows = computed(() => flatten(props.rows, new Set(props.open)))
-
-const { virtual, virtualRows, rowsStyle } = useTreeLayout({
+const { visibleRows, layout, rows, getRowRef, picked, drag, gestures, renaming } = useTree({
+  input: props,
   box,
   list,
-  visibleRows,
-  getRowHeight,
-})
-
-const rows = useDrawnRows(
-  () => visibleRows.value,
-  () => props.selected,
-  (index) => virtual.scrollToRow(index),
-)
-const { tabbed, setRowElement } = rows
-const { getRef: getRowRef } = useRowRefs(setRowElement)
-
-const selection = useRowSelection(
-  () => visibleRows.value,
-  () => props.selected,
-  (chosen) => emit('select', chosen),
-)
-const { picked } = selection
-
-const drag = useRowDrag({
-  getRows: () => props.rows,
-  getShownRows: () => visibleRows.value,
-  measure: () => {
-    const listEl = list.value
-    const overBox = box.value ? measureElementRect(box.value) : undefined
-    if (!listEl || !overBox) return null
-    const anyRow = listEl.querySelector('[data-tree-row]')
-    const rowHeight = anyRow ? measureElementRect(anyRow).height : 24
-    return { hoverRect: overBox, top: measureElementRect(listEl).top, height: rowHeight }
-  },
-  getThreshold: () => props.threshold,
-  getClock: () => props.clock,
-  getCountWords: () => props.counted,
+  renamingPath,
   emit,
 })
+const { virtual, virtualRows, rowsStyle } = layout
+const { tabbed } = rows
 const { into, before, draggedIds, label, at: dropTarget } = drag
-
-const gestures = useTreeGestures({
-  getShownRows: () => visibleRows.value,
-  getSelected: () => props.selected,
-  rows,
-  selection,
-  drag,
-  getMenuAt: (row) => {
-    const rowEl = rows.getRowElement(row)
-    const targetBox = rowEl ? measureElementRect(rowEl) : undefined
-    return targetBox ? { x: targetBox.left, y: targetBox.bottom } : null
-  },
-  emit,
-})
 const {
   onContextMenu,
   onRowContextMenu,
@@ -99,15 +49,7 @@ const {
   onRowDoubleClick,
   onKeyDown,
 } = gestures
-const { onRename, onAbandon, onFieldBlur } = useTreeRenaming(renamingPath, rows, emit)
-
-/* -------------------------------- Helpers --------------------------------- */
-function getRowHeight(): number {
-  const listEl = list.value
-  const anyRow = listEl?.querySelector('[data-tree-row]')
-  const height = anyRow ? measureElementRect(anyRow).height : undefined
-  return height && height > 0 ? height : 24
-}
+const { onRename, onAbandon, onFieldBlur } = renaming
 </script>
 
 <template>
