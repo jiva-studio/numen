@@ -255,9 +255,6 @@ func getManyCallFinding(uses map[*types.Func]*FunctionUse, object *types.Func, r
 	return position, true
 }
 
-// readFunctionValueUse records the use cases a selector reaches as function values: a field holding a
-// function of a use case's Execute signature, and the Execute method of a use case taken as a value or
-// called on a value that no field holds.
 func readFunctionValueUse(info *types.Info, expr *ast.SelectorExpr, root string, signatures []*types.Signature, use *FunctionUse) {
 	selection, ok := info.Selections[expr]
 	if !ok {

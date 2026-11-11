@@ -27,7 +27,6 @@ const (
 	maxLineWidth    = 200
 )
 
-// listModuleTrees returns the directory of every module that go.work of root uses, relative to root.
 func listModuleTrees(root string) ([]string, error) {
 	raw, err := os.ReadFile(filepath.Join(root, "go.work"))
 	if err != nil {
@@ -45,8 +44,6 @@ func listModuleTrees(root string) ([]string, error) {
 	return trees, nil
 }
 
-// countCodeLines returns the number of lines that carry a token of the source: a blank line and a line with
-// only a comment are not code, and a raw string literal counts every line it spans.
 func countCodeLines(src []byte) int {
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(src))
@@ -73,7 +70,6 @@ func countCodeLines(src []byte) int {
 	return len(lines)
 }
 
-// listWideLines returns the numbers of the lines wider than limit characters.
 func listWideLines(src []byte, limit int) []int {
 	var wide []int
 	for i, line := range strings.Split(string(src), "\n") {
@@ -93,10 +89,6 @@ func isSkippedDir(name string) bool {
 	return name == "node_modules" || name == "testdata" || strings.HasPrefix(name, ".")
 }
 
-// getOversizedSources reads the Go files of the module trees below root and returns what breaks the limits,
-// with the number of files and directories read. A test file is held only to the width limit, a nested
-// module is read as a tree of its own, and a file that claims to be generated without a generator that
-// produces it is a hand-written file.
 func getOversizedSources(root string, trees []string, limit sizeLimits) (found []string, files, dirs int, err error) {
 	fsys := os.DirFS(root)
 	for _, tree := range trees {

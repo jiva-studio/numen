@@ -9,12 +9,10 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// A driving adapter maps a request, calls one use case and maps the result. A function that reaches two use
-// cases, itself or through the functions of its package, decides between them or sequences them, which is a
-// scenario and belongs in a use case. An adapter drives the core when it imports a use case package, wherever
-// it lies below adapter/ and internal/adapter/. A use case is reached through a field of a type a use case
-// package declares, through an interface with an Execute method, through a field that holds a function of
-// the signature of an Execute method, and through an Execute method taken as a value.
+// A function of a driving adapter reaches one use case: two are a scenario, which belongs in a use case. An
+// adapter drives the core when it imports a use case package. A use case is reached through a field of its type,
+// through an interface with an Execute method, through a function field of the signature of an Execute
+// method, and through an Execute method taken as a value.
 func TestDrivingFunctionCallsOneUseCase(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks libs/core/kernel")

@@ -11,7 +11,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// isPortInterface reports whether t is an interface that a package under port/ of root declares.
 func isPortInterface(t types.Type, root string) bool {
 	named, ok := types.Unalias(t).(*types.Named)
 	if !ok || named.Obj().Pkg() == nil || !types.IsInterface(named) {
@@ -20,8 +19,6 @@ func isPortInterface(t types.Type, root string) bool {
 	return load.IsInLayer(named.Obj().Pkg().Path(), root, "port")
 }
 
-// isProbe reports whether asserting a value of type source to target looks for another interface: the
-// target is an interface that no port declares, and the value is a port or the target is spelled in place.
 func isProbe(source, target types.Type, root string) bool {
 	if target == nil || !types.IsInterface(target) || isPortInterface(target, root) {
 		return false
@@ -30,8 +27,6 @@ func isProbe(source, target types.Type, root string) bool {
 	return isLiteral || source != nil && isPortInterface(source, root)
 }
 
-// getInterfaceProbes returns every type assertion and every case of a type switch of the package that
-// probes a value for another interface, by the types the type checker resolved.
 func getInterfaceProbes(pkg *packages.Package, root string) []load.Finding {
 	var found []load.Finding
 	probe := func(pos ast.Node, subject, target ast.Expr) {
@@ -71,7 +66,6 @@ func getInterfaceProbes(pkg *packages.Package, root string) []load.Finding {
 	return found
 }
 
-// getSwitchSubject returns the value a type switch looks at: x in `switch x.(type)` and `switch v := x.(type)`.
 func getSwitchSubject(item *ast.TypeSwitchStmt) ast.Expr {
 	var guard ast.Expr
 	switch assign := item.Assign.(type) {

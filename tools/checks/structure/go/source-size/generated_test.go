@@ -16,7 +16,6 @@ var (
 	bufOutPattern        = regexp.MustCompile(`(?m)^\s*(?:-\s*)?out:\s*(\S+)`)
 )
 
-// getGeneratedHeader returns the `Code generated ... DO NOT EDIT.` comment above the package clause.
 func getGeneratedHeader(src []byte) (string, bool) {
 	file, err := parser.ParseFile(token.NewFileSet(), "", src, parser.PackageClauseOnly|parser.ParseComments)
 	if err != nil {
@@ -35,9 +34,6 @@ func getGeneratedHeader(src []byte) (string, bool) {
 	return "", false
 }
 
-// isProduced reports whether a generator of the repository writes the file at rel: buf writes everything
-// below the `out` directories of a buf.gen.yaml, and a script that the header names writes the files whose
-// path it spells out.
 func isProduced(fsys fs.FS, rel, header string) bool {
 	return isBufOutput(fsys, rel) || isScriptOutput(fsys, rel, header)
 }

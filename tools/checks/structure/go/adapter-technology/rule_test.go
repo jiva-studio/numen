@@ -21,8 +21,6 @@ func isUseCaseImport(root, path string) bool {
 	return load.IsWithin(path, root+"/usecase")
 }
 
-// getCalledObject returns what a call expression calls: the function or method, resolved by the type
-// checker, or nil for a conversion, a built-in and a call of a function value.
 func getCalledObject(info *types.Info, call *ast.CallExpr) types.Object {
 	fun := ast.Unparen(call.Fun)
 	switch generic := fun.(type) {
@@ -43,9 +41,6 @@ func getCalledObject(info *types.Info, call *ast.CallExpr) types.Object {
 	return nil
 }
 
-// isCallingTechnology reports whether the package calls a function or a method that a technology package
-// declares, directly or on a value of one of its types. Naming a type of a technology package, as an
-// `http.Handler` in a signature, is no call.
 func isCallingTechnology(pkg *packages.Package) bool {
 	found := false
 	for _, file := range pkg.Syntax {
@@ -107,9 +102,6 @@ func checkDrivenAdaptersCallATechnology(t *testing.T, workspace load.WorkspacePa
 	}
 }
 
-// isTechnologyCall reports whether a call into the package reaches outside the process. The libraries that
-// frame the wire (the RPC framework and the protocol buffer runtime) only build and read messages: a
-// package that calls nothing else integrates nothing.
 func isTechnologyCall(path string) bool {
 	for _, framing := range []string{"connectrpc.com/connect", "google.golang.org/protobuf"} {
 		if load.IsWithin(path, framing) {

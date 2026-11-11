@@ -12,15 +12,11 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// isHelperPackage reports whether the package at rel is a helper: a pure package of the kernel that belongs
-// to no layer, or a package of the shared adapter code or of the test support.
 func isHelperPackage(rel string, helpers map[string]string) bool {
 	_, isListed := helpers[rel]
 	return isListed || load.IsWithin(rel, "internal/adapterlib") || load.IsWithin(rel, "internal/testsupport")
 }
 
-// getHelperImportFindings returns the imports of a helper package that make it more than a helper: a port, a
-// use case or a technology package.
 func getHelperImportFindings(pkg *packages.Package, root, rel string) []string {
 	var found []string
 	for path := range pkg.Imports {
@@ -34,9 +30,6 @@ func getHelperImportFindings(pkg *packages.Package, root, rel string) []string {
 	return found
 }
 
-// getMutatingMethods returns the exported methods of an exported type of the package that change the state of
-// their receiver: a pointer-receiver method that assigns to, increments or deletes from something the
-// receiver holds.
 func getMutatingMethods(pkg *packages.Package) []string {
 	var found []string
 	for _, file := range pkg.Syntax {
@@ -78,8 +71,6 @@ func getReceiverTypeName(expr ast.Expr) (name string, isPointer bool) {
 	return "", false
 }
 
-// isMutating reports whether the body writes through the receiver: an assignment, an increment, a delete or
-// a clear whose target is a field of it, an element of a field, or the receiver itself dereferenced.
 func isMutating(info *types.Info, body *ast.BlockStmt, receiver types.Object) bool {
 	if receiver == nil {
 		return false
@@ -123,8 +114,6 @@ func isMutating(info *types.Info, body *ast.BlockStmt, receiver types.Object) bo
 	return found
 }
 
-// getHelperFindings returns what makes a helper package more than a helper: an import of a port, a use
-// case or a technology package, and an exported type with a method that changes its state.
 func getHelperFindings(pkgs []*packages.Package, root string, helpers map[string]string) (found []string, read int) {
 	for _, pkg := range pkgs {
 		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
@@ -143,8 +132,6 @@ func getHelperFindings(pkgs []*packages.Package, root string, helpers map[string
 
 var camelBoundary = regexp.MustCompile(`[A-Z][a-z0-9]*|[a-z0-9]+`)
 
-// listPackageWords returns the lower-case words of the package name, its documentation and its exported
-// identifiers.
 func listPackageWords(pkg *packages.Package) map[string]bool {
 	words := map[string]bool{}
 	add := func(text string) {
@@ -166,9 +153,6 @@ func listPackageWords(pkg *packages.Package) map[string]bool {
 	return words
 }
 
-// getHelperReasonFindings returns the helper entries whose reason does not describe the package it names: a
-// reason is checked against the package, and it must use a word of at least four letters that the name, the
-// documentation or an exported identifier of the package also uses.
 func getHelperReasonFindings(pkgs []*packages.Package, root string, helpers map[string]string) []string {
 	var found []string
 	byRel := map[string]*packages.Package{}

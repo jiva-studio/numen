@@ -19,7 +19,6 @@ var britishList string
 //go:embed allowed.txt
 var allowedList string
 
-// listFamilyEndings returns the endings a stem of the word list takes.
 func listFamilyEndings() []string {
 	return []string{
 		"s", "e", "es", "ed", "d", "ing", "er", "ers", "ation", "ations", "ational", "able", "ability", "ment", "ments",
@@ -38,8 +37,6 @@ type dictionary struct {
 	families []family
 }
 
-// parseDictionary reads the word list: lines of a British and an American word, `#` comments, `stem*` for a
-// stem that is a word on its own and `stem~` for one that is a word only with an ending.
 func parseDictionary(text string) (dictionary, error) {
 	dict := dictionary{words: map[string]string{}}
 	for number, line := range strings.Split(text, "\n") {
@@ -69,7 +66,6 @@ func parseDictionary(text string) (dictionary, error) {
 	return dict, nil
 }
 
-// find returns the American spelling of a lower-case British word.
 func (d dictionary) find(word string) (string, bool) {
 	if american, ok := d.words[word]; ok {
 		return american, true
@@ -86,8 +82,6 @@ func (d dictionary) find(word string) (string, bool) {
 	return "", false
 }
 
-// splitWords cuts text into lower-case words at every character that is no letter and at every change of
-// case inside a name: `isReady` is is and ready, `HTTPServer` is http and server.
 func splitWords(text string) []string {
 	var words []string
 	var current []rune
@@ -123,9 +117,6 @@ func (h spellingHit) String() string {
 	return fmt.Sprintf("%d %s %s", h.line, h.british, h.american)
 }
 
-// listBritishWords returns the British words in the identifiers, the comments and the string literals of the
-// source of a Go file. The path of an import is a name that is not ours to respell, and a generated file
-// follows the schema it comes from.
 func listBritishWords(path string, src any, dict dictionary) ([]spellingHit, error) {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, src, parser.ParseComments|parser.SkipObjectResolution)

@@ -135,9 +135,6 @@ func checkNoTypeExceedsItsLayersSize(t *testing.T, workspace load.WorkspacePacka
 	}
 }
 
-// countStructFields returns the fields of a struct with the fields of the structs it embeds and the leaf
-// fields of the named structs of its own package that it holds in a field, so a type that groups its ports
-// into sub-structs counts them all. A struct of another package is a value the field holds, one field.
 func countStructFields(shape *types.Struct, home *types.Package, visiting map[*types.Struct]bool) int {
 	if visiting[shape] {
 		return 0
@@ -155,8 +152,6 @@ func countStructFields(shape *types.Struct, home *types.Package, visiting map[*t
 	return count
 }
 
-// getGroupedStruct returns the struct a field adds its fields from: an embedded struct of any package, or a
-// field typed by a named struct of the package home.
 func getGroupedStruct(field *types.Var, home *types.Package) (*types.Struct, bool) {
 	t := field.Type()
 	if pointer, ok := types.Unalias(t).(*types.Pointer); ok {

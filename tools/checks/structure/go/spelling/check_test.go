@@ -79,8 +79,6 @@ func readDictionary(t *testing.T) dictionary {
 	return dict
 }
 
-// plant removes the dots from a word of the planted violations, which are written with dots so that no
-// spell checker reads them as the text of this file.
 func plant(text string) string {
 	return strings.ReplaceAll(text, "·", "")
 }
