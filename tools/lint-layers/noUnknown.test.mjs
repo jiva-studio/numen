@@ -45,10 +45,37 @@ describe("the no-unknown rule", () => {
     assert.deepEqual(findReports("type Unvalidated = unknown"), []);
   });
 
-  it("allows Unvalidated as the parameter of a parse function or a type guard", () => {
-    assert.deepEqual(findReports("const parseCount = (value: Unvalidated): number => Number(value)"), []);
-    assert.deepEqual(findReports("function parseCount(value: Unvalidated): number {\n  return Number(value)\n}"), []);
+  it("allows Unvalidated as the parameter of a parse function or a type guard that narrows it", () => {
+    assert.deepEqual(findReports("const parseCount = (value: Unvalidated): number => (typeof value === 'number' ? value : 0)"), []);
+    assert.deepEqual(findReports("function parseCount(value: Unvalidated): number {\n  return isCount(value) ? value : 0\n}"), []);
     assert.deepEqual(findReports("const isCount = (value: Unvalidated): value is number => typeof value === 'number'"), []);
+    assert.deepEqual(findReports("const parseUser = (value: Unvalidated) => schema.parse(value)"), []);
+    assert.deepEqual(findReports("const parseList = (value: Unvalidated) => (Array.isArray(value) ? value : [])"), []);
+    assert.deepEqual(findReports("const parseBox = (value: Unvalidated) => ('size' in value ? 1 : 0)"), []);
+    assert.deepEqual(findReports("const parseWhen = (value: Unvalidated) => (value instanceof Date ? value : undefined)"), []);
+  });
+
+  it("fails an Unvalidated parameter that the body never narrows", () => {
+    assert.deepEqual(findReports("const parseCount = (value: Unvalidated): number => Number(value)"), [1]);
+    assert.deepEqual(findReports("function parseCount(value: Unvalidated): number {\n  return value as number\n}"), [1]);
+    assert.deepEqual(findReports("const isCount = (value: Unvalidated): value is number => true"), [1]);
+    assert.deepEqual(findReports("const parseCount = (value: Unvalidated, other: number) => (typeof other === 'number' ? 1 : 0)"), [1]);
+  });
+
+  it("allows Caught as the parameter of a catch clause or of an error callback", () => {
+    assert.deepEqual(findReports("try { run() } catch (error: Caught) { report(error) }"), []);
+    assert.deepEqual(findReports("load().catch((err: Caught) => report(err))"), []);
+    assert.deepEqual(findReports("interface Deps {\n  reportError(error: Caught): void\n  onError: (reason: Caught) => void\n}"), []);
+    assert.deepEqual(findReports("type Fail = (kind: string, error: Caught) => void"), []);
+    assert.deepEqual(findReports("function describe(cause: Caught): string { return String(cause) }"), []);
+  });
+
+  it("fails Caught anywhere else", () => {
+    assert.deepEqual(findReports("interface State {\n  last: Caught\n}"), [2]);
+    assert.deepEqual(findReports("const failures: Caught[] = []"), [1]);
+    assert.deepEqual(findReports("const read = (value: Caught) => String(value)"), [1]);
+    assert.deepEqual(findReports("const run = (): Promise<Caught> => Promise.resolve(1)"), [1]);
+    assert.deepEqual(findReports("let held: Caught"), [1]);
   });
 
   it("fails Unvalidated anywhere else", () => {

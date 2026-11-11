@@ -196,42 +196,64 @@ export function findOversizedServices(backends) {
   return found
 }
 
-/** Packages that reach the machine or hold shared state; a service package does this through an adapter. */
-const MACHINE_ACCESS_IMPORTS = [
-  'os',
-  'os/exec',
-  'os/signal',
-  'os/user',
-  'runtime',
-  'io/fs',
-  'net',
-  'database/sql',
-  'syscall',
-  'sync',
-  'sync/atomic',
+/**
+ * The standard library packages a service may import: they compute on values and reach no machine, process, file,
+ * network or shared state. `net/http` is there for the status codes and the handler type of the SDK server, and
+ * `time` for its types; a service that needs the clock takes it from the SDK. `sync`, `os`, `log` and the rest are not
+ * on the list.
+ */
+export const SERVICE_STANDARD_IMPORTS = [
+  'bytes',
+  'cmp',
+  'context',
+  'encoding/json',
+  'errors',
+  'fmt',
+  'maps',
+  'math',
+  'net/http',
+  'path',
+  'regexp',
+  'slices',
+  'sort',
+  'strconv',
+  'strings',
+  'time',
+  'unicode',
+  'unicode/utf8',
 ]
 
-/** `net/http` names status codes and the handler type of the SDK server, so only the other packages under `net` are machine access. */
-function isMachineAccessImport(value) {
-  if (MACHINE_ACCESS_IMPORTS.includes(value)) return true
-  if (value === 'net/http') return false
-  return ['net/', 'runtime/', 'database/sql/', 'syscall/'].some((prefix) => value.startsWith(prefix))
+/** The SDK packages a plugin service may import: every package of the Go SDK. */
+const SDK_GO_MODULE = `${GO_MODULE_ROOT}libs/plugin/sdk-go`
+
+/** The packages of the plugin's own backend a service may import: its API, domain, use cases and ports. */
+export const SERVICE_OWN_PACKAGES = ['api', 'domain', 'usecase', 'ports']
+
+/** Whether a service of `plugin` may import `value`: a listed standard package, an SDK package or an own package of the list. */
+function isAllowedServiceImport(value, plugin) {
+  if (SERVICE_STANDARD_IMPORTS.includes(value)) return true
+  if (value === SDK_GO_MODULE || value.startsWith(`${SDK_GO_MODULE}/`)) return true
+  const own = `${GO_MODULE_ROOT}plugins/${plugin}/backend/`
+  if (!value.startsWith(own)) return false
+  return SERVICE_OWN_PACKAGES.includes(value.slice(own.length).split('/')[0])
 }
 
 /**
- * Finds the imports of a backend `service` package that reach the machine (process environment,
- * processes, runtime, file system, network, database, system calls) or hold shared state
- * (mutexes, atomics). `files` holds `{ file, imports }` with each import as `{ line, value }`.
+ * Finds the imports of a backend `service` package that are not on the allow list: the listed standard packages, the
+ * packages of the Go SDK and the `api`, `domain`, `usecase` and `ports` packages of its own plugin. Machine access
+ * (`os`, `sync`, `net`), another standard package, a package of another plugin and any other package of its own
+ * backend are refused. `files` holds `{ file, imports }` with each import as `{ line, value }`.
  */
-export function findServiceMachineAccess(files) {
+export function findServiceImportsOffAllowList(files) {
   const found = []
   for (const { file, imports } of files) {
+    const plugin = file.split('/')[1]
     for (const { line, value } of imports) {
-      if (isMachineAccessImport(value)) {
+      if (!isAllowedServiceImport(value, plugin)) {
         found.push({
           file,
           line,
-          symbol: `service imports ${value}; machine access and state belong in internal/adapter or a use case`,
+          symbol: `service imports ${value}, which is not on the allow list; machine access, state and own packages beyond api, domain, usecase and ports belong behind a use case`,
         })
       }
     }
@@ -252,21 +274,60 @@ export function verifyPluginServiceImports() {
   const files = listServiceSources()
   requireMatches('plugin service source files', files.length)
   failOnFindings(
-    'Plugin backend service package reaches the machine or holds state',
-    findServiceMachineAccess(files),
+    'Plugin backend service package imports a package off the allow list',
+    findServiceImportsOffAllowList(files),
   )
 }
 
-function listPluginBackends() {
+/** The longest production file of a Go package and the longest package, as the Go source-size check sets them. */
+export const MAX_FILE_LINES = 500
+export const MAX_PACKAGE_LINES = 3000
+
+/** The lines of a source text, counted as the Go source-size check counts them. */
+function countLines(text) {
+  return text.split('\n').length - (text.endsWith('\n') || text === '' ? 1 : 0)
+}
+
+/**
+ * Finds the files and packages of plugin backends that are too long: a production file over `MAX_FILE_LINES`, a package
+ * (a directory) over `MAX_PACKAGE_LINES`. Tests are not counted. The `service` package has its own, smaller limit.
+ *
+ * @param {{ file: string, lines: number }[]} files The production Go files under `plugins/<name>/backend`
+ */
+export function findOversizedBackendPackages(files) {
+  const found = []
+  const byDir = new Map()
+  for (const { file, lines } of files) {
+    if (lines > MAX_FILE_LINES) {
+      found.push({ file, line: MAX_FILE_LINES + 1, symbol: `file holds ${lines} lines, at most ${MAX_FILE_LINES}` })
+    }
+    const dir = path.posix.dirname(file)
+    byDir.set(dir, (byDir.get(dir) ?? 0) + lines)
+  }
+  for (const [dir, lines] of byDir) {
+    if (lines > MAX_PACKAGE_LINES) {
+      found.push({ file: dir, line: 1, symbol: `package holds ${lines} non-test lines, at most ${MAX_PACKAGE_LINES}` })
+    }
+  }
+  return found
+}
+
+function listBackendFiles() {
+  return listShippedFiles(['plugins/*/backend/**/*.go', 'plugins/*/backend/*.go'])
+    .filter((file) => /^plugins\/[^/]+\/backend\//.test(file) && !file.endsWith('_test.go'))
+    .map((file) => ({ file, lines: countLines(fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')) }))
+}
+
+function listPluginBackends(files) {
   const byPlugin = new Map()
-  for (const file of listShippedFiles(['plugins/*/backend/*.go', 'plugins/*/backend/**/*.go'])) {
+  for (const { file, lines } of files) {
     const [, plugin, , ...rest] = file.split('/')
     const entry = byPlugin.get(plugin) ?? { plugin, serviceLines: 0, innerPackages: new Set() }
     byPlugin.set(plugin, entry)
     if (rest.length < 2) continue
     if (rest[0] === 'service') {
       entry.hasService = true
-      entry.serviceLines += fs.readFileSync(path.join(REPO_ROOT, file), 'utf8').split('\n').length - 1
+      entry.serviceLines += lines
     } else {
       entry.innerPackages.add(rest.slice(0, -1).join('/'))
     }
@@ -277,9 +338,13 @@ function listPluginBackends() {
 }
 
 export function verifyPluginServiceSize() {
-  const backends = listPluginBackends()
+  const files = listBackendFiles()
+  const backends = listPluginBackends(files)
   requireMatches('plugin backends with a service package', backends.length)
-  failOnFindings('Plugin backend service package is too large', findOversizedServices(backends))
+  failOnFindings('Plugin backend package is too large', [
+    ...findOversizedServices(backends),
+    ...findOversizedBackendPackages(files),
+  ])
 }
 
 /**
@@ -628,14 +693,14 @@ export const PLUGIN_VERIFIERS = [
     id: 'plugin-service-size',
     scope: 'plugins',
     module: 'plugins',
-    name: 'Plugin Backend Service Package Stays The Composition Root And Wire',
+    name: 'Plugin Backend Packages Stay Within The File, Package And Service Size Limits',
     run: verifyPluginServiceSize,
   },
   {
     id: 'plugin-service-imports',
     scope: 'plugins',
     module: 'plugins',
-    name: 'Plugin Backend Service Package Imports No Machine Access Or Shared State',
+    name: 'Plugin Backend Service Package Imports Only The Allow List',
     run: verifyPluginServiceImports,
   },
   {

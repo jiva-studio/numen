@@ -39,6 +39,24 @@ describe("the app layer holds no logic", () => {
     ]);
   });
 
+  it("counts && , || , ?? and an array method with a callback as decisions, without an optional chain", () => {
+    const text = [
+      "export const adapter = {",
+      "  a: (x) => run(x && x.id),",
+      "  b: (x) => run(x || 'none'),",
+      "  c: (x) => run(x ?? 'none'),",
+      "  d: (xs) => run(xs.map((one) => one.id)),",
+      "  e: (xs) => run(xs.filter(isOpen)),",
+      "}",
+    ].join("\n");
+    assert.deepEqual(symbols(findLogicInApp([file("a.ts", text)])), [
+      "a.ts:2 adapter function a makes a call and decides",
+      "a.ts:3 adapter function b makes a call and decides",
+      "a.ts:4 adapter function c makes a call and decides",
+      "a.ts:5 adapter function d makes a call and decides",
+    ]);
+  });
+
   it("passes a function that only calls, only decides, or is no property of an object", () => {
     const text = [
       "export const adapter = {",

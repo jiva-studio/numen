@@ -1,5 +1,6 @@
 // Rejects comments that repeat what a name and a type already state: a comment on a field or a
-// property, and a doc comment on a function that is not exported. Go files go to the Go command
+// property, a doc comment on a function that is not exported, and a doc comment whose words are the
+// name and the signature of its declaration. Go files go to the Go command
 // beside this script; TypeScript and Vue files are read here with the TypeScript parser.
 //
 //   node tools/checks/style/comments/check.mjs            every tracked file
@@ -20,8 +21,6 @@ import { fileURLToPath } from 'node:url'
 const require = createRequire(import.meta.url)
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const SCRIPT_FILE = /\.(ts|tsx|mts|cts|vue)$/
-/** The most lines of text a doc comment on an exported symbol may have. */
-export const MAX_DOC_LINES = 5
 const KEEP =
   /^(\/\/\/?|\/\*\*?)\s*(eslint|@ts-|Stryker|istanbul|prettier|c8 |v8 |@vite|webpack|#region|#endregion|<reference|global )|@deprecated|@vitest-environment|^(\/\/|\/\*)\s*[-=─*]{6,}/
 const GENERATED = /^[ \t]*(\/\/|#|\/\*)\s*(Code generated .* DO NOT EDIT|@generated)/m
@@ -30,16 +29,72 @@ function isGenerated(text) {
   return GENERATED.test(text.split('\n').slice(0, 20).join('\n'))
 }
 
-/** Returns the lines of text of a JSDoc block: the lines between the markers, blank ones included. */
-function countDocLines(block) {
-  const lines = block
-    .replace(/^\/\*\*/, '')
-    .replace(/\*\/$/, '')
-    .split('\n')
-    .map((line) => line.replace(/^\s*\*? ?/, '').trim())
-  if (lines[0] === '') lines.shift()
-  if (lines.length > 0 && lines.at(-1) === '') lines.pop()
-  return lines.length
+/** The share, in percent, of the words of a doc comment that the name and signature already hold, from which it is refused. */
+export const RESTATE_THRESHOLD_PERCENT = 80
+
+const STOP_WORDS = new Set(
+  'a an the of to for in is are was were be been by that which and or with from on as it its this these those at if when then into each one any does do has have whose whether so not than there their can will may'.split(
+    ' ',
+  ),
+)
+
+/** Verbs that mean the same operation in a name and in a sentence, read as one word. */
+const SYNONYMS = new Map([
+  ...['find', 'read', 'fetch', 'return', 'load', 'retrieve', 'obtain', 'lookup'].map((w) => [w, 'get']),
+  ...['put', 'store', 'save', 'write', 'update', 'assign'].map((w) => [w, 'set']),
+  ...['make', 'build', 'new', 'construct'].map((w) => [w, 'create']),
+  ...['remove', 'drop'].map((w) => [w, 'delete']),
+])
+
+/** Cuts text into lower-case words at camelCase humps, digits and every character that is not a letter. */
+export function splitWords(text) {
+  return text
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+    .map((word) => word.toLowerCase())
+}
+
+function stem(word) {
+  let w = word
+  if (w.endsWith('ies') && w.length > 4) w = `${w.slice(0, -3)}y`
+  else if (w.length > 4 && /(sses|xes|ches|shes)$/.test(w)) w = w.slice(0, -2)
+  else if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') && !w.endsWith('us')) w = w.slice(0, -1)
+  return SYNONYMS.get(w) ?? w
+}
+
+/** A word of a comment is a word of a name when equal, or when one starts the other and both have four letters or more. */
+function isSameWord(a, b) {
+  if (a === b) return true
+  if (a.length < 4 || b.length < 4) return false
+  return a.startsWith(b) || b.startsWith(a)
+}
+
+/** How many words of a comment, stop words left out, the names already hold. */
+export function countRestatement(comment, names) {
+  const known = new Set(names.flatMap((name) => splitWords(name).map(stem)))
+  let matched = 0
+  let total = 0
+  for (const word of splitWords(comment)) {
+    if (STOP_WORDS.has(word)) continue
+    total += 1
+    const stemmed = stem(word)
+    if ([...known].some((name) => isSameWord(stemmed, name))) matched += 1
+  }
+  return { matched, total, isRestating: total > 0 && matched * 100 >= RESTATE_THRESHOLD_PERCENT * total }
+}
+
+/** The text of a comment range without its markers. */
+function stripComment(raw) {
+  return raw.startsWith('/*')
+    ? raw
+        .replace(/^\/\*+/, '')
+        .replace(/\*\/$/, '')
+        .split('\n')
+        .map((line) => line.replace(/^\s*\*? ?/, ''))
+        .join('\n')
+    : raw.replace(/^\/\/+/, '')
 }
 
 function getScriptBlocks(file, text) {
@@ -53,8 +108,7 @@ function getScriptBlocks(file, text) {
 
 /**
  * Returns the rejected comments of one TypeScript or Vue source, each with its line, message and
- * character range in the source. A finding with `long` set is a doc comment over MAX_DOC_LINES
- * that `--fix` leaves in place.
+ * character range in the source.
  */
 export function findScriptComments(file, text) {
   if (isGenerated(text)) return []
@@ -87,35 +141,41 @@ export function findScriptComments(file, text) {
         findings.push({ file, line, message, from: offset + range.pos, to: offset + range.end })
       }
     }
-    const reportLength = (node) => {
-      let name
-      if (ts.isVariableStatement(node)) {
-        name = node.declarationList.declarations[0]?.name.getText(source)
-      } else if (
-        ts.isFunctionDeclaration(node) ||
-        ts.isClassDeclaration(node) ||
-        ts.isInterfaceDeclaration(node) ||
-        ts.isTypeAliasDeclaration(node) ||
-        ts.isEnumDeclaration(node)
-      ) {
-        name = node.name?.getText(source) ?? 'default'
+    const typeNames = (node) => {
+      const names = []
+      const collect = (child) => {
+        if (ts.isIdentifier(child)) names.push(child.text)
+        ts.forEachChild(child, collect)
       }
-      if (name === undefined) return
+      if (node) collect(node)
+      return names
+    }
+    const signatureNames = (fn) => [
+      ...fn.parameters.flatMap((p) => [ts.isIdentifier(p.name) ? p.name.text : '', ...typeNames(p.type)]),
+      ...typeNames(fn.type),
+    ]
+    /** The doc comment above a declaration: the JSDoc block or the run of line comments, even with a blank line between when it starts with the name. */
+    const reportRestating = (node, name, kind, names) => {
       const leading = ts.getLeadingCommentRanges(content, node.getFullStart()) ?? []
-      const doc = leading.at(-1)
-      if (!doc || doc.kind !== ts.SyntaxKind.MultiLineCommentTrivia) return
-      if ((content.slice(doc.end, node.getStart(source)).match(/\n/g) ?? []).length > 1) return
-      const raw = content.slice(doc.pos, doc.end)
-      if (!raw.startsWith('/**') || KEEP.test(raw)) return
-      const count = countDocLines(raw)
-      if (count <= MAX_DOC_LINES) return
+      if (leading.length === 0) return
+      let first = leading.length - 1
+      const isBlock = leading[first].kind === ts.SyntaxKind.MultiLineCommentTrivia
+      while (!isBlock && first > 0 && leading[first - 1].kind === ts.SyntaxKind.SingleLineCommentTrivia && (content.slice(leading[first - 1].end, leading[first].pos).match(/\n/g) ?? []).length <= 1) first -= 1
+      const ranges = leading.slice(first)
+      const raw = content.slice(ranges[0].pos, ranges.at(-1).end)
+      if (KEEP.test(raw) || ranges.some((range) => seen.has(offset + range.pos))) return
+      const detached = (content.slice(ranges.at(-1).end, node.getStart(source)).match(/\n/g) ?? []).length > 1
+      const body = ranges.map((range) => stripComment(content.slice(range.pos, range.end))).join('\n')
+      if (detached && !(raw.startsWith('/**') || body.trim().startsWith(name))) return
+      const { matched, total, isRestating } = countRestatement(body, [path.basename(file).replace(/\..*$/, ''), name, ...names])
+      if (!isRestating) return
+      for (const range of ranges) seen.add(offset + range.pos)
       findings.push({
         file,
-        line: text.slice(0, offset + doc.pos).split('\n').length,
-        message: `doc comment on exported ${name} has ${count} lines; A doc comment is at most five lines: say the fact the name and type cannot show`,
-        from: offset + doc.pos,
-        to: offset + doc.end,
-        long: true,
+        line: text.slice(0, offset + ranges[0].pos).split('\n').length,
+        message: `doc comment on ${kind} ${name} restates its name and signature (${matched} of ${total} words); say the fact the name and type cannot show`,
+        from: offset + ranges[0].pos,
+        to: offset + ranges.at(-1).end,
       })
     }
     const isExported = (node) => (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export) !== 0
@@ -151,7 +211,18 @@ export function findScriptComments(file, text) {
           false,
         )
       }
-      if (node.parent === source && isExported(node)) reportLength(node)
+      if (ts.isFunctionDeclaration(node) && node.name) reportRestating(node, node.name.text, 'function', signatureNames(node))
+      else if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) reportRestating(node, node.name.text, 'method', signatureNames(node))
+      else if ((ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node) || ts.isEnumDeclaration(node)) && node.name) {
+        reportRestating(node, node.name.text, 'type', [])
+      } else if (ts.isVariableStatement(node) && node.parent === source && node.declarationList.declarations.length === 1) {
+        const [declaration] = node.declarationList.declarations
+        const init = declaration.initializer
+        if (ts.isIdentifier(declaration.name)) {
+          const isFunction = init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init))
+          reportRestating(node, declaration.name.text, isFunction ? 'function' : 'value', isFunction ? signatureNames(init) : typeNames(declaration.type))
+        }
+      }
       if (node.parent === source) {
         const isDefault = (node.modifiers ?? []).some(
           (m) => m.kind === ts.SyntaxKind.DefaultKeyword,
@@ -242,14 +313,11 @@ function main() {
     const found = findScriptComments(file, text)
     if (found.length === 0) continue
     if (fix) {
-      const removable = found.filter((finding) => !finding.long)
-      if (removable.length > 0) fs.writeFileSync(absolute, removeRanges(text, removable))
+      fs.writeFileSync(absolute, removeRanges(text, found))
+      continue
     }
-    const findings = fix ? found.filter((finding) => finding.long) : found
-    if (findings.length === 0) continue
     failed = true
-    for (const finding of findings)
-      console.log(`${finding.file}:${finding.line}: ${finding.message}`)
+    for (const finding of found) console.log(`${finding.file}:${finding.line}: ${finding.message}`)
   }
   const goStatus = checkGo(
     root,

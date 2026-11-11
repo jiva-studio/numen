@@ -67,7 +67,7 @@ describe('functions', () => {
       'class D {',
       '  /** Closes. */',
       '  private close() {}',
-      '  /** Flushes. */',
+      '  /** Flushes the buffer to disk. */',
       '  flush() {}',
       '}',
     ].join('\n')
@@ -95,60 +95,42 @@ describe('functions', () => {
   })
 })
 
-describe('length of a doc comment', () => {
-  const doc = (count) => [
-    '/**',
-    ...Array.from({ length: count }, (_, i) => ` * Line ${i + 1}.`),
-    ' */',
-  ]
-
-  it('accepts a doc of five lines and rejects one of six, on every exported kind', () => {
+describe('a doc comment that restates the name and the signature', () => {
+  it('is refused on every kind of declaration, with or without a blank line before the declaration', () => {
     const declarations = [
-      'export function f() {}',
-      'export class C {}',
-      'export interface I {}',
-      'export type T = string',
-      'export const v = 1',
-      'export const g = () => {}',
-      'export enum E {}',
+      ['/** Reads the theme of a vault. */', 'export function readTheme(vault: Vault) {}'],
+      ['/** The theme. */', 'export interface Theme {}'],
+      ['/** ReadTheme reads the theme. */', 'export const readTheme = (vault: Vault) => 1'],
+      ['// readTheme reads the theme\n// of a vault', 'function readTheme(vault: Vault) {}'],
+      ['/** Theme. */', 'export type Theme = string'],
+      ['', 'class C {\n  /** Opens the file. */\n  open(file: string) {}\n}'],
     ]
-    for (const declaration of declarations) {
-      assert.deepEqual(lines('a.ts', [...doc(5), declaration].join('\n')), [], declaration)
-      assert.deepEqual(lines('a.ts', [...doc(6), declaration].join('\n')), [1], declaration)
+    for (const [doc, declaration] of declarations) {
+      assert.equal(lines('a.ts', `${doc}\n${declaration}`).length > 0, true, declaration)
+      assert.equal(lines('a.ts', `${doc}\n\n${declaration}`).length > 0, true, `${declaration} after a blank line`)
     }
   })
 
-  it('counts a one-line block as one line and a blank line as a line', () => {
-    assert.deepEqual(lines('a.ts', '/** One. */\nexport function f() {}'), [])
-    const blank = [
-      '/**',
-      ' * A.',
-      ' * B.',
-      ' *',
-      ' * C.',
-      ' * D.',
-      ' * E.',
-      ' */',
-      'export function f() {}',
-    ]
-    assert.deepEqual(lines('a.ts', blank.join('\n')), [1])
+  it('is refused whatever its length, and a doc with a fact is kept', () => {
+    const restating = ['/**', ...Array.from({ length: 8 }, () => ' * readTheme reads the theme of a vault.'), ' */', 'export function readTheme(vault: Vault) {}']
+    assert.deepEqual(lines('a.ts', restating.join('\n')), [1])
+    const fact = ['/**', ' * Reads the theme of a vault from the bundled copy when the vault', ' * holds none, so a new vault never opens unstyled.', ' */', 'export function readTheme(vault: Vault) {}']
+    assert.deepEqual(lines('a.ts', fact.join('\n')), [])
   })
 
-  it('does not limit an unexported symbol, a line comment or a member', () => {
-    assert.deepEqual(lines('a.ts', [...doc(6), 'const v = 1'].join('\n')), [])
-    const method = ['export class C {', ...doc(6), 'flush() {}', '}']
-    assert.deepEqual(lines('a.ts', method.join('\n')), [])
+  it('leaves a line comment that is detached and does not start with the name, and a directive', () => {
+    assert.deepEqual(lines('a.ts', '// Themes are read below.\n\nexport function readTheme(vault: Vault) {}'), [])
+    assert.deepEqual(lines('a.ts', '// eslint-disable-next-line\nexport function readTheme(vault: Vault) {}'), [])
   })
 
   it('reads the script of a Vue component', () => {
-    const text = ['<script lang="ts">', ...doc(6), 'export function f() {}', '</script>'].join('\n')
+    const text = ['<script lang="ts">', '/** Reads the theme. */', 'export function readTheme() {}', '</script>'].join('\n')
     assert.deepEqual(lines('A.vue', text), [2])
   })
 
-  it('leaves the long doc in place on --fix', () => {
-    const text = [...doc(6), 'export function f() {}'].join('\n')
-    const [finding] = findScriptComments('a.ts', text)
-    assert.equal(finding.long, true)
+  it('removes the comment on --fix', () => {
+    const text = '/** Reads the theme. */\nexport function readTheme() {}\n'
+    assert.equal(removeRanges(text, findScriptComments('a.ts', text)), 'export function readTheme() {}\n')
   })
 })
 

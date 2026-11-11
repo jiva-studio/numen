@@ -3,7 +3,7 @@ import { parse as parseVue } from "@vue/compiler-sfc";
 import ts from "typescript";
 import path from "node:path";
 import { listPackages, readModuleGraph } from "../dependency-graph/check.mjs";
-import { REPO_ROOT, failOnFindings, requireMatches } from "../../../lib/graph.mjs";
+import { REPO_ROOT, failOnFindings, listTrackedFiles, requireMatches } from "../../../lib/graph.mjs";
 
 /** The segments of a slice from the lowest. */
 const SEGMENTS = ["lib", "api", "model", "ui"];
@@ -183,7 +183,7 @@ export function findAppOverreach(files, maxLines = APP_MAX_LINES) {
   return { findings, read: shipped.length };
 }
 
-/** The most decisions one function of the app layer takes: an `if`, a `?:`, a loop or a `catch`. */
+/** The most decisions one function of the app layer takes: an `if`, a `?:`, `&&`, `||`, `??`, a call of an array method with a callback, a loop or a `catch`. */
 export const APP_MAX_DECISIONS_PER_FUNCTION = 1;
 
 /** The most decisions the functions of one file of the app layer take together. */
@@ -207,9 +207,17 @@ const APP_FORBIDDEN_CALLS = new Set([
 const isFunctionNode = (node) =>
   ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node) || ts.isMethodDeclaration(node);
 
+/** The array methods that take a callback and so decide over each element. */
+export const ARRAY_CALLBACK_METHODS = new Set(["map", "filter", "find", "findIndex", "findLast", "findLastIndex", "some", "every", "reduce", "reduceRight", "flatMap", "sort", "toSorted", "forEach"]);
+
+/** The operators that choose between two operands: `&&`, `||` and `??`. */
+const CHOOSING_OPERATORS = new Set([ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken]);
+
 /** Whether a node is a point where the code takes one way or another over a value. */
 function isDecision(node) {
   if (ts.isIfStatement(node) || ts.isConditionalExpression(node) || ts.isCatchClause(node)) return true;
+  if (ts.isBinaryExpression(node) && CHOOSING_OPERATORS.has(node.operatorToken.kind)) return true;
+  if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && ARRAY_CALLBACK_METHODS.has(node.expression.name.text) && node.arguments.some((one) => ts.isArrowFunction(one) || ts.isFunctionExpression(one))) return true;
   return ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node) || ts.isWhileStatement(node) || ts.isDoStatement(node);
 }
 
@@ -421,7 +429,7 @@ function listLayerFiles(root, layer) {
   return out;
 }
 
-/** The calls a component in a window's `ui` segment must not make: a window listener or a request guard belongs in `model`. */
+/** The calls a component below a `ui` folder must not make: a listener, a timer or a request guard belongs in `model`. */
 const UI_COMPONENT_FORBIDDEN_CALLS = new Set([
   "addEventListener",
   "removeEventListener",
@@ -433,71 +441,130 @@ const UI_COMPONENT_FORBIDDEN_CALLS = new Set([
   "requestAnimationFrame",
 ]);
 
-/** The hooks and watchers inside which a component in `ui` must not call a service on its `props`. */
-const UI_LIFECYCLE_OR_WATCH_CALLS = new Set([
-  "onMounted",
-  "onBeforeMount",
-  "onUnmounted",
-  "onBeforeUnmount",
-  "watch",
-  "watchEffect",
-  "watchPostEffect",
-  "watchSyncEffect",
+/** Methods of built-in values that compute a value and reach no service; calling one on a prop reads the prop. */
+const PURE_VALUE_METHODS = new Set([
+  "map", "filter", "find", "findIndex", "findLast", "some", "every", "reduce", "flatMap", "flat", "slice", "concat", "join", "includes",
+  "indexOf", "lastIndexOf", "at", "keys", "values", "entries", "toSorted", "toReversed", "toSpliced", "with", "toString", "toFixed",
+  "toLocaleString", "toLocaleDateString", "toLocaleTimeString", "toISOString", "getTime", "startsWith", "endsWith", "trim", "trimStart",
+  "trimEnd", "split", "replace", "replaceAll", "toLowerCase", "toUpperCase", "padStart", "padEnd", "charAt", "substring", "has", "get",
+  "localeCompare", "match", "test",
 ]);
 
-/** Whether an expression is rooted at `props` (such as `props.secrets.loadStates` or `props.manager.files.getReadme`). */
-function isPropsChain(node) {
+/** The folders that hold the source of a package; the path after one of them is the path inside the package. */
+const SOURCE_FOLDERS = ["src", "frontend"];
+
+/** Whether a file is a shipped Vue component below a folder named `ui` inside its package, in any layer (window, library, plugin). */
+export function isUiComponent(file) {
+  if (!file.endsWith(".vue") || isNotShipped(file)) return false;
+  const parts = file.split("/").slice(0, -1);
+  const at = parts.findIndex((name) => SOURCE_FOLDERS.includes(name));
+  return at >= 0 && parts.slice(at + 1).includes("ui");
+}
+
+/** The text of the script blocks of a component, padded with blank lines so a node keeps its line of the file. */
+function readScriptWithLines(file, text) {
+  const { descriptor } = parseVue(text, { filename: file });
+  return [descriptor.script, descriptor.scriptSetup]
+    .filter(Boolean)
+    .sort((a, b) => a.loc.start.offset - b.loc.start.offset)
+    .map((block) => "\n".repeat(block.loc.start.line - 1) + block.content)
+    .join("\n");
+}
+
+/** The name a function is declared or assigned under, or undefined for an anonymous one. */
+function getFunctionName(node) {
+  if (node.name && ts.isIdentifier(node.name)) return node.name.text;
+  const parent = node.parent;
+  if (parent && (ts.isVariableDeclaration(parent) || ts.isPropertyAssignment(parent)) && ts.isIdentifier(parent.name)) return parent.name.text;
+  return undefined;
+}
+
+/** Whether a name is an event handler's: `onOpen`, `handleClose`. */
+const isHandlerName = (name) => name !== undefined && /^(on|handle)[A-Z]/.test(name);
+
+/** The identifier a chain of property and element accesses starts at, or undefined when the chain crosses a call. */
+function getChainRoot(node) {
   let cur = node;
-  while (ts.isPropertyAccessExpression(cur)) cur = cur.expression;
-  return ts.isIdentifier(cur) && cur.text === "props";
+  while (ts.isPropertyAccessExpression(cur) || ts.isElementAccessExpression(cur) || ts.isNonNullExpression(cur) || ts.isParenthesizedExpression(cur)) {
+    cur = cur.expression;
+  }
+  return ts.isIdentifier(cur) ? cur.text : undefined;
+}
+
+/** Whether an expression holds the props: `defineProps(...)`, `withDefaults(defineProps(...), ...)`, `toRefs(props)` or a part of a known prop name. */
+function isPropsSource(node, names) {
+  if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+    const callee = node.expression.text;
+    if (callee === "defineProps") return true;
+    if (callee === "withDefaults" || callee === "toRefs") return node.arguments.some((one) => isPropsSource(one, names));
+    return false;
+  }
+  const root = getChainRoot(node);
+  return root !== undefined && names.has(root);
+}
+
+/** The names that hold the props or a value read from them (`props`, destructured props, aliases), found in source order. */
+function collectPropNames(source) {
+  const names = new Set();
+  const collect = (name) => {
+    if (ts.isIdentifier(name)) names.add(name.text);
+    else name.elements.forEach((one) => ts.isBindingElement(one) && collect(one.name));
+  };
+  const visit = (node) => {
+    if (ts.isVariableDeclaration(node) && node.initializer && isPropsSource(node.initializer, names)) collect(node.name);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return names;
 }
 
 /**
- * The places in a window's `ui` segment where a component (`.vue`) holds behavior or service calls that belong in
- * `model`: registering a listener or timer, guarding in-flight requests with `createRequestGuard`, or calling a method
- * on `props` inside a lifecycle hook or watcher (other than `props.mount(...)` to mount an external view into a DOM
- * element ref).
+ * What a component below a `ui` folder (in a window, a library or a plugin frontend) must not hold, because it belongs
+ * in `model`: an `async` function, `await`, `.then(`, `try`, a listener, a timer or a request guard, and a call on a
+ * value read from the props (`props.load()`, a destructured prop, an alias of one) outside an event handler, a
+ * function named `on<Name>` or `handle<Name>`. `props.mount(...)`, which mounts an external view into a DOM element
+ * ref, and the methods of built-in values (`props.items.map(...)`) are not service calls.
  *
- * @param {Array<{ file: string, text: string }>} files The `.vue` files in `ui` segments of windows, with their text
+ * @param {Array<{ file: string, text: string }>} files The files to read, with their text
  * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
  */
 export function findUiComponentSideEffects(files) {
   const findings = [];
-  const shipped = files.filter((one) => one.file.endsWith(".vue") && !isNotShipped(one.file) && getSegment(one.file) === "ui");
+  const shipped = files.filter((one) => isUiComponent(one.file));
   for (const { file, text } of shipped) {
-    const source = ts.createSourceFile(file, readScriptText(file, text), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    const lineOf = (node) => source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
-    const visit = (node, inHook) => {
+    const source = ts.createSourceFile(file, readScriptWithLines(file, text), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const add = (node, symbol) => findings.push({ file, line: source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1, symbol });
+    const propNames = collectPropNames(source);
+    const visit = (node, inHandler) => {
+      if (isFunctionNode(node) && node.modifiers?.some((one) => one.kind === ts.SyntaxKind.AsyncKeyword)) add(node, "an async function in a ui component");
+      if (ts.isAwaitExpression(node)) add(node, "await in a ui component");
+      if (ts.isTryStatement(node)) add(node, "try in a ui component");
       if (ts.isCallExpression(node)) {
         const name = getCalledName(node);
-        if (name && UI_COMPONENT_FORBIDDEN_CALLS.has(name)) {
-          findings.push({ file, line: lineOf(node), symbol: `calls ${name} in a ui component` });
+        if (name && UI_COMPONENT_FORBIDDEN_CALLS.has(name)) add(node, `calls ${name} in a ui component`);
+        if (name === "then" && ts.isPropertyAccessExpression(node.expression)) add(node, "calls then in a ui component");
+        const root = getChainRoot(node.expression);
+        const method = ts.isPropertyAccessExpression(node.expression) ? node.expression.name.text : undefined;
+        const isExempt = method !== undefined && (method === "mount" || PURE_VALUE_METHODS.has(method));
+        if (root !== undefined && propNames.has(root) && !inHandler && !isExempt) {
+          add(node, `calls ${method ? `${root}.${method}` : root} on a prop outside an event handler`);
         }
-        if (inHook && ts.isPropertyAccessExpression(node.expression) && isPropsChain(node.expression) && node.expression.name.text !== "mount") {
-          findings.push({ file, line: lineOf(node), symbol: `calls props.${node.expression.name.text} inside ${inHook}` });
-        }
-        const nextHook = name && UI_LIFECYCLE_OR_WATCH_CALLS.has(name) ? name : inHook;
-        ts.forEachChild(node, (child) => visit(child, nextHook));
-        return;
       }
-      ts.forEachChild(node, (child) => visit(child, inHook));
+      const next = isFunctionNode(node) ? inHandler || isHandlerName(getFunctionName(node)) : inHandler;
+      ts.forEachChild(node, (child) => visit(child, next));
     };
-    visit(source, undefined);
+    visit(source, false);
   }
   return { findings, read: shipped.length };
 }
 
 export function verifyUiComponentsAreHumble() {
-  const findings = [];
-  let read = 0;
-  for (const root of listWindows(REPO_ROOT)) {
-    const files = ["pages", "features", "entities", "shared"].flatMap((layer) => listLayerFiles(root, layer));
-    const one = findUiComponentSideEffects(files);
-    findings.push(...one.findings);
-    read += one.read;
-  }
-  requireMatches("Components in ui segments of the windows", read);
-  failOnFindings("A component in a ui segment of a window registers a listener, guards requests or calls a service on props in a hook or watcher", findings);
+  const files = listTrackedFiles()
+    .filter((file) => /^(apps|libs|plugins)\//.test(file) && isUiComponent(file))
+    .map((file) => ({ file, text: fs.readFileSync(path.join(REPO_ROOT, file), "utf8") }));
+  const { findings, read } = findUiComponentSideEffects(files);
+  requireMatches("Components below ui folders", read);
+  failOnFindings("A component below a ui folder holds async code, a try, a listener, a timer or a call on a prop outside an event handler", findings);
 }
 
 export function verifyPagesAreComposedNotConsumed() {
@@ -617,7 +684,7 @@ export const FRONTEND_GRAPH_VERIFIERS = [
     id: "ui-components-are-humble",
     scope: "apps",
     module: "boundary",
-    name: "A Component in a ui Segment of a Window Holds No Listener, Request Guard or Service Call in a Hook or Watcher",
+    name: "A Component Below a ui Folder of a Window, Library or Plugin Holds No Async Code, Try, Listener, Timer or Call on a Prop Outside an Event Handler",
     run: verifyUiComponentsAreHumble,
   },
 ];

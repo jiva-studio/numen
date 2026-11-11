@@ -1,6 +1,6 @@
-// Command comments reports comments on Go struct fields, doc comments on unexported
-// functions and doc comments of more than five lines on exported symbols. It reads the paths of the files to check from standard input, one per line; with
-// -fix it removes those comments and rewrites the files.
+// Command comments reports comments on Go struct fields, doc comments on unexported functions and doc
+// comments whose words are the name and the signature of the declaration. It reads the paths of the files to check
+// from standard input, one per line; with -fix it removes those comments and rewrites the files.
 //
 // The exported fields of a type whose doc comment carries a marker line keep their comments:
 //
@@ -27,17 +27,13 @@ import (
 
 var directive = regexp.MustCompile(`^//(go:|lint:|numen:|export |line |extern |\s*gomutants:|\s*Deprecated:)`)
 
-// maxDocLines is the most lines of text a doc comment on an exported symbol may have.
-const maxDocLines = 5
-
 var documentedMarker = regexp.MustCompile(`^//numen:(settings|api)$`)
 
-// Finding is one comment the rule rejects. Long marks a doc comment over maxDocLines, which -fix does not remove.
+// Finding is one comment the rule rejects.
 type Finding struct {
 	Path    string
 	Line    int
 	Message string
-	Long    bool
 }
 
 func main() {
@@ -67,11 +63,6 @@ func main() {
 					os.Exit(2)
 				}
 			}
-			for _, f := range found {
-				if f.Long {
-					findings = append(findings, f)
-				}
-			}
 			continue
 		}
 		findings = append(findings, found...)
@@ -89,7 +80,6 @@ func main() {
 }
 
 // Check returns the rejected comments of one Go source and the source with them removed.
-// A doc comment over maxDocLines lines on an exported symbol is a finding that is not removed.
 // A generated file returns no findings; a file that does not parse returns the parse error.
 func Check(path string, src []byte) ([]Finding, []byte, error) {
 	fset := token.NewFileSet()
@@ -103,15 +93,12 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 	documented := getDocumentedStructs(file)
 	var findings []Finding
 	var cuts []span
-	reportLength := func(group *ast.CommentGroup, name string) {
-		if n := countDocLines(group); n > maxDocLines {
-			findings = append(findings, Finding{Path: path, Line: fset.Position(group.Pos()).Line, Message: fmt.Sprintf("doc comment on exported %s has %d lines; A doc comment is at most five lines: say the fact the name and type cannot show", name, n), Long: true})
-		}
-	}
+	done := map[*ast.CommentGroup]bool{}
 	report := func(group *ast.CommentGroup, message string) {
-		if group == nil {
+		if group == nil || done[group] {
 			return
 		}
+		done[group] = true
 		reported := false
 		for _, c := range group.List {
 			if directive.MatchString(c.Text) {
@@ -145,20 +132,7 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 		}
 		return true
 	})
-	for _, decl := range file.Decls {
-		switch d := decl.(type) {
-		case *ast.FuncDecl:
-			if d.Name.IsExported() {
-				reportLength(d.Doc, d.Name.Name)
-			}
-		case *ast.GenDecl:
-			for _, spec := range d.Specs {
-				if name, doc := getSpecDoc(d, spec); name != "" {
-					reportLength(doc, name)
-				}
-			}
-		}
-	}
+	reportRestating(fset, file, report)
 	if len(cuts) == 0 {
 		return findings, src, nil
 	}
@@ -167,44 +141,6 @@ func Check(path string, src []byte) ([]Finding, []byte, error) {
 		return nil, src, fmt.Errorf("format after removing comments: %w", err)
 	}
 	return findings, fixed, nil
-}
-
-func getSpecDoc(decl *ast.GenDecl, spec ast.Spec) (string, *ast.CommentGroup) {
-	var name string
-	var doc *ast.CommentGroup
-	switch s := spec.(type) {
-	case *ast.TypeSpec:
-		if s.Name.IsExported() {
-			name = s.Name.Name
-		}
-		doc = s.Doc
-	case *ast.ValueSpec:
-		for _, n := range s.Names {
-			if n.IsExported() {
-				name = n.Name
-				break
-			}
-		}
-		doc = s.Doc
-	}
-	if doc == nil && len(decl.Specs) == 1 {
-		doc = decl.Doc
-	}
-	return name, doc
-}
-
-func countDocLines(group *ast.CommentGroup) int {
-	if group == nil {
-		return 0
-	}
-	count := 0
-	for _, c := range group.List {
-		if directive.MatchString(c.Text) {
-			continue
-		}
-		count += strings.Count(c.Text, "\n") + 1
-	}
-	return count
 }
 
 func getDocumentedStructs(file *ast.File) map[*ast.StructType]bool {
@@ -276,4 +212,87 @@ func removeSpans(src []byte, cuts []span) []byte {
 		}
 	}
 	return out
+}
+
+// reportRestating reports the doc comment of every declaration whose words are, for the most part, the name and the
+// signature of the declaration. The comment is the group right above the declaration, or the last group between the
+// previous declaration and this one that starts with the name, even with a blank line between.
+func reportRestating(fset *token.FileSet, file *ast.File, report func(*ast.CommentGroup, string)) {
+	pkg := file.Name.Name
+	seen := map[*ast.CommentGroup]bool{}
+	check := func(group *ast.CommentGroup, kind, name string, names []string) {
+		if group == nil || seen[group] || hasMarker(group) {
+			return
+		}
+		seen[group] = true
+		text := stripComment(group)
+		if matched, total, ok := isRestating(text, names); ok {
+			report(group, fmt.Sprintf("doc comment on %s %s restates its name and signature (%d of %d words); say the fact the name and type cannot show", kind, name, matched, total))
+		}
+	}
+	previous := token.NoPos
+	for _, decl := range file.Decls {
+		start := decl.Pos()
+		var doc *ast.CommentGroup
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			doc = d.Doc
+		case *ast.GenDecl:
+			doc = d.Doc
+		}
+		if doc != nil {
+			start = doc.Pos()
+		}
+		detached := findDetachedDoc(file, previous, start)
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			check(firstOf(d.Doc, detached, d.Name.Name), "function", d.Name.Name, listSignatureNames(pkg, d))
+		case *ast.GenDecl:
+			for _, spec := range d.Specs {
+				switch s := spec.(type) {
+				case *ast.TypeSpec:
+					group := s.Doc
+					if group == nil && len(d.Specs) == 1 {
+						group = firstOf(d.Doc, detached, s.Name.Name)
+					}
+					check(group, "type", s.Name.Name, []string{pkg, s.Name.Name})
+				case *ast.ValueSpec:
+					group := s.Doc
+					if group == nil && len(d.Specs) == 1 {
+						group = firstOf(d.Doc, detached, s.Names[0].Name)
+					}
+					names := []string{pkg}
+					for _, n := range s.Names {
+						names = append(names, n.Name)
+					}
+					names = append(names, listTypeNames(s.Type)...)
+					check(group, "value", s.Names[0].Name, names)
+				}
+			}
+		}
+		previous = decl.End()
+	}
+}
+
+// firstOf returns the doc comment when there is one, and the detached comment only when it starts with the name.
+func firstOf(doc, detached *ast.CommentGroup, name string) *ast.CommentGroup {
+	if doc != nil {
+		return doc
+	}
+	if detached != nil && strings.HasPrefix(strings.TrimSpace(stripComment(detached)), name) {
+		return detached
+	}
+	return nil
+}
+
+// findDetachedDoc returns the last comment group between two positions, which a blank line may separate from the
+// declaration that follows.
+func findDetachedDoc(file *ast.File, from, to token.Pos) *ast.CommentGroup {
+	var found *ast.CommentGroup
+	for _, group := range file.Comments {
+		if group.Pos() > from && group.End() < to {
+			found = group
+		}
+	}
+	return found
 }

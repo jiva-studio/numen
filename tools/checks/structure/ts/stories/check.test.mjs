@@ -12,7 +12,7 @@ const MODELLED = "<script setup lang=\"ts\">\nconst model = defineModel<boolean>
 const PLAIN_STORY = (name) =>
   `import type { Meta } from '@storybook/vue3-vite'\nimport ${name} from './${name}.vue'\nconst meta = { component: ${name} } satisfies Meta<typeof ${name}>\nexport default meta\nexport const Idle = { render: () => ({ components: { ${name} } }) }\n`;
 const PLAYED_STORY = (name) =>
-  `import ${name} from './${name}.vue'\nconst meta = { component: ${name} }\nexport default meta\nexport const Picks = { render: () => ({ components: { ${name} } }), play: async () => {} }\n`;
+  `import { expect } from 'storybook/test'\nimport ${name} from './${name}.vue'\nconst meta = { component: ${name} }\nexport default meta\nexport const Picks = { render: () => ({ components: { ${name} } }), play: async ({ args }) => { await expect(args.onPick).toHaveBeenCalledWith('a') } }\n`;
 
 const LIBRARY = {
   [ENTRY]:
@@ -85,7 +85,7 @@ describe("a story file", () => {
   it("reaches a component through a barrel and through the alias of the source root", () => {
     const sources = createLibrary({
       [`${ROOT}/screens/Board.stories.ts`]:
-        "import { Chip } from '@/ui/chip'\nimport { Picker as Chooser } from '../ui/picker'\nexport const A = { render: () => ({ components: { Chip, Chooser } }) }\n",
+        "import { Chip } from '@/ui/chip'\nimport { Picker as Chooser } from '../ui/picker'\nexport const A = { render: () => ({ components: { Chip, Chooser }, template: '<Chip /><chooser />' }) }\n",
     });
     const read = readStoryFile(sources, `${ROOT}/screens/Board.stories.ts`, ROOT);
     assert.deepEqual([...read.rendered], [`${ROOT}/ui/chip/Chip.vue`, `${ROOT}/ui/picker/Picker.vue`]);
@@ -104,7 +104,60 @@ describe("a story file", () => {
   });
 });
 
+describe("what a story draws", () => {
+  const read = (text) => readStoryFile(createLibrary({ [`${ROOT}/x.stories.ts`]: text }), `${ROOT}/x.stories.ts`, ROOT);
+  const CHIP = "import Chip from './ui/chip/Chip.vue'\n";
+
+  it("is the component: of the story or of the default export, or the render target", () => {
+    assert.deepEqual(read(CHIP + "export default {}\nexport const A = { component: Chip }\n").rendered.size, 1);
+    assert.deepEqual(read(CHIP + "export default { component: Chip }\nexport const A = {}\n").stories[0].drawsComponent, true);
+    assert.deepEqual(read(CHIP + "export default {}\nexport const A = { render: () => ({ components: { Chip }, template: '<Chip />' }) }\n").stories[0].drawsComponent, true);
+    assert.deepEqual(read(CHIP + "import { h } from 'vue'\nexport default {}\nexport const A = { render: () => h(Chip) }\n").stories[0].drawsComponent, true);
+    assert.deepEqual(read(CHIP + "const row = () => ({ components: { Chip }, template: '<Chip />' })\nexport default {}\nexport const A = { render: row }\n").stories[0].drawsComponent, true);
+  });
+
+  it("is not a component that is only imported, mentioned in a type, registered without a tag or listed", () => {
+    for (const body of [
+      "export default {}\nexport const A = { render: () => ({}) }\n",
+      "export default {} satisfies Meta<typeof Chip>\nexport const A = {}\n",
+      "export default {}\nexport const A = { render: () => ({ components: { Chip }, template: '<p />' }) }\n",
+      "export default {}\nexport const A = { args: { parts: [Chip] } }\n",
+    ]) {
+      const found = read(CHIP + body);
+      assert.deepEqual([found.rendered.size, found.stories[0].drawsComponent], [0, false], body);
+    }
+  });
+});
+
 describe("the story checks over a library", () => {
+  it("fail a story that draws no component, and a play function that asserts nothing", () => {
+    const sources = createLibrary({
+      [`${ROOT}/ui/chip/Chip.stories.ts`]: PLAIN_STORY("Chip") + "export const Bare = { render: () => ({}), play: async () => {} }\n",
+    });
+    const found = findComponentsWithoutStories(sources, ENTRY);
+    assert.deepEqual(found.bareStories.map((one) => one.symbol.split(" draws")[0]), []);
+    assert.deepEqual(names(found.emptyPlays), ["story Bare has a play function with no expect"]);
+  });
+
+  it("fail a story file whose meta names no component and whose story draws none", () => {
+    const sources = createLibrary({ [`${ROOT}/ui/chip/Chip.stories.ts`]: PLAIN_STORY("Chip").replace("component: Chip", "title: 'Chip'") });
+    const found = findComponentsWithoutStories(sources, ENTRY);
+    assert.deepEqual(found.bareStories.map((one) => one.symbol.split(" draws")[0]), ["story Idle"]);
+    assert.deepEqual(names(found.unstoried), ["public component Chip is rendered by no story file"]);
+  });
+
+  it("fail an emitting component whose play asserts only the page, and pass one that asserts a spy or an emitted payload", () => {
+    const stories = (play) =>
+      `import Picker from './Picker.vue'\nimport { expect, fn } from 'storybook/test'\nconst onPick = fn()\nexport default { component: Picker }\nexport const A = { args: { onPick }, play: ${play} }\n`;
+    const run = (play) => names(findComponentsWithoutStories(createLibrary({ [`${ROOT}/ui/picker/Picker.stories.ts`]: stories(play) }), ENTRY).unplayed);
+    const refused = ["public component Picker declares events and the play function of no story that draws it asserts an emitted event or a spy call"];
+    assert.deepEqual(run("async () => {}"), refused);
+    assert.deepEqual(run("async ({ canvasElement }) => { await expect(canvasElement.textContent).toBe('a') }"), refused);
+    assert.deepEqual(run("async () => { await expect(onPick).toHaveBeenCalledOnce() }"), []);
+    assert.deepEqual(run("async ({ args }) => { const { onPick: spy } = args; await expect(spy.mock.calls[0]).toEqual(['a']) }"), []);
+    assert.deepEqual(run("async () => { await expect(emitted().pick).toEqual([['a']]) }"), []);
+  });
+
   it("pass when every component has a story and every emitting one has a play function", () => {
     const found = findComponentsWithoutStories(createLibrary(), ENTRY);
     assert.deepEqual(names(found.unstoried), []);
@@ -128,7 +181,7 @@ describe("the story checks over a library", () => {
       [`${ROOT}/ui/chip/Chip.stories.ts`]: PLAIN_STORY("Chip"),
     });
     assert.deepEqual(names(findComponentsWithoutStories(sources, ENTRY).unplayed), [
-      "public component Picker declares events and no story file that renders it has a play function",
+      "public component Picker declares events and the play function of no story that draws it asserts an emitted event or a spy call",
     ]);
   });
 

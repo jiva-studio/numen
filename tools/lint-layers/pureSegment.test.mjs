@@ -44,6 +44,45 @@ describe("the pure segment rule", () => {
     assert.deepEqual(findReports("export const a = (ms: number) => new Date(ms)"), []);
   });
 
+  it("fails the clock and randomness reached through an alias, a destructuring, a computed key or a call", () => {
+    const source = [
+      "const D = Date",
+      "export const a = D.now()",
+      "const { now } = Date",
+      "export const b = now()",
+      "const R = globalThis.Math",
+      "export const c = R.random()",
+      "export const d = Math['random']()",
+      "export const e = Date[\"now\"]()",
+      "const { random: draw } = Math",
+      "const { Date: Clock } = globalThis",
+      "export const f = Clock.now()",
+      "export const g = globalThis['navigator']",
+      "export const h = (name: string) => Math[name]",
+      "export const i = Date()",
+      "export const j = new Date(...[])",
+      "const { randomUUID } = crypto",
+    ].join("\n");
+    assert.deepEqual(findReports(source), ["2", "3", "6", "7", "8", "9", "11", "12", "13", "14", "15", "16"]);
+  });
+
+  it("passes a date built from pure arguments and an alias of a pure member", () => {
+    const source = [
+      "export const a = (y: number, m: number) => new Date(Date.UTC(y, m, 1))",
+      "const D = Date",
+      "export const b = D.UTC(2024, 0, 1)",
+      "const { floor } = Math",
+      "export const c = floor(1.5)",
+      "export const d = Math['floor'](1.5)",
+      "export const e = (d: Date) => new Date(d.getTime())",
+    ].join("\n");
+    assert.deepEqual(findReports(source), []);
+  });
+
+  it("fails the clock inside the arguments of a date", () => {
+    assert.deepEqual(findReports("export const a = new Date(Date.UTC(2024, 0, Date.now()))\nexport const b = new Date(performance.now())"), ["1", "2"]);
+  });
+
   it("fails an identity drawn from crypto, also through globalThis", () => {
     const source = [
       "export const a = () => crypto.randomUUID()",

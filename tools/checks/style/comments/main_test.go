@@ -21,7 +21,7 @@ func TestCheckReportsFieldComments(t *testing.T) {
 }
 
 func TestCheckReportsUnexportedFunctionDocs(t *testing.T) {
-	src := "package p\n\n// Open opens.\nfunc Open() {}\n\n// read reads.\n//\n//go:noinline\nfunc read() {}\n"
+	src := "package p\n\n// Open opens the lock the sync daemon holds.\nfunc Open() {}\n\n// read reads.\n//\n//go:noinline\nfunc read() {}\n"
 	findings, fixed, err := Check("p.go", []byte(src))
 	if err != nil {
 		t.Fatal(err)
@@ -29,7 +29,7 @@ func TestCheckReportsUnexportedFunctionDocs(t *testing.T) {
 	if len(findings) != 1 || !strings.Contains(findings[0].Message, "function read") {
 		t.Fatalf("findings = %+v, want one on read", findings)
 	}
-	if !strings.Contains(string(fixed), "// Open opens.") || !strings.Contains(string(fixed), "//go:noinline\nfunc read") || strings.Contains(string(fixed), "read reads") {
+	if !strings.Contains(string(fixed), "// Open opens the lock") || !strings.Contains(string(fixed), "//go:noinline\nfunc read") || strings.Contains(string(fixed), "read reads") {
 		t.Fatalf("fixed =\n%s", fixed)
 	}
 }
@@ -72,50 +72,57 @@ func TestCheckSkipsGeneratedFiles(t *testing.T) {
 	}
 }
 
-func TestCheckLimitsTheDocOfAnExportedSymbol(t *testing.T) {
-	five := "// A.\n// B.\n// C.\n// D.\n// E.\n"
-	six := five + "// F.\n"
+func TestCheckReportsDocsThatRestateTheNameAndTheSignature(t *testing.T) {
 	cases := []struct {
 		name string
-		decl string
+		src  string
 		want bool
 	}{
-		{"function, 5 lines", five + "func F() {}", false},
-		{"function, 6 lines", six + "func F() {}", true},
-		{"method, 6 lines", six + "func (T) M() {}", true},
-		{"type, 6 lines", six + "type X int", true},
-		{"type, 5 lines", five + "type X int", false},
-		{"constant, 6 lines", six + "const X = 1", true},
-		{"variable, 6 lines", six + "var X = 1", true},
-		{"unexported variable, 6 lines", six + "var x = 1", false},
-		{"grouped constant, 6 lines", "const (\n" + six + "\tX = 1\n)", true},
-		{"blank comment line counts", "// A.\n// B.\n//\n// C.\n// D.\n// E.\nfunc F() {}", true},
-		{"directive does not count", five + "//go:noinline\nfunc F() {}", false},
-		{"marker does not count", five + "//numen:api\ntype X struct{}", false},
-		{"block comment, 6 lines", "/*\nA.\nB.\nC.\nD.\nE.\n*/\nfunc F() {}", true},
+		{"type", "package theme\n\n// ReadTheme reads the stylesheet of a theme.\ntype ReadTheme struct{}\n", true},
+		{"method", "package windowsession\n\ntype Runtime struct{}\n\n// SetVault sets the vault the window shows.\nfunc (r *Runtime) SetVault(v domain.Vault) {}\n", true},
+		{"function", "package bridge\n\n// GetPlugin finds no plugin.\nfunc (AbsentRuntime) GetPlugin(string) (manifest.Discovered, bool) { return manifest.Discovered{}, false }\n", true},
+		{"separated by a blank line", "package p\n\n// ReadTheme reads the stylesheet of a theme.\n\nfunc ReadTheme() {}\n", true},
+		{"no five-line cap, a long restating doc is still refused", "package p\n\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\nfunc ReadTheme() {}\n", true},
+		{"a fact the name cannot show", "package p\n\n// ReadTheme reads the stylesheet of a theme from the bundled copy when the vault holds none.\nfunc ReadTheme() {}\n", false},
+		{"a long doc with facts is accepted", "", false},
+		{"a section comment that does not start with the name", "package p\n\n// Themes are read below.\n\nfunc ReadTheme() {}\n", false},
+		{"a doc with a marker is kept", "package p\n\n// Spec describes a spec.\n//\n//numen:api\ntype Spec struct{}\n", false},
 	}
 	for _, c := range cases {
-		src := "package p\n\ntype T struct{}\n\n" + c.decl + "\n"
-		findings, fixed, err := Check("p.go", []byte(src))
+		if c.name == "a long doc with facts is accepted" {
+			c.src = "package p\n\n// Open opens the file.\n// It waits for the lock the sync daemon holds while it uploads,\n// so a caller on the save path blocks for up to the lease time.\n// The file stays open until the caller closes it.\n// Failures leave the lock as found.\n// See the lease table in the design notes.\n// Calls are not reentrant.\nfunc Open() {}\n"
+		}
+		findings, _, err := Check("p.go", []byte(c.src))
 		if err != nil {
 			t.Fatalf("%s: %v", c.name, err)
 		}
 		if got := len(findings) > 0; got != c.want {
 			t.Fatalf("%s: findings = %+v, want reported %v", c.name, findings, c.want)
 		}
-		if string(fixed) != src {
-			t.Fatalf("%s: a long doc must not be rewritten:\n%s", c.name, fixed)
-		}
 	}
 }
 
-func TestCheckLimitsTheDocOfAMarkedType(t *testing.T) {
-	src := "package p\n\n// A.\n// B.\n// C.\n// D.\n// E.\n// F.\n//\n//numen:api\ntype T struct {\n\t// Name is shown.\n\t// Second line.\n\t// Third line.\n\t// Fourth line.\n\t// Fifth line.\n\t// Sixth line.\n\tName string\n}\n"
-	findings, _, err := Check("p.go", []byte(src))
+func TestCheckRemovesADocThatRestatesTheSignature(t *testing.T) {
+	src := "package p\n\n// Open opens the file.\nfunc Open(file string) {}\n\n// Close releases the lock the sync daemon holds while it uploads.\nfunc Close() {}\n"
+	findings, fixed, err := Check("p.go", []byte(src))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(findings) != 1 || findings[0].Line != 3 {
-		t.Fatalf("findings = %+v, want only the type doc on line 3", findings)
+		t.Fatalf("findings = %+v, want one on line 3", findings)
+	}
+	if strings.Contains(string(fixed), "Open opens") || !strings.Contains(string(fixed), "Close releases") {
+		t.Fatalf("fixed =\n%s", fixed)
+	}
+}
+
+func TestCheckReportsAGroupOnce(t *testing.T) {
+	src := "package p\n\n// open opens.\nfunc open() {}\n"
+	findings, _, err := Check("p.go", []byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(findings) != 1 {
+		t.Fatalf("findings = %+v, want one", findings)
 	}
 }

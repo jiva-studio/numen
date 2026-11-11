@@ -1,8 +1,9 @@
 /**
  * The rules over design tokens that stylelint has no rule for: no `var()` takes a fallback, a stylesheet
  * declares no `--numen-` token, and every `var(--numen-…)` names a token a token file declares. A fourth
- * keeps a border on one side of a box from sharing a rule with a radius. A fifth keeps a length off a
- * property: a size is a custom property in `rem` or `em`, and only a 1px hairline border is written in `px`.
+ * keeps a border on one side of a box from sharing a rule with a radius. A fifth keeps the lengths to the scale:
+ * a `rem` or `em` literal may stand on a property, a custom property outside the token files holds only a
+ * length the token files declare, and only a 1px hairline border is written in `px`.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -187,9 +188,10 @@ noRoundedSideBorder.messages = noRoundedSideBorderMessages;
 const NO_BARE_LENGTH = "numen/no-bare-length";
 
 const noBareLengthMessages = ruleMessages(NO_BARE_LENGTH, {
-  pixelProperty: (length, prop) => `${length} on ${prop}: a size is not written in px; declare it in rem or em as a local custom property (only a 1px border is px)`,
+  pixelProperty: (length, prop) => `${length} on ${prop}: a size is not written in px; write it in rem or em (only a 1px border is px)`,
   pixelDeclaration: (length, prop) => `${length} in ${prop}: a custom property holds a size in rem or em; px stays out (only a 1px border is px)`,
-  bare: (length, prop) => `${length} on ${prop}: declare the length as a local custom property in rem or em and read it with var()`,
+  otherUnit: (length, prop) => `${length} on ${prop}: write the length in rem or em`,
+  offScale: (length, prop) => `${length} in ${prop}: a custom property outside the token files holds only a length a token file declares; take the token or declare the length there`,
 });
 
 /** The units of a length that does not follow the interface scale by itself: absolute and font-relative ones. Viewport and container units, percentages and `fr` are proportions and pass. */
@@ -215,21 +217,45 @@ function findLengths(value) {
   return lengths;
 }
 
-const noBareLength = (primary) => (root, result) => {
-  if (!validateOptions(result, NO_BARE_LENGTH, { actual: primary })) return;
+/** The `rem` and `em` lengths the declarations of the token files below a root hold, each as `<number><unit>`. */
+const lengthsByRoot = new Map();
+function readRootLengths(root) {
+  if (!lengthsByRoot.has(root)) {
+    const scale = new Set();
+    for (const file of findTokenFiles(root)) {
+      postcss.parse(fs.readFileSync(file, "utf8")).walkDecls((decl) => {
+        for (const length of findLengths(decl.value)) if (SCALED_UNITS.has(length.unit)) scale.add(`${length.number}${length.unit}`);
+      });
+    }
+    lengthsByRoot.set(root, scale);
+  }
+  return lengthsByRoot.get(root);
+}
+
+const noBareLength = (primary, secondary) => (root, result) => {
+  const isValid = validateOptions(
+    result,
+    NO_BARE_LENGTH,
+    { actual: primary },
+    { actual: secondary, possible: { root: [(value) => typeof value === "string"] }, optional: true },
+  );
+  if (!isValid) return;
+  const scale = readRootLengths(path.resolve(secondary?.root ?? process.cwd()));
   root.walkDecls((decl) => {
     const isCustomProperty = decl.prop.startsWith("--");
     for (const length of findLengths(decl.value)) {
       let message;
       if (isCustomProperty) {
-        if (SCALED_UNITS.has(length.unit)) continue;
-        message = noBareLengthMessages.pixelDeclaration(length.text, decl.prop);
+        if (SCALED_UNITS.has(length.unit) && scale.has(`${length.number}${length.unit}`)) continue;
+        message = SCALED_UNITS.has(length.unit) ? noBareLengthMessages.offScale(length.text, decl.prop) : noBareLengthMessages.pixelDeclaration(length.text, decl.prop);
+      } else if (SCALED_UNITS.has(length.unit)) {
+        continue;
       } else if (length.unit === "px" && length.number === 1 && BORDER_LINE.test(decl.prop)) {
         continue;
       } else if (length.unit === "px") {
         message = noBareLengthMessages.pixelProperty(length.text, decl.prop);
       } else {
-        message = noBareLengthMessages.bare(length.text, decl.prop);
+        message = noBareLengthMessages.otherUnit(length.text, decl.prop);
       }
       report({ ruleName: NO_BARE_LENGTH, result, node: decl, message, word: length.text });
     }

@@ -76,36 +76,54 @@ describe("the rule on a border and a radius", () => {
 });
 
 describe("the rule on lengths", () => {
-  /** The rules stylelint reports for `code` written at `file`. */
+  let scale;
+  before(() => {
+    scale = fs.mkdtempSync(path.join(os.tmpdir(), "style-scale-"));
+    fs.mkdirSync(path.join(scale, "tokens"));
+    fs.writeFileSync(path.join(scale, "tokens", "tokens.css"), ":root { --numen-pad: 0.5rem; --numen-icon: 1.25em; --numen-stroke: 1px; }\n");
+  });
+  after(() => fs.rmSync(scale, { recursive: true, force: true }));
+
+  /** The rules stylelint reports for `code` written at `file`, with the scale read from a token file of a temporary root. */
   const lint = async (file, code) => {
-    const { results } = await stylelint.lint({ code, codeFilename: path.join(REPO_ROOT, file), config, configBasedir: REPO_ROOT });
+    const withRoot = (rules) => (rules?.["numen/no-bare-length"] ? { ...rules, "numen/no-bare-length": [true, { root: scale }] } : rules);
+    const { results } = await stylelint.lint({
+      code,
+      codeFilename: path.join(REPO_ROOT, file),
+      config: { ...config, overrides: config.overrides.map((one) => ({ ...one, rules: withRoot(one.rules) })) },
+      configBasedir: REPO_ROOT,
+    });
     return results[0].warnings.map((one) => one.rule);
   };
   const rejected = ["numen/no-bare-length"];
 
-  it("rejects a planted component that writes a length straight on a property", async () => {
-    const planted = "<template><p /></template>\n<style scoped>\np { padding: 0.3rem; }\n</style>\n";
+  it("rejects a planted component that writes a px length straight on a property", async () => {
+    const planted = "<template><p /></template>\n<style scoped>\np { padding: 5px; }\n</style>\n";
     assert.deepEqual(await lint("apps/desktop/editor/src/Planted.vue", planted), rejected);
   });
 
-  it("rejects a length on a property in rem, em, ch and inside calc()", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { gap: 0.5rem; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { margin-inline-start: 1.5em; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { max-inline-size: 60ch; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { inline-size: calc(100% - 2rem); }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { padding: var(--pad) 0.5rem; }"), rejected);
+  it("accepts a rem or em literal on a property, inside calc() and next to var()", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { gap: 0.5rem; margin-inline-start: 1.5em; padding: var(--pad) 0.3rem; inline-size: calc(100% - 2rem); }"), []);
   });
 
-  it("rejects px on a property and in a custom property, and a border wider than a hairline", async () => {
+  it("rejects px on a property, a border wider than a hairline, and a unit that is neither px, rem nor em", async () => {
     assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { outline: 2px solid currentColor; }"), rejected);
     assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border-radius: 4px; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --gap: 4px; }"), rejected);
     assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border: 2px solid currentColor; }"), rejected);
     assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { outline: 1px solid currentColor; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { max-inline-size: 60ch; }"), rejected);
   });
 
-  it("accepts a local custom property in rem or em, read with var()", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --pad: 0.3rem; --icon: 1.2em; padding: var(--pad); inline-size: calc(var(--icon) * 2); }"), []);
+  it("accepts a custom property in rem or em only on the scale the token files declare", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --pad: 0.5rem; --icon: 1.25em; padding: var(--pad); inline-size: calc(var(--icon) * 2); }"), []);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --w: 1000rem; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --pad: 0.3rem; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --icon: 1.25rem; }"), rejected);
+  });
+
+  it("rejects px in a custom property, even when a token file declares it", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --gap: 4px; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --hairline: 1px; }"), rejected);
   });
 
   it("accepts a 1px hairline border, zero, proportions and a length inside url()", async () => {
@@ -115,11 +133,11 @@ describe("the rule on lengths", () => {
   });
 
   it("leaves a package outside the converted ones alone", async () => {
-    assert.deepEqual(await lint("apps/docs/src/a.css", "a { gap: 0.5rem; border-radius: 4px; }"), []);
+    assert.deepEqual(await lint("apps/docs/src/a.css", "a { gap: 5px; border-radius: 4px; --w: 1000rem; }"), []);
   });
 
   it("leaves the token files alone", async () => {
-    assert.deepEqual(await lint("libs/ui/components/src/shared/tokens/tokens.css", ":root { --numen-hairline: 1px; --numen-radius: 4px; }"), []);
+    assert.deepEqual(await lint("libs/ui/components/src/shared/tokens/tokens.css", ":root { --numen-hairline: 1px; --numen-radius: 4px; --numen-w: 1000rem; }"), []);
   });
 });
 

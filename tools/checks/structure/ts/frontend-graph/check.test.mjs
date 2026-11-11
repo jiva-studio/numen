@@ -301,6 +301,13 @@ describe("the logic rule of the app layer", () => {
     ]);
   });
 
+  it("counts &&, ||, ?? and an array method with a callback as decisions", () => {
+    assert.deepEqual(symbols("const a = (x) => x && x.id;\nconst b = (x) => (x.a || x.b) ?? 1;\nconst c = (xs) => xs.map((one) => one.id);\nconst d = (xs) => xs.filter((one) => one && one.ok);"), [
+      "2 more than 1 decision in a function",
+      "1 6 decisions, at most 3 are allowed in a file of app",
+    ]);
+  });
+
   it("counts the decisions of each function apart", () => {
     assert.deepEqual(symbols("const a = (x) => (x ? 1 : 2);\nconst b = (x) => (x ? 1 : 2);\nconst c = (x) => (x ? 1 : 2);"), []);
   });
@@ -319,44 +326,92 @@ describe("the logic rule of the app layer", () => {
   });
 });
 
-describe("the humble ui component rule of windows", () => {
+describe("the humble ui component rule", () => {
   const symbols = (script, file = `${WINDOW}/pages/welcome/ui/WelcomeScreen.vue`) =>
     findUiComponentSideEffects([{ file, text: `<script setup lang="ts">\n${script}\n</script>` }]).findings.map(
       (one) => `${one.line} ${one.symbol}`,
     );
 
-  it("fails a listener, a timer, a request guard and a service call on props inside a hook or watcher", () => {
+  it("fails async code, await, then and try", () => {
     assert.deepEqual(
       symbols(
         [
-          "onMounted(() => globalThis.addEventListener('keydown', onKey));",
-          "onUnmounted(() => globalThis.removeEventListener('keydown', onKey));",
-          "const reads = createRequestGuard();",
-          "onMounted(() => props.secrets.loadStates());",
-          "watch(() => props.plugin.id, (id) => { props.manager.files.getReadme(id); });",
+          "async function onOpen() { await load(); }",
+          "const reads = async () => 1;",
+          "load().then(() => 1);",
+          "try { run(); } catch { stop(); }",
         ].join("\n"),
       ),
       [
-        "2 calls addEventListener in a ui component",
-        "3 calls removeEventListener in a ui component",
-        "4 calls createRequestGuard in a ui component",
-        "5 calls props.loadStates inside onMounted",
-        "6 calls props.getReadme inside watch",
+        "2 an async function in a ui component",
+        "2 await in a ui component",
+        "3 an async function in a ui component",
+        "4 calls then in a ui component",
+        "5 try in a ui component",
       ],
     );
   });
 
-  it("passes a component that calls a model composable, focuses a template ref or mounts a view", () => {
+  it("fails a listener, a timer and a request guard", () => {
     assert.deepEqual(
       symbols(
         [
+          "onMounted(() => globalThis.addEventListener('keydown', onKey));",
+          "const timer = setTimeout(() => 1, 5);",
+          "const reads = createRequestGuard();",
+        ].join("\n"),
+      ),
+      ["2 calls addEventListener in a ui component", "3 calls setTimeout in a ui component", "4 calls createRequestGuard in a ui component"],
+    );
+  });
+
+  it("fails a call on a prop, a destructured prop and an alias outside an event handler", () => {
+    assert.deepEqual(
+      symbols(
+        [
+          "const props = defineProps<{ secrets: Secrets; format: (n: number) => string }>();",
+          "const { manager } = props;",
+          "const files = manager.files;",
+          "onMounted(() => props.secrets.loadStates());",
+          "const label = computed(() => props.format(1));",
+          "watch(() => 1, () => files.getReadme());",
+        ].join("\n"),
+      ),
+      [
+        "5 calls props.loadStates on a prop outside an event handler",
+        "6 calls props.format on a prop outside an event handler",
+        "7 calls files.getReadme on a prop outside an event handler",
+      ],
+    );
+    assert.deepEqual(symbols("const { load } = defineProps<{ load: () => void }>();\nload();"), [
+      "3 calls load on a prop outside an event handler",
+    ]);
+  });
+
+  it("passes a call on a prop in an event handler, a model composable, a template ref, a mount and a built-in method", () => {
+    assert.deepEqual(
+      symbols(
+        [
+          "const props = defineProps<{ items: string[]; save: () => void }>();",
           "const { ways, onOpen } = useWelcomeScreen(props);",
+          "function onSave() { props.save(); }",
+          "const handleClose = () => props.save();",
           "onMounted(() => { inputRef.value?.focus(); });",
           "onMounted(() => { if (el.value) props.mount(el.value); });",
+          "const names = computed(() => props.items.map((one) => one.trim()));",
           "watch(() => props.name, (next) => { draft.value = next; });",
         ].join("\n"),
       ),
       [],
     );
+  });
+
+  it("reads a component below a ui folder in a library and in a plugin, and no other file", () => {
+    const text = '<script setup lang="ts">\nsetTimeout(() => 1, 5);\n</script>';
+    const found = (file) => findUiComponentSideEffects([{ file, text }]);
+    assert.equal(found("libs/ui/components/src/shared/ui/button/Button.vue").findings.length, 1);
+    assert.equal(found("plugins/views-cards/frontend/ui/Cards.vue").findings.length, 1);
+    assert.equal(found("plugins/views-cards/frontend/model/Cards.vue").read, 0);
+    assert.equal(found("libs/ui/components/src/shared/ui/button/Button.stories.ts").read, 0);
   });
 });

@@ -17,9 +17,9 @@ export default {
   overrides: [
     { files: ["**/*.vue"], customSyntax: "postcss-html" },
     {
-      // Lengths: the shared libraries, the plugin manager, the desktop windows and the plugin frontends.
+      // Lengths, on the scale of the token files below the root: the shared libraries, the plugin manager, the desktop windows and the plugin frontends.
       files: ["libs/ui/**/*.{css,vue}", "libs/plugin/manager/**/*.{css,vue}", "apps/desktop/**/*.{css,vue}", "plugins/*/frontend/**/*.{css,vue}"],
-      rules: { "numen/no-bare-length": true },
+      rules: { "numen/no-bare-length": [true, { root: import.meta.dirname }] },
     },
     {
       files: ["**/tokens/**/*.css", "**/theme/**/*.css", "**/themes/**/*.css"],

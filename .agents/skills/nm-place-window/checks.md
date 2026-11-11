@@ -13,7 +13,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - `package-matrix`, `protocol-declared-only-by-clients`, `core-client-private`: a window or library declaring a package its row does not allow; a package other than `@numen/core-client` and `@numen/plugin-sdk` declaring `@numen/protocol`; a plugin relying on `@numen/core-client`.
 - `core-client-only-in-api`: a window file outside an `api` segment and `main.ts` importing `@numen/core-client`.
 - `shared-serves-several-slices`: a file of `shared` that one slice imports.
-- `app-is-composition`: a file of `app` over 300 lines, named `use<Name>` or exporting a `use<Name>` composable, calling `watch`, `addEventListener` or a timer, holding a `switch`, more than one decision (`if`, `?:`, loop, `catch`) in a function or more than three in a file.
+- `app-is-composition`: a file of `app` over 300 lines, named `use<Name>` or exporting a `use<Name>` composable, calling `watch`, `addEventListener` or a timer, holding a `switch`, more than one decision (`if`, `?:`, `&&`, `||`, `??`, an array method with a callback, loop, `catch`) in a function or more than three in a file.
 - `no-component-below-ui`: a `.vue` file in a `lib`, `api` or `model` segment.
 
 ## Segments and components
@@ -35,7 +35,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - `package-matrix` and the library ESLint configs: `libs/ui/components` importing `@numen/protocol`, a wire type, a domain type or anything under `apps/**`.
 - `styles-use-tokens` (stylelint): a color literal, a `--numen-` declaration outside the token and theme files, a `var()` fallback, an undeclared token.
 - `plugins-frontend`: `@/**` or `@plugins/**` imported by a plugin frontend.
-- `styles-use-tokens` also holds the rule `numen/no-bare-length`: no `px` for a size except a 1px hairline border, no bare length on a property, and a local custom property only in `rem` or `em`.
+- `styles-use-tokens` also holds the rule `numen/no-bare-length`: no `px` for a size except a 1px hairline border; a `rem` or `em` literal may stand on a property; a custom property outside the token files holds a `rem` or `em` length only when a token file declares it.
 
 ## Whole repository
 

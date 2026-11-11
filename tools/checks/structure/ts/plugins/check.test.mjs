@@ -4,7 +4,9 @@ import { getGoReferences } from '../../../lib/graph.mjs'
 import {
   MAX_SERVICE_LINES,
   findOversizedServices,
-  findServiceMachineAccess,
+  findServiceImportsOffAllowList,
+  findOversizedBackendPackages,
+  MAX_FILE_LINES,
   findPluginEntryViolations,
   findPluginSliceShapeViolations,
   lintPlantedFrontend,
@@ -182,33 +184,76 @@ test('a service over the limit is reported with the inner packages it lacks', ()
   assert.doesNotMatch(found[1].symbol, /; the backend has no/)
 })
 
-test('a service source with machine access imports is refused', () => {
-  const source = [
-    'package service',
-    '',
-    'import (',
-    '\t"net/http"',
-    '\t"os"',
-    '\t"sync"',
-    ')',
-    '',
-    'var _ = http.StatusOK',
-  ].join('\n')
-  const found = findServiceMachineAccess([
-    { file: 'plugins/a/backend/service/x.go', imports: getGoReferences(source).imports },
-  ])
+const serviceImports = (plugin, imports) => {
+  const source = `package service\n\nimport (\n${imports.map((one) => `\t"${one}"\n`).join('')})\n`
+  return findServiceImportsOffAllowList([
+    { file: `plugins/${plugin}/backend/service/x.go`, imports: getGoReferences(source).imports },
+  ]).map((one) => one.symbol.split(',')[0])
+}
+
+test('a service source imports only the allow list: machine access, state and other packages are refused', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
   assert.deepEqual(
-    found.map((one) => one.symbol.split(';')[0]),
-    ['service imports os', 'service imports sync'],
+    serviceImports('a', [
+      'os',
+      'sync',
+      'log',
+      'io',
+      'net',
+      'os/exec',
+      'github.com/google/uuid',
+      `${own}/internal/adapter/files`,
+      `${own}/cards`,
+      'github.com/jiva-studio/numen/plugins/b/backend/api',
+      'github.com/jiva-studio/numen/libs/core/kernel/container',
+    ]),
+    [
+      'service imports os',
+      'service imports sync',
+      'service imports log',
+      'service imports io',
+      'service imports net',
+      'service imports os/exec',
+      'service imports github.com/google/uuid',
+      `service imports ${own}/internal/adapter/files`,
+      `service imports ${own}/cards`,
+      'service imports github.com/jiva-studio/numen/plugins/b/backend/api',
+      'service imports github.com/jiva-studio/numen/libs/core/kernel/container',
+    ],
   )
 })
 
-test('a service source with plain imports is accepted', () => {
-  const source = 'package service\n\nimport (\n\t"context"\n\t"net/http"\n)\n'
+test('a service source with listed standard packages, SDK packages and its own api, domain, usecase and ports is accepted', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
   assert.deepEqual(
-    findServiceMachineAccess([
-      { file: 'plugins/a/backend/service/x.go', imports: getGoReferences(source).imports },
+    serviceImports('a', [
+      'context',
+      'errors',
+      'fmt',
+      'net/http',
+      'time',
+      'encoding/json',
+      'github.com/jiva-studio/numen/libs/plugin/sdk-go/server',
+      'github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain',
+      `${own}/api`,
+      `${own}/domain`,
+      `${own}/usecase/links`,
+      `${own}/ports`,
     ]),
     [],
   )
+})
+
+test('a backend file over the file limit and a package over the package limit are reported, tests are not counted by the caller', () => {
+  const lines = (file, count) => ({ file, lines: count })
+  assert.deepEqual(findOversizedBackendPackages([lines('plugins/a/backend/x/a.go', MAX_FILE_LINES)]), [])
+  const long = findOversizedBackendPackages([lines('plugins/a/backend/x/a.go', MAX_FILE_LINES + 1)])
+  assert.deepEqual(long.map((one) => [one.file, one.symbol.split(',')[0]]), [
+    ['plugins/a/backend/x/a.go', `file holds ${MAX_FILE_LINES + 1} lines`],
+  ])
+  const many = Array.from({ length: 7 }, (_, at) => lines(`plugins/a/backend/y/f${at}.go`, 450))
+  assert.deepEqual(findOversizedBackendPackages(many).map((one) => [one.file, one.symbol.split(',')[0]]), [
+    ['plugins/a/backend/y', 'package holds 3150 non-test lines'],
+  ])
+  assert.deepEqual(findOversizedBackendPackages([...many.slice(0, 6), lines('plugins/a/backend/z/f.go', 450)]), [])
 })

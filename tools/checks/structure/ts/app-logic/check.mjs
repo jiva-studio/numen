@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse as parseVue } from "@vue/compiler-sfc";
 import ts from "typescript";
-import { isNotShipped, listAppFiles, listWindows } from "../frontend-graph/check.mjs";
+import { ARRAY_CALLBACK_METHODS, isNotShipped, listAppFiles, listWindows } from "../frontend-graph/check.mjs";
 import { failOnFindings, listShippedFiles, requireMatches, REPO_ROOT } from "../../../lib/graph.mjs";
 
 /** The script blocks of a source file, each with the number of lines above it in the file. */
@@ -50,15 +50,13 @@ function contains(root, test) {
   return found;
 }
 
-const hasOptionalChain = (root) =>
-  contains(root, (node) => (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node) || ts.isCallExpression(node)) && node.questionDotToken !== undefined);
-
-/** Whether a node takes one way or another: `if`, `?:`, `try`, or a fallback (`??`, `||`) over an optional chain. */
+/** Whether a node takes one way or another: `if`, `?:`, `try`, `&&`, `||`, `??` or an array method with a callback. */
 function isDecision(node) {
   if (ts.isIfStatement(node) || ts.isConditionalExpression(node) || ts.isTryStatement(node)) return true;
-  const isFallback =
-    ts.isBinaryExpression(node) && (node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken || node.operatorToken.kind === ts.SyntaxKind.BarBarToken);
-  return isFallback && hasOptionalChain(node.left);
+  if (ts.isBinaryExpression(node)) {
+    return [ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken].includes(node.operatorToken.kind);
+  }
+  return ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && ARRAY_CALLBACK_METHODS.has(node.expression.name.text) && node.arguments.some((one) => ts.isArrowFunction(one) || ts.isFunctionExpression(one));
 }
 
 /**
