@@ -50,7 +50,6 @@ export { createPluginPaneWrapper }
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
-/** The key of an entry a plugin registers under its own id: two plugins never share one. */
 function getEntryKey(pluginId: string, id: string): string {
   return `${pluginId}:${id}`
 }
