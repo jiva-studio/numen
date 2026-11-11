@@ -1,0 +1,101 @@
+// Package engines holds the recogniser of the plugin: it opens it when a page is first read and
+// opens it again once a setting that decides what it reads with changes.
+package engines
+
+import (
+	"context"
+	"sync"
+
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+)
+
+// Recogniser is the recogniser of a page and its contents.
+type Recogniser interface {
+	recognition.Recogniser
+	Close() error
+}
+
+// Opener opens the recogniser the configuration names.
+type Opener func(ctx context.Context, cfg engine.Config) (Recogniser, error)
+
+// Reporter receives the failures the holder cannot return.
+type Reporter interface {
+	ReportCloseError(err error)
+}
+
+// NewOpener returns an opener of the recogniser built on library, or of the mock recogniser while
+// isMock holds.
+func NewOpener(library *onnx.Library, isMock func() bool) Opener {
+	return func(ctx context.Context, cfg engine.Config) (Recogniser, error) {
+		if isMock() {
+			return engine.MockRecogniser{}, nil
+		}
+		return engine.Open(ctx, library, cfg)
+	}
+}
+
+// Holder keeps one recogniser for the current configuration.
+type Holder struct {
+	mu       sync.Mutex
+	cfg      engine.Config
+	open     Opener
+	reporter Reporter
+	engine   Recogniser
+}
+
+// NewHolder returns a holder that opens its recogniser with open for cfg.
+func NewHolder(cfg engine.Config, open Opener, reporter Reporter) *Holder {
+	return &Holder{mu: sync.Mutex{}, cfg: cfg, open: open, reporter: reporter, engine: nil}
+}
+
+// UpdateSettings applies the plugin settings and closes the recogniser when they change what it reads with.
+func (h *Holder) UpdateSettings(values map[string]string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	next := engine.ParseRecogniserSettings(h.cfg.Recognize, values)
+	if next == h.cfg.Recognize {
+		return
+	}
+	h.cfg.Recognize = next
+	h.dropLocked()
+}
+
+// GetEngine returns the open recogniser and opens it first when there is none.
+func (h *Holder) GetEngine(ctx context.Context) (recognition.Recogniser, error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.engine != nil {
+		return h.engine, nil
+	}
+	opened, err := h.open(context.WithoutCancel(ctx), h.cfg)
+	if err != nil {
+		return nil, err
+	}
+	h.engine = opened
+	return opened, nil
+}
+
+// Close closes the open recogniser.
+func (h *Holder) Close() error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.closeLocked()
+}
+
+func (h *Holder) dropLocked() {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of close failure does not affect engine state."
+	if err := h.closeLocked(); err != nil {
+		h.reporter.ReportCloseError(err)
+	}
+}
+
+func (h *Holder) closeLocked() error {
+	if h.engine == nil {
+		return nil
+	}
+	err := h.engine.Close()
+	h.engine = nil
+	return err
+}

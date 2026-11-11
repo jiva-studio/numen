@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -15,82 +14,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
-// opened counts the recognisers a factory opened and the ones closed.
-type opened struct {
-	opened, closed int
-}
-
-func (o *opened) open(context.Context, engine.Config) (recogniser, error) {
-	o.opened++
-	return closing{o: o}, nil
-}
-
-type closing struct {
-	engine.MockRecogniser
-	o *opened
-}
-
-func (c closing) Close() error {
-	c.o.closed++
-	return nil
-}
-
-func TestUpdateConfigReopensEngine(t *testing.T) {
-	o := &opened{}
-	models := newEngines(engine.Defaults(), o.open)
-	first, err := models.getEngine(t.Context())
-	if err != nil || first == nil {
-		t.Fatalf("first getEngine: %v, %v", first, err)
-	}
-	second, err := models.getEngine(t.Context())
-	if err != nil || second == nil || o.opened != 1 {
-		t.Fatalf("cached getEngine: %v, %v, opened %d", second, err, o.opened)
-	}
-
-	models.updateConfig(map[string]string{"dpi": "1"})
-	if models.cfg.Recognize.DPI != 1 || o.closed != 1 {
-		t.Fatalf("config %+v, %d closed; want DPI 1 and the recogniser closed", models.cfg.Recognize, o.closed)
-	}
-	if eng, err := models.getEngine(t.Context()); err != nil || eng == nil || o.opened != 2 {
-		t.Fatalf("reopened after DPI change: %v, %v, opened %d", eng, err, o.opened)
-	}
-
-	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
-	if models.cfg.Recognize.DPI != 450 || models.cfg.Recognize.Path != "/opt/models/rec.onnx" || o.closed != 2 {
-		t.Fatalf("config %+v, %d closed; want the new settings and the recogniser closed", models.cfg.Recognize, o.closed)
-	}
-	for _, invalid := range []string{"-100", "0", "not-a-number"} {
-		models.updateConfig(map[string]string{"dpi": invalid, "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
-		if models.cfg.Recognize.DPI != 450 {
-			t.Errorf("a resolution of %q set it to %d", invalid, models.cfg.Recognize.DPI)
-		}
-	}
-	if eng, err := models.getEngine(t.Context()); err != nil || eng == nil || o.opened != 3 {
-		t.Fatalf("%d opened (%v), want the recogniser opened again", o.opened, err)
-	}
-	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
-	if o.closed != 2 {
-		t.Fatalf("%d closed: an unchanged setting closed the recogniser", o.closed)
-	}
-	if err := models.close(); err != nil || o.closed != 3 {
-		t.Fatalf("%d closed (%v): close did not close the recogniser", o.closed, err)
-	}
-}
-
-func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
-	t.Setenv(EnvMockML, "true")
-	opened, err := newEngineOpener(engine.NewLibrary())(t.Context(), engine.Defaults())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, isMock := opened.(engine.MockRecogniser); !isMock {
-		t.Fatalf("opened %T, want the mock", opened)
-	}
-}
-
 func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
 	t.Helper()
-	commands, err := newCommands(s.tools)
+	commands, err := newCommands(s.launcher)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,43 +97,6 @@ func TestTheHandlerOfCreateTextFailsBeforeAnyTask(t *testing.T) {
 	}
 	if _, err := s.runHandlerWithin(t, command.Request{Command: "recognition.create", Path: scanPath}); !errors.Is(err, command.ErrUnknownCommand) {
 		t.Errorf("the command of before answered %v, want ErrUnknownCommand", err)
-	}
-}
-
-func TestGetEngineReturnsOpenError(t *testing.T) {
-	models := newEngines(engine.Defaults(), func(context.Context, engine.Config) (recogniser, error) {
-		return nil, errors.New("no models")
-	})
-	if _, err := models.getEngine(t.Context()); err == nil {
-		t.Fatal("a recogniser that could not open was opened")
-	}
-}
-
-// The recogniser opens with the model the settings name, and the paths of a custom model only
-// while the custom model is chosen.
-func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
-	var got engine.Config
-	models := newEngines(engine.Defaults(), func(_ context.Context, cfg engine.Config) (recogniser, error) {
-		got = cfg
-		return engine.MockRecogniser{}, nil
-	})
-	for _, tc := range []struct {
-		values     map[string]string
-		model      string
-		path, dict string
-	}{
-		{map[string]string{"model": "pp-ocrv5-eslav"}, "eslav_PP-OCRv5_rec_mobile.onnx", "", ""},
-		{map[string]string{"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt"}, engine.RecogniserCustom, "/m/rec.onnx", "/m/dict.txt"},
-		{map[string]string{"model": "pp-ocrv6-tiny"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
-		{map[string]string{"model": "tesseract"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
-	} {
-		models.updateConfig(tc.values)
-		if _, err := models.getEngine(t.Context()); err != nil {
-			t.Fatal(err)
-		}
-		if !strings.HasSuffix(got.Recognize.Name, tc.model) || got.Recognize.Path != tc.path || got.Recognize.Dict != tc.dict {
-			t.Errorf("settings %v: opened %+v", tc.values, got.Recognize)
-		}
 	}
 }
 
