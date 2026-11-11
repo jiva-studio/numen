@@ -21,25 +21,16 @@ type PluginCommands struct {
 	Open func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error)
 }
 
-func findPluginCommand(deps Deps, name string) (plugin.CommandEntry, bool) {
-	if deps.PluginCommands == nil {
-		return plugin.CommandEntry{}, false
-	}
-	return deps.PluginCommands().List.Find(name)
+// declaredCommand is a command a plugin manifest declares, run by that plugin's backend.
+type declaredCommand struct {
+	plugins func() PluginCommands
+	entry   plugin.CommandEntry
 }
 
-func writePluginCommandUsage(r *reporter, deps Deps) {
-	if deps.PluginCommands == nil {
-		return
-	}
-	entries := deps.PluginCommands().List.Execute()
-	if len(entries) == 0 {
-		return
-	}
-	r.Println("\ncommands of the plugins:")
-	for _, entry := range entries {
-		r.Printf("  numen-cli %s\n      %s\n", getPluginCommandSynopsis(deps.PluginCommands().List, entry.Command), entry.Command.Title)
-	}
+func (c declaredCommand) Name() string { return c.entry.Command.ID }
+
+func (c declaredCommand) Synopsis() string {
+	return fmt.Sprintf("  numen-cli %s\n      %s", getPluginCommandSynopsis(c.plugins().List, c.entry.Command), c.entry.Command.Title)
 }
 
 func getPluginCommandSynopsis(list plugincommand.List, command manifest.Command) string {
@@ -60,11 +51,9 @@ func getPluginCommandSynopsis(list plugincommand.List, command manifest.Command)
 	return strings.Join(words, " ")
 }
 
-func runPluginCommand(
-	ctx context.Context, out io.Writer, deps Deps, entry plugin.CommandEntry, args []string,
-) error {
-	declared := entry.Command
-	commands := deps.PluginCommands()
+func (c declaredCommand) Run(ctx context.Context, term terminal, args []string) error {
+	declared := c.entry.Command
+	commands := c.plugins()
 	list := commands.List
 	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(list, declared))
 	fs, arguments := newArgumentFlags(declared)
@@ -80,7 +69,7 @@ func runPluginCommand(
 		return usage
 	}
 
-	call := plugin.CommandCall{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
+	call := plugin.CommandCall{PluginID: c.entry.PluginID, Command: declared.ID, Arguments: arguments}
 	if list.HasTargetVariable(declared) {
 		call.Path = positional[1]
 	}
@@ -88,7 +77,7 @@ func runPluginCommand(
 	if err != nil {
 		return err
 	}
-	return writeResult(out, result)
+	return writeResult(term.out, result)
 }
 
 func newArgumentFlags(declared manifest.Command) (*flag.FlagSet, map[string]string) {

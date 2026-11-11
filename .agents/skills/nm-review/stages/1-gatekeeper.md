@@ -76,7 +76,7 @@ Load the placement skill of each area the diff touches ([`nm-place-core`](../../
 - **Driving and driven adapters are both adapters.** The core must not depend on which kind of adapter is used. A use case formatting output for a terminal, or an entity that uses a column name, violates the boundary.
 - **Entities contain rules only**: no I/O, no clock, no framework tags, no knowledge of how they are stored.
 - **A repository is a collection, not a service.** Put an aggregate in, take one out, remove one. A long list of methods is the finding; searches and counts are separate queries.
-- **Constructors validate.** Sealed `New*` with required dependencies checked. `New…` for constructors, `make` for built-in allocation.
+- **Constructors take their collaborators and return the concrete type.** No validation of collaborators, no error return, no `With*` method that changes a use case after construction. `New…` for constructors, `make` for built-in allocation.
 - **Nothing is logged.** No logging library in the core; an error is returned, reported through `port.Trouble`, or streamed to the interface.
 - **Everything exists because a decision requires it.** For every field parsed, column stored, syntax accepted or option offered there is a decision that requires it. A parsing rule nobody specified was invented by whoever wrote it, and once a vault is full of what it accepts the guess is permanent.
 - **Do not abstract before there is a second case**, and say so equally when a genuinely needed seam is missing.

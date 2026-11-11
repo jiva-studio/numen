@@ -1,6 +1,6 @@
 ---
 name: nm-place-window
-description: Says which Feature-Sliced Design layer, slice and segment a piece of window frontend code belongs to, and how a slice is shaped. Load it before adding or moving code in apps/desktop/editor, apps/desktop/flashcards or another window (apps/mobile, apps/landing, apps/docs), and when reviewing where a change puts a core call, a type, a command, a composable, a component or a story.
+description: Says which Feature-Sliced Design layer, slice and segment a piece of window frontend code belongs to, and how a slice is shaped. Load it before adding or moving code in apps/desktop/editor, apps/desktop/flashcards or another window (apps/mobile), and when reviewing where a change puts a core call, a type, a command, a composable, a component or a story.
 paths:
   - 'apps/**'
 ---
@@ -43,7 +43,7 @@ A slice is split into segments. A segment imports the segments after it in this 
 
 A `.vue` file lives in `ui/` alone. The words a slice shows are in `words.ts` at the root of the slice. A slice that holds only types and pure functions has `lib/` and `index.ts` and no other segment.
 
-A model never imports the wire. The `model` of a slice imports its own `api` segment directly (`../api`); `api` maps the wire and returns the slice's own types. `provide` and `inject` carry no RPC call: a call to the core is made by the model of the slice that owns it, never reached through the component tree. A component takes props and emits events, and holds no client, no `api` and no injected service. A test of the model runs against a real in-memory transport (`@numen/core-client/testing`), and a spy is only on the outer edge (the network, the filesystem, the navigator).
+A model never imports the wire. The `model` of a slice imports its own `api` segment directly (`../api`); `api` maps the wire and returns the slice's own types. A call to the core is made by the model of the slice that owns it. A component takes props and emits events, and holds no client, no `api` and no injected service. A test of the model runs against a real in-memory transport (`@numen/core-client/testing`), and a spy is only on the outer edge (the network, the filesystem, the navigator).
 
 ## I am adding
 
@@ -54,7 +54,7 @@ A model never imports the wire. The `model` of a slice imports its own `api` seg
 | A pure rule, mapper or formatter                                     | `lib/` of the slice that uses it                                                                                                                                                                                           |
 | A screen that is one tab                                             | `pages/<tab>/ui/`, with its state in `model/` and the registration of its tab kind in `model/kind.ts`                                                                                                                      |
 | A part of a screen that has state or is drawn on two pages           | A feature (a scenario) or an entity (a thing), imported by the pages                                                                                                                                                       |
-| A command (palette, key, menu)                                       | The feature that owns it: `features/<scenario>/model/commands.ts` declares the identifier, the words, the availability and the handler; `entities/command` holds only the `Command` type. `app` collects the commands of the features and gives them to the palette feature. |
+| A command (palette, key, menu)                                       | The feature that owns it: `features/<scenario>/model/commands.ts` declares the identifier, the words, the availability and the handler; `entities/command` holds the `Command` type and, for now, the palette engine (registry, steps, values, keys), which moves to `shared` in a later package. `app` collects the commands of the features and gives them to the palette feature. |
 | A command that a plugin declares                                     | Nothing in the window: the plugin's manifest declares it, and `app/plugins/` passes the declared entries to the palette                                                                                                    |
 | A plugin slot entry or a view a plugin draws                         | Nothing in the window: the plugin registers it and the slot row of `@numen/workbench` draws it. `app/plugins/` binds the slot to the shell.                                                                                    |
 | The order of the entries of a slot, or a move between slots          | The core keeps the layout in `numen.json` under `app.layout.slots`, and the shared slot row takes the gesture. The window adds no layout state.                                                                            |
@@ -89,7 +89,7 @@ apps/desktop/editor/src/
 │   ├── file-conflict/            keep or take a file that changed on disk while it was open
 │   ├── tab-linking/              link tabs across windows: ui/, model/, api/ (workspace service), lib/
 │   ├── tab-move/                 send a tab to another window: model/, api/, lib/
-│   ├── window-display/           interface scale, text scale, theme and mode of the window
+│   ├── window-display/           the vault as the whole window reads it: display options, target resolution, the vault list and the streams of vault changes
 │   └── hotkeys/                  bind keys to commands and keep the binding in sync with the settings
 ├── entities/
 │   ├── note/                     a note: api/ (note service), model/ (open notes, buffer), lib/ (types, mappers)
@@ -98,7 +98,8 @@ apps/desktop/editor/src/
 │   ├── settings/                 numen.json as the window reads it: api/ (settings and theme services), model/, lib/
 │   ├── tab/                      the open tabs: api/ (saved tabs), model/ (useTabs, useTabGroups, useTabPanes, useRestoredTabs), ui/ (the panes of an unavailable tab), lib/
 │   ├── plugin/                   the plugin catalog and what plugins declare: api/, model/
-│   └── command/                  the Command type and the command target that features declare and the palette runs: lib/
+│   ├── window/                   the window itself: background tasks, quit and focus requests, runtime and kind (secondary or not): api/, model/, lib/
+│   └── command/                  the Command type and the command target that features declare, plus the palette engine (registry, steps, values, keys, to move to shared): lib/, model/
 └── shared/
     ├── api/                      clients.ts: the generated clients bound once; errors.ts: the error text helpers
     ├── lib/                      Result, paths, text ranges, a DOM port: what two or more slices use
@@ -162,7 +163,7 @@ A type that two slices use lives in the lowest layer that makes sense:
 
 ## Other windows
 
-`apps/mobile` is one Capacitor window over the same core client. Its code takes the same layers, segments and rules as the editor: a new call to the core is in an `api/` segment, a screen is a page, a scenario is a feature. `apps/landing` and `apps/docs` are Astro sites with components, layouts and content; they hold no vault domain and no core call. The rules that apply to them are the design tokens, the naming, the size limits and the plain English of the text.
+`apps/mobile` is one Capacitor window over the same core client. Its code takes the same layers, segments and rules as the editor: a new call to the core is in an `api/` segment, a screen is a page, a scenario is a feature. This skill covers windows, libraries and plugins. `apps/landing` and `apps/docs` are Astro sites outside its scope until they pass the same checks.
 
 ## Size and role
 
@@ -179,7 +180,7 @@ A structure is judged by what one object does, not by the interfaces it is cut i
 
 ## What the checks enforce
 
-Each structural check and lint rule is listed by what it forbids in [`checks.md`](checks.md). In short, they forbid an import of a higher layer, an import between slices of one layer, an import of a slice other than through its `index.ts`, a segment importing a segment before it in the list above, a `@numen/core-client` import outside an `api` segment, a component outside `ui`, a file in `shared` that one slice uses, a composable that returns more than eight properties, a `.vue` file that calls a client, a plugin imported by a window, a wire type in `libs/ui/components`, a color literal in a style, and the machine clock outside a port. An RPC call carried by `provide`/`inject`, and a command declared outside the owning feature's `model/commands.ts`, are refused in review.
+Each structural check and lint rule is listed by what it forbids in [`checks.md`](checks.md). In short, they forbid an import of a higher layer, an import between slices of one layer, an import of a slice other than through its `index.ts`, a segment importing a segment before it in the list above, a `@numen/core-client` import outside an `api` segment, a component outside `ui`, a file in `shared` that one slice uses, a composable that returns more than eight properties, a `.vue` file that calls a client, a plugin imported by a window, a wire type in `libs/ui/components`, a color literal in a style, and the machine clock outside a port. A command declared outside the owning feature's `model/commands.ts`, are refused in review.
 
 A red check is fixed in the code, not by changing the check or moving code out of its sight.
 
@@ -200,7 +201,7 @@ A check sees imports and syntax. These calls are made by the person writing and 
 
 - Functions are imperative (`getTab`, `findGroup`, `createTabLinks`, `isEligible`); handlers are `on<Action>`; composables are `use<Feature>`; factories are `create<Thing>`; booleans are `is`, `has`, `can`. Types are singular nouns.
 - A fallible operation returns `Result`, and its failure key is `error`.
-- Lengths: a local custom property in `rem` or `em` (`--row: 1.5rem`) may name a dimension that belongs to one component. No `px` for a size, with one exception, a 1px hairline border. No bare length on a property (`padding: 0.375rem`): a property takes a token, a local custom property or `0`.
+- Lengths: a length is a `rem` or `em` literal on the property (`padding: 0.375rem`) or a token; a local custom property is optional (`--row: 1.5rem`) for a dimension that several properties of one component share; `px` only for a 1px hairline border.
 - A comment states a fact the code cannot show. Prose is plain technical English.
 - A test checks behavior through the real path and fails when the behavior breaks. None reads CSS text or measures a look. A scenario uses the words of the product from `words.ts`.
 - A moved file is moved. Nothing keeps the old path or the old layout working.

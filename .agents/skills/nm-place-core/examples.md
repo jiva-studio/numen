@@ -47,7 +47,7 @@ The need: the window creates an empty folder in a vault.
 
 - The type is a verb phrase and holds the one port it calls, in an unexported field: `CreateFolder` at `libs/core/kernel/usecase/file/create_folder.go:11-15`.
 - The method is `Execute(ctx, vault, path)`, opens the writer through the port, makes the folder and returns the error: `libs/core/kernel/usecase/file/create_folder.go:21-27`.
-- In the target the constructor is `NewCreateFolder(writers) (*CreateFolder, error)` and refuses a nil port, and the port it takes is the one-method need "make a folder in a vault", not the whole writer of the vault.
+- In the target the constructor is `NewCreateFolder(writers) *CreateFolder`, takes the port without checking it, and the port it takes is the one-method need "make a folder in a vault", not the whole writer of the vault.
 
 ## A new capability end to end: "export a note as PDF text"
 

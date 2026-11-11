@@ -12,8 +12,8 @@ libs/note/                      the domain; imports nothing of this repository a
 
 libs/core/kernel/                       the hexagon
 ├── domain/<area>/               small packages of the core's own concepts (settings, agent, theme, plugin information) and their sentinel errors; never imported by a plugin or the SDK
-├── port/<name>port/             the interfaces use cases require, one to three methods each; no type of its own
-├── usecase/<noun>/              one scenario per file, with its request and result types and the interfaces only it consumes
+├── port/<name>port/             the interfaces use cases require, interfaces several use cases share, at most five methods each; an interface with one consumer is in that use case's package
+├── usecase/<noun>/              a bounded context that holds several use cases, one scenario per file, each isolated from the others, with its request and result types and the interfaces only it consumes
 ├── adapter/
 │   ├── cli/                     driving: the command line; parses arguments, calls use cases, prints
 │   ├── window/                  driving: cut by wire service, one adapter type per RPC service; no object holds them all

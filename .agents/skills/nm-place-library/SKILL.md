@@ -126,7 +126,7 @@ The component is a function from props to a drawing, plus events out.
 - The clock, the viewport and the schedule are parameters with browser defaults: a `clock` prop whose default calls `getNow()` or `browserClock`, a `viewport` prop whose default reads the window. A test passes its own.
 - A boolean prop is `isX` or `hasX`. A handler is `onX`. A composable is `useX`. A function is a base-form verb phrase or a predicate.
 - The `<script setup>` block follows the section order Props, Events, State, Hooks, Handlers, Helpers, under 80-character banners. Logic beyond wiring is a function in a `lib` or `model` file beside the component; a `.vue` file holds none.
-- Lengths: a dimension that belongs to one component is a local custom property in `rem` or `em` (`--row: 1.5rem`), declared in its block. No `px` for a size, with one exception, a 1px hairline border; no bare length on a property (`padding: 0.375rem`).
+- Lengths: a length is a `rem` or `em` literal on the property (`padding: 0.375rem`) or a token; a local custom property is optional (`--row: 1.5rem`) for a dimension that several properties of one component share; `px` only for a 1px hairline border.
 - A component styles itself with token classes (`bg-surface`, `var(--numen-surface)`), declares no colour, takes its theme from `color-scheme`, and writes no `dark:` class. SVG painted with attributes uses scoped CSS over the same tokens. The root element carries the class `numen`.
 - The public surface is exported in `src/index.ts` through the folder's `index.ts`.
 

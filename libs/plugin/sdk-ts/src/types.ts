@@ -225,7 +225,8 @@ export interface PluginIdentity {
   readonly subscriptions: Subscriptions
   readonly app: AppInfo
   // Opens an http or https address in the system browser. Any other address fails; a plugin without
-  // the permission network:outbound is refused.
+  // the permission network:outbound (consent to open external links; it does not restrict requests the
+  // plugin makes itself) is refused.
   openExternal(url: string): Promise<Result<null>>
   hasPermission?(permission: string): boolean
 }

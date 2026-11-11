@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presets"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
@@ -39,7 +40,7 @@ func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
 type ProjectCurve struct {
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     Presets
+	presets     presets.Presets
 	day         review.Day
 	now         ports.Clock
 	By          func(retention float64) review.Scheduler
@@ -50,7 +51,7 @@ type ProjectCurve struct {
 // each deck is scheduled by, where one day of review gives way to the next, and
 // what time it is.
 func NewProjectCurve(
-	reviewCards ListReviewCards, schedules Schedules, presets Presets,
+	reviewCards ListReviewCards, schedules Schedules, presets presets.Presets,
 	day review.Day, now ports.Clock,
 ) ProjectCurve {
 	return ProjectCurve{
@@ -66,9 +67,9 @@ func checkGoal(p review.Preset) error {
 	var key string
 	switch p.Goal {
 	case review.GoalMinutes:
-		value, bounds, key = float64(p.MinutesADay), review.GetMinutesADayBounds(), minutesADayKey
+		value, bounds, key = float64(p.MinutesADay), review.GetMinutesADayBounds(), presets.MinutesADayKey
 	case review.GoalRetention:
-		value, bounds, key = p.Retention, review.GetRetentionBounds(), retentionKey
+		value, bounds, key = p.Retention, review.GetRetentionBounds(), presets.RetentionKey
 	case review.GoalDate:
 		// gomutants:disable-next-line BRANCH_CASE reason="Zero value and zero bounds satisfy Contains when GoalDate exits the switch."
 		return nil
@@ -79,7 +80,7 @@ func checkGoal(p review.Preset) error {
 		return nil
 	}
 	return fmt.Errorf("%w: %s %g is outside %g to %g",
-		ErrOutOfBounds, key, value, bounds.Min, bounds.Max)
+		presets.ErrOutOfBounds, key, value, bounds.Min, bounds.Max)
 }
 
 // Execute is the curve of the goal this preset steers.
@@ -167,7 +168,7 @@ type scheduledCards struct {
 }
 
 func (u ProjectCurve) readScheduledCards(
-	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
+	ctx context.Context, v domain.Vault, reads *presets.Reads, path string,
 	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 ) (scheduledCards, error) {
 	out := scheduledCards{
@@ -202,17 +203,17 @@ func (u ProjectCurve) readScheduledCards(
 
 func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, path string) ([]string, error) {
 	decks, err := u.reviewCards.GetDeckPaths(ctx, v)
-	if err != nil || path == "" || u.presets.links == nil {
+	if err != nil || path == "" || !u.presets.HasLinks() {
 		return decks, err
 	}
 
-	pos, err := u.presets.links.GetBacklinks(ctx, v.ID, path)
+	pos, err := u.presets.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}
 	naming := make(map[string]bool, len(pos))
 	for _, link := range pos {
-		if link.Type == LinkType {
+		if link.Type == presets.LinkType {
 			naming[link.From] = true
 		}
 	}
@@ -227,7 +228,7 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 }
 
 func (u ProjectCurve) countPointingDecks(
-	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
+	ctx context.Context, v domain.Vault, reads *presets.Reads, path string,
 	decks []string, requested map[string]bool,
 ) (int, error) {
 	out := 0
