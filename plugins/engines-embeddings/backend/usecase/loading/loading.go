@@ -7,14 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-)
 
-// Embedder is a model that turns texts into vectors.
-type Embedder interface {
-	Embed(ctx context.Context, texts []string) ([][]float32, error)
-	Concurrency() int
-	Close() error
-}
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
+)
 
 // Start is what one load of the model needs: the description of the model the opener reads and the
 // niceness the process takes once the model is loaded.
@@ -26,10 +21,10 @@ type Start[S any] struct {
 // Ports is what the loader asks of the machine. Opened runs once for each loaded model, with the
 // lock held.
 type Ports[S any] struct {
-	Open      func(ctx context.Context, spec S) (Embedder, error)
+	Open      func(ctx context.Context, spec S) (ports.Embedder, error)
 	LowerNice func(nice int) error
 	Report    func(what string, err error)
-	Opened    func(emb Embedder)
+	Opened    func(emb ports.Embedder)
 }
 
 // Loader holds the loaded model and the load in progress. It shares the lock of its owner: the owner
@@ -38,7 +33,7 @@ type Ports[S any] struct {
 type Loader[S any] struct {
 	lock     sync.Locker
 	ports    Ports[S]
-	embedder Embedder
+	embedder ports.Embedder
 	opening  *opening
 }
 
@@ -47,7 +42,7 @@ type Loader[S any] struct {
 type opening struct {
 	ready  chan struct{}
 	cancel context.CancelFunc
-	emb    Embedder
+	emb    ports.Embedder
 	err    error
 }
 
@@ -65,7 +60,7 @@ func New[S any](lock sync.Locker, ports Ports[S]) *Loader[S] {
 // Get returns the loaded model. A call that finds none starts the load with start, which runs with
 // the lock held, and waits for it; a call that finds a load in progress waits for that one. A load
 // outlives the call that started it.
-func (l *Loader[S]) Get(ctx context.Context, start func() Start[S]) (Embedder, error) {
+func (l *Loader[S]) Get(ctx context.Context, start func() Start[S]) (ports.Embedder, error) {
 	for {
 		emb, err := l.wait(ctx, start)
 		if !errors.Is(err, errSuperseded) {
@@ -74,7 +69,7 @@ func (l *Loader[S]) Get(ctx context.Context, start func() Start[S]) (Embedder, e
 	}
 }
 
-func (l *Loader[S]) wait(ctx context.Context, start func() Start[S]) (Embedder, error) {
+func (l *Loader[S]) wait(ctx context.Context, start func() Start[S]) (ports.Embedder, error) {
 	l.lock.Lock()
 	if l.embedder != nil {
 		emb := l.embedder
@@ -108,7 +103,7 @@ func (l *Loader[S]) begin(caller context.Context, start Start[S]) *opening {
 	return op
 }
 
-func (l *Loader[S]) finish(op *opening, emb Embedder, err error, nice int) {
+func (l *Loader[S]) finish(op *opening, emb ports.Embedder, err error, nice int) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	defer close(op.ready)
@@ -177,7 +172,7 @@ func (l *Loader[S]) retireOpening() {
 	}
 }
 
-func (l *Loader[S]) closeInBackground(emb Embedder) {
+func (l *Loader[S]) closeInBackground(emb ports.Embedder) {
 	go func() {
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on background close error has no side effect"
 		if err := emb.Close(); err != nil {

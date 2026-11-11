@@ -10,57 +10,27 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/chunking"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
 )
 
-// Machine is the process the server runs in.
-type Machine interface {
-	CountCPUs() int
-	SetMaxProcs(count int)
-	LowerNice(nice int) error
-}
-
-// ProfileSource reads the model profiles. It returns the profiles it could read together with the
-// error that kept it from reading the shipped ones.
-type ProfileSource interface {
-	Load() (*model.Profiles, error)
-}
-
-// Environment is what the process environment sets for the model.
-type Environment interface {
-	GetOverrides() model.Overrides
-	GetServiceURL() string
-	IsMockModel() bool
-	GetMockLogPath() string
-	WaitMockOpenHold(ctx context.Context) error
-}
-
-// OpenEmbedder loads the model a server embeds with.
-type OpenEmbedder func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (loading.Embedder, error)
-
-// NewMockEmbedder returns the stand-in for the model that appends the texts it is given to the file at logPath, when logPath is not empty.
-type NewMockEmbedder func(logPath string) loading.Embedder
-
-// FetchVectors asks a remote service for one vector per text.
-type FetchVectors func(ctx context.Context, key, baseURL, model string, texts []string) ([][]float32, error)
-
 // Ports is what a server asks of the machine. Report writes a fault nothing else handles.
 type Ports struct {
-	Machine      Machine
-	Profiles     ProfileSource
-	Environment  Environment
-	OpenLocal    OpenEmbedder
-	NewMock      NewMockEmbedder
-	FetchVectors FetchVectors
+	Machine      ports.Machine
+	Profiles     ports.ProfileSource
+	Environment  ports.Environment
+	OpenLocal    ports.OpenEmbedder
+	NewMock      ports.NewMockEmbedder
+	FetchVectors ports.FetchVectors
 	Report       func(what string, err error)
 }
 
 // Server serves one embedding model, local or remote, and follows the settings it is given.
 type Server struct {
-	machine      Machine
-	profileSrc   ProfileSource
-	env          Environment
-	fetchVectors FetchVectors
+	machine      ports.Machine
+	profileSrc   ports.ProfileSource
+	env          ports.Environment
+	fetchVectors ports.FetchVectors
 	report       func(what string, err error)
 
 	modelInfo   model.ModelInfo
@@ -72,8 +42,8 @@ type Server struct {
 
 	profiles *model.Profiles
 
-	open    OpenEmbedder
-	newMock NewMockEmbedder
+	open    ports.OpenEmbedder
+	newMock ports.NewMockEmbedder
 	isMock  bool
 	mockLog string
 
@@ -93,7 +63,7 @@ type Server struct {
 
 // modelSpec is the model one load opens, with the function that opens it.
 type modelSpec struct {
-	open  OpenEmbedder
+	open  ports.OpenEmbedder
 	info  model.ModelInfo
 	local model.LocalModel
 }
@@ -144,16 +114,16 @@ func (s *Server) useMockModel() {
 
 func (s *Server) newLoader() *loading.Loader[modelSpec] {
 	return loading.New(&s.mu, loading.Ports[modelSpec]{
-		Open: func(ctx context.Context, spec modelSpec) (loading.Embedder, error) {
+		Open: func(ctx context.Context, spec modelSpec) (ports.Embedder, error) {
 			return spec.open(ctx, spec.info, spec.local)
 		},
 		LowerNice: func(nice int) error { return s.machine.LowerNice(nice) },
 		Report:    s.report,
-		Opened:    func(emb loading.Embedder) { s.modelInfo.Concurrency = emb.Concurrency() },
+		Opened:    func(emb ports.Embedder) { s.modelInfo.Concurrency = emb.Concurrency() },
 	})
 }
 
-func (s *Server) getEmbedder(ctx context.Context) (loading.Embedder, error) {
+func (s *Server) getEmbedder(ctx context.Context) (ports.Embedder, error) {
 	return s.loader.Get(ctx, s.getStartLocked)
 }
 
@@ -195,7 +165,7 @@ func (s *Server) applyProfileLocked(profile performance.Profile) {
 	}
 }
 
-func (s *Server) openMockModel(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+func (s *Server) openMockModel(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 	if err := s.env.WaitMockOpenHold(ctx); err != nil {
 		return nil, err
 	}

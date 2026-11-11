@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 // openRecord is what the server opened a model with, and the models it closed.
@@ -38,7 +38,7 @@ func newRecordedServer(t *testing.T) (*Server, *openRecord) {
 	t.Helper()
 	srv := newEmbeddingServer()
 	record := &openRecord{}
-	srv.open = func(_ context.Context, _ model.ModelInfo, local model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
 		record.mu.Lock()
 		defer record.mu.Unlock()
 		record.opened = append(record.opened, local)
@@ -169,7 +169,7 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	isOpening, canceled, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
 	t.Cleanup(func() { close(release) })
 	var once sync.Once
-	srv.open = func(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		isFirst := false
 		once.Do(func() { isFirst = true; close(isOpening) })
 		if isFirst {

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
 )
 
@@ -168,7 +169,7 @@ func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
 func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 	srv := newEmbeddingServer()
 	hasOpenCall := false
-	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		hasOpenCall = true
 		return mockembedder.Embedder{}, nil
 	}
@@ -191,7 +192,7 @@ func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 	srv := newEmbeddingServer()
 	var activeInfo model.ModelInfo
 	var activeLocal model.LocalModel
-	srv.open = func(_ context.Context, info model.ModelInfo, local model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
 		activeInfo = info
 		activeLocal = local
 		return mockembedder.Embedder{}, nil
@@ -253,7 +254,7 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 	srv := newEmbeddingServer()
 	var openedInfo model.ModelInfo
-	srv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		openedInfo = info
 		return mockembedder.Embedder{}, nil
 	}
@@ -368,7 +369,7 @@ func TestUpdateLocalModelHandlesMockProfilesErrAndClosingRetired(t *testing.T) {
 	}
 
 	closed := make(chan struct{})
-	srv3.open = func(context.Context, model.ModelInfo, model.LocalModel) (loading.Embedder, error) {
+	srv3.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		return stubEmbedder{onClose: func() { close(closed) }}, nil
 	}
 	if _, err := srv3.getEmbedder(t.Context()); err != nil {
@@ -456,7 +457,7 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 
 	srv2 := newEmbeddingServer()
 	calls := 0
-	srv2.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv2.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				calls++
@@ -476,7 +477,7 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 	}
 
 	srv3 := newEmbeddingServer()
-	srv3.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv3.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				return nil, errors.New("onnx crash")
@@ -489,7 +490,7 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 	}
 
 	srv4 := newEmbeddingServer()
-	srv4.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv4.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				return [][]float32{{1}}, nil

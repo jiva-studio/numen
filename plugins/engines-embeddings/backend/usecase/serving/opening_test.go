@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 func slowModel(t *testing.T) (srv *Server, started chan struct{}, release chan struct{}) {
@@ -17,7 +17,7 @@ func slowModel(t *testing.T) (srv *Server, started chan struct{}, release chan s
 	srv = newEmbeddingServer()
 	started, release = make(chan struct{}), make(chan struct{})
 	var once sync.Once
-	srv.open = func(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(ctx context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		once.Do(func() { close(started) })
 		select {
 		case <-release:
@@ -79,7 +79,7 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.isMock = false
 	names := make(chan string, 2)
-	srv.open = func(ctx context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(ctx context.Context, info model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		names <- info.Name
 		if info.Name == "Xenova/bge-m3" {
 			<-ctx.Done()
@@ -141,7 +141,7 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 	srv.modelInfo = model.ModelInfo{Name: "remote-override"}
 	srv.localInfo = model.ModelInfo{Name: "local-actual"}
 	var gotInfo model.ModelInfo
-	srv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		gotInfo = info
 		return stubEmbedder{concurrency: 6}, nil
 	}
@@ -160,7 +160,7 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 	mockSrv.isMock = true
 	mockSrv.modelInfo = model.ModelInfo{Name: "mock-model-info"}
 	mockSrv.localInfo = model.ModelInfo{Name: "unused-local"}
-	mockSrv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	mockSrv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		gotInfo = info
 		return stubEmbedder{concurrency: 4}, nil
 	}
@@ -175,7 +175,7 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 func TestFinishOpeningFailure(t *testing.T) {
 	srv := newEmbeddingServer()
 	wantErr := errors.New("boom")
-	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		return stubEmbedder{}, wantErr
 	}
 	emb, err := srv.getEmbedder(t.Context())
@@ -193,7 +193,7 @@ func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
 	firstEntered := make(chan struct{})
 	releaseFirst := make(chan struct{})
 	calls := 0
-	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (ports.Embedder, error) {
 		calls++
 		if calls == 1 {
 			close(firstEntered)

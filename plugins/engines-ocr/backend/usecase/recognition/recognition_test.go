@@ -384,7 +384,9 @@ func TestNewRequiresHostAndRecognizer(t *testing.T) {
 	v := hosttest.New("Physics")
 	open := func(context.Context) (recognition.Recognizer, error) { return &pages{}, nil }
 	texts := hosttest.NewTexts("Physics", pluginID)
-	full := recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: func(id domain.VaultID) host.TextVersions { return texts.With(id) }, Queue: hosttest.NewQueue(), Documents: document.NewReader()}
+	full := recognition.Host{
+		Vaults: func(id domain.VaultID) recognition.Files { return v.With(id) },
+		Store:  foldersOf(v.Store()), Texts: func(id domain.VaultID) host.TextVersions { return texts.With(id) }, Queue: hosttest.NewQueue(), Documents: document.NewReader()}
 	for name, h := range map[string]recognition.Host{
 		"no vault":     {Store: full.Store, Texts: full.Texts, Queue: full.Queue, Documents: full.Documents},
 		"no store":     {Vaults: full.Vaults, Texts: full.Texts, Queue: full.Queue, Documents: full.Documents},

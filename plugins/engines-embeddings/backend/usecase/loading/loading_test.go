@@ -6,6 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 type model struct {
@@ -30,21 +32,21 @@ type harness struct {
 	loader    *Loader[string]
 	nices     []int
 	reports   []string
-	opened    []Embedder
-	openModel func(ctx context.Context, name string) (Embedder, error)
+	opened    []ports.Embedder
+	openModel func(ctx context.Context, name string) (ports.Embedder, error)
 }
 
-func newHarness(t *testing.T, openModel func(ctx context.Context, name string) (Embedder, error)) *harness {
+func newHarness(t *testing.T, openModel func(ctx context.Context, name string) (ports.Embedder, error)) *harness {
 	t.Helper()
 	h := &harness{openModel: openModel}
 	h.loader = New(&h.lock, Ports[string]{
-		Open: func(ctx context.Context, name string) (Embedder, error) { return h.openModel(ctx, name) },
+		Open: func(ctx context.Context, name string) (ports.Embedder, error) { return h.openModel(ctx, name) },
 		LowerNice: func(nice int) error {
 			h.nices = append(h.nices, nice)
 			return nil
 		},
 		Report: func(what string, err error) { h.reports = append(h.reports, what+": "+err.Error()) },
-		Opened: func(emb Embedder) { h.opened = append(h.opened, emb) },
+		Opened: func(emb ports.Embedder) { h.opened = append(h.opened, emb) },
 	})
 	t.Cleanup(func() {
 		if err := h.loader.Close(); err != nil {
@@ -62,14 +64,14 @@ func TestTheModelOpensOnceForCallsThatWaitTogether(t *testing.T) {
 	var opens atomic.Int32
 	entered := make(chan struct{}, 2)
 	release := make(chan struct{})
-	h := newHarness(t, func(context.Context, string) (Embedder, error) {
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
 		opens.Add(1)
 		entered <- struct{}{}
 		<-release
 		return &model{concurrency: 3}, nil
 	})
 
-	results := make(chan Embedder, 2)
+	results := make(chan ports.Embedder, 2)
 	for range 2 {
 		go func() {
 			emb, err := h.loader.Get(t.Context(), start("a", 10))
@@ -94,7 +96,7 @@ func TestTheModelOpensOnceForCallsThatWaitTogether(t *testing.T) {
 func TestACanceledCallDoesNotStopTheOpening(t *testing.T) {
 	release := make(chan struct{})
 	entered := make(chan struct{})
-	h := newHarness(t, func(ctx context.Context, _ string) (Embedder, error) {
+	h := newHarness(t, func(ctx context.Context, _ string) (ports.Embedder, error) {
 		close(entered)
 		select {
 		case <-release:
@@ -122,7 +124,7 @@ func TestACanceledCallDoesNotStopTheOpening(t *testing.T) {
 func TestAFailedOpeningReturnsItsErrorAndTheNextCallOpensAgain(t *testing.T) {
 	boom := errors.New("boom")
 	calls := 0
-	h := newHarness(t, func(context.Context, string) (Embedder, error) {
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
 		calls++
 		if calls == 1 {
 			return nil, boom
@@ -144,7 +146,7 @@ func TestAResetDuringTheOpeningClosesThatModelAndOpensAnother(t *testing.T) {
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	calls := 0
-	h := newHarness(t, func(context.Context, string) (Embedder, error) {
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
 		calls++
 		if calls == 1 {
 			close(entered)
@@ -154,7 +156,7 @@ func TestAResetDuringTheOpeningClosesThatModelAndOpensAnother(t *testing.T) {
 		return &model{concurrency: 5}, nil
 	})
 
-	result := make(chan Embedder, 1)
+	result := make(chan ports.Embedder, 1)
 	go func() {
 		emb, err := h.loader.Get(t.Context(), start("a", 0))
 		if err != nil {
@@ -177,7 +179,7 @@ func TestAResetDuringTheOpeningClosesThatModelAndOpensAnother(t *testing.T) {
 
 func TestAResetCancelsTheOpeningAndClosesTheLoadedModel(t *testing.T) {
 	closed := make(chan struct{})
-	h := newHarness(t, func(context.Context, string) (Embedder, error) {
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
 		return &model{closed: closed}, nil
 	})
 	if _, err := h.loader.Get(t.Context(), start("a", 0)); err != nil {
@@ -197,7 +199,7 @@ func TestAResetCancelsTheOpeningAndClosesTheLoadedModel(t *testing.T) {
 
 func TestCloseCancelsTheOpeningAndReturnsTheErrorOfTheLoadedModel(t *testing.T) {
 	wantErr := errors.New("close failed")
-	h := newHarness(t, func(context.Context, string) (Embedder, error) {
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
 		return &model{closeErr: wantErr}, nil
 	})
 	if _, err := h.loader.Get(t.Context(), start("a", 0)); err != nil {
@@ -216,7 +218,7 @@ func TestCloseEndsTheContextOfAnOpeningInProgress(t *testing.T) {
 	entered := make(chan struct{})
 	canceled := make(chan struct{})
 	var enteredOnce, canceledOnce sync.Once
-	h := newHarness(t, func(ctx context.Context, _ string) (Embedder, error) {
+	h := newHarness(t, func(ctx context.Context, _ string) (ports.Embedder, error) {
 		enteredOnce.Do(func() { close(entered) })
 		<-ctx.Done()
 		canceledOnce.Do(func() { close(canceled) })
@@ -234,7 +236,7 @@ func TestCloseEndsTheContextOfAnOpeningInProgress(t *testing.T) {
 }
 
 func TestAFailedPriorityChangeIsReportedAndTheModelStaysLoaded(t *testing.T) {
-	h := newHarness(t, func(context.Context, string) (Embedder, error) { return &model{}, nil })
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) { return &model{}, nil })
 	failure := errors.New("no permission")
 	h.loader.ports.LowerNice = func(int) error { return failure }
 

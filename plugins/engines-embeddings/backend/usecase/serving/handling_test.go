@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 // recording is a model that keeps the texts it was given.
@@ -38,7 +38,7 @@ func newRecordingServer(t *testing.T) (*Server, *[]string) {
 	srv.profileSrc = profilefiles.NewDirectory(t.TempDir())
 	var mu sync.Mutex
 	var received []string
-	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		return recording{mu: &mu, texts: &received}, nil
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
@@ -171,7 +171,7 @@ func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 	dir := t.TempDir()
 	srv.profileSrc = profilefiles.NewDirectory(dir)
 	openCount := 0
-	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (loading.Embedder, error) {
+	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		openCount++
 		return mockembedder.Embedder{}, nil
 	}

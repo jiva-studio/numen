@@ -16,13 +16,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/remote"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
-func newLocalModelOpener(library *onnx.Library) serving.OpenEmbedder {
+func newLocalModelOpener(library *onnx.Library) ports.OpenEmbedder {
 	// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
-	return func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (loading.Embedder, error) {
+	return func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
 		emb, err := engine.Open(ctx, library, info, local, nil)
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="production opener wraps engine.Open with native ONNX runtime"
 		if err != nil {
@@ -34,7 +34,7 @@ func newLocalModelOpener(library *onnx.Library) serving.OpenEmbedder {
 	}
 }
 
-func newMockEmbedder(logPath string) loading.Embedder {
+func newMockEmbedder(logPath string) ports.Embedder {
 	return mockembedder.Embedder{LogPath: logPath}
 }
 

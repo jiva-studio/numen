@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/remote"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 func newEmbeddingServer() *Server {
@@ -23,10 +23,10 @@ func newEmbeddingServer() *Server {
 		Machine:     process.Process{},
 		Profiles:    profilefiles.GetDefaultDirectory(),
 		Environment: environment.Variables{},
-		OpenLocal: func(context.Context, model.ModelInfo, model.LocalModel) (loading.Embedder, error) {
+		OpenLocal: func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 			return mockembedder.Embedder{}, nil
 		},
-		NewMock:      func(logPath string) loading.Embedder { return mockembedder.Embedder{LogPath: logPath} },
+		NewMock:      func(logPath string) ports.Embedder { return mockembedder.Embedder{LogPath: logPath} },
 		FetchVectors: remote.FetchVectors,
 		Report:       console.Report,
 	})
