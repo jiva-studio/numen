@@ -8,7 +8,10 @@ import (
 )
 
 // Allow lets one declaration of a plugin read a secret.
-type Allow struct{ operation }
+type Allow struct{ Operation }
+
+// NewAllow makes the Allow use case over the operation.
+func NewAllow(op Operation) *Allow { return &Allow{Operation: op} }
 
 // Execute adds the permission; one that is there already is kept as it is. It fails where the
 // plugin is not installed or does not declare the name and group.
@@ -31,7 +34,10 @@ func (u *Allow) Execute(ctx context.Context, secretID string, permission plugin.
 }
 
 // Deny stops one declaration of a plugin from reading a secret.
-type Deny struct{ operation }
+type Deny struct{ Operation }
+
+// NewDeny makes the Deny use case over the operation.
+func NewDeny(op Operation) *Deny { return &Deny{Operation: op} }
 
 // Execute removes the permission; one that is not there is not an error.
 func (u *Deny) Execute(ctx context.Context, secretID string, permission plugin.DeclarationKey) error {

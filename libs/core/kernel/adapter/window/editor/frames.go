@@ -66,7 +66,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		refuse(w, errNoVault)
 		return
 	}
-	opened, err := l.files.open.ExecutePluginFile(r.Context(), l.files.state.GetCurrentVault(), vaultID, pluginID, path)
+	opened, err := l.files.open.ExecutePluginFile(r.Context(), l.files.vaults.GetCurrentVault(), vaultID, pluginID, path)
 	if errors.Is(err, file.ErrNoVaultNamed) {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
 		return
@@ -83,7 +83,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		refuse(w, err)
 		return
 	}
-	defer closeAndReport(l.files.state.Window.AddTask, opened.Body)
+	defer closeAndReport(l.files.tasks.AddTask, opened.Body)
 	if opened.Size != size {
 		refuse(w, file.ErrChanged)
 		return

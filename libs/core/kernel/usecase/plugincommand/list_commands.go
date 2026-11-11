@@ -1,6 +1,9 @@
 package plugincommand
 
-import "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+)
 
 // ListedCommand is a command of an enabled plugin and whether it offers one item per text version of a file.
 type ListedCommand struct {
@@ -22,6 +25,12 @@ type Listing struct {
 type ListCommands struct {
 	list  List
 	types ContentTypes
+}
+
+// NewListCommands makes the scenario that lists the commands of the list, with the content type of each
+// extension the table registers.
+func NewListCommands(list List, types contenttypeport.ContentTypeTable) ListCommands {
+	return ListCommands{list: list, types: ContentTypes{types: types}}
 }
 
 // Execute lists every command whichever part of the plugin runs it.

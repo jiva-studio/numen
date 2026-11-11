@@ -93,7 +93,7 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 
 // The cache is written in one order whatever order the schedules were worked
 // out in, so two machines that answered the same cards hold the same file and a
-// synchroniser has nothing to reconcile.
+// synchronizer has nothing to reconcile.
 func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
@@ -328,7 +328,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), getToday(),
 		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
-		presets.New(nil, nil, nil, nil, nil, vaulttest.NewClock()).WithDay(getToday()),
+		presets.New(presets.Config{Now: vaulttest.NewClock(), Day: getToday()}),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -490,14 +490,13 @@ func (m *mockAlgorithm) CreateScheduler(retention float64) review.Scheduler {
 
 func TestScheduleAlgorithmPluggable(t *testing.T) {
 	algo := &mockAlgorithm{}
-	scenarios := flashcards.NewScenarios(flashcards.Config{
+	flashcards.NewScenarios(flashcards.Config{
 		Scheduler: algo,
 	})
 
 	if len(algo.calledWith) == 0 {
 		t.Fatal("expected scheduler algorithm CreateScheduler to be called")
 	}
-	_ = scenarios
 }
 
 // A warm request over a vault of two hundred cards answered over thirty days.
@@ -936,11 +935,14 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	)
 
 	looks := map[string]int{}
-	deckPresets := presets.New(
-		s.env.Ports.Readers, s.env.Ports.Writers,
-		lookups{LinkQueries: s.links, looks: looks},
-		s.notes, s.scan, vaulttest.NewClock(),
-	)
+	deckPresets := presets.New(presets.Config{
+		Readers: s.env.Ports.Readers,
+		Writers: s.env.Ports.Writers,
+		Links:   lookups{LinkQueries: s.links, looks: looks},
+		Notes:   s.notes,
+		Index:   s.scan,
+		Now:     vaulttest.NewClock(),
+	})
 
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), standings, deckPresets)
 	counter := flashcards.NewCountCardsDue(standings, schedules, deckPresets, getToday(), clock.NewFake(getSaturday()))
@@ -971,10 +973,15 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	deckPresets := presets.New(
-		counting{VaultReaders: s.env.Ports.Readers, reads: reads},
-		s.env.Ports.Writers, s.links, s.notes, s.scan, vaulttest.NewClock(),
-	)
+	deckPresets := presets.New(presets.Config{
+		Readers: counting{VaultReaders: s.env.Ports.Readers, reads: reads},
+		Writers: s.env.Ports.Writers,
+		Links:   s.links,
+		Notes:   s.notes,
+		Index:   s.scan,
+		Now:     vaulttest.NewClock(),
+	})
+
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), s.standings, deckPresets)
 	counter := flashcards.NewCountCardsDue(s.standings, schedules, deckPresets, getToday(), clock.NewFake(getSaturday()))
 

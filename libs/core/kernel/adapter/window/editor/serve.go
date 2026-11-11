@@ -90,7 +90,7 @@ func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io
 		State:     state,
 		lifecycle: lifecycle,
 		imports:   imports,
-		pages:     pageSet{state: state},
+		pages:     pageSet{gate: state.Gate, window: statePages{state: state}},
 		out:       out,
 	}
 }
@@ -180,8 +180,6 @@ const (
 	readingTheSettings = "read settings"
 	// readingTheFloor is the task ID for a similarity floor that is stored and cannot be read.
 	readingTheFloor = "read search floor"
-	// updatingIndex is the task ID for a file written to the vault that the index did not follow.
-	updatingIndex = "update index"
 )
 
 // RecordThemeWarning records a theme warning task, and takes the task out of the list for an empty message,

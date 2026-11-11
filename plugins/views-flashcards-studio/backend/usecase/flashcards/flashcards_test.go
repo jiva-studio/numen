@@ -60,10 +60,15 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 
 	logs := env.Ports.Logs
 	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	deckPresets := presets.New(
-		env.Ports.Readers, env.Ports.Writers,
-		env.Queries, env.Queries, scanned, vaulttest.NewClock())
-	deckPresets.Problems = env.Queries
+	deckPresets := presets.New(presets.Config{
+		Readers:  env.Ports.Readers,
+		Writers:  env.Ports.Writers,
+		Links:    env.Queries,
+		Notes:    env.Queries,
+		Problems: env.Queries,
+		Index:    scanned,
+		Now:      vaulttest.NewClock(),
+	})
 	// Each card is scheduled with the share of cards its own preset specifies, as
 	// the application builds it.
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), getToday(), standings, deckPresets)
@@ -170,7 +175,7 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now ports.Clock) flashcards.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		presets.New(nil, nil, nil, nil, nil, vaulttest.NewClock()).WithDay(day), day, vaulttest.NewClock(),
+		presets.New(presets.Config{Now: vaulttest.NewClock(), Day: day}), day, vaulttest.NewClock(),
 	)
 }
 
@@ -922,3 +927,9 @@ type named struct {
 }
 
 func (n named) GetName() string { return n.name }
+
+// newAssigning is the assigning of card ids over the vault, updating the index through index.
+func (s vaulted) newAssigning(index func(ctx context.Context, v domain.Vault, paths []string) error) flashcards.AssignCardIDs {
+	return flashcards.NewAssignCardIDs(
+		s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, s.env.Queries, index, vaulttest.NewClock())
+}

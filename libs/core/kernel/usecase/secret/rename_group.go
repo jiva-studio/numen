@@ -8,7 +8,10 @@ import (
 )
 
 // RenameGroup changes the group name for all secrets in a custom group.
-type RenameGroup struct{ operation }
+type RenameGroup struct{ Operation }
+
+// NewRenameGroup makes the RenameGroup use case over the operation.
+func NewRenameGroup(op Operation) *RenameGroup { return &RenameGroup{Operation: op} }
 
 // Execute renames the group in one write.
 func (u *RenameGroup) Execute(ctx context.Context, group, name string) error {

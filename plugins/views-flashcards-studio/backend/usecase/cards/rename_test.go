@@ -15,14 +15,34 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 func newRenameField(t *testing.T, vs vaulted) cards.RenameField {
 	t.Helper()
-	return cards.NewRenameField(
-		vs.ports.Readers, vs.ports.Writers,
-		vs.queries, vs.queries, vs.index(t), vaulttest.NewClock(),
-	)
+	return newRenameFieldOver(t, vs, vs.ports.Writers, vs.queries, cards.UnboundedDecks)
+}
+
+// newRenameFieldOver is a rename over the vault with its writers, its decks query and its deck bound replaced.
+func newRenameFieldOver(
+	t *testing.T, vs vaulted, writers ports.VaultWriters, notes cards.TypeQueries, maxDecks int,
+) cards.RenameField {
+	t.Helper()
+	return cards.NewRenameField(cards.Config{
+		Readers: vs.ports.Readers, Writers: writers, Notes: notes, CardModels: nil, Links: vs.queries,
+		Index: vs.index(t), Now: vaulttest.NewClock(),
+	}, maxDecks)
+}
+
+// renameOf is a rename over any bound, with the given parts of the vault.
+func renameOf(
+	readers ports.VaultReaders, writers ports.VaultWriters, notes cards.TypeQueries, links ports.LinkQueries,
+	index note.IndexUpdater,
+) cards.RenameField {
+	return cards.NewRenameField(cards.Config{
+		Readers: readers, Writers: writers, Notes: notes, CardModels: nil, Links: links,
+		Index: index, Now: vaulttest.NewClock(),
+	}, cards.UnboundedDecks)
 }
 
 // A field renamed in a card model is renamed in every card that card model cuts, and
@@ -181,7 +201,7 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Birds.md")
 
-	u := newRenameField(t, vs).WithWriters(refusing{VaultWriters: vs.ports.Writers, path: "decks/Birds.md"})
+	u := newRenameFieldOver(t, vs, refusing{VaultWriters: vs.ports.Writers, path: "decks/Birds.md"}, vs.queries, cards.UnboundedDecks)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -292,7 +312,7 @@ func (q byType) GetPathsOfType(
 func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	vs := newVaults(t)
 	var request int
-	u := newRenameField(t, vs).WithNotes(byType{TypePathQueries: vs.queries, queryCount: &request})
+	u := newRenameFieldOver(t, vs, vs.ports.Writers, byType{TypePathQueries: vs.queries, queryCount: &request}, cards.UnboundedDecks)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -359,7 +379,7 @@ func TestRenamingAFieldToItsOwnNameWritesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	u := newRenameField(t, vs).WithWriters(shut{t: t, isWatched: true, hold: errOutOfReach, open: errOutOfReach})
+	u := newRenameFieldOver(t, vs, shut{t: t, isWatched: true, hold: errOutOfReach, open: errOutOfReach}, vs.queries, cards.UnboundedDecks)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Height", FileStat: cardModel.FileStat,
@@ -377,15 +397,13 @@ func TestRenamingAFieldToItsOwnNameWritesNothing(t *testing.T) {
 func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 	vs := newVaults(t)
 	var updated []string
-	u := cards.NewRenameField(
+	u := renameOf(
 		vs.ports.Readers, vs.ports.Writers,
 		vs.queries, vs.queries,
 		func(_ context.Context, _ domain.Vault, paths []string) error {
 			updated = append(updated, paths...)
 			return nil
-		},
-		vaulttest.NewClock(),
-	)
+		})
 
 	if _, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -400,10 +418,9 @@ func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 // A rename with no index to update still writes, and reports what it wrote.
 func TestARenameWithNoIndexToLevelReturnsWhatItWrote(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.NewRenameField(
+	u := renameOf(
 		vs.ports.Readers, vs.ports.Writers,
-		vs.queries, vs.queries, nil, vaulttest.NewClock(),
-	)
+		vs.queries, vs.queries, nil)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -456,9 +473,8 @@ func TestARenameInAVaultOutOfReachWritesNothing(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			cardModel, birds := read(t, vs.first, "Animal.md"), read(t, vs.first, "decks/Birds.md")
-			u := cards.NewRenameField(
-				c.readers, c.writers, vs.queries, vs.queries, indexNothing, vaulttest.NewClock(),
-			)
+			u := renameOf(
+				c.readers, c.writers, vs.queries, vs.queries, indexNothing)
 
 			_, err := u.Execute(t.Context(), vs.first, cards.Rename{
 				CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -486,9 +502,8 @@ func TestARenameOfACardModelOutOfReachWritesNothing(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			cardModel, birds := read(t, vs.first, "Animal.md"), read(t, vs.first, "decks/Birds.md")
-			u := cards.NewRenameField(
-				c.readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing, vaulttest.NewClock(),
-			)
+			u := renameOf(
+				c.readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing)
 
 			_, err := u.Execute(t.Context(), vs.first, cards.Rename{
 				CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -526,9 +541,8 @@ func TestARenameDoesNotWriteOverACardModelSavedWhileItRan(t *testing.T) {
 	vs := newVaults(t)
 	saved := getAnimals()["Animal.md"] + "\nA line written while the rename ran.\n"
 	readers := faulty{inner: vs.ports.Readers, saved: map[string]string{"Animal.md": saved}, root: vs.first.Path}
-	u := cards.NewRenameField(
-		readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing, vaulttest.NewClock(),
-	)
+	u := renameOf(
+		readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing)
 
 	_, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -546,7 +560,7 @@ func TestARenameDoesNotWriteOverACardModelSavedWhileItRan(t *testing.T) {
 func TestARenameWhoseDecksCannotBeNamedIsAnError(t *testing.T) {
 	vs := newVaults(t)
 	birds := read(t, vs.first, "decks/Birds.md")
-	u := newRenameField(t, vs).WithNotes(decksOf{err: errOutOfReach})
+	u := newRenameFieldOver(t, vs, vs.ports.Writers, decksOf{err: errOutOfReach}, cards.UnboundedDecks)
 
 	_, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -565,11 +579,10 @@ func TestARenameWhoseContextEndsWritesNoFurtherDeck(t *testing.T) {
 	birds, mammals := read(t, vs.first, "decks/Birds.md"), read(t, vs.first, "decks/Mammals.md")
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	u := cards.NewRenameField(
+	u := renameOf(
 		vs.ports.Readers, vs.ports.Writers,
 		decksOf{paths: []string{"decks/Birds.md", "decks/Mammals.md"}, cancel: cancel},
-		vs.queries, indexNothing, vaulttest.NewClock(),
-	)
+		vs.queries, indexNothing)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -627,9 +640,8 @@ func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 			if c.links != nil {
 				links = c.links
 			}
-			u := cards.NewRenameField(
-				readers, vs.ports.Writers, vs.queries, links, indexNothing, vaulttest.NewClock(),
-			)
+			u := renameOf(
+				readers, vs.ports.Writers, vs.queries, links, indexNothing)
 
 			got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 				CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -657,7 +669,7 @@ func TestADeckAtTheBoundIsRenamed(t *testing.T) {
 	head := "---\ntype: deck\n---\n\n"
 	card := "\n\n## Wren\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n"
 	write(t, vs.first, "decks/Large.md", head+strings.Repeat("x", cards.MaxBytes-len(head)-len(card))+card)
-	u := newRenameField(t, vs).WithNotes(decksOf{paths: []string{"decks/Large.md"}})
+	u := newRenameFieldOver(t, vs, vs.ports.Writers, decksOf{paths: []string{"decks/Large.md"}}, cards.UnboundedDecks)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",

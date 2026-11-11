@@ -62,37 +62,13 @@ type TypeQueries interface {
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
-// NewRenameField renames a card model's field across its decks, taking a vault of any number of decks.
-func NewRenameField(
-	readers ports.VaultReaders,
-	writers ports.VaultWriters,
-	notes TypeQueries,
-	links ports.LinkQueries,
-	index note.IndexUpdater,
-	now ports.Clock,
-) RenameField {
+// NewRenameField renames a card model's field across its decks. A vault of more than maxDecks decks is
+// refused; UnboundedDecks takes a vault of any size.
+func NewRenameField(cfg Config, maxDecks int) RenameField {
 	return RenameField{
-		readers: readers, writers: writers, notes: notes, links: links,
-		index: index, now: now, maxDecks: UnboundedDecks,
+		readers: cfg.Readers, writers: cfg.Writers, notes: cfg.Notes, links: cfg.Links,
+		index: cfg.Index, now: cfg.Now, maxDecks: maxDecks,
 	}
-}
-
-// WithMaxDecks returns a copy of RenameField that refuses a vault of more than maxDecks decks.
-func (u RenameField) WithMaxDecks(maxDecks int) RenameField {
-	u.maxDecks = maxDecks
-	return u
-}
-
-// WithWriters returns a copy of RenameField with the given VaultWriters.
-func (u RenameField) WithWriters(writers ports.VaultWriters) RenameField {
-	u.writers = writers
-	return u
-}
-
-// WithNotes returns a copy of RenameField with the given TypeQueries.
-func (u RenameField) WithNotes(notes TypeQueries) RenameField {
-	u.notes = notes
-	return u
 }
 
 func (u RenameField) createIdentifier() (string, error) {

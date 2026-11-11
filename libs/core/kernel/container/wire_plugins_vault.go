@@ -177,8 +177,21 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 	)
 }
 
-func openSecrets(c pluginsWiring) *secret.Secrets {
-	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, settingsadapter.CreateSecretID, c.CredentialsPath, c.settings.SecretGate)
+func openSecrets(c pluginsWiring) *SecretScenarios {
+	base := secret.NewOperation(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, c.settings.SecretGate)
+	return &SecretScenarios{
+		Items: SecretItems{
+			Create: secret.NewCreate(base, settingsadapter.CreateSecretID),
+			Rename: secret.NewRename(base),
+			Write:  secret.NewWrite(base),
+			Delete: secret.NewDelete(base),
+			Move:   secret.NewMove(base),
+		},
+		Groups: SecretGroups{Rename: secret.NewRenameGroup(base), Delete: secret.NewDeleteGroup(base)},
+		Access: SecretAccess{Allow: secret.NewAllow(base), Deny: secret.NewDeny(base), ListStates: secret.NewListStates(base)},
+		List:   secret.NewList(base, c.CredentialsPath),
+		Prune:  secret.NewPrune(base),
+	}
 }
 
 func setSecretSource(c pluginsWiring) {
@@ -210,8 +223,8 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	if c.vault.TextVersions == nil {
 		return nil
 	}
-	run := newPluginCommands(c, c.RunningHost).Run
-	items, err := textversion.NewVersionItems(c.vault.TextVersions, run, c.RunningHost.Watch)
+	run := newPluginCommands(c, c.RunningHost, nil).Run
+	items, err := textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.RunningHost.Watch)
 	if err != nil {
 		c.settings.ErrorHandler(err)
 		return nil
@@ -224,7 +237,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost).Run, Readers: vaultReaders(c.vault),
+		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
 		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }

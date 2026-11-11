@@ -16,8 +16,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
 
@@ -167,7 +167,7 @@ func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
 	}
 }
 
-func getRunFiles(t *testing.T, store hostports.Folder) []string {
+func getRunFiles(t *testing.T, store ports.HostFolder) []string {
 	t.Helper()
 	entries, err := store.List(t.Context())
 	if err != nil {
@@ -832,7 +832,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
 	for _, one := range response.Decks {
 		rows[one.Deck] = one
-		p, err := handler.flash().Presets.GetForDeck(t.Context(), v, one.Deck)
+		p, err := handler.flash().Schedules.Presets.GetForDeck(t.Context(), v, one.Deck)
 		if err != nil {
 			t.Fatal(err)
 		}

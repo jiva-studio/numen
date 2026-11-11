@@ -75,12 +75,8 @@ type Worker struct {
 	events       Events
 	debounce     time.Duration
 	after        func(time.Duration) <-chan time.Time
-
-	sources chan struct{}
-	notes   chan struct{}
-	read    chan struct{}
-
-	skips *skipSet
+	wakes        *channelWakes
+	skips        *vaultreading.Skips
 }
 
 func NewWorker(cfg Config) *Worker {
@@ -92,28 +88,95 @@ func NewWorker(cfg Config) *Worker {
 		events:       cfg.Events,
 		debounce:     cfg.Quiet,
 		after:        cfg.After,
-		sources:      make(chan struct{}, 1),
-		notes:        make(chan struct{}, 1),
-		read:         make(chan struct{}, 1),
-		skips:        newSkipSet(),
+		wakes:        newChannelWakes(),
+		skips:        vaultreading.NewSkips(),
 	}
 }
 
 // WakeSources leaves one pass over the file texts waiting.
-func (w *Worker) WakeSources() { signal(w.sources) }
+func (w *Worker) WakeSources() { w.wakes.wakeSources() }
 
 // WakeNotes leaves one pass over the notes' vectors waiting. Several changes at
 // once are one pass.
-func (w *Worker) WakeNotes() { signal(w.notes) }
+func (w *Worker) WakeNotes() { w.wakes.wakeNotes() }
 
 // ClearSkips indexes again the sources at the paths given whose indexing a
 // person canceled. The vault calls it for every path it reports changed.
-func (w *Worker) ClearSkips(paths []string) { w.skips.clear(paths) }
+func (w *Worker) ClearSkips(paths []string) { w.skips.Clear(paths) }
 
 func (w *Worker) openReading(
 	ctx context.Context, v domain.Vault, rebuild bool,
 ) (ReadWholeVault, error) {
 	return w.reading(ctx, w.embedder, v, rebuild)
+}
+
+func (w *Worker) hasEmbedder() bool { return w.embedder != nil }
+
+func (w *Worker) waitQuiet() <-chan time.Time { return w.after(w.debounce) }
+
+func (w *Worker) wakeRead() { w.wakes.wakeRead() }
+
+func (w *Worker) notifyVectorsReady(ctx context.Context, v domain.Vault) {
+	if w.vectorsReady == nil || ctx.Err() != nil {
+		return
+	}
+	w.vectorsReady(ctx, v)
+}
+
+func (w *Worker) newPass(s *Session, v domain.Vault, rebuild bool) *pass {
+	return &pass{env: w, events: w.events, waits: w.wakes, skips: w.skips, session: s, v: v, isRebuild: rebuild}
+}
+
+// wakeWaits waits for the signals that something arrived for a pass to do.
+type wakeWaits interface {
+	sourcesWoken() <-chan struct{}
+	notesWoken() <-chan struct{}
+	readWoken() <-chan struct{}
+	// stopOnWake returns a context that ends when any of the signals arrives, and leaves that signal held.
+	stopOnWake(ctx context.Context) (context.Context, func())
+}
+
+// channelWakes are the signals that something arrived for a pass to do. Each is held until a pass takes it,
+// and several of the same kind are one.
+type channelWakes struct {
+	sources chan struct{}
+	notes   chan struct{}
+	read    chan struct{}
+}
+
+func newChannelWakes() *channelWakes {
+	return &channelWakes{sources: make(chan struct{}, 1), notes: make(chan struct{}, 1), read: make(chan struct{}, 1)}
+}
+
+func (c *channelWakes) wakeSources() { signal(c.sources) }
+
+func (c *channelWakes) wakeNotes() { signal(c.notes) }
+
+func (c *channelWakes) wakeRead() { signal(c.read) }
+
+func (c *channelWakes) sourcesWoken() <-chan struct{} { return c.sources }
+
+func (c *channelWakes) notesWoken() <-chan struct{} { return c.notes }
+
+func (c *channelWakes) readWoken() <-chan struct{} { return c.read }
+
+func (c *channelWakes) stopOnWake(ctx context.Context) (context.Context, func()) {
+	underCtx, end := context.WithCancel(ctx)
+	var watchers sync.WaitGroup
+	for _, wake := range []chan struct{}{c.read, c.sources, c.notes} {
+		watchers.Go(func() {
+			select {
+			case <-underCtx.Done():
+			case <-wake:
+				signal(wake)
+				end()
+			}
+		})
+	}
+	return underCtx, func() {
+		end()
+		watchers.Wait()
+	}
 }
 
 // taskCancel ends the context of one pass, and records whether a person asked
@@ -172,10 +235,16 @@ func signal(wake chan struct{}) {
 	}
 }
 
+// sessionHost is the worker a session runs its passes for.
+type sessionHost interface {
+	wakeRead()
+	newPass(s *Session, v domain.Vault, rebuild bool) *pass
+}
+
 // Session is the work of one vault: the sources a recognition has written more
 // of than their chunks account for, and the passes over the vault.
 type Session struct {
-	worker *Worker
+	host sessionHost
 
 	mu      sync.Mutex
 	pending map[string]domain.Vault
@@ -183,7 +252,7 @@ type Session struct {
 
 // NewSession is the work of a vault that has not been started.
 func (w *Worker) NewSession() *Session {
-	return &Session{worker: w}
+	return &Session{host: w}
 }
 
 // RequestCut requests that the source at a path be cut again from its text. A
@@ -195,7 +264,7 @@ func (s *Session) RequestCut(v domain.Vault, path string) {
 	}
 	s.pending[path] = v
 	s.mu.Unlock()
-	signal(s.worker.read)
+	s.host.wakeRead()
 }
 
 // ReportVersionsChanged requests that the file be cut again from its live text
@@ -216,6 +285,5 @@ func (s *Session) drain() map[string]domain.Vault {
 // until ctx ends. rebuild indexes every file again in the first pass over the
 // file texts.
 func (s *Session) Run(ctx context.Context, v domain.Vault, rebuild bool, read ReadNotes) {
-	p := &pass{worker: s.worker, session: s, v: v, isRebuild: rebuild}
-	p.run(ctx, read)
+	s.host.newPass(s, v, rebuild).run(ctx, read)
 }

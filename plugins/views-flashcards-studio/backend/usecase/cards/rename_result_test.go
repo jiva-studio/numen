@@ -3,7 +3,6 @@ package cards_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
@@ -12,7 +11,7 @@ import (
 // A rename that stops because the decks cannot be named has still written the
 func TestRenameField_ReturnsCardModelStateOnDeckListError(t *testing.T) {
 	vs := newVaults(t)
-	u := newRenameField(t, vs).WithNotes(decksOf{err: errOutOfReach})
+	u := newRenameFieldOver(t, vs, vs.ports.Writers, decksOf{err: errOutOfReach}, cards.UnboundedDecks)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
@@ -31,11 +30,10 @@ func TestARenameWhoseContextEndsReturnsWhatTheCardModelExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	u := cards.NewRenameField(
+	u := renameOf(
 		vs.ports.Readers, vs.ports.Writers,
 		decksOf{paths: []string{"decks/Birds.md"}, cancel: cancel},
-		vs.queries, indexNothing, vaulttest.NewClock(),
-	)
+		vs.queries, indexNothing)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",

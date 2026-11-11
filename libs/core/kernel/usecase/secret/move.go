@@ -8,7 +8,10 @@ import (
 )
 
 // Move changes the priority of a secret inside its group.
-type Move struct{ operation }
+type Move struct{ Operation }
+
+// NewMove makes the Move use case over the operation.
+func NewMove(op Operation) *Move { return &Move{Operation: op} }
 
 // Execute puts the secret before the secret beforeID, or at the end of the list, which is the end
 // of its group, where beforeID is empty.

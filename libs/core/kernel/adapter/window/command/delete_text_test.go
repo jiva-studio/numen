@@ -12,10 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
 func (v *versionItems) ListEveryVersion(context.Context, domain.Vault, string) ([]text.VersionItem, error) {
@@ -95,7 +93,7 @@ func (namingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListCommandItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(namingPlugins{}, namingPlugins{}, fileTypes{}, nil, nil).WithVersions(&namedVersions{}))
+	handler := newHandler(newScenarios(namingPlugins{}, namingPlugins{}, fileTypes{}, nil, nil).withVersions(&namedVersions{}))
 
 	list := listItemsOfOne(t, handler, "", "app:version.delete", "talks/a.mp3")
 

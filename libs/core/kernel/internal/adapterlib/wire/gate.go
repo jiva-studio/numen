@@ -1,13 +1,17 @@
-package editor
+package wire
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 )
+
+// ErrShut is returned for a request to a window that has been shut; the window answers no further requests.
+var ErrShut = errors.New("this window is shut")
 
 type inflight struct {
 	in broadcast.Inflight
@@ -32,7 +36,14 @@ func (g *Gate) Close() {
 	<-g.questions.seal()
 }
 
-func (g *Gate) isClosed() bool { return g.closed.Load() }
+// IsClosed reports whether the window is shut.
+func (g *Gate) IsClosed() bool { return g.closed.Load() }
+
+// BeginQuestion counts a question being answered, and reports false once the window is shut.
+func (g *Gate) BeginQuestion() bool { return g.questions.begin() }
+
+// FinishQuestion ends a question that BeginQuestion counted.
+func (g *Gate) FinishQuestion() { g.questions.finish() }
 
 // CountQuestions counts each call to a service among the questions the window
 // is answering, and refuses it once the window is shut.
@@ -41,7 +52,7 @@ func (g *Gate) CountQuestions() connect.HandlerOption {
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
 				if !g.questions.begin() {
-					return nil, connect.NewError(connect.CodeUnavailable, errShut)
+					return nil, connect.NewError(connect.CodeUnavailable, ErrShut)
 				}
 				defer g.questions.finish()
 				return next(ctx, r)

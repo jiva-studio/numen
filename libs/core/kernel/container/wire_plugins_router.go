@@ -27,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
 func newCompletionRouter(c pluginsWiring) (*completion.Router, error) {
@@ -124,12 +125,23 @@ func stopPlugins(c pluginsWiring, ctx context.Context) error {
 	return c.PluginHost.Watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
-func getPluginCommands(c pluginsWiring) plugincommand.Commands {
-	return newPluginCommands(c, c.PluginHost)
+func getPluginCommands(c pluginsWiring) PluginCommandScenarios {
+	return newPluginCommands(c, c.PluginHost, nil)
 }
 
-func newPluginCommands(c pluginsWiring, host *PluginHost) plugincommand.Commands {
-	return plugincommand.NewCommands(pluginmanifest.New(host.Runtime), commandbridge.Open(host.Runtime), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c))
+// newPluginCommands builds the scenarios over the host; versions are the text versions that a command with
+// items lists and runs over, and nil where the window has none.
+func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand.VersionItems) PluginCommandScenarios {
+	commands, conditions := pluginmanifest.New(host.Runtime), when.NewConditions()
+	list := plugincommand.NewList(commands, conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)
+	return PluginCommandScenarios{
+		List:       list,
+		Listing:    plugincommand.NewListCommands(list, host.Watch),
+		Run:        run,
+		RunCommand: plugincommand.NewRunCommand(list, run, versions),
+		ListItems:  plugincommand.NewListItems(list, versions),
+	}
 }
 
 func getPluginServices(c pluginsWiring) editor.PluginServices {

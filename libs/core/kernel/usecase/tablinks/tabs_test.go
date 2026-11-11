@@ -380,10 +380,10 @@ func readUntilSync(t *testing.T, watch *Watch) received {
 
 func writeTabs(r *registry, windowID string, tabs []tablink.Tab) {
 	r.state.mu.Lock()
-	isWatched := len(r.state.roster.presence.watches[windowID]) > 0
+	isWatched := r.state.roster.windows[windowID].hasWatch()
 	r.state.mu.Unlock()
 	if !isWatched {
-		r.Watch(windowID)
+		r.watches[windowID] = r.Watch(windowID)
 	}
 	r.WriteTabs(Window{ID: windowID}, tabs)
 }
@@ -755,7 +755,8 @@ type registry struct {
 	*Links
 	*Windows
 	*Transfers
-	state *state
+	state   *state
+	watches map[string]*Watch
 }
 
 func newRegistry(grace time.Duration, schedule Schedule) (*registry, error) {
@@ -763,7 +764,7 @@ func newRegistry(grace time.Duration, schedule Schedule) (*registry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: tabs.Links.state}, nil
+	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: getLockedState(tabs.Links.state), watches: map[string]*Watch{}}, nil
 }
 
 // testEvents delivers every event to every subscriber in the order published.
@@ -799,4 +800,10 @@ func (e *testEvents) Subscribe() (<-chan Event, func()) {
 			close(out)
 		}
 	}
+}
+
+func getLockedState(host shared) *state {
+	s, release := host.hold()
+	release()
+	return s
 }

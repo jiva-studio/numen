@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
 )
 
@@ -178,12 +178,12 @@ func (e *errHostVault) StatFile(ctx context.Context, path string) (domain.FileSt
 	return e.Vault.StatFile(ctx, path)
 }
 
-func (e *errHostVault) vaults() func(domain.VaultID) hostports.Vault {
-	return func(id domain.VaultID) hostports.Vault {
+func (e *errHostVault) vaults() func(domain.VaultID) ports.HostVault {
+	return func(id domain.VaultID) ports.HostVault {
 		on := e
 		if id != "" {
 			on = e.With(id)
 		}
-		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+		return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
 	}
 }

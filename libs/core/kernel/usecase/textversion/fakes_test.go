@@ -1,6 +1,7 @@
 package textversion_test
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"context"
 	"slices"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
 // memoryVersions is every vault's versions, held in memory.
@@ -194,7 +194,7 @@ func (l *listener) take() []string {
 type fakeProvider struct {
 	pluginID string
 	kind     domain.TextKind
-	versions *textversion.Versions
+	versions *textfake.TextVersions
 	vault    domain.Vault
 	folders  *memoryFiles
 	make     func(path string, source domain.VersionText, hasSource bool) []domain.TextSegment

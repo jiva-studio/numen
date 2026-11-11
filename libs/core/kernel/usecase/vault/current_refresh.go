@@ -6,12 +6,12 @@ import "sync/atomic"
 // the index reflects it before the save returns. While no vault is being opened the refresh comes from
 // Fallback.
 type CurrentRefresh struct {
-	Fallback func() Refresh
-	current  atomic.Pointer[Refresh]
+	Fallback func() Refreshing
+	current  atomic.Pointer[Refreshing]
 }
 
 // Get returns the refresh of the vault being opened, or the fallback while none is.
-func (r *CurrentRefresh) Get() Refresh {
+func (r *CurrentRefresh) Get() Refreshing {
 	if running := r.current.Load(); running != nil {
 		return *running
 	}
@@ -19,7 +19,7 @@ func (r *CurrentRefresh) Get() Refresh {
 }
 
 // Publish makes refresh the refresh of the vault being opened.
-func (r *CurrentRefresh) Publish(refresh Refresh) { r.current.Store(&refresh) }
+func (r *CurrentRefresh) Publish(refresh Refreshing) { r.current.Store(&refresh) }
 
 // Retire ends the use of the published refresh.
 func (r *CurrentRefresh) Retire() { r.current.Store(nil) }

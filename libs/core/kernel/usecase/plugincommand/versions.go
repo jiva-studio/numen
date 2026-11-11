@@ -41,11 +41,3 @@ func findEntry(list List, pluginID, command string) (plugin.CommandEntry, bool) 
 	}
 	return plugin.CommandEntry{}, false
 }
-
-// WithVersions returns the scenarios with the text versions that a command with items lists and runs
-// over; without them such a command lists and runs nothing.
-func (c Commands) WithVersions(versions VersionItems) Commands {
-	c.ListItems = ListItems{list: c.List, versions: versions}
-	c.RunCommand = RunCommand{list: c.List, run: c.Run, versions: versions}
-	return c
-}

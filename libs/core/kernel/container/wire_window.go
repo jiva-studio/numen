@@ -118,7 +118,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	current := &vault.CurrentRefresh{Fallback: func() vault.Refresh { return GetRefresh(w.cfg, w.db) }}
+	current := &vault.CurrentRefresh{Fallback: func() vault.Refreshing { return GetRefresh(w.cfg, w.db) }}
 	notes := vaultNotes(
 		vaultOf(w.cfg), w.db, vault.NewUpdateIndex(current.Get).Execute,
 		noteViews{Moves: note.NewTellMoveInShownVault(state.GetShownVault, windowView(state)), Writes: state.Writes},

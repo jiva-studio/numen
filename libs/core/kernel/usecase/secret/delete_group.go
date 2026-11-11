@@ -9,7 +9,10 @@ import (
 )
 
 // DeleteGroup removes every secret of a group with its values and its permissions.
-type DeleteGroup struct{ operation }
+type DeleteGroup struct{ Operation }
+
+// NewDeleteGroup makes the DeleteGroup use case over the operation.
+func NewDeleteGroup(op Operation) *DeleteGroup { return &DeleteGroup{Operation: op} }
 
 // Execute removes the entries of the group first and then the values, and configures the plugins
 // that could read them in one round. An entry whose value cannot be removed returns to its place

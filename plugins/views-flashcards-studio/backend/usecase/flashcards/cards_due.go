@@ -68,29 +68,6 @@ func NewCountCardsDue(
 	}
 }
 
-// WithReviewCards returns a copy of CountCardsDue with the given ListReviewCards.
-func (u CountCardsDue) WithReviewCards(reviewCards ListReviewCards) CountCardsDue {
-	u.reviewCards = reviewCards
-	return u
-}
-
-// ReviewCards returns the ListReviewCards CountCardsDue counts through.
-func (u CountCardsDue) ReviewCards() ListReviewCards {
-	return u.reviewCards
-}
-
-// WithDay returns a copy of CountCardsDue with the given Day.
-func (u CountCardsDue) WithDay(day review.Day) CountCardsDue {
-	u.day = day
-	return u
-}
-
-// WithNow returns a copy of CountCardsDue with the given Clock.
-func (u CountCardsDue) WithNow(now ports.Clock) CountCardsDue {
-	u.now = now
-	return u
-}
-
 // Execute calculates daily review counts and preset metrics for the vault.
 func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, error) {
 	in, err := u.readInputs(ctx, v)

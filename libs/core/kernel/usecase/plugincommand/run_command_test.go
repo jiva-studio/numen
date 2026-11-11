@@ -58,7 +58,7 @@ func newProofreading() *declaredCommands {
 
 func TestRunCommandRunsACommandWithItemsOverTheVersionItsItemNames(t *testing.T) {
 	declared, versions := newProofreading(), &proofreadingVersions{}
-	commands := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).WithVersions(versions)
+	commands := newScenarios(declared, declared, getTypes(), nil, nil).withVersions(versions)
 
 	result, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "org.example.ears", Command: "proofread", Path: "talks/a.mp3", ItemID: "org.example.ears/ears",
@@ -71,7 +71,7 @@ func TestRunCommandRunsACommandWithItemsOverTheVersionItsItemNames(t *testing.T)
 
 func TestRunCommandRunsACommandWithoutItemsInItsPlugin(t *testing.T) {
 	declared := newProofreading()
-	commands := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).WithVersions(&proofreadingVersions{})
+	commands := newScenarios(declared, declared, getTypes(), nil, nil).withVersions(&proofreadingVersions{})
 
 	_, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "org.example.ears", Command: "tidy"})
 
@@ -82,7 +82,7 @@ func TestRunCommandRunsACommandWithoutItemsInItsPlugin(t *testing.T) {
 
 func TestRunCommandRefusesACommandWithItemsOverAnItemItDoesNotOffer(t *testing.T) {
 	declared := newProofreading()
-	commands := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).WithVersions(&proofreadingVersions{})
+	commands := newScenarios(declared, declared, getTypes(), nil, nil).withVersions(&proofreadingVersions{})
 
 	for name, call := range map[string]plugin.CommandCall{
 		"no item":         {PluginID: "org.example.ears", Command: "proofread", Path: "talks/a.mp3"},
@@ -98,7 +98,7 @@ func TestRunCommandRefusesACommandWithItemsOverAnItemItDoesNotOffer(t *testing.T
 
 func TestRunCommandDeletesTheVersionItsItemNames(t *testing.T) {
 	declared, versions := newProofreading(), &proofreadingVersions{}
-	commands := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).WithVersions(versions)
+	commands := newScenarios(declared, declared, getTypes(), nil, nil).withVersions(versions)
 
 	_, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{
 		Command: text.DeleteCommand, Path: "talks/a.mp3", ItemID: "org.example.ears/older",
@@ -111,7 +111,7 @@ func TestRunCommandDeletesTheVersionItsItemNames(t *testing.T) {
 
 func TestRunCommandWithoutVersionsRefusesACommandWithItems(t *testing.T) {
 	declared := newProofreading()
-	commands := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil)
+	commands := newScenarios(declared, declared, getTypes(), nil, nil)
 
 	_, err := commands.RunCommand.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "org.example.ears", Command: "proofread", ItemID: "org.example.ears/ears",
@@ -124,7 +124,7 @@ func TestRunCommandWithoutVersionsRefusesACommandWithItems(t *testing.T) {
 
 func TestListItemsListsTheVersionsOfACommandWithItemsAndNothingForOthers(t *testing.T) {
 	declared := newProofreading()
-	commands := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).WithVersions(&proofreadingVersions{})
+	commands := newScenarios(declared, declared, getTypes(), nil, nil).withVersions(&proofreadingVersions{})
 
 	lists := commands.ListItems.Execute(t.Context(), getVault(), "talks/a.mp3", []plugincommand.CommandID{
 		{PluginID: "org.example.ears", Command: "proofread"},

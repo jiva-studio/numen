@@ -37,30 +37,21 @@ var (
 	ErrBadArguments = errors.New("the arguments do not meet the command")
 )
 
-// Commands is the scenarios over the commands the plugins declare.
-type Commands struct {
-	List       List
-	Listing    ListCommands
-	Run        Run
-	RunCommand RunCommand
-	ListItems  ListItems
+// NewList makes the scenario that lists the commands the plugins declare. conditions parses the condition of
+// a command; it is shared with the scenarios that run commands, so one condition is parsed once.
+func NewList(commands pluginport.PluginCommands, conditions *when.Conditions) List {
+	return List{commands: commands, conditions: conditions}
 }
 
-// NewCommands makes the scenarios over the commands and the backends that run them, which may be nothing, the table that gives a
-// file its type, the reader of the type and properties of a note, and the settings a condition reads as
-// config; without settings a condition over config is undecided and holds.
-func NewCommands(
+// NewRun makes the scenario that runs a command in the backend that declares it, over the backends that run
+// them, which may be nothing, the table that gives a file its type, the reader of the type and properties of
+// a note, and the settings a condition reads as config; without settings a condition over config is
+// undecided and holds.
+func NewRun(
 	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
-	notes NoteReader, config pluginport.WhenConfig,
-) Commands {
-	conditions := when.NewConditions()
-	list, contentTypes := List{commands: commands, conditions: conditions}, ContentTypes{types: types}
-	commandRun := Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions}
-	return Commands{
-		List:    list,
-		Listing: ListCommands{list: list, types: contentTypes},
-		Run:     commandRun,
-	}.WithVersions(nil)
+	notes NoteReader, config pluginport.WhenConfig, conditions *when.Conditions,
+) Run {
+	return Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions}
 }
 
 // List lists the commands the enabled plugins declare.

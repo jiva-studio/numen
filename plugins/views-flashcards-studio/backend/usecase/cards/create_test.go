@@ -138,11 +138,10 @@ func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
 	var updated []string
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock()).WithIndex(
-		func(_ context.Context, _ domain.Vault, paths []string) error {
-			updated = append(updated, paths...)
-			return nil
-		})
+	u := cards.NewCreate(env.Ports.Writers, func(_ context.Context, _ domain.Vault, paths []string) error {
+		updated = append(updated, paths...)
+		return nil
+	}, vaulttest.NewClock())
 
 	made, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"})
 	if err != nil {

@@ -1,20 +1,25 @@
-package editor
+package wire
 
 import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
+
+// updatingIndex is the task ID for a file written to the vault that the index did not follow.
+const updatingIndex = "update index"
 
 // Writes is the writes to the vault that the window waits for before it closes, and what a write
 // tells: whether the index followed it, and the embedder that a note holds new prose.
 type Writes struct {
 	writing           inflight
-	window            *wire.Window
+	window            *Window
 	NotifyNoteWritten func()
 }
+
+// NewWrites returns the writes of a window that tells its tasks to window.
+func NewWrites(window *Window) *Writes { return &Writes{window: window} }
 
 // BeginWrite registers a write and reports false once the window is closing, when nothing may be
 // written.

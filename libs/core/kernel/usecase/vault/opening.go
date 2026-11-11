@@ -24,13 +24,18 @@ type VaultOpener struct {
 	ShouldRebuild bool
 
 	watcher  vaultport.VaultWatcher
-	scan     Scan
+	scan     Rebuildable
 	Buffered WriteRecorder
-	Refresh  Refresh
+	Refresh  Refreshing
+}
+
+// Rebuildable is the walk of a vault, which can be set to rebuild the index instead of trusting it.
+type Rebuildable interface {
+	Rebuilding(rebuild bool) Scan
 }
 
 // ConfigureVaultOpener constructs a VaultOpener with the given watcher, scan, buffered repository, and refresh.
-func ConfigureVaultOpener(watcher vaultport.VaultWatcher, scan Scan, buffered WriteRecorder, refresh Refresh) *VaultOpener {
+func ConfigureVaultOpener(watcher vaultport.VaultWatcher, scan Rebuildable, buffered WriteRecorder, refresh Refreshing) *VaultOpener {
 	return &VaultOpener{
 		watcher:  watcher,
 		scan:     scan,
@@ -40,14 +45,10 @@ func ConfigureVaultOpener(watcher vaultport.VaultWatcher, scan Scan, buffered Wr
 }
 
 // GetRefresh brings named notes up to date, through whatever is following the vault they are in.
-func (o *VaultOpener) GetRefresh() Refresh { return o.Refresh }
+func (o *VaultOpener) GetRefresh() Refreshing { return o.Refresh }
 
 // GetScan returns the walk this opener makes, for a caller that re-reads the vault.
-func (o *VaultOpener) GetScan() Scan {
-	scan := o.scan
-	scan.ShouldRebuildIndex = o.ShouldRebuild
-	return scan
-}
+func (o *VaultOpener) GetScan() Scan { return o.scan.Rebuilding(o.ShouldRebuild) }
 
 // UpdateIndex updates the index for the named notes.
 func (o *VaultOpener) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
@@ -79,7 +80,7 @@ func (o *VaultOpener) Begin(
 
 type OpenVault struct {
 	buffered     WriteRecorder
-	refresh      refreshing
+	refresh      Refreshing
 	scan         progressScanning
 	vault        domain.Vault
 	errorHandler window.ErrorHandler

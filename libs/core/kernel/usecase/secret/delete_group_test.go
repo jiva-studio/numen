@@ -35,7 +35,7 @@ func TestDeleteGroupRemovesSecretsAndValuesInOneRound(t *testing.T) {
 	f.keys["secret/s00000002"] = "invented-other"
 	f.keys["secret/s00000003"] = "invented-two"
 	host := &countingPlugins{plugins: f.plugins}
-	f.secrets = secret.NewSecrets(f.ledger, f.keys, host, nil, nil, nil)
+	f.secrets = newSecrets(f.ledger, f.keys, host, nil, nil, nil)
 
 	if err := f.secrets.Groups.Delete.Execute(t.Context(), "g"); err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func TestDeleteGroupOfAGroupWithNoSecretIsNotFound(t *testing.T) {
 func TestDeleteGroupWithFailingStoreRestoresEntries(t *testing.T) {
 	f := newGroupFixture()
 	f.keys["secret/s00000003"] = "invented-two"
-	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
+	f.secrets = newSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
 
 	err := f.secrets.Groups.Delete.Execute(t.Context(), "g")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {

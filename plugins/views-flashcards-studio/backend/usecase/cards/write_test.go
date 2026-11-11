@@ -107,12 +107,17 @@ func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 
 func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
 	t.Helper()
+	return newWriteForDeckIndexed(t, vs, path, body, indexNothing)
+}
+
+func newWriteForDeckIndexed(t *testing.T, vs vaulted, path, body string, index note.IndexUpdater) cards.Write {
+	t.Helper()
 	write(t, vs.first, path, "---\ntype: deck\n---\n"+body)
 	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
 		t.Fatal(err)
 	}
 	return cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
+		vs.ports.Readers, vs.ports.Writers, vs.queries, index,
 		vaulttest.NewClock())
 }
 

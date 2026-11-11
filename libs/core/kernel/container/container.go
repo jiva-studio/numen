@@ -25,7 +25,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
@@ -65,7 +64,7 @@ type Config struct {
 
 	Credentials pluginport.CredentialsLocator
 
-	TextVersions *textversion.Versions
+	TextVersions *TextVersions
 
 	ShouldRebuildIndex bool
 

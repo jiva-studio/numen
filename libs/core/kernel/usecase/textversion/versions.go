@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // NoteReader reads the type and the frontmatter of a note from its current file.
@@ -22,38 +21,33 @@ type NoteReader interface {
 }
 
 // Versions records, replaces and removes the text versions of vault files, and keeps the files of
-// those versions. Texts reads the versions it records and Changes reports their changes; the three
-// work the same stores, so they are built together and one set of ports serves all of them.
+// those versions. Each change is reported to the Changes it was built with.
 type Versions struct {
 	stores  textport.VersionStores
 	files   textport.TextFileStores
 	plugins textport.TextPlugins
 	clock   machineport.Clock
-
-	Texts   *Texts
-	Changes *Changes
+	changes versionReporter
 }
 
-// NewVersions returns the versions use case with the Texts and Changes over the same stores. It takes
-// the version stores, the file stores, the enabled plugins that may record versions, the vault
-// readers, the reader of a note's properties, and the clock that dates new versions. No
-// listener is notified of changes until Changes.SetListener is called.
+// versionReporter receives the files whose versions changed.
+type versionReporter interface {
+	report(ctx context.Context, v domain.Vault, path string)
+}
+
+// NewVersions returns the versions use case over the version stores, the file stores, the enabled plugins
+// that may record versions and the clock that dates new versions. changes receives every change.
 func NewVersions(
 	stores textport.VersionStores,
 	files textport.TextFileStores,
 	plugins textport.TextPlugins,
-	readers vaultport.VaultReaders,
-	notes NoteReader,
 	clock machineport.Clock,
+	changes *Changes,
 ) (*Versions, error) {
-	if stores == nil || files == nil || plugins == nil || readers == nil || notes == nil || clock == nil {
-		return nil, errors.New("text versions need version stores, files, plugins, vault readers, a note reader and a clock")
+	if stores == nil || files == nil || plugins == nil || clock == nil || changes == nil {
+		return nil, errors.New("text versions need version stores, files, plugins, a clock and the changes")
 	}
-	texts := &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, notes: notes}}
-	return &Versions{
-		stores: stores, files: files, plugins: plugins, clock: clock,
-		Texts: texts, Changes: newChanges(stores, texts),
-	}, nil
+	return &Versions{stores: stores, files: files, plugins: plugins, clock: clock, changes: changes}, nil
 }
 
 // PutVersion records a version of the plugin, or replaces the record of the
@@ -104,7 +98,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if err := writer.SaveVersion(ctx, version); err != nil {
 		return domain.TextVersion{}, fmt.Errorf("save version %s of %s: %w", version.GetID(), version.Path, err)
 	}
-	u.Changes.report(ctx, v, version.Path)
+	u.changes.report(ctx, v, version.Path)
 	return version, nil
 }
 
@@ -136,7 +130,7 @@ func (u *Versions) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, 
 	if err := writer.RemoveVersion(ctx, path, domain.NewTextVersionID(pluginID, key)); err != nil {
 		return fmt.Errorf("remove version %s/%s of %s: %w", pluginID, key, path, err)
 	}
-	u.Changes.report(ctx, v, path)
+	u.changes.report(ctx, v, path)
 	return nil
 }
 
@@ -167,7 +161,7 @@ func (u *Versions) DeleteVersion(ctx context.Context, v domain.Vault, path strin
 	if err := files.DeleteTextFile(ctx, version.PluginID, version.File); err != nil {
 		return fmt.Errorf("delete the file %s of %s: %w", version.File, version.PluginID, err)
 	}
-	u.Changes.report(ctx, v, path)
+	u.changes.report(ctx, v, path)
 	return nil
 }
 
@@ -186,7 +180,7 @@ func (u *Versions) DeletePluginVersions(ctx context.Context, v domain.Vault, plu
 	for _, one := range removed {
 		if !slices.Contains(paths, one.Path) {
 			paths = append(paths, one.Path)
-			u.Changes.report(ctx, v, one.Path)
+			u.changes.report(ctx, v, one.Path)
 		}
 	}
 	return nil

@@ -41,12 +41,6 @@ func NewCreate(writers ports.VaultWriters, index note.IndexUpdater, now ports.Cl
 	return Create{writers: writers, index: index, now: now}
 }
 
-// WithIndex replaces the index function.
-func (u Create) WithIndex(index note.IndexUpdater) Create {
-	u.index = index
-	return u
-}
-
 // New is what to make.
 type New struct {
 	Title     string

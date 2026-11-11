@@ -28,21 +28,10 @@ type Ports struct {
 	Schedules func(name string) ports.ScheduleStore
 }
 
-// Vault is the calls the ports make on one vault, each through the narrow interface it needs.
-type Vault struct {
-	Files    host.FileReader
-	Writer   host.FileWriter
-	Index    host.VaultIndex
-	Notes    host.NoteLookup
-	Links    host.LinkLookup
-	Cache    host.CacheStore
-	Selector host.VaultSelector
-}
-
 // New returns the ports over the host vault and the plugin's folder. A call on a
 // vault names it by identity, so the same ports serve a window for one vault and a
 // window that counts all of them.
-func New(vaults func(domain.VaultID) Vault, store func(domain.VaultID) Folder) Ports {
+func New(vaults func(domain.VaultID) ports.HostVault, store func(domain.VaultID) ports.HostFolder) Ports {
 	return Ports{
 		Readers:   Readers{Vaults: vaults},
 		Writers:   Writers{Vaults: vaults},
@@ -55,7 +44,9 @@ func New(vaults func(domain.VaultID) Vault, store func(domain.VaultID) Folder) P
 }
 
 // Readers opens the files of a vault for reading.
-type Readers struct{ Vaults func(domain.VaultID) Vault }
+type Readers struct {
+	Vaults func(domain.VaultID) ports.HostVault
+}
 
 // Open returns the reader of the vault v.
 func (r Readers) Open(v domain.Vault) (ports.VaultReader, error) {
@@ -75,7 +66,9 @@ func (r reader) Read(ctx context.Context, path string) ([]byte, error) {
 }
 
 // Writers opens the files of a vault for writing.
-type Writers struct{ Vaults func(domain.VaultID) Vault }
+type Writers struct {
+	Vaults func(domain.VaultID) ports.HostVault
+}
 
 // Open returns the writer of the vault v.
 func (w Writers) Open(v domain.Vault) (ports.VaultWriter, error) {
@@ -109,7 +102,9 @@ func readError(err error) error {
 }
 
 // Notes answers queries about a vault's notes from the index.
-type Notes struct{ Vaults func(domain.VaultID) Vault }
+type Notes struct {
+	Vaults func(domain.VaultID) ports.HostVault
+}
 
 // GetNotes returns the notes at paths.
 func (n Notes) GetNotes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
@@ -162,7 +157,9 @@ func (n Notes) Has(ctx context.Context, id domain.VaultID) (bool, error) {
 }
 
 // Links answers queries about a vault's links from the index.
-type Links struct{ Vaults func(domain.VaultID) Vault }
+type Links struct {
+	Vaults func(domain.VaultID) ports.HostVault
+}
 
 // GetLinks returns the links that the note at from contains.
 func (l Links) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
@@ -180,29 +177,26 @@ func (l Links) ResolveLinks(ctx context.Context, id domain.VaultID, from string,
 }
 
 // Problems answers what parsing a vault's files turned up.
-type Problems struct{ Vaults func(domain.VaultID) Vault }
+type Problems struct {
+	Vaults func(domain.VaultID) ports.HostVault
+}
 
 // GetParseProblems returns the parse problems of the vault.
 func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.Vaults(id).Index.GetParseProblems(ctx)
 }
 
-// Folder is the plugin's folder in the store of a vault, as the review logs use it.
-type Folder interface {
-	Read(ctx context.Context, name string) ([]byte, error)
-	Append(ctx context.Context, name string, content []byte) error
-	List(ctx context.Context) ([]host.StoreFile, error)
-}
-
 // Logs opens the plugin's folder of a vault's store, which the answers are kept in.
-type Logs struct{ Store func(domain.VaultID) Folder }
+type Logs struct {
+	Store func(domain.VaultID) ports.HostFolder
+}
 
 // Open returns the log store of the vault v.
 func (l Logs) Open(v domain.Vault) (ports.LogStore, error) {
 	return store{folder: l.Store(v.ID)}, nil
 }
 
-type store struct{ folder Folder }
+type store struct{ folder ports.HostFolder }
 
 func fileOf(run string) string { return run + reviewLogSuffix }
 
@@ -234,7 +228,7 @@ func (s store) ListLogs(ctx context.Context) ([]ports.Entry, error) {
 // Schedules keeps what was worked out for a vault in the cache the host holds for the plugin, under
 // a name.
 type Schedules struct {
-	Vaults func(domain.VaultID) Vault
+	Vaults func(domain.VaultID) ports.HostVault
 	Name   string
 }
 

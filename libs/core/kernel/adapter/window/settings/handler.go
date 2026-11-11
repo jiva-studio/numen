@@ -23,8 +23,34 @@ import (
 type Handler struct {
 	Values
 	PluginFolders
-	SecretItems
-	SecretGroups
+	secretItemCalls
+	secretGroupCalls
+}
+
+type secretItemCalls interface {
+	CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error)
+	RenameSecret(context.Context, *connect.Request[v1.RenameSecretRequest]) (*connect.Response[v1.RenameSecretResponse], error)
+	WriteSecret(context.Context, *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error)
+	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
+	MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error)
+}
+
+type secretGroupCalls interface {
+	RenameSecretGroup(
+		context.Context, *connect.Request[v1.RenameSecretGroupRequest],
+	) (*connect.Response[v1.RenameSecretGroupResponse], error)
+	AllowPluginSecret(
+		context.Context, *connect.Request[v1.AllowPluginSecretRequest],
+	) (*connect.Response[v1.AllowPluginSecretResponse], error)
+	DenyPluginSecret(
+		context.Context, *connect.Request[v1.DenyPluginSecretRequest],
+	) (*connect.Response[v1.DenyPluginSecretResponse], error)
+	DeleteSecretGroup(
+		context.Context, *connect.Request[v1.DeleteSecretGroupRequest],
+	) (*connect.Response[v1.DeleteSecretGroupResponse], error)
+	ListSecretStates(
+		context.Context, *connect.Request[v1.ListSecretStatesRequest],
+	) (*connect.Response[v1.ListSecretStatesResponse], error)
 }
 
 // Values answers the reads and writes of the settings and the choice of a path. A value with no
@@ -45,8 +71,8 @@ func NewValues(
 }
 
 // NewHandler is the handler of SettingsService made of its parts.
-func NewHandler(values Values, folders PluginFolders, items SecretItems, groups SecretGroups) *Handler {
-	return &Handler{Values: values, PluginFolders: folders, SecretItems: items, SecretGroups: groups}
+func NewHandler(values Values, folders PluginFolders, items *SecretItems, groups *SecretGroups) *Handler {
+	return &Handler{Values: values, PluginFolders: folders, secretItemCalls: items, secretGroupCalls: groups}
 }
 
 // PluginFolders answers the calls about the folders plugins keep in the shown vault and the start of

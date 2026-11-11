@@ -1,25 +1,41 @@
 package vault_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func TestCurrentRefreshAnswersWithThePublishedRefreshUntilItIsRetired(t *testing.T) {
-	fallback := vault.Refresh{Force: false}
-	published := vault.Refresh{Force: true}
-	current := &vault.CurrentRefresh{Fallback: func() vault.Refresh { return fallback }}
+// namedRefresh is a refresh that answers with its name, as the notes it refreshed.
+type namedRefresh string
 
-	if current.Get().Force {
-		t.Fatal("before a publish the refresh is not the fallback")
+func (n namedRefresh) Execute(context.Context, domain.Vault, []string) (vault.RefreshResult, error) {
+	return vault.RefreshResult{Indexed: []string{string(n)}}, nil
+}
+
+func getRefreshedBy(t *testing.T, refresh vault.Refreshing) string {
+	t.Helper()
+	result, err := refresh.Execute(t.Context(), domain.Vault{}, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
-	current.Publish(published)
-	if !current.Get().Force {
-		t.Error("the published refresh was not returned")
+	return result.Indexed[0]
+}
+
+func TestCurrentRefreshAnswersWithThePublishedRefreshUntilItIsRetired(t *testing.T) {
+	current := &vault.CurrentRefresh{Fallback: func() vault.Refreshing { return namedRefresh("fallback") }}
+
+	if got := getRefreshedBy(t, current.Get()); got != "fallback" {
+		t.Fatalf("before a publish the refresh is %q, want the fallback", got)
+	}
+	current.Publish(namedRefresh("published"))
+	if got := getRefreshedBy(t, current.Get()); got != "published" {
+		t.Errorf("the refresh is %q after a publish, want the published one", got)
 	}
 	current.Retire()
-	if current.Get().Force {
-		t.Error("a retired refresh was returned")
+	if got := getRefreshedBy(t, current.Get()); got != "fallback" {
+		t.Errorf("the refresh is %q after it was retired, want the fallback", got)
 	}
 }

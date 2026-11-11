@@ -24,7 +24,7 @@ func (h *handlingPlugins) ListHandlers() []plugin.CommandEntry {
 
 func TestRun_RunsTheHandlerOfASharedCommandInItsPlugin(t *testing.T) {
 	plugins := &handlingPlugins{}
-	commands := plugincommand.NewCommands(plugins, plugins, getTypes(), nil, nil)
+	commands := newScenarios(plugins, plugins, getTypes(), nil, nil)
 
 	result, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugin.CommandCall{
 		PluginID: "md.numen.cards", Command: "app:file.createText", Path: "decks/tides.pdf",
@@ -39,7 +39,7 @@ func TestRun_RunsTheHandlerOfASharedCommandInItsPlugin(t *testing.T) {
 
 func TestRun_RefusesAHandlerWhoseConditionDoesNotHold(t *testing.T) {
 	plugins := &handlingPlugins{}
-	commands := plugincommand.NewCommands(plugins, plugins, getTypes(), nil, nil)
+	commands := newScenarios(plugins, plugins, getTypes(), nil, nil)
 
 	_, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugin.CommandCall{
 		PluginID: "md.numen.cards", Command: "app:file.createText", Path: "notes/tides.md",
@@ -51,7 +51,7 @@ func TestRun_RefusesAHandlerWhoseConditionDoesNotHold(t *testing.T) {
 
 func TestListing_IncludesTheHandlersAndTheContentTypes(t *testing.T) {
 	plugins := &handlingPlugins{}
-	commands := plugincommand.NewCommands(plugins, plugins, getTypes(), nil, nil)
+	commands := newScenarios(plugins, plugins, getTypes(), nil, nil)
 
 	listing := commands.Listing.Execute()
 

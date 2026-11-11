@@ -11,7 +11,7 @@ import (
 
 func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 	s := newScene(t)
-	text, err := textversion.NewFileText(s.versions)
+	text, err := textversion.NewFileText(s.versions.Texts, s.versions.Versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 }
 
 func TestNewFileTextRequiresVersions(t *testing.T) {
-	if _, err := textversion.NewFileText(nil); err == nil {
+	if _, err := textversion.NewFileText(nil, nil); err == nil {
 		t.Error("a file text was made without versions")
 	}
 }

@@ -43,7 +43,7 @@ func (l *progressLog) getCounted() []work.Task {
 	return counted
 }
 
-func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *readyLog) (*pass, *holdingModel, int64) {
+func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *readyLog) (*testPass, *holdingModel, int64) {
 	t.Helper()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
 	made, db := openReading(t)
@@ -146,26 +146,5 @@ func testVectorsReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc)
 	}
 	if embedded != target {
 		t.Errorf("after the cancel was cleared %d of %d chunks carry a vector", embedded, target)
-	}
-}
-
-// The count of skipped chunks is the one of the list it was counted for: a change of the list forgets
-// it, and a pass that started before the change records nothing.
-func TestSkippedChunksAreForgottenWhenTheListChanges(t *testing.T) {
-	skips := newSkipSet()
-	skips.addVectors("Book.pdf")
-	generation := skips.getGeneration()
-	skips.setSkippedChunks(12, generation)
-	if got := skips.getSkippedChunks(); got != 12 {
-		t.Fatalf("skipped chunks = %d, want 12", got)
-	}
-
-	skips.clear([]string{"Book.pdf"})
-	if got := skips.getSkippedChunks(); got != 0 {
-		t.Errorf("skipped chunks after a clear = %d, want 0", got)
-	}
-	skips.setSkippedChunks(12, generation)
-	if got := skips.getSkippedChunks(); got != 0 {
-		t.Errorf("a pass that started before the clear recorded %d skipped chunks", got)
 	}
 }

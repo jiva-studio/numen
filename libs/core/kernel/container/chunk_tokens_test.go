@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	"connectrpc.com/connect"
 
@@ -236,7 +237,11 @@ func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	if got := opener.GetScan().Cut.Sizes.Limit; got != limit {
 		t.Errorf("the scan of VaultOpenerWith cuts at %d characters, want %d", got, limit)
 	}
-	if got := opener.GetRefresh().Cut.Sizes.Limit; got != limit {
+	refresh, isRefresh := opener.GetRefresh().(vault.Refresh)
+	if !isRefresh {
+		t.Fatalf("the opener refreshes through %T, want vault.Refresh", opener.GetRefresh())
+	}
+	if got := refresh.Cut.Sizes.Limit; got != limit {
 		t.Errorf("the refresh of VaultOpenerWith cuts at %d characters, want %d", got, limit)
 	}
 }

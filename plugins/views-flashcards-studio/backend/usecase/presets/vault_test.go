@@ -45,10 +45,15 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 		return nil
 	}
 
-	deckPresets := presets.New(
-		env.Ports.Readers, env.Ports.Writers,
-		env.Queries, env.Queries, scanned, vaulttest.NewClock())
-	deckPresets.Problems = env.Queries
+	deckPresets := presets.New(presets.Config{
+		Readers:  env.Ports.Readers,
+		Writers:  env.Ports.Writers,
+		Links:    env.Queries,
+		Notes:    env.Queries,
+		Problems: env.Queries,
+		Index:    scanned,
+		Now:      vaulttest.NewClock(),
+	})
 
 	return vaulted{
 		vault:   env.Vault,

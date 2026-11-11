@@ -56,35 +56,32 @@ type Presets struct {
 	writers  ports.VaultWriters
 	links    ports.LinkQueries
 	notes    presetNotes
-	Problems ports.ProblemQueries
+	problems ports.ProblemQueries
 	index    note.IndexUpdater
 	day      review.Day
 	now      ports.Clock
 }
 
-// New creates the use case through which a vault's presets are read and
-// written. It takes the vault readers and writers, the deck-link resolver, the
-// note queries that identify presets and their names, the index updater, and the clock.
-func New(
-	readers ports.VaultReaders,
-	writers ports.VaultWriters,
-	links ports.LinkQueries,
-	notes presetNotes,
-	index note.IndexUpdater,
-	now ports.Clock,
-) Presets {
-	return Presets{
-		readers: readers, writers: writers, links: links, notes: notes,
-		Problems: nil,
-		index:    index, day: review.Day{Starts: 0, In: nil}, now: now,
-	}
+// Config is what the presets are made from. Notes identifies presets and names them. Problems is
+// optional: a link the index does not carry is accounted for in what parsing turned up. Day is the
+// review day boundary that decides whether a preset schedules anything today.
+type Config struct {
+	Readers  ports.VaultReaders
+	Writers  ports.VaultWriters
+	Links    ports.LinkQueries
+	Notes    presetNotes
+	Problems ports.ProblemQueries
+	Index    note.IndexUpdater
+	Day      review.Day
+	Now      ports.Clock
 }
 
-// WithDay returns the use case with the review day boundary that decides whether a preset
-// schedules anything today.
-func (u Presets) WithDay(day review.Day) Presets {
-	u.day = day
-	return u
+// New creates the use case through which a vault's presets are read and written.
+func New(cfg Config) Presets {
+	return Presets{
+		readers: cfg.Readers, writers: cfg.Writers, links: cfg.Links, notes: cfg.Notes,
+		problems: cfg.Problems, index: cfg.Index, day: cfg.Day, now: cfg.Now,
+	}
 }
 
 // HasLinks reports whether the use case can resolve the links of a deck. Without them every deck
@@ -137,7 +134,10 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]Summary, error) {
 
 // CreateDefault returns the preset of a deck scheduled by no preset.
 func CreateDefault() Contents {
-	return Contents{Path: "", Outcome: note.Ok, Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
+	return Contents{
+		Path: "", Outcome: note.Ok, Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil,
+		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+	}
 }
 
 // GetForDeck is the preset the deck at path is scheduled by.
@@ -241,11 +241,11 @@ func (r *Reads) readFirstLink(ctx context.Context, v domain.Vault, first domain.
 }
 
 func (r *Reads) readRolelessProblems(ctx context.Context, v domain.Vault, deck string) ([]string, error) {
-	if r.Problems == nil {
+	if r.problems == nil {
 		return nil, nil
 	}
 	if r.parseProblems == nil {
-		noted, err := r.Problems.GetParseProblems(ctx, v.ID)
+		noted, err := r.problems.GetParseProblems(ctx, v.ID)
 		if err != nil {
 			return nil, fmt.Errorf("what was noted in %s: %w", v.ID, err)
 		}

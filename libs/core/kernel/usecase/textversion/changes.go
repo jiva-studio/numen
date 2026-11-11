@@ -3,13 +3,11 @@ package textversion
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // liveKey names one file of one vault.
@@ -21,16 +19,22 @@ type liveKey struct {
 // Changes reports to a listener the files whose versions changed, or whose live version changed with
 // the file's content or the note's properties.
 type Changes struct {
-	stores textport.VersionStores
-	texts  *Texts
+	texts liveTexts
 
 	mu       sync.Mutex
 	listener textdomain.VersionListener
 	lives    map[liveKey]domain.TextVersionID
 }
 
-func newChanges(stores textport.VersionStores, texts *Texts) *Changes {
-	return &Changes{stores: stores, texts: texts, listener: noListener{}, lives: map[liveKey]domain.TextVersionID{}}
+// liveTexts finds the live version of a file.
+type liveTexts interface {
+	FindLive(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, domain.TextVersion, bool, error)
+}
+
+// NewChanges returns the reporter of the files whose versions changed, over the texts that tell
+// which version is live. No listener is notified until SetListener is called.
+func NewChanges(texts *Texts) *Changes {
+	return &Changes{texts: texts, listener: noListener{}, lives: map[liveKey]domain.TextVersionID{}}
 }
 
 type noListener struct{}
@@ -84,8 +88,8 @@ func (u *Changes) ReportFilesChanged(ctx context.Context, v domain.Vault, paths 
 }
 
 func (u *Changes) updateLive(ctx context.Context, v domain.Vault, path string) (bool, error) {
-	versions, err := getVersions(ctx, u.stores, v, path)
-	if err != nil {
+	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
+	if err != nil && !errors.Is(err, textdomain.ErrFileUnreadable) {
 		return false, err
 	}
 	key := liveKey{vault: v.ID, path: path}
@@ -95,30 +99,13 @@ func (u *Changes) updateLive(ctx context.Context, v domain.Vault, path string) (
 		u.mu.Unlock()
 		return false, nil
 	}
-	live, err := u.findCurrentLive(ctx, v, path, versions)
-	if err != nil {
-		return false, err
+	var liveID domain.TextVersionID
+	if hasLive {
+		liveID = live.GetID()
 	}
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	previous, isKnown := u.lives[key]
-	u.lives[key] = live
-	return !isKnown || previous != live, nil
-}
-
-func (u *Changes) findCurrentLive(
-	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion,
-) (domain.TextVersionID, error) {
-	contentHash, err := u.texts.GetContentHash(ctx, v, path)
-	if errors.Is(err, textdomain.ErrFileUnreadable) {
-		return "", nil
-	}
-	if err != nil {
-		return "", fmt.Errorf("read %s: %w", path, err)
-	}
-	found, ok, err := u.texts.live.find(ctx, v, path, versions, contentHash)
-	if err != nil || !ok {
-		return "", err
-	}
-	return found.GetID(), nil
+	u.lives[key] = liveID
+	return !isKnown || previous != liveID, nil
 }

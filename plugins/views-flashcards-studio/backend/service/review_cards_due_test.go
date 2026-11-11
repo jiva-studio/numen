@@ -98,7 +98,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 // the day has not.
 func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 	handler, _ := newAPI(t, getDeck())
-	*handler.day() = review.Day{Starts: 4 * time.Hour, In: time.UTC}
+	handler.flash().Day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 	for name, c := range map[string]struct {
 		currentTime time.Time
@@ -207,7 +207,7 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	// The schedule caches are filled before the clock starts, which is what a
 	// person's second opening of a day costs.
 	for _, v := range all {
-		if _, err := handler.flash().CardsDue.Execute(ctx, v); err != nil {
+		if _, err := handler.flash().Counts.CardsDue.Execute(ctx, v); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -297,7 +297,7 @@ func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDa
 	card := 0
 	for day := range days {
 		when := pos.Add(time.Duration(day) * 24 * time.Hour)
-		run, err := handler.flash().Log.Open(ctx, v, when)
+		run, err := handler.flash().Reviews.Log.Open(ctx, v, when)
 		if err != nil {
 			b.Fatal(err)
 		}

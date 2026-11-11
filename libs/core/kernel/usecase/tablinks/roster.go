@@ -6,27 +6,48 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 )
 
-// roster is the tabs the windows reported: who owns each, in which order they arrived, and which tabs a
-// window saw but another live window owns.
+// roster is the tabs, the windows that report them, and the link groups of the tabs. windowOrder is the order
+// in which the windows were first listed.
 type roster struct {
 	tabs        map[string]tablink.Tab
 	order       []string
-	windows     map[string][]string
-	info        map[string]Window
+	windows     map[string]*windowEntry
 	windowOrder []string
-	claims      map[string][]tablink.Tab
-	groups      *groupSet
-	presence    *presence
+	groups      linkGroups
+}
+
+// windowEntry is what the state knows of one window. isReported is whether the window ever had its tabs
+// set, and isListed whether it ever had its info written.
+type windowEntry struct {
+	tabIDs     []string
+	isReported bool
+	info       Window
+	isListed   bool
+	claims     []tablink.Tab
+	watches    []*Watch
+	removal    *expiry
 }
 
 func newRoster() *roster {
 	return &roster{
-		tabs:     map[string]tablink.Tab{},
-		windows:  map[string][]string{},
-		info:     map[string]Window{},
-		claims:   map[string][]tablink.Tab{},
-		groups:   &groupSet{},
-		presence: newPresence(),
+		tabs:    map[string]tablink.Tab{},
+		windows: map[string]*windowEntry{},
+		groups:  &groupSet{},
+	}
+}
+
+func (r *roster) ensure(windowID string) *windowEntry {
+	entry := r.windows[windowID]
+	if entry == nil {
+		entry = &windowEntry{}
+		r.windows[windowID] = entry
+	}
+	return entry
+}
+
+func (r *roster) prune(windowID string) {
+	if entry := r.windows[windowID]; entry != nil && entry.isEmpty() {
+		delete(r.windows, windowID)
 	}
 }
 
@@ -38,11 +59,11 @@ func (r *roster) snapshotTabs() []tablink.Tab {
 	return out
 }
 
-func (r *roster) listWindows(isWatched func(windowID string) bool) []Window {
+func (r *roster) listWindows() []Window {
 	out := make([]Window, 0, len(r.windowOrder))
 	for _, id := range r.windowOrder {
-		if isWatched(id) {
-			out = append(out, r.info[id])
+		if entry := r.windows[id]; entry.hasWatch() {
+			out = append(out, entry.info)
 		}
 	}
 	slices.SortStableFunc(out, func(a, b Window) int {
@@ -59,27 +80,43 @@ func (r *roster) listWindows(isWatched func(windowID string) bool) []Window {
 }
 
 func (r *roster) writeWindow(window Window) {
-	if _, ok := r.info[window.ID]; !ok {
+	entry := r.ensure(window.ID)
+	if !entry.isListed {
 		r.windowOrder = append(r.windowOrder, window.ID)
+		entry.isListed = true
 	}
-	r.info[window.ID] = window
+	entry.info = window
 }
 
 func (r *roster) listClaimers() []string {
-	claimers := make([]string, 0, len(r.claims))
-	for id := range r.claims {
-		claimers = append(claimers, id)
+	var claimers []string
+	for id, entry := range r.windows {
+		if len(entry.claims) > 0 {
+			claimers = append(claimers, id)
+		}
 	}
 	slices.Sort(claimers)
 	return claimers
 }
 
+func (r *roster) tabIDsOf(windowID string) []string {
+	if entry := r.windows[windowID]; entry != nil {
+		return entry.tabIDs
+	}
+	return nil
+}
+
+func (r *roster) setTabIDs(windowID string, ids []string) {
+	entry := r.ensure(windowID)
+	entry.tabIDs, entry.isReported = ids, true
+}
+
 func (r *roster) removeFromWindow(windowID, tabID string) {
-	r.windows[windowID] = slices.DeleteFunc(r.windows[windowID], func(id string) bool { return id == tabID })
+	r.setTabIDs(windowID, slices.DeleteFunc(r.tabIDsOf(windowID), func(id string) bool { return id == tabID }))
 }
 
 func (r *roster) addToWindow(windowID, tabID string) {
-	r.windows[windowID] = appendMissing(r.windows[windowID], tabID)
+	r.setTabIDs(windowID, appendMissing(r.tabIDsOf(windowID), tabID))
 }
 
 func appendMissing(to []string, ids ...string) []string {

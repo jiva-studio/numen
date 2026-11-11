@@ -16,28 +16,38 @@ type DeckContents = cards.DeckContents
 // MaxBytes is the largest deck that is read.
 const MaxBytes = cards.MaxBytes
 
-// Scenarios groups the operations that edit the cards and sections of a deck.
-type Scenarios struct {
+// CardScenarios groups the operations that read and edit the cards of a deck.
+type CardScenarios struct {
 	GetCardPage     GetCardPage
 	AddCard         AddCard
 	EditCard        EditCard
 	RemoveCardValue RemoveCardValue
 	RemoveCard      RemoveCard
-	AddSection      AddSection
-	RenameSection   RenameSection
-	RemoveSection   RemoveSection
 }
 
-// NewScenarios creates the deck editing scenarios.
-func NewScenarios(read Read, write Write) Scenarios {
-	return Scenarios{
+// NewCardScenarios creates the scenarios that edit the cards of a deck.
+func NewCardScenarios(read Read, write Write) CardScenarios {
+	return CardScenarios{
 		GetCardPage:     NewGetCardPage(read),
 		AddCard:         NewAddCard(read, write),
 		EditCard:        NewEditCard(read, write),
 		RemoveCardValue: NewRemoveCardValue(read, write),
 		RemoveCard:      NewRemoveCard(read, write),
-		AddSection:      NewAddSection(read, write),
-		RenameSection:   NewRenameSection(read, write),
-		RemoveSection:   NewRemoveSection(read, write),
+	}
+}
+
+// SectionScenarios groups the operations that edit the sections of a deck.
+type SectionScenarios struct {
+	AddSection    AddSection
+	RenameSection RenameSection
+	RemoveSection RemoveSection
+}
+
+// NewSectionScenarios creates the scenarios that edit the sections of a deck.
+func NewSectionScenarios(read Read, write Write) SectionScenarios {
+	return SectionScenarios{
+		AddSection:    NewAddSection(read, write),
+		RenameSection: NewRenameSection(read, write),
+		RemoveSection: NewRemoveSection(read, write),
 	}
 }

@@ -190,7 +190,7 @@ func (s Simulation) step(c Schedule, pos time.Time, p Preset, on *DueByDay) Sche
 
 func (s Simulation) getRecallProbability(c Schedule, pos time.Time) float64 {
 	if s.Recalls == nil {
-		return GetModelledRecall(c, pos)
+		return GetModeledRecall(c, pos)
 	}
 	return s.Recalls(c, pos)
 }

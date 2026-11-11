@@ -37,6 +37,12 @@ type ListItems struct {
 	versions VersionItems
 }
 
+// NewListItems makes the scenario that lists the items of the commands of the list. versions are the text
+// versions that a command with items lists; without them such a command lists none.
+func NewListItems(list List, versions VersionItems) ListItems {
+	return ListItems{list: list, versions: versions}
+}
+
 // Execute lists the items each command offers over the path, one list per command in the order given:
 // the text versions of the file for a command with items, none for any other command. A command that is
 // unknown, or whose items cannot be listed, has a list with the error.

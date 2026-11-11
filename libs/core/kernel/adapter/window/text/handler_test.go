@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
@@ -25,20 +24,20 @@ type scene struct {
 	vault    domain.Vault
 	files    textfake.Readers
 	folders  *textfake.Folders
-	versions *textversion.Versions
+	versions *textfake.TextVersions
 	handler  *Handler
 }
 
 func newScene(t *testing.T, files textfake.Readers) *scene {
 	t.Helper()
 	s := &scene{vault: domain.Vault{ID: "v1", Name: "v1"}, files: files, folders: &textfake.Folders{}}
-	versions, err := textversion.NewVersions(
-		&textfake.Versions{}, s.folders, textfake.Plugins{"p.t", "p.link"}, files, note.NewReadFrontmatter(files), textfake.NewSteppingClock(),
+	versions, err := textfake.NewTextVersions(
+		&textfake.Versions{}, s.folders, textfake.Plugins{"p.t", "p.link"}, files, textfake.NewSteppingClock(),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileText, err := textversion.NewFileText(versions)
+	fileText, err := textversion.NewFileText(versions.Texts, versions.Versions)
 	if err != nil {
 		t.Fatal(err)
 	}

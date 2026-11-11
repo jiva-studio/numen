@@ -98,12 +98,13 @@ func TestReplayingOneHistoryTwiceProducesOneSchedule(t *testing.T) {
 
 	delta := review.NewFSRS()
 	reviewCard := review.CardID{Card: "k7m2xq9fzp", Template: "Recognize"}
-	if one, other := review.OrderAnswers(history).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard], review.OrderAnswers(history).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard]; one != other {
+	one, other := review.OrderAnswers(history).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard], review.OrderAnswers(history).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard]
+	if one != other {
 		t.Errorf("one history gave %+v and then %+v", one, other)
 	}
 }
 
-// One identifier is one answer. A synchroniser that met a conflict leaves a
+// One identifier is one answer. A synchronizer that met a conflict leaves a
 // second copy of a run beside the first, and every line in it is a line already
 // counted: a card that came through this twice would be sent away for longer
 // than it was earned.
@@ -183,7 +184,7 @@ func session(t *rapid.T) []review.Answer {
 
 // A schedule depends on the answers themselves and never on the order in which
 // the files carrying them arrived, and one identifier is one answer however many
-// lines carry it. A synchroniser that meets a conflict leaves a second copy of a
+// lines carry it. A synchronizer that meets a conflict leaves a second copy of a
 // run next to the first, and a restored backup can add another; a card counted
 // twice is scheduled further out than it earned.
 func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {

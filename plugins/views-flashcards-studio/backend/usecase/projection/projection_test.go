@@ -1142,7 +1142,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 
 	// A run given the modeled recall explicitly equals a run with the default recall.
 	response := run
-	response.Recalls = review.GetModelledRecall
+	response.Recalls = review.GetModeledRecall
 	if got, _ := runProjection(t, response, now, p, pos, 0).Retained.GetShare(0); got != middle {
 		t.Errorf("told what the model says the run retained %v, and told nothing %v",
 			got, middle)

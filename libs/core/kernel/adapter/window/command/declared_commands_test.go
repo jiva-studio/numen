@@ -9,9 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
 // declaredByTwoPlugins declares a command of a plugin with only a frontend and one of a plugin with a backend.
@@ -44,7 +42,7 @@ func (declaredByTwoPlugins) RunCommand(context.Context, plugin.CommandCall) (plu
 }
 
 func TestListCommands_CarriesTheDeclarationOfEachCommand(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil, nil))
+	handler := newHandler(newScenarios(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -62,7 +60,7 @@ func TestListCommands_CarriesTheDeclarationOfEachCommand(t *testing.T) {
 }
 
 func TestRunPluginCommand_AnswersUnknownForACommandOfAPluginWithoutABackend(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil, nil))
+	handler := newHandler(newScenarios(declaredByTwoPlugins{}, declaredByTwoPlugins{}, nil, nil, nil))
 
 	res, err := handler.RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{PluginId: "md.numen.tree", Command: "tree.revealNote"}))
 	if err != nil {
@@ -82,7 +80,7 @@ func (suspendedPlugin) GetParts(string) plugin.Parts {
 }
 
 func TestListCommands_ListsNoCommandOfASuspendedPlugin(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(suspendedPlugin{}, suspendedPlugin{}, nil, nil, nil))
+	handler := newHandler(newScenarios(suspendedPlugin{}, suspendedPlugin{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {

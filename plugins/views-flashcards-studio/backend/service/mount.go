@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/rpc"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardcommands"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardtools"
 )
@@ -42,7 +43,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 }
 
 func mount(s *server.Server, clients hostclient.Clients) error {
-	backend := New(Config{Vaults: clients.Vaults, Store: clients.Folders, DayStart: nil, Now: clock.System{}, Cores: 0, Scheduler: nil})
+	backend := New(Config{Vaults: clients.Vaults, Store: clients.Folders, Now: clock.System{}, Cores: 0, Scheduler: nil})
 	s.SetConfigure(func(_ context.Context, values map[string]string, _ server.Secrets) error {
 		backend.Configure(values)
 		return nil
@@ -77,13 +78,18 @@ func (b *Backend) Mount(s *server.Server) error {
 
 // Commands runs the commands the manifest declares.
 func (b *Backend) Commands() (*command.Registry, error) {
-	return cardcommands.New(func() cards.Create { return b.scenarios().Cards.Create }, b.vaults("").Files, b.createCardNote)
+	return cardcommands.New(cards.NewCreate(b.ports.Writers, b.updateIndex, b.now), b.vaults("").Files, b.createCardNote)
 }
 
 // Tools provides the MCP tools for interacting with flashcards and decks.
 func (b *Backend) Tools() (*tools.Registry, error) {
 	selector := func(id domain.VaultID) host.VaultSelector { return b.vaults(id).Selector }
-	return cardtools.New(selector, b.scenarios().Cards, b.scenarios().DeckEdit).Registry()
+	cfg := b.getCardsConfig()
+	set := cards.NewScenarios(cfg)
+	return cardtools.New(
+		selector, set, cards.NewAgentRename(cfg),
+		deckedit.NewCardScenarios(set.Read, set.Write), deckedit.NewSectionScenarios(set.Read, set.Write),
+	).Registry()
 }
 
 // Handlers returns the handlers of the JSON methods.
@@ -95,9 +101,8 @@ func (b *Backend) Handlers() rpc.Handlers {
 	}
 }
 
-// Configure applies the settings supplied by the host, and makes the scenarios again with the day
-// they set. Calls already running finish under the settings they began under.
+// Configure applies the settings supplied by the host, and makes the review scenarios again with the
+// day they set. Calls already running finish under the settings they began under.
 func (b *Backend) Configure(values map[string]string) {
-	starts := settings.GetDayStart(values)
-	b.current.SetDayStart(starts)
+	b.flash.SetDayStart(settings.GetDayStart(values))
 }

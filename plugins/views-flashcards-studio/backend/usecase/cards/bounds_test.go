@@ -37,7 +37,7 @@ func TestRenameField_ErrorsWhenDeckCountExceedsBound(t *testing.T) {
 		t.Fatalf("MaxDecksPerRename = %d, want 200", cards.MaxDecksPerRename)
 	}
 
-	_, err := newBoundedRenameField(t, vs, 1).Execute(t.Context(), vs.first, cards.Rename{
+	_, err := newRenameFieldOver(t, vs, vs.ports.Writers, vs.queries, 1).Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err == nil || !strings.Contains(err.Error(), "there are 2 of them") || !strings.Contains(err.Error(), "more than the 1") {
@@ -48,7 +48,7 @@ func TestRenameField_ErrorsWhenDeckCountExceedsBound(t *testing.T) {
 	}
 
 	// checkDeckCount error propagation when maxDecks > 0.
-	failBound := newBoundedRenameField(t, vs, 10).WithNotes(decksOf{err: errOutOfReach})
+	failBound := newRenameFieldOver(t, vs, vs.ports.Writers, decksOf{err: errOutOfReach}, 10)
 	if _, err := failBound.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
 	}); !errors.Is(err, errOutOfReach) {
@@ -57,7 +57,7 @@ func TestRenameField_ErrorsWhenDeckCountExceedsBound(t *testing.T) {
 
 	// maxDecks == 0 and maxDecks < 0 skip the deck count query.
 	for _, limit := range []int{0, -1} {
-		noopBound := newBoundedRenameField(t, vs, limit).WithNotes(decksOf{err: errOutOfReach})
+		noopBound := newRenameFieldOver(t, vs, vs.ports.Writers, decksOf{err: errOutOfReach}, limit)
 		got, err := noopBound.Execute(t.Context(), vs.first, cards.Rename{
 			CardModel: "Animal.md", From: "Height", To: "Height",
 		})
@@ -68,23 +68,15 @@ func TestRenameField_ErrorsWhenDeckCountExceedsBound(t *testing.T) {
 
 	// Release error from Lock is joined into the returned error.
 	wantReleaseErr := errors.New("lock release failed")
-	relRename := newBoundedRenameField(t, vs, 2).WithWriters(releaseFailWriters{
+	relRename := newRenameFieldOver(t, vs, releaseFailWriters{
 		VaultWriters: vs.ports.Writers,
 		releaseErr:   wantReleaseErr,
-	})
+	}, vs.queries, 2)
 	if _, err := relRename.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
 	}); !errors.Is(err, wantReleaseErr) {
 		t.Fatalf("got %v, want %v", err, wantReleaseErr)
 	}
-}
-
-func newBoundedRenameField(t *testing.T, vs vaulted, maxDecks int) cards.RenameField {
-	t.Helper()
-	return cards.NewRenameField(
-		vs.ports.Readers, vs.ports.Writers,
-		vs.queries, vs.queries, vs.index(t), vaulttest.NewClock(),
-	).WithMaxDecks(maxDecks)
 }
 
 func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {

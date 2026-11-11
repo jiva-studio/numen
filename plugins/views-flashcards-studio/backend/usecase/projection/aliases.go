@@ -110,8 +110,8 @@ func GetSpentUnder(
 // GetFullRecall is review.GetFullRecall.
 func GetFullRecall(c Schedule, now time.Time) float64 { return review.GetFullRecall(c, now) }
 
-// GetModelledRecall is review.GetModelledRecall.
-func GetModelledRecall(c Schedule, now time.Time) float64 { return review.GetModelledRecall(c, now) }
+// GetModeledRecall is review.GetModeledRecall.
+func GetModeledRecall(c Schedule, now time.Time) float64 { return review.GetModeledRecall(c, now) }
 
 // Recall is review.Recall.
 func Recall(away time.Duration, stability float64) float64 { return review.Recall(away, stability) }

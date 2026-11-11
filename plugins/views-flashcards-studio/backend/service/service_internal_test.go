@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/rpc"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -113,7 +112,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 		{3, 3},
 	} {
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock(), Cores: tc.cores})
-		if got := b.scenarios().Flash.ReviewCards.Cores; got != tc.want {
+		if got := b.flash.Get().Reviews.ReviewCards.Cores; got != tc.want {
 			t.Fatalf("Cores=%d: expected %d, got %d", tc.cores, tc.want, got)
 		}
 		if got := runtime.GOMAXPROCS(0); got != 2 {
@@ -643,12 +642,12 @@ func TestMountAndAllEndpoints(t *testing.T) {
 	}
 }
 
-func (f *faultyVault) vaults() func(domain.VaultID) hostports.Vault {
-	return func(id domain.VaultID) hostports.Vault {
+func (f *faultyVault) vaults() func(domain.VaultID) ports.HostVault {
+	return func(id domain.VaultID) ports.HostVault {
 		on := f
 		if id != "" {
 			on = f.With(id)
 		}
-		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+		return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
 	}
 }

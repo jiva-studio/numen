@@ -15,6 +15,8 @@ import (
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 //go:embed all:pages
@@ -22,7 +24,7 @@ var pages embed.FS
 
 // errShut is returned for a request to a window that has been shut; the window
 // answers no further requests.
-var errShut = errors.New("this window is shut")
+var errShut = wire.ErrShut
 
 // Pages is the interface itself, built by `make interface` and embedded in the
 // binary. A binary built without it reports an error.
@@ -58,12 +60,32 @@ func NewRoute(path string, handler http.Handler, service any) Route {
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
-	state     *State
+	gate      *wire.Gate
+	window    pageWindow
 	routes    []Route
 	themes    numenv1connect.ThemeServiceHandler
 	plugins   PluginServices
 	pluginDir func(id string) (string, bool)
 }
+
+// pageWindow is what the pages need of the window besides its gate: the vault it shows, where its work is
+// listed, and where recordings are played from.
+type pageWindow interface {
+	shownVault
+	taskList
+	getPlayOrigins() []string
+}
+
+// statePages is the window of a State, as its pages see it.
+type statePages struct {
+	state *State
+}
+
+func (s statePages) GetCurrentVault() domain.Vault { return s.state.GetCurrentVault() }
+
+func (s statePages) AddTask(pos work.Task) { s.state.Window.AddTask(pos) }
+
+func (s statePages) getPlayOrigins() []string { return s.state.Playing.Load().getPlayOrigins() }
 
 // NewHandler puts the services in front of the pages, so a window and a browser
 // are served by one handler.
@@ -81,11 +103,11 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 
 	// The origin recordings play from is known once the socket it is served over is
 	// open, which precedes any page request.
-	played := s.state.Playing.Load().getPlayOrigins()
+	played := s.window.getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.
-		if s.state.Gate.isClosed() {
+		if s.gate.IsClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
@@ -121,7 +143,7 @@ func (s pageSet) newRoutes(named []string) []Route {
 	// the window together, so a build put together without a catalog serves
 	// none.
 	if s.themes != nil {
-		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.state.Gate.CountQuestions())
+		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.gate.CountQuestions())
 		if themed := NewRoute(path, handler, s.themes); isServed(named, themed) {
 			routes = append(routes, themed)
 		}
@@ -132,18 +154,18 @@ func (s pageSet) newRoutes(named []string) []Route {
 func (s pageSet) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
-		if !s.state.Gate.questions.begin() {
+		if !s.gate.BeginQuestion() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
-		defer s.state.Gate.questions.finish()
+		defer s.gate.FinishQuestion()
 		s.servePluginRoute(w, r, isWhole)
 	case isWhole && strings.HasPrefix(r.URL.Path, assetsRoute):
-		if !s.state.Gate.questions.begin() {
+		if !s.gate.BeginQuestion() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
-		defer s.state.Gate.questions.finish()
+		defer s.gate.FinishQuestion()
 		s.serveAsset(w, r)
 	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 		wire.WritePage(w, r, pages, s.themes, files)
@@ -173,7 +195,7 @@ func (s pageSet) serveAsset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {
-	vault := s.state.GetCurrentVault()
+	vault := s.window.GetCurrentVault()
 	name := filepath.FromSlash(unescapedPath)
 	if vault.Path == "" || !filepath.IsLocal(name) {
 		return false
@@ -182,7 +204,7 @@ func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescap
 	if err != nil {
 		return false
 	}
-	defer closeAndReport(s.state.Window.AddTask, file)
+	defer closeAndReport(s.window.AddTask, file)
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 	return true
 }
@@ -229,7 +251,7 @@ func (s pageSet) setRequestVault(r *http.Request) {
 	if r.Header.Get(requestVaultHeader) != "" {
 		return
 	}
-	if v := s.state.GetCurrentVault(); v.ID != "" {
+	if v := s.window.GetCurrentVault(); v.ID != "" {
 		r.Header.Set(requestVaultHeader, string(v.ID))
 	}
 }
