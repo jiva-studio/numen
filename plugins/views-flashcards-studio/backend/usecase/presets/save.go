@@ -27,8 +27,8 @@ func (u Presets) Point(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now).WithStat(stat)
-	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef)
+	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now)
+	return linking.PointAt(ctx, v, deck, note.LinkEntry{Type: LinkType, To: to, Role: domain.RoleRef}, stat)
 }
 
 func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {

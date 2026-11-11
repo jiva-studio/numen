@@ -217,7 +217,7 @@ func TestBudgetInternals(t *testing.T) {
 	day := review.Day{Starts: 0, In: time.UTC}
 
 	errLinks := errors.New("links failed")
-	readsErr := presets.New(nil, nil, stubLinkQueries{linksErr: errLinks}, nil, nil, nil).OpenReads()
+	readsErr := presets.New(presets.Config{Links: stubLinkQueries{linksErr: errLinks}}).OpenReads()
 	c1 := ReviewCard{ID: review.CardID{Card: "c1", Template: "T"}, Deck: "decks/A.md"}
 	c2 := ReviewCard{ID: review.CardID{Card: "c2", Template: "T"}, Deck: "decks/B.md"}
 	if _, err := getBudgets(ctx, v, budgetInputs{
@@ -237,7 +237,15 @@ func TestBudgetInternals(t *testing.T) {
 		"decks/A.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 		"decks/B.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 	})
-	deckPresets := presets.New(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
+	deckPresets := presets.New(presets.Config{
+		Readers: env.Ports.Readers,
+		Writers: env.Ports.Writers,
+		Links:   env.Queries,
+		Notes:   env.Queries,
+		Index:   scanOf(env),
+		Now:     clock.NewFake(now),
+		Day:     day,
+	})
 	b, err := getBudgets(ctx, env.Vault, budgetInputs{
 		reads:       deckPresets.OpenReads(),
 		day:         day,
@@ -263,7 +271,15 @@ func TestBudgetInternals(t *testing.T) {
 		"decks/A.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 		"decks/B.md":    "---\ntype: deck\nlinks:\n  - to: DatePreset\n    role: ref\n    type: preset\n---\n",
 	})
-	presetsNear := presets.New(envNear.Ports.Readers, envNear.Ports.Writers, envNear.Queries, envNear.Queries, scanOf(envNear), clock.NewFake(now)).WithDay(day)
+	presetsNear := presets.New(presets.Config{
+		Readers: envNear.Ports.Readers,
+		Writers: envNear.Ports.Writers,
+		Links:   envNear.Queries,
+		Notes:   envNear.Queries,
+		Index:   scanOf(envNear),
+		Now:     clock.NewFake(now),
+		Day:     day,
+	})
 	bNear, err := getBudgets(ctx, envNear.Vault, budgetInputs{
 		reads:       presetsNear.OpenReads(),
 		day:         day,
@@ -487,7 +503,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 	uForDeckErr := NewCountCardsDue(ListReviewCards{
 		notes: stubNoteQueries{paths: map[domain.NoteType][]string{format.TypeDeck: {"decks/A.md"}}},
 	}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
-	readsLinkErr := presets.New(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, nil).OpenReads()
+	readsLinkErr := presets.New(presets.Config{Links: stubLinkQueries{linksErr: errBoom}}).OpenReads()
 	if _, err := uForDeckErr.getPresets(ctx, v, readsLinkErr, bDue, dueMap, newMap); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetForDeck error from getPresets, got %v", err)
 	}
@@ -509,7 +525,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 			},
 		},
 	}, Schedules{}, presets.Presets{}, day, clock.NewFake(now))
-	readsOpenErr := presets.New(stubVaultReaders{openErr: errBoom}, nil, nil, nil, nil, clock.NewFake(now)).OpenReads()
+	readsOpenErr := presets.New(presets.Config{Readers: stubVaultReaders{openErr: errBoom}, Now: clock.NewFake(now)}).OpenReads()
 	if _, err := uPresetReadErr.getPresets(ctx, v, readsOpenErr, bDue, dueMap, newMap); !errors.Is(err, errBoom) {
 		t.Fatalf("expected read error for second preset Q.md after pointed P.md, got %v", err)
 	}
@@ -519,7 +535,15 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		"decks/A.md": "---\ntype: deck\n---\n\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Front\n\nhi\n",
 	})
 	rc := NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	deckPresets := presets.New(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
+	deckPresets := presets.New(presets.Config{
+		Readers: env.Ports.Readers,
+		Writers: env.Ports.Writers,
+		Links:   env.Queries,
+		Notes:   env.Queries,
+		Index:   scanOf(env),
+		Now:     clock.NewFake(now),
+		Day:     day,
+	})
 	sched := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rc, deckPresets)
 	dueUC := NewCountCardsDue(rc, sched, deckPresets, day, clock.NewFake(now))
 
@@ -538,7 +562,14 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected log read error in readInputs, got %v", err)
 	}
 
-	badPresets := presets.New(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
+	badPresets := presets.New(presets.Config{
+		Readers: env.Ports.Readers,
+		Writers: env.Ports.Writers,
+		Links:   stubLinkQueries{linksErr: errBoom},
+		Notes:   env.Queries,
+		Index:   scanOf(env),
+		Now:     clock.NewFake(now),
+	})
 	if _, err := NewCountCardsDue(
 		rc,
 		NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rc, badPresets),
@@ -556,7 +587,11 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		},
 	}
 	rcEmpty := NewListReviewCards(stubVaultReaders{openErr: errBoom}, notesWithBadPreset, nil)
-	presetsOpenFail := presets.New(stubVaultReaders{openErr: errBoom}, nil, nil, notesWithBadPreset, nil, clock.NewFake(now))
+	presetsOpenFail := presets.New(presets.Config{
+		Readers: stubVaultReaders{openErr: errBoom},
+		Notes:   notesWithBadPreset,
+		Now:     clock.NewFake(now),
+	})
 	schedEmpty := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEmpty, presetsOpenFail)
 	if _, err := NewCountCardsDue(rcEmpty, schedEmpty, presetsOpenFail, day, clock.NewFake(now)).Execute(ctx, env.Vault); !errors.Is(err, errBoom) {
 		t.Fatalf("expected getPresets error in CountCardsDue.Execute, got %v", err)
@@ -784,7 +819,7 @@ func TestCountReviewsInternalsAndErrors(t *testing.T) {
 		stubLogStores{store: stubLogStore{}},
 		review.NewFSRS(), day,
 		NewListReviewCards(stubVaultReaders{}, stubNoteQueries{hasErr: errBoom}, nil),
-		presets.New(nil, nil, stubLinkQueries{}, nil, nil, nil),
+		presets.New(presets.Config{Links: stubLinkQueries{}}),
 	)
 	uSchedFail := NewCountReviews(stubLogStores{store: stubLogStore{}}, schedFail, day, clock.NewFake(now))
 	if _, _, err := uSchedFail.getDueAndRetained(ctx, v, ReviewLog{}); !errors.Is(err, errBoom) {
@@ -859,13 +894,13 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		stubNoteQueries{has: true, paths: map[domain.NoteType][]string{format.TypeDeck: {"decks/A.md"}}},
 		nil,
 	)
-	pcNoLinks := NewProjectCurve(rcDecks, Schedules{}, presets.New(nil, nil, nil, nil, nil, nil), day, clock.NewFake(now))
+	pcNoLinks := NewProjectCurve(rcDecks, Schedules{}, presets.New(presets.Config{}), day, clock.NewFake(now))
 	decks1, err := pcNoLinks.getScheduledDecks(ctx, v, "P.md")
 	if err != nil || !slices.Equal(decks1, []string{"decks/A.md"}) {
 		t.Fatalf("expected all decks when links == nil, got %v, %v", decks1, err)
 	}
 	pcBacklinkErr := NewProjectCurve(
-		rcDecks, Schedules{}, presets.New(nil, nil, stubLinkQueries{backlinksErr: errBoom}, nil, nil, nil), day, clock.NewFake(now),
+		rcDecks, Schedules{}, presets.New(presets.Config{Links: stubLinkQueries{backlinksErr: errBoom}}), day, clock.NewFake(now),
 	)
 	if _, err := pcBacklinkErr.getScheduledDecks(ctx, v, "P.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected backlinks error, got %v", err)
@@ -876,7 +911,7 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	}
 
 	// Test readScheduledCards error, caching per deck, and continue on non-matching deck.
-	readsFail := presets.New(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, nil).OpenReads()
+	readsFail := presets.New(presets.Config{Links: stubLinkQueries{linksErr: errBoom}}).OpenReads()
 	c1 := ReviewCard{ID: review.CardID{Card: "c1", Template: "T"}, Deck: "decks/A.md"}
 	c2 := ReviewCard{ID: review.CardID{Card: "c2", Template: "T"}, Deck: "decks/A.md"}
 	c3 := ReviewCard{ID: review.CardID{Card: "c3", Template: "T"}, Deck: "decks/B.md"}
@@ -896,7 +931,15 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		"decks/B.md": "---\ntype: deck\nlinks:\n  - to: Q\n    role: ref\n    type: preset\n---\n" +
 			"\n## Three ^9z8y7x6w5v\n\n[[Term]]\n\n### Front\n\nc\n",
 	})
-	deckPresets := presets.New(env.Ports.Readers, env.Ports.Writers, env.Queries, env.Queries, scanOf(env), clock.NewFake(now)).WithDay(day)
+	deckPresets := presets.New(presets.Config{
+		Readers: env.Ports.Readers,
+		Writers: env.Ports.Writers,
+		Links:   env.Queries,
+		Notes:   env.Queries,
+		Index:   scanOf(env),
+		Now:     clock.NewFake(now),
+		Day:     day,
+	})
 	sc, err := pc.readScheduledCards(
 		ctx, env.Vault, deckPresets.OpenReads(), "P.md",
 		[]ReviewCard{c3, c1, c2},
@@ -940,7 +983,14 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 	}
 
 	// Assignment error when path == "" (so getScheduledDecks doesn't use links) and presets.links fails on GetForDeck.
-	presetsLinkFail := presets.New(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
+	presetsLinkFail := presets.New(presets.Config{
+		Readers: env.Ports.Readers,
+		Writers: env.Ports.Writers,
+		Links:   stubLinkQueries{linksErr: errBoom},
+		Notes:   env.Queries,
+		Index:   scanOf(env),
+		Now:     clock.NewFake(now),
+	})
 	schedLinkFail := NewSchedules(env.Ports.Logs, review.NewFSRS(), day, rcEnv, presetsLinkFail)
 	if _, err := NewProjectCurve(rcEnv, schedLinkFail, presetsLinkFail, day, clock.NewFake(now)).Execute(
 		ctx, env.Vault, "", review.Defaults(),
@@ -953,10 +1003,15 @@ func TestCurveInternalsAndErrors(t *testing.T) {
 		"decks/Empty.md": "---\ntype: deck\n---\n",
 	})
 	rcEmptyDeck := NewListReviewCards(envEmptyDeck.Ports.Readers, envEmptyDeck.Queries, envEmptyDeck.Queries)
-	presetsEmptyFail := presets.New(
-		envEmptyDeck.Ports.Readers, envEmptyDeck.Ports.Writers,
-		stubLinkQueries{linksErr: errBoom}, envEmptyDeck.Queries, scanOf(envEmptyDeck), clock.NewFake(now),
-	)
+	presetsEmptyFail := presets.New(presets.Config{
+		Readers: envEmptyDeck.Ports.Readers,
+		Writers: envEmptyDeck.Ports.Writers,
+		Links:   stubLinkQueries{linksErr: errBoom},
+		Notes:   envEmptyDeck.Queries,
+		Index:   scanOf(envEmptyDeck),
+		Now:     clock.NewFake(now),
+	})
+
 	schedEmptyDeck := NewSchedules(envEmptyDeck.Ports.Logs, review.NewFSRS(), day, rcEmptyDeck, presetsEmptyFail)
 	if _, err := NewProjectCurve(rcEmptyDeck, schedEmptyDeck, presetsEmptyFail, day, clock.NewFake(now)).Execute(
 		ctx, envEmptyDeck.Vault, "", review.Defaults(),
@@ -1381,9 +1436,6 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	if countSet.CardsDue.day.Starts != 3*time.Hour {
 		t.Fatalf("expected a day start of 3h, got %v", countSet.CardsDue.day.Starts)
 	}
-	if scheduleSet.Presets.Problems == nil {
-		t.Fatal("expected Presets.Problems wired")
-	}
 	if scheduleSet.Schedules.Cache != schedCache || countSet.Counted.Cache != dayCountCache {
 		t.Fatal("expected Schedules.Cache and Counted.Cache wired")
 	}
@@ -1415,7 +1467,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	sNotCarried := NewSchedules(
 		stubLogStores{}, review.NewFSRS(), dayLoc,
 		NewListReviewCards(stubVaultReaders{}, stubNoteQueries{has: false}, nil),
-		presets.New(nil, nil, stubLinkQueries{}, nil, nil, nil),
+		presets.New(presets.Config{Links: stubLinkQueries{}}),
 	)
 	if got, err := sNotCarried.getAssignment(ctx, v); err != nil || got.mark == "" {
 		t.Fatalf("expected plain assignment on ErrNotCarried, got %+v, %v", got, err)
@@ -1423,7 +1475,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	sHasErr := NewSchedules(
 		stubLogStores{store: stubLogStore{}}, review.NewFSRS(), dayLoc,
 		NewListReviewCards(stubVaultReaders{}, stubNoteQueries{hasErr: errBoom}, nil),
-		presets.New(nil, nil, stubLinkQueries{}, nil, nil, nil),
+		presets.New(presets.Config{Links: stubLinkQueries{}}),
 	)
 	if _, err := sHasErr.getAssignment(ctx, v); !errors.Is(err, errBoom) {
 		t.Fatalf("expected error from getAssignment when reviewCards.Execute fails, got %v", err)
@@ -1453,7 +1505,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	c1 := ReviewCard{ID: review.CardID{Card: "c1", Template: "T"}, Deck: "decks/A.md"}
 	c2 := ReviewCard{ID: review.CardID{Card: "c2", Template: "T"}, Deck: "decks/A.md"}
 	if _, err := sPlain.getAssignmentFrom(
-		ctx, v, presets.New(nil, nil, stubLinkQueries{linksErr: errBoom}, nil, nil, nil).OpenReads(), []ReviewCard{c1},
+		ctx, v, presets.New(presets.Config{Links: stubLinkQueries{linksErr: errBoom}}).OpenReads(), []ReviewCard{c1},
 	); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetForDeck error in getAssignmentFrom, got %v", err)
 	}
@@ -1467,15 +1519,16 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 			return []byte("---\ntype: preset\n---\n"), nil
 		},
 	}
-	readsOnce := presets.New(
-		stubVaultReaders{reader: readerCount}, nil,
-		stubLinkQueries{
+	readsOnce := presets.New(presets.Config{
+		Readers: stubVaultReaders{reader: readerCount},
+		Links: stubLinkQueries{
 			links: map[string][]domain.ResolvedLink{
 				"decks/A.md": {{Link: domain.Link{Type: presets.LinkType, Target: domain.Address{Scheme: domain.SchemeNote, Value: "P.md"}}, To: "P.md"}},
 			},
 		},
-		nil, nil, clock.NewFake(now),
-	).OpenReads()
+		Now: clock.NewFake(now),
+	}).
+		OpenReads()
 	if _, err := sPlain.getAssignmentFrom(ctx, v, readsOnce, []ReviewCard{c1, c2}); err != nil {
 		t.Fatal(err)
 	}
@@ -1559,7 +1612,14 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 			"\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Front\n\nhi\n",
 	})
 	rcEnv := NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
-	presetsFail := presets.New(env.Ports.Readers, env.Ports.Writers, stubLinkQueries{linksErr: errBoom}, env.Queries, scanOf(env), clock.NewFake(now))
+	presetsFail := presets.New(presets.Config{
+		Readers: env.Ports.Readers,
+		Writers: env.Ports.Writers,
+		Links:   stubLinkQueries{linksErr: errBoom},
+		Notes:   env.Queries,
+		Index:   scanOf(env),
+		Now:     clock.NewFake(now),
+	})
 	schedEnvFail := NewSchedules(env.Ports.Logs, review.NewFSRS(), dayLoc, rcEnv, presetsFail)
 	if _, err := NewSession(AssignCardIDs{}, rcEnv, schedEnvFail, presetsFail, dayLoc, clock.NewFake(now)).Execute(ctx, env.Vault, Scope{}); !errors.Is(err, errBoom) {
 		t.Fatalf("expected assignment error in Session.Execute, got %v", err)
@@ -1584,7 +1644,15 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 		t.Fatal(err)
 	}
 	rcTwo := NewListReviewCards(envTwo.Ports.Readers, envTwo.Queries, envTwo.Queries)
-	presetsTwo := presets.New(envTwo.Ports.Readers, envTwo.Ports.Writers, envTwo.Queries, envTwo.Queries, scanOf(envTwo), clock.NewFake(now)).WithDay(dayLoc)
+	presetsTwo := presets.New(presets.Config{
+		Readers: envTwo.Ports.Readers,
+		Writers: envTwo.Ports.Writers,
+		Links:   envTwo.Queries,
+		Notes:   envTwo.Queries,
+		Index:   scanOf(envTwo),
+		Now:     clock.NewFake(now),
+		Day:     dayLoc,
+	})
 	schedTwo := NewSchedules(envTwo.Ports.Logs, review.NewFSRS(), dayLoc, rcTwo, presetsTwo)
 	sessTwo := NewSession(AssignCardIDs{}, rcTwo, schedTwo, presetsTwo, dayLoc, clock.NewFake(now))
 	resTwo, err := sessTwo.Execute(ctx, envTwo.Vault, Scope{Preset: "P.md", IsNamed: true})
