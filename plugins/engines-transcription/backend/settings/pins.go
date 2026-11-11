@@ -1,4 +1,4 @@
-package engine
+package settings
 
 // Default addresses for the transcription models.
 const (
@@ -7,7 +7,7 @@ const (
 	segmenterDefault = "https://huggingface.co/onnx-community/silero-vad/resolve/e71cae966052b992a7eca6b17738916ce0eca4ec/onnx/model.onnx"
 )
 
-func getModels() []ParakeetModel {
+func GetModels() []ParakeetModel {
 	return []ParakeetModel{
 		{
 			Name: "parakeet-tdt-0.6b-v3-int8", Repo: parakeetV3,
@@ -22,7 +22,7 @@ func getModels() []ParakeetModel {
 
 // FindModel returns the model the settings name.
 func FindModel(name string) (ParakeetModel, bool) {
-	for _, one := range getModels() {
+	for _, one := range GetModels() {
 		if one.Name == name {
 			return one, true
 		}

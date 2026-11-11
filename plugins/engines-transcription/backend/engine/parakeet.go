@@ -26,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/tokens"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/transducer"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 // The input and output names of the graphs.
@@ -92,7 +93,7 @@ type Transcriber struct {
 
 // Open loads the models through the runtime and compiles them, reading the weights. The result is
 // used for any number of recordings until it is closed.
-func Open(ctx context.Context, runtime Runtime, cfg Config) (*Transcriber, error) {
+func Open(ctx context.Context, runtime Runtime, cfg settings.Config) (*Transcriber, error) {
 	engine, found, err := locateModels(ctx, runtime.library, cfg)
 	if err != nil {
 		return nil, err
@@ -119,7 +120,7 @@ func Open(ctx context.Context, runtime Runtime, cfg Config) (*Transcriber, error
 		workers:   cfg.Workers,
 		mu:        sync.Mutex{},
 	}
-	threads := cfg.sessionThreads()
+	threads := getSessionThreads(cfg)
 	for _, one := range []struct {
 		dst     **ort.Session
 		path    string
