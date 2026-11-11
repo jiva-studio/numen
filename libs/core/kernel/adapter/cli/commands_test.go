@@ -667,3 +667,26 @@ func (r refusingSummaries) GetSummary(ctx context.Context, vaultID domain.VaultI
 	}
 	return r.VaultSummaries.GetSummary(ctx, vaultID)
 }
+
+func TestScanReadsEverySourceOfAVaultOfANoteAPdfAndARecording(t *testing.T) {
+	t.Parallel()
+	target := vaultfixture.NewVault(t, map[string]string{
+		"lectures.md":        "# Lectures\n\nA note about the talks.\n",
+		"tidal-mills.md":     "%BOOK\nA tidal mill stored seawater behind a sluice gate.\n",
+		"books/flywheel.pdf": "%PDF-1.4\nA flywheel keeps energy in a rotor.\n",
+	})
+	vaultfixture.WriteBook(t, target.Path, "talks/lecture.wav")
+	s := &scanFixture{}
+	out, err := runWithDeps(s.deps(t, target), "scan", target.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"3 sources: 3 read, 0 unchanged, ", "index now holds 2 notes",
+		"  cutting books/flywheel.pdf\r", "  cutting talks/lecture.wav\r", "  cutting tidal-mills.md\r",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("scan did not say %q:\n%q", want, out)
+		}
+	}
+}

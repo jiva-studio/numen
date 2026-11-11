@@ -15,19 +15,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
-// Folder is the part of the plugin's folder in the store of a vault that the records use.
-type Folder interface {
-	Read(ctx context.Context, name string) ([]byte, error)
-	Write(ctx context.Context, name string, content []byte) error
-}
-
 // storeRecords keeps one JSON file for each recipe in the plugin's folder of the vault's store.
 type storeRecords struct {
-	store Folder
+	store relevance.Folder
 }
 
 // New returns the records kept in the store folder.
-func New(store Folder) relevance.Records {
+func New(store relevance.Folder) relevance.Records {
 	return storeRecords{store: store}
 }
 

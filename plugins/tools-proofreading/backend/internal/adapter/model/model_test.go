@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/endpoint"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
@@ -60,9 +61,9 @@ func TestAskSendsTheQuestionOverHTTPWhenTheProviderIsConfigured(t *testing.T) {
 		completed++
 		return "", nil
 	}
-	endpoint := Endpoint{Provider: "custom", BaseURL: srv.URL, Model: "google/gemini-2.5-flash", APIKey: "secret-key"}
+	target := endpoint.Endpoint{Provider: "custom", BaseURL: srv.URL, Model: "google/gemini-2.5-flash", APIKey: "secret-key"}
 
-	answer, err := NewAsk(complete, func() Endpoint { return endpoint })(t.Context(), "be careful", "the prompt")
+	answer, err := NewAsk(complete, func() endpoint.Endpoint { return target })(t.Context(), "be careful", "the prompt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,9 +77,9 @@ func TestAskSendsTheQuestionOverHTTPWhenTheProviderIsConfigured(t *testing.T) {
 }
 
 func TestAskWithoutAServiceURLFails(t *testing.T) {
-	endpoint := Endpoint{Provider: "custom", BaseURL: "", Model: "", APIKey: ""}
+	target := endpoint.Endpoint{Provider: "custom", BaseURL: "", Model: "", APIKey: ""}
 
-	if _, err := NewAsk(nil, func() Endpoint { return endpoint })(t.Context(), "be careful", "the prompt"); err == nil {
+	if _, err := NewAsk(nil, func() endpoint.Endpoint { return target })(t.Context(), "be careful", "the prompt"); err == nil {
 		t.Error("a custom provider with no URL was asked")
 	}
 }

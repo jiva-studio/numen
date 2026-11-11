@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/calibration"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
@@ -30,7 +31,7 @@ type App struct {
 
 // NewApp returns the backend that connects to the host the process was launched for when it is mounted.
 func NewApp() *App {
-	return &App{open: hostclient.OpenFromEnv, clock: clock.System{}, calibration: calibration.New()}
+	return &App{open: func() (calibration.Hosts, error) { return hostclient.OpenFromEnv(floorrecords.New) }, clock: clock.System{}, calibration: calibration.New()}
 }
 
 // NewAppOver returns the backend over the hosts given, with measurements stamped by the clock.

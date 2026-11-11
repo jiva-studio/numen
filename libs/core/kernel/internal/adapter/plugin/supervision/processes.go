@@ -318,8 +318,9 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 	if err := process.HideInheritedFiles(); err != nil {
 		return nil, nil, errors.Join(fmt.Errorf("hide inherited files: %w", err), stdin.Close(), stdout.Close())
 	}
+	// A failed Start has closed both pipes already.
 	if err := cmd.Start(); err != nil {
-		return nil, nil, errors.Join(fmt.Errorf("start %s: %w", binPath, err), stdin.Close(), stdout.Close())
+		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
 	}
 
 	if _, err := io.WriteString(stdin, token+"\n"); err != nil {

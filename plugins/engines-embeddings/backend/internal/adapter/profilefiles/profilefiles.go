@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
 )
 
 // Directory is a folder of user profile files. An empty path names no folder.
@@ -35,13 +34,10 @@ func GetDefaultDirectory() Directory {
 }
 
 // Load returns the profiles that ship with the plugin together with the ones in the folder. A file
-// that cannot be read is reported and skipped. The error is the one of the shipped profiles, and the
+// that cannot be read is passed to report and skipped. The error is the one of the shipped profiles, and the
 // profiles are returned with it.
-func (d Directory) Load() (*model.Profiles, error) {
+func (d Directory) Load(report func(file string, err error)) (*model.Profiles, error) {
 	shipped, err := model.GetShippedProfiles()
-	report := func(file string, err error) {
-		console.Report("embeddings: skipped the model profile "+file, err)
-	}
 	return shipped.WithUserProfiles(d.path, d.readFiles(report), report), err
 }
 

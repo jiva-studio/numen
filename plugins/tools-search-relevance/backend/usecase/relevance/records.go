@@ -18,3 +18,9 @@ type Records interface {
 	// Write keeps the record, replacing the one kept for its recipe.
 	Write(ctx context.Context, record Record) error
 }
+
+// Folder is the part of the plugin's folder in the store of a vault that the records use.
+type Folder interface {
+	Read(ctx context.Context, name string) ([]byte, error)
+	Write(ctx context.Context, name string, content []byte) error
+}

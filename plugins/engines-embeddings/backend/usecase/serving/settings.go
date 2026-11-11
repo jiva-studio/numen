@@ -45,5 +45,7 @@ func (s *Server) Update(values map[string]string, apiKey Secret) {
 
 func (s *Server) loadProfilesLocked() {
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="embedded shipped profiles json is valid"
-	s.profiles, s.profilesErr = s.profileSrc.Load()
+	s.profiles, s.profilesErr = s.profileSrc.Load(func(file string, err error) {
+		s.report("embeddings: skipped the model profile "+file, err)
+	})
 }

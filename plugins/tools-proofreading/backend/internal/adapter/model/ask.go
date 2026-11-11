@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/endpoint"
 )
 
 // EnvMockML names the variable that has the plugin answer every question with the mock proofreader.
@@ -19,31 +20,18 @@ const purpose = "proofreading"
 // Completer sends a question to the host and returns the answer.
 type Completer func(ctx context.Context, question *ai.Question) (string, error)
 
-// Endpoint is the HTTP chat service a configured provider points at.
-type Endpoint struct {
-	Provider string
-	BaseURL  string
-	Model    string
-	APIKey   string
-}
-
-// DefaultEndpoint has the host answer every question.
-func DefaultEndpoint() Endpoint {
-	return Endpoint{Provider: "agent", BaseURL: "", Model: defaultModel, APIKey: ""}
-}
-
 // IsMockEnabled reports whether the value of EnvMockML selects the mock model.
 func IsMockEnabled(value string) bool { return value == mockEnabled }
 
 // NewAsk returns the function that asks the model one question. A provider that is openrouter,
 // openai or custom is asked over HTTP by the plugin itself, unless the mock is enabled in the
 // environment; every other provider is asked through complete. A nil getEndpoint asks complete.
-func NewAsk(complete Completer, getEndpoint func() Endpoint) func(ctx context.Context, instruction, prompt string) (string, error) {
+func NewAsk(complete Completer, getEndpoint func() endpoint.Endpoint) func(ctx context.Context, instruction, prompt string) (string, error) {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
 		if getEndpoint != nil && !IsMockSelected() {
-			endpoint := getEndpoint()
-			if endpoint.Provider == "openrouter" || endpoint.Provider == "openai" || endpoint.Provider == "custom" {
-				return askDirectAPI(ctx, endpoint, instruction, prompt)
+			target := getEndpoint()
+			if target.Provider == "openrouter" || target.Provider == "openai" || target.Provider == "custom" {
+				return askDirectAPI(ctx, target, instruction, prompt)
 			}
 		}
 		return complete(ctx, &ai.Question{
@@ -58,18 +46,3 @@ func NewAsk(complete Completer, getEndpoint func() Endpoint) func(ctx context.Co
 
 // IsMockSelected reports whether the environment of the process selects the mock model.
 func IsMockSelected() bool { return IsMockEnabled(os.Getenv(EnvMockML)) }
-
-// WithSettings returns the endpoint with the provider, base URL and model the settings name. A
-// provider or a model the settings leave empty stays as it is.
-func (e Endpoint) WithSettings(values map[string]string) Endpoint {
-	if provider := values["provider"]; provider != "" {
-		e.Provider = provider
-	}
-	if baseURL, ok := values["baseUrl"]; ok {
-		e.BaseURL = baseURL
-	}
-	if name := values["model"]; name != "" {
-		e.Model = name
-	}
-	return e
-}
