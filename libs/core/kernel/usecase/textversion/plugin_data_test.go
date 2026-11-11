@@ -54,7 +54,7 @@ func TestDeletePluginDataRemovesTheFolderAndTheRecords(t *testing.T) {
 	s.requestText(t)
 	s.runEntry(t, ocr)
 	s.listener.take()
-	data, err := textversion.NewPluginData(s.versions, folderStores{files: s.folders})
+	data, err := textversion.NewPluginData(s.versions.Versions, folderStores{files: s.folders})
 	if err != nil {
 		t.Fatal(err)
 	}

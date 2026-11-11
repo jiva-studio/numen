@@ -1,6 +1,7 @@
 package textversion_test
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"errors"
 	"slices"
 	"strings"
@@ -8,8 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -29,7 +28,7 @@ const (
 // entry, a recognizer, and a proofreader of both kinds of text.
 type scene struct {
 	vault    domain.Vault
-	versions *textversion.Versions
+	versions *textfake.TextVersions
 	plugins  *plugins
 	listener *listener
 	reader   *fakeProvider
@@ -69,7 +68,7 @@ func newScene(t *testing.T) *scene {
 		}}
 	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
 	readers := readCounter{fileReaders: s.files, reads: &s.reads}
-	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, readers, note.NewReadFrontmatter(readers), steppingClock())
+	versions, err := textfake.NewTextVersions(s.repo, s.folders, s.plugins, readers, steppingClock())
 	if err != nil {
 		t.Fatal(err)
 	}

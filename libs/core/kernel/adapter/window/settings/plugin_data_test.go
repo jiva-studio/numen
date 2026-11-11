@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
@@ -21,13 +20,12 @@ func (v shownVault) GetCurrentVault() domain.Vault { return domain.Vault(v) }
 
 const transcription = "org.example.transcription"
 
-func newFolders(t *testing.T, current shownVault) (*Handler, *textversion.Versions) {
+func newFolders(t *testing.T, current shownVault) (*Handler, *textfake.TextVersions) {
 	t.Helper()
 	files := textfake.Readers{"talk.mp3": []byte("audio")}
 	folders := &textfake.Folders{}
-	versions, err := textversion.NewVersions(
-		&textfake.Versions{}, folders, textfake.Plugins{transcription}, files, note.NewReadFrontmatter(files),
-		textfake.NewSteppingClock(),
+	versions, err := textfake.NewTextVersions(
+		&textfake.Versions{}, folders, textfake.Plugins{transcription}, files, textfake.NewSteppingClock(),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -45,7 +43,7 @@ func newFolders(t *testing.T, current shownVault) (*Handler, *textversion.Versio
 	if _, err := versions.PutVersion(t.Context(), domain.Vault(current), transcription, report); err != nil {
 		t.Fatal(err)
 	}
-	data, err := textversion.NewPluginData(versions, textfake.PluginFolders{Files: folders})
+	data, err := textversion.NewPluginData(versions.Versions, textfake.PluginFolders{Files: folders})
 	if err != nil {
 		t.Fatal(err)
 	}

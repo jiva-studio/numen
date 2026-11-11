@@ -2,6 +2,7 @@ package textversion
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -23,6 +24,31 @@ type Texts struct {
 	readers vaultport.VaultReaders
 	clock   machineport.Clock
 	live    live
+}
+
+// NewTexts returns the reader of the versions of vault files over the version stores, the file stores,
+// the vault readers, the reader of a note's properties and the clock.
+func NewTexts(
+	stores textport.VersionStores, files textport.TextFileStores, readers vaultport.VaultReaders, notes NoteReader,
+	clock machineport.Clock,
+) (*Texts, error) {
+	if stores == nil || files == nil || readers == nil || notes == nil || clock == nil {
+		return nil, errors.New("texts need version stores, files, vault readers, a note reader and a clock")
+	}
+	return &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, notes: notes}}, nil
+}
+
+// GetRecordedVersions lists the versions recorded for the file at the path.
+func (u *Texts) GetRecordedVersions(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, error) {
+	return getVersions(ctx, u.stores, v, path)
+}
+
+// FindLiveVersion finds the live version of the file among its versions, for the content with the hash, and
+// false where none is live.
+func (u *Texts) FindLiveVersion(
+	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, contentHash string,
+) (domain.TextVersion, bool, error) {
+	return u.live.find(ctx, v, path, versions, contentHash)
 }
 
 // GetLiveText is the text of the file's live version, or textdomain.ErrNoText.

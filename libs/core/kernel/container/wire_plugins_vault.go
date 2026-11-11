@@ -225,7 +225,7 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 		return nil
 	}
 	run := newPluginCommands(c, c.RunningHost, nil).Run
-	items, err := textversion.NewVersionItems(c.vault.TextVersions, run, c.RunningHost.Watch)
+	items, err := textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.RunningHost.Watch)
 	if err != nil {
 		c.settings.ErrorHandler(err)
 		return nil

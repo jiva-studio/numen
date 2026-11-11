@@ -14,8 +14,13 @@ import (
 // PluginData is the folders plugins keep in a vault's store, `.numen/<plugin id>/`,
 // and the records of the text versions whose files they hold.
 type PluginData struct {
-	versions *Versions
+	versions versionDeleter
 	stores   pluginport.PluginStores
+}
+
+// versionDeleter deletes the records of the versions a plugin made.
+type versionDeleter interface {
+	DeletePluginVersions(ctx context.Context, v domain.Vault, pluginID string) error
 }
 
 // NewPluginData is the plugin folders opened through stores, with the text

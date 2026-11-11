@@ -22,14 +22,24 @@ type liveKey struct {
 // the file's content or the note's properties.
 type Changes struct {
 	stores textport.VersionStores
-	texts  *Texts
+	texts  liveTexts
 
 	mu       sync.Mutex
 	listener textdomain.VersionListener
 	lives    map[liveKey]domain.TextVersionID
 }
 
-func newChanges(stores textport.VersionStores, texts *Texts) *Changes {
+// liveTexts reads the content hash of a file and finds its live version.
+type liveTexts interface {
+	GetContentHash(ctx context.Context, v domain.Vault, path string) (string, error)
+	FindLiveVersion(
+		ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, contentHash string,
+	) (domain.TextVersion, bool, error)
+}
+
+// NewChanges returns the reporter of the files whose versions changed, over the version stores and the texts
+// that tell which version is live. No listener is notified until SetListener is called.
+func NewChanges(stores textport.VersionStores, texts *Texts) *Changes {
 	return &Changes{stores: stores, texts: texts, listener: noListener{}, lives: map[liveKey]domain.TextVersionID{}}
 }
 
@@ -116,7 +126,7 @@ func (u *Changes) findCurrentLive(
 	if err != nil {
 		return "", fmt.Errorf("read %s: %w", path, err)
 	}
-	found, ok, err := u.texts.live.find(ctx, v, path, versions, contentHash)
+	found, ok, err := u.texts.FindLiveVersion(ctx, v, path, versions, contentHash)
 	if err != nil || !ok {
 		return "", err
 	}
