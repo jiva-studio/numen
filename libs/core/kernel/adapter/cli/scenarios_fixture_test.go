@@ -1,7 +1,8 @@
 package cli_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
+	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -44,7 +45,7 @@ type noTypes struct{}
 func (noTypes) GetContentType(string) domain.ContentType   { return domain.UnknownContentType }
 func (noTypes) ListExtensions(domain.ContentType) []string { return nil }
 
-// noCommands is a plugin host that no plugin is enabled in.
+// noCommands is a plugin host with no plugin.
 type noCommands struct{}
 
 func (noCommands) ListCommands() []plugin.CommandEntry       { return nil }
@@ -52,7 +53,6 @@ func (noCommands) ListSlots() []plugin.SlotEntry             { return nil }
 func (noCommands) ListKeybindings() []plugin.KeybindingEntry { return nil }
 func (noCommands) ListHandlers() []plugin.CommandEntry       { return nil }
 func (noCommands) GetParts(string) plugin.Parts              { return plugin.Parts{} }
-
-func newNoPluginCommands() cli.PluginCommands {
-	return cli.PluginCommands{List: newScenarios(noCommands{}, nil, nil, nil, nil).List}
+func (noCommands) RunCommand(context.Context, plugin.CommandCall) (plugin.CommandResult, error) {
+	return plugin.CommandResult{}, domain.ErrUnavailable
 }
