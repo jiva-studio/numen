@@ -42,7 +42,7 @@ func (b *Backend) scenarios() *scenarios.Scenarios { return b.current.Get() }
 func New(cfg Config) *Backend {
 	b := &Backend{
 		vaults: cfg.Vaults, ports: hostports.New(cfg.Vaults, cfg.Store), now: cfg.Now, cfg: cfg,
-		runs: sessions.NewRegistry(),
+		runs: sessions.NewRegistry(), current: nil,
 	}
 	b.current = scenarios.NewCurrent(b.getInputs(cfg.DayStart))
 	return b

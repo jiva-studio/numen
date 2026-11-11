@@ -14,7 +14,7 @@ type Current struct {
 
 // NewCurrent builds the scenarios from the inputs and holds them.
 func NewCurrent(in Inputs) *Current {
-	c := &Current{inputs: in}
+	c := &Current{inputs: in, held: atomic.Pointer[Scenarios]{}}
 	c.held.Store(New(in))
 	return c
 }
