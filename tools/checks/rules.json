@@ -991,7 +991,11 @@
         "plugins/**/*.{ts,vue,json,js,mjs}",
         "plugins/**/package.json",
         "plugins/**/tsconfig.json",
+        "tools/checks/lib/*.mjs",
+        "tools/checks/structure/ts/*/check.mjs",
+        "tools/checks/structure/ts/libraries/library-matrix.json",
         "tools/lint-layers/dependency-cruiser.mjs",
+        "tools/shared/*.mjs",
         "tsconfig.base.json"
       ],
       "tags": [
@@ -1029,13 +1033,22 @@
       "paths": [
         "apps/**/*.ts",
         "apps/**/*.vue",
+        "apps/**/*.{ts,vue,json,js,mjs}",
         "apps/**/index.ts",
         "apps/**/package.json",
         "apps/**/tsconfig.json",
+        "libs/**/*.{ts,vue,json,js,mjs}",
         "libs/**/package.json",
         "libs/**/tsconfig.json",
+        "package.json",
+        "plugins/**/*.{ts,vue,json,js,mjs}",
         "plugins/**/package.json",
         "plugins/**/tsconfig.json",
+        "tools/checks/lib/*.mjs",
+        "tools/checks/structure/ts/*/check.mjs",
+        "tools/checks/structure/ts/libraries/library-matrix.json",
+        "tools/lint-layers/dependency-cruiser.mjs",
+        "tools/shared/*.mjs",
         "tsconfig.base.json"
       ],
       "tags": [
@@ -1122,6 +1135,10 @@
         ".golangci*.yml",
         "apps/**/*.{ts,vue}",
         "libs/**/*.{ts,vue}",
+        "libs/**/.golangci*.yml",
+        "libs/plugin/**",
+        "libs/ui/**",
+        "plugins/**",
         "plugins/**/*.{ts,vue,js,mjs}",
         "plugins/*/.golangci*.yml",
         "plugins/*/Makefile",
@@ -1162,10 +1179,12 @@
     {
       "name": "ts/sdk-protocol",
       "paths": [
+        "libs/**",
         "libs/**/*.ts",
         "libs/**/index.ts",
         "libs/**/package.json",
         "libs/**/tsconfig.json",
+        "package.json",
         "tsconfig.base.json"
       ],
       "tags": [

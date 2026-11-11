@@ -457,7 +457,7 @@ linters:
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
 
         # A plugin reaches the host through the plugin SDK. The rule covers every
-        # file outside libs/ and apps/, which includes a plugin checked out alone.
+        # file outside libs/, apps/ and tools/, which includes a plugin checked out alone.
         # The longer match wins, so the SDK is allowed under the denied libs/.
         plugin-isolation:
           list-mode: lax
@@ -465,6 +465,7 @@ linters:
             - "$all"
             - "!**/libs/**"
             - "!**/apps/**"
+            - "!**/tools/**"
           allow:
             - "github.com/jiva-studio/numen/libs/plugin/sdk-go"
           deny:

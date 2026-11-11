@@ -89,7 +89,7 @@ describe("the registry", () => {
 
 /** The text of a run with the root of the tree it ran in replaced, so two trees can be compared. */
 function normalize(text, root) {
-  return text.split(root).join("<root>").split(REPO_ROOT).join("<root>").replace(/\(\d+(\.\d+)?s\)/g, "(time)");
+  return text.split("/private" + root).join(root).split(root).join("<root>").split(REPO_ROOT).join("<root>").replace(/(?:\.\.\/)+(?:private)?<root>/g, "<root>").replace(/\(\d+(\.\d+)?s\)/g, "(time)");
 }
 
 function run(name, root) {

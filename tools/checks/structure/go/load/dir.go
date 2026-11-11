@@ -10,11 +10,8 @@ import (
 	"testing"
 )
 
-// ContainerDir is the directory every relative path of a check is written against: the container of the
-// kernel, where the checks lived before they moved.
-var ContainerDir string
-
-// Main changes the working directory of a check's test binary to ContainerDir and runs its tests. A check
+// Main changes the working directory of a check's test binary to the container of the kernel, where the checks
+// lived before they moved and against which their relative paths are written, and runs its tests. A check
 // calls it from TestMain.
 func Main(m *testing.M) int {
 	_, file, _, ok := runtime.Caller(0)
@@ -23,8 +20,7 @@ func Main(m *testing.M) int {
 		return 1
 	}
 	root := filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "..")
-	ContainerDir = filepath.Join(root, "libs", "core", "kernel", "container")
-	if err := os.Chdir(ContainerDir); err != nil {
+	if err := os.Chdir(filepath.Join(root, "libs", "core", "kernel", "container")); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
