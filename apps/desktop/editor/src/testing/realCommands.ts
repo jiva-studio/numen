@@ -15,7 +15,6 @@ import {
   runSupport,
   type NoteLookup,
   type PaletteLists,
-  type SearchDeps,
 } from '@/features/command-palette'
 import {
   createCommandRegistry,
@@ -32,7 +31,7 @@ import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
 import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
-import { createPluginPalette } from '@/app/window/createWindowPalettes'
+import { createPluginPalette } from '@/app/window/createPluginPalette'
 import { getVaultList } from '@/features/window-display'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
@@ -132,21 +131,10 @@ const createHost = (
   return host
 }
 
-const createCore = () => {
-  const base = {
-    fileKinds: (paths: readonly string[]) =>
-      Promise.resolve(new Map(paths.map((one) => [one, { type: 'note' }]))),
-  }
-  return new Proxy<Record<string, (...args: never[]) => Promise<object> | void>>(base, {
-    get: (target, name: string) => target[name] ?? (() => Promise.resolve([])),
-  })
-}
-
 const toOptions = (options: object): ComposeOptions => options as ComposeOptions
 
 /** What the commands of the test window are made from. */
 interface ComposeOptions {
-  readonly core: SearchDeps
   readonly windowTabs: WindowTabs
   readonly getTarget: () => CommandTarget
   readonly knows: NoteLookup
@@ -248,7 +236,6 @@ export function createRealWindow(parts: RealWindowParts) {
   })
   const pluginHost = createHost(parts, declaredCommands)
   const options = {
-    core: createCore(),
     emitEvent: parts.emitEvent,
     windowTabs: {
       panes: { onKeyPress: () => false, requestClose: () => undefined },

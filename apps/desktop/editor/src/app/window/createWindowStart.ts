@@ -20,7 +20,7 @@ import { createWindowTabMenu } from './createWindowTabMenu'
 import { registerSettingsPage } from './registerSettingsPage'
 
 /** What the keys of the window reach. */
-export interface WindowKeysDeps {
+interface WindowKeysDeps {
   readonly windowTabs: Pick<WindowTabs, 'panes'>
   readonly getTarget: () => CommandTarget
   readonly palette: Pick<ReturnType<typeof createWindowPalette>, 'paletteSwitch' | 'runs'>
@@ -28,7 +28,7 @@ export interface WindowKeysDeps {
 }
 
 /** Puts the keys of the window to the commands. */
-export function createWindowKeys(deps: WindowKeysDeps): void {
+function createWindowKeys(deps: WindowKeysDeps): void {
   const { windowTabs, getTarget, palette, pluginCommands } = deps
   useAppHotkeys(
     createKeyHandler({
@@ -55,7 +55,7 @@ export interface PluginStarterDeps {
 }
 
 /** The start of the plugins: once the commands they declare are listed. */
-export function createPluginStarter(deps: PluginStarterDeps) {
+function createPluginStarter(deps: PluginStarterDeps) {
   const { rest, declaredCommands } = deps
   return createPluginStart({
     pluginLoader: deps.pluginLoader,
@@ -78,7 +78,7 @@ export interface LayoutStarterDeps {
 }
 
 /** The start of the tabs: the saved ones, or the one a window made for a detach shows. */
-export function createLayoutStarter(deps: LayoutStarterDeps) {
+function createLayoutStarter(deps: LayoutStarterDeps) {
   return createLayoutStart({
     vaults: deps.vaults,
     windowTabs: deps.windowTabs,

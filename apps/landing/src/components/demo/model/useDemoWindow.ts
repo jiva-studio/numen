@@ -23,5 +23,5 @@ export function useDemoWindow() {
 
   const getKind = (id: string) => tabs.value.find((one) => one.id === id)?.kind
 
-  return { agent, player, workspace, tabs, actions: { close, getKind } }
+  return { agent, player, workspace, tabs, close, getKind }
 }
