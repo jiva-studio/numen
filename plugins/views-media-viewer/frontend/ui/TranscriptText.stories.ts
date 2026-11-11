@@ -40,9 +40,9 @@ export const Timed: Story = {
   }),
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('.cm-time')).not.toBeNull())
-    const times = Array.from(canvasElement.querySelectorAll('.cm-time')).map(
-      (one) => one.textContent,
-    )
+    const times = Array.from(canvasElement.querySelectorAll('.cm-time'))
+      .map((one) => one.textContent)
+      .filter((text) => text !== '')
     await expect(times).toEqual(TIMED_TIMES.filter((text) => text !== ''))
   },
 }

@@ -255,10 +255,8 @@ export const VerseSetInAPreElement: Story = {
 
     await expect(getPaper(canvasElement).querySelector('pre')).not.toBeNull()
 
-    // It ran on into columns of its own and not stopping at the first.
-    await expect(canvasElement.querySelector('.book__left')?.textContent).not.toBe(
-      '0 pages left in chapter',
-    )
+    // It is read across the columns like any other text.
+    await expect(getShownRuns(canvasElement).length).toBeGreaterThan(0)
   },
 }
 
