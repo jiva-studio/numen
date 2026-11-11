@@ -51,7 +51,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 	}
 }
 
-func TestMissingFolderLeavesTheShippedProfiles(t *testing.T) {
+func TestLoadKeepsShippedProfilesWhenFolderIsMissing(t *testing.T) {
 	table, err := NewDirectory(filepath.Join(t.TempDir(), "profiles")).Load()
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func TestMissingFolderLeavesTheShippedProfiles(t *testing.T) {
 	}
 }
 
-func TestNonFolderPathLeavesTheShippedProfiles(t *testing.T) {
+func TestLoadKeepsShippedProfilesWhenPathIsNotFolder(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "not-a-dir")
 	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
