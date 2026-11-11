@@ -29,7 +29,6 @@ interface PluginCommandPort {
 /** What the runs of the window go through. */
 export interface CommandRunnerParts {
   readonly commands: Pick<Commands, 'palette'>
-  /** Closes the search palette, which a command that opens its own step makes room for. */
   readonly closeSearch: () => void
   readonly pluginCommands: PluginCommandPort
   readonly getCommandDeps: () => CommandDeps

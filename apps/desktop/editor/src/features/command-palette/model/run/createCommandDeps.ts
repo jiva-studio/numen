@@ -14,7 +14,6 @@ export interface CommandDepsOptions {
   registry: Pick<CommandRegistry, 'get'>
   writeMessage: MessageWriter
   search: () => void
-  /** Receives the event a command run announces, for the plugins that activate on it. */
   emitEvent?: ((event: string) => void) | undefined
 }
 

@@ -29,12 +29,10 @@ export interface WindowBootstrapDeps {
   readonly waitForDeclaredCommands: () => Promise<void>
   readonly writeMessage: MessageWriter
   readonly layout: ReturnType<typeof createWindowLayout>
-  /** Whether the window was made for a detach or a move of a tab. */
   readonly isSecondary: boolean
   readonly windowId: string
   readonly tabLinkSession: { start(): Promise<void>; close(): void }
   readonly readDetachedTab: (windowId: string, tabId: string) => Promise<MovedTab | null>
-  /** Opens the tab of a detach and accepts it; runs in the background. */
   readonly openDetachedTab: (moved: MovedTab) => void
 }
 

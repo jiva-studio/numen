@@ -15,7 +15,6 @@ export interface NoteEditorsDeps {
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
 }
 
-/** The open notes as the palette reads them: the file of each, the tab it is in, and its title. */
 function createNoteStore(
   notes: ReturnType<typeof openNotes>,
   windowTabs: Pick<WindowTabs, 'tabs'>,

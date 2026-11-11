@@ -13,7 +13,6 @@ import { useTabLinks } from './useTabLinks'
 export interface TabLinkingDeps {
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'groups'>
-  /** Whether this window is the main one, which the core reports to the others. */
   readonly isMain: boolean
   readonly writeMessage: MessageWriter
 }

@@ -15,7 +15,6 @@ export interface KeyHandlerParts {
   readonly keybindings: PluginHost['keybindings']
   readonly declaredKeybindings: Ref<readonly DeclaredKeybinding[] | undefined>
   readonly plugins: Ref<readonly object[]>
-  /** Offers the key to the commands of the plugins; returns whether one took it. */
   readonly handleShortcut: (
     event: KeyboardEvent,
     runApp: (command: string, values: Values) => void,

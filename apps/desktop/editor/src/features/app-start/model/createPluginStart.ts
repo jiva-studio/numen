@@ -10,7 +10,6 @@ export type SettingPlugins = () => readonly { readonly id: string; readonly hasF
 export interface PluginStartDeps {
   readonly pluginLoader: PluginLoader
   readonly getPlugins: SettingPlugins
-  /** Settles once the first list of the commands the plugins declare is read. */
   readonly waitForDeclaredCommands: () => Promise<void>
   readonly reportError: (error: Caught) => void
 }

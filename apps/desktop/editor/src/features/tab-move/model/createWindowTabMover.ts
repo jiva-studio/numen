@@ -19,7 +19,6 @@ export interface WindowTabMoverDeps {
   readonly writeMessage: MessageWriter
 }
 
-/** A failed request is ignored: the mover writes its own errors, and a missed outline does no harm. */
 const ignoreError = (): undefined => undefined
 
 export function createWindowTabMover(deps: WindowTabMoverDeps) {

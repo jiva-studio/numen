@@ -1,4 +1,3 @@
-/** The query of the page, empty where the page has no location. */
 const getSearch = (): string =>
   typeof globalThis.location === 'undefined' ? '' : globalThis.location.search
 
