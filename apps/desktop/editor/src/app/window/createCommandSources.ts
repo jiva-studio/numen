@@ -4,7 +4,12 @@
  */
 import type { PluginHost } from '@numen/plugin-loader'
 import { createAppItemRunner } from '@/features/command-palette'
-import { createCommandItems, createPaletteCommandList, type DeclaredCommands, type usePluginCommands } from '@/features/plugin-commands'
+import {
+  createCommandItems,
+  createPaletteCommandList,
+  type DeclaredCommands,
+  type usePluginCommands,
+} from '@/features/plugin-commands'
 import type { Command } from '@/entities/command'
 import type { CommandDeps, CommandTarget } from '@/shared/model/command'
 

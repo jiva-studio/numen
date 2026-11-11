@@ -6,7 +6,11 @@ import type { Command } from '@/entities/command'
 import { runDeclaredHandler } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { FileOpeners } from '@/entities/tab'
-import { createBackendHandlers, createDeclaredState, type CommandItemLists } from '@/features/plugin-commands'
+import {
+  createBackendHandlers,
+  createDeclaredState,
+  type CommandItemLists,
+} from '@/features/plugin-commands'
 import {
   createPluginCatalog,
   createPluginReports,
