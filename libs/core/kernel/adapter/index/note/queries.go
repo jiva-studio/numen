@@ -49,11 +49,6 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	return s, err
 }
 
-// Statements exposes the SQL this package runs, so a test can ask the database
-// how it plans to execute each statement. A package cannot check a plan about
-// itself: it needs a migrated database, which lives one level up.
-func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
-
 // GetNamedPaths is every note filed under one name. A name that answers for
 // more than one note is what makes a link written by that name ambiguous, and
 // is worth saying out loud before it surprises anyone.

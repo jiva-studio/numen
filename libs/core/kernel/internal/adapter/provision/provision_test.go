@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -29,7 +29,7 @@ func sumOf(data []byte) string {
 func newTestProvisioner(t *testing.T, offline bool) *FileProvisioner {
 	t.Helper()
 	return NewFileProvisioner(Config{
-		Dir: t.TempDir(), Offline: offline, Discovery: discovery{dirs: []string{}}, Clock: clock.NewFake(time.Unix(0, 0)),
+		Dir: t.TempDir(), Offline: offline, Discovery: discovery{dirs: []string{}}, Clock: testsupport.NewClockAt(time.Unix(0, 0)),
 		Backoff: backoff{attempts: 3, first: time.Millisecond, sleep: func(context.Context, time.Duration) error { return nil }},
 	})
 }

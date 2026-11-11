@@ -2,12 +2,14 @@ package chunk_test
 
 import (
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -39,7 +41,7 @@ func TestTheSourceTimeColumnIsNanosecondsSinceTheEpoch(t *testing.T) {
 }
 
 func TestTheStatementsAreTheOnesTheRepositoryRuns(t *testing.T) {
-	got := chunk.Statements()
+	got := sqlfile.Load(os.DirFS("."), "sql").All()
 	for _, name := range []string{"save_source", "insert_chunk", "keep_vector", "move_sources"} {
 		if strings.TrimSpace(got[name]) == "" {
 			t.Errorf("no statement is named %s", name)
