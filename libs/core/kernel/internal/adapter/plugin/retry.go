@@ -20,21 +20,27 @@ type listenerRefresher interface {
 	RefreshListeners(ctx context.Context, pluginID string)
 }
 
+// registeredPlugins reports whether the host knows a plugin, and names it.
+type registeredPlugins interface {
+	isRegistered(pluginID string) bool
+	getName(pluginID string) string
+}
+
 // Retry starts a plugin once, as any use of it does.
 type Retry struct {
-	registry  *Registry
+	set       registeredPlugins
 	failures  *supervision.Failures
 	activator pluginActivator
 	listeners listenerRefresher
 }
 
-func newRetry(registry *Registry, failures *supervision.Failures, activator pluginActivator, listeners listenerRefresher) *Retry {
-	return &Retry{registry: registry, failures: failures, activator: activator, listeners: listeners}
+func newRetry(set registeredPlugins, failures *supervision.Failures, activator pluginActivator, listeners listenerRefresher) *Retry {
+	return &Retry{set: set, failures: failures, activator: activator, listeners: listeners}
 }
 
 // RetryPlugin starts a plugin once, as any use of it does, and answers why the start failed where it did.
 func (r *Retry) RetryPlugin(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
-	if !r.registry.set.isRegistered(pluginID) {
+	if !r.set.isRegistered(pluginID) {
 		return nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.NotInstalled, Err: errPluginNotFound}
 	}
 	r.failures.ForgetTargetReport(pluginID)
@@ -49,5 +55,5 @@ func (r *Retry) RetryPlugin(ctx context.Context, pluginID string) (*plugindomain
 	if errors.As(err, &unavailable) || ctx.Err() != nil {
 		return nil, err
 	}
-	return r.failures.Get(pluginID, r.registry.set.getName(pluginID)), nil
+	return r.failures.Get(pluginID, r.set.getName(pluginID)), nil
 }

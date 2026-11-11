@@ -13,16 +13,49 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
+// activationPlugins is what an activation reads of the set of plugins: which one a start is for, how to launch it and the hold
+// against a scan of the folders.
+type activationPlugins interface {
+	getKnown(pluginID string) (manifest.Discovered, bool)
+	view() (setView, func())
+	getLaunch(p manifest.Discovered) supervision.Launch
+}
+
+// hostState reports whether the host is shut down or in safe mode.
+type hostState interface {
+	IsClosed() bool
+	IsSafeMode() bool
+}
+
+// enablementChecker reports whether the settings of a plugin leave it enabled.
+type enablementChecker interface {
+	IsPluginEnabled(pluginID string) bool
+}
+
+// startHold holds the set of plugins against a scan of the folders while a plugin starts.
+type startHold interface {
+	holdStart()
+	releaseStart()
+}
+
+// configPusher gives a plugin its configuration around the start of its process.
+type configPusher interface {
+	awaitFirstConfigure(pluginID string)
+	configureActivated(ctx context.Context, pluginID string) error
+}
+
 // Activation starts the process of a plugin when something asks for it, counts the callers that
 // hold it, and says which plugin a caller is.
 type Activation struct {
-	registry  *Registry
-	mode      *Mode
-	sups      *supervision.Supervisors
-	processes *supervision.Processes
-	failures  *supervision.Failures
-	config    *ConfigPush
-	clock     machineport.Clock
+	set        activationPlugins
+	enablement enablementChecker
+	scan       startHold
+	mode       hostState
+	sups       *supervision.Supervisors
+	processes  *supervision.Processes
+	failures   *supervision.Failures
+	config     configPusher
+	clock      machineport.Clock
 }
 
 // ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
@@ -83,7 +116,7 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled, Err: ErrSafeModeActive}
 	}
 
-	p, ok := a.registry.set.getKnown(pluginID)
+	p, ok := a.set.getKnown(pluginID)
 	if !ok {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{
 			PluginID: pluginID, Reason: plugindomain.NotInstalled, Err: errPluginNotFound,
@@ -92,10 +125,10 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 
 	sup := a.sups.Register(p)
 
-	if !a.registry.IsPluginEnabled(pluginID) {
+	if !a.enablement.IsPluginEnabled(pluginID) {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled}
 	}
-	v, release := a.registry.set.view()
+	v, release := a.set.view()
 	hasBackend := v.hasBackend(p)
 	release()
 	if !hasBackend {
@@ -151,8 +184,8 @@ func (a *Activation) EnsureActive(ctx context.Context, pluginID string) (transpo
 }
 
 func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	a.registry.discovering.RLock()
-	defer a.registry.discovering.RUnlock()
+	a.scan.holdStart()
+	defer a.scan.releaseStart()
 
 	for {
 		p, sup, err := a.prepareSupervisor(pluginID)
@@ -181,7 +214,7 @@ func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID s
 }
 
 func (a *Activation) runActivation(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
-	endpoint, err := a.processes.Start(ctx, a.registry.set.getLaunch(p), sup)
+	endpoint, err := a.processes.Start(ctx, a.set.getLaunch(p), sup)
 	if err != nil {
 		a.failures.FailActivation(ctx, p.Manifest.ID, p.Manifest.Name, sup, err)
 		return endpoint, err

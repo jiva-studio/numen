@@ -49,11 +49,11 @@ func (r *Registry) GetPluginStatuses() []PluginStatus {
 	v, release := r.set.view()
 	defer release()
 	ordered := v.ordered()
-	statuses := make([]PluginStatus, 0, len(ordered)+len(r.set.problems))
+	statuses := make([]PluginStatus, 0, len(ordered)+len(v.listProblems()))
 	for _, p := range ordered {
 		statuses = append(statuses, r.getStatus(v, p.Manifest.ID))
 	}
-	for _, problem := range r.set.problems {
+	for _, problem := range v.listProblems() {
 		statuses = append(statuses, PluginStatus{
 			ID:            "",
 			Dir:           problem.Dir,

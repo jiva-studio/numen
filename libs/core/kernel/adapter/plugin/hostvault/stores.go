@@ -19,7 +19,7 @@ type Stores struct {
 	StoreWriters func(v domain.Vault, pluginID string) (vault.StoreWriter, error)
 	Cache        pluginCache
 
-	session *Session
+	session sessionAccess
 }
 
 // OpenStore opens the folder of the plugin for reading.

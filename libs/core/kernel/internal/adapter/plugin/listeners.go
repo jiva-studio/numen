@@ -26,11 +26,19 @@ var (
 	errListenerBind = errors.New("listener port not bound")
 )
 
+// listenedPlugins is what the listeners read of the set of plugins.
+type listenedPlugins interface {
+	view() (setView, func())
+	getKnown(pluginID string) (manifest.Discovered, bool)
+	getName(pluginID string) string
+	listIDs() []string
+}
+
 // Listeners binds the ports the plugins declare as listeners and forwards each connection to the
 // plugin, which it starts when a connection arrives.
 type Listeners struct {
-	registry  *Registry
-	mode      *Mode
+	set       listenedPlugins
+	mode      hostState
 	sups      *supervision.Supervisors
 	activator pluginActivator
 	failures  *supervision.Failures
@@ -48,7 +56,7 @@ type listenerBinding struct {
 }
 
 func (l *Listeners) getBindable(pluginID string) (manifest.Discovered, map[string]any, bool) {
-	v, release := l.registry.set.view()
+	v, release := l.set.view()
 	defer release()
 	p, ok := v.get(pluginID)
 	if !ok || l.mode.IsClosed() || l.mode.IsSafeMode() || !v.isEnabled(pluginID) {
@@ -99,7 +107,7 @@ func readPort(value any) (int, bool) {
 func (l *Listeners) checkPort(ctx context.Context, pluginID, key string, value any) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	p, ok := l.registry.set.getKnown(pluginID)
+	p, ok := l.set.getKnown(pluginID)
 	_, _, isBindable := l.getBindable(pluginID)
 	isBinding := ok && isBindable
 	if !ok {
@@ -133,7 +141,7 @@ func (l *Listeners) syncAll(ctx context.Context) {
 	l.mu.Lock()
 	ids := slices.Collect(maps.Keys(l.bindings))
 	l.mu.Unlock()
-	for _, id := range l.registry.set.listIDs() {
+	for _, id := range l.set.listIDs() {
 		if !slices.Contains(ids, id) {
 			ids = append(ids, id)
 		}
@@ -233,7 +241,7 @@ func (l *Listeners) failListenerBind(pluginID string, err error) {
 	if ok && sup.Failure.IsFailed() {
 		return
 	}
-	l.failures.RecordActivationFailure(pluginID, l.registry.set.getName(pluginID), err)
+	l.failures.RecordActivationFailure(pluginID, l.set.getName(pluginID), err)
 	l.failures.Deliver()
 }
 

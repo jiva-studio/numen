@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
@@ -16,15 +17,16 @@ type NoteWriter interface {
 	Create(ctx context.Context, path string, content []byte) error
 }
 
-// Files reads and writes the files of the vault.
+// Files reads and writes the files of the vault. Locks, where set, holds the writers of the vault apart while a call writes.
 type Files struct {
 	Stat        *file.StatFile
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
 	OpenWriter  func(v domain.Vault) (NoteWriter, error)
 	Index       func(ctx context.Context, v domain.Vault, paths []string) error
+	Locks       vault.Locks
 
-	session *Session
+	session sessionAccess
 }
 
 func (f Files) openWriter() (NoteWriter, error) {

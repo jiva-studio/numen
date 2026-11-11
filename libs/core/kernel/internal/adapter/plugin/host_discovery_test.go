@@ -179,7 +179,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	host.Registry.discovering.Lock()
+	host.Discovery.scan.holdScan()
 
 	reply := make(chan error, 1)
 	calling := make(chan struct{})
@@ -191,15 +191,12 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	<-calling
 	runtime.Gosched()
 
-	if host.Registry.discovering.TryRLock() {
-		t.Fatal("the discovery lock is not held")
-	}
 	select {
 	case err := <-reply:
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
 	default:
 	}
-	host.Registry.discovering.Unlock()
+	host.Discovery.scan.releaseScan()
 	if err := <-reply; err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}

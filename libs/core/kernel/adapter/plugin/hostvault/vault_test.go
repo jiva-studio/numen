@@ -25,19 +25,30 @@ import (
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
-func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
+// diskHooks are what a test sets of the vault: the notice of a written file, the indexing of paths, the
+// lookup of a vault by identity and the use case that adds links.
+type diskHooks struct {
+	onWrite  func()
+	index    func(ctx context.Context, v domain.Vault, paths []string) error
+	find     func(id domain.VaultID) (domain.Vault, error)
+	addLinks note.AddLinks
+}
+
+func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.Access, domain.Vault) {
 	t.Helper()
 	v := vaultfixture.NewVault(t, files)
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
-	return Vault{
-		Session: Session{Current: func() (domain.Vault, bool) { return v, true }},
-		Files: Files{
+	return NewAccess(
+		Session{Current: func() (domain.Vault, bool) { return v, true }, Written: hooks.onWrite, Find: hooks.find},
+		Files{
 			Stat:        file.NewStatFile(vaultreader.Readers{}),
 			ReadFile:    file.NewReadFile(vaultreader.Readers{}),
 			RangeReader: file.Read{Readers: vaultreader.Readers{}},
 			OpenWriter:  func(v domain.Vault) (NoteWriter, error) { return writers.Open(v) },
+			Index:       hooks.index,
 		},
-		Stores: Stores{
+		Lookups{}, Connections{}, Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
+		Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return derivedfile.PluginStores{}.Open(v, pluginID)
 			},
@@ -46,13 +57,13 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 			},
 			Cache: appstate.PluginCachesAt(t.TempDir()),
 		},
-	}, v
+	), v
 }
 
 func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) {
-	access, _ := diskVault(t, map[string]string{"samples/A.md": "body"})
+	access, _ := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{})
 
-	content, pos, err := access.Access().Files.Read(t.Context(), "samples/A.md")
+	content, pos, err := access.Files.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,23 +71,25 @@ func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) 
 	if string(content) != "body" || pos.Path != "samples/A.md" || pos.Size != 4 {
 		t.Errorf("read %q with %+v", content, pos)
 	}
-	if _, _, err := access.Access().Files.Read(t.Context(), "gone.md"); !errors.Is(err, fs.ErrNotExist) {
+	if _, _, err := access.Files.Read(t.Context(), "gone.md"); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("a file that is not there was read with %v", err)
 	}
 }
 
 func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
-	access, v := diskVault(t, map[string]string{"samples/A.md": "body"})
 	var indexed []string
 	var writeCount int
-	access.Session.Written = func() { writeCount++ }
-	access.Files.Index = func(_ context.Context, got domain.Vault, paths []string) error {
-		if got.ID == v.ID {
-			indexed = append(indexed, paths...)
-		}
-		return nil
-	}
-	_, pos, err := access.Access().Files.Read(t.Context(), "samples/A.md")
+	var v domain.Vault
+	access, v := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
+		onWrite: func() { writeCount++ },
+		index: func(_ context.Context, got domain.Vault, paths []string) error {
+			if got.ID == v.ID {
+				indexed = append(indexed, paths...)
+			}
+			return nil
+		},
+	})
+	_, pos, err := access.Files.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +97,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = access.Access().Writer.WriteFile(t.Context(), "samples/A.md", []byte("mine"), pos)
+	_, err = access.Writer.WriteFile(t.Context(), "samples/A.md", []byte("mine"), pos)
 
 	if !errors.Is(err, edit.ErrStale) {
 		t.Errorf("a write over a file that moved was %v", err)
@@ -92,11 +105,11 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	if writeCount != 0 || len(indexed) != 0 {
 		t.Errorf("a refused write notified %d times and indexed %v", writeCount, indexed)
 	}
-	_, now, err := access.Access().Files.Read(t.Context(), "samples/A.md")
+	_, now, err := access.Files.Read(t.Context(), "samples/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := access.Access().Writer.WriteFile(t.Context(), "samples/A.md", []byte("mine"), now); err != nil {
+	if _, err := access.Writer.WriteFile(t.Context(), "samples/A.md", []byte("mine"), now); err != nil {
 		t.Errorf("a write over what was read was %v", err)
 	}
 	if writeCount != 1 || !slices.Equal(indexed, []string{"samples/A.md"}) {
@@ -105,22 +118,24 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 }
 
 func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
-	access, v := diskVault(t, map[string]string{"samples/A.md": "body"})
 	var indexed []string
-	access.Files.Index = func(_ context.Context, got domain.Vault, paths []string) error {
-		if got.ID == v.ID {
-			indexed = append(indexed, paths...)
-		}
-		return nil
-	}
+	var v domain.Vault
+	access, v := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
+		index: func(_ context.Context, got domain.Vault, paths []string) error {
+			if got.ID == v.ID {
+				indexed = append(indexed, paths...)
+			}
+			return nil
+		},
+	})
 
-	if err := access.Access().Writer.CreateFile(t.Context(), "samples/B.md", []byte("b")); err != nil {
+	if err := access.Writer.CreateFile(t.Context(), "samples/B.md", []byte("b")); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(indexed, []string{"samples/B.md"}) {
 		t.Errorf("a created file indexed %v", indexed)
 	}
-	if err := access.Access().Writer.CreateFile(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultdomain.ErrAlreadyExists) {
+	if err := access.Writer.CreateFile(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultdomain.ErrAlreadyExists) {
 		t.Errorf("a file made over one was %v", err)
 	}
 	if !slices.Equal(indexed, []string{"samples/B.md"}) {
@@ -129,12 +144,12 @@ func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 }
 
 func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
-	access, v := diskVault(t, nil)
-	store, err := access.Access().Stores.OpenStoreWriter("md.numen.a")
+	access, v := diskVault(t, nil, diskHooks{})
+	store, err := access.Stores.OpenStoreWriter("md.numen.a")
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := access.Access().Stores.OpenStore("md.numen.a")
+	reader, err := access.Stores.OpenStore("md.numen.a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,23 +167,23 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
 	for _, id := range []string{"", "samples", "index", "..", "a/b.c", ".a.b"} {
-		if _, err := access.Access().Stores.OpenStore(id); !errors.Is(err, vaultdomain.ErrOutside) {
+		if _, err := access.Stores.OpenStore(id); !errors.Is(err, vaultdomain.ErrOutside) {
 			t.Errorf("the folder of %q was opened with %v", id, err)
 		}
 	}
 }
 
 func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
-	access, _ := diskVault(t, nil)
+	access, _ := diskVault(t, nil, diskHooks{})
 
-	if _, found, err := access.Access().Cache.ReadCache(t.Context(), "md.numen.a", "schedules"); err != nil || found {
+	if _, found, err := access.Cache.ReadCache(t.Context(), "md.numen.a", "schedules"); err != nil || found {
 		t.Fatalf("an empty cache answered %v, %v", found, err)
 	}
-	if err := access.Access().Cache.WriteCache(t.Context(), "md.numen.a", "schedules", []byte("{}")); err != nil {
+	if err := access.Cache.WriteCache(t.Context(), "md.numen.a", "schedules", []byte("{}")); err != nil {
 		t.Fatal(err)
 	}
-	mine, found, err := access.Access().Cache.ReadCache(t.Context(), "md.numen.a", "schedules")
-	other, otherFound, otherErr := access.Access().Cache.ReadCache(t.Context(), "md.numen.b", "schedules")
+	mine, found, err := access.Cache.ReadCache(t.Context(), "md.numen.a", "schedules")
+	other, otherFound, otherErr := access.Cache.ReadCache(t.Context(), "md.numen.b", "schedules")
 
 	if err != nil || !found || string(mine) != "{}" {
 		t.Errorf("the cache held %q, %v (%v)", mine, found, err)
@@ -177,48 +192,52 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 		t.Errorf("another plugin's cache held %q, %v (%v)", other, otherFound, otherErr)
 	}
 	for _, name := range []string{"", "../x", "a/b", ".days"} {
-		if err := access.Access().Cache.WriteCache(t.Context(), "md.numen.a", name, nil); err == nil {
+		if err := access.Cache.WriteCache(t.Context(), "md.numen.a", name, nil); err == nil {
 			t.Errorf("a cache was written under %q", name)
 		}
 	}
 }
 
 func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
-	access := Vault{Session: Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }}}
+	access := NewAccess(
+		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
+		Files{}, Lookups{}, Connections{}, Arranger{}, Stores{},
+	)
 
-	_, _, readErr := access.Access().Files.Read(t.Context(), "a.md")
-	_, writeErr := access.Access().Writer.WriteFile(t.Context(), "a.md", nil, domain.FileStat{})
-	_, notesErr := access.Access().Notes.GetNotes(t.Context(), nil)
-	_, openErr := access.Access().Stores.OpenStore("md.numen.a")
-	_, _, watchErr := access.Access().Watch.Watch(t.Context())
+	_, _, readErr := access.Files.Read(t.Context(), "a.md")
+	_, writeErr := access.Writer.WriteFile(t.Context(), "a.md", nil, domain.FileStat{})
+	_, notesErr := access.Notes.GetNotes(t.Context(), nil)
+	_, openErr := access.Stores.OpenStore("md.numen.a")
+	_, _, watchErr := access.Watch.Watch(t.Context())
 
 	for name, err := range map[string]error{"read": readErr, "write": writeErr, "notes": notesErr, "store": openErr, "watch": watchErr} {
 		if !errors.Is(err, plugin.ErrNoVault) {
 			t.Errorf("%s was %v", name, err)
 		}
 	}
-	if err := access.Access().Writer.Scan(t.Context(), []string{"a.md"}); !errors.Is(err, plugin.ErrNoVault) {
+	if err := access.Writer.Scan(t.Context(), []string{"a.md"}); !errors.Is(err, plugin.ErrNoVault) {
 		t.Errorf("a scan was %v", err)
 	}
 }
 
-func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *testing.T) {
-	access, _ := diskVault(t, map[string]string{
-		"Danube.md": "# Danube\n", "Rhine.md": "# Rhine\n", "Volga.md": "# Volga\n",
-	})
+func TestAddLinksCanceledAfterTheFirstNoteSendsOneFileWriteNotification(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	writeCount := 0
-	access.Session.Written = func() { writeCount++ }
 	cancelAfterIndex := func(context.Context, domain.Vault, []string) error {
 		cancel()
 		return nil
 	}
-	access.Arranger.Notes.AddLinks = note.NewAddLinks(note.NewEditLinks(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, cancelAfterIndex, testsupport.NewClock()))
+	access, _ := diskVault(t, map[string]string{
+		"Danube.md": "# Danube\n", "Rhine.md": "# Rhine\n", "Volga.md": "# Volga\n",
+	}, diskHooks{
+		onWrite: func() { writeCount++ },
+		addLinks: note.NewAddLinks(note.NewEditLinks(
+			vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, cancelAfterIndex, testsupport.NewClock())),
+	})
 	estuary := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Estuary"}, Role: domain.RoleRef}
 
-	added, err := access.Access().LinkEditor.AddLinks(ctx, []plugin.LinkAddition{
+	added, err := access.LinkEditor.AddLinks(ctx, []plugin.LinkAddition{
 		{From: "Danube.md", Link: estuary}, {From: "Rhine.md", Link: estuary}, {From: "Volga.md", Link: estuary},
 	})
 	if err != nil {
@@ -232,17 +251,18 @@ func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *test
 	}
 }
 
-func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
-	access, _ := diskVault(t, map[string]string{"Danube.md": "# Danube\n"})
+func TestAddLinksCanceledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	writeCount := 0
-	access.Session.Written = func() { writeCount++ }
-	access.Arranger.Notes.AddLinks = note.NewAddLinks(note.NewEditLinks(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock()))
+	access, _ := diskVault(t, map[string]string{"Danube.md": "# Danube\n"}, diskHooks{
+		onWrite: func() { writeCount++ },
+		addLinks: note.NewAddLinks(note.NewEditLinks(
+			vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock())),
+	})
 	estuary := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Estuary"}, Role: domain.RoleRef}
 
-	added, err := access.Access().LinkEditor.AddLinks(ctx, []plugin.LinkAddition{{From: "Danube.md", Link: estuary}})
+	added, err := access.LinkEditor.AddLinks(ctx, []plugin.LinkAddition{{From: "Danube.md", Link: estuary}})
 	if err != nil {
 		t.Fatalf("AddLinks returned %v, want the results and no error", err)
 	}
@@ -255,23 +275,24 @@ func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 }
 
 func TestAVaultNamedByIdentityIsWorkedAsTheVaultShown(t *testing.T) {
-	access, current := diskVault(t, map[string]string{"samples/A.md": "body"})
 	other := vaultfixture.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
-	access.Session.Find = func(id domain.VaultID) (domain.Vault, error) {
-		if id == other.ID {
-			return other, nil
-		}
-		return domain.Vault{}, fs.ErrNotExist
-	}
+	access, current := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
+		find: func(id domain.VaultID) (domain.Vault, error) {
+			if id == other.ID {
+				return other, nil
+			}
+			return domain.Vault{}, fs.ErrNotExist
+		},
+	})
 
-	linked, err := access.Access().Switch.With(other.ID)
+	linked, err := access.Switch.With(other.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	got, isShowing := linked.Switch.GetVault()
 	_, _, readErr := linked.Files.Read(t.Context(), "Baikal.md")
 	_, _, notThere := linked.Files.Read(t.Context(), "samples/A.md")
-	_, unknown := access.Access().Switch.With("nobody")
+	_, unknown := access.Switch.With("nobody")
 
 	if !isShowing || got.ID != other.ID || readErr != nil || !errors.Is(notThere, fs.ErrNotExist) {
 		t.Errorf("the linked vault was %+v (%v), read %v and %v", got, isShowing, readErr, notThere)
@@ -279,7 +300,7 @@ func TestAVaultNamedByIdentityIsWorkedAsTheVaultShown(t *testing.T) {
 	if !errors.Is(unknown, fs.ErrNotExist) {
 		t.Errorf("a vault nobody holds was %v", unknown)
 	}
-	if now, _ := access.Access().Switch.GetVault(); now.ID != current.ID {
+	if now, _ := access.Switch.GetVault(); now.ID != current.ID {
 		t.Errorf("the vault current changed to %v", now.ID)
 	}
 }

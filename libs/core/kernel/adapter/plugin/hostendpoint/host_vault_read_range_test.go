@@ -72,15 +72,16 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	})
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	readers := vaultreader.Readers{}
-	return openReadEndpoint(t, hostvault.Vault{
-		Session: hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
-		Files: hostvault.Files{
+	return openReadEndpoint(t, hostvault.NewAccess(
+		hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
+		hostvault.Files{
 			Stat:        file.NewStatFile(readers),
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
 		},
-	}.Access())
+		hostvault.Lookups{}, hostvault.Connections{}, hostvault.Arranger{}, hostvault.Stores{},
+	))
 }
 
 func readFileRange(t *testing.T, client numenv1connect.HostVaultServiceClient, path string, start, length int64) *v1.ReadFileResponse {

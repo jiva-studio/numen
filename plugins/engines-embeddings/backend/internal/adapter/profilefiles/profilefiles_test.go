@@ -38,9 +38,13 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	table, err := NewDirectory(dir).Load()
+	var reported []string
+	table, err := NewDirectory(dir).Load(func(file string, _ error) { reported = append(reported, filepath.Base(file)) })
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(reported) != 1 || reported[0] != "a-broken.json" {
+		t.Errorf("reported %v, want only a-broken.json", reported)
 	}
 
 	if _, err := table.GetLocal("owner/good"); err != nil {
@@ -52,7 +56,7 @@ func TestOnlyTheJSONFilesOfTheFolderAreRead(t *testing.T) {
 }
 
 func TestLoadKeepsShippedProfilesWhenFolderIsMissing(t *testing.T) {
-	table, err := NewDirectory(filepath.Join(t.TempDir(), "profiles")).Load()
+	table, err := NewDirectory(filepath.Join(t.TempDir(), "profiles")).Load(func(string, error) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +71,7 @@ func TestLoadKeepsShippedProfilesWhenPathIsNotFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	table, err := NewDirectory(file).Load()
+	table, err := NewDirectory(file).Load(func(string, error) {})
 	if err != nil {
 		t.Fatal(err)
 	}

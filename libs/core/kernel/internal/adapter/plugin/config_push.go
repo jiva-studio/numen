@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -15,11 +16,20 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
+// configPlugins is what the push reads of the set of plugins.
+type configPlugins interface {
+	listIDs() []string
+	getPluginSettings(pluginID string) map[string]any
+	getKnown(pluginID string) (manifest.Discovered, bool)
+	view() (setView, func())
+	hasProblems() bool
+}
+
 // ConfigPush gives the running plugins their configuration: the settings, the performance profile
 // and the secrets they declare, each time one of them changes. It also keeps the secret
 // declarations of the installed plugins, and drops the permissions of the ones that are gone.
 type ConfigPush struct {
-	registry *Registry
+	set      configPlugins
 	sups     *supervision.Supervisors
 	report   func(error)
 	delivery *delivery.Delivery
@@ -30,15 +40,25 @@ type ConfigPush struct {
 	hasScanned  bool
 }
 
-func newConfigPush(registry *Registry, sups *supervision.Supervisors, report func(error)) *ConfigPush {
-	c := &ConfigPush{registry: registry, sups: sups, report: report}
-	c.delivery = delivery.New(delivery.Host{
-		GetSnapshot:   c.getSnapshot,
-		ListPluginIDs: registry.set.listIDs,
-		ReportError:   report,
-		GetClient:     transport.NewClientLookup(sups.Clients()).GetClient,
-	})
+func newConfigPush(set configPlugins, sups *supervision.Supervisors, report func(error)) *ConfigPush {
+	c := &ConfigPush{set: set, sups: sups, report: report}
+	c.delivery = delivery.New(c)
 	return c
+}
+
+// ListPluginIDs returns the ids of the plugins the host knows.
+func (c *ConfigPush) ListPluginIDs() []string {
+	return c.set.listIDs()
+}
+
+// ReportError reports an error a push meets outside a call.
+func (c *ConfigPush) ReportError(err error) {
+	c.report(err)
+}
+
+// GetClient returns the client that calls the plugin process an endpoint belongs to.
+func (c *ConfigPush) GetClient(endpoint transport.Endpoint) *http.Client {
+	return transport.NewClientLookup(c.sups.Clients()).GetClient(endpoint)
 }
 
 // SetKeyStore sets where the values of secrets are kept.
@@ -127,7 +147,7 @@ func (c *ConfigPush) configureActivated(ctx context.Context, pluginID string) er
 	return nil
 }
 
-func (c *ConfigPush) getSnapshot(pluginID string) (delivery.Snapshot, bool, error) {
+func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, error) {
 	profile := c.getPerformanceProfile()
 	endpoint, hasEndpoint := c.sups.GetEndpoint(pluginID)
 	sup, hasSup := c.sups.Get(pluginID)
@@ -137,7 +157,7 @@ func (c *ConfigPush) getSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 	if state := sup.GetState(); state != lifecycle.StateActive && state != lifecycle.StateIdle {
 		return delivery.Snapshot{}, false, nil
 	}
-	rawSettings := c.registry.set.getPluginSettings(pluginID)
+	rawSettings := c.set.getPluginSettings(pluginID)
 	cfgJSON, err := json.Marshal(rawSettings)
 	if err != nil {
 		return delivery.Snapshot{}, true, fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
@@ -157,7 +177,7 @@ func (c *ConfigPush) getSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 }
 
 func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]any) []manifest.SecretDeclaration {
-	p, ok := c.registry.set.getKnown(pluginID)
+	p, ok := c.set.getKnown(pluginID)
 	if !ok {
 		return nil
 	}
@@ -171,7 +191,7 @@ func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]a
 }
 
 func (c *ConfigPush) listDeclarations(installed []manifest.Discovered) []plugindomain.DeclarationKey {
-	v, release := c.registry.set.view()
+	v, release := c.set.view()
 	defer release()
 	var declarations []plugindomain.DeclarationKey
 	installedIDs := make(map[string]bool, len(installed))
@@ -206,7 +226,7 @@ func (c *ConfigPush) recordScan(installed []manifest.Discovered) {
 func (c *ConfigPush) pruneSecretPermissions() {
 	prune := c.delivery.GetSource().Prune
 	c.mu.RLock()
-	skip := !c.hasScanned || c.registry.set.hasProblems()
+	skip := !c.hasScanned || c.set.hasProblems()
 	installed := c.installed
 	c.mu.RUnlock()
 	if prune == nil || skip {

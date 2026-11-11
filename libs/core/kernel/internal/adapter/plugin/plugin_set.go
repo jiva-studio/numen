@@ -26,10 +26,16 @@ type builtInPlugin struct {
 
 // pluginSet is the plugins the host knows, which of them came from the disk or are linked into the
 // binary, and the problems the last scan met. It is the one owner of that state.
+// modeReader is what the set reads of the mode of the host.
+type modeReader interface {
+	IsSafeMode() bool
+	GetVaultPath() string
+}
+
 type pluginSet struct {
 	sups   *supervision.Supervisors
 	values *settingValues
-	mode   *Mode
+	mode   modeReader
 
 	mu       sync.RWMutex
 	plugins  map[string]manifest.Discovered
@@ -38,7 +44,7 @@ type pluginSet struct {
 	problems []manifestjson.DiscoveryProblem
 }
 
-func newPluginSet(sups *supervision.Supervisors, values *settingValues, mode *Mode) *pluginSet {
+func newPluginSet(sups *supervision.Supervisors, values *settingValues, mode modeReader) *pluginSet {
 	return &pluginSet{
 		sups: sups, values: values, mode: mode,
 		plugins:  make(map[string]manifest.Discovered),
@@ -302,4 +308,8 @@ func (s *pluginSet) addBuiltIn(p manifest.Discovered, serve func(vars map[string
 		s.sups.Register(p)
 	}
 	return nil
+}
+
+func (v setView) listProblems() []manifestjson.DiscoveryProblem {
+	return v.set.problems
 }

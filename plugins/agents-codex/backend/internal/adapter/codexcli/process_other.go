@@ -1,6 +1,6 @@
 //go:build !unix && !windows
 
-package process
+package codexcli
 
 import "os/exec"
 

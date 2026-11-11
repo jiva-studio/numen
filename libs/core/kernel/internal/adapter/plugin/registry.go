@@ -3,7 +3,6 @@ package plugin
 import (
 	"errors"
 	"slices"
-	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
@@ -21,19 +20,22 @@ var (
 )
 
 // Registry answers which plugins the host knows and which of them are enabled. In safe mode it
-// knows none. A scan of the folders holds discovering for writing and an activation holds it for
-// reading, so that a plugin is not started while the set of plugins changes.
+// knows none.
 type Registry struct {
-	set         *pluginSet
-	mode        *Mode
-	sups        *supervision.Supervisors
-	failures    *supervision.Failures
-	readers     *contenttypes.Lookup
-	discovering sync.RWMutex
+	set      *pluginSet
+	mode     safeModeReader
+	sups     *supervision.Supervisors
+	failures *supervision.Failures
+	readers  *contenttypes.Lookup
+}
+
+// safeModeReader reports whether the host runs in safe mode.
+type safeModeReader interface {
+	IsSafeMode() bool
 }
 
 func newRegistry(
-	set *pluginSet, mode *Mode, sups *supervision.Supervisors, failures *supervision.Failures, readers *contenttypes.Lookup,
+	set *pluginSet, mode safeModeReader, sups *supervision.Supervisors, failures *supervision.Failures, readers *contenttypes.Lookup,
 ) *Registry {
 	return &Registry{set: set, mode: mode, sups: sups, failures: failures, readers: readers}
 }

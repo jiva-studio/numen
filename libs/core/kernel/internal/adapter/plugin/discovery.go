@@ -30,11 +30,32 @@ type cacheRemover interface {
 	RemoveCacheDir(pluginID string)
 }
 
-// Discovery finds the plugins in the folders it is given, registers them, and retires the ones that
-// left the disk.
+// discoveredPlugins is what a discovery reads and writes of the set of plugins.
+type discoveredPlugins interface {
+	refuseConflicts(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem)
+	replaceDiscovered(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) []string
+	isOnDisk(pluginID string) bool
+	isRegistered(pluginID string) bool
+}
+
+// pluginRegistrar adds a plugin to the set.
+type pluginRegistrar interface {
+	put(p manifest.Discovered, sup *lifecycle.Supervisor)
+	addBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error
+}
+
+// scanHold holds the set of plugins against the start of a plugin while a scan of the folders runs.
+type scanHold interface {
+	holdScan()
+	releaseScan()
+}
+
+// Discovery finds the plugins in the folders it is given, registers them, and retires the ones that left the disk.
 type Discovery struct {
-	registry  *Registry
-	mode      *Mode
+	set       discoveredPlugins
+	registrar pluginRegistrar
+	scan      scanHold
+	mode      hostState
 	sups      *supervision.Supervisors
 	stopper   pluginStopper
 	listeners listenerControl
@@ -57,12 +78,12 @@ func (d *Discovery) Discover() error {
 }
 
 func (d *Discovery) discoverPlugins() error {
-	d.registry.discovering.Lock()
-	defer d.registry.discovering.Unlock()
+	d.scan.holdScan()
+	defer d.scan.releaseScan()
 
 	all, problems := manifestjson.Discover(d.dirs)
 	discovered := manifest.FilterByTarget(all, d.target)
-	discovered, problems = d.registry.set.refuseConflicts(discovered, problems)
+	discovered, problems = d.set.refuseConflicts(discovered, problems)
 
 	if d.mode.IsClosed() {
 		return errHostClosed
@@ -71,14 +92,14 @@ func (d *Discovery) discoverPlugins() error {
 		return nil
 	}
 	d.scans.recordScan(all)
-	stalePlugins := d.registry.set.replaceDiscovered(discovered, problems)
+	stalePlugins := d.set.replaceDiscovered(discovered, problems)
 
 	for _, problem := range problems {
 		d.report(problem.Err)
 	}
 	for _, id := range stalePlugins {
 		d.retirePlugin(id)
-		if !d.registry.set.isOnDisk(id) {
+		if !d.set.isOnDisk(id) {
 			d.storage.RemoveCacheDir(id)
 		}
 	}
@@ -90,14 +111,14 @@ func (d *Discovery) retirePlugin(pluginID string) {
 	if err := d.stopper.StopPlugin(context.Background(), pluginID); err != nil {
 		d.report(err)
 	}
-	if !d.registry.set.isRegistered(pluginID) {
+	if !d.set.isRegistered(pluginID) {
 		d.sups.Forget(pluginID)
 	}
 }
 
 // RegisterPlugin adds a plugin with the supervisor that tracks it, as discovery does for a plugin found on disk.
 func (d *Discovery) RegisterPlugin(p manifest.Discovered, sup *lifecycle.Supervisor) {
-	d.registry.set.put(p, sup)
+	d.registrar.put(p, sup)
 }
 
 // RegisterBuiltIn registers a plugin linked into this binary from its manifest.json and what
@@ -113,7 +134,7 @@ func (d *Discovery) RegisterBuiltIn(manifestJSON []byte, serve func(vars map[str
 	if !slices.Contains(parsed.Targets, d.target) {
 		return fmt.Errorf("register built-in plugin %s: %w: %s", parsed.ID, errNotForTarget, d.target)
 	}
-	if err := d.registry.set.addBuiltIn(manifest.Discovered{Dir: "", Manifest: parsed}, serve); err != nil {
+	if err := d.registrar.addBuiltIn(manifest.Discovered{Dir: "", Manifest: parsed}, serve); err != nil {
 		return fmt.Errorf("register built-in plugin %s: %w", parsed.ID, err)
 	}
 	return nil

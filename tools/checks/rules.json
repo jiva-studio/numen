@@ -472,6 +472,23 @@
       "target": "plugin-adapter-layers"
     },
     {
+      "name": "go/plugin-adapters-are-siblings",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "plugin",
+        "fast"
+      ],
+      "selftest": "structure/go/plugin-adapters-are-siblings/check_test.go",
+      "runner": "go",
+      "target": "plugin-adapters-are-siblings"
+    },
+    {
       "name": "go/plugin-boundary",
       "paths": [
         "**/*.go",
