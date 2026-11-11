@@ -254,3 +254,9 @@ func (u Scan) removeGone(
 	res.Removed = len(removed)
 	return nil
 }
+
+// Rebuilding returns the walk set to rebuild the index, or to trust it where a note is unchanged.
+func (u Scan) Rebuilding(rebuild bool) Scan {
+	u.ShouldRebuildIndex = rebuild
+	return u
+}

@@ -369,12 +369,12 @@ func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v 
 // UpdateIndex brings the notes a write touched up to date in the index, through
 // the Refresh of the vault the caller has running.
 type UpdateIndex struct {
-	refresh func() Refresh
+	refresh func() Refreshing
 }
 
-// NewUpdateIndex creates an UpdateIndex that asks getRefresh for the Refresh to
+// NewUpdateIndex creates an UpdateIndex that asks getRefresh for the refresh to
 // use at each call.
-func NewUpdateIndex(getRefresh func() Refresh) UpdateIndex {
+func NewUpdateIndex(getRefresh func() Refreshing) UpdateIndex {
 	return UpdateIndex{refresh: getRefresh}
 }
 
