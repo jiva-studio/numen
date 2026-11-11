@@ -3,13 +3,9 @@ package manifest
 import (
 	"errors"
 	"fmt"
-	"maps"
 	"regexp"
 	"slices"
 	"strings"
-	"unicode/utf8"
-
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const (
@@ -200,15 +196,6 @@ type Manifest struct {
 	Warnings         []string
 }
 
-// NoteType declares one type of note and how the index keeps the notes of it.
-type NoteType struct {
-	Type            string
-	Chunks          *bool
-	Headings        *[]int
-	IDHeadingLevels []int
-	IDPattern       string
-}
-
 // GetProtocol returns the plugin protocol the manifest declares. An absent protocol is 1.
 func (m Manifest) GetProtocol() int {
 	if m.Protocol == 0 {
@@ -258,65 +245,6 @@ func (m Manifest) listServiceIssues() []error {
 		observed[name] = true
 	}
 	return issues
-}
-
-func (m Manifest) listNoteTypeIssues() []error {
-	var issues []error
-	observed := map[string]bool{}
-	for _, declared := range m.Contributes.NoteTypes {
-		switch {
-		case !manifestSecretPattern.MatchString(declared.Type):
-			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidNoteType, declared.Type))
-		case observed[declared.Type]:
-			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidNoteType, declared.Type))
-		}
-		observed[declared.Type] = true
-		if _, err := regexp.Compile(declared.IDPattern); err != nil {
-			issues = append(issues, fmt.Errorf("%w: %q has an id pattern that is no pattern: %w", ErrInvalidNoteType, declared.Type, err))
-		}
-		levels := declared.IDHeadingLevels
-		if declared.Headings != nil {
-			levels = append(slices.Clone(*declared.Headings), levels...)
-		}
-		for _, level := range levels {
-			if level < 1 || level > 6 {
-				issues = append(issues, fmt.Errorf("%w: %q names heading level %d", ErrInvalidNoteType, declared.Type, level))
-			}
-		}
-	}
-	return issues
-}
-
-// GetProfile is how the index keeps the notes of the type.
-func (t NoteType) GetProfile() domain.NoteProfile {
-	profile := domain.DefaultProfile()
-	if t.Chunks != nil {
-		profile.HasChunks = *t.Chunks
-	}
-	if t.Headings != nil {
-		profile.HeadingLevels = slices.Clone(*t.Headings)
-		if profile.HeadingLevels == nil {
-			profile.HeadingLevels = []int{}
-		}
-	}
-	profile.IDHeadingLevels = slices.Clone(t.IDHeadingLevels)
-	if t.IDPattern != "" {
-		// listNoteTypeIssues rejects a pattern that does not compile.
-		if pattern, err := regexp.Compile("^(?:" + t.IDPattern + ")$"); err == nil {
-			profile.IDPattern = pattern
-		}
-	}
-	return profile
-}
-
-// GetNoteType is the declaration of a type of note the plugin gives meaning to.
-func (m Manifest) GetNoteType(noteType string) (NoteType, bool) {
-	for _, declared := range m.Contributes.NoteTypes {
-		if declared.Type == noteType {
-			return declared, true
-		}
-	}
-	return NoteType{}, false
 }
 
 func (m Manifest) listIdentityIssues() []error {
@@ -428,162 +356,6 @@ func isValidActivationEvent(event string) bool {
 	}
 	ext, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
 	return ok && ext != "" && strings.TrimSpace(ext) == ext && !strings.Contains(ext, "*")
-}
-
-// maxSecretGroupLength is the longest group name of a secret declaration, in characters.
-const maxSecretGroupLength = 64
-
-func (m Manifest) listSecretIssues() []error {
-	var issues []error
-	for _, secret := range m.Secrets {
-		name := secret.Name
-		issues = append(issues, m.listConditionIssues("secret "+name, secret.When)...)
-		issues = append(issues, listSecretGroupIssues(secret)...)
-		switch {
-		case !manifestSecretPattern.MatchString(name):
-			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
-		case slices.Contains(listReservedSettingKeys(), name):
-			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
-		case slices.ContainsFunc(m.Settings, func(s Setting) bool { return s.Key == name }):
-			issues = append(issues, fmt.Errorf("%w: %q is also a setting", ErrInvalidSecret, name))
-		}
-	}
-	return append(issues, listRepeatedSecretIssues(m.Secrets)...)
-}
-
-func listSecretGroupIssues(secret SecretDeclaration) []error {
-	group := secret.Group
-	if group == "" {
-		return nil
-	}
-	switch {
-	case strings.TrimSpace(group) != group:
-		return []error{fmt.Errorf("%w: group %q of %q has leading or trailing space", ErrInvalidSecret, group, secret.Name)}
-	case utf8.RuneCountInString(group) > maxSecretGroupLength:
-		return []error{fmt.Errorf("%w: group of %q is longer than %d characters", ErrInvalidSecret, secret.Name, maxSecretGroupLength)}
-	}
-	return nil
-}
-
-func listRepeatedSecretIssues(secrets []SecretDeclaration) []error {
-	var issues []error
-	byName := make(map[string][]SecretDeclaration, len(secrets))
-	for _, secret := range secrets {
-		byName[secret.Name] = append(byName[secret.Name], secret)
-	}
-	for _, name := range slices.Sorted(maps.Keys(byName)) {
-		declared := byName[name]
-		if len(declared) < 2 {
-			continue
-		}
-		if !isDisjoint(declared) {
-			issues = append(issues, fmt.Errorf("%w: %q is declared twice without conditions on one setting that exclude each other", ErrInvalidSecret, name))
-			continue
-		}
-		groups := make(map[string]bool, len(declared))
-		for _, secret := range declared {
-			if groups[secret.Group] {
-				issues = append(issues, fmt.Errorf("%w: %q is declared twice for the group %q", ErrInvalidSecret, name, secret.Group))
-			}
-			groups[secret.Group] = true
-		}
-	}
-	return issues
-}
-
-func isDisjoint(declared []SecretDeclaration) bool {
-	values := make(map[string]bool)
-	for _, secret := range declared {
-		if secret.When == nil || secret.When.Setting != declared[0].When.Setting {
-			return false
-		}
-		for _, is := range secret.When.Is {
-			if values[is] {
-				return false
-			}
-		}
-		for _, is := range secret.When.Is {
-			values[is] = true
-		}
-	}
-	return true
-}
-
-func listManifestSettingIssues(settings []Setting) []error {
-	var issues []error
-	seenKeys := make(map[string]bool, len(settings))
-	for _, s := range settings {
-		key := strings.TrimSpace(s.Key)
-		if key == "" {
-			issues = append(issues, ErrEmptySettingKey)
-			continue
-		}
-		if slices.Contains(listReservedSettingKeys(), key) {
-			issues = append(issues, fmt.Errorf("%w: %s", ErrReservedSettingKey, key))
-			continue
-		}
-		if seenKeys[key] {
-			issues = append(issues, fmt.Errorf("%w: %s", ErrDuplicateSettingKey, key))
-			continue
-		}
-		seenKeys[key] = true
-		if strings.Contains(key, ".") {
-			issues = append(issues, fmt.Errorf("%w: %s holds a dot, and a key is one segment of a path", ErrInvalidSettingKey, key))
-		}
-		issues = append(issues, listManifestSettingIssue(s, key)...)
-	}
-	return issues
-}
-
-func listManifestSettingIssue(s Setting, key string) []error {
-	var issues []error
-	if strings.TrimSpace(s.Title) == "" {
-		issues = append(issues, fmt.Errorf("%w: %s", ErrEmptySettingTitle, key))
-	}
-	if !slices.Contains(listSettingTypes(), s.Type) {
-		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
-	}
-	if s.Type == SettingTypeEnum && len(s.Options) == 0 && s.OptionsBy == nil && s.OptionsFrom == "" {
-		issues = append(issues, fmt.Errorf("%w: %s", ErrEnumMissingOptions, key))
-	}
-	if s.Type == "range" && s.Min != nil && s.Max != nil && *s.Min > *s.Max {
-		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
-	}
-	issues = append(issues, listGenerateSettingIssues(s, key)...)
-	return append(issues, listFileSettingIssues(s, key)...)
-}
-
-func listGenerateSettingIssues(s Setting, key string) []error {
-	if s.Generate == "" {
-		return nil
-	}
-	var issues []error
-	if s.Generate != SettingGenerateToken {
-		issues = append(issues, fmt.Errorf("%w: %s generates %q, and the host generates only %q", ErrInvalidSetting, key, s.Generate, SettingGenerateToken))
-	}
-	if s.Type != SettingTypeString {
-		issues = append(issues, fmt.Errorf("%w: %s generates a value and is no string setting", ErrInvalidSetting, key))
-	}
-	if s.Default != nil {
-		issues = append(issues, fmt.Errorf("%w: %s generates a value and declares a default", ErrInvalidSetting, key))
-	}
-	return issues
-}
-
-func listFileSettingIssues(s Setting, key string) []error {
-	var issues []error
-	if len(s.Accept) > 0 && s.Type != SettingTypeFile {
-		issues = append(issues, fmt.Errorf("%w: %s accepts extensions and holds no file", ErrInvalidSetting, key))
-	}
-	if s.Multiple && s.Type != SettingTypeFile {
-		issues = append(issues, fmt.Errorf("%w: %s holds several paths and is no file setting", ErrInvalidSetting, key))
-	}
-	for _, extension := range s.Accept {
-		if len(extension) < 2 || !strings.HasPrefix(extension, ".") {
-			issues = append(issues, fmt.Errorf("%w: %s accepts %q, which is no extension", ErrInvalidSetting, key, extension))
-		}
-	}
-	return issues
 }
 
 // HasPermission reports whether this plugin requests the given permission.

@@ -5,8 +5,6 @@ import (
 	"maps"
 	"slices"
 	"strconv"
-
-	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
 // SettingOption is one value an enum setting can hold. Its When is a condition over the variables of
@@ -199,88 +197,6 @@ func (m Manifest) isActive(when *Condition, values map[string]any, depth int) bo
 	parent, ok := m.GetSetting(when.Setting)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
 	return ok && m.isActive(parent.When, values, depth+1)
-}
-
-func (m Manifest) listSettingLinkIssues() []error {
-	var issues []error
-	declared := map[string]Setting{}
-	for _, s := range m.Settings {
-		issues = append(issues, m.listOptionsByIssues(s, declared)...)
-		issues = append(issues, listConditionIssues("setting "+s.Key, s.When, declared)...)
-		for _, options := range m.getAllOptions(s) {
-			for _, option := range options {
-				issues = append(issues, m.listOptionIssues(s, option)...)
-			}
-		}
-		declared[s.Key] = s
-	}
-	return issues
-}
-
-func (m Manifest) listOptionIssues(s Setting, option SettingOption) []error {
-	var issues []error
-	if _, err := when.Parse(option.When); err != nil {
-		issues = append(issues, fmt.Errorf("%w: %s option %q: when %q: %w", ErrInvalidSetting, s.Key, option.Value, option.When, err))
-	}
-	for _, id := range option.Dependencies {
-		if !slices.ContainsFunc(m.Dependencies, func(req DependencyRequirement) bool { return req.ID == id }) {
-			issues = append(issues, fmt.Errorf("%w: %s option %q provisions %q, which the manifest does not declare", ErrInvalidSetting, s.Key, option.Value, id))
-		}
-	}
-	return issues
-}
-
-func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []error {
-	if s.OptionsBy == nil {
-		return nil
-	}
-	if (s.Type != SettingTypeEnum && s.Type != "string") || len(s.Options) > 0 {
-		return []error{fmt.Errorf("%w: %s takes its options from %s and is no enum or string without options of its own", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
-	}
-	parent, ok := declared[s.OptionsBy.Setting]
-	if !ok || parent.Type != SettingTypeEnum || parent.OptionsBy != nil || len(parent.Options) == 0 {
-		return []error{fmt.Errorf("%w: %s takes its options from %q, which is no enum with options declared before it", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
-	}
-	var issues []error
-	for _, option := range parent.Options {
-		if s.Type == SettingTypeEnum && len(s.OptionsBy.Options[option.Value]) == 0 {
-			issues = append(issues, fmt.Errorf("%w: %s lists no options under %s %q", ErrInvalidSetting, s.Key, parent.Key, option.Value))
-		}
-	}
-	return issues
-}
-
-func (m Manifest) listConditionIssues(subject string, when *Condition) []error {
-	declared := make(map[string]Setting, len(m.Settings))
-	for _, s := range m.Settings {
-		declared[s.Key] = s
-	}
-	return listConditionIssues(subject, when, declared)
-}
-
-func listConditionIssues(subject string, when *Condition, declared map[string]Setting) []error {
-	if when == nil {
-		return nil
-	}
-	parent, ok := declared[when.Setting]
-	if !ok {
-		return []error{fmt.Errorf("%w: %s is shown by %q, which is no setting declared before it", ErrInvalidSetting, subject, when.Setting)}
-	}
-	if len(when.Is) == 0 {
-		return []error{fmt.Errorf("%w: %s is shown by %s and lists no values", ErrInvalidSetting, subject, when.Setting)}
-	}
-	var issues []error
-	for _, value := range when.Is {
-		switch {
-		case parent.Type == "boolean" && value != "true" && value != "false":
-			issues = append(issues, fmt.Errorf("%w: %s is shown by %s holding %q, and it holds true or false", ErrInvalidSetting, subject, when.Setting, value))
-		case len(parent.Options) > 0:
-			if _, isOption := parent.Options.Find(value); !isOption {
-				issues = append(issues, fmt.Errorf("%w: %s is shown by %s holding %q, which is none of its options", ErrInvalidSetting, subject, when.Setting, value))
-			}
-		}
-	}
-	return issues
 }
 
 func (m Manifest) getAllOptions(s Setting) []SettingOptions {
