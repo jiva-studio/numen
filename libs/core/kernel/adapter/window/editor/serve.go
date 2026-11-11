@@ -90,7 +90,7 @@ func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io
 		State:     state,
 		lifecycle: lifecycle,
 		imports:   imports,
-		pages:     pageSet{state: state},
+		pages:     pageSet{window: statePages{state: state}},
 		out:       out,
 	}
 }

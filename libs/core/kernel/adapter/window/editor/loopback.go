@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
@@ -22,8 +23,19 @@ import (
 
 // FileServer answers with one file of one vault, as it is read.
 type FileServer struct {
-	state *State
-	open  *file.OpenVaultFile
+	vaults shownVault
+	tasks  taskList
+	open   *file.OpenVaultFile
+}
+
+// shownVault is the vault the window shows.
+type shownVault interface {
+	GetCurrentVault() domain.Vault
+}
+
+// taskList is where the work of the window is listed.
+type taskList interface {
+	AddTask(pos work.Task)
 }
 
 // Loopback is a socket on the loopback address that serves the vault's files.
@@ -150,7 +162,7 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		refuse(w, errNoVault)
 		return
 	}
-	opened, err := h.open.Execute(r.Context(), h.state.GetCurrentVault(), id, targetPath, named)
+	opened, err := h.open.Execute(r.Context(), h.vaults.GetCurrentVault(), id, targetPath, named)
 	if errors.Is(err, file.ErrNoVaultNamed) {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
 		return
@@ -159,7 +171,7 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		refuse(w, err)
 		return
 	}
-	defer closeAndReport(h.state.Window.AddTask, opened.Body)
+	defer closeAndReport(h.tasks.AddTask, opened.Body)
 
 	w.Header().Set("Cache-Control", immutable)
 	if opened.MediaType != "" {

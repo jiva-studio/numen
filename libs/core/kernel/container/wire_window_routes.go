@@ -188,7 +188,6 @@ func mountAgent(w *windowWiring) {
 	handler := &windowagent.Handler{
 		GetRoot:        func() string { return state.GetCurrentVault().Path },
 		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
-		GetUnreachable: state.Unreachable.Why,
 	}
 	if taking := getToolProvider(plugins(w.cfg)); taking != nil {
 		handler.Start = agent.NewStartTask(taking)

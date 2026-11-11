@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -129,7 +130,7 @@ func (s *Services) pages() pageSet {
 	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
 	routes = append(routes, NewRoute(path, served, s.Plugin))
 	routes = append(routes, s.Extra...)
-	return pageSet{state: s.state, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
+	return pageSet{window: statePages{state: s.state}, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
 }
 
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler
@@ -196,7 +197,7 @@ func ViewOf(state *State) windowsession.View {
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
 }
 
-func saveProse(write *note.Write, writes *Writes) *note.SaveProse {
+func saveProse(write *note.Write, writes *wire.Writes) *note.SaveProse {
 	if write == nil {
 		return nil
 	}
@@ -204,7 +205,7 @@ func saveProse(write *note.Write, writes *Writes) *note.SaveProse {
 	return &saved
 }
 
-func createNote(create *note.Create, writes *Writes) *note.CreateNote {
+func createNote(create *note.Create, writes *wire.Writes) *note.CreateNote {
 	if create == nil {
 		return nil
 	}
@@ -212,7 +213,7 @@ func createNote(create *note.Create, writes *Writes) *note.CreateNote {
 	return &made
 }
 
-func renameNote(rename *note.Rename, writes *Writes) *note.RenameNote {
+func renameNote(rename *note.Rename, writes *wire.Writes) *note.RenameNote {
 	if rename == nil {
 		return nil
 	}
@@ -220,7 +221,7 @@ func renameNote(rename *note.Rename, writes *Writes) *note.RenameNote {
 	return &renameUseCase
 }
 
-func writeLink(links *note.EditLinks, names edit.NameQueries, writes *Writes) *note.WriteLink {
+func writeLink(links *note.EditLinks, names edit.NameQueries, writes *wire.Writes) *note.WriteLink {
 	if links == nil {
 		return nil
 	}
