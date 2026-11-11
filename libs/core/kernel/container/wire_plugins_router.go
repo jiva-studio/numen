@@ -79,6 +79,7 @@ type pluginInstall struct {
 type pluginsWiring struct {
 	pluginInstall
 	settings settingsWiring
+	search   searchWiring
 	vault    vaultWiring
 }
 

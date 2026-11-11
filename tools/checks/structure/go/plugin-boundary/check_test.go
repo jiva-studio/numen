@@ -87,7 +87,31 @@ func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 // No module requires a plugin: a requirement is how a build evaluates to be
 // compiled from one.
 func TestNoModuleRequiresAPlugin(t *testing.T) {
-	root := filepath.Join("..", "..", "..", "..")
+	for _, one := range findPluginRequirementsInModules(t, filepath.Join("..", "..", "..", "..")) {
+		t.Error(one)
+	}
+}
+
+// TestModuleWalk_FindsThePlantedRequirement verifies that the walk finds the go.mod that requires a
+// plugin, skips node_modules and hidden folders, and fails on a tree without a go.mod.
+func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"libs/core/go.mod":      "module example.test/core\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
+		"libs/clean/go.mod":     "module example.test/clean\n\ngo 1.26\n",
+		"node_modules/x/go.mod": "module example.test/x\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
+		".hidden/go.mod":        "module example.test/hidden\n\ngo 1.26\n\nrequire " + load.PluginsPrefix + "alpha v0.0.0\n",
+	})
+	found := findPluginRequirementsInModules(t, root)
+	if len(found) != 1 || !strings.HasPrefix(found[0], "libs/core/go.mod requires a plugin") {
+		t.Errorf("the walk found %v, want the requirement in libs/core/go.mod only", found)
+	}
+}
+
+// findPluginRequirementsInModules lists the plugin requirements of the go.mod files under root. It
+// fails the test when it reads none.
+func findPluginRequirementsInModules(t *testing.T, root string) []string {
+	t.Helper()
+	var wrong []string
 	found := 0
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -109,16 +133,17 @@ func TestNoModuleRequiresAPlugin(t *testing.T) {
 		}
 		dir = filepath.ToSlash(dir)
 		for _, line := range getPluginRequirements(load.ReadGoMod(t, path)) {
-			t.Errorf("%s/go.mod requires a plugin: %s", dir, line)
+			wrong = append(wrong, dir+"/go.mod requires a plugin: "+line)
 		}
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if found < 2 {
-		t.Fatalf("%d go.mod files found under %s: a rule checked against nothing", found, root)
+	if found == 0 {
+		t.Fatalf("no go.mod found under %s: a rule checked against nothing", root)
 	}
+	return wrong
 }
 
 func TestMain(m *testing.M) {

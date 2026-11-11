@@ -14,45 +14,43 @@ import (
 )
 
 // OpenEditor opens the registry and the cache, builds the editor window over them, opens the vault named, or
-// the one shown last when none is named, and connects the plugins to the vault and the window. It returns the
-// window and the configuration with the text versions the plugins share. frame is the application window
-// around the editor, or nil.
+// the one shown last when none is named, and connects the plugins to the vault and the window. frame is the application
+// window around the editor, or nil.
 func OpenEditor(
 	c Config, ctx context.Context, named string, out io.Writer, frame editor.Frame,
-) (*OpenedWindow, Config, error) {
+) (*OpenedWindow, error) {
 	ports, err := c.registry()
 	if err != nil {
-		return nil, c, err
+		return nil, err
 	}
 	db, err := OpenIndex(c, ctx)
 	if err != nil {
-		return nil, c, err
+		return nil, err
 	}
 	return openEditorTexts(c, ctx, ports, db, WindowOpening{DB: db, Named: named, Out: out, Frame: frame})
 }
 
 func openEditorTexts(
 	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, opening WindowOpening,
-) (*OpenedWindow, Config, error) {
-	c.TextVersions = newTextVersions(vaultOf(c), db)
-	opened, err := openWindowWith(c, ctx, ports, opening)
+) (*OpenedWindow, error) {
+	opened, err := openWindowWith(c, ctx, ports, opening, newTextVersions(vaultOf(c), db))
 	if err != nil {
-		return nil, c, err
+		return nil, err
 	}
-	return connectEditor(c, ports, db, opened)
+	return connectEditor(ports, db, opened)
 }
 
-func connectEditor(c Config, ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, Config, error) {
-	state := opened.state
-	setPluginVaultPath(plugins(c), state.GetCurrentVault().Path)
+func connectEditor(ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
+	state, a := opened.state, opened.a
+	setPluginVaultPath(a, state.GetCurrentVault().Path)
 	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: opened.cases.PluginNotes}
-	if err := installPluginVault(plugins(c), ports, db, state.GetShownVault, hooks); err != nil {
-		return nil, c, err
+	if err := installPluginVault(a, ports, db, state.GetShownVault, hooks); err != nil {
+		return nil, err
 	}
-	shareVaultList(c, opened)
-	setPluginTexts(vaultOf(c))
-	shareEditorWindow(c, db, opened)
-	return getOpenedWindow(opened), c, nil
+	shareVaultList(opened)
+	setPluginTexts(a.vault)
+	shareEditorWindow(db, opened)
+	return getOpenedWindow(opened), nil
 }
 
 // Flashcards is what the flashcards application closes when it ends: CloseVaults waits until nothing is still
@@ -89,7 +87,8 @@ type flashcardsLog struct {
 func bindFlashcards(
 	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log flashcardsLog,
 ) (Flashcards, error) {
-	vaults := openVaults(c, db, log.out, log.label, api.ReportVaultRead)
+	a := plugins(c)
+	vaults := openVaults(a.vault, db, log.out, log.label, api.ReportVaultRead)
 	closers := Flashcards{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	SetShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
@@ -97,21 +96,21 @@ func bindFlashcards(
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
 	hooks := PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
-	if err := installPluginVault(plugins(c), ports, db, getNoShownVault, hooks); err != nil {
+	if err := installPluginVault(a, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}
-	closers.Themes = followFlashcards(c, ctx, api, log.label, log.notify)
+	closers.Themes = followFlashcards(a, ctx, api, log.label, log.notify)
 	return closers, nil
 }
 
-func followFlashcards(c Config, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
-	changes, err := vaultMoves(vaultOf(c), ctx)
+func followFlashcards(a pluginsWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
+	changes, err := vaultMoves(a.vault, ctx)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
 	} else {
 		api.ReportChangesFrom(ctx, changes)
 	}
-	service, themesErr := settingsThemes(settingsOf(c), Scales{}, func(response string) {
+	service, themesErr := settingsThemes(a.settings, Scales{}, func(response string) {
 		if response != "" {
 			notify("themes: " + response)
 		}

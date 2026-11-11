@@ -34,14 +34,15 @@ func newCompilationCache() wazero.CompilationCache {
 // New starts one worker for each processor and warms them up. afterFunc sets the timers that
 // release idle workers.
 func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
-	workers := pdf.NewWorkers()
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
-	workers.SetCompilationCache(newCompilationCache())
-	workers.SetAfterFunc(afterFunc)
-	workers.SetReport(ReportError)
-	workers.SetWorkers(runtime.NumCPU())
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idle worker count is bounded between 2 and 4"
-	workers.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
+	workers := pdf.NewWorkers(pdf.Options{
+		Report: ReportError,
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
+		CompilationCache: newCompilationCache(),
+		AfterFunc:        afterFunc,
+		Workers:          runtime.NumCPU(),
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idle worker count is bounded between 2 and 4"
+		IdleWorkers: max(2, min(runtime.NumCPU(), 4)),
+	})
 	go workers.Warmup()
 	return workers
 }

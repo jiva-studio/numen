@@ -39,7 +39,7 @@ import (
 )
 
 func mountCatalog(w *windowWiring) {
-	if plugins := getPluginCatalog(plugins(w.cfg)); plugins != nil {
+	if plugins := getPluginCatalog(w.a); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins)
 		path, served := windowcatalog.NewRoute(handler, w.state.Gate.CountQuestions())
 		w.inst.Mount(editor.NewRoute(path, served, handler))
@@ -48,13 +48,13 @@ func mountCatalog(w *windowWiring) {
 
 func mountMedia(w *windowWiring) {
 	state := w.state
-	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(vaultOf(w.cfg))), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)))
+	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(w.a.vault)), openPluginFile(w.a.vault), getMediaType(w.a.vault))
 	handler := mediawindow.NewHandler(state, state, resolve)
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
 }
 
 func mountCommand(w *windowWiring) {
-	p := plugins(w.cfg)
+	p := w.a
 	var versions plugincommand.VersionItems
 	if menu := openVersionItems(p); menu != nil {
 		versions = menu
@@ -66,7 +66,7 @@ func mountCommand(w *windowWiring) {
 
 func mountText(w *windowWiring) {
 	handler := windowtext.NewHandler(w.state, nil)
-	if text := openFileText(vaultOf(w.cfg)); text != nil {
+	if text := openFileText(w.a.vault); text != nil {
 		handler = windowtext.NewHandler(w.state, text)
 	}
 	path, served := windowtext.NewRoute(handler, w.state.Gate.CountQuestions())
@@ -81,7 +81,7 @@ func mountVaults(w *windowWiring) {
 		vaultlist.NewListVaults(registry.List, registry.FolderCheck),
 		vaultlist.NewAddVault(change.Add, registry.FolderCheck),
 		vaultlist.NewRenameVault(registry.Find, change.Rename, registry.FolderCheck),
-		vaultlist.NewOpenVault(registry.Find, state),
+		vaultlist.NewOpenVault(registry.Find, w.switching),
 		change.Remove,
 	)
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
@@ -93,13 +93,13 @@ func mountVaults(w *windowWiring) {
 
 func mountSearch(w *windowWiring) {
 	state := w.state
-	finds := newSearch(searchOf(w.cfg), w.db, w.asking, state.ReportWordsAlone)
+	finds := newSearch(w.a.search, w.db, w.asking, state.ReportWordsAlone)
 	handler := windowsearch.NewHandler(
 		state,
-		search.NewFindNames(w.db.NoteQueries(), w.tabKinds),
-		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
+		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
+		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 	)
-	setPluginSearch(searchOf(w.cfg), w.db, w.embedder, state.ReportFloorError)
+	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
@@ -110,27 +110,19 @@ func getTabKindChooser(c pluginsWiring) file.TabKindChooser {
 
 func mountFile(w *windowWiring) {
 	state := w.state
-	readers := vaultReaders(vaultOf(w.cfg))
-	fileKinds := file.NewGetFileKinds(readers, w.db.NoteQueries())
-	chooser := getTabKindChooser(plugins(w.cfg))
-	w.tabKinds = file.NewListTabKinds(fileKinds, chooser)
+	readers := vaultReaders(w.a.vault)
+	kinds := w.kinds
 	folders := filewindow.NewFolders(
 		state, state.Events,
-		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), w.tabKinds),
-		file.NewListFileKinds(fileKinds, chooser),
-		file.NewCreateFolder(folderWriters(vaultOf(w.cfg)), state.Writes),
+		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), kinds.list),
+		file.NewListFileKinds(kinds.files, kinds.chooser),
+		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
 	changes := filewindow.NewChanges(
 		state, state.Notices, &moveFile, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash, state.Writes,
 	)
 	handler := filewindow.NewHandler(folders, changes)
-	w.server = editor.NewFileServer(
-		state,
-		file.NewOpenVaultFile(
-			&w.cases.Listing.Find, file.NewOpenFile(readers), openPluginFile(vaultOf(w.cfg)), getMediaType(vaultOf(w.cfg)),
-		),
-	)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }
 
@@ -161,7 +153,7 @@ func mountNote(w *windowWiring) {
 	outlining := notewindow.NewOutline(
 		state,
 		query.NewGetOpeningNote(w.db.NoteQueries()),
-		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
+		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
 	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), writes)
@@ -181,7 +173,7 @@ func mountAgent(w *windowWiring) {
 		GetRoot:  func() string { return state.GetCurrentVault().Path },
 		GetVault: func() domain.VaultID { return state.GetCurrentVault().ID },
 	}
-	if taking := getToolProvider(plugins(w.cfg)); taking != nil {
+	if taking := getToolProvider(w.a); taking != nil {
 		handler.Start = agent.NewStartTask(taking)
 		handler.End = agent.NewEndConversation(taking)
 	}
@@ -208,7 +200,7 @@ func mountSettings(w *windowWiring) {
 	state := w.state
 	var secretLister settings.SecretLister
 	items, groups := &windowsettings.SecretItems{}, &windowsettings.SecretGroups{}
-	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
+	if secrets := openSecrets(w.a); secrets != nil {
 		secretLister = secrets.List.ListForSettings
 		items = windowsettings.NewSecretItems(
 			secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write, secrets.Items.Delete, secrets.Items.Move,
@@ -217,35 +209,35 @@ func mountSettings(w *windowWiring) {
 			secrets.Groups.Rename, secrets.Groups.Delete, secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates,
 		)
 	}
-	retry := openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
+	retry := openRetryPlugin(w.a.settings, getPluginRetrier(w.a))
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
-	if data := openPluginData(vaultOf(w.cfg)); data != nil {
+	if data := openPluginData(w.a.vault); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
 	values := windowsettings.NewValues(
-		settings.NewGetWithSecrets(openGetSettings(w.cfg, pluginsAgentProvider(plugins(w.cfg))), secretLister),
-		openWriteSettings(settingsOf(w.cfg)), openWatchSettings(settingsOf(w.cfg)), nil,
+		settings.NewGetWithSecrets(openGetSettings(w.cfg, pluginsAgentProvider(w.a)), secretLister),
+		openWriteSettings(w.a.settings), openWatchSettings(w.a.settings), nil,
 	)
 	handler := windowsettings.NewHandler(values, folders, items, groups)
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
-		handler.SetPathChooser(openChoosePluginPath(settingsOf(w.cfg), dialog))
+		handler.SetPathChooser(openChoosePluginPath(w.a.settings, dialog))
 	})
 	path, served := windowsettings.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountPlugin(w *windowWiring) {
-	w.inst.SetPlugins(getPluginServices(plugins(w.cfg)), func(id string) (string, bool) { return getPluginDir(plugins(w.cfg), id) })
+	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.state.Gate.CountQuestions())))
 }
 
-func shareEditorWindow(c Config, db *Index, opened *windowWiring) {
+func shareEditorWindow(db *Index, opened *windowWiring) {
 	view := windowView(opened.state)
-	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
-	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
+	focusPassages := file.NewFocusPassages(vaultReaders(opened.a.vault), view)
+	setPluginWindow(opened.a, windowsession.NewPluginWindow(
 		&opened.state.Runtime,
 		&opened.state.Tabs,
-		vaultFocusNote(vaultOf(c), db.NoteQueries(), view),
+		vaultFocusNote(opened.a.vault, db.NoteQueries(), view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),
@@ -253,9 +245,9 @@ func shareEditorWindow(c Config, db *Index, opened *windowWiring) {
 	))
 }
 
-func shareVaultList(c Config, opened *windowWiring) {
+func shareVaultList(opened *windowWiring) {
 	scenarios := opened.cases.Vaults
-	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.state.Runtime, windowsession.VaultOps{
+	setPluginVaultList(opened.a, windowsession.NewPluginVaults(&opened.state.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    opened.cases.Listing.Find,
 		Missing: opened.cases.Listing.FolderCheck,
@@ -270,19 +262,19 @@ func mountVault(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getReadVault(cfg Config, db *Index) indexing.OpenReading {
+func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
 	return func(
 		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 	) (indexing.ReadWholeVault, error) {
-		request := cfg
-		request.ShouldRebuildIndex = rebuild
-		return ReadWholeVault(request, ctx, db, embedder, v)
+		search := a.search
+		search.ShouldRebuildIndex = rebuild
+		return readWholeVault(search, ctx, db, embedder, v, vaultMakeRefresh(a.vault, db, db.Notes()))
 	}
 }
 
-func newIndexWorker(w *windowWiring, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
+func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:      getReadVault(w.cfg, w.db),
+		Reading:      getReadVault(a, db),
 		Embedder:     embedding.GetEmbedder(),
 		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
 		VectorsReady: state.Events.EmitVectorsReady,
@@ -304,33 +296,30 @@ func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession 
 	}
 }
 
-func getTextVersions(c Config) windowsession.TextVersions {
-	if versions := vaultOf(c).TextVersions; versions != nil {
+func getTextVersions(a pluginsWiring) windowsession.TextVersions {
+	if versions := a.vault.TextVersions; versions != nil {
 		return versions.Changes
 	}
 	return nil
 }
 
-func getTriggerSource(c Config) windowsession.TriggerSource {
+func getTriggerSource(a pluginsWiring) windowsession.TriggerSource {
 	return windowsession.TriggerSource{
 		Open: func() windowsession.TriggerRunner {
-			if triggers := openTriggers(plugins(c)); triggers != nil {
+			if triggers := openTriggers(a); triggers != nil {
 				return triggers
 			}
 			return nil
 		},
-		Watch: func() (<-chan struct{}, func()) { return watchPluginChanges(plugins(c)) },
+		Watch: func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
 	}
 }
 
-func startVault(c Config, db *Index, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
+func startVault(a pluginsWiring, db *Index, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
 	) windowsession.Started {
-		request := c
-		request.ShouldRebuildIndex = rebuild
-
-		opening := vaultOpener(vaultOf(request), db)
+		opening := vaultOpener(a.vault, db)
 		opening.ShouldRebuild = rebuild
 		var changed func(vault.VaultChanges)
 		if report.Changed != nil {

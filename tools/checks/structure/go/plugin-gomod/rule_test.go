@@ -22,7 +22,7 @@ func getPluginGoModViolations(dir string, file *modfile.File) []string {
 	for _, replaced := range file.Replace {
 		if replaced.New.Version == "" {
 			refusals = append(refusals, "builds "+replaced.Old.Path+" from the folder "+replaced.New.Path+
-				": a plugin builds in a repository of its own")
+				": the go.mod of a plugin resolves the SDK through go.work, not through a folder")
 		}
 	}
 	return refusals

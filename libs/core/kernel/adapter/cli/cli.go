@@ -26,11 +26,11 @@ options:
 `
 
 // Main runs the command line and returns a process exit code. open supplies the
-// installation this run works with, once the locations given on the command line
-// have been read from the arguments: the application assembles an installation, and
-// open requests one.
+// session this run works with, once the locations given on the command line have been
+// read from the arguments. The session is closed when the command ends; what its background work
+// failed at is printed as a warning and does not change the exit code.
 func Main(ctx context.Context, out, errOut io.Writer, args []string,
-	open func(Locations) Deps,
+	open func(Locations) Session,
 ) int {
 	if err := Run(ctx, out, errOut, args, open); err != nil {
 		if _, writeErr := fmt.Fprintln(errOut, "numen-cli:", err); writeErr != nil {
@@ -44,7 +44,7 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 // Run is Main with its output injected and errors returned, so the output is
 // testable. errOut carries what a command reports besides its result.
 func Run(ctx context.Context, out, errOut io.Writer, args []string,
-	open func(Locations) Deps,
+	open func(Locations) Session,
 ) error {
 	var where Locations
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
@@ -62,12 +62,24 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	deps := open(where)
+	session := open(where)
+	err := runCommand(ctx, terminal{out: out, errOut: errOut}, fs.Args(), session)
+	failures, closeErr := session.Close()
+	for _, failure := range failures {
+		if _, writeErr := fmt.Fprintln(errOut, "numen-cli: warning:", failure); writeErr != nil {
+			closeErr = errors.Join(closeErr, writeErr)
+		}
+	}
+	if closeErr != nil {
+		return errors.Join(err, closeErr)
+	}
+	return err
+}
 
-	rest := fs.Args()
-	commands := newCommandRegistry(deps)
+func runCommand(ctx context.Context, term terminal, rest []string, session Session) error {
+	commands := newCommandRegistry(session)
 	if len(rest) == 0 {
-		if err := writeUsage(out, commands); err != nil {
+		if err := writeUsage(term.out, commands); err != nil {
 			return err
 		}
 		return errors.New("no command given")
@@ -77,7 +89,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	if !isKnown {
 		return fmt.Errorf("unknown command %q", rest[0])
 	}
-	return formatVaultError(one.Run(ctx, terminal{out: out, errOut: errOut}, rest[1:]))
+	return formatVaultError(one.Run(ctx, term, rest[1:]))
 }
 
 func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {

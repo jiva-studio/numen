@@ -787,9 +787,6 @@ func openEmptyWindow(t *testing.T) *nothing {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	// The welcome screen's way into a vault: the list opens one in this window.
-	installation.State.Switch = switchFunc(installation.Show)
-
 	server := httptest.NewUnstartedServer(installation.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
 	server.StartTLS()

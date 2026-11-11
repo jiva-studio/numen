@@ -2,6 +2,7 @@
 package machineclock
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -19,13 +20,48 @@ import (
 // today receives one, and the composition root binds it to this machine's clock.
 // A scenario reading the clock itself cannot be exercised at a chosen instant.
 func TestCorePackagesDoNotReadMachineClock(t *testing.T) {
+	wrong, err := findClockReads("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
+// TestClockWalk_FindsThePlantedFiles verifies that a scenario that reads the clock is found and an
+// adapter that does the same is not.
+func TestClockWalk_FindsThePlantedFiles(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/note.go":   "package note\n\nimport \"time\"\n\nfunc stamp() time.Time { return time.Now() }\n",
+		"adapter/clock/clock.go": "package clock\n\nimport \"time\"\n\nfunc stamp() time.Time { return time.Now() }\n",
+	})
+	wrong, err := findClockReads(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.Contains(wrong[0], "usecase/note/note.go runs time.Now") {
+		t.Errorf("the walk found %v, want time.Now in usecase/note/note.go only", wrong)
+	}
+}
+
+// TestClockWalk_FailsOnAnEmptyTree verifies that a root without a core file is an error, not a pass.
+func TestClockWalk_FailsOnAnEmptyTree(t *testing.T) {
+	if _, err := findClockReads(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without a core file passed")
+	}
+}
+
+// findClockReads lists the clock reads of the files under root outside the adapters, the shared
+// packages and the machinery. It fails when it reads no file.
+func findClockReads(root string) ([]string, error) {
 	var wrong []string
 	var read int
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		pkg := load.GetPackage("..", path)
+		pkg := load.GetPackage(root, path)
 		if strings.HasSuffix(path, "_test.go") || load.IsAdapter(pkg) || load.IsShared(pkg) || load.IsMachinery(pkg) {
 			return nil
 		}
@@ -39,18 +75,10 @@ func TestCorePackagesDoNotReadMachineClock(t *testing.T) {
 		}
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
+	if err == nil && read == 0 {
+		err = fmt.Errorf("no core file read under %s: the walk checks nothing", root)
 	}
-	for _, one := range wrong {
-		t.Error(one)
-	}
-
-	// A walk that read no file of the core is a rule checked against nothing,
-	// and it passes.
-	if read < 100 {
-		t.Fatalf("%d files of the core read: the walk is not reading it", read)
-	}
+	return wrong, err
 }
 
 // the clock reads, and lets through timers, the arithmetic over an instant and

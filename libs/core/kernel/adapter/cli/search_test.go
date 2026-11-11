@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -38,29 +37,29 @@ func newVault(folder string) domain.Vault {
 	return domain.Vault{ID: "vlt-search", Name: "shelf", Path: folder}
 }
 
-func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Deps {
-	return cli.Deps{
+func createSearchDeps(folder string, index fakeSearchIndex, words error) stubSession {
+	return stubSession{
 		Vaults: createVaultList(newVault(folder)),
-		Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
-			return cli.Search{
+		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+			return cli.Indexed{Search: cli.Search{
 				Search: search.NewByName(registry.NewFind(singleVaultList{newVault(folder)}).Execute, preparing(search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil))),
 				Words:  words,
-			}, nil
+			}}, nil
 		},
 	}
 }
 
-func runWithStderr(t *testing.T, deps cli.Deps, args ...string) (out, stderr string, err error) {
+func runWithStderr(t *testing.T, deps stubSession, args ...string) (out, stderr string, err error) {
 	t.Helper()
 	var answer, aside bytes.Buffer
-	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Deps { return deps })
+	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Session { return deps.session() })
 	return answer.String(), aside.String(), err
 }
 
 func TestSearchNeedsAVaultAndAQuery(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"search"}, {"search", "shelf"}} {
-		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
+		_, err := runWithDeps(stubSession{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli search <vault> <query>") {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -70,18 +69,18 @@ func TestSearchNeedsAVaultAndAQuery(t *testing.T) {
 func TestSearchReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
 	folder := t.TempDir()
-	for name, provided := range map[string]cli.Deps{
+	for name, provided := range map[string]stubSession{
 		"the list of vaults cannot be opened": {
-			Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
-				return cli.Search{
-					Search: search.NewByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil))),
-				}, nil
+			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+				notFound := func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }
+				prepared := preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil))
+				return cli.Indexed{Search: cli.Search{Search: search.NewByName(notFound, prepared)}}, nil
 			},
 		},
 		"the search cannot be opened": {
 			Vaults: createVaultList(newVault(folder)),
-			Search: func(context.Context, window.ErrorHandler) (cli.Search, error) {
-				return cli.Search{}, errRefused
+			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+				return cli.Indexed{}, errRefused
 			},
 		},
 		"the index cannot answer": createSearchDeps(folder, fakeSearchIndex{err: errRefused}, nil),
@@ -165,10 +164,10 @@ func TestAnExcerptIsOneLineOfAtMostOneHundredSixtyCharacters(t *testing.T) {
 func TestAHalfThatCannotRunIsReportedInTheAdjacentAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
-	open := provided.Search
-	provided.Search = func(ctx context.Context, errorHandler window.ErrorHandler) (cli.Search, error) {
-		errorHandler(errRefused)
-		return open(ctx, errorHandler)
+	open := provided.Indexed
+	provided.Indexed = func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+		options.ErrorHandler(errRefused)
+		return open(ctx, options)
 	}
 
 	_, stderr, err := runWithStderr(t, provided, "search", "shelf", "bees")

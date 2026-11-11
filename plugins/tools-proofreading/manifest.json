@@ -17,7 +17,7 @@
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
+  "permissions": ["vault:read", "vault:write", "ai:complete", "link:open"],
   "secrets": [
     {
       "name": "apiKey",

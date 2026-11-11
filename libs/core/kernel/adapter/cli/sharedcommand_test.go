@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
+func createSharedCommandDeps() (stubSession, *pluginCommands) {
 	declared := &pluginCommands{handlers: []plugin.CommandEntry{
 		{PluginID: "org.example.layers", Command: manifest.Command{
 			ID: "app:file.createText", Title: "Extract text layer", When: "target.contentType == 'application/pdf'",
@@ -31,7 +31,7 @@ func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
 	}}
 	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
-	deps := cli.Deps{
+	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{

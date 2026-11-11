@@ -3,7 +3,6 @@
  */
 import type {
   AgentHost,
-  AgentProviderRegistration,
   AppInfo,
   BackgroundTaskHost,
   BufferHost,
@@ -214,10 +213,6 @@ export interface ContextRegistrationHost {
   ) => Disposable
   readonly registerTabKind: (pluginId: string, registration: TabKindRegistration) => Disposable
   readonly registerCommand: (pluginId: string, registration: CommandRegistration) => Disposable
-  readonly registerAgentProvider: (
-    pluginId: string,
-    registration: AgentProviderRegistration,
-  ) => Disposable
 }
 
 /** The views and drop handlers a plugin registers, and the views it mounts. */

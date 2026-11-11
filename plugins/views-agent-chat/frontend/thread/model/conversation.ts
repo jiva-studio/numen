@@ -8,7 +8,7 @@
  * them all as one.
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
-import { onNextFrame, type Paint } from '@numen/ui'
+import { onNextFrame, reportFailure, type Paint } from '@numen/ui'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
 import type { Turn } from '../../types'
@@ -109,7 +109,7 @@ export function useConversation(options: ConversationOptions): Conversation {
 }
 
 function closeAgentConversation(agent: AgentPort, conversation: string): void {
-  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch(() => undefined)
+  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch(reportFailure)
 }
 
 interface SettleTurnOptions {

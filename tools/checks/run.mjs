@@ -179,7 +179,15 @@ async function main() {
     for (const [tag, description] of Object.entries(registry.tags)) console.log(`${tag.padEnd(10)} ${description}`);
     return 0;
   }
-  const changed = options.changed ? listChangedFiles(REPO_ROOT) : null;
+  let changed = null;
+  if (options.changed) {
+    try {
+      changed = listChangedFiles(REPO_ROOT);
+    } catch (err) {
+      console.error(`Cannot select the changed checks: ${err.message}`);
+      return 2;
+    }
+  }
   const selection = selectChecks(registry, options, changed);
   if (options.list) {
     for (const one of selection) console.log(`${one.run ? "run " : "skip"} ${one.entry.name.padEnd(46)} ${one.reason}`);

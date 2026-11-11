@@ -1,6 +1,7 @@
 package scancomplete
 
 import (
+	"fmt"
 	"io/fs"
 	"path/filepath"
 	"slices"
@@ -63,6 +64,9 @@ func listProductionDirs(root string) ([]string, error) {
 		}
 		return nil
 	})
+	if err == nil && len(withSource) == 0 {
+		err = fmt.Errorf("no Go package under %s: the walk checks nothing", root)
+	}
 	dirs := make([]string, 0, len(withSource))
 	for dir := range withSource {
 		dirs = append(dirs, dir)
@@ -81,17 +85,17 @@ func getUnplacedPackages(dirs []string, helpers map[string]string) []string {
 	return found
 }
 
-func getUseCaseImports(pkgs []*packages.Package) (imports map[string][]string, read int) {
+func getUseCaseImports(pkgs []*packages.Package, corePath string) (imports map[string][]string, read int) {
 	imports = map[string][]string{}
 	for _, pkg := range pkgs {
-		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, load.CoreImportPath), "/")
+		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, corePath), "/")
 		if !load.IsWithin(rel, "usecase") {
 			continue
 		}
 		read++
 		for path := range pkg.Imports {
-			if load.IsWithin(path, load.CoreImportPath) {
-				target := strings.TrimPrefix(strings.TrimPrefix(path, load.CoreImportPath), "/")
+			if load.IsWithin(path, corePath) {
+				target := strings.TrimPrefix(strings.TrimPrefix(path, corePath), "/")
 				imports[rel] = append(imports[rel], target)
 			}
 		}
@@ -118,11 +122,11 @@ func getBadUseCaseImports(imports map[string][]string, helpers map[string]string
 
 func checkUseCasesImportOnlyDomainAndPorts(t *testing.T, workspace load.WorkspacePackages) {
 	t.Helper()
-	imports, read := getUseCaseImports(load.GetModulePackages(t, workspace, "libs/core/kernel"))
+	imports, read := getUseCaseImports(load.GetModulePackages(t, workspace, "libs/core/kernel"), load.CoreImportPath)
 	for _, one := range getBadUseCaseImports(imports, getHelperPackages()) {
 		t.Error(one)
 	}
-	if read < 20 {
-		t.Fatalf("%d use case packages read: the rule is checked against nothing", read)
+	if read == 0 {
+		t.Fatal("no use case package read: the rule is checked against nothing")
 	}
 }

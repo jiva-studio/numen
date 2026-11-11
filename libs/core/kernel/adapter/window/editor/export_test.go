@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"net/http"
-	"testing"
 
 	"connectrpc.com/connect"
 
@@ -206,12 +205,6 @@ func writeLink(links *note.EditLinks, names edit.NameQueries, writes *wire.Write
 	}
 	linking := note.NewWriteLink(*links, names, writes)
 	return &linking
-}
-
-// WrapPluginSwitch replaces the switch the window opens a vault through with the one wrap returns.
-func WrapPluginSwitch(tb testing.TB, state *State, wrap func(next windowsession.VaultSwitch) windowsession.VaultSwitch) {
-	tb.Helper()
-	state.Switch = wrap(state.Switch)
 }
 
 func newEmptyCommandHandler(state *State) *command.Handler {

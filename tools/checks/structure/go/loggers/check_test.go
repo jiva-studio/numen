@@ -2,6 +2,7 @@
 package loggers
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -20,9 +21,42 @@ import (
 // A log is a record for a reader who was not present; the user is in the
 // window, and messages are shown there or on the process output stream.
 func TestCorePackagesDoNotImportLoggers(t *testing.T) {
+	wrong, err := findLoggerImports("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": nothing here logs — a person is told where they are")
+	}
+}
+
+// TestLoggerWalk_FindsThePlantedFile verifies that the walk finds a file that imports a logger.
+func TestLoggerWalk_FindsThePlantedFile(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"adapter/files/files.go": "package files\n\nimport \"log/slog\"\n\nvar _ = slog.Default\n",
+		"usecase/note/note.go":   "package note\n",
+	})
+	wrong, err := findLoggerImports(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.Contains(wrong[0], "adapter/files/files.go imports log/slog") {
+		t.Errorf("the walk found %v, want the import of log/slog in adapter/files/files.go", wrong)
+	}
+}
+
+// TestLoggerWalk_FailsOnAnEmptyTree verifies that a root without a Go file is an error, not a pass.
+func TestLoggerWalk_FailsOnAnEmptyTree(t *testing.T) {
+	if _, err := findLoggerImports(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without a Go file passed")
+	}
+}
+
+// findLoggerImports lists the imports of a logger in the Go files under root. It fails when it reads no file.
+func findLoggerImports(root string) ([]string, error) {
 	var wrong []string
 	var read int
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") ||
 			strings.HasSuffix(path, "_test.go") {
 			return err
@@ -43,18 +77,10 @@ func TestCorePackagesDoNotImportLoggers(t *testing.T) {
 		}
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
+	if err == nil && read == 0 {
+		err = fmt.Errorf("no Go file read under %s: the walk checks nothing", root)
 	}
-	for _, one := range wrong {
-		t.Error(one + ": nothing here logs — a person is told where they are")
-	}
-
-	// A walk that read no file of the core is a rule checked against nothing,
-	// and it passes.
-	if read < 100 {
-		t.Fatalf("%d files of the core read: the walk is not reading it", read)
-	}
+	return wrong, err
 }
 
 // find both of the standard library's and a third party's, and let through the

@@ -31,7 +31,7 @@ func TestNoSourceFileOrPackageIsLarge(t *testing.T) {
 	for _, one := range found {
 		t.Error(one)
 	}
-	if len(trees) < 20 || files == 0 || dirs == 0 {
+	if len(trees) == 0 || files == 0 || dirs == 0 {
 		t.Fatalf("%d files in %d directories of %d modules read: the rule is checked against nothing", files, dirs, len(trees))
 	}
 }

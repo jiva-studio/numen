@@ -9,7 +9,7 @@ import (
 )
 
 type linksCommand struct {
-	links func(ctx context.Context) (Links, error)
+	session Session
 }
 
 func (linksCommand) Name() string { return "links" }
@@ -18,17 +18,16 @@ func (linksCommand) Synopsis() string {
 	return "  numen-cli links <vault> <note>               what a note points at, and what points at it"
 }
 
-func (c linksCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
+func (c linksCommand) Run(ctx context.Context, term terminal, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli links <vault> <note>")
 	}
-	open, err := c.links(ctx)
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{})
 	if err != nil {
 		return err
 	}
-	defer closeInto(&err, open.Close)
 
-	links, err := open.Show.ExecuteByName(ctx, args[0], args[1])
+	links, err := indexed.Links.ExecuteByName(ctx, args[0], args[1])
 	if err != nil {
 		return err
 	}

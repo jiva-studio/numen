@@ -86,7 +86,7 @@ func newWire(t *testing.T) *wire {
 		func(id domain.VaultID) transcribe.Folder { return store.With(id) },
 		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		w.queue,
-		func(context.Context) (transcribe.Recognizer, error) { return w.recognizer, nil })
+		func(context.Context) (transcribe.Recognizer, error) { return w.recognizer, nil }, func(string, error) {})
 	t.Cleanup(w.transcriber.Close)
 	requests := transcribe.NewRequests(w.transcriber, func(id domain.VaultID) transcribe.Vault { return vault.With(id) })
 	registry, err := newTools(requests).registry()

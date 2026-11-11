@@ -3,6 +3,10 @@
  * service is built from the table, not from the service: a member the table does not list is not
  * on the guarded service, and the table's type lists every member of the SDK types, so a member
  * added to the SDK fails the typecheck until it states its permission or why it needs none.
+ *
+ * The table catches mistakes and states what a plugin declares; it is not a security boundary.
+ * Plugins are trusted code that runs in the window realm, and a hostile one reaches the core
+ * endpoints, `fetch` and `import` without this table.
  */
 import type {
   PluginEvents,
@@ -23,7 +27,7 @@ const READ = 'vault:read'
 const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
 /** Consent to open external links; it does not restrict the requests a plugin makes itself, as plugins are trusted code. */
-const NETWORK = 'network:outbound'
+const LINK_OPEN = 'link:open'
 
 /**
  * How a refusal of a rule reaches the caller: a sync member throws, an async member rejects, and a
@@ -99,7 +103,7 @@ export interface GuardedParts {
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
   plugin: {
-    openExternal: requirePermissionsAsync(NETWORK),
+    openExternal: requirePermissionsAsync(LINK_OPEN),
   },
   register: {
     reader: requireNothing('a reader names the extensions the manifest of the plugin declares'),
@@ -107,7 +111,6 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     slotView: requireNothing('the slots are the ones the manifest of the plugin places it in'),
     tabKind: requirePermissions(READ),
     command: requireNothing('a command runs where the user or a plugin invokes it'),
-    agentProvider: requirePermissions(READ),
     view: requireNothing(
       'the manifest must list the kind and the plugin hold what the kind hands its views: checked in viewPermissions',
     ),

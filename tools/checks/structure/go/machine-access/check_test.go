@@ -2,6 +2,7 @@
 package machineaccess
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -21,13 +22,48 @@ import (
 // folder passed as a content URI. A file, a socket and a system call are the
 // same category. Taking a path apart and joining it is string arithmetic and is allowed.
 func TestCorePackagesDoNotAccessMachineDirectly(t *testing.T) {
+	wrong, err := findMachineAccess("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": the core asks a port what is on the machine")
+	}
+}
+
+// TestMachineAccessWalk_FindsThePlantedFiles runs the walk over a planted tree: a scenario that
+// imports os and resolves a path is found, an adapter that does the same is not.
+func TestMachineAccessWalk_FindsThePlantedFiles(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/note.go":   "package note\n\nimport (\n\t\"os\"\n\t\"path/filepath\"\n)\n\nvar _ = os.Args\n\nfunc run() { _, _ = filepath.Abs(\".\") }\n",
+		"adapter/files/files.go": "package files\n\nimport \"os\"\n\nvar _ = os.Args\n",
+	})
+	wrong, err := findMachineAccess(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 2 || !strings.Contains(wrong[0], "usecase/note/note.go") || !strings.Contains(wrong[1], "usecase/note/note.go") {
+		t.Errorf("the walk found %v, want an os import and a filepath.Abs call in usecase/note/note.go only", wrong)
+	}
+}
+
+// TestMachineAccessWalk_FailsOnAnEmptyTree verifies that a root without a core file is an error, not a pass.
+func TestMachineAccessWalk_FailsOnAnEmptyTree(t *testing.T) {
+	if _, err := findMachineAccess(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without a core file passed")
+	}
+}
+
+// findMachineAccess lists the files under root outside the adapters, the shared packages and the
+// machinery that import a machine package or call a filesystem function. It fails when it reads no file.
+func findMachineAccess(root string) ([]string, error) {
 	var wrong []string
 	var read int
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		pkg := load.GetPackage("..", path)
+		pkg := load.GetPackage(root, path)
 		if strings.HasSuffix(path, "_test.go") || load.IsAdapter(pkg) || load.IsShared(pkg) || load.IsMachinery(pkg) {
 			return nil
 		}
@@ -58,18 +94,10 @@ func TestCorePackagesDoNotAccessMachineDirectly(t *testing.T) {
 		})
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
+	if err == nil && read == 0 {
+		err = fmt.Errorf("no core file read under %s: the walk checks nothing", root)
 	}
-	for _, one := range wrong {
-		t.Error(one + ": the core asks a port what is on the machine")
-	}
-
-	// A walk that read no file of the core is a rule checked against nothing,
-	// and it passes.
-	if read < 100 {
-		t.Fatalf("%d files of the core read: the walk is not reading it", read)
-	}
+	return wrong, err
 }
 
 func TestMain(m *testing.M) {

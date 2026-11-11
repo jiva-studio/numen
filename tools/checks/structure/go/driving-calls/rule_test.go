@@ -39,17 +39,6 @@ func getPortFields(file *ast.File) []string {
 	return found
 }
 
-func countStructTypes(file *ast.File) int {
-	count := 0
-	ast.Inspect(file, func(node ast.Node) bool {
-		if _, is := node.(*ast.StructType); is {
-			count++
-		}
-		return true
-	})
-	return count
-}
-
 func getFieldCalls(file *ast.File, fields []string) []string {
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {

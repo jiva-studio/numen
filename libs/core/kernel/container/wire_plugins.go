@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -32,47 +31,32 @@ func (c Config) StopPlugins(ctx context.Context) error {
 	return stopPlugins(plugins(c), ctx)
 }
 
-func openPluginCommands(c Config, ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		return plugincommand.Run{}, nil, err
-	}
-	_, work, err := openPluginWork(c, db, v)
-	if err != nil {
-		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
-	}
-	return getPluginCommands(plugins(c)).Run, closeAfterWork(ctx, work, db.Close), nil
-}
-
-func openedPluginWork(c Config, db *Index, v domain.Vault) (Config, error) {
-	opened, _, err := openPluginWork(c, db, v)
-	return opened, err
-}
-
 func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func() error) func() error {
 	return func() error {
 		return errors.Join(work.WaitIdle(ctx), closeIndex())
 	}
 }
 
-func openPluginWork(c Config, db *Index, v domain.Vault) (Config, *run.PluginWork, error) {
+func openPluginWork(
+	c Config, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
+) (pluginsWiring, *run.PluginWork, error) {
 	setPluginVaultPath(plugins(c), v.Path)
-	c.TextVersions = newTextVersions(vaultOf(c), db)
-	if err := installCurrentVault(c, db, v); err != nil {
-		return c, nil, err
+	a := assemble(c, newTextVersions(vaultOf(c), db))
+	if err := installCurrentVault(a, c, db, v); err != nil {
+		return pluginsWiring{}, nil, err
 	}
-	work := pluginsOpenPluginWork(plugins(c), run.NewTasks(), &run.Lock{})
-	setPluginTexts(vaultOf(c))
-	return c, work, nil
+	work := pluginsOpenPluginWork(a, tasks, models)
+	setPluginTexts(a.vault)
+	return a, work, nil
 }
 
-func installCurrentVault(c Config, db *Index, v domain.Vault) error {
+func installCurrentVault(a pluginsWiring, c Config, db *Index, v domain.Vault) error {
 	registry, err := c.registry()
 	if err != nil {
 		return err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	return installPluginVault(plugins(c), registry, db, current, PluginVaultHooks{})
+	return installPluginVault(a, registry, db, current, PluginVaultHooks{})
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
@@ -199,16 +183,16 @@ func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,
-		Lent: services,
-		Dependencies: func() hostendpoint.Dependencies {
+		Completion: services, Vault: services, Texts: services, Search: services, Window: services, Work: services,
+		Dependencies: hostendpoint.DependencySourceFunc(func() hostendpoint.Dependencies {
 			if registry := host.Services.GetDependencies(); registry != nil {
 				return registry
 			}
 			return nil
-		},
-		Tools: func() hostendpoint.PluginTools {
+		}),
+		Tools: hostendpoint.ToolSourceFunc(func() hostendpoint.PluginTools {
 			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
-		},
+		}),
 	}))
 	return services
 }

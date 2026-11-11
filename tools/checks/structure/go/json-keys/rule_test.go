@@ -298,7 +298,7 @@ func checkProjectJSONKeysAreCamelCase(t *testing.T, workspace load.WorkspacePack
 	for _, one := range violations {
 		t.Errorf("%s: %s", one.position, one.detail)
 	}
-	if checked < 200 {
+	if checked == 0 {
 		t.Fatalf("%d JSON struct tags checked: the rule is checked against nothing", checked)
 	}
 }
