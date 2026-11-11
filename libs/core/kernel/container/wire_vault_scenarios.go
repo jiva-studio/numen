@@ -175,7 +175,7 @@ func newTextVersions(c vaultWiring, db *Index) (*TextVersions, error) {
 	if err != nil {
 		return nil, err
 	}
-	changes := textversion.NewChanges(stores, texts)
+	changes := textversion.NewChanges(texts)
 	versions, err := textversion.NewVersions(stores, files, c.RunningHost.Runtime, c.Clock, changes)
 	if err != nil {
 		return nil, err

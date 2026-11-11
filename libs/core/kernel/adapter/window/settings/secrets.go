@@ -37,8 +37,8 @@ type SecretItems struct {
 // NewSecretItems is the part of SettingsService that changes one secret.
 func NewSecretItems(
 	create *secret.Create, rename *secret.Rename, write *secret.Write, remove *secret.Delete, move *secret.Move,
-) SecretItems {
-	return SecretItems{create: create, rename: rename, write: write, delete: remove, move: move}
+) *SecretItems {
+	return &SecretItems{create: create, rename: rename, write: write, delete: remove, move: move}
 }
 
 func (h *SecretItems) check() error {
@@ -61,8 +61,8 @@ type SecretGroups struct {
 // NewSecretGroups is the part of SettingsService that changes the groups of secrets and who may read them.
 func NewSecretGroups(
 	rename *secret.RenameGroup, remove *secret.DeleteGroup, allow *secret.Allow, deny *secret.Deny, listStates *secret.ListStates,
-) SecretGroups {
-	return SecretGroups{renameGroup: rename, deleteGroup: remove, allow: allow, deny: deny, listStates: listStates}
+) *SecretGroups {
+	return &SecretGroups{renameGroup: rename, deleteGroup: remove, allow: allow, deny: deny, listStates: listStates}
 }
 
 func (h *SecretGroups) check() error {

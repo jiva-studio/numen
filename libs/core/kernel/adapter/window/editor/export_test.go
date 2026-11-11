@@ -100,7 +100,7 @@ func createServices(state *State) *Services {
 	}
 	services.Extra = []Route{
 		RouteOf(state, search.NewHandler(state, nil, nil), search.NewRoute),
-		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}, settings.SecretItems{}, settings.SecretGroups{}), settings.NewRoute),
+		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}, &settings.SecretItems{}, &settings.SecretGroups{}), settings.NewRoute),
 		RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
 		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}

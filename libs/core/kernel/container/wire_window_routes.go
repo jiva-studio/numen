@@ -216,8 +216,7 @@ func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	var secretLister settings.SecretLister
-	var items windowsettings.SecretItems
-	var groups windowsettings.SecretGroups
+	items, groups := &windowsettings.SecretItems{}, &windowsettings.SecretGroups{}
 	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
 		secretLister = secrets.List.ListForSettings
 		items = windowsettings.NewSecretItems(

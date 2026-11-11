@@ -26,13 +26,9 @@ type VersionItems struct {
 	conditions *when.Conditions
 }
 
-// itemTexts reads the versions of a file and tells which one is live.
+// itemTexts finds the versions of a file and which one is live.
 type itemTexts interface {
-	GetContentHash(ctx context.Context, v domain.Vault, path string) (string, error)
-	GetRecordedVersions(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, error)
-	FindLiveVersion(
-		ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, contentHash string,
-	) (domain.TextVersion, bool, error)
+	FindLive(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, domain.TextVersion, bool, error)
 }
 
 // versionRemover deletes a version of a file.
@@ -53,17 +49,6 @@ func NewVersionItems(texts *Texts, versions *Versions, run CommandRun, types con
 // and its arguments.
 type CommandRun interface {
 	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
-}
-
-func (u *VersionItems) findLiveVersion(ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion) (domain.TextVersion, bool, error) {
-	if len(versions) == 0 {
-		return domain.TextVersion{}, false, nil
-	}
-	contentHash, err := u.texts.GetContentHash(ctx, v, path)
-	if err != nil {
-		return domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
-	}
-	return u.texts.FindLiveVersion(ctx, v, path, versions, contentHash)
 }
 
 func listVersionItems(condition when.Condition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []text.VersionItem {
@@ -87,11 +72,7 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 	if err != nil || !condition.HasItems() {
 		return nil, err
 	}
-	versions, err := u.texts.GetRecordedVersions(ctx, v, path)
-	if err != nil {
-		return nil, err
-	}
-	live, hasLive, err := u.findLiveVersion(ctx, v, path, versions)
+	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +83,7 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 // ListEveryVersion lists every text version of the file at the path, as the items of the application
 // command text.DeleteCommand.
 func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]text.VersionItem, error) {
-	versions, err := u.texts.GetRecordedVersions(ctx, v, path)
-	if err != nil {
-		return nil, err
-	}
-	live, hasLive, err := u.findLiveVersion(ctx, v, path, versions)
+	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}

@@ -26,7 +26,7 @@ func NewTextVersions(
 	if err != nil {
 		return nil, err
 	}
-	changes := textversion.NewChanges(stores, texts)
+	changes := textversion.NewChanges(texts)
 	versions, err := textversion.NewVersions(stores, files, plugins, clock, changes)
 	if err != nil {
 		return nil, err
