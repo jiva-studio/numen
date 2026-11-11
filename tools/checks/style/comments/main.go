@@ -1,4 +1,4 @@
-// Command lint-comments reports comments on Go struct fields, doc comments on unexported
+// Command comments reports comments on Go struct fields, doc comments on unexported
 // functions and doc comments of more than five lines on exported symbols. It reads the paths of the files to check from standard input, one per line; with
 // -fix it removes those comments and rewrites the files.
 //
