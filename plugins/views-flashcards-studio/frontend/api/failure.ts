@@ -37,10 +37,10 @@ const CODE_WORDS: Readonly<Record<string, string>> = {
 const UNEXPECTED = 'internal error'
 
 /** The words of a caught failure; the SDK words any failure that is not an API failure. */
-export const formatFailureMessage = (failure: Caught): string => {
-  if (!(failure instanceof ApiFailure)) return formatErrorMessage(failure)
-  if (failure.code === CANCELED.code) return ''
-  const message = failure.message.trim()
-  if (MESSAGE_CODES.has(failure.code) && message) return message
-  return CODE_WORDS[failure.code] ?? UNEXPECTED
+export const formatFailureMessage = (error: Caught): string => {
+  if (!(error instanceof ApiFailure)) return formatErrorMessage(error)
+  if (error.code === CANCELED.code) return ''
+  const message = error.message.trim()
+  if (MESSAGE_CODES.has(error.code) && message) return message
+  return CODE_WORDS[error.code] ?? UNEXPECTED
 }

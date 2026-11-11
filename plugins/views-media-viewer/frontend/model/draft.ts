@@ -86,8 +86,8 @@ export function useTranscriptDraft(how: DraftOptions) {
   }
 
   /** Reports the failure of a write that ran in the background. */
-  const reportFailure = (failure: Caught) => {
-    error.value = formatErrorMessage(failure)
+  const reportFailure = (cause: Caught) => {
+    error.value = formatErrorMessage(cause)
   }
 
   const keepInBackground = () => {
