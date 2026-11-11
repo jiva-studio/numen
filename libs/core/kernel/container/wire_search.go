@@ -196,7 +196,7 @@ func setPluginSearch(c searchWiring, db *Index, embedder embeddingport.Embedder,
 		Samples:  db.SearchSamples(),
 		Nearest:  searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
 		Progress: db.ChunkVectors(),
-		Stats:    hostsearch.NewStats(db.ChunkVectors(), c.Clock),
+		Stats:    searchusecase.NewStats(db.ChunkVectors(), c.Clock),
 		Policy:   newFloorPolicy(c, db, embedder, errorHandler),
 		Passages: searchusecase.NewSearchPassages(newSearch(c, db, embedder, errorHandler)),
 	}.Access())

@@ -12,8 +12,14 @@ import (
 )
 
 func isDrivingHandlerPackage(path, root string) bool {
-	return isInLayer(path, root, "adapter/window") || isInLayer(path, root, "adapter/plugin/hostendpoint") ||
-		isInLayer(path, root, "adapter/cli")
+	return isInLayer(path, root, "adapter/window") || isInLayer(path, root, "adapter/cli") ||
+		isInLayer(path, root, "adapter/plugin/hostendpoint") ||
+		isInLayer(path, root, "adapter/plugin/hostsearch") ||
+		isInLayer(path, root, "adapter/plugin/hostvault") ||
+		isInLayer(path, root, "adapter/plugin/hosttext") ||
+		isInLayer(path, root, "adapter/plugin/hoststore") ||
+		isInLayer(path, root, "adapter/plugin/hostqueue") ||
+		isInLayer(path, root, "adapter/plugin/hostwindow")
 }
 
 func isUseCaseFieldType(t types.Type, root string) bool {
@@ -190,8 +196,8 @@ func checkDrivingFunctionCallsOneUseCase(t *testing.T, adapters []*packages.Pack
 		t.Errorf("%s %s: a driving adapter calls one use case", one.position, one.name)
 	}
 	// A walk that read few calls is a rule checked against almost nothing.
-	if functions < 80 {
-		t.Fatalf("%d driving-adapter functions reach a use case, want at least 80: the walk is not reading them", functions)
+	if functions < 90 {
+		t.Fatalf("%d driving-adapter functions reach a use case, want at least 90: the walk is not reading them", functions)
 	}
 }
 

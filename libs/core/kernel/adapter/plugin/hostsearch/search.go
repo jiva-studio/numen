@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
@@ -55,7 +54,7 @@ type Search struct {
 	Samples  Samples
 	Nearest  Nearest
 	Progress Progress
-	Stats    *Stats
+	Stats    *search.Stats
 	Policy   search.FloorPolicy
 	Passages *search.SearchPassages
 }
@@ -88,78 +87,27 @@ func (s Search) checkRecipe(recipe string) error {
 
 // GetEmbeddingState reads the model in use and the progress of the vault under it from the index.
 func (s Search) GetEmbeddingState(ctx context.Context, v domain.Vault) (plugin.EmbeddingState, error) {
-	recipe, err := s.getRecipe()
-	if err != nil {
-		return plugin.EmbeddingState{}, err
+	if s.Embedder == nil {
+		return plugin.EmbeddingState{}, plugin.ErrNoModel
 	}
-	held, embedded, err := s.Progress.GetProgress(ctx, v.ID, recipe)
-	if err != nil {
-		return plugin.EmbeddingState{}, fmt.Errorf("read the embedding progress of %s: %w", v.ID, err)
-	}
-	return plugin.EmbeddingState{
-		Recipe:        recipe,
-		Model:         s.Embedder.GetModel().Name,
-		FloorHint:     s.Policy.Get(ctx, v, recipe).Hint,
-		ChunkCount:    held,
-		EmbeddedCount: embedded,
-	}, nil
+	return s.Policy.GetEmbeddingState(ctx, v, s.Progress, s.Embedder.GetModel())
 }
 
 // GetIndexStats reads what the index holds for the vault and the space it takes, with the model in use.
 func (s Search) GetIndexStats(ctx context.Context, v domain.Vault) (plugin.IndexStats, error) {
-	recipe, err := s.getRecipe()
-	if err != nil {
-		return plugin.IndexStats{}, err
+	if s.Embedder == nil {
+		return plugin.IndexStats{}, plugin.ErrNoModel
 	}
-	counts, sizes, err := s.Stats.Get(ctx, v.ID, recipe)
-	if err != nil {
-		return plugin.IndexStats{}, fmt.Errorf("read the index statistics of %s: %w", v.ID, err)
-	}
-	model := s.Embedder.GetModel()
-	extensions := make([]plugin.ExtensionStats, len(counts.Extensions))
-	for i, one := range counts.Extensions {
-		extensions[i] = plugin.ExtensionStats{Extension: one.Extension, Sources: one.Sources, Chunks: one.Chunks}
-	}
-	return plugin.IndexStats{
-		Recipe: recipe, Model: model.Name, Dimensions: int64(model.Dimensions),
-		Chunks: counts.Chunks, Vectors: counts.Vectors,
-		Sources: counts.Sources, Extensions: extensions,
-		DatabaseBytes: sizes.Database, VectorBytes: sizes.Vectors,
-	}, nil
+	return s.Stats.Execute(ctx, v, s.Embedder.GetModel())
 }
 
 // EmbedTexts embeds the texts with the model in use. More than MaxEmbeddedTexts texts, or a text
 // longer than MaxEmbeddedBytes, returns ErrLimitExceeded.
 func (s Search) EmbedTexts(ctx context.Context, texts []string) (plugin.EmbeddedTexts, error) {
-	recipe, err := s.getRecipe()
-	if err != nil {
-		return plugin.EmbeddedTexts{}, err
+	if s.Embedder == nil {
+		return plugin.EmbeddedTexts{}, plugin.ErrNoModel
 	}
-	if len(texts) > plugin.MaxEmbeddedTexts {
-		return plugin.EmbeddedTexts{}, fmt.Errorf("%w: %d texts, at most %d", plugin.ErrLimitExceeded, len(texts), plugin.MaxEmbeddedTexts)
-	}
-	for i, text := range texts {
-		if len(text) > plugin.MaxEmbeddedBytes {
-			return plugin.EmbeddedTexts{}, fmt.Errorf("%w: text %d holds %d bytes, at most %d", plugin.ErrLimitExceeded, i, len(text), plugin.MaxEmbeddedBytes)
-		}
-	}
-	if len(texts) == 0 {
-		return plugin.EmbeddedTexts{Recipe: recipe}, nil
-	}
-	vectors, err := s.Queries.Execute(ctx, texts)
-	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return plugin.EmbeddedTexts{}, ctxErr
-		}
-		return plugin.EmbeddedTexts{}, fmt.Errorf("%w: %w", plugin.ErrEmbeddingFailed, err)
-	}
-	if len(vectors) != len(texts) {
-		return plugin.EmbeddedTexts{}, fmt.Errorf("%w: %d vectors for %d texts", plugin.ErrEmbeddingFailed, len(vectors), len(texts))
-	}
-	if after := s.Embedder.GetModel().Recipe(); after != recipe {
-		return plugin.EmbeddedTexts{}, fmt.Errorf("%w: the model changed while the texts were embedded", plugin.ErrRecipeMismatch)
-	}
-	return plugin.EmbeddedTexts{Recipe: recipe, Vectors: vectors}, nil
+	return s.Queries.EmbedTexts(ctx, s.Embedder.GetModel, texts)
 }
 
 // SampleSimilarities compares each query with the sampled small chunks of the vault. At most
@@ -169,46 +117,7 @@ func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe s
 	if err := s.checkRecipe(recipe); err != nil {
 		return plugin.SimilaritySample{}, err
 	}
-	if len(queries) > plugin.MaxSampledQueries {
-		return plugin.SimilaritySample{}, fmt.Errorf("%w: %d queries, at most %d", plugin.ErrLimitExceeded, len(queries), plugin.MaxSampledQueries)
-	}
-	passages, err := s.Samples.ListSmallChunkVectors(ctx, v, recipe, plugin.MaxSampledPassages)
-	if err != nil {
-		return plugin.SimilaritySample{}, err
-	}
-	sources := make(map[int64]struct{}, len(passages))
-	for _, passage := range passages {
-		sources[passage.Source] = struct{}{}
-	}
-	rows := make([][]float64, len(queries))
-	for i, query := range queries {
-		if err := ctx.Err(); err != nil {
-			return plugin.SimilaritySample{}, err
-		}
-		row, err := compare(query, passages)
-		if err != nil {
-			return plugin.SimilaritySample{}, fmt.Errorf("query %d: %w", i, err)
-		}
-		rows[i] = row
-	}
-	return plugin.SimilaritySample{PassageCount: len(passages), SourceCount: len(sources), Rows: rows}, nil
-}
-
-func compare(query plugin.SimilarityQuery, passages []searchpolicy.Passage) ([]float64, error) {
-	if len(query.Vector) == 0 {
-		return nil, nil
-	}
-	row := make([]float64, 0, len(passages))
-	for _, passage := range passages {
-		if query.Path != "" && passage.Path == query.Path {
-			continue
-		}
-		if len(passage.Vector) != len(query.Vector) {
-			return nil, fmt.Errorf("%w: a passage holds %d dimensions where the query has %d", plugin.ErrInvalidQuery, len(passage.Vector), len(query.Vector))
-		}
-		row = append(row, vector.SimilarityBytes(query.Vector, passage.Vector))
-	}
-	return row, nil
+	return search.SampleSimilarities(ctx, s.Samples, v, recipe, queries)
 }
 
 // GetBestSimilarity is the similarity of the passage of the vault nearest the query.

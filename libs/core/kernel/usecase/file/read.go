@@ -11,6 +11,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
@@ -94,6 +95,39 @@ func (u Read) Execute(
 	}
 
 	return readRange(file, path, start, length)
+}
+
+// ExecuteFileRange reads length bytes of the file at path from start, with the file stat taken
+// before the bytes are read.
+func (u Read) ExecuteFileRange(
+	ctx context.Context, v domain.Vault, path string, start, length int,
+) (plugin.FileRange, error) {
+	reader, err := u.Readers.Open(v)
+	if err != nil {
+		return plugin.FileRange{}, err
+	}
+	pos, err := reader.StatFile(ctx, path)
+	if errors.Is(err, edit.ErrNotANote) {
+		return plugin.FileRange{}, fmt.Errorf("%s is not a file in the vault: %w", path, edit.ErrNotExist)
+	}
+	if err != nil {
+		return plugin.FileRange{}, err
+	}
+	if length <= 0 || length > MostRead {
+		length = MostRead
+	}
+	result, err := u.Execute(ctx, v, path, start, length)
+	if err != nil {
+		return plugin.FileRange{}, err
+	}
+	switch result.Outcome {
+	case Ok:
+		return plugin.FileRange{Text: result.Text, Start: result.Start, Stat: pos}, nil
+	case NotText:
+		return plugin.FileRange{}, fmt.Errorf("read %s from %d: %w", path, result.Start, plugin.ErrNotText)
+	case Missing, AFolder, LeftAlone:
+	}
+	return plugin.FileRange{}, fmt.Errorf("%s is %s: %w", path, result.Outcome, edit.ErrNotExist)
 }
 
 func checkRange(path string, start, length int) (int, error) {

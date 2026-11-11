@@ -2,12 +2,9 @@ package hostvault
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -63,28 +60,7 @@ func (f Files) ReadRange(ctx context.Context, path string, start, length int) (p
 	if err != nil {
 		return plugin.FileRange{}, err
 	}
-	pos, err := f.Stat.Execute(ctx, v, path)
-	if errors.Is(err, edit.ErrNotANote) {
-		return plugin.FileRange{}, fmt.Errorf("%s is not a file in the vault: %w", path, fs.ErrNotExist)
-	}
-	if err != nil {
-		return plugin.FileRange{}, err
-	}
-	if length <= 0 || length > file.MostRead {
-		length = file.MostRead
-	}
-	result, err := f.RangeReader.Execute(ctx, v, path, start, length)
-	if err != nil {
-		return plugin.FileRange{}, err
-	}
-	switch result.Outcome {
-	case file.Ok:
-		return plugin.FileRange{Text: result.Text, Start: result.Start, Stat: pos}, nil
-	case file.NotText:
-		return plugin.FileRange{}, fmt.Errorf("read %s from %d: %w", path, result.Start, plugin.ErrNotText)
-	case file.Missing, file.AFolder, file.LeftAlone:
-	}
-	return plugin.FileRange{}, fmt.Errorf("%s is %s: %w", path, result.Outcome, fs.ErrNotExist)
+	return f.RangeReader.ExecuteFileRange(ctx, v, path, start, length)
 }
 
 // WriteFile replaces the file if it still matches the baseline, and indexes it.

@@ -2,12 +2,14 @@ package textversion
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
@@ -75,6 +77,19 @@ func (u *Texts) ListVersions(ctx context.Context, v domain.Vault, path, contentH
 		listing.Live = live.GetID()
 	}
 	return listing, nil
+}
+
+// ListFileVersions lists the versions of a file of the vault and names the live one for the file's
+// current content.
+func (u *Texts) ListFileVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error) {
+	contentHash, err := u.GetContentHash(ctx, v, path)
+	if errors.Is(err, text.ErrFileUnreadable) {
+		return plugin.TextListing{}, fmt.Errorf("%w: %w", text.ErrNoText, err)
+	}
+	if err != nil {
+		return plugin.TextListing{}, err
+	}
+	return u.ListVersions(ctx, v, path, contentHash)
 }
 
 // ListTargetVersions lists the versions of the file at the path as the when variable target.versions

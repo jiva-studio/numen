@@ -3,10 +3,20 @@ package search
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchpolicyport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
+
+// Progress reads how far a vault is embedded.
+type Progress interface {
+	// GetProgress returns how many of the vault's chunks can have a vector, and how many of those
+	// have one for the named model.
+	GetProgress(ctx context.Context, vaultID domain.VaultID, model string) (held, embedded int64, err error)
+}
 
 // ErrInvalidFloor is a floor outside the range above zero and up to one.
 var ErrInvalidFloor = errors.New("a floor is a cosine similarity above 0 and at most 1")
@@ -86,6 +96,24 @@ func (p FloorPolicy) Get(ctx context.Context, v domain.Vault, recipe string) Eff
 // GetFloor returns the floor in force for the vault under the recipe.
 func (p FloorPolicy) GetFloor(ctx context.Context, v domain.Vault, recipe string) float64 {
 	return p.Get(ctx, v, recipe).Floor
+}
+
+// GetEmbeddingState reads the model in use and the progress of the vault under it from the index.
+func (p FloorPolicy) GetEmbeddingState(
+	ctx context.Context, v domain.Vault, progress Progress, model embedding.Model,
+) (plugin.EmbeddingState, error) {
+	recipe := model.Recipe()
+	held, embedded, err := progress.GetProgress(ctx, v.ID, recipe)
+	if err != nil {
+		return plugin.EmbeddingState{}, fmt.Errorf("read the embedding progress of %s: %w", v.ID, err)
+	}
+	return plugin.EmbeddingState{
+		Recipe:        recipe,
+		Model:         model.Name,
+		FloorHint:     p.Get(ctx, v, recipe).Hint,
+		ChunkCount:    held,
+		EmbeddedCount: embedded,
+	}, nil
 }
 
 // Set stores the floor of the vault under the recipe, and removes the stored floor when the floor is

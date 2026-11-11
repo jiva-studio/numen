@@ -1,13 +1,16 @@
-package hostsearch
+package search
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // The ages a stored answer of Stats is used for. The counts change with every change of the index
@@ -76,6 +79,25 @@ func (s *Stats) Get(ctx context.Context, vaultID domain.VaultID, recipe string) 
 		return index.Counts{}, index.Sizes{}, err
 	}
 	return counts, sizes, nil
+}
+
+// Execute reads what the index holds for the vault and the space it takes, with the model in use.
+func (s *Stats) Execute(ctx context.Context, v domain.Vault, model embedding.Model) (plugin.IndexStats, error) {
+	recipe := model.Recipe()
+	counts, sizes, err := s.Get(ctx, v.ID, recipe)
+	if err != nil {
+		return plugin.IndexStats{}, fmt.Errorf("read the index statistics of %s: %w", v.ID, err)
+	}
+	extensions := make([]plugin.ExtensionStats, len(counts.Extensions))
+	for i, one := range counts.Extensions {
+		extensions[i] = plugin.ExtensionStats{Extension: one.Extension, Sources: one.Sources, Chunks: one.Chunks}
+	}
+	return plugin.IndexStats{
+		Recipe: recipe, Model: model.Name, Dimensions: int64(model.Dimensions),
+		Chunks: counts.Chunks, Vectors: counts.Vectors,
+		Sources: counts.Sources, Extensions: extensions,
+		DatabaseBytes: sizes.Database, VectorBytes: sizes.Vectors,
+	}, nil
 }
 
 func (s *Stats) getCountsLocked(ctx context.Context, now time.Time, key countsKey) (index.Counts, error) {

@@ -2,13 +2,10 @@ package hosttext
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
@@ -36,14 +33,7 @@ func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path
 // ListVersions lists the versions of a file of the vault and names the live one for the file's
 // current content.
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error) {
-	contentHash, err := p.versions.Texts.GetContentHash(ctx, v, path)
-	if errors.Is(err, text.ErrFileUnreadable) {
-		return plugin.TextListing{}, fmt.Errorf("%w: %w", text.ErrNoText, err)
-	}
-	if err != nil {
-		return plugin.TextListing{}, err
-	}
-	return p.versions.Texts.ListVersions(ctx, v, path, contentHash)
+	return p.versions.Texts.ListFileVersions(ctx, v, path)
 }
 
 // ReadText reads one page of the segments of a version of a file of the vault.
