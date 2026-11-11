@@ -76,21 +76,12 @@ describe("the rule on a border and a radius", () => {
 });
 
 describe("the rule on lengths", () => {
-  let scale;
-  before(() => {
-    scale = fs.mkdtempSync(path.join(os.tmpdir(), "style-scale-"));
-    fs.mkdirSync(path.join(scale, "tokens"));
-    fs.writeFileSync(path.join(scale, "tokens", "tokens.css"), ":root { --numen-pad: 0.5rem; --numen-icon: 1.25em; --numen-stroke: 1px; }\n");
-  });
-  after(() => fs.rmSync(scale, { recursive: true, force: true }));
-
-  /** The rules stylelint reports for `code` written at `file`, with the scale read from a token file of a temporary root. */
+  /** The rules stylelint reports for `code` written at `file`. */
   const lint = async (file, code) => {
-    const withRoot = (rules) => (rules?.["numen/no-bare-length"] ? { ...rules, "numen/no-bare-length": [true, { root: scale }] } : rules);
     const { results } = await stylelint.lint({
       code,
       codeFilename: path.join(REPO_ROOT, file),
-      config: { ...config, overrides: config.overrides.map((one) => ({ ...one, rules: withRoot(one.rules) })) },
+      config,
       configBasedir: REPO_ROOT,
     });
     return results[0].warnings.map((one) => one.rule);
@@ -114,11 +105,13 @@ describe("the rule on lengths", () => {
     assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { max-inline-size: 60ch; }"), rejected);
   });
 
-  it("accepts a custom property in rem or em only on the scale the token files declare", async () => {
+  it("accepts a custom property in rem or em, whatever the length", async () => {
     assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --pad: 0.5rem; --icon: 1.25em; padding: var(--pad); inline-size: calc(var(--icon) * 2); }"), []);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --w: 1000rem; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --pad: 0.3rem; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --icon: 1.25rem; }"), rejected);
+    assert.deepEqual(await lint("apps/desktop/editor/src/Planted.vue", "<template><p /></template>\n<style scoped>\np { --max-width: 40rem; --w: 1000rem; --pad: 0.3rem; }\n</style>\n"), []);
+  });
+
+  it("rejects a custom property in another absolute unit", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --w: 12pt; --h: 3cm; }"), [...rejected, ...rejected]);
   });
 
   it("rejects px in a custom property, even when a token file declares it", async () => {

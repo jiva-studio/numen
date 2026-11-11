@@ -58,11 +58,26 @@ func isCallingTechnology(pkg *packages.Package) bool {
 	return found
 }
 
+// isDrivenAdapter reports whether a package under adapter/ is a driven adapter: it sits in internal/adapter, in
+// adapter/index or adapter/settings, or declares a type that implements an interface of port/. The rest of
+// adapter/ translates a wire or a command line into calls and has no technology of its own to wrap.
+func isDrivenAdapter(pkg *packages.Package, rel string, ports []load.PortInterface) bool {
+	switch {
+	case load.IsWithin(rel, "internal/adapter"), load.IsWithin(rel, "adapter/index"), load.IsWithin(rel, "adapter/settings"):
+		return true
+	}
+	return load.GetImplementation(pkg, ports).Name != ""
+}
+
 func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free map[string]string) (found []string, driven int) {
+	ports := load.ListPortInterfaces(pkgs, root)
 	for _, pkg := range pkgs {
 		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
 		isInternalAdapter := load.IsWithin(rel, "internal/adapter")
 		if !isInternalAdapter && !load.IsWithin(rel, "adapter") {
+			continue
+		}
+		if !isInternalAdapter && !isDrivenAdapter(pkg, rel, ports) {
 			continue
 		}
 		isDriving := false

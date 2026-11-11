@@ -15,6 +15,9 @@ import (
 type structLimit struct {
 	methods int
 	fields  int
+	// holdsWiring marks a package of the container: its struct without any method is a holder of wired parts and
+	// counts its direct and embedded fields only.
+	holdsWiring bool
 }
 
 // The limits come from the target hexagon. A driven adapter wraps one technology behind two or three ports and
@@ -35,8 +38,10 @@ func getStructLimit(rel string) (structLimit, bool) {
 	switch {
 	case load.IsWithin(rel, "usecase"):
 		return structLimit{methods: maxUseCaseMethods, fields: maxUseCaseFields}, true
-	case load.IsWithin(rel, "adapter"), load.IsWithin(rel, "internal/adapter"), load.IsWithin(rel, "container"):
+	case load.IsWithin(rel, "adapter"), load.IsWithin(rel, "internal/adapter"):
 		return structLimit{methods: maxAdapterMethods, fields: maxAdapterFields}, true
+	case load.IsWithin(rel, "container"):
+		return structLimit{methods: maxAdapterMethods, fields: maxAdapterFields, holdsWiring: true}, true
 	}
 	return structLimit{}, false
 }
@@ -75,7 +80,7 @@ func getOversizedTypes(pkgs []*packages.Package, getLimit func(path string) (str
 				methods := types.NewMethodSet(types.NewPointer(named)).Len()
 				fields := 0
 				if st, ok := named.Underlying().(*types.Struct); ok {
-					fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{})
+					fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{}, !limit.holdsWiring || methods > 0)
 				}
 				if methods > limit.methods {
 					found = append(found, load.NewFinding(pkg.Fset, spec.Name.Pos(),
@@ -135,7 +140,7 @@ func checkNoTypeExceedsItsLayersSize(t *testing.T, workspace load.WorkspacePacka
 	}
 }
 
-func countStructFields(shape *types.Struct, home *types.Package, visiting map[*types.Struct]bool) int {
+func countStructFields(shape *types.Struct, home *types.Package, visiting map[*types.Struct]bool, isNested bool) int {
 	if visiting[shape] {
 		return 0
 	}
@@ -143,8 +148,8 @@ func countStructFields(shape *types.Struct, home *types.Package, visiting map[*t
 	defer delete(visiting, shape)
 	count := 0
 	for field := range shape.Fields() {
-		if inner, ok := getGroupedStruct(field, home); ok {
-			count += countStructFields(inner, home, visiting)
+		if inner, ok := getGroupedStruct(field, home); ok && (isNested || field.Embedded()) {
+			count += countStructFields(inner, home, visiting, isNested)
 			continue
 		}
 		count++
