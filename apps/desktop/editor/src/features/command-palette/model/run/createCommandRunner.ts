@@ -9,7 +9,7 @@ import {
   type CommandDeps,
   type CommandTarget,
   type Values,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { Commands } from '../palette/palette'

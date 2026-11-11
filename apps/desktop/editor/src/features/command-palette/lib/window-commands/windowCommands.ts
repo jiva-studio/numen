@@ -1,7 +1,8 @@
 /**
  * The commands the palette itself owns: close the tab in front, search the vault, open the settings.
  */
-import { COMMAND, createRowKeys, withWhen, type Command } from '@/entities/command'
+import { type Command } from '@/entities/command'
+import { COMMAND, createRowKeys, withWhen } from '@/shared/model/command'
 import type { Words } from '../../words'
 
 export const createWindowCommands = (words: Words, agent: string): readonly Command[] => [

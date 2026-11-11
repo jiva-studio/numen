@@ -26,7 +26,7 @@ import {
 } from '@numen/plugin-loader'
 import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import { openExternalUrl } from '@numen/ui'
-import { createWindowSlots } from '@/entities/plugin'
+import { createSlotIssueReporter, createWindowSlots } from '@/entities/plugin'
 import type { createWindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'
 
@@ -69,9 +69,7 @@ export function createShellHost(deps: ShellHostDeps) {
   const { tabs, notices, services = {}, agent, getPlatform = () => 'windows' } = deps
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
-  const slotViews = createSlotViewRegistry({
-    reportIssue: (pluginId, message) => notices.show(pluginId, `${pluginId}: ${message}`, 'error'),
-  })
+  const slotViews = createSlotViewRegistry({ reportIssue: createSlotIssueReporter(notices) })
   const windowSlots = createWindowSlots(slotViews)
 
   const contextHost = createIdleContextHost({

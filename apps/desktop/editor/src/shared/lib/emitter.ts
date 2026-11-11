@@ -1,6 +1,6 @@
 /** A signal: a producer emits a value and every listener subscribed at that moment receives it. */
 export interface Emitter<T> {
-  emit(value: T): void
+  readonly emit: (value: T) => void
   /** Answers the call that stops the listener. */
   subscribe(listener: (value: T) => void): () => void
 }

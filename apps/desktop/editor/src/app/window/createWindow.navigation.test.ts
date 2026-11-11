@@ -3,7 +3,7 @@
  * is followed by the tabs and the palette step standing on it.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMMAND } from '@/entities/command'
+import { COMMAND } from '@/shared/model/command'
 import {
   changed,
   getWindowParts,

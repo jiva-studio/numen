@@ -4,7 +4,7 @@
  */
 import { parseWhen } from '@numen/plugin-loader'
 import { getPaletteValues } from './paletteValues'
-import type { CommandTarget } from './command'
+import type { CommandTarget } from './invocation'
 
 function createAvailabilityCheck(when: string): (target: CommandTarget) => boolean {
   const parsed = parseWhen(when)

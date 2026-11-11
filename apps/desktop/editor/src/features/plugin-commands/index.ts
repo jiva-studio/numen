@@ -3,24 +3,36 @@ export { createCommandItems } from './lib/commandItems'
 export { createBackendHandlers } from './model/backendHandlers'
 export { createCommandItemLists } from './model/commandItemLists'
 export type { CommandItemLists } from './model/commandItemLists'
-export { createDeclaredState, getPaletteId, useDeclaredCommands } from './model/declaredCommands'
+export { createDeclaredState, useDeclaredCommands } from './model/declaredCommands'
 export type { DeclaredCommands } from './model/declaredCommands'
 export { createPaletteCommandList } from './model/paletteCommandList'
 export { createPluginCommandPort } from './model/pluginCommandPort'
 export { createItemLists } from './model/pluginItems'
-export { createSlotCommandFinder, readSlotEntries } from './model/pluginSlots'
 export { createCommandNoteReader, usePluginCommands } from './model/usePluginCommands'
 export { watchCommandLists } from './model/watchCommandLists'
 export { createFileMakers } from './model/host/fileServices'
 export { createPluginNotes } from './model/host/pluginNotes'
+export type { PluginNotes } from './model/host/pluginNotes'
 export { createPluginSupport } from './model/host/createPluginSupport'
+export {
+  createNoticeParts,
+  createTabActionParts,
+  createTabKindParts,
+  createTaskServiceParts,
+  createVaultServiceParts,
+} from './model/host/createHostParts'
+export type { HostParts } from './model/host/createHostParts'
 export { createWindowPluginStatus } from './model/host/pluginSettings'
-export { createPluginServices } from './model/host/createPluginServices'
+export {
+  createVaultAccess,
+  createWindowService,
+  createWorkspaceService,
+} from './model/host/createPluginServices'
 export { createPluginCatalog } from './model/host/createPluginCatalog'
 export { createPluginReports } from './model/host/createPluginReports'
 export { getAppCommandIds } from './model/host/getAppCommandIds'
 export { createWindowFacts } from './model/host/createWindowFacts'
-export type { WindowFactsSource } from './model/host/createWindowFacts'
+export { createWindowSlots } from './model/host/createWindowSlots'
 export { createNoteKindReader } from './model/host/createNoteKindReader'
 export { createCommandIconFinder } from './model/host/createCommandIconFinder'
 export { createHostPort } from './model/host/hostPort'

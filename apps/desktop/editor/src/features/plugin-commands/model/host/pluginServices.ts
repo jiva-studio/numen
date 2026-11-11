@@ -16,15 +16,14 @@ import type {
   WindowHost,
   WorkspaceFiles,
   WorkspaceHost,
+  WorkspaceIcons,
 } from '@numen/plugin-loader'
-import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
 import { getNeighborhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { Task } from '@/entities/window'
-import { createIconHost, type IconHostDeps } from './fileServices'
 import type { SettingsStore } from '@/entities/settings'
 import type { PluginNotes } from './pluginNotes'
 import type { NoteBuffer } from '@numen/plugin-loader'
@@ -45,25 +44,15 @@ export interface PluginServices {
   readonly backgroundTasks: BackgroundTaskHost
 }
 
-/** What the window hands a plugin's tabs. */
-export interface WorkspaceHostDeps extends IconHostDeps {
-  readonly getTarget?: () => CommandTarget
-  readonly runCommand?: (id: string, target: CommandTarget) => void
-  readonly window: {
-    readonly health: { readonly failure: Readonly<Ref<string>> }
-    readonly opening: { readonly path: Readonly<Ref<string>>; read(): Promise<string> }
-  }
-  readonly dragged: ShallowRef<readonly string[]>
-  readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt' | 'findFileIcon'>
+/** What the files a plugin's tabs open are opened through. */
+export interface WorkspaceFilesDeps {
+  readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
-  readonly ask: (text: string) => void
-  readonly getNoteInFocus: () => NoteRef
   readonly writeMessage: MessageWriter
-  readonly getMessageWriter: (name: string) => MessageWriter
-  readonly today: () => string
 }
 
-function createWorkspaceFiles(deps: WorkspaceHostDeps): WorkspaceFiles {
+/** The files a plugin's tabs open, and the linked tabs a path change moves. */
+export function createWorkspaceFiles(deps: WorkspaceFilesDeps): WorkspaceFiles {
   const { tabOpeners, writeMessage } = deps
   return {
     open: (path, options) => {
@@ -84,8 +73,37 @@ function createWorkspaceFiles(deps: WorkspaceHostDeps): WorkspaceFiles {
   }
 }
 
+/** What the messages a plugin's tabs write are written through. */
+export interface WorkspaceMessagesDeps {
+  readonly writeMessage: MessageWriter
+  readonly getMessageWriter: (name: string) => MessageWriter
+}
+
+/** The messages a plugin's tabs write: an error, or a message under a name of their own. */
+export function createWorkspaceMessages(deps: WorkspaceMessagesDeps): WorkspaceHost['messages'] {
+  return {
+    showError: (text) => deps.writeMessage(text, 'error'),
+    getWriter: (name) => deps.getMessageWriter(name),
+  }
+}
+
+/** What the window hands a plugin's tabs. */
+export interface WorkspaceHostDeps {
+  readonly window: {
+    readonly health: { readonly failure: Readonly<Ref<string>> }
+    readonly opening: { readonly path: Readonly<Ref<string>>; read(): Promise<string> }
+  }
+  readonly dragged: ShallowRef<readonly string[]>
+  readonly files: WorkspaceFiles
+  readonly icons: WorkspaceIcons
+  readonly messages: WorkspaceHost['messages']
+  readonly ask: (text: string) => void
+  readonly getNoteInFocus: () => NoteRef
+  readonly today: () => string
+}
+
 export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
-  const { window, dragged, tabOpeners, writeMessage } = deps
+  const { window, dragged } = deps
   return {
     window: {
       isReady: computed(() => !window.health.failure.value),
@@ -99,15 +117,9 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
         dragged.value = paths
       },
     },
-    files: createWorkspaceFiles(deps),
-    messages: {
-      showError: (text) => writeMessage(text, 'error'),
-      getWriter: (name) => deps.getMessageWriter(name),
-    },
-    icons: createIconHost({
-      ...(deps.getPluginCommandIcon ? { getPluginCommandIcon: deps.getPluginCommandIcon } : {}),
-      findFileIcon: tabOpeners.findFileIcon,
-    }),
+    files: deps.files,
+    messages: deps.messages,
+    icons: deps.icons,
     getNoteInFocus: () => deps.getNoteInFocus(),
     ask: (text) => deps.ask(text),
   }
@@ -147,10 +159,7 @@ export interface AgentHostDeps {
   readonly window: { readonly vault: { readonly unreachable: Readonly<Ref<string>> } }
   readonly settings: {
     readonly rest: {
-      readonly read: Pick<
-        SettingsStore['read'],
-        'getSetting' | 'getModelsAt'
-      >
+      readonly read: Pick<SettingsStore['read'], 'getSetting' | 'getModelsAt'>
       readonly write: Pick<SettingsStore['write'], 'writeSetting'>
     }
   }

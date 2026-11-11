@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { VAULTS_ERROR_CODE } from '@numen/core-client'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import type { CommandInvocation, CommandTarget } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { VAULT_WORDS as words } from '../words'
 import { createVaultCommands } from './commands'
@@ -44,7 +44,10 @@ const createWindow = (answers: Answers = {}, withHold = false) => {
         calls.push(`open ${request.id}`)
         return answers.opened ?? {}
       },
-      chooseFolder: () => ({ isChosen: answers.chose !== '', path: answers.chose ?? '/vaults/Heat' }),
+      chooseFolder: () => ({
+        isChosen: answers.chose !== '',
+        path: answers.chose ?? '/vaults/Heat',
+      }),
       addVault: (request: { path: string; name: string }) => {
         calls.push(`add ${request.path}`)
         return answers.added ?? { vault: wireVault('heat', 'Heat') }

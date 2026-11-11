@@ -1,6 +1,6 @@
 import { computed, watch, type Ref } from 'vue'
 import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
-import type { VaultRef } from '@/entities/command'
+import type { VaultRef } from '@/shared/model/command'
 import type { VaultList } from '@/entities/vault'
 
 interface WindowVaultsDeps {

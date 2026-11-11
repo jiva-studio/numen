@@ -2,7 +2,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { createAppBootstrap, type BootstrapDeps } from './createAppBootstrap'
+import { createAppStart, type StartDeps } from './createAppStart'
+import { createAppStop, type StopDeps } from './createAppStop'
+
+type BootstrapDeps = StartDeps & StopDeps
+
+const createAppBootstrap = (deps: BootstrapDeps) => {
+  const started = createAppStart(deps)
+  createAppStop(deps)
+  return started
+}
 
 const STEP_LIMIT_MS = 10_000
 

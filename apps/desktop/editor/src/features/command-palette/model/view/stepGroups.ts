@@ -192,22 +192,18 @@ function createVaultsGroup(
   }
 }
 
-/** The groups a step draws, over the state the palette holds. */
-export function createStepGroups(state: ViewState) {
-  const { words, lists, found, known, showing, isWorking, failureMessage } = state
-  const { getStepTitle, getStepLabel } = state
+/** What the groups of the steps that prompt or confirm read. */
+export type StepGroupsState = Pick<ViewState, 'words' | 'lists' | 'getStepTitle' | 'getStepLabel'>
 
-  const findTabKind = (id: string): string | null => {
-    const note = found.value.find((one) => one.path === id)
-    return note ? (note.tabKind ?? '') : null
-  }
+/** What the groups of the steps that choose a note or a vault read. */
+export type ChoiceGroupsState = Pick<
+  ViewState,
+  'words' | 'found' | 'known' | 'showing' | 'isWorking' | 'failureMessage'
+>
 
-  const getPickingGroup = (step: PendingStep, text: string): PaletteGroup =>
-    createPickingGroup(step, found.value, text, {
-      words,
-      isWorking: isWorking.value,
-      failureMessage: failureMessage.value,
-    })
+/** The groups of the steps that ask for a name, an argument, an item or a confirmation. */
+export function createStepGroups(state: StepGroupsState) {
+  const { words, lists } = state
 
   const getItemGroups = (step: PendingStep, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
@@ -221,6 +217,33 @@ export function createStepGroups(state: ViewState) {
     }))
   }
 
+  return {
+    getNamingGroup: (step: PendingStep, text: string) => getNamingGroup(step, text, words),
+    getArgumentGroup: (step: PendingStep, text: string) => getArgumentGroup(step, text, words),
+    getItemGroups,
+    getConfirmGroup: (step: PendingStep, text: string) =>
+      getConfirmGroup(step, text, words, state.getStepLabel(step)),
+    getExactlyGroup: (step: PendingStep, text: string) =>
+      getExactlyGroup(step, text, words, state.getStepTitle(step)),
+  }
+}
+
+/** The groups of the steps that choose a note or a vault, over what the search found. */
+export function createChoiceGroups(state: ChoiceGroupsState) {
+  const { words, found, known, showing, isWorking, failureMessage } = state
+
+  const findTabKind = (id: string): string | null => {
+    const note = found.value.find((one) => one.path === id)
+    return note ? (note.tabKind ?? '') : null
+  }
+
+  const getPickingGroup = (step: PendingStep, text: string): PaletteGroup =>
+    createPickingGroup(step, found.value, text, {
+      words,
+      isWorking: isWorking.value,
+      failureMessage: failureMessage.value,
+    })
+
   const getVaultsGroup = (text: string, step: PendingStep): PaletteGroup =>
     createVaultsGroup(known.value, step, {
       text,
@@ -231,13 +254,8 @@ export function createStepGroups(state: ViewState) {
     })
 
   return {
-    getNamingGroup: (step: PendingStep, text: string) => getNamingGroup(step, text, words),
-    getArgumentGroup: (step: PendingStep, text: string) => getArgumentGroup(step, text, words),
-    lists: { getPickingGroup, getItemGroups, getVaultsGroup },
-    getConfirmGroup: (step: PendingStep, text: string) =>
-      getConfirmGroup(step, text, words, getStepLabel(step)),
-    getExactlyGroup: (step: PendingStep, text: string) =>
-      getExactlyGroup(step, text, words, getStepTitle(step)),
+    getPickingGroup,
+    getVaultsGroup,
     findTabKind,
     getVaultAside: (one: Vault) => getVaultAside(one, showing.value, words),
   }

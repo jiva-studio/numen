@@ -5,7 +5,7 @@
  * note can be nested under as it is made. Each action is the id of the command
  * that makes the note.
  */
-import { COMMAND, type CommandTarget } from '@/entities/command'
+import { COMMAND, type CommandTarget } from '@/shared/model/command'
 import type { Words } from '../../words'
 
 /** The words of the actions that create a note. */

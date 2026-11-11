@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { Folder, FolderOpen } from '@lucide/vue'
-import { COMMAND, findIcon } from '@/entities/command'
+import { COMMAND, findIcon } from '@/shared/model/command'
 import { createFileMakers, createIconHost, createVaultFiles } from './fileServices'
 
 const target = {

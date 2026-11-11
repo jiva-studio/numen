@@ -4,7 +4,7 @@
  */
 import { computed } from 'vue'
 import { reportFailure, runInBackground } from '@numen/ui'
-import type { CommandDeps } from '@/entities/command'
+import type { CommandDeps } from '@/shared/model/command'
 import { isCommandPrefixTyped } from '../lib/commands/commands'
 import { runInvocation } from './handlers/handlers'
 import type { Commands } from './palette/palette'

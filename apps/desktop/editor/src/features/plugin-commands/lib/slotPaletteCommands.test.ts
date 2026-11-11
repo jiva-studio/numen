@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { DeclaredSlot } from '@/entities/plugin'
 import { createEmptyWhenContext } from './whenContext'
 import { createSlotPaletteCommands } from './slotPaletteCommands'
@@ -53,6 +53,8 @@ describe('the rows of the slot palette.note', () => {
     const [row] = createSlotPaletteCommands([entry({})], createEmptyWhenContext())
 
     expect(row?.isAvailable(target({}), {} as never)).toBe(true)
-    expect(row?.isAvailable(target({ path: 'scan.pdf', file: 'scan.pdf' }), {} as never)).toBe(false)
+    expect(row?.isAvailable(target({ path: 'scan.pdf', file: 'scan.pdf' }), {} as never)).toBe(
+      false,
+    )
   })
 })

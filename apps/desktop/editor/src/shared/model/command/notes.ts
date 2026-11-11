@@ -1,7 +1,13 @@
 /**
  * The files the window has an editor open on, as the commands reach them.
  */
-import type { CommandPlace } from './command'
+import type { Selector } from '@numen/plugin-loader'
+
+/** Where in the file a command that opens it moves to: a line of a note, or the selector of a reader. */
+export interface CommandPlace {
+  readonly line?: number
+  readonly selector?: Selector
+}
 
 /**
  * The files the window has an editor open on, as accessed by commands. Notes

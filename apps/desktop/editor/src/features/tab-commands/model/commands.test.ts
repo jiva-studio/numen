@@ -3,7 +3,7 @@
  * with another tab, the last two with one item per window and per tab.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { LinkableTab, TabLinkGroup } from '@/entities/tab'
 import { invoke } from '@/testing/invocation'
 import { createTabCommands, type TabCommandsDeps } from './commands'

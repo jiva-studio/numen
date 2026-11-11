@@ -2,9 +2,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { createPluginHost, getWhenValues } from '@numen/plugin-loader'
-import { COMMAND, type CommandTarget } from '@/entities/command'
+import { COMMAND, type CommandTarget } from '@/shared/model/command'
 import type { DeclaredKeybinding } from '@/entities/plugin'
-import { createKeyHandler } from './createKeyHandler'
+import { createAppKeyRunner, createKeyHandler } from './createKeyHandler'
+import { syncKeybindings } from './syncKeybindings'
 
 const TARGET = {
   tab: 'note:1',
@@ -40,11 +41,10 @@ const setup = (keybindings: readonly DeclaredKeybinding[], takesKey = false) => 
     runCommand: vi.fn(),
     runWithValues: vi.fn(),
   }
+  syncKeybindings(host.keybindings, ref(keybindings), ref([]))
   const onKeyDown = createKeyHandler({
     windowTabs: { panes: { onKeyPress: () => takesKey } },
-    keybindings: host.keybindings,
-    declaredKeybindings: ref(keybindings),
-    plugins: ref([]),
+    runApp: createAppKeyRunner({ ...calls, getTarget: () => TARGET }),
     handleShortcut: (event, runApp) =>
       host.commands.handleShortcut(event, async () => ({}) as never, {
         target: {
@@ -56,8 +56,6 @@ const setup = (keybindings: readonly DeclaredKeybinding[], takesKey = false) => 
         },
         runApp,
       }),
-    ...calls,
-    getTarget: () => TARGET,
   })
   const press = (init: KeyboardEventInit = { code: 'KeyL', ctrlKey: true }) => {
     const event = new KeyboardEvent('keydown', { cancelable: true, ...init })

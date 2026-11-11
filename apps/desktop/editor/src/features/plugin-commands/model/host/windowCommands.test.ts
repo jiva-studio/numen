@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
 import type { CommandTarget as RunTarget } from '@numen/plugin-loader'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { createWindowCommands } from './windowCommands'
 
 const WINDOWS = [{ id: 'w2', title: 'Second window' }]

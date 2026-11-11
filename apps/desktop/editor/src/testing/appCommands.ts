@@ -3,7 +3,8 @@
  * the rows. Nothing runs them, so the window they use does nothing.
  */
 import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
-import type { Command, Notes } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { Notes } from '@/shared/model/command'
 import { createNoteWriter } from '@/entities/note'
 import { WORDS } from '@/shared/ui/words'
 

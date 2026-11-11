@@ -2,23 +2,26 @@ import { watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { getFrontendPluginIds } from '@/entities/plugin'
-import type { Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 
 /** The plugins the settings name, as the window reads them. */
-export type SettingPlugins = () => readonly { readonly id: string; readonly hasFrontend: boolean }[]
+type SettingPlugins = () => readonly { readonly id: string; readonly hasFrontend: boolean }[]
 
 export interface PluginStartDeps {
   readonly pluginLoader: PluginLoader
   readonly getPlugins: SettingPlugins
   readonly waitForDeclaredCommands: () => Promise<void>
-  readonly reportError: (error: Caught) => void
+  readonly writeMessage: MessageWriter
 }
 
 /** Loads the frontends of the plugins the settings name, and again as the settings change them. */
 export function createPluginStart(deps: PluginStartDeps) {
   const { pluginLoader } = deps
   watch(deps.getPlugins, (plugins) => {
-    runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), deps.reportError)
+    runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), (error) =>
+      deps.writeMessage(`Plugins were not tracked: ${formatError(error)}`, 'error'),
+    )
   })
   return {
     /** The plugins the settings name are active before the layout opens the tabs of their kinds. */

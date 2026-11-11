@@ -1,4 +1,4 @@
-import { SETTING_COMMAND_PREFIX } from '@/entities/command'
+import { SETTING_COMMAND_PREFIX } from '@/shared/model/command'
 
 /** The id of the command of a setting: `setting:<owner>:<key>`, the key a path joined by dots. */
 export const getSettingCommandId = (owner: string, key: string): string =>

@@ -7,7 +7,7 @@
  * two.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMMAND, ROW } from '@/entities/command'
+import { COMMAND, ROW } from '@/shared/model/command'
 import { useSearch, type SearchDeps, type NameMatch, type Passage, type Words } from './search'
 import type { SearchMode } from '../../lib/search/types'
 import { createDeferred, type Deferred } from '@/testing/deferred'

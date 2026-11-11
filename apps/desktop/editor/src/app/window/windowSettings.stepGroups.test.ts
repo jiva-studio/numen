@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { WORDS } from '@/shared/ui/words'
-import { createWindowSettingsPart } from './windowSettings'
+import { createWindowSettingsPart } from '@/testing/windowSettings'
 
 describe('settings step groups', () => {
   it('returns no step groups for a command that is no setting', () => {

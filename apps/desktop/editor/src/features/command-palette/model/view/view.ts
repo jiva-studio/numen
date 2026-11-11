@@ -9,8 +9,9 @@
 import type { PaletteGroup, PaletteItem } from '@numen/workbench'
 import { getGroupCommands } from '../../lib/commands/commands'
 import type { PendingStep } from '../../lib/step/step'
-import type { Command, CommandGroup, CommandTarget } from '@/entities/command'
-import { createStepGroups } from './stepGroups'
+import type { Command, CommandGroup } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
+import { createChoiceGroups, createStepGroups } from './stepGroups'
 import type { ViewState } from './viewState'
 
 export type { ViewState } from './viewState'
@@ -27,6 +28,7 @@ function matchCommandWord(one: Command, word: string): { matches: boolean; found
 export function getPaletteView(state: ViewState) {
   const { words, runs } = state
   const steps = createStepGroups(state)
+  const choices = createChoiceGroups(state)
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
   const renderItem = (one: Command, target: CommandTarget, word: string): PaletteItem | null => {
@@ -91,12 +93,12 @@ export function getPaletteView(state: ViewState) {
     if (!step) return getCommandGroups(target, text)
     if (step.step === 'name') return [steps.getNamingGroup(step, text)]
     if (step.step === 'arguments') return [steps.getArgumentGroup(step, text)]
-    if (step.step === 'note') return [steps.lists.getPickingGroup(step, text)]
-    if (step.step === 'items') return steps.lists.getItemGroups(step, text)
-    if (step.step === 'vault') return [steps.lists.getVaultsGroup(text, step)]
+    if (step.step === 'note') return [choices.getPickingGroup(step, text)]
+    if (step.step === 'items') return steps.getItemGroups(step, text)
+    if (step.step === 'vault') return [choices.getVaultsGroup(text, step)]
     if (step.step === 'confirmation') return [steps.getConfirmGroup(step, text)]
     return [steps.getExactlyGroup(step, text)]
   }
 
-  return { createGroups, findTabKind: steps.findTabKind, getVaultAside: steps.getVaultAside }
+  return { createGroups, findTabKind: choices.findTabKind, getVaultAside: choices.getVaultAside }
 }

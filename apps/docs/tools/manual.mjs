@@ -113,7 +113,7 @@ const listed = (source, from) => {
  * names are the keys of COMMAND in ids.ts, each filed under the owner app.
  */
 const readCommandIds = async () => {
-  const source = await read(EDITOR, 'entities/command/lib/ids.ts')
+  const source = await read(EDITOR, 'shared/model/command/ids.ts')
   const ids = new Map(
     [...source.matchAll(/^\s*([A-Za-z]+):\s*formatAppCommandId\('([^']+)'\)/gm)].map(
       ([, name, id]) => [name, `app:${id}`],

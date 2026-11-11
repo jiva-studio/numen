@@ -9,7 +9,8 @@ import {
   type CommandTarget as RunTarget,
   type PluginHost,
 } from '@numen/plugin-loader'
-import { getValues, type Command, type CommandTarget } from '@/entities/command'
+import { type Command } from '@/entities/command'
+import { getValues, type CommandTarget } from '@/shared/model/command'
 import { getNamedTarget } from './runTarget'
 
 type Values = Readonly<Record<string, string>>

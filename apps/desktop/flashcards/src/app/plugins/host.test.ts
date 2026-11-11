@@ -5,9 +5,9 @@ import { createMockManifest } from '@numen/core-client/testing'
 import type { AgentHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { TARGET } from '@/shared/lib/window'
 import { createNoticeQueue } from '@numen/workbench'
+import { createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
 import { createShellHost as createHost } from './host'
-import { createWindowCommands } from './windowCommands'
 
 const createShellHost = (
   agent?: AgentHost,
@@ -56,15 +56,7 @@ const withVault = (id: string) =>
     name: id,
     permissions: ['vault:read', 'vault:write', 'network:outbound'],
     viewCapabilities: [CONVERSATION, VAULT_SUMMARY],
-    tabKinds: [
-      'unplaced',
-      'second',
-      'default-zero',
-      'negative',
-      'review',
-      'fallback',
-      'stateless',
-    ],
+    tabKinds: ['unplaced', 'second', 'default-zero', 'negative', 'review', 'fallback', 'stateless'],
     readers: ['document'],
     commands: ['open'],
     settingsViews: ['floor'],
@@ -575,7 +567,10 @@ describe('the agent calls of a plugin in the window', () => {
   })
 
   it('lets a plugin with vault:read and vault:write finish a conversation and resolve links', async () => {
-    const { getFinished, markdownInputs, agentOfPlugin } = createContext(['vault:read', 'vault:write'])
+    const { getFinished, markdownInputs, agentOfPlugin } = createContext([
+      'vault:read',
+      'vault:write',
+    ])
 
     await agentOfPlugin.finish('c1')
     await agentOfPlugin.resolveLinks('[[Garden]]')

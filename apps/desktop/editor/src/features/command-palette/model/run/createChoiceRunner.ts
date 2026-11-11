@@ -1,4 +1,4 @@
-import type { CommandTarget, Values } from '@/entities/command'
+import type { CommandTarget, Values } from '@/shared/model/command'
 import type { ResultChoice } from '../search/lookup'
 
 const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({

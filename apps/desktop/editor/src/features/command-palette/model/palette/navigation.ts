@@ -6,7 +6,8 @@ import { getRenamedPath, type PathRename } from '@/shared/lib/paths'
 import type { Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type { NoteLookup, PaletteLists } from '../../types'
-import type { Command, CommandInvocation, CommandTarget, PromptStep } from '@/entities/command'
+import type { Command, PromptStep } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 
@@ -27,7 +28,15 @@ export interface PaletteStepsOptions {
   readonly onLights: (item: string) => void
   readonly onLists: () => void
   readonly onClose: () => void
+}
+
+/** What choosing in a step reaches: the invocation it makes and the steps it pushes and pops. */
+export interface StepChoiceDeps {
   readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
+  readonly lists: PaletteLists
+  readonly text: Ref<string>
+  readonly stack: { readonly pushStep: (step: PendingStep) => void; readonly popStep: () => void }
+  readonly getStepTitle: (step: PendingStep) => string
 }
 
 interface StepActionDeps {
@@ -228,7 +237,7 @@ function createStepStack(options: {
 }
 
 export function createPaletteSteps(options: PaletteStepsOptions) {
-  const { words, lists, knows, text, onDrop, onLights, onLists, onClose, invocation } = options
+  const { words, lists, knows, text, onDrop, onLights, onLists, onClose } = options
   const steps = shallowRef<readonly PendingStep[]>([])
   const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
 
@@ -243,22 +252,6 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
       return to ? { ...s, on: { ...s.on, path: to } } : s
     })
   }
-
-  const chooseInStep = (
-    step: PendingStep,
-    item: string,
-    ...[action, found, vaults, isAside]: [
-      action: string,
-      found: readonly NameMatch[],
-      vaults: readonly Vault[],
-      isAside: (vault: Vault) => boolean,
-    ]
-  ): CommandInvocation | null =>
-    resolveStepAction(
-      step,
-      { item, action, found, vaults, isAside },
-      { invocation, pushStep, popStep, lists, text, getStepTitle },
-    )
 
   return {
     steps,
@@ -284,6 +277,28 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
         return true
       },
     },
-    chooseInStep,
   }
+}
+
+/** Carries out the choice of a row in a step: the invocation it makes, or the step it moves to. */
+export function createStepChoice(deps: StepChoiceDeps) {
+  const actionDeps: StepActionDeps = {
+    invocation: deps.invocation,
+    lists: deps.lists,
+    text: deps.text,
+    pushStep: deps.stack.pushStep,
+    popStep: deps.stack.popStep,
+    getStepTitle: deps.getStepTitle,
+  }
+  return (
+    step: PendingStep,
+    item: string,
+    ...[action, found, vaults, isAside]: [
+      action: string,
+      found: readonly NameMatch[],
+      vaults: readonly Vault[],
+      isAside: (vault: Vault) => boolean,
+    ]
+  ): CommandInvocation | null =>
+    resolveStepAction(step, { item, action, found, vaults, isAside }, actionDeps)
 }

@@ -1,4 +1,4 @@
-import type { Notes } from '@/entities/command'
+import type { Notes } from '@/shared/model/command'
 import type { WindowTabs } from '@/entities/tab'
 
 type TabsOfWindow = Pick<WindowTabs, 'tabs' | 'panes'>

@@ -13,13 +13,13 @@ import { blank } from '@/testing/stubs'
 import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginSupport } from './createPluginSupport'
+import { createTestPluginSupport, type TestPluginSupportDeps } from '@/testing/pluginSupport'
 import { getNoteIcon } from '@/entities/note'
 import { createBackendHandlers } from '@/features/plugin-commands'
 
 const createSupport = () => {
   const windowTabs = createTestTabs()
-  const support = createPluginSupport({
+  const support = createTestPluginSupport({
     windowTabs,
     tabOpeners: {
       registerExtensionReader: vi.fn(() => () => undefined),
@@ -148,8 +148,8 @@ describe('the tab kind a plugin adds', () => {
 })
 
 describe('the settings and notices a plugin is given', () => {
-  const createWith = (more: Partial<Parameters<typeof createPluginSupport>[0]>) =>
-    createPluginSupport({
+  const createWith = (more: Partial<TestPluginSupportDeps>) =>
+    createTestPluginSupport({
       windowTabs: createTestTabs(),
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),
@@ -435,7 +435,7 @@ describe('the plugins the window loads', () => {
       },
       state: { plugins: pluginsRef },
     }
-    const { pluginHost } = createPluginSupport({
+    const { pluginHost } = createTestPluginSupport({
       windowTabs,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),

@@ -8,7 +8,7 @@ import { createAppCommands } from '@/testing/appCommands'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../../words'
 import { getPrompt } from '../step/step'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 

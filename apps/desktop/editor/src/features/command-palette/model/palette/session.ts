@@ -6,13 +6,14 @@ import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue'
 import { createRequestGuard as latest } from '@numen/ui'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { Vault } from '@/entities/vault'
-import type { Command, CommandInvocation, CommandTarget, RunSupport } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandInvocation, CommandTarget, RunSupport } from '@/shared/model/command'
 import { useDebouncedSearch, type Wait } from '../search/debounced'
 import { createInvocation } from '../../lib/entries/invocation'
 import type { CommandsDeps, NoteLookup, PaletteLists } from '../../types'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
-import { createPaletteSteps } from './navigation'
+import { createPaletteSteps, createStepChoice } from './navigation'
 
 /** How many notes the step that picks one requests. */
 const GROUP_RESULT_LIMIT = 8
@@ -205,9 +206,15 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
       })
     },
     onClose: () => setOpen(false),
-    invocation,
   })
   stepsRef.current = steps
+  const choose = createStepChoice({
+    invocation,
+    lists: deps.lists,
+    text: state.typed,
+    stack: steps.stack,
+    getStepTitle: steps.naming.getStepTitle,
+  })
 
   const searchNames = createNamesSearch({
     core: deps.core,
@@ -225,6 +232,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     rows,
     invocation,
     steps,
+    choose,
     handlers: { previewItem, setOpen, searchNames },
   }
 }

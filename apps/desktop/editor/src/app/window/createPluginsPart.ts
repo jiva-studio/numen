@@ -1,192 +1,234 @@
 /**
- * The plugins of the window: the host and the loader, the services a plugin is given, and the words
- * a plugin's errors are reported in.
+ * The plugins of the window: what the host reads of the window, the services a plugin is given
+ * that the window owns, and the background tasks a plugin lists.
  */
-import { createWindowHost, SLOT, type PluginHost } from '@numen/plugin-loader'
-import { createNoticeQueue } from '@numen/workbench'
-import { formatError } from '@/shared/api/errors'
-import type { Command, CommandTarget } from '@/entities/command'
-import { readNote, resolveNameLink, writeNote } from '@/entities/note'
+import type { Component, Ref } from 'vue'
+import type { PluginStatus, WindowControls } from '@numen/plugin-loader'
+import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
+import type { Command } from '@/entities/command'
+import type { CommandItemLists } from '@/features/plugin-commands'
+import type { CommandTarget } from '@/shared/model/command'
+import { resolveNameLink } from '@/entities/note'
 import { runDeclaredHandler } from '@/entities/plugin'
+import type { SettingsStore } from '@/entities/settings'
+import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
-import { createInvocationRunner, createVaultOpener, searchCore } from '@/features/command-palette'
+import { searchCore } from '@/features/command-palette'
 import { createBufferHost } from '@/features/file-conflict'
 import {
   createBackendHandlers,
-  createCommandIconFinder,
   createDeclaredState,
-  createHostPort,
-  createNoteKindReader,
   createPluginCatalog,
-  createPluginNotes,
+  createNoticeParts,
   createPluginReports,
-  createPluginServices,
   createPluginSupport,
-  createWindowCommands,
-  createWindowFacts,
-  createWindowVaults,
-  getAppCommandIds,
-  useDeclaredCommands,
-  type CommandItemLists,
+  createVaultAccess,
+  createWorkspaceService,
+  createTabActionParts,
+  createTabKindParts,
+  createTaskServiceParts,
+  createVaultServiceParts,
+  type PluginNotes,
   type PluginServices,
+  createWindowFacts,
+  createWindowService,
+  createWindowSlots,
+  createWindowVaults,
+  type HostPort,
+  type HostParts,
 } from '@/features/plugin-commands'
 import { getWindowConfig } from '@/features/settings-commands'
-import { createWindowSlots } from '../plugins/windowSlots'
-import type { createEditorCommands } from './createEditorCommands'
-import type { VaultServices } from './createWindowServices'
-import type { PluginsCore, WindowCore, WindowFoundation } from './windowCore'
+import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
+import type { WindowFoundation } from './createWindowFoundation'
+import type { WindowVault } from './createWindowVault'
+import type { createVaultServices } from './createVaultServices'
 
-interface PluginsCoreDeps {
-  readonly foundation: WindowFoundation
-  readonly vaultServices: VaultServices
-  readonly itemLists: CommandItemLists
+type VaultServices = ReturnType<typeof createVaultServices>
+
+/** What the plugins read of the window before the host exists. */
+export interface PluginDeclarationsDeps {
+  readonly rest: SettingsStore
+  readonly log: MessageLog
+  readonly writeMessage: MessageWriter
+  readonly hostPort: Pick<HostPort, 'isPaletteOpen'>
   readonly getTarget: () => CommandTarget
-  readonly getAppCommands: () => readonly Command[]
+  readonly appCommands: readonly Command[]
+  readonly itemLists: CommandItemLists
+  readonly tabOpeners: Pick<FileOpeners, 'openFile'>
 }
 
-function createPluginBackgroundTasks(
-  deps: PluginsCoreDeps,
-  pluginNotices: ReturnType<typeof createNoticeQueue>,
-) {
-  const { log, writeMessage, settingsRequests } = deps.foundation
-  const { window, windowSettings } = deps.vaultServices
+/**
+ * The catalog and the reports of the plugins, the commands they declare, and the parts of the host
+ * that read them: the slots and the handlers of the backends.
+ */
+export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
+  const { rest, log, itemLists, tabOpeners } = deps
+  const catalog = createPluginCatalog(rest)
+  const reports = createPluginReports(log, catalog.getName)
+  const declared = createDeclaredState({ getConfig: () => getWindowConfig(rest) })
+  const facts = createWindowFacts({
+    appCommands: deps.appCommands,
+    getTarget: deps.getTarget,
+    isPaletteOpen: deps.hostPort.isPaletteOpen,
+  })
+  const slots = createWindowSlots({
+    declaredCommands: declared,
+    facts,
+    writeIssue: reports.writeIssue,
+  })
+  const handlers = createBackendHandlers({
+    getHandlers: () => declared.contributions.handlers.value,
+    list: itemLists.listItems,
+    run: runDeclaredHandler,
+    writeMessage: deps.writeMessage,
+    openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
+  })
+  const hostParts: readonly HostParts[] = [
+    slots.hostDeps,
+    handlers,
+    {
+      getCommandDeclarations: () => declared.declarations.value,
+      reportCommandIssue: reports.reportCommandIssue,
+      reportViewIssue: reports.reportViewIssue,
+    },
+  ]
+  return { catalog, reports, declared, hostParts }
+}
+
+/** What the background tasks of the plugins read of the window. */
+export interface PluginBackgroundTasksDeps {
+  readonly log: MessageLog
+  readonly notices: NoticeQueue
+  readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks'>
+  readonly windowSettings: {
+    readonly appearance: { readonly state: { readonly lost: Readonly<Ref<string>> } }
+  }
+  readonly writeMessage: MessageWriter
+  readonly openSettings: (pluginId?: string) => void
+}
+
+/** The tasks of the window and the failures of the plugins, as the background tasks a plugin lists. */
+export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps) {
+  const { window } = deps
   return createWindowBackgroundTasks({
-    log,
-    plugins: pluginNotices,
+    log: deps.log,
+    plugins: deps.notices,
     window: {
       lost: window.health.lost,
       unwatched: window.vault.unwatched,
       error: window.vault.error,
       tasks: window.tasks,
     },
-    settings: windowSettings,
-    writeMessage,
-    openSettings: (pluginId) => settingsRequests.emit({ pluginId, filter: undefined }),
+    settings: deps.windowSettings,
+    writeMessage: deps.writeMessage,
+    openSettings: deps.openSettings,
   })
 }
 
-function createWindowBackendHandlers(
-  deps: PluginsCoreDeps,
-  declared: ReturnType<typeof createDeclaredState>,
-) {
-  const { writeMessage, tabs } = deps.foundation
-  return createBackendHandlers({
-    getHandlers: () => declared.contributions.handlers.value,
-    list: deps.itemLists.listItems,
-    run: runDeclaredHandler,
-    writeMessage,
-    openFile: (path) => tabs.tabOpeners.openFile(path, '', 'current').then(() => undefined),
-  })
+/** What the services a plugin is given that the window owns are made from. */
+export interface WindowOwnedServicesDeps {
+  readonly editing: Pick<VaultServices['editing'], 'fileFlush' | 'notes'>
+  readonly window: Pick<VaultServices['window'], 'tasks'>
+  readonly vaults: Pick<VaultServices['vaults'], 'vaultList'>
+  readonly hostPort: Pick<HostPort, 'commands' | 'openVault'>
+  readonly backgroundTasks: ReturnType<typeof createPluginBackgroundTasks>
+  readonly frame: WindowControls
+  readonly writeMessage: MessageWriter
 }
 
-export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
-  const { foundation, vaultServices, itemLists, getTarget, getAppCommands } = deps
-  const { log, writeMessage, frame, rest, status, registry } = foundation
-  const { windowTabs, tabOpeners } = foundation.tabs
-  const { editing, tabSync, window, vaults } = vaultServices
-  const pluginNotices = createNoticeQueue()
-  const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })
-  const catalog = createPluginCatalog(rest)
-  const reports = createPluginReports(log, catalog.getName)
-  const hostPort = createHostPort()
-  const declared = createDeclaredState({ getConfig: () => getWindowConfig(rest) })
-  const facts = createWindowFacts({ getAppCommands, getTarget, isPaletteOpen: hostPort.isPaletteOpen })
-  const slots = createWindowSlots({ declaredCommands: declared, facts, writeIssue: reports.writeIssue })
-  const { pluginHost, pluginLoader } = createPluginSupport({
-    slots: slots.hostDeps,
-    getCommandDeclarations: () => declared.declarations.value,
-    handlers: createWindowBackendHandlers(deps, declared),
-    windowTabs,
-    tabOpeners,
-    rest,
-    status,
-    getPlatform: () => frame.platform.value,
-    getServices: () => services,
-    notices: pluginNotices,
-    ...reports,
-    ...pluginNotes,
-    resolveLink: resolveNameLink,
-  })
-  vaultServices.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
-  const declaredCommands = useDeclaredCommands({
-    state: declared,
-    registry,
-    isListed: (id) => pluginHost.commands.getPaletteCommands().some((one) => one.id === id),
-    hasBackend: catalog.hasBackend,
-    listItems: itemLists.listItems,
-  })
-  const pluginServices = createPluginServices({
-    log,
-    windowTabs,
-    search: searchCore,
-    making: editing.making,
-    pluginNotes,
-    tabOpeners,
-    tabSync,
-    window,
-    settings: { rest },
-    getTarget,
-    runInvocation: hostPort.runInvocation,
-    getPluginCommandIcon: createCommandIconFinder(pluginHost, declaredCommands),
-  })
-  const services: PluginServices = {
-    ...pluginServices,
+/** The buffers, the tasks, the commands, the vaults and the window a plugin is given. */
+export function createWindowOwnedServices(deps: WindowOwnedServicesDeps) {
+  const { editing, window, vaults, hostPort } = deps
+  return {
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),
     noteBuffer: editing.notes,
     taskList: window.tasks,
-    backgroundTasks: createPluginBackgroundTasks(deps, pluginNotices),
+    backgroundTasks: deps.backgroundTasks,
     commands: hostPort.commands,
     vaults: createWindowVaults({ vaultList: vaults.vaultList, openVault: hostPort.openVault }),
-    window: createWindowHost(frame, (error) => writeMessage(formatError(error), 'error')),
-  }
-  return {
-    declaredCommands,
-    itemLists,
-    host: { pluginHost, pluginLoader },
-    hostPort,
-    facts,
-    services,
-    pluginNotices,
-    pluginNotes,
+    window: createWindowService({ frame: deps.frame, writeMessage: deps.writeMessage }),
   }
 }
 
-export function createWindowFrameServices(
-  base: WindowCore,
-  commands: Pick<
-    ReturnType<typeof createEditorCommands>,
-    'getTarget' | 'featureCommands' | 'commands'
-  >,
-) {
-  const { frame } = base
-  const { items, runCommandToEnd } = commands.commands.pluginRuns
-  const appIds = getAppCommandIds(commands.featureCommands.commands)
-  const windowCommands = createWindowCommands({
-    getAppIds: () => appIds,
-    getPluginIds: () =>
-      base.plugins.host.pluginHost.commands.getPaletteCommands().map((one) => one.id),
-    runCommandToEnd,
-    listItems: items.listCommandItems,
-    runWithItem: items.runWithItem,
-    getTarget: commands.getTarget,
-  })
-  base.plugins.hostPort.connect({
-    commands: windowCommands,
-    isPaletteOpen: () =>
-      commands.commands.palette.open.value || commands.commands.commands.palette.open.value,
-    runInvocation: createInvocationRunner(() => commands.commands.commandDeps),
-    openVault: createVaultOpener(commands.commands.commandDeps, commands.getTarget),
-  })
-  return {
-    frame,
-    slots: base.plugins.host.pluginHost.slots,
-    windowCommands,
-    views: getPluginViews(base.plugins.host.pluginHost),
-    readNoteKind: createNoteKindReader(base.plugins.itemLists),
-  }
+/** What the services a plugin is given are read through: the notes, the notices and the services. */
+interface PluginServicesAccess {
+  readonly getServices: () => PluginServices
+  readonly notices: NoticeQueue
+  readonly pluginNotes: PluginNotes
 }
 
-const getPluginViews = (pluginHost: PluginHost) => ({
-  titleBarView: pluginHost.slotViews.getSlotView(SLOT.titleBar),
-  statusBarView: pluginHost.slotViews.getSlotView(SLOT.statusBar),
-})
+/** What the plugin host reads of the window. */
+export interface PluginHostSupportDeps {
+  readonly rest: SettingsStore
+  readonly status: PluginStatus
+  readonly getPlatform: () => WindowPlatform
+  readonly windowTabs: WindowTabs
+  readonly tabOpeners: FileOpeners
+  readonly declarations: ReturnType<typeof createPluginDeclarations>
+  readonly access: PluginServicesAccess
+}
+
+/** The plugin host and the loader, over the tabs, the services and the declarations of the window. */
+export function createPluginHostSupport(deps: PluginHostSupportDeps) {
+  const { windowTabs, tabOpeners, declarations, access } = deps
+  const { getServices, pluginNotes } = access
+  return createPluginSupport({
+    rest: deps.rest,
+    status: deps.status,
+    getPlatform: deps.getPlatform,
+    reportError: declarations.reports.reportError,
+    reportLoadError: declarations.reports.reportLoadError,
+    kinds: createTabKindParts({ windowTabs, tabOpeners }),
+    tabs: createTabActionParts({ windowTabs }),
+    parts: [
+      createVaultServiceParts({ getServices }),
+      createTaskServiceParts({ getServices }),
+      createNoticeParts({ queue: access.notices }),
+      {
+        readNote: pluginNotes.readNote,
+        writeNote: pluginNotes.writeNote,
+        resolveLink: resolveNameLink,
+      },
+      ...declarations.hostParts,
+    ],
+  })
+}
+
+/** What the workspace and the vault services a plugin is given are made from. */
+export interface VaultFacingServicesDeps {
+  readonly foundation: Pick<WindowFoundation, 'log' | 'rest'>
+  readonly tabsPart: Pick<WindowVault['tabsPart'], 'windowTabs' | 'tabOpeners'>
+  readonly vault: Pick<VaultServices, 'tabSync' | 'editing' | 'window'>
+  readonly pluginNotes: PluginNotes
+  readonly getTarget: () => CommandTarget
+  readonly runInvocation: HostPort['runInvocation']
+  readonly getPluginCommandIcon: (id: string) => Component | undefined
+}
+
+/** The workspace, the notes, the links, the files and the agent a plugin is given. */
+export function createVaultFacingServices(deps: VaultFacingServicesDeps) {
+  const { foundation, tabsPart, vault } = deps
+  const access = createVaultAccess({
+    search: searchCore,
+    making: vault.editing.making,
+    pluginNotes: deps.pluginNotes,
+    window: vault.window,
+    settings: { rest: foundation.rest },
+    getTarget: deps.getTarget,
+    runInvocation: deps.runInvocation,
+  })
+  return {
+    workspace: createWorkspaceService({
+      log: foundation.log,
+      windowTabs: tabsPart.windowTabs,
+      tabOpeners: tabsPart.tabOpeners,
+      tabSync: vault.tabSync,
+      window: vault.window,
+      getPluginCommandIcon: deps.getPluginCommandIcon,
+    }),
+    notes: access.notes,
+    relations: access.relations,
+    files: access.files,
+    agent: access.agent,
+  }
+}

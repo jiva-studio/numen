@@ -1,6 +1,6 @@
 import { shallowRef, watch } from 'vue'
 import type { CommandsHost } from '@numen/plugin-loader'
-import type { CommandTarget, VaultRef } from '@/entities/command'
+import type { CommandTarget, VaultRef } from '@/shared/model/command'
 
 /**
  * The command operations the plugin host delegates to the window's command palettes once the

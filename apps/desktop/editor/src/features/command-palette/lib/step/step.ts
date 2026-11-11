@@ -2,7 +2,8 @@
  * A step of a command: the input it requires. The step reads its own kind; the rows it
  * draws carry the command as their action.
  */
-import type { Command, CommandPrompt, CommandTarget, PromptStep } from '@/entities/command'
+import type { Command, CommandPrompt, PromptStep } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 
 /**
  * One step of a command: the input it requires, and what it applies to. An `arguments`
