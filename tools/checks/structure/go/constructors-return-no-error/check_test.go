@@ -66,7 +66,7 @@ func (Find) NewMethod() error { return nil }
 	findings, files := getFallibleConstructors(t, root)
 
 	rel := func(name string) string { return filepath.Join(root, "find", name) }
-	want := []string{rel("find.go:7"), rel("find.go:14")}
+	want := []string{rel("find.go:14"), rel("find.go:7")}
 	slices.Sort(findings)
 	if !slices.Equal(findings, want) {
 		t.Errorf("the rule rejects %v, want %v", findings, want)

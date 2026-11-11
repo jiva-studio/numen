@@ -38,7 +38,7 @@ func getFallibleConstructors(t *testing.T, roots ...string) (findings []string, 
 				return err
 			}
 			fset := token.NewFileSet()
-			file, err := parser.ParseFile(fset, path, nil, 0)
+			file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 			if err != nil {
 				return err
 			}
