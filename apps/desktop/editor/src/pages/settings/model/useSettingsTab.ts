@@ -1,6 +1,6 @@
 /**
  * The state of the settings tab: which plugin page is open, the plugin of that page, and the page
- * and search query the tab hands back to be remembered.
+ * and search query the tab keeps for the next time it opens.
  */
 import { computed, ref, watch } from 'vue'
 import type { PluginInfo } from '@/entities/settings'

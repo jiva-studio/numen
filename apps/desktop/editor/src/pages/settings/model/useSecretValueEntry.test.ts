@@ -4,29 +4,29 @@ import { useSecretValueEntry } from './useSecretValueEntry'
 
 describe('useSecretValueEntry', () => {
   it('emits the trimmed value and clears the field without a submit function', () => {
-    const sent: string[] = []
+    const emitted: string[] = []
     const field = useSecretValueEntry({
       getSubmit: () => undefined,
-      emitCommit: (v) => sent.push(v),
+      emitCommit: (v) => emitted.push(v),
     })
     field.entry.value = '  tok-123  '
     field.actions.commit()
-    expect(sent).toEqual(['tok-123'])
+    expect(emitted).toEqual(['tok-123'])
     expect(field.entry.value).toBe('')
   })
 
   it('ignores a blank value', () => {
-    const sent: string[] = []
+    const emitted: string[] = []
     const field = useSecretValueEntry({
       getSubmit: () => undefined,
-      emitCommit: (v) => sent.push(v),
+      emitCommit: (v) => emitted.push(v),
     })
     field.entry.value = '   '
     field.actions.commit()
-    expect(sent).toEqual([])
+    expect(emitted).toEqual([])
   })
 
-  it('keeps a refused value, marks it failed and sends it again only when asked', async () => {
+  it('keeps a refused value marked failed and submits it again only on request', async () => {
     const calls: string[] = []
     const field = useSecretValueEntry({
       getSubmit: () => (value) => {

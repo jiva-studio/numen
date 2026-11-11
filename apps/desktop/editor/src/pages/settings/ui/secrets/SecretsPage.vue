@@ -8,7 +8,7 @@ import { Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { PluginInfo, Secret } from '@/entities/settings'
 import type { Declaration, SecretSection as SectionData } from '../../lib/secretSections'
-import { runAfterRender } from '@/shared/model/afterRender'
+import { runAfterRender } from '../../model/afterRender'
 import { useSecretsPage } from '../../model/useSecretsPage'
 import type { InstallationSecrets } from '../../types'
 import { WORDS as words } from '../../words'
@@ -47,7 +47,7 @@ function onRenameGroup(section: SectionData, name: string): void {
 }
 
 function onCreate(group: string, name: string, value: string, draftId?: number): Promise<boolean> {
-  return actions.createSecret(group, name, value, draftId)
+  return actions.saveSecret(group, name, value, draftId)
 }
 
 function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean): void {

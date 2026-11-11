@@ -13,7 +13,7 @@ import {
   type SecretSection,
 } from '../../lib/secretSections'
 import type { SecretDraft } from '../../model/secretDrafts'
-import { runAfterRender } from '@/shared/model/afterRender'
+import { runAfterRender } from '../../model/afterRender'
 import SecretColumnLabels from './SecretColumnLabels.vue'
 import SecretDraftRow from './SecretDraftRow.vue'
 import SecretRow from './SecretRow.vue'

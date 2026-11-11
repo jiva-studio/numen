@@ -15,7 +15,7 @@ import {
   isNameTooLong,
   trimName,
 } from '@/entities/settings'
-import { runAfterRender } from '@/shared/model/afterRender'
+import { runAfterRender } from '../../model/afterRender'
 import { WORDS as words } from '../../words'
 import SecretInput from './SecretInput.vue'
 import SecretMenu from './SecretMenu.vue'

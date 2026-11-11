@@ -4,13 +4,13 @@ import { runAfterRender } from './afterRender'
 
 describe('runAfterRender', () => {
   it('runs the callback after the pending state is flushed, not before', async () => {
-    const seen: string[] = []
+    const ran: string[] = []
     const state = ref('first')
-    runAfterRender(() => seen.push(state.value))
+    runAfterRender(() => ran.push(state.value))
     state.value = 'second'
-    expect(seen).toEqual([])
+    expect(ran).toEqual([])
     await nextTick()
     await nextTick()
-    expect(seen).toEqual(['second'])
+    expect(ran).toEqual(['second'])
   })
 })
