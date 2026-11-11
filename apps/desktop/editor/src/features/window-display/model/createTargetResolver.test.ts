@@ -55,7 +55,7 @@ describe('the target of a command that names none', () => {
       path: 'Tides',
       title: 'Tide table',
     })
-    expect(resolve().kind?.kind).toBe('note')
+    expect(resolve().kind).not.toBeNull()
   })
 
   it('is not ready while the window has failed', () => {

@@ -26,6 +26,7 @@ describe('the thing it is about moving', () => {
       slots: { default: 'What this is' },
     })
     const stand = () => (tooltip.get('[role="tooltip"]').element as HTMLElement).style.insetInlineStart
+    await nextTick()
     const before = parseFloat(stand())
 
     await tooltip.setProps({ at: { x: 400, y: 200, width: 20, height: 20 } })
