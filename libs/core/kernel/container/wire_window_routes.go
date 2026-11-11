@@ -186,8 +186,8 @@ func mountNote(w *windowWiring) {
 func mountAgent(w *windowWiring) {
 	state := w.state
 	handler := &windowagent.Handler{
-		GetRoot:        func() string { return state.GetCurrentVault().Path },
-		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
+		GetRoot:  func() string { return state.GetCurrentVault().Path },
+		GetVault: func() domain.VaultID { return state.GetCurrentVault().ID },
 	}
 	if taking := getToolProvider(plugins(w.cfg)); taking != nil {
 		handler.Start = agent.NewStartTask(taking)

@@ -14,9 +14,9 @@ import (
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
