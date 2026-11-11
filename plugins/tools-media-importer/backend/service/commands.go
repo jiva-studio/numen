@@ -10,9 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
-// trueValue is the text of a true boolean argument or setting.
-const trueValue = "true"
-
 // The shared commands the plugin handles.
 const (
 	commandImport        = command.ImportLink
@@ -84,21 +81,10 @@ func newDownloadCopyCommand(links *link.Links) command.Run {
 			return command.Result{}, err
 		}
 		if !isStarted {
-			return command.Result{Message: fmt.Sprintf("Downloaded the media of %s (%s)", req.Path, describeSize(size)), OpenedPath: ""}, nil
+			return command.Result{Message: fmt.Sprintf("Downloaded the media of %s (%s)", req.Path, link.GetSizeText(size)), OpenedPath: ""}, nil
 		}
 		return command.Result{Message: "Downloading the media of " + req.Path, OpenedPath: ""}, nil
 	}
-}
-
-func getMedia(item string) (download.Media, error) {
-	switch download.Media(item) {
-	// A run with no item, as numen-cli makes, downloads the video.
-	case "", download.MediaVideo:
-		return download.MediaVideo, nil
-	case download.MediaAudio:
-		return download.MediaAudio, nil
-	}
-	return "", fmt.Errorf("%w: %s offers no item %q", command.ErrBadArguments, commandDownloadMedia, item)
 }
 
 func newDeleteCopyCommand(links *link.Links) command.Run {
@@ -114,9 +100,11 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 	}
 }
 
-func describeSize(bytes int64) string {
-	if bytes < 1<<20 {
-		return fmt.Sprintf("%d bytes", bytes)
+func getMedia(item string) (download.Media, error) {
+	// A run with no item, as numen-cli makes, downloads the video.
+	media, isKnown := download.ParseMedia(item)
+	if !isKnown {
+		return "", fmt.Errorf("%w: %s offers no item %q", command.ErrBadArguments, commandDownloadMedia, item)
 	}
-	return fmt.Sprintf("%d MB", bytes>>20)
+	return media, nil
 }

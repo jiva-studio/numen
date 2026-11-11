@@ -2,7 +2,6 @@ package service
 
 import (
 	"net/http"
-	"os/exec"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
@@ -12,7 +11,7 @@ import (
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	agent, err := newAgentServer(exec.LookPath, process.Launcher{}, clock.System{}, true)
+	agent, err := newAgentServer(process.LookPath, process.Launcher{}, clock.System{}, true)
 	if err != nil {
 		return err
 	}
