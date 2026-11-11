@@ -17,8 +17,10 @@ export interface AppKeyParts {
 /** What the keys of the window reach. */
 export interface KeyHandlerParts {
   readonly windowTabs: { readonly panes: Pick<WindowTabs['panes'], 'onKeyPress'> }
+  readonly getTarget: () => CommandTarget
   readonly handleShortcut: (
     event: KeyboardEvent,
+    getTarget: () => CommandTarget,
     runApp: (command: string, values: Values) => void,
   ) => boolean
   readonly runApp: (command: string, values: Values) => void
@@ -41,6 +43,6 @@ export function createKeyHandler(parts: KeyHandlerParts): (event: KeyboardEvent)
   return (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.panes.onKeyPress(event)) return event.preventDefault()
-    if (parts.handleShortcut(event, parts.runApp)) event.preventDefault()
+    if (parts.handleShortcut(event, parts.getTarget, parts.runApp)) event.preventDefault()
   }
 }

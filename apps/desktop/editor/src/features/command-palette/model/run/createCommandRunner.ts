@@ -17,7 +17,7 @@ import { runInvocation } from '../handlers/handlers'
 import { runInvocationToEnd } from './runInvocationToEnd'
 
 /** The commands a plugin declares, which the plugin host runs. */
-interface PluginCommandPort {
+export interface PluginCommandPort {
   isPluginCommand(id: string): boolean
   run(
     id: string,

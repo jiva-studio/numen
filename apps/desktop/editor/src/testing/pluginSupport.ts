@@ -1,6 +1,7 @@
 /**
  * The plugin support of a window made the way the window makes it, from the few parts a test names.
  */
+import { ref } from 'vue'
 import type { PluginHostDeps, PluginStatus } from '@numen/plugin-loader'
 import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
@@ -8,11 +9,13 @@ import type { WindowTabs } from '@/entities/tab'
 import type { Caught } from '@/shared/api/errors'
 import {
   createNoticeParts,
+  createPluginCatalog,
   createPluginSupport,
   createTabActionParts,
   createTabKindParts,
   createTaskServiceParts,
   createVaultServiceParts,
+  createWindowPluginStatus,
   type HostParts,
   type PluginServices,
 } from '@/features/plugin-commands'
@@ -44,8 +47,14 @@ const pickDefined = (entries: Record<string, object | undefined>): Record<string
     object
   >
 
+/** The platform of a window that reads none from its frame, as the frame reports without the runtime. */
+const NO_PLATFORM: WindowPlatform = 'windows'
+
+const ignoreError = (): void => undefined
+
 export function createTestPluginSupport(deps: TestPluginSupportDeps) {
-  const getServices = deps.getServices ?? (() => ({}))
+  const given: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
+  const services = given as PluginServices
   const named: HostParts = pickDefined({
     getCommandDeclarations: deps.getCommandDeclarations,
     reportCommandIssue: deps.reportCommandIssue,
@@ -61,19 +70,20 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
   ]
   return createPluginSupport({
     rest: deps.rest,
+    catalog: createPluginCatalog(deps.rest),
+    status: deps.status ?? createWindowPluginStatus(deps.rest),
+    getPlatform: deps.getPlatform ?? (() => NO_PLATFORM),
+    reports: {
+      reportError: deps.reportError ?? ignoreError,
+      reportLoadError: deps.reportLoadError ?? deps.reportError ?? ignoreError,
+    },
     kinds: createTabKindParts(deps),
     tabs: createTabActionParts(deps),
     parts: [
-      createVaultServiceParts({ getServices }),
-      createTaskServiceParts({ getServices }),
+      createVaultServiceParts({ services }),
+      createTaskServiceParts({ services }),
       ...optionalParts.filter((one) => one !== undefined),
       named,
     ],
-    ...pickDefined({
-      status: deps.status,
-      getPlatform: deps.getPlatform,
-      reportError: deps.reportError,
-      reportLoadError: deps.reportLoadError,
-    }),
   })
 }

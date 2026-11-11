@@ -12,17 +12,17 @@ import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
 import { APPEARANCE_WORDS } from '@/features/appearance'
 import { VaultChooser } from '@/pages/vault-chooser'
-import type { WindowDeps } from './window/createWindow'
-import { getWindowParts } from './getWindowParts'
+import type { WindowParts } from './window/createWindow'
 import { WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  deps?: WindowDeps
+  /** The window made by `createWindow`. */
+  parts: WindowParts
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { tabs, vaults, plugins, titleBarView, mountView, appearance } = getWindowParts(props.deps)
+const { tabs, vaults, plugins, titleBarView, mountView, appearance } = props.parts
 const { front, tab, openTab } = tabs
 </script>
 

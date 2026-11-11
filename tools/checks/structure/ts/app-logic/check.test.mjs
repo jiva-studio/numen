@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { findFactoriesInScriptSetup, findLogicInApp, findPassThroughFactories } from "./check.mjs";
+import { findFactoriesInScriptSetup, findLogicInApp, findPassThroughFactories, findWideAppFunctions } from "./check.mjs";
 
 const APP = "apps/desktop/editor/src/app";
 
@@ -138,5 +138,61 @@ describe("a create function is more than a pass-through", () => {
     );
     assert.deepEqual(symbols(found), []);
     assert.equal(found.read, 4);
+  });
+});
+
+describe("an app function takes few inputs and narrows no result", () => {
+  const src = (text) => [{ file: "apps/desktop/editor/src/app/window/a.ts", text }];
+
+  it("fails a function with more than eight inputs, in a parameter list or in the object it takes", () => {
+    const found = findWideAppFunctions(
+      src(
+        [
+          "export const createWide = (deps: { a: A; b: B; c: C; d: D; e: E; f: F; g: G; h: H; i: I }) => deps",
+          "export function createMany(a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I) { return a }",
+          "export const createEight = (deps: { a: A; b: B; c: C; d: D; e: E; f: F; g: G; h: H }) => deps",
+        ].join("\n"),
+      ),
+    );
+    assert.deepEqual(symbols(found), ["a.ts:1 createWide takes 9 inputs, at most 8 are allowed", "a.ts:2 createMany takes 9 inputs, at most 8 are allowed"]);
+  });
+
+  it("fails an input that narrows the result of another function, directly or by an alias", () => {
+    const found = findWideAppFunctions(
+      src(
+        [
+          "export const createStage = () => ({ a: 1, b: 2 })",
+          "type Stage = ReturnType<typeof createStage>",
+          "export const createDirect = (deps: { stage: Pick<ReturnType<typeof createStage>, 'a'> }) => deps",
+          "export const createAlias = (stage: Omit<Stage, 'b'>) => stage",
+          "export interface Deps { readonly stage: Pick<Stage, 'a'> }",
+          "export const createDeclared = (deps: Deps) => deps",
+        ].join("\n"),
+      ),
+    );
+    assert.deepEqual(symbols(found), [
+      "a.ts:3 createDirect takes stage, a narrowed result of a function",
+      "a.ts:4 createAlias takes stage, a narrowed result of a function",
+      "a.ts:6 createDeclared takes stage, a narrowed result of a function",
+    ]);
+  });
+
+  it("passes a result taken whole, a part of a result, a type of another function and few inputs", () => {
+    const found = findWideAppFunctions(
+      src(
+        [
+          "export const createStage = () => ({ a: 1, b: 2 })",
+          "export const createWhole = (deps: { stage: ReturnType<typeof createStage> }) => deps",
+          "export const createPart = (deps: { a: ReturnType<typeof createStage>['a']; b: B }) => deps",
+          "export const createOther = (deps: { host: Pick<ReturnType<typeof useHost>, 'a'> }) => deps",
+        ].join("\n"),
+      ),
+    );
+    assert.deepEqual(symbols(found), []);
+  });
+
+  it("skips the tests", () => {
+    const found = findWideAppFunctions([{ file: "apps/desktop/editor/src/app/window/a.test.ts", text: "export const f = (a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I) => a" }]);
+    assert.equal(found.read, 0);
   });
 });

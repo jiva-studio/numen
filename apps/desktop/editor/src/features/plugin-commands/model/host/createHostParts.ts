@@ -28,8 +28,6 @@ export type TabActionParts = Required<
   Pick<PluginHostDeps, 'openTab' | 'openTabAdjacent' | 'navigateTab' | 'closeTab' | 'getTabState'>
 >
 
-type GetServices = () => Partial<PluginServices>
-
 export function createTabKindParts(deps: {
   readonly windowTabs: Pick<WindowTabs, 'groups'>
   readonly tabOpeners: Pick<
@@ -70,36 +68,38 @@ export function createTabActionParts(deps: {
   }
 }
 
-/* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
 /** The notes, links, files, agent, commands, vaults and window the window gives a plugin. */
-export function createVaultServiceParts(deps: { readonly getServices: GetServices }): HostParts {
-  const { getServices } = deps
+export function createVaultServiceParts(deps: {
+  readonly services: Pick<
+    PluginServices,
+    'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'commands' | 'vaults' | 'window'
+  >
+}): HostParts {
+  const { services } = deps
   return {
-    getWorkspace: () => getServices().workspace,
-    getNotes: () => getServices().notes,
-    getRelations: () => getServices().relations,
-    getFiles: () => getServices().files,
-    getAgent: () => getServices().agent,
-    getCommands: () => getServices().commands,
-    getVaults: () => getServices().vaults,
-    getWindow: () => getServices().window,
+    getWorkspace: () => services.workspace,
+    getNotes: () => services.notes,
+    getRelations: () => services.relations,
+    getFiles: () => services.files,
+    getAgent: () => services.agent,
+    getCommands: () => services.commands,
+    getVaults: () => services.vaults,
+    getWindow: () => services.window,
   }
 }
 
 /** The buffers and the tasks the window gives a plugin. */
-export function createTaskServiceParts(deps: { readonly getServices: GetServices }): HostParts {
-  const { getServices } = deps
+export function createTaskServiceParts(deps: {
+  readonly services: Pick<PluginServices, 'buffers' | 'noteBuffer' | 'taskList' | 'backgroundTasks'>
+}): HostParts {
+  const { services } = deps
   return {
-    getBuffers: () => getServices().buffers,
-    getNoteBuffer: () => getServices().noteBuffer,
-    getTasks: (pluginId) => {
-      const list = getServices().taskList
-      return list ? createPluginTasks(list, pluginId) : undefined
-    },
-    getBackgroundTasks: () => getServices().backgroundTasks,
+    getBuffers: () => services.buffers,
+    getNoteBuffer: () => services.noteBuffer,
+    getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
+    getBackgroundTasks: () => services.backgroundTasks,
   }
 }
-/* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
 
 /** The notices a plugin raises, held per plugin by the queue of the window. */
 export function createNoticeParts(deps: { readonly queue: NoticeQueue }): HostParts {

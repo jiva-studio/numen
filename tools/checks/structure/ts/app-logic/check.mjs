@@ -221,6 +221,122 @@ export function findPassThroughFactories(files) {
   return { findings, read };
 }
 
+/** The most inputs a function of the app layer takes: its parameters, or the members of the one object it takes. */
+export const APP_MAX_INPUTS = 8;
+
+/** The type operators that keep the members of the type they wrap. */
+const TYPE_WRAPPERS = new Set(["Pick", "Omit", "Partial", "Required", "Readonly"]);
+
+const unwrapType = (node) => (ts.isParenthesizedTypeNode(node) || ts.isTypeOperatorNode(node) ? unwrapType(node.type) : node);
+
+/** Whether a type node is the whole return value of a function of the app layer: `ReturnType<typeof createX>`, not a member of it. */
+const isReturnTypeOfAppFunction = (node, appFunctions) =>
+  ts.isTypeReferenceNode(node) &&
+  ts.isIdentifier(node.typeName) &&
+  node.typeName.text === "ReturnType" &&
+  node.typeArguments?.length === 1 &&
+  ts.isTypeQueryNode(node.typeArguments[0]) &&
+  ts.isIdentifier(node.typeArguments[0].exprName) &&
+  appFunctions.has(node.typeArguments[0].exprName.text);
+
+/** The interfaces and type aliases declared in the sources, by name. */
+function collectDeclaredTypes(sources) {
+  const declared = new Map();
+  for (const source of sources) {
+    const visit = (node) => {
+      if (ts.isInterfaceDeclaration(node)) declared.set(node.name.text, { members: node.members.filter(ts.isPropertySignature) });
+      if (ts.isTypeAliasDeclaration(node)) declared.set(node.name.text, { alias: node.type });
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+  }
+  return declared;
+}
+
+/** Builds the test for a type that narrows the result of a function of the app layer, written directly or by an alias. */
+function createNarrowedResultTest(declared, appFunctions) {
+  const resultNames = new Set(
+    [...declared].filter(([, one]) => one.alias && isReturnTypeOfAppFunction(unwrapType(one.alias), appFunctions)).map(([name]) => name),
+  );
+  const isResult = (node) => isReturnTypeOfAppFunction(node, appFunctions) || (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && resultNames.has(node.typeName.text));
+  return (type) => {
+    const node = unwrapType(type);
+    if (!ts.isTypeReferenceNode(node) || !ts.isIdentifier(node.typeName) || !TYPE_WRAPPERS.has(node.typeName.text)) return false;
+    const [first] = node.typeArguments ?? [];
+    return first !== undefined && isResult(unwrapType(first));
+  };
+}
+
+/** The members of an object type written in place or declared in the app layer, or undefined for any other type. */
+function getObjectMembers(type, declared) {
+  const node = type && unwrapType(type);
+  if (!node) return undefined;
+  if (ts.isTypeLiteralNode(node)) return node.members.filter(ts.isPropertySignature);
+  if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && !TYPE_WRAPPERS.has(node.typeName.text)) {
+    const one = declared.get(node.typeName.text);
+    if (one?.members) return one.members;
+    if (one?.alias) return getObjectMembers(one.alias, declared);
+  }
+  return undefined;
+}
+
+/** The functions of a source, declared or assigned to a name. */
+function listFunctions(source) {
+  const found = [];
+  const visit = (node) => {
+    if (ts.isFunctionDeclaration(node) && node.name) found.push({ name: node.name.text, fn: node });
+    const initializer = ts.isVariableDeclaration(node) ? node.initializer : undefined;
+    if (initializer && ts.isIdentifier(node.name) && (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer))) {
+      found.push({ name: node.name.text, fn: initializer });
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
+/** The inputs of a function: the members of the object type it takes, or each of its parameters. */
+function listInputs(fn, declared, source) {
+  return fn.parameters.flatMap((param) => {
+    const members = getObjectMembers(param.type, declared);
+    if (members) return members.map((one) => ({ label: one.name.getText(source), type: one.type }));
+    if (ts.isObjectBindingPattern(param.name)) return param.name.elements.map((one) => ({ label: one.name.getText(source), type: undefined }));
+    return [{ label: param.name.getText(source), type: param.type }];
+  });
+}
+
+/**
+ * The functions of the `app` layer that take more than `maxInputs` inputs, or take an input that narrows the result
+ * of another function with `Pick`, `Omit`, `Partial`, `Required` or `Readonly`. The inputs of a function are its
+ * parameters, or the members of the object type it takes. A narrowed result hides in its type what the function uses of
+ * it; a function that takes what it uses names each of them, and takes a result whole only where it uses most of it.
+ *
+ * @param {Array<{ file: string, text: string }>} files The files under `app/`, with their text
+ * @param {number} maxInputs The most inputs a function may take
+ * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
+ */
+export function findWideAppFunctions(files, maxInputs = APP_MAX_INPUTS) {
+  const findings = [];
+  const shipped = files.filter((one) => !isNotShipped(one.file));
+  const parsed = shipped.flatMap(({ file, text }) =>
+    readScripts(file, text).map((block) => ({ file, lineOffset: block.lineOffset, source: ts.createSourceFile(`${file}.ts`, block.text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS) })),
+  );
+  const declared = collectDeclaredTypes(parsed.map((one) => one.source));
+  const appFunctions = new Set(parsed.flatMap((one) => listFunctions(one.source).map((fn) => fn.name)));
+  const isNarrowedResult = createNarrowedResultTest(declared, appFunctions);
+  for (const { file, lineOffset, source } of parsed) {
+    for (const { name, fn } of listFunctions(source)) {
+      const line = source.getLineAndCharacterOfPosition(fn.getStart(source)).line + 1 + lineOffset;
+      const inputs = listInputs(fn, declared, source);
+      if (inputs.length > maxInputs) findings.push({ file, line, symbol: `${name} takes ${inputs.length} inputs, at most ${maxInputs} are allowed` });
+      for (const one of inputs.filter((input) => input.type && isNarrowedResult(input.type))) {
+        findings.push({ file, line, symbol: `${name} takes ${one.label}, a narrowed result of a function` });
+      }
+    }
+  }
+  return { findings, read: shipped.length };
+}
+
 const SOURCE_FILE = /\.(ts|vue)$/;
 
 /** Tracked source files of the windows, libraries and plugin frontends that ship, with their text. */
@@ -248,6 +364,18 @@ export function verifyScriptSetupHoldsNoFactories() {
   failOnFindings("A <script setup> calls a create function or holds an async function", one.findings);
 }
 
+export function verifyAppFunctionsTakeConcreteInputs() {
+  const findings = [];
+  let read = 0;
+  for (const root of listWindows(REPO_ROOT)) {
+    const one = findWideAppFunctions(listAppFiles(root));
+    findings.push(...one.findings);
+    read += one.read;
+  }
+  requireMatches("Source files of the app layers", read);
+  failOnFindings("A function of the app layer takes more than eight inputs, or the whole result of another function", findings);
+}
+
 export function verifyNoPassThroughFactory() {
   const one = findPassThroughFactories(listSourceFiles());
   requireMatches("create functions", one.read);
@@ -261,6 +389,13 @@ export const APP_LOGIC_VERIFIERS = [
     module: "boundary",
     name: "The app Layer of a Desktop Window Builds No Text and Gives No Adapter Function That Calls and Decides",
     run: verifyAppHoldsNoLogic,
+  },
+  {
+    id: "app-takes-concrete-inputs",
+    scope: "apps",
+    module: "boundary",
+    name: "A Function of the app Layer of a Window Takes at Most Eight Inputs, and None Is the Whole Result of Another Function",
+    run: verifyAppFunctionsTakeConcreteInputs,
   },
   {
     id: "script-setup-holds-no-factory",

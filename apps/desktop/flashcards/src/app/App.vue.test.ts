@@ -5,7 +5,7 @@ import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client
 import { installCoreHandlers } from '@numen/core-client/testing'
 import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-loader'
 import type { VaultRow } from '@numen/workbench'
-import App from './App.vue'
+import { createRoot } from './createRoot'
 import { createWindow } from './window/createWindow'
 
 // jsdom draws no layout, and the palette scrolls the highlighted row into view.
@@ -165,7 +165,7 @@ describe('App', () => {
     wire.getPlugins.mockRejectedValueOnce(new Error('the window is gone'))
     wire.listVaults.mockResolvedValueOnce({ vaults: [] })
 
-    const window = mount(App)
+    const window = mount(createRoot())
     mounted.push(window)
     await flushPromises()
 
@@ -274,7 +274,7 @@ describe('App', () => {
 describe('the window over a plugin that draws the review', () => {
   /** The window drawn over the plugin, as the page draws it. */
   const mountWindow = async (listVaults?: () => Promise<readonly VaultRow[]>) => {
-    const window = mount(App, { props: { deps: createDeps(listVaults) }, attachTo: document.body })
+    const window = mount(createRoot(createDeps(listVaults)), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
     return { window }
@@ -486,7 +486,7 @@ describe('the appearance palette', () => {
     wire.getPlugins.mockResolvedValue({
       plugins: [{ id: 'org.example.themes', name: 'Sample Themes' }],
     })
-    const window = mount(App, { attachTo: document.body })
+    const window = mount(createRoot(), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
     globalThis.dispatchEvent(
@@ -683,7 +683,7 @@ const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) =
 
 describe('the title bar of the flashcards window', () => {
   it('is not drawn while no plugin draws it, and the window draws no buttons of its own', async () => {
-    const window = mount(App, { props: { deps: createDeps() }, attachTo: document.body })
+    const window = mount(createRoot(createDeps()), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
 
@@ -692,8 +692,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('is drawn by the plugin that registers the view of the slot titleBar', async () => {
-    const window = mount(App, {
-      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -704,8 +703,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('gives the bar the vaults of the window, and the vault of the open review as the current one', async () => {
-    const window = mount(App, {
-      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -719,8 +717,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('opens the review on the vault the bar switches to', async () => {
-    const window = mount(App, {
-      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -734,8 +731,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('gives the bar the state of the window', async () => {
-    const window = mount(App, {
-      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+    const window = mount(createRoot(createBarDeps([createBarPlugin('org.example.ledger')])), {
       attachTo: document.body,
     })
     mounted.push(window)
@@ -773,7 +769,7 @@ describe('the title bar of the flashcards window', () => {
   it('shows only the loading indicator while the plugins of the window slots start', async () => {
     const deps = createDeps()
     wire.getPlugins.mockReturnValue(new Promise(() => undefined))
-    const window = mount(App, { props: { deps }, attachTo: document.body })
+    const window = mount(createRoot(deps), { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
 
@@ -784,18 +780,18 @@ describe('the title bar of the flashcards window', () => {
   it('draws the window at once when the bar has started, while another plugin still loads', async () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
-    const window = mount(App, {
-      props: {
-        deps: {
-          ...deps,
-          dynamicImport: (url: string) =>
-            url.includes('/md.numen.cards/')
-              ? new Promise<object>(() => undefined)
-              : deps.dynamicImport(url),
-        },
+    const window = mount(
+      createRoot({
+        ...deps,
+        dynamicImport: (url: string) =>
+          url.includes('/md.numen.cards/')
+            ? new Promise<object>(() => undefined)
+            : deps.dynamicImport(url),
+      }),
+      {
+        attachTo: document.body,
       },
-      attachTo: document.body,
-    })
+    )
     mounted.push(window)
 
     await vi.advanceTimersByTimeAsync(10)
@@ -807,18 +803,18 @@ describe('the title bar of the flashcards window', () => {
   it('draws the window at 3 s without a bar that has not started', async () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
-    const window = mount(App, {
-      props: {
-        deps: {
-          ...deps,
-          dynamicImport: (url: string) =>
-            url.includes('/org.example.ledger/')
-              ? new Promise<object>(() => undefined)
-              : deps.dynamicImport(url),
-        },
+    const window = mount(
+      createRoot({
+        ...deps,
+        dynamicImport: (url: string) =>
+          url.includes('/org.example.ledger/')
+            ? new Promise<object>(() => undefined)
+            : deps.dynamicImport(url),
+      }),
+      {
+        attachTo: document.body,
       },
-      attachTo: document.body,
-    })
+    )
     mounted.push(window)
 
     await vi.advanceTimersByTimeAsync(3_000 - 1)
@@ -832,19 +828,19 @@ describe('the title bar of the flashcards window', () => {
   it('draws a bar that starts after 3 s once it has started', async () => {
     vi.useFakeTimers()
     const deps = createBarDeps([createBarPlugin('org.example.ledger')])
-    const window = mount(App, {
-      props: {
-        deps: {
-          ...deps,
-          dynamicImport: async (url: string) => {
-            if (url.includes('/org.example.ledger/'))
-              await new Promise((resolve) => setTimeout(resolve, 3_000 + 2_000))
-            return deps.dynamicImport(url)
-          },
+    const window = mount(
+      createRoot({
+        ...deps,
+        dynamicImport: async (url: string) => {
+          if (url.includes('/org.example.ledger/'))
+            await new Promise((resolve) => setTimeout(resolve, 3_000 + 2_000))
+          return deps.dynamicImport(url)
         },
+      }),
+      {
+        attachTo: document.body,
       },
-      attachTo: document.body,
-    })
+    )
     mounted.push(window)
 
     await vi.advanceTimersByTimeAsync(3_000)

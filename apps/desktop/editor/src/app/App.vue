@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import type { Caught } from '@/shared/api/errors'
 /**
  * The window: one vault, and tabs to divide the screen between.
  *
- * The window's structure is defined in `window.ts`. This file holds what the user
+ * The window's structure is made by `createWindow` and handed in. This file holds what the user
  * sees of it, and the binding between the two.
  */
 import { WorkspaceLayout } from '@numen/workbench'
 import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
-import { formatError } from '@/shared/api/errors'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -19,12 +17,16 @@ import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
 import { BootstrapFailure } from '@/features/app-start'
 import { getUserAgent } from './window/getUserAgent'
-import { getWindowParts } from './getWindowParts'
-import { useWindowTabMenu } from '@/entities/tab'
-import { COMMAND } from '@/shared/model/command'
+import type { WindowParts } from './window/createWindow'
 import { WORDS as words } from '@/shared/ui/words'
 import { WINDOW_WORDS } from './window/words'
 import { WORDS as note } from '@/entities/note'
+
+/* --------------------------------- Props ---------------------------------- */
+const props = defineProps<{
+  /** The window made by `createWindow`. */
+  parts: WindowParts
+}>()
 
 /* --------------------------------- State ---------------------------------- */
 /** What the notes still unwritten are put in: the window's words and a note's. */
@@ -35,47 +37,27 @@ const unsaved = {
   later: words.later,
 }
 
-const parts = getWindowParts()
-const { frame } = parts.base
-const { windowTabs } = parts.base.tabs
-const { tabLinks } = parts.base.tabs
-const { closeTab } = windowTabs
+const { tabs, tabParts, vault, getTarget, palettes, views, tabMenu, bootstrap } = props.parts
+const { windowTabs, tabLinks, tabOpeners } = tabs
+const { isHighlighted } = tabs.linkSession
 const { layout } = windowTabs.panes
-const { moves, openTabs, linkSession, openCurrentVault } = parts.tabs
-const { highlightWindow, detachTab } = moves
-const { getTabIcon } = openTabs
-const { isHighlighted } = linkSession
-const {
-  commands,
-  palette: search,
-  commandDeps,
-  pluginWays,
-  runCommand,
-  runChoice,
-} = parts.commands.commands
-const { getTarget } = parts.commands
-const { findFileIcon } = parts.kinds
-const { slots, windowCommands, readNoteKind } = parts.frame
-const { titleBarView, statusBarView } = parts.frame.views
-const { fileFlush, getTitle } = parts.services.editing
-const { failure } = parts.services.window.health
-const { vaultList } = parts.services.vaults
-const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = parts.bootstrap
-const { isReady: isLayoutReady } = parts.tabs.layout
-
-const tabMenu = useWindowTabMenu({
-  moveCommand: COMMAND.moveTabToWindow,
-  windowTabs,
-  onHighlight: highlightWindow,
-  slots,
-  commands: windowCommands,
-  readNoteKind,
-  reportError: (error: Caught) => commandDeps.writeMessage(formatError(error), 'error'),
-})
+const { detachTab } = tabParts.moves
+const { getTabIcon } = tabParts.openTabs
+const { isReady: isLayoutReady } = tabParts.layout
+const { openCurrentVault } = tabParts
+const { commands, search } = palettes.palette
+const { runCommand, runChoice } = palettes.palette.runs
+const { commandDeps } = palettes
+const { pluginWays } = palettes.pluginPalette
+const { titleBarView, statusBarView, windowEdge } = views
+const { fileFlush, getTitle } = vault.editing
+const { failure } = vault.window.health
+const { vaultList } = vault.vaults
+const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstrap
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCloseTab(id: string, hold?: () => void) {
-  closeTab(id, hold)
+  windowTabs.closeTab(id, hold)
 }
 
 function onShowTab(id: string) {
@@ -97,7 +79,7 @@ function onShowTab(id: string) {
       v-model="layout"
       class="below"
       :tabs="windowTabs.tabs.tabs.value"
-      :window-edge="titleBarView ? undefined : frame.windowEdge.value"
+      :window-edge="windowEdge"
       :tab-menu="tabMenu.menu.value"
       @close="onCloseTab"
       @show="onShowTab"
@@ -170,7 +152,7 @@ function onShowTab(id: string) {
       :search="search"
       :doing="commandDeps"
       :get-target="getTarget"
-      :places="{ findFileIcon }"
+      :places="{ findFileIcon: tabOpeners.findFileIcon }"
       :run-choice="runChoice"
     />
   </main>
