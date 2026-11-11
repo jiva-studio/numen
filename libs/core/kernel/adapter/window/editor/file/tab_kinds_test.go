@@ -23,9 +23,6 @@ import (
 type window struct{ vault domain.Vault }
 
 func (w window) GetCurrentVault() domain.Vault { return w.vault }
-func (window) BeginWrite() bool                { return true }
-func (window) FinishWrite()                    {}
-func (window) IsIndexOutdated(error) bool      { return false }
 func (window) PublishChange(...string)         {}
 func (window) EmitFileEvent(string)            {}
 
@@ -61,7 +58,7 @@ func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewind
 			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(fileKinds, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
-		filewindow.NewChanges(open, open, open, nil, nil, nil),
+		filewindow.NewChanges(open, open, nil, nil, nil),
 	)
 }
 

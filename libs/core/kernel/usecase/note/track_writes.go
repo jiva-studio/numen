@@ -28,6 +28,16 @@ type IndexFollow interface {
 	NoteWritten()
 }
 
+type openWriteGate struct{}
+
+func (openWriteGate) BeginWrite() bool { return true }
+func (openWriteGate) FinishWrite()     {}
+
+type noIndexFollow struct{}
+
+func (noIndexFollow) IsIndexOutdated(error) bool { return false }
+func (noIndexFollow) NoteWritten()               {}
+
 // TrackWrites runs a write of a window so that the window waits for it before it closes, and tells
 // whether the index followed it.
 type TrackWrites struct {
@@ -204,4 +214,50 @@ func (u CreateRelatedNote) Execute(ctx context.Context, v domain.Vault, in domai
 		return createErr
 	})
 	return made, isIndexOutdated, err
+}
+
+// RenameNote renames a note as a write of the window.
+type RenameNote struct {
+	rename *Rename
+	track  TrackWrites
+}
+
+// NewRenameNote returns the use case over the renaming of a note.
+func NewRenameNote(rename *Rename, gate WriteGate, follow IndexFollow) RenameNote {
+	return RenameNote{rename: rename, track: NewTrackWrites(gate, follow)}
+}
+
+// Execute renames the note at path to title and reports whether the index did not follow. It fails
+// with window.ErrClosing once the window is closing.
+func (u RenameNote) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, bool, error) {
+	var renamed RenameResult
+	isIndexOutdated, err := u.track.Execute(ctx, func(ctx context.Context) error {
+		var renameErr error
+		renamed, renameErr = u.rename.Execute(ctx, v, path, title)
+		return renameErr
+	})
+	return renamed, isIndexOutdated, err
+}
+
+// RemoveFile moves a file or a folder of the vault to the trash as a write of the window.
+type RemoveFile struct {
+	remove *Remove
+	track  TrackWrites
+}
+
+// NewRemoveFile returns the use case over the removal of a file or a folder.
+func NewRemoveFile(remove *Remove, gate WriteGate, follow IndexFollow) RemoveFile {
+	return RemoveFile{remove: remove, track: NewTrackWrites(gate, follow)}
+}
+
+// Execute moves the file or folder at path to the vault's trash and reports whether the index did not
+// follow. It fails with window.ErrClosing once the window is closing.
+func (u RemoveFile) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, bool, error) {
+	var removed RemoveResult
+	isIndexOutdated, err := u.track.Execute(ctx, func(ctx context.Context) error {
+		var removeErr error
+		removed, removeErr = u.remove.Execute(ctx, v, path)
+		return removeErr
+	})
+	return removed, isIndexOutdated, err
 }

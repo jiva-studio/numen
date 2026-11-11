@@ -34,6 +34,25 @@ type connectionEditor struct {
 	now     machineport.Clock
 	links   noteport.LinkQueries
 	names   edit.NameQueries
+	track   TrackWrites
+}
+
+func newConnectionEditor(
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
+	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
+) connectionEditor {
+	return connectionEditor{
+		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
+		track: NewTrackWrites(openWriteGate{}, noIndexFollow{}),
+	}
+}
+
+func (e connectionEditor) run(ctx context.Context, write func(ctx context.Context) error) error {
+	isIndexOutdated, err := e.track.Execute(ctx, write)
+	if isIndexOutdated {
+		return nil
+	}
+	return err
 }
 
 func (e connectionEditor) getAddresses(
@@ -224,25 +243,25 @@ func NewSaveConnection(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) SaveConnection {
-	return SaveConnection{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
-	}}
+	return SaveConnection{editor: newConnectionEditor(readers, writers, index, now, links, names)}
 }
 
 // Execute replaces the records of both notes. A side that is nil is removed from
 // its note. A connection with no side is refused: RemoveConnection removes one.
 func (u SaveConnection) Execute(ctx context.Context, v domain.Vault, c domain.Connection) error {
-	if c.IsEmpty() {
-		return fmt.Errorf("%w: a connection with no record is removed, not saved", domain.ErrInvalidConnection)
-	}
-	if err := u.editor.check(ctx, v, c); err != nil {
-		return err
-	}
-	changes, err := u.editor.getChanges(ctx, v, c, getKind(c))
-	if err != nil {
-		return err
-	}
-	return u.editor.apply(ctx, v, changes)
+	return u.editor.run(ctx, func(ctx context.Context) error {
+		if c.IsEmpty() {
+			return fmt.Errorf("%w: a connection with no record is removed, not saved", domain.ErrInvalidConnection)
+		}
+		if err := u.editor.check(ctx, v, c); err != nil {
+			return err
+		}
+		changes, err := u.editor.getChanges(ctx, v, c, getKind(c))
+		if err != nil {
+			return err
+		}
+		return u.editor.apply(ctx, v, changes)
+	})
 }
 
 // RemoveConnection removes the records of one type that two notes write about each
@@ -257,23 +276,23 @@ func NewRemoveConnection(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) RemoveConnection {
-	return RemoveConnection{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
-	}}
+	return RemoveConnection{editor: newConnectionEditor(readers, writers, index, now, links, names)}
 }
 
 // Execute removes the records of the type from both notes. The empty type names the
 // records that carry none.
 func (u RemoveConnection) Execute(ctx context.Context, v domain.Vault, a, b, kind string) error {
-	c := domain.Connection{A: a, B: b}
-	if err := c.Validate(); err != nil {
-		return err
-	}
-	changes, err := u.editor.getChanges(ctx, v, c, kind)
-	if err != nil {
-		return err
-	}
-	return u.editor.apply(ctx, v, changes)
+	return u.editor.run(ctx, func(ctx context.Context) error {
+		c := domain.Connection{A: a, B: b}
+		if err := c.Validate(); err != nil {
+			return err
+		}
+		changes, err := u.editor.getChanges(ctx, v, c, kind)
+		if err != nil {
+			return err
+		}
+		return u.editor.apply(ctx, v, changes)
+	})
 }
 
 // RemoveSide removes the record one note writes about another and leaves the other
@@ -288,21 +307,21 @@ func NewRemoveSide(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) RemoveSide {
-	return RemoveSide{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
-	}}
+	return RemoveSide{editor: newConnectionEditor(readers, writers, index, now, links, names)}
 }
 
 // Execute removes the records of the type that `from` writes about `to`.
 func (u RemoveSide) Execute(ctx context.Context, v domain.Vault, from, to, kind string) error {
-	if err := (domain.Connection{A: from, B: to}).Validate(); err != nil {
-		return err
-	}
-	change, err := u.editor.setChange(ctx, v, from, to, kind, nil)
-	if err != nil {
-		return err
-	}
-	return u.editor.apply(ctx, v, []noteChange{change})
+	return u.editor.run(ctx, func(ctx context.Context) error {
+		if err := (domain.Connection{A: from, B: to}).Validate(); err != nil {
+			return err
+		}
+		change, err := u.editor.setChange(ctx, v, from, to, kind, nil)
+		if err != nil {
+			return err
+		}
+		return u.editor.apply(ctx, v, []noteChange{change})
+	})
 }
 
 // Join writes the record one note holds about another, keeping the record the
@@ -316,31 +335,31 @@ func NewJoin(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, names edit.NameQueries,
 ) Join {
-	return Join{editor: connectionEditor{
-		readers: readers, writers: writers, index: index, now: now, links: links, names: names,
-	}}
+	return Join{editor: newConnectionEditor(readers, writers, index, now, links, names)}
 }
 
 // Execute makes `from` write `side` about `to`. The record of `to` about `from` is
 // kept, and must be the inverse of the new one.
 func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side domain.Side) error {
-	c := domain.Connection{A: from, B: to, AB: &side}
-	if err := c.Validate(); err != nil {
-		return err
-	}
-	links, err := u.editor.links.GetLinks(ctx, v.ID, to)
-	if err != nil {
-		return err
-	}
-	c.BA = domain.FindSide(links, v.ID, from, side.Type)
-	if err := u.editor.check(ctx, v, c); err != nil {
-		return err
-	}
-	change, err := u.editor.setChange(ctx, v, from, to, side.Type, &side)
-	if err != nil {
-		return err
-	}
-	return u.editor.apply(ctx, v, []noteChange{change})
+	return u.editor.run(ctx, func(ctx context.Context) error {
+		c := domain.Connection{A: from, B: to, AB: &side}
+		if err := c.Validate(); err != nil {
+			return err
+		}
+		links, err := u.editor.links.GetLinks(ctx, v.ID, to)
+		if err != nil {
+			return err
+		}
+		c.BA = domain.FindSide(links, v.ID, from, side.Type)
+		if err := u.editor.check(ctx, v, c); err != nil {
+			return err
+		}
+		change, err := u.editor.setChange(ctx, v, from, to, side.Type, &side)
+		if err != nil {
+			return err
+		}
+		return u.editor.apply(ctx, v, []noteChange{change})
+	})
 }
 
 func getLinkAddress(ctx context.Context, names edit.NameQueries, v domain.Vault, path string) (domain.Address, error) {

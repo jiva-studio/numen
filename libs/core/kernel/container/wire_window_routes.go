@@ -115,12 +115,15 @@ func mountFile(w *windowWiring) {
 	chooser := getTabKindChooser(plugins(w.cfg))
 	w.tabKinds = file.NewListTabKinds(fileKinds, chooser)
 	folders := filewindow.NewFolders(
-		editor.NewSession(state), state.Events,
+		state, state.Events,
 		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), w.tabKinds),
 		file.NewListFileKinds(fileKinds, chooser),
-		file.NewCreateFolder(folderWriters(vaultOf(w.cfg))),
+		file.NewCreateFolder(folderWriters(vaultOf(w.cfg))).WithWriteGate(state.Writes),
 	)
-	changes := filewindow.NewChanges(editor.NewSession(state), state.Writes, state.Notices, &w.cases.Vaults.Tree.Move, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash)
+	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
+	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes, state.Writes)
+	w.cases.Notes.Place.EmptyTrash = w.cases.Notes.Place.EmptyTrash.WithWriteGate(state.Writes)
+	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.server = editor.NewFileServer(
 		state,
@@ -155,22 +158,24 @@ func mountWorkspace(w *windowWiring) error {
 func mountNote(w *windowWiring) {
 	state := w.inst.State
 	notes, queries := w.cases.Notes, w.cases.Queries
-	session := editor.NewSession(state)
-	save, create := note.NewSaveProse(&notes.Edit.Write, session, session), note.NewCreateNote(&notes.Edit.Create, session, session)
-	prose := notewindow.NewProse(session, &notes.Edit.Read, &save, &create, &notes.Place.Rename)
+	writes := state.Writes
+	save, create := note.NewSaveProse(&notes.Edit.Write, writes, writes), note.NewCreateNote(&notes.Edit.Create, writes, writes)
+	rename := note.NewRenameNote(&notes.Place.Rename, writes, writes)
+	prose := notewindow.NewProse(state, &notes.Edit.Read, &save, &create, &rename)
 	outlining := notewindow.NewOutline(
 		state,
 		query.NewGetOpeningNote(w.db.NoteQueries()),
 		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.tabKinds),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
-	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), session, session)
-	createRelated := note.NewCreateRelatedNote(notes.Connect.CreateInRelation, session, session)
+	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), writes, writes)
+	createRelated := note.NewCreateRelatedNote(notes.Connect.CreateInRelation, writes, writes)
 	links := notewindow.NewLinks(
 		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &createRelated, &queries.Refer.Backlinks,
 	)
+	notes.Connect = notes.Connect.WithWrites(writes, writes)
 	connections := notewindow.NewConnections(
-		session, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
+		state, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
 	w.inst.Mount(editor.NewNoteRoute(state, handler))

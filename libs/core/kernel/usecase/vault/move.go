@@ -8,10 +8,45 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
+// WriteGate admits the writes a window waits for before it closes.
+type WriteGate interface {
+	BeginWrite() bool
+	FinishWrite()
+}
+
+// IndexFollow reports whether the index followed a write.
+type IndexFollow interface {
+	IsIndexOutdated(err error) bool
+}
+
+// MoveFile moves a file or a folder in the vault as a write of the window.
+type MoveFile struct {
+	move   *Move
+	gate   WriteGate
+	follow IndexFollow
+}
+
+// NewMoveFile returns the use case over the moving of a file or a folder.
+func NewMoveFile(move *Move, gate WriteGate, follow IndexFollow) MoveFile {
+	return MoveFile{move: move, gate: gate, follow: follow}
+}
+
+// Execute moves the file or folder from from to to and reports whether the index did not follow. It
+// fails with window.ErrClosing once the window is closing.
+func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, bool, error) {
+	if !u.gate.BeginWrite() {
+		return domain.MoveResult{}, false, windowdomain.ErrClosing
+	}
+	defer u.gate.FinishWrite()
+	moved, err := u.move.Execute(ctx, v, from, to)
+	return moved, u.follow.IsIndexOutdated(err), err
+}
 
 // NoteMover settles each note that traveled in a vault move.
 type NoteMover interface {

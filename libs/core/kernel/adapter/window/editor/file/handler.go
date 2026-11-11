@@ -19,23 +19,6 @@ type Vault interface {
 	GetCurrentVault() domain.Vault
 }
 
-// Writes counts the writes the window waits for before it closes.
-type Writes interface {
-	BeginWrite() bool
-	FinishWrite()
-}
-
-// Session is the window a handler serves: the vault it shows and the writes it waits for.
-type Session interface {
-	Vault
-	Writes
-}
-
-// Index reports whether the index followed a write.
-type Index interface {
-	IsIndexOutdated(err error) bool
-}
-
 // Tree tells the views drawing the vault which paths changed.
 type Tree interface {
 	PublishChange(paths ...string)
@@ -73,7 +56,6 @@ func NewHandler(folders *Folders, changes *Changes) *Handler {
 // Folders lists what the folders of the vault hold and makes folders.
 type Folders struct {
 	vault        Vault
-	writes       Writes
 	events       Events
 	listFolder   *file.ListFolder
 	listKinds    *file.ListFileKinds
@@ -82,28 +64,26 @@ type Folders struct {
 
 // NewFolders is the part of FileService that lists and makes folders.
 func NewFolders(
-	session Session, events Events, folder *file.ListFolder, kinds *file.ListFileKinds, create *file.CreateFolder,
+	window Vault, events Events, folder *file.ListFolder, kinds *file.ListFileKinds, create *file.CreateFolder,
 ) *Folders {
-	return &Folders{vault: session, writes: session, events: events, listFolder: folder, listKinds: kinds, createFolder: create}
+	return &Folders{vault: window, events: events, listFolder: folder, listKinds: kinds, createFolder: create}
 }
 
 // Changes moves and removes the files of the vault.
 type Changes struct {
 	vault      Vault
-	writes     Writes
-	index      Index
 	tree       Tree
-	move       *vaults.Move
-	remove     *note.Remove
+	move       *vaults.MoveFile
+	remove     *note.RemoveFile
 	emptyTrash *note.EmptyTrash
 }
 
 // NewChanges is the part of FileService that moves and removes files.
 func NewChanges(
-	session Session, index Index, tree Tree,
-	move *vaults.Move, remove *note.Remove, emptyTrash *note.EmptyTrash,
+	window Vault, tree Tree,
+	move *vaults.MoveFile, remove *note.RemoveFile, emptyTrash *note.EmptyTrash,
 ) *Changes {
 	return &Changes{
-		vault: session, writes: session, index: index, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash,
+		vault: window, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash,
 	}
 }

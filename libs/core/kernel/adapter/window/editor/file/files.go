@@ -14,6 +14,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -134,13 +135,11 @@ func (h *Folders) CreateFolder(
 	if h.createFolder == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
 	out := &v1.CreateFolderResponse{}
 	if err := h.createFolder.Execute(ctx, showing, r.Msg.GetPath()); err != nil {
+		if errors.Is(err, windowdomain.ErrClosing) {
+			return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+		}
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -158,18 +157,15 @@ func (h *Changes) MoveFile(
 	if err != nil {
 		return nil, err
 	}
-	if !h.writes.BeginWrite() {
+	moved, isIndexOutdated, err := h.move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
+	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.writes.FinishWrite()
-
-	moved, err := h.move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
-	out := &v1.MoveFileResponse{}
+	out := &v1.MoveFileResponse{IsIndexOutdated: isIndexOutdated}
 	if moved.IsMoved {
 		out.Moved = newMoveResult(moved)
 	}
-	out.IsIndexOutdated = h.index.IsIndexOutdated(err)
-	if err != nil && !out.GetIsIndexOutdated() {
+	if err != nil && !isIndexOutdated {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:
@@ -209,13 +205,10 @@ func (h *Changes) RemoveFile(
 	if err != nil {
 		return nil, err
 	}
-	if !h.writes.BeginWrite() {
+	removed, indexOutdated, err := h.remove.Execute(ctx, showing, r.Msg.GetPath())
+	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.writes.FinishWrite()
-
-	removed, err := h.remove.Execute(ctx, showing, r.Msg.GetPath())
-	indexOutdated := h.index.IsIndexOutdated(err)
 	if err != nil && !indexOutdated {
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
@@ -245,12 +238,10 @@ func (h *Changes) EmptyTrash(
 	if h.emptyTrash == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	if !h.writes.BeginWrite() {
+	undeleted, err := h.emptyTrash.Execute(ctx, showing)
+	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.writes.FinishWrite()
-
-	undeleted, err := h.emptyTrash.Execute(ctx, showing)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

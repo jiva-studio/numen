@@ -368,22 +368,20 @@ func (h *Prose) RenameNote(
 	if err != nil {
 		return nil, err
 	}
-	if !h.writes.BeginWrite() {
+	renamed, isIndexOutdated, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
+	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.writes.FinishWrite()
-
-	renamed, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameNoteResponse{
-		Path:       renamed.Path,
-		Title:      renamed.Title,
-		NameSource: newWireNameSource(renamed.By),
+		Path:            renamed.Path,
+		Title:           renamed.Title,
+		NameSource:      newWireNameSource(renamed.By),
+		IsIndexOutdated: isIndexOutdated,
 	}
 	if renamed.Moved != nil {
 		out.Moved = newMoveResult(*renamed.Moved)
 	}
-	out.IsIndexOutdated = h.writes.IsIndexOutdated(err)
-	if err != nil && !out.GetIsIndexOutdated() {
+	if err != nil && !isIndexOutdated {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:

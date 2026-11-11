@@ -49,13 +49,3 @@ func (w *Writes) NoteWritten() {
 		w.NotifyNoteWritten()
 	}
 }
-
-// Session is the vault the window shows and the writes it takes: what the services that change the vault
-// ask of the window.
-type Session struct {
-	*State
-	*Writes
-}
-
-// NewSession is the session of a window over its state.
-func NewSession(state *State) Session { return Session{State: state, Writes: state.Writes} }

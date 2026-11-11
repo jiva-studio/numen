@@ -43,6 +43,16 @@ type Connecting struct {
 	CreateInRelation CreateInRelation
 }
 
+// WithWrites returns Connecting with every connection write tracked through gate and follow.
+func (c Connecting) WithWrites(gate WriteGate, follow IndexFollow) Connecting {
+	track := NewTrackWrites(gate, follow)
+	c.SaveConnection.editor.track = track
+	c.RemoveSide.editor.track = track
+	c.RemoveConnection.editor.track = track
+	c.Join.editor.track = track
+	return c
+}
+
 // Referring adds the links of notes.
 type Referring struct {
 	AddLinks AddLinks

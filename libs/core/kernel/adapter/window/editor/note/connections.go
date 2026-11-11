@@ -21,10 +21,12 @@ type connectionFailure struct {
 	isCycle   bool
 }
 
-func (h *Connections) failureOf(err error) (connectionFailure, error) {
+func failureOf(err error) (connectionFailure, error) {
 	switch {
-	case err == nil, h.writes.IsIndexOutdated(err):
+	case err == nil:
 		return connectionFailure{}, nil
+	case errors.Is(err, windowdomain.ErrClosing):
+		return connectionFailure{}, connect.NewError(connect.CodeUnavailable, errClosing)
 	case errors.Is(err, domain.ErrHierarchyCycle):
 		return connectionFailure{isCycle: true}, nil
 	case errors.Is(err, domain.ErrInvalidConnection):
@@ -65,12 +67,7 @@ func (h *Connections) SaveConnection(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
-	failure, err := h.failureOf(h.saveConnection.Execute(ctx, showing, saving))
+	failure, err := failureOf(h.saveConnection.Execute(ctx, showing, saving))
 	if err != nil {
 		return nil, err
 	}
@@ -87,12 +84,7 @@ func (h *Connections) RemoveSide(
 	if err != nil {
 		return nil, err
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
-	failure, err := h.failureOf(h.removeSide.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTo(), r.Msg.GetType()))
+	failure, err := failureOf(h.removeSide.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTo(), r.Msg.GetType()))
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +102,7 @@ func (h *Connections) RemoveConnection(
 	if err != nil {
 		return nil, err
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
-	failure, err := h.failureOf(
+	failure, err := failureOf(
 		h.removeConnection.Execute(ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), r.Msg.GetType()))
 	if err != nil {
 		return nil, err
@@ -138,12 +125,7 @@ func (h *Connections) JoinNotes(
 	if err != nil || side == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.Join(errNoSide, err))
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
-	failure, err := h.failureOf(h.join.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo(), *side))
+	failure, err := failureOf(h.join.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo(), *side))
 	if err != nil {
 		return nil, err
 	}

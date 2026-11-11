@@ -18,21 +18,6 @@ type Vault interface {
 	GetCurrentVault() domain.Vault
 }
 
-// Writes counts the writes the window waits for before it closes, and reports whether the index
-// followed a write.
-type Writes interface {
-	BeginWrite() bool
-	FinishWrite()
-	IsIndexOutdated(err error) bool
-	NoteWritten()
-}
-
-// Session is the window a handler serves: the vault it shows and the writes it waits for.
-type Session interface {
-	Vault
-	Writes
-}
-
 // Edits is the stream of edits being made to the notes of the window.
 type Edits interface {
 	SubscribeEdits() (<-chan domain.Edit, func())
@@ -69,18 +54,17 @@ func NewHandler(edits Edits, prose *Prose, outline *Outline, links *Links, conne
 // Prose reads, writes, creates and renames notes.
 type Prose struct {
 	vault  Vault
-	writes Writes
 	read   *note.Read
 	save   *note.SaveProse
 	create *note.CreateNote
-	rename *note.Rename
+	rename *note.RenameNote
 }
 
 // NewProse is the part of NoteService that reads and changes the prose of notes.
 func NewProse(
-	session Session, read *note.Read, save *note.SaveProse, create *note.CreateNote, rename *note.Rename,
+	window Vault, read *note.Read, save *note.SaveProse, create *note.CreateNote, rename *note.RenameNote,
 ) *Prose {
-	return &Prose{vault: session, writes: session, read: read, save: save, create: create, rename: rename}
+	return &Prose{vault: window, read: read, save: save, create: create, rename: rename}
 }
 
 // Outline answers what a note stands among: the note a vault opens on, its neighborhood and the
@@ -119,7 +103,6 @@ func NewLinks(
 // Connections reads and changes the relationship between two notes.
 type Connections struct {
 	vault            Vault
-	writes           Writes
 	getConnection    *query.GetConnection
 	saveConnection   *note.SaveConnection
 	removeSide       *note.RemoveSide
@@ -129,12 +112,12 @@ type Connections struct {
 
 // NewConnections is the part of NoteService that works the connections between notes.
 func NewConnections(
-	session Session,
+	window Vault,
 	get *query.GetConnection, save *note.SaveConnection, removeSide *note.RemoveSide,
 	remove *note.RemoveConnection, join *note.Join,
 ) *Connections {
 	return &Connections{
-		vault: session, writes: session, getConnection: get, saveConnection: save, removeSide: removeSide,
+		vault: window, getConnection: get, saveConnection: save, removeSide: removeSide,
 		removeConnection: remove, join: join,
 	}
 }

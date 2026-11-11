@@ -74,13 +74,13 @@ type NoteUseCases struct {
 // UseNotes builds the notes service over NoteCases.
 func (s *Services) UseNotes() {
 	use := s.NoteCases
-	session := NewSession(s.state)
+	writes := s.state.Writes
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
-		notewindow.NewProse(session, use.Read, saveProse(use.Write, session), createNote(use.Create, session), use.Rename),
+		notewindow.NewProse(s.state, use.Read, saveProse(use.Write, writes), createNote(use.Create, writes), renameNote(use.Rename, writes)),
 		notewindow.NewOutline(s.state, use.OpeningNote, use.Neighborhood, use.Headings),
-		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, session), nil, nil),
-		notewindow.NewConnections(session, nil, nil, nil, nil, nil),
+		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, writes), nil, nil),
+		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)
 }
 
@@ -88,8 +88,8 @@ func createServices(state *State) *Services {
 	services := &Services{
 		state: state,
 		File: filewindow.NewHandler(
-			filewindow.NewFolders(NewSession(state), state.Events, nil, nil, nil),
-			filewindow.NewChanges(NewSession(state), state.Writes, state.Notices, nil, nil, nil),
+			filewindow.NewFolders(state, state.Events, nil, nil, nil),
+			filewindow.NewChanges(state, state.Notices, nil, nil, nil),
 		),
 		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil)),
 		Media:   mediawindow.NewHandler(state, state, nil),
@@ -194,26 +194,34 @@ func ViewOf(state *State) windowsession.View {
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
 }
 
-func saveProse(write *note.Write, session Session) *note.SaveProse {
+func saveProse(write *note.Write, writes *Writes) *note.SaveProse {
 	if write == nil {
 		return nil
 	}
-	saved := note.NewSaveProse(write, session, session)
+	saved := note.NewSaveProse(write, writes, writes)
 	return &saved
 }
 
-func createNote(create *note.Create, session Session) *note.CreateNote {
+func createNote(create *note.Create, writes *Writes) *note.CreateNote {
 	if create == nil {
 		return nil
 	}
-	made := note.NewCreateNote(create, session, session)
+	made := note.NewCreateNote(create, writes, writes)
 	return &made
 }
 
-func writeLink(links *note.EditLinks, names edit.NameQueries, session Session) *note.WriteLink {
+func renameNote(rename *note.Rename, writes *Writes) *note.RenameNote {
+	if rename == nil {
+		return nil
+	}
+	renamed := note.NewRenameNote(rename, writes, writes)
+	return &renamed
+}
+
+func writeLink(links *note.EditLinks, names edit.NameQueries, writes *Writes) *note.WriteLink {
 	if links == nil {
 		return nil
 	}
-	linking := note.NewWriteLink(*links, names, session, session)
+	linking := note.NewWriteLink(*links, names, writes, writes)
 	return &linking
 }
