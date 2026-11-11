@@ -1,4 +1,4 @@
-import type { CommandInvocation } from './command'
+import type { CommandInvocation } from './invocation'
 
 /** The values a keybinding or a menu entry runs a command with. */
 export type Values = Readonly<Record<string, string>>

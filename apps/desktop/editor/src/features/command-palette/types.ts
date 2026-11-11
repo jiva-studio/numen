@@ -1,5 +1,6 @@
 /**
- * Palette types: the context the commands run over. The `Command` family is in `entities/command`.
+ * Palette types: the context the commands run over. The `Command` type is in `entities/command`,
+ * the engine in `shared/model/command`.
  *
  * This file defines types only. The commands the palette owns are `lib/commands/table.ts`, display
  * words are `words.ts`, and the services
@@ -7,9 +8,9 @@
  */
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
-import type { StepGroup } from '@/entities/command'
+import type { StepGroup } from '@/shared/model/command'
 
-export type { StepRow } from '@/entities/command'
+export type { StepRow } from '@/shared/model/command'
 
 /** What the commands ask of the application before anything is chosen. */
 export interface CommandsDeps {

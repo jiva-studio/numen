@@ -4,8 +4,15 @@ import type { Task } from '@/entities/window'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
 import { formatError, type Caught } from '@/shared/api/errors'
-import { runInBackground } from '@numen/ui'
-import { createWindowStreams, type VaultScan } from './useWindowStreams'
+import { createFollower, runInBackground } from '@numen/ui'
+import {
+  createEditStream,
+  createFocusStream,
+  createTaskStream,
+  createVaultStream,
+  type VaultScan,
+  type WindowStreams,
+} from './useWindowStreams'
 import { useDisplayHealth, type DisplayHealth } from './useDisplayHealth'
 import { useDisplayOpening } from './useDisplayOpening'
 import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVault'
@@ -52,15 +59,12 @@ interface StartDisplayDeps {
   ask: () => Promise<VaultScan>
   readInitialNote: () => Promise<string>
   onVaultChanged: (paths: readonly string[], renames: readonly PathRename[]) => Promise<void> | void
-  streams: ReturnType<typeof createWindowStreams>
+  streams: WindowStreams
   wait: (ms: number) => Promise<void>
   isOpen: () => boolean
 }
 
-function startStreams(
-  streams: ReturnType<typeof createWindowStreams>,
-  health: DisplayHealth,
-): void {
+function startStreams(streams: WindowStreams, health: DisplayHealth): void {
   const onError = (error: Caught) => {
     health.failure.value = formatError(error)
   }
@@ -110,25 +114,38 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
 
   const ask = () => askVaultState(vault)
 
-  const streams = createWindowStreams({
-    listening: abortController,
+  const follows = createFollower({
     isOpen: () => open,
     setLost: (response) => {
       health.lost.value = response
     },
     wait,
-    opening: opening.path,
-    tasks,
-    isVaultSwapped: () => isVaultSwapped(vault),
-    reload,
-    onVaultChanged,
-    readInitialNote: opening.read,
-    ask,
-    reportChange: how.reportChange ?? (() => undefined),
-    travelTo: how.travelTo ?? (() => undefined),
-    openFileAt: how.openFileAt ?? (() => undefined),
-    activateTab: how.activateTab ?? (() => undefined),
   })
+  const streams: WindowStreams = {
+    follow: createVaultStream({
+      follows,
+      listening: abortController,
+      opening: opening.path,
+      isVaultSwapped: () => isVaultSwapped(vault),
+      reload,
+      onVaultChanged,
+      readInitialNote: opening.read,
+      ask,
+    }),
+    draw: createEditStream({
+      follows,
+      listening: abortController,
+      reportChange: how.reportChange ?? (() => undefined),
+    }),
+    watch: createFocusStream({
+      follows,
+      listening: abortController,
+      travelTo: how.travelTo ?? (() => undefined),
+      openFileAt: how.openFileAt ?? (() => undefined),
+      activateTab: how.activateTab ?? (() => undefined),
+    }),
+    followTasks: createTaskStream({ follows, listening: abortController, tasks, ask }),
+  }
 
   return {
     vault,

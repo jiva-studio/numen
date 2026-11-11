@@ -3,7 +3,7 @@
  * their end for a plugin that awaits one.
  */
 import type { PluginHost } from '@numen/plugin-loader'
-import type { CommandTarget, Values } from '@/entities/command'
+import type { CommandTarget, Values } from '@/shared/model/command'
 import { toRunTarget } from '../lib/runTarget'
 import type { createCommandNoteReader } from './usePluginCommands'
 

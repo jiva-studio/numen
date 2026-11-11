@@ -8,8 +8,8 @@
  */
 import { Search } from '@lucide/vue'
 import { Palette, type ActionWords } from '@numen/workbench'
-import type { CommandDeps } from '@/entities/command'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandDeps } from '@/shared/model/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { Commands } from '../model/palette/palette'
 import type { ResultChoice, SearchState } from '../model/search/search'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'

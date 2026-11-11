@@ -3,13 +3,8 @@
  * it with another tab. Moving and linking offer one item per window and per tab.
  */
 import type { CommandItem } from '@numen/plugin-loader'
-import {
-  COMMAND,
-  type Command,
-  type CommandInvocation,
-  type CommandTarget,
-  type FeatureCommands,
-} from '@/entities/command'
+import { type Command, type FeatureCommands } from '@/entities/command'
+import { COMMAND, type CommandInvocation, type CommandTarget } from '@/shared/model/command'
 import {
   getAllTabs,
   getEligibleTabs,

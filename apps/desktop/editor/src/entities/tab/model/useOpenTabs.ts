@@ -7,13 +7,14 @@ import { findTabKindIcon } from '../lib/icons'
 import { writeOpenTabs as writeOpenTabsToCore } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import type { WindowTabs } from './windowTabs'
-import type { Caught } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { JsonValue } from '@/shared/api/json'
 
 export interface OpenTabsDeps {
   windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
-  reportError: (error: Caught) => void
+  writeMessage: MessageWriter
   writeOpenTabs?: (open: OpenTabs) => Promise<void>
 }
 
@@ -38,9 +39,12 @@ function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
 export function useOpenTabs({
   windowTabs,
   isWriting = ref(true),
-  reportError,
+  writeMessage,
   writeOpenTabs = writeOpenTabsToCore,
 }: OpenTabsDeps) {
+  const reportError = (error: Caught) =>
+    writeMessage(`The open tabs were not saved: ${formatError(error)}`, 'error')
+
   /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
   const isTakingText = (id: string): boolean =>
     windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined

@@ -8,10 +8,11 @@ import { ref } from 'vue'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../../words'
 import type { PendingStep } from '../../lib/step/step'
-import type { StepGroup } from '@/entities/command'
-import type { Command, CommandTarget, PromptStep } from '@/entities/command'
+import type { StepGroup } from '@/shared/model/command'
+import type { Command, PromptStep } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { NameMatch } from '../search/search'
-import { createPaletteSteps } from './navigation'
+import { createPaletteSteps, createStepChoice } from './navigation'
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 
@@ -61,12 +62,18 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
     onClose: () => {
       happened.push('close')
     },
+  })
+  const choose = createStepChoice({
     invocation: (id, target, name) => {
       invoked.push([id, target, name])
       return { id } as never
     },
+    lists: { getStepGroups: () => groups, previewItem: vi.fn() },
+    text,
+    stack: steps.stack,
+    getStepTitle: steps.naming.getStepTitle,
   })
-  return { steps, text, happened, invoked }
+  return { steps, choose, text, happened, invoked }
 }
 
 const match = (path: string, title: string) => ({ path, title }) as NameMatch
@@ -165,7 +172,7 @@ describe('choosing on a step', () => {
     const createdItem = createSteps()
     return {
       ...createdItem,
-      chosen: () => createdItem.steps.chooseInStep(step, item, action, found, [], () => false),
+      chosen: () => createdItem.choose(step, item, action, found, [], () => false),
     }
   }
 

@@ -3,7 +3,7 @@
  * a write cannot reach the vault the window is going to, and go on where the switch is refused.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { COMMAND } from '@/entities/command'
+import { COMMAND } from '@/shared/model/command'
 import { createInvocation } from '@/features/command-palette'
 import {
   getTabs,

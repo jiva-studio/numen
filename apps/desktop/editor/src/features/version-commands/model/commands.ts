@@ -3,13 +3,8 @@
  * of the file the core lists and has the core delete the one picked. The core serves it with no plugin.
  */
 import type { CommandItem } from '@numen/plugin-loader'
-import {
-  COMMAND,
-  type Command,
-  type CommandInvocation,
-  type CommandTarget,
-  type FeatureCommands,
-} from '@/entities/command'
+import { type Command, type FeatureCommands } from '@/entities/command'
+import { COMMAND, type CommandInvocation, type CommandTarget } from '@/shared/model/command'
 import { runDeclaredHandler } from '@/entities/plugin'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { VERSION_WORDS } from '../words'

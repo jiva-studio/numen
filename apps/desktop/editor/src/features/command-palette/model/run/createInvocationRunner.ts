@@ -1,4 +1,4 @@
-import type { CommandDeps, CommandTarget } from '@/entities/command'
+import type { CommandDeps, CommandTarget } from '@/shared/model/command'
 import { createInvocation } from '../../lib/entries/invocation'
 import { runInvocation } from '../handlers/handlers'
 

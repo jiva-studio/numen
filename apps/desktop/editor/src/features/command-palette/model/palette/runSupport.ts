@@ -5,7 +5,7 @@
  * and the window does not offer it afterwards.
  */
 import { shallowRef } from 'vue'
-import type { RunSupport } from '@/entities/command'
+import type { RunSupport } from '@/shared/model/command'
 
 /** The runs supported by one window: all of them until the application reports one as unsupported. */
 export const runSupport = (): RunSupport => {

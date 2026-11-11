@@ -1,10 +1,11 @@
 /**
- * The settings of the window: the state its appearance and palette read, and the settings tab.
+ * The settings of a window made the way the window makes them: the state its appearance and palette
+ * read, and the settings tab.
  */
-import { createWindowSettings } from '@/features/settings-commands'
-import { createSettingsPage } from '@/pages/settings'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
+import { createWindowSettings } from '@/features/settings-commands'
+import { createSettingsPage } from '@/pages/settings'
 import type { MessageLog } from '@/shared/model/notices/messages'
 
 type PageDeps = Parameters<typeof createSettingsPage>[0]
@@ -30,5 +31,14 @@ export function createWindowSettingsPart(deps: WindowSettingsDeps) {
     getSettingsViews: deps.getSettingsViews,
     getPlatform: deps.getPlatform,
   })
-  return { rest, ...windowSettings, ...page }
+  return {
+    rest,
+    appearance: windowSettings.appearance,
+    settingPalette: windowSettings.settingPalette,
+    paletteLists: windowSettings.paletteLists,
+    start: windowSettings.start,
+    close: windowSettings.close,
+    configured: page.configured,
+    kinds: page.kinds,
+  }
 }

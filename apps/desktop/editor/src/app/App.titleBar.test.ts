@@ -14,7 +14,7 @@ import {
   requests,
   settle,
 } from '@/testing/window'
-import { COMMAND } from '@/entities/command'
+import { COMMAND } from '@/shared/model/command'
 import type * as ShellModule from '@numen/workbench'
 
 const frame = vi.hoisted(() => ({

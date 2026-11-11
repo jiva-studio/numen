@@ -4,7 +4,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { CommandNote, CommandTarget as RunTarget } from '@numen/plugin-loader'
-import type { Command, CommandTarget } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { createCommandItems } from './commandItems'
 
 const FRONT = {

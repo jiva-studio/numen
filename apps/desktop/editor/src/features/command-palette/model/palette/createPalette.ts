@@ -4,7 +4,8 @@
  * A command that needs nothing runs as soon as it is chosen. One that needs a name, a note, a
  * vault or an answer opens a step of its own.
  */
-import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { findUnsuppliedPrompt } from './navigation'
 import type { PaletteSession } from './session'
 import type { usePaletteView } from './usePaletteView'
@@ -83,7 +84,7 @@ function createPaletteCommands(session: PaletteSession) {
 }
 
 export function createPalette(session: PaletteSession, view: ReturnType<typeof usePaletteView>) {
-  const { state, steps, on } = session
+  const { state, steps, on, choose } = session
   const { previewItem, setOpen, searchNames } = session.handlers
   const { startCommand, getObjection } = createPaletteCommands(session)
 
@@ -96,7 +97,7 @@ export function createPalette(session: PaletteSession, view: ReturnType<typeof u
   const chooseItem = (item: string, action: string): CommandInvocation | null => {
     const step = steps.here.value
     if (!step) return startCommand(action, on.value)
-    return steps.chooseInStep(
+    return choose(
       step,
       item,
       action,

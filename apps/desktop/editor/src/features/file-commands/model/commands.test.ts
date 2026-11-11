@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { NOTE_ERROR_CODE } from '@numen/core-client'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import type { CommandInvocation, CommandTarget } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { FILE_WORDS as words } from '../words'
 import { createFileCommands } from './commands'
@@ -41,9 +41,7 @@ const createWindow = (answers: Answers = {}) => {
     installCoreHandlers({
       moveFile: (request: { from: string; to: string }) => {
         actions.push(`move ${request.from} ${request.to}`)
-        return (
-          answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
-        )
+        return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
       },
       listFiles: (request: { path: string }) => {
         actions.push(`listNames ${request.path || '—'}`)

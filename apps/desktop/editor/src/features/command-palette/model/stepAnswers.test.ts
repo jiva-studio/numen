@@ -10,8 +10,8 @@ import { createAppCommands } from '@/testing/appCommands'
 import * as stepModule from '../lib/step/step'
 import { runSupport } from './palette/runSupport'
 import { createCommandPalette } from './palette/palette'
-import type { StepGroup } from '@/entities/command'
-import type { CommandTarget } from '@/entities/command'
+import type { StepGroup } from '@/shared/model/command'
+import type { CommandTarget } from '@/shared/model/command'
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 

@@ -1,5 +1,10 @@
 import { runInBackground } from '@numen/ui'
-import { withValues, type CommandDeps, type CommandTarget, type Values } from '@/entities/command'
+import {
+  withValues,
+  type CommandDeps,
+  type CommandTarget,
+  type Values,
+} from '@/shared/model/command'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { createInvocation } from '../../lib/entries/invocation'

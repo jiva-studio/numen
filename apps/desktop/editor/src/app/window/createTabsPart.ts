@@ -6,16 +6,17 @@ import type { SettingsStore } from '@/entities/settings'
 import { createWindowTabs, fileOpeners, RestoreFailedPane, UnavailablePane } from '@/entities/tab'
 import { isSecondaryWindow } from '@/entities/window'
 import { createTabLinking } from '@/features/tab-linking'
-import type { TabsCore, WindowCore } from './windowCore'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 
-interface TabsCoreDeps {
-  readonly writeMessage: WindowCore['writeMessage']
-  readonly rest: SettingsStore
+/** What the tabs of the window read of the others parts of it. */
+export interface TabsPartDeps {
+  readonly writeMessage: MessageWriter
+  readonly rest: Pick<SettingsStore, 'write'>
   readonly isPluginStarting: (pluginId: string) => boolean
   readonly openPluginSettings: (pluginId?: string) => void
 }
 
-export function createTabsCore(deps: TabsCoreDeps): TabsCore {
+export function createTabsPart(deps: TabsPartDeps) {
   const windowTabs = createWindowTabs(
     { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
     {

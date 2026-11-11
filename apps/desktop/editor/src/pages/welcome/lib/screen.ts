@@ -7,7 +7,7 @@
 import type { Keystroke } from '@numen/ui'
 import type { VaultRow, WelcomeAction } from '@numen/workbench'
 import type { VaultList } from '@/entities/vault'
-import { createRowKeys, COMMAND, COMMANDS_ROW } from '@/entities/command'
+import { createRowKeys, COMMAND, COMMANDS_ROW } from '@/shared/model/command'
 
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {

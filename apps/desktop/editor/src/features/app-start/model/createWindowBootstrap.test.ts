@@ -6,6 +6,8 @@ import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, type AnyTabKind, type MovedTab } from '@/entities/tab'
 import { answerCore } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
+import { createLayoutStart } from './createLayoutStart'
+import { createPluginStart } from './createPluginStart'
 import { createWindowBootstrap, type WindowBootstrapDeps } from './createWindowBootstrap'
 
 const withPlacement = (kind: string): AnyTabKind => ({
@@ -52,31 +54,39 @@ const setup = ({ saved = false, vaultId = 'sea', detached = null }: Parts = {}) 
     },
     close: () => Promise.resolve(),
   } as unknown as PluginLoader
+  const writeMessage = vi.fn()
+  const openDetachedTab = vi.fn()
+  const vaults = {
+    activeVault: computed(() => ({ id: vaultId, name: 'Sea' })),
+    loadVaults: () => Promise.resolve(),
+  }
   const deps: WindowBootstrapDeps = {
-    vaults: {
-      activeVault: computed(() => ({ id: vaultId, name: 'Sea' })),
-      loadVaults: () => Promise.resolve(),
-    },
-    windowTabs,
-    settings: {
-      start: () => Promise.resolve(),
-      close: () => undefined,
+    vaults,
+    settings: { start: () => Promise.resolve(), close: () => undefined },
+    window: { start: () => Promise.resolve(), close: () => undefined },
+    editing: { fileFlush: { start: () => Promise.resolve() }, close: () => undefined },
+    tabLinkSession: { start: () => Promise.resolve(), close: () => undefined },
+    writeMessage,
+    plugins: createPluginStart({
+      pluginLoader,
       getPlugins: () => [
         { id: 'md.example.notes', hasFrontend: true },
         { id: 'md.example.server', hasFrontend: false },
       ],
-    },
-    window: { start: () => Promise.resolve(), close: () => undefined },
-    editing: { fileFlush: { start: () => Promise.resolve() }, close: () => undefined },
-    pluginLoader,
-    waitForDeclaredCommands: () => Promise.resolve(),
-    writeMessage: vi.fn(),
-    layout,
-    isSecondary: false,
-    windowId: 'window-a',
-    tabLinkSession: { start: () => Promise.resolve(), close: () => undefined },
-    readDetachedTab: vi.fn(() => Promise.resolve(detached)),
-    openDetachedTab: vi.fn(),
+      waitForDeclaredCommands: () => Promise.resolve(),
+      writeMessage,
+    }),
+    layout: createLayoutStart({
+      vaults,
+      windowTabs,
+      pluginLoader,
+      writeMessage,
+      layout,
+      isSecondary: false,
+      windowId: 'window-a',
+      readDetachedTab: vi.fn(() => Promise.resolve(detached)),
+      openDetachedTab,
+    }),
   }
   mount(
     defineComponent({
@@ -86,7 +96,7 @@ const setup = ({ saved = false, vaultId = 'sea', detached = null }: Parts = {}) 
       },
     }),
   )
-  return { deps, windowTabs, layout, calls }
+  return { openDetachedTab, windowTabs, layout, calls }
 }
 
 describe('a window starting', () => {
@@ -116,12 +126,12 @@ describe('a window starting', () => {
   })
 
   it('opens no tab and keeps the layout unready where no vault is open', async () => {
-    const { windowTabs, layout, deps } = setup({ vaultId: '' })
+    const { windowTabs, layout, openDetachedTab } = setup({ vaultId: '' })
 
     await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(windowTabs.tabs.tabs.value).toStrictEqual([])
     expect(layout.isReady.value).toBe(false)
-    expect(deps.openDetachedTab).not.toHaveBeenCalled()
+    expect(openDetachedTab).not.toHaveBeenCalled()
   })
 })

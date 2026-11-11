@@ -1,7 +1,7 @@
 /** The commands the plugins declare, as the window runs them. */
 import { describe, expect, it, vi } from 'vitest'
 import type { CommandNote, PluginHost } from '@numen/plugin-loader'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { createPluginCommandPort } from './pluginCommandPort'
 
 const TARGET = {

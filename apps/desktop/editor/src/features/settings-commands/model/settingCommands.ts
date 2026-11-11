@@ -8,7 +8,8 @@
  * and restored when the step is left without a choice.
  */
 import { parseWhen } from '@numen/plugin-loader'
-import { getPaletteValues, type Command, type StepGroup, type StepRow } from '@/entities/command'
+import { type Command } from '@/entities/command'
+import { getPaletteValues, type StepGroup, type StepRow } from '@/shared/model/command'
 import type { PluginSettingInfo, PluginSettingOption, SettingEdit } from '@/entities/settings'
 import {
   APP_OWNER,

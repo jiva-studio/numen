@@ -15,8 +15,14 @@ export interface NoteEditorsDeps {
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
 }
 
+/** What the store of the notes of the window reads and releases of the notes it opens. */
+type OpenNotes = Pick<
+  ReturnType<typeof openNotes>,
+  'has' | 'getPath' | 'stale' | 'flushPending' | 'close' | 'getOpenIds'
+>
+
 function createNoteStore(
-  notes: ReturnType<typeof openNotes>,
+  notes: OpenNotes,
   windowTabs: Pick<WindowTabs, 'tabs'>,
   reportError: (error: Caught) => void,
 ) {

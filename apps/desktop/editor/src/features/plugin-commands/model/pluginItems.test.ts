@@ -5,7 +5,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { CommandItem } from '@numen/plugin-loader'
-import type { Command, CommandTarget, RunSupport } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandTarget, RunSupport } from '@/shared/model/command'
 import { createItemLists } from './pluginItems'
 
 const TARGET = {

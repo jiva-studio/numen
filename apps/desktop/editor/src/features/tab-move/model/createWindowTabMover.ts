@@ -4,7 +4,7 @@
  */
 import { runInBackground } from '@numen/ui'
 import { getTabPaneRect } from '@numen/workbench'
-import type { Notes } from '@/entities/command'
+import type { Notes } from '@/shared/model/command'
 import type { WindowTabs } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { highlightWindow } from '../api/tab-move'

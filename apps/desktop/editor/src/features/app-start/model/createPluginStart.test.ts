@@ -14,14 +14,14 @@ const setup = () => {
     close: vi.fn(() => Promise.resolve()),
     status: { waitForInterface: vi.fn(() => Promise.resolve()) },
   }
-  const reportError = vi.fn()
+  const writeMessage = vi.fn()
   const start = createPluginStart({
     pluginLoader: pluginLoader as unknown as PluginLoader,
     getPlugins: () => plugins.value,
     waitForDeclaredCommands: () => Promise.resolve(),
-    reportError,
+    writeMessage,
   })
-  return { start, plugins, pluginLoader, reportError }
+  return { start, plugins, pluginLoader, writeMessage }
 }
 
 describe('the plugins a window loads', () => {
@@ -44,13 +44,18 @@ describe('the plugins a window loads', () => {
   })
 
   it('report a track that failed', async () => {
-    const { plugins, pluginLoader, reportError } = setup()
+    const { plugins, pluginLoader, writeMessage } = setup()
     pluginLoader.trackPlugins.mockRejectedValueOnce(new Error('no import'))
 
     plugins.value = []
     await nextTick()
 
-    await vi.waitFor(() => expect(reportError).toHaveBeenCalledOnce())
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledExactlyOnceWith(
+        expect.stringContaining('Plugins were not tracked'),
+        'error',
+      ),
+    )
   })
 
   it('are waited for through the interface and the first list of declared commands', async () => {

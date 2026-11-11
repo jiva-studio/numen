@@ -2,16 +2,31 @@
 import { describe, expect, it, vi } from 'vitest'
 import { answerCore } from '@/testing/coreAnswers'
 import { ref, shallowRef } from 'vue'
+import type { FileOpeners } from '@/entities/tab'
+import { createIconHost } from './fileServices'
 import {
   createAgentHost,
   createVaultNotes,
+  createWorkspaceFiles,
   createWorkspaceHost,
+  createWorkspaceMessages,
+  type WorkspaceFilesDeps,
   type WorkspaceHostDeps,
 } from './pluginServices'
-import type { CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 
-const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
+interface WorkspaceParts extends Pick<WorkspaceFilesDeps, 'writeMessage'> {
+  readonly tabOpeners: WorkspaceFilesDeps['tabOpeners'] & Pick<FileOpeners, 'findFileIcon'>
+  readonly window: WorkspaceHostDeps['window']
+  readonly dragged: WorkspaceHostDeps['dragged']
+  readonly tabSync?: WorkspaceFilesDeps['tabSync']
+  readonly ask: WorkspaceHostDeps['ask']
+  readonly getNoteInFocus: WorkspaceHostDeps['getNoteInFocus']
+  readonly getMessageWriter: (name: string) => WorkspaceFilesDeps['writeMessage']
+  readonly today: WorkspaceHostDeps['today']
+}
+
+const createWorkspace = (overrides: Partial<WorkspaceParts> = {}) => {
   const failure = ref('')
   const deps = {
     window: {
@@ -25,17 +40,34 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
       findFileIcon: vi.fn(() => undefined),
     },
     tabSync: { syncPathFromTab: vi.fn(() => true) },
-    getTarget: () => ({ tab: 'plex:1', kind: 'plex', path: 'Here.md' }) as unknown as CommandTarget,
-    runCommand: vi.fn(),
     ask: vi.fn(),
     getNoteInFocus: () => ({ path: 'Focus.md', title: 'Focus' }),
     writeMessage: vi.fn(),
     getMessageWriter: () => vi.fn(),
     today: () => '2026-09-04',
     ...overrides,
-  } satisfies WorkspaceHostDeps
-  return { deps, failure, workspace: createWorkspaceHost(deps) }
+  } satisfies WorkspaceParts
+  return { deps, failure, workspace: createWorkspaceFromParts(deps) }
 }
+
+const createWorkspaceFromParts = (parts: WorkspaceParts) =>
+  createWorkspaceHost({
+    window: parts.window,
+    dragged: parts.dragged,
+    files: createWorkspaceFiles({
+      tabOpeners: parts.tabOpeners,
+      ...(parts.tabSync ? { tabSync: parts.tabSync } : {}),
+      writeMessage: parts.writeMessage,
+    }),
+    icons: createIconHost({ findFileIcon: parts.tabOpeners.findFileIcon }),
+    messages: createWorkspaceMessages({
+      writeMessage: parts.writeMessage,
+      getMessageWriter: parts.getMessageWriter,
+    }),
+    ask: parts.ask,
+    getNoteInFocus: parts.getNoteInFocus,
+    today: parts.today,
+  })
 
 describe('the window a plugin is handed', () => {
   it('is ready while it says nothing failed', () => {
@@ -73,10 +105,10 @@ describe('the window a plugin is handed', () => {
     const { workspace, deps } = createWorkspace()
 
     expect(workspace.files.syncPath('plex:1', 'One.md', 'One')).toBe(true)
-    expect(deps.tabSync.syncPathFromTab).toHaveBeenCalledWith('plex:1', 'One.md', 'One')
+    expect(deps.tabSync?.syncPathFromTab).toHaveBeenCalledWith('plex:1', 'One.md', 'One')
 
     const { tabSync: _tabSync, ...unlinked } = deps
-    expect(createWorkspaceHost(unlinked).files.syncPath('plex:1', 'One.md')).toBe(false)
+    expect(createWorkspaceFromParts(unlinked).files.syncPath('plex:1', 'One.md')).toBe(false)
   })
 
   it('runs no command itself: a plugin runs one through the commands of its context', () => {

@@ -3,7 +3,7 @@
  * and binds none a plugin registers.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createWindowCommands } from './windowCommands'
+import { createWindowCommands } from './createWindowCommands'
 
 describe('the commands of the flashcards window', () => {
   it('are none, now and after a watcher is added', () => {
