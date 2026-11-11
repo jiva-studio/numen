@@ -230,7 +230,10 @@ func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadE
 }
 
 func newEmbedQueries(embedder embeddingport.Embedder) *vectorscase.EmbedQueries {
-	queries, _ := embedder.(embeddingport.QueryEmbedder)
+	queries, ok := embedder.(embeddingport.QueryEmbedder)
+	if !ok {
+		return vectorscase.NewEmbedQueries(embedder, nil)
+	}
 	return vectorscase.NewEmbedQueries(embedder, queries)
 }
 
