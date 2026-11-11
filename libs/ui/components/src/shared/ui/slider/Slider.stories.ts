@@ -6,7 +6,7 @@
  * surroundings: its label, the displayed value, and the width left for the track.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, fn, userEvent, waitFor } from 'storybook/test'
 import { ref } from 'vue'
 import Slider from './Slider.vue'
 
@@ -18,6 +18,7 @@ interface Knobs {
   isDisabled: boolean
   label: string
   width: string
+  onCommit?: (value: number) => void
 }
 
 const meta: Meta<Knobs> = {
@@ -59,6 +60,7 @@ const meta: Meta<Knobs> = {
             :max="args.max"
             :step="args.step"
             :is-disabled="args.isDisabled"
+            @commit="args.onCommit?.($event)"
           />
         </div>
         <span style="font-variant-numeric: tabular-nums">{{ share }}%</span>
@@ -230,6 +232,21 @@ export const CommitsWhenTheKeyIsLetGo: Story = {
 
     await userEvent.keyboard('{End}')
     await waitFor(() => expect(rests()).toBe('43 100'))
+  },
+}
+
+/** A key walk emits the place it rests at, once. */
+export const EmitsWhereTheHandleRests: Story = {
+  args: { onCommit: fn() },
+  play: async ({ canvasElement, args }) => {
+    await userEvent.tab()
+    await userEvent.keyboard('{ArrowRight>3/}')
+    await waitFor(() => expect(args.onCommit).toHaveBeenCalledWith(43))
+    await expect(args.onCommit).toHaveBeenCalledTimes(1)
+
+    await userEvent.keyboard('{End}')
+    await waitFor(() => expect(args.onCommit).toHaveBeenLastCalledWith(100))
+    await expect(getValueNow(canvasElement)).toBe('100')
   },
 }
 

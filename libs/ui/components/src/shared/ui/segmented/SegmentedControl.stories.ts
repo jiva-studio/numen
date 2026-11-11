@@ -6,7 +6,7 @@
  * far too long, in another script, and with nothing to break at.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, fn, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import SegmentedControl from './SegmentedControl.vue'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
@@ -17,6 +17,7 @@ interface Knobs {
   chosen: string
   isDisabled: boolean
   width: string
+  onChange?: (value: string) => void
 }
 
 const meta: Meta<Knobs> = {
@@ -47,16 +48,21 @@ const meta: Meta<Knobs> = {
             text,
           })),
       )
-      const selected = ref(args.chosen)
-      return { args, choices, chosen: selected }
+      const current = ref(args.chosen)
+      const onChange = (value: string): void => {
+        current.value = value
+        args.onChange?.(value)
+      }
+      return { args, choices, current, onChange }
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
         <SegmentedControl
-          v-model="chosen"
+          :model-value="current"
           aria-label="How large it is drawn"
           :choices="choices"
           :is-disabled="args.isDisabled"
+          @update:model-value="onChange"
         />
       </div>
     `,
@@ -200,6 +206,19 @@ export const AnnouncedAsChoices: Story = {
     await expect(group).not.toBeNull()
     await expect(segments(canvasElement)).toHaveLength(3)
     await expect(getChosen(canvasElement)).toBe('Small')
+  },
+}
+
+/** Picking a segment hands on the id of its choice. */
+export const HandsOnThePickedChoice: Story = {
+  args: { onChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    const large = segments(canvasElement).find((one) => one.textContent?.trim() === 'Large')!
+
+    await userEvent.click(large)
+    await expect(args.onChange).toHaveBeenCalledTimes(1)
+    await expect(args.onChange).toHaveBeenCalledWith('large')
+    await expect(getChosen(canvasElement)).toBe('Large')
   },
 }
 

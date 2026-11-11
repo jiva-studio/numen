@@ -6,7 +6,7 @@
  * beside it and the keyboard reaching it.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, fn, userEvent, waitFor } from 'storybook/test'
 import { ref } from 'vue'
 import Switch from './Switch.vue'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
@@ -17,6 +17,7 @@ interface Knobs {
   isOn: boolean
   isDisabled: boolean
   label: string
+  onChange?: (value: boolean) => void
 }
 
 const meta: Meta<Knobs> = {
@@ -33,13 +34,17 @@ const meta: Meta<Knobs> = {
     components: { Switch },
     setup: () => {
       const isOn = ref(args.isOn)
-      return { args, isOn }
+      const onChange = (value: boolean): void => {
+        isOn.value = value
+        args.onChange?.(value)
+      }
+      return { args, isOn, onChange }
     },
     // A switch is not a form control, so a label around it is empty: the
     // words beside it are pointed at instead, which is how a window does it.
     template: `
       <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem; inline-size: 20rem">
-        <Switch v-model="isOn" :is-disabled="args.isDisabled" aria-labelledby="switch-label" />
+        <Switch :model-value="isOn" :is-disabled="args.isDisabled" aria-labelledby="switch-label" @update:model-value="onChange" />
         <span id="switch-label" style="min-inline-size: 0; overflow-wrap: anywhere">{{ args.label }}</span>
       </div>
     `,
@@ -60,6 +65,21 @@ export const ASwitch: Story = {}
 
 /** A switch that is off. */
 export const Off: Story = { args: { isOn: false } }
+
+/** Each press hands on the state it turns the switch to. */
+export const HandsOnTheNewState: Story = {
+  args: { isOn: false, onChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    const control = getSwitch(canvasElement)
+
+    await userEvent.click(control)
+    await expect(args.onChange).toHaveBeenLastCalledWith(true)
+
+    await userEvent.click(control)
+    await expect(args.onChange).toHaveBeenLastCalledWith(false)
+    await expect(args.onChange).toHaveBeenCalledTimes(2)
+  },
+}
 
 /** A switch that cannot be toggled. */
 export const Disabled: Story = { args: { isDisabled: true } }
