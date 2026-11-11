@@ -5,7 +5,6 @@ export interface PopoverPlacementOptions {
   readonly at: { readonly x: number; readonly y: number }
   readonly popoverSize: { readonly width: number; readonly height: number }
   readonly containerSize: { readonly width: number; readonly height: number }
-  /** The size that stands in for a container with no measure. */
   readonly windowSize?: { readonly width: number; readonly height: number }
   readonly margin?: number
   readonly gap?: number

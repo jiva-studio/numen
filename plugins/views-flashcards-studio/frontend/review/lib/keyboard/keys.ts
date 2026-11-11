@@ -18,7 +18,6 @@ export interface KeyPress {
   readonly target: object | null
 }
 
-/** Whether the key was pressed into something being written in. */
 const isTyping = (press: KeyPress): boolean => {
   const { target } = press
   if (!target) return false
@@ -58,10 +57,7 @@ export const READ_KEY = 'r'
  * into a question and space or enter on a button the focus has moved to answer
  * nothing.
  */
-export function getSessionKeyIntent(
-  press: KeyPress,
-  screen: ScreenState,
-): SessionKeyIntent | null {
+export function getSessionKeyIntent(press: KeyPress, screen: ScreenState): SessionKeyIntent | null {
   // A field also receives the overlay key: control and A selects the text it
   // contains.
   if (isTyping(press)) return press.key === 'Escape' ? { does: 'shut' } : null
