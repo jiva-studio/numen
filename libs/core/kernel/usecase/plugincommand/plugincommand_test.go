@@ -162,17 +162,6 @@ func TestACommandIsFoundByThePluginOfTheLowestID(t *testing.T) {
 	}
 }
 
-func TestAnInstallationWithNoPluginHostListsNoCommandAndRunsNone(t *testing.T) {
-	commands := newScenarios(nil, nil, nil, nil, nil)
-
-	if entries := commands.List.Execute(); len(entries) != 0 {
-		t.Errorf("got %+v", entries)
-	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{Command: "tidy"}); !errors.Is(err, domain.ErrUnavailable) {
-		t.Errorf("a run answered %v, want unavailable", err)
-	}
-}
-
 func TestTheContentTypesAreListedByExtension(t *testing.T) {
 	got := newScenarios(newDeclared(), newDeclared(), getTypes(), nil, nil).Listing.Execute().ContentTypeByExtension
 

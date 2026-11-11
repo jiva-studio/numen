@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
@@ -48,11 +47,6 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	err = q.db.QueryRowContext(ctx, summarySQL, vault, vault).Scan(&s.Notes, &s.Headings)
 	return s, err
 }
-
-// Statements exposes the SQL this package runs, so a test can ask the database
-// how it plans to execute each statement. A package cannot check a plan about
-// itself: it needs a migrated database, which lives one level up.
-func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
 
 // GetNamedPaths is every note filed under one name. A name that answers for
 // more than one note is what makes a link written by that name ambiguous, and

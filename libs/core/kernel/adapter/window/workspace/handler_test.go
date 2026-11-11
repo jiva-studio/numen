@@ -38,10 +38,7 @@ func (s showing) GetCurrentVault() domain.Vault { return s.vault }
 
 func newHandlerOver(t *testing.T, window showing, store memoryTabs) *Handler {
 	t.Helper()
-	links, err := tablinks.New(LinkGrace, scheduleNothing, newLinkEvents())
-	if err != nil {
-		t.Fatal(err)
-	}
+	links := tablinks.New(LinkGrace, scheduleNothing, newLinkEvents())
 	return NewHandler(window, window.Notices, window, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links)
 }
 

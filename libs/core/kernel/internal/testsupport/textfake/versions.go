@@ -21,15 +21,9 @@ type TextVersions struct {
 func NewTextVersions(
 	stores textport.VersionStores, files textport.TextFileStores, plugins textport.TextPlugins,
 	readers vaultport.VaultReaders, clock machineport.Clock,
-) (*TextVersions, error) {
-	texts, err := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), clock)
-	if err != nil {
-		return nil, err
-	}
+) *TextVersions {
+	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), clock)
 	changes := textversion.NewChanges(texts)
-	versions, err := textversion.NewVersions(stores, files, plugins, clock, changes)
-	if err != nil {
-		return nil, err
-	}
-	return &TextVersions{Versions: versions, Texts: texts, Changes: changes}, nil
+	versions := textversion.NewVersions(stores, files, plugins, clock, changes)
+	return &TextVersions{Versions: versions, Texts: texts, Changes: changes}
 }

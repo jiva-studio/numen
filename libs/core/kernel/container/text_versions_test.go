@@ -11,8 +11,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -87,10 +87,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	a := assemble(cfg, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
@@ -125,10 +122,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	a := assemble(cfg, versions)
 	readIntoIndex(t, a, db, v)
 	if _, err := db.DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
@@ -161,10 +155,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	a := assemble(cfg, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
@@ -202,10 +193,7 @@ func newTalkIndex(t *testing.T) (pluginsWiring, *Index, domain.Vault, domain.Tex
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := newTextVersions(vaultOf(cfg), db)
 	a := assemble(cfg, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
@@ -365,10 +353,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	texts, err := newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	texts := newTextVersions(vaultOf(cfg), db)
 	a := assemble(cfg, texts)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
@@ -385,10 +370,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	texts, err = newTextVersions(vaultOf(cfg), db)
-	if err != nil {
-		t.Fatal(err)
-	}
+	texts = newTextVersions(vaultOf(cfg), db)
 	a = assemble(cfg, texts)
 	readIntoIndex(t, a, db, v)
 

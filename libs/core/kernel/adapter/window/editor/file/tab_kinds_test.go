@@ -13,8 +13,8 @@ import (
 
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	pluginentries "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
@@ -46,10 +46,7 @@ func (notesOnly) ListExtensions(domain.ContentType) []string { return []string{"
 func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewindow.Handler {
 	t.Helper()
 	open := window{vault: vaultfixture.NewVault(t, notes)}
-	choose, err := tabkind.NewChoose(kinds, notesOnly{}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	choose := tabkind.NewChoose(kinds, notesOnly{}, nil)
 	readers := vaultreader.Readers{}
 	fileKinds := file.NewGetFileKinds(readers, nil)
 	return filewindow.NewHandler(

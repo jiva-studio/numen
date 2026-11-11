@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
@@ -56,17 +55,9 @@ type Bus struct {
 	isClosed         bool
 	inFlight         sync.WaitGroup
 	clock            machineport.Clock
-	delay            machine.Delay
 	keyExtractor     KeyExtractor
 	debounceRules    []DebounceRule
 	errorHandler     ErrorHandler
-}
-
-// WithDelay sets the delay port used for scheduling timers.
-func WithDelay(delay machine.Delay) Option {
-	return func(b *Bus) {
-		b.delay = delay
-	}
 }
 
 // WithKeyExtractor sets the key extractor used for debounce grouping.
@@ -109,7 +100,6 @@ func New(host Trigger, clock machineport.Clock, debounceDelay, throttleInterval 
 		isClosed:         false,
 		inFlight:         sync.WaitGroup{},
 		clock:            clock,
-		delay:            nil,
 		keyExtractor:     nil,
 		debounceRules:    nil,
 		errorHandler:     nil,
@@ -118,13 +108,6 @@ func New(host Trigger, clock machineport.Clock, debounceDelay, throttleInterval 
 		opt(bus)
 	}
 	return bus
-}
-
-// SetDelay sets the delay port used for scheduling timers.
-func (b *Bus) SetDelay(delay machine.Delay) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	b.delay = delay
 }
 
 // SetKeyExtractor sets the key extractor used for debounce grouping.
@@ -153,9 +136,6 @@ func (b *Bus) getNow() time.Time {
 }
 
 func (b *Bus) scheduleDelay(d time.Duration, f func()) func() bool {
-	if b.delay != nil {
-		return b.delay(d, f)
-	}
 	t := time.AfterFunc(d, f)
 	return t.Stop
 }

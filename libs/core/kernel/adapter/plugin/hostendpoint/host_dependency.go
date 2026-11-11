@@ -39,7 +39,7 @@ func (e *dependencyEndpoint) begin(header http.Header) (Dependencies, error) {
 	if _, err := e.endpoint.authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
 	}
-	catalog := e.endpoint.callers.Dependencies.GetDependencies()
+	catalog := e.endpoint.callers.Dependencies()
 	if catalog == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoDependencies)
 	}

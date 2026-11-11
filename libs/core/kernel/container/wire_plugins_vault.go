@@ -3,8 +3,6 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
@@ -34,11 +32,7 @@ type PluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Notes      NoteScenarios
-}
-
-func hasReaders(notes NoteScenarios) bool {
-	return notes.Place.Move.IsConfigured()
+	Notes      *NoteScenarios
 }
 
 func getNoteChanges(notes NoteScenarios) hostvault.NoteChanges {
@@ -105,7 +99,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
 			Index:       index,
-			Locks:       hold.NewLocks(writeLocks(c.vault), clock.System{}, hold.LockHold),
+			Locks:       hold.NewLocks(writeLocks(c.vault), hold.LockHold),
 		},
 		hostvault.Lookups{
 			Notes:      db.NoteQueries(),
@@ -129,15 +123,15 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	scenarios NoteScenarios, db *Index, window NoteScenarios, current func() (domain.Vault, bool),
+	scenarios NoteScenarios, db *Index, window *NoteScenarios, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(scenarios),
 		Checks:   getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
 		Problems: db.NoteProblems(),
 	}
-	if hasReaders(window) {
-		arranger.Window, arranger.WindowVault = getNoteChanges(window), current
+	if window != nil {
+		arranger.Window, arranger.WindowVault = getNoteChanges(*window), current
 	}
 	return arranger
 }
@@ -213,12 +207,7 @@ func watchPluginChanges(c pluginsWiring) (<-chan struct{}, func()) {
 }
 
 func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
-	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
-	if err != nil {
-		c.settings.ErrorHandler(err)
-		return nil
-	}
-	return choose
+	return tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
 }
 
 func openVersionItems(c pluginsWiring) *textversion.VersionItems {
@@ -226,12 +215,7 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 		return nil
 	}
 	run := newPluginCommands(c, c.RunningHost, nil).Run
-	items, err := textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.RunningHost.Watch)
-	if err != nil {
-		c.settings.ErrorHandler(err)
-		return nil
-	}
-	return items
+	return textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.RunningHost.Watch)
 }
 
 func openTriggers(c pluginsWiring) *trigger.Triggers {

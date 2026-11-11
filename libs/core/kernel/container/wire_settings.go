@@ -244,11 +244,7 @@ func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *sett
 }
 
 func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*plugindomain.Failure, error)) *settingsusecase.RetryPlugin {
-	retry, err := settingsusecase.NewRetryPlugin(retrier)
-	if err != nil {
-		return nil
-	}
-	return retry
+	return settingsusecase.NewRetryPlugin(retrier)
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {

@@ -33,7 +33,7 @@ func NewEvictor(stopper idleStopper) *Evictor {
 				return
 			case <-e.ticker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), evictTimeout)
-				_ = e.stopper.EvictIdle(ctx, IdleThreshold, stopPluginGracePeriod)
+				e.stopper.EvictIdle(ctx, IdleThreshold, stopPluginGracePeriod)
 				cancel()
 			}
 		}

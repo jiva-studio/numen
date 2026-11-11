@@ -58,9 +58,6 @@ func NewMove(d MoveDeps) Move {
 	}
 }
 
-// IsConfigured reports whether the move was made by NewMove.
-func (u Move) IsConfigured() bool { return u.readers != nil }
-
 func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
 	res := domain.MoveResult{From: from, To: to}
 	if from == to {

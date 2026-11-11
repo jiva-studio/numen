@@ -68,7 +68,7 @@ func NewHandler(
 }
 
 // NewLinks is the registry of the tab links of one window.
-func NewLinks() (*tablinks.Tabs, error) {
+func NewLinks() *tablinks.Tabs {
 	return tablinks.New(LinkGrace, scheduleAfter, newLinkEvents())
 }
 

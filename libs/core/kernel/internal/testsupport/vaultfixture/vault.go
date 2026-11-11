@@ -1,4 +1,3 @@
-// Package vaultfixture writes vaults, books and database templates on disk for tests.
 package vaultfixture
 
 import (

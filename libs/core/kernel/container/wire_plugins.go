@@ -41,10 +41,7 @@ func openPluginWork(
 	c Config, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
 ) (pluginsWiring, *run.PluginWork, error) {
 	setPluginVaultPath(plugins(c), v.Path)
-	texts, err := newTextVersions(vaultOf(c), db)
-	if err != nil {
-		return pluginsWiring{}, nil, err
-	}
+	texts := newTextVersions(vaultOf(c), db)
 	a := assemble(c, texts)
 	if err := installCurrentVault(a, c, db, v); err != nil {
 		return pluginsWiring{}, nil, err
@@ -187,16 +184,16 @@ func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,
-		Completion: services, Vault: services, Texts: services, Search: services, Window: services, Work: services,
-		Dependencies: hostendpoint.DependencySourceFunc(func() hostendpoint.Dependencies {
+		Lent: services,
+		Dependencies: func() hostendpoint.Dependencies {
 			if registry := host.Services.GetDependencies(); registry != nil {
 				return registry
 			}
 			return nil
-		}),
-		Tools: hostendpoint.ToolSourceFunc(func() hostendpoint.PluginTools {
+		},
+		Tools: func() hostendpoint.PluginTools {
 			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
-		}),
+		},
 	}))
 	return services
 }

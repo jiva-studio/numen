@@ -29,7 +29,7 @@ libs/core/kernel/                       the hexagon
 │   │   └── (one folder per other technology: provision, models, onnxruntime, appstate)
 │   ├── adapterlib/              code several adapters share and that is not a port (retry, watchhub, wire)
 │   ├── chunking, vector, text   pure helpers of the core that no application names
-│   └── testsupport/, testonly/  helpers for tests
+│   └── testsupport/             helpers for tests
 └── container/                   the composition root: one package, wiring only
 
 apps/desktop/                    thin shells

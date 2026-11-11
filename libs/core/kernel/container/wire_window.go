@@ -215,17 +215,13 @@ func newFileServer(a pluginsWiring, state *editor.State, cases WindowUseCases) *
 }
 
 func startWindow(ctx context.Context, w *windowWiring, first domain.Vault) error {
-	if err := mountServices(w); err != nil {
-		return err
-	}
+	mountServices(w)
 	return w.inst.Start(ctx, first, w.server)
 }
 
-func mountServices(w *windowWiring) error {
+func mountServices(w *windowWiring) {
 	mountVault(w)
-	if err := mountWorkspace(w); err != nil {
-		return err
-	}
+	mountWorkspace(w)
 	mountWindowState(w)
 	mountFile(w)
 	mountNote(w)
@@ -238,7 +234,6 @@ func mountServices(w *windowWiring) error {
 	mountText(w)
 	mountPlugin(w)
 	mountCatalog(w)
-	return nil
 }
 
 func windowView(state *editor.State) windowsession.View {
