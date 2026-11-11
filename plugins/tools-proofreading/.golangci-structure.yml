@@ -10,7 +10,7 @@
 # exhaustruct applies to the core identity types and to every struct of a plugin
 # (matched by the plugin module path, which holds wherever the plugin is checked
 # out). Plugin directories and libs/plugin/sdk-go carry byte-identical copies of
-# this file; tools/lint-layers verifies the copies.
+# this file; tools/checks verifies the copies.
 #
 # Run from the directory of a module: golangci-lint run -c <path to this file> ./...
 

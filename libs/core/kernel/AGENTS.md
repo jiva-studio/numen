@@ -9,7 +9,7 @@ and the corresponding tests enforcing them.
 
 ## Layer boundaries and dependency direction
 
-`container/layers_test.go` and `container/direction_test.go` enforce these boundaries.
+The checks `go/layers` and `go/direction` of `tools/checks/structure/go` enforce these boundaries (`make checks ONLY=go/layers,go/direction`).
 Each test verifies adherence to structural rules.
 
 | The rule                                                                      | The test                                           |

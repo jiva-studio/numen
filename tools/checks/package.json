@@ -16,6 +16,6 @@
   },
   "scripts": {
     "check": "node run.mjs",
-    "test": "node --test registry.test.mjs lib/*.test.mjs structure/ts/*/*.test.mjs docs/*/*.test.mjs style/*/*.test.mjs"
+    "test": "node --test lib/*.test.mjs structure/ts/*/*.test.mjs docs/*/*.test.mjs style/*/*.test.mjs"
   }
 }

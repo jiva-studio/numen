@@ -934,7 +934,18 @@
     {
       "name": "ts/app-logic",
       "paths": [
-        "**"
+        "apps/**/*.ts",
+        "apps/**/*.vue",
+        "apps/**/index.ts",
+        "apps/**/package.json",
+        "libs/**/*.ts",
+        "libs/**/*.vue",
+        "libs/**/index.ts",
+        "libs/**/package.json",
+        "plugins/**/*.ts",
+        "plugins/**/*.vue",
+        "plugins/**/index.ts",
+        "plugins/**/package.json"
       ],
       "tags": [
         "structure",
@@ -950,7 +961,11 @@
     {
       "name": "ts/core-client",
       "paths": [
-        "**"
+        "apps/**/package.json",
+        "libs/**/package.json",
+        "plugins/**/package.json",
+        "tests/**/package.json",
+        "tools/**/package.json"
       ],
       "tags": [
         "structure",
@@ -966,7 +981,18 @@
     {
       "name": "ts/dependency-graph",
       "paths": [
-        "**"
+        "apps/**/*.{ts,vue,json,js,mjs}",
+        "apps/**/package.json",
+        "apps/**/tsconfig.json",
+        "libs/**/*.{ts,vue,json,js,mjs}",
+        "libs/**/package.json",
+        "libs/**/tsconfig.json",
+        "package.json",
+        "plugins/**/*.{ts,vue,json,js,mjs}",
+        "plugins/**/package.json",
+        "plugins/**/tsconfig.json",
+        "tools/lint-layers/dependency-cruiser.mjs",
+        "tsconfig.base.json"
       ],
       "tags": [
         "structure",
@@ -990,7 +1016,6 @@
       "tags": [
         "structure",
         "ts",
-        "go",
         "gate",
         "fast"
       ],
@@ -1002,7 +1027,16 @@
     {
       "name": "ts/frontend-graph",
       "paths": [
-        "**"
+        "apps/**/*.ts",
+        "apps/**/*.vue",
+        "apps/**/index.ts",
+        "apps/**/package.json",
+        "apps/**/tsconfig.json",
+        "libs/**/package.json",
+        "libs/**/tsconfig.json",
+        "plugins/**/package.json",
+        "plugins/**/tsconfig.json",
+        "tsconfig.base.json"
       ],
       "tags": [
         "structure",
@@ -1018,7 +1052,9 @@
     {
       "name": "ts/frontend-layout",
       "paths": [
-        "**"
+        "apps/**",
+        "libs/**",
+        "plugins/**"
       ],
       "tags": [
         "structure",
@@ -1036,12 +1072,13 @@
     {
       "name": "ts/libraries",
       "paths": [
-        "**"
+        "libs/**/*.go",
+        "libs/**/go.mod",
+        "libs/**/package.json"
       ],
       "tags": [
         "structure",
         "ts",
-        "go",
         "library",
         "gate",
         "fast"
@@ -1054,7 +1091,16 @@
     {
       "name": "ts/lint-config",
       "paths": [
-        "**"
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
       ],
       "tags": [
         "structure",
@@ -1070,12 +1116,24 @@
     {
       "name": "ts/plugins",
       "paths": [
-        "**"
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        ".golangci*.yml",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "plugins/*/.golangci*.yml",
+        "plugins/*/Makefile",
+        "plugins/.example/**",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
       ],
       "tags": [
         "structure",
         "ts",
-        "go",
         "plugin",
         "security",
         "slow"
@@ -1088,7 +1146,7 @@
     {
       "name": "ts/registrations",
       "paths": [
-        "**"
+        "libs/**/*.ts"
       ],
       "tags": [
         "structure",
@@ -1104,7 +1162,11 @@
     {
       "name": "ts/sdk-protocol",
       "paths": [
-        "**"
+        "libs/**/*.ts",
+        "libs/**/index.ts",
+        "libs/**/package.json",
+        "libs/**/tsconfig.json",
+        "tsconfig.base.json"
       ],
       "tags": [
         "structure",
@@ -1120,7 +1182,10 @@
     {
       "name": "ts/stories",
       "paths": [
-        "**"
+        "libs/**/*.ts",
+        "libs/**/*.vue",
+        "libs/**/index.ts",
+        "libs/**/vite.config.ts"
       ],
       "tags": [
         "structure",
@@ -1136,7 +1201,16 @@
     {
       "name": "ts/story-lint",
       "paths": [
-        "**"
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
       ],
       "tags": [
         "structure",
@@ -1152,7 +1226,17 @@
     {
       "name": "ts/styles",
       "paths": [
-        "**"
+        "**/*.{css,vue}",
+        "apps/**/*.css",
+        "apps/**/*.vue",
+        "libs/**/*.css",
+        "libs/**/*.vue",
+        "package.json",
+        "package.yaml",
+        "plugins/**/*.css",
+        "plugins/**/*.vue",
+        "stylelint.config.mjs",
+        "tools/lint-layers/stylelint-plugin.mjs"
       ],
       "tags": [
         "style",
@@ -1169,7 +1253,16 @@
     {
       "name": "ts/ts-packages-eslint",
       "paths": [
-        "**"
+        "**/eslint.config.{js,mjs}",
+        "**/package.json",
+        "**/tsconfig*.json",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue,js,mjs}",
+        "tests/**/*.{ts,js}",
+        "tools/**/*.mjs",
+        "tools/eslint.config.mjs",
+        "tools/lint-layers/*.mjs"
       ],
       "tags": [
         "structure",
@@ -1199,7 +1292,10 @@
     {
       "name": "docs/paths-exist",
       "paths": [
-        "**"
+        ".agents/**/*.md",
+        "AGENTS.md",
+        "apps/**/AGENTS.md",
+        "libs/**/AGENTS.md"
       ],
       "tags": [
         "docs",
@@ -1222,7 +1318,6 @@
       "tags": [
         "structure",
         "ts",
-        "go",
         "plugin",
         "fast"
       ],
@@ -1244,7 +1339,6 @@
       "tags": [
         "structure",
         "ts",
-        "go",
         "slow"
       ],
       "selftest": "structure/ts/duplication/check.mjs",
@@ -1263,7 +1357,6 @@
       "tags": [
         "style",
         "ts",
-        "go",
         "fast"
       ],
       "selftest": "style/comments/check.test.mjs",
@@ -1286,7 +1379,6 @@
       "tags": [
         "style",
         "ts",
-        "go",
         "docs",
         "fast"
       ],

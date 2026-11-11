@@ -9,7 +9,7 @@ paths:
 
 A window is a thin shell. It composes plugins and libraries, routes requests to the core through `@numen/core-client`, and holds little logic of its own. The business logic of a capability belongs to the core or to a plugin. A small piece of window-specific logic may live in the window, for example where flashcards live, which the flashcards window decides when it picks the vault its tab opens on.
 
-The window is organized as Feature-Sliced Design. This skill says where each kind of code goes and how a slice is shaped. The structural checks refuse some wrong places; the rest is judgement, and the last section says how to make it. The rules are in `.agents/rules/architecture.md` §4 and §10 and in `.agents/rules/coding-style-frontend.md`; the checks are in `tools/lint-layers/`. Sibling files: [`examples.md`](examples.md) holds worked examples of the target shape, [`checks.md`](checks.md) lists each check by what it forbids.
+The window is organized as Feature-Sliced Design. This skill says where each kind of code goes and how a slice is shaped. The structural checks refuse some wrong places; the rest is judgement, and the last section says how to make it. The rules are in `.agents/rules/architecture.md` §4 and §10 and in `.agents/rules/coding-style-frontend.md`; the checks are in `tools/checks/` and the ESLint rules in `tools/lint-layers/`. Sibling files: [`examples.md`](examples.md) holds worked examples of the target shape, [`checks.md`](checks.md) lists each check by what it forbids.
 
 ## The layers
 

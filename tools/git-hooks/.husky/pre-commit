@@ -52,14 +52,14 @@ if [ -n "$FRONTEND_STAGED" ] && [ -x "$root/node_modules/.bin/eslint" ]; then
 fi
 
 # 5. Comments on fields and properties and doc comments on unexported functions in staged files
-if ! COMMENTS_REPORT=$(node "$root/tools/lint-comments/check.mjs" --staged 2>&1); then
+if ! COMMENTS_REPORT=$(node "$root/tools/checks/style/comments/check.mjs" --staged 2>&1); then
   echo "$COMMENTS_REPORT"
   echo "❌ Error: staged files contain comments that the name and type already state (see AGENTS.md §1)."
   exit 1
 fi
 
 # 6. Narrative identifiers, test names and comments in staged files
-if ! NARRATIVE_REPORT=$(node "$root/tools/lint-narrative/scan.mjs" "$root" --staged --check 2>&1); then
+if ! NARRATIVE_REPORT=$(node "$root/tools/checks/style/names/check.mjs" "$root" --staged --check 2>&1); then
   echo "$NARRATIVE_REPORT"
   echo "❌ Error: staged files contain narrative identifiers, test names or comments (see AGENTS.md §13)."
   exit 1

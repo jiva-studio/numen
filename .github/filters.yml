@@ -98,6 +98,7 @@ core:
   - tests/vault/**
   - plugins/*/manifest.json
   - tools/build-plugin-index/**
+  - tools/checks/structure/go/**
   - '!**/*.md'
 protocol:
   - *ci_router

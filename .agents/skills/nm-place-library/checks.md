@@ -1,6 +1,6 @@
 # What the checks enforce
 
-Each entry names what the check forbids. The registered verifiers are printed by `node tools/lint-layers/check.mjs --list`; the rules are in `tools/lint-layers/` and the `eslint.config.js` of each package.
+Each entry names what the check forbids. The registered checks are printed by `make checks LIST=1` and run with `make checks TAGS=library`; the rules are in `tools/checks/`, `tools/lint-layers/` and the `eslint.config.js` of each package.
 
 A red check is fixed in the code, not by changing the check or moving code out of its sight.
 
