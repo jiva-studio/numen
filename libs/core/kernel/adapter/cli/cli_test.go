@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 

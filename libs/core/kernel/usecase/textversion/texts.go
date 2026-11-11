@@ -2,7 +2,6 @@ package textversion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,11 +30,8 @@ type Texts struct {
 func NewTexts(
 	stores textport.VersionStores, files textport.TextFileStores, readers vaultport.VaultReaders, notes NoteReader,
 	clock machineport.Clock,
-) (*Texts, error) {
-	if stores == nil || files == nil || readers == nil || notes == nil || clock == nil {
-		return nil, errors.New("texts need version stores, files, vault readers, a note reader and a clock")
-	}
-	return &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, notes: notes}}, nil
+) *Texts {
+	return &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, notes: notes}}
 }
 
 // FindLive lists the versions recorded for the file at the path and finds the live one among them, for

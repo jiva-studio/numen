@@ -2,7 +2,6 @@ package textversion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -25,11 +24,8 @@ type versionDeleter interface {
 
 // NewPluginData is the plugin folders opened through stores, with the text
 // versions recorded in versions.
-func NewPluginData(versions *Versions, stores pluginport.PluginStores) (*PluginData, error) {
-	if versions == nil || stores == nil {
-		return nil, errors.New("plugin data needs text versions and plugin stores")
-	}
-	return &PluginData{versions: versions, stores: stores}, nil
+func NewPluginData(versions *Versions, stores pluginport.PluginStores) *PluginData {
+	return &PluginData{versions: versions, stores: stores}
 }
 
 // GetPluginData is the size of the plugin's folder in the vault.

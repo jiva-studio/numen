@@ -2,7 +2,6 @@
 package tabkind
 
 import (
-	"errors"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -23,11 +22,8 @@ type Choose struct {
 
 // NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
 // settings a condition reads as config, which may be none. It needs the tab kinds and the table.
-func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) (*Choose, error) {
-	if kinds == nil || types == nil {
-		return nil, errors.New("the choice of a tab kind needs the tab kinds and the content type table")
-	}
-	return &Choose{kinds: kinds, types: types, config: config, conditions: when.NewConditions()}, nil
+func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *Choose {
+	return &Choose{kinds: kinds, types: types, config: config, conditions: when.NewConditions()}
 }
 
 // Execute gives the kind of tab the note at the path opens in: of the kinds whose when condition

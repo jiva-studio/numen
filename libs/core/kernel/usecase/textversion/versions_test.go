@@ -68,10 +68,7 @@ func newScene(t *testing.T) *scene {
 		}}
 	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
 	readers := readCounter{fileReaders: s.files, reads: &s.reads}
-	versions, err := textfake.NewTextVersions(s.repo, s.folders, s.plugins, readers, steppingClock())
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := textfake.NewTextVersions(s.repo, s.folders, s.plugins, readers, steppingClock())
 	s.versions = versions
 	versions.Changes.SetListener(s.listener)
 	for _, p := range []*fakeProvider{s.reader, s.ocr, s.fixer} {

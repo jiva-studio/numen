@@ -54,10 +54,7 @@ func TestDeletePluginDataRemovesTheFolderAndTheRecords(t *testing.T) {
 	s.requestText(t)
 	s.runEntry(t, ocr)
 	s.listener.take()
-	data, err := textversion.NewPluginData(s.versions.Versions, folderStores{files: s.folders})
-	if err != nil {
-		t.Fatal(err)
-	}
+	data := textversion.NewPluginData(s.versions.Versions, folderStores{files: s.folders})
 	size, err := data.GetPluginData(t.Context(), s.vault, ocr)
 	if err != nil || size.FileCount != 1 || size.ByteCount == 0 {
 		t.Fatalf("the recognizer's folder holds %+v (%v), want one file", size, err)
@@ -82,11 +79,5 @@ func TestDeletePluginDataRemovesTheFolderAndTheRecords(t *testing.T) {
 	}
 	if got := s.listener.take(); !slices.Equal(got, []string{scanPath}) {
 		t.Fatalf("deleting the data reported %v, want one change of %s", got, scanPath)
-	}
-}
-
-func TestNewPluginDataRequiresVersionsAndStores(t *testing.T) {
-	if _, err := textversion.NewPluginData(nil, folderStores{}); err == nil {
-		t.Fatal("plugin data was made without text versions")
 	}
 }

@@ -19,7 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -59,10 +59,7 @@ func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open window
 
 func newWorkspace(t *testing.T, state *State) *workspace.Handler {
 	t.Helper()
-	links, err := workspace.NewLinks()
-	if err != nil {
-		t.Fatal(err)
-	}
+	links := workspace.NewLinks()
 	store := memoryTabs{}
 	return workspace.NewHandler(state, state.Notices, state, vaults.NewWriteOpenTabs(store), vaults.NewReadOpenTabs(store), links)
 }

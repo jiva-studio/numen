@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"

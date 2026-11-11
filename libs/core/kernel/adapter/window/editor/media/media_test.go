@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
