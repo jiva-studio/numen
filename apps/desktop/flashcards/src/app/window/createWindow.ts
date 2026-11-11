@@ -5,6 +5,7 @@
  * them, then the host the services are given to.
  */
 import { onUnmounted } from 'vue'
+import { loadWailsRuntime } from '@/shared/api/wailsRuntime'
 import {
   createPluginLoader,
   createWindowHost,
@@ -31,7 +32,7 @@ export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
 export function createWindow(deps: WindowDeps = {}) {
   const notices = createNoticeQueue()
   const tabs = createWindowTabs()
-  const frame = useWindowFrame()
+  const frame = useWindowFrame(loadWailsRuntime)
   const windowAgent = createWindowAgent()
   const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
   const { host, mountView, titleBarView } = createShellHost({

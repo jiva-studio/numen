@@ -4,12 +4,7 @@
  * tests) gets a frame that does nothing.
  */
 import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
-import {
-  loadWailsRuntime,
-  runInBackground,
-  type WailsRuntime,
-  type WailsRuntimeLoader,
-} from '@numen/ui'
+import { runInBackground } from '@numen/ui'
 import {
   getWindowEdge as getTopEdge,
   getWindowRadius,
@@ -20,11 +15,26 @@ import {
 } from '../lib/corners'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
 
-/** The part of the Wails runtime module the frame uses, under the names Wails gives it. */
-export type FrameRuntime = WailsRuntime
+/** The part of the runtime of the desktop shell the frame uses, under the names the shell gives it. */
+export interface FrameRuntime {
+  readonly Window?: {
+    readonly Focus?: () => Promise<void>
+    readonly Minimise?: () => Promise<void>
+    readonly ToggleMaximise?: () => Promise<void>
+    readonly Close?: () => Promise<void>
+    readonly IsMaximised?: () => Promise<boolean>
+    readonly IsFullscreen?: () => Promise<boolean>
+  }
+  readonly System?: {
+    readonly IsMac?: () => boolean
+    readonly IsWindows?: () => boolean
+    readonly IsLinux?: () => boolean
+    readonly Environment?: () => Promise<{ readonly OSInfo?: { readonly Version?: string } }>
+  }
+}
 
-/** Loads the runtime module; resolves to undefined where the page is not served by Wails. */
-export type FrameRuntimeLoader = WailsRuntimeLoader
+/** Loads the runtime module; resolves to undefined where the page is not served by the desktop shell. */
+export type FrameRuntimeLoader = () => Promise<FrameRuntime | undefined>
 
 /** The room the system buttons take in the top corners of the window, in pixels. */
 export interface FrameEdge {
@@ -68,10 +78,10 @@ async function readMacVersion(system: FrameRuntime['System']): Promise<number | 
 }
 
 /**
- * The frame of the window this page is drawn in, read through the Wails runtime: its platform, its
+ * The frame of the window this page is drawn in, read through the runtime the shell loads: its platform, its
  * maximized and full screen state, which a resize reads again, and its buttons.
  */
-export function useWindowFrame(load: FrameRuntimeLoader = loadWailsRuntime): WindowFrame {
+export function useWindowFrame(load: FrameRuntimeLoader): WindowFrame {
   const platform = ref<WindowPlatform>('windows')
   const isMaximized = ref(false)
   const isFullscreen = ref(false)

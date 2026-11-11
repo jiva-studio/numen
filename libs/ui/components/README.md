@@ -8,7 +8,7 @@ Interface components shared by the desktop and mobile clients.
 
 **A component here uses nothing from the application and says nothing of its domain.** No import from the application's domain, no wire types, nothing from `apps/**` — not in the components, not in the stories, not in the fixtures — and no domain word in a name, a prop, an event or a story: a component says `tree`, `menu`, `row`, `slot`, `item`, never `vault` or `note`. A component takes props it defines itself and emits events with opaque identifiers; whoever renders it maps its domain onto these general words and maps the identifier back. The window (or `@numen/workbench`) that draws a list of vaults passes it as `items` of a `tree` or a `menu`.
 
-The dependency runs one way: `apps/*` depends on `libs/ui/components`. Never the reverse, and never sideways. `@numen/ui` is a published package with a versioned public contract, so its names are general ones that a consumer outside this repository can use.
+The dependency runs one way: `apps/*` depends on `libs/ui/components`. Never the reverse, and never sideways. `@numen/ui` is a private package (`"private": true`, on no registry) whose public contract plugins build on, so its names are general ones. It holds no code of the desktop shell or of a domain, so its names stay general: the Wails runtime, and what loads or calls it, belongs to the window that is served by Wails.
 
 ## Working on it
 

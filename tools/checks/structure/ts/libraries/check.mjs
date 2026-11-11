@@ -15,17 +15,28 @@ import {
 /** The path of the matrix both the library check and the import graph read. */
 export const LIBRARY_MATRIX_FILE = path.join(path.dirname(new URL(import.meta.url).pathname), "library-matrix.json");
 
-/** Reads the matrix: the Go families and the TypeScript packages, each with the ones it may depend on. */
+/**
+ * Reads the matrix, which the file keys by the directory of each library: the Go families by directory, each with the
+ * families it may depend on, and the TypeScript packages by directory, each with its package name and the directories
+ * it may depend on. The `packages` of the result are keyed by package name, which is how a package is imported.
+ */
 export function readLibraryMatrix(file = LIBRARY_MATRIX_FILE) {
-  return JSON.parse(fs.readFileSync(file, "utf8"));
+  const matrix = JSON.parse(fs.readFileSync(file, "utf8"));
+  const nameOf = (dir) => {
+    const row = matrix.packages[dir];
+    if (!row) throw new Error(`the package matrix lists ${dir} as a dependency and has no row for it`);
+    return row.name;
+  };
+  const packages = Object.fromEntries(Object.values(matrix.packages).map((row) => [row.name, row.dependsOn.map(nameOf)]));
+  return { go: matrix.go, packages };
 }
 
 /**
  * The Go libraries and the libraries each one may depend on, from `library-matrix.json`.
  *
- * A library is a directory under `libs/` that holds a `go.mod`. Its family is the path under `libs/` of the
- * outermost library that contains it: `libs/plugin/sdk-go/host` is of the family `plugin/sdk-go` because
- * `libs/plugin/sdk-go` holds a `go.mod` too, and `libs/note` is of the family `note`. The
+ * A library is a directory under `libs/` that holds a `go.mod`. Its family is the directory of the
+ * outermost library that contains it: `libs/plugin/sdk-go/host` is of the family `libs/plugin/sdk-go` because
+ * `libs/plugin/sdk-go` holds a `go.mod` too, and `libs/note` is of the family `libs/note`. The
  * modules of one family may depend on each other. A dependency between two families is allowed only
  * where the matrix lists it, and a family the matrix does not list fails: a new library states its
  * place before it builds.
@@ -37,7 +48,7 @@ export function getFamily(dir, dirs) {
   const outermost = dirs
     .filter((one) => dir === one || dir.startsWith(one + "/"))
     .sort((a, b) => a.length - b.length)[0];
-  return (outermost ?? dir).replace(/^libs\//, "");
+  return outermost ?? dir;
 }
 
 /**
