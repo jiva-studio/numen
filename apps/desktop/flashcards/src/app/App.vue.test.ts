@@ -102,7 +102,10 @@ const MANIFEST = {
   version: '1.0.0',
   frontend: {},
   permissions: ['vault:read', 'vault:write'],
-  contributes: { viewCapabilities: [VAULT_SUMMARY] },
+  contributes: {
+    viewCapabilities: [VAULT_SUMMARY],
+    tabKinds: [{ kind: 'review', title: 'Review' }],
+  },
 }
 
 const serveCore = (

@@ -32,6 +32,7 @@ import {
   disposePluginEntry,
   setStarting,
   type HostRegistry,
+  type RegisteredAgentProvider,
 } from './registry'
 import { createVaultServiceBridge, createWindowServiceBridge } from './bridge/services'
 import type {
@@ -49,8 +50,9 @@ export { createPluginPaneWrapper }
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
-function getSettingsViewKey(pluginId: string, viewId: string): string {
-  return `${pluginId}:${viewId}`
+/** The key of an entry a plugin registers under its own id: two plugins never share one. */
+function getEntryKey(pluginId: string, id: string): string {
+  return `${pluginId}:${id}`
 }
 
 function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): ContextEventHost {
@@ -89,18 +91,19 @@ function createRegistrationBridge(
       return addEntry(holder, fullId, { pluginId, reg: registration })
     },
     registerSettingsView: (pluginId, registration) =>
-      addEntry(registry.settingsViews, getSettingsViewKey(pluginId, registration.id), {
+      addEntry(registry.settingsViews, getEntryKey(pluginId, registration.id), {
         pluginId,
         reg: registration,
       }),
     // Stryker disable all: agentProviders map is internal state for future host provider lookup
     registerAgentProvider: (pluginId, registration) => {
       const entry = { pluginId, reg: registration }
-      registry.agentProviders.set(registration.id, entry)
+      const key = getEntryKey(pluginId, registration.id)
+      registry.agentProviders.set(key, entry)
       return {
         dispose: () => {
-          if (registry.agentProviders.get(registration.id) === entry) {
-            registry.agentProviders.delete(registration.id)
+          if (registry.agentProviders.get(key) === entry) {
+            registry.agentProviders.delete(key)
           }
         },
       }
@@ -197,6 +200,10 @@ function createRegisteredApi(registry: HostRegistry) {
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
+    /** The agent providers of every plugin, each with the plugin that registered it. */
+    getRegisteredAgentProviders: (): RegisteredAgentProvider[] => [
+      ...registry.agentProviders.values(),
+    ],
   }
 }
 

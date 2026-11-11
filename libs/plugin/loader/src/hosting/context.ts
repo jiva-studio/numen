@@ -163,7 +163,11 @@ export function createPluginContext(
       id: pluginId,
       target: host.info.target,
       app: host.info.app,
-      openExternal: createExternalOpener(host.info.openExternal),
+      openExternal: guardService(
+        { openExternal: createExternalOpener(host.info.openExternal) },
+        rules.plugin,
+        { check },
+      ).openExternal,
       subscriptions: subscriptions.view,
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },

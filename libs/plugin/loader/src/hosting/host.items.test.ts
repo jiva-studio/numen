@@ -30,7 +30,11 @@ function createHost() {
   const host = createPluginHost(deps)
   const context = host.lifecycle.createContext(
     TIDE,
-    createMockManifest(TIDE, { name: 'Tide', version: '1' }),
+    createMockManifest(TIDE, {
+      name: 'Tide',
+      version: '1',
+      commands: ['chart.move', 'chart.open', 'chart.share'],
+    }),
   )
   return { host, context }
 }

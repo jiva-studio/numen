@@ -53,7 +53,11 @@ export const registerNoteTabs = (): void => {
   host.lifecycle
     .createContext(
       NOTE_PLUGIN,
-      createMockManifest(NOTE_PLUGIN, { name: 'Notes', permissions: ['vault:read'] }),
+      createMockManifest(NOTE_PLUGIN, {
+        name: 'Notes',
+        permissions: ['vault:read'],
+        tabKinds: [NOTE_TAB],
+      }),
     )
     .register.tabKind(noteTabKind)
 }

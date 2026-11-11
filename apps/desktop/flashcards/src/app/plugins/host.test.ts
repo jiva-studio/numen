@@ -26,8 +26,13 @@ const createMockWindowHost = (): WindowHost => ({
 const withVault = (id: string) =>
   createMockManifest(id, {
     name: id,
-    permissions: ['vault:read', 'vault:write'],
+    permissions: ['vault:read', 'vault:write', 'network:outbound'],
     viewCapabilities: [CONVERSATION, VAULT_SUMMARY],
+    tabKinds: ['unplaced', 'second', 'default-zero', 'negative', 'review', 'fallback'],
+    readers: ['document'],
+    commands: ['open'],
+    settingsViews: ['floor'],
+    capabilities: ['ai.agent.provider'],
   })
 
 const view = (kind: string, order?: number) => ({
@@ -233,10 +238,10 @@ describe('createShellHost', () => {
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
 
-    context.register.reader?.({} as never).dispose()
-    context.register.command?.({} as never).dispose()
-    context.register.agentProvider?.({} as never).dispose()
-    context.register.settingsView?.({} as never).dispose()
+    context.register.reader?.({ id: 'document' } as never).dispose()
+    context.register.command?.({ id: 'open' } as never).dispose()
+    context.register.agentProvider?.({ id: 'helper' } as never).dispose()
+    context.register.settingsView?.({ id: 'floor' } as never).dispose()
     expect(context.settings.get?.('key')).toBeUndefined()
     context.settings.onChange?.('key', () => undefined).dispose()
     context.events.onVaultChange?.(() => undefined).dispose()

@@ -2,6 +2,7 @@
  * A run whose caller awaits it, as a plugin's `context.commands.run`: it rejects with the error of
  * the run and the host reports nothing, so the caller shows the one entry. The plugins are invented.
  */
+import { createMockManifest } from '@numen/core-client/testing'
 import { describe, expect, it, vi } from 'vitest'
 import type { CommandNote } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
@@ -38,7 +39,10 @@ function createHost(hasFrontend: boolean) {
     onError,
   }
   const host = createPluginHost(deps)
-  const context = host.lifecycle.createContext(TIDES)
+  const context = host.lifecycle.createContext(
+    TIDES,
+    createMockManifest(TIDES, { commands: ['tide.read'], handlers: [CREATE] }),
+  )
   const fail = async () => {
     throw new Error('the tide is out')
   }

@@ -57,7 +57,11 @@ describe('closing the tabs of a plugin', () => {
     support.pluginHost.lifecycle
       .createContext(
         'md.numen.a',
-        createMockManifest('md.numen.a', { name: 'md.numen.a', permissions: ['vault:read'] }),
+        createMockManifest('md.numen.a', {
+          name: 'md.numen.a',
+          permissions: ['vault:read'],
+          tabKinds: ['a-kind'],
+        }),
       )
       .register.tabKind({ kind: 'a-kind', component: blank, title: 'A' })
     const id = await windowTabs.tabs.createTab('a-kind', 'x')
@@ -88,7 +92,11 @@ describe('closing the tabs of a plugin', () => {
     support.pluginHost.lifecycle
       .createContext(
         'md.numen.b',
-        createMockManifest('md.numen.b', { name: 'md.numen.b', permissions: ['vault:read'] }),
+        createMockManifest('md.numen.b', {
+          name: 'md.numen.b',
+          permissions: ['vault:read'],
+          tabKinds: ['b-kind'],
+        }),
       )
       .register.tabKind({ kind: 'b-kind', component: blank, title: 'B' })
     const id = await windowTabs.tabs.createTab('b-kind', 'x')
@@ -103,6 +111,7 @@ describe('closing the tabs of a plugin', () => {
 const manifest: Manifest = createMockManifest('md.numen.sample.chat', {
   name: 'Chat',
   permissions: ['vault:read'],
+  tabKinds: ['chat'],
 })
 
 const activate = (context: PluginContext) => {
@@ -207,7 +216,7 @@ describe('the settings and notices a plugin is given', () => {
     })
 
     pluginHost.lifecycle
-      .createContext('md.numen.pdf')
+      .createContext('md.numen.pdf', createMockManifest('md.numen.pdf', { readers: ['document'] }))
       .register.reader({ id: 'document', title: 'Document', component: blank })
 
     expect(registerExtensionReader).toHaveBeenCalledTimes(1)
@@ -463,7 +472,11 @@ describe('the plugins the window loads', () => {
 
     const ctx = pluginHost.lifecycle.createContext(
       'md.numen.a',
-      createMockManifest('md.numen.a', { name: 'A', permissions: ['vault:read'] }),
+      createMockManifest('md.numen.a', {
+        name: 'A',
+        permissions: ['vault:read'],
+        tabKinds: ['sample'],
+      }),
     )
     const icon = { name: 'CustomIcon' }
     ctx.register.tabKind({
