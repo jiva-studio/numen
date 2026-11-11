@@ -33,7 +33,13 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
-  const list = createFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
+  const listings: string[] = []
+  const list = createFileTree({
+    list: async (folderPath: string) => {
+      listings.push(folderPath)
+      return target[folderPath] ?? []
+    },
+  })
   const tab: FilesTabState = useFilesTab(list, {
     window: {
       ...renderDeps,
@@ -72,7 +78,7 @@ const mountFiles = async (open: readonly string[] = []) => {
   for (const folderPath of open) await list.folders.openFolder(folderPath)
   const window = mount(FilesTab, { props: { state: tab } })
   await settle()
-  return { recorded: isDone, list, tab, window }
+  return { recorded: isDone, listings, list, tab, window }
 }
 
 const getRowIds = (rows: readonly { id: string; rows?: readonly unknown[] }[]): unknown =>
@@ -123,6 +129,30 @@ describe('the tree the tab draws', () => {
     expect(marking.getAttributeValue('physics/Kelvin.md')).toBe('physics')
     expect(marking.getAttributeValue('Entropy.md')).toBe(ROOT)
     expect(marking.getAttributeValue(null)).toBe(ROOT)
+  })
+})
+
+describe('the window regaining focus', () => {
+  it('lists the open folders again', async () => {
+    const { listings, window } = await mountFiles(['physics'])
+    listings.length = 0
+
+    globalThis.dispatchEvent(new Event('focus'))
+    await settle()
+
+    expect([...listings].sort()).toStrictEqual([ROOT, 'physics'].sort())
+    window.unmount()
+  })
+
+  it('does not list them after the tab is unmounted', async () => {
+    const { listings, window } = await mountFiles(['physics'])
+    window.unmount()
+    listings.length = 0
+
+    globalThis.dispatchEvent(new Event('focus'))
+    await settle()
+
+    expect(listings).toStrictEqual([])
   })
 })
 

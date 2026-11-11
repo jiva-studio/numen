@@ -8,6 +8,7 @@ import {
   createCommandIconFinder,
   createHostPort,
   createPluginNotes,
+  isCommandListed,
   useDeclaredCommands,
   type PluginServices,
 } from '@/features/plugin-commands'
@@ -67,7 +68,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const declaredCommands = useDeclaredCommands({
     state: declarations.declared,
     registry,
-    isListed: (id) => pluginHost.commands.getPaletteCommands().some((one) => one.id === id),
+    isListed: (id) => isCommandListed(pluginHost, id),
     hasBackend: declarations.catalog.hasBackend,
     listItems: itemLists.listItems,
   })

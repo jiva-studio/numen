@@ -23,7 +23,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const query = ref('')
-const { results, isLoading, setQuery } = useSearchResults((text) => props.search(text))
+const { results, isLoading, setQuery } = useSearchResults(() => props.search)
 
 /** The notes found, each named by its path and written by its title. */
 const items = computed<readonly ListItem[]>(() =>

@@ -3,9 +3,10 @@
  * A conversation with an agent: the questions, the lines about its work and its answers, and the field a
  * question is written in.
  */
-import { computed, ref, useTemplateRef } from 'vue'
+import { ref, useTemplateRef } from 'vue'
 import { Menu, Prose, type MenuItem } from '@numen/ui'
 import { MODEL_OPTIONS, type Agent } from '../model/agent'
+import { useAgentDraft } from '../model/useAgentDraft'
 import { useThreadScroll } from '../model/useThreadScroll'
 import AgentCall from './AgentCall.vue'
 import AgentFoot from './AgentFoot.vue'
@@ -16,10 +17,7 @@ const props = defineProps<{ agent: Agent }>()
 /* --------------------------------- State ---------------------------------- */
 const thread = useTemplateRef<HTMLElement>('thread')
 const menuAt = ref<{ x: number; y: number } | null>(null)
-const draft = computed({
-  get: () => props.agent.draft.value,
-  set: (text: string) => props.agent.setDraft(text),
-})
+const draft = useAgentDraft(() => props.agent)
 
 const items: readonly MenuItem[] = MODEL_OPTIONS.map((one) => ({
   id: one.modelId,

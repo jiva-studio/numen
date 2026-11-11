@@ -7,8 +7,8 @@
 import { computed, onBeforeUnmount, ref, useTemplateRef, type Component } from 'vue'
 import { ChevronUp } from '@lucide/vue'
 import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
-import { useSlotMenu } from '@numen/plugin-sdk'
 import { WORDS } from '../lib/entries'
+import { BAR, useBarSlotMenu } from '../model/useBarSlotMenu'
 import type { SlotMenuButtonProps } from './SlotMenuButton.types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -23,12 +23,10 @@ const emit = defineEmits<{
 const button = useTemplateRef<HTMLElement>('button')
 const trigger = ref<MenuTrigger>('pointer')
 const anchor = ref({ x: 0, y: 0 })
-/** The bar passes no target of its own; the window runs a bar entry over the front tab. */
-const BAR = 'bar'
-const slotMenu = useSlotMenu<typeof BAR>({
-  listItems: (command) => props.listItems(command),
+const slotMenu = useBarSlotMenu({
+  getListItems: () => props.listItems,
+  getReportError: () => props.reportError,
   words: WORDS,
-  onError: (error) => props.reportError?.(error),
 })
 const rows = computed(() => {
   const items = slotMenu.menu.value?.items ?? []

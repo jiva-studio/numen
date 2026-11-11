@@ -2,11 +2,12 @@
 /**
  * A recording: a player over the transcript. The transcript follows the playback while it plays.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { LocateFixed, Pause, Play } from '@lucide/vue'
 import { Slider, clock } from '@numen/ui'
 import { LECTURE_CUES, LECTURE_MEDIA_URL, getActiveCueIndex } from '../lib/cues'
 import type { Player } from '../model/player'
+import { usePlayerLoad } from '../model/usePlayerLoad'
 import TranscriptView from './TranscriptView.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -17,7 +18,7 @@ const isFollowing = ref(true)
 const active = computed(() => getActiveCueIndex(LECTURE_CUES, props.player.position.value))
 
 /* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => props.player.load(LECTURE_MEDIA_URL))
+usePlayerLoad(() => props.player, LECTURE_MEDIA_URL)
 </script>
 
 <template>

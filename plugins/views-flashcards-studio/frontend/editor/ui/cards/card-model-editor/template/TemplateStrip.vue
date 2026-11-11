@@ -3,10 +3,11 @@
  * The strip a template is led by: its name, the row of fields that may be written
  * into it, and what is wrong with it.
  */
-import { computed, useId } from 'vue'
+import { useId } from 'vue'
 import { ErrorMessage } from '../../error-message'
 import { NameBox } from '../../name-box'
 import { useNameEntry } from '../../../../model/cards/nameEntry'
+import { useObjection, useObjectionMessage } from '../../../../model/cards/useObjection'
 import { Button } from '@numen/ui'
 import { checkHeadingName, type HeadingObjection } from '../../../../../lib/cards'
 import { CARD_MODEL_WORDS, type TemplateRow, type CardModelWords } from '../../../../../lib/cards'
@@ -40,13 +41,13 @@ const naming = useNameEntry<HeadingObjection>({
 })
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
-const objections = computed(() => naming.getObjection(props.template.id))
+const objections = useObjection(
+  () => naming,
+  () => props.template.id,
+)
 
 /** The message for a name that cannot be used, empty while it can. */
-const says = computed(() => {
-  const objection = objections.value
-  return objection === null ? null : props.words.templateObjection(objection)
-})
+const says = useObjectionMessage(objections, () => props.words.templateObjection)
 </script>
 
 <template>

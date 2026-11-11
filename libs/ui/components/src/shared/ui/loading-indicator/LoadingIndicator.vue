@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** A spinner and its label, drawn while a pane is loading its content. */
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useDelayedFlag } from '@/shared/model/useDelayedFlag'
 import { Spinner } from '../spinner'
 
 const props = withDefaults(defineProps<{ label?: string; delay?: number }>(), {
@@ -9,12 +9,7 @@ const props = withDefaults(defineProps<{ label?: string; delay?: number }>(), {
 })
 
 // What arrives within the delay replaces an empty pane, so no ring flashes before it.
-const isShown = ref(props.delay <= 0)
-let timer: ReturnType<typeof setTimeout> | undefined
-onMounted(() => {
-  if (!isShown.value) timer = setTimeout(() => (isShown.value = true), props.delay)
-})
-onBeforeUnmount(() => clearTimeout(timer))
+const isShown = useDelayedFlag(() => props.delay)
 </script>
 
 <template>
