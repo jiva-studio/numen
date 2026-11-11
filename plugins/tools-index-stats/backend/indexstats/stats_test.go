@@ -103,4 +103,3 @@ func TestAnIndexWithMoreVectorsThanChunksWaitsForNothing(t *testing.T) {
 		t.Errorf("waiting %d (%v), want 0", got.Waiting, err)
 	}
 }
-
