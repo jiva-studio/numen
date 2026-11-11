@@ -11,12 +11,8 @@ import {
   searchCore,
   useSearch,
 } from '@/features/command-palette'
-import {
-  createCommandNoteReader,
-  createPluginCommandPort,
-  createSearchMenu,
-  usePluginCommands,
-} from '@/features/plugin-commands'
+import { createCommandNoteReader, createPluginCommandPort, usePluginCommands } from '@/features/plugin-commands'
+import { createSearchMenu } from '@/features/plugin-host'
 import { WORDS as words } from '@/shared/ui/words'
 import {
   createCommandRuns,

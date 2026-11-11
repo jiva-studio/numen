@@ -15,7 +15,6 @@ import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createTestPluginSupport, type TestPluginSupportDeps } from '@/testing/pluginSupport'
 import { getNoteIcon } from '@/entities/note'
-import { createBackendHandlers } from '@/features/plugin-commands'
 
 const createSupport = () => {
   const windowTabs = createTestTabs()
@@ -307,14 +306,13 @@ describe('the settings and notices a plugin is given', () => {
     })
   })
 
-  it('rejects a run awaited through the host with the error of a backend handler, and writes nothing', async () => {
+  it('rejects a run awaited through the host with the error of a backend handler', async () => {
     const rest = {
       state: { plugins: ref([{ id: 'md.numen.ears', hasFrontend: false, hasBackend: true }]) },
     }
-    const writeMessage = vi.fn()
     const onError = vi.fn()
-    const handlers = createBackendHandlers({
-      getHandlers: () => [
+    const handlers = {
+      getHandlerDeclarations: () => [
         {
           pluginId: 'md.numen.ears',
           command: 'app:file.createText',
@@ -322,11 +320,11 @@ describe('the settings and notices a plugin is given', () => {
           hasItems: false,
         },
       ],
-      list: async () => [],
-      run: async () => ({ ok: false, error: 'the recording has no audio' }),
-      writeMessage,
-      openFile: async () => undefined,
-    })
+      listBackendHandlerItems: async () => [],
+      runBackendHandler: async () => {
+        throw new Error('the recording has no audio')
+      },
+    }
     const { pluginHost } = createWith({
       rest: rest as never,
       handlers,
@@ -337,7 +335,6 @@ describe('the settings and notices a plugin is given', () => {
     await expect(
       pluginHost.commands.executeCommand('app:file.createText', note, { isAwaited: true }),
     ).rejects.toThrow('the recording has no audio')
-    expect(writeMessage).not.toHaveBeenCalled()
     expect(onError).not.toHaveBeenCalled()
   })
 

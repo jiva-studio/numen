@@ -7,7 +7,7 @@ import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
 import { listFiles } from '@/entities/file'
 import { COMMAND, findIcon, type CommandTarget } from '@/shared/model/command'
 import type { NoteCreator } from '@/entities/note'
-import { getEntryIcon } from './entryIcon'
+import { getEntryIcon } from './window/entryIcon'
 
 /** What the files of the vault are listed, made and moved through. */
 export interface VaultFilesDeps {

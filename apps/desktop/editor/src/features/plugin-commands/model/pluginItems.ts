@@ -10,7 +10,7 @@ import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugi
 import type { Command } from '@/entities/command'
 import type { CommandTarget, RunSupport, StepGroup } from '@/shared/model/command'
 import { WORDS } from '@/shared/ui/words'
-import { toRunTarget } from '../lib/runTarget'
+import { toRunTarget } from '@/entities/plugin'
 
 /** The lists of the steps of the commands the window offers besides the plugin commands. */
 interface WindowLists {

@@ -4,14 +4,8 @@
  */
 import { createNoticeQueue } from '@numen/workbench'
 import { readNote, writeNote } from '@/entities/note'
-import {
-  createCommandIconFinder,
-  createHostPort,
-  createPluginNotes,
-  isCommandListed,
-  useDeclaredCommands,
-  type PluginServices,
-} from '@/features/plugin-commands'
+import { useDeclaredCommands } from '@/features/plugin-commands'
+import { createCommandIconFinder, createHostPort, createPluginNotes, isCommandListed, type PluginServices } from '@/features/plugin-host'
 import type { WindowFeatures } from './createWindowFeatures'
 import type { WindowFoundation } from './createWindowFoundation'
 import type { WindowVault } from './createWindowVault'

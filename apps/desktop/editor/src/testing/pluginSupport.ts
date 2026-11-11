@@ -6,16 +6,7 @@ import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { Caught } from '@/shared/api/errors'
-import {
-  createNoticeParts,
-  createPluginSupport,
-  createTabActionParts,
-  createTabKindParts,
-  createTaskServiceParts,
-  createVaultServiceParts,
-  type HostParts,
-  type PluginServices,
-} from '@/features/plugin-commands'
+import { createNoticeParts, createPluginSupport, createTabActionParts, createTabKindParts, createTaskServiceParts, createVaultServiceParts, type HostParts, type PluginServices } from '@/features/plugin-host'
 
 /** What a test names of the plugin support; the rest is left out as a window without it leaves it out. */
 export interface TestPluginSupportDeps {

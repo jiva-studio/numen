@@ -11,7 +11,7 @@ import {
 } from '@numen/plugin-loader'
 import { type Command } from '@/entities/command'
 import { getValues, type CommandTarget } from '@/shared/model/command'
-import { getNamedTarget } from './runTarget'
+import { getNamedTarget } from '@/entities/plugin'
 
 type Values = Readonly<Record<string, string>>
 

@@ -17,13 +17,7 @@ import {
   type SearchDeps,
   type SearchState,
 } from '@/features/command-palette'
-import {
-  createCommandItems,
-  createItemLists,
-  createPaletteCommandList,
-  watchCommandLists,
-  type DeclaredCommands,
-} from '@/features/plugin-commands'
+import { createCommandItems, createItemLists, createPaletteCommandList, watchCommandLists, type DeclaredCommands } from '@/features/plugin-commands'
 import type { createPluginCommandPort, usePluginCommands } from '@/features/plugin-commands'
 import { getVaultList } from '@/features/window-display'
 import type { Command } from '@/entities/command'

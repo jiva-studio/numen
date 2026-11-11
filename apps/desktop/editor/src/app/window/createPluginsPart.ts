@@ -15,28 +15,8 @@ import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
 import { searchCore } from '@/features/command-palette'
 import { createBufferHost } from '@/features/file-conflict'
-import {
-  createBackendHandlers,
-  createDeclaredState,
-  createPluginCatalog,
-  createNoticeParts,
-  createPluginReports,
-  createPluginSupport,
-  createVaultAccess,
-  createWorkspaceService,
-  createTabActionParts,
-  createTabKindParts,
-  createTaskServiceParts,
-  createVaultServiceParts,
-  type PluginNotes,
-  type PluginServices,
-  createWindowFacts,
-  createWindowService,
-  createWindowSlots,
-  createWindowVaults,
-  type HostPort,
-  type HostParts,
-} from '@/features/plugin-commands'
+import { createBackendHandlers, createDeclaredState } from '@/features/plugin-commands'
+import { createPluginCatalog, createNoticeParts, createPluginReports, createPluginSupport, createVaultAccess, createWorkspaceService, createTabActionParts, createTabKindParts, createTaskServiceParts, createVaultServiceParts, type PluginNotes, type PluginServices, createWindowFacts, createWindowService, createWindowSlots, createWindowVaults, type HostPort, type HostParts } from '@/features/plugin-host'
 import { getWindowConfig } from '@/features/settings-commands'
 import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowFoundation } from './createWindowFoundation'

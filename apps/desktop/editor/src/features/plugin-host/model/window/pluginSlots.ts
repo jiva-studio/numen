@@ -18,10 +18,9 @@ import {
 import type { Component } from 'vue'
 import { type Command } from '@/entities/command'
 import { findIcon } from '@/shared/model/command'
-import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
+import { getPaletteId, type DeclaredCommand, type DeclaredSlot } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/ui/icons'
-import { getPaletteId } from './declaredCommands'
-import { APP_SLOT_ENTRIES } from '../lib/appPlacements'
+import { APP_SLOT_ENTRIES } from '../../lib/appPlacements'
 
 /** The entries of the plugins with those of the application; undefined until the plugins have been listed. */
 export function readSlotEntries(

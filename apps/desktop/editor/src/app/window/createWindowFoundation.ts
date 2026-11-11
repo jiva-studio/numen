@@ -4,7 +4,7 @@
  */
 import { useWindowFrame } from '@numen/workbench'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
-import { createWindowPluginStatus } from '@/features/plugin-commands'
+import { createWindowPluginStatus } from '@/features/plugin-host'
 import { createEmitter } from '@/shared/lib/emitter'
 import { createCommandRegistry } from '@/shared/model/command'
 import { createMessageLog } from '@/shared/model/notices/messages'

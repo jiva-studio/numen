@@ -30,14 +30,8 @@ import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import {
-  createCommandNoteReader,
-  createPluginCommandPort,
-  createSearchMenu,
-  createWindowSlots,
-  useDeclaredCommands,
-  usePluginCommands,
-} from '@/features/plugin-commands'
+import { createCommandNoteReader, createPluginCommandPort, useDeclaredCommands, usePluginCommands } from '@/features/plugin-commands'
+import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
 import {
   createCommandRuns,
   createCommandSources,

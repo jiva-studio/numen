@@ -10,7 +10,7 @@ import { agentPort } from '@/entities/plugin'
 import { getNoteInFocus, type WindowTabs } from '@/entities/tab'
 import { formatError } from '@/shared/api/errors'
 import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
-import { formatLocalDate } from '../../lib/localDate'
+import { formatLocalDate } from '../lib/localDate'
 import { createAgentAsker } from './createAgentAsker'
 import { createIconHost, createVaultFiles, type VaultFilesDeps } from './fileServices'
 import {
