@@ -66,6 +66,25 @@ func TestEveryExhaustructPatternMatchesAType(t *testing.T) {
 	checkEveryExhaustructPatternMatchesAType(t, load.Workspace(t))
 }
 
+// TestLintConfigWalk_FindsThePlantedConfigs verifies that the walk lists the golangci files of a
+// planted tree, in the root and in a nested folder, and skips node_modules.
+func TestLintConfigWalk_FindsThePlantedConfigs(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		".golangci.yml":                    "version: \"2\"\n",
+		"plugins/alpha/.golangci.yml":      "version: \"2\"\n",
+		"node_modules/pkg/.golangci.yml":   "version: \"2\"\n",
+		"plugins/alpha/golangci-notes.yml": "x: 1\n",
+	})
+	found, err := listLintConfigs(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{filepath.Join(root, ".golangci.yml"), filepath.Join(root, "plugins", "alpha", ".golangci.yml")}
+	if !slices.Equal(found, want) {
+		t.Errorf("the walk lists %v, want %v", found, want)
+	}
+}
+
 func TestMain(m *testing.M) {
 	os.Exit(load.Main(m))
 }

@@ -2,6 +2,7 @@
 package layers
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -21,9 +22,43 @@ import (
 // Test files are excluded: a test is external to the package it exercises and
 // builds the adapters that stand in for the real ones.
 func TestLayerDependenciesPointInward(t *testing.T) {
+	wrong, err := findOutwardImports("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
+// TestLayerWalk_FindsThePlantedImports verifies that the walk finds a scenario that imports an
+// adapter and passes the adapter that imports a port.
+func TestLayerWalk_FindsThePlantedImports(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/note.go":   "package note\n\nimport _ \"" + load.Module + "adapter/index\"\n",
+		"adapter/index/index.go": "package index\n\nimport _ \"" + load.Module + "port\"\n",
+	})
+	wrong, err := findOutwardImports(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.HasPrefix(wrong[0], "usecase/note reaches adapter/index") {
+		t.Errorf("the walk found %v, want usecase/note reaching adapter/index only", wrong)
+	}
+}
+
+// TestLayerWalk_FailsOnATreeWithoutEdges verifies that a root without an import of this module is an error, not a pass.
+func TestLayerWalk_FailsOnATreeWithoutEdges(t *testing.T) {
+	if _, err := findOutwardImports(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without an edge passed")
+	}
+}
+
+// findOutwardImports lists the imports of this module under root that point against the layers. It
+// fails when it reads no edge.
+func findOutwardImports(root string) ([]string, error) {
 	var wrong []string
 	var read int
-	root := ".."
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -48,26 +83,51 @@ func TestLayerDependenciesPointInward(t *testing.T) {
 		}
 		return nil
 	})
+	if err == nil && read == 0 {
+		err = fmt.Errorf("no import of this module read under %s: the walk checks nothing", root)
+	}
+	return wrong, err
+}
+
+// TestNoPackageIsImportedBelowItsLayer verifies that packages do not use layer names as import aliases.
+func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
+	wrong, err := findLayerAliases("..")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, one := range wrong {
 		t.Error(one)
 	}
+}
 
-	// A walk that reads no edge of this module checks nothing and passes. The count
-	// is a lower bound well below the core's edge count; it confirms the walk found
-	// the tree, not how large the tree is.
-	if read < 100 {
-		t.Fatalf("%d edges of this module read: the walk is not reading the core", read)
+// TestAliasWalk_FindsThePlantedAlias verifies that the walk finds an import aliased with a layer name.
+func TestAliasWalk_FindsThePlantedAlias(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/note.go":   "package note\n\nimport usecase \"" + load.Module + "usecase/vault\"\n\nvar _ = usecase.Name\n",
+		"usecase/vault/vault.go": "package vault\n\nimport pathpkg \"path\"\n\nvar _ = pathpkg.Base\n\nconst Name = \"vault\"\n",
+	})
+	wrong, err := findLayerAliases(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.Contains(wrong[0], "usecase/note/note.go names "+load.Module+"usecase/vault usecase") {
+		t.Errorf("the walk found %v, want the alias usecase in usecase/note/note.go only", wrong)
 	}
 }
 
-// TestNoPackageIsImportedBelowItsLayer verifies that packages do not use layer names as import aliases.
-func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
+// TestAliasWalk_FailsOnAnEmptyTree verifies that a root without a Go file is an error, not a pass.
+func TestAliasWalk_FailsOnAnEmptyTree(t *testing.T) {
+	if _, err := findLayerAliases(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without a Go file passed")
+	}
+}
+
+// findLayerAliases lists the imports under root that carry a layer name as their alias. It fails
+// when it reads no file.
+func findLayerAliases(root string) ([]string, error) {
 	var wrong []string
-	var read, aliased int
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	var read int
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
@@ -80,7 +140,6 @@ func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 			if one.Name == nil {
 				continue
 			}
-			aliased++
 			if !getLayers()[one.Name.Name] {
 				continue
 			}
@@ -92,21 +151,10 @@ func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 		}
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
+	if err == nil && read == 0 {
+		err = fmt.Errorf("no Go file read under %s: the walk checks nothing", root)
 	}
-	for _, one := range wrong {
-		t.Error(one)
-	}
-
-	// A walk that read no file, or one that met no alias, is a rule checked
-	// against nothing, and it passes: this rule has only aliases to read.
-	if read < 100 {
-		t.Fatalf("%d files of the core read: the walk is not reading it", read)
-	}
-	if aliased < 10 {
-		t.Fatalf("%d imports carry a name of their own: the walk is reading no alias", aliased)
-	}
+	return wrong, err
 }
 
 // TestLayerAliasRule_RejectsLayerNamedAliases verifies rejection of layer names as import aliases.

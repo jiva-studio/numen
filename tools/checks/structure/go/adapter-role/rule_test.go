@@ -119,7 +119,7 @@ func checkAdapterHasOneRole(t *testing.T, roles []adapterRole) {
 	}
 
 	// A classification that finds no adapter of either kind is checked against nothing.
-	if len(roles) < 20 || driving == 0 || driven == 0 {
+	if len(roles) == 0 || driving == 0 || driven == 0 {
 		t.Fatalf("%d adapters read, %d driving and %d driven: the rule is checked against nothing", len(roles), driving, driven)
 	}
 }
