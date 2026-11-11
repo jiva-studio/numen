@@ -3,14 +3,14 @@ import { BOLTZMANN_PATH } from './documents'
 
 export type TabKind = 'files' | 'plex' | 'agent' | 'note' | 'pdf' | 'recording' | 'link' | 'deck'
 
-export const FILES_TAB = 'files'
-export const PLEX_TAB = 'plex'
-export const AGENT_TAB = 'agent'
-export const NOTE_TAB = 'note'
-export const PDF_TAB = 'pdf'
-export const RECORDING_TAB = 'recording'
-export const LINK_TAB = 'link'
-export const DECK_TAB = 'deck'
+const FILES_TAB = 'files'
+const PLEX_TAB = 'plex'
+const AGENT_TAB = 'agent'
+const NOTE_TAB = 'note'
+const PDF_TAB = 'pdf'
+const RECORDING_TAB = 'recording'
+const LINK_TAB = 'link'
+const DECK_TAB = 'deck'
 
 /** The tabs the window opens with, and the kind each one draws. */
 export const DEMO_TABS: readonly (Tab & { readonly kind: TabKind })[] = [
@@ -25,7 +25,7 @@ export const DEMO_TABS: readonly (Tab & { readonly kind: TabKind })[] = [
 ]
 
 /** The paper the pdf tab shows. */
-export const PDF_TAB_PATH = BOLTZMANN_PATH
+const PDF_TAB_PATH = BOLTZMANN_PATH
 
 /** The panes the window opens with: the files, the plex and the note tabs, and the agent. */
 export function createDemoWorkspace(): Workspace {

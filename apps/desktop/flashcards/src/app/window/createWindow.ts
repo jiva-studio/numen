@@ -76,9 +76,7 @@ export function createWindow(deps: WindowDeps = {}) {
   usePluginStyles(() => (tabs.front.value ? [tabs.front.value] : []))
 
   return {
-    front: tabs.front,
-    tab: tabs.tab,
-    openTab: tabs.openTab,
+    tabs,
     vaults: { list: vaults, isListing },
     plugins: start,
     titleBarView,

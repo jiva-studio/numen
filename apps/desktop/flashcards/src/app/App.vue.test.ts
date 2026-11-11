@@ -759,7 +759,7 @@ describe('the title bar of the flashcards window', () => {
     )
     await flushPromises()
 
-    expect(shell?.plugins.titleBarView.value?.pluginId).toBe('org.example.harbor')
+    expect(shell?.titleBarView.value?.pluginId).toBe('org.example.harbor')
     expect(
       shell?.notices.notices.value.some(
         (one) => one.severity === 'error' && one.text.includes('org.example.ledger'),
