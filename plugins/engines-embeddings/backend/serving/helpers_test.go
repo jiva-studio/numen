@@ -30,7 +30,6 @@ func newEmbeddingServer() *Server {
 	})
 }
 
-// updateConfig applies the values and the secrets the way the host delivers them.
 func (s *Server) updateConfig(values map[string]string, secrets server.Secrets) {
 	key := Secret{Value: "", IsSet: false}
 	if list, isCarried := server.ReadSecrets(secrets, server.SecretAPIKey); isCarried {

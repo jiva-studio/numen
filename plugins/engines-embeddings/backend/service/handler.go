@@ -52,8 +52,7 @@ func getEngineRole(role embedding.Role) engine.Role {
 }
 
 func getRPCError(err error) error {
-	var refusal serving.PreconditionError
-	if errors.As(err, &refusal) {
+	if refusal, isRefusal := errors.AsType[serving.PreconditionError](err); isRefusal && refusal.Err != nil {
 		return rpcerror.New(rpcerror.FailedPrecondition, err)
 	}
 	return rpcerror.New(rpcerror.Internal, err)
