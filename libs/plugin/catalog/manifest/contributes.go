@@ -145,10 +145,23 @@ func listTabKindIssues(kinds []TabKind) []error {
 			issues = append(issues, fmt.Errorf("%w: tab kind %q has no title", ErrInvalidContribution, declared.Kind))
 		}
 		if declared.Icon != "" && !iconNamePattern.MatchString(declared.Icon) {
-			issues = append(issues, fmt.Errorf("%w: tab kind %q has icon %q, which is not lowercase words joined by hyphens", ErrInvalidContribution, declared.Kind, declared.Icon))
+			issues = append(
+				issues,
+				fmt.Errorf("%w: tab kind %q has icon %q, which is not lowercase words joined by hyphens", ErrInvalidContribution, declared.Kind, declared.Icon),
+			)
 		}
 		if !declared.Rank.IsValid() {
-			issues = append(issues, fmt.Errorf("%w: tab kind %q has rank %q, expected %q or %q", ErrInvalidContribution, declared.Kind, declared.Rank, domain.RankDefault, domain.RankAlternate))
+			issues = append(
+				issues,
+				fmt.Errorf(
+					"%w: tab kind %q has rank %q, expected %q or %q",
+					ErrInvalidContribution,
+					declared.Kind,
+					declared.Rank,
+					domain.RankDefault,
+					domain.RankAlternate,
+				),
+			)
 		}
 		if _, err := when.Parse(declared.When); err != nil {
 			issues = append(issues, fmt.Errorf("%w: tab kind %q: when: %w", ErrInvalidContribution, declared.Kind, err))
@@ -193,7 +206,16 @@ func (m Manifest) listViewCapabilityIssues() []error {
 		}
 		observed[capability] = true
 		if !m.isViewCapabilityAllowed(capability) {
-			issues = append(issues, fmt.Errorf("%w: view capability %q is neither one of %s nor named %q followed by a name", ErrInvalidContribution, capability, strings.Join(GetApplicationViewCapabilities(), ", "), m.ID+"."))
+			issues = append(
+				issues,
+				fmt.Errorf(
+					"%w: view capability %q is neither one of %s nor named %q followed by a name",
+					ErrInvalidContribution,
+					capability,
+					strings.Join(GetApplicationViewCapabilities(), ", "),
+					m.ID+".",
+				),
+			)
 		}
 	}
 	return issues

@@ -13,8 +13,21 @@ type machine struct {
 
 func getMachines() []machine {
 	return []machine{
-		{"a sixteen-thread desktop with eight cores and 32 GB", settings.MachineSpecs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768, AvailableRAMMB: 24000}},
-		{"an Apple chip with four performance and six efficiency cores", settings.MachineSpecs{LogicalCPUs: 10, PhysicalCPUs: 10, PerformanceCPUs: 4, TotalRAMMB: 16384, AvailableRAMMB: 9000, Accelerators: []string{"coreml"}}},
+		{
+			"a sixteen-thread desktop with eight cores and 32 GB",
+			settings.MachineSpecs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768, AvailableRAMMB: 24000},
+		},
+		{
+			"an Apple chip with four performance and six efficiency cores",
+			settings.MachineSpecs{
+				LogicalCPUs:     10,
+				PhysicalCPUs:    10,
+				PerformanceCPUs: 4,
+				TotalRAMMB:      16384,
+				AvailableRAMMB:  9000,
+				Accelerators:    []string{"coreml"},
+			},
+		},
 		{"a two-core laptop", settings.MachineSpecs{LogicalCPUs: 2, PhysicalCPUs: 2, PerformanceCPUs: 2, TotalRAMMB: 4096, AvailableRAMMB: 1500}},
 		{"a 64-core server", settings.MachineSpecs{LogicalCPUs: 128, PhysicalCPUs: 64, PerformanceCPUs: 64, TotalRAMMB: 262144, AvailableRAMMB: 200000}},
 		{"a machine whose memory is unknown", settings.MachineSpecs{LogicalCPUs: 8, PhysicalCPUs: 4, PerformanceCPUs: 4}},

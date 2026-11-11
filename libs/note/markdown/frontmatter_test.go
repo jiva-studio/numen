@@ -1052,7 +1052,11 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 	if s, e, ok := d.span(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a"}}}, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(odd Content) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.span(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a", Line: 1, Column: 1}, {Value: "1", Line: 1}}}, "missing"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.span(
+		&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a", Line: 1, Column: 1}, {Value: "1", Line: 1}}},
+		"missing",
+	); s != 0 || e != 0 ||
+		ok {
 		t.Fatalf("span(missing) = (%d, %d, %v)", s, e, ok)
 	}
 
@@ -1418,7 +1422,10 @@ func TestLinkblockHelpersAndBoundaries(t *testing.T) {
 	if err != nil || !b.isFound || b.indent != "  " {
 		t.Fatalf("nullLinksDoc.block() = (%+v, %v)", b, err)
 	}
-	if n, err := nullLinksDoc.RemoveLink(domain.LinkKey{Target: domain.ParseAddress("A")}); err != nil || n != 0 || !strings.Contains(string(nullLinksDoc.Bytes()), "links:") {
+	if n, err := nullLinksDoc.RemoveLink(
+		domain.LinkKey{Target: domain.ParseAddress("A")},
+	); err != nil || n != 0 ||
+		!strings.Contains(string(nullLinksDoc.Bytes()), "links:") {
 		t.Fatalf("nullLinksDoc.RemoveLink = (%d, %v), bytes = %q", n, err, nullLinksDoc.Bytes())
 	}
 	if err := nullLinksDoc.SetLinkOfType("preset", domain.Address{}, domain.RoleRef); err != nil || !strings.Contains(string(nullLinksDoc.Bytes()), "links:") {
@@ -1489,7 +1496,11 @@ func TestLinkblockHelpersAndBoundaries(t *testing.T) {
 		t.Fatalf("gotEntries[1] span = (%d, %d), want (25, 35)", gotEntries[1].start, gotEntries[1].end)
 	}
 
-	addDoc, err := Open([]byte("---\nlinks:\n  - to: A\n    role: ref\n    type: other\n  - to: A # keep comment\n    role: parent\n    type: target\n    note: initial\n---\n"))
+	addDoc, err := Open(
+		[]byte(
+			"---\nlinks:\n  - to: A\n    role: ref\n    type: other\n  - to: A # keep comment\n    role: parent\n    type: target\n    note: initial\n---\n",
+		),
+	)
 	if err != nil {
 		t.Fatalf("Open addDoc: %v", err)
 	}
@@ -1589,7 +1600,11 @@ func TestLinkblockHelpersAndBoundaries(t *testing.T) {
 		Label:  "l2",
 		Marker: domain.LinkMarker("custom"),
 	}
-	if got := applyLinkChange(origLink, changedLink); got.Role != domain.RoleChild || got.Type != "t2" || got.Why != "w2" || got.Label != "l2" || got.Marker != domain.LinkMarker("custom") {
+	if got := applyLinkChange(
+		origLink,
+		changedLink,
+	); got.Role != domain.RoleChild || got.Type != "t2" || got.Why != "w2" || got.Label != "l2" ||
+		got.Marker != domain.LinkMarker("custom") {
 		t.Fatalf("applyLinkChange full = %+v", got)
 	}
 
@@ -1601,7 +1616,11 @@ func TestLinkblockHelpersAndBoundaries(t *testing.T) {
 		t.Fatalf("UpdateLink = (%d, %v), want 1", n, err)
 	}
 
-	redirectOrderDoc, err := Open([]byte("---\nlinks:\n  - to: Target\n    role: parent\n  - to: Other\n    role: jump\n  - to: Target\n    role: unknown_role\n  - to: Target\n    role: parent\n    extra: 1\n---\n"))
+	redirectOrderDoc, err := Open(
+		[]byte(
+			"---\nlinks:\n  - to: Target\n    role: parent\n  - to: Other\n    role: jump\n  - to: Target\n    role: unknown_role\n  - to: Target\n    role: parent\n    extra: 1\n---\n",
+		),
+	)
 	if err != nil {
 		t.Fatalf("Open redirectOrderDoc: %v", err)
 	}
@@ -1664,7 +1683,10 @@ func TestScalarHelpersAndBoundaries(t *testing.T) {
 	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.LiteralStyle, Line: 1, Column: 1}); s != 0 || e != 0 || ok {
 		t.Fatalf("scalarSpan(LiteralStyle) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.DoubleQuotedStyle, Line: 1, Column: 1, Value: "mismatch"}); s != 0 || e != 0 || ok {
+	if s, e, ok := d.scalarSpan(
+		&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.DoubleQuotedStyle, Line: 1, Column: 1, Value: "mismatch"},
+	); s != 0 || e != 0 ||
+		ok {
 		t.Fatalf("scalarSpan(mismatch) = (%d, %d, %v)", s, e, ok)
 	}
 

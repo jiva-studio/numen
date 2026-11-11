@@ -180,7 +180,11 @@ func TestTheValidatorRejectsLinksThatLeadNowhere(t *testing.T) {
 		"a bare dot extension":       `{"key":"a","type":"file","title":"A","accept":["."]}`,
 		"several paths of a string":  `{"key":"a","type":"string","title":"A","multiple":true}`,
 	} {
-		_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"dep1","kind":"model"}],"settings":[` + settings + `]}`))
+		_, err := manifestjson.Read(
+			strings.NewReader(
+				`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"dep1","kind":"model"}],"settings":[` + settings + `]}`,
+			),
+		)
 		if !errors.Is(err, ErrInvalidSetting) {
 			t.Errorf("%s: err = %v, want ErrInvalidSetting", name, err)
 		}
@@ -320,7 +324,11 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 }
 
 func readOptionWhenManifest(option string) error {
-	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":["x",` + option + `]}]}`))
+	_, err := manifestjson.Read(
+		strings.NewReader(
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":["x",` + option + `]}]}`,
+		),
+	)
 	return err
 }
 
@@ -328,7 +336,11 @@ func TestAnOptionMayCarryACondition(t *testing.T) {
 	if err := readOptionWhenManifest(`{"value":"y","when":"app.platform != 'darwin'"}`); err != nil {
 		t.Fatal(err)
 	}
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":[{"value":"y","when":"app.platform == 'linux'"}]}]}`))
+	m, err := manifestjson.Read(
+		strings.NewReader(
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"settings":[{"key":"a","type":"enum","title":"A","options":[{"value":"y","when":"app.platform == 'linux'"}]}]}`,
+		),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

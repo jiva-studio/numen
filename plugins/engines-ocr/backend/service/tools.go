@@ -21,9 +21,9 @@ type RecognitionCreateInput struct {
 }
 
 type RecognitionCreateOutput struct {
-	TaskID  string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
-	Path    string `json:"path" jsonschema:"the file; its text can be read and searched once it is recognized"`
-	State   string `json:"state" jsonschema:"started; running when a recognition of this file is already in progress and no second one was started; or done when the file is already recognized and nothing was started"`
+	TaskID  string `json:"taskId"            jsonschema:"the id of the recognition in the list of tasks"`
+	Path    string `json:"path"              jsonschema:"the file; its text can be read and searched once it is recognized"`
+	State   string `json:"state"             jsonschema:"started; running when a recognition of this file is already in progress and no second one was started; or done when the file is already recognized and nothing was started"`
 	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version that is read: the recognized text, or a version made from it such as a proofread"`
 }
 

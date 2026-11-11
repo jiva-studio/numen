@@ -86,10 +86,12 @@ func PluginCapabilities() []string {
 }
 
 var (
-	ErrEmptyID                = errors.New("plugin id cannot be empty")
-	ErrEmptyName              = errors.New("plugin name cannot be empty")
-	ErrEmptyVersion           = errors.New("plugin version cannot be empty")
-	ErrInvalidID              = errors.New("plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)")
+	ErrEmptyID      = errors.New("plugin id cannot be empty")
+	ErrEmptyName    = errors.New("plugin name cannot be empty")
+	ErrEmptyVersion = errors.New("plugin version cannot be empty")
+	ErrInvalidID    = errors.New(
+		"plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)",
+	)
 	ErrInvalidVersion         = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
 	ErrUnsupportedProtocol    = errors.New("unsupported plugin protocol")
 	ErrEmptySettingTitle      = errors.New("setting title cannot be empty")
@@ -126,7 +128,9 @@ var (
 	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
 	manifestServicePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
 	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
+	manifestVersionPattern = regexp.MustCompile(
+		`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`,
+	)
 )
 
 // SettingTypeString is the type of a setting that holds a text string.

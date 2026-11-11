@@ -40,7 +40,12 @@ func TestEntriesRoute_ServesBookImageFromRequestedVault(t *testing.T) {
 	if got := answer.Header().Get("Cache-Control"); got != "public, max-age=31536000, immutable" {
 		t.Errorf("Cache-Control = %q, want immutable", got)
 	}
-	badMtime := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub&size="+strconv.FormatInt(int64(len(testsupport.CreateImageEpub(t))), 10)+"&mtime=notanumber", nil)
+	badMtime := httptest.NewRequestWithContext(
+		t.Context(),
+		http.MethodGet,
+		"/entries/EPUB/cover.png?path=pictured.epub&size="+strconv.FormatInt(int64(len(testsupport.CreateImageEpub(t))), 10)+"&mtime=notanumber",
+		nil,
+	)
 	badMtime.Header.Set("Numen-Vault", "Chemistry")
 	badMtimeAnswer := httptest.NewRecorder()
 	mux.ServeHTTP(badMtimeAnswer, badMtime)

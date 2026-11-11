@@ -42,8 +42,11 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) stubSes
 		Vaults: createVaultList(newVault(folder)),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
 			return cli.Indexed{Search: cli.Search{
-				Search: search.NewByName(registry.NewFind(singleVaultList{newVault(folder)}).Execute, preparing(search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil))),
-				Words:  words,
+				Search: search.NewByName(
+					registry.NewFind(singleVaultList{newVault(folder)}).Execute,
+					preparing(search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil)),
+				),
+				Words: words,
 			}}, nil
 		},
 	}

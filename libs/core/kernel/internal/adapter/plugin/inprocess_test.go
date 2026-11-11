@@ -304,7 +304,10 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 
 func newFixedCatalog(library, provider string, err error) *fakeCatalog {
 	catalog := newONNXCatalog()
-	catalog.resolved[plugindomain.RuntimeONNX] = plugindomain.ResolvedDependency{ID: plugindomain.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider}}
+	catalog.resolved[plugindomain.RuntimeONNX] = plugindomain.ResolvedDependency{
+		ID:      plugindomain.RuntimeONNX,
+		EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider},
+	}
 	catalog.err = err
 	return catalog
 }

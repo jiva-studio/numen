@@ -35,7 +35,14 @@ func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, q sour
 func TestSearchPassesPathPrefixToEveryRanking(t *testing.T) {
 	spy := &prefixSpy{}
 	nearest := &nearestFake{}
-	searching := search.New(search.Index{Passages: spy, Nearest: nearest}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
+	searching := search.New(
+		search.Index{Passages: spy, Nearest: nearest},
+		vaultreader.Readers{},
+		nil,
+		oneWay{direction: newVector(+1)},
+		vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil),
+		nil,
+	)
 
 	p := search.Parameters{Limit: 5, PathPrefix: "library/"}
 	if _, err := searching.Execute(t.Context(), domain.Vault{ID: "01VAULT"}, "heron", p); err != nil {

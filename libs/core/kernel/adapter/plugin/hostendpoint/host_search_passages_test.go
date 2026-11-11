@@ -56,7 +56,13 @@ func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 func TestHostSearchPassagesDenyPluginWithoutPermission(t *testing.T) {
 	fakeCallers := newSearchCallers(&recordingSearch{})
 	denied := newSearchClient(t, fakeCallers, "token-b")
-	if _, err := denied.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"})); readCode(t, err) != connect.CodePermissionDenied {
+	if _, err := denied.SearchPassages(
+		t.Context(),
+		connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"}),
+	); readCode(
+		t,
+		err,
+	) != connect.CodePermissionDenied {
 		t.Errorf("a plugin without the permission got %v", err)
 	}
 }
@@ -71,7 +77,13 @@ func TestHostSearchPassagesRejectUnknownVaultAndKind(t *testing.T) {
 	if _, err := client.SearchPassages(t.Context(), unknown); readCode(t, err) != connect.CodeNotFound {
 		t.Errorf("an unknown vault got %v, want not found", err)
 	}
-	if _, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron", Kinds: []string{"book"}})); readCode(t, err) != connect.CodeInvalidArgument {
+	if _, err := client.SearchPassages(
+		t.Context(),
+		connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron", Kinds: []string{"book"}}),
+	); readCode(
+		t,
+		err,
+	) != connect.CodeInvalidArgument {
 		t.Errorf("a kind the index does not have got %v, want invalid argument", err)
 	}
 	if len(search.passageQueries) != 0 {

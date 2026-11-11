@@ -153,8 +153,14 @@ func newScene(t *testing.T) *scene {
 			words:    map[int]string{0: "first words", 1000: "second words"},
 		},
 	}
-	s.transcriber = NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return vault.With(id) }}, storesOf(s.store), textsOf(texts), s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil }, noReport)
+	s.transcriber = NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return vault.With(id) }},
+		storesOf(s.store),
+		textsOf(texts),
+		s.queue,
+		func(context.Context) (Recognizer, error) { return s.model, nil },
+		noReport,
+	)
 	t.Cleanup(s.transcriber.Close)
 	texts.SetStore(PluginID, s.store)
 	return s
@@ -581,8 +587,14 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 
 	// hasWhole store error in run.
 	fsRead := &faultyStore{Folder: s.store, readErr: func(string) error { return errBoom }}
-	trStoreErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, foldersOf(fsRead), textsOf(s.texts), s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil }, noReport)
+	trStoreErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
+		foldersOf(fsRead),
+		textsOf(s.texts),
+		s.queue,
+		func(context.Context) (Recognizer, error) { return s.model, nil },
+		noReport,
+	)
 	if err := trStoreErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected store error from hasWhole, got %v", err)
 	}
@@ -624,8 +636,14 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	}
 
 	// engines callback error.
-	trEngineErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, storesOf(s.store), textsOf(s.texts), s.queue,
-		func(context.Context) (Recognizer, error) { return nil, errBoom }, noReport)
+	trEngineErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
+		storesOf(s.store),
+		textsOf(s.texts),
+		s.queue,
+		func(context.Context) (Recognizer, error) { return nil, errBoom },
+		noReport,
+	)
 	if err := trEngineErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected engine open error, got %v", err)
 	}
@@ -640,8 +658,14 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 
 	// finish returning non-ErrNotExist error in run.
 	fsRename := &faultyStore{Folder: s.store, renameErr: errBoom}
-	trRenameErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, foldersOf(fsRename), textsOf(s.texts), s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil }, noReport)
+	trRenameErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
+		foldersOf(fsRename),
+		textsOf(s.texts),
+		s.queue,
+		func(context.Context) (Recognizer, error) { return s.model, nil },
+		noReport,
+	)
 	if err := trRenameErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected finish renameErr, got %v", err)
 	}
@@ -665,22 +689,40 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		}
 		return nil
 	}}
-	trReachedErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }}, foldersOf(fsReachedErr), textsOf(s2.texts), s2.queue,
-		func(context.Context) (Recognizer, error) { return s2.model, nil }, noReport)
+	trReachedErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
+		foldersOf(fsReachedErr),
+		textsOf(s2.texts),
+		s2.queue,
+		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		noReport,
+	)
 	if err := trReachedErr.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected readReached error, got %v", err)
 	}
 
 	fsAppendErr := &faultyStore{Folder: hosttest.New("Tmp").Store(), appendErr: errBoom}
-	trAppendErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }}, foldersOf(fsAppendErr), textsOf(s2.texts), s2.queue,
-		func(context.Context) (Recognizer, error) { return s2.model, nil }, noReport)
+	trAppendErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
+		foldersOf(fsAppendErr),
+		textsOf(s2.texts),
+		s2.queue,
+		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		noReport,
+	)
 	if err := trAppendErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected appendBatch error, got %v", err)
 	}
 
 	ftPutErr := &faultyTexts{TextVersions: s2.texts, putErr: errBoom}
-	trPutErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }}, storesOf(hosttest.New("Lectures").Store()), func(domain.VaultID) host.TextVersions { return ftPutErr }, s2.queue,
-		func(context.Context) (Recognizer, error) { return s2.model, nil }, noReport)
+	trPutErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
+		storesOf(hosttest.New("Lectures").Store()),
+		func(domain.VaultID) host.TextVersions { return ftPutErr },
+		s2.queue,
+		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		noReport,
+	)
 	if err := trPutErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected putVersion error, got %v", err)
 	}
@@ -688,16 +730,28 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	waitingCh := make(chan struct{})
 	close(waitingCh)
 	fqYieldErr := &faultyQueue{Queue: s2.queue, turn: &faultyTurn{waiting: waitingCh, releaseErr: errBoom}}
-	trYieldErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }}, storesOf(hosttest.New("Lectures").Store()), textsOf(s2.texts), fqYieldErr,
-		func(context.Context) (Recognizer, error) { return s2.model, nil }, noReport)
+	trYieldErr := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
+		storesOf(hosttest.New("Lectures").Store()),
+		textsOf(s2.texts),
+		fqYieldErr,
+		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		noReport,
+	)
 	if err := trYieldErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected yieldTurn releaseErr, got %v", err)
 	}
 
 	// reportProgress division by 1000 boundaries.
 	fqProgress := &faultyQueue{Queue: s2.queue}
-	trProgress := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }}, storesOf(s2.store), textsOf(s2.texts), fqProgress,
-		func(context.Context) (Recognizer, error) { return s2.model, nil }, noReport)
+	trProgress := NewTranscriber(
+		vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s2.vault.With(id) }},
+		storesOf(s2.store),
+		textsOf(s2.texts),
+		fqProgress,
+		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		noReport,
+	)
 	trProgress.reportProgress(ctx, "Lectures", lecture, 999, 1998)
 	trProgress.reportProgress(ctx, "Lectures", lecture, 1000, 2000)
 	if len(fqProgress.tasks) != 2 {

@@ -51,7 +51,14 @@ func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			spy := newFloorFixture()
-			searching := search.New(search.Index{Passages: noWords{}, Nearest: spy}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
+			searching := search.New(
+				search.Index{Passages: noWords{}, Nearest: spy},
+				vaultreader.Readers{},
+				nil,
+				oneWay{direction: newVector(+1)},
+				vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil),
+				nil,
+			)
 			if tc.source != nil {
 				searching.Floor = tc.source
 			}
@@ -88,7 +95,14 @@ func TestTheDefaultFloorIsThirtyHundredths(t *testing.T) {
 func TestASearchAsksTheFloorSourceOncePerQuery(t *testing.T) {
 	vault := domain.Vault{ID: "01VAULT"}
 	calls := 0
-	searching := search.New(search.Index{Passages: noWords{}, Nearest: newFloorFixture()}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
+	searching := search.New(
+		search.Index{Passages: noWords{}, Nearest: newFloorFixture()},
+		vaultreader.Readers{},
+		nil,
+		oneWay{direction: newVector(+1)},
+		vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil),
+		nil,
+	)
 	searching.Floor = func(context.Context, domain.Vault, string) float64 { calls++; return 0.4 }
 
 	if _, err := searching.Execute(t.Context(), vault, "disorder", search.GetTypingParameters(search.Hybrid, 5)); err != nil {

@@ -147,7 +147,8 @@ func TestTheSampleManifestIsReadWithEveryFieldMapped(t *testing.T) {
 	if len(m.Settings) != 4 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
 		t.Errorf("optionsBy = %+v", m.Settings)
 	}
-	if len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || !slices.Equal(*m.Contributes.NoteTypes[0].Headings, []int{1, 2}) || !slices.Equal(m.Contributes.NoteTypes[0].IDHeadingLevels, []int{3}) {
+	if len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || !slices.Equal(*m.Contributes.NoteTypes[0].Headings, []int{1, 2}) ||
+		!slices.Equal(m.Contributes.NoteTypes[0].IDHeadingLevels, []int{3}) {
 		t.Errorf("noteTypes = %+v", m.Contributes.NoteTypes)
 	}
 }
@@ -233,19 +234,34 @@ func TestDataAfterTheManifestIsRefused(t *testing.T) {
 }
 
 func TestAnOptionOfNoValueShapeIsRefused(t *testing.T) {
-	if _, err := manifestjson.Decode([]byte(`{"settings":[{"key":"k","options":[1]}]}`)); err == nil || !strings.Contains(err.Error(), `setting "k"`) || !strings.Contains(err.Error(), "options must be a list") {
+	if _, err := manifestjson.Decode(
+		[]byte(`{"settings":[{"key":"k","options":[1]}]}`),
+	); err == nil || !strings.Contains(err.Error(), `setting "k"`) ||
+		!strings.Contains(err.Error(), "options must be a list") {
 		t.Errorf("a number was accepted as an option: %v", err)
 	}
-	if _, err := manifestjson.Decode([]byte(`{"settings":[{"key":"k","options":[{"value":1}]}]}`)); err == nil || !strings.Contains(err.Error(), "options must be a list") {
+	if _, err := manifestjson.Decode(
+		[]byte(`{"settings":[{"key":"k","options":[{"value":1}]}]}`),
+	); err == nil ||
+		!strings.Contains(err.Error(), "options must be a list") {
 		t.Errorf("an option with numeric value was accepted: %v", err)
 	}
-	if _, err := manifestjson.Decode([]byte(`{"settings":[{"key":"k","optionsBy":{"setting":"p","options":{"a":[1]}}}]}`)); err == nil || !strings.Contains(err.Error(), `setting "k"`) || !strings.Contains(err.Error(), `options under "a"`) {
+	if _, err := manifestjson.Decode(
+		[]byte(`{"settings":[{"key":"k","optionsBy":{"setting":"p","options":{"a":[1]}}}]}`),
+	); err == nil || !strings.Contains(err.Error(), `setting "k"`) ||
+		!strings.Contains(err.Error(), `options under "a"`) {
 		t.Errorf("an invalid optionsBy option was accepted: %v", err)
 	}
-	if _, err := manifestjson.Decode([]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":["bad"]}]}}`)); err == nil || !strings.Contains(err.Error(), `note type "link"`) {
+	if _, err := manifestjson.Decode(
+		[]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":["bad"]}]}}`),
+	); err == nil ||
+		!strings.Contains(err.Error(), `note type "link"`) {
 		t.Errorf("a string heading was accepted: %v", err)
 	}
-	if _, err := manifestjson.Decode([]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":[1.5]}]}}`)); err == nil || !strings.Contains(err.Error(), `note type "link"`) {
+	if _, err := manifestjson.Decode(
+		[]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":[1.5]}]}}`),
+	); err == nil ||
+		!strings.Contains(err.Error(), `note type "link"`) {
 		t.Errorf("a fractional heading was accepted: %v", err)
 	}
 	m, err := manifestjson.Decode([]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":[]}]}}`))

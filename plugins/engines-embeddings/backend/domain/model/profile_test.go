@@ -108,7 +108,9 @@ func TestGetRemoteOfAnUnlistedModelUsesTheFallbackWithItsOwnID(t *testing.T) {
 
 func TestUserProfileAddsAModel(t *testing.T) {
 	var reported []string
-	table := getShipped(t).WithUserProfiles("/data/profiles", []UserFile{{Path: "mine.json", Data: []byte(`{"id":"owner/my-model","title":"Mine","dims":256,"maxTokens":2048,"pooling":"last","queryPrefix":"q: ","onnxFile":"onnx/model.onnx","extraInputs":["position_ids"]}`)}}, func(file string, _ error) { reported = append(reported, file) })
+	table := getShipped(
+		t,
+	).WithUserProfiles("/data/profiles", []UserFile{{Path: "mine.json", Data: []byte(`{"id":"owner/my-model","title":"Mine","dims":256,"maxTokens":2048,"pooling":"last","queryPrefix":"q: ","onnxFile":"onnx/model.onnx","extraInputs":["position_ids"]}`)}}, func(file string, _ error) { reported = append(reported, file) })
 
 	p, err := table.GetLocal("owner/my-model")
 	if err != nil || len(reported) != 0 {
@@ -123,7 +125,9 @@ func TestUserProfileAddsAModel(t *testing.T) {
 }
 
 func TestUserProfileOverridesTheFieldsItNamesAndKeepsTheRest(t *testing.T) {
-	table := getShipped(t).WithUserProfiles("/data/profiles", []UserFile{{Path: "e5.json", Data: []byte(`[{"id":"Xenova/multilingual-e5-small","queryPrefix":"search_query: ","documentPrefix":"search_document: "}]`)}}, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+	table := getShipped(
+		t,
+	).WithUserProfiles("/data/profiles", []UserFile{{Path: "e5.json", Data: []byte(`[{"id":"Xenova/multilingual-e5-small","queryPrefix":"search_query: ","documentPrefix":"search_document: "}]`)}}, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
 
 	p, err := table.GetLocal(DefaultModel)
 	if err != nil {
@@ -145,7 +149,9 @@ func TestUserProfileOverridesTheFieldsItNamesAndKeepsTheRest(t *testing.T) {
 }
 
 func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
-	table := getShipped(t).WithUserProfiles("/data/profiles", []UserFile{{Path: "e5.json", Data: []byte(`{"id":"Xenova/multilingual-e5-small","onnxFile":"onnx/model_int8.onnx"}`)}}, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+	table := getShipped(
+		t,
+	).WithUserProfiles("/data/profiles", []UserFile{{Path: "e5.json", Data: []byte(`{"id":"Xenova/multilingual-e5-small","onnxFile":"onnx/model_int8.onnx"}`)}}, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
 
 	p, err := table.GetLocal(DefaultModel)
 	if err != nil {
@@ -155,7 +161,9 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 		t.Errorf("pins of the old file kept: %+v", p)
 	}
 
-	tablePinned := getShipped(t).WithUserProfiles("/data/profiles", []UserFile{{Path: "e5.json", Data: []byte(`{"id":"Xenova/multilingual-e5-small","onnxFile":"onnx/model_int8.onnx","sha256":{"onnx/model_int8.onnx":"abc"}}`)}}, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+	tablePinned := getShipped(
+		t,
+	).WithUserProfiles("/data/profiles", []UserFile{{Path: "e5.json", Data: []byte(`{"id":"Xenova/multilingual-e5-small","onnxFile":"onnx/model_int8.onnx","sha256":{"onnx/model_int8.onnx":"abc"}}`)}}, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
 	p2, err := tablePinned.GetLocal(DefaultModel)
 	if err != nil || p2.SHA256["onnx/model_int8.onnx"] != "abc" || p2.Revision == "" {
 		t.Errorf("explicit sha256 pin lost: %+v, %v", p2, err)
@@ -163,7 +171,9 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 }
 
 func TestUserProfileByAnAliasOverridesTheModelOfTheAlias(t *testing.T) {
-	table := getShipped(t).WithUserProfiles("/data/profiles", []UserFile{{Path: "m3.json", Data: []byte(`{"id":"bge-m3","floorHint":0.5}`)}}, func(string, error) {})
+	table := getShipped(
+		t,
+	).WithUserProfiles("/data/profiles", []UserFile{{Path: "m3.json", Data: []byte(`{"id":"bge-m3","floorHint":0.5}`)}}, func(string, error) {})
 
 	p, err := table.GetLocal("Xenova/bge-m3")
 	if err != nil || p.FloorHint != 0.5 {
@@ -178,8 +188,19 @@ func TestMalformedUserFilesAreReportedAndSkipped(t *testing.T) {
 	files := []UserFile{}
 	files = append(files, UserFile{Path: "a-broken.json", Data: []byte(`{"id": "owner/x", `)})
 	files = append(files, UserFile{Path: "b-nodims.json", Data: []byte(`{"id":"owner/y","maxTokens":512,"pooling":"mean","onnxFile":"onnx/m.onnx"}`)})
-	files = append(files, UserFile{Path: "c-unknown-field.json", Data: []byte(`{"id":"owner/z","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","querryPrefix":"x"}`)})
-	files = append(files, UserFile{Path: "d-half.json", Data: []byte(`[{"id":"owner/ok","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"},{"id":"owner/bad","dims":8,"maxTokens":8,"pooling":"median","onnxFile":"m.onnx"}]`)})
+	files = append(
+		files,
+		UserFile{Path: "c-unknown-field.json", Data: []byte(`{"id":"owner/z","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","querryPrefix":"x"}`)},
+	)
+	files = append(
+		files,
+		UserFile{
+			Path: "d-half.json",
+			Data: []byte(
+				`[{"id":"owner/ok","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"},{"id":"owner/bad","dims":8,"maxTokens":8,"pooling":"median","onnxFile":"m.onnx"}]`,
+			),
+		},
+	)
 	files = append(files, UserFile{Path: "e-good.json", Data: []byte(`{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)})
 	files = append(files, UserFile{Path: "f-array.json", Data: []byte(`[broken`)})
 	reported := map[string]error{}
@@ -357,7 +378,11 @@ func TestProfileNormalizeCloneAndErrorPaths(t *testing.T) {
 	embeddedProfiles = origEmbedded
 
 	table := getShipped(t)
-	withExtra := table.WithUserProfiles("/data/profiles", []UserFile{{Path: "extra.json", Data: []byte(`{"id":"Xenova/bge-m3","extraInputs":["position_ids"]}`)}}, func(string, error) {})
+	withExtra := table.WithUserProfiles(
+		"/data/profiles",
+		[]UserFile{{Path: "extra.json", Data: []byte(`{"id":"Xenova/bge-m3","extraInputs":["position_ids"]}`)}},
+		func(string, error) {},
+	)
 	m3, err := withExtra.GetLocal("Xenova/bge-m3")
 	if err != nil {
 		t.Fatal(err)

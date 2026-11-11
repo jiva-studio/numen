@@ -189,18 +189,46 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, manifest.ErrUnsupportedProtocol},
 		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, manifest.ErrUnsupportedProtocol},
 		{"backend with a blank entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, manifest.ErrInvalidBackend},
-		{"the wildcard activation event", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["*"]}`, manifest.ErrInvalidActivationEvent},
-		{"an activation event with an empty extension", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onFile:"]}`, manifest.ErrInvalidActivationEvent},
-		{"an activation event with a wildcard extension", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onFile:*"]}`, manifest.ErrInvalidActivationEvent},
-		{"an activation event that is not declared in the guide", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onCommand:a"]}`, manifest.ErrInvalidActivationEvent},
+		{
+			"the wildcard activation event",
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["*"]}`,
+			manifest.ErrInvalidActivationEvent,
+		},
+		{
+			"an activation event with an empty extension",
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onFile:"]}`,
+			manifest.ErrInvalidActivationEvent,
+		},
+		{
+			"an activation event with a wildcard extension",
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onFile:*"]}`,
+			manifest.ErrInvalidActivationEvent,
+		},
+		{
+			"an activation event that is not declared in the guide",
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onCommand:a"]}`,
+			manifest.ErrInvalidActivationEvent,
+		},
 		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
-		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onStartup"],"frontend":{}}`, manifest.ErrNoBackend},
+		{
+			"activation events without a backend",
+			`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onStartup"],"frontend":{}}`,
+			manifest.ErrNoBackend,
+		},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
 		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
-		{"runtime dependencies without a backend", `{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`, manifest.ErrNoBackend},
+		{
+			"runtime dependencies without a backend",
+			`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`,
+			manifest.ErrNoBackend,
+		},
 		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, manifest.ErrEmptySettingTitle},
 		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, manifest.ErrInvalidPermission},
-		{"settings view without a frontend", `{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`, manifest.ErrInvalidSettingsView},
+		{
+			"settings view without a frontend",
+			`{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`,
+			manifest.ErrInvalidSettingsView,
+		},
 	}
 
 	for _, tc := range cases {
@@ -371,12 +399,18 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 
 func TestAManifestDeclaresDependencies(t *testing.T) {
 	sum := strings.Repeat("a", 64)
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"sample-runtime","kind":"runtime"},{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))
+	m, err := manifestjson.Read(
+		strings.NewReader(
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"sample-runtime","kind":"runtime"},{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`,
+		),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	got := m.GetDependencyRequirements("/p", nil)
-	if len(got) != 2 || got[0].Kind != manifest.DependencyKindRuntime || got[0].ID != "sample-runtime" || got[1].ID != "whisper" || got[1].Metadata["fileName"] != "w.bin" || got[1].PluginDir != "/p" {
+	if len(got) != 2 || got[0].Kind != manifest.DependencyKindRuntime || got[0].ID != "sample-runtime" || got[1].ID != "whisper" ||
+		got[1].Metadata["fileName"] != "w.bin" ||
+		got[1].PluginDir != "/p" {
 		t.Errorf("requirements = %+v", got)
 	}
 }
@@ -416,7 +450,9 @@ func TestSettingBoundsAreAbsentUntilTheManifestSetsThem(t *testing.T) {
 // The field enabled of the object of a plugin in the settings file is the host's, so a setting of that
 // name would meet it.
 func TestAManifestDoesNotDeclareASettingNamedEnabled(t *testing.T) {
-	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"Enabled"}]}`))
+	_, err := manifestjson.Read(
+		strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"Enabled"}]}`),
+	)
 	if !errors.Is(err, manifest.ErrReservedSettingKey) {
 		t.Errorf("error = %v, want ErrReservedSettingKey", err)
 	}
@@ -459,7 +495,9 @@ func TestAManifestRejectsAnIdThatTheSettingsFileReserves(t *testing.T) {
 // Not yet decided by the person: a key of a plugin setting is one segment, since a dot joins the levels of a
 // path. This test is dropped if the person decides otherwise.
 func TestAManifestDoesNotDeclareASettingKeyWithADot(t *testing.T) {
-	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"max.tokens","type":"number","title":"Tokens"}]}`))
+	_, err := manifestjson.Read(
+		strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"max.tokens","type":"number","title":"Tokens"}]}`),
+	)
 	if !errors.Is(err, manifest.ErrInvalidSettingKey) {
 		t.Errorf("error = %v, want ErrInvalidSettingKey", err)
 	}

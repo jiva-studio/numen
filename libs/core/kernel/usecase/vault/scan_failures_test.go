@@ -158,11 +158,35 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 		indexed int
 	}{
 		{"the vault cannot be opened", func(m *scanVault) { m.openErr = boom }, "boom", func(m *scanVault) bool { return m.registerCalled }, 0},
-		{"the vault cannot be registered", func(m *scanVault) { m.registerErr = boom }, "the index cannot record the vault named: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
-		{"the index cannot be read", func(m *scanVault) { m.knownErr = boom }, "the index of named cannot be read: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
+		{
+			"the vault cannot be registered",
+			func(m *scanVault) { m.registerErr = boom },
+			"the index cannot record the vault named: boom",
+			func(m *scanVault) bool { return len(m.reads) > 0 },
+			0,
+		},
+		{
+			"the index cannot be read",
+			func(m *scanVault) { m.knownErr = boom },
+			"the index of named cannot be read: boom",
+			func(m *scanVault) bool { return len(m.reads) > 0 },
+			0,
+		},
 		{"the walk fails", func(m *scanVault) { m.walkErr = boom }, "boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
-		{"the vault cannot be told which notes are gone", func(m *scanVault) { m.removeErr = boom }, "the deleted notes of named cannot be removed from the index: boom", func(m *scanVault) bool { return m.reports > 0 }, 1},
-		{"the index upkeep fails", func(m *scanVault) { m.reportErr = boom }, "the index upkeep of named failed: boom", func(*scanVault) bool { return false }, 1},
+		{
+			"the vault cannot be told which notes are gone",
+			func(m *scanVault) { m.removeErr = boom },
+			"the deleted notes of named cannot be removed from the index: boom",
+			func(m *scanVault) bool { return m.reports > 0 },
+			1,
+		},
+		{
+			"the index upkeep fails",
+			func(m *scanVault) { m.reportErr = boom },
+			"the index upkeep of named failed: boom",
+			func(*scanVault) bool { return false },
+			1,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -230,8 +254,16 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 		want  func(vaultreading.ScanResult) bool
 	}{
 		{"a source of another kind", scanFile{kind: domain.KindFile, size: 1, modTime: newest}, func(r vaultreading.ScanResult) bool { return r.Assets == 1 }},
-		{"a file that vanished", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: fs.ErrNotExist}, func(r vaultreading.ScanResult) bool { return r.Vanished == 1 }},
-		{"a file nobody can read", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: errors.New("denied")}, func(r vaultreading.ScanResult) bool { return r.Unreadable == 1 }},
+		{
+			"a file that vanished",
+			scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: fs.ErrNotExist},
+			func(r vaultreading.ScanResult) bool { return r.Vanished == 1 },
+		},
+		{
+			"a file nobody can read",
+			scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: errors.New("denied")},
+			func(r vaultreading.ScanResult) bool { return r.Unreadable == 1 },
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

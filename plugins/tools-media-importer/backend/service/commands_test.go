@@ -27,7 +27,14 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{
+		PluginID: PluginID,
+		Vaults:   vaultsOf(vault),
+		Store:    foldersOf(vault),
+		Texts:    textsOf(texts),
+		Queue:    hosttest.NewQueue(),
+		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+	}
 	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock(webpage.New()) },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
@@ -188,7 +195,14 @@ func TestCommandErrorPaths(t *testing.T) {
 	es := &errListStore{Store: vault.Store()}
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
-	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: func(domain.VaultID) link.Folder { return link.Folder{Files: es, Writer: es} }, Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{
+		PluginID: PluginID,
+		Vaults:   vaultsOf(vault),
+		Store:    func(domain.VaultID) link.Folder { return link.Folder{Files: es, Writer: es} },
+		Texts:    textsOf(texts),
+		Queue:    hosttest.NewQueue(),
+		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+	}
 	cf := &configurableFetcher{}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },
@@ -261,7 +275,14 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
 	queue := hosttest.NewQueue()
-	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(texts), Queue: queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{
+		PluginID: PluginID,
+		Vaults:   vaultsOf(vault),
+		Store:    foldersOf(vault),
+		Texts:    textsOf(texts),
+		Queue:    queue,
+		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+	}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })

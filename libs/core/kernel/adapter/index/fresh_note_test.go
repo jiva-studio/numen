@@ -16,7 +16,8 @@ func TestAFreshNoteIsSearchableByItsWordsBeforeItsVector(t *testing.T) {
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{Path: "n/fresh.md", Kind: "note", Size: int64(len(text)), MTime: 1}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "note", "n/fresh.md", []chunk.Chunk{{Start: 0, Length: len(text), Text: text, Small: []chunk.Chunk{{Start: 0, Length: len(text), Text: text}}}}); err != nil {
+	if err := db.Chunks().
+		ReplaceChunks(ctx, vault.ID, "note", "n/fresh.md", []chunk.Chunk{{Start: 0, Length: len(text), Text: text, Small: []chunk.Chunk{{Start: 0, Length: len(text), Text: text}}}}); err != nil {
 		t.Fatal(err)
 	}
 

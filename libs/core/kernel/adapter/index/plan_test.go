@@ -41,16 +41,36 @@ func getExpectedPlans() []struct {
 		{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 		{chunk.Statements(), "file_stats", []any{1, "book"}, []string{"sources_by_fingerprint"}},
 		{chunk.Statements(), "source_text", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
-		{chunk.Statements(), "file_stats_under", []any{1, "folder", 1, "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
-		{chunk.Statements(), "sources_under", []any{1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+		{
+			chunk.Statements(),
+			"file_stats_under",
+			[]any{1, "folder", 1, "folder/", "folder0"},
+			[]string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"},
+		},
+		{
+			chunk.Statements(),
+			"sources_under",
+			[]any{1, "folder", "folder/", "folder0"},
+			[]string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"},
+		},
 		// A folder and everything under it are filed at their new paths through the
 		// same two lookups, and the note at the path itself is renamed by its own.
-		{chunk.Statements(), "move_sources", []any{"science/folder", 7, 1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+		{
+			chunk.Statements(),
+			"move_sources",
+			[]any{"science/folder", 7, 1, "folder", "folder/", "folder0"},
+			[]string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"},
+		},
 		{chunk.Statements(), "note_naming", []any{1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)", "INTEGER PRIMARY KEY"}},
 		{chunk.Statements(), "rename_note", []any{"Entropy", "Entropy", 1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
 		{chunk.Statements(), "unchunked", []any{1, "book", 50}, []string{"sources_by_fingerprint", "chunks_by_source"}},
 		{chunk.Statements(), "stale_recipe", []any{1, "book", `["epub-1","pdf-1"]`, 50}, []string{"sources_by_fingerprint"}},
-		{chunk.Statements(), "unembedded", []any{"model", 1, int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), 0, 0, 50}, []string{"sources_by_modified", "vectors_by_hash"}},
+		{
+			chunk.Statements(),
+			"unembedded",
+			[]any{"model", 1, int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), 0, 0, 50},
+			[]string{"sources_by_modified", "vectors_by_hash"},
+		},
 		{chunk.Statements(), "passage", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 		{chunk.Statements(), "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 		{chunk.Statements(), "progress", []any{"model", 1, 0}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
@@ -74,7 +94,12 @@ func getExpectedPlans() []struct {
 		// The coarse pass under a path prefix finds the sources by the range of their
 		// paths, their chunks by source, and the vector of each chunk by its key: the
 		// "!" of the plan of the vector table is its lookup of one row by key.
-		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10, "notes0", "notes/", "notes0"}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
+		{
+			chunk.Statements(),
+			"coarse_prefix",
+			[]any{getCoarse(), 1, "notes/", 10, "notes0", "notes/", "notes0"},
+			[]string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"},
+		},
 		{chunk.Statements(), "coarse", []any{getCoarse(), 1, 10}, []string{"chunks_vec"}},
 		// The cached hash of a file is its source row, found by vault and path. The
 		// vault is given by its identifier, then the path; a save gives the record's

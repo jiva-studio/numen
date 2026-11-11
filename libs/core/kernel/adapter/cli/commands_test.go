@@ -69,7 +69,12 @@ func createLinkDeps(links, backlinks []domain.ResolvedLink) stubSession {
 	return stubSession{
 		Vaults: createVaultList(getNotebook()),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Links: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}))}, nil
+			return cli.Indexed{
+				Links: query.NewShowLinksByName(
+					registry.NewFind(singleVaultList{getNotebook()}).Execute,
+					query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}),
+				),
+			}, nil
 		},
 	}
 }
@@ -223,7 +228,9 @@ func problemsDeps(queries problemport.ProblemQueries) stubSession {
 	return stubSession{
 		Vaults: createVaultList(getNotebook()),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Problems: vaults.NewGetProblemsByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, vaults.NewGetProblems(check.Standard(queries)))}, nil
+			return cli.Indexed{
+				Problems: vaults.NewGetProblemsByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, vaults.NewGetProblems(check.Standard(queries))),
+			}, nil
 		},
 	}
 }
@@ -315,7 +322,12 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		}
 	}
 	if _, err := runWithDeps(stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-		return cli.Indexed{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
+		return cli.Indexed{
+			Problems: vaults.NewGetProblemsByName(
+				func(string) (domain.Vault, error) { return domain.Vault{}, errRefused },
+				vaults.NewGetProblems(check.Standard(fixedProblemQueries{})),
+			),
+		}, nil
 	}},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the rejection was lost: %v", err)
@@ -508,7 +520,10 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 				}
 				embed.Embedder = s.embedder
 			}
-			read := indexing.NewReadWholeVaultByName(registry.NewFind(singleVaultList{target}).Execute, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
+			read := indexing.NewReadWholeVaultByName(
+				registry.NewFind(singleVaultList{target}).Execute,
+				preparingRead(indexing.NewReadWholeVault(notes, books, embed)),
+			)
 			read.Unembedded = s.unembedded
 			return cli.Indexed{Scan: cli.Scan{
 				Scan: indexing.NewScanVault(read, refusingSummaries{VaultSummaries: db.NoteQueries(), err: s.summary}),
