@@ -47,7 +47,6 @@ const getCardsIn = (section: string) => INITIAL_CARDS.filter((one) => one.sectio
   margin: 0;
 }
 
-
 .deck__label {
   white-space: nowrap;
   color: var(--numen-hushed);

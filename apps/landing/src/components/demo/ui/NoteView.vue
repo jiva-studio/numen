@@ -23,5 +23,4 @@ defineProps<{ body: string }>()
   user-select: text;
   -webkit-user-select: text;
 }
-
 </style>

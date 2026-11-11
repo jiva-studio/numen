@@ -15,10 +15,20 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
 
 <template>
   <div class="plex">
-    <svg class="plex__canvas" :viewBox="`0 0 ${PLEX_WIDTH} ${PLEX_HEIGHT}`" role="img" aria-label="Plex">
+    <svg
+      class="plex__canvas"
+      :viewBox="`0 0 ${PLEX_WIDTH} ${PLEX_HEIGHT}`"
+      role="img"
+      aria-label="Plex"
+    >
       <PlexArrow />
 
-      <PlexEdgeView v-for="(edge, index) in PLEX_LAYOUT.edges" :key="edge.id" :edge="edge" :label-id="getLabelId(index)" />
+      <PlexEdgeView
+        v-for="(edge, index) in PLEX_LAYOUT.edges"
+        :key="edge.id"
+        :edge="edge"
+        :label-id="getLabelId(index)"
+      />
 
       <g
         v-for="node in PLEX_LAYOUT.nodes"
@@ -26,8 +36,21 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
         class="plex__node"
         :data-relation="node.relation"
       >
-        <rect class="plex__box" :x="getBoxX(node)" :y="getBoxY(node)" :width="node.width" :height="node.height" rx="8" />
-        <text class="plex__title" :x="node.x" :y="node.y" text-anchor="middle" dominant-baseline="central">
+        <rect
+          class="plex__box"
+          :x="getBoxX(node)"
+          :y="getBoxY(node)"
+          :width="node.width"
+          :height="node.height"
+          rx="8"
+        />
+        <text
+          class="plex__title"
+          :x="node.x"
+          :y="node.y"
+          text-anchor="middle"
+          dominant-baseline="central"
+        >
           {{ node.text }}
         </text>
       </g>
@@ -86,5 +109,4 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
 .plex__node[data-relation='focus'] .plex__title {
   fill: var(--numen-accent-ink);
 }
-
 </style>

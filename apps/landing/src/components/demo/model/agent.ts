@@ -17,7 +17,12 @@ export interface ModelOption {
 }
 
 export const MODEL_OPTIONS: readonly ModelOption[] = [
-  { agentId: 'claude', agentTitle: 'Claude', modelId: 'claude-3-7-sonnet', modelTitle: 'Sonnet 3.7' },
+  {
+    agentId: 'claude',
+    agentTitle: 'Claude',
+    modelId: 'claude-3-7-sonnet',
+    modelTitle: 'Sonnet 3.7',
+  },
   { agentId: 'gemini', agentTitle: 'Gemini', modelId: 'gemini-2.5-pro', modelTitle: '2.5 Pro' },
 ]
 
@@ -68,7 +73,11 @@ export function createAgent() {
     const title = FOCUS_TITLE
     const id = String(turns.value.length + 1)
     draft.value = ''
-    turns.value = [...turns.value, createAsked(`${id}-q`, text), createDid(`${id}-tool`, 'note search', title, '3 passages')]
+    turns.value = [
+      ...turns.value,
+      createAsked(`${id}-q`, text),
+      createDid(`${id}-tool`, 'note search', title, '3 passages'),
+    ]
     isWorking.value = true
     setTimeout(() => {
       turns.value = [

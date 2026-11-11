@@ -23,7 +23,13 @@ test('each curve of the plex joins two notes it draws', () => {
 
 test('each note of the plex fits the drawing', () => {
   for (const node of layout.nodes) {
-    assert.ok(node.x - node.width / 2 >= 0 && node.x + node.width / 2 <= WIDTH, `${node.path} is cut at the sides`)
-    assert.ok(node.y - node.height / 2 >= 0 && node.y + node.height / 2 <= HEIGHT, `${node.path} is cut at the top or bottom`)
+    assert.ok(
+      node.x - node.width / 2 >= 0 && node.x + node.width / 2 <= WIDTH,
+      `${node.path} is cut at the sides`,
+    )
+    assert.ok(
+      node.y - node.height / 2 >= 0 && node.y + node.height / 2 <= HEIGHT,
+      `${node.path} is cut at the top or bottom`,
+    )
   }
 })

@@ -70,11 +70,7 @@ describe('createShellHost', () => {
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
     })
     let platform: 'windows' | 'darwin' = 'windows'
-    const { host } = createShellHost(
-      undefined,
-      {},
-      () => platform,
-    )
+    const { host } = createShellHost(undefined, {}, () => platform)
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
     vi.unstubAllGlobals()
 

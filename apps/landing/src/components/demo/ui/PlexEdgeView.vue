@@ -32,7 +32,6 @@ defineProps<{
   stroke: none;
 }
 
-
 .plex__label {
   fill: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);

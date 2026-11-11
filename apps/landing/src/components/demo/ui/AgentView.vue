@@ -74,7 +74,14 @@ function onChooseModel(id: string) {
       <AgentFoot :agent="agent" @open-models="onOpenModels" />
     </div>
 
-    <Menu v-if="menuAt" :items="items" :at="menuAt" is-open @choose="onChooseModel" @dismiss="menuAt = null" />
+    <Menu
+      v-if="menuAt"
+      :items="items"
+      :at="menuAt"
+      is-open
+      @choose="onChooseModel"
+      @dismiss="menuAt = null"
+    />
   </div>
 </template>
 
@@ -159,5 +166,4 @@ function onChooseModel(id: string) {
   user-select: text;
   -webkit-user-select: text;
 }
-
 </style>

@@ -46,7 +46,13 @@ function onZoom(by: number) {
       <button type="button" class="pdf__action" aria-label="Next page" @click="onGo(page + 1)">
         <ChevronRight class="pdf__icon" />
       </button>
-      <input class="pdf__page" :value="page + 1" inputmode="numeric" aria-label="Page" @change="onTypePage" />
+      <input
+        class="pdf__page"
+        :value="page + 1"
+        inputmode="numeric"
+        aria-label="Page"
+        @change="onTypePage"
+      />
       <span class="pdf__count">/ {{ doc.leaves }}</span>
       <button type="button" class="pdf__action" aria-label="Zoom out" @click="onZoom(-ZOOM_STEP)">
         <Minus class="pdf__icon" />

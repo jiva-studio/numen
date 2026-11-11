@@ -31,6 +31,7 @@ export const getTabIcon = (kind: TabKind): Component => TAB_ICONS[kind]
 export function getRowIcon(path: string, isOpen: boolean): Component {
   if (path.endsWith('.mp3')) return AudioLines
   if (path.endsWith('.pdf')) return Book
-  if (path.endsWith('.md')) return path.startsWith('decks/') ? Layers : path.startsWith('lectures/') ? Link : FileText
+  if (path.endsWith('.md'))
+    return path.startsWith('decks/') ? Layers : path.startsWith('lectures/') ? Link : FileText
   return isOpen ? FolderOpen : Folder
 }

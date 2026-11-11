@@ -22,7 +22,10 @@ const createKind = (kind: string, order: number) => {
 describe('createWindowTabs', () => {
   it('puts in front the main-pane kind of the lowest order and falls back when it goes', () => {
     const tabs = createWindowTabs()
-    const late = tabs.addView({ pluginId: 'md.numen.a', registration: createKind('late', 2).registration })
+    const late = tabs.addView({
+      pluginId: 'md.numen.a',
+      registration: createKind('late', 2).registration,
+    })
     tabs.addView({ pluginId: 'md.numen.b', registration: createKind('early', 1).registration })
     tabs.addView({ pluginId: 'md.numen.c', registration: { kind: 'unplaced', component: {} } })
 
