@@ -36,7 +36,9 @@ func TestCheckReportsUnexportedFunctionDocs(t *testing.T) {
 
 func TestCheckKeepsExportedFieldCommentsOfAMarkedType(t *testing.T) {
 	for _, marker := range []string{"//numen:settings", "//numen:api"} {
-		src := "package p\n\n// Spec describes a tool.\n//\n" + marker + "\ntype Spec struct {\n\t// Name is shown to the user.\n\tName string\n\t// cache is filled on first use.\n\tcache map[string]int\n}\n\n// Other is not marked.\ntype Other struct {\n\t// Name is the name.\n\tName string\n}\n"
+		src := "package p\n\n// Spec describes a tool.\n//\n" + marker + "\n" +
+			"type Spec struct {\n\t// Name is shown to the user.\n\tName string\n\t// cache is filled on first use.\n\tcache map[string]int\n}\n\n" +
+			"// Other is not marked.\ntype Other struct {\n\t// Name is the name.\n\tName string\n}\n"
 		findings, fixed, err := Check("p.go", []byte(src))
 		if err != nil {
 			t.Fatal(err)
@@ -82,7 +84,11 @@ func TestCheckReportsDocsThatRestateTheNameAndTheSignature(t *testing.T) {
 		{"method", "package windowsession\n\ntype Runtime struct{}\n\n// SetVault sets the vault the window shows.\nfunc (r *Runtime) SetVault(v domain.Vault) {}\n", true},
 		{"function", "package bridge\n\n// GetPlugin finds no plugin.\nfunc (AbsentRuntime) GetPlugin(string) (manifest.Discovered, bool) { return manifest.Discovered{}, false }\n", true},
 		{"separated by a blank line", "package p\n\n// ReadTheme reads the stylesheet of a theme.\n\nfunc ReadTheme() {}\n", true},
-		{"no five-line cap, a long restating doc is still refused", "package p\n\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\n// ReadTheme reads the theme.\nfunc ReadTheme() {}\n", true},
+		{
+			"no five-line cap, a long restating doc is still refused",
+			"package p\n\n" + strings.Repeat("// ReadTheme reads the theme.\n", 6) + "func ReadTheme() {}\n",
+			true,
+		},
 		{"a fact the name cannot show", "package p\n\n// ReadTheme reads the stylesheet of a theme from the bundled copy when the vault holds none.\nfunc ReadTheme() {}\n", false},
 		{"a long doc with facts is accepted", "", false},
 		{"a section comment that does not start with the name", "package p\n\n// Themes are read below.\n\nfunc ReadTheme() {}\n", false},
@@ -90,7 +96,9 @@ func TestCheckReportsDocsThatRestateTheNameAndTheSignature(t *testing.T) {
 	}
 	for _, c := range cases {
 		if c.name == "a long doc with facts is accepted" {
-			c.src = "package p\n\n// Open opens the file.\n// It waits for the lock the sync daemon holds while it uploads,\n// so a caller on the save path blocks for up to the lease time.\n// The file stays open until the caller closes it.\n// Failures leave the lock as found.\n// See the lease table in the design notes.\n// Calls are not reentrant.\nfunc Open() {}\n"
+			c.src = "package p\n\n// Open opens the file.\n// It waits for the lock the sync daemon holds while it uploads,\n" +
+				"// so a caller on the save path blocks for up to the lease time.\n// The file stays open until the caller closes it.\n" +
+				"// Failures leave the lock as found.\n// See the lease table in the design notes.\n// Calls are not reentrant.\nfunc Open() {}\n"
 		}
 		findings, _, err := Check("p.go", []byte(c.src))
 		if err != nil {
