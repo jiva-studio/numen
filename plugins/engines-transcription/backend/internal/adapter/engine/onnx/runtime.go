@@ -45,7 +45,7 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 			case <-pending:
 				continue
 			case <-ctx.Done():
-				// gomutants:disable-next-line RETURN_ZERO reason="none is already the zero value of E"
+				// gomutants:disable-next-line RETURN_ZERO reason="none is the zero value of E."
 				return none, "", ctx.Err()
 			}
 		}
@@ -61,10 +61,9 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 		}
 		r.opening = nil
 		r.mu.Unlock()
-		// gomutants:disable-next-line STATEMENT_REMOVE reason="closing mine wakes concurrent waiters in select"
 		close(mine)
 		if err != nil {
-			// gomutants:disable-next-line RETURN_ZERO reason="none is already the zero value of E"
+			// gomutants:disable-next-line RETURN_ZERO reason="none is the zero value of E."
 			return none, "", err
 		}
 		return engine, libPath, nil
@@ -126,10 +125,6 @@ func (r *Runtime[E]) GetLoaded() (E, string) {
 func (r *Runtime[E]) IsAvailable(libPath string) bool {
 	if r.loaded.Load() {
 		return true
-	}
-	// gomutants:disable-next-line BRANCH_IF reason="os.Stat on empty path also returns an error and false"
-	if libPath == "" {
-		return false
 	}
 	_, err := os.Stat(libPath)
 	return err == nil

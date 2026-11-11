@@ -112,14 +112,14 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 }
 
 func TestPermissionRule_ReportsPermissionDifferences(t *testing.T) {
-	valid := []string{"vault:read", "network:outbound", "network"}
-	if got := listPermissionDifferences([]string{"vault:read", "network:outbound", "network"}, valid); len(got) != 0 {
+	valid := []string{"vault:read", "link:open", "network"}
+	if got := listPermissionDifferences([]string{"vault:read", "link:open", "network"}, valid); len(got) != 0 {
 		t.Errorf("equal lists differ: %v", got)
 	}
-	if got := listPermissionDifferences([]string{"vault:read", "network:outbound"}, valid); len(got) != 1 {
+	if got := listPermissionDifferences([]string{"vault:read", "link:open"}, valid); len(got) != 1 {
 		t.Errorf("a permission left out of the guide is found %d times: %v", len(got), got)
 	}
-	if got := listPermissionDifferences([]string{"vault:read", "network:outbound", "network", "root"}, valid); len(got) != 1 {
+	if got := listPermissionDifferences([]string{"vault:read", "link:open", "network", "root"}, valid); len(got) != 1 {
 		t.Errorf("a permission only the guide names is found %d times: %v", len(got), got)
 	}
 	line := "- **`permissions`**: Whitelisted: `vault:read` and `ai:complete` (ask). Any other value, such as `root`, is rejected."

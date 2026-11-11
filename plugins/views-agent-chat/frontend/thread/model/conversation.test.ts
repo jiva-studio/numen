@@ -5,7 +5,7 @@
  * no answer under it, a line about work that never comes down, or a reason
  * from one exchange landing in the next.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useConversation as baseUseConversation, type ConversationStrings } from './conversation'
 import type { AgentPort, AgentStep, SourceLocation } from '@numen/plugin-sdk'
 import type { Paint } from '@numen/ui'
@@ -588,38 +588,63 @@ describe('a conversation that is over', () => {
     expect(conversation.isAnswerPending.value).toBe(false)
   })
 
-  it('says nothing when the agent refuses to release it', async () => {
-    const conversation = useConversation(
-      {
-        ...createPort([createStopped()]),
-        finish: async () => Promise.reject(new Error('unreachable')),
-      },
-      words,
-      called,
-      now,
-    )
+  describe('when the agent fails to release it', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
 
-    expect(() => conversation.finish()).not.toThrow()
-    await flushPromises()
+    /** Collects what the window would throw as uncaught errors. */
+    const collectUncaught = (): Error[] => {
+      const uncaught: Error[] = []
+      vi.stubGlobal('queueMicrotask', (task: () => void) => {
+        try {
+          task()
+        } catch (error) {
+          uncaught.push(error as Error)
+        }
+      })
+      return uncaught
+    }
 
-    expect(conversation.turns.value).toStrictEqual([])
-  })
-
-  it('says nothing when the agent cannot be reached at all', () => {
-    const conversation = useConversation(
-      {
-        ...createPort([createStopped()]),
-        finish: () => {
-          throw new Error('no agent')
+    it('keeps the transcript and reports the refusal', async () => {
+      const uncaught = collectUncaught()
+      const conversation = useConversation(
+        {
+          ...createPort([createStopped()]),
+          finish: async () => Promise.reject(new Error('unreachable')),
         },
-      },
-      words,
-      called,
-      now,
-    )
+        words,
+        called,
+        now,
+      )
 
-    expect(() => conversation.finish()).not.toThrow()
-    expect(conversation.turns.value).toStrictEqual([])
+      expect(() => conversation.finish()).not.toThrow()
+      await flushPromises()
+
+      expect(uncaught.map((error) => error.message)).toStrictEqual(['unreachable'])
+      expect(conversation.turns.value).toStrictEqual([])
+    })
+
+    it('keeps the transcript and reports an agent that cannot be reached at all', async () => {
+      const uncaught = collectUncaught()
+      const conversation = useConversation(
+        {
+          ...createPort([createStopped()]),
+          finish: () => {
+            throw new Error('no agent')
+          },
+        },
+        words,
+        called,
+        now,
+      )
+
+      expect(() => conversation.finish()).not.toThrow()
+      await flushPromises()
+
+      expect(uncaught.map((error) => error.message)).toStrictEqual(['no agent'])
+      expect(conversation.turns.value).toStrictEqual([])
+    })
   })
 })
 

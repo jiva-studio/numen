@@ -168,7 +168,7 @@ func newRequestFixtureWithFiles(t *testing.T, wrap func(Files) Files) *requestFi
 	}
 	s.blocking = &blockingModel{heardModel: s.model, startCh: make(chan struct{}), release: make(chan struct{})}
 	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}), storesOf(s.store), textsOf(s.texts), s.finishing,
-		func(context.Context) (Recognizer, error) { return s.blocking, nil })
+		func(context.Context) (Recognizer, error) { return s.blocking, nil }, noReport)
 	t.Cleanup(s.transcriber.Close)
 	s.requests = NewRequests(s.transcriber, func(id domain.VaultID) Vault { return s.vault.With(id) })
 	return s
@@ -738,7 +738,7 @@ func (s *requestFixture) countReads(t *testing.T) *readCounts {
 	counts := &readCounts{}
 	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, counts: counts},
 		func(id domain.VaultID) Folder { return countingStore{Folder: s.store.With(id), counts: counts} }, textsOf(s.texts), s.finishing,
-		func(context.Context) (Recognizer, error) { return s.blocking, nil })
+		func(context.Context) (Recognizer, error) { return s.blocking, nil }, noReport)
 	t.Cleanup(s.transcriber.Close)
 	counted := countingVault{Vault: s.vault, counts: counts}
 	s.requests = NewRequests(s.transcriber, func(id domain.VaultID) Vault { return counted.With(id) })

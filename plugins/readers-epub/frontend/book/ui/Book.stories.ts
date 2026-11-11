@@ -187,6 +187,34 @@ const getShownRuns = (canvasElement: HTMLElement) =>
 const expectRunShown = async (canvasElement: HTMLElement, offset: number) =>
   await expect(isRunShown(canvasElement, getRunAt(canvasElement, offset))).toBe(true)
 
+/**
+ * Waits until the layout stands still: the indicator, the offset in front, the width of the area,
+ * the extent of the columns and the shown runs unchanged for a run of frames. It does not depend on
+ * how many pages a font sets the text in, only on the layout having settled whatever it came to.
+ */
+const waitForSettledLayout = async (canvasElement: HTMLElement) => {
+  const getState = () =>
+    [
+      getPageCount(canvasElement),
+      getFrontOffset(canvasElement),
+      getArea(canvasElement).getBoundingClientRect().width,
+      getPaper(canvasElement).scrollWidth,
+      getShownRuns(canvasElement)
+        .map((run) => run.dataset['offset'])
+        .join(','),
+    ].join('|')
+  const deadline = performance.now() + ITS_OWN_PACE
+  let last = getState()
+  let stable = 0
+  while (stable < 30) {
+    if (performance.now() > deadline) throw new Error('the layout did not settle')
+    await waitForFrame()
+    const state = getState()
+    stable = state === last ? stable + 1 : 0
+    last = state
+  }
+}
+
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
 export const Playground: Story = {
   decorators: [WIDE],
@@ -330,19 +358,11 @@ export const SetLarger: Story = {
       timeout: ITS_OWN_PACE,
     })
     const before = getFrontOffset(canvasElement)
-    const counted = getPageCount(canvasElement)
 
-    await userEvent.click(canvas.getByLabelText('Larger'))
+    // Three steps of a quarter make the text about twice as large, which lays it out again on any font.
+    for (let step = 0; step < 3; step += 1) await userEvent.click(canvas.getByLabelText('Larger'))
 
-    // The columns are laid out again and there are more of them, so the count
-    // differs. The reading position is on the spread in front.
-    await waitFor(
-      async () => {
-        await expect(getPageCount(canvasElement)).not.toBe(counted)
-        await expectRunShown(canvasElement, before)
-      },
-      { timeout: ITS_OWN_PACE },
-    )
+    await expectPassageInFront(canvasElement, before)
   },
 }
 
@@ -362,24 +382,16 @@ const turnTwice = async (canvasElement: HTMLElement) => {
 }
 
 /**
- * Once the columns are set again for the new size, which shows as another page count, the spread in
- * front is the one holding the offset read before the resize, and it stays there.
+ * Once the layout has settled for the new size, the spread in front holds the offset read before the
+ * resize, the offset in front is unchanged, and the indicator names a page within the pages counted.
  */
-const expectPassageInFront = async (
-  canvasElement: HTMLElement,
-  offset: number,
-  counted: string,
-) => {
-  await waitFor(
-    async () => {
-      await expect(getPageCount(canvasElement)).not.toBe(counted)
-      await expectRunShown(canvasElement, offset)
-    },
-    { timeout: ITS_OWN_PACE },
-  )
-  for (let frame = 0; frame < 20; frame += 1) await waitForFrame()
+const expectPassageInFront = async (canvasElement: HTMLElement, offset: number) => {
+  await waitForSettledLayout(canvasElement)
   await expectRunShown(canvasElement, offset)
   await expect(getFrontOffset(canvasElement)).toBe(offset)
+  const [, page, pages] = /(\d+) of (\d+)/.exec(getPageCount(canvasElement)) ?? []
+  await expect(Number(page)).toBeGreaterThan(0)
+  await expect(Number(page)).toBeLessThanOrEqual(Number(pages))
 }
 
 /**
@@ -394,7 +406,6 @@ export const Resized: Story = {
     await waitForLayout(canvasElement)
     await turnTwice(canvasElement)
     const before = getFrontOffset(canvasElement)
-    const counted = getPageCount(canvasElement)
 
     const holder = getHolder(canvasElement)
     const from = holder.getBoundingClientRect().width
@@ -405,7 +416,7 @@ export const Resized: Story = {
     }
     holder.style.inlineSize = `${to}px`
 
-    await expectPassageInFront(canvasElement, before, counted)
+    await expectPassageInFront(canvasElement, before)
   },
 }
 
@@ -416,7 +427,6 @@ const draggedWithPauses =
     await turnTwice(canvasElement)
     for (let frame = 0; frame < 60; frame += 1) await waitForFrame()
     const before = getFrontOffset(canvasElement)
-    const counted = getPageCount(canvasElement)
 
     const holder = getHolder(canvasElement)
     const from = holder.getBoundingClientRect().width
@@ -429,7 +439,7 @@ const draggedWithPauses =
     }
     holder.style.inlineSize = `${from - 560}px`
 
-    await expectPassageInFront(canvasElement, before, counted)
+    await expectPassageInFront(canvasElement, before)
   }
 
 /** A drag that pauses for four frames now and then keeps the passage in front. */
@@ -461,7 +471,6 @@ const resizedRightAfterATurn =
     await waitForLayout(canvasElement)
     await turnTwice(canvasElement)
     const before = getFrontOffset(canvasElement)
-    const counted = getPageCount(canvasElement)
 
     const holder = getHolder(canvasElement)
     document.fonts.dispatchEvent(new Event('loadingdone'))
@@ -472,7 +481,7 @@ const resizedRightAfterATurn =
       holder.style.inlineSize = `${width}px`
     }
 
-    await expectPassageInFront(canvasElement, before, counted)
+    await expectPassageInFront(canvasElement, before)
   }
 
 /** An area set to 592 px right after a turn keeps the passage in front. */
@@ -525,7 +534,6 @@ export const TargetInFrontKeptAcrossAResize: Story = {
     })
     const offset = Number(inSecondColumn.at(-1)!.dataset['offset'])
     const front = getFrontOffset(canvasElement)
-    const counted = getPageCount(canvasElement)
 
     canvasElement
       .querySelector('[data-front]')!
@@ -535,14 +543,7 @@ export const TargetInFrontKeptAcrossAResize: Story = {
     await expectRunShown(canvasElement, offset)
 
     getHolder(canvasElement).style.inlineSize = '640px'
-    await waitFor(
-      async () => {
-        await expect(getPageCount(canvasElement)).not.toBe(counted)
-        await expectRunShown(canvasElement, offset)
-      },
-      { timeout: ITS_OWN_PACE },
-    )
-    for (let frame = 0; frame < 20; frame += 1) await waitForFrame()
+    await waitForSettledLayout(canvasElement)
     await expectRunShown(canvasElement, offset)
   },
 }

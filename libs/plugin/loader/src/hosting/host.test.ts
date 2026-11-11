@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
-import { disposeAllEntries, type HostRegistry } from './registry'
 import { registerPluginStyle } from '../styles'
 import {
   CONVERSATION,
@@ -186,33 +185,6 @@ describe('createPluginHost', () => {
     expect(extensionReaders.has('ext1')).toBe(false)
     expect(host.commands.hasCommand('disposable.plugin:cmd1')).toBe(false)
     expect(host.registered.getRegisteredReaders()).toHaveLength(0)
-
-    // Disposing a plugin cleans up its agent providers, and disposeAllEntries cleans up agentProviders without context
-    const reg: HostRegistry = {
-      vaultListeners: new Set(),
-      fileListeners: new Set(),
-      readers: new Map(),
-      tabKinds: new Map(),
-      commands: { value: new Map() },
-      handlers: { value: new Map() },
-      settingsViews: { value: new Map() },
-      agentProviders: new Map([
-        [
-          'ap-orphan',
-          {
-            pluginId: 'orphan.plugin',
-            reg: { id: 'ap-orphan', name: 'Orphan', createAgent: vi.fn() },
-          },
-        ],
-      ]),
-      contexts: new Map(),
-      manifests: new Map(),
-      activated: { value: new Set() },
-      disposed: new Set(),
-      reportedIssues: new Set(),
-    }
-    disposeAllEntries({ registry: reg, deps })
-    expect(reg.agentProviders.size).toBe(0)
   })
 
   it('handles reader extensions fallback, missing tab state on open, and non-function registerEditor return', async () => {

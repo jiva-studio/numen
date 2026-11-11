@@ -150,14 +150,14 @@ func TestSupervisorPermissionNormalization(t *testing.T) {
 	if !sup.Permissions.Has(manifest.PermissionVaultRead) {
 		t.Errorf("expected permission %s to be present", manifest.PermissionVaultRead)
 	}
-	if !sup.Permissions.Has(manifest.PermissionNetworkOutbound) {
-		t.Errorf("expected permission %s to be normalized and present", manifest.PermissionNetworkOutbound)
+	if !sup.Permissions.Has(manifest.PermissionLinkOpen) {
+		t.Errorf("expected permission %s to be normalized and present", manifest.PermissionLinkOpen)
 	}
 	if !sup.Permissions.Has("network") {
 		t.Errorf("expected alias network to return true")
 	}
-	if err := sup.Permissions.Check(manifest.PermissionNetworkOutbound); err != nil {
-		t.Errorf("expected CheckPermission for %s to pass: %v", manifest.PermissionNetworkOutbound, err)
+	if err := sup.Permissions.Check(manifest.PermissionLinkOpen); err != nil {
+		t.Errorf("expected CheckPermission for %s to pass: %v", manifest.PermissionLinkOpen, err)
 	}
 	if sup.Permissions.Has(manifest.PermissionVaultWrite) {
 		t.Errorf("expected undeclared permission %s to be false", manifest.PermissionVaultWrite)
@@ -330,7 +330,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 
 	t.Run("permission denied without vault:read", func(t *testing.T) {
 		sup := New(nil)
-		sup.Permissions.Set([]string{"network:outbound"})
+		sup.Permissions.Set([]string{"link:open"})
 
 		if err := sup.Permissions.Check("vault:read"); !errors.Is(err, plugin.ErrPermissionDenied) {
 			t.Fatalf("expected ErrPermissionDenied, got %v", err)

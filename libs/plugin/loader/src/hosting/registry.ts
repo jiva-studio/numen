@@ -3,7 +3,6 @@
  * registrations are taken away with it.
  */
 import type {
-  AgentProviderRegistration,
   CommandRegistration,
   Disposable,
   FileSelectEvent,
@@ -36,11 +35,6 @@ export interface RegisteredCommand {
   reg: CommandRegistration
 }
 
-export interface RegisteredAgentProvider {
-  pluginId: string
-  reg: AgentProviderRegistration
-}
-
 interface RegisteredSettingsView {
   pluginId: string
   reg: SettingsViewRegistration
@@ -54,7 +48,6 @@ export interface HostRegistry {
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly handlers: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
-  readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
   readonly manifests: Map<string, Manifest>
   readonly activated: { value: ReadonlySet<string> }
@@ -81,14 +74,6 @@ function cleanupMapItems(
     if (item.pluginId === pluginId) item.cleanup()
   }
 }
-
-// Stryker disable all: agentProviders cleanup is internal state for future host provider lookup
-function cleanupProviderItems(items: Map<string, { pluginId: string }>, pluginId: string): void {
-  for (const [id, item] of items) {
-    if (item.pluginId === pluginId) items.delete(id)
-  }
-}
-// Stryker restore all
 
 /** What the disposal of a plugin's entries works on. */
 export interface DisposalParts {
@@ -154,7 +139,6 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   registry.manifests.delete(pluginId)
   cleanupMapItems(registry.readers, pluginId)
   cleanupMapItems(registry.tabKinds, pluginId)
-  cleanupProviderItems(registry.agentProviders, pluginId)
   removePluginItems(registry.commands, pluginId)
   removePluginItems(registry.handlers, pluginId)
   removePluginItems(registry.settingsViews, pluginId)
@@ -172,7 +156,6 @@ export function disposeAllEntries(parts: DisposalParts & { readonly deps: Plugin
     ...[...registry.commands.value.values()].map((c) => c.pluginId),
     ...[...registry.handlers.value.values()].map((c) => c.pluginId),
     ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),
-    ...[...registry.agentProviders.values()].map((p) => p.pluginId),
     ...(slotViews?.views.value ?? []).map((v) => v.pluginId),
   ])
   for (const pluginId of allPluginIds) disposePluginEntry(pluginId, parts)
