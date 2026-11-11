@@ -6,8 +6,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 )
 
-// IsFetched reports whether one recogniser model file is on this machine.
-func IsFetched(cfg settings.Config, model settings.RecogniserModel) bool {
+// IsFetched reports whether one recognizer model file is on this machine.
+func IsFetched(cfg settings.Config, model settings.RecognizerModel) bool {
 	if model.Path != "" {
 		return isPresent(model.Path)
 	}

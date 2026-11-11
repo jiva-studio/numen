@@ -28,15 +28,15 @@ func BenchmarkCropRegion(b *testing.B) {
 	}
 }
 
-// BenchmarkRecognisePage measures multi-region recognition on a single page.
-func BenchmarkRecognisePage(b *testing.B) {
+// BenchmarkRecognizePage measures multi-region recognition on a single page.
+func BenchmarkRecognizePage(b *testing.B) {
 	page := image.NewRGBA(image.Rect(0, 0, 1200, 1600))
-	makeRecogniser := func(count int) *Recogniser {
+	makeRecognizer := func(count int) *Recognizer {
 		rects := make([]image.Rectangle, count)
 		for i := range count {
 			rects[i] = image.Rect(10, 10+i*100, 500, 90+i*100)
 		}
-		return &Recogniser{
+		return &Recognizer{
 			layout: partsOf(rects...),
 			body:   map[string]bool{"text": true},
 			head:   map[string]int{},
@@ -52,7 +52,7 @@ func BenchmarkRecognisePage(b *testing.B) {
 	ctx := b.Context()
 
 	b.Run("1_Region", func(b *testing.B) {
-		r := makeRecogniser(1)
+		r := makeRecognizer(1)
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
@@ -63,7 +63,7 @@ func BenchmarkRecognisePage(b *testing.B) {
 	})
 
 	b.Run("4_Regions", func(b *testing.B) {
-		r := makeRecogniser(4)
+		r := makeRecognizer(4)
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
@@ -74,7 +74,7 @@ func BenchmarkRecognisePage(b *testing.B) {
 	})
 
 	b.Run("8_Regions", func(b *testing.B) {
-		r := makeRecogniser(8)
+		r := makeRecognizer(8)
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
@@ -89,7 +89,7 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
 	broken := errors.New("the session is gone")
 
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
@@ -107,7 +107,7 @@ func TestOnePartThatCouldNotBeReadPreservesTheRest(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
 	var request atomic.Int32
 
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
@@ -131,7 +131,7 @@ func TestOnePartThatCouldNotBeReadPreservesTheRest(t *testing.T) {
 func TestMultiRegionPreservesReadingOrder(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
 
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(
 			image.Rect(10, 10, 590, 100),
 			image.Rect(10, 110, 590, 250),
@@ -169,12 +169,12 @@ func TestMultiRegionPreservesReadingOrder(t *testing.T) {
 	}
 }
 
-func TestRecogniseContextCancelled(t *testing.T) {
+func TestRecognizeContextCancelled(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
@@ -262,7 +262,7 @@ func oneLine(text string) func(image.Image) ([]read.RecResult, error) {
 
 func TestALayoutThatFailsIsThePagesFailure(t *testing.T) {
 	broken := errors.New("the layout model is gone")
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: func(image.Image) ([]Region, error) { return nil, broken },
 		body:   map[string]bool{"text": true},
 		read:   oneLine("what the page says"),
@@ -280,7 +280,7 @@ func TestALayoutThatFailsIsThePagesFailure(t *testing.T) {
 func TestAPartOfAnUnwantedKindIsNotRead(t *testing.T) {
 	var mu sync.Mutex
 	var heights []int
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: labeled(
 			Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)},
 			Region{Label: "text", Rect: image.Rect(10, 100, 590, 400)},
@@ -309,7 +309,7 @@ func TestAPartOfAnUnwantedKindIsNotRead(t *testing.T) {
 func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 	var mu sync.Mutex
 	var request []image.Image
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(image.Rect(700, 900, 800, 950), image.Rect(10, 10, 590, 400)),
 		body:   map[string]bool{"text": true},
 		read: func(img image.Image) ([]read.RecResult, error) {
@@ -335,7 +335,7 @@ func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: labeled(Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)}),
 		body:   map[string]bool{"text": true},
 		read:   oneLine("never asked"),
@@ -348,7 +348,7 @@ func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 }
 
 func TestABoxIsAddressedFromThePage(t *testing.T) {
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(image.Rect(50, 60, 590, 400)),
 		body:   map[string]bool{"text": true},
 		read: func(image.Image) ([]read.RecResult, error) {
@@ -370,7 +370,7 @@ func TestABoxIsAddressedFromThePage(t *testing.T) {
 
 func TestAPageOfOnePartThatCouldNotBeReadIsAFailure(t *testing.T) {
 	broken := errors.New("the session is gone")
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(image.Rect(10, 10, 590, 400)),
 		body:   map[string]bool{"text": true},
 		read:   func(image.Image) ([]read.RecResult, error) { return nil, broken },
@@ -382,7 +382,7 @@ func TestAPageOfOnePartThatCouldNotBeReadIsAFailure(t *testing.T) {
 }
 
 func TestAPageOfPartsThatSayNothingIsBlank(t *testing.T) {
-	r := &Recogniser{
+	r := &Recognizer{
 		layout: partsOf(image.Rect(10, 10, 590, 400)),
 		body:   map[string]bool{"text": true},
 		read:   func(image.Image) ([]read.RecResult, error) { return nil, nil },

@@ -22,7 +22,7 @@ import (
 const PluginID = "md.numen.engines.ocr"
 
 // Mount registers the services of the plugin on s, working the vault, the plugin's folder, the text
-// versions and the queue through the host the environment names. The recogniser closes with s.
+// versions and the queue through the host the environment names. The recognizer closes with s.
 func Mount(s *server.Server) error {
 	vault, err := host.NewClientFromEnv()
 	if err != nil {
@@ -78,13 +78,13 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 
 func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(command.CreateText, newRecogniseCommand(launcher)); err != nil {
+	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher)); err != nil {
 		return nil, err
 	}
 	return commands, nil
 }
 
-func newRecogniseCommand(launcher *launch.Launcher) command.Run {
+func newRecognizeCommand(launcher *launch.Launcher) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		if err := launcher.StartFile(ctx, req.Path); err != nil {
 			return command.Result{}, err

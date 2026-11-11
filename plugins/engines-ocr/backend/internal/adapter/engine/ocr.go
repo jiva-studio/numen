@@ -21,7 +21,7 @@ type Region struct {
 	Order int
 }
 
-// Line is a run of words a detector found, and what a recogniser read in it.
+// Line is a run of words a detector found, and what a recognizer read in it.
 type Line struct {
 	Box   image.Rectangle
 	Text  string

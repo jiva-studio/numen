@@ -9,7 +9,7 @@ type Config struct {
 	ShouldDownload bool                                 `json:"download"`
 	Layout         LayoutModel                          `json:"layout"`
 	Detect         DetectModel                          `json:"detect"`
-	Recognize      RecogniserModel                      `json:"recognize"`
+	Recognize      RecognizerModel                      `json:"recognize"`
 	Regions        RegionKinds                          `json:"regions"`
 	Compute        Compute                              `json:"-"`
 	Progress       func(what string, done, total int64) `json:"-"`
@@ -41,8 +41,8 @@ type DetectModel struct {
 	Minimum float32 `json:"minimum"`
 }
 
-// RecogniserModel configures the model that recognizes the text of a line.
-type RecogniserModel struct {
+// RecognizerModel configures the model that recognizes the text of a line.
+type RecognizerModel struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
 	Dict    string `json:"dict"`
@@ -71,7 +71,7 @@ func Defaults() Config {
 		Detect: DetectModel{
 			Name: detectDefault, Path: "", MaxSide: 0, Expand: 0, Minimum: 0,
 		},
-		Recognize: RecogniserModel{
+		Recognize: RecognizerModel{
 			Name: recogDefault, Path: "", Dict: "", Classes: 0, DPI: 300, Height: 0, Jobs: 0, Threads: 0,
 		},
 		Regions:  RegionKinds{Body: nil, Head: nil},
@@ -136,14 +136,14 @@ func (d DetectModel) GetMinimum() float32 {
 	return d.Minimum
 }
 
-func (r RecogniserModel) GetDPI() int {
+func (r RecognizerModel) GetDPI() int {
 	if r.DPI <= 0 {
 		return 300
 	}
 	return r.DPI
 }
 
-func (r RecogniserModel) GetHeight() int {
+func (r RecognizerModel) GetHeight() int {
 	if r.Height <= 0 {
 		return 48
 	}
@@ -178,7 +178,7 @@ const (
 	FallbackJobs    = 4
 )
 
-// GetJobs returns the number of lines the recogniser reads at once.
+// GetJobs returns the number of lines the recognizer reads at once.
 func (c Config) GetJobs() int {
 	switch {
 	case c.Recognize.Jobs > 0:
@@ -189,7 +189,7 @@ func (c Config) GetJobs() int {
 	return FallbackJobs
 }
 
-// GetThreads returns the thread count of the recogniser; cores bounds the fallback.
+// GetThreads returns the thread count of the recognizer; cores bounds the fallback.
 func (c Config) GetThreads(cores int) int {
 	switch {
 	case c.Recognize.Threads > 0:

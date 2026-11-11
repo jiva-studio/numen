@@ -18,7 +18,7 @@ const (
 	valueField    = 2
 )
 
-func alphabet(model string, cfg settings.RecogniserModel) (int64, string, error) {
+func alphabet(model string, cfg settings.RecognizerModel) (int64, string, error) {
 	characters, err := readAlphabet(model, cfg.Dict)
 	if err != nil {
 		return 0, "", err

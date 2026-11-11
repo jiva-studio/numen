@@ -1,5 +1,5 @@
 // Package document opens the files the plugin recognizes, a scanned page or a PDF, and draws their
-// pages for the recogniser.
+// pages for the recognizer.
 package document
 
 import (

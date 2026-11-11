@@ -98,23 +98,23 @@ func TestIsFetchedWithConfiguredOrEnvPath(t *testing.T) {
 	}
 
 	// False when missing
-	if IsFetched(settings.Config{}, settings.RecogniserModel{}) {
+	if IsFetched(settings.Config{}, settings.RecognizerModel{}) {
 		t.Fatal("expected IsFetched to be false when nothing configured")
 	}
 
 	// True when path is configured
-	if !IsFetched(settings.Config{}, settings.RecogniserModel{Path: recPath}) {
+	if !IsFetched(settings.Config{}, settings.RecognizerModel{Path: recPath}) {
 		t.Fatal("expected IsFetched to be true with explicit path")
 	}
 
 	// True when env var points to existing file
 	t.Setenv("NUMEN_DEPENDENCY_PP_OCR_REC", recPath)
-	if !IsFetched(settings.Config{}, settings.RecogniserModel{}) {
+	if !IsFetched(settings.Config{}, settings.RecognizerModel{}) {
 		t.Fatal("expected IsFetched to be true with env var set")
 	}
 
 	// False when explicit path does not exist
-	if IsFetched(settings.Config{}, settings.RecogniserModel{Path: filepath.Join(dir, "missing.onnx")}) {
+	if IsFetched(settings.Config{}, settings.RecognizerModel{Path: filepath.Join(dir, "missing.onnx")}) {
 		t.Fatal("expected IsFetched to be false when explicit path is missing")
 	}
 }

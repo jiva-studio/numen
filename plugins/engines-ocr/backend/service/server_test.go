@@ -38,7 +38,7 @@ func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (comma
 	}
 }
 
-func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognises(t *testing.T) {
+func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognizes(t *testing.T) {
 	s := newToolFixture(t)
 
 	res, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: scanPath})
@@ -47,7 +47,7 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognises(t *testing.T) {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
 	s.waitStarted(t)
-	close(s.recogniser.release)
+	close(s.recognizer.release)
 	s.waitFinished(t, recognition.GetTaskID("Physics", scanPath))
 	if !hasRecognition(t, s.texts, scanPath) {
 		t.Error("the scan has no recognition once its task ended")
@@ -56,8 +56,8 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognises(t *testing.T) {
 
 func TestCreateTextFailsTheTaskOfAFailedRecognition(t *testing.T) {
 	s := newToolFixture(t)
-	s.recogniser.failure = errors.New("the page cannot be decoded")
-	close(s.recogniser.release)
+	s.recognizer.failure = errors.New("the page cannot be decoded")
+	close(s.recognizer.release)
 
 	_, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: scanPath})
 
@@ -129,7 +129,7 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 		}
 		for _, option := range setting.Options {
 			count++
-			address, ok := settings.FindRecogniser(option.Value)
+			address, ok := settings.FindRecognizer(option.Value)
 			if !ok {
 				t.Errorf("the manifest offers %s, which the engine does not run", option.Value)
 				continue

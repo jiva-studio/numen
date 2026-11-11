@@ -1,4 +1,4 @@
-// Package recognition reads the text of a scanned file with the recogniser, keeps it in the plugin's
+// Package recognition reads the text of a scanned file with the recognizer, keeps it in the plugin's
 // folder of the vault's store, and reports it to the host as a positioned text version.
 package recognition
 
@@ -25,7 +25,7 @@ const batch = 8
 // Model describes active OCR models.
 type Model struct {
 	Layout     string
-	Recogniser string
+	Recognizer string
 	DPI        int
 	From       string
 }
@@ -51,8 +51,8 @@ type Block struct {
 	Boxes     []Box
 }
 
-// Recogniser reads the blocks of one page drawn as an image.
-type Recogniser interface {
+// Recognizer reads the blocks of one page drawn as an image.
+type Recognizer interface {
 	GetRecognitionModel() Model
 	Recognize(ctx context.Context, page image.Image) ([]Block, error)
 }
@@ -97,23 +97,23 @@ type Host struct {
 	Report    func(what string, err error)
 }
 
-// ErrAlreadyRecognising is returned for a file another run is recognizing.
-var ErrAlreadyRecognising = errors.New("the file is already being recognized")
+// ErrAlreadyRecognizing is returned for a file another run is recognizing.
+var ErrAlreadyRecognizing = errors.New("the file is already being recognized")
 
-// Recognition reads files with the recogniser it opens. One run at a time locks a file of a vault.
+// Recognition reads files with the recognizer it opens. One run at a time locks a file of a vault.
 type Recognition struct {
 	host Host
-	open func(ctx context.Context) (Recogniser, error)
+	open func(ctx context.Context) (Recognizer, error)
 
 	mu      sync.Mutex
 	running map[string]bool
 }
 
-// New returns the recognition through the host, with the function that opens the recogniser when a
+// New returns the recognition through the host, with the function that opens the recognizer when a
 // page is first read.
-func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recognition, error) {
+func New(h Host, open func(ctx context.Context) (Recognizer, error)) (*Recognition, error) {
 	if h.Vaults == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || h.Documents == nil || open == nil {
-		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue, the documents and a recogniser")
+		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue, the documents and a recognizer")
 	}
 	return &Recognition{
 		host: h, open: open,
@@ -128,7 +128,7 @@ type Request struct {
 	Path  string
 }
 
-// Result is the outcome of one recognition. IsEmpty is set for a file from which the recogniser
+// Result is the outcome of one recognition. IsEmpty is set for a file from which the recognizer
 // extracted no text.
 type Result struct {
 	Pages   int
@@ -137,7 +137,7 @@ type Result struct {
 
 // Recognize reads the file and stores its text version. A failure is shown as a task until
 // the file is recognized again, and so is a file from which nothing is read. A failure of a missing
-// file ends the task. For a file another run has locked, it returns ErrAlreadyRecognising.
+// file ends the task. For a file another run has locked, it returns ErrAlreadyRecognizing.
 func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error) {
 	req, key, err := r.claim(ctx, req)
 	if err != nil {
@@ -152,7 +152,7 @@ func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error
 // and the run reads and writes only that vault. The channel is closed when the run ends.
 func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, bool, error) {
 	req, key, err := r.claim(ctx, req)
-	if errors.Is(err, ErrAlreadyRecognising) {
+	if errors.Is(err, ErrAlreadyRecognizing) {
 		return nil, false, nil
 	}
 	if err != nil {
@@ -192,7 +192,7 @@ func (r *Recognition) claim(ctx context.Context, req Request) (Request, string, 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.running[key] {
-		return Request{}, "", fmt.Errorf("%s: %w", req.Path, ErrAlreadyRecognising)
+		return Request{}, "", fmt.Errorf("%s: %w", req.Path, ErrAlreadyRecognizing)
 	}
 	r.running[key] = true
 	return req, key, nil
@@ -336,21 +336,21 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Document implementations opened by Reader return nil on Close."
 	defer func() { err = errors.Join(err, doc.Close()) }()
-	recogniser, err := r.open(ctx)
+	recognizer, err := r.open(ctx)
 	if err != nil {
-		return Result{}, fmt.Errorf("open the recogniser: %w", err)
+		return Result{}, fmt.Errorf("open the recognizer: %w", err)
 	}
-	model := recogniser.GetRecognitionModel()
+	model := recognizer.GetRecognitionModel()
 	rec = keepOrRestart(rec, req.Path, inputHash, model, doc.GetPageCount())
 
-	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
+	if err := r.readPages(ctx, pageReading{doc: doc, recognizer: recognizer, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
 		return Result{}, err
 	}
 	return putVersion(ctx, on, rec)
 }
 
 func keepOrRestart(rec *progress.Record, path, inputHash string, model Model, pageCount int) *progress.Record {
-	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
+	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recognizer, model.DPI)
 	if rec.IsFor(inputHash, recipe) {
 		return rec
 	}
@@ -360,7 +360,7 @@ func keepOrRestart(rec *progress.Record, path, inputHash string, model Model, pa
 // pageReading is what the pages of one file are read with.
 type pageReading struct {
 	doc        Document
-	recogniser Recogniser
+	recognizer Recognizer
 	dpi        int
 	store      Folder
 	task       *host.Task
@@ -376,7 +376,7 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *progre
 		if err != nil {
 			return err
 		}
-		blocks, err := on.recogniser.Recognize(ctx, page)
+		blocks, err := on.recognizer.Recognize(ctx, page)
 		if err != nil {
 			return fmt.Errorf("recognize page %d of %s: %w", index+1, rec.Path, err)
 		}

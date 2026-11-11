@@ -58,19 +58,19 @@ type pages struct {
 	pageCount   int
 	err         error
 	says        string
-	onRecognise func()
+	onRecognize func()
 }
 
 func (p *pages) GetRecognitionModel() recognition.Model {
-	return recognition.Model{Layout: "layout", Recogniser: "lines", DPI: 72, From: "a test"}
+	return recognition.Model{Layout: "layout", Recognizer: "lines", DPI: 72, From: "a test"}
 }
 
 func (p *pages) Recognize(_ context.Context, page image.Image) ([]recognition.Block, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pageCount++
-	if p.onRecognise != nil {
-		p.onRecognise()
+	if p.onRecognize != nil {
+		p.onRecognize()
 	}
 	if p.err != nil {
 		return nil, p.err
@@ -123,7 +123,7 @@ type scene struct {
 	store      *hosttest.Store
 	texts      *hosttest.Texts
 	queue      *hosttest.Queue
-	recogniser *pages
+	recognizer *pages
 	run        *recognition.Recognition
 }
 
@@ -142,7 +142,7 @@ func newScene(t *testing.T) *scene {
 		vault:      hosttest.New("Physics"),
 		texts:      hosttest.NewTexts("Physics", pluginID),
 		queue:      hosttest.NewQueue(),
-		recogniser: &pages{says: "page"},
+		recognizer: &pages{says: "page"},
 	}
 	s.store = s.vault.Store()
 	s.texts.SetStore(pluginID, s.store)
@@ -154,7 +154,7 @@ func newScene(t *testing.T) *scene {
 	documents := document.NewReader()
 	run, err := recognition.New(
 		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue, Documents: documents},
-		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
+		func(context.Context) (recognition.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -189,7 +189,7 @@ func (s *scene) readLive(t *testing.T, path string) domain.VersionText {
 	return domain.VersionText{}
 }
 
-func TestRecognisePDFWritesPositionedText(t *testing.T) {
+func TestRecognizePDFWritesPositionedText(t *testing.T) {
 	s := newScene(t)
 
 	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
@@ -220,23 +220,23 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 	}
 }
 
-func TestRecogniseReadsAPDFWithATextLayer(t *testing.T) {
+func TestRecognizeReadsAPDFWithATextLayer(t *testing.T) {
 	s := newScene(t)
 
 	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/layer.pdf"})
-	if err != nil || res.Pages == 0 || s.recogniser.getPageCount() != res.Pages {
-		t.Fatalf("a PDF with a layer: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
+	if err != nil || res.Pages == 0 || s.recognizer.getPageCount() != res.Pages {
+		t.Fatalf("a PDF with a layer: %+v (%v), %d pages read", res, err, s.recognizer.getPageCount())
 	}
 }
 
-func TestRecogniseReadsARecognisedFileAgain(t *testing.T) {
+func TestRecognizeReadsARecognizedFileAgain(t *testing.T) {
 	s := newScene(t)
 	for range 2 {
 		if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if got := s.recogniser.getPageCount(); got != 4 {
+	if got := s.recognizer.getPageCount(); got != 4 {
 		t.Fatalf("%d pages were read, want the file read twice", got)
 	}
 }
@@ -254,7 +254,7 @@ func (s *scene) getStoreNames(t *testing.T) []string {
 	return names
 }
 
-func TestRecogniseKeepsOnlyTheVersionFile(t *testing.T) {
+func TestRecognizeKeepsOnlyTheVersionFile(t *testing.T) {
 	s := newScene(t)
 
 	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
@@ -267,7 +267,7 @@ func TestRecogniseKeepsOnlyTheVersionFile(t *testing.T) {
 	}
 }
 
-func TestRecogniseReadsAgainOnceTheVersionIsRemoved(t *testing.T) {
+func TestRecognizeReadsAgainOnceTheVersionIsRemoved(t *testing.T) {
 	s := newScene(t)
 	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 		t.Fatal(err)
@@ -278,12 +278,12 @@ func TestRecogniseReadsAgainOnceTheVersionIsRemoved(t *testing.T) {
 
 	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
-	if err != nil || s.recogniser.getPageCount() != 4 {
-		t.Fatalf("recognized %+v (%v) after %d pages, want the file read again", res, err, s.recogniser.getPageCount())
+	if err != nil || s.recognizer.getPageCount() != 4 {
+		t.Fatalf("recognized %+v (%v) after %d pages, want the file read again", res, err, s.recognizer.getPageCount())
 	}
 }
 
-func TestRecogniseResumesFromTheProgressRecord(t *testing.T) {
+func TestRecognizeResumesFromTheProgressRecord(t *testing.T) {
 	s := newScene(t)
 	raw := readFixture(t, "scan.pdf")
 	sum := sha256.Sum256([]byte("books/scan.pdf"))
@@ -295,8 +295,8 @@ func TestRecogniseResumesFromTheProgressRecord(t *testing.T) {
 
 	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
-	if err != nil || res.Pages != 2 || s.recogniser.getPageCount() != 1 {
-		t.Fatalf("recognized %+v (%v) after %d pages, want only the second page read", res, err, s.recogniser.getPageCount())
+	if err != nil || res.Pages != 2 || s.recognizer.getPageCount() != 1 {
+		t.Fatalf("recognized %+v (%v) after %d pages, want only the second page read", res, err, s.recognizer.getPageCount())
 	}
 	if text := s.readLive(t, "books/scan.pdf"); !strings.HasPrefix(text.Text, "kept from before\n\nHeading") {
 		t.Errorf("the text reads %q, want the kept page first", text.Text)
@@ -306,9 +306,9 @@ func TestRecogniseResumesFromTheProgressRecord(t *testing.T) {
 	}
 }
 
-func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
+func TestRecognizeEmptyScanKeepsNothing(t *testing.T) {
 	s := newScene(t)
-	s.recogniser.says = ""
+	s.recognizer.says = ""
 
 	res, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
@@ -335,19 +335,19 @@ func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
 	}
 }
 
-func TestRecogniseFailureReportsTaskError(t *testing.T) {
+func TestRecognizeFailureReportsTaskError(t *testing.T) {
 	s := newScene(t)
-	s.recogniser.err = errors.New("the model ran out of memory")
+	s.recognizer.err = errors.New("the model ran out of memory")
 
 	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err == nil {
-		t.Fatal("a recogniser that failed recognized the file")
+		t.Fatal("a recognizer that failed recognized the file")
 	}
 	tasks := s.queue.ListTasks()
 	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "out of memory") || !tasks[0].IsUserStarted {
 		t.Fatalf("tasks %+v, want the failure pageCount", tasks)
 	}
 
-	s.recogniser.err = nil
+	s.recognizer.err = nil
 	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 		t.Fatal(err)
 	}
@@ -356,7 +356,7 @@ func TestRecogniseFailureReportsTaskError(t *testing.T) {
 	}
 }
 
-func TestRecogniseMissingFileFails(t *testing.T) {
+func TestRecognizeMissingFileFails(t *testing.T) {
 	s := newScene(t)
 	if _, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/gone.pdf"}); !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file that is not there answered %v", err)
@@ -366,9 +366,9 @@ func TestRecogniseMissingFileFails(t *testing.T) {
 	}
 }
 
-func TestRecogniseFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
+func TestRecognizeFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 	s := newScene(t)
-	s.recogniser.onRecognise = func() { s.vault.Remove("books/scan.pdf") }
+	s.recognizer.onRecognize = func() { s.vault.Remove("books/scan.pdf") }
 
 	_, err := s.run.Recognize(t.Context(), recognition.Request{Path: "books/scan.pdf"})
 
@@ -380,9 +380,9 @@ func TestRecogniseFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 	}
 }
 
-func TestNewRequiresHostAndRecogniser(t *testing.T) {
+func TestNewRequiresHostAndRecognizer(t *testing.T) {
 	v := hosttest.New("Physics")
-	open := func(context.Context) (recognition.Recogniser, error) { return &pages{}, nil }
+	open := func(context.Context) (recognition.Recognizer, error) { return &pages{}, nil }
 	texts := hosttest.NewTexts("Physics", pluginID)
 	full := recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: func(id domain.VaultID) host.TextVersions { return texts.With(id) }, Queue: hosttest.NewQueue(), Documents: document.NewReader()}
 	for name, h := range map[string]recognition.Host{
@@ -401,7 +401,7 @@ func TestNewRequiresHostAndRecogniser(t *testing.T) {
 	}
 }
 
-func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
+func TestRecognizeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
@@ -435,7 +435,7 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	}
 }
 
-func TestRecogniseInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
+func TestRecognizeInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
@@ -455,7 +455,7 @@ func TestRecogniseInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	firstPage := make(chan struct{})
 	release := make(chan struct{})
 	var once sync.Once
-	s.recogniser.onRecognise = func() {
+	s.recognizer.onRecognize = func() {
 		once.Do(func() {
 			close(firstPage)
 			<-release
@@ -469,8 +469,8 @@ func TestRecogniseInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	}()
 	<-firstPage
 
-	if _, err := s.run.Recognize(t.Context(), recognition.Request{Vault: "Physics", Path: "books/scan.pdf"}); !errors.Is(err, recognition.ErrAlreadyRecognising) {
-		t.Fatalf("second run in Physics returned %v, want %v", err, recognition.ErrAlreadyRecognising)
+	if _, err := s.run.Recognize(t.Context(), recognition.Request{Vault: "Physics", Path: "books/scan.pdf"}); !errors.Is(err, recognition.ErrAlreadyRecognizing) {
+		t.Fatalf("second run in Physics returned %v, want %v", err, recognition.ErrAlreadyRecognizing)
 	}
 
 	chemErr := make(chan error, 1)
@@ -515,7 +515,7 @@ func TestStartReportsTaskBeforeReturning(t *testing.T) {
 	s := newScene(t)
 	release := make(chan struct{})
 	var once sync.Once
-	s.recogniser.onRecognise = func() {
+	s.recognizer.onRecognize = func() {
 		once.Do(func() { <-release })
 	}
 

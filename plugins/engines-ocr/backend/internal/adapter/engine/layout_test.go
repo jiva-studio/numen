@@ -95,7 +95,7 @@ func TestRegionsAreReturnedInReadingOrder(t *testing.T) {
 }
 
 func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
-	// A detector finds a run of words and the recogniser reads nothing in it.
+	// A detector finds a run of words and the recognizer reads nothing in it.
 	// Joining that in puts two spaces where the page prints one.
 	got, _ := Assemble([]Line{
 		line(0, 0, 30, 20, "As the"),

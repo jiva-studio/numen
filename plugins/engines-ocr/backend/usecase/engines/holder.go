@@ -1,4 +1,4 @@
-// Package engines holds the recogniser of the plugin: it opens it when a page is first read and
+// Package engines holds the recognizer of the plugin: it opens it when a page is first read and
 // opens it again once a setting that decides what it reads with changes.
 package engines
 
@@ -10,39 +10,39 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
-// Recogniser is the recogniser of a page and its contents.
-type Recogniser interface {
-	recognition.Recogniser
+// Recognizer is the recognizer of a page and its contents.
+type Recognizer interface {
+	recognition.Recognizer
 	Close() error
 }
 
-// Opener opens the recogniser the configuration names.
-type Opener func(ctx context.Context, cfg settings.Config) (Recogniser, error)
+// Opener opens the recognizer the configuration names.
+type Opener func(ctx context.Context, cfg settings.Config) (Recognizer, error)
 
 // Reporter receives the failures the holder cannot return.
 type Reporter interface {
 	ReportCloseError(err error)
 }
 
-// Holder keeps one recogniser for the current configuration.
+// Holder keeps one recognizer for the current configuration.
 type Holder struct {
 	mu       sync.Mutex
 	cfg      settings.Config
 	open     Opener
 	reporter Reporter
-	engine   Recogniser
+	engine   Recognizer
 }
 
-// NewHolder returns a holder that opens its recogniser with open for cfg.
+// NewHolder returns a holder that opens its recognizer with open for cfg.
 func NewHolder(cfg settings.Config, open Opener, reporter Reporter) *Holder {
 	return &Holder{mu: sync.Mutex{}, cfg: cfg, open: open, reporter: reporter, engine: nil}
 }
 
-// UpdateSettings applies the plugin settings and closes the recogniser when they change what it reads with.
+// UpdateSettings applies the plugin settings and closes the recognizer when they change what it reads with.
 func (h *Holder) UpdateSettings(values map[string]string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	next := settings.ParseRecogniserSettings(h.cfg.Recognize, values)
+	next := settings.ParseRecognizerSettings(h.cfg.Recognize, values)
 	if next == h.cfg.Recognize {
 		return
 	}
@@ -50,8 +50,8 @@ func (h *Holder) UpdateSettings(values map[string]string) {
 	h.dropLocked()
 }
 
-// GetEngine returns the open recogniser and opens it first when there is none.
-func (h *Holder) GetEngine(ctx context.Context) (recognition.Recogniser, error) {
+// GetEngine returns the open recognizer and opens it first when there is none.
+func (h *Holder) GetEngine(ctx context.Context) (recognition.Recognizer, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.engine != nil {
@@ -65,7 +65,7 @@ func (h *Holder) GetEngine(ctx context.Context) (recognition.Recogniser, error) 
 	return opened, nil
 }
 
-// Close closes the open recogniser.
+// Close closes the open recognizer.
 func (h *Holder) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()

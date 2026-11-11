@@ -19,8 +19,8 @@ import (
 // Model describes active OCR models.
 type Model = recognition.Model
 
-// Recogniser executes OCR recognition models on images.
-type Recogniser struct {
+// Recognizer executes OCR recognition models on images.
+type Recognizer struct {
 	shape  *Layout
 	lines  *paddle.Engine
 	layout func(image.Image) ([]Region, error)
@@ -33,7 +33,7 @@ type Recogniser struct {
 }
 
 // Open loads the layout and PaddleOCR recognition models through the library.
-func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Recogniser, error) {
+func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Recognizer, error) {
 	engine, pos, found, err := locateModels(ctx, library, cfg)
 	if err != nil {
 		return nil, err
@@ -75,10 +75,10 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 		UseCuda:             false,
 	})
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("the recogniser: %w", err), layout.Close())
+		return nil, errors.Join(fmt.Errorf("the recognizer: %w", err), layout.Close())
 	}
 
-	return &Recogniser{
+	return &Recognizer{
 		shape:  layout,
 		lines:  lines,
 		layout: layout.Regions,
@@ -89,7 +89,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 		jobs:   cfg.GetJobs(),
 		model: Model{
 			Layout:     name(found.layout),
-			Recogniser: name(found.recognize),
+			Recognizer: name(found.recognize),
 			DPI:        cfg.Recognize.GetDPI(),
 			From:       found.from,
 		},
@@ -97,10 +97,10 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config) (*Rec
 }
 
 // GetRecognitionModel returns model identity information.
-func (r *Recogniser) GetRecognitionModel() Model { return r.model }
+func (r *Recognizer) GetRecognitionModel() Model { return r.model }
 
 // Close releases loaded model sessions.
-func (r *Recogniser) Close() error {
+func (r *Recognizer) Close() error {
 	if r.lines != nil {
 		r.lines.Destroy()
 	}
@@ -111,7 +111,7 @@ func (r *Recogniser) Close() error {
 }
 
 // Recognize extracts layout regions and text lines from a page image.
-func (r *Recogniser) Recognize(ctx context.Context, page image.Image) ([]Block, error) {
+func (r *Recognizer) Recognize(ctx context.Context, page image.Image) ([]Block, error) {
 	regions, err := r.layout(page)
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func (r *Recogniser) Recognize(ctx context.Context, page image.Image) ([]Block, 
 	return out, nil
 }
 
-type recogniseTarget struct {
+type recognizeTarget struct {
 	region Region
 	crop   image.Image
 	corner image.Point
@@ -162,8 +162,8 @@ type outcome struct {
 	err   error
 }
 
-func (r *Recogniser) getTargets(page image.Image, regions []Region) []recogniseTarget {
-	var targets []recogniseTarget
+func (r *Recognizer) getTargets(page image.Image, regions []Region) []recognizeTarget {
+	var targets []recognizeTarget
 	for _, region := range regions {
 		if !r.body[region.Label] {
 			continue
@@ -172,7 +172,7 @@ func (r *Recogniser) getTargets(page image.Image, regions []Region) []recogniseT
 		if crop == nil {
 			continue
 		}
-		targets = append(targets, recogniseTarget{
+		targets = append(targets, recognizeTarget{
 			region: region,
 			crop:   crop,
 			corner: corner,
@@ -181,7 +181,7 @@ func (r *Recogniser) getTargets(page image.Image, regions []Region) []recogniseT
 	return targets
 }
 
-func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (Block, bool) {
+func (r *Recognizer) makeBlock(t recognizeTarget, found []read.RecResult) (Block, bool) {
 	lines := make([]Line, 0, len(found))
 	for _, line := range found {
 		lines = append(lines, Line{
@@ -239,13 +239,13 @@ func collapseSpaces(text string) string {
 	return strings.Join(strings.Fields(text), " ")
 }
 
-// NewTestRecogniser creates a Recogniser with custom layout and read functions for testing.
-func NewTestRecogniser(
+// NewTestRecognizer creates a Recognizer with custom layout and read functions for testing.
+func NewTestRecognizer(
 	layout func(image.Image) ([]Region, error),
 	read func(image.Image) ([]read.RecResult, error),
 	model Model,
-) *Recogniser {
-	return &Recogniser{
+) *Recognizer {
+	return &Recognizer{
 		shape:  nil,
 		lines:  nil,
 		layout: layout,

@@ -59,7 +59,7 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 			}
 			return s.vault.With(id)
 		}, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue, Documents: documents},
-		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
+		func(context.Context) (recognition.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {
 		t.Fatal(err)

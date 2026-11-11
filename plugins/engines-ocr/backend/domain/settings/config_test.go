@@ -10,10 +10,10 @@ func TestUnsetThreadsAndJobsTakeTheResolvedProfile(t *testing.T) {
 	cfg := Defaults()
 	cfg.Compute = Compute{Threads: 6, Jobs: 3}
 	if got := cfg.GetThreads(8); got != 6 {
-		t.Errorf("the recogniser takes %d threads, want 6", got)
+		t.Errorf("the recognizer takes %d threads, want 6", got)
 	}
 	if got := cfg.GetJobs(); got != 3 {
-		t.Errorf("the recogniser runs %d jobs, want 3", got)
+		t.Errorf("the recognizer runs %d jobs, want 3", got)
 	}
 }
 
@@ -22,10 +22,10 @@ func TestExplicitThreadsAndJobsWinOverTheResolvedProfile(t *testing.T) {
 	cfg.Compute = Compute{Threads: 6, Jobs: 3}
 	cfg.Recognize.Threads, cfg.Recognize.Jobs = 2, 5
 	if got := cfg.GetThreads(8); got != 2 {
-		t.Errorf("the recogniser takes %d threads, want 2", got)
+		t.Errorf("the recognizer takes %d threads, want 2", got)
 	}
 	if got := cfg.GetJobs(); got != 5 {
-		t.Errorf("the recogniser runs %d jobs, want 5", got)
+		t.Errorf("the recognizer runs %d jobs, want 5", got)
 	}
 }
 
@@ -52,7 +52,7 @@ func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	for name, got := range map[string]string{
 		"layout":     cfg.Layout.Name,
 		"detector":   cfg.Detect.Name,
-		"recogniser": cfg.Recognize.Name,
+		"recognizer": cfg.Recognize.Name,
 	} {
 		if !strings.HasPrefix(got, "https://") || !strings.HasSuffix(got, ".onnx") {
 			t.Errorf("the %s model is %q, want an address of an onnx file", name, got)
@@ -79,10 +79,10 @@ func TestWhatASettingsFilePreservesOutIsTheDefaultOfTheModel(t *testing.T) {
 	if got := (DetectModel{}).GetMinimum(); got != 0.3 {
 		t.Errorf("a pixel is hot from %v", got)
 	}
-	if got := (RecogniserModel{}).GetDPI(); got != 300 {
+	if got := (RecognizerModel{}).GetDPI(); got != 300 {
 		t.Errorf("a page is rendered at %d", got)
 	}
-	if got := (RecogniserModel{}).GetHeight(); got != 48 {
+	if got := (RecognizerModel{}).GetHeight(); got != 48 {
 		t.Errorf("a line is scaled to %d", got)
 	}
 }
@@ -106,10 +106,10 @@ func TestWhatASettingsFileNamesExists(t *testing.T) {
 	if got := (DetectModel{Minimum: 0.5}).GetMinimum(); got != 0.5 {
 		t.Errorf("a pixel is hot from %v", got)
 	}
-	if got := (RecogniserModel{DPI: 1}).GetDPI(); got != 1 {
+	if got := (RecognizerModel{DPI: 1}).GetDPI(); got != 1 {
 		t.Errorf("a page is rendered at %d", got)
 	}
-	if got := (RecogniserModel{Height: 1}).GetHeight(); got != 1 {
+	if got := (RecognizerModel{Height: 1}).GetHeight(); got != 1 {
 		t.Errorf("a line is scaled to %d", got)
 	}
 }
@@ -133,10 +133,10 @@ func TestANegativeNumberIsNoNumberAtAll(t *testing.T) {
 	if got := (DetectModel{Minimum: -1}).GetMinimum(); got != 0.3 {
 		t.Errorf("a pixel is hot from %v", got)
 	}
-	if got := (RecogniserModel{DPI: -1}).GetDPI(); got != 300 {
+	if got := (RecognizerModel{DPI: -1}).GetDPI(); got != 300 {
 		t.Errorf("a page is rendered at %d", got)
 	}
-	if got := (RecogniserModel{Height: -1}).GetHeight(); got != 48 {
+	if got := (RecognizerModel{Height: -1}).GetHeight(); got != 48 {
 		t.Errorf("a line is scaled to %d", got)
 	}
 }

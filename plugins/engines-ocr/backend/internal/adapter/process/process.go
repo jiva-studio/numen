@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 )
 
-// EnvMockML names the variable that has the plugin read every page with the mock recogniser.
+// EnvMockML names the variable that has the plugin read every page with the mock recognizer.
 const EnvMockML = "NUMEN_MOCK_ML"
 
 // envModelsDir names the folder plugins keep their models in; the host sets it.
@@ -17,7 +17,7 @@ const envModelsDir = "NUMEN_MODELS_DIR"
 // Process is the process the plugin runs in.
 type Process struct{}
 
-// IsMockML reports whether the environment asks for the mock recogniser.
+// IsMockML reports whether the environment asks for the mock recognizer.
 func (Process) IsMockML() bool {
 	return os.Getenv(EnvMockML) == "true"
 }
@@ -36,9 +36,9 @@ func (Process) GetConfig() settings.Config {
 	return cfg
 }
 
-// ReportCloseError writes the failure to close the recogniser to standard error.
+// ReportCloseError writes the failure to close the recognizer to standard error.
 func (Process) ReportCloseError(err error) {
-	fmt.Fprintln(os.Stderr, "engines-ocr: close the recogniser:", err)
+	fmt.Fprintln(os.Stderr, "engines-ocr: close the recognizer:", err)
 }
 
 // ReportError writes a background failure of the plugin to standard error.

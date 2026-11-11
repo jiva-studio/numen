@@ -8,10 +8,10 @@ const (
 	recogDefault  = rapidOCR + "PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx"
 )
 
-// RecogniserCustom is the recogniser the user selects by its file.
-const RecogniserCustom = "custom"
+// RecognizerCustom is the recognizer the user selects by its file.
+const RecognizerCustom = "custom"
 
-func getRecognisers() map[string]string {
+func getRecognizers() map[string]string {
 	return map[string]string{
 		"pp-ocrv6-tiny":       recogDefault,
 		"pp-ocrv6-small":      rapidOCR + "PP-OCRv6/rec/PP-OCRv6_rec_small.onnx",
@@ -23,12 +23,12 @@ func getRecognisers() map[string]string {
 	}
 }
 
-// FindRecogniser returns the address of the recognition model the settings name, and false for a
-// name the plugin does not provision. The custom recogniser has no address.
-func FindRecogniser(name string) (string, bool) {
-	if name == RecogniserCustom {
+// FindRecognizer returns the address of the recognition model the settings name, and false for a
+// name the plugin does not provision. The custom recognizer has no address.
+func FindRecognizer(name string) (string, bool) {
+	if name == RecognizerCustom {
 		return "", true
 	}
-	address, ok := getRecognisers()[name]
+	address, ok := getRecognizers()[name]
 	return address, ok
 }

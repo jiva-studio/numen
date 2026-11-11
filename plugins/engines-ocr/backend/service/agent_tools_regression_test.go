@@ -24,7 +24,7 @@ func TestRecognitionCreateOfAChangedScanStartsARun(t *testing.T) {
 	if out.State != "started" || out.Version != "" {
 		t.Errorf("recognition_create of a changed scan returned %+v, want started", out)
 	}
-	close(s.recogniser.release)
+	close(s.recognizer.release)
 	s.launcher.Close()
 }
 
@@ -50,7 +50,7 @@ func TestRecognitionCreateOverOtherPluginsKeyStartsARun(t *testing.T) {
 	if out.State != "started" {
 		t.Errorf("recognition_create over another plugin's live version returned %+v, want started", out)
 	}
-	close(s.recogniser.release)
+	close(s.recognizer.release)
 	s.launcher.Close()
 }
 
@@ -64,6 +64,6 @@ func TestRecognitionCreateInChemistryReadsChemistryVersions(t *testing.T) {
 	if res.State == "done" {
 		t.Errorf("recognition_create in Chemistry returned %+v from the versions of Physics", res)
 	}
-	close(s.recogniser.release)
+	close(s.recognizer.release)
 	s.launcher.Close()
 }

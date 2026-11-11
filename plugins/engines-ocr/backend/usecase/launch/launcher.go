@@ -120,7 +120,7 @@ func (l *Launcher) StartFile(ctx context.Context, path string) error {
 		return err
 	}
 	if state == StateRunning {
-		return fmt.Errorf("%s: %w", path, recognition.ErrAlreadyRecognising)
+		return fmt.Errorf("%s: %w", path, recognition.ErrAlreadyRecognizing)
 	}
 	return nil
 }

@@ -7,10 +7,10 @@ import (
 	"testing"
 )
 
-func TestMockRecogniserReturnsTextInsidePage(t *testing.T) {
+func TestMockRecognizerReturnsTextInsidePage(t *testing.T) {
 	page := image.NewGray(image.Rect(0, 0, 200, 100))
 
-	blocks, err := MockRecogniser{}.Recognize(t.Context(), page)
+	blocks, err := MockRecognizer{}.Recognize(t.Context(), page)
 
 	if err != nil || len(blocks) != 1 || blocks[0].Text != MockText || blocks[0].Depth != 0 || len(blocks[0].Boxes) != 1 {
 		t.Fatalf("read %+v (%v)", blocks, err)
@@ -23,7 +23,7 @@ func TestMockRecogniserReturnsTextInsidePage(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := (MockRecogniser{}).Recognize(ctx, page); !errors.Is(err, context.Canceled) {
-		t.Errorf("canceled MockRecogniser returned %v, want context.Canceled", err)
+	if _, err := (MockRecognizer{}).Recognize(ctx, page); !errors.Is(err, context.Canceled) {
+		t.Errorf("canceled MockRecognizer returned %v, want context.Canceled", err)
 	}
 }
