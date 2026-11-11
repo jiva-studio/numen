@@ -76,7 +76,7 @@ func newMCPCaller() testPlugin {
 	return testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}}
 }
 
-func openToolsOfHost(t *testing.T, host *pluginhost.Host) numenv1connect.PluginToolServiceClient {
+func openToolsOfHost(t *testing.T, host *container.PluginRoles) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {

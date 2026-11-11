@@ -27,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -226,7 +225,7 @@ func (p *probe) serialized() string {
 // window is an installation with three plugins, a key store in memory and a client of the settings service.
 type window struct {
 	client   numenv1connect.SettingsServiceClient
-	host     *pluginhost.Host
+	host     *container.PluginRoles
 	keys     *secretKeys
 	probes   map[string]*probe
 	file     string
@@ -250,7 +249,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	writeFile(t, filepath.Join(pluginsDir, "beta", "manifest.json"), betaManifest)
 	writeFile(t, filepath.Join(pluginsDir, "gamma", "manifest.json"), gammaManifest)
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", pluginsDir)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", pluginsDir)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

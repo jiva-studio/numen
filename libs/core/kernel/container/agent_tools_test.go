@@ -31,7 +31,6 @@ import (
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -208,7 +207,7 @@ type testPlugin struct {
 	mount        func(mux *http.ServeMux)
 }
 
-func hostOver(t *testing.T, plugins ...testPlugin) *pluginhost.Host {
+func hostOver(t *testing.T, plugins ...testPlugin) *container.PluginRoles {
 	t.Helper()
 	tmp := t.TempDir()
 	ports := map[string]int{}
@@ -246,7 +245,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *pluginhost.Host {
 		ports[one.id] = addr.Port
 	}
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +278,7 @@ func toolsAt(id string, permissions []string, tools *toolPlugin) testPlugin {
 	}
 }
 
-func vaultAndCards(t *testing.T, agent *toolAgent) (*pluginhost.Host, *toolPlugin, *toolPlugin) {
+func vaultAndCards(t *testing.T, agent *toolAgent) (*container.PluginRoles, *toolPlugin, *toolPlugin) {
 	t.Helper()
 	vault := &toolPlugin{tools: []*v1.PluginTool{
 		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),

@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -61,7 +60,7 @@ func (*chunkingPlugin) EmbedBatch(
 	return connect.NewResponse(&v1.EmbedBatchResponse{Vectors: vectors}), nil
 }
 
-func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *pluginhost.Host, *chunkingPlugin) {
+func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *container.PluginRoles, *chunkingPlugin) {
 	t.Helper()
 	reporter := &chunkingPlugin{}
 	reporter.tokens.Store(tokens)
@@ -82,7 +81,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *pluginho
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

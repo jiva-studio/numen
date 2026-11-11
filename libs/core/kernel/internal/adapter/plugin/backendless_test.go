@@ -9,10 +9,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -28,7 +28,7 @@ const frontendOnlyManifest = `{
 	"frontend": {}
 }`
 
-func newFrontendOnlyHost(t *testing.T) (*pluginhost.Host, *int) {
+func newFrontendOnlyHost(t *testing.T) (*container.PluginRoles, *int) {
 	t.Helper()
 	dir := t.TempDir()
 	pluginDir := filepath.Join(dir, "views-sketch")
@@ -38,7 +38,7 @@ func newFrontendOnlyHost(t *testing.T) (*pluginhost.Host, *int) {
 	if err := os.WriteFile(filepath.Join(pluginDir, "manifest.json"), []byte(frontendOnlyManifest), 0o600); err != nil {
 		t.Fatalf("write manifest: %v", err)
 	}
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", dir)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", dir)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)

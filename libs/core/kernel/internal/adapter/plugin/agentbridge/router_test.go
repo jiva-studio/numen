@@ -3,6 +3,7 @@ package agentbridge_test
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
@@ -89,7 +90,7 @@ func newProviderHost(t *testing.T, handlers map[string]numenv1connect.AgentServi
 		ports[id] = wiretest.GetPort(t, server)
 	}
 
-	inner := pluginhost.New(testsupport.GetMachine(), "desktop.editor", dir)
+	inner := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", dir)
 	host := &providerHost{Roles: pluginhost.Join(inner)}
 	settings := map[string]map[string]any{}
 	for _, id := range disabled {

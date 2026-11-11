@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
@@ -104,7 +105,7 @@ func (s *mockEmbeddingServer) EmbedBatch(
 }
 
 func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", t.TempDir())
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", t.TempDir())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +151,7 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

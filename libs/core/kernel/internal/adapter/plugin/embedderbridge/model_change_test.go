@@ -2,6 +2,7 @@ package embedderbridge_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
@@ -39,7 +40,7 @@ func (configurable) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-func openConfigurable(t *testing.T) (*pluginhost.Host, *embedderbridge.Embedder, *mockEmbeddingServer, *atomic.Int32) {
+func openConfigurable(t *testing.T) (*container.PluginRoles, *embedderbridge.Embedder, *mockEmbeddingServer, *atomic.Int32) {
 	t.Helper()
 	mock := &mockEmbeddingServer{}
 	mock.chunkTokens.Store(256)
@@ -62,7 +63,7 @@ func openConfigurable(t *testing.T) (*pluginhost.Host, *embedderbridge.Embedder,
 			t.Fatal(err)
 		}
 	}
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

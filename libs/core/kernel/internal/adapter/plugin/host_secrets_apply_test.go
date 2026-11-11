@@ -3,10 +3,10 @@ package plugin_test
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
-func applyChange(host *pluginhost.Host, ctx context.Context, change func() ([]string, error)) error {
+func applyChange(host *container.PluginRoles, ctx context.Context, change func() ([]string, error)) error {
 	readers, err := change()
 	if err != nil {
 		return err

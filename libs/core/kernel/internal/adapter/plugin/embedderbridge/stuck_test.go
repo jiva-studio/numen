@@ -3,6 +3,7 @@ package embedderbridge_test
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
@@ -66,7 +67,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

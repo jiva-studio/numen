@@ -27,7 +27,6 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -112,7 +111,7 @@ func (s *providerServer) GetAgentPrograms(
 	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: s.programs}), nil
 }
 
-func hostWith(t *testing.T, capabilities map[string][]string, servers map[string]*providerServer) *pluginhost.Host {
+func hostWith(t *testing.T, capabilities map[string][]string, servers map[string]*providerServer) *container.PluginRoles {
 	t.Helper()
 
 	tmp := t.TempDir()
@@ -146,7 +145,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 		ports[id] = addr.Port
 	}
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +169,7 @@ const (
 	providerTwo = "md.test.two"
 )
 
-func twoProviders(t *testing.T) (*pluginhost.Host, *providerServer, *providerServer) {
+func twoProviders(t *testing.T) (*container.PluginRoles, *providerServer, *providerServer) {
 	t.Helper()
 	one := &providerServer{programs: []*v1.AgentProgram{{
 		Name: "alpha", Title: "Alpha", IsInstalled: true, IsDefault: true,

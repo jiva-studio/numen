@@ -8,14 +8,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 )
 
-func serveCompletions(t *testing.T, host *pluginhost.Host, output string) (hostendpoint.Completer, string) {
+func serveCompletions(t *testing.T, host *container.PluginRoles, output string) (hostendpoint.Completer, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {

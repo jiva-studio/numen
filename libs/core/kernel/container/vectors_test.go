@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -68,7 +67,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +107,7 @@ func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
 	}
 }
 
-func writeEmbeddingPlugin(t *testing.T, manifest string) *pluginhost.Host {
+func writeEmbeddingPlugin(t *testing.T, manifest string) *container.PluginRoles {
 	t.Helper()
 	tmp := t.TempDir()
 	pDir := filepath.Join(tmp, "embeddings")
@@ -118,7 +117,7 @@ func writeEmbeddingPlugin(t *testing.T, manifest string) *pluginhost.Host {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

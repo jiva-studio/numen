@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 const tokenPluginID = "org.example.relay"
@@ -38,7 +38,7 @@ func (w *tokenWrites) get(pluginID, key string) []any {
 	return append([]any(nil), w.values[pluginID+"/"+key]...)
 }
 
-func newTokenHost(t *testing.T) *pluginhost.Host {
+func newTokenHost(t *testing.T) *container.PluginRoles {
 	t.Helper()
 	root := t.TempDir()
 	dir := filepath.Join(root, "relay")
@@ -59,14 +59,14 @@ func newTokenHost(t *testing.T) *pluginhost.Host {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
 }
 
-func loadTokenHost(host *pluginhost.Host, stored map[string]map[string]any, writes *tokenWrites) {
+func loadTokenHost(host *container.PluginRoles, stored map[string]map[string]any, writes *tokenWrites) {
 	host.Settings.SetSettings(stored)
 	host.Settings.SetPersistHandler(writes.add)
 }
