@@ -118,13 +118,17 @@ func openWindowWith(
 		return nil, errors.Join(err, opening.DB.Close())
 	}
 	built := buildWindow(ctx, c, ports, opening, texts)
-	if opening.UseCases != nil {
-		*opening.UseCases = built.wiring.cases
-	}
+	shareUseCases(opening, built.wiring.cases)
 	if err := startWindow(ctx, built.wiring, first); err != nil {
 		return nil, errors.Join(err, built.closeEmbedder(), opening.DB.Close())
 	}
 	return built.wiring, nil
+}
+
+func shareUseCases(opening WindowOpening, cases WindowUseCases) {
+	if opening.UseCases != nil {
+		*opening.UseCases = cases
+	}
 }
 
 func buildWindow(

@@ -182,10 +182,14 @@ func (p cliSearching) prepare(ctx context.Context, v domain.Vault) (searchusecas
 		return searchusecase.Search{}, err
 	}
 	embedder, why := p.over.session.openEmbedder(asking, ctx)
-	if why != nil && p.errorHandler != nil {
-		p.errorHandler(why)
-	}
+	reportEmbedderError(p.errorHandler, why)
 	return newSearch(asking.search, p.over.db, embedder, p.errorHandler), nil
+}
+
+func reportEmbedderError(handler func(error), why error) {
+	if why != nil && handler != nil {
+		handler(why)
+	}
 }
 
 // openEmbedder opens the embedder of the plugins a, which Close closes, and returns why there is none.
