@@ -138,14 +138,14 @@ func (w readingParts) cutNotes() chunking.CutNotes {
 	return chunking.NewCutNotes(w.chunks.Get())
 }
 
-func (w readingParts) setNoteCut(scan *vault.Scan, db *testIndex) {
+func (w readingParts) setNoteCut(scan *vault.Scan) {
 	scan.Cut = w.cutNotes()
 	scan.ShouldRecut = w.chunks.Get() > 0
 }
 
 func (w readingParts) scan(db *testIndex, rebuild bool) vault.Scan {
 	scan := vault.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
-	w.setNoteCut(&scan, db)
+	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = rebuild
 	return scan
@@ -168,7 +168,7 @@ func (w readingParts) OpenVaultWith(
 	db *testIndex, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *vault.VaultOpener {
 	scan := vault.NewScan(walking, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
-	w.setNoteCut(&scan, db)
+	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
 	buffered := &indexnote.Buffered{NoteRepository: db.Stores.Notes}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
@@ -198,7 +198,7 @@ func (w readingParts) ReadWholeVault(
 		}
 		return nil
 	}
-	texts := filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts, nil, readNote)
+	texts := filetext.NewHandlingIndex(filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts), nil, readNote)
 	cutter := w.cutNotes()
 	texts.Sizes = cutter.Sizes
 	texts.Legibility = cutter.Legibility

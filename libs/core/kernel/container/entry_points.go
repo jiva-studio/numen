@@ -81,13 +81,19 @@ func OpenFlashcards(c Config,
 	if err != nil {
 		return Flashcards{}, err
 	}
-	return bindFlashcards(c, ctx, ports, db, api, out, label, notify)
+	return bindFlashcards(c, ctx, ports, db, api, flashcardsLog{out: out, label: label, notify: notify})
 }
 
-func bindFlashcards(c Config,
-	ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, out io.Writer, label string, notify func(message string),
+type flashcardsLog struct {
+	out    io.Writer
+	label  string
+	notify func(message string)
+}
+
+func bindFlashcards(
+	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log flashcardsLog,
 ) (Flashcards, error) {
-	vaults := openVaults(c, db, out, label, api.ReportVaultRead)
+	vaults := openVaults(c, db, log.out, log.label, api.ReportVaultRead)
 	closers := Flashcards{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	SetShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
@@ -97,7 +103,7 @@ func bindFlashcards(c Config,
 	if err := installPluginVault(plugins(c), ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}
-	closers.Themes = followFlashcards(c, ctx, api, label, notify)
+	closers.Themes = followFlashcards(c, ctx, api, log.label, log.notify)
 	return closers, nil
 }
 

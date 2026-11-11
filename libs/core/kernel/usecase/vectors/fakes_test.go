@@ -89,6 +89,6 @@ func newEmbed(readers vaultport.VaultReaders, chunks embeddingport.VectorQueries
 func newExtract(
 	readers vaultport.VaultReaders, index *indexfake.Store,
 ) filetext.Index {
-	extract := filetext.NewIndex(readers, index, index, index, index, bookTexts{readers: readers}, nil, nil)
+	extract := filetext.NewIndex(readers, index, index, index, index, bookTexts{readers: readers})
 	return extract
 }

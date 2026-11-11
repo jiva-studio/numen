@@ -27,7 +27,7 @@ type Session struct {
 	rebuild func(found domain.Vault) *vault.Access
 }
 
-func (s Session) showing(found domain.Vault) Session {
+func (s *Session) showing(found domain.Vault) Session {
 	return Session{
 		Current: func() (domain.Vault, bool) { return found, true }, Vaults: s.Vaults, Find: s.Find,
 		IndexState: s.IndexState, Moved: s.Moved, Watcher: s.Watcher, Written: s.Written,

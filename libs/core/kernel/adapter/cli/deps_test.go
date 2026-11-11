@@ -72,7 +72,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				db.NoteQueries(), db.Maintenance(), nil)
 			notes.ShouldRebuildIndex = rebuild
 
-			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers}, nil, nil)
+			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 			books.ShouldRebuildIndex = rebuild
 
 			// No vectors: a test uses no model, and a vault is searched by words alone.
