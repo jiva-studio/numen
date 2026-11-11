@@ -40,7 +40,7 @@ func getNotebook() domain.Vault {
 
 func runWithDeps(deps stubSession, args ...string) (string, error) {
 	var out bytes.Buffer
-	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Session { return deps })
+	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Session { return deps.session() })
 	return out.String(), err
 }
 
@@ -290,7 +290,9 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}{
 		"the list of vaults cannot be opened": {
 			stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				return cli.Indexed{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
+				notFound := func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }
+				problems := vaults.NewGetProblems(check.Standard(fixedProblemQueries{}))
+				return cli.Indexed{Problems: vaults.NewGetProblemsByName(notFound, problems)}, nil
 			}},
 			[]string{"problems", "notebook"},
 		},
@@ -385,7 +387,7 @@ func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 	wasOpened := false
 	var out bytes.Buffer
 	runErr := cli.Run(t.Context(), &out, io.Discard, []string{"--no-such-flag", "help"},
-		func(cli.Locations) cli.Session { wasOpened = true; return stubSession{} })
+		func(cli.Locations) cli.Session { wasOpened = true; return stubSession{}.session() })
 
 	if runErr == nil {
 		t.Error("a flag nobody knows was accepted")
@@ -408,7 +410,7 @@ func TestEveryLocationIsHandedToTheOpener(t *testing.T) {
 	var out bytes.Buffer
 	err := cli.Run(t.Context(), &out, io.Discard,
 		[]string{"--index", "i.db", "--registry", "r.json", "--service-dir", ".mine", "help"},
-		func(where cli.Locations) cli.Session { got = where; return stubSession{} })
+		func(where cli.Locations) cli.Session { got = where; return stubSession{}.session() })
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -27,7 +27,7 @@ type pageSet struct {
 	flushes   int
 	canceled  int
 	log       *eventLog
-	held      *heldFlush
+	hold      *heldFlush
 	releasing *heldFlush
 }
 
@@ -41,13 +41,13 @@ func (p *pageSet) RequestFlush(context.Context) bool {
 	p.mu.Lock()
 	p.flushes++
 	p.log.add("flush")
-	held := p.held
-	p.held = nil
+	hold := p.hold
+	p.hold = nil
 	isAsking := p.isAsking
 	p.mu.Unlock()
-	if held != nil {
-		close(held.entered)
-		<-held.gate
+	if hold != nil {
+		close(hold.entered)
+		<-hold.gate
 	}
 	return !isAsking
 }
@@ -56,18 +56,18 @@ func (p *pageSet) RequestFlush(context.Context) bool {
 func (p *pageSet) holdNextFlush() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.held = &heldFlush{entered: make(chan struct{}), gate: make(chan struct{})}
-	p.releasing = p.held
+	p.hold = &heldFlush{entered: make(chan struct{}), gate: make(chan struct{})}
+	p.releasing = p.hold
 }
 
 // waitHeld returns once a flush request waits inside the pages.
 func (p *pageSet) waitHeld(t *testing.T) {
 	t.Helper()
 	p.mu.Lock()
-	held := p.releasing
+	hold := p.releasing
 	p.mu.Unlock()
 	select {
-	case <-held.entered:
+	case <-hold.entered:
 	case <-time.After(5 * time.Second):
 		t.Fatal("no flush was requested from the pages")
 	}
@@ -75,9 +75,9 @@ func (p *pageSet) waitHeld(t *testing.T) {
 
 func (p *pageSet) release() {
 	p.mu.Lock()
-	held := p.releasing
+	hold := p.releasing
 	p.mu.Unlock()
-	close(held.gate)
+	close(hold.gate)
 }
 
 func (p *pageSet) CancelFlush() {

@@ -26,17 +26,17 @@ type Locations struct {
 
 // Session is the installation one run of the terminal works with. A command opens only its own machinery
 // through it: listing vaults opens no index, and a search opens no provider that fills one. Everything a
-// command opens is closed by Close, once, when the run ends.
-type Session interface {
+// command opens is closed by Close, once, when the run ends. Every field is set.
+type Session struct {
 	// OpenVaults returns the use cases over the list of vaults.
-	OpenVaults() (Vaults, error)
+	OpenVaults func() (Vaults, error)
 	// OpenIndexed opens the index and returns the use cases that read or change it.
-	OpenIndexed(ctx context.Context, options IndexOptions) (Indexed, error)
+	OpenIndexed func(ctx context.Context, options IndexOptions) (Indexed, error)
 	// GetPluginCommands returns the commands the enabled plugins declare, and what runs one.
-	GetPluginCommands() PluginCommands
+	GetPluginCommands func() PluginCommands
 	// Close ends what the run opened. It returns what the background work of the run reported as failed, one
 	// line each, and the failure to close.
-	Close() (failures []string, err error)
+	Close func() (failures []string, err error)
 }
 
 // IndexOptions say how the index of a run is used: whether a scan reads every file again, and where the search

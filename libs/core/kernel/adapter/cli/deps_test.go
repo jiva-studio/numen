@@ -62,6 +62,13 @@ type closeList struct{ fns []func() error }
 
 func (l *closeList) add(closer func() error) { l.fns = append(l.fns, closer) }
 
+// session is d as the session a run is given.
+func (d stubSession) session() cli.Session {
+	return cli.Session{
+		OpenVaults: d.OpenVaults, OpenIndexed: d.OpenIndexed, GetPluginCommands: d.GetPluginCommands, Close: d.Close,
+	}
+}
+
 func (d stubSession) OpenVaults() (cli.Vaults, error) {
 	if d.Vaults == nil {
 		return cli.Vaults{}, errNotProvided
@@ -97,7 +104,7 @@ func (d stubSession) Close() ([]string, error) {
 var errNotProvided = errors.New("the test provided no such part")
 
 func (s *session) deps(where cli.Locations) cli.Session {
-	return s.depsOver(where, s.parts(where))
+	return s.depsOver(where, s.parts(where)).session()
 }
 
 func (s *session) depsOver(where cli.Locations, parts vaultParts) stubSession {
@@ -257,7 +264,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 
 	var out bytes.Buffer
 	err := cli.Run(t.Context(), &out, io.Discard,
-		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Session { return provided })
+		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Session { return provided.session() })
 	if err != nil {
 		t.Fatalf("links: %v\n%s", err, out.String())
 	}
