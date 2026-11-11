@@ -1,7 +1,7 @@
-import type { TabId, Workspace } from './node'
-import type { Rect } from './rect'
-import { getRect } from './drop'
-import { paneWithTab } from './tree'
+import type { TabId, Workspace } from '../lib/node'
+import type { Rect } from '../lib/rect'
+import { getRect } from './rect'
+import { paneWithTab } from '../lib/tree'
 
 /** The box of the drawn pane that holds the tab, in viewport coordinates; null where none does. */
 export function getTabPaneRect(workspace: Workspace, tab: TabId): Rect | null {

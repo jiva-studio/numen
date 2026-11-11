@@ -22,7 +22,7 @@ import {
 } from '@codemirror/view'
 import { moveBlock } from '../table/grid'
 import { type BlockNode, blockMarks, findBlocks, getMarks } from './marks'
-import { getWikilinkMarks } from './wikilinks'
+import { getWikilinkMarks } from '../../lib/live/wikilinks'
 
 /**
  * How far beyond the visible lines the marks are drawn, in characters. Resizing

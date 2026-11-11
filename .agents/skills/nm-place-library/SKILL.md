@@ -42,7 +42,7 @@ An arrow is a permitted import; the package matrix (`PACKAGE_DEPENDENCIES` in `t
 
 | Library | Holds |
 | --- | --- |
-| `@numen/ui` (`libs/ui/components`) | Pure components of general purpose, the design tokens, and the pure helpers beneath them (clock, viewport, geometry, text). No domain, no wire types, no application code. |
+| `@numen/ui` (`libs/ui/components`) | Pure components of general purpose, the design tokens, and the helpers beneath them (clock types, geometry, text, and the browser access in `shared/api`). No domain, no wire types, no application code. |
 | `@numen/workbench` (`libs/ui/workbench`) | The chrome every desktop window shares: the panes and tabs, the command palette, the notices, the window frame. Built from `@numen/ui` alone. |
 | `@numen/core-client` (`libs/core/client`) | The first-party client of the core: service clients, transport, enum codes, error words, the manifest reader, the catalog client. Private. |
 | `@numen/protocol` (`libs/core/protocol`) | The `.proto` schema, and the Go and TypeScript generated from it. |
@@ -78,7 +78,8 @@ Ask in this order. The first question answered yes names the home.
 | A view-model for any other domain list | The window slice that draws it |
 | A helper two windows use | The library its content names (decision list above); with no library that fits, each window keeps its own copy |
 | A helper two plugins use | Each plugin keeps its own copy; the SDK gains it only when a plugin needs the host to provide it |
-| A pure function over time, geometry, text or the viewport | `@numen/ui`, `shared/lib/<topic>/` |
+| A pure function over time, geometry or text | `@numen/ui`, `shared/lib/<topic>/` |
+| A read of the browser (window, document, clock, timers, observers, the runtime) | `@numen/ui`, `shared/api/`; the composable that follows it is in `shared/model/` |
 | A composable with Vue state and no domain | `@numen/ui`, the `model` segment of its slice, named `use<Feature>` |
 | A composable that calls a client | The `api` segment of the window slice that uses it |
 | A window-chrome behavior (tab arrangement, palette keys, notice queue) | `@numen/workbench`, a slice in `features/` |
@@ -94,7 +95,9 @@ libs/ui/components/src/
   index.ts                 the public surface
   shared/
     ui/<component>/        Component.vue, Component.types.ts, index.ts, Component.test.ts, Component.stories.ts
-    lib/<topic>/           pure functions: clock, viewport, math, text, format, dom
+    lib/<topic>/           pure functions and types: time, math, text, format, dom geometry; no Vue, DOM, clock or timers
+    api/                   browser access: window, document, clock, viewport observers, links, the runtime
+    model/                 shared composables over api (viewport) and refs
     tokens/                tokens.css, theme.css, window.css, classes.css
     fixtures/              invented content for stories
   features/<slice>/

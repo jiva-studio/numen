@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { resolvePopoverPosition } from './popoverPlacement'
 
 describe('resolvePopoverPosition', () => {
@@ -179,25 +179,18 @@ describe('resolvePopoverPosition', () => {
   })
 
   describe('without a measured container', () => {
-    afterEach(() => {
-      vi.unstubAllGlobals()
-    })
-
-    it('measures the window', () => {
-      vi.stubGlobal('window', { innerWidth: 900, innerHeight: 500 })
-
+    it('falls back to the window size', () => {
       const pos = resolvePopoverPosition({
         at: { x: 880, y: 100 },
         popoverSize: { width: 0, height: 400 },
         containerSize: { width: 0, height: 0 },
+        windowSize: { width: 900, height: 500 },
       })
 
       expect(pos).toEqual({ left: 568, top: 88 })
     })
 
-    it('assumes 800 by 600 where there is no window', () => {
-      vi.stubGlobal('window', undefined)
-
+    it('assumes 800 by 600 where no window size is given', () => {
       const pos = resolvePopoverPosition({
         at: { x: 790, y: 180 },
         popoverSize: { width: 0, height: 400 },

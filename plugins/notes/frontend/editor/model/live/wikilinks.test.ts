@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getMarks } from './marks'
-import { renderBracketMatch } from './wikilinks'
+import { renderBracketMatch } from '../../lib/live/wikilinks'
 import { createState } from '../../fixtures/state'
 
 interface Drawn {

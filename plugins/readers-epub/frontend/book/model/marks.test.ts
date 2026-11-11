@@ -11,7 +11,7 @@ import { defineComponent, nextTick, reactive, shallowRef } from 'vue'
 
 import type { TextRange } from '@numen/ui'
 import type { SettledBookProps } from '../lib/props'
-import { HIGHLIGHT, OTHER_HIGHLIGHT } from '../lib/highlight'
+import { HIGHLIGHT, OTHER_HIGHLIGHT } from './highlight'
 import { useBookMarks } from './marks'
 
 /** What the registry holds for an entry: the ranges of every book that marked it. */

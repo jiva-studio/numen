@@ -6,6 +6,7 @@
  * A link to another document of the book names a location inside markup that has
  * not been rendered yet, so the link is held until that document is available.
  */
+import { win } from '@numen/ui'
 import { isExternalHref, parseBookLink, type BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
@@ -35,7 +36,7 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkRepo
     const href = link.getAttribute('href') as string
 
     press.preventDefault()
-    if (isExternalHref(href)) return
+    if (isExternalHref(href, win.location.href)) return
 
     const place = parseBookLink(href)
     if (place.path !== '' && place.path !== props.path) {

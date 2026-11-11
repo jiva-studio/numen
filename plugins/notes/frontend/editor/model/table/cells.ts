@@ -1,6 +1,6 @@
 /** Typing into a drawn table: what a cell writes back, and what the keys do. */
 import { EditorView } from '@codemirror/view'
-import { emptyRow, withColumn, writeCell } from './table'
+import { emptyRow, withColumn, writeCell } from '../../lib/table/table'
 
 const getSpan = (frame: HTMLElement) => {
   const from = Number(frame.dataset['from'])

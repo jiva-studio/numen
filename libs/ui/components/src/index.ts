@@ -53,7 +53,8 @@ export { createWriteOrder, type WriteOrder } from './shared/lib/async/remoteValu
 export { runInBackground } from './shared/lib/async/background'
 
 /** Rethrows a rejection of a background task as an uncaught error. */
-export { reportFailure, type Caught, type Unvalidated } from './shared/lib/async/report'
+export { reportFailure } from './shared/api/report'
+export type { Caught, Unvalidated } from './shared/lib/async/types'
 
 export { Spinner } from './shared/ui/spinner'
 
@@ -63,7 +64,8 @@ export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
 
 /** A link that leads out of the application, and the window held against it. */
-export { interceptExternalLinks, isExternalLink } from './shared/lib/text/externalLink'
+export { interceptExternalLinks } from './shared/api/externalLink'
+export { isExternalLink } from './shared/lib/text/externalLink'
 
 /** Numbers as they are read out, which both windows read the same way. */
 export { groupDigits, many, percent, plural } from './shared/lib/format/digits'
@@ -77,21 +79,11 @@ export type { TextRange } from './shared/lib/text/textRange'
 export type { Position, Size } from './shared/lib/math/geometry'
 export { clamp } from './shared/lib/math/bounds'
 export { getAdjacentPlace, type Box } from './shared/lib/dom/place'
-export {
-  browserViewport,
-  useFreeSpace,
-  useViewport,
-  useWholeViewport,
-  type Viewport,
-} from './shared/lib/dom/viewport'
+export { browserViewport, type Viewport } from './shared/api/viewport'
+export { useFreeSpace, useViewport, useWholeViewport } from './shared/model/viewport'
 export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
-export {
-  browserClock,
-  getMonotonicNow,
-  onNextFrame,
-  type Clock,
-  type Paint,
-} from './shared/lib/time/clock'
+export { browserClock, getMonotonicNow, onNextFrame } from './shared/api/clock'
+export type { Clock, Paint } from './shared/lib/time/clock'
 export {
   doc,
   getCurrentDate,
@@ -102,8 +94,8 @@ export {
   measureWindow,
   nav,
   win,
-} from './shared/lib/dom'
-export { createRefRegistry } from './shared/lib/dom/refs'
+} from './shared/api/dom'
+export { createRefRegistry } from './shared/model/refs'
 export { cn } from './shared/lib/dom/classes'
 
 /** A row of a list the arrow keys walk, and a pair of UTF-16 units read as one character. */
@@ -115,8 +107,8 @@ export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
 export { useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 /** The Wails runtime the window serves beside its pages, and an address opened through it. */
-export { loadWailsRuntime, openExternalUrl } from './shared/lib/runtime/wailsRuntime'
-export type { WailsRuntime, WailsRuntimeLoader } from './shared/lib/runtime/wailsRuntime'
+export { loadWailsRuntime, openExternalUrl } from './shared/api/wailsRuntime'
+export type { WailsRuntime, WailsRuntimeLoader } from './shared/api/wailsRuntime'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'

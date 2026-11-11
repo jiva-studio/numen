@@ -4,9 +4,29 @@
  * Kept outside the template because the meaning of a key is a rule, and a rule
  * inside a component can only be tested by pressing a key on a rendered screen.
  */
-import { isTyping } from '@numen/ui'
 import { grades } from '../card/grades'
 import type { Grade } from '../card/grades'
+
+/** The fields of a key press that these rules read; a keyboard event has them all. */
+export interface KeyPress {
+  readonly key: string
+  readonly repeat: boolean
+  readonly altKey: boolean
+  readonly ctrlKey: boolean
+  readonly metaKey: boolean
+  readonly shiftKey: boolean
+  readonly target: object | null
+}
+
+/** Whether the key was pressed into something being written in. */
+const isTyping = (press: KeyPress): boolean => {
+  const { target } = press
+  if (!target) return false
+  return (
+    ('tagName' in target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) ||
+    ('isContentEditable' in target && target.isContentEditable === true)
+  )
+}
 
 /** The action a keystroke requests in a session, or null when it requests none. */
 export type SessionKeyIntent =
@@ -39,7 +59,7 @@ export const READ_KEY = 'r'
  * nothing.
  */
 export function getSessionKeyIntent(
-  press: KeyboardEvent,
+  press: KeyPress,
   screen: ScreenState,
 ): SessionKeyIntent | null {
   // A field also receives the overlay key: control and A selects the text it
@@ -52,14 +72,14 @@ export function getSessionKeyIntent(
   return getCardKeyIntent(press, screen)
 }
 
-const getPanelKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
+const getPanelKeyIntent = (press: KeyPress): SessionKeyIntent | null => {
   const letter = press.key.toLowerCase()
   if (letter === ASK_KEY) return { does: 'ask' }
   if (letter === READ_KEY) return { does: 'read' }
   return null
 }
 
-const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
+const getCardKeyIntent = (press: KeyPress, screen: ScreenState): SessionKeyIntent | null => {
   if (press.key === 'Escape') {
     return screen.isAsking || screen.isNotesOpen ? { does: 'shut' } : { does: 'leave' }
   }
@@ -68,12 +88,12 @@ const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKey
   return getGradeKeyIntent(press)
 }
 
-const getSpaceKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
+const getSpaceKeyIntent = (press: KeyPress, screen: ScreenState): SessionKeyIntent | null => {
   if (screen.isNotesOpen) return { does: 'scroll', back: press.shiftKey }
   return screen.isShown ? null : { does: 'show' }
 }
 
-const getGradeKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
+const getGradeKeyIntent = (press: KeyPress): SessionKeyIntent | null => {
   const how = grades[Number(press.key) - 1]
   return how ? { does: 'answer', how } : null
 }
@@ -107,7 +127,7 @@ export const getLetter = (index: number): string => LETTERS[index] ?? ''
  * index, and escape returns to the vault list. The whole vault is the daily action, so it has
  * the most accessible keys.
  */
-export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerKeyIntent | null {
+export function getPickerKeyIntent(press: KeyPress, decks: number): PickerKeyIntent | null {
   if (hasModifierOrRepeat(press)) return null
   if (press.key === 'Escape') return { does: 'back' }
   if (press.key === 'Enter' || press.key === ' ') return { does: 'all' }
@@ -118,8 +138,8 @@ export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerK
   return null
 }
 
-const hasModifierOrRepeat = (press: KeyboardEvent): boolean =>
+const hasModifierOrRepeat = (press: KeyPress): boolean =>
   press.repeat || press.altKey || press.ctrlKey || press.metaKey
 
-const hasOverlayKey = (press: KeyboardEvent): boolean =>
+const hasOverlayKey = (press: KeyPress): boolean =>
   !press.repeat && !press.altKey && (press.ctrlKey || press.metaKey)

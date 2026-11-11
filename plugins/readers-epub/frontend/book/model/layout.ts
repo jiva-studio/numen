@@ -15,7 +15,7 @@ import type { PageNavigationAction } from '@numen/ui'
 import type { useBookColumns } from './columns'
 import { getTurnTarget, type useBookTurns } from './turns'
 import { copyPaper, type LeavingSpread } from './leaving'
-import { findPending, whenArrived } from '../lib/pictures'
+import { findPending, whenArrived } from './pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 

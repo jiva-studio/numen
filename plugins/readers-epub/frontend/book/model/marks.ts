@@ -8,8 +8,8 @@
 import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
-import { createMarks, findOffset, rangesOver, getRuns, type Run } from '../lib/runs'
+import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from './highlight'
+import { createMarks, findOffset, rangesOver, getRuns, type Run } from '../api/runs'
 import type { Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
 

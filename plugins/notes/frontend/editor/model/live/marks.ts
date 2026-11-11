@@ -9,12 +9,12 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState, Range, Text } from '@codemirror/state'
 import { Decoration, type DecorationSet, type WidgetType } from '@codemirror/view'
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
-import { findChild } from '../extensions/address'
+import { findChild } from '../../lib/extensions/address'
 import { getGrid } from '../table/grid'
-import { BULLET, HEADING, HIDDEN, INLINE, line, mark, CARET_ONLY } from './styles'
+import { BULLET, HEADING, HIDDEN, INLINE, line, mark, CARET_ONLY } from '../../lib/live/styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
-import { drawWikilink, findDrawnWikilinks, isLinkSelected, isWithin } from './wikilinks'
-import type { Wikilink } from '../extensions/wikilink'
+import { drawWikilink, findDrawnWikilinks, isLinkSelected, isWithin } from '../../lib/live/wikilinks'
+import type { Wikilink } from '../../lib/extensions/wikilink'
 
 /** The nodes the markdown parser makes of the inner brackets of a wikilink. */
 const LINK_NODES = new Set(['Link', 'LinkMark', 'LinkLabel', 'URL', 'LinkTitle'])

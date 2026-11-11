@@ -366,14 +366,7 @@ export function createBaseConfig(dirname, options = {}) {
             ],
           },
         ],
-        'no-restricted-globals': [
-          'error',
-          { name: 'window', message: 'lib/ is pure TypeScript and must not access DOM window' },
-          { name: 'document', message: 'lib/ is pure TypeScript and must not access DOM document' },
-          { name: 'navigator', message: 'lib/ is pure TypeScript and must not access browser navigator' },
-          { name: 'localStorage', message: 'lib/ is pure TypeScript and must not access localStorage' },
-          { name: 'sessionStorage', message: 'lib/ is pure TypeScript and must not access sessionStorage' },
-        ],
+        'numen/pure-segment': 'error',
       },
     },
 

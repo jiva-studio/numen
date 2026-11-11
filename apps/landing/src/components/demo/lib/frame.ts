@@ -79,7 +79,9 @@ function createSeekMessage(ms: number): string {
 }
 
 /** What a frame is told through. */
-export type MessageTarget = Pick<Window, 'postMessage'>
+export interface MessageTarget {
+  postMessage(message: string, targetOrigin: string): void
+}
 
 /** A frame told to play from a moment, and nobody else is told. */
 export function seekFrame(

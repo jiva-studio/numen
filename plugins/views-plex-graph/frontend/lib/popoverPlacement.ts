@@ -1,12 +1,12 @@
 /**
  * Where the link inspector popover is placed in its container.
  */
-import { measureWindow } from '@numen/ui'
-
 export interface PopoverPlacementOptions {
   readonly at: { readonly x: number; readonly y: number }
   readonly popoverSize: { readonly width: number; readonly height: number }
   readonly containerSize: { readonly width: number; readonly height: number }
+  /** The size that stands in for a container with no measure. */
+  readonly windowSize?: { readonly width: number; readonly height: number }
   readonly margin?: number
   readonly gap?: number
 }
@@ -47,14 +47,14 @@ export function resolvePopoverPosition({
   at: point,
   popoverSize,
   containerSize,
+  windowSize = { width: 800, height: 600 },
   margin = 12,
   gap = 12,
 }: PopoverPlacementOptions): PopoverPlacementResult {
   const width = popoverSize.width || 320
   const height = popoverSize.height || 160
-  const inner = measureWindow()
-  const containerW = containerSize.width || inner.width
-  const containerH = containerSize.height || inner.height
+  const containerW = containerSize.width || windowSize.width
+  const containerH = containerSize.height || windowSize.height
 
   return {
     left: Math.round(getLeftPosition(point.x, width, containerW, margin)),

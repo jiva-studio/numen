@@ -5,7 +5,7 @@
  * without the editor being built again; with it off what is left is markdown
  * with its syntax coloured.
  */
-import { doc } from '@numen/ui'
+import { browserClock, doc } from '@numen/ui'
 import { history, historyKeymap, defaultKeymap, indentLess, indentMore } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { bracketMatching, indentUnit, syntaxHighlighting, syntaxTree } from '@codemirror/language'
@@ -30,16 +30,16 @@ import {
   placeholder,
   rectangularSelection,
 } from '@codemirror/view'
-import { follow } from './extensions/address'
-import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from './change/change'
-import { highlighting } from './config/highlight'
-import { LANGUAGES } from './config/languages'
+import { follow } from '../lib/extensions/address'
+import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from '../lib/change/change'
+import { highlighting } from '../lib/config/highlight'
+import { LANGUAGES } from '../lib/config/languages'
 import { live, sourceWikilinks, wholeLines } from './live/live'
-import { renderBracketMatch } from './live/wikilinks'
-import { HEADING } from './live/styles'
+import { renderBracketMatch } from '../lib/live/wikilinks'
+import { HEADING } from '../lib/live/styles'
 import { GFM } from '@lezer/markdown'
-import { saveHandler } from './outside'
-import { monospaced, theme } from './config/theme'
+import { saveHandler } from '../lib/outside'
+import { monospaced, theme } from '../lib/config/theme'
 
 /** What can be changed without the editor being built again. */
 export const previewCompartment = new Compartment()
@@ -238,7 +238,7 @@ export const setup = (settings: Settings = {}): Extension => [
   placeholder(settings.placeholder ?? ''),
   getAccessibility(settings),
   changeMarks,
-  createPacePlugin(),
+  createPacePlugin(browserClock),
   previewCompartment.of(preview(settings.isLivePreview ?? true)),
   editableCompartment.of(createEditable(!settings.readonly)),
   changeCompartment.of(showChange(settings.change ?? null)),

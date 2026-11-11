@@ -9,9 +9,9 @@
  * one beginning at or before it.
  */
 import { doc } from '@numen/ui'
-import { countBytes, getUnitOffset } from './bytes'
+import { countBytes, getUnitOffset } from '../lib/bytes'
 import type { TextRange } from '@numen/ui'
-import type { Mark } from './spread'
+import type { Mark } from '../lib/spread'
 
 /** Single contiguous text run in rendered book. */
 export interface Run {

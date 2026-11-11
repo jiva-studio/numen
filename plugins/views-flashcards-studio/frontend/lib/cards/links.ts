@@ -5,7 +5,7 @@
  * an attribute or a scheme that is not named here does not survive.
  */
 
-import { ANY, DRAWN, OWN, SCHEMES, STRUCK, STYLED } from './tags'
+import { ANY, OWN, SCHEMES, STYLED } from './tags'
 
 /** An image standing in the text itself. */
 const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i
@@ -19,12 +19,12 @@ const stripControls = (url: string): string =>
 export const scheme = (url: string): string | null =>
   /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(stripControls(url))?.[0].toLowerCase() ?? null
 
-const canLinkTo = (url: string): boolean => {
+export const canLinkTo = (url: string): boolean => {
   const named = scheme(url)
   return named === null || SCHEMES.has(named)
 }
 
-const canShow = (url: string): boolean => {
+export const canShow = (url: string): boolean => {
   const cleaned = stripControls(url)
   if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
   // An address starting with two slashes names a host and inherits the window's
@@ -32,7 +32,7 @@ const canShow = (url: string): boolean => {
   return scheme(cleaned) === null && !/^[\\/]{2}/.test(cleaned)
 }
 
-const filterStyles = (value: string): string =>
+export const filterStyles = (value: string): string =>
   value
     .split(';')
     .map((each) => each.trim())
@@ -50,66 +50,12 @@ const filterStyles = (value: string): string =>
     })
     .join('; ')
 
-const stripComments = (root: ParentNode & Node): void => {
-  const walk = (node: Node): void => {
-    for (const child of [...node.childNodes]) {
-      if (child.nodeType === 8) child.remove()
-      else walk(child)
-    }
-  }
-  walk(root)
-}
-
-const canCarry = (tag: string, name: string): boolean =>
+export const canCarry = (tag: string, name: string): boolean =>
   // Stryker disable next-line ArrayDeclaration: the mutated value is ["Stryker was here"], a name with spaces that no parsed attribute has.
   ANY.has(name) || (OWN[tag] ?? []).includes(name)
 
-const canPointAt = (name: string, value: string): boolean => {
+export const canPointAt = (name: string, value: string): boolean => {
   if (name === 'href') return canLinkTo(value)
   if (name === 'src') return canShow(value)
   return true
 }
-
-const strip = (element: Element): void => {
-  const tag = element.tagName.toLowerCase()
-  for (const attribute of [...element.attributes]) {
-    const name = attribute.name.toLowerCase()
-
-    if (name === 'style') {
-      const filtered = filterStyles(attribute.value)
-      if (filtered === '') element.removeAttribute(attribute.name)
-      else element.setAttribute('style', filtered)
-      continue
-    }
-
-    if (!canCarry(tag, name) || !canPointAt(name, attribute.value)) {
-      element.removeAttribute(attribute.name)
-    }
-  }
-}
-
-const pass = (html: string): string => {
-  const readItem = new DOMParser().parseFromString(html, 'text/html')
-  stripComments(readItem.body)
-
-  for (const element of [...readItem.body.querySelectorAll('*')]) {
-    const tag = element.tagName.toLowerCase()
-    if (STRUCK.has(tag)) {
-      element.remove()
-      continue
-    }
-    if (!DRAWN.has(tag)) {
-      element.replaceWith(...element.childNodes)
-      continue
-    }
-    strip(element)
-  }
-
-  return readItem.body.innerHTML
-}
-
-/**
- * Text a card may be drawn with. It is read twice, because what one reading
- * writes out is what the next parser is handed.
- */
-export const safe = (html: string): string => pass(pass(html))

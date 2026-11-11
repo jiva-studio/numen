@@ -12,7 +12,6 @@ import { runInBackground } from '@numen/ui'
 import { runInvocation, createInvocation } from '@/features/command-palette'
 import { COMMAND, createRowKeys, findIcon, type VaultRef } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
-import { getUserAgent } from '../lib/dom'
 import { VERSION } from '../lib/version'
 import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
 import { WORDS as words } from '@/shared/ui/words'
@@ -20,7 +19,9 @@ import { WELCOME_WORDS } from '../words'
 import type { WelcomeScreenProps } from './welcomeScreen.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<WelcomeScreenProps>()
+const props = withDefaults(defineProps<WelcomeScreenProps>(), {
+  agent: () => navigator.userAgent,
+})
 
 /* --------------------------------- State ---------------------------------- */
 const adding = computed(() => {
@@ -29,7 +30,7 @@ const adding = computed(() => {
     text: words.newVault,
     detail: WELCOME_WORDS.newVaultDetail,
     ...(icon ? { icon } : {}),
-    ...createRowKeys(COMMAND.createVault, getUserAgent()),
+    ...createRowKeys(COMMAND.createVault, props.agent),
   }
 })
 
@@ -38,7 +39,7 @@ const ways = computed(() => {
   return createWelcomeActions(
     { vault: target.vault.id, isReady: target.isReady },
     { ...words, ...WELCOME_WORDS },
-    getUserAgent(),
+    props.agent,
     props.pluginWays,
   ).map((one) => {
     const icon = one.icon ?? findIcon(one.id)

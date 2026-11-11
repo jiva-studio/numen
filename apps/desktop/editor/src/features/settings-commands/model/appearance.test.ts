@@ -9,7 +9,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DESIGNED } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
-import { IS_SIZES } from '../lib/head'
+import { IS_SIZES } from '../api/head'
 import { createWindowAppearance } from './appearance'
 import { APPEARANCE_WORDS as words } from '../words'
 
