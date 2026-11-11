@@ -98,3 +98,19 @@ func (v *Vault) findLinkProblems(
 	}
 	return out
 }
+
+func (v *Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	notes := v.parsed()
+	var out []domain.VaultProblem
+	for _, p := range sortedPaths(notes) {
+		for _, detail := range notes[p].Problems {
+			out = append(out, domain.VaultProblem{Path: p, Kind: domain.CheckParse, Detail: detail})
+		}
+	}
+	return out, nil
+}

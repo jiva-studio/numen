@@ -147,11 +147,22 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     whenReader: deps.whenReader ?? createWhenReader(),
   }
   let newest = 0
+  const isFirstListSettled = shallowRef(false)
 
-  let onFirstList: () => void = () => undefined
-  const firstList = new Promise<void>((resolve) => {
-    onFirstList = resolve
-  })
+  const waitForFirstList = (): Promise<void> =>
+    isFirstListSettled.value
+      ? Promise.resolve()
+      : new Promise((resolve) => {
+          const stop = watch(
+            isFirstListSettled,
+            (isSettled) => {
+              if (!isSettled) return
+              stop()
+              resolve()
+            },
+            { flush: 'sync' },
+          )
+        })
 
   const read = async (): Promise<void> => {
     newest += 1
@@ -167,12 +178,12 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     const keybindings = commands.keybindings ?? []
     if (!isSameList(declaredKeybindings.value, keybindings)) declaredKeybindings.value = keybindings
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
-    onFirstList()
+    isFirstListSettled.value = true
   }
 
   return {
     /** Settles once the lists of a read are held, or a read has failed. */
-    waitForFirstList: (): Promise<void> => firstList,
+    waitForFirstList,
     /** What the when conditions of the commands read besides their target. */
     whenContext,
     commands: computed(() => declared.value),
@@ -185,7 +196,7 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load: (): Promise<void> =>
       read().catch((error: Caught) => {
-        onFirstList()
+        isFirstListSettled.value = true
         throw error
       }),
   }

@@ -129,7 +129,7 @@ describe('the page it says it relies on', () => {
 
   it('asks for no other page once the row has arrived at the page it was turned to', async () => {
     // The viewport holds more than two pages, so a page against the left edge
-    // would leave the centre line on the page after it.
+    // would leave the center line on the page after it.
     const target = await reader(1600, 800)
     const area = target.find('.reader__viewport').element as HTMLElement
     area.scrollTo = ((to: ScrollToOptions) => {

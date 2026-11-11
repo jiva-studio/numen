@@ -15,7 +15,7 @@ import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import { getLines } from './lines'
 import { createTitle, getLabelPlaces, getRise, getShift, LABEL_GAP } from '../../lib/arrange'
 import { getArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
-import { lightness } from '../../../fixtures/colour'
+import { getLightness } from '../../../fixtures/color'
 import { DARK, expectDark } from '../../../fixtures/theme'
 import type { EdgeArrow } from '../../../types'
 
@@ -118,9 +118,9 @@ const meta: Meta<Knobs> = {
       description: {
         component:
           'One edge: the curve, the heads it ends in, and the titles set along ' +
-          'it over a halo, one centred on the line, or two set at opposite ends ' +
+          'it over a halo, one centered on the line, or two set at opposite ends ' +
           'whatever heads the line has. Lifted, it is drawn over the boxes, in ' +
-          'the colours and the weight that stand out against them.',
+          'the colors and the weight that stand out against them.',
       },
     },
   },
@@ -261,15 +261,15 @@ export const Dark: Story = {
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     const ground = getComputedStyle(canvasElement.querySelector('[data-ground]')!).backgroundColor
-    const surface = lightness(ground)
-    const getDistanceFrom = (colour: string) => Math.abs(lightness(colour, ground) - surface)
+    const surface = getLightness(ground)
+    const getDistanceFrom = (color: string) => Math.abs(getLightness(color, ground) - surface)
 
     const restParts = getParts(canvasElement, 'resting')
     const lifted = getParts(canvasElement, 'lifted')
 
     // A resting line is still lighter than the surface in the dark set, where
     // lines are drawn lighter than the background.
-    await expect(lightness(getComputedStyle(restParts.curve).stroke, ground)).toBeGreaterThan(
+    await expect(getLightness(getComputedStyle(restParts.curve).stroke, ground)).toBeGreaterThan(
       surface + 2,
     )
 

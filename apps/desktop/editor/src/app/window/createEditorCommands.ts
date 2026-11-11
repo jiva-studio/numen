@@ -1,43 +1,45 @@
 /**
  * The kinds of tab and the commands of the window, and the few requests one makes of the other.
  */
+import { getFileKinds } from '@/entities/file'
+import { listDeclaredItemLists } from '@/entities/plugin'
 import {
   createCommandNotes,
-  createInvocationRunner,
   createNoteLookup,
   runSupport,
   searchCore,
 } from '@/features/command-palette'
-import { createWindowBackgroundTasks } from '@/features/background-tasks'
-import { createBufferHost } from '@/features/file-conflict'
 import {
-  createCommandIconFinder,
+  createCommandItemLists,
   createCommandNoteReader,
   createFileMakers,
-  createPluginServices,
-  createWindowFacts,
 } from '@/features/plugin-commands'
 import { createTargetResolver } from '@/features/window-display'
 import type { TabsHold } from '@/features/vault-commands'
 import { WORDS as words } from '@/shared/ui/words'
 import { createCommands } from './createCommands'
 import { collectFeatureCommands, createFeatureDeps } from './createFeatureCommands'
-import type { WindowCore } from './windowCore'
-import type { WindowServices } from './createWindowServices'
+import type { WindowCore, WindowFoundation } from './windowCore'
+import type { VaultServices, WindowServices } from './createWindowServices'
 import type { createWindowTabMover } from '@/features/tab-move'
 
-export function createEditorCommands(
-  base: WindowCore,
-  services: WindowServices,
+export function createTargetAndFeatureCommands(
+  base: WindowFoundation,
+  services: VaultServices,
   moves: ReturnType<typeof createWindowTabMover>,
   tabsHold: TabsHold,
 ) {
-  const { editing, settings, window, vaults } = services
+  const { editing, window, vaults } = services
   const { windowTabs, tabLinks } = base.tabs
+  const itemLists = createCommandItemLists({
+    listLists: listDeclaredItemLists,
+    fileKinds: getFileKinds,
+  })
   const getTarget = createTargetResolver(windowTabs, vaults, window)
   const featureCommands = collectFeatureCommands(
     createFeatureDeps({
       base,
+      itemLists,
       services,
       moves,
       tabsHold,
@@ -47,6 +49,17 @@ export function createEditorCommands(
     words,
   )
   base.registry.registerAll(featureCommands.handlers)
+  return { getTarget, featureCommands, itemLists }
+}
+
+export function createEditorCommands(
+  base: WindowCore,
+  services: WindowServices,
+  initial: ReturnType<typeof createTargetAndFeatureCommands>,
+) {
+  const { editing, settings, vaults } = services
+  const { windowTabs } = base.tabs
+  const { getTarget, featureCommands } = initial
   const commands = createCommands({
     declaredCommands: base.plugins.declaredCommands,
     getAppCommands: () => featureCommands.commands,
@@ -67,60 +80,20 @@ export function createEditorCommands(
     pluginHost: base.plugins.host.pluginHost,
   })
   services.renames.subscribe((renamed) => commands.commands.navigation.applyRenames(renamed))
-  const facts = createWindowFacts({
-    getAppCommands: () => featureCommands.commands,
-    getTarget,
-    isPaletteOpen: () => commands.palette.open.value || commands.commands.palette.open.value,
-  })
-  return { getTarget, featureCommands, commands, facts }
+  return { getTarget, featureCommands, commands, facts: base.plugins.facts }
 }
 
-/** The services the plugins are given, made from the parts of the window. */
+/** The tab kinds and file makers of the window. */
 export function createWindowKinds(
   base: WindowCore,
   services: WindowServices,
-  parts: Pick<ReturnType<typeof createEditorCommands>, 'getTarget' | 'commands'>,
 ) {
-  const { editing, settings, window, tabSync } = services
+  const { settings } = services
   const { windowTabs, tabOpeners } = base.tabs
-  const { pluginHost } = base.plugins.host
   windowTabs.groups.registerKinds(settings.kinds)
-  const pluginServices = createPluginServices({
-    log: base.log,
-    windowTabs,
-    search: searchCore,
-    making: editing.making,
-    pluginNotes: base.plugins.pluginNotes,
-    tabOpeners,
-    tabSync,
-    window,
-    settings,
-    getTarget: parts.getTarget,
-    runCommand: parts.commands.runCommand,
-    runInvocation: createInvocationRunner(() => parts.commands.commandDeps),
-    getPluginCommandIcon: createCommandIconFinder(pluginHost, base.plugins.declaredCommands),
-  })
   return {
     findFileIcon: (path: string) => tabOpeners.findFileIcon(path),
     made: createFileMakers({ tabOpeners, windowTabs, writeMessage: base.log.getWriter('command') }),
-    services: {
-      ...pluginServices,
-      buffers: createBufferHost({ fileFlush: editing.fileFlush }),
-      noteBuffer: editing.notes,
-      taskList: window.tasks,
-      backgroundTasks: createWindowBackgroundTasks({
-        log: base.log,
-        plugins: base.plugins.pluginNotices,
-        window: {
-          lost: window.health.lost,
-          unwatched: window.vault.unwatched,
-          error: window.vault.error,
-          tasks: window.tasks,
-        },
-        settings,
-        writeMessage: base.writeMessage,
-        openSettings: (pluginId) => settings.configured.openSettings(pluginId),
-      }),
-    },
+    services: base.plugins.services,
   }
 }

@@ -5,18 +5,9 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { h } from 'vue'
 import type { ReaderTabState, Selector, TabPlace } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
 import type { Documents } from '../types'
-
-vi.mock('../reader', () => ({
-  Reader: { name: 'Reader', render: () => h('div', { class: 'reader-stub' }) },
-}))
-
-vi.mock('@numen/ui', () => ({
-  LoadingIndicator: { render: () => h('span') },
-}))
 
 const PATH = 'library/Marsh Birds.pdf'
 

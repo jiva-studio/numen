@@ -3,7 +3,7 @@
  * not shipped.
  *
  * A theme is chosen by `color-scheme` on the root, which is what `light-dark()`
- * in the tokens reads. A story reads the set of colours it is rendered in from
+ * in the tokens reads. A story reads the set of colors it is rendered in from
  * that attribute.
  */
 import { expect } from 'storybook/test'

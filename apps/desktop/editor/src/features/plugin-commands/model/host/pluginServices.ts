@@ -47,8 +47,8 @@ export interface PluginServices {
 
 /** What the window hands a plugin's tabs. */
 export interface WorkspaceHostDeps extends IconHostDeps {
-  readonly getTarget: () => CommandTarget
-  readonly runCommand: (id: string, target: CommandTarget) => void
+  readonly getTarget?: () => CommandTarget
+  readonly runCommand?: (id: string, target: CommandTarget) => void
   readonly window: {
     readonly health: { readonly failure: Readonly<Ref<string>> }
     readonly opening: { readonly path: Readonly<Ref<string>>; read(): Promise<string> }

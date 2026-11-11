@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { APP_MAX_LINES, findAppLogic, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findDeepSliceImports, findLateBindings, findPageImports, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
+import { APP_MAX_LINES, findAppLogic, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findDeepSliceImports, findLateBindings, findPageImports, findSharedServingOneSlice, findUiComponentSideEffects, getSegment, getSliceOf } from "./frontendGraph.mjs";
 
 /** A module of the resolved graph with local imports `{ specifier: resolvedPath }`. */
 function moduleOf(source, imports = {}) {
@@ -316,5 +316,47 @@ describe("the logic rule of the app layer", () => {
     );
     assert.deepEqual(findings, []);
     assert.equal(read, 0);
+  });
+});
+
+describe("the humble ui component rule of windows", () => {
+  const symbols = (script, file = `${WINDOW}/pages/welcome/ui/WelcomeScreen.vue`) =>
+    findUiComponentSideEffects([{ file, text: `<script setup lang="ts">\n${script}\n</script>` }]).findings.map(
+      (one) => `${one.line} ${one.symbol}`,
+    );
+
+  it("fails a listener, a timer, a request guard and a service call on props inside a hook or watcher", () => {
+    assert.deepEqual(
+      symbols(
+        [
+          "onMounted(() => globalThis.addEventListener('keydown', onKey));",
+          "onUnmounted(() => globalThis.removeEventListener('keydown', onKey));",
+          "const reads = createRequestGuard();",
+          "onMounted(() => props.secrets.loadStates());",
+          "watch(() => props.plugin.id, (id) => { props.manager.files.getReadme(id); });",
+        ].join("\n"),
+      ),
+      [
+        "2 calls addEventListener in a ui component",
+        "3 calls removeEventListener in a ui component",
+        "4 calls createRequestGuard in a ui component",
+        "5 calls props.loadStates inside onMounted",
+        "6 calls props.getReadme inside watch",
+      ],
+    );
+  });
+
+  it("passes a component that calls a model composable, focuses a template ref or mounts a view", () => {
+    assert.deepEqual(
+      symbols(
+        [
+          "const { ways, onOpen } = useWelcomeScreen(props);",
+          "onMounted(() => { inputRef.value?.focus(); });",
+          "onMounted(() => { if (el.value) props.mount(el.value); });",
+          "watch(() => props.name, (next) => { draft.value = next; });",
+        ].join("\n"),
+      ),
+      [],
+    );
   });
 });

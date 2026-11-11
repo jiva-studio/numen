@@ -1,5 +1,5 @@
 /**
- * Queries the application for the window's appearance: the theme, the mode of a colour
+ * Queries the application for the window's appearance: the theme, the mode of a color
  * pair, and the sizes.
  *
  * A theme is one stylesheet, and nothing here reads inside one: the transferred

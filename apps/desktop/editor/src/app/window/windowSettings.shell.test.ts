@@ -56,6 +56,7 @@ const createWindow = () => {
         },
       ],
     })),
+    updateSettings: vi.fn(async () => undefined),
   } as unknown as SettingsCore
   const listThemes = vi.fn(() => DUSK)
   restore = installSettingsCore(core, {
@@ -77,15 +78,12 @@ const createWindow = () => {
     getSettingsViews: () => new Map(),
     getPlatform: () => 'linux',
   })
-  vi.spyOn(settings.rest, 'start').mockResolvedValue()
-  vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
   return { settings, listThemes }
 }
 
 describe('the settings of the shell in the settings tab', () => {
   it('are the ones the core declared, with the value in force it resolved', async () => {
     const { settings } = createWindow()
-    vi.mocked(settings.rest.start).mockRestore()
 
     await settings.rest.start()
 

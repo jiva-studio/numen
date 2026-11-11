@@ -75,7 +75,7 @@ describe('edges', () => {
     expect(edge.control2.y).toBe(edge.toPoint.y)
   })
 
-  it('starts and ends on a border, not in a centre', () => {
+  it('starts and ends on a border, not in a center', () => {
     const layout = arrangePlex(neighborhoods.typical)
     const byId = new Map(layout.nodes.map((node) => [node.id, node]))
 
@@ -562,7 +562,7 @@ describe('the run of a line between two boxes', () => {
 
 /**
  * The position of a label along its line is decided by how many labels the line
- * carries: one is centred, two are set at opposite ends. The arrowheads do not
+ * carries: one is centered, two are set at opposite ends. The arrowheads do not
  * enter into it.
  */
 describe('the position of a label', () => {
@@ -702,7 +702,7 @@ describe('the position of a label', () => {
     // The baseline is half the height of an x below the line, whatever else the font does.
     expect(getRise(0, TYPE)).toBe(3)
     expect(getRise(0, { ascent: 20, descent: 1, xHeight: 8 })).toBe(4)
-    // A label beside the line is centred by the middle of its ink, from capital to descender.
+    // A label beside the line is centered by the middle of its ink, from capital to descender.
     expect(getRise(-1, TYPE)).toBe((9 - 3) / 2)
     expect(getRise(1, { ascent: 10, descent: 4, xHeight: 6 })).toBe(3)
     // So the near edge of the ink is the gap from the line, on each side.
@@ -763,7 +763,7 @@ describe('the position of a label', () => {
     expect([first!.heading, second!.heading]).toEqual(['along', 'against'])
   })
 
-  it('reads the one label of a line along the way that is readable, centred and on the line', () => {
+  it('reads the one label of a line along the way that is readable, centered and on the line', () => {
     const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
     const edge = { from: 'lighthouse', to: 'harbour', labels: [{ text: 'guides' }] }
     const [only] = routeEdge(edge, byId, measured)!.titles

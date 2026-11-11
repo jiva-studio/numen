@@ -1,6 +1,7 @@
 package hosttest
 
 import (
+	"context"
 	"fmt"
 	"maps"
 	"sort"
@@ -8,6 +9,7 @@ import (
 
 	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
 	notesmarkdown "github.com/jiva-studio/numen/libs/note/markdown"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
@@ -123,4 +125,101 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 		}
 	}
 	return out
+}
+
+func (v *Vault) SetIndexState(state host.IndexState) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	v.state = state
+}
+
+// Scans returns the lists of paths the plugin requested the index to scan, in order.
+func (v *Vault) Scans() [][]string {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	return append([][]string(nil), v.scanned...)
+}
+
+func (v *Vault) Scan(ctx context.Context, paths []string) error {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return err
+	}
+	v.scanned = append(v.scanned, append([]string(nil), paths...))
+	v.rescan(paths...)
+	return nil
+}
+
+func (v *Vault) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	notes := v.parsed()
+	out := map[string]domain.NoteRef{}
+	for _, p := range paths {
+		if n, ok := notes[p]; ok {
+			out[p] = domain.NoteRef{Path: p, Title: n.Title, ID: n.ID}
+		}
+	}
+	return out, nil
+}
+
+func (v *Vault) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	notes := v.parsed()
+	out := map[string]domain.NoteType{}
+	for _, p := range paths {
+		if n, ok := notes[p]; ok {
+			out[p] = n.Type
+		}
+	}
+	return out, nil
+}
+
+func (v *Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	folded := notesdomain.FoldName(name)
+	var out []string
+	for _, p := range sortedPaths(v.parsed()) {
+		if notesdomain.FoldName(domain.Basename(p)) == folded {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return nil, err
+	}
+	notes := v.parsed()
+	var out []string
+	for _, p := range sortedPaths(notes) {
+		if notes[p].Type == noteType {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+func (v *Vault) EnsureIndexed(ctx context.Context) (host.IndexState, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	if err := v.gate(ctx); err != nil {
+		return host.IndexState{}, err
+	}
+	return v.state, nil
 }

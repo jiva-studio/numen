@@ -74,7 +74,7 @@ const root: PlexNeighborhood = neighborhood('Everything', [
   ...run('child', 5, (i) => ['Ideas', 'People', 'Places', 'Work', 'Reading'][i] ?? `Child ${i}`),
 ])
 
-/** Nothing below it, and the plex has to stay centred anyway. */
+/** Nothing below it, and the plex has to stay centered anyway. */
 const leaf: PlexNeighborhood = neighborhood('Nothing below', [
   { id: 'parent-0', title: 'Inbox', relation: 'parent' },
 ])

@@ -5,18 +5,11 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { h, shallowRef } from 'vue'
+import { shallowRef } from 'vue'
 import type { ReaderTabState, Selector, TabPlace } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
+import { Reader } from '../reader'
 import type { Documents, TextRange } from '../types'
-
-vi.mock('../reader', () => ({
-  Reader: { name: 'Reader', render: () => h('div', { class: 'reader-stub' }) },
-}))
-
-vi.mock('@numen/ui', () => ({
-  LoadingIndicator: { render: () => h('span') },
-}))
 
 const PATH = 'library/Wading Birds.pdf'
 
@@ -66,7 +59,7 @@ const mountTab = (documents: Documents) => {
   }
   const tab = mount(DocumentTab, { props: { state, documents } })
   const goToPage = async (page: number) => {
-    tab.getComponent({ name: 'Reader' }).vm.$emit('go', page)
+    tab.getComponent(Reader).vm.$emit('go', page)
     await flush()
   }
   return { tab, ranges, savePlace, reportPlace, goToPage }

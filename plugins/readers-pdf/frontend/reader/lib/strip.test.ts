@@ -213,14 +213,14 @@ describe('where the row remains', () => {
     expect(getScrollTarget(stripLayout, VIEWPORT, 5)).toBe(stripLayout.starts[5]! - GAP)
   })
 
-  it('centres a page narrower than half the viewport', () => {
+  it('centers a page narrower than half the viewport', () => {
     const broadViewport: Size = { width: 1600, height: 800 }
     const stripLayout = row(book(20), broadViewport, 1)
     const target = getScrollTarget(stripLayout, broadViewport, 5)!
 
-    const centre = target + broadViewport.width / 2
-    const pageCentre = stripLayout.starts[5]! + stripLayout.widths[5]! / 2
-    expect(Math.abs(centre - pageCentre)).toBeLessThanOrEqual(0.5)
+    const center = target + broadViewport.width / 2
+    const pageCenter = stripLayout.starts[5]! + stripLayout.widths[5]! / 2
+    expect(Math.abs(center - pageCenter)).toBeLessThanOrEqual(0.5)
   })
 
   it('scrolls nowhere for a page the row does not hold', () => {
@@ -384,7 +384,7 @@ describe('the zoom a document opens at', () => {
   })
 })
 
-describe('the point kept under the centre line of the viewport', () => {
+describe('the point kept under the center line of the viewport', () => {
   const viewport = { width: 400, height: 300 }
   const pages = [
     { width: 100, height: 200 },
@@ -393,9 +393,9 @@ describe('the point kept under the centre line of the viewport', () => {
 
   it('is a page and a share of its width', () => {
     const before = row(pages, viewport, 1)
-    const centre = before.starts[1]! + before.widths[1]! / 4
+    const center = before.starts[1]! + before.widths[1]! / 4
 
-    const anchor = getAnchor(before, viewport, centre - viewport.width / 2)
+    const anchor = getAnchor(before, viewport, center - viewport.width / 2)
 
     expect(anchor?.page).toBe(1)
     expect(anchor?.fraction).toBeCloseTo(0.25)
@@ -405,7 +405,7 @@ describe('the point kept under the centre line of the viewport', () => {
     expect(getAnchor(row([], viewport, 1), viewport, 0)).toBeUndefined()
   })
 
-  it('stays under the centre line when every page is wider', () => {
+  it('stays under the center line when every page is wider', () => {
     const before = row(pages, viewport, 1)
     const after = row(pages, viewport, 2)
     const offset = before.starts[1]! + before.widths[1]! / 4 - viewport.width / 2
@@ -413,8 +413,8 @@ describe('the point kept under the centre line of the viewport', () => {
 
     const to = getAnchorScroll(after, viewport, anchor)!
 
-    const centre = to + viewport.width / 2
-    expect((centre - after.starts[1]!) / after.widths[1]!).toBeCloseTo(0.25, 1)
+    const center = to + viewport.width / 2
+    expect((center - after.starts[1]!) / after.widths[1]!).toBeCloseTo(0.25, 1)
   })
 
   it('is clamped to the row', () => {
@@ -427,7 +427,7 @@ describe('the point kept under the centre line of the viewport', () => {
     expect(getAnchorScroll(after, viewport, { page: 9, fraction: 0 })).toBeUndefined()
   })
 
-  it('keeps the share of the page height under the centre line across', () => {
+  it('keeps the share of the page height under the center line across', () => {
     const before = row(pages, viewport, 1)
     const after = row(pages, viewport, 2)
     const share = getAcrossShare(

@@ -8,7 +8,7 @@ import { LoadingIndicator } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
 import { WORDS as words } from '../words'
-import { useBookReader } from '../model/useBookReader'
+import { useBookReader, type Books } from '../model/useBookReader'
 import { useBookTab, type BookTabState } from '../model/useBookTab'
 import { useBookPlace } from '../model/useBookPlace'
 import { useBookRanges } from '../model/useBookRanges'
@@ -17,6 +17,7 @@ import { useBookRanges } from '../model/useBookRanges'
 interface Props {
   path?: string
   state?: Partial<ReaderTabState>
+  books?: Books
 }
 
 const props = defineProps<Props>()
@@ -24,7 +25,13 @@ const props = defineProps<Props>()
 const targetPath = props.path ?? props.state?.path ?? ''
 
 const existingState = isBookTabState(props.state) ? props.state : null
-const tabState = existingState ?? useBookTab(useBookReader(targetPath, { words }))
+const tabState =
+  existingState ??
+  useBookTab(
+    props.books
+      ? useBookReader(props.books, targetPath, { words })
+      : useBookReader(targetPath, { words }),
+  )
 
 /* --------------------------------- State ---------------------------------- */
 const isListingOpen = ref(false)

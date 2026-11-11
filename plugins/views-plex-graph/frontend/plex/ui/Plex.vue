@@ -10,7 +10,7 @@
 import { computed, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
-import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
+import { DEFAULT_BEHAVIOR, type PlexBehavior } from '../model/behavior'
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
@@ -23,13 +23,13 @@ import type { PlexRelation } from '../../types'
 const props = withDefaults(defineProps<PlexProps>(), {
   showEdgeLabels: true,
   duration: 420,
-  clock: () => DEFAULT_BEHAVIOUR.clock,
+  clock: () => DEFAULT_BEHAVIOR.clock,
   viewport: () => browserViewport,
   creatable: () => ['parent', 'child', 'jump'],
   dragThreshold: 8,
-  expansionDelay: DEFAULT_BEHAVIOUR.expansionDelay,
-  reaching: () => DEFAULT_BEHAVIOUR.reaching,
-  showing: () => DEFAULT_BEHAVIOUR.showing,
+  expansionDelay: DEFAULT_BEHAVIOR.expansionDelay,
+  reaching: () => DEFAULT_BEHAVIOR.reaching,
+  showing: () => DEFAULT_BEHAVIOR.showing,
   relationName: getRelationName,
   pending: null,
   dragged: () => [],
@@ -63,7 +63,7 @@ const { room, options, measures, widen, hung } = useFreeSpace(
 )
 
 /** How the nodes behave, handed down as one. */
-const behaviour = computed<PlexBehaviour>(() => ({
+const behavior = computed<PlexBehavior>(() => ({
   expansionDelay: props.expansionDelay,
   reaching: props.reaching,
   showing: props.showing,
@@ -170,7 +170,7 @@ watch(
       :relation-name="relationName"
       :widen="widen"
       :hung="hung"
-      :behaviour="behaviour"
+      :behavior="behavior"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"

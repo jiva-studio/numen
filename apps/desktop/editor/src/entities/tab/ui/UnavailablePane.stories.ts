@@ -1,7 +1,7 @@
 /**
  * The placeholder of a tab whose plugin is not running, in each state the catalog reports, rendered
  * in a browser. The checks cover what jsdom cannot: the action is the library's button with its
- * colours and its disabled look, and the text fits a narrow pane.
+ * colors and its disabled look, and the text fits a narrow pane.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'

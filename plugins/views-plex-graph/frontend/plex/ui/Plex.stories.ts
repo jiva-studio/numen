@@ -934,8 +934,8 @@ export const Walk: Story = {
             .getByLabelText(label)
             .querySelector('.plex__box')!
             .getBoundingClientRect()
-          const centre = box.x + box.width / 2
-          await expect(Math.abs(centre - (middle.x + middle.width / 2))).toBeLessThan(2)
+          const center = box.x + box.width / 2
+          await expect(Math.abs(center - (middle.x + middle.width / 2))).toBeLessThan(2)
         },
         { timeout: 3000 },
       )

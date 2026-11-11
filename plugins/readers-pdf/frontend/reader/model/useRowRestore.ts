@@ -69,7 +69,7 @@ export function useRowRestore(sources: RowRestoreSources): RowRestore {
     stand(page, 'smooth')
   })
 
-  // Zooming keeps the point under the centre of the viewport where it is. Every
+  // Zooming keeps the point under the center of the viewport where it is. Every
   // page changes width, so the scroll position shifts. A row with no pages before
   // it has no point to keep, and the current page is shown instead.
   watch(pageLayout, (now, was) => {
