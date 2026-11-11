@@ -25,7 +25,7 @@ func TestParsePageRequestRefusesWhatNamesNoPage(t *testing.T) {
 		"width not a number": {"0", "a.pdf", "x"},
 	} {
 		_, err := ParsePageRequest(args[0], args[1], args[2])
-		if _, ok := errors.AsType[*BadRequestError](err); !ok {
+		if failure, ok := errors.AsType[*BadRequestError](err); !ok || failure == nil {
 			t.Errorf("%s: error %v, want a BadRequestError", name, err)
 		}
 	}
