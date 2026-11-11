@@ -5,7 +5,7 @@
  */
 import type { Selector } from '@numen/plugin-loader'
 import type { Store } from '../../types'
-import type { CommandPlace, Notes } from '@/entities/command'
+import type { CommandPlace, Notes } from '@/shared/model/command'
 
 /** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
 export interface NoteOpeners {

@@ -1,5 +1,6 @@
 import type { WhenValues } from '@numen/plugin-loader'
-import type { Command, CommandTarget } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { isFieldFocused } from './isFieldFocused'
 
 /** What the commands part of the window says of the window: its own commands and the when values. */

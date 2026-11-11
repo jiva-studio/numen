@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findIcon } from '@/entities/command'
+import { findIcon } from '@/shared/model/command'
 import { WORDS as words } from '@/shared/ui/words'
 import { WELCOME_WORDS } from '../words'
 import { createWelcomeActions } from './screen'

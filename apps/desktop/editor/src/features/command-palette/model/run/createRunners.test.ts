@@ -6,7 +6,7 @@ import {
   createCommandRegistry,
   type CommandInvocation,
   type CommandTarget,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { runSupport } from '../palette/runSupport'
 import { createAppItemRunner } from './createAppItemRunner'
 import { createChoiceRunner } from './createChoiceRunner'

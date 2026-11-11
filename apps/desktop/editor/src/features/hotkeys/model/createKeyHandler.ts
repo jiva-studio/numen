@@ -4,7 +4,7 @@
  */
 import type { Ref } from 'vue'
 import type { PluginHost } from '@numen/plugin-loader'
-import { COMMAND, type CommandTarget, type Values } from '@/entities/command'
+import { COMMAND, type CommandTarget, type Values } from '@/shared/model/command'
 import type { WindowTabs } from '@/entities/tab'
 import type { DeclaredKeybinding } from '@/entities/plugin'
 import { syncKeybindings } from './syncKeybindings'

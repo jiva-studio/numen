@@ -2,6 +2,7 @@
  * The commands offered over the note in front, and what carries each out.
  */
 import { runInBackground } from '@numen/ui'
+import { type Command, type FeatureCommands } from '@/entities/command'
 import {
   ARGUMENT,
   COMMAND,
@@ -9,12 +10,10 @@ import {
   createRowKeys,
   flushTab,
   withWhen,
-  type Command,
   type CommandInvocation,
   type CommandPlace,
-  type FeatureCommands,
   type Notes,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { removeFile } from '@/entities/file'
 import { renameNote, type NoteCreator } from '@/entities/note'
 import { NOTE } from '@/entities/tab'

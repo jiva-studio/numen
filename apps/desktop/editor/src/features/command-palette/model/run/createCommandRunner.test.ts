@@ -1,12 +1,12 @@
 /** How a command of the window is run from the palette and the keys, and to its end for a plugin. */
 import { describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
+import { type Command } from '@/entities/command'
 import {
   createCommandRegistry,
-  type Command,
   type CommandInvocation,
   type CommandTarget,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { WORDS } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../../words'
 import { createCommandPalette } from '../palette/palette'

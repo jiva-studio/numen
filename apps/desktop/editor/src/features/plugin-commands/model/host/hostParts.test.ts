@@ -1,7 +1,8 @@
 /** The small parts the window makes the host of its plugins from. */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import type { Command, CommandTarget } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { createTestTabs } from '@/testing/tabs'
 import { createAgentAsker } from './createAgentAsker'

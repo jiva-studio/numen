@@ -13,7 +13,7 @@ import type {
   useDeclaredCommands,
   WindowFactsSource,
 } from '@/features/plugin-commands'
-import type { CommandRegistry } from '@/entities/command'
+import type { CommandRegistry } from '@/shared/model/command'
 import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { TabReports, useTabLinks } from '@/features/tab-linking'

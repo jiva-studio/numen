@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { DeclaredSlot } from '@/entities/plugin'
 import { createEmptyWhenContext } from './whenContext'
 import { createSlotPaletteCommands } from './slotPaletteCommands'

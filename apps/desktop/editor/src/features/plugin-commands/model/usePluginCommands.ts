@@ -10,12 +10,8 @@ import type {
   PluginPaletteCommand,
 } from '@numen/plugin-loader'
 import type { WelcomeAction } from '@numen/workbench'
-import {
-  findShortcutKeys,
-  type Command,
-  type CommandRegistry,
-  type CommandTarget,
-} from '@/entities/command'
+import { type Command } from '@/entities/command'
+import { findShortcutKeys, type CommandRegistry, type CommandTarget } from '@/shared/model/command'
 import type { FileKind } from '@/entities/file'
 import { getNamedIcon } from '@/shared/ui/icons'
 import {

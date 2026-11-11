@@ -14,7 +14,7 @@ import {
   type TabMoveError,
   type WindowTabs,
 } from '@/entities/tab'
-import type { Notes } from '@/entities/command'
+import type { Notes } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { acceptTabMove, detachTab, moveTab } from '../api/tab-move'
 import {

@@ -7,7 +7,7 @@ import {
   type CommandDeps,
   type CommandInvocation,
   type CommandTarget,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { createInvocation } from '../../lib/entries/invocation'
 import { runSupport } from '../palette/runSupport'
 import { runInvocation } from './handlers'

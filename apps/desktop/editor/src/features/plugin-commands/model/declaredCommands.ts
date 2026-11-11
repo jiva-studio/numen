@@ -3,7 +3,7 @@
  * for each required argument (an optional one is for a caller that is not a person),
  * and the run handed to the plugin's backend.
  */
-import type { CommandRegistry } from '@/entities/command'
+import type { CommandRegistry } from '@/shared/model/command'
 import { computed, shallowRef, watch } from 'vue'
 import {
   createWhenReader,
@@ -14,7 +14,8 @@ import {
   type WhenReader,
   type WhenSettings,
 } from '@numen/plugin-loader'
-import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { getNamedIcon } from '@/shared/ui/icons'
 import type { Writable } from '@/entities/tab'
 import {

@@ -4,7 +4,8 @@
  * A command that needs nothing runs as soon as it is chosen. One that needs a name, a note, a
  * vault or an answer opens a step of its own.
  */
-import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
+import type { Command } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { findUnsuppliedPrompt } from './navigation'
 import type { PaletteSession } from './session'
 import type { usePaletteView } from './usePaletteView'

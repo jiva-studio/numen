@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { createPluginHost, getWhenValues } from '@numen/plugin-loader'
-import { COMMAND, type CommandTarget } from '@/entities/command'
+import { COMMAND, type CommandTarget } from '@/shared/model/command'
 import type { DeclaredKeybinding } from '@/entities/plugin'
 import { createKeyHandler } from './createKeyHandler'
 

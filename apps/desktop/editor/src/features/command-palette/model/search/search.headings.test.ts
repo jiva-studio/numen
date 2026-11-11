@@ -1,6 +1,6 @@
 /** The group headings of the search, with the real group builder and only the vault questions held back. */
 import { describe, expect, it } from 'vitest'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { createDeferred } from '@/testing/deferred'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
 

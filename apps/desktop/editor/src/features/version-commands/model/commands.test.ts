@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { createVersionCommands } from './commands'
 

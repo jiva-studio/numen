@@ -1,6 +1,6 @@
 /** The invocation of a command made from its target. */
 import { describe, expect, it } from 'vitest'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { createInvocation } from './invocation'
 
 const TARGET: CommandTarget = {

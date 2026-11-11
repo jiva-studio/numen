@@ -57,7 +57,7 @@ const getPropertyName = (property) =>
 
 /** The commands the editor provides, by full id, with whether the table gives each an icon name. */
 const readEditorCommands = () => {
-  const idsPath = join(EDITOR_SRC, 'entities/command/lib/ids.ts')
+  const idsPath = join(EDITOR_SRC, 'shared/model/command/ids.ts')
   const idsFile = ts.createSourceFile(
     idsPath,
     readFileSync(idsPath, 'utf8'),

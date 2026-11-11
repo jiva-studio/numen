@@ -6,7 +6,14 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { getVaultForKey, type Tab, type WelcomeAction } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
 import { createInvocation, runInvocation, type Commands, type SearchState } from '@/features/command-palette'
-import { COMMAND, createRowKeys, findIcon, type CommandDeps, type CommandTarget, type VaultRef } from '@/entities/command'
+import {
+  COMMAND,
+  createRowKeys,
+  findIcon,
+  type CommandDeps,
+  type CommandTarget,
+  type VaultRef,
+} from '@/shared/model/command'
 import type { VaultList } from '@/entities/vault'
 import { formatError } from '@/shared/api/errors'
 import { WORDS as words } from '@/shared/ui/words'

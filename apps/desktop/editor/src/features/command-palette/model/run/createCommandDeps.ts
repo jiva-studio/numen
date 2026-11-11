@@ -1,6 +1,6 @@
-import { type CommandDeps } from '@/entities/command'
+import { type CommandDeps } from '@/shared/model/command'
 import { runInBackground } from '@numen/ui'
-import type { CommandRegistry, Notes, RunSupport } from '@/entities/command'
+import type { CommandRegistry, Notes, RunSupport } from '@/shared/model/command'
 import { createCommandNotes } from '../notes/createCommandNotes'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'

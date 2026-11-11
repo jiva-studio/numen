@@ -1,4 +1,4 @@
-import type { CommandInvocation, CommandTarget, InvocationTarget } from '@/entities/command'
+import type { CommandInvocation, CommandTarget, InvocationTarget } from '@/shared/model/command'
 
 const getInvocationTarget = (target: CommandTarget): InvocationTarget => ({
   path: target.path,

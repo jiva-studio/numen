@@ -1,4 +1,4 @@
-import type { CommandDeps, CommandInvocation } from '@/entities/command'
+import type { CommandDeps, CommandInvocation } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { runInvocation } from '../handlers/handlers'
 

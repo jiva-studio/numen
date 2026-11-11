@@ -14,7 +14,8 @@ import {
   type VaultCommandsDeps,
 } from '@/features/vault-commands'
 import type { createWindowTabMover } from '@/features/tab-move'
-import type { FeatureCommands, Notes } from '@/entities/command'
+import type { FeatureCommands } from '@/entities/command'
+import type { Notes } from '@/shared/model/command'
 import { formatError } from '@/shared/api/errors'
 import type { WORDS } from '@/shared/ui/words'
 import { getUserAgent } from './getUserAgent'

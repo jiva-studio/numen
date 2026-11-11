@@ -3,7 +3,7 @@
  * plugins, made in the order each needs the one before.
  */
 import { useWindowFrame } from '@numen/workbench'
-import { createCommandRegistry } from '@/entities/command'
+import { createCommandRegistry } from '@/shared/model/command'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { createWindowLayout, startPlacedTabs, useOpenTabs } from '@/entities/tab'
 import { isSecondaryWindow } from '@/entities/window'

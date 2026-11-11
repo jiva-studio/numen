@@ -1,6 +1,6 @@
 /** The target a run of a command is over. Every path is invented. */
 import { describe, expect, it } from 'vitest'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { getNamedTarget, toRunTarget } from './runTarget'
 
 const FRONT: CommandTarget = {

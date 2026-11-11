@@ -4,7 +4,8 @@
  * Nothing here does anything. `handlers.ts` is what carries a command out through these.
  */
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import type { CommandInvocation, Notes, RunSupport } from '@/entities/command'
+import type { CommandInvocation, RunSupport } from './invocation'
+import type { Notes } from './notes'
 import type { CommandRegistry } from './registry'
 
 /** Where a command of the palette takes the window. */

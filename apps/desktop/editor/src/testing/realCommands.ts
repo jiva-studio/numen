@@ -15,7 +15,7 @@ import {
   type PluginHost,
 } from '@numen/plugin-loader'
 import { runSupport } from '@/features/command-palette'
-import { createCommandRegistry, type CommandTarget } from '@/entities/command'
+import { createCommandRegistry, type CommandTarget } from '@/shared/model/command'
 import {
   createCommandNoteReader,
   createSlotCommandFinder,

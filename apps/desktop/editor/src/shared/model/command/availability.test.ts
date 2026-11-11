@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { getPaletteValues } from './paletteValues'
 import { withWhen } from './availability'
-import type { CommandTarget } from './command'
+import type { CommandTarget } from './invocation'
 
 const chosenDocument = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: '',

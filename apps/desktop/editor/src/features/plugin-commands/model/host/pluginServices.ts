@@ -17,7 +17,7 @@ import type {
   WorkspaceFiles,
   WorkspaceHost,
 } from '@numen/plugin-loader'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { FileOpeners } from '@/entities/tab'
 import { getNeighborhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'

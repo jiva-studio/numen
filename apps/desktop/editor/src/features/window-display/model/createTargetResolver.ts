@@ -1,4 +1,4 @@
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
 import type { WindowDisplay } from './useWindowDisplay'

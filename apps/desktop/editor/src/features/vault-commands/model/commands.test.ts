@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { VAULTS_ERROR_CODE } from '@numen/core-client'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import type { CommandInvocation, CommandTarget } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { VAULT_WORDS as words } from '../words'
 import { createVaultCommands } from './commands'

@@ -85,7 +85,7 @@ $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{fe
 - **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
 - **Segments**: Inside a slice the direction is `ui` → `model` → `api` → `lib`.
 - **Calls to the core**: The `model` of a slice imports its own `api` directly. A component takes props only and emits events.
-- **Commands**: A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type and, for now, the palette engine (registry, steps, values, keys), which moves to `shared` in a later package.
+- **Commands**: A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type and `shared/model/command` the palette engine (registry, steps, values, keys, icons).
 
 Component architecture enforces separation of concerns:
 

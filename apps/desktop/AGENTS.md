@@ -23,7 +23,7 @@ path. Code that two slices share is in a lower layer.
 
 ## What a `.vue` may not do
 
-A `.vue` file uses no client, and a component receives only props. What talks to the core is the `api` segment of a slice, which binds the generated clients from `shared/api` and which the `model` of the same slice imports directly. A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type and, for now, the palette engine, which moves to `shared` in a later package. Lengths in styles: a `rem` or `em` literal on the property or a token, `px` only for a 1px hairline border. Business logic is a composable or a domain
+A `.vue` file uses no client, and a component receives only props. What talks to the core is the `api` segment of a slice, which binds the generated clients from `shared/api` and which the `model` of the same slice imports directly. A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type and `shared/model/command` the palette engine. Lengths in styles: a `rem` or `em` literal on the property or a token, `px` only for a 1px hairline border. Business logic is a composable or a domain
 model, never a component.
 
 There is no store framework and no module-level mutable state.

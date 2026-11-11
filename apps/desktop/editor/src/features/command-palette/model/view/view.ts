@@ -9,7 +9,8 @@
 import type { PaletteGroup, PaletteItem } from '@numen/workbench'
 import { getGroupCommands } from '../../lib/commands/commands'
 import type { PendingStep } from '../../lib/step/step'
-import type { Command, CommandGroup, CommandTarget } from '@/entities/command'
+import type { Command, CommandGroup } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { createStepGroups } from './stepGroups'
 import type { ViewState } from './viewState'
 

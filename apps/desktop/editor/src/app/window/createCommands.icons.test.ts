@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { COMMAND, findIcon } from '@/entities/command'
+import { COMMAND, findIcon } from '@/shared/model/command'
 import { getNamedIcon } from '@/shared/ui/icons'
 import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
 import { createAppCommands } from '@/testing/appCommands'

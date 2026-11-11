@@ -1,7 +1,7 @@
 /** A key the application holds is drawn on a row of the palette that carries it out. */
 import { describe, expect, it } from 'vitest'
 import { APP_KEYBINDINGS } from '@numen/plugin-loader'
-import { createRowKeys } from '@/entities/command'
+import { createRowKeys } from '@/shared/model/command'
 import { createAppCommands } from '@/testing/appCommands'
 
 const APPLE = 'MacIntel'

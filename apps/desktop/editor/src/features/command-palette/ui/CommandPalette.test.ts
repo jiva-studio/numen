@@ -8,9 +8,9 @@ import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
-import type { CommandDeps } from '@/entities/command'
-import { createCommandRegistry } from '@/entities/command'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandDeps } from '@/shared/model/command'
+import { createCommandRegistry } from '@/shared/model/command'
+import type { CommandTarget } from '@/shared/model/command'
 import CommandPalette from './CommandPalette.vue'
 
 const words = { ...windowWords, ...PALETTE_WORDS }

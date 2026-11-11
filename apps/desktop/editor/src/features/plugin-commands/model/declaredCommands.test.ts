@@ -6,7 +6,7 @@ import {
   createCommandRegistry,
   type CommandDeps,
   type CommandInvocation,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DeclaredCommand, listDeclaredCommands } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/ui/icons'

@@ -5,16 +5,15 @@
  * A vault is not a note. It holds the user's folder, and each of these commands moves the window to
  * a different location than it was at.
  */
+import { type Command, type FeatureCommands } from '@/entities/command'
 import {
   COMMAND,
   ROW,
   createRowKeys,
   withWhen,
-  type Command,
   type CommandInvocation,
-  type FeatureCommands,
   type VaultRef,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { emptyTrash } from '@/entities/file'
 import { vaults } from '@/entities/vault'
 import type { MessageWriter } from '@/shared/model/notices/messages'

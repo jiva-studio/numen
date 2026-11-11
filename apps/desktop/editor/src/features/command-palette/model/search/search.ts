@@ -20,7 +20,7 @@ import {
 } from './lookup'
 import type { SearchDeps } from '../../lib/search/types'
 import { getCreateNoteActions } from '../../lib/entries/entries'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
 export type { NameMatch, Passage, SearchHit, SearchGroup, ResultChoice, SearchDeps }

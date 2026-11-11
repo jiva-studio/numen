@@ -13,7 +13,7 @@ import {
   type CommandDeps,
   type CommandHandler,
   type CommandInvocation,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { SETTINGS } from '@/entities/tab'
 
 /** What each command of the palette evaluates to. A command with no entry here does nothing. */

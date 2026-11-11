@@ -2,7 +2,7 @@
  * The target of a search hit, and where choosing one navigates the user.
  */
 import { describe, expect, it } from 'vitest'
-import { COMMAND, ROW } from '@/entities/command'
+import { COMMAND, ROW } from '@/shared/model/command'
 import {
   createNameItem,
   createPassageItem,

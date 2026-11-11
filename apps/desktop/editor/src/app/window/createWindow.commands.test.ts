@@ -4,7 +4,7 @@
  * provided run their commands with the dependencies of the window.
  */
 import { describe, expect, it } from 'vitest'
-import { COMMAND } from '@/entities/command'
+import { COMMAND } from '@/shared/model/command'
 import { PALETTE_WORDS } from '@/features/command-palette'
 import {
   cards,

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { NOTE_ERROR_CODE } from '@numen/core-client'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import type { CommandInvocation, CommandTarget } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { invoke } from '@/testing/invocation'
 import { FILE_WORDS as words } from '../words'
 import { createFileCommands } from './commands'

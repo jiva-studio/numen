@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { PluginHost } from '@numen/plugin-loader'
 import { getNamedIcon } from '@/shared/ui/icons'
-import { createCommandRegistry } from '@/entities/command'
+import { createCommandRegistry } from '@/shared/model/command'
 import { getFileKinds } from '@/entities/file'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 

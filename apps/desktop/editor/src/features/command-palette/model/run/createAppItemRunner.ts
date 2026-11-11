@@ -1,4 +1,9 @@
-import { withValues, type CommandDeps, type CommandTarget, type Values } from '@/entities/command'
+import {
+  withValues,
+  type CommandDeps,
+  type CommandTarget,
+  type Values,
+} from '@/shared/model/command'
 import { createInvocation } from '../../lib/entries/invocation'
 import { runInvocationToEnd } from './runInvocationToEnd'
 

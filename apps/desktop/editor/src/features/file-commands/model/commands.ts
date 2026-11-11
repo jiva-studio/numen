@@ -1,15 +1,15 @@
 /**
  * The commands over files and folders: make a folder, move a file, and open a document in a tab.
  */
+import { type FeatureCommands } from '@/entities/command'
 import {
   COMMAND,
   ROW,
   flushTab,
   withWhen,
   type CommandInvocation,
-  type FeatureCommands,
   type Notes,
-} from '@/entities/command'
+} from '@/shared/model/command'
 import { createFolder, listFiles, moveFile } from '@/entities/file'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { generateUniqueName } from '@/shared/lib/paths'

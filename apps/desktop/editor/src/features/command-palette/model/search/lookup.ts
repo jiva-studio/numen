@@ -4,7 +4,7 @@
 import type { PaletteItem } from '@numen/workbench'
 import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { NoteType } from '@/entities/file'
-import { COMMAND, ROW } from '@/entities/command'
+import { COMMAND, ROW } from '@/shared/model/command'
 import type { NameMatch, Passage } from '../../lib/search/types'
 import type { Words } from './search'
 
