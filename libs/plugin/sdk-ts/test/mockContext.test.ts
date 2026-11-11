@@ -128,21 +128,6 @@ describe('mock plugin context', () => {
     expect(handler.mock.calls[1]?.slice(1)).toStrictEqual([undefined, {}])
   })
 
-  it('manages agent provider registrations', () => {
-    const ctx = createMockPluginContext()
-    const d = ctx.register.agentProvider({
-      id: 'custom-llm',
-      name: 'Custom LLM',
-      createAgent: () => AGENT,
-      capabilities: ['chat'],
-    })
-
-    expect(ctx.getRegisteredAgentProviders()).toHaveLength(1)
-    expect(ctx.getRegisteredAgentProviders()[0]?.name).toBe('Custom LLM')
-    d.dispose()
-    expect(ctx.getRegisteredAgentProviders()).toHaveLength(0)
-  })
-
   it('keeps the views a plugin declares and the views it mounts', () => {
     const ctx = createMockPluginContext()
     const declared = ctx.register.view({ capability: CONVERSATION, component: {} })

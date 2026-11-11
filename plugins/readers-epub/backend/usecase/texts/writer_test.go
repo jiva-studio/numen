@@ -35,7 +35,7 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *Writ
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
 	texts.SetStore(pluginID, files.Store())
-	server := NewWriter(filesOf(files), textsOf(texts), storeOf(files), hosttest.NewQueue())
+	server := NewWriter(filesOf(files), textsOf(texts), storeOf(files), hosttest.NewQueue(), noReport)
 	t.Cleanup(server.Close)
 	return texts, server
 }
@@ -140,7 +140,7 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	other := texts.With("Chemistry")
 	other.File("book.epub", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewWriter(filesOf(physics), textsOf(texts), storeOf(physics), hosttest.NewQueue())
+	server := NewWriter(filesOf(physics), textsOf(texts), storeOf(physics), hosttest.NewQueue(), noReport)
 	t.Cleanup(server.Close)
 
 	createText(t, server, Request{Vault: "Chemistry", Path: "book.epub"})
@@ -257,7 +257,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := NewWriter(filesOf(files), textsOf(texts), storeOf(files), queue)
+	srv := NewWriter(filesOf(files), textsOf(texts), storeOf(files), queue, noReport)
 
 	if err := srv.CreateText(t.Context(), Request{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
@@ -277,7 +277,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 
 	// Failure reporting when file does not exist
 	q2 := hosttest.NewQueue()
-	srv2 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q2)
+	srv2 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q2, noReport)
 	t.Cleanup(srv2.Close)
 	createText(t, srv2, Request{Path: "missing.epub"})
 	tasks := q2.ListTasks()
@@ -287,7 +287,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 
 	// EnqueueWork failure
 	q3 := &failingQueue{Queue: hosttest.NewQueue(), enqueueErr: errors.New("queue down")}
-	srv3 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q3)
+	srv3 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q3, noReport)
 	t.Cleanup(srv3.Close)
 	createText(t, srv3, Request{Path: "book.epub"})
 	if tasks := q3.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "queue down") {
@@ -296,7 +296,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 
 	// ReportTask failure
 	q4 := &failingQueue{Queue: hosttest.NewQueue(), reportErr: errors.New("report failed")}
-	srv4 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q4)
+	srv4 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q4, noReport)
 	t.Cleanup(srv4.Close)
 	createText(t, srv4, Request{Path: "book.epub"})
 	if tasks := q4.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "report failed") {
@@ -307,7 +307,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	q5 := hosttest.NewQueue()
 	srv5 := NewWriter(filesOf(files), textsOf(texts), func(domain.VaultID) host.StoreWriter {
 		return &failingStore{StoreWriter: files.Store(), err: errors.New("store full")}
-	}, q5)
+	}, q5, noReport)
 	t.Cleanup(srv5.Close)
 	createText(t, srv5, Request{Path: "book.epub"})
 	if tasks := q5.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "store full") {
@@ -318,7 +318,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	q6 := hosttest.NewQueue()
 	srv6 := NewWriter(filesOf(files), func(domain.VaultID) host.TextVersions {
 		return &failingTexts{TextVersions: texts, err: errors.New("put version failed")}
-	}, storeOf(files), q6)
+	}, storeOf(files), q6, noReport)
 	t.Cleanup(srv6.Close)
 	createText(t, srv6, Request{Path: "book.epub"})
 	if tasks := q6.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "put version failed") {
@@ -327,7 +327,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 
 	// Sequential CreateText after completion works (verifies delete(s.running, key))
 	q7 := hosttest.NewQueue()
-	srv7 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q7)
+	srv7 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q7, noReport)
 	t.Cleanup(srv7.Close)
 	createText(t, srv7, Request{Path: "book.epub"})
 	guided := testsupport.CreateGuidedEpub(t)
@@ -338,3 +338,6 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 		t.Errorf("second CreateText did not update live version, got %q", live.Text)
 	}
 }
+
+// noReport drops the background failures of a writer that a test does not look at.
+func noReport(string, error) {}

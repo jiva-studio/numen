@@ -3,7 +3,6 @@
  */
 import {
   isSharedCommand,
-  type AgentProviderRegistration,
   type CommandRegistration,
   type Disposable,
   type DropRegistration,
@@ -17,7 +16,6 @@ import {
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from '../types'
 import {
-  requireDeclaredAgentProvider,
   requireDeclaredCommand,
   requireDeclaredDropTypes,
   requireDeclaredReader,
@@ -79,11 +77,6 @@ export function createRegistrations(
       const snapshot = takeSnapshot(reg)
       requireDeclaredCommand(target, snapshot.id, isSharedCommand(snapshot.id))
       return add(host.registration.registerCommand(pluginId, snapshot))
-    },
-    agentProvider: (reg: AgentProviderRegistration) => {
-      const snapshot = takeSnapshot(reg)
-      requireDeclaredAgentProvider(target, snapshot.id)
-      return add(host.registration.registerAgentProvider(pluginId, snapshot))
     },
     view: (reg: ViewRegistration) => {
       // Read once: a getter on the registration cannot answer the check and the registry differently.

@@ -11,7 +11,6 @@ describe('PluginContext', () => {
       registerReader: 0,
       registerTabKind: 0,
       registerCommand: 0,
-      registerAgentProvider: 0,
       getSetting: 0,
       onSettingChange: 0,
       onVaultChange: 0,
@@ -34,10 +33,6 @@ describe('PluginContext', () => {
         }),
         registerCommand: vi.fn((_id, _reg) => {
           calls.registerCommand++
-          return { dispose: vi.fn() }
-        }),
-        registerAgentProvider: vi.fn((_id, _reg) => {
-          calls.registerAgentProvider++
           return { dispose: vi.fn() }
         }),
       },
@@ -130,33 +125,22 @@ describe('PluginContext', () => {
       expect.objectContaining({ kind: 'custom-tab' }),
     )
 
-    const sub4 = ctx.register.agentProvider({
-      id: 'agent1',
-      name: 'Agent 1',
-      createAgent: vi.fn(),
-    })
-    expect(ctx.plugin.subscriptions).toHaveLength(4)
-    expect(host.registration.registerAgentProvider).toHaveBeenCalledWith(
-      'test.plugin',
-      expect.objectContaining({ id: 'agent1' }),
-    )
-
     expect(ctx.settings.get('enabled')).toBe(true)
     expect(host.settings.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
 
-    const sub5 = ctx.settings.onChange('enabled', vi.fn())
-    expect(ctx.plugin.subscriptions).toHaveLength(5)
+    const sub4 = ctx.settings.onChange('enabled', vi.fn())
+    expect(ctx.plugin.subscriptions).toHaveLength(4)
     expect(host.settings.onSettingChange).toHaveBeenCalledWith(
       'test.plugin',
       'enabled',
       expect.any(Function),
     )
 
-    const sub6 = ctx.events.onVaultChange(vi.fn())
-    expect(ctx.plugin.subscriptions).toHaveLength(6)
+    const sub5 = ctx.events.onVaultChange(vi.fn())
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
 
-    const sub7 = ctx.events.onFileSelect(vi.fn())
-    expect(ctx.plugin.subscriptions).toHaveLength(7)
+    const sub6 = ctx.events.onFileSelect(vi.fn())
+    expect(ctx.plugin.subscriptions).toHaveLength(6)
 
     ctx.events.emitVaultChange({ vaultPath: '/path' })
     expect(host.events.emitVaultChange).toHaveBeenCalledWith('test.plugin', { vaultPath: '/path' })
@@ -200,15 +184,14 @@ describe('PluginContext', () => {
 
     // Calling dispose twice on sub1 must not splice another subscription
     sub1.dispose()
-    expect(ctx.plugin.subscriptions).toHaveLength(6)
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
     sub1.dispose()
-    expect(ctx.plugin.subscriptions).toHaveLength(6)
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
     sub2.dispose()
     sub3.dispose()
     sub4.dispose()
     sub5.dispose()
     sub6.dispose()
-    sub7.dispose()
     expect(ctx.plugin.subscriptions).toHaveLength(0)
   })
 
@@ -328,7 +311,7 @@ describe('PluginContext', () => {
     const ctx = createPluginContext(
       'test.plugin',
       host,
-      createMockManifest('test.plugin', { permissions: ['network:outbound'] }),
+      createMockManifest('test.plugin', { permissions: ['link:open'] }),
     )
 
     expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })

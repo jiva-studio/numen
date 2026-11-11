@@ -118,7 +118,7 @@ func getHintCases() []hintCase {
 	return []hintCase{
 		{
 			name: "a removing tool that needs the network with the hints of a local read", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE,
-			step: v1.ToolStep_TOOL_STEP_REMOVE, requires: []string{"network:outbound"},
+			step: v1.ToolStep_TOOL_STEP_REMOVE, requires: []string{"link:open"},
 			hints:    &v1.ToolHints{ReadOnly: true, Idempotent: true},
 			readOnly: true, idempotent: true,
 		},
@@ -134,7 +134,7 @@ func getHintCases() []hintCase {
 		},
 		{
 			name: "a read that needs the network with no hints", effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY,
-			requires: []string{"network:outbound"},
+			requires: []string{"link:open"},
 		},
 		{
 			name: "a removing tool with every hint", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE, step: v1.ToolStep_TOOL_STEP_REMOVE,

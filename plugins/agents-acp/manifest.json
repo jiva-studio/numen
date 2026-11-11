@@ -8,7 +8,7 @@
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": { "category": "agents" },
   "permissions": [
-    "network:outbound",
+    "link:open",
     "vault:read",
     "vault:write",
     "vault:manage",

@@ -21,7 +21,6 @@ export {
 export type {
   AgentHost,
   AgentPort,
-  AgentProviderRegistration,
   BackgroundTask,
   BackgroundTaskAction,
   BackgroundTaskAllowed,

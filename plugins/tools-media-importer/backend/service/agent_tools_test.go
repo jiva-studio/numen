@@ -276,8 +276,8 @@ func TestURLImportRequiresOutboundNetwork(t *testing.T) {
 	if len(listing.Tools) != 1 {
 		t.Fatalf("the registry lists %+v, want url_import alone", listing.Tools)
 	}
-	if requires := listing.Tools[0].GetRequires(); !slices.Contains(requires, "network:outbound") {
-		t.Errorf("url_import requires %q, want network:outbound among them", requires)
+	if requires := listing.Tools[0].GetRequires(); !slices.Contains(requires, "link:open") {
+		t.Errorf("url_import requires %q, want link:open among them", requires)
 	}
 }
 

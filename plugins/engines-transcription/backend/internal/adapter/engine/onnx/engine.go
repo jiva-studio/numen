@@ -35,7 +35,7 @@ func (l *Library) Open(ctx context.Context, libPath string) (*ort.Engine, string
 }
 
 func openEngine(libPath string) (*ort.Engine, error) {
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="C++ runtime preloading is an environment-dependent side effect for Linux dynamic linkers"
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Preloading the C++ runtime is a platform linker side effect."
 	preloadCppRuntime()
 	engine, err := ort.NewEngine(libPath)
 	if err != nil {
