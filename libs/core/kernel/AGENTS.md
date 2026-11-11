@@ -82,6 +82,7 @@ after construction.
 | The rule                                                                                 | The check                                      |
 | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
 | A use case does not store a collaborator that its constructor takes in an exported field | `go/use-case-fields` |
+| A constructor of a use case or an adapter returns the value and no error | `go/constructors-return-no-error` |
 
 No use case exposes a collaborator.
 
