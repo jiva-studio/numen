@@ -174,6 +174,8 @@ export function verifyPluginBackendInternalLayers() {
 
 export const MAX_SERVICE_LINES = 600
 const MIN_SERVICES_EXAMINED = 15
+// 66 source files on the tree when the floor was set; the floor is that count less 5%.
+const MIN_SERVICE_FILES_EXAMINED = 62
 const REQUIRED_INNER_KINDS = ['domain', 'usecase', 'ports']
 
 /**
@@ -198,6 +200,67 @@ export function findOversizedServices(backends) {
     })
   }
   return found
+}
+
+/** Packages that reach the machine or hold shared state; a service package does this through an adapter. */
+const MACHINE_ACCESS_IMPORTS = [
+  'os',
+  'os/exec',
+  'os/signal',
+  'os/user',
+  'runtime',
+  'io/fs',
+  'net',
+  'database/sql',
+  'syscall',
+  'sync',
+  'sync/atomic',
+]
+
+/** `net/http` names status codes and the handler type of the SDK server, so only the other packages under `net` are machine access. */
+function isMachineAccessImport(value) {
+  if (MACHINE_ACCESS_IMPORTS.includes(value)) return true
+  if (value === 'net/http') return false
+  return ['net/', 'runtime/', 'database/sql/', 'syscall/'].some((prefix) => value.startsWith(prefix))
+}
+
+/**
+ * Finds the imports of a backend `service` package that reach the machine (process environment,
+ * processes, runtime, file system, network, database, system calls) or hold shared state
+ * (mutexes, atomics). `files` holds `{ file, imports }` with each import as `{ line, value }`.
+ */
+export function findServiceMachineAccess(files) {
+  const found = []
+  for (const { file, imports } of files) {
+    for (const { line, value } of imports) {
+      if (isMachineAccessImport(value)) {
+        found.push({
+          file,
+          line,
+          symbol: `service imports ${value}; machine access and state belong in internal/adapter or a use case`,
+        })
+      }
+    }
+  }
+  return found
+}
+
+function listServiceSources() {
+  return listShippedFiles(['plugins/*/backend/service/*.go'])
+    .filter((file) => /^plugins\/[^/]+\/backend\/service\/[^/]+\.go$/.test(file) && !file.endsWith('_test.go'))
+    .map((file) => ({
+      file,
+      imports: getGoReferences(fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')).imports,
+    }))
+}
+
+export function verifyPluginServiceImports() {
+  const files = listServiceSources()
+  requireMatches('plugin service source files', files.length, MIN_SERVICE_FILES_EXAMINED)
+  failOnFindings(
+    'Plugin backend service package reaches the machine or holds state',
+    findServiceMachineAccess(files),
+  )
 }
 
 function listPluginBackends() {
@@ -575,6 +638,13 @@ export const PLUGIN_VERIFIERS = [
     module: 'plugins',
     name: 'Plugin Backend Service Package Stays The Composition Root And Wire',
     run: verifyPluginServiceSize,
+  },
+  {
+    id: 'plugin-service-imports',
+    scope: 'plugins',
+    module: 'plugins',
+    name: 'Plugin Backend Service Package Imports No Machine Access Or Shared State',
+    run: verifyPluginServiceImports,
   },
   {
     id: 'plugins-independence',

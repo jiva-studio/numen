@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { getGoReferences } from './helpers.mjs'
 import {
   MAX_SERVICE_LINES,
   findOversizedServices,
+  findServiceMachineAccess,
   findPluginEntryViolations,
   findPluginSliceShapeViolations,
   lintPlantedFrontend,
@@ -178,4 +180,35 @@ test('a service over the limit is reported with the inner packages it lacks', ()
   assert.equal(found.length, 2)
   assert.match(found[0].symbol, /no usecase, ports package/)
   assert.doesNotMatch(found[1].symbol, /; the backend has no/)
+})
+
+test('a service source with machine access imports is refused', () => {
+  const source = [
+    'package service',
+    '',
+    'import (',
+    '\t"net/http"',
+    '\t"os"',
+    '\t"sync"',
+    ')',
+    '',
+    'var _ = http.StatusOK',
+  ].join('\n')
+  const found = findServiceMachineAccess([
+    { file: 'plugins/a/backend/service/x.go', imports: getGoReferences(source).imports },
+  ])
+  assert.deepEqual(
+    found.map((one) => one.symbol.split(';')[0]),
+    ['service imports os', 'service imports sync'],
+  )
+})
+
+test('a service source with plain imports is accepted', () => {
+  const source = 'package service\n\nimport (\n\t"context"\n\t"net/http"\n)\n'
+  assert.deepEqual(
+    findServiceMachineAccess([
+      { file: 'plugins/a/backend/service/x.go', imports: getGoReferences(source).imports },
+    ]),
+    [],
+  )
 })
