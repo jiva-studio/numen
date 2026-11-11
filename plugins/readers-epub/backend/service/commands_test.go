@@ -25,7 +25,7 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *text
 		func(id domain.VaultID) texts.Vault { return files.With(id) },
 		func(id domain.VaultID) host.TextVersions { return versions.With(id) },
 		func(id domain.VaultID) host.StoreWriter { return files.Store().With(id) },
-		hosttest.NewQueue())
+		hosttest.NewQueue(), func(string, error) {})
 	t.Cleanup(writer.Close)
 	return versions, writer
 }

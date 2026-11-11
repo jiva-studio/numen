@@ -34,11 +34,10 @@ func newAgent(p parts) (*agent, error) {
 	agentSettings := new(settings.Settings)
 	tools := new(toolset.Toolset)
 	lister := process.Lister{}
-	models, err := catalog.New(lister, p.isAsync)
+	models, err := catalog.New(lister, lister.ReportError, p.isAsync)
 	if err != nil {
 		return nil, err
 	}
-	models.SetReport(lister.ReportError)
 	known, err := programs.New(programs.Dependencies{
 		Settings: agentSettings, Finder: executable.Finder{}, Models: models, Environment: p.environment,
 	})
