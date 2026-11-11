@@ -49,3 +49,13 @@ Feature: Search
       When the person searches the vault for "reflowable epub reader"
       And the person chooses the search result "assets/sample.epub" in the group "Text"
       Then the tab at "assets/sample.epub" has the highlight "reflowable"
+
+    Scenario: A book passage has one action
+      Given the vault has the following:
+        | path               | sample      |
+        | assets/sample.epub | sample.epub |
+      When the person searches the vault for "reflowable epub reader"
+      And the person opens the actions of the search result "assets/sample.epub" in the group "Text"
+      Then the actions of the search result are "Open the document here"
+      When the person chooses the action "Open the document here"
+      Then the tab at "assets/sample.epub" has the highlight "reflowable"

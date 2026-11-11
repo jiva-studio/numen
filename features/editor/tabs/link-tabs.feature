@@ -1,0 +1,17 @@
+Feature: Link tabs
+  A tab is linked to another tab. A note opened in the first tab opens in the linked tab.
+
+  Scenario: A note is opened in the tab it is linked to
+    Given the empty vault "Test"
+    And the vault has the following:
+      | path                 | text                                        |
+      | notes/Weir notes.md  | Water over the weir.                        |
+      | notes/Flume notes.md | The flume carries the water onto the wheel. |
+    And the application "editor" starts
+    And the person opens the note titled "Weir notes"
+    And the person runs the command "Link with tab" on the tab titled "Files"
+    And the person picks "Weir notes"
+    When the person opens the file at "notes/Flume notes.md"
+    Then the tab at "notes/Flume notes.md" is active
+    And the tab titled "Weir notes" is not open
+    And the note tab titled "Flume notes" has "The flume carries the water onto the wheel."

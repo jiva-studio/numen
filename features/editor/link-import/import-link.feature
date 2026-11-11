@@ -58,3 +58,15 @@ Feature: Import link
       Given the application "editor" starts
       When the person opens the note of the link "https://youtu.be/mill01" in the file tree
       Then the Media tab for the web address "https://youtu.be/mill01" has "The mill pond fills behind the gate."
+
+    Scenario: The video is deleted
+      Given the tab for the web address "https://youtu.be/mill01" has a recording
+      When the person deletes the video of the link "https://youtu.be/mill01"
+      Then the tab for the web address "https://youtu.be/mill01" does not have a recording
+      And the tab for the web address "https://youtu.be/mill01" has "The mill pond fills behind the gate."
+
+    Scenario: The video is downloaded again
+      Given the person deletes the video of the link "https://youtu.be/mill01"
+      And the tab for the web address "https://youtu.be/mill01" does not have a recording
+      When the person downloads the video of the link "https://youtu.be/mill01"
+      Then the tab for the web address "https://youtu.be/mill01" has a recording

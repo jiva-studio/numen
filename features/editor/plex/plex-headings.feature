@@ -1,0 +1,21 @@
+Feature: Plex headings
+  A person sees the headings of a note under its node in the plex.
+
+  Background:
+    Given the empty vault "Test"
+    And the vault has the following:
+      | path           | text                                        |
+      | notes/Heat.md  | # Heat\n\n## First law\n\nEnergy is kept.   |
+    And the application "editor" starts
+    And the person opens the note titled "Heat"
+    And the person runs the command "Show note in plex" on the note tab titled "Heat"
+
+  Scenario: The headings of a note are shown
+    When the person points at the note titled "Heat" in the plex
+    Then the plex shows the heading "First law" under the note titled "Heat"
+
+  Scenario: The headings of a note are left out
+    Given the person runs the command "Nest headings under notes"
+    And the person picks "Off"
+    When the person points at the note titled "Heat" in the plex
+    Then the plex does not show the heading "First law" under the note titled "Heat"

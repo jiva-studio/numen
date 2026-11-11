@@ -16,6 +16,7 @@ Feature: External changes of a note
     Scenario: The file changes
       When another program writes "milk" in the note titled "Shopping list"
       Then the note titled "Shopping list" has "milk"
+      And the note titled "Shopping list" does not have "the file changed on disk"
 
     Scenario: The file changes twice
       When another program writes "milk" in the note titled "Shopping list"

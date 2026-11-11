@@ -38,3 +38,14 @@ Feature: Restore tabs
     And the recording tab at "assets/talk.mp3" is open at time "2:00"
     When the application "editor" starts
     Then the recording tab at "assets/talk.mp3" is at time "2:00"
+
+  Scenario: The open tabs and the active tab are restored
+    Given the vault has the following:
+      | path             | text                  | sample    |
+      | notes/Entropy.md | Entropy is a measure. |           |
+      | assets/shore.pdf |                       | shore.pdf |
+    And the person opens the file at "assets/shore.pdf"
+    And the person opens the file at "notes/Entropy.md"
+    When the application "editor" starts
+    Then the tab at "assets/shore.pdf" is open
+    And the tab at "notes/Entropy.md" is active

@@ -30,6 +30,18 @@ Feature: Plex
       When the person links the note titled "Quay" to the note titled "Jetty" in the plex
       Then the note titled "Quay" links to the note titled "Jetty"
 
+    Scenario: A child note is made from the file tree
+      Given the vault has the following:
+        | path            | text                |
+        | notes/Lagoon.md | The lagoon is calm. |
+      When the person runs the command "Create child note" on the file at "notes/Lagoon.md"
+      And the person names it "Reef flat"
+      And the person opens the file at "notes/Lagoon.md"
+      And the person runs the command "Show note in plex"
+      Then the vault "Test" contains the note titled "Reef flat"
+      And the note titled "Lagoon" links to the note titled "Reef flat"
+      And the plex has the note titled "Reef flat" as the "child"
+
   Rule: The plex shows notes
 
     Scenario: A note is shown in the plex
@@ -55,3 +67,26 @@ Feature: Plex
       When the person clicks the note titled "Entropy" in the plex
       Then the tab at "notes/Entropy.md" is active
       And the tab titled "Weir notes" is not open
+
+  Rule: A found note has actions
+
+    Background:
+      Given the vault has the following:
+        | path          | text                        |
+        | notes/Quay.md | The quay is at the harbour. |
+
+    Scenario: The plex is an action of a found note
+      When the person searches the vault for "Quay"
+      Then the search result "Quay" in the group "Names" has the following actions:
+        | action            |
+        | Open note         |
+        | Show note in plex |
+
+    Scenario: A found note without the plex is only opened
+      Given the person disables the plugin "Plex Graph"
+      When the person searches the vault for "Quay"
+      Then the search result "Quay" in the group "Names" has the following actions:
+        | action    |
+        | Open note |
+      When the person chooses the search result "Quay" in the group "Names"
+      Then the tab at "notes/Quay.md" is active
