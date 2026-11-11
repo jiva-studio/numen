@@ -196,7 +196,7 @@ describe('a book opened', () => {
     const { books, placeCalls } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    expect(await readItem.actions.goToCfi('epubcfi(/8/4!/4/4/1:600)')).toBe(true)
+    expect(await readItem.locator.goToCfi('epubcfi(/8/4!/4/4/1:600)')).toBe(true)
 
     expect(readItem.navigation.offset.value).toBe(3_600)
     expect(readItem.marks.highlights.value).toStrictEqual([{ start: 3_600, end: 3_600 }])
@@ -207,7 +207,7 @@ describe('a book opened', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    expect(await readItem.actions.goToCfi('epubcfi(/8/10!/4/2)')).toBe(false)
+    expect(await readItem.locator.goToCfi('epubcfi(/8/10!/4/2)')).toBe(false)
 
     expect(readItem.navigation.offset.value).toBe(0)
   })
@@ -216,7 +216,7 @@ describe('a book opened', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    expect(await readItem.actions.getCfi(42)).toBe('epubcfi(/8/2!/4/2/1:42)')
+    expect(await readItem.locator.getCfi(42)).toBe('epubcfi(/8/2!/4/2/1:42)')
   })
 
   it('is called what the book calls itself', async () => {
@@ -369,7 +369,7 @@ describe('where the person is standing', () => {
     await settle()
     const jump = readItem.navigation.target.value
 
-    const restore = readItem.actions.goToCfi('epubcfi(/8/2!/4/2/1:100)')
+    const restore = readItem.locator.goToCfi('epubcfi(/8/2!/4/2/1:100)')
     await settle()
     await readItem.navigation.moveTo(2_500)
     answerOffset(100)
@@ -395,7 +395,7 @@ describe('a passage reached', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.focusSpans({ start: 3_600, end: 3_642 })
+    await readItem.locator.focusSpans({ start: 3_600, end: 3_642 })
 
     expect(readItem.navigation.offset.value).toBe(3_600)
     expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
@@ -406,7 +406,7 @@ describe('a passage reached', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.focusSpans({ start: 100, end: 110 }, { start: 6_500, end: 6_520 })
+    await readItem.locator.focusSpans({ start: 100, end: 110 }, { start: 6_500, end: 6_520 })
 
     expect(readItem.navigation.offset.value).toBe(100)
     expect(readItem.marks.otherHighlights.value).toStrictEqual([{ start: 6_500, end: 6_520 }])
@@ -416,7 +416,7 @@ describe('a passage reached', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.focusSpans()
+    await readItem.locator.focusSpans()
 
     expect(readItem.marks.highlights.value).toStrictEqual([])
   })

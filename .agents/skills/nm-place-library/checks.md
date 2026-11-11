@@ -42,6 +42,6 @@ A red check is fixed in the code, not by changing the check or moving code out o
 - `core-client-only-in-api`: a window file other than an `api` segment and the window entry that imports `@numen/core-client`.
 - `no-component-below-ui`: a component in a `lib`, `api` or `model` segment.
 - `shared-serves-several-slices`: a file in a window's `shared` layer that only one slice imports.
-- `numen/max-composable-return-properties`: a composable that returns more than eight properties, counted through a returned variable, returns a spread, a group of one key, or a group named for what it wraps (`base`, `parts`, `services`, `actions`, `frame`, `helpers`, `utils`, `deps`).
+- `numen/max-composable-return-properties`: a composable that returns more than eight properties, counted through a returned variable, returns a spread, a group of one key, or a group named for what it wraps (`base`, `parts`, `services`, `frame`, `helpers`, `utils`, `deps`).
 - `typecheck-covers-sources`: a `tsconfig` that excludes a tracked file.
 - A plugin frontend `lib` segment that imports a `ui`, `model` or `api` segment or a component, and a plugin component that breaks the inline-props, script-sections and script-length limits.

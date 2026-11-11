@@ -45,16 +45,16 @@ useBookPlace(
     offset: tabState.book.navigation.offset,
     isLoading: tabState.book.state.isLoading,
     chapter: tabState.book.progress.chapter,
-    getCfi: tabState.book.actions.getCfi,
-    goToCfi: tabState.book.actions.goToCfi,
+    getCfi: tabState.book.locator.getCfi,
+    goToCfi: tabState.book.locator.goToCfi,
   },
   () => readerTab,
 )
 useBookRanges(
   {
     isLoading: tabState.book.state.isLoading,
-    focusSpans: tabState.book.actions.focusSpans,
-    reportFailure: tabState.book.actions.reportFailure,
+    focusSpans: tabState.book.locator.focusSpans,
+    reportFailure: tabState.book.reportFailure,
   },
   () => readerTab,
 )
@@ -82,7 +82,7 @@ function onPageTurnKey(event: KeyboardEvent) {
 
 function onSelectEntry(offset: number) {
   isListingOpen.value = false
-  tabState.book.navigation.goToOffset(offset).catch(tabState.book.actions.reportFailure)
+  tabState.book.navigation.goToOffset(offset).catch(tabState.book.reportFailure)
 }
 
 function onToggleListing() {
@@ -90,11 +90,11 @@ function onToggleListing() {
 }
 
 function onMove(offset: number) {
-  tabState.book.navigation.moveTo(offset).catch(tabState.book.actions.reportFailure)
+  tabState.book.navigation.moveTo(offset).catch(tabState.book.reportFailure)
 }
 
 function onFollow(destPath: string) {
-  tabState.book.navigation.followLink(destPath).catch(tabState.book.actions.reportFailure)
+  tabState.book.navigation.followLink(destPath).catch(tabState.book.reportFailure)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
