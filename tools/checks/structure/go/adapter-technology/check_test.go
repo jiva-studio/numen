@@ -2,6 +2,8 @@
 package adaptertechnology
 
 import (
+	"go/token"
+	"go/types"
 	"os"
 	"slices"
 	"testing"
@@ -26,33 +28,38 @@ func TestTechnologyImportRule_NamesWhatReachesOutsideTheProcess(t *testing.T) {
 	}
 }
 
-// A package under adapter/ or internal/adapter/ that calls no use case is a driven adapter and calls a
-// technology, a function or a method of a package that reaches outside the process; one that holds
+// A package of internal/adapter/, adapter/index, adapter/settings or one that implements a port, and calls no use
+// case, is a driven adapter and calls a technology, a function or a method of a package that reaches outside
+// the process; one that holds
 // callbacks, or imports a technology package only for its types, is a seam written as an adapter. A
 // package of internal/adapter/ that calls a use case is a driving adapter in the wrong folder.
 func TestTechnologyRule_RejectsAnAdapterThatCallsNoTechnology(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
-		"usecase/find/find.go":          "package find\n\nfunc Execute() {}\n",
-		"adapter/window/window.go":      "package window\n\nimport \"fixture/usecase/find\"\n\nfunc Show() { find.Execute() }\n",
-		"adapter/disk/disk.go":          "package disk\n\nimport \"os\"\n\nfunc Read() ([]byte, error) { return os.ReadFile(\"x\") }\n",
-		"adapter/file/file.go":          "package file\n\nimport \"os\"\n\nfunc Close(f *os.File) error { return f.Close() }\n",
-		"adapter/hook/hook.go":          "package hook\n\ntype Hook struct{ OnChange func() }\n",
-		"adapter/typeonly/typeonly.go":  "package typeonly\n\nimport \"net/http\"\n\nfunc New() http.Handler { return nil }\n\nvar _ = http.HandlerFunc(nil)\n",
-		"adapter/convert/convert.go":    "package convert\n\nimport \"os\"\n\ntype Mode = os.FileMode\n\nfunc Wrap(m uint32) Mode { return os.FileMode(m) }\n",
-		"internal/adapter/host/host.go": "package host\n\nimport \"fixture/usecase/find\"\n\nfunc Serve() { find.Execute() }\n",
+		"usecase/find/find.go":               "package find\n\nfunc Execute() {}\n",
+		"port/storeport/store.go":            "package storeport\n\ntype Store interface{ Save() }\n",
+		"adapter/blob/blob.go":               "package blob\n\ntype Blob struct{}\n\nfunc (Blob) Save() {}\n",
+		"adapter/window/route/route.go":      "package route\n\ntype Route struct{ OnCall func() }\n",
+		"adapter/window/window.go":           "package window\n\nimport \"fixture/usecase/find\"\n\nfunc Show() { find.Execute() }\n",
+		"adapter/index/disk/disk.go":         "package disk\n\nimport \"os\"\n\nfunc Read() ([]byte, error) { return os.ReadFile(\"x\") }\n",
+		"adapter/index/file/file.go":         "package file\n\nimport \"os\"\n\nfunc Close(f *os.File) error { return f.Close() }\n",
+		"adapter/index/hook/hook.go":         "package hook\n\ntype Hook struct{ OnChange func() }\n",
+		"adapter/index/typeonly/typeonly.go": "package typeonly\n\nimport \"net/http\"\n\nfunc New() http.Handler { return nil }\n\nvar _ = http.HandlerFunc(nil)\n",
+		"adapter/index/convert/convert.go":   "package convert\n\nimport \"os\"\n\ntype Mode = os.FileMode\n\nfunc Wrap(m uint32) Mode { return os.FileMode(m) }\n",
+		"internal/adapter/host/host.go":      "package host\n\nimport \"fixture/usecase/find\"\n\nfunc Serve() { find.Execute() }\n",
 	})
 	found, driven := getAdapterTechnologyFindings(load.LoadFixture(t, dir), "fixture", map[string]string{})
 	want := []string{
-		"adapter/convert is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
-		"adapter/hook is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
-		"adapter/typeonly is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/blob is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/index/convert is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/index/hook is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/index/typeonly is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
 		"internal/adapter/host calls a use case: a driving adapter lives under adapter/",
 	}
 	if !slices.Equal(found, want) {
 		t.Errorf("the rule rejects %v, want %v", found, want)
 	}
-	if driven != 5 {
-		t.Errorf("%d driven adapters read, want 5", driven)
+	if driven != 6 {
+		t.Errorf("%d driven adapters read, want 6", driven)
 	}
 }
 
@@ -75,6 +82,49 @@ func TestTechnologyCallRule_ExcludesTheWireFraming(t *testing.T) {
 	} {
 		if got := isTechnologyCall(path); got != want {
 			t.Errorf("a call into %s reaches outside the process: %v, want %v", path, got, want)
+		}
+	}
+}
+
+// A call through a generated Connect client is a call across a process boundary: the constructor and the methods
+// of a client declared in a *connect.go file count, a call of the connect.Client type counts, and naming a client
+// type, building a request or calling the server side of the generated code does not.
+func TestTechnologyCallRule_CountsGeneratedConnectClientCalls(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"gen/svcconnect/svc.connect.go": "package svcconnect\n\ntype SvcClient interface{ Ping() }\n\ntype svcClient struct{}\n\n" +
+			"func (*svcClient) Ping() {}\n\nfunc NewSvcClient() SvcClient { return &svcClient{} }\n\n" +
+			"type SvcHandler struct{}\n\nfunc (SvcHandler) Serve() {}\n\nfunc NewSvcHandler() SvcHandler { return SvcHandler{} }\n",
+		"adapter/index/calls/calls.go":   "package calls\n\nimport \"fixture/gen/svcconnect\"\n\nfunc Ping() { svcconnect.NewSvcClient().Ping() }\n",
+		"adapter/index/method/method.go": "package method\n\nimport \"fixture/gen/svcconnect\"\n\nfunc Ping(c svcconnect.SvcClient) { c.Ping() }\n",
+		"adapter/index/named/named.go":   "package named\n\nimport \"fixture/gen/svcconnect\"\n\ntype Named struct{ Client svcconnect.SvcClient }\n",
+		"adapter/index/server/server.go": "package server\n\nimport \"fixture/gen/svcconnect\"\n\nfunc Serve() { svcconnect.NewSvcHandler().Serve() }\n",
+		"adapter/index/ctor/ctor.go":     "package ctor\n\nimport \"fixture/gen/svcconnect\"\n\nvar _ = svcconnect.NewSvcClient\n",
+	})
+	found, _ := getAdapterTechnologyFindings(load.LoadFixture(t, dir), "fixture", map[string]string{})
+	want := []string{
+		"adapter/index/ctor is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/index/named is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+		"adapter/index/server is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
+	}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule rejects %v, want %v", found, want)
+	}
+}
+
+func TestConnectClientCallRule_ReadsTheClientTypeOfTheLibrary(t *testing.T) {
+	library := types.NewPackage("connectrpc.com/connect", "connect")
+	fset := token.NewFileSet()
+	method := func(receiver string) *types.Func {
+		recv := types.NewVar(token.NoPos, library, "c", types.NewPointer(types.NewNamed(types.NewTypeName(token.NoPos, library, receiver, nil), types.NewStruct(nil, nil), nil)))
+		return types.NewFunc(token.NoPos, library, "CallUnary", types.NewSignatureType(recv, nil, nil, nil, nil, false))
+	}
+	function := types.NewFunc(token.NoPos, library, "NewRequest", types.NewSignatureType(nil, nil, nil, nil, nil, false))
+	for name, tc := range map[string]struct {
+		fn   *types.Func
+		want bool
+	}{"a method of Client": {method("Client"), true}, "a method of another type": {method("Request"), false}, "a function": {function, false}} {
+		if got := isConnectClientCall(fset, tc.fn); got != tc.want {
+			t.Errorf("%s is a client call: %v, want %v", name, got, tc.want)
 		}
 	}
 }

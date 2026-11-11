@@ -35,7 +35,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - `package-matrix` and the library ESLint configs: `libs/ui/components` importing `@numen/protocol`, a wire type, a domain type or anything under `apps/**`.
 - `styles-use-tokens` (stylelint): a color literal, a `--numen-` declaration outside the token and theme files, a `var()` fallback, an undeclared token.
 - `plugins-frontend`: `@/**` or `@plugins/**` imported by a plugin frontend.
-- `styles-use-tokens` also holds the rule `numen/no-bare-length`: no `px` for a size except a 1px hairline border; a `rem` or `em` literal may stand on a property; a custom property outside the token files holds a `rem` or `em` length only when a token file declares it.
+- `styles-use-tokens` also holds the rule `numen/no-bare-length`: no `px` for a size except a 1px hairline border; a `rem` or `em` literal may stand on a property; a `rem` or `em` literal may also stand in any custom property.
 
 ## Whole repository
 

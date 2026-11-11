@@ -70,6 +70,10 @@ func countCodeLines(src []byte) int {
 	return len(lines)
 }
 
+// listWideLines returns the lines wider than limit that hold code. A line that holds only a comment, or only
+// one string literal (with the comma or bracket that closes it), or lies inside a raw string literal, is data
+// or prose that a reader skips: it is not listed, nor is a line of a declaration or assignment whose whole
+// right-hand side is a string literal. A call with a literal argument is code and is listed.
 func listWideLines(src []byte, limit int) []int {
 	var wide []int
 	for i, line := range strings.Split(string(src), "\n") {
@@ -77,7 +81,56 @@ func listWideLines(src []byte, limit int) []int {
 			wide = append(wide, i+1)
 		}
 	}
-	return wide
+	if len(wide) == 0 {
+		return nil
+	}
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(src))
+	var scan scanner.Scanner
+	scan.Init(file, src, nil, scanner.ScanComments)
+	occupants := map[int][]token.Token{}
+	var items []scanned
+	for {
+		pos, tok, literal := scan.Scan()
+		if tok == token.EOF {
+			break
+		}
+		if tok == token.SEMICOLON && literal == "\n" {
+			items = append(items, scanned{tok: tok, first: file.Line(pos), last: file.Line(pos)})
+			continue
+		}
+		first := file.Line(pos)
+		last := first
+		if tok == token.STRING || tok == token.COMMENT {
+			last += strings.Count(literal, "\n")
+		}
+		items = append(items, scanned{tok: tok, first: first, last: last})
+		for line := first; line <= last; line++ {
+			occupants[line] = append(occupants[line], tok)
+		}
+	}
+	literals := listLiteralAssignmentLines(items)
+	var kept []int
+	for _, line := range wide {
+		if !isProse(occupants[line]) && !literals[line] {
+			kept = append(kept, line)
+		}
+	}
+	return kept
+}
+
+func isProse(tokens []token.Token) bool {
+	prose := 0
+	for _, tok := range tokens {
+		switch tok {
+		case token.STRING, token.COMMENT:
+			prose++
+		case token.COMMA, token.RPAREN, token.RBRACE, token.SEMICOLON:
+		default:
+			return false
+		}
+	}
+	return prose == 1
 }
 
 // sizeLimits are the bounds getOversizedSources enforces.
@@ -146,4 +199,68 @@ func getOversizedSources(root string, trees []string, limit sizeLimits) (found [
 	}
 	slices.Sort(found)
 	return found, files, dirs, nil
+}
+
+// listLiteralAssignmentLines returns the lines covered by a declaration or assignment whose whole right-hand
+// side is one string literal or a concatenation of literals: `const A = "..."`, `x.f = "..." + "..."` or a keyed
+// field `Name: "...",` on a line of its own. Anything with a call or another operand on the right, or code
+// beside it on the line, is not listed.
+func listLiteralAssignmentLines(items []scanned) map[int]bool {
+	covered := map[int]bool{}
+	blocked := map[int]bool{}
+	var segment []scanned
+	flush := func() {
+		isLiteral := isLiteralAssignment(segment)
+		for _, one := range segment {
+			for line := one.first; line <= one.last; line++ {
+				covered[line] = covered[line] || isLiteral
+				blocked[line] = blocked[line] || !isLiteral && one.tok != token.RPAREN && one.tok != token.RBRACK
+			}
+		}
+		segment = nil
+	}
+	for _, one := range items {
+		switch one.tok {
+		case token.SEMICOLON, token.COMMA, token.LBRACE, token.RBRACE:
+			flush()
+		case token.COMMENT:
+		default:
+			segment = append(segment, one)
+		}
+	}
+	flush()
+	for line, isBlocked := range blocked {
+		if isBlocked {
+			delete(covered, line)
+		}
+	}
+	return covered
+}
+
+func isLiteralAssignment(segment []scanned) bool {
+	operator := slices.IndexFunc(segment, func(one scanned) bool {
+		return one.tok == token.ASSIGN || one.tok == token.DEFINE || one.tok == token.COLON
+	})
+	if operator < 1 || operator == len(segment)-1 {
+		return false
+	}
+	for _, one := range segment[:operator] {
+		switch one.tok {
+		case token.IDENT, token.PERIOD, token.CONST, token.VAR, token.MUL:
+		default:
+			return false
+		}
+	}
+	for i, one := range segment[operator+1:] {
+		if i%2 == 0 && one.tok != token.STRING || i%2 == 1 && one.tok != token.ADD {
+			return false
+		}
+	}
+	return segment[len(segment)-1].tok == token.STRING
+}
+
+// scanned is one token with the first and the last line it occupies.
+type scanned struct {
+	tok         token.Token
+	first, last int
 }

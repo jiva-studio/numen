@@ -97,7 +97,7 @@ func TestSourceSizeRule_CountsEveryLineOfARawString(t *testing.T) {
 // A line wider than the limit is refused in a production file and in a test file, and a generated file is
 // not read.
 func TestSourceSizeRule_RejectsAWideLineInAnyNonGeneratedFile(t *testing.T) {
-	wide := "var _ = \"" + strings.Repeat("x", 200) + "\"\n"
+	wide := "var _ = len(\"" + strings.Repeat("x", 200) + "\")\n"
 	dir := writeTree(t, map[string]string{
 		"m/go.mod":       "module m\n",
 		"m/buf.gen.yaml": "plugins:\n  - local: protoc-gen-go\n    out: gen\n",
@@ -110,6 +110,45 @@ func TestSourceSizeRule_RejectsAWideLineInAnyNonGeneratedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{"m/a.go:3 is wider than 200 characters", "m/a_test.go:4 is wider than 200 characters"}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule rejects %v, want %v", found, want)
+	}
+}
+
+// A wide line that is only a string literal, a line inside a raw string literal, a comment, or a declaration or
+// assignment whose whole right-hand side is string literals is not counted; a code line that carries a wide
+// literal as a call argument, a struct literal or an operand of logic still is.
+func TestSourceSizeRule_SkipsWideLiteralAndCommentLinesButNotCode(t *testing.T) {
+	long := strings.Repeat("x", 210)
+	dir := writeTree(t, map[string]string{
+		"m/go.mod": "module m\n",
+		"m/a.go": "package p\n\n" +
+			"var table = []string{\n\t\"" + long + "\",\n}\n" + // line 4: literal only
+			"var raw = `\n" + long + "\n`\n" + // line 7: inside a raw string
+			"// " + long + "\n" + // line 9: comment
+			"/*\n" + long + "\n*/\n" + // line 11: block comment
+			"var call = len(\"" + long + "\")\n" + // line 13: code with a literal argument
+			"var joined = \"" + long + "\" + \"y\"\n" + // line 14: concatenated literals
+			"var _ = 1 // " + long + "\n" + // line 15: code with a trailing comment
+			"const named string = \"" + long + "\"\n" + // line 16: constant literal
+			"var spread = \"" + long + "\" +\n\t\"" + long + "\"\n" + // lines 17 and 18: continuation line
+			"var holder = struct{ f string }{}\nfunc init() {\n\tholder.f = \"" + long + "\"\n}\n" + // line 21: field assignment
+			"var keyed = struct{ f string }{\n\tf: \"" + long + "\",\n}\n" + // line 24: keyed field
+			"var logic = \"" + long + "\" + suffix()\n" + // line 26: operand with a call
+			"var literal = struct{ f, g string }{f: \"" + long + "\", g: \"y\"}\n" + // line 27: struct literal
+			"var sum = \"a\" + name + \"" + long + "\"\n", // line 28: operand that is a name
+	})
+	found, _, _, err := getOversizedSources(dir, []string{"m"}, getTreeLimits())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"m/a.go:13 is wider than 200 characters",
+		"m/a.go:15 is wider than 200 characters",
+		"m/a.go:26 is wider than 200 characters",
+		"m/a.go:27 is wider than 200 characters",
+		"m/a.go:28 is wider than 200 characters",
+	}
 	if !slices.Equal(found, want) {
 		t.Errorf("the rule rejects %v, want %v", found, want)
 	}

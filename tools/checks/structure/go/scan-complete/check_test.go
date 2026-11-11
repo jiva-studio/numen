@@ -76,8 +76,11 @@ func TestUseCasesImportOnlyDomainAndPorts(t *testing.T) {
 	checkUseCasesImportOnlyDomainAndPorts(t, load.Workspace(t, "libs/core/kernel"))
 }
 
-// A helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
+// A pure helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
 // whose methods change its state. A helper that does is an adapter or a use case under a helper's name.
+// A package of internal/testsupport implements ports and holds state by design: it may import ports and use
+// cases, and still reaches no technology. A package of internal/adapterlib is shared adapter code: it may reach
+// technology, import ports and hold state, and imports no use case and no adapter.
 func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
@@ -103,7 +106,7 @@ func TestHelperRule_RejectsAHelperWithStateOrOutsideImports(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface{ Read() string }\n",
 		"usecase/find/find.go":      "package find\n\ntype Find struct{}\n",
-		"internal/adapterlib/pure/p.go": `package pure
+		"internal/vector/p.go": `package pure
 
 func Add(a, b int) int { return a + b }
 
@@ -117,7 +120,7 @@ func (r *Range) Size() int {
 	return local
 }
 `,
-		"internal/adapterlib/bus/bus.go": `package bus
+		"internal/text/bus.go": `package bus
 
 type Bus struct {
 	subscribers map[string]int
@@ -139,7 +142,7 @@ type hidden struct{ n int }
 
 func (h *hidden) Add() { h.n++ }
 `,
-		"internal/adapterlib/reach/reach.go": `package reach
+		"internal/chunking/reach.go": `package reach
 
 import (
 	"os"
@@ -152,28 +155,47 @@ var _ = os.Args
 var _ noteport.Reader
 var _ find.Find
 `,
-		"internal/testsupport/fake/fake.go": "package fake\n\nimport \"fixture/port/noteport\"\n\ntype Reader struct{}\n\nfunc (Reader) Read() string { return \"\" }\n\nvar _ noteport.Reader = Reader{}\n",
+		"internal/testsupport/fake/fake.go": `package fake
+
+import "fixture/port/noteport"
+
+type Reader struct{ n int }
+
+func (r *Reader) Read() string { r.n++; return "" }
+
+var _ noteport.Reader = (*Reader)(nil)
+`,
+		"internal/testsupport/tech/tech.go": "package tech\n\nimport \"os\"\n\nvar _ = os.Args\n",
 		"internal/csp/csp.go":               "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
 		"adapter/index/index.go":            "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
+		"internal/adapterlib/state/state.go": "package state\n\nimport (\n\t\"os\"\n\n\t\"fixture/port/noteport\"\n)\n\n" +
+			"type Hub struct{ n int }\n\nfunc (h *Hub) Add() { h.n++ }\n\nvar _ = os.Args\nvar _ noteport.Reader\n",
+		"internal/adapterlib/reach/reach.go": "package reach\n\nimport (\n\t_ \"fixture/adapter/index\"\n\t_ \"fixture/internal/adapter/clock\"\n\t_ \"fixture/usecase/find\"\n)\n",
+		"internal/adapter/clock/clock.go":    "package clock\n\nfunc Now() int { return 0 }\n",
 	})
-	found, read := getHelperFindings(load.LoadFixture(t, dir), "fixture", map[string]string{"internal/csp": "builds the policy"})
+	found, read := getHelperFindings(load.LoadFixture(t, dir), "fixture", map[string]string{
+		"internal/csp": "builds the policy", "internal/vector": "vectors", "internal/text": "text", "internal/chunking": "chunks",
+	})
 	want := []string{
-		"internal/adapterlib/bus exports Bus.Count, which changes the state of its receiver: a helper holds no state",
-		"internal/adapterlib/bus exports Bus.Forget, which changes the state of its receiver: a helper holds no state",
-		"internal/adapterlib/bus exports Bus.Store, which changes the state of its receiver: a helper holds no state",
-		"internal/adapterlib/bus exports Bus.Subscribe, which changes the state of its receiver: a helper holds no state",
-		"internal/adapterlib/bus exports Reset.Zero, which changes the state of its receiver: a helper holds no state",
-		"internal/adapterlib/reach imports os: a helper reaches no technology",
-		"internal/adapterlib/reach imports port/noteport: a helper depends on no port and no use case",
-		"internal/adapterlib/reach imports usecase/find: a helper depends on no port and no use case",
+		"internal/adapterlib/reach imports adapter/index: shared adapter code depends on no other adapter",
+		"internal/adapterlib/reach imports internal/adapter/clock: shared adapter code depends on no other adapter",
+		"internal/adapterlib/reach imports usecase/find: shared adapter code depends on no use case",
+		"internal/chunking imports os: a helper reaches no technology",
+		"internal/chunking imports port/noteport: a helper depends on no port and no use case",
+		"internal/chunking imports usecase/find: a helper depends on no port and no use case",
 		"internal/csp exports Mutable.Set, which changes the state of its receiver: a helper holds no state",
-		"internal/testsupport/fake imports port/noteport: a helper depends on no port and no use case",
+		"internal/testsupport/tech imports os: a helper reaches no technology",
+		"internal/text exports Bus.Count, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Forget, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Store, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Subscribe, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Reset.Zero, which changes the state of its receiver: a helper holds no state",
 	}
 	if !slices.Equal(found, want) {
 		t.Errorf("the rule rejects\n%s\nwant\n%s", strings.Join(found, "\n"), strings.Join(want, "\n"))
 	}
-	if read != 5 {
-		t.Errorf("%d helper packages read, want 5", read)
+	if read != 8 {
+		t.Errorf("%d helper packages read, want 8", read)
 	}
 }
 

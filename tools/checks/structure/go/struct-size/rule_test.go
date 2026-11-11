@@ -15,6 +15,9 @@ import (
 type structLimit struct {
 	methods int
 	fields  int
+	// holdsWiring marks a package of the container: every type in it, with or without methods, counts its direct
+	// and embedded fields, each embedded field as one.
+	holdsWiring bool
 }
 
 // The limits come from the target hexagon. A driven adapter wraps one technology behind two or three ports and
@@ -35,8 +38,10 @@ func getStructLimit(rel string) (structLimit, bool) {
 	switch {
 	case load.IsWithin(rel, "usecase"):
 		return structLimit{methods: maxUseCaseMethods, fields: maxUseCaseFields}, true
-	case load.IsWithin(rel, "adapter"), load.IsWithin(rel, "internal/adapter"), load.IsWithin(rel, "container"):
+	case load.IsWithin(rel, "adapter"), load.IsWithin(rel, "internal/adapter"):
 		return structLimit{methods: maxAdapterMethods, fields: maxAdapterFields}, true
+	case load.IsWithin(rel, "container"):
+		return structLimit{methods: maxAdapterMethods, fields: maxAdapterFields, holdsWiring: true}, true
 	}
 	return structLimit{}, false
 }
@@ -75,7 +80,11 @@ func getOversizedTypes(pkgs []*packages.Package, getLimit func(path string) (str
 				methods := types.NewMethodSet(types.NewPointer(named)).Len()
 				fields := 0
 				if st, ok := named.Underlying().(*types.Struct); ok {
-					fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{})
+					if limit.holdsWiring {
+						fields = st.NumFields()
+					} else {
+						fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{})
+					}
 				}
 				if methods > limit.methods {
 					found = append(found, load.NewFinding(pkg.Fset, spec.Name.Pos(),

@@ -143,13 +143,15 @@ func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error
 	if err != nil {
 		return Result{}, err
 	}
-	defer r.release(key)
-	return r.runRecognition(ctx, req)
+	release := sync.OnceFunc(func() { r.release(key) })
+	defer release()
+	return r.runRecognition(ctx, req, release)
 }
 
 // Start claims the file and recognizes it in the background under ctx, and returns false when
 // another run has locked the file. An empty vault is the vault the host shows when Start is called,
-// and the run reads and writes only that vault. The channel is closed when the run ends.
+// and the run reads and writes only that vault. The channel is closed when the run ends. The file stops
+// counting as running before its task is reported as ended.
 func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, bool, error) {
 	req, key, err := r.claim(ctx, req)
 	if errors.Is(err, ErrAlreadyRecognizing) {
@@ -165,9 +167,10 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 	runEnd := make(chan struct{})
 	go func() {
 		defer close(runEnd)
-		defer r.release(key)
+		release := sync.OnceFunc(func() { r.release(key) })
+		defer release()
 		// runRecognition reports a failure as the error of the task.
-		_, err := r.runRecognition(ctx, req)
+		_, err := r.runRecognition(ctx, req, release)
 		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect recognition state."
 		if err != nil && ctx.Err() == nil {
 			r.reportError("recognize "+req.Path, err)
@@ -263,10 +266,11 @@ func newTask(req Request) host.Task {
 	}
 }
 
-func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, error) {
+func (r *Recognition) runRecognition(ctx context.Context, req Request, release func()) (Result, error) {
 	on := reach{vault: r.host.Vaults(req.Vault), store: r.host.Store(req.Vault), texts: r.host.Texts(req.Vault)}
 	task := newTask(req)
 	res, err := r.recognize(ctx, on, req, &task)
+	release()
 	if err != nil && ctx.Err() == nil && !isMissing(ctx, on.vault, req.Path) {
 		task.FailureReason = err.Error()
 		if reportErr := r.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {

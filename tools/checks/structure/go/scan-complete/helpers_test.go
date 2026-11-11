@@ -17,12 +17,28 @@ func isHelperPackage(rel string, helpers map[string]string) bool {
 	return isListed || load.IsWithin(rel, "internal/adapterlib") || load.IsWithin(rel, "internal/testsupport")
 }
 
+// isTestSupport reports a package of internal/testsupport: it implements ports and calls use cases by design, so it may
+// import them and may hold state; it still reaches no technology.
+func isTestSupport(rel string) bool { return load.IsWithin(rel, "internal/testsupport") }
+
+// isAdapterLib reports a package of internal/adapterlib: shared adapter-side code. It reaches technology and
+// holds state like an adapter and may import ports, but imports neither a use case nor an adapter.
+func isAdapterLib(rel string) bool { return load.IsWithin(rel, "internal/adapterlib") }
+
 func getHelperImportFindings(pkg *packages.Package, root, rel string) []string {
 	var found []string
 	for path := range pkg.Imports {
+		target := strings.TrimPrefix(strings.TrimPrefix(path, root), "/")
 		switch {
-		case load.IsInLayer(path, root, "port"), load.IsInLayer(path, root, "usecase"):
-			found = append(found, rel+" imports "+strings.TrimPrefix(strings.TrimPrefix(path, root), "/")+": a helper depends on no port and no use case")
+		case isAdapterLib(rel):
+			if load.IsInLayer(path, root, "usecase") {
+				found = append(found, rel+" imports "+target+": shared adapter code depends on no use case")
+			}
+			if load.IsInLayer(path, root, "adapter") || load.IsInLayer(path, root, "internal/adapter") {
+				found = append(found, rel+" imports "+target+": shared adapter code depends on no other adapter")
+			}
+		case !isTestSupport(rel) && (load.IsInLayer(path, root, "port") || load.IsInLayer(path, root, "usecase")):
+			found = append(found, rel+" imports "+target+": a helper depends on no port and no use case")
 		case load.IsTechnologyImport(path):
 			found = append(found, rel+" imports "+path+": a helper reaches no technology")
 		}
@@ -122,6 +138,9 @@ func getHelperFindings(pkgs []*packages.Package, root string, helpers map[string
 		}
 		read++
 		found = append(found, getHelperImportFindings(pkg, root, rel)...)
+		if isTestSupport(rel) || isAdapterLib(rel) {
+			continue
+		}
 		for _, method := range getMutatingMethods(pkg) {
 			found = append(found, rel+" exports "+method+", which changes the state of its receiver: a helper holds no state")
 		}
