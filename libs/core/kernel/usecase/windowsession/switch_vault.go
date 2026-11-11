@@ -18,13 +18,13 @@ type OpenTabsView interface {
 
 // SwitchVault shows a vault in the window and, where it was shown, points the plugins at it.
 type SwitchVault struct {
-	show    ShowVault
+	show    VaultSwitch
 	plugins PluginVaultPath
 	tabs    OpenTabsView
 }
 
 // NewSwitchVault returns the use case over the show of a vault, the plugins and the view of the open tabs.
-func NewSwitchVault(show ShowVault, plugins PluginVaultPath, tabs OpenTabsView) SwitchVault {
+func NewSwitchVault(show VaultSwitch, plugins PluginVaultPath, tabs OpenTabsView) SwitchVault {
 	return SwitchVault{show: show, plugins: plugins, tabs: tabs}
 }
 
