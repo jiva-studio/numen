@@ -144,7 +144,7 @@ type requestFixture struct {
 	blocking  *blockingModel
 	requests  *Requests
 	// ended holds the tasks that ended before a wait asked for them.
-	ended map[string]bool
+	ended     map[string]bool
 }
 
 func newRequestFixture(t *testing.T) *requestFixture {

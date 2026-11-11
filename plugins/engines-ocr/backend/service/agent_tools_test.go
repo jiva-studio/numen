@@ -117,7 +117,7 @@ type toolFixture struct {
 	launcher     *launch.Launcher
 	registry     *tools.Registry
 	// ended holds the tasks that ended before a wait asked for them.
-	ended map[string]bool
+	ended        map[string]bool
 }
 
 // chemistryScan is the scan stored only in the vault Chemistry.
