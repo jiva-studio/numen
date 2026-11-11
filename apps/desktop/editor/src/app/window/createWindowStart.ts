@@ -27,7 +27,6 @@ interface WindowKeysDeps {
   readonly pluginCommands: ReturnType<typeof createPluginCommandPort>
 }
 
-/** Puts the keys of the window to the commands. */
 function createWindowKeys(deps: WindowKeysDeps): void {
   const { windowTabs, getTarget, palette, pluginCommands } = deps
   useAppHotkeys(
@@ -54,7 +53,6 @@ export interface PluginStarterDeps {
   readonly writeMessage: MessageWriter
 }
 
-/** The start of the plugins: once the commands they declare are listed. */
 function createPluginStarter(deps: PluginStarterDeps) {
   const { rest, declaredCommands } = deps
   return createPluginStart({
@@ -77,7 +75,6 @@ export interface LayoutStarterDeps {
   readonly writeMessage: MessageWriter
 }
 
-/** The start of the tabs: the saved ones, or the one a window made for a detach shows. */
 function createLayoutStarter(deps: LayoutStarterDeps) {
   return createLayoutStart({
     vaults: deps.vaults,
