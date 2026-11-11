@@ -3,10 +3,7 @@
  * reads a registration once and hands the host that copy, as it does for a reader and a tab kind.
  */
 import { createMockManifest } from '@numen/core-client/testing'
-import type {
-  CommandRegistration,
-  SettingsViewRegistration,
-} from '@numen/plugin-sdk'
+import type { CommandRegistration, SettingsViewRegistration } from '@numen/plugin-sdk'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 import { createTestContextHost } from '../../testing/contextHost'

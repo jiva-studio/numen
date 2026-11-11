@@ -181,7 +181,8 @@ export interface TabKindFiles<State extends object = object> {
 // note at the path its tab opens on. A kind that declares getState has its tabs reopened after a
 // restart with the saved state.
 export interface TabKindRegistration<State extends object = object>
-  extends TabKindIdentity<State>,
+  extends
+    TabKindIdentity<State>,
     TabKindPresentation<State>,
     TabKindLifecycle<State>,
     TabKindInput<State>,
