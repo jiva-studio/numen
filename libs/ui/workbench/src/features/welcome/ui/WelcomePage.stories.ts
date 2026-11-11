@@ -8,7 +8,7 @@
  * what the claim is about.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { Bot, FolderPlus, Settings, SquarePen, Waypoints } from '@lucide/vue'
 import WelcomePage from './WelcomePage.vue'
 import type { FooterEntry, VaultRow, WelcomeAction } from '../model/welcome'
@@ -62,6 +62,9 @@ interface Knobs {
   high: number
   ways: readonly WelcomeAction[]
   vaults: readonly VaultRow[]
+  onRun?: (id: string) => void
+  onOpen?: (id: string) => void
+  onTakeFooter?: () => void
 }
 
 const meta: Meta<Knobs> = {
@@ -92,6 +95,9 @@ const meta: Meta<Knobs> = {
           heading="Vaults"
           :footer="FOOTER"
           version="0.4.1"
+          @run="args.onRun?.($event)"
+          @open="args.onOpen?.($event)"
+          @take-footer="args.onTakeFooter?.()"
         />
       </div>
     `,
@@ -117,6 +123,25 @@ export const Opening: Story = {
     await expect(mark.getBoundingClientRect().height).toBeLessThan(
       page.getBoundingClientRect().height / 2,
     )
+  },
+}
+
+/** A way in, a vault and the row below the list each emit what was pressed. */
+export const EmitsWhatIsPressed: Story = {
+  args: { onRun: fn(), onOpen: fn(), onTakeFooter: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: /New note/ }))
+    await expect(args.onRun).toHaveBeenCalledTimes(1)
+    await expect(args.onRun).toHaveBeenCalledWith('note')
+
+    await userEvent.click(canvas.getByRole('button', { name: /Sanskrit/ }))
+    await expect(args.onOpen).toHaveBeenCalledTimes(1)
+    await expect(args.onOpen).toHaveBeenCalledWith('sanskrit')
+
+    await userEvent.click(canvas.getByRole('button', { name: /New vault/ }))
+    await expect(args.onTakeFooter).toHaveBeenCalledTimes(1)
   },
 }
 

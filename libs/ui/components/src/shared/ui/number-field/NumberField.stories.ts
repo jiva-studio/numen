@@ -6,7 +6,7 @@
  * past the bounds, and digits that are not the ones this file is written in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import NumberField from './NumberField.vue'
 
@@ -17,6 +17,7 @@ interface Knobs {
   step: number
   isDisabled: boolean
   placeholder: string
+  onCommit?: (value: number | null) => void
 }
 
 const meta: Meta<Knobs> = {
@@ -55,6 +56,7 @@ const meta: Meta<Knobs> = {
           :step="args.step"
           :is-disabled="args.isDisabled"
           :placeholder="args.placeholder"
+          @commit="args.onCommit?.($event)"
         />
       </div>
     `,
@@ -118,6 +120,22 @@ export const KeepsWhatWasTyped: Story = {
     await expect(input.value).toBe('12x')
     await expect(input.getAttribute('aria-invalid')).toBe('true')
     await expect(canvas.getByRole('spinbutton')).toBe(input)
+  },
+}
+
+/** The typed number is emitted once, when the field is left. */
+export const CommitsTheTypedNumber: Story = {
+  args: { value: null, onCommit: fn() },
+  play: async ({ canvasElement, args }) => {
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('45')
+    await expect(args.onCommit).not.toHaveBeenCalled()
+
+    await userEvent.tab()
+    await expect(args.onCommit).toHaveBeenCalledTimes(1)
+    await expect(args.onCommit).toHaveBeenCalledWith(45)
   },
 }
 
