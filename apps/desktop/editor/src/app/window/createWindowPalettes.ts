@@ -8,6 +8,7 @@ import {
   createSearchRequests,
   createWindowPalette,
   runSupport,
+  type PaletteLists,
   type PluginPaletteLists,
 } from '@/features/command-palette'
 import { getVaultList } from '@/features/window-display'
@@ -25,7 +26,6 @@ import {
 import type { CommandRegistry, CommandTarget, Notes } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
-import type { createWindowSettings } from '@/features/settings-commands'
 import { createCommandSources } from './createCommandSources'
 import { createHostConnection } from './createHostConnection'
 import type { createWindowBase } from './createWindowBase'
@@ -65,10 +65,10 @@ export interface PluginPaletteDeps {
   readonly registry: CommandRegistry
   readonly appCommands: readonly Command[]
   readonly getTarget: () => CommandTarget
-  readonly windowSettings: Pick<
-    ReturnType<typeof createWindowSettings>,
-    'settingPalette' | 'paletteLists'
-  >
+  readonly windowSettings: {
+    readonly settingPalette: { readonly getCommands: () => readonly Command[] }
+    readonly paletteLists: PaletteLists
+  }
 }
 
 export function createPluginPalette(deps: PluginPaletteDeps) {
