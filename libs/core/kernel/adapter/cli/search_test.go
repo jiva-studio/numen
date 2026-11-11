@@ -42,11 +42,8 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) stubSes
 		Vaults: createVaultList(newVault(folder)),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
 			return cli.Indexed{Search: cli.Search{
-				Search: search.NewByName(
-					registry.NewFind(singleVaultList{newVault(folder)}).Execute,
-					preparing(search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil)),
-				),
-				Words: words,
+				Search: search.NewByName(registry.NewFind(singleVaultList{newVault(folder)}).Execute, preparing(search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil))),
+				Words:  words,
 			}}, nil
 		},
 	}
@@ -55,7 +52,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) stubSes
 func runWithStderr(t *testing.T, deps stubSession, args ...string) (out, stderr string, err error) {
 	t.Helper()
 	var answer, aside bytes.Buffer
-	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Session { return deps })
+	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Session { return deps.session() })
 	return answer.String(), aside.String(), err
 }
 
@@ -75,12 +72,9 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 	for name, provided := range map[string]stubSession{
 		"the list of vaults cannot be opened": {
 			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				return cli.Indexed{Search: cli.Search{
-					Search: search.NewByName(
-						func(string) (domain.Vault, error) { return domain.Vault{}, errRefused },
-						preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil)),
-					),
-				}}, nil
+				notFound := func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }
+				prepared := preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil))
+				return cli.Indexed{Search: cli.Search{Search: search.NewByName(notFound, prepared)}}, nil
 			},
 		},
 		"the search cannot be opened": {

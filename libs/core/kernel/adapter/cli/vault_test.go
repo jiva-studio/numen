@@ -70,7 +70,7 @@ func (s *session) runBroken(adjust func(*vaultParts), args ...string) (string, e
 	err := cli.Run(s.t.Context(), &out, &s.reply, append(s.base, args...), func(where cli.Locations) cli.Session {
 		parts := s.parts(where)
 		adjust(&parts)
-		return s.depsOver(where, parts)
+		return s.depsOver(where, parts).session()
 	})
 	return out.String(), err
 }

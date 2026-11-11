@@ -95,7 +95,7 @@ func openVia(w *testWindow, show func(context.Context, domain.Vault, *PluginOpen
 
 // A switch given a plugin open that has ended takes the exclusion like any other switch: during the
 // close by the user it is rejected, and the close completes.
-func TestASwitchUnderAnEndedPluginOpenFailsDuringTheClose(t *testing.T) {
+func TestASwitchOfAnEndedPluginOpenFailsDuringTheClose(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 	var recordedCtx context.Context
