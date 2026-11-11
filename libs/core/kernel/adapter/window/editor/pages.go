@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
@@ -74,8 +75,7 @@ type pageSet struct {
 type pageWindow interface {
 	shownVault
 	taskList
-	getPlayOrigins() []string
-	SetPlaying(playing *Loopback)
+	GetPlaying() *atomic.Pointer[Loopback]
 	RemoveTask(id string)
 	WaitForFlush(ctx context.Context) bool
 }
@@ -93,9 +93,7 @@ func (s statePages) RemoveTask(id string) { s.state.Window.RemoveTask(id) }
 
 func (s statePages) WaitForFlush(ctx context.Context) bool { return s.state.Window.WaitForFlush(ctx) }
 
-func (s statePages) SetPlaying(playing *Loopback) { s.state.Playing.Store(playing) }
-
-func (s statePages) getPlayOrigins() []string { return s.state.Playing.Load().getPlayOrigins() }
+func (s statePages) GetPlaying() *atomic.Pointer[Loopback] { return &s.state.Playing }
 
 // NewHandler puts the services in front of the pages, so a window and a browser
 // are served by one handler.
@@ -113,7 +111,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 
 	// The origin recordings play from is known once the socket it is served over is
 	// open, which precedes any page request.
-	played := s.window.getPlayOrigins()
+	played := s.window.GetPlaying().Load().getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.

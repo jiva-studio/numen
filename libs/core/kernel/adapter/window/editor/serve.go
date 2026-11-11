@@ -146,7 +146,7 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 	if playing, why := Listen(ctx, files, onStop); why != nil {
 		writeDiagnostic(o.pages.window.AddTask, o.out, "recordings will not play: %v\n", why)
 	} else {
-		o.pages.window.SetPlaying(playing)
+		o.pages.window.GetPlaying().Store(playing)
 	}
 	return nil
 }
