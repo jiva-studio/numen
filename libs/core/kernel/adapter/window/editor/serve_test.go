@@ -199,7 +199,9 @@ func openingWith(
 	db := wired.openIndex(t)
 
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
+		note.OpenGate{},
+	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(NewState(run.NewTasks(), nil, nil))
 	bindNotes(api, db)

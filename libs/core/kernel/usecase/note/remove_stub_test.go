@@ -93,7 +93,9 @@ func (tr *trashing) remove() note.Remove {
 	return note.NewRemove(tr.writers, tr.links, tr.sources, func(_ context.Context, _ domain.Vault, paths []string) error {
 		*tr.updated = append(*tr.updated, slices.Clone(paths))
 		return tr.levelErr
-	})
+	},
+		note.OpenGate{},
+	)
 }
 
 func noteAt(path string) domain.FileStat {
@@ -299,7 +301,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
-	removing := note.NewRemove(tr.writers, tr.links, tr.sources, nil)
+	removing := note.NewRemove(tr.writers, tr.links, tr.sources, nil, note.OpenGate{})
 
 	got, err := removing.Execute(t.Context(), domain.Vault{}, "Entropy.md")
 	if err != nil {

@@ -64,11 +64,13 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}.File(ctx, path)
 }
 
-// noteViews are the viewers that receive what a person or a program does to the notes, and the gate the
-// writes that empty the trash pass. A nil view receives no one.
+// noteViews are the viewers that receive what a person or a program does to the notes, the gate the writes
+// pass, and what tells whether the index followed a write. A nil view receives no one; a nil Follow takes the
+// index to follow every write.
 type noteViews struct {
 	Moves  note.TellMove
 	Writes note.WriteGate
+	Follow note.IndexFollow
 }
 
 func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteScenarios {
@@ -88,29 +90,33 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 	mover := note.NewMove(moveDeps)
 
 	linking := note.NewEditLinks(readers, writers, index, now)
-	remove := note.NewRemove(writers, links, indexed, index)
-	create := note.NewCreate(writers, names, index, now)
+	remove := note.NewRemove(writers, links, indexed, index, views.Writes)
+	create := note.NewCreate(writers, names, index, now, views.Writes)
+	connecting := note.ConnectionDeps{
+		Readers: readers, Writers: writers, Index: index, Now: now, Links: links, Names: names,
+		Gate: views.Writes, Follow: views.Follow,
+	}
 
 	return NoteScenarios{
 		Edit: NoteEditing{
 			Read:    note.NewRead(readers),
-			Write:   note.NewWrite(readers, writers, index, now),
+			Write:   note.NewWrite(readers, writers, index, now, views.Writes),
 			Create:  create,
 			Replace: note.NewReplace(readers, writers, index, now),
 			Linking: linking,
 		},
 		Place: NotePlacing{
 			Move:       mover,
-			Rename:     note.NewRename(moveDeps, mover),
+			Rename:     note.NewRename(moveDeps, mover, views.Writes),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
 			EmptyTrash: note.NewEmptyTrash(writers, views.Writes),
 		},
 		Connect: NoteConnecting{
-			SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, names),
-			RemoveSide:       note.NewRemoveSide(readers, writers, index, now, links, names),
-			RemoveConnection: note.NewRemoveConnection(readers, writers, index, now, links, names),
-			Join:             note.NewJoin(readers, writers, index, now, links, names),
+			SaveConnection:   note.NewSaveConnection(connecting),
+			RemoveSide:       note.NewRemoveSide(connecting),
+			RemoveConnection: note.NewRemoveConnection(connecting),
+			Join:             note.NewJoin(connecting),
 			CreateInRelation: note.NewCreateInRelation(create, names),
 		},
 		Refer: NoteReferring{AddLinks: note.NewAddLinks(linking)},

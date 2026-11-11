@@ -23,7 +23,7 @@ import (
 )
 
 func (c changing) newWrite() note.Write {
-	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
+	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), note.OpenGate{})
 }
 
 func (c changing) openNote(t *testing.T, path string) *edit.Baseline {
@@ -342,6 +342,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
+		note.OpenGate{},
 	)
 
 	added := make(chan error, 1)
@@ -437,6 +438,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
+		note.OpenGate{},
 	)
 
 	moved := make(chan error, 1)

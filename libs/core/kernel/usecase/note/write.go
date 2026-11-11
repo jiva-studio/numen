@@ -24,22 +24,29 @@ type Write struct {
 	now     machineport.Clock
 	Bound   int
 	Drawing TellEdit
+	gate    WriteGate
 }
 
 // NewWrite returns the writer that saves a note to disk. It takes the vault
-// readers and writers, the index synchronizer, and the clock.
+// readers and writers, the index synchronizer, the clock, and the gate a write passes.
 func NewWrite(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock, gate WriteGate,
 ) Write {
-	return Write{readers: readers, writers: writers, index: index, now: now}
+	return Write{readers: readers, writers: writers, index: index, now: now, gate: gate}
 }
 
-// Execute writes body to the note at path.
+// Execute writes body to the note at path. It fails with window.ErrClosing once the window is closing.
 // FileStat, when set, is the file state the caller expects on disk. A note
 // changed since it was read is left unchanged and port.ErrStale is returned:
 // the user's edits take precedence over a caller working from an older read.
 // The returned file stat describes the file this write produced.
 func (u Write) Execute(
+	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
+) (domain.FileStat, error) {
+	return writeUnder(u.gate, func() (domain.FileStat, error) { return u.replace(ctx, v, path, body, stat) })
+}
+
+func (u Write) replace(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (result domain.FileStat, err error) {
 	if err := domain.CheckPath(path); err != nil {
@@ -85,7 +92,14 @@ func (u Write) Execute(
 // frontmatter the file holds when the write begins; a note without an
 // identifier keeps none, and a created note has no frontmatter.
 // Baseline is the state the caller last read: a differing note is left unchanged and port.ErrStale is returned; nil skips the check.
+// It fails with window.ErrClosing once the window is closing.
 func (u Write) Save(
+	ctx context.Context, v domain.Vault, path, body string, baseline *edit.Baseline,
+) (domain.FileStat, error) {
+	return writeUnder(u.gate, func() (domain.FileStat, error) { return u.overwrite(ctx, v, path, body, baseline) })
+}
+
+func (u Write) overwrite(
 	ctx context.Context, v domain.Vault, path, body string, baseline *edit.Baseline,
 ) (domain.FileStat, error) {
 	if err := domain.CheckPath(path); err != nil {

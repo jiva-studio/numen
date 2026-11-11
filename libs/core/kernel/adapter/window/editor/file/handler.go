@@ -24,6 +24,11 @@ type Tree interface {
 	PublishChange(paths ...string)
 }
 
+// IndexFollow tells whether the index followed a write.
+type IndexFollow interface {
+	IsIndexOutdated(err error) bool
+}
+
 // Events tells the plugins of the window that something happened.
 type Events interface {
 	EmitFileEvent(event string)
@@ -74,16 +79,17 @@ type Changes struct {
 	vault      Vault
 	tree       Tree
 	move       *vaults.MoveFile
-	remove     *note.RemoveFile
+	remove     *note.Remove
 	emptyTrash *note.EmptyTrash
+	writes     IndexFollow
 }
 
 // NewChanges is the part of FileService that moves and removes files.
 func NewChanges(
 	window Vault, tree Tree,
-	move *vaults.MoveFile, remove *note.RemoveFile, emptyTrash *note.EmptyTrash,
+	move *vaults.MoveFile, remove *note.Remove, emptyTrash *note.EmptyTrash, writes IndexFollow,
 ) *Changes {
 	return &Changes{
-		vault: window, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash,
+		vault: window, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash, writes: writes,
 	}
 }

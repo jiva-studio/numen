@@ -29,6 +29,7 @@ type Rename struct {
 	now     machineport.Clock
 	sync    naming.SyncSetting
 	moving  fileMoving
+	gate    WriteGate
 }
 
 // fileMoving files a note at another path. A note that traveled because it was
@@ -40,9 +41,9 @@ type fileMoving interface {
 
 // NewRename is the rename over the mover that files the note. It takes the readers,
 // writers, index updater, clock and naming setting of d, and uses the rest of d
-// nowhere.
-func NewRename(d MoveDeps, moving fileMoving) Rename {
-	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moving: moving}
+// nowhere. A rename passes gate.
+func NewRename(d MoveDeps, moving fileMoving, gate WriteGate) Rename {
+	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moving: moving, gate: gate}
 }
 
 // RenameResult reports the note's current name and what happened to the file.
@@ -57,7 +58,12 @@ type RenameResult struct {
 // has nothing in it to bring into line, and is moved and not edited.
 var errFilenameNamesIt = errors.New("the filename determines the title")
 
+// Execute renames the note at path to title. It fails with window.ErrClosing once the window is closing.
 func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
+	return writeUnder(u.gate, func() (RenameResult, error) { return u.rename(ctx, v, path, title) })
+}
+
+func (u Rename) rename(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
 	title = strings.TrimSpace(title)
 	name, exact, err := domain.Filename(title)
 	if err != nil {

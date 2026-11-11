@@ -26,29 +26,31 @@ func (c changing) addresses() edit.NameQueries {
 	return c.db.NoteQueries()
 }
 
+func (c changing) connectionDeps(writers note.NoteWriting) note.ConnectionDeps {
+	return note.ConnectionDeps{
+		Readers: vaultreader.Readers{}, Writers: writers, Index: c.index, Now: testsupport.NewClock(),
+		Links: c.db.NoteQueries(), Names: c.addresses(), Gate: note.OpenGate{},
+	}
+}
+
 func (c changing) saveConnection() note.SaveConnection {
-	return note.NewSaveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
+	return c.saveConnectionWith(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
 }
 
 func (c changing) saveConnectionWith(writers note.NoteWriting) note.SaveConnection {
-	return note.NewSaveConnection(
-		vaultreader.Readers{}, writers, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
+	return note.NewSaveConnection(c.connectionDeps(writers))
 }
 
 func (c changing) removeConnection() note.RemoveConnection {
-	return note.NewRemoveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
+	return note.NewRemoveConnection(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
 func (c changing) removeSide() note.RemoveSide {
-	return note.NewRemoveSide(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
+	return note.NewRemoveSide(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
 func (c changing) join() note.Join {
-	return note.NewJoin(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.NoteQueries(), c.addresses())
+	return note.NewJoin(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
 func (c changing) connection(t *testing.T, a, b string) domain.Connection {

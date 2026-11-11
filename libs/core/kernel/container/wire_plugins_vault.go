@@ -80,10 +80,12 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	}
 	scenarios := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
 	connections := hostvault.Connections{
-		Reader:  note.NewConnectionReader(query.NewGetConnection(db.NoteQueries())),
-		Writer:  note.NewConnectionWriter(scenarios.Connect.SaveConnection, scenarios.Connect.RemoveSide, scenarios.Connect.RemoveConnection),
-		Joiner:  note.NewConnectionJoiner(scenarios.Connect.Join),
-		Creator: note.NewRelatedNoteCreator(scenarios.Connect.CreateInRelation),
+		Reader:      query.NewGetConnection(db.NoteQueries()),
+		Saver:       scenarios.Connect.SaveConnection,
+		SideRemover: scenarios.Connect.RemoveSide,
+		Remover:     scenarios.Connect.RemoveConnection,
+		Joiner:      scenarios.Connect.Join,
+		Creator:     scenarios.Connect.CreateInRelation,
 	}
 	arranger := newArranger(scenarios, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
