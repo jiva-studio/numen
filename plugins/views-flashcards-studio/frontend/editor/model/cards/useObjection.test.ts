@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
+import type { HeadingObjection } from '../../../lib/cards'
 import type { NameEntryState } from './nameEntry'
 import { useObjection, useObjectionMessage } from './useObjection'
 
-type Why = 'empty' | 'taken'
+type Why = HeadingObjection
 
 const createNaming = (objections: Readonly<Record<string, Why>>): NameEntryState<Why> => ({
   getText: () => '',
@@ -38,7 +39,7 @@ describe('why a name cannot be used', () => {
 })
 
 describe('the message for an objection', () => {
-  const format = (why: Why): string => (why === 'empty' ? 'Name it' : 'Already used')
+  const format = (why: Why): string => (why === 'blank' ? 'Say a name' : 'Already used')
 
   it('is the formatted objection', () => {
     expect(useObjectionMessage({ value: 'taken' }, () => format).value).toBe('Already used')
