@@ -220,7 +220,7 @@ func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	}
 }
 
-func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *testing.T) {
+func TestAddLinksCanceledAfterTheFirstNoteSendsOneFileWriteNotification(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	writeCount := 0
@@ -251,7 +251,7 @@ func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *test
 	}
 }
 
-func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
+func TestAddLinksCanceledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	writeCount := 0

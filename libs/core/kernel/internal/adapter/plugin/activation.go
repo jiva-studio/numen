@@ -27,7 +27,7 @@ type hostState interface {
 	IsSafeMode() bool
 }
 
-// enablementChecker says whether the settings of a plugin leave it enabled.
+// enablementChecker reports whether the settings of a plugin leave it enabled.
 type enablementChecker interface {
 	IsPluginEnabled(pluginID string) bool
 }
