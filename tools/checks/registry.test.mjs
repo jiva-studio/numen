@@ -89,7 +89,7 @@ describe("the registry", () => {
 
 /** The text of a run with the root of the tree it ran in replaced, so two trees can be compared. */
 function normalize(text, root) {
-  return text.split(root).join("<root>").replace(/\(\d+(\.\d+)?s\)/g, "(time)");
+  return text.split(root).join("<root>").split(REPO_ROOT).join("<root>").replace(/\(\d+(\.\d+)?s\)/g, "(time)");
 }
 
 function run(name, root) {
@@ -113,7 +113,7 @@ describe("the paths of the verifiers", { concurrency: 4 }, () => {
       const reduced = plantTree(REPO_ROOT, entry.paths);
       planted.push(reduced);
       const [full, small] = await Promise.all([run(entry.name, REPO_ROOT), run(entry.name, reduced)]);
-      assert.equal(small.status, full.status);
+      assert.equal(small.status, full.status, `${entry.name}: the status differs on the reduced tree; it prints:\n${small.text.slice(0, 3000)}`);
       assert.equal(small.text.replace(/\(\d+\.\d+s\)/g, ""), full.text.replace(/\(\d+\.\d+s\)/g, ""), `${entry.name} reads a file outside its paths`);
     });
   }

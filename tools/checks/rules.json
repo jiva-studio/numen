@@ -1232,7 +1232,6 @@
         "libs/**/*.css",
         "libs/**/*.vue",
         "package.json",
-        "package.yaml",
         "plugins/**/*.css",
         "plugins/**/*.vue",
         "stylelint.config.mjs",

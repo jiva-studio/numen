@@ -16,9 +16,13 @@ export function listTrackedFiles(root) {
 export function plantTree(root, patterns) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "checks-tree-"));
   for (const file of listTrackedFiles(root)) {
-    if (!isMatching(file, patterns) || !fs.existsSync(path.join(root, file))) continue;
+    if (!isMatching(file, patterns)) continue;
+    const source = path.join(root, file);
+    const kind = fs.lstatSync(source, { throwIfNoEntry: false });
+    if (!kind) continue;
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
-    fs.copyFileSync(path.join(root, file), path.join(dir, file));
+    if (kind.isSymbolicLink()) fs.symlinkSync(fs.readlinkSync(source), path.join(dir, file));
+    else if (kind.isFile()) fs.copyFileSync(source, path.join(dir, file));
   }
   const modules = path.join(root, "node_modules");
   if (fs.existsSync(modules)) fs.symlinkSync(modules, path.join(dir, "node_modules"));

@@ -4,7 +4,7 @@ import path from 'node:path'
 import { parse as parseYaml } from 'yaml'
 import { listPluginNames, readPluginManifests } from '../../../../shared/manifests.mjs'
 import { findPluginCommandMismatches } from '../../../../shared/registrations.mjs'
-import { createDeterminismSelectors } from '../base-eslint.mjs'
+import { createDeterminismSelectors } from '../../../../lint-layers/base-eslint.mjs'
 import {
   GO_MODULE_ROOT,
   MODULES_DIR,

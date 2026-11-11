@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import stylelint from "stylelint";
-import config from "../../../stylelint.config.mjs";
-import { isTokenFile, readDeclaredTokens } from "../stylelint-plugin.mjs";
+import config from "../../../../../stylelint.config.mjs";
+import { isTokenFile, readDeclaredTokens } from "../../../../lint-layers/stylelint-plugin.mjs";
 import { REPO_ROOT } from "../../../lib/graph.mjs";
 
 describe("the style rules", () => {
