@@ -64,7 +64,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
-	mux.Handle(vault.NewHandler(endpoint, vaultSource{callers: callers}))
+	mux.Handle(vault.NewHandler(endpoint, callers.Lent))
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
@@ -123,7 +123,7 @@ func (e *Endpoint) Complete(
 	if err != nil {
 		return nil, err
 	}
-	completer := e.callers.Completion.GetCompleter()
+	completer := e.callers.Lent.GetCompleter()
 	if completer == nil {
 		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, ""), nil
 	}
@@ -136,15 +136,8 @@ func (e *Endpoint) Complete(
 	}), nil
 }
 
-// vaultSource lends the vault service what the callers lend.
-type vaultSource struct{ callers Callers }
-
-func (s vaultSource) GetPluginVault() *vault.Access { return s.callers.Vault.GetPluginVault() }
-
-func (s vaultSource) GetPluginVaultList() vault.List { return s.callers.Window.GetPluginVaultList() }
-
 func (e *Endpoint) getVault(header http.Header) (*vault.Access, error) {
-	return vault.Select(e.callers.Vault.GetPluginVault(), header)
+	return vault.Select(e.callers.Lent.GetPluginVault(), header)
 }
 
 func (e *Endpoint) authenticate(header string) (string, error) {
