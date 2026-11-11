@@ -36,6 +36,7 @@ func readRestateRules() restateRules {
 	return read
 }
 
+// So that `GetPlugin finds no plugin` and `SetVault stores the vault` are read as what they say.
 func invertSynonyms(groups map[string][]string) map[string]string {
 	inverted := map[string]string{}
 	for canonical, verbs := range groups {
@@ -82,6 +83,7 @@ func splitWords(text string) []string {
 	return words
 }
 
+// The form a name and a sentence share: no plural or third-person ending, and one word for the verbs that mean the same operation.
 func stem(word string) string {
 	switch {
 	case strings.HasSuffix(word, "ies") && len(word) > 4:
@@ -97,6 +99,7 @@ func stem(word string) string {
 	return word
 }
 
+// One word is the start of the other (`window` and the package name `windowsession`) when both have `minPrefixLength` letters or more.
 func isSameWord(commentWord, nameWord string) bool {
 	if commentWord == nameWord {
 		return true

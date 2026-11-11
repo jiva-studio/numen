@@ -22,6 +22,7 @@ const notesModule = "github.com/jiva-studio/numen/libs/note/"
 // rootPackage names the files of the module folder itself.
 const rootPackage = "."
 
+// A package of libs/note that is not listed fails the check.
 func getInternalEdges() map[string][]string {
 	return map[string][]string{
 		rootPackage: nil,
@@ -107,6 +108,7 @@ func TestNoteLibraryWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findNoteLibraryViolations(root string) ([]string, error) {
 	var found []string
 	var read int

@@ -58,6 +58,7 @@ func TestSDKModuleWalk_FindsThePlantedModules(t *testing.T) {
 	}
 }
 
+// Fails the test when it reads no go.mod file.
 func findSDKModuleFindings(t *testing.T, root string) []string {
 	t.Helper()
 	var wrong []string

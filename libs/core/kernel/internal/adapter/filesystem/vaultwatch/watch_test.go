@@ -88,6 +88,7 @@ func TestWatchVault_RequestsReloadWhenFolderRemoved(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// The index holds the contents of the removed folder, so the watcher requests a full vault reload.
 	if err := os.Rename(filepath.Join(root, "projects"), filepath.Join(t.TempDir(), "gone")); err != nil {
 		t.Fatal(err)
 	}

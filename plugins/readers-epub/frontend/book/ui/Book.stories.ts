@@ -186,6 +186,10 @@ const getShownRuns = (canvasElement: HTMLElement) =>
 const expectRunShown = async (canvasElement: HTMLElement, offset: number) =>
   await expect(isRunShown(canvasElement, getRunAt(canvasElement, offset))).toBe(true)
 
+/**
+ * Settled means the indicator, the offset in front, the width of the area, the extent of the columns and the shown runs
+ * stay unchanged for a run of frames, whatever number of pages the font sets the text in.
+ */
 const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   const getState = () =>
     [
@@ -375,6 +379,10 @@ const turnTwice = async (canvasElement: HTMLElement) => {
   }
 }
 
+/**
+ * Once the layout has settled for the new size, the spread in front holds the offset read before the resize, the offset
+ * in front is unchanged, and the indicator names a page within the pages counted.
+ */
 const expectPassageInFront = async (canvasElement: HTMLElement, offset: number) => {
   await waitForSettledLayout(canvasElement)
   await expectRunShown(canvasElement, offset)

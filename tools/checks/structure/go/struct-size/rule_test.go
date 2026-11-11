@@ -15,6 +15,7 @@ import (
 type structLimit struct {
 	methods     int
 	fields      int
+	// A package of the container: every type in it, with or without methods, counts its direct and embedded fields, each embedded field as one.
 	holdsWiring bool
 }
 

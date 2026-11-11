@@ -54,6 +54,7 @@ func TestPortClaimWalk_FailsOnATreeWithoutAdapters(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findPortClaims(root string) ([]string, error) {
 	var wrong []string
 	var read int

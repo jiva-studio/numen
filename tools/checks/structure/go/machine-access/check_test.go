@@ -54,6 +54,7 @@ func TestMachineAccessWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findMachineAccess(root string) ([]string, error) {
 	var wrong []string
 	var read int

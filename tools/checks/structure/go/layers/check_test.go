@@ -54,6 +54,7 @@ func TestLayerWalk_FailsOnATreeWithoutEdges(t *testing.T) {
 	}
 }
 
+// Fails when it reads no edge.
 func findOutwardImports(root string) ([]string, error) {
 	var wrong []string
 	var read int
@@ -120,6 +121,7 @@ func TestAliasWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findLayerAliases(root string) ([]string, error) {
 	var wrong []string
 	var read int

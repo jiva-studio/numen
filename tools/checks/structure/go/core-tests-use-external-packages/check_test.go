@@ -53,6 +53,7 @@ func TestInternalTestWalk_FailsOnATreeWithoutTests(t *testing.T) {
 	}
 }
 
+// Fails when it reads no test.
 func findInternalAdapterTests(root string) ([]string, error) {
 	var wrong []string
 	var read int

@@ -55,6 +55,7 @@ func TestTransportWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findTransportImports(dir, base string) ([]string, error) {
 	var wrong []string
 	var read int

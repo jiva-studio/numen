@@ -64,6 +64,7 @@ func TestSpellingWalk_FindsThePlantedFile(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findBritishSpelling(root string, modules []string, dict dictionary, allowed []*allowance) ([]load.Finding, error) {
 	var found []load.Finding
 	visited := map[string]bool{}

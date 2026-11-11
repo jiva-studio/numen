@@ -17,6 +17,7 @@ const (
 	BalancedBatchTexts = 4
 )
 
+// GetRun gives the Maximum profile batches of maximumBatchTexts texts; Eco and Balanced use the fixed sizes above.
 func GetRun(profile performance.Profile, cpus, maximumBatchTexts int) Run {
 	shared := performance.Resolve(profile, cpus)
 	batchTexts := BalancedBatchTexts

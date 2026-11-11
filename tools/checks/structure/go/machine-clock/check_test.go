@@ -52,6 +52,7 @@ func TestClockWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findClockReads(root string) ([]string, error) {
 	var wrong []string
 	var read int

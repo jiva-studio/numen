@@ -23,6 +23,8 @@ func listCopySets() []copySet {
 	}}
 }
 
+// The files of each copy are compared by name and content with those of the first copy. A file named in intended may differ in content,
+// and must exist in every copy.
 func getCopyDrifts(copies map[string]map[string][]byte, order, intended []string) []string {
 	var drifts []string
 	if len(order) < 2 {

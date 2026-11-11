@@ -50,6 +50,7 @@ func TestDomainWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
+// Fails when it reads no file.
 func findDomainImportRefusals(root string) ([]string, error) {
 	var wrong []string
 	var read int

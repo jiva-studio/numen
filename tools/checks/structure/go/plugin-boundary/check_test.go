@@ -107,6 +107,7 @@ func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
 	}
 }
 
+// Fails the test when it reads no go.mod file.
 func findPluginRequirementsInModules(t *testing.T, root string) []string {
 	t.Helper()
 	var wrong []string

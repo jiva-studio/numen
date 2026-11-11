@@ -214,6 +214,8 @@ func removeSpans(src []byte, cuts []span) []byte {
 	return out
 }
 
+// The comment is the group right above the declaration, or the last group between the previous declaration and this one that starts with
+// the name, even with a blank line between.
 func reportRestating(fset *token.FileSet, file *ast.File, report func(*ast.CommentGroup, string)) {
 	pkg := file.Name.Name
 	checked := map[*ast.CommentGroup]bool{}
@@ -281,6 +283,7 @@ func firstOf(doc, detached *ast.CommentGroup, name string) *ast.CommentGroup {
 	return nil
 }
 
+// A blank line may separate the group from the declaration that follows.
 func findDetachedDoc(file *ast.File, from, to token.Pos) *ast.CommentGroup {
 	var found *ast.CommentGroup
 	for _, group := range file.Comments {
