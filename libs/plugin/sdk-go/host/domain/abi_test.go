@@ -17,16 +17,16 @@ import (
 
 func getPinnedShapes() map[string]string {
 	return map[string]string{
-		"Address":            "struct{Scheme string; Value string}",
-		"Backlink":           "struct{ResolvedLink domain.ResolvedLink; SourceRole domain.LinkRole}",
-		"ByteRange":          "struct{Start int; End int}",
-		"Connection":         "struct{A string; B string; AB *domain.Side; BA *domain.Side}",
-		"FileStat":           "struct{Path string; Kind domain.SourceKind; Size int64; ModTime time.Time; FileID domain.FileID}",
-		"Link":               "struct{Target domain.Address; Role domain.LinkRole; Type string; Why string; Label string; Marker domain.LinkMarker}",
-		"LinkMarker":         "string",
-		"LinkRole":           "string",
-		"MoveResult":         "struct{From string; To string; IsMoved bool; Repaired []string; Dangling []string}",
-		"Note":               "struct{FileStat domain.FileStat; Title string; Type domain.NoteType; ID string; Frontmatter map[string]interface {}; " +
+		"Address":    "struct{Scheme string; Value string}",
+		"Backlink":   "struct{ResolvedLink domain.ResolvedLink; SourceRole domain.LinkRole}",
+		"ByteRange":  "struct{Start int; End int}",
+		"Connection": "struct{A string; B string; AB *domain.Side; BA *domain.Side}",
+		"FileStat":   "struct{Path string; Kind domain.SourceKind; Size int64; ModTime time.Time; FileID domain.FileID}",
+		"Link":       "struct{Target domain.Address; Role domain.LinkRole; Type string; Why string; Label string; Marker domain.LinkMarker}",
+		"LinkMarker": "string",
+		"LinkRole":   "string",
+		"MoveResult": "struct{From string; To string; IsMoved bool; Repaired []string; Dangling []string}",
+		"Note": "struct{FileStat domain.FileStat; Title string; Type domain.NoteType; ID string; Frontmatter map[string]interface {}; " +
 			"Headings []domain.Heading; Links []domain.Link; Body string; Problems []string; FrontmatterErr string}",
 		"NoteRef":            "struct{Path string; Title string; ID string}",
 		"NoteType":           "string",
@@ -38,13 +38,13 @@ func getPinnedShapes() map[string]string {
 		"TextKind":           "string",
 		"TextSegment":        "struct{Text string; Heading string; Selector domain.Selector}",
 		"TextSourceProperty": "struct{Key string; Value string}",
-		"TextVersion":        "struct{Path string; PluginID string; Key string; Source domain.TextVersionID; SourceProperty domain.TextSourceProperty; " +
+		"TextVersion": "struct{Path string; PluginID string; Key string; Source domain.TextVersionID; SourceProperty domain.TextSourceProperty; " +
 			"Kind domain.TextKind; File string; InputHash string; TextHash string; CreateTime time.Time}",
-		"TextVersionID":      "string",
-		"Vault":              "struct{ID domain.VaultID; Name string; Path string}",
-		"VaultID":            "string",
-		"VaultProblem":       "struct{Path string; Kind domain.Check; Detail string; Target domain.Address; Candidates []string}",
-		"VersionText":        "struct{version domain.TextVersion; Text string; segments []domain.TextSegment; offsets []int}",
+		"TextVersionID": "string",
+		"Vault":         "struct{ID domain.VaultID; Name string; Path string}",
+		"VaultID":       "string",
+		"VaultProblem":  "struct{Path string; Kind domain.Check; Detail string; Target domain.Address; Candidates []string}",
+		"VersionText":   "struct{version domain.TextVersion; Text string; segments []domain.TextSegment; offsets []int}",
 	}
 }
 
