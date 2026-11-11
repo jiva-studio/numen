@@ -21,7 +21,6 @@ export interface PluginDetailDeps {
   readonly getPlugin: () => PluginInfo
 }
 
-/** Deletes the vault data of the shown plugin in the background, then reads the file count again. */
 function createDataDeletion(
   deps: PluginDetailDeps,
   deleteProblem: Ref<string>,

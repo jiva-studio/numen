@@ -12,7 +12,6 @@ interface RowHandle {
 const isRowHandle = (value: Unvalidated): value is RowHandle =>
   typeof value === 'object' && value !== null && 'element' in value
 
-/** The rows as rendered, keyed by the action each represents, and the scroll that shows one. */
 function createActionRows(getActiveActionId: () => string) {
   const actionRows = new Map<string, RowHandle>()
 
