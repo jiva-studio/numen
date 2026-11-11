@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import PluginsList from './PluginsList.vue'
-import { createCatalogEntry, createInstallation, createPluginInfo } from '@/pages/settings/testing/installation'
+import {
+  createCatalogEntry,
+  createInstallation,
+  createPluginInfo,
+} from '@/pages/settings/testing/installation'
 import type { CatalogEntry } from '@/entities/plugin'
 import type { Installation } from '../../types'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'

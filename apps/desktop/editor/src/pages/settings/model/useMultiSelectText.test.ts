@@ -25,6 +25,8 @@ describe('the line of a multiple choice', () => {
   })
 
   it('adds how many more follow the first choice', () => {
-    expect(useMultiSelectText(() => createSource(['large', 'small', 'huge'])).value).toBe('Large +2')
+    expect(useMultiSelectText(() => createSource(['large', 'small', 'huge'])).value).toBe(
+      'Large +2',
+    )
   })
 })

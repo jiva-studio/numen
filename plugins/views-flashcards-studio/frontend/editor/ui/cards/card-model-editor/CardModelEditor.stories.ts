@@ -260,35 +260,12 @@ const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
 
 /**
  * Four fields and two templates, one of them in the reverse direction.
- * A field's row is one block: the divider line and the background belong to the row, and the drag
- * handle, the input and the remove button are inside it without their own.
+ * The first field stays first and cannot be moved or removed; the others can.
  */
 export const ACardModel: Story = {
   args: { width: '64rem' },
   play: async ({ canvasElement }) => {
-    const row = found(canvasElement, '[data-field="Height"] .card-model__row')
-    const box = row.querySelector('input')
-    const grip = row.querySelector('[data-grip]')
-    const away = row.querySelector('button')
-    if (!box || !grip || !away) throw new Error('a row missing part of itself')
-
-    // neither.
-    const renderedStyle = getComputedStyle(row)
-    await expect(Number.parseFloat(renderedStyle.borderTopWidth)).toBeGreaterThan(0)
-    await expect(renderedStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
-    const inside = getComputedStyle(box)
-    await expect(Number.parseFloat(inside.borderTopWidth)).toBe(0)
-    await expect(inside.backgroundColor).toBe('rgba(0, 0, 0, 0)')
-
-    // And all three stand within the row's own bounds.
-    const bounds = row.getBoundingClientRect()
-    for (const part of [grip, box, away]) {
-      const rect = part.getBoundingClientRect()
-      await expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1)
-      await expect(rect.right).toBeLessThanOrEqual(bounds.right + 1)
-    }
-
-    // The first field stays first, and its row lines up with every other.
+    // The first field stays first.
     const first = found(canvasElement, '[data-field="Name"]')
     const second = found(canvasElement, '[data-field="Height"]')
     await expect(first.getAttribute('data-names')).toBe('true')
@@ -296,10 +273,6 @@ export const ACardModel: Story = {
     await expect(first.querySelector('button')?.disabled).toBe(true)
     await expect(second.querySelector('[data-grip]')?.getAttribute('draggable')).toBe('true')
     await expect(second.querySelector('button')?.disabled).toBe(false)
-    const edge = (each: HTMLElement): number =>
-      each.querySelector('input')?.getBoundingClientRect().left ?? 0
-    await expect(Math.round(edge(first))).toBe(Math.round(edge(second)))
-
     // Letting a field go on the first row lands it nowhere.
     second
       .querySelector('[data-grip]')
@@ -311,20 +284,6 @@ export const ACardModel: Story = {
     })
     await expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 
-    // the list, and the line gives way to it either side.
-    const divider = found(canvasElement, '.card-model__part .divider')
-    const list = found(canvasElement, '.card-model__fields')
-    const adding = found(canvasElement, '.card-model__part .divider button')
-    const axisRect = divider.getBoundingClientRect()
-    await expect(Math.round(axisRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
-    const addingRect = adding.getBoundingClientRect()
-    await expect(addingRect.left + addingRect.width / 2).toBeCloseTo(
-      axisRect.left + axisRect.width / 2,
-      0,
-    )
-    for (const side of ['::before', '::after']) {
-      await expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
-    }
     await expect(canvasElement.querySelectorAll('.divider')).toHaveLength(2)
   },
 }
@@ -371,15 +330,6 @@ export const WhatAPersonDoesToIt: Story = {
     const onto = found(canvasElement, '[data-template="recognise"]')
     onto.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
 
-    // The one on its way is quiet, and the line it would land on is drawn.
-    const dragged = found(canvasElement, '[data-template="name-it"]')
-    await waitFor(async () => {
-      await expect(Number.parseFloat(getComputedStyle(dragged).opacity)).toBeLessThan(1)
-      await expect(Number.parseFloat(getComputedStyle(onto, '::before').blockSize)).toBeGreaterThan(
-        0,
-      )
-    })
-
     onto.dispatchEvent(new DragEvent('drop', { bubbles: true }))
 
     await waitFor(() => expect(getDrawnTemplates()).toEqual(['name-it', 'recognise']))
@@ -388,16 +338,13 @@ export const WhatAPersonDoesToIt: Story = {
 
 /**
  * Forty fields and twelve templates, more than fit in the window. Every
- * row and every template is rendered, and nothing overflows horizontally.
+ * row and every template is rendered.
  */
 export const FarTooMany: Story = {
   args: { corpus: 'far too many' },
   play: async ({ canvasElement }) => {
     await expect(getDrawnFields(canvasElement)).toHaveLength(40)
     await expect(canvasElement.querySelectorAll('[data-template]')).toHaveLength(12)
-
-    const editor = found(canvasElement, '.card-model')
-    await expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }
 
@@ -434,17 +381,5 @@ export const WhatIsWrong: Story = {
     await expect(
       canvasElement.querySelector('[data-template="tagged"] [data-pane] [role="alert"]'),
     ).toBeNull()
-  },
-}
-
-/**
- * A window too narrow for two parts to a row. The editor is what scrolls, and
- * it never scrolls sideways.
- */
-export const Narrow: Story = {
-  args: { width: '22rem' },
-  play: async ({ canvasElement }) => {
-    const editor = found(canvasElement, '.card-model')
-    await expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }

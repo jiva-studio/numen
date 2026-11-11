@@ -10,12 +10,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardcommands"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardtools"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/rpc"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardcommands"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardtools"
 )
 
 // Mount registers the services of the plugin on s, working the vault and the plugin's folder of its

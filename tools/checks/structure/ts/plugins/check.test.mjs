@@ -4,6 +4,7 @@ import { getGoReferences } from '../../../lib/graph.mjs'
 import {
   MAX_SERVICE_LINES,
   findOversizedServices,
+  findPluginBackendLayerInversions,
   findServiceImportsOffAllowList,
   findOversizedBackendPackages,
   MAX_FILE_LINES,
@@ -202,9 +203,12 @@ test('a service source imports only the allow list: machine access, state and ot
       'net',
       'os/exec',
       'github.com/google/uuid',
-      `${own}/internal/adapter/files`,
+      `${own}/internal/vaulttest`,
+      `${own}/internal`,
       `${own}/cards`,
       'github.com/jiva-studio/numen/plugins/b/backend/api',
+      'github.com/jiva-studio/numen/plugins/b/backend/wire/x',
+      'github.com/jiva-studio/numen/plugins/b/backend/internal/adapter/files',
       'github.com/jiva-studio/numen/libs/core/kernel/container',
     ]),
     [
@@ -215,15 +219,18 @@ test('a service source imports only the allow list: machine access, state and ot
       'service imports net',
       'service imports os/exec',
       'service imports github.com/google/uuid',
-      `service imports ${own}/internal/adapter/files`,
+      `service imports ${own}/internal/vaulttest`,
+      `service imports ${own}/internal`,
       `service imports ${own}/cards`,
       'service imports github.com/jiva-studio/numen/plugins/b/backend/api',
+      'service imports github.com/jiva-studio/numen/plugins/b/backend/wire/x',
+      'service imports github.com/jiva-studio/numen/plugins/b/backend/internal/adapter/files',
       'service imports github.com/jiva-studio/numen/libs/core/kernel/container',
     ],
   )
 })
 
-test('a service source with listed standard packages, SDK packages and its own api, domain, usecase and ports is accepted', () => {
+test('a service source with listed standard packages, SDK packages and its own api, domain, usecase, ports, wire and adapters is accepted', () => {
   const own = 'github.com/jiva-studio/numen/plugins/a/backend'
   assert.deepEqual(
     serviceImports('a', [
@@ -239,6 +246,8 @@ test('a service source with listed standard packages, SDK packages and its own a
       `${own}/domain`,
       `${own}/usecase/links`,
       `${own}/ports`,
+      `${own}/wire/cardwire`,
+      `${own}/internal/adapter/hostclient`,
     ]),
     [],
   )
@@ -256,4 +265,32 @@ test('a backend file over the file limit and a package over the package limit ar
     ['plugins/a/backend/y', 'package holds 3150 non-test lines'],
   ])
   assert.deepEqual(findOversizedBackendPackages([...many.slice(0, 6), lines('plugins/a/backend/z/f.go', 450)]), [])
+})
+
+const layerImports = (file, imports) => {
+  const source = `package x\n\nimport (\n${imports.map((one) => `\t"${one}"\n`).join('')})\n`
+  return findPluginBackendLayerInversions([{ file, imports: getGoReferences(source).imports }]).map((one) => one.file)
+}
+
+test('an inner package importing wire, and wire importing service, engine or an adapter, are refused', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
+  assert.deepEqual(layerImports('plugins/a/backend/usecase/x/x.go', [`${own}/wire/cardwire`, `${own}/service`, `${own}/engine`]), [
+    'plugins/a/backend/usecase/x/x.go',
+    'plugins/a/backend/usecase/x/x.go',
+    'plugins/a/backend/usecase/x/x.go',
+  ])
+  assert.deepEqual(layerImports('plugins/a/backend/wire/cardwire/x.go', [`${own}/service`, `${own}/engine`, `${own}/internal/adapter/files`]), [
+    'plugins/a/backend/wire/cardwire/x.go',
+    'plugins/a/backend/wire/cardwire/x.go',
+    'plugins/a/backend/wire/cardwire/x.go',
+  ])
+})
+
+test('wire imports the api, domain, use cases, ports and its sibling wire packages; the service imports wire', () => {
+  const own = 'github.com/jiva-studio/numen/plugins/a/backend'
+  assert.deepEqual(
+    layerImports('plugins/a/backend/wire/cardwire/x.go', [`${own}/api`, `${own}/domain/format`, `${own}/usecase/cards`, `${own}/ports`, `${own}/wire/filewire`, `${own}/internal/enumtest`]),
+    [],
+  )
+  assert.deepEqual(layerImports('plugins/a/backend/service/x.go', [`${own}/wire/cardwire`, `${own}/internal/adapter/files`]), [])
 })

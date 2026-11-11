@@ -13,7 +13,7 @@ import (
 	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/engine/onnx"
 )
 
 // The inputs a sentence encoder exported to ONNX requires.

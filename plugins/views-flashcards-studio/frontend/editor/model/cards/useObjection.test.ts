@@ -18,19 +18,32 @@ describe('why a name cannot be used', () => {
   it('is the objection the name entry holds for the target', () => {
     const naming = createNaming({ front: 'taken' })
 
-    expect(useObjection(() => naming, () => 'front').value).toBe('taken')
+    expect(
+      useObjection(
+        () => naming,
+        () => 'front',
+      ).value,
+    ).toBe('taken')
   })
 
   it('is null for a target without one', () => {
     const naming = createNaming({ front: 'taken' })
 
-    expect(useObjection(() => naming, () => 'back').value).toBeNull()
+    expect(
+      useObjection(
+        () => naming,
+        () => 'back',
+      ).value,
+    ).toBeNull()
   })
 
   it('follows a change of the target id', () => {
     const naming = createNaming({ front: 'taken' })
     const target = ref('back')
-    const objection = useObjection(() => naming, () => target.value)
+    const objection = useObjection(
+      () => naming,
+      () => target.value,
+    )
 
     target.value = 'front'
 

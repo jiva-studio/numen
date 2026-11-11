@@ -169,7 +169,10 @@ describe('the queue of an open note', () => {
       await queue.read('a', 'Note.md', 3)
 
       expect(turned).toEqual([
-        ['a', { kind: 'read', generation: 3, answer: { kind: 'body', body: 'text', at: '1 1 v1' } }],
+        [
+          'a',
+          { kind: 'read', generation: 3, answer: { kind: 'body', body: 'text', at: '1 1 v1' } },
+        ],
       ])
     })
 

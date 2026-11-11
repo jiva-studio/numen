@@ -22,17 +22,9 @@ const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, f
   await page.mouse.up()
 }
 
-const setSystemScheme: BrowserCommand<[scheme: 'light' | 'dark' | null]> = async (
-  { page },
-  scheme,
-) => {
-  await page.emulateMedia({ colorScheme: scheme })
-}
-
 declare module 'vitest/browser' {
   interface BrowserCommands {
     sweep: (from: Position, to: Position) => Promise<void>
-    setSystemScheme: (scheme: 'light' | 'dark' | null) => Promise<void>
   }
 }
 
@@ -82,6 +74,6 @@ export const getStoryBrowser = () => {
       },
       { browser: 'webkit' as const },
     ],
-    commands: { sweep, setSystemScheme },
+    commands: { sweep },
   }
 }

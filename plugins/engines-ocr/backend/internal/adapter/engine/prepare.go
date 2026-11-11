@@ -11,7 +11,7 @@ import (
 	"github.com/getcharzp/go-ocr/paddle"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine/onnx"
 )
 
 // NewLibrary returns the ONNX Runtime library a page is read through, which binds the go-ocr runtime

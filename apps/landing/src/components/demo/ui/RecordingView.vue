@@ -47,7 +47,12 @@ usePlayerLoad(() => props.player, LECTURE_MEDIA_URL)
         <LocateFixed class="recording__icon" />
       </button>
     </div>
-    <TranscriptView :cues="LECTURE_CUES" :active="active" :is-following="isFollowing" @seek="player.seek" />
+    <TranscriptView
+      :cues="LECTURE_CUES"
+      :active="active"
+      :is-following="isFollowing"
+      @seek="player.seek"
+    />
   </div>
 </template>
 

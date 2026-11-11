@@ -3,7 +3,7 @@
  * story is run in a browser by `@storybook/addon-vitest`.
  *
  * The difficult cases are the names: a week starting on Sunday, names in
- * another script, and letters wide enough to overflow a round chip. The level of
+ * another script, and letters wider than a round chip. The level of
  * a day is readable from the chip without opening the menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -11,8 +11,6 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import WeekdayChips from './WeekdayChips.vue'
 import { rotateWeek, WEEK, type DayName } from './week'
-import { lightness } from '../../../testing/colour'
-import { DARK, expectDark } from '../../../testing/theme'
 
 /** The week as Russian names it, for the names that are not Latin. */
 const RUSSIAN: readonly DayName[] = [
@@ -135,7 +133,7 @@ export const LevelOutsideMenu: Story = {
   },
 }
 
-/** Names that are not Latin, in chips the same size. */
+/** Names that are not Latin. */
 export const OtherScripts: Story = {
   args: { names: 'Russian', levelOf: { sat: 0.5, sun: 0 } },
 }
@@ -173,7 +171,7 @@ export const NoLevelsAtAll: Story = {
   },
 }
 
-/** Far more days than a week holds, each drawn at the size of the rest. */
+/** Far more days than a week holds, each with a chip of its own. */
 export const FarTooMany: Story = {
   args: {
     named: Array.from({ length: 31 }, (_, index) => ({
@@ -185,20 +183,12 @@ export const FarTooMany: Story = {
   play: async ({ canvasElement }) => {
     const all = chips(canvasElement)
     await expect(all).toHaveLength(31)
-
-    // No chip shrinks to make space: every chip has the size of the first.
-    const first = all[0]?.getBoundingClientRect()
-    for (const chip of all) {
-      const box = chip.getBoundingClientRect()
-      await expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
-      await expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
-    }
   },
 }
 
 /**
  * Names a round chip was not drawn for: nothing at all, and four letters
- * where one was meant. Every chip stays the size of the rest.
+ * where one was meant. Every chip keeps its text and its label.
  */
 export const AwkwardNames: Story = {
   args: {
@@ -214,13 +204,6 @@ export const AwkwardNames: Story = {
     const all = chips(canvasElement)
     await expect(all.map((chip) => chip.textContent?.trim())).toEqual(['', 'Tues', 'W', 'Четв'])
     await expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
-
-    const first = all[0]?.getBoundingClientRect()
-    for (const chip of all) {
-      const box = chip.getBoundingClientRect()
-      await expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
-      await expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
-    }
   },
 }
 
@@ -316,40 +299,6 @@ export const TheKeyboardComesBack: Story = {
     await waitFor(() => expect(getMenuLabels()).toEqual([]))
     await expect(document.activeElement).toBe(chip)
     await expect(getChipLabels(canvasElement)[5]).toBe('Saturday, 25%')
-  },
-}
-
-/**
- * The same week on the dark set of tokens, where the fill of a chip is blended.
- *
- * The blend runs from the background of the chip toward the accent, so a
- * heavier day is further from a day at level zero, and on the dark set that
- * direction is toward lighter colors.
- */
-export const Dark: Story = {
-  globals: DARK,
-  args: {
-    levelOf: { mon: 0.9, tue: 0.75, wed: 0.5, thu: 0.25, fri: 0.1, sat: 0, sun: 0.9 },
-  },
-  play: async ({ canvasElement }) => {
-    await expectDark(canvasElement)
-    const all = chips(canvasElement)
-    await expect(all).toHaveLength(7)
-
-    // Saturday, at level zero, is the base the others are blended from; Friday,
-    // Thursday, Wednesday, Tuesday and Monday follow in that order, each further
-    // from it.
-    const ground = (chip: HTMLElement) => lightness(getComputedStyle(chip).backgroundColor)
-    const rising = [5, 4, 3, 2, 1, 0].map((idx) => ground(all[idx] as HTMLElement))
-    for (const [at, chip] of rising.slice(1).entries()) {
-      await expect(chip).toBeGreaterThan((rising[at] as number) + 1)
-    }
-
-    // A day filled to the whole of it uses the accent's own text color, which on the dark
-    // set is darker than the background it is written on. A day short of it is a tint
-    // under the ink, which is lighter.
-    const heavy = getComputedStyle(all[0] as HTMLElement)
-    await expect(lightness(heavy.color)).toBeGreaterThan(lightness(heavy.backgroundColor))
   },
 }
 

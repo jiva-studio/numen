@@ -84,8 +84,8 @@ export function useDocumentReader(documents: Documents, path: string) {
     pages.value = []
   }
 
-  const reportFailure = (caughtError: Caught) => {
-    error.value = formatErrorMessage(caughtError)
+  const reportFailure = (cause: Caught) => {
+    error.value = formatErrorMessage(cause)
   }
 
   return {

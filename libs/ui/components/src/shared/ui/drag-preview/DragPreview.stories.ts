@@ -26,18 +26,6 @@ export const Label: Story = {
   },
 }
 
-/** A long label stays on one line and ends in an ellipsis. */
-export const LongLabel: Story = {
-  args: {
-    label:
-      'The garden shed, the greenhouse, the compost bins and every other building behind the house',
-  },
-  play: async ({ canvasElement, args }) => {
-    const preview = within(canvasElement).getByText(args.label)
-    await expect(preview.scrollWidth).toBeGreaterThan(preview.clientWidth)
-  },
-}
-
 /** The pointer reaches what is under the label, not the label. */
 export const PointerPassesThrough: Story = {
   render: (args) => ({

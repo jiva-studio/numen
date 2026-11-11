@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/ortraw"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/onnx"
 )
 
 // Runtime is the ONNX Runtime a recording is transcribed through: the library, and the entry points

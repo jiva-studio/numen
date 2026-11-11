@@ -44,10 +44,7 @@ describe('usePalettePlaces', () => {
     })
 
     it('is empty where no group is silent', () => {
-      const state = setUp([
-        group('seen', [item('a')]),
-        group('loading', [], { isWorking: true }),
-      ])
+      const state = setUp([group('seen', [item('a')]), group('loading', [], { isWorking: true })])
       expect(state.announcement.value).toBe('')
     })
   })

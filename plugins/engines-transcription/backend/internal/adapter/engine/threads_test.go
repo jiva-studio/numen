@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/onnx"
 )
 
 func TestOnlyTheEncoderConsumesMoreThanOneThread(t *testing.T) {

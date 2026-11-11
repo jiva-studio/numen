@@ -12,7 +12,7 @@ export interface PDFReaderPreferences {
 const DEFAULT_ZOOM = 'defaultZoom'
 
 const isFit = (value: Unvalidated): value is Fit =>
-  value === 'page' || value === 'width' || value === '100%'
+  typeof value === 'string' && (value === 'page' || value === 'width' || value === '100%')
 
 export function readPDFReaderPreferences(
   getSetting?: (key: string) => JsonValue | undefined,

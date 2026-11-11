@@ -853,6 +853,10 @@ export default {
             '`unknown` is not a type to write. Name the type, use JsonValue for JSON, Caught for a caught value, or Unvalidated for the parameter of a parse function.',
           unvalidatedOutsideParse:
             '`Unvalidated` is the parameter of a function that validates it: name the function parseX, or return a type guard.',
+          unvalidatedNotNarrowed:
+            'The `Unvalidated` parameter "{{ name }}" is never narrowed: check it with typeof, instanceof, in, a guard or a schema call in the body.',
+          caughtOutsideCatch:
+            '`Caught` is the type of a caught error: the parameter of a catch clause or of an error callback, named error, err, e, reason or cause.',
         },
       },
       create(context) {
@@ -879,6 +883,48 @@ export default {
           if (!fn || !FUNCTIONS.has(fn.type) || !fn.params.includes(param)) return false
           return fn.returnType?.typeAnnotation?.type === 'TSTypePredicate' || /^parse[A-Z]/.test(getFunctionName(fn))
         }
+        const getParameter = (node) => {
+          const annotation = node.parent
+          const param = annotation?.parent
+          return annotation?.type === 'TSTypeAnnotation' && param?.type === 'Identifier' ? param : undefined
+        }
+        const ERROR_PARAMETER = /^(error|err|e|reason|cause|caught|ex|exception|thrown)$/i
+        const CALLABLES = new Set([
+          ...FUNCTIONS,
+          'TSFunctionType',
+          'TSMethodSignature',
+          'TSCallSignatureDeclaration',
+          'TSEmptyBodyFunctionExpression',
+          'TSConstructorType',
+        ])
+        const isCaughtPosition = (node) => {
+          const param = getParameter(node)
+          if (!param || !ERROR_PARAMETER.test(param.name)) return false
+          const owner = param.parent
+          return owner?.type === 'CatchClause' || (CALLABLES.has(owner?.type) && owner.params.includes(param))
+        }
+        /** The guard and schema calls that narrow a value: `isX(v)`, `assertX(v)`, `parseX(v)`, `schema.parse(v)`, `Array.isArray(v)`. */
+        const NARROWING_CALL = /^(is|assert|parse|safeParse|validate|check|ensure|decode|has)([A-Z]|$)/
+        const calleeName = (callee) =>
+          callee.type === 'Identifier' ? callee.name : callee.type === 'MemberExpression' && !callee.computed ? callee.property.name : ''
+        const isNamed = (node, name) => node?.type === 'Identifier' && node.name === name
+        const isNarrowing = (node, name) => {
+          if (node.type === 'UnaryExpression' && node.operator === 'typeof') return isNamed(node.argument, name)
+          if (node.type === 'BinaryExpression' && node.operator === 'instanceof') return isNamed(node.left, name)
+          if (node.type === 'BinaryExpression' && node.operator === 'in') return isNamed(node.right, name)
+          return node.type === 'CallExpression' && NARROWING_CALL.test(calleeName(node.callee)) && node.arguments.some((one) => isNamed(one, name))
+        }
+        const narrows = (body, name) => {
+          const keys = context.sourceCode.visitorKeys
+          const visit = (node) => {
+            if (isNarrowing(node, name)) return true
+            return (keys[node.type] ?? []).some((key) => {
+              const child = node[key]
+              return Array.isArray(child) ? child.some((one) => one && visit(one)) : Boolean(child && typeof child.type === 'string' && visit(child))
+            })
+          }
+          return visit(body)
+        }
         return {
           TSUnknownKeyword(node) {
             const alias = node.parent
@@ -887,8 +933,20 @@ export default {
             if (!isHelper) context.report({ node, messageId: 'unknownType' })
           },
           TSTypeReference(node) {
-            if (node.typeName.type === 'Identifier' && node.typeName.name === 'Unvalidated' && !isParseBoundary(node))
+            if (node.typeName.type !== 'Identifier') return
+            if (node.typeName.name === 'Caught' && !isCaughtPosition(node)) {
+              context.report({ node, messageId: 'caughtOutsideCatch' })
+            }
+            if (node.typeName.name !== 'Unvalidated') return
+            if (!isParseBoundary(node)) {
               context.report({ node, messageId: 'unvalidatedOutsideParse' })
+              return
+            }
+            const param = getParameter(node)
+            const fn = param.parent
+            if (fn.body && !narrows(fn.body, param.name)) {
+              context.report({ node, messageId: 'unvalidatedNotNarrowed', data: { name: param.name } })
+            }
           },
         }
       },
@@ -909,6 +967,7 @@ export default {
           port: 'A pure segment does not import the platform port "{{ name }}"; take it as a parameter.',
           clock: 'A pure segment does not read the clock; take the time as a parameter.',
           random: 'A pure segment does not draw random numbers or identities; take them as a parameter.',
+          computed: 'A pure segment does not reach "{{ name }}" through a computed key; name the member.',
         },
       },
       create(context) {
@@ -922,12 +981,54 @@ export default {
             context.report({ node: reference.identifier, messageId: 'domType', data: { name } })
           }
         }
-        const isGlobalName = (node, name) => {
-          if (node.type !== 'Identifier' || node.name !== name) return false
-          let found
-          for (let one = sourceCode.getScope(node); one && !found; one = one.upper) found = one.set.get(name)
-          return !found || found.defs.length === 0
+        const findVariable = (node) => {
+          for (let one = sourceCode.getScope(node); one; one = one.upper) {
+            const found = one.set.get(node.name)
+            if (found) return found
+          }
+          return undefined
         }
+        /** The name of a member written `.name` or `['name']`, undefined for a computed key that is not a string. */
+        const getMemberName = (node) => {
+          if (!node.computed) return node.property.name
+          if (node.property.type === 'Literal' && typeof node.property.value === 'string') return node.property.value
+          if (node.property.type === 'TemplateLiteral' && node.property.expressions.length === 0) return node.property.quasis[0].value.cooked
+          return undefined
+        }
+        /**
+         * The global an expression stands for: the name `Date`, `globalThis.Date`, `globalThis['Date']`, a constant
+         * initialised with one of them (`const D = Date`) and a name destructured from `globalThis` (`const { Date: D } = globalThis`).
+         */
+        const resolveGlobal = (node, seen = new Set()) => {
+          if (node.type === 'MemberExpression') {
+            const name = getMemberName(node)
+            return name && resolveGlobal(node.object, seen) === 'globalThis' ? name : undefined
+          }
+          if (node.type !== 'Identifier') return undefined
+          const variable = findVariable(node)
+          if (!variable || variable.defs.length === 0) return node.name
+          if (variable.defs.length !== 1 || seen.has(variable)) return undefined
+          seen.add(variable)
+          const def = variable.defs[0].node
+          if (def?.type !== 'VariableDeclarator' || !def.init) return undefined
+          if (def.id.type === 'Identifier') return resolveGlobal(def.init, seen)
+          if (def.id.type !== 'ObjectPattern' || resolveGlobal(def.init, seen) !== 'globalThis') return undefined
+          const property = def.id.properties.find((one) => one.type === 'Property' && one.value.type === 'Identifier' && one.value.name === node.name)
+          return property && !property.computed && property.key.type === 'Identifier' ? property.key.name : undefined
+        }
+        const isGlobalName = (node, name) => resolveGlobal(node) === name
+        /** The message for reaching member `member` of the global `owner`, or undefined when the member is pure. */
+        const getImpureMessage = (owner, member) => {
+          if (owner === 'Date' && member === 'now') return 'clock'
+          if (owner === 'Math' && member === 'random') return 'random'
+          if (owner === 'crypto' && (member === 'randomUUID' || member === 'getRandomValues')) return 'random'
+          return undefined
+        }
+        const IMPURE_OWNERS = new Map([
+          ['Date', 'clock'],
+          ['Math', 'random'],
+          ['crypto', 'random'],
+        ])
         return {
           Program() {
             for (const scope of sourceCode.scopeManager.scopes) {
@@ -944,27 +1045,44 @@ export default {
             }
           },
           MemberExpression(node) {
-            const property = node.computed ? undefined : node.property.name
-            if (isGlobalName(node.object, 'globalThis') && (BROWSER_GLOBALS.has(property) || DOM_TYPES.has(property))) {
+            const owner = resolveGlobal(node.object)
+            const property = getMemberName(node)
+            if (owner === 'globalThis' && property !== undefined && (BROWSER_GLOBALS.has(property) || DOM_TYPES.has(property))) {
               context.report({ node, messageId: 'global', data: { name: property } })
             }
             if (property && DOM_MEMBERS.has(property)) {
               context.report({ node: node.property, messageId: 'domMember', data: { name: property } })
             }
-            if (isGlobalName(node.object, 'Date') && property === 'now') context.report({ node, messageId: 'clock' })
-            if (isGlobalName(node.object, 'Math') && property === 'random') context.report({ node, messageId: 'random' })
-            const isCrypto =
-              isGlobalName(node.object, 'crypto') ||
-              (node.object.type === 'MemberExpression' &&
-                isGlobalName(node.object.object, 'globalThis') &&
-                !node.object.computed &&
-                node.object.property.name === 'crypto')
-            if (isCrypto && (property === 'randomUUID' || property === 'getRandomValues')) {
-              context.report({ node, messageId: 'random' })
+            const impure = owner && property !== undefined ? getImpureMessage(owner, property) : undefined
+            if (impure) context.report({ node, messageId: impure })
+            if (owner && property === undefined && node.computed && IMPURE_OWNERS.has(owner)) {
+              context.report({ node, messageId: 'computed', data: { name: owner } })
+            }
+            if (owner === 'globalThis' && property === undefined && node.computed) {
+              context.report({ node, messageId: 'computed', data: { name: owner } })
             }
           },
+          VariableDeclarator(node) {
+            if (node.id.type !== 'ObjectPattern' || !node.init) return
+            const owner = resolveGlobal(node.init)
+            if (!owner) return
+            for (const property of node.id.properties) {
+              if (property.type !== 'Property') continue
+              const name = property.computed ? (property.key.type === 'Literal' ? String(property.key.value) : undefined) : property.key.name
+              const impure = name === undefined ? undefined : getImpureMessage(owner, name)
+              if (impure) context.report({ node: property, messageId: impure })
+              if (name === undefined && IMPURE_OWNERS.has(owner)) context.report({ node: property, messageId: 'computed', data: { name: owner } })
+              if (owner === 'globalThis' && name !== undefined && IMPURE_OWNERS.has(name) === false && (BROWSER_GLOBALS.has(name) || DOM_TYPES.has(name))) {
+                context.report({ node: property, messageId: 'global', data: { name } })
+              }
+            }
+          },
+          CallExpression(node) {
+            if (isGlobalName(node.callee, 'Date')) context.report({ node, messageId: 'clock' })
+          },
           NewExpression(node) {
-            if (isGlobalName(node.callee, 'Date') && node.arguments.length === 0) {
+            if (!isGlobalName(node.callee, 'Date')) return
+            if (node.arguments.length === 0 || node.arguments.some((one) => one.type === 'SpreadElement')) {
               context.report({ node, messageId: 'clock' })
             }
           },
