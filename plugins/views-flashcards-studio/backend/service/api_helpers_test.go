@@ -91,7 +91,6 @@ func (c reviewClient) WatchCardsDue(
 	return openStream(ctx, req, c.reviewHandler.WatchCardsDue)
 }
 
-// WatchReloads opens the stream of reload messages.
 func (c reviewClient) WatchReloads(
 	ctx context.Context, req *api.WatchReloadsRequest,
 ) (*messageStream[api.WatchReloadsResponse], error) {

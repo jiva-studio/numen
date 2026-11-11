@@ -89,7 +89,6 @@ func (a *adapter) EmbedBatch(
 	return connect.NewResponse(writeVectors(dense)), nil
 }
 
-// NewHandler creates the Connect-RPC handler for an embedding Handler.
 func NewHandler(h Handler, opts ...connect.HandlerOption) (string, http.Handler) {
 	return numenv1connect.NewEmbeddingServiceHandler(&adapter{h: h}, opts...)
 }

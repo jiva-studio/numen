@@ -288,7 +288,6 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request, release f
 	return res, err
 }
 
-// GetTaskID returns the id of the recognition of a file of a vault in the list of tasks.
 func GetTaskID(vault domain.VaultID, filePath string) string {
 	return "recognize:" + string(vault) + ":" + filePath
 }

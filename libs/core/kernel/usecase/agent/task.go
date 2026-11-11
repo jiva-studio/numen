@@ -40,7 +40,6 @@ type Closer interface {
 	EndConversation(ctx context.Context, conversation string) error
 }
 
-// EndConversation ends a conversation on the agent.
 type EndConversation struct {
 	agent Closer
 }

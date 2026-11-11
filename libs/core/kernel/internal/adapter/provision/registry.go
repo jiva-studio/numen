@@ -43,7 +43,6 @@ func (r *Registry) Add(provisioner pluginport.DependencyProvisioner) {
 	r.provisioners = append(r.provisioners, provisioner)
 }
 
-// Observe reports a status to the observer, as a provisioning does.
 func (r *Registry) Observe(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
 	r.mu.Lock()
 	observer := r.observer
@@ -89,7 +88,6 @@ func (r *Registry) Register(req manifest.DependencyRequirement) {
 	r.requirements[req.ID] = req
 }
 
-// Lookup returns the registered requirement with the id.
 func (r *Registry) Lookup(id string) (manifest.DependencyRequirement, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

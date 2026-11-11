@@ -115,13 +115,11 @@ func (r *Response) GetEditProgress() *EditProgress {
 	return nil
 }
 
-// IsModelStarted is whether the response is a model started step.
 func (r *Response) IsModelStarted() bool {
 	_, isStarted := r.GetStep().(*ModelStartedStep)
 	return isStarted
 }
 
-// IsToolFinished is whether the response is a tool finished step.
 func (r *Response) IsToolFinished() bool {
 	_, isFinished := r.GetStep().(*ToolFinishedStep)
 	return isFinished

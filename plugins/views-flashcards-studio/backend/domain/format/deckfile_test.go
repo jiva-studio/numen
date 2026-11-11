@@ -1223,7 +1223,6 @@ func TestSetValueToNothingKeepsTheFieldsAfterIt(t *testing.T) {
 	}
 }
 
-// The last field of the file set to nothing ends the file on its heading.
 func TestSetTheLastValueToNothingEndsTheFileOnItsHeading(t *testing.T) {
 	f := format.OpenDeckBody(twoFieldCard)
 	if err := f.SetValue("k7m2xq9fzp", "Height", ""); err != nil {

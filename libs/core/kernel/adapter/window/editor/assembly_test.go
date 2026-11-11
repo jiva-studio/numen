@@ -126,7 +126,6 @@ func (i *testIndex) Ledger() *vault.Ledger { return i.ledger }
 
 func (i *testIndex) VectorIndex() embeddingport.VectorIndex { return i.vectors }
 
-// GetVaultReaders opens vaults for reading.
 func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultreader.Readers{} }
 
 // GetVaultWatcher monitors vaults for external filesystem changes.

@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 )
 
-// NoteScanner scans the notes of a vault.
 type NoteScanner interface {
 	ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult)) (vaultreading.ScanResult, error)
 }
@@ -70,7 +69,6 @@ func NewReadWholeVaultByName(find VaultFinding, prepare VaultPreparing) ReadWhol
 	return ReadWholeVault{find: find, prepare: prepare}
 }
 
-// ExecuteByName resolves the vault and reads the whole vault.
 func (u ReadWholeVault) ExecuteByName(
 	ctx context.Context, nameOrPath string, reporting Reporting,
 ) (domain.Vault, ReadWholeVaultResult, error) {

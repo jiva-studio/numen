@@ -28,7 +28,6 @@ func (o SettingOption) GetTitle() string {
 // SettingOptions are the values an enum setting can hold, in the order they are offered.
 type SettingOptions []SettingOption
 
-// Find returns the option holding the value.
 func (o SettingOptions) Find(value string) (SettingOption, bool) {
 	for _, one := range o {
 		if one.Value == value {
@@ -68,7 +67,6 @@ func (m Manifest) GetSecretNames() []string {
 	return names
 }
 
-// GetSetting returns the declaration of the setting with the key.
 func (m Manifest) GetSetting(key string) (Setting, bool) {
 	for _, s := range m.Settings {
 		if s.Key == key {

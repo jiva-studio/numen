@@ -16,7 +16,6 @@ type PluginStatus struct {
 	FailureReason string `json:"failureReason,omitempty"`
 }
 
-// GetPluginStatus returns the status of the specified plugin.
 func (r *Registry) GetPluginStatus(pluginID string) (PluginStatus, bool) {
 	v, release := r.set.view()
 	defer release()

@@ -44,8 +44,6 @@ type MoveView interface {
 	ShowMove(ctx context.Context, went domain.Move) error
 }
 
-// NewTellMoveInShownVault tells view the moves of notes in the vault showing names, and the moves in no
-// other vault.
 func NewTellMoveInShownVault(showing func() (domain.Vault, bool), view MoveView) TellMove {
 	return func(ctx context.Context, v domain.Vault, went domain.Move) error {
 		if current, isShowing := showing(); !isShowing || current.ID != v.ID {

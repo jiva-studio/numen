@@ -27,7 +27,6 @@ type PluginCommands interface {
 	GetParts(pluginID string) plugin.Parts
 }
 
-// PluginCommandRuns runs a command in the backend of its plugin.
 type PluginCommandRuns interface {
 	// RunCommand runs the command in the backend of its plugin. A plugin that cannot be started or
 	// reached is an *UnavailableError, and a command that ran and failed a *CommandFailedError.

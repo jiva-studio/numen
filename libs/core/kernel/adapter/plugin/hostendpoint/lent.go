@@ -51,7 +51,6 @@ func (s *Services) GetPluginVault() *vault.Access {
 	return s.access
 }
 
-// SetPluginTexts sets the text versions the plugins work through the host.
 func (s *Services) SetPluginTexts(texts TextVersions) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -86,7 +85,6 @@ func (s *Services) SetPluginVaultList(list vault.List) {
 	s.vaultList = list
 }
 
-// GetPluginVaultList returns the list of vaults exposed to plugins, or nil.
 func (s *Services) GetPluginVaultList() vault.List {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

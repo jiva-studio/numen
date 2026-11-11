@@ -77,7 +77,6 @@ func (c Contributes) HasTabKind(kind string) bool {
 	return ok
 }
 
-// GetTabKind returns the declaration of the kind of tab.
 func (c Contributes) GetTabKind(kind string) (TabKind, bool) {
 	for _, declared := range c.TabKinds {
 		if declared.Kind == kind {

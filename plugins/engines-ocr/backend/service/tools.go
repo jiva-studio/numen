@@ -16,12 +16,10 @@ const (
 	recognitionOnceSentence       = "Call recognition_create once per file: a second call while the first runs starts nothing and reports the state running, and a call on a file already recognized starts nothing and reports the state done with the version that is read."
 )
 
-// RecognitionCreateInput is the input of the recognition_create tool.
 type RecognitionCreateInput struct {
 	Path string `json:"path" jsonschema:"the scanned PDF or image, relative to the vault root"`
 }
 
-// RecognitionCreateOutput is the output of the recognition_create tool.
 type RecognitionCreateOutput struct {
 	TaskID  string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
 	Path    string `json:"path" jsonschema:"the file; its text can be read and searched once it is recognized"`

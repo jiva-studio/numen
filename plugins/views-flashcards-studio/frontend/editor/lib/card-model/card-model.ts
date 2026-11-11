@@ -156,7 +156,6 @@ export const removeTemplate = (cardModel: BufferCardModel, id: string): BufferCa
   templates: cardModel.templates.filter((template) => template.id !== id),
 })
 
-/** Write one half of one template. */
 export const writeTemplate = (
   cardModel: BufferCardModel,
   ...[id, half, text]: [id: string, half: 'front' | 'back', text: string]

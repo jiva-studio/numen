@@ -40,7 +40,6 @@ func NewVersionText(version TextVersion, segments []TextSegment) VersionText {
 // Version returns the metadata of the text version.
 func (t VersionText) Version() TextVersion { return t.version }
 
-// GetSegments is the segments of the text, in order.
 func (t VersionText) GetSegments() []TextSegment { return t.segments }
 
 // GetHeadings is where each heading begins.

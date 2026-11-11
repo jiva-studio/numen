@@ -12,7 +12,6 @@ import { computed, ref } from 'vue'
 import WeekdayChips from './WeekdayChips.vue'
 import { rotateWeek, WEEK, type DayName } from './week'
 
-/** The week as Russian names it, for the names that are not Latin. */
 const RUSSIAN: readonly DayName[] = [
   { id: 'mon', short: 'Пн', long: 'Понедельник' },
   { id: 'tue', short: 'Вт', long: 'Вторник' },
@@ -102,7 +101,6 @@ export const TheDaysOfTheWeek: Story = {}
 /** Every day at the full level, which is a week with no levels configured. */
 export const NoneAtAll: Story = { args: { levelOf: {} } }
 
-/** A day at nothing. */
 export const ADayAtNothing: Story = { args: { levelOf: { sun: 0 } } }
 
 /** Every day cut, each to a different level. */
@@ -112,7 +110,6 @@ export const AllOfThem: Story = {
   },
 }
 
-/** A week starting on Sunday. */
 export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 
 /**

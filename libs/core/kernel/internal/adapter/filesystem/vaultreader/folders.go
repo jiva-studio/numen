@@ -26,7 +26,6 @@ type Folders struct {
 	Indexed map[string]bool
 }
 
-// IsKnownFolder is whether this path was a folder when it was last there.
 func (f *Folders) IsKnownFolder(path string) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()

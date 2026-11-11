@@ -38,7 +38,6 @@ func IsValidSecretName(name string) bool {
 	return name != "" && strings.TrimSpace(name) == name && utf8.RuneCountInString(name) <= MaxSecretNameLength
 }
 
-// secretIDLength is the length of the id of a secret.
 const secretIDLength = 9
 
 // IsValidSecretID reports whether the text has the shape of the id of a secret: "s" and 8

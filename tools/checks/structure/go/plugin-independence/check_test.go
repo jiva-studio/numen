@@ -233,7 +233,6 @@ func TestManifestList_FindsThePlantedManifests(t *testing.T) {
 	}
 }
 
-// listManifests lists the manifest.json of the plugin folders under root. It fails when there is none.
 func listManifests(root string) ([]string, error) {
 	found, err := filepath.Glob(filepath.Join(root, "plugins", "*", "manifest.json"))
 	if err != nil {
@@ -245,7 +244,6 @@ func listManifests(root string) ([]string, error) {
 	return found, nil
 }
 
-// Every manifest.json of a plugin passes the validator.
 func TestEveryPluginManifestPassesTheValidator(t *testing.T) {
 	found, err := listManifests(load.RepoRootDir)
 	if err != nil {

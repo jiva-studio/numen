@@ -14,10 +14,8 @@ type AddCard struct {
 	write Write
 }
 
-// NewAddCard creates the AddCard scenario.
 func NewAddCard(read Read, write Write) AddCard { return AddCard{read: read, write: write} }
 
-// Execute adds a card to a deck or one of its sections.
 func (u AddCard) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardModel string, values []format.Value, section *int,
 ) (AddedCard, error) {

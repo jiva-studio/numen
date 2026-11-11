@@ -42,7 +42,6 @@ func (AbsentRuntime) ResolveService(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
 
-// GetPlugin finds no plugin.
 func (AbsentRuntime) GetPlugin(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
@@ -92,7 +91,6 @@ func (AbsentRuntime) WatchPluginConfig(string, func()) func() { return func() {}
 // nothing.
 type AbsentSettings struct{}
 
-// GetPluginSettingDeclarations finds no plugin.
 func (AbsentSettings) GetPluginSettingDeclarations(string) ([]manifest.Setting, bool) {
 	return nil, false
 }

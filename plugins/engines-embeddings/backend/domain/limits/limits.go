@@ -17,8 +17,6 @@ const (
 	BalancedBatchTexts = 4
 )
 
-// GetRun is the limits of profile on a machine of cpus cores. The maximum profile runs batches of
-// maximumBatchTexts texts.
 func GetRun(profile performance.Profile, cpus, maximumBatchTexts int) Run {
 	shared := performance.Resolve(profile, cpus)
 	batchTexts := BalancedBatchTexts

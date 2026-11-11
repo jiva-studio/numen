@@ -85,7 +85,6 @@ export function dispose(wrapper: VueWrapper): void {
   document.body.innerHTML = ''
 }
 
-/** The text inputs in a scope. */
 export const textInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
   Array.from(scope.querySelectorAll<HTMLInputElement>('input[type="text"]'))
 

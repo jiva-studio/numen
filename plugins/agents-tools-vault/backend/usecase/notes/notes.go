@@ -115,7 +115,6 @@ func (u *UseCase) writeOrCreate(ctx context.Context, path, content string) (doma
 	return stat, nil
 }
 
-// ListHeadings returns the headings of a note.
 func (u *UseCase) ListHeadings(ctx context.Context, in api.NoteHeadingListInput) (api.NoteHeadingListOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
 		return api.NoteHeadingListOutput{}, errors.New("path is required")

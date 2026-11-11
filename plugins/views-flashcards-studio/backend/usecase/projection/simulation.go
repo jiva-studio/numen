@@ -316,7 +316,6 @@ func (s Simulation) simulateDaySession(
 	d.finishDay(out, answers[today], elapsed)
 }
 
-// Run projects the review cards forward from now.
 func (s Simulation) Run(
 	ctx context.Context, now time.Time, p Preset, schedules map[ReviewCardID]Schedule, unreviewed int,
 ) (Projection, error) {

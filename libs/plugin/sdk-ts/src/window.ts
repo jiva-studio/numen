@@ -4,7 +4,6 @@
  */
 import type { Disposable } from './types'
 
-// VaultSummary is one vault the window can show.
 export interface VaultSummary {
   readonly id: string
   readonly name: string
@@ -16,7 +15,6 @@ export interface VaultsState {
   readonly current: VaultSummary | null
 }
 
-// VaultsHost is the vaults of the window.
 export interface VaultsHost {
   getState(): VaultsState
   // Calls the handler with the state at once and again on every change.

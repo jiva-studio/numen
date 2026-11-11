@@ -193,7 +193,6 @@ func TestAWalkOverAClosedIndexFails(t *testing.T) {
 	}
 }
 
-// A source saved through the port reads back as it was passed.
 func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)

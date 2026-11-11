@@ -130,7 +130,6 @@ func (c *Cache) Open(ctx context.Context, checksum string) (io.ReadCloser, error
 	return file, nil
 }
 
-// Remove deletes the package.
 func (c *Cache) Remove(ctx context.Context, checksum string) error {
 	target, err := c.pathOf(checksum)
 	if err != nil {

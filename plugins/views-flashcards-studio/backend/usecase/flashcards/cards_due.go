@@ -58,7 +58,6 @@ type CountCardsDue struct {
 	now         ports.Clock
 }
 
-// NewCountCardsDue constructs a CountCardsDue calculator.
 func NewCountCardsDue(
 	reviewCards ListReviewCards, schedules Schedules, presets presets.Presets,
 	day review.Day, now ports.Clock,

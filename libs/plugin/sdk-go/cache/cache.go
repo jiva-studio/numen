@@ -99,7 +99,6 @@ type Cache[V any] struct {
 	inFlight       map[string]*call[V]
 }
 
-// New creates a Cache named name with the given options.
 func New[V any](name string, opts ...Option) *Cache[V] {
 	cfg := config{clock: clock.System{}}
 	for _, opt := range opts {

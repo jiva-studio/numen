@@ -42,12 +42,10 @@ func NewStoreClientFromVars(vars map[string]string) (*StoreClient, error) {
 	return NewStoreClient(addr), nil
 }
 
-// NewStoreClient connects to the host at the endpoint.
 func NewStoreClient(endpoint hostcall.Endpoint) *StoreClient {
 	return NewStoreClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewStoreClientOver connects to the host at the endpoint through the given HTTP client.
 func NewStoreClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *StoreClient {
 	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }

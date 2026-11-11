@@ -177,7 +177,6 @@ func (s *Server) Close(ctx context.Context) error {
 	return errors.Join(shutdownErr, s.serveErr)
 }
 
-// Handler returns the HTTP handler of the server.
 func (s *Server) Handler() http.Handler {
 	return s.handler
 }
@@ -192,7 +191,6 @@ func (s *Server) GetHTTPURL() string {
 	return (&url.URL{Scheme: "http", Host: s.actualAddr, Path: "/mcp"}).String()
 }
 
-// GetToken returns the authentication token.
 func (s *Server) GetToken() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()

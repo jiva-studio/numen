@@ -363,7 +363,6 @@ func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
 	}
 }
 
-// CardsDue summary includes each vault once.
 func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 	handler, target := newAPI(t, getLived(), getDeck())
 	setNow(handler, getFirstMorning())

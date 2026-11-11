@@ -178,7 +178,6 @@ func (e *Embedder) Concurrency() int {
 	return e.passes
 }
 
-// GetModel returns the model description.
 func (e *Embedder) GetModel() model.ModelInfo {
 	return model.ModelInfo{
 		Name:           e.name,

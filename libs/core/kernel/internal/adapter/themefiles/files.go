@@ -77,7 +77,6 @@ func (f Files) ListPresets() []themedomain.File {
 	return files
 }
 
-// ReadPreset returns the stylesheet of the preset.
 func (f Files) ReadPreset(title string) (string, error) {
 	text, err := shipped.ReadFile(path.Join(shippedIn, title+themedomain.Extension))
 	if err != nil {

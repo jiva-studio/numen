@@ -86,13 +86,11 @@ func (c *Client) GetPrograms(ctx context.Context, commands []ProgramCommand) ([]
 	return programsFromProto(resp.Msg), nil
 }
 
-// RegisterTool registers a tool with the agent.
 func (c *Client) RegisterTool(ctx context.Context, tool *ToolDefinition) error {
 	_, err := c.rpc.RegisterTool(ctx, newRequest(c, &v1.RegisterToolRequest{Tool: toolDefinitionToProto(tool)}))
 	return err
 }
 
-// ExtendSystemPrompt extends the system prompt of the agent and returns the whole prompt.
 func (c *Client) ExtendSystemPrompt(ctx context.Context, extension string) (string, error) {
 	resp, err := c.rpc.ExtendSystemPrompt(ctx, newRequest(c, &v1.ExtendSystemPromptRequest{Extension: extension}))
 	if err != nil {

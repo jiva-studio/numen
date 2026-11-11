@@ -90,12 +90,10 @@ export interface CurvePoint {
   day: string
 }
 
-/** GetDeckPresetRequest is the request of the GetDeckPreset method. */
 export interface GetDeckPresetRequest {
   deck?: string
 }
 
-/** GetDeckPresetResponse is the response of the GetDeckPreset method. */
 export interface GetDeckPresetResponse {
   preset?: Preset
   error?: ErrorCode
@@ -103,10 +101,8 @@ export interface GetDeckPresetResponse {
   bounds?: SettingsBounds
 }
 
-/** ListPresetsRequest is the request of the ListPresets method. */
 export type ListPresetsRequest = Record<string, never>
 
-/** ListPresetsResponse is the response of the ListPresets method. */
 export interface ListPresetsResponse {
   presets: PresetSummary[]
 }
@@ -117,39 +113,33 @@ interface PresetSummary {
   title: string
 }
 
-/** CreatePresetRequest is the request of the CreatePreset method. */
 export interface CreatePresetRequest {
   title?: string
   path?: string
 }
 
-/** CreatePresetResponse is the response of the CreatePreset method. */
 export interface CreatePresetResponse {
   path: string
   error?: ErrorCode
   isIndexOutdated: boolean
 }
 
-/** ScheduleDeckRequest is the request of the ScheduleDeck method. */
 export interface ScheduleDeckRequest {
   deck?: string
   preset?: string
   baseline?: FileStat
 }
 
-/** ScheduleDeckResponse is the response of the ScheduleDeck method. */
 export interface ScheduleDeckResponse {
   error?: ErrorCode
   at?: FileStat
   isIndexOutdated: boolean
 }
 
-/** ReadPresetRequest is the request of the ReadPreset method. */
 export interface ReadPresetRequest {
   path?: string
 }
 
-/** ReadPresetResponse is the response of the ReadPreset method. */
 export interface ReadPresetResponse {
   preset?: Preset
   error?: ErrorCode
@@ -168,38 +158,32 @@ export interface SettingsBounds {
   load?: Bounds
 }
 
-/** WritePresetRequest is the request of the WritePreset method. */
 export interface WritePresetRequest {
   path?: string
   settings?: Settings
   baseline?: FileStat
 }
 
-/** WritePresetResponse is the response of the WritePreset method. */
 export interface WritePresetResponse {
   error?: ErrorCode
   at?: FileStat
   isIndexOutdated: boolean
 }
 
-/** ComputeCurveRequest is the request of the ComputeCurve method. */
 export interface ComputeCurveRequest {
   path?: string
   settings?: Settings
 }
 
-/** ComputeCurveResponse is the response of the ComputeCurve method. */
 export interface ComputeCurveResponse {
   curve?: Curve
 }
 
-/** GetVaultDeckPresetRequest is the request of the GetVaultDeckPreset method. */
 export interface GetVaultDeckPresetRequest {
   vault?: string
   deck?: string
 }
 
-/** GetVaultDeckPresetResponse is the response of the GetVaultDeckPreset method. */
 export interface GetVaultDeckPresetResponse {
   preset?: Preset
   error?: ErrorCode

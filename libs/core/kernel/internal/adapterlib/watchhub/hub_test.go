@@ -201,7 +201,6 @@ func TestAFolderInsideAFolderFollowedAloneWidensItsWatch(t *testing.T) {
 	expectNoEvent(t, inner)
 }
 
-// Folders apart from each other are watched apart.
 func TestFoldersApartAreWatchedApart(t *testing.T) {
 	dirs := makeTree(t, "one", "two")
 	system := newFakeSystem(t)

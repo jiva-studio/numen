@@ -55,9 +55,6 @@ func TestTransportWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findTransportImports lists the transport imports of the files under dir outside the adapters, the
-// shared packages and the machinery; a package is named by its path under base. It fails when it
-// reads no file.
 func findTransportImports(dir, base string) ([]string, error) {
 	var wrong []string
 	var read int

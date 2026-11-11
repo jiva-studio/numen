@@ -29,7 +29,6 @@ export const formatBuyFact = (fact: BuyFact): string => {
   }
 }
 
-/** A fact about the material, formatted as a figure and its name. */
 export const formatMaterialFact = (fact: MaterialFact): { figure: string; name: string } => {
   const figure = count(fact.count)
   switch (fact.kind) {

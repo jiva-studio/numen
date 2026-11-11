@@ -70,12 +70,10 @@ func NewClientFromVars(vars map[string]string) (*Client, error) {
 	return NewClient(addr), nil
 }
 
-// NewClient connects to the host at the endpoint.
 func NewClient(endpoint hostcall.Endpoint) *Client {
 	return NewClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewClientOver connects to the host at the endpoint through the given HTTP client.
 func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
 	return &Client{
 		rpc:    numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),

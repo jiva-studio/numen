@@ -30,7 +30,6 @@ func TestCorePackagesDoNotImportLoggers(t *testing.T) {
 	}
 }
 
-// TestLoggerWalk_FindsThePlantedFile verifies that the walk finds a file that imports a logger.
 func TestLoggerWalk_FindsThePlantedFile(t *testing.T) {
 	root := load.WriteTreeFixture(t, map[string]string{
 		"adapter/files/files.go": "package files\n\nimport \"log/slog\"\n\nvar _ = slog.Default\n",
@@ -52,7 +51,6 @@ func TestLoggerWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findLoggerImports lists the imports of a logger in the Go files under root. It fails when it reads no file.
 func findLoggerImports(root string) ([]string, error) {
 	var wrong []string
 	var read int

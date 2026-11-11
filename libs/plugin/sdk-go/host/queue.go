@@ -97,12 +97,10 @@ func NewQueueClientFromVars(vars map[string]string) (*QueueClient, error) {
 	return NewQueueClient(addr), nil
 }
 
-// NewQueueClient connects to the host at the endpoint.
 func NewQueueClient(endpoint hostcall.Endpoint) *QueueClient {
 	return NewQueueClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewQueueClientOver connects to the host at the endpoint through the given HTTP client.
 func NewQueueClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *QueueClient {
 	return &QueueClient{rpc: numenv1connect.NewHostQueueServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }

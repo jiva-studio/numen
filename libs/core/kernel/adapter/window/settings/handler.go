@@ -62,7 +62,6 @@ type Values struct {
 	choosePath *setting.ChoosePluginPath
 }
 
-// NewValues is the part of SettingsService that reads and writes the settings and chooses a path.
 func NewValues(
 	get *setting.GetWithSecrets, write *setting.WriteSettings, watch *setting.WatchSettingChanges,
 	choosePath *setting.ChoosePluginPath,

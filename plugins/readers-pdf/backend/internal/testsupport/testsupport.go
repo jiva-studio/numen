@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
-// PluginID is the id of the plugin in its manifest.
 const PluginID = "md.numen.readers.pdf"
 
 // compilationDirVariable names the folder Run makes for the compiled PDFium of the test binary.
@@ -126,7 +125,6 @@ func CreateText(t *testing.T, writer *extract.Writer, req extract.Request) {
 	writer.Wait()
 }
 
-// ReadLive returns the live text version of the file.
 func ReadLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionText {
 	t.Helper()
 	listing, err := texts.ListVersions(t.Context(), path)

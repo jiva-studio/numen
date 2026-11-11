@@ -41,7 +41,6 @@ type EraseResult struct {
 	IsTrashed bool
 }
 
-// EraseByName erases the vault a person names.
 type EraseByName struct {
 	find  VaultFinding
 	erase Erase

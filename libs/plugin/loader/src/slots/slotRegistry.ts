@@ -323,7 +323,6 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
   }
 }
 
-/** The slot entries a manifest declares, as the registry reads them. */
 export function readManifestSlotEntries(
   pluginId: string,
   manifest: Manifest,

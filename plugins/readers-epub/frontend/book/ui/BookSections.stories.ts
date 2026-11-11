@@ -190,10 +190,6 @@ const turnUntil = async (
   await expect(isTarget(getFrontOffset(canvasElement))).toBe(true)
 }
 
-/**
- * A forward page turn from the last page of a section to the first page of the
- * next one shows the first page of the next section inside the area.
- */
 export const ForwardTurnIntoNextSectionShowsFirstPage: Story = {
   decorators: [WIDE],
   render: renderTwoSections([SHORT_FIRST, LONG_SECOND], 0),

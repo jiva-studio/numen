@@ -188,7 +188,6 @@ func (p cliSearching) prepare(ctx context.Context, v domain.Vault) (searchusecas
 	return newSearch(asking.search, p.over.db, embedder, p.errorHandler), nil
 }
 
-// openEmbedder opens the embedder of the plugins a, which Close closes, and returns why there is none.
 func (s *CLISession) openEmbedder(a pluginsWiring, ctx context.Context) (embeddingport.Embedder, error) {
 	embedder, closeEmbedder, why := searchEmbedder(a.search, ctx)
 	if closeEmbedder != nil {

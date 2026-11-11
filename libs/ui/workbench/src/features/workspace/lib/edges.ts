@@ -68,7 +68,6 @@ export function getStripEdge(
   }
 }
 
-/** The panes at the top edge and in the top corners of the workspace. */
 export function findTopPanes(workspace: Workspace): TopPanes {
   const top: NodeId[] = []
   collectTop(workspace.root, workspace.axis, 0, top)

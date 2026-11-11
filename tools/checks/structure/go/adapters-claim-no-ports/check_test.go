@@ -54,8 +54,6 @@ func TestPortClaimWalk_FailsOnATreeWithoutAdapters(t *testing.T) {
 	}
 }
 
-// findPortClaims lists the port claims in the adapter and shared files under root. It fails when it
-// reads no file.
 func findPortClaims(root string) ([]string, error) {
 	var wrong []string
 	var read int

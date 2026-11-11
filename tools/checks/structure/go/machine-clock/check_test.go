@@ -52,8 +52,6 @@ func TestClockWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findClockReads lists the clock reads of the files under root outside the adapters, the shared
-// packages and the machinery. It fails when it reads no file.
 func findClockReads(root string) ([]string, error) {
 	var wrong []string
 	var read int

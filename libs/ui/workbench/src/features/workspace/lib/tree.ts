@@ -49,7 +49,6 @@ export const withChildren = (
   sizes: readonly number[],
 ): Branch => ({ ...branch, children, sizes: fit(sizes, children.length) })
 
-/** The tree with the node at `path` replaced. */
 export function replaceAt(
   root: WorkspaceNode,
   path: Path,

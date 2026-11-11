@@ -42,7 +42,6 @@ func TestAWatcherDoesNotRunForAnotherPlugin(t *testing.T) {
 	}
 }
 
-// A stopped watcher runs no more.
 func TestAStoppedWatcherRunsNoMore(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
 	var stopped, remaining atomic.Int32

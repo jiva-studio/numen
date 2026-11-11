@@ -187,7 +187,6 @@ func TestSavingAConnectionWritesNothingWhenOneNoteCannotBeEdited(t *testing.T) {
 	}
 }
 
-// pathFailingWriters fail the write of one path.
 type pathFailingWriters struct {
 	vaultwriter.VaultWriters
 	path string

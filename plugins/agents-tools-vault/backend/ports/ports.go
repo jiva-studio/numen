@@ -29,7 +29,6 @@ type Indexer interface {
 	Scan(ctx context.Context, paths []string) error
 }
 
-// NoteLookup finds the notes of one vault.
 type NoteLookup interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetNamedPaths(ctx context.Context, name string) ([]string, error)

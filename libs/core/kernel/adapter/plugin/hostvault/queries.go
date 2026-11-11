@@ -39,7 +39,6 @@ type Lookups struct {
 	session sessionAccess
 }
 
-// GetNotes returns the refs of the notes at the paths.
 func (l Lookups) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
 	v, err := l.session.open()
 	if err != nil {
@@ -48,7 +47,6 @@ func (l Lookups) GetNotes(ctx context.Context, paths []string) (map[string]domai
 	return l.Notes.GetNotes(ctx, v.ID, paths)
 }
 
-// GetTypes returns the types of the notes at the paths.
 func (l Lookups) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
 	v, err := l.session.open()
 	if err != nil {
@@ -57,7 +55,6 @@ func (l Lookups) GetTypes(ctx context.Context, paths []string) (map[string]domai
 	return l.Types.GetTypes(ctx, v.ID, paths)
 }
 
-// GetNamedPaths returns the paths of the notes with the name.
 func (l Lookups) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
 	v, err := l.session.open()
 	if err != nil {
@@ -66,7 +63,6 @@ func (l Lookups) GetNamedPaths(ctx context.Context, name string) ([]string, erro
 	return l.NamedPaths.GetNamedPaths(ctx, v.ID, name)
 }
 
-// GetPathsOfType returns the paths of the notes of the type.
 func (l Lookups) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	v, err := l.session.open()
 	if err != nil {

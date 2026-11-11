@@ -59,10 +59,8 @@ const getSwitch = (canvas: HTMLElement): HTMLElement => {
   return found
 }
 
-/** A switch that is on. */
 export const ASwitch: Story = {}
 
-/** A switch that is off. */
 export const Off: Story = { args: { isOn: false } }
 
 /** Each press hands on the state it turns the switch to. */
@@ -174,7 +172,6 @@ export const TheSpaceBarTurnsIt: Story = {
   },
 }
 
-/** The keyboard has no effect on a disabled switch. */
 export const DisabledTakesNoKeyboard: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {

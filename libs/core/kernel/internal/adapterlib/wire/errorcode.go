@@ -20,7 +20,6 @@ import (
 // not write one, names the reason the same way: the translation is written once
 // and not one per window.
 
-// ConvertOutcomeToErrorCode returns which error code an outcome is, and whether it is one at all.
 func ConvertOutcomeToErrorCode(o edit.ReadOutcome) (v1.ErrorCode, bool) {
 	switch o {
 	case edit.Missing:

@@ -26,7 +26,6 @@ func (s WhenConfig) GetWhenConfig() map[string]any {
 	return BuildWhenConfig(app, plugins)
 }
 
-// configAppOwner is the owner of the settings of the application in config.
 const configAppOwner = "app"
 
 // BuildWhenConfig builds the config of when conditions from resolved settings: a setting of the

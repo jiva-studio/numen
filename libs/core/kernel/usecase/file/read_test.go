@@ -470,8 +470,6 @@ func TestAFileThatShrankWhileItWasReadReachesBackAsWhatItContains(t *testing.T) 
 	}
 }
 
-// A range opening inside a character and reaching the end of the file opens
-// after that character.
 func TestARangeOpeningInsideACharacterAtTheEndOpensAfterIt(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"lecture.txt": "śā"})
 

@@ -93,7 +93,6 @@ func TestTheOpeningIsSplitShort(t *testing.T) {
 	}
 }
 
-// A transcript saying nothing is described as nothing.
 func TestATranscriptSayingNothingIsDescribedAsNothing(t *testing.T) {
 	if about := DescribeSpeech(makeLines("", "")); about != "" {
 		t.Errorf("the digest says %q", about)

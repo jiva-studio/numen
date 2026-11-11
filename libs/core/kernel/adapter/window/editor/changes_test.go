@@ -738,7 +738,6 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	}
 }
 
-// TestFlushPending_ClosesAfterPromptsResolved.
 func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	testsupport.CloseAfter(t, f.installation)

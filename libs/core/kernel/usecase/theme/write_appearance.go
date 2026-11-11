@@ -13,7 +13,6 @@ type WriteAppearance struct {
 	scales   *Scales
 }
 
-// NewWriteAppearance makes the write over the sources and the store of the appearance.
 func NewWriteAppearance(
 	sources Sources,
 	writer themeport.AppearanceWriter,

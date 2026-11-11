@@ -88,7 +88,6 @@ export async function* watchTabLinks(
   }
 }
 
-/** Cancels the tab links stream of a window. */
 export const cancelTabLinksWatch = async (windowId: string): Promise<void> => {
   await keepaliveWorkspace.cancelWatchTabLinks({ windowId })
 }

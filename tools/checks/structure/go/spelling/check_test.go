@@ -64,8 +64,6 @@ func TestSpellingWalk_FindsThePlantedFile(t *testing.T) {
 	}
 }
 
-// findBritishSpelling lists the British words of the Go files of the modules, named relative to
-// root. It fails when it reads no file.
 func findBritishSpelling(root string, modules []string, dict dictionary, allowed []*allowance) ([]load.Finding, error) {
 	var found []load.Finding
 	visited := map[string]bool{}

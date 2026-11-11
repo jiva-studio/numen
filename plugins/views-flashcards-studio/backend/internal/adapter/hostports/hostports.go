@@ -48,7 +48,6 @@ type Readers struct {
 	Vaults func(domain.VaultID) ports.HostVault
 }
 
-// Open returns the reader of the vault v.
 func (r Readers) Open(v domain.Vault) (ports.VaultReader, error) {
 	return reader{vault: r.Vaults(v.ID).Files}, nil
 }
@@ -70,7 +69,6 @@ type Writers struct {
 	Vaults func(domain.VaultID) ports.HostVault
 }
 
-// Open returns the writer of the vault v.
 func (w Writers) Open(v domain.Vault) (ports.VaultWriter, error) {
 	return writer{vault: w.Vaults(v.ID).Writer}, nil
 }
@@ -106,17 +104,14 @@ type Notes struct {
 	Vaults func(domain.VaultID) ports.HostVault
 }
 
-// GetNotes returns the notes at paths.
 func (n Notes) GetNotes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	return n.Vaults(id).Notes.GetNotes(ctx, paths)
 }
 
-// GetTypes returns the note types of the notes at paths.
 func (n Notes) GetTypes(ctx context.Context, id domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
 	return n.Vaults(id).Notes.GetTypes(ctx, paths)
 }
 
-// GetPathsOfType returns the paths of the notes of a type.
 func (n Notes) GetPathsOfType(ctx context.Context, id domain.VaultID, noteType domain.NoteType) ([]string, error) {
 	return n.Vaults(id).Notes.GetPathsOfType(ctx, noteType)
 }
@@ -139,7 +134,6 @@ func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.Ca
 	return out, nil
 }
 
-// GetNamedPaths returns the paths of the notes that a name resolves to.
 func (n Notes) GetNamedPaths(ctx context.Context, id domain.VaultID, name string) ([]string, error) {
 	return n.Vaults(id).Notes.GetNamedPaths(ctx, name)
 }
@@ -181,7 +175,6 @@ type Problems struct {
 	Vaults func(domain.VaultID) ports.HostVault
 }
 
-// GetParseProblems returns the parse problems of the vault.
 func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.Vaults(id).Index.GetParseProblems(ctx)
 }
@@ -191,7 +184,6 @@ type Logs struct {
 	Store func(domain.VaultID) ports.HostFolder
 }
 
-// Open returns the log store of the vault v.
 func (l Logs) Open(v domain.Vault) (ports.LogStore, error) {
 	return store{folder: l.Store(v.ID)}, nil
 }

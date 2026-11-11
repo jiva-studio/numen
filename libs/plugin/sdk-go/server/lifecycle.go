@@ -118,7 +118,6 @@ func (s *LifecycleServer) SetUpdateConfig(fn func(values map[string]string, secr
 	})
 }
 
-// GetConfig returns the configuration value for a key.
 func (s *LifecycleServer) GetConfig(key string) (string, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

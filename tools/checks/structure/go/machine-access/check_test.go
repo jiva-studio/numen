@@ -54,8 +54,6 @@ func TestMachineAccessWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findMachineAccess lists the files under root outside the adapters, the shared packages and the
-// machinery that import a machine package or call a filesystem function. It fails when it reads no file.
 func findMachineAccess(root string) ([]string, error) {
 	var wrong []string
 	var read int

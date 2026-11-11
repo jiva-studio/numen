@@ -27,7 +27,6 @@ type Programs struct {
 	models       Models
 }
 
-// New creates the programs from the installation check and the models.
 func New(installation Installation, models Models) *Programs {
 	return &Programs{installation: installation, models: models}
 }

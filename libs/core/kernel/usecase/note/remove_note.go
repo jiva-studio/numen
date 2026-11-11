@@ -29,7 +29,6 @@ func NewRemoveNote(remove noteRemoving, readers vaultport.VaultReaders) RemoveNo
 	return RemoveNote{remove: remove, readers: readers}
 }
 
-// Execute removes the note at path, or destroys it when shouldDestroy is set.
 func (u RemoveNote) Execute(
 	ctx context.Context, v domain.Vault, path string, shouldDestroy bool,
 ) (RemoveResult, error) {

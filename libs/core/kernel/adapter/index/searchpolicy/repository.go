@@ -54,7 +54,6 @@ func (r *Repository) WriteFloor(ctx context.Context, v domain.Vault, recipe stri
 	return nil
 }
 
-// DeleteFloor removes the floor kept.
 func (r *Repository) DeleteFloor(ctx context.Context, v domain.Vault, recipe string) error {
 	if _, err := sqlwrite.Exec(ctx, r.write, getStatement("delete"), string(v.ID), recipe); err != nil {
 		return fmt.Errorf("delete the floor of %s: %w", v.ID, err)

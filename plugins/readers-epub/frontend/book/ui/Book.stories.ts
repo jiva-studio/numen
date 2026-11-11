@@ -173,7 +173,6 @@ const getPageCount = (canvasElement: HTMLElement) =>
 const getRunAt = (canvasElement: HTMLElement, offset: number) =>
   getRunsOf(canvasElement).find((one) => Number(one.dataset['offset']) === offset)!
 
-/** Whether the first line of a run stands within the area, which is whether the reader shows it. */
 const isRunShown = (canvasElement: HTMLElement, run: HTMLElement) => {
   const rect = run.getClientRects()[0]
   if (rect === undefined) return false
@@ -187,11 +186,6 @@ const getShownRuns = (canvasElement: HTMLElement) =>
 const expectRunShown = async (canvasElement: HTMLElement, offset: number) =>
   await expect(isRunShown(canvasElement, getRunAt(canvasElement, offset))).toBe(true)
 
-/**
- * Waits until the layout stands still: the indicator, the offset in front, the width of the area,
- * the extent of the columns and the shown runs unchanged for a run of frames. It does not depend on
- * how many pages a font sets the text in, only on the layout having settled whatever it came to.
- */
 const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   const getState = () =>
     [
@@ -381,10 +375,6 @@ const turnTwice = async (canvasElement: HTMLElement) => {
   }
 }
 
-/**
- * Once the layout has settled for the new size, the spread in front holds the offset read before the
- * resize, the offset in front is unchanged, and the indicator names a page within the pages counted.
- */
 const expectPassageInFront = async (canvasElement: HTMLElement, offset: number) => {
   await waitForSettledLayout(canvasElement)
   await expectRunShown(canvasElement, offset)

@@ -407,7 +407,6 @@ func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 	}
 }
 
-// A run with no tool to call is given no endpoint.
 func TestARunWithNoToolPluginIsGivenNoEndpoint(t *testing.T) {
 	agent := &toolAgent{}
 	host := hostOver(t, agentAt(agent))

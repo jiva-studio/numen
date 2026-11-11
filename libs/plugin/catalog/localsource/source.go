@@ -19,7 +19,6 @@ type Settings interface {
 	IsEnabled(pluginID string) bool
 }
 
-// SettingsFunc is a function that answers as Settings does.
 type SettingsFunc func(pluginID string) bool
 
 // IsEnabled calls the function.
@@ -37,7 +36,6 @@ func New(dirs []string, settings Settings) *Source {
 	return &Source{dirs: dirs, settings: settings}
 }
 
-// Name is Name.
 func (s *Source) Name() string { return Name }
 
 // List returns an entry for each valid plugin found. A folder that cannot be read is reported in

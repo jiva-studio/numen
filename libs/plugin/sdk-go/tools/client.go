@@ -79,7 +79,6 @@ func (r *CallResult) GetIsError() bool {
 	return r.IsError
 }
 
-// CallResponse is the response from a tool invocation.
 type CallResponse struct {
 	Result *CallResult
 	Error  ErrorCode
@@ -307,7 +306,6 @@ func (a *serviceAdapter) CallTool(
 	return connect.NewResponse(writeCallResponse(res)), nil
 }
 
-// NewServiceHandler mounts a ServiceHandler as a PluginToolService HTTP handler.
 func NewServiceHandler(h ServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	return numenv1connect.NewPluginToolServiceHandler(&serviceAdapter{h: h}, opts...)
 }

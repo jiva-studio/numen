@@ -97,7 +97,6 @@ func TestAnIndexWhoseVersionCannotBeReadIsNotMigrated(t *testing.T) {
 	}
 }
 
-// A migration that fails is named in the report, which carries the cause.
 func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
 	db, faults := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
 	faults.breakOn(t, "PRAGMA user_version = 1")
@@ -132,7 +131,6 @@ func TestCommentsAreTakenOutLineByLine(t *testing.T) {
 	}
 }
 
-// An index whose migrations cannot be read is not migrated.
 func TestMigrationsThatCannotBeReadMigrateNothing(t *testing.T) {
 	db, _ := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
 	saved := files

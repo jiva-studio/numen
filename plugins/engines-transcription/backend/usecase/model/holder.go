@@ -27,7 +27,6 @@ type Holder struct {
 	current Model
 }
 
-// NewHolder returns a holder that opens the model with open for cfg.
 func NewHolder(cfg settings.Config, open Opener) *Holder {
 	return &Holder{mu: sync.Mutex{}, cfg: cfg, open: open, current: nil}
 }

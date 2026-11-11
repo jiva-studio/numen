@@ -52,7 +52,6 @@ var ErrClosed = errors.New("the embedder is closed")
 // errSuperseded ends an opening whose model the settings changed while it ran.
 var errSuperseded = errors.New("the model was changed while it opened")
 
-// New returns a loader that locks with lock.
 func New[S any](lock sync.Locker, ports Ports[S]) *Loader[S] {
 	return &Loader[S]{lock: lock, ports: ports, embedder: nil, opening: nil}
 }

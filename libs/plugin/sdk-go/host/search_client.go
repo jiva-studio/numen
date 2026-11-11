@@ -44,12 +44,10 @@ func NewSearchClientFromVars(vars map[string]string) (*SearchClient, error) {
 	return NewSearchClient(addr), nil
 }
 
-// NewSearchClient connects to the host at the endpoint.
 func NewSearchClient(endpoint hostcall.Endpoint) *SearchClient {
 	return NewSearchClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewSearchClientOver connects to the host at the endpoint through the given HTTP client.
 func NewSearchClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *SearchClient {
 	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }

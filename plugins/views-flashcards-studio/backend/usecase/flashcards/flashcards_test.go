@@ -928,7 +928,6 @@ type named struct {
 
 func (n named) GetName() string { return n.name }
 
-// newAssigning is the assigning of card ids over the vault, updating the index through index.
 func (s vaulted) newAssigning(index func(ctx context.Context, v domain.Vault, paths []string) error) flashcards.AssignCardIDs {
 	return flashcards.NewAssignCardIDs(
 		s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, s.env.Queries, index, vaulttest.NewClock())

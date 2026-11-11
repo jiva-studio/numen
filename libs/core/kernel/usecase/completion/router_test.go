@@ -235,7 +235,6 @@ func (b *blocker) answer(ctx context.Context, _ agent.Task) (string, error) {
 	}
 }
 
-// No more questions answer at once than the limit.
 func TestAnAgentAnswersNoMoreQuestionsAtOnceThanTheLimit(t *testing.T) {
 	block := newBlocker()
 	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 2}}, &programs{answer: block.answer})

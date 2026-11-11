@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-// repositoryPlugins is the plugins folder of the repository.
 const repositoryPlugins = "../../../../../../../plugins"
 
 func newRepositoryHandler(b *testing.B) *command.Handler {

@@ -133,7 +133,6 @@ func (r *Registry) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProf
 	return domain.NoteProfile{}, false
 }
 
-// FindPluginByCapability finds the plugin ResolveCapability finds, and whether there is one.
 func (r *Registry) FindPluginByCapability(capability string) (manifest.Discovered, bool) {
 	p, err := r.ResolveCapability(capability)
 	return p, err == nil

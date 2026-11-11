@@ -94,7 +94,6 @@ type registered struct {
 	run  func(ctx context.Context, arguments []byte) *v1.ToolResult
 }
 
-// New makes a registry of no tools.
 func New() *Registry {
 	return &Registry{}
 }
@@ -274,7 +273,6 @@ func writeResult(out any) *v1.ToolResult {
 	return &v1.ToolResult{Text: string(encoded)}
 }
 
-// ListTools returns the tools in the registry.
 func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
@@ -284,7 +282,6 @@ func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
 	return readListing(res.Msg), nil
 }
 
-// InvokeTool invokes a tool in the registry.
 func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
 	res, err := registryHandler{registry: r}.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
 		Name:      call.Name,

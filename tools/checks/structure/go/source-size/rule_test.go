@@ -70,10 +70,6 @@ func countCodeLines(src []byte) int {
 	return len(lines)
 }
 
-// listWideLines returns the lines wider than limit that hold code. A line that holds only a comment, or only
-// one string literal (with the comma or bracket that closes it), or lies inside a raw string literal, is data
-// or prose that a reader skips: it is not listed, nor is a line of a declaration or assignment whose whole
-// right-hand side is a string literal. A call with a literal argument is code and is listed.
 func listWideLines(src []byte, limit int) []int {
 	var wide []int
 	for i, line := range strings.Split(string(src), "\n") {
@@ -201,10 +197,6 @@ func getOversizedSources(root string, trees []string, limit sizeLimits) (found [
 	return found, files, dirs, nil
 }
 
-// listLiteralAssignmentLines returns the lines covered by a declaration or assignment whose whole right-hand
-// side is one string literal or a concatenation of literals: `const A = "..."`, `x.f = "..." + "..."` or a keyed
-// field `Name: "...",` on a line of its own. Anything with a call or another operand on the right, or code
-// beside it on the line, is not listed.
 func listLiteralAssignmentLines(items []scanned) map[int]bool {
 	covered := map[int]bool{}
 	blocked := map[int]bool{}

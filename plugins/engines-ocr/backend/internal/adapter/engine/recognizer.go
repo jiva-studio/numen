@@ -239,7 +239,6 @@ func collapseSpaces(text string) string {
 	return strings.Join(strings.Fields(text), " ")
 }
 
-// NewTestRecognizer creates a Recognizer with custom layout and read functions for testing.
 func NewTestRecognizer(
 	layout func(image.Image) ([]Region, error),
 	read func(image.Image) ([]read.RecResult, error),

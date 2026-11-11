@@ -87,7 +87,6 @@ func NewWriteDeckResponse(pos domain.FileStat, err error) (*api.WriteDeckRespons
 	return res, nil
 }
 
-// NewWriteCardModelResponse answers the end of the write of a card model.
 func NewWriteCardModelResponse(pos domain.FileStat, err error) (*api.WriteCardModelResponse, error) {
 	out, err := filewire.ConvertWrite(pos, err)
 	if err != nil {

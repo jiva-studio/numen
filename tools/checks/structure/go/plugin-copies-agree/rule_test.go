@@ -15,7 +15,6 @@ type copySet struct {
 	Intended []string
 }
 
-// listCopySets names the folders the plugins copy from each other.
 func listCopySets() []copySet {
 	return []copySet{{
 		Folder:   "backend/internal/adapter/engine/onnx",
@@ -24,8 +23,6 @@ func listCopySets() []copySet {
 	}}
 }
 
-// getCopyDrifts compares the files of each copy, by name and content, with those of the first
-// copy. A file named in intended may differ in content, and must exist in every copy.
 func getCopyDrifts(copies map[string]map[string][]byte, order, intended []string) []string {
 	var drifts []string
 	if len(order) < 2 {

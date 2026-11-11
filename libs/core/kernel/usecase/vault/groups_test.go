@@ -85,7 +85,6 @@ func TestAGroupIsSavedAtEightMebibytes(t *testing.T) {
 	}
 }
 
-// Flushing a group that holds nothing writes nothing.
 func TestFlushingAnEmptyGroupWritesNothing(t *testing.T) {
 	t.Parallel()
 	g, writes := newRecordingGroup()

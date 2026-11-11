@@ -201,8 +201,6 @@ func TestTheOneCardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	}
 }
 
-// A card model too large to read is a card model that did not read, and the card
-// naming it is not reported as naming a note that is not a card model.
 func TestACardNamingACardModelTooLargeToReadIsNotCalledANote(t *testing.T) {
 	vs := newVaults(t)
 	if err := os.Truncate(filepath.Join(vs.first.Path, "Animal.md"), note.MaxBytes+1); err != nil {

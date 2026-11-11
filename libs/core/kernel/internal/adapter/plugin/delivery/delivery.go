@@ -55,7 +55,6 @@ type Delivery struct {
 	noKeyStoreOnce sync.Once
 }
 
-// New creates a delivery over the host.
 func New(host Host) *Delivery {
 	return &Delivery{host: host, lock: make(chan struct{}, 1), ledger: newLedger(), watchers: &watchers{}}
 }

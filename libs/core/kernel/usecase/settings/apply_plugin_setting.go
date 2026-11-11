@@ -34,7 +34,6 @@ func NewApplyPluginSetting(deps ApplyPluginSettingDeps) *ApplyPluginSetting {
 	}
 }
 
-// Execute applies the value of one setting of the plugin.
 func (u *ApplyPluginSetting) Execute(ctx context.Context, pluginID, key string, value any) error {
 	previous, hadPrevious, changesDependencies := u.values.ReplaceSetting(pluginID, key, value)
 

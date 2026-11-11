@@ -61,7 +61,6 @@ import type {
 /** The name the manifest declares for the service. */
 const SERVICE = 'md.numen.views.flashcards.studio'
 
-/** Options of one call. */
 export interface CallOptions {
   readonly signal?: AbortSignal
 }

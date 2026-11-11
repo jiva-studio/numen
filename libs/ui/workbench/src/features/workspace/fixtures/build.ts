@@ -11,7 +11,6 @@ import { getPanes } from '../lib/tree'
 import { even } from '../lib/shares'
 import type { NodeIdFactory } from '../lib/edit'
 
-/** A stack of tabs. */
 export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
 
 const splitBranch = (

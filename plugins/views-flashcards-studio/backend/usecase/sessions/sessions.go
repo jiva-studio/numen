@@ -48,7 +48,6 @@ func (r *Registry) Store(v domain.Vault, run *flashcards.LogWriter) {
 	r.run[v.ID] = run
 }
 
-// GetRun returns the run named, if it is the one open on the vault.
 func (r *Registry) GetRun(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

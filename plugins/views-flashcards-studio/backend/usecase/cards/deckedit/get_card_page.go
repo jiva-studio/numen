@@ -8,13 +8,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 )
 
-// GetCardPage reads a run of the cards of one deck, or one card of it.
 type GetCardPage struct{ read Read }
 
-// NewGetCardPage creates the GetCardPage scenario.
 func NewGetCardPage(read Read) GetCardPage { return GetCardPage{read: read} }
 
-// Execute reads one page of the cards of a deck.
 func (u GetCardPage) Execute(ctx context.Context, v domain.Vault, in Query) (Page, error) {
 	contents, err := readExistingDeck(ctx, u.read, v, in.Path)
 	if err != nil {

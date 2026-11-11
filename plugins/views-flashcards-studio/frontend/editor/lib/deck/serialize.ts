@@ -5,9 +5,6 @@ import type { IdMaker } from '../../../lib/identity'
 import { NO_DECK, type BufferDeck } from './types'
 import type { VaultCard, VaultDeck, VaultSection } from '../../../types'
 
-/**
- * A deck as the vault read it.
- */
 export const deserializeVaultDeck = (
   readItem: VaultDeck,
   generateBufferId: IdMaker,

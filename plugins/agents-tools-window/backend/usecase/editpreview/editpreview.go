@@ -40,7 +40,6 @@ func NewCreator(store *preview.Store, vault Vault) Creator {
 	return Creator{vault: vault, store: store}
 }
 
-// Create builds the preview of the request and keeps it.
 func (c Creator) Create(ctx context.Context, req Request) (preview.Preview, error) {
 	if req.Path == "" {
 		return preview.Preview{}, errMissingPath

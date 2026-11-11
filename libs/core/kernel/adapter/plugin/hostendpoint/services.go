@@ -197,5 +197,4 @@ func (f DependencySourceFunc) GetDependencies() Dependencies { return f() }
 // ToolSourceFunc lends the tools the function returns.
 type ToolSourceFunc func() PluginTools
 
-// GetPluginTools returns the tools the plugins offer.
 func (f ToolSourceFunc) GetPluginTools() PluginTools { return f() }

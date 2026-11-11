@@ -43,7 +43,6 @@ function requireFreeKind(
   )
 }
 
-/** Undoes the steps of a registration that failed, the last first. */
 function undoSteps(steps: readonly (() => void)[]): void {
   for (const undo of [...steps].reverse()) undo()
 }

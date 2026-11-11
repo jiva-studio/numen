@@ -101,7 +101,6 @@ func next[T any](t *testing.T, from <-chan T) T {
 	}
 }
 
-// TestAChangedNoteIsBroughtUpToDateAndReported.
 func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()

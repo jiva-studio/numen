@@ -53,8 +53,6 @@ func TestInternalTestWalk_FailsOnATreeWithoutTests(t *testing.T) {
 	}
 }
 
-// findInternalAdapterTests lists the tests under root that import an adapter from inside the
-// package they exercise. It fails when it reads no test.
 func findInternalAdapterTests(root string) ([]string, error) {
 	var wrong []string
 	var read int

@@ -118,7 +118,6 @@ type latePrograms []agent.Program
 
 func (l latePrograms) GetLate() []agent.Program { return l }
 
-// jsonCodec is the JSON the settings are held as.
 type jsonCodec struct{}
 
 func (jsonCodec) Decode(text string) (any, error) {

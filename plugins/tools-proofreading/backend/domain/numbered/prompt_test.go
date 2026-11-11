@@ -23,7 +23,6 @@ func TestTheDigestExistsBeforeTheFirstLine(t *testing.T) {
 	}
 }
 
-// A batch without a digest is the lines alone.
 func TestABatchWithNoDigestIsTheLinesAlone(t *testing.T) {
 	batch := Batch{Number: 0, Lines: []Line{{Number: 0, Text: "Ganaka spoke"}}}
 	if request := BuildPrompt(batch); request != Opens+"0"+Closes+"Ganaka spoke" {

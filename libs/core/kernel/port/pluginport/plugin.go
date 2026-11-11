@@ -42,7 +42,6 @@ type PluginLister interface {
 	IsPluginEnabled(pluginID string) bool
 }
 
-// PluginSettingDeclarer returns the settings a plugin declares.
 type PluginSettingDeclarer interface {
 	// GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and
 	// false for a plugin the host does not know.
@@ -70,7 +69,6 @@ type ConfigWatcher interface {
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
-// SettingChecker checks the value of one setting of a plugin.
 type SettingChecker interface {
 	CheckPluginSetting(pluginID, key string, value any) error
 }
@@ -80,7 +78,6 @@ type PersistHook interface {
 	SetPersistHandler(handler plugin.PersistHandler)
 }
 
-// PluginEventEmitter broadcasts events to plugins.
 type PluginEventEmitter interface {
 	EmitEvent(event string)
 }

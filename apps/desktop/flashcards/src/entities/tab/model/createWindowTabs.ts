@@ -62,5 +62,4 @@ export function createWindowTabs() {
   return { tab, tabVault, front, frontViews, openTab, closeTab, addView, dropPlugin }
 }
 
-/** The tabs of a window, as createWindowTabs makes them. */
 export type WindowTabs = ReturnType<typeof createWindowTabs>

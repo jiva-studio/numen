@@ -84,7 +84,6 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 	return out, nil
 }
 
-// LogFile is one file of the log as it was read.
 type LogFile struct {
 	Answers      []review.Answer
 	Size         int

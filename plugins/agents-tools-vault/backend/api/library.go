@@ -1,6 +1,5 @@
 package api
 
-// LibrarySearchInput is the input of the library_search tool.
 type LibrarySearchInput struct {
 	Query  string   `json:"query" jsonschema:"words to search for, as they appear in the text"`
 	Limit  int      `json:"limit,omitempty" jsonschema:"how many passages to return (default: 20, max: 100)"`
@@ -31,13 +30,11 @@ type LibraryMatch struct {
 	URI    string `json:"uri" jsonschema:"the address of this passage; use it as the target of a markdown link to the passage"`
 }
 
-// LibrarySearchOutput is the output of the library_search tool.
 type LibrarySearchOutput struct {
 	Query   string         `json:"query" jsonschema:"the query searched for"`
 	Matches []LibraryMatch `json:"matches" jsonschema:"the matching passages, best first"`
 }
 
-// LibraryReadInput is the input of the library_read tool.
 type LibraryReadInput struct {
 	Path   string `json:"path" jsonschema:"the file's path relative to the vault folder"`
 	Page   int    `json:"page,omitempty" jsonschema:"the page to read, counted from 1; for a source whose text has pages"`
@@ -52,7 +49,6 @@ type LibraryRange struct {
 	Place  *Place `json:"place" jsonschema:"the place in the source where the range starts"`
 }
 
-// LibraryReadOutput is the output of the library_read tool.
 type LibraryReadOutput struct {
 	Path      string         `json:"path" jsonschema:"the path of the file, relative to the vault folder"`
 	Kind      string         `json:"kind,omitempty" jsonschema:"the kind of the text version, as set by the plugin that created it; absent for a text file"`

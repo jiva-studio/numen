@@ -34,7 +34,6 @@ func (v *Vault) GetOpenedVault() (domain.Vault, bool) {
 	return v.world.openedVault.vault, true
 }
 
-// GetVaultList lists the vaults GetVaults lists, each with whether its folder is gone.
 func (v *Vault) GetVaultList(ctx context.Context) ([]host.VaultEntry, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()

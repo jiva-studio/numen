@@ -146,7 +146,6 @@ type Read struct {
 	readers ports.VaultReaders
 }
 
-// NewRead is the reader of the prose of a note.
 func NewRead(readers ports.VaultReaders) Read { return Read{readers: readers} }
 
 // Execute reads the note at path. An error is the vault being out of reach; what is wrong with the

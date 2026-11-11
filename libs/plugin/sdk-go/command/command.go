@@ -84,12 +84,10 @@ type Registry struct {
 	runs map[string]Run
 }
 
-// New makes a registry of no commands.
 func New() *Registry {
 	return &Registry{runs: map[string]Run{}}
 }
 
-// Add adds the command run answers for.
 func (r *Registry) Add(id string, run Run) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -269,7 +269,6 @@ func (s *Server) HandlerOptions() []connect.HandlerOption {
 	return []connect.HandlerOption{connect.WithInterceptors(s.interceptor)}
 }
 
-// AuthInterceptor returns the authentication interceptor.
 func (s *Server) AuthInterceptor() connect.Interceptor {
 	return s.interceptor
 }

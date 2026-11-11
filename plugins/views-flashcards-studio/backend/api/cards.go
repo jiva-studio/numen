@@ -86,44 +86,37 @@ type Value struct {
 	Text  string `json:"text"`
 }
 
-// ListCardModelsRequest is the request of the ListCardModels method.
 type ListCardModelsRequest struct {
 	Limit int32 `json:"limit"`
 }
 
-// ListCardModelsResponse is the response of the ListCardModels method.
 type ListCardModelsResponse struct {
 	CardModels []*CardModelSummary `json:"cardModels"`
 	Total      int32               `json:"total"`
 }
 
-// CreateCardModelRequest is the request of the CreateCardModel method.
 type CreateCardModelRequest struct {
 	Title  string   `json:"title"`
 	Path   string   `json:"path"`
 	Fields []string `json:"fields"`
 }
 
-// CreateCardModelResponse is the response of the CreateCardModel method.
 type CreateCardModelResponse struct {
 	Path            string    `json:"path"`
 	Error           ErrorCode `json:"error,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
-// ReadCardModelRequest is the request of the ReadCardModel method.
 type ReadCardModelRequest struct {
 	Path string `json:"path"`
 }
 
-// ReadCardModelResponse is the response of the ReadCardModel method.
 type ReadCardModelResponse struct {
 	CardModel *CardModel `json:"cardModel,omitempty"`
 	Error     ErrorCode  `json:"error,omitempty"`
 	At        *FileStat  `json:"at,omitempty"`
 }
 
-// WriteCardModelRequest is the request of the WriteCardModel method.
 type WriteCardModelRequest struct {
 	Path      string          `json:"path"`
 	Fields    []string        `json:"fields"`
@@ -133,14 +126,12 @@ type WriteCardModelRequest struct {
 	Tail      string          `json:"tail"`
 }
 
-// WriteCardModelResponse is the response of the WriteCardModel method.
 type WriteCardModelResponse struct {
 	Error           ErrorCode `json:"error,omitempty"`
 	At              *FileStat `json:"at,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
-// RenameCardModelFieldRequest is the request of the RenameCardModelField method.
 type RenameCardModelFieldRequest struct {
 	Path     string    `json:"path"`
 	From     string    `json:"from"`
@@ -148,7 +139,6 @@ type RenameCardModelFieldRequest struct {
 	Baseline *FileStat `json:"baseline,omitempty"`
 }
 
-// RenameCardModelFieldResponse is the response of the RenameCardModelField method.
 type RenameCardModelFieldResponse struct {
 	Decks           []string         `json:"decks"`
 	Cards           int32            `json:"cards"`
@@ -164,25 +154,21 @@ type UnwrittenDeck struct {
 	Problem *Problem `json:"problem,omitempty"`
 }
 
-// CreateDeckRequest is the request of the CreateDeck method.
 type CreateDeckRequest struct {
 	Title string `json:"title"`
 	Path  string `json:"path"`
 }
 
-// CreateDeckResponse is the response of the CreateDeck method.
 type CreateDeckResponse struct {
 	Path            string    `json:"path"`
 	Error           ErrorCode `json:"error,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
-// ReadDeckRequest is the request of the ReadDeck method.
 type ReadDeckRequest struct {
 	Path string `json:"path"`
 }
 
-// ReadDeckResponse is the response of the ReadDeck method.
 type ReadDeckResponse struct {
 	Deck  *Deck     `json:"deck,omitempty"`
 	Error ErrorCode `json:"error,omitempty"`
@@ -190,7 +176,6 @@ type ReadDeckResponse struct {
 	Bound int64     `json:"bound"`
 }
 
-// WriteDeckRequest is the request of the WriteDeck method.
 type WriteDeckRequest struct {
 	Path     string     `json:"path"`
 	Preamble string     `json:"preamble"`
@@ -200,7 +185,6 @@ type WriteDeckRequest struct {
 	Tail     string     `json:"tail"`
 }
 
-// WriteDeckResponse is the response of the WriteDeck method.
 type WriteDeckResponse struct {
 	Error           ErrorCode `json:"error,omitempty"`
 	At              *FileStat `json:"at,omitempty"`

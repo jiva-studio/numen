@@ -51,7 +51,6 @@ func (b *Backend) updateIndex(ctx context.Context, v domain.Vault, paths []strin
 	return b.vaults(v.ID).Index.Scan(ctx, paths)
 }
 
-// getFlashConfig is what the review is built over; the host's cache keeps the schedules and the days counted.
 func (b *Backend) getFlashConfig() flashcards.Config {
 	return flashcards.Config{
 		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, Links: b.ports.Links,

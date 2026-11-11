@@ -21,14 +21,12 @@ const (
 
 var errNoVault = errors.New("the call names no vault")
 
-// URLImportInput is the input of the url_import tool.
 type URLImportInput struct {
 	URL                 string `json:"url" jsonschema:"the http or https address to import"`
 	Folder              string `json:"folder,omitempty" jsonschema:"the folder of a new link note, relative to the vault root; the root by default"`
 	ShouldDownloadVideo bool   `json:"downloadVideo,omitempty" jsonschema:"also download the video at the address to this disk; the download is large, so set it only when the video is needed offline"`
 }
 
-// URLImportOutput is the output of the url_import tool.
 type URLImportOutput struct {
 	Path           string `json:"path" jsonschema:"the link note of the address, created or found, relative to the vault root"`
 	Title          string `json:"title,omitempty" jsonschema:"the title of the page or the video"`
@@ -45,7 +43,6 @@ type Tools struct {
 	links *link.Links
 }
 
-// NewTools returns the tools for the links.
 func NewTools(links *link.Links) *Tools {
 	return &Tools{links: links}
 }

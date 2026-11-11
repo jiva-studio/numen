@@ -430,7 +430,6 @@ func TestWatchCardsDue_CountsEveryVault(t *testing.T) {
 	}
 }
 
-// Counting cards does not modify vault files.
 func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	handwritten := map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -466,7 +465,6 @@ func getPointed() map[string]string {
 	}
 }
 
-// WatchCardsDue returns daily progress and limits for each preset.
 func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
 	handler, target := newAPI(t, getPointed())
 	v := target[0]
@@ -555,7 +553,6 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 	}
 }
 
-// WatchCardsDue returns settings for each preset independently.
 func TestWatchCardsDue_ReturnsSettingsPerPreset(t *testing.T) {
 	handler, _ := newAPI(t, getTwoPresets())
 
@@ -1079,7 +1076,6 @@ func session(t *testing.T, handler *API, v domain.Vault, preset string) sessionC
 	return target
 }
 
-// The backlog share moves the session and the projection together.
 func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	target := make(map[int]sessionCounts, 2)
 	bands := make(map[int][]int32, 2)

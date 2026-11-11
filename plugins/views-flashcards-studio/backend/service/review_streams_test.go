@@ -429,8 +429,6 @@ func (w waiting) Open(domain.Vault) (ports.VaultReader, error) {
 
 var errNothingRead = errors.New("the count was let go")
 
-// readThrough makes the count of cards due read the files of a vault through readers, over a list
-// of review cards of its own.
 func readThrough(handler *API, readers ports.VaultReaders) {
 	shared := hostports.New(handler.vaults, nil)
 	flash := handler.flash()

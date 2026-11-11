@@ -14,7 +14,6 @@ import (
 // the directory of the module. The rules that walk it share one load and never change it.
 type WorkspacePackages map[string][]*packages.Package
 
-// ListModule returns the packages of the module in dir.
 func (w WorkspacePackages) ListModule(t *testing.T, dir string) []*packages.Package {
 	t.Helper()
 	pkgs, ok := w[dir]

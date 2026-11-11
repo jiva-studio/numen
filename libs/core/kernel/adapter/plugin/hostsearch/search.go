@@ -140,7 +140,6 @@ func (s Search) GetSearchFloor(ctx context.Context, v domain.Vault, recipe strin
 	}, nil
 }
 
-// SetSearchFloor stores the floor of the vault under the recipe.
 func (s Search) SetSearchFloor(ctx context.Context, v domain.Vault, recipe string, floor float64) error {
 	if err := s.checkRecipe(recipe); err != nil {
 		return err

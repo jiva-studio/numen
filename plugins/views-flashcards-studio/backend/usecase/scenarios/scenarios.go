@@ -38,7 +38,6 @@ func NewCurrent(cfg flashcards.Config) *Current {
 	return c
 }
 
-// Get returns the review scenarios in force.
 func (c *Current) Get() *Review { return c.active.Load() }
 
 // SetDayStart builds the review scenarios again with the time past midnight at which a day of review begins.

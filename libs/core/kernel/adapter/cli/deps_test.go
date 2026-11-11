@@ -170,7 +170,6 @@ func (p vaultParts) build() cli.Vaults {
 	}
 }
 
-// indexedOver is what renames, forgets and erases a vault over rows.
 func (p vaultParts) indexedOver(rows vaultport.VaultRepository) cli.Indexed {
 	find := registry.NewFind(p.ports.Lookup).Execute
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)

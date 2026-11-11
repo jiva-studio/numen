@@ -39,7 +39,6 @@ type FileProvisioner struct {
 	cfg Config
 }
 
-// NewFileProvisioner returns a provisioner for the configuration.
 func NewFileProvisioner(cfg Config) *FileProvisioner {
 	if cfg.Client == nil {
 		cfg.Client = newClient()

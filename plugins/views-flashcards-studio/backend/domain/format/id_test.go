@@ -82,7 +82,6 @@ func TestIsValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 	}
 }
 
-// Every character of the alphabet can be minted, in every position.
 func TestEveryCharacterOfTheAlphabetIsMinted(t *testing.T) {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 

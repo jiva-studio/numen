@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// The model setting suggests models, and the model it defaults to is one of them.
 func TestManifest_ModelSettingSuggestsItsDefault(t *testing.T) {
 	var manifest struct {
 		Settings []struct {

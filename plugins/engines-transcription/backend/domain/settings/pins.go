@@ -20,7 +20,6 @@ func GetModels() []ParakeetModel {
 	}
 }
 
-// FindModel returns the model the settings name.
 func FindModel(name string) (ParakeetModel, bool) {
 	for _, one := range GetModels() {
 		if one.Name == name {

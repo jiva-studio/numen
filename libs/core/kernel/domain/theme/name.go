@@ -16,17 +16,14 @@ const MaxSize = 256 << 10
 // PluginPrefix starts the name of a plugin theme: `plugin:<pluginId>/<themeId>`.
 const PluginPrefix = string(Plugin) + ":"
 
-// PluginName is the name of the theme a plugin contributes.
 func PluginName(pluginID, themeID string) string {
 	return PluginPrefix + pluginID + "/" + themeID
 }
 
-// GetName is the name of the theme of the title on the origin.
 func GetName(origin Origin, title string) string {
 	return string(origin) + ":" + title
 }
 
-// SplitPluginName returns the plugin id and the theme id a plugin theme name holds.
 func SplitPluginName(name string) (pluginID, themeID string, isValid bool) {
 	pluginID, themeID, found := strings.Cut(strings.TrimPrefix(name, PluginPrefix), "/")
 	return pluginID, themeID, found && pluginID != "" && themeID != ""

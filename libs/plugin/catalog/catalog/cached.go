@@ -22,7 +22,6 @@ func NewCachedSource(source Source, cache Cache, ttl time.Duration, now func() t
 	return &CachedSource{source: source, cache: cache, ttl: ttl, now: now}
 }
 
-// Name is the name of the source behind the cache.
 func (c *CachedSource) Name() string { return c.source.Name() }
 
 // List returns the fresh snapshot, else the entries of the source, which become the snapshot. When

@@ -1,6 +1,5 @@
 package api
 
-// LinkListInput is the input of the link_list tool.
 type LinkListInput struct {
 	Path string `json:"path" jsonschema:"path of the note to inspect for links and backlinks"`
 }
@@ -15,7 +14,6 @@ type ResolvedLinkItem struct {
 	IsAmbiguous bool   `json:"isAmbiguous,omitempty" jsonschema:"true if link target matches multiple notes"`
 }
 
-// LinkListOutput is the output of the link_list tool.
 type LinkListOutput struct {
 	Path      string             `json:"path"`
 	Links     []ResolvedLinkItem `json:"links" jsonschema:"outgoing links from this note"`
@@ -33,7 +31,6 @@ type LinkAddition struct {
 	Note        string `json:"note,omitempty" jsonschema:"why the link exists"`
 }
 
-// LinkAddInput is the input of the link_add tool.
 type LinkAddInput struct {
 	Links []LinkAddition `json:"links" jsonschema:"the links to write, at most 50"`
 }
@@ -46,12 +43,10 @@ type LinkAddItem struct {
 	Error       string `json:"error,omitempty" jsonschema:"error message when the link was not written"`
 }
 
-// LinkAddOutput is the output of the link_add tool.
 type LinkAddOutput struct {
 	Results []LinkAddItem `json:"results" jsonschema:"one entry per link, in the order given"`
 }
 
-// LinkUpdateInput is the input of the link_update tool.
 type LinkUpdateInput struct {
 	From        string `json:"from" jsonschema:"path of the source note"`
 	Address     string `json:"address" jsonschema:"the target as it is written now"`
@@ -62,7 +57,6 @@ type LinkUpdateInput struct {
 	Note        string `json:"note,omitempty" jsonschema:"why the link exists; kept when left out"`
 }
 
-// LinkRemoveInput is the input of the link_remove tool.
 type LinkRemoveInput struct {
 	From        string `json:"from" jsonschema:"path of the source note"`
 	Address     string `json:"address" jsonschema:"the target as it is written"`

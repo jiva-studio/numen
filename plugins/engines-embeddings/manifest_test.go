@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
-// The plugin declares the ONNX Runtime as a runtime dependency.
 func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	var manifest struct {
 		Dependencies []struct {

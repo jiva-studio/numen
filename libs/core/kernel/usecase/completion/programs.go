@@ -112,7 +112,6 @@ type SettingsAgent struct {
 	programs *Programs
 }
 
-// NewSettingsAgent creates a SettingsAgent backed by Programs.
 func NewSettingsAgent(programs *Programs) *SettingsAgent {
 	return &SettingsAgent{programs: programs}
 }

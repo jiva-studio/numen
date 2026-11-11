@@ -113,7 +113,6 @@ func TestProblemsStandByNoteAndThenByCheck(t *testing.T) {
 	}
 }
 
-// Every check there is is named, and nothing else.
 func TestEveryCheckIsNamedAndNothingElse(t *testing.T) {
 	l := check.Checks{List: []check.Checker{
 		fixed{name: "first"},

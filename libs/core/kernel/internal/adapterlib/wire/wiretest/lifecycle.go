@@ -23,7 +23,6 @@ func (PluginLifecycle) Ping(
 	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: manifest.ProtocolVersion}), nil
 }
 
-// HandlePluginLifecycle mounts a PluginLifecycle on mux.
 func HandlePluginLifecycle(mux *http.ServeMux) {
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(PluginLifecycle{}))
 }

@@ -36,8 +36,6 @@ func readRestateRules() restateRules {
 	return read
 }
 
-// invertSynonyms maps each verb of the rules to the word it stands for, so that `GetPlugin finds no plugin` and
-// `SetVault stores the vault` are read as what they say.
 func invertSynonyms(groups map[string][]string) map[string]string {
 	inverted := map[string]string{}
 	for canonical, verbs := range groups {
@@ -56,7 +54,6 @@ func toSet(words []string) map[string]bool {
 	return set
 }
 
-// splitWords cuts text into lower-case words at camelCase humps, digits and every character that is not a letter.
 func splitWords(text string) []string {
 	var words []string
 	var current []rune
@@ -85,8 +82,6 @@ func splitWords(text string) []string {
 	return words
 }
 
-// stem reduces a word to the form a name and a sentence share: no plural or third-person ending, and one word for the
-// verbs that mean the same operation.
 func stem(word string) string {
 	switch {
 	case strings.HasSuffix(word, "ies") && len(word) > 4:
@@ -102,8 +97,6 @@ func stem(word string) string {
 	return word
 }
 
-// isSameWord reports whether a word of a comment is a word of a name: equal, or one is the start of the other
-// (`window` and the package name `windowsession`) when both have `minPrefixLength` letters or more.
 func isSameWord(commentWord, nameWord string) bool {
 	if commentWord == nameWord {
 		return true
@@ -114,7 +107,6 @@ func isSameWord(commentWord, nameWord string) bool {
 	return strings.HasPrefix(nameWord, commentWord) || strings.HasPrefix(commentWord, nameWord)
 }
 
-// restatement counts the words of a comment, stop words left out, and how many of them the names already hold.
 func restatement(comment string, names []string) (matched, total int) {
 	nameWords := map[string]bool{}
 	for _, name := range names {
@@ -138,13 +130,11 @@ func restatement(comment string, names []string) (matched, total int) {
 	return matched, total
 }
 
-// isRestating reports whether a comment says nothing the names do not.
 func isRestating(comment string, names []string) (matched, total int, ok bool) {
 	matched, total = restatement(comment, names)
 	return matched, total, total > 0 && matched*100 >= restateThresholdPercent*total
 }
 
-// listTypeNames lists the identifiers a type expression names, such as `domain.Vault` or `[]manifest.Discovered`.
 func listTypeNames(expr ast.Expr) []string {
 	var names []string
 	if expr == nil {
@@ -159,8 +149,6 @@ func listTypeNames(expr ast.Expr) []string {
 	return names
 }
 
-// listSignatureNames lists the names a function declaration shows: its own, its receiver type, and the names and the
-// types of its parameters and results.
 func listSignatureNames(pkg string, decl *ast.FuncDecl) []string {
 	names := []string{pkg, decl.Name.Name}
 	add := func(fields *ast.FieldList) {
@@ -180,7 +168,6 @@ func listSignatureNames(pkg string, decl *ast.FuncDecl) []string {
 	return names
 }
 
-// stripComment returns the text of a comment group without the comment markers.
 func stripComment(group *ast.CommentGroup) string {
 	var lines []string
 	for _, c := range group.List {

@@ -44,7 +44,6 @@ func (c *CLI) List(ctx context.Context, command []string) ([]model.Model, error)
 	return model.Parse(out), nil
 }
 
-// Build returns the command that runs req.
 func (c *CLI) Build(
 	ctx context.Context, req *agentrun.Request, reg *agentrun.Registry, executablePath string,
 ) (runs.Command, error) {

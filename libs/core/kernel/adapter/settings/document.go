@@ -51,7 +51,6 @@ type appSections struct {
 
 func isOutsideDeclaration(section string) bool { return section == "agent" || section == "ai" }
 
-// keyVersion is the key of the version of the file.
 const keyVersion = "v"
 
 // GetVersion returns a pointer to the file format version.
@@ -66,7 +65,6 @@ func (f *File) AddNotice(notice string) { f.Notices = append(f.Notices, notice) 
 // Sync is whether a note's title and its filename are kept as one name.
 func (f *File) Sync() bool { return f.Titles.Sync() }
 
-// WriteJSON is every setting as JSON.
 func (f *File) WriteJSON() (string, error) {
 	content, err := json.Marshal(f)
 	if err != nil {

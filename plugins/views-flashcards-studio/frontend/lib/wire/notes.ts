@@ -119,44 +119,37 @@ interface Value {
   text: string
 }
 
-/** ListCardModelsRequest is the request of the ListCardModels method. */
 export interface ListCardModelsRequest {
   limit?: number
 }
 
-/** ListCardModelsResponse is the response of the ListCardModels method. */
 export interface ListCardModelsResponse {
   cardModels: CardModelSummary[]
   total: number
 }
 
-/** CreateCardModelRequest is the request of the CreateCardModel method. */
 export interface CreateCardModelRequest {
   title?: string
   path?: string
   fields?: string[]
 }
 
-/** CreateCardModelResponse is the response of the CreateCardModel method. */
 export interface CreateCardModelResponse {
   path: string
   error?: ErrorCode
   isIndexOutdated: boolean
 }
 
-/** ReadCardModelRequest is the request of the ReadCardModel method. */
 export interface ReadCardModelRequest {
   path?: string
 }
 
-/** ReadCardModelResponse is the response of the ReadCardModel method. */
 export interface ReadCardModelResponse {
   cardModel?: CardModel
   error?: ErrorCode
   at?: FileStat
 }
 
-/** WriteCardModelRequest is the request of the WriteCardModel method. */
 export interface WriteCardModelRequest {
   path?: string
   fields?: string[]
@@ -166,14 +159,12 @@ export interface WriteCardModelRequest {
   tail?: string
 }
 
-/** WriteCardModelResponse is the response of the WriteCardModel method. */
 export interface WriteCardModelResponse {
   error?: ErrorCode
   at?: FileStat
   isIndexOutdated: boolean
 }
 
-/** RenameCardModelFieldRequest is the request of the RenameCardModelField method. */
 export interface RenameCardModelFieldRequest {
   path?: string
   from?: string
@@ -181,7 +172,6 @@ export interface RenameCardModelFieldRequest {
   baseline?: FileStat
 }
 
-/** RenameCardModelFieldResponse is the response of the RenameCardModelField method. */
 export interface RenameCardModelFieldResponse {
   decks: string[]
   cards: number
@@ -197,25 +187,21 @@ interface UnwrittenDeck {
   problem?: Problem
 }
 
-/** CreateDeckRequest is the request of the CreateDeck method. */
 export interface CreateDeckRequest {
   title?: string
   path?: string
 }
 
-/** CreateDeckResponse is the response of the CreateDeck method. */
 export interface CreateDeckResponse {
   path: string
   error?: ErrorCode
   isIndexOutdated: boolean
 }
 
-/** ReadDeckRequest is the request of the ReadDeck method. */
 export interface ReadDeckRequest {
   path?: string
 }
 
-/** ReadDeckResponse is the response of the ReadDeck method. */
 export interface ReadDeckResponse {
   deck?: Deck
   error?: ErrorCode
@@ -223,7 +209,6 @@ export interface ReadDeckResponse {
   bound: number
 }
 
-/** WriteDeckRequest is the request of the WriteDeck method. */
 export interface WriteDeckRequest {
   path?: string
   preamble?: string
@@ -233,7 +218,6 @@ export interface WriteDeckRequest {
   tail?: string
 }
 
-/** WriteDeckResponse is the response of the WriteDeck method. */
 export interface WriteDeckResponse {
   error?: ErrorCode
   at?: FileStat

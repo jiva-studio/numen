@@ -133,7 +133,6 @@ func (h Handling) Hash(maxTokens int) string {
 
 const handlingHashLength = 8
 
-// GetHandling returns the handling of the texts of the model.
 func (p Profile) GetHandling() Handling {
 	if p.Remote {
 		return Handling{}

@@ -53,8 +53,6 @@ func TestDrivingWalk_FailsOnATreeWithoutDrivingAdapters(t *testing.T) {
 	}
 }
 
-// findPortFieldCalls lists the calls through a port field in the driving adapters under root. It
-// fails when it reads no driving adapter.
 func findPortFieldCalls(root string) ([]string, error) {
 	fields := map[string][]string{}
 	files := map[string]*ast.File{}

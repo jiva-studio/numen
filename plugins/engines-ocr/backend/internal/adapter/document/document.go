@@ -46,7 +46,6 @@ func NewReader() *Reader {
 	return &Reader{mu: sync.Mutex{}, workers: nil, compilationCache: nil}
 }
 
-// Open opens the bytes of the file at the path, by its extension.
 func (r *Reader) Open(filePath string, raw []byte) (recognition.Document, error) {
 	if strings.EqualFold(path.Ext(filePath), ".pdf") {
 		return r.openPDF(raw)

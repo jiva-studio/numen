@@ -37,7 +37,6 @@ func (f Files) openWriter() (NoteWriter, error) {
 	return f.OpenWriter(v)
 }
 
-// StatFile returns the stat of the file at the path.
 func (f Files) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
 	v, err := f.session.open()
 	if err != nil {
@@ -46,7 +45,6 @@ func (f Files) StatFile(ctx context.Context, path string) (domain.FileStat, erro
 	return f.Stat.Execute(ctx, v, path)
 }
 
-// Read returns the bytes of the file and its stat.
 func (f Files) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
 	v, err := f.session.open()
 	if err != nil {
@@ -83,7 +81,6 @@ func (f Files) WriteFile(
 	return pos, nil
 }
 
-// CreateFile creates the file and indexes it.
 func (f Files) CreateFile(ctx context.Context, path string, content []byte) error {
 	writer, err := f.openWriter()
 	if err != nil {

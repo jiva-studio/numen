@@ -43,12 +43,10 @@ func NewTextClientFromVars(vars map[string]string) (*TextClient, error) {
 	return NewTextClient(addr), nil
 }
 
-// NewTextClient connects to the host at the endpoint.
 func NewTextClient(endpoint hostcall.Endpoint) *TextClient {
 	return NewTextClientOver(hostcall.HTTPClient(), endpoint)
 }
 
-// NewTextClientOver connects to the host at the endpoint using the given HTTP client.
 func NewTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *TextClient {
 	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }

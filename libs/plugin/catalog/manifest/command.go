@@ -49,7 +49,6 @@ type Command struct {
 	Arguments  []CommandArgument
 }
 
-// CommandArgument is one argument a command takes.
 type CommandArgument struct {
 	Name       string
 	Title      string

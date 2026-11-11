@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// GetLinks returns the links written in one note, resolved.
 func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) (_ []domain.ResolvedLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {

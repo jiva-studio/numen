@@ -265,7 +265,6 @@ export interface PluginRegistrations {
   dropHandler?(registration: DropRegistration): Disposable
 }
 
-// PluginSettings is the settings of the plugin.
 export interface PluginSettings {
   get<T extends JsonValue = JsonValue>(key: string): T | undefined
   onChange<T extends JsonValue = JsonValue>(key: string, handler: (value: T) => void): Disposable
@@ -338,7 +337,6 @@ export interface PluginContext {
 export type JsonValue =
   string | number | boolean | null | readonly JsonValue[] | { readonly [key: string]: JsonValue }
 
-// JsonObject is a JsonValue that is an object.
 export type JsonObject = { readonly [key: string]: JsonValue }
 
 // WikilinkChoice is a note a wikilink can name.

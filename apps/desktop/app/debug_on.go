@@ -18,7 +18,6 @@ type DebugOptions struct {
 	IsMockML bool
 }
 
-// RegisterDebugFlags registers debug flags on the flag set.
 func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 	fs.StringVar(&opts.Debug.HTTPAddr, "debug-http-addr", "", "serve the window over HTTP without opening an OS window")
 	fs.BoolVar(&opts.Debug.IsMockML, "debug-mock-ml", false,

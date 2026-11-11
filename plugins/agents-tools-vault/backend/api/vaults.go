@@ -9,12 +9,10 @@ type VaultEntry struct {
 	IsMissing bool   `json:"isMissing,omitempty" jsonschema:"true when the vault folder does not exist"`
 }
 
-// VaultListOutput is the output of the vault_list tool.
 type VaultListOutput struct {
 	Vaults []VaultEntry `json:"vaults"`
 }
 
-// VaultProblemListInput is the input of the vault_problem_list tool.
 type VaultProblemListInput struct {
 	Checks []string `json:"checks,omitempty" jsonschema:"the names of the checks to run, as the description lists them; the default checks when left out"`
 }
@@ -28,54 +26,45 @@ type VaultProblemItem struct {
 	Candidates []string `json:"candidates,omitempty" jsonschema:"paths of the notes an ambiguous link could resolve to"`
 }
 
-// VaultProblemListOutput is the output of the vault_problem_list tool.
 type VaultProblemListOutput struct {
 	Problems []VaultProblemItem `json:"problems"`
 	Checks   []string           `json:"checks" jsonschema:"the checks this result covers"`
 }
 
-// VaultAddInput is the input of the vault_add tool.
 type VaultAddInput struct {
 	Path string `json:"path" jsonschema:"absolute path of the folder on this machine"`
 	Name string `json:"name,omitempty" jsonschema:"display name of the vault; the folder's name when left out"`
 }
 
-// VaultAddOutput is the output of the vault_add tool.
 type VaultAddOutput struct {
 	ID   string `json:"id" jsonschema:"identifier of the new vault"`
 	Name string `json:"name" jsonschema:"display name of the new vault"`
 	Path string `json:"path" jsonschema:"root directory of the new vault"`
 }
 
-// VaultRenameInput is the input of the vault_rename tool.
 type VaultRenameInput struct {
 	Vault string `json:"vault" jsonschema:"the vault's name, path or identifier, as vault_list returns them"`
 	Name  string `json:"name" jsonschema:"the new display name"`
 }
 
-// VaultRenameOutput is the output of the vault_rename tool.
 type VaultRenameOutput struct {
 	ID   string `json:"id" jsonschema:"identifier of the vault"`
 	Name string `json:"name" jsonschema:"display name of the vault after the rename"`
 	Path string `json:"path" jsonschema:"root directory of the vault"`
 }
 
-// VaultRemoveInput is the input of the vault_remove tool.
 type VaultRemoveInput struct {
 	Vault string `json:"vault" jsonschema:"the vault's name, path or identifier, as vault_list returns them"`
 }
 
-// VaultRemoveOutput is the output of the vault_remove tool.
 type VaultRemoveOutput struct {
 	Path string `json:"path" jsonschema:"root directory of the vault, which is not deleted"`
 }
 
-// VaultOpenInput is the input of the vault_open tool.
 type VaultOpenInput struct {
 	Vault string `json:"vault" jsonschema:"the vault's name, path or identifier, as vault_list returns them"`
 }
 
-// VaultOpenOutput is the output of the vault_open tool.
 type VaultOpenOutput struct {
 	ID   string `json:"id" jsonschema:"identifier of the vault the window opens"`
 	Name string `json:"name" jsonschema:"display name of the vault the window opens"`
@@ -95,5 +84,4 @@ type VaultInfoOutput struct {
 	NoteCount int    `json:"noteCount" jsonschema:"total number of indexed notes in the vault"`
 }
 
-// VaultListInput is the input of the vault_list tool.
 type VaultListInput struct{}

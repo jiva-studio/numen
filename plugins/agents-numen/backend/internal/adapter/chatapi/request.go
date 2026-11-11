@@ -5,7 +5,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 )
 
-// reasoningRequest is the reasoning object of a request.
 type reasoningRequest struct {
 	Effort string `json:"effort"`
 }

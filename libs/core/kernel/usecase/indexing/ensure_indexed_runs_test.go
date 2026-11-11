@@ -64,7 +64,6 @@ func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
 	}
 }
 
-// A window that reads nothing claims nothing.
 func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
 	r := &indexing.Runs{}
 	read, _, underway, reason := r.Claim(domain.Vault{ID: "one"})

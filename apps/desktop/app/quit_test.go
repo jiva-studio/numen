@@ -183,7 +183,6 @@ func TestRequestQuit_WaitsWhileQuestionPending(t *testing.T) {
 	}
 }
 
-// TestRequestedQuitProceedsOnceVaultIsFlushed.
 func TestRequestedQuitProceedsOnceVaultIsFlushed(t *testing.T) {
 	vault := newSettler(true)
 	g := &vaultFlush{flush: vault.settle}
@@ -258,7 +257,6 @@ func TestCloseWindow_NoRepeatWhenPageClosed(t *testing.T) {
 	}
 }
 
-// TestWindowWithFlushedVaultIsDestroyed.
 func TestWindowWithFlushedVaultIsDestroyed(t *testing.T) {
 	g := &vaultFlush{flush: newSettler(true).settle}
 

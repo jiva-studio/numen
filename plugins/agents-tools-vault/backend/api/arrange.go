@@ -8,13 +8,11 @@ type FileMove struct {
 	BrokenLinks   []string `json:"brokenLinks" jsonschema:"paths of the notes whose links to the old name could not be rewritten and are broken"`
 }
 
-// NoteRenameInput is the input of the note_rename tool.
 type NoteRenameInput struct {
 	Path  string `json:"path" jsonschema:"path of the note"`
 	Title string `json:"title" jsonschema:"the new title"`
 }
 
-// NoteRenameOutput is the output of the note_rename tool.
 type NoteRenameOutput struct {
 	Path       string    `json:"path" jsonschema:"path of the note after the rename"`
 	Title      string    `json:"title" jsonschema:"title of the note after the rename"`
@@ -22,7 +20,6 @@ type NoteRenameOutput struct {
 	Move       *FileMove `json:"move,omitempty" jsonschema:"the move of the file; absent when the file kept its path"`
 }
 
-// NoteMoveInput is the input of the note_move tool.
 type NoteMoveInput struct {
 	Paths  []string `json:"paths" jsonschema:"paths of the notes, at most 50"`
 	Folder string   `json:"folder" jsonschema:"folder to move the notes to, relative to the vault folder; \"/\" for the vault root"`
@@ -37,12 +34,10 @@ type NoteMoveItem struct {
 	Error         string   `json:"error,omitempty" jsonschema:"error message when the note was not moved"`
 }
 
-// NoteMoveOutput is the output of the note_move tool.
 type NoteMoveOutput struct {
 	Results []NoteMoveItem `json:"results" jsonschema:"one entry per path, in the order given"`
 }
 
-// NoteRemoveInput is the input of the note_remove tool.
 type NoteRemoveInput struct {
 	Paths []string `json:"paths" jsonschema:"paths of the notes, at most 50"`
 }
@@ -55,7 +50,6 @@ type NoteRemoveItem struct {
 	Error       string   `json:"error,omitempty" jsonschema:"error message when the note was not removed"`
 }
 
-// NoteRemoveOutput is the output of the note_remove tool.
 type NoteRemoveOutput struct {
 	Results []NoteRemoveItem `json:"results" jsonschema:"one entry per path, in the order given"`
 }

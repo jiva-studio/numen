@@ -85,7 +85,6 @@ func (s *Storage) GetVars(pluginID string) ([]string, error) {
 	return vars, nil
 }
 
-// RemoveCacheDir removes the cache folder of the plugin.
 func (s *Storage) RemoveCacheDir(pluginID string) {
 	s.mu.RLock()
 	root := s.roots.cache

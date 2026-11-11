@@ -48,7 +48,6 @@ type Session struct {
 	now         ports.Clock
 }
 
-// NewSession constructs a Session from its dependencies.
 func NewSession(
 	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets presets.Presets,
 	day review.Day, now ports.Clock,

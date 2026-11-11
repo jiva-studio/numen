@@ -38,7 +38,6 @@ func ResolveDesktopScale(getenv func(string) string, bounds Bounds, fallback flo
 	return scale
 }
 
-// CheckAppearanceScales checks both the interface scale and the text scale against their bounds.
 func CheckAppearanceScales(
 	interfaceKey string, interfaceBounds Bounds, interfaceScale float64,
 	textKey string, textBounds Bounds, textScale float64,

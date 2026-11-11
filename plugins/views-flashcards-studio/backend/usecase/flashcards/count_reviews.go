@@ -45,7 +45,6 @@ func NewCountReviews(
 	return CountReviews{logs: logs, Cache: nil, Report: nil, schedules: schedules, day: day, now: now}
 }
 
-// Execute counts one vault.
 func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
 	log := Log{Stores: u.logs}
 	files, err := log.GetLogFiles(ctx, v)
@@ -252,7 +251,6 @@ type GetReviewDays struct {
 	counted CountReviews
 }
 
-// NewGetReviewDays creates the GetReviewDays scenario.
 func NewGetReviewDays(counted CountReviews) GetReviewDays {
 	return GetReviewDays{counted: counted}
 }

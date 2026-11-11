@@ -244,7 +244,6 @@ func onList(t *testing.T, list *v1.ListVaultsResponse, id string) *v1.Vault {
 	return nil
 }
 
-// TestTheListMarksAFolderThatIsGone.
 func TestTheListMarksAFolderThatIsMissing(t *testing.T) {
 	f := onAList(t)
 	if err := os.RemoveAll(f.second.Path); err != nil {
@@ -266,7 +265,6 @@ func TestTheListMarksAFolderThatIsMissing(t *testing.T) {
 	}
 }
 
-// TestAFolderInsideAVaultOnTheListIsRefused, and one holding a vault with it.
 func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 	f := onAList(t)
 	inner := filepath.Join(f.first.Path, "projects", "inner")
@@ -335,7 +333,6 @@ func TestAFolderJoinsTheListBelowANameAnotherVaultHas(t *testing.T) {
 	}
 }
 
-// TestANameAnotherVaultHasIsNotGivenToASecond.
 func TestANameAnotherVaultHasIsNotGivenToASecond(t *testing.T) {
 	f := onAList(t)
 
@@ -354,7 +351,6 @@ func TestANameAnotherVaultHasIsNotGivenToASecond(t *testing.T) {
 	}
 }
 
-// TestAVaultIsCalledWhatThePersonCallsIt.
 func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 	f := onAList(t)
 
@@ -411,7 +407,6 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	}
 }
 
-// TestTheLastVaultAnInstallationHasStaysOnTheList.
 func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	f := onAList(t)
 	// A window standing on nothing is not what keeps this vault: the list is.
@@ -478,7 +473,6 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 	}
 }
 
-// TestAVaultGoesToTheTrashAndOffTheList.
 func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	f := onAList(t)
 
@@ -501,7 +495,6 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	}
 }
 
-// TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing.
 func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	f := onAList(t)
 	f.bin.refuse(machine.ErrNoTrash)
@@ -523,7 +516,6 @@ func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	}
 }
 
-// TestAnotherVaultIsPutInTheWindow.
 func TestAnotherVaultIsInsertInTheWindow(t *testing.T) {
 	f := onAList(t)
 
@@ -578,7 +570,6 @@ func TestAWindowThatIsGoingIsNotACodeAboutTheVault(t *testing.T) {
 	}
 }
 
-// TestAPersonWhoClosedTheFolderDialogChoseNothing, which is an ordinary answer.
 func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	f := onAList(t)
 
@@ -597,7 +588,6 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	}
 }
 
-// TestChooseFolder_ReturnsChosenPath.
 func TestChooseFolder_ReturnsChosenPath(t *testing.T) {
 	f := onAList(t)
 	f.dialog.pick, f.dialog.isChosen = f.second.Path, true

@@ -112,7 +112,6 @@ func (f filing) exists(path string) bool {
 	return err == nil
 }
 
-// A path moved onto itself is not a move.
 func TestAMoveOntoItselfIsNothingCompleted(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
@@ -212,7 +211,6 @@ func TestEveryNoteOfAFolderIsReportedWhereItWent(t *testing.T) {
 	}
 }
 
-// A move that cannot ask what points at a note moves nothing.
 func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
@@ -406,7 +404,6 @@ func TestANoteThatCannotBeSettledIsAnErrorAfterTheFileLanded(t *testing.T) {
 	}
 }
 
-// A Move over another index files through that index.
 func TestAMoveOverAnotherIndexFilesThroughIt(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})

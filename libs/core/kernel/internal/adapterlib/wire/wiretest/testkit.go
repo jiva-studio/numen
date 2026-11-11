@@ -203,7 +203,6 @@ func (s *MockAgentServer) GetAgentTools(
 	}), nil
 }
 
-// GetPort returns the port the test server listens on.
 func GetPort(tb testing.TB, server *httptest.Server) int {
 	tb.Helper()
 	addr, ok := server.Listener.Addr().(*net.TCPAddr)

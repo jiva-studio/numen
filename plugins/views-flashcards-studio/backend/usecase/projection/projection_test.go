@@ -809,7 +809,6 @@ func TestTheDayEveryCardIsLearned(t *testing.T) {
 	}
 }
 
-// A projection over a material already learned is learned in no days.
 func TestAMaterialAlreadyLearnedIsLearnedInNoDays(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{
@@ -1400,7 +1399,6 @@ func TestABudgetThatNeverBindsGetsThroughTheSameAtEitherCounting(t *testing.T) {
 	}
 }
 
-// A deck of nothing projects nothing at either counting.
 func TestADeckOfNothingProjectsNothingAtEitherCounting(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	run := projection.Simulation{

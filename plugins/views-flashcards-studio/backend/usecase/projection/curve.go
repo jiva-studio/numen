@@ -50,14 +50,12 @@ type Point struct {
 	Backlog  []int
 }
 
-// CurvePoint is a point on the curve.
 type CurvePoint struct {
 	Index int
 	Value float64
 	Day   string
 }
 
-// GetOutsideGrid returns the point falling outside the grid.
 func GetOutsideGrid() CurvePoint { return CurvePoint{Index: -1, Value: 0, Day: ""} }
 
 func createCurve(goal Goal) Curve {

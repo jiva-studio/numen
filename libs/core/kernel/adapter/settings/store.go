@@ -45,7 +45,6 @@ func (s *Store) ReadChecked() (settingsdomain.Stored, error) {
 	return &file, nil
 }
 
-// ReadCheckedFile is ReadChecked as the file.
 func (s *Store) ReadCheckedFile() (File, error) {
 	path, err := s.getPath()
 	if err != nil {
@@ -150,7 +149,6 @@ type Validator struct {
 	registries Registries
 }
 
-// NewValidator makes a validator over the declarations and the registries.
 func NewValidator(declared Declarations, registries Registries) Validator {
 	return Validator{declared: declared, registries: registries}
 }
@@ -160,7 +158,6 @@ func (v Validator) CheckWrite(path []string, value any) error {
 	return CheckWrite(v.declared, v.registries, path, value)
 }
 
-// AppDeclaration is the declaration of the settings of the shell.
 type AppDeclaration struct{}
 
 // GetAppDeclaration returns the settings the shell declares.

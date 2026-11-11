@@ -13,7 +13,6 @@ import (
 // VaultFiles keeps one file to a vault in one folder.
 type VaultFiles struct{ dir string }
 
-// VaultFilesAt keeps the files of each vault in dir.
 func VaultFilesAt(dir string) *VaultFiles { return &VaultFiles{dir: dir} }
 
 func (f *VaultFiles) Read(_ context.Context, vaultID domain.VaultID) ([]byte, error) {

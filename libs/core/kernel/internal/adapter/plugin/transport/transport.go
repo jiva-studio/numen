@@ -94,7 +94,6 @@ func (c *Clients) Get(e Endpoint) *http.Client {
 // finds an unpooled client for every endpoint.
 type ClientLookup struct{ clients *Clients }
 
-// NewClientLookup returns the lookup over the clients.
 func NewClientLookup(clients *Clients) ClientLookup { return ClientLookup{clients: clients} }
 
 // GetClient returns the client kept for the endpoint, or an unpooled client when none is kept.

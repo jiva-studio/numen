@@ -1089,7 +1089,6 @@ func TestFindPluginByCapability_SelectsLowestID(t *testing.T) {
 	}
 }
 
-// The host lists its plugins in the order of their ids.
 func TestHost_ListsPluginsInIDOrder(t *testing.T) {
 	host := newHostOfProviders(t)
 	want := []string{"md.numen.provider-a", "md.numen.provider-b", "md.numen.provider-c"}

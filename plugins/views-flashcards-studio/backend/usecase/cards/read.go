@@ -182,7 +182,6 @@ func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.P
 	return out
 }
 
-// CardModel reads the card model at path. A card model is a note and is bounded as one.
 func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardModelContents, error) {
 	out := CardModelContents{
 		Path: path, Title: "", Outcome: "", Type: "",

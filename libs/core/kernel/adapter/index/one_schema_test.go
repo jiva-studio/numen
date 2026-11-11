@@ -66,7 +66,6 @@ func openRaw(t *testing.T, path string) *sql.DB {
 	return raw
 }
 
-// The dump in testdata is the schema a fresh index has.
 func TestAFreshIndexHasExactlyTheRecordedSchema(t *testing.T) {
 	ctx := t.Context()
 	raw, err := os.ReadFile(filepath.Join("testdata", "schema_of_the_ten_steps.json"))

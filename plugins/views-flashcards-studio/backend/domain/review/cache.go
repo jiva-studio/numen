@@ -55,7 +55,6 @@ func EncodeCounts(cache CountsCache) ([]byte, error) {
 	return json.Marshal(cache)
 }
 
-// DecodeSchedules reads a cache of the schedules.
 func DecodeSchedules(raw []byte) (SchedulesCache, error) {
 	var cache SchedulesCache
 	err := json.Unmarshal(raw, &cache)

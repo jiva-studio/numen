@@ -94,7 +94,6 @@ type Resources struct {
 	subscribedHosts settingsusecase.HostSubscriptions
 }
 
-// NewResources returns the resources of one container.
 func NewResources() *Resources {
 	return &Resources{
 		Chunks:        &note.ChunkTokens{},
@@ -213,8 +212,6 @@ func vaultWith(base vaultWiring, settings settingsWiring, search searchWiring) v
 	return base
 }
 
-// assemble builds the settings, search, vault and plugin wiring of one open, once. texts are the text
-// versions the open made over its index, or nil where it makes none.
 func assemble(c Config, texts *TextVersions) pluginsWiring {
 	settings := settingsOf(c)
 	base := vaultBase(c, texts)

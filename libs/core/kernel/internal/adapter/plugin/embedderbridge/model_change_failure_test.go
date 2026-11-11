@@ -102,7 +102,6 @@ func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 	}
 }
 
-// A read that succeeds reports no error.
 func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
 	host, bridge, mock, _ := openConfigurable(t)
 	reports := failureReports(bridge)

@@ -115,7 +115,6 @@ export const LongDescriptionGoesToATooltip: Story = {
   },
 }
 
-/** Each control is labelled by the title of its row. */
 export const ControlsAreLabelledByTheTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

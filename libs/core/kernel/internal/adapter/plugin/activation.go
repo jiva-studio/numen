@@ -104,7 +104,6 @@ func (a *Activation) GetPluginIDByToken(token string) (string, bool) {
 	return a.sups.FindByToken(token)
 }
 
-// GetSupervisor returns the supervisor that tracks a plugin.
 func (a *Activation) GetSupervisor(pluginID string) (*lifecycle.Supervisor, bool) {
 	return a.sups.Get(pluginID)
 }

@@ -287,7 +287,6 @@ func TestEmptyDeclarationSkipsKeyStoreRead(t *testing.T) {
 	}
 }
 
-// A secret the store has no value for is left out of the list.
 func TestASecretWithNoValueInTheStoreIsLeftOut(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	host.Config.SetSecretSource(allowOne(secretPluginID))
@@ -468,7 +467,6 @@ func TestAPluginNamedByAnOperationIsConfiguredAgain(t *testing.T) {
 	}
 }
 
-// A refused operation configures no plugin.
 func TestAnOperationThatFailsConfiguresNoPlugin(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
@@ -483,7 +481,6 @@ func TestAnOperationThatFailsConfiguresNoPlugin(t *testing.T) {
 	}
 }
 
-// A refresh and a Configure from elsewhere run one at a time.
 func TestARefreshAndAConfigureRunOneAtATime(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	source := newListing("Work")

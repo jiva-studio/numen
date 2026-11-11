@@ -250,7 +250,6 @@ export const EmitsWhereTheHandleRests: Story = {
   },
 }
 
-/** The keyboard has no effect on a disabled slider. */
 export const DisabledTakesNoKeyboard: Story = {
   args: { isDisabled: true },
   play: async ({ canvasElement }) => {

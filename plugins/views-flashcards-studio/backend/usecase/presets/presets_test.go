@@ -32,7 +32,6 @@ func getPointing() map[string]string {
 	}
 }
 
-// A deck is scheduled by the preset its link names.
 func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointing())

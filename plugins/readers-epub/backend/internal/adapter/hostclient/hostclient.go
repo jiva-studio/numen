@@ -61,7 +61,6 @@ func OpenFromVars(vars map[string]string) (*Host, error) {
 	return &Host{files: files, texts: textClient, store: store, queue: queue}, nil
 }
 
-// OpenFiles returns the files of a vault.
 func (h *Host) OpenFiles(id domain.VaultID) host.FileReader {
 	return h.files.With(id)
 }
@@ -71,7 +70,6 @@ func (h *Host) OpenVault(id domain.VaultID) texts.Vault {
 	return h.files.With(id)
 }
 
-// OpenTexts returns the text versions of a vault.
 func (h *Host) OpenTexts(id domain.VaultID) host.TextVersions {
 	return h.texts.With(id)
 }
@@ -81,7 +79,6 @@ func (h *Host) OpenStore(id domain.VaultID) host.StoreWriter {
 	return h.store.With(id)
 }
 
-// GetQueue returns the work queue of the host.
 func (h *Host) GetQueue() host.Queue {
 	return h.queue
 }

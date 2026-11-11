@@ -181,7 +181,6 @@ func TestEachConversationGoesOnInItsOwn(t *testing.T) {
 	}
 }
 
-// A question in no conversation carries nothing, and nothing carries into it.
 func TestAQuestionInNoConversationCarriesNothing(t *testing.T) {
 	dir := t.TempDir()
 	script := echoSession(t, dir)

@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// A pattern that matches no type is reported, and one that matches a type is not.
 func TestExhaustructIncludeRule_ReportsAPatternThatMatchesNoType(t *testing.T) {
 	names := []string{"example.com/a/domain/model.Model", "example.com/a/domain/model.Vector"}
 	got := getUnmatchedPatterns([]string{`example\.com/a/domain/model\.Model$`, `example\.com/a/core/port\.Model$`}, names)

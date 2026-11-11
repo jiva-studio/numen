@@ -15,7 +15,6 @@ type DiscoveryProblem struct {
 	Err error
 }
 
-// ReadFile reads and validates the manifest at the path.
 func ReadFile(path string) (m manifest.Manifest, err error) {
 	file, err := os.Open(path)
 	if err != nil {

@@ -47,7 +47,6 @@ type Chunk struct {
 	Parent   int64
 }
 
-// NewStore creates an empty index.
 func NewStore() *Store {
 	return &Store{
 		Sources:     map[domain.VaultID]map[string]domain.Source{},
@@ -169,7 +168,6 @@ func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	return out, next, nil
 }
 
-// GetChunkID formats a row index as domain.ChunkID.
 func GetChunkID(row int64) domain.ChunkID {
 	return domain.ChunkID(strconv.FormatInt(row, 10))
 }
@@ -347,7 +345,6 @@ func (s *Store) HasChunk(chunk domain.ChunkID) bool {
 	return false
 }
 
-// GetVectors returns the vectors this store holds for one chunk.
 func (s *Store) GetVectors(c Chunk) []embedding.Vector {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

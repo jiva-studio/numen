@@ -2,7 +2,6 @@ package document
 
 import "strconv"
 
-// PageRequest is a request for one page image.
 type PageRequest struct {
 	Index      int
 	Path       string

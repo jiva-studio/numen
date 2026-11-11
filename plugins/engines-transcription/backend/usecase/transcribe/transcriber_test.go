@@ -725,5 +725,4 @@ func TestStartReportsTaskBeforeReturning(t *testing.T) {
 	s.waitFinished(t, getTaskID("Lectures", lecture))
 }
 
-// noReport drops the background failures of a transcriber that a test does not look at.
 func noReport(string, error) {}

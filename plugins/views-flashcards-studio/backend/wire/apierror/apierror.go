@@ -85,7 +85,6 @@ func NewError(code server.ErrorCode, err error) error {
 // IsIndexOutdated reports whether a write reached the vault and the index did not follow.
 func IsIndexOutdated(err error) bool { return errors.Is(err, edit.ErrIndexOutdated) }
 
-// GetDeckError is the ErrorCode of a read that did not return a deck.
 func GetDeckError(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, bool) {
 	if o == note.TooLarge {
 		return api.ErrorCodeDeckTooLarge, true
@@ -96,7 +95,6 @@ func GetDeckError(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, bool) 
 	return ConvertOutcome(o)
 }
 
-// GetCardModelError is the ErrorCode of a read that did not return a card model.
 func GetCardModelError(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, bool) {
 	if o == note.Ok && is != format.TypeCardModel {
 		return api.ErrorCodeNotACardModel, true
@@ -145,7 +143,6 @@ func ClassifyCreate(made cards.CreateNoteResult, err error) (cards.CreateNoteRes
 // NewFailure is err as an API error whose code is the one GetCode gives.
 func NewFailure(err error) error { return NewError(GetCode(err), err) }
 
-// NewInternal is err as an internal API error.
 func NewInternal(err error) error { return NewError(server.CodeInternal, err) }
 
 var errNoVault = errors.New("no vault is open")

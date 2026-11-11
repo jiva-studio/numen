@@ -17,12 +17,10 @@ const (
 	maxPassagesPerSource = 3
 )
 
-// PassageFinder is the search of the passages of a vault, which Search is.
 type PassageFinder interface {
 	Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error)
 }
 
-// PassageQuery is a passage search request.
 type PassageQuery struct {
 	Query      string
 	Limit      int

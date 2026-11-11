@@ -121,7 +121,6 @@ func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of
 	return out, rows.Err()
 }
 
-// GetHeadings answers noteport.Headings.
 func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error) {
 	return queryEachPath(ctx, q.db, vaultID, paths, headingsOfSQL, func(statement *sql.Stmt, vault int64, path string) ([]domain.Heading, bool, error) {
 		found, err := getHeadingsAt(ctx, statement, vault, path)

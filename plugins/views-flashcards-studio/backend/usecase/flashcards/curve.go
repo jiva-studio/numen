@@ -15,7 +15,6 @@ import (
 // Curve is the simulated progression of a preset across its target range.
 type Curve = projection.Curve
 
-// CurvePoint is one point of a simulated curve.
 type CurvePoint = projection.CurvePoint
 
 // Point is one place of a simulated curve.
@@ -30,7 +29,6 @@ const Ahead = projection.Ahead
 // MostAhead is how far ahead a goal of a date is projected.
 const MostAhead = projection.MostAhead
 
-// GetOutsideGrid returns the point falling outside the grid.
 func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
 
 // ProjectCurve is the simulator behind the one control of a preset.

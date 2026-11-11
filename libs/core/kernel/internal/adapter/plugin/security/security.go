@@ -22,7 +22,6 @@ var (
 // VaultPathValidator verifies that file paths accessed by plugins reside within the active vault.
 type VaultPathValidator struct{}
 
-// NewVaultPathValidator creates a new path validator.
 func NewVaultPathValidator() VaultPathValidator {
 	return VaultPathValidator{}
 }

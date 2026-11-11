@@ -15,7 +15,6 @@ import (
 // ErrNoPathSetting is a plugin or a setting of it that holds no path.
 var ErrNoPathSetting = errors.New("the plugin declares no setting of type file under that key")
 
-// ChosenPath is the path the user chose for a setting.
 type ChosenPath struct {
 	Path     string
 	IsChosen bool

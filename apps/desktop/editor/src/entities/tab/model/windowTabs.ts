@@ -42,5 +42,4 @@ export function createWindowTabs(panes: PlaceholderPanes, unavailable: Unavailab
   }
 }
 
-/** The tabs of a window. */
 export type WindowTabs = ReturnType<typeof createWindowTabs>

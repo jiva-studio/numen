@@ -50,7 +50,6 @@ func TestAKeyNeverStoredIsNoKey(t *testing.T) {
 	}
 }
 
-// Keys under two names stay apart.
 func TestKeysBelowTwoNamesStayApart(t *testing.T) {
 	keyring.MockInit()
 	store := Store{}

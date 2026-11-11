@@ -39,7 +39,6 @@ func NewQueryCache(capacity int) *QueryCache {
 	}
 }
 
-// Get returns the cached vector for the recipe and query.
 func (c *QueryCache) Get(recipe, query string) ([]float32, bool) {
 	if c == nil {
 		return nil, false
@@ -56,7 +55,6 @@ func (c *QueryCache) Get(recipe, query string) ([]float32, bool) {
 	return entry.vector, true
 }
 
-// Put stores the vector for the recipe and query.
 func (c *QueryCache) Put(recipe, query string, vector []float32) {
 	if c == nil || len(vector) == 0 {
 		return

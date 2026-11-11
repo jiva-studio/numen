@@ -133,7 +133,6 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	}
 }
 
-// An indexing that failed stays in the list of work with why it failed.
 func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 	api := newAPI(t)
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {

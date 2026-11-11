@@ -27,7 +27,6 @@ type VaultSummaries interface {
 	GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error)
 }
 
-// NoteTypes reads the type of notes.
 type NoteTypes interface {
 	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
 }

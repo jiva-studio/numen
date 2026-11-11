@@ -22,8 +22,6 @@ const notesModule = "github.com/jiva-studio/numen/libs/note/"
 // rootPackage names the files of the module folder itself.
 const rootPackage = "."
 
-// getInternalEdges lists the packages of libs/note and what each may import of the module.
-// A package that is not listed fails the check.
 func getInternalEdges() map[string][]string {
 	return map[string][]string{
 		rootPackage: nil,
@@ -35,7 +33,6 @@ func getInternalEdges() map[string][]string {
 	}
 }
 
-// getForbiddenInfra lists the packages that do I/O or serialize for the wire.
 func getForbiddenInfra() map[string]bool {
 	return map[string]bool{
 		"os":            true,
@@ -48,14 +45,12 @@ func getForbiddenInfra() map[string]bool {
 	}
 }
 
-// getAllowedInfra lists the forbidden packages that one package of the library may import anyway.
 func getAllowedInfra() map[string][]string {
 	return map[string][]string{
 		"textfile": {"encoding/json"},
 	}
 }
 
-// listThirdParty lists the third-party packages the library may import.
 func listThirdParty() []string {
 	return []string{"gopkg.in/yaml.v3", "golang.org/x/text/"}
 }
@@ -112,8 +107,6 @@ func TestNoteLibraryWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findNoteLibraryViolations lists what the non-test Go files under root break. It fails when it
-// reads no file.
 func findNoteLibraryViolations(root string) ([]string, error) {
 	var found []string
 	var read int

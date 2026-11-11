@@ -266,7 +266,6 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 	}
 }
 
-// A built-in plugin whose copy on disk is removed is the built-in again.
 func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
@@ -420,7 +419,6 @@ func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
 	}
 }
 
-// A call whose context ends after the header has been written ends with the error of the context.
 func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
 	transport := transport.NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -458,7 +456,6 @@ func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
 	}
 }
 
-// A handler whose activation does not complete is shut down.
 func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 	host := newBuiltInHost(t)
 	backend := newBuiltInBackend()

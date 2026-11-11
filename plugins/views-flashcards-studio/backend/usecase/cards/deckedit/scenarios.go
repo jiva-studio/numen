@@ -10,7 +10,6 @@ type Read = cards.Read
 // Write is the note writing scenario of the cards package.
 type Write = cards.Write
 
-// DeckContents is the parsed contents of a deck.
 type DeckContents = cards.DeckContents
 
 // MaxBytes is the largest deck that is read.
@@ -25,7 +24,6 @@ type CardScenarios struct {
 	RemoveCard      RemoveCard
 }
 
-// NewCardScenarios creates the scenarios that edit the cards of a deck.
 func NewCardScenarios(read Read, write Write) CardScenarios {
 	return CardScenarios{
 		GetCardPage:     NewGetCardPage(read),
@@ -43,7 +41,6 @@ type SectionScenarios struct {
 	RemoveSection RemoveSection
 }
 
-// NewSectionScenarios creates the scenarios that edit the sections of a deck.
 func NewSectionScenarios(read Read, write Write) SectionScenarios {
 	return SectionScenarios{
 		AddSection:    NewAddSection(read, write),

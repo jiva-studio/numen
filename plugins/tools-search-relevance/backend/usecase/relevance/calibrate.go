@@ -123,7 +123,6 @@ func isTooSmall(sample host.SimilaritySample) bool {
 	return sample.PassageCount < minPassages || sample.SourceCount < minSources
 }
 
-// noteTitle is the title of a note and its path.
 type noteTitle struct {
 	path string
 	text string

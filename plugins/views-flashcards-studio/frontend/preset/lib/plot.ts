@@ -25,7 +25,6 @@ export interface Plot {
   readonly foot: number
 }
 
-/** The curve plot. */
 const CURVE_PLOT: Plot = { high: PLOT_HEIGHT, top: PLOT_TOP, foot: PLOT_BOTTOM }
 
 /** The backlog plot below the curve plot: shorter, and the same width. */

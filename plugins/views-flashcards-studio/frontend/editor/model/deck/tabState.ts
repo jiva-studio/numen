@@ -19,7 +19,6 @@ interface DeckDataState {
   readonly errorMessage: ComputedRef<string>
 }
 
-/** Schedule preset state for a deck tab. */
 interface DeckScheduleState {
   readonly scheduled: ComputedRef<DeckPreset>
   readonly choices: ComputedRef<readonly Choice[]>

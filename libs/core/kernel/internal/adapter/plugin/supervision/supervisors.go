@@ -63,7 +63,6 @@ func (s *Supervisors) Put(pluginID string, sup *lifecycle.Supervisor) {
 	s.byPlugin[pluginID] = sup
 }
 
-// Get returns the supervisor that tracks a plugin.
 func (s *Supervisors) Get(pluginID string) (*lifecycle.Supervisor, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

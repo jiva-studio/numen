@@ -18,7 +18,6 @@ export interface CreateNoteOptions {
   readonly target: CommandTarget
 }
 
-/** One action that creates a note. */
 export interface CreateNoteAction {
   readonly id: string
   readonly text: string

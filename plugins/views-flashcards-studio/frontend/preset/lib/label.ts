@@ -67,7 +67,6 @@ export const isAxisLabelClear = (
   return !places.some(isNear)
 }
 
-/** Returns the CSS position style for a mark label. */
 export const getMarkNameStyle = (position: Position): CSSProperties => {
   let back = '-50%'
   if (position.x < PLOT_LEFT + LABEL) back = '0'
@@ -99,7 +98,6 @@ export const getAxisNumber = (y: number, offsetY: string, high = PLOT_HEIGHT): C
   translate: `0 ${offsetY}`,
 })
 
-/** Returns the bounding box of an axis number. */
 export const getAxisNumberBox = (y: number, offsetY: string): Box => ({
   x: PLOT_LEFT,
   y: offsetY === '0' ? y : y - AXIS_LABEL_HEIGHT,
@@ -186,7 +184,6 @@ export interface AxisLabelsContext {
   calloutBox?: Box | null
 }
 
-/** Creates the axis height labels for a plot extent. */
 export const createAxisLabels = (
   extent: Extent,
   context: AxisLabelsContext,
@@ -234,7 +231,6 @@ export const createBacklogAxisLabels = (
   ]
 }
 
-/** Returns the CSS position style for the knob value label. */
 export const getKnobValueStyle = (knob: Position | null): CSSProperties => {
   if (!knob) return {}
   let back = '-50%'

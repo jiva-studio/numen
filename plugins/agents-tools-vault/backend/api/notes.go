@@ -1,11 +1,9 @@
 package api
 
-// NoteReadInput is the input of the note_read tool.
 type NoteReadInput struct {
 	Path string `json:"path" jsonschema:"relative path to the note file (e.g. Notes/Topic.md)"`
 }
 
-// NoteReadOutput is the output of the note_read tool.
 type NoteReadOutput struct {
 	Path        string         `json:"path" jsonschema:"path of the note"`
 	Title       string         `json:"title" jsonschema:"title of the note"`
@@ -15,14 +13,12 @@ type NoteReadOutput struct {
 	Frontmatter map[string]any `json:"frontmatter,omitempty" jsonschema:"parsed YAML frontmatter, if present"`
 }
 
-// NoteWriteInput is the input of the note_write tool.
 type NoteWriteInput struct {
 	Path        string  `json:"path" jsonschema:"relative path to the note file"`
 	Text        *string `json:"text,omitempty" jsonschema:"markdown content to write"`
 	Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"optional baseline fingerprint from note_read for optimistic concurrency"`
 }
 
-// NoteWriteOutput is the output of the note_write tool.
 type NoteWriteOutput struct {
 	Path        string `json:"path" jsonschema:"path written"`
 	Fingerprint string `json:"fingerprint" jsonschema:"new concurrency fingerprint after write"`
@@ -37,12 +33,10 @@ type HeadingItem struct {
 	Start int    `json:"start" jsonschema:"byte offset of the heading in the body"`
 }
 
-// NoteHeadingListInput is the input of the note_heading_list tool.
 type NoteHeadingListInput struct {
 	Path string `json:"path" jsonschema:"relative path to the note file"`
 }
 
-// NoteHeadingListOutput is the output of the note_heading_list tool.
 type NoteHeadingListOutput struct {
 	Path     string        `json:"path"`
 	Headings []HeadingItem `json:"headings"`

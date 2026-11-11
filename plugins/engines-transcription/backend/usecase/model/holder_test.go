@@ -22,7 +22,6 @@ func (m quietModel) Close() error {
 	return nil
 }
 
-// The recognizer opens with the model the settings name.
 func TestTheRecognizerOpensWithTheModelOfTheSettings(t *testing.T) {
 	for _, tc := range []struct {
 		values map[string]string

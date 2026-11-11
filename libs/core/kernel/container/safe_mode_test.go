@@ -72,8 +72,6 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	})
 }
 
-// An installation without a plugin host has no plugin installed, and its
-// plugins are set and stopped without one.
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := NewConfig(Config{})
 	_, err := plugins(cfg).RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)

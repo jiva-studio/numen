@@ -15,7 +15,6 @@ import (
 // ErrNoNotePath is returned by a focus with no path.
 var ErrNoNotePath = errors.New("note path is empty")
 
-// FocusNote sets the focused note.
 type FocusNote struct {
 	queries noteport.NoteRefs
 	view    PlaceFocus

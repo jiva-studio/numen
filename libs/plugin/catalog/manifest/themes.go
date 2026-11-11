@@ -13,7 +13,6 @@ const (
 	AppearanceDark  = "dark"
 )
 
-// ThemeExtension is the extension of a theme stylesheet.
 const ThemeExtension = ".css"
 
 // MaxThemeSize is the largest theme stylesheet, in bytes. The text is spliced into the page before

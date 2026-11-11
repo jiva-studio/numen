@@ -55,7 +55,6 @@ func NewListVaults(list Lister, missing FolderChecker) *ListVaults {
 	return &ListVaults{list: list, missing: missing}
 }
 
-// Execute lists the vaults.
 func (u *ListVaults) Execute() ([]Listed, error) {
 	vaults, err := u.list.Execute()
 	if err != nil {

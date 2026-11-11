@@ -185,7 +185,6 @@ export const NoTextAtAll: Story = {
   parameters: { reach: false },
 }
 
-/** A disabled control. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
 /** The same control on the dark token set, with the same segments and the same one in force. */

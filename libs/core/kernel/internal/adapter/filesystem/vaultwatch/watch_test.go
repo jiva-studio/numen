@@ -77,8 +77,6 @@ func TestOneSaveIsOneReport(t *testing.T) {
 	}
 }
 
-// TestWatchVault_RequestsReloadWhenFolderRemoved. The index has the contents of
-// the removed folder, so the watcher requests a full vault reload.
 func TestWatchVault_RequestsReloadWhenFolderRemoved(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{
 		"Note.md":            "# Note\n",
@@ -206,7 +204,6 @@ func TestDebouncingContinuesWhileNoListenerIsRegistered(t *testing.T) {
 	}
 }
 
-// TestAnEditIsReported.
 func TestAnEditIsReported(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	next := watchVault(t, watchhub.NewHub(), root)

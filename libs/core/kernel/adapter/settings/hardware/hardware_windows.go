@@ -16,7 +16,6 @@ var (
 	procGetLogicalProcessorInfoEx = kernel32.NewProc("GetLogicalProcessorInformationEx")
 )
 
-// memoryStatusEx is the MEMORYSTATUSEX structure.
 type memoryStatusEx struct {
 	Length               uint32
 	MemoryLoad           uint32

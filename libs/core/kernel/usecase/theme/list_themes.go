@@ -7,7 +7,6 @@ type ListThemes struct {
 	catalog catalog
 }
 
-// NewListThemes makes the listing over the sources.
 func NewListThemes(sources Sources) *ListThemes {
 	return &ListThemes{catalog: catalog{sources: sources}}
 }

@@ -14,7 +14,6 @@ type reading struct {
 	newVault       func(tb testing.TB, notes map[string]string) domain.Vault
 }
 
-// GetVaultReaders opens vaults for reading.
 func (r reading) GetVaultReaders() vaultport.VaultReaders { return r.readers }
 
 // openFunc opens an index in a folder of the test and returns what reads into it.

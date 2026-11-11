@@ -136,8 +136,6 @@ func getPluginCommands(c pluginsWiring) PluginCommandScenarios {
 	return newPluginCommands(c, c.PluginHost, nil)
 }
 
-// newPluginCommands builds the scenarios over the host; versions are the text versions that a command with
-// items lists and runs over, and nil where the window has none.
 func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand.VersionItems) PluginCommandScenarios {
 	commands, conditions := pluginmanifest.New(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)

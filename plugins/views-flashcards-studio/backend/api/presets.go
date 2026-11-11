@@ -123,12 +123,10 @@ type CurvePoint struct {
 	Day   string  `json:"day"`
 }
 
-// GetDeckPresetRequest is the request of the GetDeckPreset method.
 type GetDeckPresetRequest struct {
 	Deck string `json:"deck"`
 }
 
-// GetDeckPresetResponse is the response of the GetDeckPreset method.
 type GetDeckPresetResponse struct {
 	Preset *Preset         `json:"preset,omitempty"`
 	Error  ErrorCode       `json:"error,omitempty"`
@@ -136,11 +134,9 @@ type GetDeckPresetResponse struct {
 	Bounds *SettingsBounds `json:"bounds,omitempty"`
 }
 
-// ListPresetsRequest is the request of the ListPresets method.
 type ListPresetsRequest struct {
 }
 
-// ListPresetsResponse is the response of the ListPresets method.
 type ListPresetsResponse struct {
 	Presets []*PresetSummary `json:"presets"`
 }
@@ -151,39 +147,33 @@ type PresetSummary struct {
 	Title string `json:"title"`
 }
 
-// CreatePresetRequest is the request of the CreatePreset method.
 type CreatePresetRequest struct {
 	Title string `json:"title"`
 	Path  string `json:"path"`
 }
 
-// CreatePresetResponse is the response of the CreatePreset method.
 type CreatePresetResponse struct {
 	Path            string    `json:"path"`
 	Error           ErrorCode `json:"error,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
-// ScheduleDeckRequest is the request of the ScheduleDeck method.
 type ScheduleDeckRequest struct {
 	Deck     string    `json:"deck"`
 	Preset   string    `json:"preset"`
 	Baseline *FileStat `json:"baseline,omitempty"`
 }
 
-// ScheduleDeckResponse is the response of the ScheduleDeck method.
 type ScheduleDeckResponse struct {
 	Error           ErrorCode `json:"error,omitempty"`
 	At              *FileStat `json:"at,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
-// ReadPresetRequest is the request of the ReadPreset method.
 type ReadPresetRequest struct {
 	Path string `json:"path"`
 }
 
-// ReadPresetResponse is the response of the ReadPreset method.
 type ReadPresetResponse struct {
 	Preset *Preset         `json:"preset,omitempty"`
 	Error  ErrorCode       `json:"error,omitempty"`
@@ -202,27 +192,23 @@ type SettingsBounds struct {
 	Load        *Bounds `json:"load,omitempty"`
 }
 
-// WritePresetRequest is the request of the WritePreset method.
 type WritePresetRequest struct {
 	Path     string    `json:"path"`
 	Settings *Settings `json:"settings,omitempty"`
 	Baseline *FileStat `json:"baseline,omitempty"`
 }
 
-// WritePresetResponse is the response of the WritePreset method.
 type WritePresetResponse struct {
 	Error           ErrorCode `json:"error,omitempty"`
 	At              *FileStat `json:"at,omitempty"`
 	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
-// ComputeCurveRequest is the request of the ComputeCurve method.
 type ComputeCurveRequest struct {
 	Path     string    `json:"path"`
 	Settings *Settings `json:"settings,omitempty"`
 }
 
-// ComputeCurveResponse is the response of the ComputeCurve method.
 type ComputeCurveResponse struct {
 	Curve *Curve `json:"curve,omitempty"`
 }

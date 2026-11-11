@@ -369,7 +369,6 @@ func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
 	}
 }
 
-// TestAVaultOpensOnItsFirstNote.
 func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 	t.Parallel()
 	db, v := newIndexedVault(t, map[string]string{

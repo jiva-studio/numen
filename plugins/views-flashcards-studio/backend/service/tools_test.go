@@ -463,7 +463,6 @@ func TestAFieldIsTakenOffACardAndTheOthersStay(t *testing.T) {
 	}
 }
 
-// TestACardIsRemovedAndNothingElseIs.
 func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 	session, v := newSession(t, vault())
 

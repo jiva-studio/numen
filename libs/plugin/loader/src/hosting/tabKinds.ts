@@ -117,7 +117,6 @@ export interface TabKind<TabState, K extends string = string> {
  */
 export type AnyTabKind = TabKind<object>
 
-/** Returns the tab kind id for a reader, prefixed with `reader:`. */
 export function getReaderKindId(id: string): string {
   return id.startsWith('reader:') ? id : `reader:${id}`
 }

@@ -70,7 +70,6 @@ func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], wind
 	return out.Send(convertEventToWire(event))
 }
 
-// CancelWatchTabLinks cancels the WatchTabLinks streams of a window.
 func (h *Handler) CancelWatchTabLinks(
 	_ context.Context, r *connect.Request[v1.CancelWatchTabLinksRequest],
 ) (*connect.Response[v1.CancelWatchTabLinksResponse], error) {

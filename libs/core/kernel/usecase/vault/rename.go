@@ -32,7 +32,6 @@ func NewRename(vaults vaultport.VaultList, saver vaultport.VaultSaver, index vau
 	return Rename{vaults: vaults, saver: saver, index: index}
 }
 
-// RenameByName renames the vault a person names.
 type RenameByName struct {
 	find   VaultFinding
 	rename Rename
@@ -43,7 +42,6 @@ func NewRenameByName(find VaultFinding, rename Rename) RenameByName {
 	return RenameByName{find: find, rename: rename}
 }
 
-// ExecuteByName resolves the vault and renames it.
 func (u RenameByName) ExecuteByName(ctx context.Context, nameOrPath, name string) (RenameResult, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {

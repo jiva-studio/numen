@@ -23,7 +23,6 @@ type Readers interface {
 	Open(v domain.Vault) (VaultTexts, error)
 }
 
-// VaultTexts reads the text of one vault.
 type VaultTexts interface {
 	Texts
 	// GetContentHash returns domain.HashContent of the file as it is now.

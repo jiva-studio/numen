@@ -13,10 +13,8 @@ import (
 
 // structLimit is how many methods and fields one named type of a layer may have.
 type structLimit struct {
-	methods int
-	fields  int
-	// holdsWiring marks a package of the container: every type in it, with or without methods, counts its direct
-	// and embedded fields, each embedded field as one.
+	methods     int
+	fields      int
 	holdsWiring bool
 }
 

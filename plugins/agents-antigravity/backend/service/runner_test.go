@@ -169,7 +169,6 @@ func TestResultEventEndsRunWithOpenChildOutput(t *testing.T) {
 	}
 }
 
-// A result in error stops the run with the error the CLI gave.
 func TestAnErrorResultOfTheCliStopsTheRunWithItsError(t *testing.T) {
 	script := agenttest.WriteScript(t, "agy",
 		`echo '{"event":"result","result":{"status":"ERROR","response":"","error":"Eligibility check failed: 503"}}'`+"\n"+

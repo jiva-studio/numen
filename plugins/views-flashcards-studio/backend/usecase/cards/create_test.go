@@ -66,7 +66,6 @@ func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 	}
 }
 
-// A card model of one field declares it.
 func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault

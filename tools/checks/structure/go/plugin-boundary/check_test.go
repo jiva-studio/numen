@@ -107,8 +107,6 @@ func TestModuleWalk_FindsThePlantedRequirement(t *testing.T) {
 	}
 }
 
-// findPluginRequirementsInModules lists the plugin requirements of the go.mod files under root. It
-// fails the test when it reads none.
 func findPluginRequirementsInModules(t *testing.T, root string) []string {
 	t.Helper()
 	var wrong []string

@@ -105,7 +105,6 @@ func TestAWriteThatCannotReplaceTheFilePreservesNothingPrior(t *testing.T) {
 	}
 }
 
-// A folder that cannot be written into fails the write.
 func TestAFolderThatCannotBeSavedIntoFailsTheWrite(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser writes into any folder")

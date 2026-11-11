@@ -88,7 +88,6 @@ func (s *Services) OpenHostEndpoint(ctx context.Context) (int, error) {
 	return endpoint.Open(ctx)
 }
 
-// CloseHostEndpoint closes the endpoint if one is set.
 func (s *Services) CloseHostEndpoint(ctx context.Context) error {
 	s.mu.RLock()
 	endpoint := s.endpoint

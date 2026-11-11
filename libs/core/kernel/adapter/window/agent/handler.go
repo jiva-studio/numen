@@ -85,7 +85,6 @@ func (h *Handler) AskAgent(
 	return streamRun(ctx, work, stream)
 }
 
-// FinishConversation ends the conversation on the agent.
 func (h *Handler) FinishConversation(
 	ctx context.Context,
 	r *connect.Request[v1.FinishConversationRequest],

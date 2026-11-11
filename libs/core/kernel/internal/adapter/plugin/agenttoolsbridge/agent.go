@@ -68,7 +68,6 @@ func (a *Agent) StartRun(ctx context.Context, task agentdomain.Task) (agentport.
 	return &endpointRun{Run: run, endpoint: served}, nil
 }
 
-// EndConversation ends the conversation on the agent it wraps.
 func (a *Agent) EndConversation(ctx context.Context, conversation string) error {
 	return a.agent.EndConversation(ctx, conversation)
 }
@@ -79,7 +78,6 @@ type endpointRun struct {
 	endpoint *endpoint
 }
 
-// Stop stops the run, then the endpoint.
 func (r *endpointRun) Stop() error {
 	return errors.Join(r.Run.Stop(), r.endpoint.close(context.Background()))
 }

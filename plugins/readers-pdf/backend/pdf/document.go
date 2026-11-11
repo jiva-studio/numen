@@ -52,16 +52,11 @@ type Workers struct {
 
 // Options is what a pool is made from.
 type Options struct {
-	// Report receives the failures of the pool that no caller waits for. It is required.
-	Report func(what string, err error)
-	// CompilationCache makes pools that share it compile PDFium once. Without one each pool compiles on its own.
+	Report           func(what string, err error)
 	CompilationCache wazero.CompilationCache
-	// AfterFunc makes the timer that releases the idle pool. Without it the pool is never released.
-	AfterFunc func(time.Duration, func()) Timer
-	// Workers is how many workers the pool starts with. Zero or less is one per CPU.
-	Workers int
-	// IdleWorkers is how many returned workers the pool keeps alive. Zero or less keeps none.
-	IdleWorkers int
+	AfterFunc        func(time.Duration, func()) Timer
+	Workers          int
+	IdleWorkers      int
 }
 
 // NewWorkers returns a pool that has not started, made from options.

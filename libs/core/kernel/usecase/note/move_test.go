@@ -383,7 +383,6 @@ func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
 	}
 }
 
-// A note that went since the links were read took its link with it.
 func TestANoteThatWentSinceTheLinksWereReadIsLeftOut(t *testing.T) {
 	c := openLinked(t)
 	if err := os.Remove(filepath.Join(c.vault.Path, "physics", "Heat.md")); err != nil {
@@ -417,7 +416,6 @@ func TestANoteThatNoLongerReturnsTheLinkIsNotSaved(t *testing.T) {
 	}
 }
 
-// A link in the block and a link in the prose are both repaired.
 func TestALinkInTheBlockAndOneInTheProseAreBothRepaired(t *testing.T) {
 	isolate(t)
 	c := openChanging(t, map[string]string{

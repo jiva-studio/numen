@@ -277,7 +277,6 @@ func (f *File) resetApp(declared manifest.Setting) {
 // a registry that is not known.
 type RegistryOptions func(name string) (manifest.SettingOptions, bool)
 
-// ListRegistryOptions returns the options of the registry named.
 func (r RegistryOptions) ListRegistryOptions(name string) (manifest.SettingOptions, bool) {
 	return r(name)
 }

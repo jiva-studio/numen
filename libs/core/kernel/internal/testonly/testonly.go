@@ -6,5 +6,4 @@ package testonly
 // Grant is the permission itself. It carries nothing; holding one is the point.
 type Grant struct{}
 
-// NewGrant makes a Grant.
 func NewGrant() Grant { return Grant{} }

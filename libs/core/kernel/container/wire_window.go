@@ -69,9 +69,7 @@ type WindowOpening struct {
 
 // WindowUseCases are the use cases of notes and vaults a window works through.
 type WindowUseCases struct {
-	Notes *NoteScenarios
-	// PluginNotes are the note use cases the plugins work through in the window: they pass no gate and report no
-	// write to the window.
+	Notes       *NoteScenarios
 	PluginNotes *NoteScenarios
 	Queries     *query.Scenarios
 	Listing     *registry.Listing

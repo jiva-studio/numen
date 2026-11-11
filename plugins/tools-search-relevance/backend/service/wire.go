@@ -14,7 +14,6 @@ import (
 // errNotMounted is a call that reached the service before it was mounted.
 var errNotMounted = server.NewAPIError(server.CodeUnavailable, "the plugin is not ready")
 
-// convertError translates a domain or host error into the corresponding APIError.
 func convertError(err error) error {
 	switch {
 	case errors.Is(err, calibration.ErrNotStarted):
@@ -34,7 +33,6 @@ func convertError(err error) error {
 	}
 }
 
-// convertState converts a floor state into its wire message.
 func convertState(state relevance.State) api.GetFloorResponse {
 	out := api.GetFloorResponse{
 		Floor:          state.Floor,
@@ -58,7 +56,6 @@ func convertState(state relevance.State) api.GetFloorResponse {
 	return out
 }
 
-// convertCalibrate converts a calibration outcome and state into its wire message.
 func convertCalibrate(outcome relevance.Outcome, state relevance.State) api.CalibrateFloorResponse {
 	return api.CalibrateFloorResponse{
 		Outcome: convertOutcome(outcome),
@@ -66,7 +63,6 @@ func convertCalibrate(outcome relevance.Outcome, state relevance.State) api.Cali
 	}
 }
 
-// convertProbe converts a probe result into its wire message.
 func convertProbe(result relevance.ProbeResult) api.ProbeFloorResponse {
 	return api.ProbeFloorResponse{
 		BestSimilarity: result.BestSimilarity,

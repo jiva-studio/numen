@@ -339,5 +339,4 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	}
 }
 
-// noReport drops the background failures of a writer that a test does not look at.
 func noReport(string, error) {}

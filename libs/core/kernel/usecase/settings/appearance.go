@@ -63,7 +63,6 @@ func NewWriteAppearance(codec settingsport.ValueCodec, write *WriteSettings) *Wr
 	return &WriteAppearance{codec: codec, write: write}
 }
 
-// Execute writes the appearance.
 func (u *WriteAppearance) Execute(selected themedomain.Appearance) error {
 	values := []struct {
 		path  []string

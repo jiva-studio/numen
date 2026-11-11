@@ -7,19 +7,16 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// NoteWriter writes the notes of one vault.
 type NoteWriter interface {
 	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
 	Create(ctx context.Context, path string, content []byte) error
 }
 
-// FolderWriter fills the folders of one vault.
 type FolderWriter interface {
 	MakeFolder(ctx context.Context, path string) error
 	Import(ctx context.Context, path string, content io.Reader) error
 }
 
-// FileMover moves and removes the files of one vault.
 type FileMover interface {
 	Move(ctx context.Context, from, to string) error
 	// CheckMoveTarget returns vault.ErrAlreadyExists when a file other than the one at from is at to. On

@@ -58,8 +58,6 @@ func TestSDKModuleWalk_FindsThePlantedModules(t *testing.T) {
 	}
 }
 
-// findSDKModuleFindings lists the go.mod files under root that the SDK rules refuse. It fails the
-// test when it reads none.
 func findSDKModuleFindings(t *testing.T, root string) []string {
 	t.Helper()
 	var wrong []string

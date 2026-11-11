@@ -20,7 +20,6 @@ const (
 	noErrorUI      = 0x0400
 )
 
-// shFileOpStruct is SHFILEOPSTRUCTW.
 type shFileOpStruct struct {
 	window        windows.Handle
 	operation     uint32

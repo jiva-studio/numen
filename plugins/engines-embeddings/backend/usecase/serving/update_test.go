@@ -2,7 +2,6 @@ package serving
 
 import "testing"
 
-// The model is read while Configure changes it.
 func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	srv := newEmbeddingServer()
 	isDone := make(chan struct{})

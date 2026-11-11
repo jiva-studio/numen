@@ -24,7 +24,6 @@ type LinkLookup interface {
 	ResolveLinks(ctx context.Context, from string, output []string) (map[string]domain.ResolvedLink, error)
 }
 
-// FileReader reads the files of the vault.
 type FileReader interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
@@ -34,7 +33,6 @@ type FileReader interface {
 	ReadRange(ctx context.Context, path string, start, length int) (plugin.FileRange, error)
 }
 
-// FileWriter writes the files of the vault.
 type FileWriter interface {
 	// WriteFile replaces the file if it still matches the baseline, and returns the new file stat.
 	WriteFile(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)

@@ -43,7 +43,6 @@ func (h *Holder) GetFetcher() link.Fetcher {
 	return h.current
 }
 
-// GetSettings returns the current fetch settings.
 func (h *Holder) GetSettings() link.Settings {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

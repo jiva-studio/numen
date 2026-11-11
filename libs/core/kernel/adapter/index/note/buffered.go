@@ -31,7 +31,6 @@ func (r *Buffered) Save(ctx context.Context, vaultID domain.VaultID, notes []dom
 	return r.NoteRepository.Save(ctx, vaultID, notes)
 }
 
-// Remove removes the notes at the paths and records the paths.
 func (r *Buffered) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	for _, path := range paths {
 		r.Record(path)

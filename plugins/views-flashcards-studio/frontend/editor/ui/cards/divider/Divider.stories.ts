@@ -71,7 +71,6 @@ export const OtherScripts: Story = { args: { label: 'Добавить поле' 
 /** A word with nothing in it to break at. */
 export const Unbroken: Story = { args: { label: UNBROKEN } }
 
-/** No text at all. */
 export const NoTextAtAll: Story = { args: { label: '' } }
 
 /** A window too narrow for the word and the line both. */

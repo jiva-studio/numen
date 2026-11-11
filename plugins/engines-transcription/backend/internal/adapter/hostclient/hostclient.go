@@ -43,18 +43,15 @@ type Files struct {
 	vaults func(domain.VaultID) VaultReader
 }
 
-// NewFiles returns the files of the vaults.
 func NewFiles(vaults func(domain.VaultID) VaultReader) Files {
 	return Files{vaults: vaults}
 }
 
-// ReadFile returns the bytes of the file in the vault.
 func (f Files) ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error) {
 	raw, _, err := f.vaults(vault).Read(ctx, path)
 	return raw, err
 }
 
-// GetActiveVaultID returns the id of the vault the host shows.
 func (f Files) GetActiveVaultID(ctx context.Context) (domain.VaultID, error) {
 	shown, err := f.vaults("").GetVault(ctx)
 	if err != nil {

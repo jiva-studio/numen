@@ -18,7 +18,6 @@ type CommandCall struct {
 	ItemID    string
 }
 
-// CommandResult is the result of a command that ran.
 type CommandResult struct {
 	Message    string
 	OpenedPath string

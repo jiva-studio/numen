@@ -13,37 +13,31 @@ type NoteTitle struct {
 	ID    string `json:"id,omitempty" jsonschema:"identifier written in the note, which [[note://<identifier>]] names; absent for a note without one"`
 }
 
-// NoteListInput is the input of the note_list tool.
 type NoteListInput struct {
 	Folder string `json:"folder,omitempty" jsonschema:"limit the result to this folder and its subfolders, relative to the vault folder; the whole vault when left out"`
 	Limit  int    `json:"limit,omitempty" jsonschema:"how many notes to return (default: 100, max: 500)"`
 	Offset int    `json:"offset,omitempty" jsonschema:"how many notes to skip; the nextOffset of the previous result continues the list"`
 }
 
-// NoteListOutput is the output of the note_list tool.
 type NoteListOutput struct {
 	Notes      []NoteEntry `json:"notes" jsonschema:"the notes of this page, ordered by path"`
 	Total      int         `json:"total" jsonschema:"number of notes that match, before limit and offset"`
 	NextOffset int         `json:"nextOffset,omitempty" jsonschema:"the offset of the next page; absent on the last page"`
 }
 
-// NoteTitleListInput is the input of the note_title_list tool.
 type NoteTitleListInput struct {
 	Paths []string `json:"paths" jsonschema:"paths of the notes, at most 50"`
 }
 
-// NoteTitleListOutput is the output of the note_title_list tool.
 type NoteTitleListOutput struct {
 	Notes        []NoteTitle `json:"notes" jsonschema:"the notes found, with their titles"`
 	MissingPaths []string    `json:"missingPaths" jsonschema:"the paths that name no note, in the order given"`
 }
 
-// NoteResolveInput is the input of the note_resolve tool.
 type NoteResolveInput struct {
 	Name string `json:"name" jsonschema:"file name of a note without its extension, as a wikilink writes it"`
 }
 
-// NoteResolveOutput is the output of the note_resolve tool.
 type NoteResolveOutput struct {
 	Paths []string `json:"paths" jsonschema:"paths of every note with that name; empty when none has it"`
 }

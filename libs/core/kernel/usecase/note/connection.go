@@ -58,7 +58,6 @@ func newConnectionEditor(d ConnectionDeps) connectionEditor {
 	}
 }
 
-// run is a write of a connection. A write that reached the vault while the index did not follow is a success.
 func (e connectionEditor) run(ctx context.Context, write func(ctx context.Context) error) error {
 	_, err := writeUnder(e.gate, func() (struct{}, error) { return struct{}{}, write(ctx) })
 	if e.follow != nil && e.follow.IsIndexOutdated(err) {

@@ -33,7 +33,6 @@ type ListTabKinds struct {
 	chooser TabKindChooser
 }
 
-// NewListTabKinds creates the listing over the reading of file kinds and the chooser of tab kinds.
 func NewListTabKinds(kinds *GetFileKinds, chooser TabKindChooser) *ListTabKinds {
 	return &ListTabKinds{kinds: kinds, chooser: chooser}
 }
@@ -62,12 +61,10 @@ type ListFolder struct {
 	tabKinds *ListTabKinds
 }
 
-// NewListFolder creates the listing over the reading of a folder and the listing of tab kinds.
 func NewListFolder(entries *GetFolderEntries, tabKinds *ListTabKinds) *ListFolder {
 	return &ListFolder{entries: entries, tabKinds: tabKinds}
 }
 
-// Execute lists the folder at the path.
 func (u *ListFolder) Execute(ctx context.Context, v domain.Vault, path string) (FolderListing, error) {
 	folder, err := u.entries.Execute(ctx, v, path)
 	if err != nil {
@@ -92,7 +89,6 @@ type ListFileKinds struct {
 	chooser TabKindChooser
 }
 
-// NewListFileKinds creates the listing over the reading of file kinds and the chooser of tab kinds.
 func NewListFileKinds(kinds *GetFileKinds, chooser TabKindChooser) *ListFileKinds {
 	return &ListFileKinds{kinds: kinds, chooser: chooser}
 }

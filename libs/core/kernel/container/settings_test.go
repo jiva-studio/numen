@@ -234,7 +234,6 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 	p.profiles = append(p.profiles, profile)
 }
 
-// Another setting sends no profile.
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}

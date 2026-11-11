@@ -59,7 +59,6 @@ func (f *Downloader) GetDownloadModel(address string) Model {
 	return delta.GetDownloadModel(address)
 }
 
-// GetMetadata returns media metadata.
 func (f *Downloader) GetMetadata(ctx context.Context, address string) (Metadata, error) {
 	delta, err := f.providerFor(address)
 	if err != nil {

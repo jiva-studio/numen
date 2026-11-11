@@ -35,7 +35,6 @@ func NewGetWithSecrets(get *Get, secrets SecretLister) *GetWithSecrets {
 	return &GetWithSecrets{get: get, secrets: secrets}
 }
 
-// Execute reads the settings, then the secrets.
 func (u *GetWithSecrets) Execute(ctx context.Context) (CurrentWithSecrets, error) {
 	current, err := u.get.Execute()
 	if err != nil {

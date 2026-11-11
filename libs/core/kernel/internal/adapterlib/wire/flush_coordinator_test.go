@@ -90,7 +90,6 @@ func TestAQuestionEndsTheRoundAndNotTheWait(t *testing.T) {
 	}
 }
 
-// TestOneQuestionAmongManyPagesKeepsTheWindow.
 func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
 	var pages flushCoordinator
 
@@ -155,7 +154,6 @@ func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
 	}
 }
 
-// TestFlushCoordinator_PageRegisteredDuringCloseReceivesFlush.
 func TestFlushCoordinator_PageRegisteredDuringCloseReceivesFlush(t *testing.T) {
 	var pages flushCoordinator
 
@@ -268,7 +266,6 @@ func TestFlushCoordinator_DepartedPageWithQuestionIsNotPending(t *testing.T) {
 	}
 }
 
-// TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo.
 func TestAPageWithNothingLeftAndOneThatHasSavedBothLetTheWindowGo(t *testing.T) {
 	for name, response := range map[string]flushState{
 		"nothing unembedded": parseFlushResult(v1.FlushResult_FLUSH_RESULT_NOTHING),

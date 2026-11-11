@@ -66,7 +66,6 @@ func (c Connections) GetConnection(ctx context.Context, first, second, kind stri
 	return c.Reader.Execute(ctx, v, first, second, kind)
 }
 
-// SaveConnection saves the connection.
 func (c Connections) SaveConnection(ctx context.Context, connection domain.Connection) error {
 	v, err := c.openConnections(c.Saver == nil)
 	if err != nil {
@@ -75,7 +74,6 @@ func (c Connections) SaveConnection(ctx context.Context, connection domain.Conne
 	return c.session.notifyAfterWrite(c.Saver.Execute(ctx, v, connection))
 }
 
-// RemoveSide removes one side of a connection.
 func (c Connections) RemoveSide(ctx context.Context, from, to, kind string) error {
 	v, err := c.openConnections(c.SideRemover == nil)
 	if err != nil {

@@ -214,9 +214,6 @@ func removeSpans(src []byte, cuts []span) []byte {
 	return out
 }
 
-// reportRestating reports the doc comment of every declaration whose words are, for the most part, the name and the
-// signature of the declaration. The comment is the group right above the declaration, or the last group between the
-// previous declaration and this one that starts with the name, even with a blank line between.
 func reportRestating(fset *token.FileSet, file *ast.File, report func(*ast.CommentGroup, string)) {
 	pkg := file.Name.Name
 	checked := map[*ast.CommentGroup]bool{}
@@ -274,7 +271,6 @@ func reportRestating(fset *token.FileSet, file *ast.File, report func(*ast.Comme
 	}
 }
 
-// firstOf returns the doc comment when there is one, and the detached comment only when it starts with the name.
 func firstOf(doc, detached *ast.CommentGroup, name string) *ast.CommentGroup {
 	if doc != nil {
 		return doc
@@ -285,8 +281,6 @@ func firstOf(doc, detached *ast.CommentGroup, name string) *ast.CommentGroup {
 	return nil
 }
 
-// findDetachedDoc returns the last comment group between two positions, which a blank line may separate from the
-// declaration that follows.
 func findDetachedDoc(file *ast.File, from, to token.Pos) *ast.CommentGroup {
 	var found *ast.CommentGroup
 	for _, group := range file.Comments {

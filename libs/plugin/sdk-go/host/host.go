@@ -144,7 +144,6 @@ type NoteLookup interface {
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
-// LinkLookup finds the links of notes.
 type LinkLookup interface {
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)

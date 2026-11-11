@@ -29,7 +29,6 @@ func (t *Toolset) ExtendPrompt(extension string) string {
 	return t.prompt
 }
 
-// GetPrompt returns the system prompt.
 func (t *Toolset) GetPrompt() string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()

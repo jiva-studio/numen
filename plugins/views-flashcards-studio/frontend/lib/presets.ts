@@ -48,9 +48,6 @@ export const LOADS: readonly number[] = [0, 10, 25, 50, 75, 90, WHOLE_LOAD]
 
 export const getLoadOn = (load: Load, day: string): number => load[day] ?? WHOLE_LOAD
 
-/**
- * The load with one day put at a share.
- */
 export const setLoadOn = (load: Load, day: string, share: number): Load => {
   const out: Record<string, number> = { ...load }
   if (share === WHOLE_LOAD) delete out[day]

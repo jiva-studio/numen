@@ -89,7 +89,6 @@ export const NO_CARD_MODEL_PROBLEMS: CardModelProblems = Object.freeze({
   fields: getSealedMap<string, readonly string[]>(),
 })
 
-/** One field of a card model, as its row is drawn. */
 export interface FieldRow {
   readonly field: string
   readonly at: number
@@ -113,7 +112,6 @@ export function fieldRows(
   }))
 }
 
-/** One template of a card model, as its row is drawn. */
 export interface TemplateRow {
   readonly id: string
   readonly name: string

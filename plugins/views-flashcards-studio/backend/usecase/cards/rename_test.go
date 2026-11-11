@@ -23,7 +23,6 @@ func newRenameField(t *testing.T, vs vaulted) cards.RenameField {
 	return newRenameFieldOver(t, vs, vs.ports.Writers, vs.queries, cards.UnboundedDecks)
 }
 
-// newRenameFieldOver is a rename over the vault with its writers, its decks query and its deck bound replaced.
 func newRenameFieldOver(
 	t *testing.T, vs vaulted, writers ports.VaultWriters, notes cards.TypeQueries, maxDecks int,
 ) cards.RenameField {
@@ -34,7 +33,6 @@ func newRenameFieldOver(
 	}, maxDecks)
 }
 
-// renameOf is a rename over any bound, with the given parts of the vault.
 func renameOf(
 	readers ports.VaultReaders, writers ports.VaultWriters, notes cards.TypeQueries, links ports.LinkQueries,
 	index note.IndexUpdater,

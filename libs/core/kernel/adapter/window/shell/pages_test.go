@@ -205,7 +205,6 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 	}
 }
 
-// A window given no plugins lists none.
 func TestAWindowWithNoPluginsListsNone(t *testing.T) {
 	server := httptest.NewServer(newAPI(t).NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)

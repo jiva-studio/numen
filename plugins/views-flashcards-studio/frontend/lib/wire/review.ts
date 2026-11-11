@@ -26,7 +26,6 @@ interface VaultCardsDue {
   isIndexing: boolean
 }
 
-/** DeckCardsDue is what one deck has due for review. */
 interface DeckCardsDue {
   deck: string
   reviewCards: number
@@ -81,24 +80,20 @@ interface SessionCard {
   intervals?: Intervals
 }
 
-/** WatchCardsDueRequest is the request of the WatchCardsDue method. */
 export type WatchCardsDueRequest = Record<string, never>
 
-/** WatchCardsDueResponse is the response of the WatchCardsDue method. */
 export interface WatchCardsDueResponse {
   vaults: VaultCardsDue[]
   day: string
   counted?: VaultCardsDue
 }
 
-/** StartSessionRequest is the request of the StartSession method. */
 export interface StartSessionRequest {
   vault?: string
   deck?: string
   preset?: string
 }
 
-/** StartSessionResponse is the response of the StartSession method. */
 export interface StartSessionResponse {
   run: string
   cards: SessionCard[]
@@ -106,7 +101,6 @@ export interface StartSessionResponse {
   skipped: number
 }
 
-/** RecordReviewRequest is the request of the RecordReview method. */
 export interface RecordReviewRequest {
   vault?: string
   run?: string
@@ -116,29 +110,24 @@ export interface RecordReviewRequest {
   durationMs?: number
 }
 
-/** RecordReviewResponse is the response of the RecordReview method. */
 export interface RecordReviewResponse {
   answer: string
 }
 
-/** UndoReviewRequest is the request of the UndoReview method. */
 export interface UndoReviewRequest {
   vault?: string
   run?: string
   answer?: string
 }
 
-/** UndoReviewResponse is the response of the UndoReview method. */
 export type UndoReviewResponse = Record<string, never>
 
-/** ListReviewDaysRequest is the request of the ListReviewDays method. */
 export interface ListReviewDaysRequest {
   vault?: string
   from?: string
   to?: string
 }
 
-/** ListReviewDaysResponse is the response of the ListReviewDays method. */
 export interface ListReviewDaysResponse {
   days: ReviewDay[]
   due: ReviewDay[]
@@ -158,13 +147,11 @@ interface ReviewDay {
   recalled: number
 }
 
-/** GetDeckNeighborhoodRequest is the request of the GetDeckNeighborhood method. */
 export interface GetDeckNeighborhoodRequest {
   vault?: string
   deck?: string
 }
 
-/** GetDeckNeighborhoodResponse is the response of the GetDeckNeighborhood method. */
 export interface GetDeckNeighborhoodResponse {
   notes: DeckNeighbor[]
   unread: number
@@ -182,10 +169,8 @@ interface DeckNeighbor {
   error?: ErrorCode
 }
 
-/** WatchReloadsRequest is the request of the WatchReloads method. */
 export type WatchReloadsRequest = Record<string, never>
 
-/** WatchReloadsResponse is the response of the WatchReloads method. */
 export interface WatchReloadsResponse {
   reload: boolean
 }

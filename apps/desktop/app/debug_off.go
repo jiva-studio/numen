@@ -13,7 +13,6 @@ import (
 // DebugOptions holds test settings for debug builds.
 type DebugOptions struct{}
 
-// RegisterDebugFlags registers debug flags on the flag set.
 func RegisterDebugFlags(*flag.FlagSet, *Options) {}
 
 func (d *DebugOptions) apply(*container.Config) error { return nil }

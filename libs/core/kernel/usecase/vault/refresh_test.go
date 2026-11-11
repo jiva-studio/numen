@@ -86,7 +86,6 @@ func TestANoteIsIndexedInAVaultNothingHasWalked(t *testing.T) {
 	}
 }
 
-// TestARefreshedNoteIsWhatIsOnDisk.
 func TestARefreshedNoteIsWhatIsOnDisk(t *testing.T) {
 	t.Parallel()
 	refresh, db, v := newRefresh(t, map[string]string{

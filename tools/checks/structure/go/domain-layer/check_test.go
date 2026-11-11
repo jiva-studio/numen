@@ -50,8 +50,6 @@ func TestDomainWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findDomainImportRefusals lists the imports under root that a domain package may not make. It
-// fails when it reads no file.
 func findDomainImportRefusals(root string) ([]string, error) {
 	var wrong []string
 	var read int
@@ -152,7 +150,6 @@ func TestCoreImportWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findCoreImports lists the imports of a package of the core under root. It fails when it finds no import.
 func findCoreImports(root string) ([]string, error) {
 	imports, err := load.GetImports(root)
 	if err != nil {

@@ -22,7 +22,6 @@ func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithItsReason(t *testing.T
 	}
 }
 
-// Without tasks there is nowhere to report to, and no reporter.
 func TestNoReporterOfAFailedModelReadWithoutTasks(t *testing.T) {
 	if run.NewModelReadReporter(nil) != nil {
 		t.Error("got a reporter without tasks")

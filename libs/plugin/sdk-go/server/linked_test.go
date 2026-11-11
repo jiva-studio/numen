@@ -94,7 +94,6 @@ func TestALinkedHandlerRunsItsClosersWhenTheHostShutsItDown(t *testing.T) {
 	}
 }
 
-// A mount that fails runs the closers it added.
 func TestALinkedHandlerWhoseMountFailsClosesWhatItAdded(t *testing.T) {
 	closed := false
 	_, err := NewLinkedHandler(map[string]string{tokenVar: "linked-token"}, func(s *Server) error {

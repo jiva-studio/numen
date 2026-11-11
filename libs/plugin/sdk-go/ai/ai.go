@@ -80,10 +80,8 @@ type Message struct {
 	Text string
 }
 
-// GetRole returns the role of the message.
 func (m Message) GetRole() string { return m.Role }
 
-// GetText returns the text of the message.
 func (m Message) GetText() string { return m.Text }
 
 // Question is a completion question sent to the host's routed AI model.
@@ -92,7 +90,6 @@ type Question struct {
 	Messages []Message
 }
 
-// GetPurpose returns the purpose of the question.
 func (q *Question) GetPurpose() string {
 	if q == nil {
 		return ""
@@ -100,7 +97,6 @@ func (q *Question) GetPurpose() string {
 	return q.Purpose
 }
 
-// GetMessages returns the messages of the question.
 func (q *Question) GetMessages() []Message {
 	if q == nil {
 		return nil

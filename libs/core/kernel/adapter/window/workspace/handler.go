@@ -60,7 +60,6 @@ type Handler struct {
 	links      *tablinks.Tabs
 }
 
-// NewHandler is the handler of the workspace service of one window.
 func NewHandler(
 	current Window, focus Focus, tabWindows TabWindows, write OpenTabsWriter, read OpenTabsReader, links *tablinks.Tabs,
 ) *Handler {

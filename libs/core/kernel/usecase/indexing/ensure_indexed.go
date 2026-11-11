@@ -12,7 +12,6 @@ import (
 // noIndexReason is why a vault is failed where nothing indexes it.
 const noIndexReason = "the index does not contain this vault"
 
-// IndexVault is a vault walked into the index.
 type IndexVault func(ctx context.Context, v domain.Vault) error
 
 // VaultIndexed reports whether the index already contains a vault.

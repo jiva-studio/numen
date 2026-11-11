@@ -50,7 +50,6 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	}
 }
 
-// A card due later today is due now: a card due today is due for the whole day.
 func TestACardDueLaterTodayIsDueNow(t *testing.T) {
 	in := london(t)
 	day := review.Day{Starts: review.DayStartTime, In: in}
@@ -412,7 +411,6 @@ func TestGetReviewed_GroupsByDayOfAnswer(t *testing.T) {
 	}
 }
 
-// A streak is the days up to now with no gap in them.
 func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 	days := makeTallies(map[string]int{
 		"2026-08-25": 4,

@@ -13,7 +13,6 @@ type EditCard struct {
 	write Write
 }
 
-// NewEditCard creates the EditCard scenario.
 func NewEditCard(read Read, write Write) EditCard { return EditCard{read: read, write: write} }
 
 // Execute replaces the values of a card.

@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// ErrInvalidSelector is a selector that is not JSON.
 var ErrInvalidSelector = errors.New("textfile: the selector is not JSON")
 
 // line is one segment as a line of the file holds it.

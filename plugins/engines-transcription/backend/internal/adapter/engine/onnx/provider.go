@@ -62,7 +62,6 @@ const (
 	// ComputeUnitsAll places the model on the CPU, the GPU and the Neural Engine.
 	ComputeUnitsAll ComputeUnits = "ALL"
 
-	// ComputeUnitsCPUAndNeuralEngine places the model on the CPU and the Neural Engine.
 	ComputeUnitsCPUAndNeuralEngine ComputeUnits = "CPUAndNeuralEngine"
 
 	// ComputeUnitsCPUAndGPU places the model on the CPU and the GPU.

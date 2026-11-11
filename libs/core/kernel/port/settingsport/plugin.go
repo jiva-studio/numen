@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-// PluginSettings checks one setting of a plugin.
 type PluginSettings interface {
 	CheckPluginSetting(pluginID, key string, value any) error
 }
@@ -32,7 +31,6 @@ type PluginSettingValues interface {
 	FillGeneratedSettings()
 }
 
-// PluginStopper stops the process of a plugin.
 type PluginStopper interface {
 	StopPlugin(ctx context.Context, pluginID string) error
 }

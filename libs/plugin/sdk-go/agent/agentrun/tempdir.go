@@ -54,7 +54,6 @@ func WriteTempFile(pattern string, data []byte) (path string, err error) {
 	return file.Name(), nil
 }
 
-// RemoveFile removes the file at path. An empty path and a missing file are not errors.
 func RemoveFile(path string) error {
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("remove %s: %w", path, err)
@@ -75,12 +74,10 @@ func IsRunnable(path string) bool {
 	return info.Mode()&0o111 != 0
 }
 
-// ReadFile reads the file at path.
 func ReadFile(path string) ([]byte, error) {
 	return os.ReadFile(path)
 }
 
-// WriteFile writes data to the file at path with permissions perm.
 func WriteFile(path string, data []byte, perm os.FileMode) error {
 	return os.WriteFile(path, data, perm)
 }

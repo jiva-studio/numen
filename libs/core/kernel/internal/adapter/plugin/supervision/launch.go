@@ -51,7 +51,6 @@ func isDependencyEnvName(name string) bool {
 	return name != "NUMEN_VAULT_PATH" && !strings.HasPrefix(name, "NUMEN_PLUGIN_") && !strings.HasPrefix(name, "NUMEN_HOST_")
 }
 
-// GetLaunchVars returns the variables a process of the plugin is launched with.
 func (p *Processes) GetLaunchVars(
 	ctx context.Context, pluginID string, requirements []manifest.DependencyRequirement, vaultPath string, processPort int, token string,
 ) ([]string, error) {

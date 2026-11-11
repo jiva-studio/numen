@@ -57,7 +57,6 @@ type CreateNoteResult struct {
 	Title string
 }
 
-// Deck makes a deck of no cards.
 func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	in.Fields = nil
 	return u.make(ctx, v, format.TypeDeck, in)

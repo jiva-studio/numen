@@ -35,7 +35,6 @@ type Handler struct {
 	changes Changes
 }
 
-// NewHandler is the handler of the vault service of one window.
 func NewHandler(current Window, changes Changes) *Handler {
 	return &Handler{window: current, changes: changes}
 }

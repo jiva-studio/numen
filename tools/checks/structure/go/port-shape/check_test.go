@@ -135,8 +135,6 @@ func TestPortWalk_FindsThePlantedInternalType(t *testing.T) {
 	}
 }
 
-// findInternalPortTypes lists the types of internal/ packages that the port files under dir name. It
-// fails when it reads no file.
 func findInternalPortTypes(dir string) ([]string, error) {
 	entries, err := load.ReadTree(dir)
 	if err != nil {

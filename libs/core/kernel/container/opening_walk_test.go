@@ -20,7 +20,6 @@ type unopenable struct{ err error }
 
 func (u unopenable) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, u.err }
 
-// The walk answers how many notes the vault holds.
 func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {
 	cfg, db, v := openVault(t, map[string]string{
 		"One.md":     "---\ntitle: One\n---\n\n# One\n",
@@ -163,7 +162,6 @@ func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
 	}
 }
 
-// Watching an index that has no folder returns an error.
 func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 	isolate(t)
 	file := filepath.Join(t.TempDir(), "plain")
@@ -217,7 +215,6 @@ func TestTheRefreshAnOpenerPassesOutIndexesNamedNotes(t *testing.T) {
 	}
 }
 
-// A walk that stops partway still returns how many notes it had read.
 func TestAWalkThatStopsReturnsHowManyNotesItHadRead(t *testing.T) {
 	notes := map[string]string{}
 	for _, name := range []string{"a", "b", "c", "d"} {

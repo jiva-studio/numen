@@ -1,12 +1,10 @@
 package api
 
-// NoteSearchInput is the input of the note_search tool.
 type NoteSearchInput struct {
 	Query string `json:"query" jsonschema:"words or phrase to search for across note titles and content"`
 	Limit int    `json:"limit,omitempty" jsonschema:"maximum number of matches to return (default: 20, max: 100)"`
 }
 
-// SearchMatch is a note matching a search.
 type SearchMatch struct {
 	Path    string `json:"path" jsonschema:"relative path to the note"`
 	Title   string `json:"title,omitempty" jsonschema:"title of the note"`
@@ -15,7 +13,6 @@ type SearchMatch struct {
 	Score   int    `json:"score" jsonschema:"relevance score"`
 }
 
-// NoteSearchOutput is the output of the note_search tool.
 type NoteSearchOutput struct {
 	Query   string        `json:"query"`
 	Matches []SearchMatch `json:"matches"`

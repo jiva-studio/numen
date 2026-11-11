@@ -37,7 +37,6 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (edit.Co
 	return edit.Read(ctx, reader, path)
 }
 
-// ReadFrontmatter returns the type and the frontmatter of one note.
 type ReadFrontmatter struct {
 	readers vaultport.VaultReaders
 }

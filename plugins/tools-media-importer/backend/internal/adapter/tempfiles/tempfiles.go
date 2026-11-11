@@ -42,7 +42,6 @@ func (Files) ReadDir(dir string) ([]string, error) {
 	return names, nil
 }
 
-// CopyFile copies the contents of path into into.
 func (Files) CopyFile(path string, into io.Writer) (err error) {
 	file, err := os.Open(path)
 	if err != nil {

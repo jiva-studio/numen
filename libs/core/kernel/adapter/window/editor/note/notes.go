@@ -422,7 +422,6 @@ func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	}
 }
 
-// createNote creates the note; a blank title makes an untitled note.
 func (h *Prose) createNote(ctx context.Context, v domain.Vault, in note.NewNote) (note.CreateResult, error) {
 	if strings.TrimSpace(in.Title) == "" {
 		return h.create.ExecuteUntitled(ctx, v, in)

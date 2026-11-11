@@ -181,25 +181,19 @@ func (b Bounds) Contains(value float64) bool { return value >= b.Min && value <=
 // does not do, and an interval a card is learned at is a day at the least and a
 // year at the most.
 
-// GetMinutesADayBounds returns the bounds of the minutes a day.
 func GetMinutesADayBounds() Bounds { return Bounds{Min: 0, Max: 24 * 60} }
 
-// GetNewADayBounds returns the bounds of the new cards a day.
 func GetNewADayBounds() Bounds { return Bounds{Min: 0, Max: 9999} }
 
-// GetReviewsADayBounds returns the bounds of the reviews a day.
 func GetReviewsADayBounds() Bounds { return Bounds{Min: 0, Max: 9999} }
 
-// GetRetentionBounds returns the bounds of the retention target.
 func GetRetentionBounds() Bounds { return Bounds{Min: 0.7, Max: 0.99} }
 
 // GetIntervalBounds returns the bounds of the interval a card is learned at, in days.
 func GetIntervalBounds() Bounds { return Bounds{Min: 1, Max: 365} }
 
-// GetBacklogBounds returns the bounds of the backlog.
 func GetBacklogBounds() Bounds { return Bounds{Min: 0, Max: 100} }
 
-// GetLoadBounds returns the bounds of the load.
 func GetLoadBounds() Bounds { return Bounds{Min: 0, Max: FullLoad} }
 
 // Defaults is a preset naming nothing, and how a deck pointing at no preset is

@@ -27,7 +27,6 @@ type Fake struct {
 	now time.Time
 }
 
-// NewFake creates a Fake that reports start.
 func NewFake(start time.Time) *Fake {
 	return &Fake{mu: sync.Mutex{}, now: start}
 }

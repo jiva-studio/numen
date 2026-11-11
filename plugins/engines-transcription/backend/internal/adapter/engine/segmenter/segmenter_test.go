@@ -44,7 +44,6 @@ func TestWideningJoinsTwoSpansThatMeet(t *testing.T) {
 	}
 }
 
-// A span shorter than the shortest is not a span.
 func TestASpanTooShortIsNotOne(t *testing.T) {
 	if got := getSpans(buildScores(10, 4), 0.5, 2, 0, 100, 3); len(got) != 0 {
 		t.Errorf("one window came out as %v", got)
@@ -193,7 +192,6 @@ func TestRecordingEndingBeforeSilenceKeepsSpan(t *testing.T) {
 	}
 }
 
-// A span longer than longest is split when longest is two.
 func TestSplitLongSpanWhenLongestIsTwo(t *testing.T) {
 	scores := []float32{1, 0, 1}
 	got := splitLongSpan(span{From: 0, To: 3}, scores, 2)

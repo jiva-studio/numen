@@ -1,11 +1,9 @@
 package theme
 
-// ReadTheme reads the stylesheet of a theme.
 type ReadTheme struct {
 	catalog catalog
 }
 
-// NewReadTheme makes the read over the sources.
 func NewReadTheme(sources Sources) *ReadTheme {
 	return &ReadTheme{catalog: catalog{sources: sources}}
 }

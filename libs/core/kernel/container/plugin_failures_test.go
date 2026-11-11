@@ -64,7 +64,6 @@ func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 	}
 }
 
-// An installation with no plugin host has nothing to retry and nothing to report.
 func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 	cfg := NewConfig(Config{})
 	reportPluginFailures(plugins(cfg), run.NewTasks())

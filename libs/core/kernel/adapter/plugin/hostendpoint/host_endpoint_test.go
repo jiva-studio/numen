@@ -249,7 +249,6 @@ func TestACallerWithoutAKnownTokenIsRefused(t *testing.T) {
 	}
 }
 
-// A header that is no bearer token is not read as one.
 func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	fakeCallers := newCallers(nil)
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
@@ -388,7 +387,6 @@ func TestTheCallerIsTheTokensPlugin(t *testing.T) {
 	}
 }
 
-// A question nothing can answer is an invalid argument, not an error.
 func TestAQuestionNothingCanAnswerIsAnInvalidArgument(t *testing.T) {
 	target := newCallers(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) {
 		return "", fmt.Errorf("%w: no message", completion.ErrInvalidQuestion)

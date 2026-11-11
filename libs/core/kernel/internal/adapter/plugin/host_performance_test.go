@@ -21,7 +21,6 @@ func TestAChangeOfTheProfileReachesARunningPlugin(t *testing.T) {
 	}
 }
 
-// The same profile again calls no plugin.
 func TestTheSameProfileAgainConfiguresNoPlugin(t *testing.T) {
 	host, probe := newSecretHost(t, nil)
 	host.Config.SetPerformanceProfile(t.Context(), "eco")

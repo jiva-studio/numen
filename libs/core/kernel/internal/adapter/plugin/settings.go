@@ -99,7 +99,6 @@ func (s *Settings) GetPluginSettings(pluginID string) map[string]any {
 	return s.set.getPluginSettings(pluginID)
 }
 
-// GetPluginConfigJSON returns serialized JSON configuration for the specified plugin.
 func (s *Settings) GetPluginConfigJSON(pluginID string) (string, error) {
 	data, err := json.Marshal(s.GetPluginSettings(pluginID))
 	if err != nil {

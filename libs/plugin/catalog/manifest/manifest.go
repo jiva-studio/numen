@@ -141,7 +141,6 @@ const SettingTypeEnum = "enum"
 // SettingTypeFile is the type of a setting that holds a file path on this machine.
 const SettingTypeFile = "file"
 
-// settingTypeNumber is the type of a setting that stores a number.
 const settingTypeNumber = "number"
 
 func listSettingTypes() []string {

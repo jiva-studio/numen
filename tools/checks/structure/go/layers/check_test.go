@@ -54,8 +54,6 @@ func TestLayerWalk_FailsOnATreeWithoutEdges(t *testing.T) {
 	}
 }
 
-// findOutwardImports lists the imports of this module under root that point against the layers. It
-// fails when it reads no edge.
 func findOutwardImports(root string) ([]string, error) {
 	var wrong []string
 	var read int
@@ -122,8 +120,6 @@ func TestAliasWalk_FailsOnAnEmptyTree(t *testing.T) {
 	}
 }
 
-// findLayerAliases lists the imports under root that carry a layer name as their alias. It fails
-// when it reads no file.
 func findLayerAliases(root string) ([]string, error) {
 	var wrong []string
 	var read int
@@ -157,7 +153,6 @@ func findLayerAliases(root string) ([]string, error) {
 	return wrong, err
 }
 
-// TestLayerAliasRule_RejectsLayerNamedAliases verifies rejection of layer names as import aliases.
 func TestLayerAliasRule_RejectsLayerNamedAliases(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "alias.go", `package p
 

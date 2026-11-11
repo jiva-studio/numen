@@ -121,7 +121,6 @@ func checkVersionSource(version domain.TextVersion, versions []domain.TextVersio
 	return nil
 }
 
-// RemoveVersion removes the record of a version of the plugin.
 func (u *Versions) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path, key string) error {
 	writer, err := u.stores.OpenVersionWriter(v)
 	if err != nil {

@@ -9,7 +9,6 @@ const ProofreadingKind domain.TextKind = "proofreading"
 // anyTextKind is the kind that stands for every text kind.
 const anyTextKind domain.TextKind = "*"
 
-// GetProofreadKinds is the text kinds the plugin proofreads.
 func GetProofreadKinds() map[domain.TextKind]bool {
 	return map[domain.TextKind]bool{anyTextKind: true}
 }

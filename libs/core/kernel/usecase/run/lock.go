@@ -87,7 +87,6 @@ func (g *Lock) leave(pos int, stand chan struct{}) {
 	g.release()
 }
 
-// HasWaiting reports whether a run waits for the lock.
 func (g *Lock) HasWaiting() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()

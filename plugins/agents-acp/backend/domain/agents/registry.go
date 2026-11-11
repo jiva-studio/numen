@@ -6,7 +6,6 @@ import (
 	"sync"
 )
 
-// executablePathSetting is the setting that holds the executables of agents.
 const executablePathSetting = "executablePath"
 
 // Registry holds the agents the plugin can run: the commands of the settings, the known agents

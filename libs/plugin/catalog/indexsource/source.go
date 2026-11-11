@@ -25,7 +25,6 @@ import (
 // Name is the name of the source in its entries.
 const Name = "index"
 
-// FileName is the name of the index file.
 const FileName = "plugins-index.json"
 
 // Source lists the plugins of the index as available plugins.
@@ -40,7 +39,6 @@ func New(indexPaths, manifestDirs []string) *Source {
 	return &Source{indexPaths: slices.Clone(indexPaths), manifestDirs: slices.Clone(manifestDirs)}
 }
 
-// Name is Name.
 func (s *Source) Name() string { return Name }
 
 // List returns an available entry for each manifest of the index. A manifest that is invalid is

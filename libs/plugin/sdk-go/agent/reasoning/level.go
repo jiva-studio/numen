@@ -61,7 +61,6 @@ func IsKnown(name string) bool {
 	return slices.Contains(listLevelNames(), strings.ToLower(strings.TrimSpace(name)))
 }
 
-// Contains is whether a level of the name is among the levels.
 func Contains(levels []Level, name string) bool {
 	return slices.ContainsFunc(levels, func(one Level) bool { return one.Name == name })
 }

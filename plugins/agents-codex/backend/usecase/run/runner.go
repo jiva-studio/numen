@@ -57,8 +57,6 @@ type Runner struct {
 	launcher Launcher
 }
 
-// NewRunner creates a runner that builds its commands with commands and starts them with
-// launcher.
 func NewRunner(commands Commands, launcher Launcher) *Runner {
 	return &Runner{commands: commands, launcher: launcher}
 }

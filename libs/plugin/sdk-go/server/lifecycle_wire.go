@@ -65,7 +65,6 @@ type LifecycleClient struct {
 	rpc numenv1connect.PluginLifecycleServiceClient
 }
 
-// NewLifecycleClient creates a client of the lifecycle service served at baseURL.
 func NewLifecycleClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) *LifecycleClient {
 	return &LifecycleClient{rpc: numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, opts...)}
 }

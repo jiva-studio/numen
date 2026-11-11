@@ -18,7 +18,6 @@ func NewReadFile(readers vaultport.VaultReaders) *ReadFile {
 	return &ReadFile{readers: readers}
 }
 
-// Execute reads the file at path from the vault.
 func (u *ReadFile) Execute(ctx context.Context, v domain.Vault, path string) ([]byte, domain.FileStat, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {

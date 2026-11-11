@@ -17,12 +17,8 @@ func isHelperPackage(rel string, helpers map[string]string) bool {
 	return isListed || load.IsWithin(rel, "internal/adapterlib") || load.IsWithin(rel, "internal/testsupport")
 }
 
-// isTestSupport reports a package of internal/testsupport: it implements ports and calls use cases by design, so it may
-// import them and may hold state; it still reaches no technology.
 func isTestSupport(rel string) bool { return load.IsWithin(rel, "internal/testsupport") }
 
-// isAdapterLib reports a package of internal/adapterlib: shared adapter-side code. It reaches technology and
-// holds state like an adapter and may import ports, but imports neither a use case nor an adapter.
 func isAdapterLib(rel string) bool { return load.IsWithin(rel, "internal/adapterlib") }
 
 func getHelperImportFindings(pkg *packages.Package, root, rel string) []string {

@@ -264,13 +264,11 @@ func (s pageSet) setRequestVault(r *http.Request) {
 	}
 }
 
-// NewNoteRoute is the route of the notes service.
 func NewNoteRoute(state *State, handler *notewindow.Handler) Route {
 	path, served := numenv1connect.NewNoteServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
 }
 
-// NewFileRoute is the route of the files service.
 func NewFileRoute(state *State, handler *filewindow.Handler) Route {
 	path, served := numenv1connect.NewFileServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)

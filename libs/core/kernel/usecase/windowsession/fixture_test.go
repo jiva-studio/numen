@@ -52,7 +52,6 @@ func (p *pageSet) RequestFlush(context.Context) bool {
 	return !isAsking
 }
 
-// holdNextFlush makes the next request for a flush wait until release.
 func (p *pageSet) holdNextFlush() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -60,7 +59,6 @@ func (p *pageSet) holdNextFlush() {
 	p.releasing = p.held
 }
 
-// waitHeld returns once a flush request waits inside the pages.
 func (p *pageSet) waitHeld(t *testing.T) {
 	t.Helper()
 	p.mu.Lock()

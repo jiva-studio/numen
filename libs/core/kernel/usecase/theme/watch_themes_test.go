@@ -66,7 +66,6 @@ func TestAThemeSavedIntoTheFolderIsReportedByName(t *testing.T) {
 	watching.await(t, "mine:dracula")
 }
 
-// WatchThemes reports the plugin themes that vanish with the plugin that is disabled.
 func TestWatchThemesReportsThePluginThemesOfAPluginDisabled(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{})
 	watching := startWatch(t, desk)
@@ -76,7 +75,6 @@ func TestWatchThemesReportsThePluginThemesOfAPluginDisabled(t *testing.T) {
 	watching.await(t, themedomain.PluginName(pluginID, "night"), themedomain.PluginName(pluginID, "day"))
 }
 
-// WatchThemes reports the plugin themes that appear with the plugin that is enabled.
 func TestWatchThemesReportsThePluginThemesOfAPluginEnabled(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{})
 	desk.plugins.disable()

@@ -57,12 +57,10 @@ export interface MockPluginUi extends PluginUi {
   readonly window: MockWindowHost
 }
 
-// MockPluginVault is the vault part of a mock context.
 export interface MockPluginVault extends PluginVault {
   readonly vaults: MockVaultsHost
 }
 
-// MockPluginWork is the work part of a mock context.
 export interface MockPluginWork extends PluginWork {
   readonly backgroundTasks: MockBackgroundTaskHost
 }
