@@ -21,7 +21,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - ESLint on `lib/`: importing Vue, Pinia or `@vue/*`; touching `window`, `document`, `navigator`, `localStorage` or `sessionStorage`; timers (`setTimeout`, `setInterval`).
 - ESLint on `model/`: importing from `ui/`; touching `window`, `document` or `navigator` directly.
 - ESLint on `.vue`: importing a wire module, `@connectrpc/*` or `@bufbuild/*`; touching `window`, `document` or `navigator`.
-- ESLint `numen/max-composable-return-properties`: a composable returning more than eight properties, counted through a returned variable, or returning a spread.
+- ESLint `numen/max-composable-return-properties`: a composable returning more than eight properties, counted through a returned variable, returning a spread, a group of one key, a group named for what it wraps (`base`, `parts`, `services`, `actions`, `frame`, `api`, `methods`, `handlers`, `helpers`, `utils`, `deps`), or more than eight names counting those a group holds.
 - ESLint `numen/vue-script-sections`, `numen/max-script-lines`, `numen/max-inline-props`, `numen/thin-computed`, `numen/handler-naming`, `numen/boolean-prop-naming`, `numen/enforce-vue-reactivity-in-composable`: a script that departs from the section order and limits of `coding-style-frontend.md`.
 - ESLint size rules `complexity`, `max-depth`, `max-lines-per-function`, `max-statements`, `max-params`: a function over the limits of `architecture.md` §8.
 

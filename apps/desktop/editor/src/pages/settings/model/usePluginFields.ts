@@ -1,6 +1,7 @@
 /**
- * The state and actions of the declarative settings form of one plugin: the values in force, the
- * enum choices, the text drafts and the paths chosen through the host's dialog.
+ * The state of the declarative settings form of one plugin, in three parts the form calls one after
+ * the other: the values in force with the text drafts, the enum choices, and the paths chosen
+ * through the host's dialog.
  *
  * A path chosen for another plugin than the one shown when the dialog was opened is dropped.
  */
@@ -12,7 +13,7 @@ import type { JsonValue } from '@/shared/api/json'
 import { createEnumFields, getValueInForce } from '../lib/enums'
 import type { InstallationSettings, PluginFieldsHost } from '../types'
 import { createPluginSettings } from './createPluginSettings'
-import { appendPathEntry, createTextDrafts, removePathEntry } from './drafts'
+import { appendPathEntry, removePathEntry, useTextDrafts } from './drafts'
 
 export interface PluginFieldsDeps {
   readonly getSettings: () => InstallationSettings
@@ -50,41 +51,65 @@ function createSettingValues(
   }
 }
 
-export function usePluginFields(deps: PluginFieldsDeps) {
-  const pluginSettings = createPluginSettings(
+const createFieldSettings = (deps: PluginFieldsDeps) =>
+  createPluginSettings(
     () => deps.getSettings(),
     () => deps.getPlugin().id,
   )
+
+/** The values in force of the settings of the plugin, the text typed and not written yet, and the write of a value. */
+export function usePluginFields(deps: PluginFieldsDeps) {
+  const pluginSettings = createFieldSettings(deps)
   const values = createSettingValues(deps, pluginSettings)
-  const enums = createEnumFields(
+  const { getDraft, setDraft, writeDraft } = useTextDrafts(pluginSettings.set)
+  return {
+    getBooleanSetting: values.getBooleanSetting,
+    getNumberSetting: values.getNumberSetting,
+    getStringSetting: values.getStringSetting,
+    getDraft,
+    setDraft,
+    writeDraft,
+    setSetting: pluginSettings.set,
+  }
+}
+
+/** The choices of the enum settings, the settings shown and the secrets placed among them. */
+export function useEnumFields(deps: PluginFieldsDeps) {
+  const pluginSettings = createFieldSettings(deps)
+  return createEnumFields(
     () => deps.getPlugin(),
     pluginSettings.get,
     pluginSettings.isRequested,
     () => deps.getSettings().getPlatform(),
   )
+}
 
+/** The paths chosen for the path settings of the plugin, and why one was not accepted. */
+export function usePluginPaths(
+  deps: PluginFieldsDeps,
+  fields: Pick<ReturnType<typeof usePluginFields>, 'getStringSetting' | 'setSetting'>,
+) {
   /** Why a path setting did not accept the path last chosen, by key. */
   const problems = ref<Record<string, string>>({})
-  const drafts = createTextDrafts(pluginSettings.set)
 
   async function choosePathNow(setting: PluginSettingInfo): Promise<void> {
     const pluginId = deps.getPlugin().id
-    const previous = values.getStringSetting(setting.key, setting.default)
+    const previous = fields.getStringSetting(setting.key, setting.default)
     const problem = await deps.getHost().choosePath(pluginId, setting.key)
     if (deps.getPlugin().id !== pluginId) return
     problems.value = { ...problems.value, [setting.key]: problem }
     if (problem === '' && previous !== '' && hasManyPaths(setting)) {
-      pluginSettings.set(
+      fields.setSetting(
         setting.key,
-        appendPathEntry(previous, values.getStringSetting(setting.key, '')),
+        appendPathEntry(previous, fields.getStringSetting(setting.key, '')),
       )
     }
   }
 
-  const paths = {
+  return {
     problems,
-    hasMany: hasManyPaths,
-    choose: (setting: PluginSettingInfo): void => {
+    hasManyPaths,
+    choosePath: (setting: PluginSettingInfo): void => {
       const pluginId = deps.getPlugin().id
       runInBackground(choosePathNow(setting), (error) => {
         if (deps.getPlugin().id === pluginId) {
@@ -92,12 +117,10 @@ export function usePluginFields(deps: PluginFieldsDeps) {
         }
       })
     },
-    clear: (setting: PluginSettingInfo, targetPath?: string): void => {
+    clearPath: (setting: PluginSettingInfo, targetPath?: string): void => {
       problems.value = { ...problems.value, [setting.key]: '' }
-      const current = values.getStringSetting(setting.key, setting.default)
-      pluginSettings.set(setting.key, removePathEntry(current, targetPath))
+      const current = fields.getStringSetting(setting.key, setting.default)
+      fields.setSetting(setting.key, removePathEntry(current, targetPath))
     },
   }
-
-  return { enums, values, drafts, paths, setSetting: pluginSettings.set }
 }

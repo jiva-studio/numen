@@ -62,6 +62,9 @@ function isBoundToPart(variable) {
 // The primitive types that hold data, by the name TypeScript prints for them; the literal types are found by the type itself.
 const DATA_TYPE_NAMES = new Set(['string', 'number', 'boolean', 'bigint', 'undefined', 'null', 'void', 'never', 'true', 'false'])
 
+// The names of a group that only wraps what a function returns; a group takes the name of the thing it holds.
+const WRAPPER_GROUP_NAMES = new Set(['base', 'parts', 'services', 'actions', 'frame', 'api', 'methods', 'handlers', 'helpers', 'utils', 'deps'])
+
 const maxComposableReturnProperties = {
   meta: {
     type: 'problem',
@@ -80,6 +83,8 @@ const maxComposableReturnProperties = {
         '"{{name}}" takes {{count}} properties in its input (max: {{max}}). Narrow the input to what the function uses, or split the function.',
       singleKeyGroup:
         '"{{name}}" returns the group "{{group}}" with one key. A group of one key adds a level and no meaning: return the key itself.',
+      wrapperGroup:
+        '"{{name}}" returns the group "{{group}}", a name that wraps and does not say what the group holds. Return its members, or name the group after the thing it holds.',
       reexposedGroup:
         '"{{name}}" returns the group "{{group}}" that only re-exposes {{count}} members of the parts it calls. Let the consumer take the parts, or give the group a meaning of its own.',
     },
@@ -212,6 +217,10 @@ const maxComposableReturnProperties = {
         if (prop.type !== 'Property' || prop.value.type !== 'ObjectExpression') continue
         const group = prop.key.name ?? prop.key.value
         const members = prop.value.properties.filter((one) => one.type === 'Property')
+        if (WRAPPER_GROUP_NAMES.has(group)) {
+          context.report({ node: prop, messageId: 'wrapperGroup', data: { name: fnName, group } })
+          continue
+        }
         if (members.length === 1) {
           context.report({ node: prop, messageId: 'singleKeyGroup', data: { name: fnName, group } })
           continue
@@ -223,6 +232,16 @@ const maxComposableReturnProperties = {
       }
     }
 
+    // The names a returned member brings: the member itself, and for an object literal the names it holds in turn.
+    function countLeafNames(value) {
+      if (value.type !== 'ObjectExpression') return 1
+      let count = 0
+      for (const prop of value.properties) {
+        if (prop.type === 'Property') count += isDataValue(prop.value) ? 0 : countLeafNames(prop.value)
+      }
+      return count
+    }
+
     function checkReturned(argument, fnName, fn) {
       if (!fnName || !isPartName(fnName) || !argument) return
       const node = getReturnedObject(argument)
@@ -230,7 +249,7 @@ const maxComposableReturnProperties = {
       if (node) {
         for (const prop of node.properties) {
           if (prop.type === 'Property') {
-            if (!isDataValue(prop.value)) count++
+            if (!isDataValue(prop.value)) count += countLeafNames(prop.value)
           } else if (prop.type === 'SpreadElement') {
             // A composable names every property it returns; a factory that spreads a part it built is counted by its type, and one that spreads a value it did not build is reported.
             if (fnName.startsWith('use')) {
