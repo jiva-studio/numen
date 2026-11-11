@@ -53,7 +53,9 @@ func BenchmarkSave(b *testing.B) {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
 			v := vaultfixture.GenerateVault(b, 100)
 			write := note.NewWrite(
-				vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, indexNothing, testsupport.NewClock())
+				vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, indexNothing, testsupport.NewClock(),
+				note.OpenGate{},
+			)
 			path := "01/note-000001.md"
 
 			body := ""

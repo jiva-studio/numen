@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -35,11 +33,11 @@ func newFailingConfig(t *testing.T) Config {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(sampleManifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.Open(t, "desktop.editor", root)
+	host := openPluginRoles(t, "desktop.editor", root)
 	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
-	return NewConfig(Config{PluginHost: AdaptPluginHost((*PluginRoles)(host))})
+	return NewConfig(Config{PluginHost: AdaptPluginHost(host)})
 }
 
 func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {

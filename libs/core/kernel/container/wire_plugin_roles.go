@@ -9,7 +9,8 @@ import (
 )
 
 // PluginRoles are the roles of a plugin host, each keeping its own state and made from the roles it needs, so that
-// none reaches back to one made after it.
+// none reaches back to one made after it. NewPluginRoles is the one place that makes them, for the container and for
+// the tests that hold a host.
 type PluginRoles struct {
 	Registry     *plugin.Registry
 	Discovery    *plugin.Discovery
@@ -28,7 +29,9 @@ type PluginRoles struct {
 	Mode         *plugin.Mode
 }
 
-func newPluginRoles(clock machineport.Clock, target string, dirs []string) *PluginRoles {
+// NewPluginRoles creates the roles of a plugin host for the target application and the folders its plugins are in. The
+// roles read the time from clock.
+func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *PluginRoles {
 	errs := plugin.NewErrorSink()
 	mode := plugin.NewMode()
 	values := plugin.NewSettingValues()

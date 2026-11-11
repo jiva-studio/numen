@@ -76,14 +76,14 @@ func newMCPCaller() testPlugin {
 	return testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}}
 }
 
-func openToolsOfHost(t *testing.T, host *pluginhost.Host) numenv1connect.PluginToolServiceClient {
+func openToolsOfHost(t *testing.T, host *container.PluginRoles) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
-	container.AdaptPluginHost((*container.PluginRoles)(host)).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
+	container.AdaptPluginHost(host).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -250,7 +250,7 @@ func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
 	t.Helper()
 	agent := &toolAgent{}
 	host := hostOver(t, append([]testPlugin{agentAt(agent)}, plugins...)...)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Instructions: instructions})
 

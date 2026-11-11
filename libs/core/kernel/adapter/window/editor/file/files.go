@@ -205,7 +205,8 @@ func (h *Changes) RemoveFile(
 	if err != nil {
 		return nil, err
 	}
-	removed, indexOutdated, err := h.remove.Execute(ctx, showing, r.Msg.GetPath())
+	removed, err := h.remove.Execute(ctx, showing, r.Msg.GetPath())
+	indexOutdated := h.writes.IsIndexOutdated(err)
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}

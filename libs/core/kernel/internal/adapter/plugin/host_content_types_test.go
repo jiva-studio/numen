@@ -8,15 +8,15 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
-func newReaderHost(manifests ...catalogmanifest.Manifest) *pluginhost.Host {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+func newReaderHost(manifests ...catalogmanifest.Manifest) *container.PluginRoles {
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
@@ -31,7 +31,7 @@ func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...doma
 	}}
 }
 
-func getReaders(host *pluginhost.Host) map[string][]plugindomain.ReaderInfo {
+func getReaders(host *container.PluginRoles) map[string][]plugindomain.ReaderInfo {
 	out := map[string][]plugindomain.ReaderInfo{}
 	for _, info := range host.Registry.GetPluginInfos() {
 		out[info.ID] = info.Readers

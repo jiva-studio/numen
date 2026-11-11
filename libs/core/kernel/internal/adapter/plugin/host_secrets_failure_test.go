@@ -3,9 +3,9 @@ package plugin_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -122,7 +122,7 @@ func deliveredName(t *testing.T, probe *configured) string {
 	return got[0].GetName()
 }
 
-func newConfiguredHost(t *testing.T) (*pluginhost.Host, *configured, *listing) {
+func newConfiguredHost(t *testing.T) (*container.PluginRoles, *configured, *listing) {
 	t.Helper()
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	source := newListing("Work")
@@ -133,13 +133,13 @@ func newConfiguredHost(t *testing.T) (*pluginhost.Host, *configured, *listing) {
 	return host, probe, source
 }
 
-func prepareActivation(t *testing.T, host *pluginhost.Host, dormant bool) func() error {
+func prepareActivation(t *testing.T, host *container.PluginRoles, dormant bool) func() error {
 	t.Helper()
 	activate := prepareActivationWith(t, host, dormant)
 	return func() error { return activate(t.Context()) }
 }
 
-func prepareActivationWith(t *testing.T, host *pluginhost.Host, dormant bool) func(ctx context.Context) error {
+func prepareActivationWith(t *testing.T, host *container.PluginRoles, dormant bool) func(ctx context.Context) error {
 	t.Helper()
 	port := endpointOf(host, secretPluginID).Port
 	sleeper := wiretest.StartSleepProcess(t).Process
@@ -160,7 +160,7 @@ func prepareActivationWith(t *testing.T, host *pluginhost.Host, dormant bool) fu
 	}
 }
 
-func addSecretPlugin(t *testing.T, host *pluginhost.Host, source *listing, pluginID string) *configured {
+func addSecretPlugin(t *testing.T, host *container.PluginRoles, source *listing, pluginID string) *configured {
 	t.Helper()
 	probe := &configured{}
 	mux := http.NewServeMux()
