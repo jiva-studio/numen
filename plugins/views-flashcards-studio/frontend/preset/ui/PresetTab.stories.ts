@@ -214,7 +214,7 @@ export const TheBacklogIsDrawnWithTheAnswer: Story = {
   },
 }
 
-/** The curve response is pending: the waiting text stands in place of the plot, and the settings are still there. */
+/** The curve response is pending: the waiting text replaces the plot, and the settings are still there. */
 export const WaitingForAnAnswer: Story = {
   args: { isHonest: false, isWaiting: true },
   play: async ({ canvasElement }) => {

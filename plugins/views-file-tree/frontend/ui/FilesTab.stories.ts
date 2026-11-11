@@ -5,7 +5,7 @@
  * row inside a folder relative to the folder, and the position of the row menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, userEvent, waitFor } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'

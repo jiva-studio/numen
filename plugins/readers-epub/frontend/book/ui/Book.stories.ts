@@ -291,11 +291,11 @@ export const OneLine: Story = {
     )
 
     const was = getFrontOffset(canvasElement)
-    const shown = getShownRuns(canvasElement)
+    const runsBefore = getShownRuns(canvasElement)
     await userEvent.keyboard('{ArrowRight}')
     for (let frame = 0; frame < 20; frame += 1) await waitForFrame()
     await expect(getFrontOffset(canvasElement)).toBe(was)
-    await expect(getShownRuns(canvasElement)).toEqual(shown)
+    await expect(getShownRuns(canvasElement)).toEqual(runsBefore)
   },
 }
 
