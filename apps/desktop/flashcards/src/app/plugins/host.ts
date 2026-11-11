@@ -25,7 +25,7 @@ import {
   type WindowHost,
 } from '@numen/plugin-loader'
 import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
-import { openExternalUrl } from '@numen/ui'
+import { openExternalUrl } from '@/features/external-links'
 import { createSlotIssueReporter, createWindowSlots } from '@/entities/plugin'
 import type { createWindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'

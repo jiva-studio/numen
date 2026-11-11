@@ -10,7 +10,7 @@ describe('useSecretValueEntry', () => {
       emitCommit: (v) => emitted.push(v),
     })
     field.entry.value = '  tok-123  '
-    field.actions.commit()
+    field.commit()
     expect(emitted).toEqual(['tok-123'])
     expect(field.entry.value).toBe('')
   })
@@ -22,7 +22,7 @@ describe('useSecretValueEntry', () => {
       emitCommit: (v) => emitted.push(v),
     })
     field.entry.value = '   '
-    field.actions.commit()
+    field.commit()
     expect(emitted).toEqual([])
   })
 
@@ -36,16 +36,16 @@ describe('useSecretValueEntry', () => {
       emitCommit: () => undefined,
     })
     field.entry.value = 'tok-123'
-    field.actions.commit()
+    field.commit()
     await flushPromises()
     expect(field.hasFailed.value).toBe(true)
     expect(field.entry.value).toBe('tok-123')
 
-    field.actions.commit()
+    field.commit()
     await flushPromises()
     expect(calls).toEqual(['tok-123'])
 
-    field.actions.commitAgain()
+    field.commitAgain()
     await flushPromises()
     expect(calls).toEqual(['tok-123', 'tok-123'])
     expect(field.hasFailed.value).toBe(false)
@@ -65,8 +65,8 @@ describe('useSecretValueEntry', () => {
       emitCommit: () => undefined,
     })
     field.entry.value = 'tok-123'
-    field.actions.commit()
-    field.actions.commit()
+    field.commit()
+    field.commit()
     expect(calls).toEqual(['tok-123'])
     release(true)
     await flushPromises()

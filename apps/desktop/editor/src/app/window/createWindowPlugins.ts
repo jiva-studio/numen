@@ -5,12 +5,8 @@
  */
 import { createNoticeQueue } from '@numen/workbench'
 import { readNote, writeNote } from '@/entities/note'
-import {
-  createHostPort,
-  createPluginNotes,
-  isCommandListed,
-  useDeclaredCommands,
-} from '@/features/plugin-commands'
+import { useDeclaredCommands } from '@/features/plugin-commands'
+import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { createWindowBase } from './createWindowBase'
 import { createPluginDeclarations } from './createPluginDeclarations'

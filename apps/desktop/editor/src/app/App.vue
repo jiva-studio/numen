@@ -54,15 +54,6 @@ const { fileFlush, getTitle } = vault.editing
 const { failure } = vault.window.health
 const { vaultList } = vault.vaults
 const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstrap
-
-/* -------------------------------- Handlers -------------------------------- */
-function onCloseTab(id: string, hold?: () => void) {
-  windowTabs.closeTab(id, hold)
-}
-
-function onShowTab(id: string) {
-  windowTabs.panes.onTabShown(id)
-}
 </script>
 
 <template>
@@ -81,8 +72,8 @@ function onShowTab(id: string) {
       :tabs="windowTabs.tabs.tabs.value"
       :window-edge="windowEdge"
       :tab-menu="tabMenu.menu.value"
-      @close="onCloseTab"
-      @show="onShowTab"
+      @close="windowTabs.closeTab"
+      @show="windowTabs.panes.onTabShown"
       @tab-context-menu="tabMenu.open"
       @tab-menu-choose="tabMenu.choose"
       @tab-menu-dismiss="tabMenu.dismiss"

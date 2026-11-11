@@ -3,7 +3,8 @@
  * window has no address bar.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { interceptExternalLinks, openExternalUrl } from '@numen/ui'
+import { interceptExternalLinks } from '@numen/ui'
+import { openExternalUrl } from '../api/wailsRuntime'
 import type { NoticeQueue } from '@numen/workbench'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'

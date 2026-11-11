@@ -106,9 +106,6 @@ export { isLeading, isTrailing } from './shared/lib/text/surrogate'
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
 export { useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
-/** The Wails runtime the window serves beside its pages, and an address opened through it. */
-export { loadWailsRuntime, openExternalUrl } from './shared/api/wailsRuntime'
-export type { WailsRuntime, WailsRuntimeLoader } from './shared/lib/runtime/wailsRuntime'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'

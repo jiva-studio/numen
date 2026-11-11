@@ -39,9 +39,7 @@ export function useNoteSheet(deps: NoteSheetDeps) {
   return {
     prose,
     isReading,
-    actions: {
-      open: () => runInBackground(open(), reportFailure),
-      save: () => runInBackground(save(), reportFailure),
-    },
+    open: () => () => runInBackground(open(), reportFailure),
+    save: () => () => runInBackground(save(), reportFailure),
   }
 }

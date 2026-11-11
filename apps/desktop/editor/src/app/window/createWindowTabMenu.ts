@@ -3,7 +3,8 @@
  */
 import type { PluginHost } from '@numen/plugin-loader'
 import { useWindowTabMenu, type WindowTabs } from '@/entities/tab'
-import { createNoteKindReader, type CommandItemLists } from '@/features/plugin-commands'
+import { type CommandItemLists } from '@/features/plugin-commands'
+import { createNoteKindReader } from '@/features/plugin-host'
 import type { createWindowTabMover } from '@/features/tab-move'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { COMMAND } from '@/shared/model/command'

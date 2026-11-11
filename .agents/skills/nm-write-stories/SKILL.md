@@ -143,7 +143,7 @@ A component draws with design tokens and declares none.
 | `stories (chromium)` | Playwright Chromium | every story and its `play` function |
 | `stories (webkit)` | Playwright WebKit | the same stories; the window is WebKit on macOS and Linux |
 
-Geometry, focus, pointer and keyboard are proven in the story projects in both engines. jsdom decides logic. Use `getBoundingClientRect` in a story to prove that something is whole, inside or ordered, never to pin a size.
+Geometry, focus, pointer and keyboard are proven in the story projects in both engines. jsdom decides logic. A story file that reads `getBoundingClientRect` to prove that something is whole, inside or ordered is listed with its reason in `tools/checks/structure/ts/story-geometry/allowlist.json`; the check refuses any other story file that reads it, and every story file that reads `getComputedStyle` or `toHaveStyle`. A component that declares events needs a play function that acts as a person does (`userEvent`, `fireEvent`) before it asserts a spy or an emitted payload.
 
 In `libs/ui/components` and `libs/ui/workbench` take the projects one at a time; `npm test` starts both story instances at once and the run dies before a test executes:
 

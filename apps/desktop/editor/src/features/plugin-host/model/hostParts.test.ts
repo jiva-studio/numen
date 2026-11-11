@@ -6,11 +6,11 @@ import type { CommandTarget } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { createTestTabs } from '@/testing/tabs'
 import { createAgentAsker } from './createAgentAsker'
-import { createNoteKindReader } from './createNoteKindReader'
+import { createNoteKindReader } from './window/createNoteKindReader'
 import { createPluginCatalog } from './createPluginCatalog'
 import { createPluginReports } from './createPluginReports'
-import { createWindowFacts } from './createWindowFacts'
-import { getAppCommandIds } from './getAppCommandIds'
+import { createWindowFacts } from './window/createWindowFacts'
+import { getAppCommandIds } from './window/getAppCommandIds'
 
 const row = (id: string, command?: string): Command => ({
   id,

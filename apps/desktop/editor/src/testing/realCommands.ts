@@ -30,12 +30,8 @@ import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import {
-  createSearchMenu,
-  createWindowSlots,
-  useDeclaredCommands,
-  watchCommandLists,
-} from '@/features/plugin-commands'
+import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
+import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
 import { createPluginPalette } from '@/app/window/createWindowPalettes'
 import { getVaultList } from '@/features/window-display'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'

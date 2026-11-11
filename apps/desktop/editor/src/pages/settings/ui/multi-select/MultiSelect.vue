@@ -4,8 +4,9 @@
  * The line says the first choice in force and how many more. A choice pressed emits `toggle` with
  * its identifier and whether it is now in force, and `update:selected` with the new list.
  */
-import { computed, ref, useTemplateRef } from 'vue'
-import { measureRect, SearchableListPopup, type Position } from '@numen/ui'
+import { computed, useTemplateRef } from 'vue'
+import { SearchableListPopup } from '@numen/ui'
+import { useMultiSelect } from '../../model/useMultiSelect'
 import { useMultiSelectText } from '../../model/useMultiSelectText'
 import type { MultiSelectProps } from './MultiSelect.types'
 import SelectTrigger from './SelectTrigger.vue'
@@ -35,39 +36,23 @@ defineExpose({
 })
 
 /* ---------------------------------- State --------------------------------- */
-const query = ref('')
 const trigger = useTemplateRef<InstanceType<typeof SelectTrigger>>('trigger')
 const element = computed(() => trigger.value?.element ?? null)
-const menuAnchor = ref<{ at: Position; wide: number } | null>(null)
+const { query, menuAnchor, openChoices, closeChoices, toggleChoice } = useMultiSelect({
+  getSelected: () => props.selected,
+  isDisabled: () => props.isDisabled,
+  getElement: () => element.value,
+  updateSelected: (selected) => emit('update:selected', selected),
+  toggle: (id, isOn) => emit('toggle', id, isOn),
+})
 
 const displayText = useMultiSelectText(() => props)
 
 /* -------------------------------- Handlers -------------------------------- */
-const onOpenChoices = () => {
-  const line = element.value
-  if (!line || props.isDisabled) return
-  const box = measureRect(line)
-  menuAnchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
-}
-
-const onCloseChoices = () => {
-  menuAnchor.value = null
-  query.value = ''
-}
-
-const onChoose = (id: string) => {
-  const isOn = !props.selected.includes(id)
-  emit(
-    'update:selected',
-    isOn ? [...props.selected, id] : props.selected.filter((one) => one !== id),
-  )
-  emit('toggle', id, isOn)
-}
-
 const onKey = (event: KeyboardEvent) => {
   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
   event.preventDefault()
-  onOpenChoices()
+  openChoices()
 }
 </script>
 
@@ -81,7 +66,7 @@ const onKey = (event: KeyboardEvent) => {
     :is-expanded="menuAnchor !== null"
     has-popup="listbox"
     :class="props.class"
-    @click="onOpenChoices"
+    @click="openChoices"
     @keydown="onKey"
   />
 
@@ -97,7 +82,7 @@ const onKey = (event: KeyboardEvent) => {
     :at="menuAnchor.at"
     :asking="menuAnchor.wide"
     :from="element"
-    @select="onChoose"
-    @close="onCloseChoices"
+    @select="toggleChoice"
+    @close="closeChoices"
   />
 </template>

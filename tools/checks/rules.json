@@ -1240,6 +1240,25 @@
       "export": "STORY_VERIFIERS"
     },
     {
+      "name": "ts/story-geometry",
+      "paths": [
+        "apps/**/*.stories.ts",
+        "libs/**/*.stories.ts",
+        "plugins/**/*.stories.ts",
+        "tools/checks/structure/ts/story-geometry/**"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/ts/story-geometry/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/story-geometry/check.mjs",
+      "export": "STORY_GEOMETRY_VERIFIERS"
+    },
+    {
       "name": "ts/story-lint",
       "paths": [
         "**/eslint.config.{js,mjs}",

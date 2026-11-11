@@ -26,7 +26,7 @@ const emit = defineEmits<{
 defineExpose({ focus: () => input.value?.focus() })
 
 /* --------------------------------- State ---------------------------------- */
-const { entry, hasFailed, actions } = useSecretValueEntry({
+const { entry, hasFailed, commit, commitAgain, clearFailure } = useSecretValueEntry({
   getSubmit: () => props.submit,
   emitCommit: (value) => emit('commit', value),
 })
@@ -35,18 +35,6 @@ const stateId = useId()
 const failureId = useId()
 const describedBy = computed(() => (hasFailed.value ? `${stateId} ${failureId}` : stateId))
 
-/* -------------------------------- Handlers -------------------------------- */
-function onCommit(): void {
-  actions.commit()
-}
-
-function onCommitAgain(): void {
-  actions.commitAgain()
-}
-
-function onInput(): void {
-  actions.clearFailure()
-}
 </script>
 
 <template>
@@ -61,10 +49,10 @@ function onInput(): void {
       :aria-describedby="describedBy"
       :aria-invalid="hasFailed"
       :placeholder="hasValue ? words.secretMasked : words.keyPlaceholder"
-      @blur="onCommit"
-      @change="onCommit"
-      @input="onInput"
-      @keydown.enter="onCommitAgain"
+      @blur="commit"
+      @change="commit"
+      @input="clearFailure"
+      @keydown.enter="commitAgain"
     />
     <span :id="stateId" class="sr-only">
       {{ hasValue ? words.secretValueSet : words.secretValueEmpty }}

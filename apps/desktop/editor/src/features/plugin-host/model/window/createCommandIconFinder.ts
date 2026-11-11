@@ -1,14 +1,13 @@
 import type { Component } from 'vue'
 import type { PluginHost } from '@numen/plugin-loader'
 import { getNamedIcon } from '@/shared/ui/icons'
-import type { DeclaredCommands } from '../declaredCommands'
-import { getPaletteId } from '../declaredCommands'
+import { getPaletteId, type DeclaredCommand } from '@/entities/plugin'
 
 /** The icon a command of a plugin is drawn with: the one it registered, else the one it declares. */
 export const createCommandIconFinder =
   (
     pluginHost: Pick<PluginHost, 'commands'>,
-    declaredCommands: Pick<DeclaredCommands, 'commands'>,
+    declaredCommands: { readonly commands: { readonly value: readonly DeclaredCommand[] | undefined } },
   ) =>
   (id: string): Component | undefined => {
     const name =

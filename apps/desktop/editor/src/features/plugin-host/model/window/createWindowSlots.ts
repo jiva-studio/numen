@@ -6,18 +6,30 @@
 import {
   getWhenValues as buildWhenValues,
   type CommandTarget,
+  type HandlerDeclaration,
   type PluginHostDeps,
+  type WhenReader,
+  type WhenSettings,
   type WhenValues,
 } from '@numen/plugin-loader'
-import { getPaletteId, type DeclaredCommands } from '../declaredCommands'
-import { createSlotCommandFinder, readSlotEntries } from '../pluginSlots'
+import type { Ref } from 'vue'
+import { getPaletteId, type DeclaredCommand, type DeclaredSlot } from '@/entities/plugin'
+import { createSlotCommandFinder, readSlotEntries } from './pluginSlots'
 import type { WindowFactsSource } from './createWindowFacts'
 
 export interface WindowSlotsDeps {
-  readonly declaredCommands: Pick<
-    DeclaredCommands,
-    'slots' | 'commands' | 'contributions' | 'whenContext'
-  >
+  readonly declaredCommands: {
+    readonly slots: Readonly<Ref<readonly DeclaredSlot[] | undefined>>
+    readonly commands: Readonly<Ref<readonly DeclaredCommand[] | undefined>>
+    readonly contributions: {
+      readonly handlers: Readonly<Ref<readonly HandlerDeclaration[] | undefined>>
+    }
+    readonly whenContext: {
+      readonly getContentTypes: () => Readonly<Record<string, string>>
+      readonly getConfig: () => WhenSettings
+      readonly whenReader: WhenReader
+    }
+  }
   readonly facts: WindowFactsSource
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
 }

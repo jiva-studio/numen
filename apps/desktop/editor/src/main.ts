@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
-import { interceptExternalLinks, openExternalUrl, reportFailure, runInBackground } from '@numen/ui'
+import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
+import { openExternalUrl } from '@/shared/api/wailsRuntime'
 import { createRoot } from './app/createRoot'
 
 // The window draws its own menus. The one the webview draws carries a browser's

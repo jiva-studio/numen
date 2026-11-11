@@ -11,14 +11,7 @@ import type { SettingsStore } from '@/entities/settings'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
 import { searchCore } from '@/features/command-palette'
 import { createBufferHost } from '@/features/file-conflict'
-import {
-  createVaultAccess,
-  createWindowService,
-  createWindowVaults,
-  createWorkspaceService,
-  type HostPort,
-  type PluginNotes,
-} from '@/features/plugin-commands'
+import { createVaultAccess, createWindowService, createWindowVaults, createWorkspaceService, type HostPort, type PluginNotes } from '@/features/plugin-host'
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { createVaultServices } from './createVaultServices'

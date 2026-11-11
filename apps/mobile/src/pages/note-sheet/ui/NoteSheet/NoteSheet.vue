@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const editor = useTemplateRef<HTMLTextAreaElement>('editor')
-const { prose, isReading, actions } = useNoteSheet({
+const { prose, isReading, open, save } = useNoteSheet({
   core: props.core,
   path: props.path,
   focusEditor: () => editor.value?.focus(),
@@ -27,17 +27,13 @@ const { prose, isReading, actions } = useNoteSheet({
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => actions.open())
+onMounted(open)
 
-/* -------------------------------- Handlers -------------------------------- */
-function onKeep() {
-  actions.save()
-}
 </script>
 
 <template>
   <div class="note">
-    <NoteBar :path="path" :is-reading="isReading" @close="emit('close')" @keep="onKeep" />
+    <NoteBar :path="path" :is-reading="isReading" @close="emit('close')" @keep="save" />
     <div class="note__prose">
       <textarea
         ref="editor"

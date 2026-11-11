@@ -87,6 +87,8 @@ apps/desktop/editor/src/
 ├── features/
 │   ├── command-palette/          find and run a command: ui/, model/ (palette, search, handlers), lib/
 │   ├── file-conflict/            keep or take a file that changed on disk while it was open
+│   ├── plugin-commands/          the commands the enabled plugins declare, their palette rows and their slot entries: model/, lib/
+│   ├── plugin-host/              the plugin host adapter: the services, slots, vaults, notes and window commands the window serves to the plugins: model/, lib/
 │   ├── tab-linking/              link tabs across windows: ui/, model/, api/ (workspace service), lib/
 │   ├── tab-move/                 send a tab to another window: model/, api/, lib/
 │   ├── window-display/           the vault as the whole window reads it: display options, target resolution, the vault list and the streams of vault changes
@@ -189,6 +191,7 @@ A red check is fixed in the code, not by changing the check or moving code out o
 A check sees imports and syntax. These calls are made by the person writing and the person reviewing, and each has a test to apply.
 
 - Entity or feature. An entity is a thing with a name in the product that exists when no one acts on it, with its state and rules; a feature is something a person does, with a start and an end. "The open notes" is an entity; "resolve the conflict of an open note" is a feature that reads the entity. When the code is mostly verbs it is a feature.
+- Features cut by kind of command. `note-commands`, `file-commands`, `tab-commands`, `version-commands`, `vault-commands` and `settings-commands` stay. Decision: each is the commands of one entity, declared in `model/commands.ts` next to the scenario code those commands start (open a note, create a file, close a tab, restore a version), so a slice named `<entity>-commands` is a feature when it holds that scenario code and not only a list of command declarations. A re-cut by scenario would split one entity's commands across many slices and give `app` more to collect. A slice that holds declarations and no scenario code moves its declarations to the slice that owns the scenario. A command that needs two of these slices is composed in `app`, never imported across them.
 - Feature or page. A page is a tab a person opens and closes as a whole. A part of a screen with its own state and scenario, or one drawn on two pages, is a feature.
 - Does a type go to a lower layer. When two slices of one layer need the same type, it moves to the layer below: to the entity that owns the concept when there is one, to `shared/lib` otherwise. One slice does not import the other and the type is not copied.
 - Window, plugin or core. Apply the test in "The line between window, plugin and core" before adding logic to a window.

@@ -1,4 +1,4 @@
-import { openExternalUrl } from '@numen/ui'
+import { openExternalUrl } from '@/shared/api/wailsRuntime'
 import {
   createAppInfo,
   createPluginHost,

@@ -36,30 +36,13 @@ const actionWords: ActionWords = {
   silence: words.noAction,
 }
 
-const { field, actions } = usePaletteInput({
+const { field, type, choose, dismiss, goBack } = usePaletteInput({
   commands: props.commands,
   search: props.search,
   doing: props.doing,
   runChoice: props.runChoice,
   findPlaceholder: () => words.find,
 })
-
-/* -------------------------------- Handlers -------------------------------- */
-function onTyping(text: string) {
-  actions.type(text)
-}
-
-function onChoose(item: string, action: string) {
-  actions.choose(item, action)
-}
-
-function onDismiss() {
-  actions.dismiss()
-}
-
-function onBack() {
-  actions.goBack()
-}
 
 /* -------------------------------- Helpers --------------------------------- */
 function getRowIcon(id: string) {
@@ -79,11 +62,11 @@ function getRowIcon(id: string) {
     :opens-on="field.opensOn"
     :name="words.find"
     :action-words="actionWords"
-    @update:model-value="onTyping"
-    @choose="onChoose"
+    @update:model-value="type"
+    @choose="choose"
     @light="commands.palette.previewItem"
-    @back="onBack"
-    @dismiss="onDismiss"
+    @back="goBack"
+    @dismiss="dismiss"
   >
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />

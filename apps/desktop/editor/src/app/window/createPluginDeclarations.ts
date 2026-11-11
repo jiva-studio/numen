@@ -6,17 +6,8 @@ import type { Command } from '@/entities/command'
 import { runDeclaredHandler } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { FileOpeners } from '@/entities/tab'
-import {
-  createBackendHandlers,
-  createDeclaredState,
-  createPluginCatalog,
-  createPluginReports,
-  createWindowFacts,
-  createWindowSlots,
-  type CommandItemLists,
-  type HostParts,
-  type HostPort,
-} from '@/features/plugin-commands'
+import { createBackendHandlers, createDeclaredState, type CommandItemLists } from '@/features/plugin-commands'
+import { createPluginCatalog, createPluginReports, createWindowFacts, createWindowSlots, type HostParts, type HostPort } from '@/features/plugin-host'
 import { getWindowConfig } from '@/features/settings-commands'
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'

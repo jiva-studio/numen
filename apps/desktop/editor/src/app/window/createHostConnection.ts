@@ -11,12 +11,7 @@ import {
   createVaultOpener,
   type createWindowPalette,
 } from '@/features/command-palette'
-import {
-  createWindowCommands,
-  getAppCommandIds,
-  getListedCommandIds,
-  type HostPort,
-} from '@/features/plugin-commands'
+import { createWindowCommands, getAppCommandIds, getListedCommandIds, type HostPort } from '@/features/plugin-host'
 import type { createCommandSources } from './createCommandSources'
 
 /** What the commands a plugin reads and runs are made from. */

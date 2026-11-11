@@ -43,7 +43,7 @@ An arrow is a permitted import; the package matrix (`packages` in `tools/checks/
 | Library | Holds |
 | --- | --- |
 | `@numen/ui` (`libs/ui/components`) | Pure components of general purpose, the design tokens, and the helpers beneath them (clock types, geometry, text, and the browser access in `shared/api`). No domain, no wire types, no application code. |
-| `@numen/workbench` (`libs/ui/workbench`) | The chrome every desktop window shares: the panes and tabs, the command palette, the notices, the window frame. Built from `@numen/ui` alone. |
+| `@numen/workbench` (`libs/ui/workbench`) | The chrome every desktop window shares: the panes and tabs, the command palette, the notices, the window frame. Built from `@numen/ui` alone; it may hold domain words that every desktop window shares (the welcome page and its vault rows), and the Wails runtime stays in each window: the frame takes a loader of the runtime as a parameter. |
 | `@numen/core-client` (`libs/core/client`) | The first-party client of the core: service clients, transport, enum codes, error words, the manifest reader, the catalog client. Private. |
 | `@numen/protocol` (`libs/core/protocol`) | The `.proto` schema, and the Go and TypeScript generated from it. |
 | `@numen/plugin-manager` (`libs/plugin/manager`) | The plugin list and the plugin page, over view-model types it defines; data in by props, answers out by events. |

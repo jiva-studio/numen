@@ -5,17 +5,11 @@
  * group is renamed in place; a name that is too long or is the name of another group is refused
  * with an alert and the field stays open.
  */
-import { computed, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button, type MenuItem } from '@numen/ui'
-import {
-  MAX_NAME_LENGTH,
-  getServiceInfo,
-  isGroupNameTaken,
-  isNameTooLong,
-  trimName,
-} from '@/entities/settings'
-import { runAfterRender } from '../../model/afterRender'
+import { getServiceInfo } from '@/entities/settings'
+import { useGroupRename } from '../../model/useGroupRename'
 import { WORDS as words } from '../../words'
 import SecretInput from './SecretInput.vue'
 import SecretMenu from './SecretMenu.vue'
@@ -44,57 +38,32 @@ const items: readonly MenuItem[] = [
   { id: 'rename', text: words.secretGroupRename },
   { id: 'delete', text: words.secretGroupDelete },
 ]
-const isRenaming = ref(false)
-const draftName = ref('')
-const nameProblem = ref<'' | 'long' | 'taken'>('')
 const info = computed(() => getServiceInfo(props.group))
 const nameInput = useTemplateRef<InstanceType<typeof SecretInput>>('nameInput')
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
-
-onMounted(() => {
-  if (props.isNew) onStartRename()
+const {
+  isRenaming,
+  draftName,
+  nameProblem,
+  startRename,
+  commitRename,
+  cancelRename,
+  getNameProblemText,
+} = useGroupRename({
+  getGroup: () => props.group,
+  getGroups: () => props.groups,
+  isNew: () => props.isNew,
+  focusName: () => {
+    nameInput.value?.focus()
+    nameInput.value?.select()
+  },
+  emitRename: (name) => emit('rename', name),
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onStartRename(): void {
-  draftName.value = props.group
-  nameProblem.value = ''
-  isRenaming.value = true
-  runAfterRender(() => {
-    nameInput.value?.focus()
-    nameInput.value?.select()
-  })
-}
-
-function onCommitRename(): void {
-  if (!isRenaming.value) return
-  const name = trimName(draftName.value)
-  nameProblem.value = getNameProblem(name)
-  if (nameProblem.value !== '') return
-  isRenaming.value = false
-  if (name !== '' && name !== props.group) emit('rename', name)
-}
-
-function onCancelRename(): void {
-  isRenaming.value = false
-  nameProblem.value = ''
-}
-
 function onChoose(id: string, opener: HTMLElement): void {
-  if (id === 'rename') onStartRename()
+  if (id === 'rename') startRename()
   else emit('delete-group', opener)
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getNameProblem(name: string): '' | 'long' | 'taken' {
-  if (isNameTooLong(name)) return 'long'
-  return isGroupNameTaken(props.groups, props.group, name) ? 'taken' : ''
-}
-
-function getNameProblemText(): string {
-  return nameProblem.value === 'long'
-    ? words.secretGroupTooLong(MAX_NAME_LENGTH)
-    : words.secretGroupTaken(trimName(draftName.value))
 }
 </script>
 
@@ -108,10 +77,10 @@ function getNameProblemText(): string {
         type="text"
         :aria-label="words.secretGroupRenameName"
         :aria-invalid="nameProblem !== ''"
-        @keydown.enter="onCommitRename"
-        @keydown.esc="onCancelRename"
-        @change="onCommitRename"
-        @blur="onCommitRename"
+        @keydown.enter="commitRename"
+        @keydown.esc="cancelRename"
+        @change="commitRename"
+        @blur="commitRename"
       />
       <p v-if="nameProblem !== ''" role="alert" class="secret-title__refusal">
         {{ getNameProblemText() }}
