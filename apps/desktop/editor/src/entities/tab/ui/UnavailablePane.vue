@@ -9,6 +9,7 @@ import { TriangleAlert } from '@lucide/vue'
 import { Button, LoadingIndicator, runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import type { UnavailableState } from '../model/unavailable'
+import { useIsStartingPlugin } from '../model/useIsStartingPlugin'
 import { getUnavailableView, type UnavailableView } from '../lib/unavailableView'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -19,12 +20,7 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const isEnabling = ref(false)
 const problem = ref('')
-const isStarting = computed(() => {
-  const lookup = props.state.lookup.value
-  return (
-    lookup.status === 'found' && props.state.services.isPluginStarting?.(lookup.plugin.id) === true
-  )
-})
+const isStarting = useIsStartingPlugin(() => props.state)
 const view = computed(() => getUnavailableView(props.state.lookup.value, isEnabling.value))
 
 /* -------------------------------- Handlers -------------------------------- */

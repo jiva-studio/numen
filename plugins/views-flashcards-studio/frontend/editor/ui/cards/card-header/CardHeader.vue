@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { win } from '@numen/ui'
 /**
  * The strip a tile or a block is dragged by.
  *
@@ -11,7 +10,7 @@ import { win } from '@numen/ui'
  * of is the handle at its start, as it is on every other row that is reordered
  * here: a control, named, and worked by the arrows along the order.
  */
-import { onScopeDispose, shallowRef } from 'vue'
+import { useGripPress } from '../../../model/cards/useGripPress'
 import { CardRow } from '../card-row'
 import { Icon } from '../icon'
 import { parseStepKey, STEP_KEYS, type StepDirection } from '../../../../lib/cards'
@@ -31,26 +30,8 @@ const emit = defineEmits<{
   (event: 'step', direction: StepDirection, press: KeyboardEvent): void
 }>()
 
-/** What a press lands on that is worked, and lets the press have it. */
-const WORKED = 'input, textarea, button, a, select, [contenteditable]'
-
 /** It is taken hold of. A press on something worked lets that thing have it. */
-const isDraggable = shallowRef(true)
-
-const release = (): void => {
-  isDraggable.value = true
-  win.removeEventListener('pointerup', release)
-  win.removeEventListener('pointercancel', release)
-}
-
-onScopeDispose(release)
-
-const onPress = (event: PointerEvent): void => {
-  if ((event.target as HTMLElement | null)?.closest?.(WORKED) == null) return
-  isDraggable.value = false
-  win.addEventListener('pointerup', release)
-  win.addEventListener('pointercancel', release)
-}
+const { isDraggable, press: onPress } = useGripPress()
 
 const onStep = (event: KeyboardEvent): void => {
   const direction = parseStepKey(event.key)

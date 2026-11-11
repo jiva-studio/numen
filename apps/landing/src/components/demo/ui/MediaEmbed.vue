@@ -8,10 +8,11 @@
  * messages a player takes from the page holding it, so nothing that host serves
  * runs in this window.
  */
-import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
-import { reportFailure, runInBackground, win } from '@numen/ui'
+import { computed, useTemplateRef } from 'vue'
+import { reportFailure, runInBackground } from '@numen/ui'
 import { getFrameOrigin, LEAST, readPlayerInfo, seekFrame } from '../lib/frame'
 import type { HeightStore } from '../model/heightStore'
+import { useWindowMessage } from '../model/useWindowMessage'
 import { useFrameHeight } from './useFrameHeight'
 
 const props = defineProps<{
@@ -35,8 +36,7 @@ const media = computed(() => player.value ?? frame.value)
 const { tall, isHeld, tallest, handleValue, frameStyle, onPointerDown, onHandleKeydown } =
   useFrameHeight(props.store, root, media)
 
-onMounted(() => win.addEventListener('message', onWindowMessage))
-onBeforeUnmount(() => win.removeEventListener('message', onWindowMessage))
+useWindowMessage(onWindowMessage)
 
 function onVideoTimeUpdate(event: Event): void {
   const video = event.target as HTMLVideoElement

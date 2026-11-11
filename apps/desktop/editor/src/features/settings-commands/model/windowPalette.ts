@@ -13,7 +13,8 @@ import type { Unvalidated } from '@/shared/api/errors'
 
 const SHELL_APPEARANCE = ['app', 'appearance'] as const
 
-const isMode = (value: Unvalidated): value is Mode => MODES.some((one) => one === value)
+const isMode = (value: Unvalidated): value is Mode =>
+  typeof value === 'string' && MODES.some((one) => one === value)
 
 const isScale = (key: string | undefined): key is typeof INTERFACE_SCALE | typeof TEXT_SCALE =>
   key === INTERFACE_SCALE || key === TEXT_SCALE

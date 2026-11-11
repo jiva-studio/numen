@@ -6,6 +6,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { measureRect, SearchableListPopup, type Position } from '@numen/ui'
+import { useMultiSelectText } from '../../model/useMultiSelectText'
 import type { MultiSelectProps } from './MultiSelect.types'
 import SelectTrigger from './SelectTrigger.vue'
 
@@ -39,15 +40,7 @@ const trigger = useTemplateRef<InstanceType<typeof SelectTrigger>>('trigger')
 const element = computed(() => trigger.value?.element ?? null)
 const menuAnchor = ref<{ at: Position; wide: number } | null>(null)
 
-const getChosenText = (id: string): string => props.choices.find((one) => one.id === id)?.text || id
-
-const displayText = computed(() => {
-  const [first, ...rest] = props.selected
-  if (first === undefined) return props.placeholder
-  return rest.length === 0
-    ? getChosenText(first)
-    : `${getChosenText(first)} ${props.getMoreText(rest.length)}`
-})
+const displayText = useMultiSelectText(() => props)
 
 /* -------------------------------- Handlers -------------------------------- */
 const onOpenChoices = () => {
