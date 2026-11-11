@@ -15,15 +15,15 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 // taskHost is a running, idle host whose plugin reports tasks through the host endpoint.
 type taskHost struct {
-	host    *pluginhost.Host
+	host    *container.PluginRoles
 	process *os.Process
 	client  numenv1connect.HostQueueServiceClient
 }
@@ -43,7 +43,7 @@ func newTaskHost(t *testing.T) taskHost {
 	return taskHost{host: host, process: procs[0], client: newTaskClient(t, host)}
 }
 
-func newTaskClient(t *testing.T, host *pluginhost.Host) numenv1connect.HostQueueServiceClient {
+func newTaskClient(t *testing.T, host *container.PluginRoles) numenv1connect.HostQueueServiceClient {
 	t.Helper()
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil || port == 0 {

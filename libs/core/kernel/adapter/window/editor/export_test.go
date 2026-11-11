@@ -83,9 +83,9 @@ func (s *Services) UseNotes() {
 	writes := s.state.Writes
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
-		notewindow.NewProse(s.state, use.Read, saveProse(use.Write, writes), createNote(use.Create, writes), renameNote(use.Rename, writes)),
+		notewindow.NewProse(s.state, use.Read, use.Write, use.Create, use.Rename, writes),
 		notewindow.NewOutline(s.state, use.OpeningNote, use.Neighborhood, use.Headings),
-		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, writes), nil, nil),
+		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, writes), nil, nil, writes),
 		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)
 }
@@ -95,7 +95,7 @@ func createServices(state *State) *Services {
 		state: state,
 		File: filewindow.NewHandler(
 			filewindow.NewFolders(state, state.Events, nil, nil, nil),
-			filewindow.NewChanges(state, state.Notices, nil, nil, nil),
+			filewindow.NewChanges(state, state.Notices, nil, nil, nil, nil),
 		),
 		Command: newEmptyCommandHandler(state),
 		Media:   mediawindow.NewHandler(state, state, nil),
@@ -200,35 +200,11 @@ func ViewOf(state *State) windowsession.View {
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
 }
 
-func saveProse(write *note.Write, writes *wire.Writes) *note.SaveProse {
-	if write == nil {
-		return nil
-	}
-	saved := note.NewSaveProse(write, writes, writes)
-	return &saved
-}
-
-func createNote(create *note.Create, writes *wire.Writes) *note.CreateNote {
-	if create == nil {
-		return nil
-	}
-	made := note.NewCreateNote(create, writes, writes)
-	return &made
-}
-
-func renameNote(rename *note.Rename, writes *wire.Writes) *note.RenameNote {
-	if rename == nil {
-		return nil
-	}
-	renameUseCase := note.NewRenameNote(rename, writes, writes)
-	return &renameUseCase
-}
-
 func writeLink(links *note.EditLinks, names edit.NameQueries, writes *wire.Writes) *note.WriteLink {
 	if links == nil {
 		return nil
 	}
-	linking := note.NewWriteLink(*links, names, writes, writes)
+	linking := note.NewWriteLink(*links, names, writes)
 	return &linking
 }
 

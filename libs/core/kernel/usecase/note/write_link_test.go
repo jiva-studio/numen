@@ -15,15 +15,13 @@ import (
 // windowGate is the writes a window waits for; a closing one admits none.
 type windowGate struct{ isClosing bool }
 
-func (g windowGate) BeginWrite() bool           { return !g.isClosing }
-func (g windowGate) FinishWrite()               {}
-func (g windowGate) IsIndexOutdated(error) bool { return false }
-func (g windowGate) NoteWritten()               {}
+func (g windowGate) BeginWrite() bool { return !g.isClosing }
+func (g windowGate) FinishWrite()     {}
 
 func TestWriteLinkNamesTheTargetByItsName(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "physics/Entropy.md": "# Entropy\n"})
-	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{}, windowGate{})
+	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{})
 
 	err := write.Execute(t.Context(), c.vault, "Heat.md", note.NamedLink{To: "physics/Entropy.md", Role: domain.RoleParent})
 
@@ -38,7 +36,7 @@ func TestWriteLinkNamesTheTargetByItsName(t *testing.T) {
 func TestWriteLinkRefusesALinkWithNowhereToGo(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{}, windowGate{})
+	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{})
 
 	err := write.Execute(t.Context(), c.vault, "Heat.md", note.NamedLink{Role: domain.RoleParent})
 
@@ -53,7 +51,7 @@ func TestWriteLinkRefusesALinkWithNowhereToGo(t *testing.T) {
 func TestWriteLinkWritesNothingWhileTheWindowCloses(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "Entropy.md": "# Entropy\n"})
-	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{isClosing: true}, windowGate{})
+	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{isClosing: true})
 
 	err := write.Execute(t.Context(), c.vault, "Heat.md", note.NamedLink{To: "Entropy.md", Role: domain.RoleParent})
 
@@ -65,13 +63,12 @@ func TestWriteLinkWritesNothingWhileTheWindowCloses(t *testing.T) {
 	}
 }
 
-func TestCreateNoteWritesTheNamedLinksIntoTheNewNote(t *testing.T) {
+func TestCreateWritesTheNamedLinksIntoTheNewNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"physics/Heat.md": "# Heat\n"})
-	create := c.create()
-	creating := note.NewCreateNote(&create, windowGate{}, windowGate{})
+	creating := c.create()
 
-	made, _, err := creating.Execute(t.Context(), c.vault, note.NewNote{
+	made, err := creating.Execute(t.Context(), c.vault, note.NewNote{
 		Title: "Order", Named: []note.NamedLink{{To: "physics/Heat.md", Role: domain.RoleParent}},
 	})
 
@@ -83,13 +80,12 @@ func TestCreateNoteWritesTheNamedLinksIntoTheNewNote(t *testing.T) {
 	}
 }
 
-func TestCreateNoteMakesNoFileForALinkWithNowhereToGo(t *testing.T) {
+func TestCreateMakesNoFileForALinkWithNowhereToGo(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	create := c.create()
-	creating := note.NewCreateNote(&create, windowGate{}, windowGate{})
+	creating := c.create()
 
-	_, _, err := creating.Execute(t.Context(), c.vault, note.NewNote{
+	_, err := creating.Execute(t.Context(), c.vault, note.NewNote{
 		Title: "Order", Named: []note.NamedLink{{Role: domain.RoleParent}},
 	})
 

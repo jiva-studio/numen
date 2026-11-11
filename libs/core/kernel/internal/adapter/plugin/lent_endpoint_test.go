@@ -2,12 +2,12 @@ package plugin_test
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
-func lendEndpoint(host *pluginhost.Host, address string) (*hostendpoint.Services, hostendpoint.Callers) {
+func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Services, hostendpoint.Callers) {
 	services := hostendpoint.NewServices()
 	callers := hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,
@@ -26,7 +26,7 @@ func lendEndpoint(host *pluginhost.Host, address string) (*hostendpoint.Services
 	return services, callers
 }
 
-func lentCallers(host *pluginhost.Host) hostendpoint.Callers {
+func lentCallers(host *container.PluginRoles) hostendpoint.Callers {
 	_, callers := lendEndpoint(host, hostendpoint.Address)
 	return callers
 }

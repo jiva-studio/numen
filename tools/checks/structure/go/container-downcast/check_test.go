@@ -13,9 +13,9 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// TestContainerDoesNotDowncastPluginHost ensures container code interacts with
-// plugin supervisor solely through the capabilities of container.PluginHost, never downcasting
-// to concrete *plugin.Host.
+// TestContainerDoesNotDowncastPluginHost ensures container code reaches the roles of the plugin host
+// solely through the capabilities of container.PluginHost and the fields of container.PluginRoles, never by an
+// assertion to a concrete role of package plugin (*plugin.Discovery, *plugin.Settings and the like).
 func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 	files, err := filepath.Glob("*.go")
 	if err != nil {
@@ -47,8 +47,8 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 			if !ok {
 				return true
 			}
-			if pkg.Name == "plugin" && sel.Sel.Name == "Host" {
-				t.Errorf("%s: downcast to *plugin.Host is forbidden; use container.PluginHost", file)
+			if pkg.Name == "plugin" {
+				t.Errorf("%s: assertion to *plugin.%s is forbidden; use the capabilities of container.PluginHost", file, sel.Sel.Name)
 			}
 			return true
 		})

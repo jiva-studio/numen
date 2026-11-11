@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"os"
@@ -103,9 +103,9 @@ func newBuiltInBackend() *builtInBackend {
 	return &builtInBackend{probe: &configured{}}
 }
 
-func newBuiltInHost(t *testing.T, dirs ...string) *pluginhost.Host {
+func newBuiltInHost(t *testing.T, dirs ...string) *container.PluginRoles {
 	t.Helper()
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", dirs...)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", dirs...)
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -114,14 +114,14 @@ func newBuiltInHost(t *testing.T, dirs ...string) *pluginhost.Host {
 	return host
 }
 
-func registerBuiltIn(t *testing.T, host *pluginhost.Host, manifest []byte, serve func(map[string]string) (http.Handler, error)) {
+func registerBuiltIn(t *testing.T, host *container.PluginRoles, manifest []byte, serve func(map[string]string) (http.Handler, error)) {
 	t.Helper()
 	if err := host.Discovery.RegisterBuiltIn(manifest, serve); err != nil {
 		t.Fatalf("RegisterBuiltIn: %v", err)
 	}
 }
 
-func getAgentPrompt(t *testing.T, host *pluginhost.Host, endpoint transport.Endpoint) string {
+func getAgentPrompt(t *testing.T, host *container.PluginRoles, endpoint transport.Endpoint) string {
 	t.Helper()
 	client := numenv1connect.NewAgentServiceClient(host.Activation.ClientLookup().GetClient(endpoint), transport.GetBaseURL(endpoint))
 	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
@@ -230,7 +230,7 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 	if err := host.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, plugin.ErrBuiltInRegistered) {
 		t.Errorf("second registration = %v, want plugin.ErrBuiltInRegistered", err)
 	}
-	other := pluginhost.New(testsupport.GetMachine(), "mobile.reader")
+	other := container.NewPluginRoles(testsupport.GetMachine(), "mobile.reader")
 	t.Cleanup(func() {
 		if err := other.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)

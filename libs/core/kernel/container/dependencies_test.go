@@ -14,7 +14,6 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
@@ -23,7 +22,7 @@ import (
 )
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
@@ -32,7 +31,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	registry := provision.NewRegistry()
 	host.Services.SetDependencies(registry)
 	tasks := run.NewTasks()
-	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost((*PluginRoles)(host))})), tasks)
+	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})

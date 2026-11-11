@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
-
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 )
@@ -106,8 +104,8 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.Open(t, "desktop.editor", tmp)
-	cfg := NewConfig(Config{PluginHost: AdaptPluginHost((*PluginRoles)(host))})
+	host := openPluginRoles(t, "desktop.editor", tmp)
+	cfg := NewConfig(Config{PluginHost: AdaptPluginHost(host)})
 
 	setPluginVaultPath(plugins(cfg), "vault")
 	if got := host.Mode.GetVaultPath(); got != "vault" {

@@ -17,13 +17,13 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 
@@ -187,7 +187,7 @@ func (c *configured) last(t *testing.T) *v1.ConfigureRequest {
 	return c.calls[len(c.calls)-1]
 }
 
-func newSecretHost(t *testing.T, store pluginport.KeyStore) (*pluginhost.Host, *configured) {
+func newSecretHost(t *testing.T, store pluginport.KeyStore) (*container.PluginRoles, *configured) {
 	t.Helper()
 	probe := &configured{}
 	mux := http.NewServeMux()
@@ -195,7 +195,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*pluginhost.Host, *
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)

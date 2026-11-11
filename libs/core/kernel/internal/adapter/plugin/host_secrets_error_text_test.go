@@ -14,8 +14,8 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 const pluginWords = "rejected the key"
@@ -94,7 +94,7 @@ type errorTextCase struct {
 	say    func(values []string) string
 }
 
-func newErrorTextHost(t *testing.T, values []string) (*pluginhost.Host, *configured) {
+func newErrorTextHost(t *testing.T, values []string) (*container.PluginRoles, *configured) {
 	t.Helper()
 	items := make(map[string]string, len(values))
 	secrets := make([]plugindomain.Secret, 0, len(values))

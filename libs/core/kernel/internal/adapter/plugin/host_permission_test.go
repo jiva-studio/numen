@@ -13,12 +13,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
-func createManifestedHost(t *testing.T, manifests map[string]string) *pluginhost.Host {
+func createManifestedHost(t *testing.T, manifests map[string]string) *container.PluginRoles {
 	t.Helper()
 	plugins := map[string]runningPlugin{}
 	for token, text := range manifests {
@@ -31,7 +31,7 @@ func createManifestedHost(t *testing.T, manifests map[string]string) *pluginhost
 	return newRunningTestHost(t, plugins)
 }
 
-func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) numenv1connect.HostVaultServiceClient {
+func createRawVaultClient(t *testing.T, host *container.PluginRoles, token string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host))
 	if err != nil {
@@ -83,7 +83,7 @@ func TestACallWithoutTheManifestPermissionIsRefusedByTheCore(t *testing.T) {
 	}
 }
 
-func createRawSearchClient(t *testing.T, host *pluginhost.Host, token string) numenv1connect.HostSearchServiceClient {
+func createRawSearchClient(t *testing.T, host *container.PluginRoles, token string) numenv1connect.HostSearchServiceClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host))
 	if err != nil {

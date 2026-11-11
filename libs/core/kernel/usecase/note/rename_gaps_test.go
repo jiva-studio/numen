@@ -87,7 +87,7 @@ func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
-	renaming := note.NewRename(c.moveDeps(), c.move())
+	renaming := note.NewRename(c.moveDeps(), c.move(), note.OpenGate{})
 	if _, err := renaming.Execute(t.Context(), c.vault, "Old.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}
