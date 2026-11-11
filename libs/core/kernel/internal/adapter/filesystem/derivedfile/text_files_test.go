@@ -1,4 +1,4 @@
-package textfiles_test
+package derivedfile_test
 
 import (
 	"errors"
@@ -9,30 +9,30 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 )
 
-const plugin = "org.example.transcription"
+const transcriber = "org.example.transcription"
 
 func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 	root := t.TempDir()
-	files, err := textfiles.Stores{}.Open(domain.Vault{ID: "v", Path: root})
+	files, err := derivedfile.TextStores{}.Open(domain.Vault{ID: "v", Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
 	segments := []domain.TextSegment{{Text: "Good morning.", Selector: `{"t":[0,1.5]}`}}
-	hash, err := files.WriteTextFile(t.Context(), plugin, "a.jsonl", segments)
+	hash, err := files.WriteTextFile(t.Context(), transcriber, "a.jsonl", segments)
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, err := os.ReadFile(filepath.Join(root, ".numen", plugin, "a.jsonl"))
+	raw, err := os.ReadFile(filepath.Join(root, ".numen", transcriber, "a.jsonl"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if hash != domain.HashContent(raw) {
 		t.Fatalf("hash %s is not the hash of the file", hash)
 	}
-	got, err := files.ReadTextFile(t.Context(), plugin, "a.jsonl")
+	got, err := files.ReadTextFile(t.Context(), transcriber, "a.jsonl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,11 +42,11 @@ func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 }
 
 func TestReadTextFileRejectsANameOutsideThePluginFolder(t *testing.T) {
-	files, err := textfiles.Stores{}.Open(domain.Vault{ID: "v", Path: t.TempDir()})
+	files, err := derivedfile.TextStores{}.Open(domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := files.ReadTextFile(t.Context(), plugin, "../core/x.jsonl"); err == nil || errors.Is(err, text.ErrNoText) {
+	if _, err := files.ReadTextFile(t.Context(), transcriber, "../core/x.jsonl"); err == nil || errors.Is(err, text.ErrNoText) {
 		t.Fatalf("a name with a slash: got %v, want a refusal", err)
 	}
 }

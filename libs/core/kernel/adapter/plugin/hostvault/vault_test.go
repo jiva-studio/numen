@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -26,7 +27,7 @@ import (
 
 func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 	t.Helper()
-	v := testsupport.NewVault(t, files)
+	v := vaultfixture.NewVault(t, files)
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	return Vault{
 		Session: Session{Current: func() (domain.Vault, bool) { return v, true }},
@@ -255,7 +256,7 @@ func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 
 func TestAVaultNamedByIdentityIsWorkedAsTheVaultShown(t *testing.T) {
 	access, current := diskVault(t, map[string]string{"samples/A.md": "body"})
-	other := testsupport.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
+	other := vaultfixture.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
 	access.Session.Find = func(id domain.VaultID) (domain.Vault, error) {
 		if id == other.ID {
 			return other, nil

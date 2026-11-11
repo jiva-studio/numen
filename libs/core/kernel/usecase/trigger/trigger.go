@@ -121,7 +121,7 @@ func (u *Triggers) execute(
 	if err != nil {
 		return err
 	}
-	p := &pass{triggers: u, vault: v, list: triggers, config: u.config.GetWhenConfig(), skipped: map[string]bool{}}
+	p := &pass{types: u.types, run: u.run, notes: u.notes, versions: u.versions, vault: v, list: triggers, config: u.config.GetWhenConfig(), skipped: map[string]bool{}}
 	err = walk(reader, func(stat domain.FileStat) error {
 		if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
 			return nil
@@ -169,7 +169,10 @@ func (u *Triggers) readTriggers() []trigger {
 // pass is one run of the triggers over files of a vault. skipped holds the plugins that could not be
 // reached in this pass.
 type pass struct {
-	triggers *Triggers
+	types    contenttypeport.ContentTypeTable
+	run      CommandRun
+	notes    NoteReader
+	versions Versions
 	vault    domain.Vault
 	list     []trigger
 	config   map[string]any
@@ -189,7 +192,7 @@ type file struct {
 func (p *pass) runFile(ctx context.Context, path string) {
 	current := &file{
 		path:   path,
-		values: plugin.NewTargetValues(path, false, p.triggers.types.GetContentType(path)).WithConfig(p.config),
+		values: plugin.NewTargetValues(path, false, p.types.GetContentType(path)).WithConfig(p.config),
 	}
 	for _, one := range p.list {
 		if p.skipped[one.entry.PluginID] {
@@ -203,7 +206,7 @@ func (p *pass) runFile(ctx context.Context, path string) {
 		if !isTrue {
 			continue
 		}
-		_, err = p.triggers.run.Execute(ctx, p.vault, plugin.CommandCall{
+		_, err = p.run.Execute(ctx, p.vault, plugin.CommandCall{
 			PluginID: one.entry.PluginID, Command: one.entry.Trigger.Command, Path: path,
 		})
 		if err == nil {
@@ -219,7 +222,7 @@ func (p *pass) runFile(ctx context.Context, path string) {
 func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, error) {
 	result := evaluate(current.values, one)
 	if result == when.Unknown && current.values.IsNote() && !current.isNoteRead {
-		noteType, properties, err := p.triggers.notes.Execute(ctx, p.vault, current.path)
+		noteType, properties, err := p.notes.Execute(ctx, p.vault, current.path)
 		if err != nil {
 			return false, err
 		}
@@ -227,7 +230,7 @@ func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, er
 		result = evaluate(current.values, one)
 	}
 	if result == when.Unknown && !current.isVersionsRead {
-		versions, err := p.triggers.versions.ListTargetVersions(ctx, p.vault, current.path)
+		versions, err := p.versions.ListTargetVersions(ctx, p.vault, current.path)
 		if err != nil {
 			return false, err
 		}

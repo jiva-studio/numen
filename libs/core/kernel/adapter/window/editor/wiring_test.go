@@ -48,10 +48,6 @@ type sessionOptions struct {
 	out       io.Writer
 }
 
-type noIdentity struct{}
-
-func (noIdentity) Execute(domain.Vault) error { return nil }
-
 type noRecord struct{}
 
 func (noRecord) Execute(domain.VaultID) error { return nil }
@@ -84,32 +80,29 @@ func (w wiring) startSession(
 	})
 	state.Writes.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
-	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Window: windowsession.WindowPorts{
-			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
+	diag := windowsession.NewDiagnostics(opts.out, state.Window)
+	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
+		Failures: &state.Runtime, Diag: diag,
+		NewSession: func() windowsession.IndexSession {
+			indexed := worker.NewSession()
+			return windowsession.IndexSession{
+				Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
+					indexed.Run(ctx, v, rebuild, read)
+				},
+				ReportVersionsChanged: indexed.ReportVersionsChanged,
+			}
 		},
-		Vault: windowsession.VaultPorts{
-			Identity: noIdentity{}, Recorded: noRecord{}, Passes: windowsession.VaultPassesFunc(passes.StartVault),
-		},
-		Index: windowsession.IndexPorts{
-			Wake: worker,
-			NewSession: func() windowsession.IndexSession {
-				indexed := worker.NewSession()
-				return windowsession.IndexSession{
-					Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
-						indexed.Run(ctx, v, rebuild, read)
-					},
-					ReportVersionsChanged: indexed.ReportVersionsChanged,
-				}
-			},
-		},
-		Shutdown:     windowsession.ShutdownPorts{Door: openDoor{}},
-		Out:          opts.out,
-		IsRebuilding: opts.rebuild,
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, worker, nil, diag),
+		Passes:   windowsession.VaultPassesFunc(passes.StartVault),
 	})
-	session.Start.Execute(ctx, v)
+	session := windowsession.NewSession(&state.Runtime, noRecord{}, diag, nil, runner)
+	guard := &windowsession.Guard{}
+	rebuild := windowsession.NewRebuildSession(guard, session)
+	start := windowsession.NewStartWindow(diag, nil, windowsession.NewModelFollow(nil, worker, &state.Runtime, rebuild), session, opts.rebuild)
+	closeWindow := windowsession.NewCloseWindow(openDoor{}, session)
+	start.Execute(ctx, v)
 	return func() {
-		if err := session.Closing.Close.Execute(ctx); err != nil {
+		if err := closeWindow.Execute(ctx); err != nil {
 			t.Error(err)
 		}
 	}

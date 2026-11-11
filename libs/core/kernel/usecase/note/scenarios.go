@@ -6,58 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Scenarios is everything that changes the notes of a vault, grouped; the container builds each
-// use case on its own. The window and the agent tools use the same set, so both enforce the same
-// rules and a dependency is configured once for both.
-type Scenarios struct {
-	Edit    Editing
-	Place   Placing
-	Connect Connecting
-	Refer   Referring
-}
-
-// Editing reads and changes the text of a note.
-type Editing struct {
-	Read    Read
-	Write   Write
-	Create  Create
-	Replace Replace
-	Linking EditLinks
-}
-
-// Placing moves, renames and removes notes.
-type Placing struct {
-	Move       Move
-	Rename     Rename
-	Remove     Remove
-	RemoveNote RemoveNote
-	EmptyTrash EmptyTrash
-}
-
-// Connecting changes the relationships between notes.
-type Connecting struct {
-	SaveConnection   SaveConnection
-	RemoveSide       RemoveSide
-	RemoveConnection RemoveConnection
-	Join             Join
-	CreateInRelation CreateInRelation
-}
-
-// WithWrites returns Connecting with every connection write tracked through gate and follow.
-func (c Connecting) WithWrites(gate WriteGate, follow IndexFollow) Connecting {
-	track := NewTrackWrites(gate, follow)
-	c.SaveConnection.editor.track = track
-	c.RemoveSide.editor.track = track
-	c.RemoveConnection.editor.track = track
-	c.Join.editor.track = track
-	return c
-}
-
-// Referring adds the links of notes.
-type Referring struct {
-	AddLinks AddLinks
-}
-
 // ConnectionReader reads one relationship between two notes.
 type ConnectionReader struct {
 	get connectionGetting
@@ -70,9 +18,9 @@ type connectionGetting interface {
 
 // ConnectionWriter saves and removes relationships between notes.
 type ConnectionWriter struct {
-	save   SaveConnection
-	side   RemoveSide
-	remove RemoveConnection
+	save   connectionSaving
+	side   sideRemoving
+	remove connectionRemoving
 }
 
 // ConnectionJoiner joins two notes on one side of a relationship.
@@ -90,17 +38,17 @@ func NewConnectionReader(get connectionGetting) ConnectionReader {
 	return ConnectionReader{get: get}
 }
 
-// NewConnectionWriter takes the use cases of a set of scenarios that write connections.
-func NewConnectionWriter(n Scenarios) ConnectionWriter {
-	return ConnectionWriter{save: n.Connect.SaveConnection, side: n.Connect.RemoveSide, remove: n.Connect.RemoveConnection}
+// NewConnectionWriter takes the use cases that write connections.
+func NewConnectionWriter(save SaveConnection, side RemoveSide, remove RemoveConnection) ConnectionWriter {
+	return ConnectionWriter{save: save, side: side, remove: remove}
 }
 
-// NewConnectionJoiner takes the use case of a set of scenarios that joins two notes.
-func NewConnectionJoiner(n Scenarios) ConnectionJoiner { return ConnectionJoiner{join: n.Connect.Join} }
+// NewConnectionJoiner takes the use case that joins two notes.
+func NewConnectionJoiner(join Join) ConnectionJoiner { return ConnectionJoiner{join: join} }
 
-// NewRelatedNoteCreator takes the use case of a set of scenarios that creates a related note.
-func NewRelatedNoteCreator(n Scenarios) RelatedNoteCreator {
-	return RelatedNoteCreator{create: n.Connect.CreateInRelation}
+// NewRelatedNoteCreator takes the use case that creates a related note.
+func NewRelatedNoteCreator(create CreateInRelation) RelatedNoteCreator {
+	return RelatedNoteCreator{create: create}
 }
 
 func (c ConnectionReader) GetConnection(ctx context.Context, v domain.Vault, a, b, kind string) (domain.Connection, error) {
@@ -126,4 +74,19 @@ func (c ConnectionJoiner) Join(ctx context.Context, v domain.Vault, from, to str
 func (c RelatedNoteCreator) CreateInRelation(ctx context.Context, v domain.Vault, in domain.RelatedNote) (string, error) {
 	made, err := c.create.Execute(ctx, v, in)
 	return made.Path, err
+}
+
+// connectionSaving makes the records between two notes exactly the ones given.
+type connectionSaving interface {
+	Execute(ctx context.Context, v domain.Vault, c domain.Connection) error
+}
+
+// sideRemoving removes the record one note writes about another.
+type sideRemoving interface {
+	Execute(ctx context.Context, v domain.Vault, from, to, kind string) error
+}
+
+// connectionRemoving removes the records of one type that two notes write about each other.
+type connectionRemoving interface {
+	Execute(ctx context.Context, v domain.Vault, a, b, kind string) error
 }

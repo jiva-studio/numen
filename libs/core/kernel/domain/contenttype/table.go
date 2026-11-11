@@ -1,7 +1,7 @@
-// Package sharedmimeinfo finds the MIME type of a file by its name in a fixed snapshot of the globs
+// Package contenttype finds the MIME type of a file by its name in a fixed snapshot of the globs
 // table of the freedesktop.org shared-mime-info database. The system's own table is not read: it
 // differs between machines, and a file would open differently on each.
-package sharedmimeinfo
+package contenttype
 
 import (
 	"bufio"

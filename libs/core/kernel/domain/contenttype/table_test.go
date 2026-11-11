@@ -1,10 +1,10 @@
-package sharedmimeinfo_test
+package contenttype_test
 
 import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -24,7 +24,7 @@ func TestGetContentTypeFindsTheTypeOfAName(t *testing.T) {
 		"no-extension":           domain.UnknownContentType,
 		"papers/lecture.unknown": domain.UnknownContentType,
 	}
-	table := sharedmimeinfo.Open()
+	table := contenttype.Open()
 	for name, want := range cases {
 		if got := table.GetContentType(name); got != want {
 			t.Errorf("GetContentType(%q) = %q; want %q", name, got, want)
@@ -33,7 +33,7 @@ func TestGetContentTypeFindsTheTypeOfAName(t *testing.T) {
 }
 
 func TestGetContentTypeIgnoresTheCaseOfAnExtension(t *testing.T) {
-	table := sharedmimeinfo.Open()
+	table := contenttype.Open()
 	for _, name := range []string{"LECTURE.PDF", "Lecture.Pdf", "lecture.pdf"} {
 		if got := table.GetContentType(name); got != "application/pdf" {
 			t.Errorf("GetContentType(%q) = %q; want application/pdf", name, got)
@@ -42,7 +42,7 @@ func TestGetContentTypeIgnoresTheCaseOfAnExtension(t *testing.T) {
 }
 
 func TestGetContentTypeKeepsTheCaseOfACaseSensitivePattern(t *testing.T) {
-	table := sharedmimeinfo.Open()
+	table := contenttype.Open()
 	if got := table.GetContentType("main.c"); got != "text/x-csrc" {
 		t.Errorf("GetContentType(main.c) = %q; want text/x-csrc", got)
 	}
@@ -52,13 +52,13 @@ func TestGetContentTypeKeepsTheCaseOfACaseSensitivePattern(t *testing.T) {
 }
 
 func TestGetContentTypePrefersTheHeavierPattern(t *testing.T) {
-	if got := sharedmimeinfo.Open().GetContentType("readme.md"); got != "text/markdown" {
+	if got := contenttype.Open().GetContentType("readme.md"); got != "text/markdown" {
 		t.Errorf("GetContentType(readme.md) = %q; want text/markdown over a ROM image", got)
 	}
 }
 
 func TestListExtensionsListsTheExtensionsOfAMask(t *testing.T) {
-	got := sharedmimeinfo.Open().ListExtensions("audio/*")
+	got := contenttype.Open().ListExtensions("audio/*")
 	for _, want := range []string{"mp3", "wav", "flac", "m4a", "ogg"} {
 		if !slices.Contains(got, want) {
 			t.Errorf("ListExtensions(audio/*) = %v; want %s among them", got, want)
@@ -70,13 +70,13 @@ func TestListExtensionsListsTheExtensionsOfAMask(t *testing.T) {
 }
 
 func TestListExtensionsExcludesAnExtensionOfAHeavierType(t *testing.T) {
-	if got := sharedmimeinfo.Open().ListExtensions("application/x-genesis-rom"); slices.Contains(got, "md") {
+	if got := contenttype.Open().ListExtensions("application/x-genesis-rom"); slices.Contains(got, "md") {
 		t.Errorf("ListExtensions = %v; want md left to text/markdown", got)
 	}
 }
 
 func TestListExtensionsListsOneExtensionOfAType(t *testing.T) {
-	if got := sharedmimeinfo.Open().ListExtensions("application/pdf"); !slices.Equal(got, []string{"pdf"}) {
+	if got := contenttype.Open().ListExtensions("application/pdf"); !slices.Equal(got, []string{"pdf"}) {
 		t.Errorf("ListExtensions(application/pdf) = %v; want [pdf]", got)
 	}
 }

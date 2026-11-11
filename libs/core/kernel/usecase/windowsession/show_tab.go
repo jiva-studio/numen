@@ -11,36 +11,43 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-// defaultTabBound is how long ShowTab waits when Deps.TabBound is zero.
+// defaultTabBound is how long ShowTab waits when the timeout is zero.
 const defaultTabBound = 2 * time.Second
 
 // ShowTab asks the window to make an open tab the active one.
 type ShowTab struct {
-	life *lifecycle
+	reports  *TabReports
+	tabFront TabFront
+	timeout  time.Duration
+}
+
+// NewShowTab makes the use case over the tab reports of the window and the front of its tabs. A zero
+// timeout waits for defaultTabBound.
+func NewShowTab(reports *TabReports, tabFront TabFront, timeout time.Duration) ShowTab {
+	return ShowTab{reports: reports, tabFront: tabFront, timeout: timeout}
 }
 
 // Execute asks the window to make the open tab with the id the active one and returns the open tabs
 // as the window reports them once it is. An id with no open tab returns fs.ErrNotExist, and a tab the
 // window does not report active in time returns plugin.ErrTabNotShown.
 func (u ShowTab) Execute(ctx context.Context, id string) (windowdomain.OpenTabs, error) {
-	rt, deps := u.life.rt, u.life.deps
-	report := rt.openTabsReports.wait()
-	open := rt.GetOpenTabs()
+	report := u.reports.signal.wait()
+	open := u.reports.GetOpenTabs()
 	if !slices.ContainsFunc(open.Tabs, func(tab windowdomain.Tab) bool { return tab.ID == id }) {
 		return windowdomain.OpenTabs{}, fmt.Errorf("editor: %q: %w", id, plugin.ErrTabNotOpen)
 	}
-	deps.Window.TabFront.Publish(id)
+	u.tabFront.Publish(id)
 	if open.ActiveID == id {
 		return open, nil
 	}
-	wait := cmp.Or(deps.TabBound, defaultTabBound)
+	wait := cmp.Or(u.timeout, defaultTabBound)
 	bound, stop := context.WithTimeout(ctx, wait)
 	defer stop()
 	for {
 		select {
 		case <-report:
-			report = rt.openTabsReports.wait()
-			if open := rt.GetOpenTabs(); open.ActiveID == id {
+			report = u.reports.signal.wait()
+			if open := u.reports.GetOpenTabs(); open.ActiveID == id {
 				return open, nil
 			}
 		case <-bound.Done():

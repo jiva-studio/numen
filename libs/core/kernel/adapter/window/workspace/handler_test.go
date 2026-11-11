@@ -52,7 +52,7 @@ func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 	state := newState()
 	api := newHandlerOver(t, showing{State: state}, memoryTabs{})
 
-	if open := state.Runtime.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
+	if open := state.Tabs.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
@@ -74,7 +74,7 @@ func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 			{ID: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
 		},
 	}
-	if got := state.Runtime.GetOpenTabs(); !reflect.DeepEqual(got, want) {
+	if got := state.Tabs.GetOpenTabs(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window has %+v open", got)
 	}
 }

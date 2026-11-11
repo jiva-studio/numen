@@ -23,8 +23,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -52,7 +52,7 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 }
 
 func TestAgentBridge(t *testing.T) {
-	bridge := openTestBridge(t, &plugintest.MockAgentServer{})
+	bridge := openTestBridge(t, &wiretest.MockAgentServer{})
 	ctx := t.Context()
 
 	run, err := bridge.StartRun(ctx, agent.Task{
@@ -190,11 +190,11 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 	t.Helper()
 
 	mux := http.NewServeMux()
-	testsupport.HandlePluginLifecycle(mux)
+	wiretest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	serverPort := plugintest.GetPort(t, server)
+	serverPort := wiretest.GetPort(t, server)
 
 	tmp := t.TempDir()
 	createTestAgentPluginTree(t, tmp)
@@ -203,7 +203,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := plugintest.StartSleepProcess(t)
+	cmd := wiretest.StartSleepProcess(t)
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil

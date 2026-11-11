@@ -2,6 +2,7 @@ package onnxruntime
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"sync"
 	"time"
 
@@ -17,15 +18,15 @@ const progressInterval = 100 * time.Millisecond
 
 // ONNXProvisioner provisions the ONNX Runtime as a runtime dependency.
 type ONNXProvisioner struct {
-	inner *Provisioner
+	inner provisioning
+	clock machineport.Clock
 
 	mu    sync.Mutex
 	ready map[string]plugin.ResolvedDependency
 }
 
-// NewONNXProvisioner returns an ONNXProvisioner for the configuration.
 func NewONNXProvisioner(cfg Config) *ONNXProvisioner {
-	return &ONNXProvisioner{inner: New(cfg), ready: make(map[string]plugin.ResolvedDependency)}
+	return &ONNXProvisioner{inner: New(cfg), clock: cfg.Clock, ready: make(map[string]plugin.ResolvedDependency)}
 }
 
 // CanProvision reports whether the requirement is the ONNX Runtime.
@@ -39,10 +40,10 @@ func (p *ONNXProvisioner) Provision(
 ) (plugin.ResolvedDependency, error) {
 	var last time.Time
 	report := func(done, total int64) {
-		if onProgress == nil || (done < total && p.inner.cfg.Clock.Now().Sub(last) < progressInterval) {
+		if onProgress == nil || (done < total && p.clock.Now().Sub(last) < progressInterval) {
 			return
 		}
-		last = p.inner.cfg.Clock.Now()
+		last = p.clock.Now()
 		var percent float64
 		if total > 0 {
 			percent = float64(done) * 100 / float64(total)
@@ -77,4 +78,9 @@ func (p *ONNXProvisioner) Status(_ context.Context, req manifest.DependencyRequi
 		return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateMissing}, nil
 	}
 	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
+}
+
+// provisioning fetches or finds the library with the progress of a download reported.
+type provisioning interface {
+	ProvisionWithProgress(ctx context.Context, pluginDir string, report func(done, total int64)) (library, provider string, err error)
 }

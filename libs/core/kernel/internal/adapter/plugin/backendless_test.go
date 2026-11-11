@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -38,7 +38,7 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 		t.Fatalf("write manifest: %v", err)
 	}
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", dir)
-	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}

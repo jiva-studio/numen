@@ -11,11 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/indexfolder"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -72,7 +71,7 @@ type noteViews struct {
 	Writes note.WriteGate
 }
 
-func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) note.Scenarios {
+func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteScenarios {
 	names, links := db.NoteQueries(), db.NoteQueries()
 	indexed := db.Sources()
 	readers := vaultReaders(c)
@@ -92,29 +91,29 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 	remove := note.NewRemove(writers, links, indexed, index)
 	create := note.NewCreate(writers, names, index, now)
 
-	return note.Scenarios{
-		Edit: note.Editing{
+	return NoteScenarios{
+		Edit: NoteEditing{
 			Read:    note.NewRead(readers),
 			Write:   note.NewWrite(readers, writers, index, now),
 			Create:  create,
 			Replace: note.NewReplace(readers, writers, index, now),
 			Linking: linking,
 		},
-		Place: note.Placing{
+		Place: NotePlacing{
 			Move:       mover,
 			Rename:     note.NewRename(moveDeps, mover),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
 			EmptyTrash: note.NewEmptyTrash(writers, views.Writes),
 		},
-		Connect: note.Connecting{
+		Connect: NoteConnecting{
 			SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, names),
 			RemoveSide:       note.NewRemoveSide(readers, writers, index, now, links, names),
 			RemoveConnection: note.NewRemoveConnection(readers, writers, index, now, links, names),
 			Join:             note.NewJoin(readers, writers, index, now, links, names),
 			CreateInRelation: note.NewCreateInRelation(create, names),
 		},
-		Refer: note.Referring{AddLinks: note.NewAddLinks(linking)},
+		Refer: NoteReferring{AddLinks: note.NewAddLinks(linking)},
 	}
 }
 
@@ -171,7 +170,7 @@ func vaultMakeRefresh(c vaultWiring, db *Index, notes noteport.NoteRepository) v
 }
 
 func newTextVersions(c vaultWiring, db *Index) (*textversion.Versions, error) {
-	return textversion.NewVersions(db.Versions, textfiles.Stores{Options: vaultOptions(c)}, c.RunningHost.Runtime, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
+	return textversion.NewVersions(db.Versions, derivedfile.TextStores{Options: vaultOptions(c)}, c.RunningHost.Runtime, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }
 
 func getTextReaders(c vaultWiring) textdomain.Readers {
@@ -221,7 +220,7 @@ func openPluginFile(c vaultWiring) *file.OpenPluginFile {
 }
 
 func getMediaType(_ vaultWiring) *file.GetMediaType {
-	return file.NewGetMediaType(sharedmimeinfo.Open())
+	return file.NewGetMediaType(contenttype.Open())
 }
 
 func openVaults(c Config, db *Index, out io.Writer, label string, record func(domain.Vault)) *vault.OpenVaults[*Index] {
@@ -231,10 +230,8 @@ func openVaults(c Config, db *Index, out io.Writer, label string, record func(do
 	}
 }
 
-// SetShellNotes gives a shell the notes it answers about: whether a vault is indexed and what a link
-// resolves to.
+// SetShellNotes gives a shell the notes it answers about: whether a vault is indexed.
 func SetShellNotes(api *shell.API, db *Index) {
 	queries := vaultQueries(db)
 	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, queries.Browse.IsVaultIndexed, api.Window, api)
-	api.ResolveLinks = queries.Refer.ResolveLinks
 }

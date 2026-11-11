@@ -40,7 +40,7 @@ func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost
 	if err := os.WriteFile(path, []byte(`{"`+courierPlugin+`":{"enabled":false}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	pluginHost := pluginhost.Open("desktop.editor", root)
+	pluginHost := pluginhost.Open(t, "desktop.editor", root)
 	lent := container.AdaptPluginHost(pluginHost)
 	host := &recordingHost{apply: lent.ApplySetting, SettingsPush: lent.Configuration.SettingsPush}
 	lent.ApplySetting, lent.Configuration.SettingsPush = host.applySetting, host

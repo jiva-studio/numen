@@ -1,6 +1,4 @@
-// Package textfiles reads and writes the version files in the plugin folders
-// of a vault's store, `.numen/<plugin id>/<name>`, as JSON Lines of segments.
-package textfiles
+package derivedfile
 
 import (
 	"context"
@@ -12,27 +10,26 @@ import (
 	"github.com/jiva-studio/numen/libs/note/textfile"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
-// Stores opens the version files of a vault.
-type Stores struct {
+// TextStores opens the version files of a vault, `.numen/<plugin id>/<name>`, as JSON Lines of segments.
+type TextStores struct {
 	Options vaultconfig.Options
 }
 
 // Open is the version files of one vault.
-func (s Stores) Open(v domain.Vault) (textport.TextFiles, error) {
-	return files{vault: v, stores: derivedfile.PluginStores{Options: s.Options}}, nil
+func (s TextStores) Open(v domain.Vault) (textport.TextFiles, error) {
+	return textFiles{vault: v, stores: PluginStores(s)}, nil
 }
 
-type files struct {
+type textFiles struct {
 	vault  domain.Vault
-	stores derivedfile.PluginStores
+	stores PluginStores
 }
 
-func (f files) ReadTextFile(ctx context.Context, pluginID, name string) (text.File, error) {
+func (f textFiles) ReadTextFile(ctx context.Context, pluginID, name string) (text.File, error) {
 	store, err := f.stores.Open(f.vault, pluginID)
 	if err != nil {
 		return text.File{}, err
@@ -51,7 +48,7 @@ func (f files) ReadTextFile(ctx context.Context, pluginID, name string) (text.Fi
 	return text.File{Segments: segments, TextHash: domain.HashContent(raw)}, nil
 }
 
-func (f files) WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {
+func (f textFiles) WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {
 	raw, err := textfile.Encode(segments)
 	if err != nil {
 		return "", err
@@ -66,7 +63,7 @@ func (f files) WriteTextFile(ctx context.Context, pluginID, name string, segment
 	return domain.HashContent(raw), nil
 }
 
-func (f files) DeleteTextFile(ctx context.Context, pluginID, name string) error {
+func (f textFiles) DeleteTextFile(ctx context.Context, pluginID, name string) error {
 	store, err := f.stores.OpenWriter(f.vault, pluginID)
 	if err != nil {
 		return err

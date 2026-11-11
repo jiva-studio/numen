@@ -8,7 +8,7 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -56,7 +56,7 @@ func (w workingHost) checkCleared(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the stopped plugin still holds the lock")
 	}
-	plugintest.WaitUntil(t, "the stopped plugin's tasks are gone", func() bool { return len(w.tasks.List()) == 0 })
+	wiretest.WaitUntil(t, "the stopped plugin's tasks are gone", func() bool { return len(w.tasks.List()) == 0 })
 }
 
 func TestDisabledPluginTasksAreCleared(t *testing.T) {
@@ -71,7 +71,7 @@ func TestDisabledPluginTasksAreCleared(t *testing.T) {
 func TestCrashedPluginTasksAreCleared(t *testing.T) {
 	w := newWorkingHost(t)
 
-	plugintest.KillProcess(t, w.process)
+	wiretest.KillProcess(t, w.process)
 	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
 	w.checkCleared(t)
 }

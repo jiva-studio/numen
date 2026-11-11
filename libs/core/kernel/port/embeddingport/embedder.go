@@ -45,3 +45,16 @@ type FloorAdvisor interface {
 	// GetFloorHint returns the starting floor, and zero where the model has none.
 	GetFloorHint(ctx context.Context) float64
 }
+
+// ModelWatcher reports when the model behind an embedder changes.
+type ModelWatcher interface {
+	// OnModelChange registers fn to run each time the model changes.
+	OnModelChange(fn func())
+}
+
+// WatchedEmbedder is an Embedder whose model can change while the window is open, as the model of a
+// plugin does when its settings change.
+type WatchedEmbedder interface {
+	Embedder
+	ModelWatcher
+}

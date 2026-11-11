@@ -1,4 +1,4 @@
-package testsupport
+package vaultfixture
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -36,7 +37,7 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 		}
 	}
 
-	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, GetEpoch())
+	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch())
 	if err != nil {
 		tb.Fatal(err)
 	}

@@ -38,21 +38,14 @@ func (c scanCommand) Run(ctx context.Context, term terminal, args []string) (err
 	}
 	defer closeInto(&err, open.Close)
 	r := newReporter(term.out)
-	if open.Unembedded != nil {
-		open.Read.Unembedded = open.Unembedded
-	}
-
 	started := readClock(open.Now)
-	v, made, err := open.Read.ExecuteByName(ctx, rest[0], getProgressReporting(r))
+	scanned, err := open.Scan.Execute(ctx, rest[0], getProgressReporting(r))
 	if err != nil {
 		return err
 	}
 
-	summary, err := open.Summary(ctx, v)
-	if err != nil {
-		return err
-	}
-	reportMade(r, v.Name, made)
+	summary := scanned.Summary
+	reportMade(r, scanned.Vault.Name, scanned.Made)
 	elapsed := ""
 	if open.Now != nil {
 		elapsed = ", in " + readClock(open.Now).Sub(started).Round(time.Millisecond).String()

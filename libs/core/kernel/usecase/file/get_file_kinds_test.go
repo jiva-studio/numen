@@ -3,14 +3,14 @@ package file_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func TestGetFileKinds_PreservesRequestOrderAndOmitsMissing(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"a.md":   "# a\n",
 		"b.mp3":  "sound",
 		"c.docx": "left alone",
@@ -38,7 +38,7 @@ func TestGetFileKinds_PreservesRequestOrderAndOmitsMissing(t *testing.T) {
 }
 
 func TestGetFileKinds_CarriesTheFrontmatterOfEachNote(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"links/tide.md": "---\ntype: link\nurl: https://tides.example/mill\nmedia: plugin://org.example.links/tide.mp4\n---\n",
 		"plain.md":      "# plain\n",
 		"b.mp3":         "sound",
@@ -61,7 +61,7 @@ func TestGetFileKinds_CarriesTheFrontmatterOfEachNote(t *testing.T) {
 }
 
 func TestGetFileKinds_UnindexedNoteUsesFileNameType(t *testing.T) {
-	v := testsupport.NewVault(t, map[string]string{
+	v := vaultfixture.NewVault(t, map[string]string{
 		"presets/gentle.md": "---\ntype: preset\n---\n# Gentle\n",
 		"plain.md":          "# plain\n",
 	})

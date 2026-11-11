@@ -20,8 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 
@@ -88,7 +88,7 @@ func (k *keys) DeleteKey(_ context.Context, name string) error {
 
 // configured records the Configure calls a plugin receives.
 type configured struct {
-	testsupport.PluginLifecycle
+	wiretest.PluginLifecycle
 	mu            sync.Mutex
 	calls         []*v1.ConfigureRequest
 	unimplemented bool
@@ -210,7 +210,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	putSupervisor(host, secretPluginID, sup)
 	putEndpoint(host, secretPluginID, transport.Endpoint{
-		Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "launch-name",
+		Host: "127.0.0.1", Port: wiretest.GetPort(t, server), Token: "launch-name",
 	})
 	if store != nil {
 		host.Config.SetKeyStore(store)

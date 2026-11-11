@@ -11,7 +11,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 // Editor is the name of the editor window. A request names its target window,
@@ -52,7 +51,7 @@ func (r *Reason) Why() string {
 type Window struct {
 	Name string
 
-	Tasks *run.Tasks
+	Tasks TaskList
 
 	Vault func() string
 
@@ -294,4 +293,13 @@ func convertKind(in work.Kind) v1.TaskKind {
 		return v1.TaskKind_TASK_KIND_NOTICE
 	}
 	return v1.TaskKind_TASK_KIND_UNSPECIFIED
+}
+
+// TaskList is the list of what the window is doing, which the window shows and lets the user cancel from.
+type TaskList interface {
+	Watch(ctx context.Context) <-chan []work.Task
+	Cancel(id string) bool
+	Set(task work.Task)
+	Remove(id string)
+	List() []work.Task
 }

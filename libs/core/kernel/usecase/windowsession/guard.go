@@ -8,15 +8,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 )
 
-// guard is whether a flush of pending writes is running and whether the window has closed. Vault
-// swaps and window close both flush, one at a time.
+// Guard is whether a flush of pending writes is running and whether the window has closed. Vault
+// swaps and window close both flush, one at a time. The zero value is a window that is open and idle.
 //
 // A window that has closed shows no other vault.
-type guard struct {
+type Guard struct {
 	mu         sync.Mutex
 	isBusy     bool
 	isClosing  bool
 	pluginOpen *PluginOpen
+
+	switching sync.Mutex
 }
 
 // PluginOpen tracks a running plugin-initiated vault open; a user flush cancels it. A vault switch
@@ -30,7 +32,7 @@ type PluginOpen struct {
 // quits or switches its vault.
 var errCancelledByUser = errors.New("the user closed the window or switched its vault")
 
-func (s *guard) tryBegin() error {
+func (s *Guard) tryBegin() error {
 	s.mu.Lock()
 	for s.pluginOpen != nil {
 		current := s.pluginOpen
@@ -51,7 +53,7 @@ func (s *guard) tryBegin() error {
 	return nil
 }
 
-func (s *guard) tryBeginPluginOpen(ctx context.Context) (context.Context, *PluginOpen, func(), error) {
+func (s *Guard) tryBeginPluginOpen(ctx context.Context) (context.Context, *PluginOpen, func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -73,7 +75,7 @@ func (s *guard) tryBeginPluginOpen(ctx context.Context) (context.Context, *Plugi
 	}, nil
 }
 
-func (s *guard) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
+func (s *Guard) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
 	s.mu.Lock()
 	isInsidePluginOpen := open != nil && s.pluginOpen == open
 	s.mu.Unlock()
@@ -86,19 +88,19 @@ func (s *guard) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
 	return s.endKeepOpen, false, nil
 }
 
-func (s *guard) isClosed() bool {
+func (s *Guard) isClosed() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.isClosing
 }
 
-func (s *guard) endKeepOpen() {
+func (s *Guard) endKeepOpen() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.isBusy = false
 }
 
-func (s *guard) end(closed bool) {
+func (s *Guard) end(closed bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.isBusy = false

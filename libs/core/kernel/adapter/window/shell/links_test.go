@@ -44,10 +44,11 @@ func (l *linkIndex) ResolveLinks(
 func newNoteClient(t *testing.T, index *linkIndex) numenv1connect.NoteServiceClient {
 	t.Helper()
 	api := newAPI(t)
-	api.Vaults = listing(func() ([]domain.Vault, error) {
+	garden := func() ([]domain.Vault, error) {
 		return []domain.Vault{{ID: "garden", Name: "Garden", Path: "/vaults/garden"}}, nil
-	})
-	api.ResolveLinks = query.NewResolveLinks(index)
+	}
+	api.Vaults = listing(garden)
+	api.ResolveLinks = query.NewResolveVaultLinks(vaultLister(garden), query.NewResolveLinks(index))
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewNoteServiceClient(server.Client(), server.URL)

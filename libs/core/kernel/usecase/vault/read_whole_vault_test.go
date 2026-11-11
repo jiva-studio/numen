@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -23,7 +24,7 @@ import (
 // the same vault: the three passes, in the one order.
 func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
 	made, err := newWholeVaultRead(readers, db).Execute(t.Context(), v, indexing.Reporting{})
@@ -47,7 +48,7 @@ func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 // vault whose books are read next.
 func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
 	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
@@ -87,7 +88,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 // Reading the notes is what the whole pass relies on.
 func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
 	notes := scanner(refusing{}, db)
@@ -108,7 +109,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 // Two failed passes are two faults in the vault, and the caller receives both.
 func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
 	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
@@ -138,7 +139,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 // reached the limit, and the context is not consulted afterwards.
 func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	t.Parallel()
-	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
 	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {

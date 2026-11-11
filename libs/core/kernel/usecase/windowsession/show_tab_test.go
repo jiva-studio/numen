@@ -19,7 +19,7 @@ func reportTabs(active string) windowdomain.OpenTabs {
 
 func TestShowingATabThatIsNotOpenFails(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.rt.ReportOpenTabs(reportTabs("note:one"))
+	w.tabs.ReportOpenTabs(reportTabs("note:one"))
 
 	_, err := w.scenarios.ShowTab.Execute(t.Context(), "note:missing")
 
@@ -30,7 +30,7 @@ func TestShowingATabThatIsNotOpenFails(t *testing.T) {
 
 func TestShowingTheActiveTabAsksForItAndAnswersAtOnce(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.rt.ReportOpenTabs(reportTabs("note:one"))
+	w.tabs.ReportOpenTabs(reportTabs("note:one"))
 
 	open, err := w.scenarios.ShowTab.Execute(t.Context(), "note:one")
 	if err != nil {
@@ -44,10 +44,10 @@ func TestShowingTheActiveTabAsksForItAndAnswersAtOnce(t *testing.T) {
 
 func TestShowingATabWaitsForTheWindowToReportItActive(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.rt.ReportOpenTabs(reportTabs("note:one"))
+	w.tabs.ReportOpenTabs(reportTabs("note:one"))
 	go func() {
 		time.Sleep(20 * time.Millisecond)
-		w.rt.ReportOpenTabs(reportTabs("plex:two"))
+		w.tabs.ReportOpenTabs(reportTabs("plex:two"))
 	}()
 
 	open, err := w.scenarios.ShowTab.Execute(t.Context(), "plex:two")
@@ -62,7 +62,7 @@ func TestShowingATabWaitsForTheWindowToReportItActive(t *testing.T) {
 
 func TestATabTheWindowDoesNotShowInTimeFails(t *testing.T) {
 	w := newTestWindow(t, func(deps *Deps) { deps.TabBound = 20 * time.Millisecond })
-	w.rt.ReportOpenTabs(reportTabs("note:one"))
+	w.tabs.ReportOpenTabs(reportTabs("note:one"))
 
 	_, err := w.scenarios.ShowTab.Execute(t.Context(), "plex:two")
 

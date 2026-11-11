@@ -49,10 +49,12 @@ func GetConfigFor(target string) container.Config {
 	}
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
 	host.SetStorage(cacheRoot, dataRoot)
+	keys := getKeyStore()
 	cfg := container.NewConfig(container.Config{
 		PluginHost:    host,
 		PluginCatalog: getCatalogConfig(target, dirs, host),
-		KeyStore:      getKeyStore(),
+		KeyStore:      keys,
+		Credentials:   keys,
 		Resources:     container.NewResources(),
 	})
 	// A machine with no data folder leaves the path empty, and the core fails to start.

@@ -30,9 +30,8 @@ type OpenVaults[I any] struct {
 }
 
 type openedVault struct {
-	once    sync.Once
-	opening *VaultOpener
-	open    *OpenVault
+	once sync.Once
+	open *OpenVault
 }
 
 // CloseAndWait releases every vault and holds until nothing is still writing to the index.
@@ -96,7 +95,7 @@ func (o *OpenVaults[I]) openVault(ctx context.Context, v domain.Vault, one *open
 	if why := open.GetUnwatchedReason(); why != nil {
 		o.writeOutput("%s: %s is not being followed: %v\n", o.Label, v.Name, why)
 	}
-	one.opening, one.open = opening, open
+	one.open = open
 
 	if o.tryBeginWork() {
 		go func() {
@@ -140,7 +139,7 @@ func (o *OpenVaults[I]) UpdateIndex(ctx context.Context, v domain.Vault, paths [
 	}
 	defer o.running.Done()
 
-	err := o.getOpenedVault(ctx, v).opening.UpdateIndex(ctx, v, paths)
+	err := o.getOpenedVault(ctx, v).open.UpdateIndex(ctx, v, paths)
 	return errors.Join(err, o.takeOutputError())
 }
 

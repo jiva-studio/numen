@@ -172,7 +172,7 @@ func mountNote(w *windowWiring) {
 	links := notewindow.NewLinks(
 		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &createRelated, &queries.Refer.Backlinks,
 	)
-	notes.Connect = notes.Connect.WithWrites(writes, writes)
+	notes.Connect = trackConnections(notes.Connect, writes, writes)
 	connections := notewindow.NewConnections(
 		state, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)
@@ -247,6 +247,7 @@ func shareEditorWindow(c Config, db *Index, opened *windowWiring) {
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
 		&opened.inst.State.Runtime,
+		&opened.inst.State.Tabs,
 		vaultFocusNote(vaultOf(c), db.NoteQueries(), view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})

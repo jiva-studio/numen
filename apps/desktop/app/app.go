@@ -266,7 +266,7 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 
 func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            "/",
@@ -296,7 +296,7 @@ const (
 
 func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),

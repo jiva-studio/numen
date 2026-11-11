@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
@@ -84,7 +85,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 
 	mux := http.NewServeMux()
-	testsupport.HandlePluginLifecycle(mux)
+	wiretest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(&mockEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -104,7 +105,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		testsupport.Kill(t, cmd)
+		wiretest.Kill(t, cmd)
 		// The plugin host may have reaped the process already.
 		if _, err := cmd.Process.Wait(); err != nil && !errors.Is(err, syscall.ECHILD) && !errors.Is(err, os.ErrProcessDone) {
 			t.Errorf("wait: %v", err)

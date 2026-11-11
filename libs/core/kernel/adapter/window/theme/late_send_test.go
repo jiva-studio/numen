@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 // A write to a response after its handler returned panics inside net/http and ends the process, so a
@@ -45,13 +46,7 @@ func TestAWatchEndsItsKeepaliveBeforeTheHandlerReturns(t *testing.T) {
 		cancel()
 	}
 
-	deadline := time.Now().Add(10 * time.Second)
-	for isWatchRunning() {
-		if time.Now().After(deadline) {
-			t.Fatal("a watch is still running after every client went away")
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
+	testsupport.WaitFor(t, func() bool { return !isWatchRunning() })
 }
 
 func isWatchRunning() bool {

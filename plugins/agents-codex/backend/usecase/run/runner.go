@@ -115,25 +115,26 @@ func configureCommand(cmd *Command, s spec) {
 }
 
 func (r *Runner) newSpec(req *agentrun.Request, customPath string) spec {
-	s := spec{
+	if agentrun.HasTools(req) {
+		return spec{
+			Conversation: req.Conversation,
+			MaxSteps:     int(req.MaxSteps),
+			Root:         req.Root,
+			Token:        req.ToolsToken,
+			Build: func(ctx context.Context) (Command, error) {
+				return r.commands.MakeToolsCommand(ctx, req, customPath), nil
+			},
+		}
+	}
+	return spec{
 		Conversation: req.Conversation,
 		MaxSteps:     int(req.MaxSteps),
 		Root:         "",
 		Token:        "",
-		Build:        nil,
+		Build: func(ctx context.Context) (Command, error) {
+			return r.commands.MakeAnswerCommand(ctx, req, customPath)
+		},
 	}
-	if agentrun.HasTools(req) {
-		s.Root = req.Root
-		s.Token = req.ToolsToken
-		s.Build = func(ctx context.Context) (Command, error) {
-			return r.commands.MakeToolsCommand(ctx, req, customPath), nil
-		}
-		return s
-	}
-	s.Build = func(ctx context.Context) (Command, error) {
-		return r.commands.MakeAnswerCommand(ctx, req, customPath)
-	}
-	return s
 }
 
 // runProcess holds the started command of a run and what its reader needs to stop and release it.

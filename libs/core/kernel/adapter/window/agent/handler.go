@@ -78,7 +78,11 @@ func (h *Handler) AskAgent(
 		Root:         root,
 		Vault:        vault,
 	}
-	return streamTask(ctx, h.Start, task, stream)
+	work, err := h.Start.Execute(ctx, task)
+	if err != nil {
+		return connect.NewError(connect.CodeInternal, err)
+	}
+	return streamRun(ctx, work, stream)
 }
 
 // FinishConversation ends the conversation on the agent.

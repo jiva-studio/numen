@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"io"
-	"io/fs"
 	"maps"
 	"slices"
 	"strings"
@@ -78,7 +78,7 @@ func (l *Library) WalkFiles(_ context.Context, fn func(domain.FileStat) error) e
 func (l *Library) Read(_ context.Context, path string) ([]byte, error) {
 	target, ok := l.Files[path]
 	if !ok {
-		return nil, fmt.Errorf("read %s: %w", path, fs.ErrNotExist)
+		return nil, fmt.Errorf("read %s: %w", path, edit.ErrNotExist)
 	}
 	l.Reads[path]++
 	return target.Raw, nil
@@ -87,7 +87,7 @@ func (l *Library) Read(_ context.Context, path string) ([]byte, error) {
 func (l *Library) Open(_ context.Context, path string) (io.ReadSeekCloser, error) {
 	target, ok := l.Files[path]
 	if !ok {
-		return nil, fmt.Errorf("open %s: %w", path, fs.ErrNotExist)
+		return nil, fmt.Errorf("open %s: %w", path, edit.ErrNotExist)
 	}
 	l.Reads[path]++
 	return nopCloser{bytes.NewReader(target.Raw)}, nil
@@ -100,7 +100,7 @@ func (nopCloser) Close() error { return nil }
 
 func (l *Library) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	if _, ok := l.Files[path]; !ok {
-		return domain.FileStat{}, fmt.Errorf("stat %s: %w", path, fs.ErrNotExist)
+		return domain.FileStat{}, fmt.Errorf("stat %s: %w", path, edit.ErrNotExist)
 	}
 	return l.getStat(path), nil
 }

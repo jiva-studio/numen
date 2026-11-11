@@ -34,14 +34,14 @@ type PluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Notes      note.Scenarios
+	Notes      NoteScenarios
 }
 
-func hasReaders(notes note.Scenarios) bool {
+func hasReaders(notes NoteScenarios) bool {
 	return notes.Place.Move.IsConfigured()
 }
 
-func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
+func getNoteChanges(notes NoteScenarios) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
 		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking, AddLinks: notes.Refer.AddLinks,
 	}
@@ -81,9 +81,9 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	scenarios := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
 	connections := hostvault.Connections{
 		Reader:  note.NewConnectionReader(query.NewGetConnection(db.NoteQueries())),
-		Writer:  note.NewConnectionWriter(scenarios),
-		Joiner:  note.NewConnectionJoiner(scenarios),
-		Creator: note.NewRelatedNoteCreator(scenarios),
+		Writer:  note.NewConnectionWriter(scenarios.Connect.SaveConnection, scenarios.Connect.RemoveSide, scenarios.Connect.RemoveConnection),
+		Joiner:  note.NewConnectionJoiner(scenarios.Connect.Join),
+		Creator: note.NewRelatedNoteCreator(scenarios.Connect.CreateInRelation),
 	}
 	arranger := newArranger(scenarios, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
@@ -128,7 +128,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	scenarios note.Scenarios, db *Index, window note.Scenarios, current func() (domain.Vault, bool),
+	scenarios NoteScenarios, db *Index, window NoteScenarios, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(scenarios),
@@ -248,7 +248,6 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-// GetFrontendPluginIDs lists the plugins that have a frontend.
 func GetFrontendPluginIDs(c Config) []string { return getFrontendPluginIDs(plugins(c)) }
 
 // GetPluginDir returns the folder of a plugin and whether the plugin is installed.

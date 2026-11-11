@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -137,9 +138,9 @@ func compareIDs(a, b domain.VaultID) int {
 
 func newDiskVaults(t *testing.T, files map[string]string) (*diskVaults, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
-	physics := testsupport.NewVault(t, files)
+	physics := vaultfixture.NewVault(t, files)
 	physics.ID, physics.Name = "v1", "Physics"
-	chemistry := testsupport.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
+	chemistry := vaultfixture.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
 	chemistry.ID, chemistry.Name = "v2", "Chemistry"
 	disk := &diskVaults{
 		current: &physics,
