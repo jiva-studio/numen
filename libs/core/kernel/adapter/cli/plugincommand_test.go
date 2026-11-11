@@ -39,7 +39,7 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugin.CommandCall) 
 	return plugin.CommandResult{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
 }
 
-func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
+func createPluginCommandDeps() (stubSession, *pluginCommands, *[]domain.Vault) {
 	declared := &pluginCommands{entries: []plugin.CommandEntry{
 		{PluginID: "org.example.sample", Command: manifest.Command{
 			ID: "sample.create", Title: "Create a sample",
@@ -56,7 +56,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	var vaults []domain.Vault
 	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
-	deps := cli.Deps{
+	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
@@ -169,7 +169,7 @@ func TestACommandNoPluginDeclaresIsUnknown(t *testing.T) {
 // line neither runs nor mentions one.
 func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 	domainCommands := []string{"transcript.create", "recognition.create", "link.import", "proofreading.create"}
-	deps := cli.Deps{Vaults: createVaultList(getNotebook())}
+	deps := stubSession{Vaults: createVaultList(getNotebook())}
 
 	help, err := runWithDeps(deps, "help")
 	if err != nil {
@@ -193,7 +193,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	}}}
 	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
-	deps := cli.Deps{
+	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
@@ -244,7 +244,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 		Command:  manifest.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
 	commands := newScenarios(declared, declared, fileTypes{}, nil, nil)
-	deps := cli.Deps{
+	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{List: commands.List}
@@ -264,7 +264,7 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 	}}}
 	commands := newScenarios(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
-	deps := cli.Deps{
+	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{

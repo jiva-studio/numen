@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"reflect"
@@ -115,7 +116,7 @@ func TestEveryBridgeAnswersAPluginThatIsDownWithAnErrorAndNoValue(t *testing.T) 
 func TestBridges_UninstalledPluginReturnsUnavailable(t *testing.T) {
 	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
-			host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+			host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 			defer func() {
 				if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 					t.Errorf("TeardownAll: %v", err)

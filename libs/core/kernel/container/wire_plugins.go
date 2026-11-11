@@ -137,7 +137,7 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
-// AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made, to the container. The
+// AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
 // tests of packages outside the container use it to run a window over a host they hold.
 func AdaptPluginHost(host *PluginRoles) *PluginHost {
 	return adaptPluginHost(host)

@@ -7,10 +7,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -20,7 +20,7 @@ func failLaunching(_ context.Context, _ manifest.Discovered, _ int, _ string) (*
 	return nil, nil, errors.New("exec format error")
 }
 
-func getFailure(t *testing.T, host *pluginhost.Host, id string) *plugindomain.Failure {
+func getFailure(t *testing.T, host *container.PluginRoles, id string) *plugindomain.Failure {
 	t.Helper()
 	for _, info := range host.Registry.GetPluginInfos() {
 		if info.ID == id {
