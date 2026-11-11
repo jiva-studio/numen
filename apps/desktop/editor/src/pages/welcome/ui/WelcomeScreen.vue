@@ -19,9 +19,7 @@ import { WELCOME_WORDS } from '../words'
 import type { WelcomeScreenProps } from './welcomeScreen.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(defineProps<WelcomeScreenProps>(), {
-  agent: () => navigator.userAgent,
-})
+const props = defineProps<WelcomeScreenProps>()
 
 /* --------------------------------- State ---------------------------------- */
 const adding = computed(() => {

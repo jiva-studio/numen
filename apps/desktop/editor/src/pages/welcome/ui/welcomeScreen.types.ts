@@ -14,6 +14,6 @@ export interface WelcomeScreenProps {
   getTarget: () => CommandTarget
   pluginWays: readonly WelcomeAction[]
   runCommand: (id: string, target: CommandTarget) => void
-  agent?: string
+  agent: string
   openCurrentVault?: () => void
 }
