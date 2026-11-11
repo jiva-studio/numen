@@ -8,7 +8,19 @@ import type { NoticeQueue, WindowFrame } from '@numen/workbench'
 import { resolveNameLink } from '@/entities/note'
 import type { SettingsStore } from '@/entities/settings'
 import type { FileOpeners, WindowTabs } from '@/entities/tab'
-import { createNoticeParts, createPluginSupport, createTabActionParts, createTabKindParts, createTaskServiceParts, createVaultServiceParts, type createPluginCatalog, type createPluginReports, type HostParts, type PluginNotes, type PluginServices } from '@/features/plugin-host'
+import {
+  createNoticeParts,
+  createPluginSupport,
+  createTabActionParts,
+  createTabKindParts,
+  createTaskServiceParts,
+  createVaultServiceParts,
+  type createPluginCatalog,
+  type createPluginReports,
+  type HostParts,
+  type PluginNotes,
+  type PluginServices,
+} from '@/features/plugin-host'
 
 /** What the host parts that read the services of the window are made from. */
 export interface ServicePartsDeps {

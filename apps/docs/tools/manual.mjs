@@ -821,7 +821,7 @@ const getUsageText = async () => {
   for (const type of typesIn(await read(CLI, 'command.go'), 'func getBuiltinCommands')) {
     if (type !== 'helpCommand') builtin.push(type)
   }
-  if (!(await read(CLI, 'command.go')).includes('newVaultCommand(deps)')) {
+  if (!(await read(CLI, 'command.go')).includes('newVaultCommand(session)')) {
     die('command.go no longer lists the vault commands')
   }
   const commands = [...vault, ...builtin]
