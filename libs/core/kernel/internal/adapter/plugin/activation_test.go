@@ -3,8 +3,8 @@ package plugin_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"os"
 	"testing"
@@ -18,11 +18,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func newDiscoveredHost(t *testing.T) *pluginhost.Host {
+func newDiscoveredHost(t *testing.T) *container.PluginRoles {
 	t.Helper()
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

@@ -1,12 +1,13 @@
-package embedderbridge
+package embedderbridge_test
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"strings"
 	"testing"
 	"time"
 )
 
-func failureReports(bridge *Embedder) chan error {
+func failureReports(bridge *embedderbridge.Embedder) chan error {
 	reports := make(chan error, 8)
 	bridge.OnModelReadError(func(err error) { reports <- err })
 	return reports
