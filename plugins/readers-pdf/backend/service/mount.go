@@ -47,9 +47,8 @@ func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, 
 		func(id domain.VaultID) extract.Files { return files.With(id) },
 		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		func(id domain.VaultID) host.StoreWriter { return store.With(id) },
-		queue, workers,
+		queue, workers, pdfworkers.ReportError,
 	)
-	writer.SetReport(pdfworkers.ReportError)
 	return mount(s, reader, writer, pdfworkers.ReportError)
 }
 

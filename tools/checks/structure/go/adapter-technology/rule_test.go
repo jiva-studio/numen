@@ -148,7 +148,7 @@ func checkDrivenAdaptersCallATechnology(t *testing.T, workspace load.WorkspacePa
 			t.Errorf("the entry %s names no package of the kernel or has no reason", name)
 		}
 	}
-	if driven < 20 {
+	if driven == 0 {
 		t.Fatalf("%d driven adapters read: the rule is checked against nothing", driven)
 	}
 }

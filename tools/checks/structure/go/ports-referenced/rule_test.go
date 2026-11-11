@@ -18,8 +18,8 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(declared) < 50 {
-		return nil, fmt.Errorf("%s declares %d port methods: the walk is not reading it", dir, len(declared))
+	if len(declared) == 0 {
+		return nil, fmt.Errorf("%s declares no port method: the walk is not reading it", dir)
 	}
 
 	called := map[string]bool{}

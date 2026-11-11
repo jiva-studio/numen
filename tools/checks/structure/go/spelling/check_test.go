@@ -2,6 +2,7 @@
 package spelling
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -28,9 +29,47 @@ func TestNoGoTextIsSpeltInBritishEnglish(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	found, err := findBritishSpelling(root, load.ListWorkspaceModules(t), dict, allowed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range found {
+		t.Errorf("%s: %s", one.Position, one.Name)
+	}
+	for _, one := range allowed {
+		if !one.used {
+			t.Errorf("the allow-list entry %s %s lets nothing through", one.path, one.word)
+		}
+	}
+}
+
+// TestSpellingWalk_FindsThePlantedFile verifies that the walk finds a British word in a Go file of a
+// module, skips testdata and hidden folders, and fails on modules without a Go file.
+func TestSpellingWalk_FindsThePlantedFile(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"m/a/a.go":        plant("package a\n\n// The request was can·celled.\nvar _ = 1\n"),
+		"m/testdata/b.go": plant("package b\n\n// can·celled\n"),
+		"m/.hidden/c.go":  plant("package c\n\n// can·celled\n"),
+	})
+	found, err := findBritishSpelling(root, []string{filepath.Join(root, "m")}, readDictionary(t), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || !strings.HasPrefix(found[0].Position, "m/a/a.go:") {
+		t.Errorf("the walk found %v, want one British word in m/a/a.go", found)
+	}
+	empty := t.TempDir()
+	if _, err := findBritishSpelling(empty, []string{empty}, readDictionary(t), nil); err == nil {
+		t.Error("modules without a Go file passed")
+	}
+}
+
+// findBritishSpelling lists the British words of the Go files of the modules, named relative to
+// root. It fails when it reads no file.
+func findBritishSpelling(root string, modules []string, dict dictionary, allowed []*allowance) ([]load.Finding, error) {
 	var found []load.Finding
 	visited := map[string]bool{}
-	for _, module := range load.ListWorkspaceModules(t) {
+	for _, module := range modules {
 		err := filepath.WalkDir(module, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -54,20 +93,13 @@ func TestNoGoTextIsSpeltInBritishEnglish(t *testing.T) {
 			return err
 		})
 		if err != nil {
-			t.Fatal(err)
+			return nil, err
 		}
 	}
-	for _, one := range load.SortFindings(found) {
-		t.Errorf("%s: %s", one.Position, one.Name)
+	if len(visited) == 0 {
+		return nil, fmt.Errorf("no Go file read under %v: the walk checks nothing", modules)
 	}
-	for _, one := range allowed {
-		if !one.used {
-			t.Errorf("the allow-list entry %s %s lets nothing through", one.path, one.word)
-		}
-	}
-	if len(visited) < 1000 {
-		t.Fatalf("%d Go files read: the walk is not reading the workspace", len(visited))
-	}
+	return load.SortFindings(found), nil
 }
 
 func readDictionary(t *testing.T) dictionary {

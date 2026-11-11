@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { findMissingPaths } from "./check.mjs";
+import { DOCUMENT_PATTERNS, findMissingPaths, findUnmatchedPatterns } from "./check.mjs";
 
 const TRACKED = [
   "libs/core/kernel/go.mod",
-  "libs/core/kernel/container/layers_test.go",
+  "libs/core/kernel/container/container.go",
   "libs/plugin/loader/src/index.ts",
   "plugins/views-tasks/manifest.json",
   "plugins/views-files/manifest.json",
@@ -40,5 +40,19 @@ describe("the paths documents name exist in the tree", () => {
     const found = findMissingPaths([{ file: "AGENTS.md", text: "`make check_layers` `docs/gone.md` `src/gone.ts` `a/b` `libs gone/x`" }], TRACKED);
     assert.deepEqual(found.findings, []);
     assert.equal(found.read, 0);
+  });
+});
+
+describe("the document patterns", () => {
+  it("reports a pattern that matches no tracked file", () => {
+    assert.deepEqual(findUnmatchedPatterns([/^docs\/architecture\/target-layout\.md$/, /^\.agents\/.*\.md$/], TRACKED), [/^docs\/architecture\/target-layout\.md$/]);
+  });
+
+  it("covers every markdown file under .agents and every AGENTS.md", () => {
+    const covers = (file) => DOCUMENT_PATTERNS.some((pattern) => pattern.test(file));
+    assert.ok(covers(".agents/skills/nm-place-window/examples.md"));
+    assert.ok(covers(".agents/rules/architecture.md"));
+    assert.ok(covers("libs/core/kernel/AGENTS.md"));
+    assert.ok(!covers("docs/readme.md"));
   });
 });

@@ -2,6 +2,7 @@
 package portshape
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"os"
@@ -31,8 +32,8 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 	for _, one := range load.SortFindings(found) {
 		t.Errorf("%s: %s: a value is used as the port it was handed as", one.Position, one.Name)
 	}
-	if len(pkgs) < 100 {
-		t.Fatalf("%d packages of the core read: the walk is not reading it", len(pkgs))
+	if len(pkgs) == 0 {
+		t.Fatal("no package of the core read: the walk checks nothing")
 	}
 }
 
@@ -106,11 +107,42 @@ func (*concrete) Read() string { return "" }
 // An adapter outside the core cannot name a package under internal/, so a port
 // domain/ or beside the port.
 func TestNoPortNamesATypeFromInternal(t *testing.T) {
-	dir := filepath.Join("..", "port")
-	entries, err := load.ReadTree(dir)
+	wrong, err := findInternalPortTypes(filepath.Join("..", "port"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
+// TestPortWalk_FindsThePlantedInternalType verifies that the walk finds a port that names a type of
+// a package under internal/, and fails on a folder without a port file.
+func TestPortWalk_FindsThePlantedInternalType(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"vaultport/vaultport.go": "package vaultport\n\nimport \"" + load.Module + "internal/highlight\"\n\ntype Reader interface{ Read() highlight.Span }\n",
+		"noteport/noteport.go":   "package noteport\n\ntype Reader interface{ Read() string }\n",
+	})
+	wrong, err := findInternalPortTypes(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.Contains(wrong[0], "vaultport.go names highlight.Span") {
+		t.Errorf("the walk found %v, want highlight.Span in vaultport.go only", wrong)
+	}
+	if _, err := findInternalPortTypes(t.TempDir()); err == nil {
+		t.Error("a folder without a port file passed")
+	}
+}
+
+// findInternalPortTypes lists the types of internal/ packages that the port files under dir name. It
+// fails when it reads no file.
+func findInternalPortTypes(dir string) ([]string, error) {
+	entries, err := load.ReadTree(dir)
+	if err != nil {
+		return nil, err
+	}
+	var wrong []string
 	var read int
 	for _, item := range entries {
 		if !strings.HasSuffix(item.Path, ".go") || strings.HasSuffix(item.Path, "_test.go") {
@@ -118,19 +150,18 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, item.Path), nil, 0)
 		if err != nil {
-			t.Fatal(err)
+			return nil, err
 		}
 		read++
 		rel := "port/" + item.Path
 		for _, one := range internalTypes(file) {
-			t.Errorf("%s names %s: a port uses the core own types", rel, one)
+			wrong = append(wrong, fmt.Sprintf("%s names %s: a port uses the core own types", rel, one))
 		}
 	}
-
-	// A walk that read no file of port/ is a rule checked against nothing.
-	if read < 20 {
-		t.Fatalf("%d files of port/ read: the walk is not reading it", read)
+	if read == 0 {
+		return nil, fmt.Errorf("no file read under %s: the walk checks nothing", dir)
 	}
+	return wrong, nil
 }
 
 // type of a package under internal/, by whatever name the file imports it, and

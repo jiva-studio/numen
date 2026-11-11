@@ -14,7 +14,7 @@
       }
     ]
   },
-  "permissions": ["network:outbound"],
+  "permissions": ["link:open"],
   "services": ["md.numen.tools.updater"],
   "backend": {
     "entrypoint": "bin/tools-updater"

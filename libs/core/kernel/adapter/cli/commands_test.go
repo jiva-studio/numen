@@ -38,9 +38,9 @@ func getNotebook() domain.Vault {
 	return domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 }
 
-func runWithDeps(deps cli.Deps, args ...string) (string, error) {
+func runWithDeps(deps stubSession, args ...string) (string, error) {
 	var out bytes.Buffer
-	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Deps { return deps })
+	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Session { return deps.session() })
 	return out.String(), err
 }
 
@@ -65,11 +65,11 @@ func (failingLinkQueries) ResolveLinks(context.Context, domain.VaultID, string, 
 	return nil, errRefused
 }
 
-func createLinkDeps(links, backlinks []domain.ResolvedLink) cli.Deps {
-	return cli.Deps{
+func createLinkDeps(links, backlinks []domain.ResolvedLink) stubSession {
+	return stubSession{
 		Vaults: createVaultList(getNotebook()),
-		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}))}, nil
+		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+			return cli.Indexed{Links: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks}))}, nil
 		},
 	}
 }
@@ -84,20 +84,20 @@ func newResolvedLink(role domain.LinkRole, scheme, value, to string) domain.Reso
 
 func TestLinksReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
-	for name, provided := range map[string]cli.Deps{
+	for name, provided := range map[string]stubSession{
 		"the list of vaults cannot be opened": {
-			Links: func(context.Context) (cli.Links, error) {
-				return cli.Links{Show: query.NewShowLinksByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, query.NewShowLinks(fixedLinkQueries{}))}, nil
+			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+				return cli.Indexed{Links: query.NewShowLinksByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, query.NewShowLinks(fixedLinkQueries{}))}, nil
 			},
 		},
 		"the links cannot be opened": {
-			Vaults: createVaultList(getNotebook()),
-			Links:  func(context.Context) (cli.Links, error) { return cli.Links{}, errRefused },
+			Vaults:  createVaultList(getNotebook()),
+			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused },
 		},
 		"the index cannot say what a note points at": {
 			Vaults: createVaultList(getNotebook()),
-			Links: func(context.Context) (cli.Links, error) {
-				return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(failingLinkQueries{}))}, nil
+			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+				return cli.Indexed{Links: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(failingLinkQueries{}))}, nil
 			},
 		},
 	} {
@@ -219,11 +219,11 @@ func (fixedProblemQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]
 	return nil, nil
 }
 
-func problemsDeps(queries problemport.ProblemQueries) cli.Deps {
-	return cli.Deps{
+func problemsDeps(queries problemport.ProblemQueries) stubSession {
+	return stubSession{
 		Vaults: createVaultList(getNotebook()),
-		Problems: func(context.Context) (cli.Problems, error) {
-			return cli.Problems{Problems: vaults.NewGetProblemsByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, vaults.NewGetProblems(check.Standard(queries)))}, nil
+		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+			return cli.Indexed{Problems: vaults.NewGetProblemsByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, vaults.NewGetProblems(check.Standard(queries)))}, nil
 		},
 	}
 }
@@ -285,19 +285,21 @@ func TestProblemsNeedsAVault(t *testing.T) {
 func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		input cli.Deps
+		input stubSession
 		args  []string
 	}{
 		"the list of vaults cannot be opened": {
-			cli.Deps{Problems: func(context.Context) (cli.Problems, error) {
-				return cli.Problems{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
+			stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+				notFound := func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }
+				problems := vaults.NewGetProblems(check.Standard(fixedProblemQueries{}))
+				return cli.Indexed{Problems: vaults.NewGetProblemsByName(notFound, problems)}, nil
 			}},
 			[]string{"problems", "notebook"},
 		},
 		"the problems cannot be opened": {
-			cli.Deps{
-				Vaults:   createVaultList(getNotebook()),
-				Problems: func(context.Context) (cli.Problems, error) { return cli.Problems{}, errRefused },
+			stubSession{
+				Vaults:  createVaultList(getNotebook()),
+				Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused },
 			},
 			[]string{"problems", "notebook"},
 		},
@@ -314,8 +316,8 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 			t.Errorf("%s: problems said something before it failed:\n%s", name, out)
 		}
 	}
-	if _, err := runWithDeps(cli.Deps{Problems: func(context.Context) (cli.Problems, error) {
-		return cli.Problems{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
+	if _, err := runWithDeps(stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+		return cli.Indexed{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
 	}},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the rejection was lost: %v", err)
@@ -326,29 +328,30 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 	t.Parallel()
 	closed := 0
 	provided := createLinkDeps(nil, nil)
-	provided.Links = func(context.Context) (cli.Links, error) {
-		return cli.Links{
-			Show:  query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(fixedLinkQueries{})),
-			Close: func() error { closed++; return nil },
+	provided.closes = &closeList{}
+	provided.Indexed = func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+		provided.closes.add(func() error { closed++; return nil })
+		return cli.Indexed{
+			Links: query.NewShowLinksByName(registry.NewFind(singleVaultList{getNotebook()}).Execute, query.NewShowLinks(fixedLinkQueries{})),
 		}, nil
 	}
 	if _, err := runWithDeps(provided, "links", "notebook", "Bees.md"); err != nil {
 		t.Fatal(err)
 	}
 	if closed != 1 {
-		t.Errorf("what links opened was closed %d times", closed)
+		t.Errorf("what the session opened was closed %d times", closed)
 	}
 }
 
 // A vault the list cannot find is reported with the list's own reason intact.
 func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 	t.Parallel()
-	provided := cli.Deps{
+	provided := stubSession{
 		Vaults: func() (cli.Vaults, error) {
 			return vaultParts{ports: brokenVaultList{}.ports()}.build(), nil
 		},
-		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(brokenVaultList{}).Execute, query.NewShowLinks(fixedLinkQueries{}))}, nil
+		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+			return cli.Indexed{Links: query.NewShowLinksByName(registry.NewFind(brokenVaultList{}).Execute, query.NewShowLinks(fixedLinkQueries{}))}, nil
 		},
 	}
 	_, err := runWithDeps(provided, "links", "notebook", "Bees.md")
@@ -384,7 +387,7 @@ func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 	wasOpened := false
 	var out bytes.Buffer
 	runErr := cli.Run(t.Context(), &out, io.Discard, []string{"--no-such-flag", "help"},
-		func(cli.Locations) cli.Deps { wasOpened = true; return cli.Deps{} })
+		func(cli.Locations) cli.Session { wasOpened = true; return stubSession{}.session() })
 
 	if runErr == nil {
 		t.Error("a flag nobody knows was accepted")
@@ -407,7 +410,7 @@ func TestEveryLocationIsHandedToTheOpener(t *testing.T) {
 	var out bytes.Buffer
 	err := cli.Run(t.Context(), &out, io.Discard,
 		[]string{"--index", "i.db", "--registry", "r.json", "--service-dir", ".mine", "help"},
-		func(where cli.Locations) cli.Deps { got = where; return cli.Deps{} })
+		func(where cli.Locations) cli.Session { got = where; return stubSession{}.session() })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,7 +427,7 @@ func TestAFlagMistypedAfterTheCommandIsAnError(t *testing.T) {
 		{"vault", "erase", "--no-such-flag"},
 		{"vault", "erase", "notebook", "--no-such-flag"},
 	} {
-		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
+		_, err := runWithDeps(stubSession{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || !strings.Contains(err.Error(), "no-such-flag") {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -480,19 +483,22 @@ type scanFixture struct {
 	rebuilt    bool
 }
 
-func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
+func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 	t.Helper()
 	indexPath := filepath.Join(t.TempDir(), "index.db")
-	return cli.Deps{
+	closes := &closeList{}
+	return stubSession{
 		Vaults: createVaultList(target),
-		Scan: func(ctx context.Context, rebuild bool) (cli.Scan, error) {
-			s.rebuilt = rebuild
+		closes: closes,
+		Indexed: func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+			s.rebuilt = options.Rebuild
 			db, err := index.Open(ctx, indexPath)
 			if err != nil {
-				return cli.Scan{}, err
+				return cli.Indexed{}, err
 			}
-			options := vaultconfig.Options{}
-			readers := vaultreader.Readers{Options: options}
+			closes.add(db.Close)
+			readerOptions := vaultconfig.Options{}
+			readers := vaultreader.Readers{Options: readerOptions}
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes(),
 				db.NoteQueries(), db.Maintenance(), nil)
@@ -500,17 +506,15 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {
-					testsupport.Close(t, db)
-					return cli.Scan{}, err
+					return cli.Indexed{}, err
 				}
 				embed.Embedder = s.embedder
 			}
 			read := indexing.NewReadWholeVaultByName(registry.NewFind(singleVaultList{target}).Execute, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
 			read.Unembedded = s.unembedded
-			return cli.Scan{
-				Scan:  indexing.NewScanVault(read, refusingSummaries{VaultSummaries: db.NoteQueries(), err: s.summary}),
-				Close: db.Close,
-			}, nil
+			return cli.Indexed{Scan: cli.Scan{
+				Scan: indexing.NewScanVault(read, refusingSummaries{VaultSummaries: db.NoteQueries(), err: s.summary}),
+			}}, nil
 		},
 	}
 }
@@ -606,7 +610,7 @@ func TestScanReturnsWhatWentWrong(t *testing.T) {
 	target := createNoteVault(t)
 
 	opening := (&scanFixture{}).deps(t, target)
-	opening.Scan = func(context.Context, bool) (cli.Scan, error) { return cli.Scan{}, errRefused }
+	opening.Indexed = func(context.Context, cli.IndexOptions) (cli.Indexed, error) { return cli.Indexed{}, errRefused }
 	if _, err := runWithDeps(opening, "scan", target.Name); !errors.Is(err, errRefused) {
 		t.Errorf("a scan that cannot open answered %v", err)
 	}
@@ -688,5 +692,34 @@ func TestScanReadsEverySourceOfAVaultOfANoteAPdfAndARecording(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Errorf("scan did not say %q:\n%q", want, out)
 		}
+	}
+}
+
+// What the background work of a run failed at is reported beside the answer of the command. It is a warning:
+// the command succeeded.
+func TestAFailedBackgroundTaskIsAWarningAndKeepsTheExitCode(t *testing.T) {
+	t.Parallel()
+	provided := stubSession{failures: []string{"Thumbnails: Make thumbnails: no space left"}}
+
+	out, stderr, err := runWithStderr(t, provided, "help")
+	if err != nil {
+		t.Fatalf("a failed background task failed the command: %v", err)
+	}
+	if !strings.Contains(out, "usage:") {
+		t.Errorf("the command did not answer:\n%s", out)
+	}
+	if want := "numen-cli: warning: Thumbnails: Make thumbnails: no space left\n"; stderr != want {
+		t.Errorf("the warning was %q, want %q", stderr, want)
+	}
+}
+
+func TestAFailureToCloseWhatTheRunOpenedFailsTheRun(t *testing.T) {
+	t.Parallel()
+	closes := &closeList{}
+	closes.add(func() error { return errRefused })
+
+	_, err := runWithDeps(stubSession{closes: closes}, "help")
+	if !errors.Is(err, errRefused) {
+		t.Errorf("the failure to close answered %v", err)
 	}
 }

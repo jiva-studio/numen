@@ -170,7 +170,7 @@ export type ToolHints = Message<"numen.v1.ToolHints"> & {
   idempotent: boolean;
 
   /**
-   * The tool reaches outside the machine: requires contains network:outbound.
+   * The tool reaches outside the machine: requires contains link:open.
    *
    * @generated from field: bool open_world = 4;
    */

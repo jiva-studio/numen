@@ -50,34 +50,34 @@ type Workers struct {
 	report      func(what string, err error)
 }
 
-// NewWorkers returns a pool that has not started, of one worker per CPU, keeping no idle worker.
-func NewWorkers() *Workers {
-	return &Workers{
-		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="NewWorkers initializes pool counters to zero"
-		mu: sync.Mutex{}, pool: nil, size: 0, idle: 0, open: 0, isWarmed: false, release: nil,
-		afterFunc: nil, idleRelease: defaultIdleRelease, compilation: nil, report: nil,
-	}
+// Options is what a pool is made from.
+type Options struct {
+	// Report receives the failures of the pool that no caller waits for. It is required.
+	Report func(what string, err error)
+	// CompilationCache makes pools that share it compile PDFium once. Without one each pool compiles on its own.
+	CompilationCache wazero.CompilationCache
+	// AfterFunc makes the timer that releases the idle pool. Without it the pool is never released.
+	AfterFunc func(time.Duration, func()) Timer
+	// Workers is how many workers the pool starts with. Zero or less is one per CPU.
+	Workers int
+	// IdleWorkers is how many returned workers the pool keeps alive. Zero or less keeps none.
+	IdleWorkers int
 }
 
-// SetReport sets the callback that receives background failures of the worker pool.
-func (w *Workers) SetReport(report func(what string, err error)) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.report = report
+// NewWorkers returns a pool that has not started, made from options.
+func NewWorkers(options Options) *Workers {
+	return &Workers{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="NewWorkers initializes pool counters to zero"
+		mu: sync.Mutex{}, pool: nil, size: options.Workers, idle: max(options.IdleWorkers, 0), open: 0, isWarmed: false,
+		release: nil, afterFunc: options.AfterFunc, idleRelease: defaultIdleRelease,
+		compilation: options.CompilationCache, report: options.Report,
+	}
 }
 
 func (w *Workers) reportError(what string, err error) {
-	if w.report != nil && err != nil {
+	if err != nil {
 		w.report(what, err)
 	}
-}
-
-// SetCompilationCache makes the pools started afterwards compile PDFium into cache, so pools that
-// share a cache compile it once. It has no effect on a pool that has started.
-func (w *Workers) SetCompilationCache(cache wazero.CompilationCache) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.compilation = cache
 }
 
 func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
@@ -88,13 +88,6 @@ func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
 	return wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2 | experimental.CoreFeaturesExceptionHandling).
 		WithCompilationCache(w.compilation)
-}
-
-// SetAfterFunc sets the timer factory that releases idle workers.
-func (w *Workers) SetAfterFunc(fn func(time.Duration, func()) Timer) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.afterFunc = fn
 }
 
 // defaultIdleRelease is how long an unused pool keeps its workers; a worker holds
@@ -126,25 +119,9 @@ func ComputeIdleWorkers(planned int, availableBytes int64) int {
 	return int(min(int64(planned), fits))
 }
 
-// SetIdleWorkers sets how many returned workers the pool keeps alive. Zero or
-// less keeps none. It has no effect on a pool that has started.
-func (w *Workers) SetIdleWorkers(n int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.idle = max(n, 0)
-}
-
 // minWorkers is the fewest workers the pool starts: a reader and the reader
 // beside it each hold one document.
 const minWorkers = 2
-
-// SetWorkers sets how many workers the pool starts with. Zero or less is one
-// per CPU. It has no effect on a pool that has started.
-func (w *Workers) SetWorkers(n int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.size = n
-}
 
 func (w *Workers) getPoolSize() int {
 	if w.size > 0 {
@@ -394,14 +371,10 @@ func (w *Workers) Warmup() {
 	w.mu.Unlock()
 	worker, err := w.getWorker()
 	if err != nil {
+		w.report("start the warm-up worker", err)
 		return
 	}
 	if err := w.putWorker(worker); err != nil {
-		w.mu.Lock()
-		report := w.report
-		w.mu.Unlock()
-		if report != nil {
-			report("release the warm-up worker", err)
-		}
+		w.report("release the warm-up worker", err)
 	}
 }

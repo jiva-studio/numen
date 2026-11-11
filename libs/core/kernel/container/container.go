@@ -10,7 +10,6 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -63,8 +62,6 @@ type Config struct {
 	KeyStore pluginport.KeyStore
 
 	Credentials pluginport.CredentialsLocator
-
-	TextVersions *TextVersions
 
 	ShouldRebuildIndex bool
 
@@ -154,12 +151,6 @@ func handleError(c Config, err error) {
 	}
 }
 
-// GetWait is the wait every scenario assembled here is handed, bound to this
-// machine's timers.
-func (c Config) GetWait() machine.Wait {
-	return clock.System{}.Wait
-}
-
 func settingsOf(c Config) settingsWiring {
 	res := c.Resources
 	return settingsWiring{
@@ -183,8 +174,7 @@ func settingsOf(c Config) settingsWiring {
 	}
 }
 
-func searchOf(c Config) searchWiring {
-	v := vaultBase(c)
+func searchWith(c Config, v vaultWiring) searchWiring {
 	return searchWiring{
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
@@ -199,7 +189,7 @@ func searchOf(c Config) searchWiring {
 	}
 }
 
-func vaultBase(c Config) vaultWiring {
+func vaultBase(c Config, texts *TextVersions) vaultWiring {
 	res := c.Resources
 	return vaultWiring{
 		IndexPath:    c.IndexPath,
@@ -208,7 +198,7 @@ func vaultBase(c Config) vaultWiring {
 		Clock:        c.Clock(),
 		PluginHost:   c.host(),
 		RunningHost:  c.runningHost(),
-		TextVersions: c.TextVersions,
+		TextVersions: texts,
 		TextReaders:  res.TextReaders,
 		VaultLocks:   res.vaultLocks,
 		Watches:      res.watches,
@@ -216,16 +206,17 @@ func vaultBase(c Config) vaultWiring {
 	}
 }
 
-func vaultOf(c Config) vaultWiring {
-	v := vaultBase(c)
-	s := searchOf(c)
-	v.SyncSetting = syncSetting(settingsOf(c))
-	v.CutNotes = cutNotes(s)
-	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(s, scan) }
-	return v
+func vaultWith(base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
+	base.SyncSetting = syncSetting(settings)
+	base.CutNotes = cutNotes(search)
+	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
+	return base
 }
 
-func plugins(c Config) pluginsWiring {
+func assemble(c Config, texts *TextVersions) pluginsWiring {
+	settings := settingsOf(c)
+	base := vaultBase(c, texts)
+	search := searchWith(c, base)
 	return pluginsWiring{
 		pluginInstall: pluginInstall{
 			PluginCachePath: c.PluginCachePath,
@@ -236,10 +227,17 @@ func plugins(c Config) pluginsWiring {
 			KeyStore:        c.KeyStore,
 			CredentialsPath: c.getCredentialsPath(),
 		},
-		settings: settingsOf(c),
-		vault:    vaultOf(c),
+		settings: settings,
+		search:   search,
+		vault:    vaultWith(base, settings, search),
 	}
 }
+
+func plugins(c Config) pluginsWiring { return assemble(c, nil) }
+
+func vaultOf(c Config) vaultWiring { return plugins(c).vault }
+
+func searchOf(c Config) searchWiring { return plugins(c).search }
 
 func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	return getAgentPrograms(plugins(c), provider, target)

@@ -40,7 +40,7 @@ apps/desktop/                    thin shells
 
 ## What each folder may import
 
-- `libs/note/*` imports the standard library and its own siblings only, along the edges its layer test lists.
+- `libs/note/*` imports the standard library and its own siblings only, along the edges the `go/note-library` check lists.
 - `domain/<area>` imports the standard library, `libs/note/domain` and itself.
 - `port/*` imports `domain/<area>`, `libs/note/domain` and the standard library.
 - `usecase/*` imports `port`, `domain/<area>`, `libs/note` and no other use case.

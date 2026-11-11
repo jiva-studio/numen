@@ -1,5 +1,4 @@
 import type {
-  AgentProviderRegistration,
   AppInfo,
   CommandNote,
   CommandRegistration,
@@ -98,7 +97,6 @@ export interface MockPluginContext extends PluginContext {
   getOpenedAddresses(): string[]
   getRegisteredTabKinds(): TabKindRegistration[]
   getRegisteredCommands(): CommandRegistration[]
-  getRegisteredAgentProviders(): AgentProviderRegistration[]
   getRegisteredViews(): ViewRegistration[]
   getRegisteredDropHandlers(): DropRegistration[]
   getMountedViews(): MockMountedView[]
@@ -184,7 +182,6 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
   const openedAddresses: string[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
-  const agentProviders: AgentProviderRegistration[] = []
   const views: ViewRegistration[] = []
   const drops: DropRegistration[] = []
   const mounted: MockMountedView[] = []
@@ -201,7 +198,6 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     tabKind: <State extends object>(registration: TabKindRegistration<State>) =>
       registerInList(tabKinds, registration, subscriptions),
     command: (registration) => registerInList(commands, registration, subscriptions),
-    agentProvider: (registration) => registerInList(agentProviders, registration, subscriptions),
     dropHandler: (registration) => registerInList(drops, registration, subscriptions),
     view: (registration) => registerInList(views, registration, subscriptions),
   }
@@ -338,10 +334,6 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
 
     getRegisteredCommands(): CommandRegistration[] {
       return [...commands]
-    },
-
-    getRegisteredAgentProviders(): AgentProviderRegistration[] {
-      return [...agentProviders]
     },
 
     getRegisteredViews(): ViewRegistration[] {

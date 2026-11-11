@@ -16,7 +16,7 @@
     "vault:manage",
     "window:focus",
     "index:read",
-    "network:outbound"
+    "link:open"
   ],
   "backend": { "entrypoint": "bin/agents-mcp-server" },
   "services": ["md.numen.agents.mcp.server"],

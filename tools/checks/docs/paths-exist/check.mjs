@@ -5,13 +5,16 @@ import { REPO_ROOT, failOnFindings, requireMatches, listTrackedFiles } from "../
 /** The roots a backticked path starts with to be read as a path of the repository. */
 const PATH_ROOTS = ["libs", "apps", "plugins", "tools", ".agents"];
 
-/** The documents that name folders and files of the repository, as patterns of tracked paths. */
-const DOCUMENT_PATTERNS = [
-  /^docs\/architecture\/target-layout\.md$/,
-  /^\.agents\/skills\/nm-place-[^/]+\/SKILL\.md$/,
-  /^\.agents\/rules\/architecture\.md$/,
-  /(^|\/)AGENTS\.md$/,
-];
+/**
+ * The documents that name folders and files of the repository, as patterns of tracked paths. Every pattern must
+ * match a tracked file. `docs/architecture/target-layout.md` is not tracked (it lives outside git) and is not covered.
+ */
+export const DOCUMENT_PATTERNS = [/^\.agents\/.*\.md$/, /(^|\/)AGENTS\.md$/];
+
+/** The patterns that match no tracked file: a document that moved or was never tracked is not covered. */
+export function findUnmatchedPatterns(patterns, tracked) {
+  return patterns.filter((pattern) => !tracked.some((file) => pattern.test(file)));
+}
 
 const escapeRegExp = (text) => text.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
 
@@ -72,6 +75,10 @@ export function findMissingPaths(documents, tracked) {
 
 export function verifyDocumentsNameExistingPaths() {
   const tracked = listTrackedFiles();
+  failOnFindings(
+    "A document pattern matches no tracked file",
+    findUnmatchedPatterns(DOCUMENT_PATTERNS, tracked).map((pattern) => ({ file: "tools/checks/docs/paths-exist/check.mjs", line: 1, symbol: String(pattern) })),
+  );
   const documents = tracked
     .filter((file) => DOCUMENT_PATTERNS.some((pattern) => pattern.test(file)))
     .map((file) => ({ file, text: fs.readFileSync(path.join(REPO_ROOT, file), "utf8") }));

@@ -14,6 +14,7 @@ import (
 
 // windowParts are what the use cases of one window are built over besides its state.
 type windowParts struct {
+	db            *Index
 	indexer       *indexing.Worker
 	embedding     *indexing.Embedding
 	moves         *VaultScenarios
@@ -38,14 +39,22 @@ type windowTools struct {
 	showTab     windowsession.ShowTab
 }
 
-func windowSession(w *windowWiring, state *editor.State, ctx context.Context, parts windowParts) (windowCases, windowTools) {
+// windowSession is the use cases of the lifecycle of a window, the ones beside it, and the switch a person
+// shows another vault through.
+type windowSession struct {
+	cases      windowCases
+	tools      windowTools
+	userSwitch windowsession.UserSwitch
+}
+
+func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
-		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(w.cfg), diag),
-		Passes:   wrapPasses(w, startVault(w.cfg, w.db, parts.current)), Triggers: getTriggerSource(w.cfg),
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
+		Passes:   startVault(a, parts.db, parts.current), Triggers: getTriggerSource(a),
 	})
-	identity := vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg)))
+	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.moves.RecordOpen, diag, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(state.Window, state.Writes)
@@ -54,27 +63,28 @@ func windowSession(w *windowWiring, state *editor.State, ctx context.Context, pa
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
 	switching := startup.SwitchVault[*windowsession.PluginOpen]{
 		Show:        show.Execute,
-		FollowVault: func(path string) { setPluginVaultPath(plugins(w.cfg), path) },
+		FollowVault: func(path string) { setPluginVaultPath(a, path) },
 		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
 	}
-	state.Switch = switching
-	cases := windowCases{
-		start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, w.cfg.ShouldRebuildIndex),
-		show:       show,
-		openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window, state.GetVaultSwitch()),
-		flush:      windowsession.NewFlushPending(guard, flush),
-		close: windowsession.NewCloseWindow(
-			state.Gate, session,
-			windowsession.CloseFunc(state.ClosePlaying),
-			windowsession.CloseFunc(func(context.Context) error { return parts.closeEmbedder() }),
-			windowsession.CloseFunc(func(context.Context) error { return w.db.Close() }),
-		),
+	return windowSession{
+		cases: windowCases{
+			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, c.ShouldRebuildIndex),
+			show:       show,
+			openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window, switching),
+			flush:      windowsession.NewFlushPending(guard, flush),
+			close: windowsession.NewCloseWindow(
+				state.Gate, session,
+				windowsession.CloseFunc(state.ClosePlaying),
+				windowsession.CloseFunc(func(context.Context) error { return parts.closeEmbedder() }),
+				windowsession.CloseFunc(func(context.Context) error { return parts.db.Close() }),
+			),
+		},
+		tools: windowTools{
+			importFiles: windowsession.NewImportFiles(
+				parts.moves.Tree.Import, state.Writes, state.Window, &state.Notices.ChangeEvents,
+			),
+			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
+		},
+		userSwitch: windowsession.NewUserSwitch(switching),
 	}
-	tools := windowTools{
-		importFiles: windowsession.NewImportFiles(
-			parts.moves.Tree.Import, state.Writes, state.Window, &state.Notices.ChangeEvents,
-		),
-		showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
-	}
-	return cases, tools
 }

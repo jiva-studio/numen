@@ -78,7 +78,7 @@ message ToolHints {
   bool destructive = 2;
   // A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
   bool idempotent = 3;
-  // The tool reaches outside the machine: requires contains network:outbound.
+  // The tool reaches outside the machine: requires contains link:open.
   bool open_world = 4;
 }
 

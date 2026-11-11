@@ -10,7 +10,7 @@ paths:
 
 # Placing code in a plugin (`/nm-place-plugin`)
 
-A plugin is a folder under `plugins/` that could be moved to a repository of its own and keep working unchanged. It depends on the plugin SDK (`libs/plugin/sdk-go`, `@numen/plugin-sdk`), on `@numen/ui` in its frontend, and on third-party code. Its backend and its frontend do not import each other. Its tooling configuration files are its own copies of `plugins/.example/`. Code that two plugins need is written in both.
+A plugin is a folder under `plugins/` that reaches the rest of the repository only through the plugin SDK. It does not move to a repository of its own yet: the Go SDK requires `libs/core/protocol` and `libs/note` through `replace` lines to folders, which the build of a consumer ignores, so a plugin outside this repository builds only after the SDK is published. It depends on the plugin SDK (`libs/plugin/sdk-go`, `@numen/plugin-sdk`), on `@numen/ui` in its frontend, and on third-party code. Its backend and its frontend do not import each other. Its tooling configuration files are its own copies of `plugins/.example/`. Code that two plugins need is written in both.
 
 This skill covers what the checks cannot decide: how a plugin is cut, where a piece of code goes, what is copied. The rules the checks enforce are in `.agents/rules/architecture.md` §10 and §11 and are listed by effect in [`checks.md`](checks.md). The manifest fields, the host calls and the SDK calls are described in `docs/plugins/README.md`; this skill points to them and does not repeat them. Worked examples are in [`examples.md`](examples.md). Where the code in `plugins/` differs from what is written here, this skill is the target and the code is brought to it.
 
@@ -152,7 +152,7 @@ A component of general use belongs in `@numen/ui` (what plugins need goes into `
 
 ## Permissions
 
-A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `network:outbound` (opening external links only), `ai:complete`, `index:read`, `search:policy`, `window:focus`. It declares the permission for the calls it makes and no more. Plugins are trusted code: permissions are consent and API hygiene, not a sandbox, and `network:outbound` gates only `openExternal`. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-claude/manifest_permissions_test.go`).
+A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `link:open` (opening external links only), `ai:complete`, `index:read`, `search:policy`, `window:focus`. It declares the permission for the calls it makes and no more. Plugins are trusted code: permissions are consent and API hygiene, not a sandbox, and `link:open` gates only `openExternal`. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-claude/manifest_permissions_test.go`).
 
 The host checks both sides. For a backend, the host endpoint authenticates the bearer token (`NUMEN_PLUGIN_TOKEN`) as a plugin id and checks the permission of that plugin's manifest on each call (`authorize` in `libs/core/kernel/adapter/plugin/hostendpoint/host_endpoint.go`; `libs/core/kernel/internal/adapter/plugin/host_permission_test.go` tests it for any client). For a frontend, `libs/plugin/loader/src/hosting/context.ts` wraps each service of the context so that a call without the permission throws (`requirePerm`).
 

@@ -16,11 +16,11 @@ func newHintedRegistry(t *testing.T) *Registry {
 	for _, spec := range []Spec{
 		{Name: "pond_read", Effect: ReadOnly},
 		{Name: "pond_search", Effect: ReadOnly, Step: Search},
-		{Name: "pond_fetch", Effect: ReadOnly, Requires: []string{"network:outbound"}},
+		{Name: "pond_fetch", Effect: ReadOnly, Requires: []string{"link:open"}},
 		{Name: "pond_write", Effect: ReadWrite},
 		{Name: "pond_drain", Effect: ReadWrite, Step: Remove, Requires: []string{"vault:manage"}},
 		{Name: "pond_rename", Effect: ReadWrite, Step: Move},
-		{Name: "pond_import", Effect: ReadWrite, Requires: []string{"network:outbound"}},
+		{Name: "pond_import", Effect: ReadWrite, Requires: []string{"link:open"}},
 	} {
 		if err := Add(registry, spec, func(context.Context, greetIn) (greetOut, error) { return greetOut{}, nil }); err != nil {
 			t.Fatal(err)

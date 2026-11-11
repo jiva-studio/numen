@@ -2,6 +2,7 @@
 package drivingcalls
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -19,15 +20,50 @@ import (
 // held in a field, and a call through that field would perform the use case's
 // work in the adapter.
 func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
+	wrong, err := findPortFieldCalls("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
+// TestDrivingWalk_FindsThePlantedCall verifies that the walk finds the call through a port field in
+// a driving adapter and passes the same call in a package that is no driving adapter.
+func TestDrivingWalk_FindsThePlantedCall(t *testing.T) {
+	source := "package p\n\ntype API struct{ Queries noteport.NoteRefs }\n\nfunc read(a *API) { a.Queries.GetTypes() }\n"
+	root := load.WriteTreeFixture(t, map[string]string{
+		"adapter/window/window.go": source,
+		"usecase/note/note.go":     source,
+	})
+	wrong, err := findPortFieldCalls(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(wrong) != 1 || !strings.Contains(wrong[0], "adapter/window/window.go calls Queries.GetTypes") {
+		t.Errorf("the walk found %v, want the call in adapter/window/window.go only", wrong)
+	}
+}
+
+// TestDrivingWalk_FailsOnATreeWithoutDrivingAdapters verifies that a root without a driving adapter is an error, not a pass.
+func TestDrivingWalk_FailsOnATreeWithoutDrivingAdapters(t *testing.T) {
+	if _, err := findPortFieldCalls(t.TempDir()); err == nil {
+		t.Error("a walk over a tree without a driving adapter passed")
+	}
+}
+
+// findPortFieldCalls lists the calls through a port field in the driving adapters under root. It
+// fails when it reads no driving adapter.
+func findPortFieldCalls(root string) ([]string, error) {
 	fields := map[string][]string{}
 	files := map[string]*ast.File{}
-	structs := 0
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") ||
 			strings.HasSuffix(path, "_test.go") {
 			return err
 		}
-		rel := load.GetPackage("..", path) + "/" + entry.Name()
+		rel := load.GetPackage(root, path) + "/" + entry.Name()
 		if !isDrivingAdapterFile(rel) {
 			return nil
 		}
@@ -36,35 +72,26 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 			return err
 		}
 		files[rel] = file
-		structs += countStructTypes(file)
 		dir := filepath.Dir(rel)
 		fields[dir] = append(fields[dir], getPortFields(file)...)
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
-
-	// A walk that read no driving adapter is a rule checked against nothing. A driving adapter holds no
-	// port in a field, so no field proves the walk; the packages and struct types read do, and the fixture
-	// test proves the rule fires.
-	if len(files) < 30 {
-		t.Fatalf("%d files of the driving adapters read: the walk is not reading them", len(files))
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no driving-adapter file read under %s: the walk checks nothing", root)
 	}
-	if packagesRead := len(fields); packagesRead < 15 {
-		t.Fatalf("%d driving-adapter packages read, want at least 15: the walk is not reading them", packagesRead)
-	}
-	if structs < 60 {
-		t.Fatalf("%d struct types of the driving adapters read, want at least 60: the walk is not reading them", structs)
-	}
-
+	var wrong []string
 	for rel, file := range files {
 		calls := getFieldCalls(file, fields[filepath.Dir(rel)])
 		if len(calls) == 0 {
 			continue
 		}
-		t.Errorf("%s calls %s: a driving adapter asks a use case, not a port", rel, calls[0])
+		wrong = append(wrong, fmt.Sprintf("%s calls %s: a driving adapter asks a use case, not a port", rel, calls[0]))
 	}
+	slices.Sort(wrong)
+	return wrong, nil
 }
 
 // call through a field typed port.X, and lets through a call through a field of

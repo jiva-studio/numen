@@ -17,7 +17,7 @@ function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
 const READ_WRITE = createMockManifest('p', {
   name: 'P',
   version: '1',
-  permissions: ['vault:read', 'vault:write', 'network:outbound'],
+  permissions: ['vault:read', 'vault:write', 'link:open'],
   commands: ['run', 'summary', 'rich', 'fail-quietly'],
   tabKinds: ['tree-kind'],
   readers: ['pdf'],

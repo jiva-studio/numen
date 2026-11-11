@@ -29,14 +29,14 @@ type vaultCommand struct {
 	subcommands []command
 }
 
-func newVaultCommand(deps Deps) vaultCommand {
+func newVaultCommand(session Session) vaultCommand {
 	return vaultCommand{subcommands: []command{
-		addVaultCommand{vaults: deps.Vaults},
-		listVaultsCommand{vaults: deps.Vaults},
-		renameVaultCommand{vaults: deps.Vaults},
-		removeVaultCommand{vaults: deps.Vaults},
-		eraseVaultCommand{vaults: deps.Vaults},
-		openVaultCommand{vaults: deps.Vaults},
+		addVaultCommand{session: session},
+		listVaultsCommand{session: session},
+		renameVaultCommand{session: session},
+		removeVaultCommand{session: session},
+		eraseVaultCommand{session: session},
+		openVaultCommand{session: session},
 	}}
 }
 
@@ -63,7 +63,7 @@ func (c vaultCommand) Run(ctx context.Context, term terminal, args []string) err
 }
 
 type addVaultCommand struct {
-	vaults func() (Vaults, error)
+	session Session
 }
 
 func (addVaultCommand) Name() string { return "add" }
@@ -84,7 +84,7 @@ func (c addVaultCommand) Run(_ context.Context, term terminal, args []string) er
 		return errors.New("usage: numen-cli vault add <path> [--name <name>]")
 	}
 
-	vaults, err := c.vaults()
+	vaults, err := c.session.OpenVaults()
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (c addVaultCommand) Run(_ context.Context, term terminal, args []string) er
 }
 
 type listVaultsCommand struct {
-	vaults func() (Vaults, error)
+	session Session
 }
 
 func (listVaultsCommand) Name() string { return "list" }
@@ -113,7 +113,7 @@ func (listVaultsCommand) Synopsis() string {
 }
 
 func (c listVaultsCommand) Run(_ context.Context, term terminal, _ []string) error {
-	vaults, err := c.vaults()
+	vaults, err := c.session.OpenVaults()
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func (c listVaultsCommand) Run(_ context.Context, term terminal, _ []string) err
 }
 
 type renameVaultCommand struct {
-	vaults func() (Vaults, error)
+	session Session
 }
 
 func (renameVaultCommand) Name() string { return "rename" }
@@ -153,21 +153,16 @@ func (renameVaultCommand) Synopsis() string {
 	return "  numen-cli vault rename <vault> <new name>    change the name of a vault"
 }
 
-func (c renameVaultCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
+func (c renameVaultCommand) Run(ctx context.Context, term terminal, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli vault rename <vault> <new name>")
 	}
-	vaults, err := c.vaults()
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{})
 	if err != nil {
 		return err
 	}
-	renaming, err := vaults.OpenRename(ctx)
-	if err != nil {
-		return err
-	}
-	defer closeInto(&err, renaming.Close)
 
-	renamed, err := renaming.Rename.ExecuteByName(ctx, args[0], args[1])
+	renamed, err := indexed.Rename.ExecuteByName(ctx, args[0], args[1])
 	if err != nil {
 		return err
 	}
@@ -177,7 +172,7 @@ func (c renameVaultCommand) Run(ctx context.Context, term terminal, args []strin
 }
 
 type removeVaultCommand struct {
-	vaults func() (Vaults, error)
+	session Session
 }
 
 func (removeVaultCommand) Name() string { return "remove" }
@@ -186,21 +181,16 @@ func (removeVaultCommand) Synopsis() string {
 	return "  numen-cli vault remove <vault>               take a vault off the list, leaving its folder"
 }
 
-func (c removeVaultCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
+func (c removeVaultCommand) Run(ctx context.Context, term terminal, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault remove <vault>")
 	}
-	vaults, err := c.vaults()
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{})
 	if err != nil {
 		return err
 	}
-	forgetting, err := vaults.OpenUnregister(ctx)
-	if err != nil {
-		return err
-	}
-	defer closeInto(&err, forgetting.Close)
 
-	v, err := forgetting.Unregister.ExecuteByName(ctx, args[0])
+	v, err := indexed.Unregister.ExecuteByName(ctx, args[0])
 	if err != nil {
 		return err
 	}
@@ -219,7 +209,7 @@ func (c eraseConfirmation) ConfirmErase(v domain.Vault) (bool, error) {
 }
 
 type eraseVaultCommand struct {
-	vaults func() (Vaults, error)
+	session Session
 }
 
 func (eraseVaultCommand) Name() string { return "erase" }
@@ -228,7 +218,7 @@ func (eraseVaultCommand) Synopsis() string {
 	return "  numen-cli vault erase <vault> [--yes]        remove it and move its folder to the trash"
 }
 
-func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string) (err error) {
+func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string) error {
 	fs := flag.NewFlagSet("vault erase", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	yes := fs.Bool("yes", false, "erase without asking")
@@ -239,21 +229,16 @@ func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string
 	if len(rest) != 1 {
 		return errors.New("usage: numen-cli vault erase <vault> [--yes]")
 	}
-	vaults, err := c.vaults()
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{})
 	if err != nil {
 		return err
 	}
-	erasing, err := vaults.OpenErase(ctx)
-	if err != nil {
-		return err
-	}
-	defer closeInto(&err, erasing.Close)
 
 	var confirm vault.EraseConfirmation
 	if !*yes {
 		confirm = eraseConfirmation{out: term.out}
 	}
-	res, err := erasing.Erase.ExecuteByName(ctx, rest[0], confirm)
+	res, err := indexed.Erase.ExecuteByName(ctx, rest[0], confirm)
 	if errors.Is(err, machine.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, res.Vault.Name)
 	}
@@ -285,7 +270,7 @@ func confirmErase(out io.Writer, v domain.Vault) (bool, error) {
 }
 
 type openVaultCommand struct {
-	vaults func() (Vaults, error)
+	session Session
 }
 
 func (openVaultCommand) Name() string { return "open" }
@@ -298,7 +283,7 @@ func (c openVaultCommand) Run(_ context.Context, term terminal, args []string) e
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault open <vault>")
 	}
-	vaults, err := c.vaults()
+	vaults, err := c.session.OpenVaults()
 	if err != nil {
 		return err
 	}

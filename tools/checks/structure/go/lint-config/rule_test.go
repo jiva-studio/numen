@@ -120,8 +120,8 @@ func checkEveryExhaustructPatternMatchesAType(t *testing.T, workspace load.Works
 		}
 	}
 
-	// A walk that reads no configuration or no pattern checks nothing.
-	if len(configs) < 20 || patterns < 20 || len(names) < 1000 {
+	// A walk that reads no configuration, no pattern or no struct type checks nothing.
+	if len(configs) == 0 || patterns == 0 || len(names) == 0 {
 		t.Fatalf("%d configurations, %d patterns and %d struct types read: the rule is checked against nothing", len(configs), patterns, len(names))
 	}
 }

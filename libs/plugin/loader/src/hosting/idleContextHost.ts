@@ -58,7 +58,6 @@ export function createIdleContextHost(parts: IdleContextHostParts): PluginContex
       registerReader: () => NOTHING,
       registerSettingsView: () => NOTHING,
       registerCommand: () => NOTHING,
-      registerAgentProvider: () => NOTHING,
       ...parts.registration,
     },
     views: {

@@ -29,22 +29,16 @@ function isGenerated(text) {
   return GENERATED.test(text.split('\n').slice(0, 20).join('\n'))
 }
 
-/** The share, in percent, of the words of a doc comment that the name and signature already hold, from which it is refused. */
-export const RESTATE_THRESHOLD_PERCENT = 80
+// The threshold, the stop words and the synonyms are in restate.json, which restate.go reads as well.
+const RESTATE = JSON.parse(fs.readFileSync(path.join(HERE, 'restate.json'), 'utf8'))
 
-const STOP_WORDS = new Set(
-  'a an the of to for in is are was were be been by that which and or with from on as it its this these those at if when then into each one any does do has have whose whether so not than there their can will may'.split(
-    ' ',
-  ),
-)
+/** The share, in percent, of the words of a doc comment that the name and signature already hold, from which it is refused. */
+export const RESTATE_THRESHOLD_PERCENT = RESTATE.thresholdPercent
+
+const STOP_WORDS = new Set(RESTATE.stopWords)
 
 /** Verbs that mean the same operation in a name and in a sentence, read as one word. */
-const SYNONYMS = new Map([
-  ...['find', 'read', 'fetch', 'return', 'load', 'retrieve', 'obtain', 'lookup'].map((w) => [w, 'get']),
-  ...['put', 'store', 'save', 'write', 'update', 'assign'].map((w) => [w, 'set']),
-  ...['make', 'build', 'new', 'construct'].map((w) => [w, 'create']),
-  ...['remove', 'drop'].map((w) => [w, 'delete']),
-])
+const SYNONYMS = new Map(Object.entries(RESTATE.synonyms).flatMap(([canonical, words]) => words.map((word) => [word, canonical])))
 
 /** Cuts text into lower-case words at camelCase humps, digits and every character that is not a letter. */
 export function splitWords(text) {
@@ -64,10 +58,10 @@ function stem(word) {
   return SYNONYMS.get(w) ?? w
 }
 
-/** A word of a comment is a word of a name when equal, or when one starts the other and both have four letters or more. */
+/** A word of a comment is a word of a name when equal, or when one starts the other and both have `minPrefixLength` letters or more. */
 function isSameWord(a, b) {
   if (a === b) return true
-  if (a.length < 4 || b.length < 4) return false
+  if (a.length < RESTATE.minPrefixLength || b.length < RESTATE.minPrefixLength) return false
   return a.startsWith(b) || b.startsWith(a)
 }
 

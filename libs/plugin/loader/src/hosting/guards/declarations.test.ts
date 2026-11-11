@@ -14,7 +14,6 @@ function createRegistering() {
       registerTabKind: registered,
       registerCommand: registered,
       registerSettingsView: registered,
-      registerAgentProvider: registered,
     },
   })
   return { host, registered }
@@ -74,17 +73,6 @@ describe('a registration the manifest does not declare', () => {
     expect(registered).not.toHaveBeenCalled()
   })
 
-  it('fails for an agent provider of a plugin that lacks the capability', () => {
-    const { host, registered } = createRegistering()
-    const manifest = createMockManifest('md.numen.sample', { permissions: PERMISSIONS })
-    const context = createPluginContext('md.numen.sample', host, manifest)
-
-    expect(() =>
-      context.register.agentProvider({ id: 'helper', name: 'Helper', createAgent: vi.fn() }),
-    ).toThrowError('registers the agent provider "helper"')
-    expect(registered).not.toHaveBeenCalled()
-  })
-
   it('fails for every registration of a plugin that has no manifest', () => {
     const { host } = createRegistering()
     const context = createPluginContext('md.numen.sample', host, { permissions: PERMISSIONS })
@@ -105,7 +93,6 @@ describe('a registration the manifest declares', () => {
       commands: ['deck.open'],
       handlers: ['app:file.createText'],
       settingsViews: ['floor'],
-      capabilities: ['ai.agent.provider'],
     })
     const context = createPluginContext('md.numen.sample', host, manifest)
 
@@ -114,14 +101,13 @@ describe('a registration the manifest declares', () => {
     context.register.command({ id: 'deck.open', handler: vi.fn() })
     context.register.command({ id: 'app:file.createText', handler: vi.fn() })
     context.register.settingsView({ id: 'floor', component: STUB_COMPONENT })
-    context.register.agentProvider({ id: 'helper', name: 'Helper', createAgent: vi.fn() })
 
-    expect(registered).toHaveBeenCalledTimes(6)
+    expect(registered).toHaveBeenCalledTimes(5)
   })
 })
 
 describe('openExternal', () => {
-  it('rejects for a plugin without network:outbound and does not open the address', async () => {
+  it('rejects for a plugin without link:open and does not open the address', async () => {
     const openExternal = vi.fn(() => Promise.resolve())
     const host = createTestContextHost({ info: { openExternal } })
     const context = createPluginContext(
@@ -131,18 +117,18 @@ describe('openExternal', () => {
     )
 
     await expect(context.plugin.openExternal('https://numen.md/')).rejects.toThrowError(
-      'lacks required permission "network:outbound" for openExternal',
+      'lacks required permission "link:open" for openExternal',
     )
     expect(openExternal).not.toHaveBeenCalled()
   })
 
-  it('opens the address for a plugin that declares network:outbound', async () => {
+  it('opens the address for a plugin that declares link:open', async () => {
     const openExternal = vi.fn(() => Promise.resolve())
     const host = createTestContextHost({ info: { openExternal } })
     const context = createPluginContext(
       'md.numen.sample',
       host,
-      createMockManifest('md.numen.sample', { permissions: ['network:outbound'] }),
+      createMockManifest('md.numen.sample', { permissions: ['link:open'] }),
     )
 
     await expect(context.plugin.openExternal('https://numen.md/')).resolves.toEqual({

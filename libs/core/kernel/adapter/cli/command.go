@@ -33,41 +33,35 @@ type commandRegistry struct {
 	groups []group
 }
 
-func newCommandRegistry(deps Deps) commandRegistry {
+func newCommandRegistry(session Session) commandRegistry {
 	return commandRegistry{groups: []group{
-		{list: func() []command { return getBuiltinCommands(deps) }},
-		{heading: "commands of the plugins:", list: func() []command { return listDeclaredCommands(deps) }},
-		{heading: "shared commands, run by the handler of a plugin:", list: func() []command { return listSharedCommands(deps) }},
+		{list: func() []command { return getBuiltinCommands(session) }},
+		{heading: "commands of the plugins:", list: func() []command { return listDeclaredCommands(session) }},
+		{heading: "shared commands, run by the handler of a plugin:", list: func() []command { return listSharedCommands(session) }},
 	}}
 }
 
-func getBuiltinCommands(deps Deps) []command {
+func getBuiltinCommands(session Session) []command {
 	return []command{
-		newVaultCommand(deps),
-		scanCommand{scan: deps.Scan},
-		searchCommand{search: deps.Search},
-		linksCommand{links: deps.Links},
-		problemsCommand{problems: deps.Problems},
-		helpCommand{deps: deps},
+		newVaultCommand(session),
+		scanCommand{session: session},
+		searchCommand{session: session},
+		linksCommand{session: session},
+		problemsCommand{session: session},
+		helpCommand{session: session},
 	}
 }
 
-func listDeclaredCommands(deps Deps) []command {
-	if deps.PluginCommands == nil {
-		return nil
-	}
+func listDeclaredCommands(session Session) []command {
 	var commands []command
-	for _, entry := range deps.PluginCommands().List.Execute() {
-		commands = append(commands, declaredCommand{plugins: deps.PluginCommands, entry: entry})
+	for _, entry := range session.GetPluginCommands().List.Execute() {
+		commands = append(commands, declaredCommand{plugins: session.GetPluginCommands, entry: entry})
 	}
 	return commands
 }
 
-func listSharedCommands(deps Deps) []command {
-	if deps.PluginCommands == nil {
-		return nil
-	}
-	list := deps.PluginCommands().List
+func listSharedCommands(session Session) []command {
+	list := session.GetPluginCommands().List
 	var ids []string
 	for _, one := range list.ListBackendHandlers() {
 		if !slices.Contains(ids, one.Command.ID) {
@@ -76,7 +70,7 @@ func listSharedCommands(deps Deps) []command {
 	}
 	var commands []command
 	for _, id := range ids {
-		commands = append(commands, sharedCommand{plugins: deps.PluginCommands, handlers: list.ListSharedHandlers(id)})
+		commands = append(commands, sharedCommand{plugins: session.GetPluginCommands, handlers: list.ListSharedHandlers(id)})
 	}
 	return commands
 }
@@ -97,7 +91,7 @@ func (r commandRegistry) find(name string) (command, bool) {
 
 // helpCommand prints the usage text, built from the commands of the registry.
 type helpCommand struct {
-	deps Deps
+	session Session
 }
 
 func (helpCommand) Name() string { return "help" }
@@ -105,7 +99,7 @@ func (helpCommand) Name() string { return "help" }
 func (helpCommand) Synopsis() string { return "" }
 
 func (c helpCommand) Run(_ context.Context, term terminal, _ []string) error {
-	return writeUsage(term.out, newCommandRegistry(c.deps))
+	return writeUsage(term.out, newCommandRegistry(c.session))
 }
 
 func writeUsage(out io.Writer, r commandRegistry) error {

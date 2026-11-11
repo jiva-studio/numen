@@ -19,8 +19,8 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 	return cfg
 }
 
-func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
-	return func(where cli.Locations) cli.Deps {
+func makeDeps(cfg container.Config) func(cli.Locations) cli.Session {
+	return func(where cli.Locations) cli.Session {
 		cfg = configureLocations(cfg, where)
 
 		return container.OpenCLI(cfg)

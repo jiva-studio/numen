@@ -89,7 +89,7 @@ func TestTranscriptCreateWhenTheTaskEndsReturnsTheVersion(t *testing.T) {
 	letGo := sync.OnceFunc(func() { close(queue.let) })
 	t.Cleanup(letGo)
 	transcriber := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
-		storesOf(s.store), textsOf(s.texts), queue, func(context.Context) (Recognizer, error) { return s.blocking, nil })
+		storesOf(s.store), textsOf(s.texts), queue, func(context.Context) (Recognizer, error) { return s.blocking, nil }, noReport)
 	t.Cleanup(transcriber.Close)
 	requests := NewRequests(transcriber, func(id domain.VaultID) Vault { return s.vault.With(id) })
 	first, err := requests.Create(t.Context(), "Lectures", lecture)

@@ -3,14 +3,15 @@ package cli_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -46,67 +47,114 @@ func (s *session) parts(where cli.Locations) vaultParts {
 	}
 }
 
-func (s *session) deps(where cli.Locations) cli.Deps {
-	options := vaultconfig.Options{ServiceDir: where.ServiceDir}
-	find := registry.NewFind(s.parts(where).ports.Lookup).Execute
-	return cli.Deps{
-		Vaults: func() (cli.Vaults, error) { return s.parts(where).build(), nil },
+// stubSession is the session of a test: what each command opens, written as functions, and the closers of what
+// they opened.
+type stubSession struct {
+	Vaults         func() (cli.Vaults, error)
+	Indexed        func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error)
+	PluginCommands func() cli.PluginCommands
+	closes         *closeList
+	failures       []string
+}
 
-		Links: func(ctx context.Context) (cli.Links, error) {
-			db, err := index.Open(ctx, where.Index)
-			if err != nil {
-				return cli.Links{}, err
-			}
-			return cli.Links{Show: query.NewShowLinksByName(find, query.NewShowLinks(db.NoteQueries())), Close: db.Close}, nil
-		},
+// closeList is what a test session closes, last opened first.
+type closeList struct{ fns []func() error }
 
-		Scan: func(ctx context.Context, rebuild bool) (cli.Scan, error) {
-			db, err := index.Open(ctx, where.Index)
-			if err != nil {
-				return cli.Scan{}, err
-			}
-			readers := vaultreader.Readers{Options: options}
+func (l *closeList) add(closer func() error) { l.fns = append(l.fns, closer) }
 
-			notes := vaults.NewScan(readers, db.Vaults(),
-				db.Notes(),
-				db.NoteQueries(), db.Maintenance(), nil)
-			notes.ShouldRebuildIndex = rebuild
-
-			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
-			books.ShouldRebuildIndex = rebuild
-
-			// No vectors: a test uses no model, and a vault is searched by words alone.
-			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-			embed.Texts = testsupport.Texts{Readers: readers}
-
-			return cli.Scan{
-				Scan:  indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, preparingRead(indexing.NewReadWholeVault(notes, books, embed))), db.NoteQueries()),
-				Now:   clockOf(s.parts(where).now),
-				Close: db.Close,
-			}, nil
-		},
-
-		// No embedder: a test uses no model, so a query is answered by words alone.
-		Search: func(ctx context.Context, errorHandler window.ErrorHandler) (cli.Search, error) {
-			db, err := index.Open(ctx, where.Index)
-			if err != nil {
-				return cli.Search{}, err
-			}
-			return cli.Search{
-				Search: search.NewByName(find, preparing(search.New(search.Index{Passages: db.ChunkSearch(), Nearest: db.ChunkSearch()}, vaultreader.Readers{Options: options},
-					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, nil, errorHandler))),
-				Close: db.Close,
-			}, nil
-		},
-
-		Problems: func(ctx context.Context) (cli.Problems, error) {
-			db, err := index.Open(ctx, where.Index)
-			if err != nil {
-				return cli.Problems{}, err
-			}
-			return cli.Problems{Problems: vaults.NewGetProblemsByName(find, vaults.NewGetProblems(check.Standard(db.NoteProblems()))), Close: db.Close}, nil
-		},
+func (d stubSession) session() cli.Session {
+	return cli.Session{
+		OpenVaults: d.OpenVaults, OpenIndexed: d.OpenIndexed, GetPluginCommands: d.GetPluginCommands, Close: d.Close,
 	}
+}
+
+func (d stubSession) OpenVaults() (cli.Vaults, error) {
+	if d.Vaults == nil {
+		return cli.Vaults{}, errNotProvided
+	}
+	return d.Vaults()
+}
+
+func (d stubSession) OpenIndexed(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+	if d.Indexed == nil {
+		return cli.Indexed{}, errNotProvided
+	}
+	return d.Indexed(ctx, options)
+}
+
+func (d stubSession) GetPluginCommands() cli.PluginCommands {
+	if d.PluginCommands == nil {
+		return cli.PluginCommands{}
+	}
+	return d.PluginCommands()
+}
+
+func (d stubSession) Close() ([]string, error) {
+	var err error
+	if d.closes == nil {
+		return d.failures, nil
+	}
+	for _, closeOne := range slices.Backward(d.closes.fns) {
+		err = errors.Join(err, closeOne())
+	}
+	return d.failures, err
+}
+
+var errNotProvided = errors.New("the test provided no such part")
+
+func (s *session) deps(where cli.Locations) cli.Session {
+	return s.depsOver(where, s.parts(where)).session()
+}
+
+func (s *session) depsOver(where cli.Locations, parts vaultParts) stubSession {
+	closes := &closeList{}
+	return stubSession{
+		Vaults: func() (cli.Vaults, error) { return parts.build(), nil },
+		Indexed: func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+			return s.openIndexed(ctx, where, parts, closes, options)
+		},
+		closes: closes,
+	}
+}
+
+func (s *session) openIndexed(
+	ctx context.Context, where cli.Locations, parts vaultParts, closes *closeList, options cli.IndexOptions,
+) (cli.Indexed, error) {
+	rows, closeRows, err := parts.rows(ctx)
+	if err != nil {
+		return cli.Indexed{}, err
+	}
+	closes.add(closeRows)
+	db, err := index.Open(ctx, where.Index)
+	if err != nil {
+		return cli.Indexed{}, err
+	}
+	closes.add(db.Close)
+	vaultOptions := vaultconfig.Options{ServiceDir: where.ServiceDir}
+	readers := vaultreader.Readers{Options: vaultOptions}
+	find := registry.NewFind(parts.ports.Lookup).Execute
+
+	notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), nil)
+	notes.ShouldRebuildIndex = options.Rebuild
+	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
+	books.ShouldRebuildIndex = options.Rebuild
+	// No vectors: a test uses no model, and a vault is searched by words alone.
+	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
+	embed.Texts = testsupport.Texts{Readers: readers}
+
+	indexed := parts.indexedOver(rows)
+	indexed.Scan = cli.Scan{
+		Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, preparingRead(indexing.NewReadWholeVault(notes, books, embed))), db.NoteQueries()),
+		Now:  clockOf(parts.now),
+	}
+	// No embedder: a test uses no model, so a query is answered by words alone.
+	indexed.Search = cli.Search{
+		Search: search.NewByName(find, preparing(search.New(search.Index{Passages: db.ChunkSearch(), Nearest: db.ChunkSearch()}, vaultreader.Readers{Options: vaultOptions},
+			testsupport.Texts{Readers: vaultreader.Readers{Options: vaultOptions}}, nil, nil, options.ErrorHandler))),
+	}
+	indexed.Links = query.NewShowLinksByName(find, query.NewShowLinks(db.NoteQueries()))
+	indexed.Problems = vaults.NewGetProblemsByName(find, vaults.NewGetProblems(check.Standard(db.NoteProblems())))
+	return indexed, nil
 }
 
 // vaultParts are the pieces the vault commands of a test are built from, so a test can replace one.
@@ -121,34 +169,20 @@ type vaultParts struct {
 
 func (p vaultParts) build() cli.Vaults {
 	find := registry.NewFind(p.ports.Lookup).Execute
-	unregister := func(rows vaultport.VaultRepository) vaults.Unregister {
-		return vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
-	}
 	return cli.Vaults{
 		Add:        vaults.NewAdd(p.identity, p.ports.Vaults, p.ports.Lookup, p.ports.Saver, p.now),
 		Known:      registry.NewGetKnownVaults(p.ports.Vaults, p.ports.Last, p.readers),
 		RecordOpen: vaults.NewRecordOpenByName(find, vaults.NewRecordOpen(p.ports.Recorder)),
-		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
-			rows, closeRows, err := p.rows(ctx)
-			if err != nil {
-				return cli.Renaming{}, err
-			}
-			return cli.Renaming{Rename: vaults.NewRenameByName(find, vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows)), Close: closeRows}, nil
-		},
-		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
-			rows, closeRows, err := p.rows(ctx)
-			if err != nil {
-				return cli.Unregistering{}, err
-			}
-			return cli.Unregistering{Unregister: vaults.NewUnregisterByName(find, unregister(rows)), Close: closeRows}, nil
-		},
-		OpenErase: func(ctx context.Context) (cli.Erasing, error) {
-			rows, closeRows, err := p.rows(ctx)
-			if err != nil {
-				return cli.Erasing{}, err
-			}
-			return cli.Erasing{Erase: vaults.NewEraseByName(find, vaults.NewErase(p.identity, p.trash, unregister(rows))), Close: closeRows}, nil
-		},
+	}
+}
+
+func (p vaultParts) indexedOver(rows vaultport.VaultRepository) cli.Indexed {
+	find := registry.NewFind(p.ports.Lookup).Execute
+	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
+	return cli.Indexed{
+		Rename:     vaults.NewRenameByName(find, vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows)),
+		Unregister: vaults.NewUnregisterByName(find, unregister),
+		Erase:      vaults.NewEraseByName(find, vaults.NewErase(p.identity, p.trash, unregister)),
 	}
 }
 
@@ -200,12 +234,12 @@ func (fixedLinkQueries) ResolveLinks(
 func TestACommandRunsOnValuesAlone(t *testing.T) {
 	t.Parallel()
 	target := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
-	provided := cli.Deps{
+	provided := stubSession{
 		Vaults: func() (cli.Vaults, error) {
 			return vaultParts{ports: portsOfSingle(singleVaultList{target})}.build(), nil
 		},
-		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: query.NewShowLinksByName(registry.NewFind(singleVaultList{target}).Execute, query.NewShowLinks(fixedLinkQueries{
+		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
+			return cli.Indexed{Links: query.NewShowLinksByName(registry.NewFind(singleVaultList{target}).Execute, query.NewShowLinks(fixedLinkQueries{
 				links: []domain.ResolvedLink{{
 					Link: domain.Link{
 						Target: domain.Address{Scheme: domain.SchemeName, Value: "Hives"},
@@ -228,7 +262,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 
 	var out bytes.Buffer
 	err := cli.Run(t.Context(), &out, io.Discard,
-		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Deps { return provided })
+		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Session { return provided.session() })
 	if err != nil {
 		t.Fatalf("links: %v\n%s", err, out.String())
 	}

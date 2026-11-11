@@ -114,18 +114,57 @@ func TestGetCoreMLOptionsPlacesADefaultModelOnAllUnits(t *testing.T) {
 	if units := GetCoreMLOptions("/cache", ComputeUnitsCPUOnly)[3][1]; units != "CPUOnly" {
 		t.Errorf("MLComputeUnits = %q, want CPUOnly", units)
 	}
+}
 
-	if _, err := GetCoreMLCacheDir(filepath.Join(t.TempDir(), "missing.onnx")); err == nil {
-		t.Fatal("expected error for missing model file")
+func TestCoreMLCacheErrors(t *testing.T) {
+	_, model := grantModel(t)
+	missingModel := filepath.Join(t.TempDir(), "missing.onnx")
+	if _, err := GetCoreMLCacheDir(missingModel); err == nil {
+		t.Fatal("GetCoreMLCacheDir with missing model succeeded, want error")
+	}
+	if DeleteCoreMLCache(missingModel) {
+		t.Fatal("DeleteCoreMLCache with missing model returned true, want false")
 	}
 
+	t.Setenv(cache.EnvSharedDir, model)
+	if _, err := GetCoreMLCacheDir(model); err == nil {
+		t.Fatal("GetCoreMLCacheDir with file as shared dir succeeded, want error")
+	}
+
+	t.Setenv(cache.EnvSharedDir, "")
+	t.Setenv(cache.EnvCacheDir, "")
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CACHE_HOME", "")
+	if _, err := GetCoreMLCacheDir(model); err == nil {
+		t.Fatal("GetCoreMLCacheDir without cache env or HOME succeeded, want error")
+	}
+}
+
+func TestDeleteCoreMLCacheReturnsFalseWhenRemoveFails(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("chmod permission check requires non-root unix")
+	}
 	_, model := grantModel(t)
-	fileAsDir := filepath.Join(t.TempDir(), "not-a-dir")
-	if err := os.WriteFile(fileAsDir, []byte("x"), 0o600); err != nil {
+	dir, err := GetCoreMLCacheDir(model)
+	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv(cache.EnvSharedDir, fileAsDir)
-	if _, err := GetCoreMLCacheDir(model); err == nil {
-		t.Fatal("expected error when shared dir is a regular file")
+	lockedSub := filepath.Join(dir, "locked-sub")
+	if err := os.MkdirAll(lockedSub, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(lockedSub, "inner"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(lockedSub, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chmod(lockedSub, 0o700); err != nil {
+			t.Error(err)
+		}
+	})
+	if DeleteCoreMLCache(model) {
+		t.Fatal("DeleteCoreMLCache returned true when removing an entry failed")
 	}
 }

@@ -2,14 +2,14 @@
 /**
  * Conventional Commits & Scope Validator for Numen (@numen/git.hooks)
  *
- * Ensures a pull request title follows Conventional Commits:
+ * Ensures a pull request title follows Conventional Commits with a type from ALLOWED_TYPES and, when
+ * present, one or more comma-separated scopes of lowercase words joined by hyphens:
  *   <type>(<scope>): <subject>
  *   <type>: <subject>
  *
  * The title is the first argument or, without one, the environment variable PR_TITLE.
  * Commits on a branch are not validated.
  */
-import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -28,115 +28,10 @@ export const ALLOWED_TYPES = new Set([
   'arch',
 ])
 
-export const ALLOWED_BASE_SCOPES = new Set([
-  // Core packages & layers
-  'core',
-  'domain',
-  'note',
-  'ui',
-  'wire',
-  'protocol',
-  'sdk',
-  'plugin-sdk',
-  'plugin-loader',
-  'core-client',
+/** A scope is lowercase words joined by hyphens: `core`, `plugin-sdk`, `reader-epub`. */
+export const SCOPE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-  // Apps
-  'desktop',
-  'editor',
-  'flashcards',
-  'mobile',
-  'landing',
-  'docs',
-  'cli',
-
-  // Infrastructure & quality
-  'tools',
-  'lint',
-  'ci',
-  'deps',
-  'repo',
-  'release',
-  'arch',
-  'e2e',
-  'test',
-  'tests',
-  'quality',
-  'mutation',
-  'workflows',
-  'build',
-
-  // Concepts & domains
-  'vault',
-  'mcp',
-  'frontend',
-  'backend',
-  'security',
-
-  // Categories (general fallback)
-  'plugins',
-  'plugin',
-  'agent',
-  'agents',
-  'engine',
-  'engines',
-  'reader',
-  'readers',
-  'view',
-  'views',
-  'editors',
-])
-
-export function getDynamicScopes(repoRoot) {
-  const dynamic = new Set(ALLOWED_BASE_SCOPES)
-  const scanDirs = [
-    { dir: 'plugins', isPlugin: true },
-    { dir: 'apps' },
-    { dir: 'libs' },
-    { dir: 'libs/core' },
-    { dir: 'libs/plugin' },
-    { dir: 'libs/ui' },
-    { dir: 'tools' },
-  ]
-
-  for (const { dir, isPlugin } of scanDirs) {
-    const fullDir = path.join(repoRoot, dir)
-    if (!fs.existsSync(fullDir)) continue
-    try {
-      const entries = fs.readdirSync(fullDir, { withFileTypes: true })
-      for (const entry of entries) {
-        if (!entry.isDirectory() || entry.name.startsWith('.')) continue
-        const name = entry.name
-        dynamic.add(name)
-
-        if (isPlugin) {
-          const parts = name.split('-')
-          const prefix = parts[0]
-          const singularPrefix = prefix.endsWith('s') ? prefix.slice(0, -1) : prefix
-
-          dynamic.add(prefix)
-          dynamic.add(singularPrefix)
-
-          if (parts.length > 1) {
-            const rest = parts.slice(1)
-            dynamic.add(rest.join('-'))
-            dynamic.add(`${singularPrefix}-${rest.join('-')}`)
-
-            for (const part of rest) {
-              dynamic.add(part)
-            }
-          }
-        }
-      }
-    } catch {
-      // Fallback to base scopes if directory cannot be read
-    }
-  }
-
-  return dynamic
-}
-
-export function validateCommitMessage(content, repoRoot) {
+export function validateCommitMessage(content) {
   const lines = content.split('\n')
   const headerLine = lines.find((l) => {
     const t = l.trim()
@@ -158,7 +53,6 @@ export function validateCommitMessage(content, repoRoot) {
     return { ok: true }
   }
 
-  const allowedScopes = getDynamicScopes(repoRoot)
   const match = header.match(/^([a-z]+)(?:\(([^)]+)\))?(!)?:\s(.+)$/)
 
   if (!match) {
@@ -180,10 +74,10 @@ export function validateCommitMessage(content, repoRoot) {
   if (rawScope) {
     const scopes = rawScope.split(',').map((s) => s.trim())
     for (const scope of scopes) {
-      if (!allowedScopes.has(scope) && !allowedScopes.has(scope.toLowerCase())) {
+      if (!SCOPE_PATTERN.test(scope)) {
         return {
           ok: false,
-          error: `Unknown scope: "(${scope})".`,
+          error: `Malformed scope: "(${scope})". A scope is lowercase words joined by hyphens.`,
         }
       }
     }
@@ -206,10 +100,7 @@ export function validateCommitMessage(content, repoRoot) {
 /** Validates the pull request title given as the first argument or in PR_TITLE. */
 function main() {
   const content = process.argv[2] ?? process.env.PR_TITLE ?? ''
-  const scriptDir = path.dirname(new URL(import.meta.url).pathname)
-  const repoRoot = path.resolve(scriptDir, '../..')
-
-  const result = validateCommitMessage(content, repoRoot)
+  const result = validateCommitMessage(content)
   if (!result.ok) {
     console.error(`\n❌ Error: ${result.error}\n`)
     process.exit(1)

@@ -7,7 +7,7 @@
   "capabilities": ["embedding"],
   "targets": ["desktop.editor"],
   "contributes": { "category": "engines" },
-  "permissions": ["vault:read", "network:outbound"],
+  "permissions": ["vault:read", "link:open"],
   "dependencies": [
     {
       "id": "onnxruntime",

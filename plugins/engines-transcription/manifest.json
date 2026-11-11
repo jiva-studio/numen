@@ -32,7 +32,7 @@
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "permissions": ["vault:read", "vault:write", "link:open"],
   "dependencies": [
     {
       "id": "onnxruntime",

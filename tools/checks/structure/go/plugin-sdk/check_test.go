@@ -2,6 +2,7 @@
 package pluginsdk
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -38,7 +39,30 @@ func TestWhatTheSDKModuleRulesRefuse(t *testing.T) {
 // Every go.mod of the plugin SDK is named after its folder and requires only
 // what getSDKRefusal lets it.
 func TestNoSDKModuleRequiresAFeatureModule(t *testing.T) {
-	root := filepath.Join("..", "..", "..", "plugin", "sdk-go")
+	for _, one := range findSDKModuleFindings(t, filepath.Join("..", "..", "..", "plugin", "sdk-go")) {
+		t.Error(one)
+	}
+}
+
+// TestSDKModuleWalk_FindsThePlantedModules verifies that the walk finds a module named after another
+// folder and a module that requires a feature module of the SDK, and passes a correct one.
+func TestSDKModuleWalk_FindsThePlantedModules(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"go.mod":           "module " + load.SdkModule + "\n\ngo 1.26\n",
+		"sdk/vault/go.mod": "module " + load.SdkModule + "/wrong\n\ngo 1.26\n",
+		"sdk/onnx/go.mod":  "module " + load.SdkModule + "/onnx\n\ngo 1.26\n\nrequire " + load.SdkModule + "/agent v0.0.0\n",
+	})
+	found := findSDKModuleFindings(t, filepath.Join(root, "sdk"))
+	if len(found) != 2 {
+		t.Errorf("the walk found %v, want the wrong name of vault and the requirement of onnx", found)
+	}
+}
+
+// findSDKModuleFindings lists the go.mod files under root that the SDK rules refuse. It fails the
+// test when it reads none.
+func findSDKModuleFindings(t *testing.T, root string) []string {
+	t.Helper()
+	var wrong []string
 	found := 0
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || entry.Name() != "go.mod" {
@@ -56,11 +80,11 @@ func TestNoSDKModuleRequiresAFeatureModule(t *testing.T) {
 		}
 		mod := load.GetModulePath(file)
 		if mod != want {
-			t.Errorf("%s declares module %q, want %q", path, mod, want)
+			wrong = append(wrong, fmt.Sprintf("%s declares module %q, want %q", path, mod, want))
 		}
 		for _, required := range file.Require {
 			if why := getSDKRefusal(mod, required.Mod.Path); why != "" {
-				t.Errorf("%s requires %s: %s", mod, required.Mod.Path, why)
+				wrong = append(wrong, fmt.Sprintf("%s requires %s: %s", mod, required.Mod.Path, why))
 			}
 		}
 		return nil
@@ -68,9 +92,10 @@ func TestNoSDKModuleRequiresAFeatureModule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if found < 2 {
-		t.Fatalf("%d go.mod files found under %s: a rule checked against nothing", found, root)
+	if found == 0 {
+		t.Fatalf("no go.mod found under %s: a rule checked against nothing", root)
 	}
+	return wrong
 }
 
 func TestMain(m *testing.M) {

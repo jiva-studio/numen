@@ -22,19 +22,60 @@ func studio() domain.Vault {
 
 // pageSet is the pages of a window: they write at once unless one holds an unanswered question.
 type pageSet struct {
-	mu       sync.Mutex
-	isAsking bool
-	flushes  int
-	canceled int
-	log      *eventLog
+	mu        sync.Mutex
+	isAsking  bool
+	flushes   int
+	canceled  int
+	log       *eventLog
+	hold      *heldFlush
+	releasing *heldFlush
+}
+
+// heldFlush is a flush request that waits inside the pages until it is released.
+type heldFlush struct {
+	entered chan struct{}
+	gate    chan struct{}
 }
 
 func (p *pageSet) RequestFlush(context.Context) bool {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	p.flushes++
 	p.log.add("flush")
-	return !p.isAsking
+	hold := p.hold
+	p.hold = nil
+	isAsking := p.isAsking
+	p.mu.Unlock()
+	if hold != nil {
+		close(hold.entered)
+		<-hold.gate
+	}
+	return !isAsking
+}
+
+func (p *pageSet) holdNextFlush() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.hold = &heldFlush{entered: make(chan struct{}), gate: make(chan struct{})}
+	p.releasing = p.hold
+}
+
+func (p *pageSet) waitHeld(t *testing.T) {
+	t.Helper()
+	p.mu.Lock()
+	hold := p.releasing
+	p.mu.Unlock()
+	select {
+	case <-hold.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("no flush was requested from the pages")
+	}
+}
+
+func (p *pageSet) release() {
+	p.mu.Lock()
+	hold := p.releasing
+	p.mu.Unlock()
+	close(hold.gate)
 }
 
 func (p *pageSet) CancelFlush() {

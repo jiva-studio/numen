@@ -1,6 +1,7 @@
 package load
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -43,18 +44,27 @@ func GetPluginDependencyRefusal(mod, dep string) string {
 
 func ListPluginModules(t *testing.T) []string {
 	t.Helper()
-	found, err := filepath.Glob(filepath.Join(RepoRootDir, "plugins", "*", "go.mod"))
+	dirs, err := GetPluginModules(RepoRootDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) < 2 {
-		t.Fatalf("%d plugin modules found: a rule checked against nothing", len(found))
+	return dirs
+}
+
+// GetPluginModules lists the folders under root/plugins that hold a go.mod. It fails when there is none.
+func GetPluginModules(root string) ([]string, error) {
+	found, err := filepath.Glob(filepath.Join(root, "plugins", "*", "go.mod"))
+	if err != nil {
+		return nil, err
+	}
+	if len(found) == 0 {
+		return nil, fmt.Errorf("no plugin module under %s/plugins: a rule checked against nothing", root)
 	}
 	dirs := make([]string, len(found))
 	for i, gomod := range found {
 		dirs[i] = filepath.Dir(gomod)
 	}
-	return dirs
+	return dirs, nil
 }
 
 func GetImports(root string) (map[string][]string, error) {
