@@ -143,7 +143,6 @@ type requestFixture struct {
 	finishing recordingQueue
 	blocking  *blockingModel
 	requests  *Requests
-	// ended holds the tasks that ended before a wait asked for them.
 	ended     map[string]bool
 }
 

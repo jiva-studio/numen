@@ -116,7 +116,6 @@ type toolFixture struct {
 	recognitions *recognition.Recognition
 	launcher     *launch.Launcher
 	registry     *tools.Registry
-	// ended holds the tasks that ended before a wait asked for them.
 	ended        map[string]bool
 }
 

@@ -140,7 +140,8 @@ func (r *Recognition) Recognize(ctx context.Context, req Request) (Result, error
 
 // Start claims the file and recognizes it in the background under ctx, and returns false when
 // another run has locked the file. An empty vault is the vault the host shows when Start is called,
-// and the run reads and writes only that vault. The channel is closed when the run ends.
+// and the run reads and writes only that vault. The channel is closed when the run ends. The file stops
+// counting as running before its task is reported as ended.
 func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, bool, error) {
 	req, key, err := r.claim(ctx, req)
 	if errors.Is(err, ErrAlreadyRecognising) {
@@ -255,8 +256,6 @@ func newTask(req Request) host.Task {
 	}
 }
 
-// runRecognition calls release before it reports how the task ended, so that whoever sees the task
-// end finds the file no longer running.
 func (r *Recognition) runRecognition(ctx context.Context, req Request, release func()) (Result, error) {
 	on := reach{vault: r.host.Vaults(req.Vault), store: r.host.Store(req.Vault), texts: r.host.Texts(req.Vault)}
 	task := newTask(req)

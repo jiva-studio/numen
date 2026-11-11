@@ -118,7 +118,8 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 
 // Start claims the recording and transcribes it in the background, and returns false when a run
 // already has it. The recording is read in the background as well, and a failed read fails the
-// task. Close cancels the transcription and waits for it.
+// task. Close cancels the transcription and waits for it. The recording stops counting as running
+// before its task is reported as ended.
 func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
 	claimed, err := t.getClaimVault(ctx, vault)
 	if err != nil {

@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
-// transcribe calls release before it reports how the task ended, so that whoever sees the task end
-// finds the recording no longer running.
 func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string, read readRecording, release func()) error {
 	err := t.run(ctx, vault, path, read)
 	release()
