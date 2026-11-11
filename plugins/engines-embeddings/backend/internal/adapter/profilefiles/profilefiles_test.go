@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
 func TestTheDefaultDirectoryIsTheProfilesFolderOfTheDataDirectory(t *testing.T) {

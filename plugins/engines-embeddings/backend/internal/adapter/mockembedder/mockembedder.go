@@ -15,7 +15,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
 // mockTermDimensions is how many dimensions of the word part one term takes,

@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/pdfworkers"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 // Mount registers the plugin's services on s, reporting text versions to the host the environment
@@ -50,14 +50,14 @@ func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, 
 		queue, workers,
 	)
 	writer.SetReport(pdfworkers.ReportError)
-	return mount(s, reader, writer)
+	return mount(s, reader, writer, pdfworkers.ReportError)
 }
 
-func mount(s *server.Server, reader *document.Reader, writer *extract.Writer) error {
+func mount(s *server.Server, reader *document.Reader, writer *extract.Writer, report func(what string, err error)) error {
 	if err := NewDocumentServer(reader).Mount(s.NewAPI(api.Service)); err != nil {
 		return err
 	}
-	s.RegisterRoute(pagesPattern, NewPageServer(reader))
+	s.RegisterRoute(pagesPattern, NewPageServer(reader, report))
 	commands, err := newCommands(writer)
 	if err != nil {
 		return err

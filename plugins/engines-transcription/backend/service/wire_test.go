@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/hostclient"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
 const (

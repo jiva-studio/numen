@@ -5,7 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/launch"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
 )
 
 // The instruction sentences of recognition_create: when to call it and what it returns.

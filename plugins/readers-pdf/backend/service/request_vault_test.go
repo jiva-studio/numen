@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 // twoVaults is a current vault without the file and a second vault holding tiny.pdf with its text
@@ -93,7 +93,7 @@ func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	pages := NewPageServer(newReader(t, v.current, v.texts))
+	pages := NewPageServer(newReader(t, v.current, v.texts), func(string, error) {})
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+pagesPattern, pages)
 

@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/indexstats"
+	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/usecase/indexstats"
 )
 
 const recipe = "local|bge-m3|1024|512|mean|int8@0.4"

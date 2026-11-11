@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
 // The plugin declares the ONNX Runtime as a runtime dependency.
@@ -102,7 +102,7 @@ type manifestOption struct {
 }
 
 // The local models of the settings are the curated profiles of the plugin, in the order of the table,
-// and the model setting defaults to the default model. Edit manifest.json to match backend/model/profiles.json.
+// and the model setting defaults to the default model. Edit manifest.json to match backend/domain/model/profiles.json.
 func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.T) {
 	var manifest struct {
 		Settings []struct {
