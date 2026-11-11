@@ -51,7 +51,7 @@ const { selectedPluginId, plugins, uninstalled, selectedPlugin, selectPlugin, up
           v-else
           :settings="installation.settings"
           :catalog="installation.plugin.catalog.value"
-          :query="initialSearchQuery.value"
+          :query="initialSearchQuery"
           :plugins="plugins"
           @select-plugin="selectPlugin"
           @update:query="updateQuery"

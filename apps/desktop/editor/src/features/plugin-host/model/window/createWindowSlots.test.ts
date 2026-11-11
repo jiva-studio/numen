@@ -77,7 +77,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     declaredCommands: {
       slots: computed(() => slotEntries),
       commands: computed(() => COMMANDS),
-      contributions: { handlers: computed(() => []), keybindings: computed(() => []) },
+      contributions: { handlers: computed(() => []) },
       whenContext: {
         getContentTypes: () => ({ md: 'text/markdown' }),
         getConfig: () => ({}),
