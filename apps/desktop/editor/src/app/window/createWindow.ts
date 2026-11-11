@@ -1,85 +1,45 @@
 /**
- * The window composed: the services that read the vault, the commands, the kinds of tab and the
- * plugins, made in the order each needs the one before.
+ * The window composed in four steps, each made from the ones before: the base (the tabs, the
+ * vault, the commands of the features), the plugins, the palettes, and the start.
  */
-import { createNoteKindReader } from '@/features/plugin-host'
-import { createSettingsPage } from '@/pages/settings'
-import { createHostConnection } from './createHostConnection'
-import { createWindowFeatures } from './createWindowFeatures'
-import { createWindowFoundation } from './createWindowFoundation'
+import { createWindowBase } from './createWindowBase'
 import { createWindowPalettes } from './createWindowPalettes'
 import { createWindowPlugins } from './createWindowPlugins'
 import { createWindowStart } from './createWindowStart'
-import { createWindowVault } from './createWindowVault'
-import { getPluginViews } from './getPluginViews'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const createWindow = () => {
-  const foundation = createWindowFoundation()
-  const { frame, rest, log, settingsRequests } = foundation
-  const parts = createWindowVault(foundation)
-  const { windowTabs, tabOpeners } = parts.tabsPart
-  const features = createWindowFeatures({ foundation, parts })
-  const plugins = createWindowPlugins({ foundation, parts, features })
-  const { pluginHost } = plugins.support
-  const palettes = createWindowPalettes({ foundation, parts, features, plugins })
-
-  const settingsPage = createSettingsPage({
-    rest,
-    appearance: parts.windowSettings.appearance,
-    log,
-    windowTabs,
-    getSettingsViews: (pluginId) => pluginHost.registered.getRegisteredSettingsViews(pluginId),
-    getPlatform: () => frame.platform.value,
-  })
-  settingsRequests.subscribe(settingsPage.configured.openSettings)
-  windowTabs.groups.registerKinds(settingsPage.kinds)
-
-  const windowCommands = createHostConnection({
-    hostPort: plugins.hostPort,
-    pluginHost,
-    appCommands: features.featureCommands.commands,
-    getTarget: features.getTarget,
-    items: palettes.sources.items,
-    runCommandToEnd: palettes.commandRuns.runCommandToEnd,
-    isPaletteOpen: palettes.paletteSwitch.isOpen,
-    commandDeps: palettes.commandDeps,
-  })
-  const bootstrap = createWindowStart({
+  const base = createWindowBase()
+  const { foundation, tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
+  const plugins = createWindowPlugins({
     foundation,
-    parts,
-    getTarget: features.getTarget,
+    tabs,
+    vault,
+    windowSettings,
+    getTarget,
+    appCommands,
+  })
+  const palettes = createWindowPalettes({
+    foundation,
+    tabs,
+    vault,
+    windowSettings,
+    getTarget,
+    appCommands,
+    plugins,
+  })
+  const { views, tabMenu, bootstrap } = createWindowStart({
+    foundation,
+    tabs,
+    tabParts,
+    vault,
+    windowSettings,
+    getTarget,
     plugins,
     palettes,
   })
-
-  const base = { frame, tabs: parts.tabsPart, plugins: { host: plugins.support } }
-  const commands = {
-    getTarget: features.getTarget,
-    commands: {
-      palette: palettes.search,
-      commands: palettes.paletteCommands,
-      commandDeps: palettes.commandDeps,
-      pluginWays: palettes.plugin.pluginWays,
-      runCommand: palettes.commandRuns.runCommand,
-      runChoice: palettes.commandRuns.runChoice,
-    },
-  }
-  const kinds = { findFileIcon: (path: string) => tabOpeners.findFileIcon(path) }
-  const frameServices = {
-    slots: pluginHost.slots,
-    windowCommands,
-    views: getPluginViews(pluginHost),
-    readNoteKind: createNoteKindReader(features.itemLists),
-  }
-  const { editing, window, vaults } = parts.vault
-  return {
-    base,
-    services: { editing, window, vaults },
-    commands,
-    kinds,
-    frame: frameServices,
-    bootstrap,
-    tabs: parts.tabs,
-  }
+  return { tabs, tabParts, vault, getTarget, palettes, views, tabMenu, bootstrap }
 }
+
+/** What the component that draws the window is given. */
+export type WindowParts = ReturnType<typeof createWindow>

@@ -10,35 +10,33 @@ import { getPluginTexts } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
-import { createPluginCatalog } from './createPluginCatalog'
-import { createPluginSettingsAccessor, createWindowPluginStatus } from './pluginSettings'
+import type { createPluginCatalog } from './createPluginCatalog'
+import { createPluginSettingsAccessor } from './pluginSettings'
 
 /** What the plugin host and the plugin loader are made from. */
 export interface PluginSupportDeps {
   readonly rest: SettingsStore
+  readonly catalog: ReturnType<typeof createPluginCatalog>
+  readonly status: PluginStatus
   readonly kinds: TabKindParts
   readonly tabs: TabActionParts
   readonly parts: readonly HostParts[]
-  readonly status?: PluginStatus
-  readonly getPlatform?: () => WindowPlatform
-  readonly reportError?: (pluginId: string, error: Caught) => void
-  readonly reportLoadError?: (pluginId: string, error: Caught) => void
+  readonly getPlatform: () => WindowPlatform
+  readonly reports: {
+    readonly reportError: (pluginId: string, error: Caught) => void
+    readonly reportLoadError: (pluginId: string, error: Caught) => void
+  }
 }
 
 const mergeHostParts = (parts: readonly HostParts[]): HostParts =>
   parts.reduce<HostParts>((all, one) => ({ ...all, ...one }), {})
 
 export function createPluginSupport(deps: PluginSupportDeps) {
-  const { rest } = deps
-  const catalog = createPluginCatalog(rest)
+  const { rest, catalog, status } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(
     rest,
-    // Stryker disable next-line OptionalChaining: reportError is optional on PluginSupportDeps
-    (pluginId, error) => deps.reportError?.(pluginId, error),
+    deps.reports.reportError,
   )
-
-  /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
-  const status = deps.status ?? createWindowPluginStatus(rest)
   const pluginHost = createPluginHost({
     ...mergeHostParts(deps.parts),
     ...deps.kinds,
@@ -50,22 +48,19 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,
-      getPlatform: deps.getPlatform ?? (() => 'windows'),
+      getPlatform: deps.getPlatform,
     }),
     openExternal: (url) => openExternalUrl(url),
-    ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
+    onError: deps.reports.reportError,
     getReaderExtensions: catalog.getReaderExtensions,
     getSetting,
     onSettingChange,
     getTexts: (pluginId) => getPluginTexts(pluginId),
   })
-  const reportLoadError = deps.reportLoadError ?? deps.reportError
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,
     status,
-    ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
+    onError: deps.reports.reportLoadError,
   })
-  /* Stryker restore OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction */
-
   return { pluginHost, pluginLoader }
 }

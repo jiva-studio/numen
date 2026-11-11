@@ -24,10 +24,6 @@ var files embed.FS
 
 func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
-// Statements exposes the SQL this package runs, for tests that inspect the
-// query plan of each statement.
-func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
-
 // errNoVault is returned when the index has no record of the requested vault.
 // Every query for an unknown vault has the same result, an empty one, so
 // callers convert this error into an empty result.

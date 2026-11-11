@@ -60,7 +60,7 @@ type List struct {
 	conditions *when.Conditions
 }
 
-// Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
+// Execute lists the commands that a plugin backend runs.
 func (u List) Execute() []plugin.CommandEntry {
 	return slices.DeleteFunc(u.ExecuteAll(), func(one plugin.CommandEntry) bool { return !u.commands.GetParts(one.PluginID).HasBackend })
 }
@@ -69,9 +69,6 @@ func (u List) Execute() []plugin.CommandEntry {
 // A plugin with neither a frontend nor a backend has nothing that runs its commands, and a plugin the
 // host holds suspended runs none; both list none.
 func (u List) ExecuteAll() []plugin.CommandEntry {
-	if u.commands == nil {
-		return nil
-	}
 	return slices.DeleteFunc(u.commands.ListCommands(), func(one plugin.CommandEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
@@ -82,32 +79,15 @@ func (u List) ExecuteAll() []plugin.CommandEntry {
 // the full id of its shared command, leaving out those of a plugin the host holds suspended and of a
 // plugin with neither a frontend nor a backend.
 func (u List) ExecuteHandlers() []plugin.CommandEntry {
-	if u.commands == nil {
-		return nil
-	}
 	return slices.DeleteFunc(u.commands.ListHandlers(), func(one plugin.CommandEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
 }
 
-func getParts(commands pluginport.PluginCommands, pluginID string) plugin.Parts {
-	if commands == nil {
-		return plugin.Parts{}
-	}
-	return commands.GetParts(pluginID)
-}
-
-func hasBackend(commands pluginport.PluginCommands, pluginID string) bool {
-	return commands != nil && commands.GetParts(pluginID).HasBackend
-}
-
 // ExecuteSlots lists the slot entries of the enabled plugins, leaving out those of a plugin the host
 // holds suspended and of a plugin with neither a frontend nor a backend.
 func (u List) ExecuteSlots() []plugin.SlotEntry {
-	if u.commands == nil {
-		return nil
-	}
 	return slices.DeleteFunc(u.commands.ListSlots(), func(one plugin.SlotEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
@@ -117,9 +97,6 @@ func (u List) ExecuteSlots() []plugin.SlotEntry {
 // ExecuteKeybindings lists the keybindings of the enabled plugins, leaving out those of a plugin the host
 // holds suspended and of a plugin with neither a frontend nor a backend.
 func (u List) ExecuteKeybindings() []plugin.KeybindingEntry {
-	if u.commands == nil {
-		return nil
-	}
 	return slices.DeleteFunc(u.commands.ListKeybindings(), func(one plugin.KeybindingEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
@@ -151,9 +128,6 @@ type Run struct {
 // command runs the handler the plugin declares. A call that does not meet the declaration is
 // ErrBadArguments, saying what is wrong, and nothing is run.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
-	if u.commands == nil || u.runs == nil {
-		return plugin.CommandResult{}, domain.ErrUnavailable
-	}
 	var entries []plugin.CommandEntry
 	if manifest.IsSharedCommand(call.Command) {
 		entries = u.commands.ListHandlers()
@@ -259,9 +233,6 @@ func normalizeArguments(declared manifest.Command, arguments map[string]string) 
 }
 
 func (u Run) getContentType(path string) domain.ContentType {
-	if u.types == nil {
-		return domain.UnknownContentType
-	}
 	return u.types.GetContentType(path)
 }
 
@@ -299,9 +270,6 @@ type ContentTypes struct {
 // Execute returns the content type of each registered extension, lowercase and without the dot.
 func (u ContentTypes) Execute() map[string]string {
 	out := map[string]string{}
-	if u.types == nil {
-		return out
-	}
 	for _, extension := range u.types.ListExtensions(domain.AnyContentType) {
 		out[extension] = string(u.types.GetContentType("file." + extension))
 	}

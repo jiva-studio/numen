@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import App from './app/App.vue'
+import { createRoot } from './app/createRoot'
 import './app/app.css'
 
 // The webview's default menu carries browser entries (inspect, reload, view source),
@@ -10,4 +10,4 @@ document.addEventListener('contextmenu', (event) => {
   event.preventDefault()
 })
 
-createApp(App).mount('#app')
+createApp(createRoot()).mount('#app')

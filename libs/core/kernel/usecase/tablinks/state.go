@@ -1,7 +1,6 @@
 package tablinks
 
 import (
-	"errors"
 	"slices"
 	"sync"
 	"time"
@@ -17,10 +16,7 @@ type Tabs struct {
 // New returns the use cases over an empty state. A detached tab that no window reports within grace is
 // unlinked, and so are the tabs of a window that does not watch again within grace of its last watch
 // closing.
-func New(grace time.Duration, schedule Schedule, events Events) (*Tabs, error) {
-	if schedule == nil {
-		return nil, errors.New("tab links need a schedule")
-	}
+func New(grace time.Duration, schedule Schedule, events Events) *Tabs {
 	s := &state{
 		events:  events,
 		roster:  newRoster(),
@@ -28,7 +24,7 @@ func New(grace time.Duration, schedule Schedule, events Events) (*Tabs, error) {
 	}
 	s.owners = &ownership{state: s}
 	s.expiries = &expiries{grace: grace, schedule: schedule}
-	return &Tabs{Links: &Links{state: s}, Windows: &Windows{state: s}, Transfers: &Transfers{state: s}}, nil
+	return &Tabs{Links: &Links{state: s}, Windows: &Windows{state: s}, Transfers: &Transfers{state: s}}
 }
 
 // state is what the use cases share; mu guards every field of it and of its parts.

@@ -13,7 +13,7 @@ import (
 // Open returns a plugin host for the target that has discovered the plugins in dirs.
 func Open(tb testing.TB, target string, dirs ...string) *container.PluginRoles {
 	tb.Helper()
-	host, err := container.OpenPluginRoles(target, dirs...)
+	host, err := container.OpenPluginRoles(func(error) {}, target, dirs...)
 	if err != nil {
 		tb.Logf("discover plugins: %v", err)
 	}

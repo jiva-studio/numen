@@ -24,12 +24,9 @@ func newFolders(t *testing.T, current shownVault) (*Handler, *textfake.TextVersi
 	t.Helper()
 	files := textfake.Readers{"talk.mp3": []byte("audio")}
 	folders := &textfake.Folders{}
-	versions, err := textfake.NewTextVersions(
+	versions := textfake.NewTextVersions(
 		&textfake.Versions{}, folders, textfake.Plugins{transcription}, files, textfake.NewSteppingClock(),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
 	segments := []domain.TextSegment{{Text: "Hello.\n"}}
 	if _, err := folders.WriteTextFile(t.Context(), transcription, "unrelated.jsonl", segments); err != nil {
 		t.Fatal(err)
@@ -43,10 +40,7 @@ func newFolders(t *testing.T, current shownVault) (*Handler, *textfake.TextVersi
 	if _, err := versions.PutVersion(t.Context(), domain.Vault(current), transcription, report); err != nil {
 		t.Fatal(err)
 	}
-	data, err := textversion.NewPluginData(versions.Versions, textfake.PluginFolders{Files: folders})
-	if err != nil {
-		t.Fatal(err)
-	}
+	data := textversion.NewPluginData(versions.Versions, textfake.PluginFolders{Files: folders})
 	return NewHandler(Values{}, NewPluginFolders(nil, data, current), &SecretItems{}, &SecretGroups{}), versions
 }
 

@@ -14,6 +14,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - `core-client-only-in-api`: a window file outside an `api` segment and `main.ts` importing `@numen/core-client`.
 - `shared-serves-several-slices`: a file of `shared` that one slice imports.
 - `app-is-composition`: a file of `app` over 300 lines, named `use<Name>` or exporting a `use<Name>` composable, calling `watch`, `addEventListener` or a timer, holding a `switch`, more than one decision (`if`, `?:`, `&&`, `||`, `??`, an array method with a callback, loop, `catch`) in a function or more than three in a file.
+- `app-takes-concrete-inputs`: a function of `app` taking more than eight inputs, or an input that narrows the result of another function of `app` with `Pick`, `Omit`, `Partial`, `Required` or `Readonly`.
 - `no-component-below-ui`: a `.vue` file in a `lib`, `api` or `model` segment.
 
 ## Segments and components

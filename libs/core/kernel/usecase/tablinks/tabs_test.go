@@ -45,10 +45,7 @@ const grace = 30 * time.Second
 func newTestRegistry(t *testing.T) (*registry, *timers) {
 	t.Helper()
 	clock := &timers{}
-	r, err := newRegistry(grace, clock.schedule)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := newRegistry(grace, clock.schedule)
 	return r, clock
 }
 
@@ -461,12 +458,6 @@ func TestDetachSurvivesOldWindowReportBeforeNewWindow(t *testing.T) {
 	}
 }
 
-func TestNewRegistryRequiresASchedule(t *testing.T) {
-	if _, err := newRegistry(grace, nil); err == nil {
-		t.Error("a registry with no schedule was made")
-	}
-}
-
 func TestWriteTabsAfterReloadKeepsTabsOfTheNewWindow(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	old := r.Watch("window-old")
@@ -599,10 +590,7 @@ func (s *realTimers) schedule(d time.Duration, f func()) func() bool {
 
 func TestConcurrentWatchWriteDetachMoveAndCloseDoNotRace(t *testing.T) {
 	clock := &realTimers{}
-	r, err := newRegistry(time.Millisecond, clock.schedule)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := newRegistry(time.Millisecond, clock.schedule)
 	var windows sync.WaitGroup
 	for index := range 40 {
 		windows.Go(func() {
@@ -759,12 +747,9 @@ type registry struct {
 	watches map[string]*Watch
 }
 
-func newRegistry(grace time.Duration, schedule Schedule) (*registry, error) {
-	tabs, err := New(grace, schedule, &testEvents{})
-	if err != nil {
-		return nil, err
-	}
-	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: getLockedState(tabs.Links.state), watches: map[string]*Watch{}}, nil
+func newRegistry(grace time.Duration, schedule Schedule) *registry {
+	tabs := New(grace, schedule, &testEvents{})
+	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: getLockedState(tabs.Links.state), watches: map[string]*Watch{}}
 }
 
 // testEvents delivers every event to every subscriber in the order published.

@@ -31,16 +31,10 @@ type scene struct {
 func newScene(t *testing.T, files textfake.Readers) *scene {
 	t.Helper()
 	s := &scene{vault: domain.Vault{ID: "v1", Name: "v1"}, files: files, folders: &textfake.Folders{}}
-	versions, err := textfake.NewTextVersions(
+	versions := textfake.NewTextVersions(
 		&textfake.Versions{}, s.folders, textfake.Plugins{"p.t", "p.link"}, files, textfake.NewSteppingClock(),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fileText, err := textversion.NewFileText(versions.Texts, versions.Versions)
-	if err != nil {
-		t.Fatal(err)
-	}
+	fileText := textversion.NewFileText(versions.Texts, versions.Versions)
 	s.versions = versions
 	s.handler = NewHandler(shownVault{v: s.vault}, fileText)
 	return s

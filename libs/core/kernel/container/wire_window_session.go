@@ -6,10 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/startup"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // windowParts are what the use cases of one window are built over besides its state.
@@ -44,17 +42,7 @@ type windowTools struct {
 type windowSession struct {
 	cases      windowCases
 	tools      windowTools
-	userSwitch userSwitch
-}
-
-// userSwitch shows a vault as a person asks for it.
-type userSwitch struct {
-	switching windowsession.VaultSwitch
-}
-
-// ShowVault shows v in the window and points the plugins at it.
-func (u userSwitch) ShowVault(ctx context.Context, v domain.Vault) error {
-	return u.switching.Execute(ctx, v, nil)
+	userSwitch windowsession.UserSwitch
 }
 
 func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
@@ -71,11 +59,7 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
-	switching := startup.SwitchVault[*windowsession.PluginOpen]{
-		Show:        show.Execute,
-		FollowVault: func(path string) { setPluginVaultPath(a, path) },
-		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
-	}
+	switching := windowsession.NewSwitchVault(show, a.PluginHost.Runtime, state)
 	return windowSession{
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, c.ShouldRebuildIndex),
@@ -95,6 +79,6 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 		},
-		userSwitch: userSwitch{switching: switching},
+		userSwitch: windowsession.NewUserSwitch(switching),
 	}
 }

@@ -24,5 +24,3 @@ export function createWindowFoundation() {
     settingsRequests: createEmitter<string | undefined>(),
   }
 }
-
-export type WindowFoundation = ReturnType<typeof createWindowFoundation>

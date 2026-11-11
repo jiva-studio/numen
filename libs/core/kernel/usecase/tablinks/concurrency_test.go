@@ -49,10 +49,7 @@ func busyWindow(r *registry, index, windows, rounds int) {
 
 func TestConcurrentWindowsLeaveNoState(t *testing.T) {
 	const windows, rounds = 6, 60
-	tabs, err := New(time.Millisecond, scheduleAfterDelay, &testEvents{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	tabs := New(time.Millisecond, scheduleAfterDelay, &testEvents{})
 	r := &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: getLockedState(tabs.Links.state), watches: map[string]*Watch{}}
 
 	var working sync.WaitGroup

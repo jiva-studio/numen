@@ -62,6 +62,12 @@ type closeList struct{ fns []func() error }
 
 func (l *closeList) add(closer func() error) { l.fns = append(l.fns, closer) }
 
+func (d stubSession) session() cli.Session {
+	return cli.Session{
+		OpenVaults: d.OpenVaults, OpenIndexed: d.OpenIndexed, GetPluginCommands: d.GetPluginCommands, Close: d.Close,
+	}
+}
+
 func (d stubSession) OpenVaults() (cli.Vaults, error) {
 	if d.Vaults == nil {
 		return cli.Vaults{}, errNotProvided
@@ -78,7 +84,7 @@ func (d stubSession) OpenIndexed(ctx context.Context, options cli.IndexOptions) 
 
 func (d stubSession) GetPluginCommands() cli.PluginCommands {
 	if d.PluginCommands == nil {
-		return cli.PluginCommands{}
+		return cli.PluginCommands{List: newScenarios(noCommands{}, noCommands{}, nil, nil, nil).List}
 	}
 	return d.PluginCommands()
 }
@@ -97,7 +103,7 @@ func (d stubSession) Close() ([]string, error) {
 var errNotProvided = errors.New("the test provided no such part")
 
 func (s *session) deps(where cli.Locations) cli.Session {
-	return s.depsOver(where, s.parts(where))
+	return s.depsOver(where, s.parts(where)).session()
 }
 
 func (s *session) depsOver(where cli.Locations, parts vaultParts) stubSession {
@@ -170,7 +176,6 @@ func (p vaultParts) build() cli.Vaults {
 	}
 }
 
-// indexedOver is what renames, forgets and erases a vault over rows.
 func (p vaultParts) indexedOver(rows vaultport.VaultRepository) cli.Indexed {
 	find := registry.NewFind(p.ports.Lookup).Execute
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
@@ -257,7 +262,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 
 	var out bytes.Buffer
 	err := cli.Run(t.Context(), &out, io.Discard,
-		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Session { return provided })
+		[]string{"links", "notebook", "Bees.md"}, func(cli.Locations) cli.Session { return provided.session() })
 	if err != nil {
 		t.Fatalf("links: %v\n%s", err, out.String())
 	}

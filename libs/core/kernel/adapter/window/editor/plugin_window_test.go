@@ -59,10 +59,7 @@ func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open window
 
 func newWorkspace(t *testing.T, state *State) *workspace.Handler {
 	t.Helper()
-	links, err := workspace.NewLinks()
-	if err != nil {
-		t.Fatal(err)
-	}
+	links := workspace.NewLinks()
 	store := memoryTabs{}
 	return workspace.NewHandler(state, state.Notices, state, vaults.NewWriteOpenTabs(store), vaults.NewReadOpenTabs(store), links)
 }

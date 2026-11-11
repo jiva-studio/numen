@@ -27,7 +27,7 @@ func (e *queueEndpoint) begin(header http.Header) (string, WorkQueue, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	work := e.endpoint.callers.Work.GetPluginWork()
+	work := e.endpoint.callers.Lent.GetPluginWork()
 	if work == nil {
 		return "", nil, connect.NewError(connect.CodeUnavailable, errNoQueue)
 	}
