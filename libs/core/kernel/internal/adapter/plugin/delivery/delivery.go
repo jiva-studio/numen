@@ -35,11 +35,11 @@ type Snapshot struct {
 }
 
 // Host is what the delivery asks the plugin host for.
-type Host struct {
-	GetSnapshot   func(pluginID string) (Snapshot, bool, error)
-	ListPluginIDs func() []string
-	ReportError   func(err error)
-	GetClient     func(endpoint transport.Endpoint) *http.Client
+type Host interface {
+	GetSnapshot(pluginID string) (Snapshot, bool, error)
+	ListPluginIDs() []string
+	ReportError(err error)
+	GetClient(endpoint transport.Endpoint) *http.Client
 }
 
 // Delivery gives each running plugin its configuration and the secrets it declares, and sends them

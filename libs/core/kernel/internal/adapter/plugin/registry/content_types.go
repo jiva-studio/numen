@@ -1,20 +1,22 @@
-package plugin
+package registry
 
 import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
 )
 
 // ContentTypes gives a file the type of its name, as the table of types says, over the enabled
 // plugins.
 type ContentTypes struct {
-	registry *Registry
-	lookup   *contenttypes.Lookup
+	set    *pluginset.Set
+	lookup *contenttypes.Lookup
 }
 
-func newContentTypes(registry *Registry, lookup *contenttypes.Lookup) *ContentTypes {
-	return &ContentTypes{registry: registry, lookup: lookup}
+// NewContentTypes returns the content types over the set of plugins and the lookup that holds the table.
+func NewContentTypes(set *pluginset.Set, lookup *contenttypes.Lookup) *ContentTypes {
+	return &ContentTypes{set: set, lookup: lookup}
 }
 
 // SetContentTypeTable sets the table of the types of files. Until it is set, a file is of an
@@ -31,5 +33,5 @@ func (c *ContentTypes) GetContentType(name string) domain.ContentType {
 // ListExtensions lists, lowercase, sorted and without the dot, the extensions that give a file a
 // type the mask covers.
 func (c *ContentTypes) ListExtensions(mask domain.ContentType) []string {
-	return c.lookup.ListExtensions(c.registry.set.listEnabled(), mask)
+	return c.lookup.ListExtensions(c.set.ListEnabled(), mask)
 }

@@ -32,7 +32,7 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		t.Fatalf("write manifest failed: %v", err)
 	}
 
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("discover failed: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Fatalf("write manifest failed: %v", err)
 	}
 
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("discover failed: %v", err)
 	}

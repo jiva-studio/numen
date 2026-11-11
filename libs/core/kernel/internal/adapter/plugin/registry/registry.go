@@ -1,10 +1,12 @@
-package plugin
+// Package registry answers which plugins the host knows, which of them are enabled, what state they are in, and which
+// type a file has over them.
+package registry
 
 import (
-	"errors"
 	"slices"
-	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostmode"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -13,50 +15,47 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-var (
-	errPluginNotFound = errors.New("plugin not found")
-	// ErrSafeModeActive is what a call fails with while the host runs in safe mode.
-	ErrSafeModeActive = errors.New("plugin host is running in safe mode")
-	errHostClosed     = errors.New("plugin host is shut down")
-)
-
-// Registry answers which plugins the host knows and which of them are enabled. In safe mode it
-// knows none. A scan of the folders holds discovering for writing and an activation holds it for
-// reading, so that a plugin is not started while the set of plugins changes.
-type Registry struct {
-	set         *pluginSet
-	mode        *Mode
-	sups        *supervision.Supervisors
-	failures    *supervision.Failures
-	readers     *contenttypes.Lookup
-	discovering sync.RWMutex
+// modeState is what the registry reads of the mode of the host.
+type modeState interface {
+	IsSafeMode() bool
 }
 
-func newRegistry(
-	set *pluginSet, mode *Mode, sups *supervision.Supervisors, failures *supervision.Failures, readers *contenttypes.Lookup,
+// Registry answers which plugins the host knows and which of them are enabled. In safe mode it
+// knows none.
+type Registry struct {
+	set      *pluginset.Set
+	mode     modeState
+	sups     *supervision.Supervisors
+	failures *supervision.Failures
+	readers  *contenttypes.Lookup
+}
+
+// New returns the registry over the set of plugins, the mode of the host, the supervisors, the failures and the readers.
+func New(
+	set *pluginset.Set, mode modeState, sups *supervision.Supervisors, failures *supervision.Failures, readers *contenttypes.Lookup,
 ) *Registry {
 	return &Registry{set: set, mode: mode, sups: sups, failures: failures, readers: readers}
 }
 
 // GetPlugins returns all discovered plugins registered with the host, in the order of their ids.
 func (r *Registry) GetPlugins() []manifest.Discovered {
-	v, release := r.set.view()
+	v, release := r.set.View()
 	defer release()
 	if r.mode.IsSafeMode() {
 		return nil
 	}
-	return v.ordered()
+	return v.Ordered()
 }
 
 // GetPlugin retrieves a single enabled plugin by its unique identifier.
 func (r *Registry) GetPlugin(id string) (manifest.Discovered, bool) {
-	v, release := r.set.view()
+	v, release := r.set.View()
 	defer release()
 	if r.mode.IsSafeMode() {
 		return manifest.Discovered{}, false
 	}
-	p, ok := v.get(id)
-	if !ok || !v.isEnabled(id) {
+	p, ok := v.Get(id)
+	if !ok || !v.IsEnabled(id) {
 		return manifest.Discovered{}, false
 	}
 	return p, true
@@ -64,9 +63,9 @@ func (r *Registry) GetPlugin(id string) (manifest.Discovered, bool) {
 
 // IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 func (r *Registry) IsPluginEnabled(pluginID string) bool {
-	v, release := r.set.view()
+	v, release := r.set.View()
 	defer release()
-	return v.isEnabled(pluginID)
+	return v.IsEnabled(pluginID)
 }
 
 // ResolveCapability finds the enabled plugin with the lowest id among those declaring the given
@@ -74,16 +73,16 @@ func (r *Registry) IsPluginEnabled(pluginID string) bool {
 // plugin declares it and it is switched off or the host is in safe mode, NotInstalled when
 // none declares it.
 func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, error) {
-	v, release := r.set.view()
+	v, release := r.set.View()
 	defer release()
 
 	isSafe := r.mode.IsSafeMode()
 	reason := plugindomain.NotInstalled
-	for _, p := range v.ordered() {
+	for _, p := range v.Ordered() {
 		if !p.Manifest.HasCapability(capability) {
 			continue
 		}
-		if isSafe || !v.isEnabled(p.Manifest.ID) {
+		if isSafe || !v.IsEnabled(p.Manifest.ID) {
 			reason = plugindomain.Disabled
 			continue
 		}
@@ -91,7 +90,7 @@ func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, er
 	}
 	missing := &plugindomain.UnavailableError{Capability: capability, Reason: reason}
 	if isSafe {
-		missing.Err = ErrSafeModeActive
+		missing.Err = hostmode.ErrSafeModeActive
 	}
 	return manifest.Discovered{}, missing
 }
@@ -99,9 +98,9 @@ func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, er
 // ResolveService finds the enabled plugin with the lowest id among those that serve the service to
 // the windows.
 func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
-	v, release := r.set.view()
+	v, release := r.set.View()
 	defer release()
-	for _, p := range v.enabled() {
+	for _, p := range v.Enabled() {
 		if p.Manifest.HasService(service) {
 			return p, true
 		}
@@ -113,9 +112,9 @@ func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
 // defined by the enabled plugin with the lowest id among those declaring the
 // type.
 func (r *Registry) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool) {
-	v, release := r.set.view()
+	v, release := r.set.View()
 	defer release()
-	for _, p := range v.enabled() {
+	for _, p := range v.Enabled() {
 		if declared, found := p.Manifest.GetNoteType(string(noteType)); found {
 			return declared.GetProfile(), true
 		}
@@ -132,7 +131,7 @@ func (r *Registry) FindPluginByCapability(capability string) (manifest.Discovere
 // GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and false
 // for a plugin the host does not know.
 func (r *Registry) GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool) {
-	p, ok := r.set.getKnown(pluginID)
+	p, ok := r.set.GetKnown(pluginID)
 	if !ok {
 		return nil, false
 	}

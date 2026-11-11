@@ -1,4 +1,5 @@
-package plugin
+// Package discovery finds the plugins in the folders it is given, registers them, and retires the ones that left the disk.
+package discovery
 
 import (
 	"bytes"
@@ -8,21 +9,37 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostmode"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
-var (
-	errNotForTarget      = errors.New("the plugin does not target this host")
-	errBuiltInRegistered = errors.New("a built-in plugin of this id is registered")
-)
+// ErrNotForTarget is what the registration of a built-in plugin fails with when its manifest does not name the target of the host.
+var ErrNotForTarget = errors.New("the plugin does not target this host")
+
+// modeState is what discovery reads of the mode of the host.
+type modeState interface {
+	IsClosed() bool
+	IsSafeMode() bool
+}
 
 // scanRecorder keeps what a scan found, for the permissions of the declarations that are gone.
 type scanRecorder interface {
-	recordScan(installed []manifest.Discovered)
-	pruneSecretPermissions()
+	RecordScan(installed []manifest.Discovered)
+	PruneSecretPermissions()
+}
+
+// pluginStopper stops the process of a plugin.
+type pluginStopper interface {
+	StopPlugin(ctx context.Context, pluginID string) error
+}
+
+// listenerSync syncs the ports bound for the listeners of the plugins with the host.
+type listenerSync interface {
+	SyncAll(ctx context.Context)
 }
 
 // cacheRemover removes the files a plugin cached.
@@ -33,16 +50,30 @@ type cacheRemover interface {
 // Discovery finds the plugins in the folders it is given, registers them, and retires the ones that
 // left the disk.
 type Discovery struct {
-	registry  *Registry
-	mode      *Mode
+	set       *pluginset.Set
+	scan      *pluginset.ScanLock
+	mode      modeState
 	sups      *supervision.Supervisors
 	stopper   pluginStopper
-	listeners listenerControl
+	listeners listenerSync
 	storage   cacheRemover
 	scans     scanRecorder
 	report    func(error)
 	dirs      []string
 	target    string
+}
+
+// New returns the discovery of the plugins in dirs that target the target, over the set of plugins and the lock that keeps a scan apart
+// from a start, the mode of the host and the
+// parts it informs of a scan; report receives the errors of a scan.
+func New(
+	set *pluginset.Set, scan *pluginset.ScanLock, mode modeState, sups *supervision.Supervisors, stopper pluginStopper, listeners listenerSync,
+	storage cacheRemover, scans scanRecorder, report func(error), dirs []string, target string,
+) *Discovery {
+	return &Discovery{
+		set: set, scan: scan, mode: mode, sups: sups, stopper: stopper, listeners: listeners,
+		storage: storage, scans: scans, report: report, dirs: dirs, target: target,
+	}
 }
 
 // Discover scans the configured directories and synchronizes the registered plugins, and the ports bound
@@ -52,37 +83,37 @@ func (d *Discovery) Discover() error {
 	if err := d.discoverPlugins(); err != nil {
 		return err
 	}
-	d.listeners.syncAll(context.Background())
+	d.listeners.SyncAll(context.Background())
 	return nil
 }
 
 func (d *Discovery) discoverPlugins() error {
-	d.registry.discovering.Lock()
-	defer d.registry.discovering.Unlock()
+	d.scan.BeginScan()
+	defer d.scan.EndScan()
 
 	all, problems := manifestjson.Discover(d.dirs)
 	discovered := manifest.FilterByTarget(all, d.target)
-	discovered, problems = d.registry.set.refuseConflicts(discovered, problems)
+	discovered, problems = d.set.RefuseConflicts(discovered, problems)
 
 	if d.mode.IsClosed() {
-		return errHostClosed
+		return hostmode.ErrHostClosed
 	}
 	if d.mode.IsSafeMode() {
 		return nil
 	}
-	d.scans.recordScan(all)
-	stalePlugins := d.registry.set.replaceDiscovered(discovered, problems)
+	d.scans.RecordScan(all)
+	stalePlugins := d.set.ReplaceDiscovered(discovered, problems)
 
 	for _, problem := range problems {
 		d.report(problem.Err)
 	}
 	for _, id := range stalePlugins {
 		d.retirePlugin(id)
-		if !d.registry.set.isOnDisk(id) {
+		if !d.set.IsOnDisk(id) {
 			d.storage.RemoveCacheDir(id)
 		}
 	}
-	d.scans.pruneSecretPermissions()
+	d.scans.PruneSecretPermissions()
 	return nil
 }
 
@@ -90,14 +121,14 @@ func (d *Discovery) retirePlugin(pluginID string) {
 	if err := d.stopper.StopPlugin(context.Background(), pluginID); err != nil {
 		d.report(err)
 	}
-	if !d.registry.set.isRegistered(pluginID) {
+	if !d.set.IsRegistered(pluginID) {
 		d.sups.Forget(pluginID)
 	}
 }
 
 // RegisterPlugin adds a plugin with the supervisor that tracks it, as discovery does for a plugin found on disk.
 func (d *Discovery) RegisterPlugin(p manifest.Discovered, sup *lifecycle.Supervisor) {
-	d.registry.set.put(p, sup)
+	d.set.Put(p, sup)
 }
 
 // RegisterBuiltIn registers a plugin linked into this binary from its manifest.json and what
@@ -111,9 +142,9 @@ func (d *Discovery) RegisterBuiltIn(manifestJSON []byte, serve func(vars map[str
 		return fmt.Errorf("register built-in plugin: %w", err)
 	}
 	if !slices.Contains(parsed.Targets, d.target) {
-		return fmt.Errorf("register built-in plugin %s: %w: %s", parsed.ID, errNotForTarget, d.target)
+		return fmt.Errorf("register built-in plugin %s: %w: %s", parsed.ID, ErrNotForTarget, d.target)
 	}
-	if err := d.registry.set.addBuiltIn(manifest.Discovered{Dir: "", Manifest: parsed}, serve); err != nil {
+	if err := d.set.AddBuiltIn(manifest.Discovered{Dir: "", Manifest: parsed}, serve); err != nil {
 		return fmt.Errorf("register built-in plugin %s: %w", parsed.ID, err)
 	}
 	return nil

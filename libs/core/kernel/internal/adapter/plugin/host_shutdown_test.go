@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostmode"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"os"
@@ -49,8 +50,8 @@ func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, errHostClosed) {
-		t.Fatalf("expected errHostClosed, got %v", err)
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, hostmode.ErrHostClosed) {
+		t.Fatalf("expected hostmode.ErrHostClosed, got %v", err)
 	}
 	if started.Load() != 0 {
 		t.Fatalf("a plugin was launched after shutdown")
@@ -146,9 +147,9 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 // ResolveCapability reports why no plugin responds: none declares the
 // capability, or those that do are disabled or turned off by safe mode.
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}})
+		setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}})
 	}
 	getReason := func(capability string) plugindomain.UnavailableReason {
 		t.Helper()
@@ -195,8 +196,8 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // A plugin EnsureActive cannot start is distinguished from one that is absent
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	setPlugin(host, "md.numen.a", manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}})
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
+	setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}})
 	if err := setEnabled(t.Context(), host, "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
@@ -213,9 +214,9 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 }
 
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
+		setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
@@ -240,7 +241,7 @@ func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 }
 
 func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 	cmd := wiretest.NewIdleCommand(t.Context())
@@ -272,7 +273,7 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	evicted := host.Teardown.stopper.EvictTargets(canceled, []supervision.Target{{ID: "p", PID: cmd.Process.Pid, Sup: sup, Endpoint: supervision.NoEndpoint()}}, time.Millisecond)
+	evicted := stopperOf(host).EvictTargets(canceled, []supervision.Target{{ID: "p", PID: cmd.Process.Pid, Sup: sup, Endpoint: supervision.NoEndpoint()}}, time.Millisecond)
 
 	if len(evicted) != 0 {
 		t.Fatalf("a failed eviction was counted: %v", evicted)

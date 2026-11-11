@@ -46,7 +46,7 @@ func TestRestoreSettingReplacesTheValueOrRemovesTheSetting(t *testing.T) {
 }
 
 func TestAFailedStartForAListenerIsReportedOnlyOnce(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	failure := errors.New("exec format error")
 
 	if host.Failures.MarkTargetResult("md.numen.sample", failure) {

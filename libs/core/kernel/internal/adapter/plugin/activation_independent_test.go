@@ -44,7 +44,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
 	writeSecondPlugin(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

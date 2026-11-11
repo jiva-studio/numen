@@ -2,6 +2,7 @@ package plugin_test
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostmode"
 	"os"
 	"path/filepath"
 	"testing"
@@ -56,7 +57,7 @@ func TestHostSafeMode(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); !errors.Is(err, plugin.ErrSafeModeActive) {
+	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); !errors.Is(err, hostmode.ErrSafeModeActive) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 

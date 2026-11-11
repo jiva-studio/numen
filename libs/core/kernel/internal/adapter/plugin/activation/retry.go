@@ -1,8 +1,9 @@
-package plugin
+package activation
 
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
@@ -22,20 +23,21 @@ type listenerRefresher interface {
 
 // Retry starts a plugin once, as any use of it does.
 type Retry struct {
-	registry  *Registry
+	set       *pluginset.Set
 	failures  *supervision.Failures
 	activator pluginActivator
 	listeners listenerRefresher
 }
 
-func newRetry(registry *Registry, failures *supervision.Failures, activator pluginActivator, listeners listenerRefresher) *Retry {
-	return &Retry{registry: registry, failures: failures, activator: activator, listeners: listeners}
+// NewRetry returns the retry over the set of plugins, the failures, the activator and the listeners.
+func NewRetry(set *pluginset.Set, failures *supervision.Failures, activator pluginActivator, listeners listenerRefresher) *Retry {
+	return &Retry{set: set, failures: failures, activator: activator, listeners: listeners}
 }
 
 // RetryPlugin starts a plugin once, as any use of it does, and answers why the start failed where it did.
 func (r *Retry) RetryPlugin(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
-	if !r.registry.set.isRegistered(pluginID) {
-		return nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.NotInstalled, Err: errPluginNotFound}
+	if !r.set.IsRegistered(pluginID) {
+		return nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.NotInstalled, Err: pluginset.ErrNotFound}
 	}
 	r.failures.ForgetTargetReport(pluginID)
 	defer r.listeners.RefreshListeners(ctx, pluginID)
@@ -49,5 +51,5 @@ func (r *Retry) RetryPlugin(ctx context.Context, pluginID string) (*plugindomain
 	if errors.As(err, &unavailable) || ctx.Err() != nil {
 		return nil, err
 	}
-	return r.failures.Get(pluginID, r.registry.set.getName(pluginID)), nil
+	return r.failures.Get(pluginID, r.set.GetName(pluginID)), nil
 }

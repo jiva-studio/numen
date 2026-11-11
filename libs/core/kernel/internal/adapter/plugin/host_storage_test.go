@@ -40,7 +40,7 @@ func newStorageHost(t *testing.T) (*Host, string, string) {
 	host := newDiscoveredHost(t)
 	cacheRoot, dataRoot := t.TempDir(), t.TempDir()
 	host.Storage.SetStorageRoots(cacheRoot, dataRoot)
-	setPlugin(host, "org.example.other", manifest.Discovered{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}})
+	setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}})
 	return host, cacheRoot, dataRoot
 }
 
@@ -123,7 +123,7 @@ func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 	}
 	p := getRawPlugin(host, "org.example.sample")
 	p.Manifest.Version = "1.1.0"
-	setPlugin(host, "org.example.sample", p)
+	setPlugin(host, p)
 	launch()
 
 	if _, err := os.Stat(cached); !os.IsNotExist(err) {
@@ -216,7 +216,7 @@ func TestAllPluginsAreGivenTheSameSharedDirectoriesThatSurviveAVersionChange(t *
 	}
 	p := getRawPlugin(host, "org.example.sample")
 	p.Manifest.Version = "9.0.0"
-	setPlugin(host, "org.example.sample", p)
+	setPlugin(host, p)
 	if _, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t"); err != nil {
 		t.Fatal(err)
 	}

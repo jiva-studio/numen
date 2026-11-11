@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/settings"
 	"os"
 	"path/filepath"
 	"slices"
@@ -32,7 +33,7 @@ func newLinkedHost(t *testing.T) *Host {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +45,7 @@ func newLinkedHost(t *testing.T) *Host {
 func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	host := newLinkedHost(t)
 	getIDs := func() []string {
-		return host.Registry.set.getRequirementIDs("md.numen.sample")
+		return partsOf(host).set.GetRequirementIDs("md.numen.sample")
 	}
 	if got := getIDs(); !slices.Equal(got, []string{"large-weights"}) {
 		t.Errorf("requirements = %v, want the large weights", got)
@@ -82,10 +83,10 @@ func TestCheckPluginSettingAcceptsPathsOfItsType(t *testing.T) {
 	}{
 		{"dictionary", "", nil},
 		{"dictionary", text, nil},
-		{"dictionary", model, errNotAccepted},
-		{"dictionary", tmp, errNotAFile},
-		{"dictionary", filepath.Join(tmp, "absent.txt"), errPathNotFound},
-		{"dictionary", 3.0, errPathNotFound},
+		{"dictionary", model, settings.ErrNotAccepted},
+		{"dictionary", tmp, settings.ErrNotAFile},
+		{"dictionary", filepath.Join(tmp, "absent.txt"), settings.ErrPathNotFound},
+		{"dictionary", 3.0, settings.ErrPathNotFound},
 		{"model", "anything", nil},
 	} {
 		err := host.Settings.CheckPluginSetting("md.numen.sample", tc.key, tc.value)

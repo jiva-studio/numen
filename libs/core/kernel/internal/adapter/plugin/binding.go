@@ -1,9 +1,14 @@
 package plugin
 
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostmode"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/teardown"
+)
+
 // Binding gives the host the mode and the vault path the plugins run under.
 type Binding struct {
-	teardown *Teardown
-	mode     *Mode
+	teardown *teardown.Teardown
+	mode     *hostmode.Mode
 }
 
 // SetSafeMode enables or disables safe recovery mode. Entering it stops every running plugin.

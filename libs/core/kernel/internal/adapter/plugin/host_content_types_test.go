@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"reflect"
 	"slices"
 	"testing"
@@ -14,11 +15,11 @@ import (
 )
 
 func newReaderHost(manifests ...catalogmanifest.Manifest) *Host {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
-		setPlugin(host, manifest.ID, catalogmanifest.Discovered{Manifest: manifest})
+		setPlugin(host, catalogmanifest.Discovered{Manifest: manifest})
 	}
 	return host
 }
@@ -52,7 +53,7 @@ func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 		t.Fatalf("readers = %+v; want %+v", got, want)
 	}
 
-	host.Settings.SetSettings(map[string]map[string]any{"org.example.a": {settingEnabled: false}})
+	host.Settings.SetSettings(map[string]map[string]any{"org.example.a": {pluginset.SettingEnabled: false}})
 	if got := getReaders(host)["org.example.b"]; !reflect.DeepEqual(got, []plugindomain.ReaderInfo{{ID: "pdf", Extensions: []string{"pdf"}}}) {
 		t.Fatalf("with the lower id disabled, readers = %+v", got)
 	}

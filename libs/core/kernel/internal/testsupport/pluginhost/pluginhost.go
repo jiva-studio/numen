@@ -9,6 +9,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/activation"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/configpush"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/discovery"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/events"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostmode"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/registry"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 )
@@ -36,15 +43,15 @@ func dependencies() *provision.Registry {
 
 // Roles presents the roles of a host as one value, for a test that gives a bridge the whole host.
 type Roles struct {
-	*plugin.Activation
-	*plugin.Registry
-	*plugin.Settings
-	*plugin.ConfigPush
+	*activation.Activation
+	*registry.Registry
+	*settings.Settings
+	*configpush.ConfigPush
 	*supervision.Failures
-	*plugin.Events
-	*plugin.Mode
-	*plugin.ContentTypes
-	*plugin.Discovery
+	*events.Events
+	*hostmode.Mode
+	*registry.ContentTypes
+	*discovery.Discovery
 	*supervision.Services
 }
 

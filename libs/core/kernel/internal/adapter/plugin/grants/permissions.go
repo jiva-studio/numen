@@ -1,4 +1,5 @@
-package lifecycle
+// Package grants holds the permissions the manifest of a plugin gives it.
+package grants
 
 import (
 	"slices"
@@ -16,7 +17,8 @@ type Permissions struct {
 	validator security.VaultPathValidator
 }
 
-func newPermissions() Permissions {
+// New returns the permissions of a plugin that holds none.
+func New() Permissions {
 	return Permissions{validator: security.NewVaultPathValidator()}
 }
 

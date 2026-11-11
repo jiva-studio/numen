@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -44,13 +45,26 @@ type stdinKey struct {
 	pid      int
 }
 
+// processTable is what a start of a process reads and writes of the supervisors.
+type processTable interface {
+	Clients() *transport.Clients
+	AttachProcess(ctx context.Context, attach ProcessAttachment) error
+	AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, now time.Time) error
+}
+
+// launchServices is what a start of a process reads of the services the host gives the plugins.
+type launchServices interface {
+	GetDependencies() pluginport.DependencyRegistry
+	OpenHostEndpoint(ctx context.Context) (int, error)
+}
+
 // Processes starts the process of a plugin, or the handler of a built-in one, and holds the pipes it
 // opened for the process until the process exits.
 type Processes struct {
-	sups     *Supervisors
+	sups     processTable
 	clock    machineport.Clock
 	report   func(error)
-	services *Services
+	services launchServices
 	storage  *storage.Storage
 
 	mu       sync.RWMutex
@@ -63,7 +77,7 @@ type Processes struct {
 }
 
 // NewProcesses returns the starter of the processes the supervisors track.
-func NewProcesses(sups *Supervisors, clock machineport.Clock, report func(error), services *Services, files *storage.Storage) *Processes {
+func NewProcesses(sups processTable, clock machineport.Clock, report func(error), services launchServices, files *storage.Storage) *Processes {
 	return &Processes{
 		sups: sups, clock: clock, report: report, services: services, storage: files,
 		limits: process.DefaultLimits(), policy: lifecycle.DefaultActivationPolicy(),

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/listeners"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net"
@@ -181,7 +183,7 @@ func newUndiscoveredListenerHost(t *testing.T, name string, defaultPort int, lis
 	t.Helper()
 	root := t.TempDir()
 	createListenerPlugin(t, root, name, defaultPort)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startRelayLauncher(t, &started, listenerToken))
@@ -205,9 +207,9 @@ func newListenerHost(t *testing.T) listenerHost {
 	return w
 }
 
-func waitForFailure(t *testing.T, host *Host) PluginStatus {
+func waitForFailure(t *testing.T, host *Host) registry.PluginStatus {
 	t.Helper()
-	var status PluginStatus
+	var status registry.PluginStatus
 	wiretest.WaitUntil(t, "the plugin to be failed", func() bool {
 		var ok bool
 		status, ok = host.Registry.GetPluginStatus(listenerPlugin)
@@ -528,7 +530,7 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	root := t.TempDir()
 	port := getFreePort(t)
 	writeFixedPortListenerPlugin(t, root, port)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
@@ -584,8 +586,8 @@ func TestCheckPluginSettingAcceptsOnlyFreeOrBoundPort(t *testing.T) {
 	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(takenPort)); err == nil {
 		t.Errorf("CheckPluginSetting accepted the taken port %d", takenPort)
 	}
-	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(80)); !errors.Is(err, errListenerPortValue) {
-		t.Errorf("CheckPluginSetting of port 80 = %v, want errListenerPortValue", err)
+	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(80)); !errors.Is(err, listeners.ErrListenerPortValue) {
+		t.Errorf("CheckPluginSetting of port 80 = %v, want listeners.ErrListenerPortValue", err)
 	}
 	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(freePort)); err != nil {
 		t.Errorf("CheckPluginSetting of the free port %d = %v, want nil", freePort, err)

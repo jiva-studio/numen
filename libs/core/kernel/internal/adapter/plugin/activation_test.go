@@ -21,7 +21,7 @@ func newDiscoveredHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

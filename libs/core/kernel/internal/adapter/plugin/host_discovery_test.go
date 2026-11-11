@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/registry"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -25,7 +27,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(broken, "manifest.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
@@ -39,7 +41,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	if len(reported) != 1 {
 		t.Fatalf("expected one reported problem, got %v", reported)
 	}
-	var failed []PluginStatus
+	var failed []registry.PluginStatus
 	for _, status := range host.Registry.GetPluginStatuses() {
 		if status.Failed {
 			failed = append(failed, status)
@@ -53,7 +55,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -75,15 +77,15 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatal("a plugin removed from disk is still registered")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, errPluginNotFound) {
-		t.Fatalf("expected errPluginNotFound, got %v", err)
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, pluginset.ErrNotFound) {
+		t.Fatalf("expected pluginset.ErrNotFound, got %v", err)
 	}
 }
 
 func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -128,7 +130,7 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -158,7 +160,7 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 
 	var wg sync.WaitGroup
 	for range 8 {
@@ -179,7 +181,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	host.Registry.discovering.Lock()
+	partsOf(host).scan.BeginScan()
 
 	reply := make(chan error, 1)
 	calling := make(chan struct{})
@@ -191,15 +193,12 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	<-calling
 	runtime.Gosched()
 
-	if host.Registry.discovering.TryRLock() {
-		t.Fatal("the discovery lock is not held")
-	}
 	select {
 	case err := <-reply:
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
 	default:
 	}
-	host.Registry.discovering.Unlock()
+	partsOf(host).scan.EndScan()
 	if err := <-reply; err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -223,7 +222,7 @@ func TestAPluginThatDeclaresATabKindOfAnotherPluginIsRefused(t *testing.T) {
 	}
 	write("first", "org.example.first")
 	write("second", "org.example.second")
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := openHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 

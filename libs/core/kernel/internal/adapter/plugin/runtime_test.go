@@ -69,7 +69,7 @@ func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
 }
 
 func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
@@ -93,7 +93,7 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 }
 
 func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
@@ -114,7 +114,7 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 }
 
 func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
@@ -138,7 +138,7 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 }
 
 func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
@@ -159,7 +159,7 @@ func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
 }
 
 func TestAPluginIsNotLaunchedWhenNothingProvisionsItsRuntime(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
@@ -172,7 +172,7 @@ func TestAPluginIsNotLaunchedWhenNothingProvisionsItsRuntime(t *testing.T) {
 }
 
 func TestAPluginIsNotLaunchedWithARuntimeTheHostDoesNotKnow(t *testing.T) {
-	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	host := openHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
