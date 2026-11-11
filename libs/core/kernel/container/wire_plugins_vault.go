@@ -211,7 +211,7 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	if c.vault.TextVersions == nil {
 		return nil
 	}
-	run := newPluginCommands(c, c.RunningHost).Run
+	run := newPluginCommands(c, c.RunningHost, nil).Run
 	items, err := textversion.NewVersionItems(c.vault.TextVersions, run, c.RunningHost.Watch)
 	if err != nil {
 		c.settings.ErrorHandler(err)
@@ -225,7 +225,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost).Run, Readers: vaultReaders(c.vault),
+		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
 		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }

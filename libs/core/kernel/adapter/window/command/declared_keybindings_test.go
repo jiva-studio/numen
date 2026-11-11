@@ -7,9 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -38,7 +36,7 @@ func (keyBindingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListCommands_ListsTheKeybindingsOfEnabledPlugins(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(keyBindingPlugins{}, keyBindingPlugins{}, nil, nil, nil))
+	handler := newHandler(newScenarios(keyBindingPlugins{}, keyBindingPlugins{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {

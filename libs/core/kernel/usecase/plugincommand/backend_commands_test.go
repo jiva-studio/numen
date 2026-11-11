@@ -43,7 +43,7 @@ func (m *mixedCommands) RunCommand(_ context.Context, call plugin.CommandCall) (
 }
 
 func TestTheCommandLineListsOnlyCommandsOfPluginsThatHaveABackend(t *testing.T) {
-	commands := plugincommand.NewCommands(&mixedCommands{}, &mixedCommands{}, getTypes(), nil, nil)
+	commands := newScenarios(&mixedCommands{}, &mixedCommands{}, getTypes(), nil, nil)
 
 	entries := commands.List.Execute()
 
@@ -53,7 +53,7 @@ func TestTheCommandLineListsOnlyCommandsOfPluginsThatHaveABackend(t *testing.T) 
 }
 
 func TestTheWindowListsTheCommandsOfEveryRunningPluginWhateverPartRunsThem(t *testing.T) {
-	commands := plugincommand.NewCommands(&mixedCommands{}, &mixedCommands{}, getTypes(), nil, nil)
+	commands := newScenarios(&mixedCommands{}, &mixedCommands{}, getTypes(), nil, nil)
 
 	entries := commands.List.ExecuteAll()
 
@@ -65,7 +65,7 @@ func TestTheWindowListsTheCommandsOfEveryRunningPluginWhateverPartRunsThem(t *te
 func TestACommandOfAPluginWithoutABackendIsNotRunInABackend(t *testing.T) {
 	declared := &mixedCommands{}
 
-	_, err := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
+	_, err := newScenarios(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "md.numen.tree", Command: "tree.open",
 	})
 
@@ -77,7 +77,7 @@ func TestACommandOfAPluginWithoutABackendIsNotRunInABackend(t *testing.T) {
 func TestACommandOfAPluginWithABackendIsRunInItsBackend(t *testing.T) {
 	declared := &mixedCommands{}
 
-	result, err := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
+	result, err := newScenarios(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "md.numen.cards", Command: "deck.create",
 	})
 

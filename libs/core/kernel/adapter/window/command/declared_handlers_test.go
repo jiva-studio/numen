@@ -8,9 +8,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
 // handlingPlugins declares a handler of a plugin with a backend, one with items, and one of a plugin
@@ -33,7 +31,7 @@ func (handlingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListCommands_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(handlingPlugins{}, handlingPlugins{}, nil, nil, nil))
+	handler := newHandler(newScenarios(handlingPlugins{}, handlingPlugins{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -66,8 +64,8 @@ func (p commandReadsCounted) ListCommands() []plugin.CommandEntry {
 
 func TestListCommandItems_OfASharedCommandReadsOnlyTheHandlers(t *testing.T) {
 	reads := 0
-	commands := plugincommand.NewCommands(commandReadsCounted{reads: &reads}, commandReadsCounted{reads: &reads}, nil, nil, nil)
-	handler := command.NewHandler(shownVault{}, commands.WithVersions(&versionItems{}))
+	commands := newScenarios(commandReadsCounted{reads: &reads}, commandReadsCounted{reads: &reads}, nil, nil, nil)
+	handler := newHandler(commands.withVersions(&versionItems{}))
 
 	list := listItemsOfOne(t, handler, "org.example.scans", "app:link.downloadMedia", "scans/page.png")
 

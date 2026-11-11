@@ -7,9 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -40,7 +38,7 @@ func (menuPlacingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListCommands_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheManifests(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil, nil))
+	handler := newHandler(newScenarios(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -74,7 +72,7 @@ func TestListCommands_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheManifest
 }
 
 func TestListCommands_ListsNoMenuEntryOfASuspendedPlugin(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil, nil))
+	handler := newHandler(newScenarios(menuPlacingPlugins{}, menuPlacingPlugins{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -102,7 +100,7 @@ func (viewAndSubmenuPlugins) ListSlots() []plugin.SlotEntry {
 }
 
 func TestListCommands_CarriesAViewAndASubmenuWithTheirTitleIconAndCondition(t *testing.T) {
-	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(viewAndSubmenuPlugins{}, viewAndSubmenuPlugins{}, nil, nil, nil))
+	handler := newHandler(newScenarios(viewAndSubmenuPlugins{}, viewAndSubmenuPlugins{}, nil, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {

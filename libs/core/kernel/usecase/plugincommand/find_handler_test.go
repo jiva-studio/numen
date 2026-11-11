@@ -23,8 +23,8 @@ func (readingPlugins) ListHandlers() []plugin.CommandEntry {
 	}
 }
 
-func newReading() plugincommand.Commands {
-	return plugincommand.NewCommands(&readingPlugins{}, &readingPlugins{}, getTypes(), nil, nil)
+func newReading() scenarios {
+	return newScenarios(&readingPlugins{}, &readingPlugins{}, getTypes(), nil, nil)
 }
 
 func TestListSharedHandlersListsTheHandlersABackendRunsWithoutItemsByPluginID(t *testing.T) {
@@ -81,7 +81,7 @@ func TestRunPassesTheVersionArgumentToACommandWithItems(t *testing.T) {
 	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "org.example.proofs", Command: manifest.Command{
 		ID: "proofread", Title: "Proofread", When: "version.isLive",
 	}}}}
-	run := plugincommand.NewCommands(declared, declared, getTypes(), nil, nil).Run
+	run := newScenarios(declared, declared, getTypes(), nil, nil).Run
 
 	_, err := run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "org.example.proofs", Command: "proofread", Path: "talks/a.mp3",

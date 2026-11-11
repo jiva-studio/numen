@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -92,7 +93,7 @@ func createServices(state *State) *Services {
 			filewindow.NewFolders(state, state.Events, nil, nil, nil),
 			filewindow.NewChanges(state, state.Notices, nil, nil, nil),
 		),
-		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil)),
+		Command: newEmptyCommandHandler(state),
 		Media:   mediawindow.NewHandler(state, state, nil),
 		Plugin:  numenv1connect.UnimplementedPluginServiceHandler{},
 		server:  NewFileServer(state, nil),
@@ -231,4 +232,10 @@ func writeLink(links *note.EditLinks, names edit.NameQueries, writes *Writes) *n
 func (o *Installation) WrapPluginSwitch(tb testing.TB, wrap func(next windowsession.VaultSwitch) windowsession.VaultSwitch) {
 	tb.Helper()
 	o.State.Switch = wrap(o.State.Switch)
+}
+
+func newEmptyCommandHandler(state *State) *command.Handler {
+	list := plugincommand.NewList(nil, when.NewConditions())
+	run := plugincommand.NewRun(nil, nil, nil, nil, nil, when.NewConditions())
+	return command.NewHandler(state, plugincommand.NewListCommands(list, nil), plugincommand.NewRunCommand(list, run, nil), plugincommand.NewListItems(list, nil))
 }

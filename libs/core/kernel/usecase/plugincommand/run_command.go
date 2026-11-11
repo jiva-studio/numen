@@ -19,6 +19,12 @@ type RunCommand struct {
 	versions VersionItems
 }
 
+// NewRunCommand makes the scenario that runs a command of the list through run. versions are the text
+// versions that a command with items runs over; without them such a command runs nothing.
+func NewRunCommand(list List, run Run, versions VersionItems) RunCommand {
+	return RunCommand{list: list, run: run, versions: versions}
+}
+
 // Execute runs the call over the vault. A call that is not a command, matches none, or names a version
 // the file does not offer is ErrUnknownCommand or ErrBadArguments, and nothing is run.
 func (u RunCommand) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {

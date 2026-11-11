@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -53,11 +54,13 @@ func mountMedia(w *windowWiring) {
 }
 
 func mountCommand(w *windowWiring) {
-	commands := getPluginCommands(plugins(w.cfg))
-	if menu := openVersionItems(plugins(w.cfg)); menu != nil {
-		commands = commands.WithVersions(menu)
+	p := plugins(w.cfg)
+	var versions plugincommand.VersionItems
+	if menu := openVersionItems(p); menu != nil {
+		versions = menu
 	}
-	handler := command.NewHandler(w.inst.State, commands)
+	commands := newPluginCommands(p, p.PluginHost, versions)
+	handler := command.NewHandler(w.inst.State, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.Gate.CountQuestions(), handler)))
 }
 

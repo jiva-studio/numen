@@ -32,9 +32,11 @@ type Handler struct {
 	listItems  plugincommand.ListItems
 }
 
-// NewHandler makes the handler over the scenarios of the commands.
-func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler {
-	return &Handler{vaults: vaults, listing: commands.Listing, runCommand: commands.RunCommand, listItems: commands.ListItems}
+// NewHandler makes the handler over the scenarios that list and run the commands.
+func NewHandler(
+	vaults VaultProvider, listing plugincommand.ListCommands, runCommand plugincommand.RunCommand, listItems plugincommand.ListItems,
+) *Handler {
+	return &Handler{vaults: vaults, listing: listing, runCommand: runCommand, listItems: listItems}
 }
 
 // NewRoute is where CommandService is mounted, what the schema generated to answer it, and the
