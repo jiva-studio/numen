@@ -36,7 +36,6 @@ func newRoster() *roster {
 	}
 }
 
-// ensure returns the entry of the window, which it makes where there is none.
 func (r *roster) ensure(windowID string) *windowEntry {
 	entry := r.windows[windowID]
 	if entry == nil {
@@ -46,7 +45,6 @@ func (r *roster) ensure(windowID string) *windowEntry {
 	return entry
 }
 
-// prune forgets the entry of the window when it holds nothing.
 func (r *roster) prune(windowID string) {
 	if entry := r.windows[windowID]; entry != nil && entry.isEmpty() {
 		delete(r.windows, windowID)

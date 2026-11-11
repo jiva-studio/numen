@@ -27,7 +27,6 @@ type Handler struct {
 	secretGroupCalls
 }
 
-// secretItemCalls are the calls that change one secret.
 type secretItemCalls interface {
 	CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error)
 	RenameSecret(context.Context, *connect.Request[v1.RenameSecretRequest]) (*connect.Response[v1.RenameSecretResponse], error)
@@ -36,7 +35,6 @@ type secretItemCalls interface {
 	MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error)
 }
 
-// secretGroupCalls are the calls that change the groups of secrets and who may read them.
 type secretGroupCalls interface {
 	RenameSecretGroup(
 		context.Context, *connect.Request[v1.RenameSecretGroupRequest],

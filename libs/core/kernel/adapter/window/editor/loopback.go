@@ -28,12 +28,10 @@ type FileServer struct {
 	open   *file.OpenVaultFile
 }
 
-// shownVault is the vault the window shows.
 type shownVault interface {
 	GetCurrentVault() domain.Vault
 }
 
-// taskList is where the work of the window is listed.
 type taskList interface {
 	AddTask(pos work.Task)
 }

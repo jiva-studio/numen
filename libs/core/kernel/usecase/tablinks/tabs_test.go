@@ -764,7 +764,7 @@ func newRegistry(grace time.Duration, schedule Schedule) (*registry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: heldState(tabs.Links.state), watches: map[string]*Watch{}}, nil
+	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: getLockedState(tabs.Links.state), watches: map[string]*Watch{}}, nil
 }
 
 // testEvents delivers every event to every subscriber in the order published.
@@ -802,8 +802,7 @@ func (e *testEvents) Subscribe() (<-chan Event, func()) {
 	}
 }
 
-// heldState is the state behind the shared handle of a use case, which a test reads under the lock.
-func heldState(host shared) *state {
+func getLockedState(host shared) *state {
 	s, release := host.hold()
 	release()
 	return s

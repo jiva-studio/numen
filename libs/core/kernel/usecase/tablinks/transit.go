@@ -88,9 +88,9 @@ func (t *transit) isTransferringInto(windowID, tabID string) bool {
 
 func (t *transit) endMove(tabID string, pending *move, outcome tablink.MoveError) {
 	pending.cancel()
-	if held := t.transfers[tabID]; held != nil {
-		held.move = nil
-		if held.detach == nil {
+	if entry := t.transfers[tabID]; entry != nil {
+		entry.move = nil
+		if entry.detach == nil {
 			delete(t.transfers, tabID)
 		}
 	}
@@ -99,9 +99,9 @@ func (t *transit) endMove(tabID string, pending *move, outcome tablink.MoveError
 
 func (t *transit) endDetach(tabID string, pending *detach, outcome tablink.MoveError) {
 	pending.cancel()
-	if held := t.transfers[tabID]; held != nil {
-		held.detach = nil
-		if held.move == nil {
+	if entry := t.transfers[tabID]; entry != nil {
+		entry.detach = nil
+		if entry.move == nil {
 			delete(t.transfers, tabID)
 		}
 	}
@@ -118,12 +118,12 @@ func (t *transit) endTransfers(tabID string, outcome tablink.MoveError) {
 }
 
 func (t *transit) endMovesInto(windowID string) {
-	for tabID, held := range t.transfers {
-		if held.move != nil && held.move.targetWindowID == windowID {
-			t.endMove(tabID, held.move, tablink.MoveErrorWindowClosed)
+	for tabID, entry := range t.transfers {
+		if entry.move != nil && entry.move.targetWindowID == windowID {
+			t.endMove(tabID, entry.move, tablink.MoveErrorWindowClosed)
 		}
-		if held.detach != nil && held.detach.windowID == windowID {
-			t.endDetach(tabID, held.detach, tablink.MoveErrorWindowClosed)
+		if entry.detach != nil && entry.detach.windowID == windowID {
+			t.endDetach(tabID, entry.detach, tablink.MoveErrorWindowClosed)
 		}
 	}
 }

@@ -8,7 +8,6 @@ import (
 // maxColorIndex is the number of group colors; groups past it share colors.
 const maxColorIndex = 4
 
-// linkGroups are the link groups of the tabs.
 type linkGroups interface {
 	find(tabID string) *Group
 	remove(tabID string) bool

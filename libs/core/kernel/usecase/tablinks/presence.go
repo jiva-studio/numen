@@ -9,10 +9,8 @@ type expiry struct {
 	hasAccepted bool
 }
 
-// hasWatch reports whether the window is watching. A window with no entry is not.
 func (e *windowEntry) hasWatch() bool { return e != nil && len(e.watches) > 0 }
 
-// isLive reports whether the window is watching, or accepted a tab and waits out the grace period.
 func (e *windowEntry) isLive() bool {
 	return e.hasWatch() || (e != nil && e.removal != nil && e.removal.hasAccepted)
 }
@@ -21,7 +19,6 @@ func (e *windowEntry) isEmpty() bool {
 	return !e.isReported && !e.isListed && len(e.claims) == 0 && len(e.watches) == 0 && e.removal == nil
 }
 
-// removeWatch drops the watch and reports whether it was the last of the window.
 func (e *windowEntry) removeWatch(w *Watch) bool {
 	if e == nil {
 		return true

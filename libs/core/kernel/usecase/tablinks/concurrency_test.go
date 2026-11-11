@@ -9,13 +9,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 )
 
-// scheduleAfterDelay runs f on its own goroutine after d, the way the application schedules.
 func scheduleAfterDelay(d time.Duration, f func()) func() bool {
 	return time.AfterFunc(d, f).Stop
 }
 
-// busyWindow drives one window the way a window does: it watches, reports its tabs, links them, moves a tab
-// to the next window, detaches another, and closes its watch, over and over.
 func busyWindow(r *registry, index, windows, rounds int) {
 	id := "window-" + strconv.Itoa(index)
 	next := "window-" + strconv.Itoa((index+1)%windows)
@@ -56,7 +53,7 @@ func TestConcurrentWindowsLeaveNoState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: heldState(tabs.Links.state), watches: map[string]*Watch{}}
+	r := &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: getLockedState(tabs.Links.state), watches: map[string]*Watch{}}
 
 	var working sync.WaitGroup
 	for index := range windows {

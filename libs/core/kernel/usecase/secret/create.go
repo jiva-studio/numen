@@ -14,7 +14,6 @@ type Create struct {
 	newID func() (string, error)
 }
 
-// NewCreate makes the use case that creates a secret; newID makes the id of the new one.
 func NewCreate(op Operation, newID func() (string, error)) *Create {
 	return &Create{Operation: op, newID: newID}
 }

@@ -21,7 +21,6 @@ func NewSkips() *Skips {
 	return &Skips{vectors: map[string]*string{}, texts: map[string]bool{}}
 }
 
-// AddVectors skips the vectors of the source at the path.
 func (c *Skips) AddVectors(path string) {
 	if path == "" {
 		return
@@ -32,7 +31,6 @@ func (c *Skips) AddVectors(path string) {
 	c.forgetChunks()
 }
 
-// AddTexts skips the text of the source at the path.
 func (c *Skips) AddTexts(path string) {
 	if path == "" {
 		return
