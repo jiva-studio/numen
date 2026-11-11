@@ -32,23 +32,33 @@ Feature: Import link
 
     Scenario: Another address has its own note
       When the person imports the link "http://numen.dev/weather"
-      Then the number of the notes of the type "link" in the vault "Test" is 2
+      Then the vault has the following links:
+        | address |
+        | http://numen.dev/tides |
+        | http://numen.dev/weather |
 
     Scenario: The same address opens its note
       Given the person closes the Media tab for the web address "http://numen.dev/tides"
       When the person imports the link "http://numen.dev/tides"
       Then the Media tab for the web address "http://numen.dev/tides" is open
-      And the number of the notes of the type "link" in the vault "Test" is 1
+      And the vault has the following links:
+        | address                |
+        | http://numen.dev/tides |
 
   Rule: An import makes a note or none
 
     Scenario: The first import opens the tab of the note
       When the person imports the link "http://numen.dev/tides"
       Then the Media tab for the web address "http://numen.dev/tides" is open
-      And the number of the notes of the type "link" in the vault "Test" is 1
+      And the vault has the following links:
+        | address                |
+        | http://numen.dev/tides |
 
     Scenario: A bad address makes no note
       Given the person imports the link "http://numen.dev/tides"
-      When the person tries to import the link "tides"
-      Then the window shows the message "not a web address"
-      And the number of the notes of the type "link" in the vault "Test" is 1
+      When the person runs the command "Import link" with:
+        | Web address | tides |
+      Then the task list has the failed task "not a web address"
+      And the vault has the following links:
+        | address                |
+        | http://numen.dev/tides |

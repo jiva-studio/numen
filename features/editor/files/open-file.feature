@@ -49,7 +49,9 @@ Feature: Open file
     Scenario: An open file keeps one tab
       Given the person opens the file at "notes/Entropy.md"
       When the person opens the file at "notes/Entropy.md"
-      Then the tab at "notes/Entropy.md" is open once
+      Then the window has the following tabs:
+        | kind | path             |
+        | note | notes/Entropy.md |
 
     Scenario: A file without a tab type is not opened
       Given the person opens the file at "notes/Entropy.md"
