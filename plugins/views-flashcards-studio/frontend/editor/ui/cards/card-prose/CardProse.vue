@@ -5,13 +5,15 @@
  * A template is HTML and is drawn as the markup it is, measured first against what
  * a card may be drawn with. Typesetting is the typography plugin's.
  */
-import { computed, type Directive } from 'vue'
-import { renderCardHtml } from './render'
+import { computed } from 'vue'
+import { findLinkHref, renderCardHtml, vMarkup } from '../../../../api/render'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   text: string
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /**
    * A link was pressed, with what it points at and the press itself. Nothing
@@ -20,21 +22,12 @@ const emit = defineEmits<{
   (event: 'follow', href: string, press: MouseEvent): void
 }>()
 
-/** Writes markup that was checked before it reached this component. */
-const vMarkup: Directive<HTMLElement, string> = {
-  created: (element, binding) => {
-    element.innerHTML = binding.value
-  },
-  beforeUpdate: (element, binding) => {
-    if (binding.value !== binding.oldValue) element.innerHTML = binding.value
-  },
-}
-
+/* --------------------------------- State ---------------------------------- */
 const html = computed(() => renderCardHtml(props.text))
 
+/* -------------------------------- Handlers -------------------------------- */
 const onClick = (press: MouseEvent) => {
-  const link = (press.target as HTMLElement | null)?.closest?.('a')
-  const href = link?.getAttribute('href')
+  const href = findLinkHref(press)
   if (href) emit('follow', href, press)
 }
 </script>

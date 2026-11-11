@@ -3,7 +3,203 @@ import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
-import numenPlugin from './numen-rules.mjs'
+import numenRules from './numen-rules.mjs'
+
+/** The variable a name refers to from a node, or null. */
+function findScopeVariable(context, node, name) {
+  for (let scope = context.sourceCode.getScope(node); scope; scope = scope.upper) {
+    const variable = scope.set.get(name)
+    if (variable) return variable
+  }
+  return null
+}
+
+const noMockOfSubjectSliceRule = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Forbid vi.mock or vi.spyOn of a module or value in the same slice as the test: a test that replaces its own slice verifies the replacement',
+    },
+    messages: {
+      mocksOwnSlice:
+        'vi.mock("{{specifier}}") replaces a module of the slice "{{slice}}" that this test verifies. Use the real module and fake only what lies outside the slice (a transport, a port).',
+      spiesOnOwnSlice:
+        'vi.spyOn({{target}}) spies on a value from the slice "{{slice}}" that this test verifies. Use the real module and fake only what lies outside the slice (a transport, a port).',
+    },
+    schema: [],
+  },
+  create(context) {
+    const SLICED_LAYERS = new Set(['entities', 'features', 'pages', 'widgets', 'app', 'shared'])
+    const filename = (context.filename ?? '').replaceAll('\\', '/')
+    const root = /^(.*\/(?:src|frontend))\//.exec(filename)
+    if (!root) return {}
+    const rootDir = root[1]
+    const slice = getSlice(filename)
+
+    function getSlice(file) {
+      const parts = file.slice(rootDir.length + 1).split('/')
+      const length = SLICED_LAYERS.has(parts[0]) ? 2 : 1
+      return parts.length > length ? parts.slice(0, length).join('/') : '.'
+    }
+
+    function resolve(specifier) {
+      if (specifier.startsWith('@/')) return `${rootDir}/${specifier.slice(2)}`
+      if (!specifier.startsWith('.')) return null
+      const parts = `${filename.slice(0, filename.lastIndexOf('/'))}/${specifier}`.split('/')
+      const out = []
+      for (const part of parts) {
+        if (part === '..') out.pop()
+        else if (part !== '.') out.push(part)
+      }
+      return out.join('/')
+    }
+
+    function isOwnSliceSpecifier(specifier) {
+      if (typeof specifier !== 'string') return false
+      const target = resolve(specifier)
+      if (!target || !target.startsWith(`${rootDir}/`)) return false
+      return getSlice(`${target}/x`) === slice || getSlice(target) === slice
+    }
+
+    function getRootIdentifier(node) {
+      let current = node
+      while (current?.type === 'MemberExpression') current = current.object
+      return current?.type === 'Identifier' ? current : null
+    }
+
+    function isSpySubjectImport(def) {
+      const specifier = def.parent?.source?.value
+      if (!isOwnSliceSpecifier(specifier)) return false
+      if (def.node?.type === 'ImportNamespaceSpecifier') return true
+      const target = resolve(specifier)
+      if (!target) return false
+      const targetStem = target.slice(target.lastIndexOf('/') + 1).replace(/\.[a-z]+$/i, '')
+      const fileBase = filename.slice(filename.lastIndexOf('/') + 1)
+      return targetStem === 'index' || fileBase.startsWith(`${targetStem}.`)
+    }
+
+    function resolveFunctionBody(identifier) {
+      const fnVar = findScopeVariable(context, identifier, identifier.name)
+      for (const fnDef of fnVar?.defs ?? []) {
+        if (fnDef.type === 'FunctionName') return fnDef.node.body
+        if (
+          fnDef.type === 'Variable' &&
+          (fnDef.node.init?.type === 'ArrowFunctionExpression' ||
+            fnDef.node.init?.type === 'FunctionExpression')
+        ) {
+          return fnDef.node.init.body
+        }
+      }
+      return null
+    }
+
+    function findObjectPropertyInit(node, propName) {
+      if (!node || typeof node !== 'object') return null
+      if (node.type === 'AwaitExpression') return findObjectPropertyInit(node.argument, propName)
+      if (node.type === 'ObjectExpression') {
+        for (const prop of node.properties) {
+          if (prop.type === 'Property' && prop.key?.name === propName) return prop.value
+        }
+        return null
+      }
+      if (node.type === 'BlockStatement') {
+        for (const stmt of node.body) {
+          if (stmt.type === 'ReturnStatement') {
+            const found = findObjectPropertyInit(stmt.argument, propName)
+            if (found) return found
+          }
+        }
+      }
+      return null
+    }
+
+    function isExpressionFromOwnSlice(expr, seen) {
+      if (!expr || typeof expr !== 'object') return false
+      const unwrapped = expr.type === 'AwaitExpression' ? expr.argument : expr
+      const rootId =
+        unwrapped?.type === 'CallExpression'
+          ? getRootIdentifier(unwrapped.callee)
+          : getRootIdentifier(unwrapped)
+      if (!rootId) return false
+      if (isFromOwnSlice(rootId, seen)) return true
+      const body = resolveFunctionBody(rootId)
+      return Boolean(body && returnsOwnSlice(body, seen))
+    }
+
+    function isFromOwnSlice(identifier, seen = new Set()) {
+      const variable = findScopeVariable(context, identifier, identifier.name)
+      if (!variable || seen.has(variable)) return false
+      seen.add(variable)
+      for (const def of variable.defs) {
+        if (def.type === 'ImportBinding') {
+          if (isSpySubjectImport(def)) return true
+          continue
+        }
+        if (def.type !== 'Variable') continue
+        if (def.node.id.type === 'Identifier') {
+          if (isExpressionFromOwnSlice(def.node.init, seen)) return true
+          continue
+        }
+        if (def.node.id.type === 'ObjectPattern') {
+          const prop = def.node.id.properties.find(
+            (p) => p.type === 'Property' && p.value?.name === identifier.name,
+          )
+          const propName = prop?.key?.name
+          const unwrapped =
+            def.node.init?.type === 'AwaitExpression' ? def.node.init.argument : def.node.init
+          const calleeId =
+            unwrapped?.type === 'CallExpression' ? getRootIdentifier(unwrapped.callee) : null
+          const body = calleeId ? resolveFunctionBody(calleeId) : unwrapped
+          const propInit = propName && body ? findObjectPropertyInit(body, propName) : null
+          if (propInit && isExpressionFromOwnSlice(propInit, seen)) return true
+        }
+      }
+      return false
+    }
+
+    function returnsOwnSlice(node, seen) {
+      if (!node || typeof node !== 'object') return false
+      if (node.type === 'CallExpression' || node.type === 'AwaitExpression') {
+        return isExpressionFromOwnSlice(node, new Set(seen))
+      }
+      if (node.type === 'BlockStatement') {
+        return node.body.some(
+          (stmt) => stmt.type === 'ReturnStatement' && returnsOwnSlice(stmt.argument, seen),
+        )
+      }
+      return false
+    }
+
+    return {
+      'CallExpression[callee.object.name="vi"][callee.property.name=/^(mock|doMock)$/]'(node) {
+        const specifier = node.arguments[0]?.value
+        if (isOwnSliceSpecifier(specifier)) {
+          context.report({ node, messageId: 'mocksOwnSlice', data: { specifier, slice } })
+        }
+      },
+      'CallExpression[callee.object.name="vi"][callee.property.name="spyOn"]'(node) {
+        const target = node.arguments[0]
+        const rootId = getRootIdentifier(target)
+        if (rootId && isFromOwnSlice(rootId)) {
+          context.report({
+            node,
+            messageId: 'spiesOnOwnSlice',
+            data: { target: context.sourceCode.getText(target), slice },
+          })
+        }
+      },
+    }
+  },
+}
+
+const numenPlugin = {
+  ...numenRules,
+  rules: {
+    ...numenRules.rules,
+    'no-mock-of-subject-slice': noMockOfSubjectSliceRule,
+  },
+}
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
 export const lifetimes = [

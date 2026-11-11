@@ -1,5 +1,5 @@
 /**
- * A plex centred on a note, and the vault behind it, made up for a test.
+ * A plex centered on a note, and the vault behind it, made up for a test.
  *
  * The vault is not here: what the view returns is recorded when it is created, and
  * every request the editor made is kept in order.

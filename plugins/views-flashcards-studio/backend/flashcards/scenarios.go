@@ -48,6 +48,7 @@ type Config struct {
 	Logs      ports.LogStores
 	Schedules ports.ScheduleStore
 	DayCounts ports.ScheduleStore
+	Report    func(what string, err error)
 	DayStart  func() time.Duration
 	Now       ports.Clock
 	Cores     int
@@ -95,12 +96,14 @@ func NewScenarios(cfg Config) Scenarios {
 	}
 	schedules := NewSchedules(cfg.Logs, defaultScheduler, day, reviewCards, presets)
 	schedules.Cache = cfg.Schedules
+	schedules.Report = cfg.Report
 	if createScheduler != nil {
 		schedules.At = createScheduler
 	}
 
 	counted := NewCountReviews(cfg.Logs, schedules, day, cfg.Now)
 	counted.Cache = cfg.DayCounts
+	counted.Report = cfg.Report
 
 	curves := NewProjectCurve(reviewCards, schedules, presets, day, cfg.Now)
 	curves.Cores = cfg.Cores

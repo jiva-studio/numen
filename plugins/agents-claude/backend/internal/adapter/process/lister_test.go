@@ -13,7 +13,7 @@ import (
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
-const initializeFixture = "../../../models/testdata/initialize-response.json"
+const initializeFixture = "../../../model/testdata/initialize-response.json"
 
 func readAnswer(t *testing.T) string {
 	t.Helper()

@@ -83,7 +83,7 @@ describe('a row', () => {
     expect(of(placedLayout, 'parent').every((node) => node.y < 0)).toBe(true)
   })
 
-  it('is centred on the focus', () => {
+  it('is centered on the focus', () => {
     const row = of(place({ child: createNodes('child', 3) }), 'child')
     const leftCoord = row[0]!.x - row[0]!.width / 2
     const right = row[2]!.x + row[2]!.width / 2
@@ -146,7 +146,7 @@ describe('a column', () => {
     expect(of(placedLayout, 'sibling').every((node) => node.x > 0)).toBe(true)
   })
 
-  it('is centred on the focus, one gap between neighbors', () => {
+  it('is centered on the focus, one gap between neighbors', () => {
     const column = of(place({ sibling: createNodes('sibling', 3) }), 'sibling')
 
     expect(column[1]!.y).toBeCloseTo(0)

@@ -1,14 +1,11 @@
 package download
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"os/exec"
 	"slices"
 	"strings"
-	"time"
 )
 
 // Downloader is the providers installed on this machine, tried in order.
@@ -18,8 +15,8 @@ type Downloader struct {
 
 // New is a downloader for this machine: yt-dlp on the video sites, and every other page read as an
 // article.
-func New(c Config) *Downloader {
-	return &Downloader{providers: []Provider{newYtDLP(c), NewPages()}}
+func New(c Config, runner Runner, files Files) *Downloader {
+	return &Downloader{providers: []Provider{newYtDLP(c, runner, files), NewPages()}}
 }
 
 // CanHandle reports whether any provider handles the address.
@@ -103,45 +100,37 @@ func (p program) getPath() string {
 	return p.command[0]
 }
 
-func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cmd {
-	running := exec.CommandContext(ctx, p.command[0],
-		append(append([]string(nil), p.command[1:]...), arguments...)...)
-	running.Env = p.env
-	setProcessGroup(running)
-	return running
-}
-
-const stopGrace = 5 * time.Second
-
-func resolveProgram(named Tool, tool string) program {
+func resolveProgram(named Tool, tool string, runner Runner) program {
+	var baseEnv []string
+	if len(named.Environment) > 0 && runner != nil {
+		baseEnv = runner.Environ()
+	}
 	if len(named.Command) > 0 {
 		return program{
 			command: append(append([]string(nil), named.Command...), named.Arguments...),
-			env:     named.getEnvironment(),
+			env:     named.getEnvironment(baseEnv),
 		}
 	}
-	found, err := exec.LookPath(tool)
+	if runner == nil {
+		return program{command: nil, env: nil}
+	}
+	found, err := runner.LookPath(tool)
 	if err != nil {
 		// gomutants:disable-next-line RETURN_ZERO reason="struct literal with nil fields equals zero value"
 		return program{command: nil, env: nil}
 	}
-	return program{command: append([]string{found}, named.Arguments...), env: named.getEnvironment()}
+	return program{command: append([]string{found}, named.Arguments...), env: named.getEnvironment(baseEnv)}
 }
 
-func run(ctx context.Context, tool program, into io.Writer, arguments ...string) ([]byte, error) {
-	running := tool.buildCommand(ctx, arguments...)
-	var out, response bytes.Buffer
-	running.Stdout, running.Stderr = &out, &response
-	if into != nil {
-		running.Stdout = into
-	}
-	if err := running.Run(); err != nil {
+func run(ctx context.Context, runner Runner, tool program, into io.Writer, arguments ...string) ([]byte, error) {
+	out, combined, err := runner.Run(ctx, tool.command, tool.env, into, arguments...)
+	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, ctxErr
 		}
-		return nil, fmt.Errorf("%w: %s", err, getLastLine(response.String()))
+		return nil, fmt.Errorf("%w: %s", err, getLastLine(combined))
 	}
-	return out.Bytes(), nil
+	return out, nil
 }
 
 func getLastLine(response string) string {

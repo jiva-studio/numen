@@ -22,7 +22,7 @@ export interface PlexMetrics {
 }
 
 /** The type and the lengths a plex is drawn with, in pixels. */
-interface PlexType {
+export interface PlexType {
   readonly font: string
   readonly labelFont: string
   readonly padding: number
@@ -55,7 +55,7 @@ const LABEL = 'font-size:var(--numen-edge-label-size)'
 /** Something with a width, in each of the two sizes. */
 const SAMPLE = 'Hxg'
 
-interface Probe {
+export interface Probe {
   readonly box: HTMLElement
   readonly label: HTMLElement
 }
@@ -71,17 +71,20 @@ const parsePixels = (value: string): number => {
  * `icon` is the space reserved beside a title for an icon the caller draws there.
  * Undefined where there is no canvas to measure against; the arrangement then draws every box at its widest.
  */
-export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined> {
+export function useTitleWidths(
+  icon: () => number,
+  readType: (probe: Probe) => PlexType = getType,
+): Ref<PlexMetrics | undefined> {
   const probe = openProbe()
   if (!probe) return shallowRef<PlexMetrics | undefined>(undefined)
 
-  const type = shallowRef(getType(probe))
+  const type = shallowRef(readType(probe))
 
   if (typeof ResizeObserver === 'undefined') {
     probe.box.remove()
   } else {
     const observer = new ResizeObserver(() => {
-      const now = getType(probe)
+      const now = readType(probe)
       if (!sameType(now, type.value)) type.value = now
     })
     observer.observe(probe.box, { box: 'border-box' })

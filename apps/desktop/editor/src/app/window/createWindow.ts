@@ -21,13 +21,17 @@ import {
 import { formatError } from '@/shared/api/errors'
 import { createEmitter } from '@/shared/lib/emitter'
 import { createMessageLog } from '@/shared/model/notices/messages'
-import { createEditorCommands, createWindowKinds } from './createEditorCommands'
+import {
+  createEditorCommands,
+  createTargetAndFeatureCommands,
+  createWindowKinds,
+} from './createEditorCommands'
 import { createPluginsCore, createWindowFrameServices } from './createPluginsPart'
 import { createTabsCore } from './createTabsPart'
-import { createWindowServices } from './createWindowServices'
-import type { SettingsRequest, WindowCore } from './windowCore'
+import { createVaultServices, createWindowServices, type VaultServices } from './createWindowServices'
+import type { SettingsRequest, WindowCore, WindowFoundation } from './windowCore'
 
-function createWindowCore(): WindowCore {
+function createWindowFoundation(): WindowFoundation {
   const log = createMessageLog()
   const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
   const writeMessage = log.getWriter('command')
@@ -41,20 +45,22 @@ function createWindowCore(): WindowCore {
     openPluginSettings: (pluginId) => settingsRequests.emit({ pluginId, filter: undefined }),
   })
   const registry = createCommandRegistry()
-  const plugins = createPluginsCore({
-    log,
-    writeMessage,
+  return {
     frame,
-    windowTabs: tabs.windowTabs,
-    tabOpeners: tabs.tabOpeners,
+    log,
     rest,
+    writeMessage,
     status,
     registry,
-  })
-  return { frame, log, rest, writeMessage, registry, tabs, plugins, settingsRequests }
+    tabs,
+    settingsRequests,
+  }
 }
 
-function createWindowTabParts(base: WindowCore, services: ReturnType<typeof createWindowServices>) {
+function createWindowTabParts(
+  base: Pick<WindowFoundation, 'tabs' | 'writeMessage'>,
+  services: Pick<VaultServices, 'editing' | 'tabSync'>,
+) {
   const { windowTabs, windowId, tabLinks, reports } = base.tabs
   const { writeMessage } = base
   const isSecondary = isSecondaryWindow()
@@ -102,19 +108,29 @@ function createWindowTabParts(base: WindowCore, services: ReturnType<typeof crea
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const createWindow = () => {
-  const base = createWindowCore()
-  const { windowTabs } = base.tabs
-  const services = createWindowServices(base)
+  const foundation = createWindowFoundation()
+  const { windowTabs } = foundation.tabs
+  const vaultServices = createVaultServices(foundation)
+  const tabs = createWindowTabParts(foundation, vaultServices)
+  const initialCommands = createTargetAndFeatureCommands(foundation, vaultServices, tabs.moves, {
+    pause: async () => tabs.openTabs.pause(),
+    resume: () => tabs.openTabs.resume(),
+  })
+  const plugins = createPluginsCore({
+    foundation,
+    vaultServices,
+    itemLists: initialCommands.itemLists,
+    getTarget: initialCommands.getTarget,
+    getAppCommands: () => initialCommands.featureCommands.commands,
+  })
+  const base: WindowCore = { ...foundation, plugins }
+  const services = createWindowServices(base, vaultServices)
   const { editing, window, settings, vaults } = services
   base.settingsRequests.subscribe((request) =>
     settings.configured.openSettings(request.pluginId, request.filter),
   )
-  const tabs = createWindowTabParts(base, services)
-  const commands = createEditorCommands(base, services, tabs.moves, {
-    pause: async () => tabs.openTabs.pause(),
-    resume: () => tabs.openTabs.resume(),
-  })
-  const kinds = createWindowKinds(base, services, commands)
+  const commands = createEditorCommands(base, services, initialCommands)
+  const kinds = createWindowKinds(base, services)
   useAppHotkeys(commands.commands.onKeyDown)
   const bootstrap = createWindowBootstrap({
     vaults,
@@ -136,7 +152,7 @@ export const createWindow = () => {
     readDetachedTab,
     openDetachedTab: tabs.openMovedTab,
   })
-  const frame = createWindowFrameServices(base, services, commands, kinds)
+  const frame = createWindowFrameServices(base, commands)
   return {
     base,
     services,

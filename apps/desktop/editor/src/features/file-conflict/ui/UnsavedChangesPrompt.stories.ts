@@ -3,7 +3,7 @@
  *
  * It overlays the work because nothing else the user does can dismiss it, and
  * how a name too long for the row affects the three actions is browser
- * behaviour.
+ * behavior.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'

@@ -8,8 +8,8 @@ import { ApiFailure, CANCELED } from './failure'
 import type {
   RecordReviewRequest,
   RecordReviewResponse,
-  GetDeckNeighbourhoodRequest,
-  GetDeckNeighbourhoodResponse,
+  GetDeckNeighborhoodRequest,
+  GetDeckNeighborhoodResponse,
   ListReviewDaysRequest,
   ListReviewDaysResponse,
   StartSessionRequest,
@@ -150,9 +150,9 @@ export const reviewService = {
     watch<WatchReloadsRequest, WatchReloadsResponse>('WatchReloads', request, options),
   listReviewDays: (request: ListReviewDaysRequest, options?: CallOptions) =>
     call<ListReviewDaysRequest, ListReviewDaysResponse>('ListReviewDays', request, options),
-  getDeckNeighbourhood: (request: GetDeckNeighbourhoodRequest, options?: CallOptions) =>
-    call<GetDeckNeighbourhoodRequest, GetDeckNeighbourhoodResponse>(
-      'GetDeckNeighbourhood',
+  getDeckNeighborhood: (request: GetDeckNeighborhoodRequest, options?: CallOptions) =>
+    call<GetDeckNeighborhoodRequest, GetDeckNeighborhoodResponse>(
+      'GetDeckNeighborhood',
       request,
       options,
     ),

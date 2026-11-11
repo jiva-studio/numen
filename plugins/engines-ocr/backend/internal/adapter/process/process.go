@@ -40,3 +40,10 @@ func (Process) GetConfig() settings.Config {
 func (Process) ReportCloseError(err error) {
 	fmt.Fprintln(os.Stderr, "engines-ocr: close the recogniser:", err)
 }
+
+// ReportError writes a background failure of the plugin to standard error.
+func (Process) ReportError(what string, err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "engines-ocr: %s: %v\n", what, err)
+	}
+}

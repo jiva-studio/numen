@@ -88,7 +88,7 @@ func (b *Backend) Tools() (*tools.Registry, error) {
 
 // Handlers returns the handlers of the JSON methods.
 func (b *Backend) Handlers() rpc.Handlers {
-	cards, presets, reviews := &cardsHandler{Backend: b}, &presetsHandler{Backend: b}, &reviewHandler{Backend: b}
+	cards, presets, reviews := b.newCardsHandler(), b.newPresetsHandler(), b.newReviewHandler()
 	return rpc.Handlers{
 		Models: cards, Decks: cards, PresetReads: presets, PresetWrites: presets,
 		Sessions: reviews, Watches: reviews, Stats: reviews,

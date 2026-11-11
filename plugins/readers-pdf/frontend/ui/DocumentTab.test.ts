@@ -3,51 +3,34 @@
  * highlights all of them.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { h, nextTick, reactive, ref, shallowRef } from 'vue'
+import { flushPromises, mount } from '@vue/test-utils'
+import { reactive } from 'vue'
 import DocumentTab from './DocumentTab.vue'
-import type { TextRange } from '../types'
-
-const reader = vi.hoisted(() => ({
-  focusSpans: vi.fn(async (..._spans: readonly TextRange[]) => undefined),
-}))
-
-vi.mock('../model/useDocumentReader', () => ({
-  useDocumentReader: (_documents: unknown, path: string) => ({
-    path,
-    reportFailure: () => undefined,
-    close: () => undefined,
-    state: {
-      pages: shallowRef([{ width: 600, height: 800 }]),
-      pageNumber: ref(0),
-      isLoading: ref(false),
-      error: ref(''),
-    },
-    view: { getPageImageUrl: () => '', widen: () => undefined },
-    highlights: {
-      getHighlightsOn: () => [],
-      getOtherHighlightsOn: () => [],
-      applyHighlights: async () => undefined,
-    },
-    actions: { goToPage: async () => undefined, focusSpans: reader.focusSpans },
-  }),
-}))
-
-vi.mock('../reader', () => ({
-  Reader: () => h('div', { class: 'reader-stub' }),
-}))
-
-vi.mock('@numen/ui', () => ({
-  LoadingIndicator: () => h('span'),
-}))
+import type { Documents, TextRange } from '../types'
 
 const RANGES: readonly TextRange[] = [
   { start: 40_512, end: 40_543 },
   { start: 1_200, end: 1_260 },
 ]
 
+const createDocuments = () => {
+  const getHighlights = vi.fn(async (_path: string, _ranges: readonly TextRange[]) => [
+    [{ page: 4, rects: [{ minX: 0.1, minY: 0.2, maxX: 0.8, maxY: 0.3 }] }],
+    [{ page: 1, rects: [{ minX: 0.1, minY: 0.5, maxX: 0.6, maxY: 0.55 }] }],
+  ])
+  const documents: Documents = {
+    getDocumentLayout: async () => ({
+      pages: Array.from({ length: 8 }, () => ({ width: 600, height: 800 })),
+      stat: 'birds-1',
+    }),
+    getPageUrl: () => '',
+    getHighlights,
+  }
+  return { documents, getHighlights }
+}
+
 const mountTab = (ranges: readonly TextRange[] | null) => {
-  reader.focusSpans.mockClear()
+  const { documents, getHighlights } = createDocuments()
   const state = reactive({
     path: 'library/Birds.pdf',
     title: 'Birds',
@@ -56,31 +39,32 @@ const mountTab = (ranges: readonly TextRange[] | null) => {
     savePlace: vi.fn(),
     reportPlace: vi.fn(),
   })
-  const tab = mount(DocumentTab, { props: { state } })
-  return { tab, state }
+  const tab = mount(DocumentTab, { props: { state, documents } })
+  return { tab, state, getHighlights }
 }
 
 describe('the ranges of a PDF tab', () => {
   it('highlights the ranges the tab opens with, in their order', async () => {
-    const { tab } = mountTab(RANGES)
-    await nextTick()
+    const { tab, state, getHighlights } = mountTab(RANGES)
+    await flushPromises()
 
-    expect(reader.focusSpans).toHaveBeenCalledWith(...RANGES)
+    expect(getHighlights).toHaveBeenCalledWith('library/Birds.pdf', RANGES)
+    expect(state.savePlace).toHaveBeenCalledWith({ page: 5, pageCount: 8 })
     tab.unmount()
   })
 
   it('highlights the ranges the window sets later, each time it sets them', async () => {
-    const { tab, state } = mountTab(null)
-    await nextTick()
-    expect(reader.focusSpans).not.toHaveBeenCalled()
+    const { tab, state, getHighlights } = mountTab(null)
+    await flushPromises()
+    expect(getHighlights).not.toHaveBeenCalled()
 
     state.ranges = RANGES
-    await nextTick()
+    await flushPromises()
     state.ranges = [...RANGES]
-    await nextTick()
+    await flushPromises()
 
-    expect(reader.focusSpans).toHaveBeenCalledTimes(2)
-    expect(reader.focusSpans).toHaveBeenLastCalledWith(...RANGES)
+    expect(getHighlights).toHaveBeenCalledTimes(2)
+    expect(getHighlights).toHaveBeenLastCalledWith('library/Birds.pdf', RANGES)
     tab.unmount()
   })
 })

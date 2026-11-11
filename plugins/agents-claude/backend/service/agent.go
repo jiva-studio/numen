@@ -33,10 +33,12 @@ type parts struct {
 func newAgent(p parts) (*agent, error) {
 	agentSettings := new(settings.Settings)
 	tools := new(toolset.Toolset)
-	models, err := catalog.New(process.Lister{}, p.isAsync)
+	lister := process.Lister{}
+	models, err := catalog.New(lister, p.isAsync)
 	if err != nil {
 		return nil, err
 	}
+	models.SetReport(lister.ReportError)
 	known, err := programs.New(programs.Dependencies{
 		Settings: agentSettings, Finder: executable.Finder{}, Models: models, Environment: p.environment,
 	})

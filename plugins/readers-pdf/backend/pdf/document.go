@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -48,6 +47,7 @@ type Workers struct {
 	afterFunc   func(time.Duration, func()) Timer
 	idleRelease time.Duration
 	compilation wazero.CompilationCache
+	report      func(what string, err error)
 }
 
 // NewWorkers returns a pool that has not started, of one worker per CPU, keeping no idle worker.
@@ -55,7 +55,20 @@ func NewWorkers() *Workers {
 	return &Workers{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="NewWorkers initializes pool counters to zero"
 		mu: sync.Mutex{}, pool: nil, size: 0, idle: 0, open: 0, isWarmed: false, release: nil,
-		afterFunc: nil, idleRelease: defaultIdleRelease, compilation: nil,
+		afterFunc: nil, idleRelease: defaultIdleRelease, compilation: nil, report: nil,
+	}
+}
+
+// SetReport sets the callback that receives background failures of the worker pool.
+func (w *Workers) SetReport(report func(what string, err error)) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.report = report
+}
+
+func (w *Workers) reportError(what string, err error) {
+	if w.report != nil && err != nil {
+		w.report(what, err)
 	}
 }
 
@@ -227,7 +240,7 @@ func (w *Workers) releasePool() {
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE,CONDITIONALS_NEGATION,BRANCH_IF reason="releasePool closes idle workers pool and logs any failure"
 	if err := w.pool.Close(); err != nil {
-		fmt.Fprintf(os.Stderr, "readers-pdf: close the worker pool: %v\n", err)
+		w.reportError("close the worker pool", err)
 	}
 	w.pool = nil
 	if w.release != nil {
@@ -384,6 +397,11 @@ func (w *Workers) Warmup() {
 		return
 	}
 	if err := w.putWorker(worker); err != nil {
-		fmt.Fprintf(os.Stderr, "readers-pdf: release the warm-up worker: %v\n", err)
+		w.mu.Lock()
+		report := w.report
+		w.mu.Unlock()
+		if report != nil {
+			report("release the warm-up worker", err)
+		}
 	}
 }

@@ -11,7 +11,7 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeHeadings from './PlexNodeHeadings.vue'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/interaction/hoverFocus'
-import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
+import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
 import { useNodePress } from '../../model/interaction/press'
 import { createAriaLabel, type Position } from '../../lib/node'
@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
   wide: null,
   hung: null,
-  behaviour: () => DEFAULT_BEHAVIOUR,
+  behavior: () => DEFAULT_BEHAVIOR,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -53,7 +53,7 @@ const { listening } = press
  */
 const hasDropTarget = computed(
   () =>
-    props.behaviour.reaching.hasHandle &&
+    props.behavior.reaching.hasHandle &&
     props.node.opacity >= 1 &&
     (props.gestureRole === 'source' || (props.gestureRole === 'open' && hoverFocus.isOn.value)),
 )
@@ -81,8 +81,8 @@ const { open, box, handle } = useOpenBox({
   node: () => props.node,
   wide: () => props.wide,
   on: () => openPosition.value,
-  delay: () => props.behaviour.expansionDelay,
-  clock: props.behaviour.clock,
+  delay: () => props.behavior.expansionDelay,
+  clock: props.behavior.clock,
 })
 
 /**

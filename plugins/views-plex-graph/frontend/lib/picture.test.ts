@@ -173,9 +173,9 @@ const LINE_KINDS: readonly {
   readonly first: string
   readonly second: string
 }[] = [
-  { name: 'centre to parent', rows: [['Above', 'parent']], first: 'Above', second: 'Here' },
-  { name: 'centre to child', rows: [['Below', 'child']], first: 'Here', second: 'Below' },
-  { name: 'centre to jump', rows: [['Across', 'jump']], first: 'Across', second: 'Here' },
+  { name: 'center to parent', rows: [['Above', 'parent']], first: 'Above', second: 'Here' },
+  { name: 'center to child', rows: [['Below', 'child']], first: 'Here', second: 'Below' },
+  { name: 'center to jump', rows: [['Across', 'jump']], first: 'Across', second: 'Here' },
   {
     name: 'parent to sibling',
     rows: [
@@ -196,7 +196,7 @@ const LINE_KINDS: readonly {
     second: 'Other',
   },
   {
-    name: 'child to jump, both away from the centre',
+    name: 'child to jump, both away from the center',
     rows: [
       ['Below', 'child'],
       ['Across', 'jump'],

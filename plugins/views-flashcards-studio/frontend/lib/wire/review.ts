@@ -158,20 +158,20 @@ interface ReviewDay {
   recalled: number
 }
 
-/** GetDeckNeighbourhoodRequest is the request of the GetDeckNeighbourhood method. */
-export interface GetDeckNeighbourhoodRequest {
+/** GetDeckNeighborhoodRequest is the request of the GetDeckNeighborhood method. */
+export interface GetDeckNeighborhoodRequest {
   vault?: string
   deck?: string
 }
 
-/** GetDeckNeighbourhoodResponse is the response of the GetDeckNeighbourhood method. */
-export interface GetDeckNeighbourhoodResponse {
-  notes: DeckNeighbour[]
+/** GetDeckNeighborhoodResponse is the response of the GetDeckNeighborhood method. */
+export interface GetDeckNeighborhoodResponse {
+  notes: DeckNeighbor[]
   unread: number
 }
 
-/** DeckNeighbour is a note a deck links to or is linked from. Address is the link target as the deck spells it. */
-interface DeckNeighbour {
+/** DeckNeighbor is a note a deck links to or is linked from. Address is the link target as the deck spells it. */
+interface DeckNeighbor {
   address: string
   path: string
   title: string

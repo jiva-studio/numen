@@ -4,7 +4,6 @@ package download
 
 import (
 	"maps"
-	"os"
 	"slices"
 )
 
@@ -21,11 +20,11 @@ type Tool struct {
 	Environment map[string]string
 }
 
-func (t Tool) getEnvironment() []string {
+func (t Tool) getEnvironment(base []string) []string {
 	if len(t.Environment) == 0 {
 		return nil
 	}
-	out := os.Environ()
+	out := slices.Clone(base)
 	for _, name := range slices.Sorted(maps.Keys(t.Environment)) {
 		out = append(out, name+"="+t.Environment[name])
 	}

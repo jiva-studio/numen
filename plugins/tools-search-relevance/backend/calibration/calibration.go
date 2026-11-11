@@ -15,6 +15,14 @@ import (
 // ErrNotStarted is a call that reached the calibration before Start.
 var ErrNotStarted = errors.New("the calibration is not started")
 
+var errIncompleteHost = errors.New("search relevance needs the search index, the store and the queue of the host")
+
+// Hosts is what the plugin works through the host.
+type Hosts struct {
+	Floors relevance.Host
+	Queue  host.Queue
+}
+
 // calibratingTask is the task the list shows when the measurement of a vault failed.
 const calibratingTask = "calibrating the search"
 
@@ -29,6 +37,15 @@ type Calibration struct {
 // New returns a calibration that ignores events until Start.
 func New() *Calibration {
 	return &Calibration{mu: sync.Mutex{}, floors: nil, queue: nil, isChecked: false}
+}
+
+// StartOver validates the hosts and starts the calibration over them with the clock.
+func (c *Calibration) StartOver(hosts Hosts, clk relevance.Clock) error {
+	if hosts.Floors.Search == nil || hosts.Floors.Vaults == nil || hosts.Floors.Store == nil || hosts.Queue == nil {
+		return errIncompleteHost
+	}
+	c.Start(relevance.New(hosts.Floors, clk), hosts.Queue)
+	return nil
 }
 
 // Start gives the calibration the floors it measures and the queue it reports to.
@@ -46,6 +63,42 @@ func (c *Calibration) GetFloors() (*relevance.Floors, error) {
 		return nil, ErrNotStarted
 	}
 	return floors, nil
+}
+
+// Get returns the floor in force for the shown vault.
+func (c *Calibration) Get(ctx context.Context) (relevance.State, error) {
+	floors, err := c.GetFloors()
+	if err != nil {
+		return relevance.State{}, err
+	}
+	return floors.Get(ctx, "")
+}
+
+// Calibrate measures the shown vault and keeps the result.
+func (c *Calibration) Calibrate(ctx context.Context) (relevance.Outcome, relevance.State, error) {
+	floors, err := c.GetFloors()
+	if err != nil {
+		return 0, relevance.State{}, err
+	}
+	return floors.Calibrate(ctx, "")
+}
+
+// Set puts the floor of the person in force for the shown vault, or returns to the automatic floor.
+func (c *Calibration) Set(ctx context.Context, isManual bool, floor float64) (relevance.State, error) {
+	floors, err := c.GetFloors()
+	if err != nil {
+		return relevance.State{}, err
+	}
+	return floors.Set(ctx, "", isManual, floor)
+}
+
+// Probe embeds the query and measures the nearest passage of the shown vault.
+func (c *Calibration) Probe(ctx context.Context, query string) (relevance.ProbeResult, error) {
+	floors, err := c.GetFloors()
+	if err != nil {
+		return relevance.ProbeResult{}, err
+	}
+	return floors.Probe(ctx, "", query)
 }
 
 func (c *Calibration) getParts() (*relevance.Floors, host.Queue) {

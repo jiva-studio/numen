@@ -72,7 +72,7 @@ func Mount(a *server.API, h Handlers) error {
 	handle(a, "UndoReview", h.Sessions.UndoReview)
 	stream(a, "WatchReloads", h.Watches.WatchReloads)
 	handle(a, "ListReviewDays", h.Stats.ListReviewDays)
-	handle(a, "GetDeckNeighbourhood", h.Stats.GetDeckNeighbourhood)
+	handle(a, "GetDeckNeighborhood", h.Stats.GetDeckNeighborhood)
 	handle(a, "GetVaultDeckPreset", h.Stats.GetVaultDeckPreset)
 	return a.Err()
 }

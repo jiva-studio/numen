@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"strings"
 	"sync"
@@ -37,6 +36,7 @@ type Writer struct {
 	texts  func(domain.VaultID) host.TextVersions
 	store  func(domain.VaultID) host.StoreWriter
 	queue  host.Queue
+	report func(what string, err error)
 
 	wg sync.WaitGroup
 
@@ -57,12 +57,23 @@ type Request struct {
 // texts, each written in a turn of queue.
 func NewWriter(vaults func(domain.VaultID) Vault, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue) *Writer {
 	return &Writer{
-		vaults: vaults, texts: texts, store: store, queue: queue,
+		vaults: vaults, texts: texts, store: store, queue: queue, report: nil,
 		wg:       sync.WaitGroup{},
 		mu:       sync.Mutex{},
 		isClosed: false,
 		last:     bookText{hash: "", text: "", segments: nil},
 		running:  map[string]context.CancelFunc{},
+	}
+}
+
+// SetReport sets the callback that receives background failures of the writer.
+func (s *Writer) SetReport(report func(what string, err error)) {
+	s.report = report
+}
+
+func (s *Writer) reportError(what string, err error) {
+	if s.report != nil && err != nil {
+		s.report(what, err)
 	}
 }
 
@@ -167,13 +178,13 @@ func (s *Writer) writeText(ctx context.Context, req Request) {
 		task.FailureReason = err.Error()
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="task report failure is logged to stderr"
 		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
-			fmt.Fprintf(os.Stderr, "readers-epub: show the task %s: %v\n", task.ID, reportErr)
+			s.reportError("show the task "+task.ID, reportErr)
 		}
 		return
 	}
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="task finish failure is logged to stderr"
 	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
-		fmt.Fprintf(os.Stderr, "readers-epub: finish the task %s: %v\n", task.ID, finishErr)
+		s.reportError("finish the task "+task.ID, finishErr)
 	}
 }
 

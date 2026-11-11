@@ -19,7 +19,7 @@ import {
 } from '@lucide/vue'
 import { ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
-import { hoverOver } from '../../fixtures/colour'
+import { hoverOver } from '../../fixtures/color'
 import Plex from './Plex.vue'
 import { RELATION_NAMES } from '../lib/relation'
 import type { PlexRelation, PlexEdge, PlexHeading, PlexNeighborhood, PlexNode } from '../../types'

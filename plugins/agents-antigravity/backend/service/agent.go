@@ -24,7 +24,7 @@ func newAgentServer(isAsync bool) *agentServer {
 	s := new(agentServer)
 	s.settings = new(settings.Settings)
 	s.catalog = catalog.New(cli, cli, isAsync)
-	s.runner = runs.New(&s.Registry, cli, supervisor, s.catalog)
+	s.runner = runs.New(&s.Registry, cli, process.Launcher{}, s.catalog)
 	return s
 }
 

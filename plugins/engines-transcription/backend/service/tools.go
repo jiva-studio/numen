@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
@@ -17,8 +16,6 @@ const (
 	transcriptBackgroundSentence = "transcript_create returns a task id at once and the transcription runs in the background; the transcript can be read and searched as it is written."
 	transcriptOnceSentence       = "Call transcript_create once per recording: a second call while the first runs starts nothing and reports the state running, and a call on a recording already transcribed starts nothing and reports the state done with the version that is read."
 )
-
-var errNoVault = errors.New("the call names no vault")
 
 // toolset serves transcript_create. The transcriptions it starts end with the transcriber.
 type toolset struct {
@@ -54,11 +51,7 @@ func (t *toolset) registry() (*tools.Registry, error) {
 }
 
 func (t *toolset) createTranscript(ctx context.Context, in api.TranscriptCreateInput) (api.TranscriptCreateOutput, error) {
-	vault := domain.VaultID(tools.GetVault(ctx))
-	if vault == "" {
-		return api.TranscriptCreateOutput{}, errNoVault
-	}
-	outcome, err := t.requests.Create(ctx, vault, in.Path)
+	outcome, err := t.requests.Create(ctx, domain.VaultID(tools.GetVault(ctx)), in.Path)
 	if err != nil {
 		return api.TranscriptCreateOutput{}, err
 	}

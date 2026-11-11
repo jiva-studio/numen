@@ -83,6 +83,23 @@ type Player interface {
 	Download(ctx context.Context, address string, media Media, into io.Writer) (Copy, error)
 }
 
+// Runner finds and runs external programs on the machine.
+type Runner interface {
+	LookPath(file string) (string, error)
+	Environ() []string
+	Run(ctx context.Context, command, env []string, into io.Writer, arguments ...string) (stdout []byte, combined string, err error)
+	ReportError(what string, err error)
+}
+
+// Files manages temporary files and directories for a download.
+type Files interface {
+	WriteTemp(pattern string, content []byte) (string, error)
+	ReadFile(path string) ([]byte, error)
+	ReadDir(dir string) ([]string, error)
+	CopyFile(path string, into io.Writer) error
+	WithTempDir(pattern string, fn func(dir string) error) error
+}
+
 // ParseMedia returns the media a name selects; the empty name selects the video. A name that
 // selects no media gives the video and false.
 func ParseMedia(name string) (Media, bool) {

@@ -113,7 +113,7 @@ vi.mock('../../api/client', async (original) => ({
       wire.requestedPresets.push(request)
       return { preset: undefined }
     },
-    getDeckNeighbourhood: async (request: unknown) => {
+    getDeckNeighborhood: async (request: unknown) => {
       wire.requestedNotes.push(request)
       return {
         notes: [

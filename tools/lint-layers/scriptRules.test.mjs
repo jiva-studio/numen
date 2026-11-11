@@ -3,9 +3,7 @@ import { describe, it } from "node:test";
 import { Linter } from "eslint";
 import tseslint from "typescript-eslint";
 import vueParser from "vue-eslint-parser";
-import numenRules from "./numen-rules.mjs";
-
-const numen = numenRules;
+import { numenPlugin as numen } from "./base-eslint.mjs";
 
 /** The message ids and lines a rule reports in a component. */
 function findComponentReports(rule, script, template = "<div />") {
@@ -98,6 +96,24 @@ describe("the mock of the subject slice rule", () => {
     const file = "/repo/plugins/p/frontend/ui/Tab.test.ts";
     assert.deepEqual(findMockReports("vi.mock('./Other.vue', () => ({}))", file), ["1 mocksOwnSlice"]);
     assert.deepEqual(findMockReports("vi.mock('../model/useReader', () => ({}))", file), []);
+  });
+
+  it("fails vi.spyOn on a module or value from the slice of the test, and passes a spy on a fake port or another slice", () => {
+    const file = "/repo/apps/w/src/app/window/windowSettings.test.ts";
+    const violating = [
+      "import { createWindowSettingsPart } from './windowSettings'",
+      "const create = () => ({ settings: createWindowSettingsPart() })",
+      "const { settings } = create()",
+      "vi.spyOn(settings.rest, 'start')",
+    ].join("\n");
+    assert.deepEqual(findMockReports(violating, file), ["4 spiesOnOwnSlice"]);
+
+    const passing = [
+      "import { createTestTabs } from '@/testing/tabs'",
+      "const windowTabs = createTestTabs()",
+      "vi.spyOn(windowTabs.groups, 'closeTabsOfPlugin')",
+    ].join("\n");
+    assert.deepEqual(findMockReports(passing, file), []);
   });
 });
 

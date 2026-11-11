@@ -6,10 +6,10 @@ import { nextTick, ref } from 'vue'
 import NotesPanel from './NotesPanel.vue'
 import { useNotesPanel } from '../../model/session/notes'
 import { WORDS as words } from '../../lib/session/notesWords'
-import type { DeckNeighbourhood, Neighbour } from '../../api/session/notes'
+import type { DeckNeighborhood, Neighbor } from '../../api/session/notes'
 import type { NotesPanelState } from '../../model/session/notes'
 
-const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
+const createNeighbor = (more: Partial<Neighbor> = {}): Neighbor => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
   title: 'Leaf mould',
@@ -21,7 +21,7 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   ...more,
 })
 
-const createPanel = (neighbourhood: DeckNeighbourhood): NotesPanelState => {
+const createPanel = (neighborhood: DeckNeighborhood): NotesPanelState => {
   const open = ref(false)
   return useNotesPanel({
     open: () => open.value,
@@ -30,14 +30,14 @@ const createPanel = (neighbourhood: DeckNeighbourhood): NotesPanelState => {
     },
     vault: () => 'one',
     deck: () => 'decks/Words.md',
-    getDeckNeighbourhood: async () => neighbourhood,
+    getDeckNeighborhood: async () => neighborhood,
     showNotice: () => undefined,
     resolveLinks: async () => [],
   })
 }
 
-const mountPanel = async (neighbourhood: DeckNeighbourhood) => {
-  const panel = createPanel(neighbourhood)
+const mountPanel = async (neighborhood: DeckNeighborhood) => {
+  const panel = createPanel(neighborhood)
   await panel.actions.openPanel()
   return mount(NotesPanel, { props: { panel } })
 }
@@ -45,7 +45,7 @@ const mountPanel = async (neighbourhood: DeckNeighbourhood) => {
 describe('the panel the deck is read in', () => {
   it('names every note it read, one under another', async () => {
     const one = await mountPanel({
-      notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],
+      notes: [createNeighbor(), createNeighbor({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })
     expect(one.findAll('.reading__name').map((it) => it.text())).toEqual(['Leaf mould', 'Humus'])
@@ -56,8 +56,8 @@ describe('the panel the deck is read in', () => {
   it('says which of them point at the deck and not being pointed at', async () => {
     const one = await mountPanel({
       notes: [
-        createNeighbour(),
-        createNeighbour({ title: 'Humus', path: 'notes/Humus.md', hasPoints: false }),
+        createNeighbor(),
+        createNeighbor({ title: 'Humus', path: 'notes/Humus.md', hasPoints: false }),
       ],
       unread: 0,
     })
@@ -69,7 +69,7 @@ describe('the panel the deck is read in', () => {
   // hiding the question answers it wrongly.
   it('names a link that reached no note, and reads nothing under it', async () => {
     const one = await mountPanel({
-      notes: [createNeighbour({ path: '', title: '', body: '', written: 'Mould' })],
+      notes: [createNeighbor({ path: '', title: '', body: '', written: 'Mould' })],
       unread: 0,
     })
     expect(one.find('.reading__name').text()).toBe('Mould')
@@ -77,14 +77,14 @@ describe('the panel the deck is read in', () => {
   })
 
   it('says where a name several notes answer to was read as the nearest', async () => {
-    const one = await mountPanel({ notes: [createNeighbour({ isAmbiguous: true })], unread: 0 })
+    const one = await mountPanel({ notes: [createNeighbor({ isAmbiguous: true })], unread: 0 })
     expect(one.text()).toContain(words.ambiguous)
     expect(one.text()).not.toContain(words.dangling)
   })
 
   it('says why a note it could reach has no text', async () => {
     const one = await mountPanel({
-      notes: [createNeighbour({ body: '', error: 'note not in the vault' })],
+      notes: [createNeighbor({ body: '', error: 'note not in the vault' })],
       unread: 0,
     })
     expect(one.text()).toContain('note not in the vault')
@@ -92,7 +92,7 @@ describe('the panel the deck is read in', () => {
 
   // The limit is visible to the user and is not a silently truncated list.
   it('says how many at the end it did not read', async () => {
-    const one = await mountPanel({ notes: [createNeighbour()], unread: 4 })
+    const one = await mountPanel({ notes: [createNeighbor()], unread: 4 })
     expect(one.text()).toContain(words.named(4))
   })
 
@@ -114,7 +114,7 @@ describe('a reading opened on one note', () => {
   // note is awaited and not looked up once and abandoned.
   it('scrolls to it once the notes have arrived', async () => {
     const panel = createPanel({
-      notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],
+      notes: [createNeighbor(), createNeighbor({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })
     const one = mount(NotesPanel, { props: { panel } })

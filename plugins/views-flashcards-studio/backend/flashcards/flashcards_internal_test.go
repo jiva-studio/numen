@@ -1101,7 +1101,7 @@ func TestLogInternalsAndErrors(t *testing.T) {
 	}
 }
 
-func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
+func TestNeighborhoodInternalsAndErrors(t *testing.T) {
 	ctx := t.Context()
 	v := domain.Vault{ID: "v1"}
 	errBoom := errors.New("boom")
@@ -1110,9 +1110,9 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected MostRead == 30, got %d", MostRead)
 	}
 
-	// Test ShowNeighbourhood.Execute error branches: linked error, GetNotes error, GetTypes error,
+	// Test ShowNeighborhood.Execute error branches: linked error, GetNotes error, GetTypes error,
 	// boundary len(out.Notes) == MostRead vs MostRead+1.
-	snLinkErr := NewShowNeighbourhood(
+	snLinkErr := NewShowNeighborhood(
 		note.NewShowLinks(stubLinkQueries{linksErr: errBoom}),
 		stubNoteQueries{},
 		note.NewRead(stubVaultReaders{}),
@@ -1128,7 +1128,7 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 			},
 		},
 	}
-	snNotesErr := NewShowNeighbourhood(
+	snNotesErr := NewShowNeighborhood(
 		note.NewShowLinks(linksOne),
 		stubNoteQueries{notesErr: errBoom},
 		note.NewRead(stubVaultReaders{}),
@@ -1137,7 +1137,7 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected GetNotes error, got %v", err)
 	}
 
-	snTypesErr := NewShowNeighbourhood(
+	snTypesErr := NewShowNeighborhood(
 		note.NewShowLinks(linksOne),
 		stubNoteQueries{typesErr: errBoom},
 		note.NewRead(stubVaultReaders{}),
@@ -1171,7 +1171,7 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 			return []byte("prose"), nil
 		},
 	}
-	snThirty := NewShowNeighbourhood(
+	snThirty := NewShowNeighborhood(
 		note.NewShowLinks(stubLinkQueries{links: map[string][]domain.ResolvedLink{"decks/A.md": thirtyLinks}}),
 		stubNoteQueries{notes: notesMap, types: typesMap},
 		note.NewRead(stubVaultReaders{reader: readerOk}),
@@ -1187,8 +1187,8 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 		t.Fatalf("expected second neighbor body read after dangling first neighbor, got %q", gotThirty.Notes[1].Body)
 	}
 
-	// Test getNeighbours duplicate backlinks & seen link, scheme Note vs Name vs http, and getNeighbourTitle missing note.
-	neighbors := getNeighbours(v, "decks/A.md", note.Links{
+	// Test getNeighbors duplicate backlinks & seen link, scheme Note vs Name vs http, and getNeighborTitle missing note.
+	neighbors := getNeighbors(v, "decks/A.md", note.Links{
 		Links: []domain.ResolvedLink{
 			{Link: domain.Link{Target: domain.Address{Scheme: "https", Value: "example.com"}}},
 			{Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeNote, Value: "N1.md"}}, To: "N1.md", ToVault: v.ID},
@@ -1202,9 +1202,9 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 		},
 	})
 	if len(neighbors) != 3 || neighbors[0].Path != "N1.md" || neighbors[1].Path != "N2.md" || neighbors[1].Label != "first" || neighbors[2].Path != "N3.md" {
-		t.Fatalf("unexpected getNeighbours deduplication: %+v", neighbors)
+		t.Fatalf("unexpected getNeighbors deduplication: %+v", neighbors)
 	}
-	if _, ok := getNeighbourTitle(Neighbor{Path: "Gone.md"}, map[string]domain.NoteRef{}, map[string]domain.NoteType{}); ok {
+	if _, ok := getNeighborTitle(Neighbor{Path: "Gone.md"}, map[string]domain.NoteRef{}, map[string]domain.NoteType{}); ok {
 		t.Fatal("expected missing note in index to not be included")
 	}
 

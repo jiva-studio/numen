@@ -3,6 +3,9 @@
 package hostclient
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/texts"
@@ -81,4 +84,11 @@ func (h *Host) OpenStore(id domain.VaultID) host.StoreWriter {
 // GetQueue returns the work queue of the host.
 func (h *Host) GetQueue() host.Queue {
 	return h.queue
+}
+
+// ReportError writes a background failure of the plugin to standard error.
+func (*Host) ReportError(what string, err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "readers-epub: %s: %v\n", what, err)
+	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -197,13 +196,13 @@ func (t *Transcriber) reportProgress(ctx context.Context, vault domain.VaultID, 
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
 	if err := t.queue.ReportTask(context.WithoutCancel(ctx), task); err != nil {
-		fmt.Fprintf(os.Stderr, "engines-transcription: show the task %s: %v\n", task.ID, err)
+		t.reportError("show the task "+task.ID, err)
 	}
 }
 
 func (t *Transcriber) finishTask(ctx context.Context, vault domain.VaultID, path string) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
 	if err := t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(vault, path)); err != nil {
-		fmt.Fprintf(os.Stderr, "engines-transcription: finish the task of %s: %v\n", path, err)
+		t.reportError("finish the task of "+path, err)
 	}
 }

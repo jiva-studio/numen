@@ -9,7 +9,7 @@ import { formatErrorCodeMessage } from '../../../lib/wire/errors'
 import { cards } from '../clients'
 
 /** One note the deck is joined to. */
-export interface Neighbour {
+export interface Neighbor {
   readonly written: string
   readonly path: string
   readonly title: string
@@ -21,17 +21,17 @@ export interface Neighbour {
 }
 
 /** The notes linked to one deck. */
-export interface DeckNeighbourhood {
-  readonly notes: readonly Neighbour[]
+export interface DeckNeighborhood {
+  readonly notes: readonly Neighbor[]
   readonly unread: number
 }
 
 /** The notes one deck is joined to, in the order they are read. */
-export const getDeckNeighbourhood = async (
+export const getDeckNeighborhood = async (
   vault: string,
   deck: string,
-): Promise<DeckNeighbourhood> => {
-  const answer = await cards.getDeckNeighbourhood({ vault, deck })
+): Promise<DeckNeighborhood> => {
+  const answer = await cards.getDeckNeighborhood({ vault, deck })
   return {
     notes: answer.notes.map((one) => ({
       written: one.address,

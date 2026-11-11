@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"os"
 	"path"
 	"strings"
 	"sync"
@@ -79,6 +78,7 @@ type Host struct {
 	Store  func(domain.VaultID) Folder
 	Texts  func(domain.VaultID) host.TextVersions
 	Queue  host.Queue
+	Report func(what string, err error)
 }
 
 // ErrAlreadyRecognising is returned for a file another run is recognizing.
@@ -160,10 +160,16 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 		_, err := r.runRecognition(ctx, req)
 		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect recognition state."
 		if err != nil && ctx.Err() == nil {
-			fmt.Fprintf(os.Stderr, "engines-ocr: recognize %s: %v\n", req.Path, err)
+			r.reportError("recognize "+req.Path, err)
 		}
 	}()
 	return runEnd, true, nil
+}
+
+func (r *Recognition) reportError(what string, err error) {
+	if r.host.Report != nil && err != nil {
+		r.host.Report(what, err)
+	}
 }
 
 func (r *Recognition) claim(ctx context.Context, req Request) (Request, string, error) {
@@ -307,7 +313,7 @@ func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task
 		}
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of waiting task failure does not affect recognition state."
 		if err := r.host.Queue.ReportTask(ctx, queuedTask); err != nil {
-			fmt.Fprintf(os.Stderr, "engines-ocr: show the task %s: %v\n", queuedTask.ID, err)
+			r.reportError("show the task "+queuedTask.ID, err)
 		}
 	}})
 	if err != nil {

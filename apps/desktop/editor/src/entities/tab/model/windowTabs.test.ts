@@ -1,7 +1,7 @@
 /**
  * The window managing tabs of tab kinds it has no knowledge of.
  *
- * The tests use a kind created for the test: the window's behaviour toward a
+ * The tests use a kind created for the test: the window's behavior toward a
  * kind is all a real kind can rely on.
  */
 import { describe, expect, it, vi } from 'vitest'

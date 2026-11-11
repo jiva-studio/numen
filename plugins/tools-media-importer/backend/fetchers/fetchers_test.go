@@ -3,17 +3,20 @@ package fetchers
 import (
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/tempfiles"
 )
 
 const videoAddress = "https://www.youtube.com/watch?v=tidalmill01"
 
 // The settings name the programs, the captions and how large a copy may be.
 func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
-	fMock := New(true)
+	fMock := New(true, process.Runner{}, tempfiles.Files{})
 	if fMock.GetFetcher() == nil || fMock.GetFetcher().GetDownloadModel(videoAddress).Tool != "mock" {
 		t.Fatalf("mock fetcher = %+v", fMock.GetFetcher())
 	}
-	f := New(false)
+	f := New(false, process.Runner{}, tempfiles.Files{})
 	if f.GetFetcher() == nil || f.GetFetcher().GetDownloadModel(videoAddress).Tool == "mock" {
 		t.Fatalf("real fetcher = %+v", f.GetFetcher())
 	}
@@ -55,7 +58,7 @@ func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
 }
 
 func TestImportSettingsAreReadFromTheCamelCaseKeys(t *testing.T) {
-	f := New(false)
+	f := New(false, process.Runner{}, tempfiles.Files{})
 	f.UpdateConfig(map[string]string{
 		"ytDlp": "/custom/yt-dlp", "automaticCaptions": "false", "copyMaxSizeMb": "20",
 	})
@@ -68,7 +71,7 @@ func TestImportSettingsAreReadFromTheCamelCaseKeys(t *testing.T) {
 }
 
 func TestImportSettingsAreNotReadFromTheSnakeCaseKeys(t *testing.T) {
-	f := New(false)
+	f := New(false, process.Runner{}, tempfiles.Files{})
 	before, command := f.GetSettings(), slices.Clone(f.GetPrograms().Video.Command)
 	f.UpdateConfig(map[string]string{
 		"yt_dlp": "/custom/yt-dlp", "automatic_captions": "false", "copy_max_size_mb": "20",

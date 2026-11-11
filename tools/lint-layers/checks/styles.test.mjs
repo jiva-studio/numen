@@ -28,13 +28,13 @@ describe("the style rules", () => {
     return [...results[0].warnings.map((one) => one.rule), ...(results[0].invalidOptionWarnings ?? []).map((one) => one.text)];
   };
 
-  it("rejects a colour literal outside a token or theme file", async () => {
+  it("rejects a color literal outside a token or theme file", async () => {
     assert.deepEqual(await lint("view/a.css", "a { color: #fff; }"), ["color-no-hex"]);
     assert.deepEqual(await lint("view/a.css", "a { color: rgb(0 0 0); }"), ["function-disallowed-list"]);
     assert.deepEqual(await lint("view/a.css", "a { color: red; }"), ["color-named"]);
   });
 
-  it("rejects a colour literal in the style block of a component", async () => {
+  it("rejects a color literal in the style block of a component", async () => {
     assert.deepEqual(await lint("view/View.vue", "<template><p /></template>\n<style scoped>\np { color: #fff; }\n</style>\n"), ["color-no-hex"]);
   });
 
@@ -44,7 +44,7 @@ describe("the style rules", () => {
     assert.deepEqual(await lint("view/a.css", "a { color: var(--numen-missing); }"), ["numen/known-token"]);
   });
 
-  it("accepts a declared token, a local property, and colours in token and theme files", async () => {
+  it("accepts a declared token, a local property, and colors in token and theme files", async () => {
     assert.deepEqual(await lint("view/a.css", "a { --gap: 0.25rem; margin: var(--gap); color: var(--numen-ink); }"), []);
     assert.deepEqual(await lint("view/tokens/tokens.css", ":root { --numen-ink: light-dark(#000, rgb(255 255 255)); }"), []);
     assert.deepEqual(await lint("view/themes/dark.css", ":root { --numen-ink: white; }"), []);

@@ -7,7 +7,8 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/runs"
 )
 
 // Supervisor ends the whole process group of a command when its context is canceled.
@@ -31,7 +32,7 @@ func (c *CLI) IsInstalled(path string) bool {
 }
 
 // List runs the "models" command of the program and returns the models it prints.
-func (c *CLI) List(ctx context.Context, command []string) ([]models.Model, error) {
+func (c *CLI) List(ctx context.Context, command []string) ([]model.Model, error) {
 	name, args := resolveCommand(command)
 	cmd := exec.CommandContext(ctx, name, slices.Concat(args, []string{"models"})...)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
@@ -40,12 +41,12 @@ func (c *CLI) List(ctx context.Context, command []string) ([]models.Model, error
 	if err != nil {
 		return nil, fmt.Errorf("list the models of %s: %w", name, err)
 	}
-	return models.Parse(out), nil
+	return model.Parse(out), nil
 }
 
-// Build returns the command that runs req, and the function that releases what the command needs.
+// Build returns the command that runs req.
 func (c *CLI) Build(
 	ctx context.Context, req *agentrun.Request, reg *agentrun.Registry, executablePath string,
-) (*exec.Cmd, func() error, error) {
+) (runs.Command, error) {
 	return makeAntigravityCommand(ctx, req, reg, executablePath)
 }

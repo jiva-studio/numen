@@ -9,7 +9,7 @@ import { Prose } from '@numen/ui'
 
 import { NoteHead } from './note-head'
 import { WORDS as words } from '../../lib/session/notesWords'
-import type { Neighbour } from '../../api/session/notes'
+import type { Neighbor } from '../../api/session/notes'
 import { getNoteKey, type NotesPanelState } from '../../model/session/notes'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -46,7 +46,7 @@ watch(
   async ([open, col, notes]) => {
     if (!open || !col || !notes.length) return
     await nextTick(() => {
-      const found = notes.find((one: Neighbour) => one.written === col || one.path === col)
+      const found = notes.find((one: Neighbor) => one.written === col || one.path === col)
       if (found)
         noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
       props.panel.actions.read()
@@ -57,7 +57,7 @@ watch(
 
 /* -------------------------------- Helpers --------------------------------- */
 const registerNoteElement = (
-  one: Neighbour,
+  one: Neighbor,
   element: Element | ComponentPublicInstance | null,
 ): void => {
   if (element instanceof HTMLElement) noteElements.set(getNoteKey(one), element)

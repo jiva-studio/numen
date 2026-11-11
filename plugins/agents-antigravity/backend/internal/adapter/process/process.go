@@ -3,8 +3,14 @@
 package process
 
 import (
+	"bytes"
+	"context"
+	"io"
+	"os"
 	"os/exec"
 	"time"
+
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/runs"
 )
 
 // waitDelay is how long the pipes of a killed child are waited for.
@@ -26,3 +32,43 @@ type Supervisor struct{}
 func (Supervisor) Supervise(cmd *exec.Cmd) {
 	Supervise(cmd)
 }
+
+// Launcher starts a command in its own process group.
+type Launcher struct{}
+
+// Start starts spec and returns the running process.
+func (Launcher) Start(ctx context.Context, spec runs.Command) (runs.Process, error) {
+	cmd := exec.CommandContext(ctx, spec.Path, spec.Args...)
+	cmd.Dir = spec.Dir
+	env := spec.Env
+	if len(env) == 0 {
+		env = os.Environ()
+	}
+	if spec.Token != "" {
+		env = append(env, "NUMEN_TOKEN="+spec.Token)
+	}
+	cmd.Env = env
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
+	Supervise(cmd)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	stdout, err := cmd.StdoutPipe()
+	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdoutPipe on a fresh command before Start fails only on OS descriptor exhaustion."
+	if err != nil {
+		return nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	return &startedProcess{cmd: cmd, stdout: stdout, stderr: &stderr}, nil
+}
+
+type startedProcess struct {
+	cmd    *exec.Cmd
+	stdout io.ReadCloser
+	stderr *bytes.Buffer
+}
+
+func (p *startedProcess) Output() io.ReadCloser { return p.stdout }
+func (p *startedProcess) Stderr() string        { return p.stderr.String() }
+func (p *startedProcess) Wait() error           { return p.cmd.Wait() }

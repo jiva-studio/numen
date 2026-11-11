@@ -2,20 +2,22 @@
  * The parts that read and draw the vault: the note editors, the display, the settings and the
  * vaults.
  */
+import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { formatError } from '@/shared/api/errors'
 import { createNotes } from '@/features/command-palette'
 import { createNoteEditors } from '@/features/file-conflict'
+import { createWindowSettings } from '@/features/settings-commands'
 import { createTabNavigation, createTabSync, measureTabs } from '@/entities/tab'
 import { useVaults } from '@/entities/vault'
 import { syncTabPath } from '@/features/tab-linking'
 import { createDisplayOptions, getVaultList, useWindowDisplay } from '@/features/window-display'
+import { createSettingsPage } from '@/pages/settings'
 import { createEmitter } from '@/shared/lib/emitter'
 import type { PathRename } from '@/shared/lib/paths'
 import { WORDS as words } from '@/shared/ui/words'
-import { createWindowSettingsPart } from './windowSettings'
-import type { WindowCore } from './windowCore'
+import type { WindowCore, WindowFoundation } from './windowCore'
 
-export function createWindowServices(base: WindowCore) {
+export function createVaultServices(base: WindowFoundation) {
   const { windowTabs, tabLinks, tabOpeners } = base.tabs
   const noteEditors = createNoteEditors({ log: base.log, windowTabs })
   const editing = { ...noteEditors, reached: createNotes([noteEditors.store], tabOpeners) }
@@ -30,6 +32,7 @@ export function createWindowServices(base: WindowCore) {
   const navigation = createTabNavigation({ tabOpeners, windowTabs, tabSync })
 
   const renames = createEmitter<readonly PathRename[]>()
+  const vaultChanges = createEmitter<VaultChangeEvent>()
 
   const window = useWindowDisplay(
     createDisplayOptions({
@@ -38,20 +41,16 @@ export function createWindowServices(base: WindowCore) {
       renames,
       tabOpeners,
       windowTabs,
-      notifyPlugins: (event) => base.plugins.host.pluginHost.notifyVaultChange(event),
+      notifyPlugins: (event) => vaultChanges.emit(event),
       writeMessage: base.writeMessage,
     }),
   )
 
-  const settings = createWindowSettingsPart({
+  const windowSettings = createWindowSettings({
     rest: base.rest,
     words,
     log: base.log,
-    windowTabs,
     onSizeChanged: () => measureTabs(windowTabs),
-    getSettingsViews: (pluginId) =>
-      base.plugins.host.pluginHost.registered.getRegisteredSettingsViews(pluginId),
-    getPlatform: () => base.frame.platform.value,
   })
 
   const vaults = useVaults({
@@ -62,7 +61,31 @@ export function createWindowServices(base: WindowCore) {
     isEmbedding: window.vault.isEmbedding,
   })
 
-  return { editing, tabSync, navigation, renames, window, settings, vaults }
+  return { editing, tabSync, navigation, renames, vaultChanges, window, windowSettings, vaults }
+}
+
+export type VaultServices = ReturnType<typeof createVaultServices>
+
+export function createWindowServices(base: WindowCore, vaultServices: VaultServices) {
+  const page = createSettingsPage({
+    rest: base.rest,
+    appearance: vaultServices.windowSettings.appearance,
+    log: base.log,
+    windowTabs: base.tabs.windowTabs,
+    getSettingsViews: (pluginId) =>
+      base.plugins.host.pluginHost.registered.getRegisteredSettingsViews(pluginId),
+    getPlatform: () => base.frame.platform.value,
+  })
+  const settings = { rest: base.rest, ...vaultServices.windowSettings, ...page }
+  return {
+    editing: vaultServices.editing,
+    tabSync: vaultServices.tabSync,
+    navigation: vaultServices.navigation,
+    renames: vaultServices.renames,
+    window: vaultServices.window,
+    settings,
+    vaults: vaultServices.vaults,
+  }
 }
 
 export type WindowServices = ReturnType<typeof createWindowServices>

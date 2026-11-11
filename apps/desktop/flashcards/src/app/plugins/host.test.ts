@@ -35,10 +35,12 @@ const createShellHost = (
 
 const NOTHING = { dispose: () => undefined }
 
-const createMockVaultsHost = (): VaultsHost => ({
+const createMockVaultsHost = (switched: string[] = []): VaultsHost => ({
   getState: () => ({ vaults: [], current: null }),
   watch: () => NOTHING,
-  switchTo: async () => undefined,
+  switchTo: async (id) => {
+    switched.push(id)
+  },
 })
 
 const createMockWindowHost = (): WindowHost => ({
@@ -168,8 +170,8 @@ describe('createShellHost', () => {
   })
 
   it('refuses the vaults to a plugin without vault:read and switching to one without vault:manage', async () => {
-    const vaults = createMockVaultsHost()
-    const switchTo = vi.spyOn(vaults, 'switchTo')
+    const switched: string[] = []
+    const vaults = createMockVaultsHost(switched)
     const { host } = createShellHost(undefined, { vaults })
     const noGrants = host.createContext(
       'org.example.bare',
@@ -179,7 +181,7 @@ describe('createShellHost', () => {
 
     expect(() => noGrants.vault.vaults?.getState()).toThrowError('vault:read')
     await expect(reader.vault.vaults?.switchTo('roots')).rejects.toThrowError('vault:manage')
-    expect(switchTo).not.toHaveBeenCalled()
+    expect(switched).toStrictEqual([])
   })
 
   it('gives a plugin no vaults and no window where the window offers none', () => {
@@ -502,45 +504,59 @@ describe('the agent calls of a plugin in the window', () => {
     })
 
   const createContext = (permissions: string[]) => {
-    const agent = createMockAgentHost()
+    const queries: string[] = []
+    const markdownInputs: string[] = []
+    const baseAgent = createMockAgentHost()
+    const agent: AgentHost = {
+      ...baseAgent,
+      ask: (query) => {
+        queries.push(query.question)
+        return baseAgent.ask(query)
+      },
+      resolveLinks: async (markdown: string) => {
+        markdownInputs.push(markdown)
+        return []
+      },
+    }
     const { host } = createShellHost(agent)
     const context = host.createContext(
       'md.numen.example',
       createMockManifest('md.numen.example', { name: 'Example', permissions }),
     )
-    return { agent, agentOfPlugin: context.work.agent! }
+    return {
+      queries,
+      getFinished: () => baseAgent.getFinished(),
+      markdownInputs,
+      agentOfPlugin: context.work.agent!,
+    }
   }
 
   it('refuses the agent to a plugin without vault:write to ask', () => {
-    const { agent, agentOfPlugin } = createContext([])
-    const spy = vi.spyOn(agent, 'ask')
+    const { queries, agentOfPlugin } = createContext([])
 
     expect(() => ask(agentOfPlugin)).toThrow(/vault:write/)
-    expect(spy).not.toHaveBeenCalled()
+    expect(queries).toStrictEqual([])
   })
 
   it('refuses the agent to a plugin without vault:write to finish', async () => {
-    const { agent, agentOfPlugin } = createContext([])
-    const spy = vi.spyOn(agent, 'finish')
+    const { getFinished, agentOfPlugin } = createContext([])
 
     await expect(agentOfPlugin.finish('c1')).rejects.toThrow(/vault:write/)
-    expect(spy).not.toHaveBeenCalled()
+    expect(getFinished()).toStrictEqual([])
   })
 
   it('refuses the agent to a plugin without vault:read to resolve links', async () => {
-    const { agent, agentOfPlugin } = createContext([])
-    const spy = vi.spyOn(agent, 'resolveLinks')
+    const { markdownInputs, agentOfPlugin } = createContext([])
 
     await expect(agentOfPlugin.resolveLinks('[[Garden]]')).rejects.toThrow(/vault:read/)
-    expect(spy).not.toHaveBeenCalled()
+    expect(markdownInputs).toStrictEqual([])
   })
 
   it('refuses the agent, which can write the vault, to a plugin with vault:read only to ask', () => {
-    const { agent, agentOfPlugin } = createContext(['vault:read'])
-    const spy = vi.spyOn(agent, 'ask')
+    const { queries, agentOfPlugin } = createContext(['vault:read'])
 
     expect(() => ask(agentOfPlugin)).toThrow(/vault:write/)
-    expect(spy).not.toHaveBeenCalled()
+    expect(queries).toStrictEqual([])
   })
 
   it('refuses the agent to a plugin that has no manifest', () => {
@@ -551,23 +567,20 @@ describe('the agent calls of a plugin in the window', () => {
   })
 
   it('lets a plugin with vault:write ask the agent', () => {
-    const { agent, agentOfPlugin } = createContext(['vault:write'])
-    const spy = vi.spyOn(agent, 'ask')
+    const { queries, agentOfPlugin } = createContext(['vault:write'])
 
     ask(agentOfPlugin)
 
-    expect(spy).toHaveBeenCalledOnce()
+    expect(queries).toStrictEqual(['Quote the note'])
   })
 
   it('lets a plugin with vault:read and vault:write finish a conversation and resolve links', async () => {
-    const { agent, agentOfPlugin } = createContext(['vault:read', 'vault:write'])
-    const finish = vi.spyOn(agent, 'finish')
-    const resolveLinks = vi.spyOn(agent, 'resolveLinks')
+    const { getFinished, markdownInputs, agentOfPlugin } = createContext(['vault:read', 'vault:write'])
 
     await agentOfPlugin.finish('c1')
     await agentOfPlugin.resolveLinks('[[Garden]]')
 
-    expect(finish).toHaveBeenCalledWith('c1')
-    expect(resolveLinks).toHaveBeenCalledOnce()
+    expect(getFinished()).toStrictEqual(['c1'])
+    expect(markdownInputs).toStrictEqual(['[[Garden]]'])
   })
 })

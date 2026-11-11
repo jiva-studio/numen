@@ -61,9 +61,12 @@ func (t *Tools) WithLibrary(library func(domain.VaultID) Library) *Tools {
 // Registry registers and returns all vault tools.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
-	registrations := joinRegistrations(noteTools(), libraryTools(), inspectTools(), fileTools(), arrangeTools(), linkEditTools())
+	registrations := joinRegistrations(
+		createNoteTools(), createLibraryTools(), createInspectTools(),
+		createFileTools(), createArrangeTools(), createLinkEditTools(),
+	)
 	if t.list != nil {
-		registrations = append(registrations, vaultListTools()...)
+		registrations = append(registrations, createVaultListTools()...)
 	}
 	for _, register := range registrations {
 		if err := register(t, registry); err != nil {

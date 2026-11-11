@@ -170,6 +170,13 @@ describe('how wide a box is drawn', () => {
   /** The type the page is set in, which a theme may rewrite at any moment. */
   let theme = { size: 13, padding: 10, gap: 6, label: 10 }
 
+  const readThemeType = () => ({
+    font: `${theme.size}px Test Sans`,
+    labelFont: `${theme.label}px Test Sans`,
+    padding: theme.padding,
+    gap: theme.gap,
+  })
+
   /** A canvas that measures by the character. jsdom has none of its own. */
   const stubCanvas = () => {
     vi.stubGlobal('CanvasRenderingContext2D', class {})
@@ -177,33 +184,6 @@ describe('how wide a box is drawn', () => {
       font: '',
       measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
     } as unknown as CanvasRenderingContext2D)
-  }
-
-  /**
-   * The document, resolving the tokens a box carries into pixels. jsdom
-   */
-  const stubStyles = () => {
-    const engine: (element: Element, pseudo?: string | null) => unknown =
-      window.getComputedStyle.bind(window)
-
-    vi.spyOn(window, 'getComputedStyle').mockImplementation(((
-      element: Element,
-      pseudo?: string | null,
-    ) => {
-      // The box the measurer holds is hidden from assistive technology; its label word is the second child.
-      const isBox = element.getAttribute('aria-hidden') === 'true'
-      const isLabel =
-        element.parentElement?.getAttribute('aria-hidden') === 'true' &&
-        element.previousElementSibling !== null
-      if (!isBox && !isLabel) return engine(element, pseudo)
-
-      return {
-        fontSize: `${isLabel ? theme.label : theme.size}px`,
-        fontFamily: 'Test Sans',
-        paddingInlineStart: `${theme.padding}px`,
-        columnGap: `${theme.gap}px`,
-      } as CSSStyleDeclaration
-    }) as typeof window.getComputedStyle)
   }
 
   /** A window that reports a size change when a test triggers it. */
@@ -242,9 +222,8 @@ describe('how wide a box is drawn', () => {
     // Measured before the first arrangement, so nothing is drawn at a width it
     // then has to leave: the reader is never shown a box shrinking into place.
     stubCanvas()
-    stubStyles()
 
-    const plex = mountPlex({ duration: 400 })
+    const plex = mountPlex({ duration: 400, readType: readThemeType })
     const painted = boxes(plex)
 
     expect(new Set(painted).size).toBeGreaterThan(1)
@@ -259,10 +238,9 @@ describe('how wide a box is drawn', () => {
     // The box of the plex's own type is observed, and measured again whenever the
     // window reports it may have moved.
     stubCanvas()
-    stubStyles()
     const rings = stubObserver()
 
-    const plex = mountPlex({ duration: 400 })
+    const plex = mountPlex({ duration: 400, readType: readThemeType })
     const painted = boxes(plex)
 
     for (const ring of rings) ring()
@@ -276,10 +254,9 @@ describe('how wide a box is drawn', () => {
     // A theme is applied by rewriting a style element, with nothing remounted.
     // Every box then holds a title set in a type the plex has not measured.
     stubCanvas()
-    stubStyles()
     const rings = stubObserver()
 
-    const plex = mountPlex()
+    const plex = mountPlex({ readType: readThemeType })
     const painted = boxes(plex)
 
     theme = { ...theme, size: 20, padding: 24 }

@@ -1,13 +1,10 @@
 <script setup lang="ts">
 /**
  * One card of the session: the front, and the back once the answer is requested.
- *
- * A review card is drawn by the one component every review card is drawn by, so a card reads
- * here the way it reads where it was written.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { findLinkHref, renderCardHtml, vMarkup } from '../../../api/render'
 import { scheme } from '../../../lib/cards'
-import { CardProse } from '../card-prose'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -28,20 +25,23 @@ const MAX_TAP_DISTANCE = 4
 /* --------------------------------- State ---------------------------------- */
 /** Horizontal position where the pointer went down, to tell a press from a drag across the card. */
 const from = ref<number | null>(null)
+const frontHtml = computed(() => renderCardHtml(props.front))
+const backHtml = computed(() => renderCardHtml(props.back))
 
 /* -------------------------------- Handlers -------------------------------- */
 const onPointerDown = (press: PointerEvent) => {
   from.value = press.clientX
 }
 
-const onFollow = (href: string, press: MouseEvent) => {
-  press.preventDefault()
-  // A name carrying no scheme points inside the vault, which is where the
-  // reading beside the card is.
-  if (scheme(href) === null) emit('read', decodeHref(href))
-}
-
 const onClick = (press: MouseEvent) => {
+  const href = findLinkHref(press)
+  if (href) {
+    press.preventDefault()
+    // A name carrying no scheme points inside the vault, which is where the
+    // reading beside the card is.
+    if (scheme(href) === null) emit('read', decodeHref(href))
+    return
+  }
   if (press.defaultPrevented) return
   // A press that did not drag requests the answer.
   const distanceX = from.value === null ? 0 : Math.abs(press.clientX - from.value)
@@ -63,9 +63,16 @@ function decodeHref(href: string): string {
 
 <template>
   <article class="card" @click="onClick" @pointerdown="onPointerDown">
-    <CardProse :text="front" @follow="onFollow" />
+    <div
+      v-markup="frontHtml"
+      class="prose prose-sm prose-numen numen max-w-none break-words"
+    ></div>
     <div v-if="isShown" class="card__rule" />
-    <CardProse v-if="isShown" :text="back" @follow="onFollow" />
+    <div
+      v-if="isShown"
+      v-markup="backHtml"
+      class="prose prose-sm prose-numen numen max-w-none break-words"
+    ></div>
   </article>
 </template>
 
@@ -93,5 +100,36 @@ function decodeHref(href: string): string {
   flex: none;
   block-size: var(--rule-block-size);
   background: var(--numen-edge);
+}
+
+.prose {
+  font-size: var(--local-prose-size);
+  user-select: text;
+  -webkit-user-select: text;
+
+  /* A line written with no enclosing tag is not wrapped, so the breaks
+     between such lines are kept and each reads as the line it is. */
+  white-space: pre-wrap;
+}
+
+/* Inside a user-written tag the whitespace belongs to the markup: a list is not
+   indented by the spaces the file was laid out with. Preformatted text keeps
+   its own. */
+.prose :deep(*:not(pre, pre *)) {
+  white-space: normal;
+}
+
+.prose :deep(table) {
+  display: block;
+  overflow-x: auto;
+}
+
+/* A slot naming no field is read at its current position. */
+.prose :deep(mark) {
+  --prose-padding-inline: 0.25em;
+  border-radius: var(--numen-radius);
+  padding-inline: var(--prose-padding-inline);
+  background: var(--numen-alarm-bg);
+  color: var(--numen-alarm);
 }
 </style>

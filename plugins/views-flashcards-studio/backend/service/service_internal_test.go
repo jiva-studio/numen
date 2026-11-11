@@ -221,8 +221,8 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		env := vaulttest.New(t, map[string]string{})
 		env.Host.Hide()
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
-		cardsAPI := &cardsHandler{Backend: b}
-		presetsAPI := &presetsHandler{Backend: b}
+		cardsAPI := b.newCardsHandler()
+		presetsAPI := b.newPresetsHandler()
 
 		if _, err := cardsAPI.ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeFailedPrecondition {
 			t.Fatalf("ListCardModels: %v", err)
@@ -279,13 +279,13 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			Store:  vaulttest.Folders(env.Host),
 			Now:    vaulttest.NewClock(),
 		})
-		if _, err := (&cardsHandler{Backend: b}).ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeInternal {
+		if _, err := (b.newCardsHandler()).ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeInternal {
 			t.Fatalf("expected CodeInternal from ListCardModels, got %v", err)
 		}
-		if _, err := (&presetsHandler{Backend: b}).ListPresets(ctx, &api.ListPresetsRequest{}); codeOf(err) != server.CodeInternal {
+		if _, err := (b.newPresetsHandler()).ListPresets(ctx, &api.ListPresetsRequest{}); codeOf(err) != server.CodeInternal {
 			t.Fatalf("expected CodeInternal from ListPresets, got %v", err)
 		}
-		if _, err := (&presetsHandler{Backend: b}).GetDeckPreset(ctx, &api.GetDeckPresetRequest{Deck: "D.md"}); codeOf(err) != server.CodeInternal {
+		if _, err := (b.newPresetsHandler()).GetDeckPreset(ctx, &api.GetDeckPresetRequest{Deck: "D.md"}); codeOf(err) != server.CodeInternal {
 			t.Fatalf("expected CodeInternal from GetDeckPreset, got %v", err)
 		}
 	})
@@ -297,8 +297,8 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			Store:  vaulttest.Folders(env.Host),
 			Now:    vaulttest.NewClock(),
 		})
-		cardsAPI := &cardsHandler{Backend: b}
-		presetsAPI := &presetsHandler{Backend: b}
+		cardsAPI := b.newCardsHandler()
+		presetsAPI := b.newPresetsHandler()
 
 		created, err := cardsAPI.CreateDeck(ctx, &api.CreateDeckRequest{Title: "Fresh"})
 		if err != nil || !created.IsIndexOutdated || created.Path != "Fresh.md" || created.Error != api.ErrorCodeUnspecified {
@@ -348,8 +348,8 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		notes["Huge.md"] = "---\ntype: deck\n---\n\n" + strings.Repeat("x", int(cards.MaxBytes)+10)
 		env := vaulttest.New(t, notes)
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
-		cardsAPI := &cardsHandler{Backend: b}
-		presetsAPI := &presetsHandler{Backend: b}
+		cardsAPI := b.newCardsHandler()
+		presetsAPI := b.newPresetsHandler()
 
 		if _, err := cardsAPI.CreateCardModel(ctx, &api.CreateCardModelRequest{Title: "Empty"}); codeOf(err) != server.CodeInvalidArgument {
 			t.Fatalf("expected CodeInvalidArgument for empty fields, got %v", err)
@@ -482,7 +482,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	hEnsureErr := &reviewHandler{Backend: bEnsureErr}
+	hEnsureErr := bEnsureErr.newReviewHandler()
 	if got := hEnsureErr.countVault(ctx, env.Vault); got == nil || got.Unread != "ensure boom" {
 		t.Fatalf("expected Unread='ensure boom', got %+v", got)
 	}
@@ -492,7 +492,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	hDueErr := &reviewHandler{Backend: bDueErr}
+	hDueErr := bDueErr.newReviewHandler()
 	if got := hDueErr.countVault(ctx, env.Vault); got == nil || got.Unread != "due boom" {
 		t.Fatalf("expected Unread='due boom', got %+v", got)
 	}
@@ -521,7 +521,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if err := (&reviewHandler{Backend: bWatchErr}).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+	if err := (bWatchErr.newReviewHandler()).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); codeOf(err) != server.CodeUnavailable {
 		t.Fatalf("expected CodeUnavailable when WatchMoves fails, got %v", err)
@@ -534,7 +534,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if err := (&reviewHandler{Backend: bClosedMoves}).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+	if err := (bClosedMoves.newReviewHandler()).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); err != nil {
 		t.Fatalf("expected nil when WatchMoves channel closes cleanly, got %v", err)
@@ -547,7 +547,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if err := (&reviewHandler{Backend: bErrMoves}).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+	if err := (bErrMoves.newReviewHandler()).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); codeOf(err) != server.CodeUnavailable {
 		t.Fatalf("expected CodeUnavailable when move.Err != nil, got %v", err)
@@ -606,7 +606,7 @@ func TestMountAndAllEndpoints(t *testing.T) {
 		"RecordReview",
 		"UndoReview",
 		"ListReviewDays",
-		"GetDeckNeighbourhood",
+		"GetDeckNeighborhood",
 		"GetVaultDeckPreset",
 		"WatchCardsDue",
 	} {

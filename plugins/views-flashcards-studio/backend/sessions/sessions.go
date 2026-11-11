@@ -2,12 +2,15 @@
 package sessions
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
 // ErrNoRun is an answer named against a run this backend did not open. A run is one session at one
@@ -26,6 +29,18 @@ func NewRegistry() *Registry {
 	return &Registry{mu: sync.Mutex{}, run: make(map[domain.VaultID]*flashcards.LogWriter)}
 }
 
+// Open opens a new run on v at now and makes it the active run for v.
+func (r *Registry) Open(
+	ctx context.Context, log flashcards.Log, v domain.Vault, now time.Time,
+) (*flashcards.LogWriter, error) {
+	run, err := log.Open(ctx, v, now)
+	if err != nil {
+		return nil, err
+	}
+	r.Store(v, run)
+	return run, nil
+}
+
 // Store makes run the one open on the vault v.
 func (r *Registry) Store(v domain.Vault, run *flashcards.LogWriter) {
 	r.mu.Lock()
@@ -42,4 +57,40 @@ func (r *Registry) GetRun(vault domain.VaultID, name string) (*flashcards.LogWri
 		return nil, fmt.Errorf("%w: %s", ErrNoRun, name)
 	}
 	return run, nil
+}
+
+// AnswerRequest names the run and the answer to append to it.
+type AnswerRequest struct {
+	Vault    domain.VaultID
+	Run      string
+	Card     review.CardID
+	Rating   review.Rating
+	Duration time.Duration
+}
+
+// RecordAnswer appends an answer to the active run named on vault.
+func (r *Registry) RecordAnswer(
+	ctx context.Context, record flashcards.Record, req AnswerRequest,
+) (review.Answer, error) {
+	run, err := r.GetRun(req.Vault, req.Run)
+	if err != nil {
+		return review.Answer{}, err
+	}
+	return record.Answer(ctx, run, req.Card, req.Rating, req.Duration)
+}
+
+// UndoAnswer withdraws an answer from the active run named on vault.
+func (r *Registry) UndoAnswer(
+	ctx context.Context,
+	record flashcards.Record,
+	vault domain.VaultID,
+	runName string,
+	answerID string,
+) error {
+	run, err := r.GetRun(vault, runName)
+	if err != nil {
+		return err
+	}
+	_, err = record.TakeBack(ctx, run, answerID)
+	return err
 }

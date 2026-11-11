@@ -82,7 +82,7 @@ describe('every theme there is', () => {
   })
 })
 
-describe('which half of a colour pair is read', () => {
+describe('which half of a color pair is read', () => {
   it('is returned in the window’s own words', async () => {
     for (const [mode, word] of [
       [THEME_MODE.LIGHT, 'light'],

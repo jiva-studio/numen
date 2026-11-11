@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -35,6 +34,7 @@ type Transcriber struct {
 	texts   func(domain.VaultID) host.TextVersions
 	queue   host.Queue
 	engines Engines
+	report  func(what string, err error)
 
 	closing   chan struct{}
 	closeOnce sync.Once
@@ -48,9 +48,20 @@ type Transcriber struct {
 // NewTranscriber is the transcriber over what the host gives the plugin.
 func NewTranscriber(files Files, stores func(domain.VaultID) Folder, texts func(domain.VaultID) host.TextVersions, queue host.Queue, engines Engines) *Transcriber {
 	return &Transcriber{
-		files: files, stores: stores, texts: texts, queue: queue, engines: engines,
+		files: files, stores: stores, texts: texts, queue: queue, engines: engines, report: nil,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
 		mu: sync.Mutex{}, isClosed: false, running: map[string]bool{},
+	}
+}
+
+// SetReport sets the callback that receives background failures of the transcriber.
+func (t *Transcriber) SetReport(report func(what string, err error)) {
+	t.report = report
+}
+
+func (t *Transcriber) reportError(what string, err error) {
+	if t.report != nil && err != nil {
+		t.report(what, err)
 	}
 }
 
@@ -130,7 +141,7 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 		if err := t.runTranscription(context.WithoutCancel(ctx), key, claimed, path, func(ctx context.Context) ([]byte, error) {
 			return t.files.ReadFile(ctx, claimed, path)
 		}); err != nil && !errors.Is(err, context.Canceled) {
-			fmt.Fprintf(os.Stderr, "engines-transcription: transcribe %s: %v\n", path, err)
+			t.reportError("transcribe "+path, err)
 		}
 	}()
 	return true, nil

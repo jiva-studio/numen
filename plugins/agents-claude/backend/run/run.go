@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/arguments"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/environment"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/ports"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/settings"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/stream"
@@ -100,17 +100,17 @@ func (r *Run) prepareArguments(
 			return nil, "", rpcerror.New(rpcerror.Internal, fmt.Errorf("write mcp config: %w", err))
 		}
 	}
-	model := msg.Model
-	if model == "" {
-		model = values.DefaultModel
+	modelName := msg.Model
+	if modelName == "" {
+		modelName = values.DefaultModel
 	}
-	level := r.deps.Reasoning.GetReasoning(model, msg.Reasoning)
-	if model == models.DefaultName {
-		model = ""
+	level := r.deps.Reasoning.GetReasoning(modelName, msg.Reasoning)
+	if modelName == model.DefaultName {
+		modelName = ""
 	}
 	args := arguments.Build(arguments.Options{
 		Instructions:  instructions,
-		Model:         model,
+		Model:         modelName,
 		Reasoning:     level,
 		Configuration: configFile,
 		Session:       r.registry.GetSession(msg.Conversation),

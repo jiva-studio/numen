@@ -12,8 +12,8 @@ import type { FieldValue } from '../../../../../lib/cards'
 import { getDeclaredFields, type Half } from '../../../../../lib/cards'
 import { templateRows, type TemplateRow, type CardModelTemplate } from '../../../../../lib/cards'
 import { sampleValues } from '../../../../../lib/cards'
-import { hoverOver, lightness } from '../../../fixtures/colour'
-import { DARK, expectDark } from '../../../fixtures/theme'
+import { hoverOver, lightness } from '../../../../../testing/colour'
+import { DARK, expectDark } from '../../../../../testing/theme'
 
 interface Corpus {
   readonly template: CardModelTemplate

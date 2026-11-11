@@ -8,7 +8,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
-import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
+import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { EXPANSION_DURATION, type WideBox } from '../../model/sizing/expansion'
 import { getNodeHeadings } from '../../lib/inside'
 import { stubClock } from '../../../fixtures/clock'
@@ -325,7 +325,7 @@ describe('a box with more of its title to show', () => {
       props: {
         node: createNode(overrides),
         wide,
-        behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
+        behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: WAIT, clock: world.clock },
         gestureRole,
       },
     })
@@ -441,7 +441,7 @@ describe('a box with nothing more to show', () => {
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(),
-        behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
+        behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: WAIT, clock: world.clock },
         ...props,
       },
     })
@@ -504,7 +504,7 @@ describe('the headings a node hangs', () => {
             margin: 20,
           },
         }),
-        behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
+        behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: WAIT, clock: world.clock },
       },
     })
     return { node, world }

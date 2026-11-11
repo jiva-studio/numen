@@ -2,10 +2,9 @@ package runs
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
-	"os/exec"
+	"io"
 	"slices"
 	"strings"
 	"testing"
@@ -14,9 +13,21 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/events"
 )
 
-type noSupervisor struct{}
+type fakeProcess struct {
+	stdout  string
+	stderr  string
+	waitErr error
+}
 
-func (noSupervisor) Supervise(*exec.Cmd) {}
+func (p *fakeProcess) Output() io.ReadCloser { return io.NopCloser(strings.NewReader(p.stdout)) }
+func (p *fakeProcess) Stderr() string        { return p.stderr }
+func (p *fakeProcess) Wait() error           { return p.waitErr }
+
+type launcherFunc func(ctx context.Context, cmd Command) (Process, error)
+
+func (f launcherFunc) Start(ctx context.Context, cmd Command) (Process, error) {
+	return f(ctx, cmd)
+}
 
 func TestRunnerErrorPathsAndLimits(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
@@ -51,42 +62,34 @@ func TestRunnerErrorPathsAndLimits(t *testing.T) {
 	}
 
 	// configureCommand with pre-set Env vs empty Env and Token vs empty Token.
-	cmd := exec.CommandContext(t.Context(), "true")
-	cmd.Env = []string{"CUSTOM=1"}
-	configureCommand(cmd, spec{Root: "/tmp/r", Token: ""})
-	if cmd.Dir != "/tmp/r" || !slices.Equal(cmd.Env, []string{"CUSTOM=1"}) {
-		t.Errorf("configureCommand custom Env: Dir=%q, Env=%v", cmd.Dir, cmd.Env)
+	cmd := Command{Path: "true", Env: []string{"CUSTOM=1"}}
+	configureCommand(&cmd, spec{Root: "/tmp/r", Token: ""})
+	if cmd.Dir != "/tmp/r" || !slices.Equal(cmd.Env, []string{"CUSTOM=1"}) || cmd.Token != "" {
+		t.Errorf("configureCommand custom Env: Dir=%q, Env=%v, Token=%q", cmd.Dir, cmd.Env, cmd.Token)
 	}
-	cmd2 := exec.CommandContext(t.Context(), "true")
-	configureCommand(cmd2, spec{Root: "", Token: "tok-x"})
-	if cmd2.Dir != "" || !slices.Contains(cmd2.Env, "NUMEN_TOKEN=tok-x") {
-		t.Errorf("configureCommand default Env with token: Dir=%q", cmd2.Dir)
+	cmd2 := Command{Path: "true"}
+	configureCommand(&cmd2, spec{Root: "", Token: "tok-x"})
+	if cmd2.Dir != "" || cmd2.Token != "tok-x" {
+		t.Errorf("configureCommand with token: Dir=%q, Token=%q", cmd2.Dir, cmd2.Token)
 	}
 
 	var reg agentrun.Registry
-	runner := New(&reg, nil, noSupervisor{}, nil)
-
-	// start error paths: StdoutPipe error, cmd.Start error, closed registry, and cleanup error in runReader.
-	cleanedStdout := false
-	if _, err := runner.start(t.Context(), spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			c := exec.CommandContext(ctx, "true")
-			c.Stdout = &bytes.Buffer{}
-			return c, func() error {
-				cleanedStdout = true
-				return nil
-			}, nil
-		},
-	}); err == nil || !cleanedStdout {
-		t.Errorf("start with pre-set Stdout = %v, cleaned=%v", err, cleanedStdout)
-	}
+	runner := New(&reg, nil, launcherFunc(func(_ context.Context, c Command) (Process, error) {
+		if c.Path == "/nonexistent-agy-bin" {
+			return nil, errors.New("no such file")
+		}
+		return &fakeProcess{stdout: "plain-line\n", stderr: "custom-stderr\n"}, nil
+	}), nil)
 
 	cleanedStart := false
 	if _, err := runner.start(t.Context(), spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			return exec.CommandContext(ctx, "/nonexistent-agy-bin"), func() error {
-				cleanedStart = true
-				return nil
+		Build: func(context.Context) (Command, error) {
+			return Command{
+				Path: "/nonexistent-agy-bin",
+				Release: func() error {
+					cleanedStart = true
+					return nil
+				},
 			}, nil
 		},
 	}); err == nil || !cleanedStart {
@@ -97,27 +100,32 @@ func TestRunnerErrorPathsAndLimits(t *testing.T) {
 	if err := closedReg.Close(); err != nil {
 		t.Fatal(err)
 	}
-	closedRunner := New(&closedReg, nil, noSupervisor{}, nil)
+	closedRunner := New(&closedReg, nil, launcherFunc(func(context.Context, Command) (Process, error) {
+		return &fakeProcess{}, nil
+	}), nil)
 	cleanedClosed := false
 	if _, err := closedRunner.start(t.Context(), spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			return exec.CommandContext(ctx, "true"), func() error {
-				cleanedClosed = true
-				return nil
+		Build: func(context.Context) (Command, error) {
+			return Command{
+				Path: "true",
+				Release: func() error {
+					cleanedClosed = true
+					return nil
+				},
 			}, nil
 		},
 	}); err == nil || !cleanedClosed {
 		t.Errorf("start with closed registry = %v, cleaned=%v", err, cleanedClosed)
 	}
 
-	var customStderr bytes.Buffer
 	wCleanErr, err := runner.start(t.Context(), spec{
 		NewHandler: events.NewHandler,
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			c := exec.CommandContext(ctx, "/bin/sh", "-c", "echo plain-line; echo custom-stderr >&2")
-			c.Stderr = &customStderr
-			return c, func() error {
-				return errors.New("cleanup failed")
+		Build: func(context.Context) (Command, error) {
+			return Command{
+				Path: "/bin/sh",
+				Release: func() error {
+					return errors.New("cleanup failed")
+				},
 			}, nil
 		},
 	})
@@ -130,9 +138,6 @@ func TestRunnerErrorPathsAndLimits(t *testing.T) {
 	}
 	if len(cleanSteps) != 2 || cleanSteps[0].GetText() != "plain-line\n" || !strings.Contains(cleanSteps[1].GetStopped(), "release the resources of the run: cleanup failed") {
 		t.Errorf("cleanSteps = %+v", cleanSteps)
-	}
-	if !strings.Contains(customStderr.String(), "custom-stderr") {
-		t.Errorf("customStderr = %q", customStderr.String())
 	}
 
 	// scanOutput when work is stopped mid-stream returns false.

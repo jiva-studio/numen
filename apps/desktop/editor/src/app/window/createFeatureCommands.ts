@@ -18,8 +18,9 @@ import type { FeatureCommands, Notes } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
 import type { WORDS } from '@/shared/ui/words'
 import { getUserAgent } from './getUserAgent'
-import type { WindowServices } from './createWindowServices'
-import type { WindowCore } from './windowCore'
+import type { CommandItemLists } from '@/features/plugin-commands'
+import type { VaultServices } from './createWindowServices'
+import type { WindowFoundation } from './windowCore'
 
 /** What the commands of the features use of the window. */
 interface FeatureCommandsDeps {
@@ -32,16 +33,17 @@ interface FeatureCommandsDeps {
 
 /** The parts of the window the commands of the features are given. */
 interface FeatureWindow {
-  readonly base: WindowCore
-  readonly services: WindowServices
+  readonly base: Pick<WindowFoundation, 'writeMessage' | 'tabs'>
+  readonly itemLists: CommandItemLists
+  readonly services: Pick<VaultServices, 'editing' | 'window' | 'navigation' | 'vaults'>
   readonly moves: ReturnType<typeof createWindowTabMover>
   readonly tabsHold: TabsHold
   readonly notes: Notes
-  readonly tabLinks: WindowCore['tabs']['tabLinks']
+  readonly tabLinks: WindowFoundation['tabs']['tabLinks']
 }
 
 export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
-  const { base, services, moves, notes } = parts
+  const { base, itemLists, services, moves, notes } = parts
   const { writeMessage } = base
   const { windowTabs } = base.tabs
   const { editing, window, navigation, vaults } = services
@@ -81,7 +83,7 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
       detach: moves.detachTabInPlace,
       move: moves.moveTab,
     },
-    versions: { listItems: base.plugins.itemLists.listItems, writeMessage },
+    versions: { listItems: itemLists.listItems, writeMessage },
   }
 }
 

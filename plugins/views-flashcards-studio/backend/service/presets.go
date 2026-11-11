@@ -9,12 +9,29 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/filewire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 )
 
 // presetsHandler answers about the presets decks are scheduled by.
 type presetsHandler struct {
-	*Backend
+	getCurrentVault func(context.Context) (domain.Vault, error)
+	createCardNote  func(context.Context, func(domain.Vault, cards.New) (cards.CreateNoteResult, error), string, string) (cards.CreateNoteResult, api.ErrorCode, bool, error)
+	newTitler       func(context.Context, domain.Vault) func(string) string
+	create          func() cards.Create
+	presets         func() flashcards.Presets
+	curves          func() flashcards.ProjectCurve
+}
+
+func (b *Backend) newPresetsHandler() *presetsHandler {
+	return &presetsHandler{
+		getCurrentVault: b.getCurrentVault,
+		createCardNote:  b.createCardNote,
+		newTitler:       b.newTitler,
+		create:          func() cards.Create { return b.scenarios().Cards.Create },
+		presets:         func() flashcards.Presets { return b.scenarios().Flash.Presets },
+		curves:          func() flashcards.ProjectCurve { return b.scenarios().Flash.Curves },
+	}
 }
 
 func (h *presetsHandler) GetDeckPreset(ctx context.Context, req *api.GetDeckPresetRequest) (*api.GetDeckPresetResponse, error) {
@@ -22,7 +39,7 @@ func (h *presetsHandler) GetDeckPreset(ctx context.Context, req *api.GetDeckPres
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().Flash.Presets.GetForDeck(ctx, showing, req.Deck)
+	found, err := h.presets().GetForDeck(ctx, showing, req.Deck)
 	return presetwire.NewDeckPresetResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -31,13 +48,13 @@ func (h *presetsHandler) ListPresets(ctx context.Context, _ *api.ListPresetsRequ
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().Flash.Presets.List(ctx, showing)
+	found, err := h.presets().List(ctx, showing)
 	return presetwire.NewListResponse(found, err)
 }
 
 func (h *presetsHandler) CreatePreset(ctx context.Context, req *api.CreatePresetRequest) (*api.CreatePresetResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return h.scenarios().Cards.Create.Preset(ctx, showing, in)
+		return h.create().Preset(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
@@ -50,7 +67,7 @@ func (h *presetsHandler) ScheduleDeck(ctx context.Context, req *api.ScheduleDeck
 	if err != nil {
 		return nil, err
 	}
-	pos, err := h.scenarios().Flash.Presets.Point(ctx, showing, req.Deck, req.Preset, filewire.GetStat(req.Baseline))
+	pos, err := h.presets().Point(ctx, showing, req.Deck, req.Preset, filewire.GetStat(req.Baseline))
 	return presetwire.NewScheduleDeckResponse(pos, err)
 }
 
@@ -59,7 +76,7 @@ func (h *presetsHandler) ReadPreset(ctx context.Context, req *api.ReadPresetRequ
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().Flash.Presets.Read(ctx, showing, req.Path)
+	found, err := h.presets().Read(ctx, showing, req.Path)
 	return presetwire.NewReadPresetResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -72,7 +89,7 @@ func (h *presetsHandler) WritePreset(ctx context.Context, req *api.WritePresetRe
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	pos, err := h.scenarios().Flash.Presets.Save(ctx, showing, req.Path, settings, filewire.GetStat(req.Baseline))
+	pos, err := h.presets().Save(ctx, showing, req.Path, settings, filewire.GetStat(req.Baseline))
 	return presetwire.NewWritePresetResponse(pos, err)
 }
 
@@ -85,6 +102,6 @@ func (h *presetsHandler) ComputeCurve(ctx context.Context, req *api.ComputeCurve
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	curve, err := h.scenarios().Flash.Curves.Execute(ctx, showing, req.Path, settings)
+	curve, err := h.curves().Execute(ctx, showing, req.Path, settings)
 	return presetwire.NewCurveResponse(curve, err)
 }

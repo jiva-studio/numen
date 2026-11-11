@@ -3,7 +3,7 @@
  * there, in plex coordinates.
  *
  * A title stays on its own line, clear of every box and of every other title:
- * at its own position when that position is clear (centred for a line with one
+ * at its own position when that position is clear (centered for a line with one
  * title, one near each end for a line with two), and moved along the curve
  * to the nearest clear position, truncated to the longest clear stretch when the whole
  * text fits nowhere, and dropped when that stretch is shorter than half.

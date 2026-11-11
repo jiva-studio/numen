@@ -3,6 +3,8 @@
 package pdfworkers
 
 import (
+	"fmt"
+	"os"
 	"runtime"
 	"time"
 
@@ -12,6 +14,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
+
+// ReportError writes a background failure of the plugin to standard error.
+func ReportError(what string, err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "readers-pdf: %s: %v\n", what, err)
+	}
+}
 
 func newCompilationCache() wazero.CompilationCache {
 	dir, err := cache.GetPluginDir()
@@ -29,6 +38,7 @@ func New(afterFunc func(time.Duration, func()) pdf.Timer) *pdf.Workers {
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
 	workers.SetCompilationCache(newCompilationCache())
 	workers.SetAfterFunc(afterFunc)
+	workers.SetReport(ReportError)
 	workers.SetWorkers(runtime.NumCPU())
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idle worker count is bounded between 2 and 4"
 	workers.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))

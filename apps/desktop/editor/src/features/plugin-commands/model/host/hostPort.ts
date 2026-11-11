@@ -1,39 +1,66 @@
-import type { WhenValues } from '@numen/plugin-loader'
-import type { Command } from '@/entities/command'
-import type { PluginServices } from './pluginServices'
+import { shallowRef, watch } from 'vue'
+import type { CommandsHost } from '@numen/plugin-loader'
+import type { CommandTarget, VaultRef } from '@/entities/command'
 
-/** What the commands part of the window says of the window: its own commands and the when values. */
-export interface WindowFactsSource {
-  readonly getAppCommands: () => readonly Command[]
-  readonly getValues: () => WhenValues
-}
-
-/** What the window offers its plugin host once the window is composed. */
-export interface HostPortParts {
-  readonly services: PluginServices
-  readonly facts: WindowFactsSource
+/**
+ * The command operations the plugin host delegates to the window's command palettes once the
+ * palettes are composed with the host.
+ */
+export interface HostCommandPort {
+  readonly commands: CommandsHost
+  readonly isPaletteOpen: () => boolean
+  readonly runInvocation: (id: string, target: CommandTarget, name: string) => Promise<void>
+  readonly openVault: (vault: VaultRef) => Promise<void>
 }
 
 /**
- * The one place the plugin host and the window depend on each other. The host is made first, because
- * the parts of the window are made with it; the window opens this port with the services and facts it
- * made. A read before the port opens is a fault of the composition and throws.
+ * The port between the plugin host and the command palettes: each needs the other, so the host
+ * reads through this port and the palettes connect it once they are made.
  */
-export function createHostPort() {
-  let parts: HostPortParts | undefined
-  const read = (): HostPortParts => {
-    if (parts === undefined) throw new Error('The plugin host was asked before the window was composed')
-    return parts
+export interface HostPort extends HostCommandPort {
+  readonly connect: (port: HostCommandPort) => void
+}
+
+export function createHostPort(): HostPort {
+  const connected = shallowRef<HostCommandPort | undefined>(undefined)
+  const read = (): HostCommandPort => {
+    if (connected.value === undefined) {
+      throw new Error('The plugin host was asked before the window commands were connected')
+    }
+    return connected.value
+  }
+  const commands: CommandsHost = {
+    getIds: () => connected.value?.commands.getIds() ?? [],
+    watch: (handler) => {
+      let inner: { dispose(): void } | undefined
+      const stop = watch(
+        connected,
+        (port) => {
+          inner?.dispose()
+          inner = port?.commands.watch(handler)
+        },
+        { immediate: true },
+      )
+      return {
+        dispose: () => {
+          stop()
+          inner?.dispose()
+        },
+      }
+    },
+    listItems: (id, target) => read().commands.listItems(id, target),
+    run: (id, target, itemId, values) => read().commands.run(id, target, itemId, values),
   }
   return {
-    getServices: (): PluginServices => read().services,
-    getAppCommands: (): readonly Command[] => read().facts.getAppCommands(),
-    getValues: (): WhenValues => read().facts.getValues(),
-    open: (next: HostPortParts): void => {
-      if (parts !== undefined) throw new Error('The plugin host port is open already')
-      parts = next
+    commands,
+    isPaletteOpen: () => read().isPaletteOpen(),
+    runInvocation: (id, target, name) => read().runInvocation(id, target, name),
+    openVault: (vault) => read().openVault(vault),
+    connect: (port: HostCommandPort): void => {
+      if (connected.value !== undefined) {
+        throw new Error('The plugin host command port is connected already')
+      }
+      connected.value = port
     },
   }
 }
-
-export type HostPort = ReturnType<typeof createHostPort>

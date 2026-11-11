@@ -143,7 +143,7 @@ describe('the plot of what remains overdue', () => {
 
   // The area a plot is drawn in is the same box in every state, so nothing under
   // the plot moves when the response arrives.
-  it('holds one room for the plot, waiting, drawn and empty areNeighbourhoodsEqual', () => {
+  it('holds one room for the plot, waiting, drawn and empty areNeighborhoodsEqual', () => {
     const room = (overrides: Partial<Curve> = {}) =>
       mountPresetTab(overrides)
         .tab.findAll('[data-control="room"]')

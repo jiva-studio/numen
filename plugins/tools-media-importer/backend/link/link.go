@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"os"
 	pathpkg "path"
 	"strings"
 	"sync"
@@ -102,6 +101,7 @@ type Host struct {
 	Texts    func(domain.VaultID) Texts
 	Queue    host.Queue
 	Clock    Clock
+	Report   func(what string, err error)
 }
 
 // Settings are the user's fetch settings. CopyMaxSize is in bytes; zero means
@@ -402,10 +402,10 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link))
+		l.reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link))
 		if l.IsCopyable(link.Address) {
 			_, err := l.Copy(runCtx, link, download.MediaVideo)
-			reportBackgroundError(runCtx, "copy the video of", link, err)
+			l.reportBackgroundError(runCtx, "copy the video of", link, err)
 		}
 	})
 }
@@ -416,15 +416,21 @@ func (l *Links) StartCopy(ctx context.Context, link Link, media download.Media) 
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
 		_, err := l.Copy(runCtx, link, media)
-		reportBackgroundError(runCtx, "copy the video of", link, err)
+		l.reportBackgroundError(runCtx, "copy the video of", link, err)
 	})
 }
 
-func reportBackgroundError(ctx context.Context, work string, link Link, err error) {
+func (l *Links) reportBackgroundError(ctx context.Context, work string, link Link, err error) {
 	if err == nil || ctx.Err() != nil || errors.Is(err, ErrBeingFetched) {
 		return
 	}
-	fmt.Fprintf(os.Stderr, "tools-media-importer: %s %s: %v\n", work, link.Path, err)
+	l.reportError(work+" "+link.Path, err)
+}
+
+func (l *Links) reportError(what string, err error) {
+	if l.host.Report != nil && err != nil {
+		l.host.Report(what, err)
+	}
 }
 
 // taskTitles are the names of each type of work on a link in the task list.
@@ -461,7 +467,7 @@ func (l *Links) StartTextFetch(ctx context.Context, link Link) error {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		reportBackgroundError(runCtx, "fetch the text of", link, l.endTextFetch(runCtx, link, task))
+		l.reportBackgroundError(runCtx, "fetch the text of", link, l.endTextFetch(runCtx, link, task))
 	})
 	return nil
 }
@@ -551,7 +557,7 @@ func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Me
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
 		_, err := l.endCopy(runCtx, link, media, *task)
-		reportBackgroundError(runCtx, "copy the video of", link, err)
+		l.reportBackgroundError(runCtx, "copy the video of", link, err)
 	})
 	return 0, true, nil
 }
@@ -747,7 +753,7 @@ func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
 func (l *Links) reportTask(ctx context.Context, task host.Task) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr diagnostic log on queue failure has no observable effect"
 	if err := l.host.Queue.ReportTask(ctx, task); err != nil {
-		fmt.Fprintf(os.Stderr, "tools-media-importer: show the task %s: %v\n", task.ID, err)
+		l.reportError("show the task "+task.ID, err)
 	}
 }
 
@@ -756,7 +762,7 @@ func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 	if err == nil || errors.Is(err, context.Canceled) {
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr diagnostic log on queue failure has no observable effect"
 		if finishErr := l.host.Queue.FinishTask(ctx, task.ID); finishErr != nil {
-			fmt.Fprintf(os.Stderr, "tools-media-importer: finish the task %s: %v\n", task.ID, finishErr)
+			l.reportError("finish the task "+task.ID, finishErr)
 		}
 		return
 	}

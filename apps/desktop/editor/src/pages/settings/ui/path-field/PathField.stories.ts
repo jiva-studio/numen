@@ -1,7 +1,7 @@
 /**
  * The path field of a file setting, with one path and with several, rendered in a browser in both
  * token sets. The checks cover what jsdom cannot: the actions are the library's outline buttons, of
- * one height and one border colour, and that border is the field border token, not the text colour.
+ * one height and one border color, and that border is the field border token, not the text color.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'

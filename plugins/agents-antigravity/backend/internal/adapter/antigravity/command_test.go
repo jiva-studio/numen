@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
 )
 
 func withoutAgentsAnywhere(t *testing.T) {
@@ -35,9 +35,16 @@ func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
 	var reg agentrun.Registry
 	reg.SetSession("c-1", "s-1")
 
-	cmd, _, err := makeAntigravityCommand(t.Context(), &agentrun.Request{Conversation: "c-1", Prompt: "q"}, &reg)
+	cmd, err := makeAntigravityCommand(t.Context(), &agentrun.Request{Conversation: "c-1", Prompt: "q"}, &reg)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if cmd.Release != nil {
+		defer func() {
+			if err := cmd.Release(); err != nil {
+				t.Error(err)
+			}
+		}()
 	}
 
 	if !slices.Contains(cmd.Args, "--conversation") || !slices.Contains(cmd.Args, "s-1") {
@@ -148,41 +155,41 @@ func TestTheCommandsAreMadeFromTheRequest(t *testing.T) {
 	reg.SetSession("conv-a", "sess-a")
 	shPath, err := exec.LookPath("sh")
 	if err == nil {
-		cmdWithTools, cleanTools, err := makeAntigravityCommand(t.Context(), &agentrun.Request{
-			Prompt: "p", Tools: []string{"t"}, Model: models.DefaultName, Conversation: "conv-a",
+		cmdWithTools, err := makeAntigravityCommand(t.Context(), &agentrun.Request{
+			Prompt: "p", Tools: []string{"t"}, Model: model.DefaultName, Conversation: "conv-a",
 			ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tk",
 		}, &reg, shPath)
-		if err != nil || cleanTools == nil || cmdWithTools.Path != shPath {
+		if err != nil || cmdWithTools.Release == nil || cmdWithTools.Path != shPath {
 			t.Fatalf("makeAntigravityCommand with ToolsURL: Path=%q, err=%v", cmdWithTools.Path, err)
 		}
 		if slices.Contains(cmdWithTools.Args, "--model") || !slices.Contains(cmdWithTools.Args, "--conversation") {
 			t.Errorf("makeAntigravityCommand Args = %v", cmdWithTools.Args)
 		}
-		if err := cleanTools(); err != nil {
+		if err := cmdWithTools.Release(); err != nil {
 			t.Fatal(err)
 		}
 
-		ansCmd, cleanAns, err := makeAnswerCommand(t.Context(), &agentrun.Request{
+		ansCmd, err := makeAnswerCommand(t.Context(), &agentrun.Request{
 			Prompt: "p", Model: "m-ans", Conversation: "conv-a",
 		}, &reg, shPath)
-		if err != nil || cleanAns == nil || ansCmd.Path != shPath {
+		if err != nil || ansCmd.Release == nil || ansCmd.Path != shPath {
 			t.Fatalf("makeAnswerCommand: Path=%q, err=%v", ansCmd.Path, err)
 		}
 		if !slices.Contains(ansCmd.Args, "--model") || !slices.Contains(ansCmd.Args, "m-ans") || !slices.Contains(ansCmd.Args, "--conversation") {
 			t.Errorf("makeAnswerCommand Args = %v", ansCmd.Args)
 		}
-		if err := cleanAns(); err != nil {
+		if err := ansCmd.Release(); err != nil {
 			t.Fatal(err)
 		}
 
-		ansDefaultCmd, cleanAnsDef, err := makeAnswerCommand(t.Context(), &agentrun.Request{
-			Prompt: "p", Model: models.DefaultName,
+		ansDefaultCmd, err := makeAnswerCommand(t.Context(), &agentrun.Request{
+			Prompt: "p", Model: model.DefaultName,
 		}, &reg, shPath)
-		if err != nil || cleanAnsDef == nil || slices.Contains(ansDefaultCmd.Args, "--model") {
-			t.Errorf("makeAnswerCommand with models.DefaultName Args = %v, err = %v", ansDefaultCmd.Args, err)
+		if err != nil || ansDefaultCmd.Release == nil || slices.Contains(ansDefaultCmd.Args, "--model") {
+			t.Errorf("makeAnswerCommand with model.DefaultName Args = %v, err = %v", ansDefaultCmd.Args, err)
 		}
-		if cleanAnsDef != nil {
-			if err := cleanAnsDef(); err != nil {
+		if ansDefaultCmd.Release != nil {
+			if err := ansDefaultCmd.Release(); err != nil {
 				t.Error(err)
 			}
 		}

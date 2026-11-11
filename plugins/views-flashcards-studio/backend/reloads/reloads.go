@@ -6,7 +6,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 )
+
+// Interval is the interval at which a stream with no changes sends a message, so a page can tell an
+// open stream from a closed one.
+const Interval = time.Second
 
 // Moves is where the changes to the files of the vaults are reported.
 type Moves interface {
@@ -19,6 +24,14 @@ type UnavailableError struct{ Err error }
 func (e *UnavailableError) Error() string { return e.Err.Error() }
 
 func (e *UnavailableError) Unwrap() error { return e.Err }
+
+// WatchTicks signals that nothing changed at once and every Interval, and that something changed on
+// each move, until ctx ends or the moves stop.
+func WatchTicks(ctx context.Context, moves Moves, invalidate func(), signal func(reload bool) error) error {
+	repeat := clock.NewTicker(Interval)
+	defer repeat.Stop()
+	return Watch(ctx, moves, repeat.C, invalidate, signal)
+}
 
 // Watch signals that nothing changed at once and whenever idle fires, and that something changed on
 // each move, until ctx ends or the moves stop. The change itself is not carried: a window shows

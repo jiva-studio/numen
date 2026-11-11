@@ -49,6 +49,7 @@ func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, 
 		func(id domain.VaultID) host.StoreWriter { return store.With(id) },
 		queue, workers,
 	)
+	writer.SetReport(pdfworkers.ReportError)
 	return mount(s, reader, writer)
 }
 

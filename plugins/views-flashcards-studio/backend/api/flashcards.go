@@ -161,20 +161,20 @@ type ReviewDay struct {
 	Recalled int32  `json:"recalled"`
 }
 
-// GetDeckNeighbourhoodRequest is the request of the GetDeckNeighbourhood method.
-type GetDeckNeighbourhoodRequest struct {
+// GetDeckNeighborhoodRequest is the request of the GetDeckNeighborhood method.
+type GetDeckNeighborhoodRequest struct {
 	Vault string `json:"vault"`
 	Deck  string `json:"deck"`
 }
 
-// GetDeckNeighbourhoodResponse is the response of the GetDeckNeighbourhood method.
-type GetDeckNeighbourhoodResponse struct {
-	Notes  []*DeckNeighbour `json:"notes"`
+// GetDeckNeighborhoodResponse is the response of the GetDeckNeighborhood method.
+type GetDeckNeighborhoodResponse struct {
+	Notes  []*DeckNeighbor `json:"notes"`
 	Unread int32            `json:"unread"`
 }
 
-// DeckNeighbour is a note a deck links to or is linked from. Address is the link target as the deck spells it.
-type DeckNeighbour struct {
+// DeckNeighbor is a note a deck links to or is linked from. Address is the link target as the deck spells it.
+type DeckNeighbor struct {
 	Address     string    `json:"address"`
 	Path        string    `json:"path"`
 	Title       string    `json:"title"`

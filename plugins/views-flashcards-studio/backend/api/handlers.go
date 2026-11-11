@@ -49,6 +49,6 @@ type ReviewWatchAPI interface {
 // ReviewStatsAPI answers the counts and the presets of the review window.
 type ReviewStatsAPI interface {
 	ListReviewDays(ctx context.Context, req *ListReviewDaysRequest) (*ListReviewDaysResponse, error)
-	GetDeckNeighbourhood(ctx context.Context, req *GetDeckNeighbourhoodRequest) (*GetDeckNeighbourhoodResponse, error)
+	GetDeckNeighborhood(ctx context.Context, req *GetDeckNeighborhoodRequest) (*GetDeckNeighborhoodResponse, error)
 	GetVaultDeckPreset(ctx context.Context, req *GetVaultDeckPresetRequest) (*GetVaultDeckPresetResponse, error)
 }
