@@ -9,8 +9,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 func TestEmbeddingServerGetModel(t *testing.T) {
@@ -127,7 +128,7 @@ func TestEmbeddingServerWithoutAProfileFailsAndNamesWhereToAddOne(t *testing.T) 
 	if !isPrecondition(err) || !strings.Contains(err.Error(), "owner/model") || !strings.Contains(err.Error(), "profile") {
 		t.Fatalf("GetModelInfo error = %v, want FailedPrecondition that names the model and the profile", err)
 	}
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"text"}); !isPrecondition(err) {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"}); !isPrecondition(err) {
 		t.Errorf("EmbedTexts error = %v, want FailedPrecondition", err)
 	}
 }
@@ -144,32 +145,32 @@ func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
 	t.Setenv("NUMEN_MOCK_ML", "true")
 	srv := newEmbeddingServer()
 
-	model, err := srv.GetModelInfo()
+	served, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if model.From != "mock" {
-		t.Errorf("the model is from %q, want mock", model.From)
+	if served.From != "mock" {
+		t.Errorf("the model is from %q, want mock", served.From)
 	}
 
-	vectors, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"boat", "ferry"})
+	vectors, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"boat", "ferry"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(vectors) != 2 {
 		t.Fatalf("got %d vectors for 2 texts", len(vectors))
 	}
-	if got := len(vectors[0]); got != int(model.Dimensions) {
-		t.Errorf("got %d dimensions, want %d", got, model.Dimensions)
+	if got := len(vectors[0]); got != int(served.Dimensions) {
+		t.Errorf("got %d dimensions, want %d", got, served.Dimensions)
 	}
 }
 
 func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 	srv := newEmbeddingServer()
 	hasOpenCall := false
-	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		hasOpenCall = true
-		return engine.MockEmbedder{}, nil
+		return mockembedder.Embedder{}, nil
 	}
 
 	srv.updateConfig(map[string]string{
@@ -177,7 +178,7 @@ func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 		"model":    "openai/text-embedding-3-small",
 	}, nil)
 
-	_, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"})
+	_, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"hello"})
 	if !isPrecondition(err) {
 		t.Fatalf("err = %v, want FailedPrecondition", err)
 	}
@@ -188,12 +189,12 @@ func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 
 func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 	srv := newEmbeddingServer()
-	var activeInfo engine.ModelInfo
-	var activeLocal engine.LocalModel
-	srv.open = func(_ context.Context, info engine.ModelInfo, local engine.LocalModel) (loading.Embedder, error) {
+	var activeInfo model.ModelInfo
+	var activeLocal model.LocalModel
+	srv.open = func(_ context.Context, info model.ModelInfo, local model.LocalModel) (loading.Embedder, error) {
 		activeInfo = info
 		activeLocal = local
-		return engine.MockEmbedder{}, nil
+		return mockembedder.Embedder{}, nil
 	}
 
 	srv.updateConfig(map[string]string{
@@ -205,14 +206,14 @@ func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Name != engine.DefaultModel || info.Dimensions != 384 {
+	if info.Name != model.DefaultModel || info.Dimensions != 384 {
 		t.Fatalf("GetModelInfo = %s@%d, want the default model at 384", info.Name, info.Dimensions)
 	}
 
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
-	if activeInfo.Name != engine.DefaultModel || activeInfo.Dimensions != 384 || activeLocal.Name != engine.DefaultModel {
+	if activeInfo.Name != model.DefaultModel || activeInfo.Dimensions != 384 || activeLocal.Name != model.DefaultModel {
 		t.Fatalf("opened %+v / %+v, want the default model at 384", activeInfo, activeLocal)
 	}
 }
@@ -251,13 +252,13 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 
 func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	var openedInfo engine.ModelInfo
-	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	var openedInfo model.ModelInfo
+	srv.open = func(_ context.Context, info model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		openedInfo = info
-		return engine.MockEmbedder{}, nil
+		return mockembedder.Embedder{}, nil
 	}
 	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, nil)
-	if _, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
 	if openedInfo.Dimensions != 384 || openedInfo.MaxTokens != 512 || openedInfo.Pooling != "mean" {
@@ -329,7 +330,7 @@ func TestRefreshModelInfoPreservesDimensionsEnvAndConcurrency(t *testing.T) {
 		t.Fatalf("remote Concurrency = %d, want 7", srv.modelInfo.Concurrency)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel}, nil)
 	if srv.modelInfo.Concurrency != 7 {
 		t.Fatalf("local Concurrency after refresh = %d, want 7", srv.modelInfo.Concurrency)
 	}
@@ -338,8 +339,8 @@ func TestRefreshModelInfoPreservesDimensionsEnvAndConcurrency(t *testing.T) {
 	srv2.provider = "custom"
 	srv2.remoteModel = ""
 	srv2.refreshModelInfoLocked()
-	if srv2.modelInfo.Name != engine.DefaultModel {
-		t.Fatalf("refreshModelInfoLocked with empty remoteModel = %q, want %q", srv2.modelInfo.Name, engine.DefaultModel)
+	if srv2.modelInfo.Name != model.DefaultModel {
+		t.Fatalf("refreshModelInfoLocked with empty remoteModel = %q, want %q", srv2.modelInfo.Name, model.DefaultModel)
 	}
 }
 
@@ -355,8 +356,8 @@ func TestUpdateLocalModelHandlesMockProfilesErrAndClosingRetired(t *testing.T) {
 	srv2 := newEmbeddingServer()
 	wantErr := errors.New("profiles broken")
 	srv2.profilesErr = wantErr
-	srv2.updateLocalModelLocked(engine.DefaultModel)
-	if !errors.Is(srv2.localErr, wantErr) || srv2.localName != engine.DefaultModel || srv2.localKey != "error" {
+	srv2.updateLocalModelLocked(model.DefaultModel)
+	if !errors.Is(srv2.localErr, wantErr) || srv2.localName != model.DefaultModel || srv2.localKey != "error" {
 		t.Fatalf("profilesErr state: err=%v, name=%q, key=%q", srv2.localErr, srv2.localName, srv2.localKey)
 	}
 
@@ -367,13 +368,13 @@ func TestUpdateLocalModelHandlesMockProfilesErrAndClosingRetired(t *testing.T) {
 	}
 
 	closed := make(chan struct{})
-	srv3.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (loading.Embedder, error) {
+	srv3.open = func(context.Context, model.ModelInfo, model.LocalModel) (loading.Embedder, error) {
 		return stubEmbedder{onClose: func() { close(closed) }}, nil
 	}
 	if _, err := srv3.getEmbedder(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	srv3.updateLocalModelLocked(engine.DefaultModel)
+	srv3.updateLocalModelLocked(model.DefaultModel)
 	<-closed
 	if srv3.loader.IsLoaded() || srv3.localKey == "error" {
 		t.Fatalf("updateLocalModelLocked did not close retired embedder or update key: %q", srv3.localKey)
@@ -436,26 +437,26 @@ func (f funcEmbedder) Close() error { return nil }
 
 func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 	srv := newEmbeddingServer()
-	vecs, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, nil)
+	vecs, err := srv.EmbedTexts(t.Context(), model.RoleDocument, nil)
 	if err != nil || vecs != nil {
 		t.Fatalf("empty EmbedTexts = %v, %v", vecs, err)
 	}
 
 	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": ""}, keysOf("my-key"))
-	_, err = srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
+	_, err = srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"hi"})
 	if !isPrecondition(err) || !strings.Contains(err.Error(), "URL is not configured") {
 		t.Fatalf("missing URL err = %v", err)
 	}
 
 	srv.updateConfig(map[string]string{"provider": "custom", "baseUrl": "https://example.com"}, keysOf())
-	_, err = srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
+	_, err = srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"hi"})
 	if !isPrecondition(err) || !strings.Contains(err.Error(), "API key is not configured") {
 		t.Fatalf("missing key err = %v", err)
 	}
 
 	srv2 := newEmbeddingServer()
 	calls := 0
-	srv2.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv2.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				calls++
@@ -463,39 +464,39 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 					srv2.mu.Lock()
 					srv2.loader.ResetLocked()
 					srv2.mu.Unlock()
-					return nil, engine.ErrClosed
+					return nil, loading.ErrClosed
 				}
 				return [][]float32{{1, 2, 3}}, nil
 			},
 		}, nil
 	}
-	vecs, err = srv2.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
+	vecs, err = srv2.EmbedTexts(t.Context(), model.RoleDocument, []string{"hi"})
 	if err != nil || len(vecs) != 1 || calls != 2 {
 		t.Fatalf("retry on ErrClosed = %v, %v, calls=%d", vecs, err, calls)
 	}
 
 	srv3 := newEmbeddingServer()
-	srv3.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv3.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				return nil, errors.New("onnx crash")
 			},
 		}, nil
 	}
-	_, err = srv3.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hi"})
+	_, err = srv3.EmbedTexts(t.Context(), model.RoleDocument, []string{"hi"})
 	if isPrecondition(err) || !strings.Contains(err.Error(), "embed batch: onnx crash") {
 		t.Fatalf("embed error = %v", err)
 	}
 
 	srv4 := newEmbeddingServer()
-	srv4.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+	srv4.open = func(_ context.Context, _ model.ModelInfo, _ model.LocalModel) (loading.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				return [][]float32{{1}}, nil
 			},
 		}, nil
 	}
-	_, err = srv4.EmbedTexts(t.Context(), engine.RoleDocument, []string{"one", "two"})
+	_, err = srv4.EmbedTexts(t.Context(), model.RoleDocument, []string{"one", "two"})
 	if isPrecondition(err) || !strings.Contains(err.Error(), "expected 2 vectors, got 1") {
 		t.Fatalf("vector count mismatch err = %v", err)
 	}
@@ -575,7 +576,7 @@ func TestEmbedRemoteTexts(t *testing.T) {
 		"model":    "remote-test",
 	}, keysOf("secret"))
 
-	vecs, err := srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"})
+	vecs, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"hello"})
 	if err != nil || len(vecs) != 1 || len(vecs[0]) != 5 {
 		t.Fatalf("EmbedTexts remote = %v, %v", vecs, err)
 	}
@@ -587,7 +588,7 @@ func TestEmbedRemoteTexts(t *testing.T) {
 	}
 
 	mode = "status500"
-	_, err = srv.EmbedTexts(t.Context(), engine.RoleDocument, []string{"hello"})
+	_, err = srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"hello"})
 	if isPrecondition(err) || !strings.Contains(err.Error(), "service text 0: status 500: server exploded") {
 		t.Fatalf("status500 err = %v", err)
 	}

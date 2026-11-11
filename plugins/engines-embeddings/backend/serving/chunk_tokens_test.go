@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 func getReportedChunkTokens(t *testing.T, srv *Server) int {
@@ -20,7 +20,7 @@ func getReportedChunkTokens(t *testing.T, srv *Server) int {
 
 func TestGetModelInfoReportsTheDefaultChunkTokensOfALocalModelOf512(t *testing.T) {
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel}, nil)
 	info, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +38,7 @@ func TestGetModelInfoReportsTheDefaultChunkTokensBeforeTheHostConfiguresThePlugi
 
 func TestGetModelInfoNeverReportsMoreChunkTokensThanTheModelReads(t *testing.T) {
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": "1000"}, nil)
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel, "chunkTokens": "1000"}, nil)
 	if got := getReportedChunkTokens(t, srv); got != 512 {
 		t.Errorf("chunk tokens for 1000 on a model of 512 = %d, want 512", got)
 	}
@@ -47,7 +47,7 @@ func TestGetModelInfoNeverReportsMoreChunkTokensThanTheModelReads(t *testing.T) 
 func TestGetModelInfoReportsTheRequestedChunkTokensWithinTheBounds(t *testing.T) {
 	srv := newEmbeddingServer()
 	for value, want := range map[string]int{"abc": 256, "0": 16, "15": 16, "300": 300, "256.9": 256} {
-		srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": value}, nil)
+		srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel, "chunkTokens": value}, nil)
 		if got := getReportedChunkTokens(t, srv); got != want {
 			t.Errorf("configured %q: reported %d, want %d", value, got, want)
 		}
@@ -58,17 +58,17 @@ func TestAModelOfALowerLimitLowersChunkTokensAndTheOldModelRestoresThem(t *testi
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
 	srv.profileSrc = profilefiles.NewDirectory(dir)
-	values := map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": "400"}
+	values := map[string]string{"provider": "local", "model": model.DefaultModel, "chunkTokens": "400"}
 
 	srv.updateConfig(values, nil)
 	first := getReportedChunkTokens(t, srv)
 	writeFile(t, filepath.Join(dir, "small.json"), `{"id":"Xenova/multilingual-e5-small","maxTokens":256}`)
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel}, nil)
 	lowered := getReportedChunkTokens(t, srv)
 	if err := os.Remove(filepath.Join(dir, "small.json")); err != nil {
 		t.Fatal(err)
 	}
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel}, nil)
 	restored := getReportedChunkTokens(t, srv)
 
 	if first != 400 || lowered != 256 || restored != 400 {
@@ -78,12 +78,12 @@ func TestAModelOfALowerLimitLowersChunkTokensAndTheOldModelRestoresThem(t *testi
 
 func TestAChangeOfChunkTokensDoesNotChangeTheModelNorItsHandling(t *testing.T) {
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": "256"}, nil)
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel, "chunkTokens": "256"}, nil)
 	before, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel, "chunkTokens": "128"}, nil)
+	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel, "chunkTokens": "128"}, nil)
 	after, err := srv.GetModelInfo()
 	if err != nil {
 		t.Fatal(err)

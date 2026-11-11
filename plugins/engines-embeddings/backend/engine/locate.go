@@ -15,8 +15,10 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // FetchProgress reports progress while downloading models.
@@ -29,10 +31,10 @@ type Paths struct {
 }
 
 // Locate finds the model files: in a specified directory, or in the download cache.
-func Locate(ctx context.Context, cfg LocalModel, progress FetchProgress) (Paths, error) {
+func Locate(ctx context.Context, cfg model.LocalModel, progress FetchProgress) (Paths, error) {
 	file := cfg.File
 	if file == "" {
-		file = ModelFile
+		file = model.ModelFile
 	}
 	if cfg.Dir != "" {
 		return locateInDir(cfg.Dir, file)
@@ -49,7 +51,7 @@ func Locate(ctx context.Context, cfg LocalModel, progress FetchProgress) (Paths,
 func locateInDir(dir, file string) (Paths, error) {
 	p := Paths{
 		Model:     filepath.Join(dir, file),
-		Tokenizer: filepath.Join(dir, TokenizerFile),
+		Tokenizer: filepath.Join(dir, model.TokenizerFile),
 	}
 	for _, required := range []string{p.Model, p.Tokenizer} {
 		if _, err := os.Stat(required); err != nil {
@@ -106,7 +108,7 @@ func verifyFile(path, wantSum string) (err error) {
 	return nil
 }
 
-func downloadModel(ctx context.Context, cfg LocalModel, file string, progress FetchProgress) (Paths, error) {
+func downloadModel(ctx context.Context, cfg model.LocalModel, file string, progress FetchProgress) (Paths, error) {
 	home, err := GetHome()
 	if err != nil {
 		return Paths{}, fmt.Errorf("models folder: %w", err)
@@ -126,7 +128,7 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 		return Paths{}, fmt.Errorf("listing %s: %w", cfg.Name, err)
 	}
 	if !slices.Contains(folder, file) {
-		return Paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, ModelFolder, file, folder)
+		return Paths{}, fmt.Errorf("%s publishes no %s/%s: it has %v", cfg.Name, model.ModelFolder, file, folder)
 	}
 
 	files := selectModelFiles(folder, file)
@@ -155,9 +157,9 @@ func reserveDownload(
 	for _, f := range files {
 		total += sizes[f]
 	}
-	sizes[TokenizerFile] = tokenizerSize
+	sizes[model.TokenizerFile] = tokenizerSize
 	total += tokenizerSize
-	counted := append(slices.Clone(files), TokenizerFile)
+	counted := append(slices.Clone(files), model.TokenizerFile)
 
 	dir, dirErr := repo.CacheDir()
 	var cancelProgress func()
@@ -172,14 +174,14 @@ func reserveDownload(
 }
 
 func fetchTokenizer(ctx context.Context, repo *hub.Repo, name string, sums map[string]string) (string, error) {
-	if !repo.HasFile(TokenizerFile) {
-		return "", fmt.Errorf("%s publishes no %s", name, TokenizerFile)
+	if !repo.HasFile(model.TokenizerFile) {
+		return "", fmt.Errorf("%s publishes no %s", name, model.TokenizerFile)
 	}
-	tokenizer, err := repo.DownloadFileCtx(ctx, TokenizerFile)
+	tokenizer, err := repo.DownloadFileCtx(ctx, model.TokenizerFile)
 	if err != nil {
-		return "", fmt.Errorf("fetching %s: %w", TokenizerFile, err)
+		return "", fmt.Errorf("fetching %s: %w", model.TokenizerFile, err)
 	}
-	if err := checkPinned(sums, TokenizerFile, tokenizer); err != nil {
+	if err := checkPinned(sums, model.TokenizerFile, tokenizer); err != nil {
 		return "", err
 	}
 	return tokenizer, nil
@@ -188,17 +190,17 @@ func fetchTokenizer(ctx context.Context, repo *hub.Repo, name string, sums map[s
 func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string, sums map[string]string) (Paths, error) {
 	p := Paths{Model: "", Tokenizer: ""}
 	for _, name := range files {
-		pos, err := repo.DownloadFileCtx(ctx, ModelFolder+"/"+name)
+		pos, err := repo.DownloadFileCtx(ctx, model.ModelFolder+"/"+name)
 		if err != nil {
-			return Paths{}, fmt.Errorf("fetching %s/%s: %w", ModelFolder, name, err)
+			return Paths{}, fmt.Errorf("fetching %s/%s: %w", model.ModelFolder, name, err)
 		}
-		if err := checkPinned(sums, ModelFolder+"/"+name, pos); err != nil {
+		if err := checkPinned(sums, model.ModelFolder+"/"+name, pos); err != nil {
 			return Paths{}, err
 		}
 		if name == file {
 			p.Model = pos
 		}
-		if name == TokenizerFile {
+		if name == model.TokenizerFile {
 			p.Tokenizer = pos
 		}
 	}
@@ -213,10 +215,10 @@ func listRepoFiles(repo *hub.Repo) ([]string, map[string]int64, int64, error) {
 		if err != nil {
 			return nil, nil, 0, err
 		}
-		if info.Name == TokenizerFile {
+		if info.Name == model.TokenizerFile {
 			tokenizer = info.Size
 		}
-		rest, inside := strings.CutPrefix(info.Name, ModelFolder+"/")
+		rest, inside := strings.CutPrefix(info.Name, model.ModelFolder+"/")
 		if !inside || rest == "" {
 			continue
 		}
@@ -297,8 +299,8 @@ func selectModelFiles(folder []string, named string) []string {
 }
 
 func isFileOfAnyModel(name string, siblings []string) bool {
-	for _, model := range siblings {
-		if strings.HasPrefix(name, model) {
+	for _, sibling := range siblings {
+		if strings.HasPrefix(name, sibling) {
 			return true
 		}
 	}
@@ -335,7 +337,7 @@ func discardDownload(path string) error {
 	return errors.Join(removed...)
 }
 
-func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, error) {
+func locateCached(repo *hub.Repo, cfg model.LocalModel, file string) (Paths, bool, error) {
 	cache, err := repo.CacheDir()
 	if err != nil {
 		return Paths{}, false, fmt.Errorf("cache folder of %s: %w", cfg.Name, err)
@@ -349,10 +351,10 @@ func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, err
 		// gomutants:disable-next-line RETURN_ZERO reason="an empty Paths literal equals the zero value"
 		return Paths{Model: "", Tokenizer: ""}, false, nil
 	}
-	if err := checkPinned(cfg.Sums, ModelFolder+"/"+file, p.Model); err != nil {
+	if err := checkPinned(cfg.Sums, model.ModelFolder+"/"+file, p.Model); err != nil {
 		return Paths{}, false, err
 	}
-	if err := checkPinned(cfg.Sums, TokenizerFile, p.Tokenizer); err != nil {
+	if err := checkPinned(cfg.Sums, model.TokenizerFile, p.Tokenizer); err != nil {
 		return Paths{}, false, err
 	}
 	return p, true, nil
@@ -394,8 +396,8 @@ func locateNewestSnapshot(cache, name, file string) (Paths, bool, error) {
 
 func snapshotPaths(snapshot, file string) Paths {
 	return Paths{
-		Model:     filepath.Join(snapshot, ModelFolder, file),
-		Tokenizer: filepath.Join(snapshot, TokenizerFile),
+		Model:     filepath.Join(snapshot, model.ModelFolder, file),
+		Tokenizer: filepath.Join(snapshot, model.TokenizerFile),
 	}
 }
 

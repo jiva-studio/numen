@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
@@ -63,9 +64,9 @@ func TestCuratedModelsFindThePassageOfAQuery(t *testing.T) {
 	}
 }
 
-func checkRetrieval(t *testing.T, profile Profile, dir, lib string, fixture retrievalFixture) {
+func checkRetrieval(t *testing.T, profile model.Profile, dir, lib string, fixture retrievalFixture) {
 	t.Helper()
-	info, local := NewConfig(profile)
+	info, local := model.NewConfig(profile)
 	local.Dir, local.ShouldDownload, local.Runtime = flatten(t, dir), false, lib
 	local.Threads, local.BatchTexts = 4, 8
 	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil)
@@ -86,11 +87,11 @@ func checkRetrieval(t *testing.T, profile Profile, dir, lib string, fixture retr
 	for i, q := range fixture.Queries {
 		queries[i] = q.Query
 	}
-	docVectors, err := emb.Embed(t.Context(), info.Handling.Apply(RoleDocument, docs))
+	docVectors, err := emb.Embed(t.Context(), info.Handling.Apply(model.RoleDocument, docs))
 	if err != nil {
 		t.Fatalf("embed documents: %v", err)
 	}
-	queryVectors, err := emb.Embed(t.Context(), info.Handling.Apply(RoleQuery, queries))
+	queryVectors, err := emb.Embed(t.Context(), info.Handling.Apply(model.RoleQuery, queries))
 	if err != nil {
 		t.Fatalf("embed queries: %v", err)
 	}
@@ -132,13 +133,13 @@ func checkRetrieval(t *testing.T, profile Profile, dir, lib string, fixture retr
 func flatten(t *testing.T, dir string) string {
 	t.Helper()
 	flat := t.TempDir()
-	entries, err := os.ReadDir(filepath.Join(dir, ModelFolder))
+	entries, err := os.ReadDir(filepath.Join(dir, model.ModelFolder))
 	if err != nil {
 		t.Fatal(err)
 	}
-	names := []string{TokenizerFile}
+	names := []string{model.TokenizerFile}
 	for _, e := range entries {
-		names = append(names, filepath.Join(ModelFolder, e.Name()))
+		names = append(names, filepath.Join(model.ModelFolder, e.Name()))
 	}
 	for _, name := range names {
 		if err := os.Symlink(filepath.Join(dir, name), filepath.Join(flat, filepath.Base(name))); err != nil {

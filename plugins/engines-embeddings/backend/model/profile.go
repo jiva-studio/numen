@@ -1,4 +1,4 @@
-package engine
+package model
 
 import (
 	"bytes"
@@ -8,12 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"maps"
-	"os"
-	"path/filepath"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -264,35 +260,23 @@ func (t *Profiles) clone() *Profiles {
 	return out
 }
 
-// WithUserProfiles returns the table with the profiles of every *.json file in dir merged over it by
-// id. A field a user profile leaves out keeps the shipped value. A file that cannot be read, or that
-// holds a profile that cannot run, is passed to report and skipped whole.
-func (t *Profiles) WithUserProfiles(dir string, report func(file string, err error)) *Profiles {
+// UserFile is a profile file the owner keeps, with the path it was read from.
+type UserFile struct {
+	Path string
+	Data []byte
+}
+
+// WithUserProfiles returns the table with the profiles of the files merged over it by id, in the
+// order of the files. dir is the folder the files come from. A field a user profile leaves out keeps
+// the shipped value. A file that holds a profile that cannot run is passed to report and skipped
+// whole.
+func (t *Profiles) WithUserProfiles(dir string, files []UserFile, report func(file string, err error)) *Profiles {
 	out := t.clone()
 	out.userHome = dir
-	// gomutants:disable-next-line BRANCH_IF reason="os.ReadDir on an empty path returns fs.ErrNotExist and returns out"
-	if dir == "" {
-		return out
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			report(dir, err)
-		}
-		return out
-	}
-	names := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.EqualFold(filepath.Ext(entry.Name()), ".json") {
-			names = append(names, entry.Name())
-		}
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		path := filepath.Join(dir, name)
-		merged, err := out.readUserFile(path)
+	for _, file := range files {
+		merged, err := out.readUserFile(file.Data)
 		if err != nil {
-			report(path, err)
+			report(file.Path, err)
 			continue
 		}
 		for _, p := range merged {
@@ -302,11 +286,7 @@ func (t *Profiles) WithUserProfiles(dir string, report func(file string, err err
 	return out
 }
 
-func (t *Profiles) readUserFile(path string) ([]Profile, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
+func (t *Profiles) readUserFile(data []byte) ([]Profile, error) {
 	raw, err := splitProfiles(data)
 	if err != nil {
 		return nil, err
