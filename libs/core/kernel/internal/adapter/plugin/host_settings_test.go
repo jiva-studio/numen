@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 func TestHostSettingsOverlayAndPersistence(t *testing.T) {
@@ -32,7 +33,7 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		t.Fatalf("write manifest failed: %v", err)
 	}
 
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("discover failed: %v", err)
 	}
@@ -121,7 +122,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Fatalf("write manifest failed: %v", err)
 	}
 
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("discover failed: %v", err)
 	}

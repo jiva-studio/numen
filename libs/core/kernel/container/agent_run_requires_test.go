@@ -26,7 +26,7 @@ func runWrite(t *testing.T, agent *toolAgent, agentPermissions ...string) *toolP
 		newAgentPlugin(agent, agentPermissions...),
 		toolsAt(atlasToolsPlugin, []string{"vault:read", "vault:write", "vault:manage"}, served),
 	)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "Shelve the atlas of rivers.", Agent: "alpha"})
 	return served

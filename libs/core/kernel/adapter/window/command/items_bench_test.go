@@ -12,7 +12,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
@@ -22,7 +21,7 @@ const repositoryPlugins = "../../../../../../../plugins"
 
 func newRepositoryHandler(b *testing.B) *command.Handler {
 	b.Helper()
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)
 	b.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(b.Context()), 0); err != nil {
 			b.Error(err)

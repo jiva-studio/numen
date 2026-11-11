@@ -58,6 +58,29 @@ type Activation struct {
 	clock      machineport.Clock
 }
 
+// ActivationDeps are what an Activation starts a plugin from: the set of plugins, the answer whether a plugin is enabled,
+// the gate against a scan, the mode of the host, the supervisors and the processes of the plugins, their failures, the push
+// of the configuration and the clock.
+type ActivationDeps struct {
+	Set         activationPlugins
+	Enablement  enablementChecker
+	Scan        startHold
+	Mode        hostState
+	Supervisors *supervision.Supervisors
+	Processes   *supervision.Processes
+	Failures    *supervision.Failures
+	Config      configPusher
+	Clock       machineport.Clock
+}
+
+// NewActivation creates the activation of the plugins with none running.
+func NewActivation(d ActivationDeps) *Activation {
+	return &Activation{
+		set: d.Set, enablement: d.Enablement, scan: d.Scan, mode: d.Mode, sups: d.Supervisors, processes: d.Processes,
+		failures: d.Failures, config: d.Config, clock: d.Clock,
+	}
+}
+
 // ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
 func (a *Activation) ClientLookup() transport.ClientLookup {
 	return transport.NewClientLookup(a.sups.Clients())

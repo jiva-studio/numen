@@ -18,7 +18,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -89,7 +88,7 @@ func newProviderHost(t *testing.T, handlers map[string]numenv1connect.AgentServi
 		ports[id] = wiretest.GetPort(t, server)
 	}
 
-	inner := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", dir)
+	inner := pluginhost.New(testsupport.GetMachine(), "desktop.editor", dir)
 	host := &providerHost{Roles: pluginhost.Join(inner)}
 	settings := map[string]map[string]any{}
 	for _, id := range disabled {

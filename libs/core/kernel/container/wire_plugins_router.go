@@ -7,7 +7,6 @@ import (
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
@@ -111,7 +110,7 @@ var errSafeMode = errors.New("numen is running in safe mode")
 // provider NUMEN_ONNX_PROVIDER names (auto when unset). The host is returned also when the discovery of the
 // plugins failed, with the failure.
 func NewPluginHost(target string, dirs ...string) (*PluginHost, error) {
-	host := plugin.NewHost(clock.System{}, target, dirs...)
+	host := newPluginRoles(clock.System{}, target, dirs)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Services.SetDependencies(newDependencyRegistry(""))
 	err := host.Discovery.Discover()

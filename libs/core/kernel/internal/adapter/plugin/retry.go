@@ -34,8 +34,16 @@ type Retry struct {
 	listeners listenerRefresher
 }
 
-func newRetry(set registeredPlugins, failures *supervision.Failures, activator pluginActivator, listeners listenerRefresher) *Retry {
-	return &Retry{set: set, failures: failures, activator: activator, listeners: listeners}
+// RetryDeps are what a Retry reads and starts.
+type RetryDeps struct {
+	Set        registeredPlugins
+	Failures   *supervision.Failures
+	Activation pluginActivator
+	Listeners  listenerRefresher
+}
+
+func NewRetry(d RetryDeps) *Retry {
+	return &Retry{set: d.Set, failures: d.Failures, activator: d.Activation, listeners: d.Listeners}
 }
 
 // RetryPlugin starts a plugin once, as any use of it does, and answers why the start failed where it did.

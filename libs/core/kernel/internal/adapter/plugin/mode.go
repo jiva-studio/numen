@@ -11,7 +11,8 @@ type Mode struct {
 	vaultPath string
 }
 
-func newMode() *Mode {
+// NewMode creates the mode of a host that is neither in safe mode nor shut down, with no vault.
+func NewMode() *Mode {
 	return &Mode{}
 }
 

@@ -8,18 +8,18 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
-func openSettingsAgent(t *testing.T, host *plugin.Host, content string) agentport.Agent {
+func openSettingsAgent(t *testing.T, host *pluginhost.Host, content string) agentport.Agent {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	agent := (container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost(host),
+		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
 		Paths:      container.Paths{SettingsPath: path},
 	})).GetSettingsAgent()
 	if agent == nil {

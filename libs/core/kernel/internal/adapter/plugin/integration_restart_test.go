@@ -20,7 +20,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -136,7 +135,7 @@ func writeRestartedPlugin(t *testing.T) string {
 func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
-			host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
+			host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
 			if err := host.Discovery.Discover(); err != nil {
 				t.Fatal(err)
 			}

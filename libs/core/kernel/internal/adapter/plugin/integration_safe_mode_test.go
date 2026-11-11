@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 func TestHostSafeMode(t *testing.T) {
@@ -32,7 +33,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.Teardown.SetSafeMode(true)
 
 	if !host.Mode.IsSafeMode() {

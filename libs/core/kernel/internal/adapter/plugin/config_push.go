@@ -40,8 +40,15 @@ type ConfigPush struct {
 	hasScanned  bool
 }
 
-func newConfigPush(set configPlugins, sups *supervision.Supervisors, report func(error)) *ConfigPush {
-	c := &ConfigPush{set: set, sups: sups, report: report}
+// ConfigPushDeps are what a ConfigPush reads and where it reports an error.
+type ConfigPushDeps struct {
+	Set         *PluginSet
+	Supervisors *supervision.Supervisors
+	Report      func(error)
+}
+
+func NewConfigPush(d ConfigPushDeps) *ConfigPush {
+	c := &ConfigPush{set: d.Set, sups: d.Supervisors, report: d.Report}
 	c.delivery = delivery.New(c)
 	return c
 }

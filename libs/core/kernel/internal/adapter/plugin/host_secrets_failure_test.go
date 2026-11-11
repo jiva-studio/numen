@@ -1,9 +1,11 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -120,7 +122,7 @@ func deliveredName(t *testing.T, probe *configured) string {
 	return got[0].GetName()
 }
 
-func newConfiguredHost(t *testing.T) (*Host, *configured, *listing) {
+func newConfiguredHost(t *testing.T) (*pluginhost.Host, *configured, *listing) {
 	t.Helper()
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	source := newListing("Work")
@@ -131,13 +133,13 @@ func newConfiguredHost(t *testing.T) (*Host, *configured, *listing) {
 	return host, probe, source
 }
 
-func prepareActivation(t *testing.T, host *Host, dormant bool) func() error {
+func prepareActivation(t *testing.T, host *pluginhost.Host, dormant bool) func() error {
 	t.Helper()
 	activate := prepareActivationWith(t, host, dormant)
 	return func() error { return activate(t.Context()) }
 }
 
-func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx context.Context) error {
+func prepareActivationWith(t *testing.T, host *pluginhost.Host, dormant bool) func(ctx context.Context) error {
 	t.Helper()
 	port := endpointOf(host, secretPluginID).Port
 	sleeper := wiretest.StartSleepProcess(t).Process
@@ -153,12 +155,12 @@ func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx cont
 		putSupervisor(host, secretPluginID, activating)
 	}
 	return func(ctx context.Context) error {
-		_, err := host.Activation.runActivation(ctx, p, activating)
+		_, err := plugin.RunActivation(ctx, host.Activation, p, activating)
 		return err
 	}
 }
 
-func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string) *configured {
+func addSecretPlugin(t *testing.T, host *pluginhost.Host, source *listing, pluginID string) *configured {
 	t.Helper()
 	probe := &configured{}
 	mux := http.NewServeMux()
@@ -492,18 +494,18 @@ func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
-	if err := host.Config.delivery.Lock(t.Context()); err != nil {
+	if err := plugin.GetDelivery(host.Config).Lock(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	wiretest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
+		return plugin.GetDelivery(host.Config).IsAwaitingFirstConfigure(secretPluginID)
 	})
 	source.rename("Renamed")
 	refresh := make(chan error, 1)
 	go func() { refresh <- host.Config.Refresh(t.Context()) }()
-	host.Config.delivery.Unlock()
+	plugin.GetDelivery(host.Config).Unlock()
 
 	if err := <-activation; err != nil {
 		t.Fatal(err)

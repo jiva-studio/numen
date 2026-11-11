@@ -18,8 +18,15 @@ type ContentTypes struct {
 	lookup *contenttypes.Lookup
 }
 
-func newContentTypes(set enabledPlugins, lookup *contenttypes.Lookup) *ContentTypes {
-	return &ContentTypes{set: set, lookup: lookup}
+// ContentTypesDeps are what a ContentTypes reads: the set of plugins and the lookup that holds the table of types.
+type ContentTypesDeps struct {
+	Set    *PluginSet
+	Lookup *contenttypes.Lookup
+}
+
+// NewContentTypes creates the content types over the enabled plugins.
+func NewContentTypes(d ContentTypesDeps) *ContentTypes {
+	return &ContentTypes{set: d.Set, lookup: d.Lookup}
 }
 
 // SetContentTypeTable sets the table of the types of files. Until it is set, a file is of an

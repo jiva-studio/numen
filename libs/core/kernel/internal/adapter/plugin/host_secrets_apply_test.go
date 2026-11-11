@@ -1,8 +1,12 @@
-package plugin
+package plugin_test
 
-import "context"
+import (
+	"context"
 
-func applyChange(host *Host, ctx context.Context, change func() ([]string, error)) error {
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+)
+
+func applyChange(host *pluginhost.Host, ctx context.Context, change func() ([]string, error)) error {
 	readers, err := change()
 	if err != nil {
 		return err

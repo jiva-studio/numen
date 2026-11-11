@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"bufio"
@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net"
 	"os"
@@ -52,7 +54,7 @@ func getFreePort(t *testing.T) int {
 	return port
 }
 
-func changePortToFree(t *testing.T, host *Host, change func(context.Context, *Host, int) error) int {
+func changePortToFree(t *testing.T, host *pluginhost.Host, change func(context.Context, *pluginhost.Host, int) error) int {
 	t.Helper()
 	var err error
 	for range 5 {
@@ -161,7 +163,7 @@ func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken strin
 	}
 }
 
-func teardownAfter(t *testing.T, host *Host) {
+func teardownAfter(t *testing.T, host *pluginhost.Host) {
 	t.Helper()
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 50*time.Millisecond); err != nil {
@@ -172,7 +174,7 @@ func teardownAfter(t *testing.T, host *Host) {
 
 // listenerHost is a host with one plugin that declares the listener mcp on port, backed by an echo server.
 type listenerHost struct {
-	host    *Host
+	host    *pluginhost.Host
 	port    int
 	started *atomic.Int32
 }
@@ -181,14 +183,14 @@ func newUndiscoveredListenerHost(t *testing.T, name string, defaultPort int, lis
 	t.Helper()
 	root := t.TempDir()
 	createListenerPlugin(t, root, name, defaultPort)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startRelayLauncher(t, &started, listenerToken))
 	return listenerHost{host: host, port: defaultPort, started: &started}
 }
 
-func discover(t *testing.T, host *Host) {
+func discover(t *testing.T, host *pluginhost.Host) {
 	t.Helper()
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -205,9 +207,9 @@ func newListenerHost(t *testing.T) listenerHost {
 	return w
 }
 
-func waitForFailure(t *testing.T, host *Host) PluginStatus {
+func waitForFailure(t *testing.T, host *pluginhost.Host) plugin.PluginStatus {
 	t.Helper()
-	var status PluginStatus
+	var status plugin.PluginStatus
 	wiretest.WaitUntil(t, "the plugin to be failed", func() bool {
 		var ok bool
 		status, ok = host.Registry.GetPluginStatus(listenerPlugin)
@@ -369,8 +371,8 @@ func TestTheHostBindsTheStoredValueOfThePortSetting(t *testing.T) {
 }
 
 func TestAChangedPortSettingBindsTheNewPortAndClosesTheOldOne(t *testing.T) {
-	for name, change := range map[string]func(context.Context, *Host, int) error{
-		"UpdatePluginSetting": func(ctx context.Context, host *Host, port int) error {
+	for name, change := range map[string]func(context.Context, *pluginhost.Host, int) error{
+		"UpdatePluginSetting": func(ctx context.Context, host *pluginhost.Host, port int) error {
 			return updateSetting(ctx, host, listenerPlugin, "port", float64(port))
 		},
 	} {
@@ -419,8 +421,8 @@ func TestListenerPortInUseMarksThePluginFailed(t *testing.T) {
 }
 
 func TestPortSettingChangedToUnbindablePortKeepsOldPortAndStatus(t *testing.T) {
-	changes := map[string]func(context.Context, *Host, any) error{
-		"UpdatePluginSetting": func(ctx context.Context, host *Host, value any) error {
+	changes := map[string]func(context.Context, *pluginhost.Host, any) error{
+		"UpdatePluginSetting": func(ctx context.Context, host *pluginhost.Host, value any) error {
 			return updateSetting(ctx, host, listenerPlugin, "port", value)
 		},
 	}
@@ -528,7 +530,7 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	root := t.TempDir()
 	port := getFreePort(t)
 	writeFixedPortListenerPlugin(t, root, port)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
@@ -544,7 +546,7 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	}
 }
 
-func getStoredSettings(t *testing.T, host *Host) map[string]any {
+func getStoredSettings(t *testing.T, host *pluginhost.Host) map[string]any {
 	t.Helper()
 	raw, err := host.Settings.GetPluginConfigJSON(listenerPlugin)
 	if err != nil {
@@ -584,8 +586,8 @@ func TestCheckPluginSettingAcceptsOnlyFreeOrBoundPort(t *testing.T) {
 	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(takenPort)); err == nil {
 		t.Errorf("CheckPluginSetting accepted the taken port %d", takenPort)
 	}
-	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(80)); !errors.Is(err, errListenerPortValue) {
-		t.Errorf("CheckPluginSetting of port 80 = %v, want errListenerPortValue", err)
+	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(80)); !errors.Is(err, plugin.ErrListenerPortValue) {
+		t.Errorf("CheckPluginSetting of port 80 = %v, want plugin.ErrListenerPortValue", err)
 	}
 	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(freePort)); err != nil {
 		t.Errorf("CheckPluginSetting of the free port %d = %v, want nil", freePort, err)
@@ -605,8 +607,8 @@ func TestCheckPluginSettingAcceptsOnlyFreeOrBoundPort(t *testing.T) {
 }
 
 func TestUnbindablePortSettingIsNotStoredAndOthersUpdate(t *testing.T) {
-	changes := map[string]func(context.Context, *Host, string, any) error{
-		"UpdatePluginSetting": func(ctx context.Context, host *Host, key string, value any) error {
+	changes := map[string]func(context.Context, *pluginhost.Host, string, any) error{
+		"UpdatePluginSetting": func(ctx context.Context, host *pluginhost.Host, key string, value any) error {
 			return updateSetting(ctx, host, listenerPlugin, key, value)
 		},
 	}

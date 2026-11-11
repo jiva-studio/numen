@@ -1,10 +1,11 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net"
 	"net/http"
@@ -82,14 +83,14 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	return addr.Port
 }
 
-func newEventHost(t *testing.T, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *Host {
+func newEventHost(t *testing.T, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *pluginhost.Host {
 	t.Helper()
 	return newEventHostWithClock(t, testsupport.GetMachine(), manifests, ports)
 }
 
-func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *Host {
+func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *pluginhost.Host {
 	t.Helper()
-	host := NewHost(clock, "desktop.editor")
+	host := pluginhost.New(clock, "desktop.editor")
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id

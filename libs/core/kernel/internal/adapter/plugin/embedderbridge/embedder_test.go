@@ -21,7 +21,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -104,7 +103,7 @@ func (s *mockEmbeddingServer) EmbedBatch(
 }
 
 func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", t.TempDir())
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", t.TempDir())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +149,7 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

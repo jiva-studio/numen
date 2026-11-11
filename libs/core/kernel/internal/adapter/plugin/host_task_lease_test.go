@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
@@ -17,12 +17,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 // taskHost is a running, idle host whose plugin reports tasks through the host endpoint.
 type taskHost struct {
-	host    *Host
+	host    *pluginhost.Host
 	process *os.Process
 	client  numenv1connect.HostQueueServiceClient
 }
@@ -42,7 +43,7 @@ func newTaskHost(t *testing.T) taskHost {
 	return taskHost{host: host, process: procs[0], client: newTaskClient(t, host)}
 }
 
-func newTaskClient(t *testing.T, host *Host) numenv1connect.HostQueueServiceClient {
+func newTaskClient(t *testing.T, host *pluginhost.Host) numenv1connect.HostQueueServiceClient {
 	t.Helper()
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil || port == 0 {

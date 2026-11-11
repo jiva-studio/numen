@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -44,7 +45,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
 	writeSecondPlugin(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

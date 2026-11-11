@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
@@ -23,7 +22,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 		t.Skipf("Embeddings binary not found at %s; skipping real process E2E test", embeddingsBin)
 	}
 
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", pluginsDir)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", pluginsDir)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

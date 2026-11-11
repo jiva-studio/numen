@@ -1,7 +1,8 @@
-package plugin
+package plugin_test
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"testing"
 )
 
@@ -27,7 +28,7 @@ func TestEnablingAPluginGeneratesItsToken(t *testing.T) {
 	writes := &tokenWrites{}
 	loadTokenHost(host, map[string]map[string]any{tokenPluginID: {"enabled": false}}, writes)
 
-	if err := updateSetting(t.Context(), host, tokenPluginID, settingEnabled, true); err != nil {
+	if err := updateSetting(t.Context(), host, tokenPluginID, plugin.SettingEnabled, true); err != nil {
 		t.Fatal(err)
 	}
 

@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
@@ -64,6 +65,31 @@ type Discovery struct {
 	report    func(error)
 	dirs      []string
 	target    string
+}
+
+// DiscoveryDeps are what a Discovery registers plugins with and retires them through, and the folders and the target it
+// scans for.
+type DiscoveryDeps struct {
+	Set         discoveredPlugins
+	Registrar   pluginRegistrar
+	Scan        scanHold
+	Mode        hostState
+	Supervisors *supervision.Supervisors
+	Stopper     *supervision.Stopper
+	Listeners   listenerControl
+	Storage     *storage.Storage
+	Config      scanRecorder
+	Report      func(error)
+	Dirs        []string
+	Target      string
+}
+
+// NewDiscovery creates the discovery of the plugins in d.Dirs that target d.Target.
+func NewDiscovery(d DiscoveryDeps) *Discovery {
+	return &Discovery{
+		set: d.Set, registrar: d.Registrar, scan: d.Scan, mode: d.Mode, sups: d.Supervisors, stopper: d.Stopper, listeners: d.Listeners,
+		storage: d.Storage, scans: d.Config, report: d.Report, dirs: d.Dirs, target: d.Target,
+	}
 }
 
 // Discover scans the configured directories and synchronizes the registered plugins, and the ports bound

@@ -17,7 +17,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -39,7 +38,7 @@ func (configurable) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServer, *atomic.Int32) {
+func openConfigurable(t *testing.T) (*pluginhost.Host, *Embedder, *mockEmbeddingServer, *atomic.Int32) {
 	t.Helper()
 	mock := &mockEmbeddingServer{}
 	mock.chunkTokens.Store(256)
@@ -62,7 +61,7 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 			t.Fatal(err)
 		}
 	}
-	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}

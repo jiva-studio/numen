@@ -1,4 +1,4 @@
-package plugin
+package plugin_test
 
 import (
 	"os"
@@ -8,10 +8,11 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func newResolvedHost(t *testing.T) *Host {
+func newResolvedHost(t *testing.T) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	dir := filepath.Join(tmp, "sample")
@@ -34,14 +35,14 @@ func newResolvedHost(t *testing.T) *Host {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
 }
 
-func findInfoSetting(t *testing.T, host *Host, key string) plugindomain.Setting {
+func findInfoSetting(t *testing.T, host *pluginhost.Host, key string) plugindomain.Setting {
 	t.Helper()
 	for _, info := range host.Registry.GetPluginInfos() {
 		for _, one := range info.Settings {

@@ -1,10 +1,12 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"os"
@@ -101,9 +103,9 @@ func newBuiltInBackend() *builtInBackend {
 	return &builtInBackend{probe: &configured{}}
 }
 
-func newBuiltInHost(t *testing.T, dirs ...string) *Host {
+func newBuiltInHost(t *testing.T, dirs ...string) *pluginhost.Host {
 	t.Helper()
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", dirs...)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", dirs...)
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -112,14 +114,14 @@ func newBuiltInHost(t *testing.T, dirs ...string) *Host {
 	return host
 }
 
-func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[string]string) (http.Handler, error)) {
+func registerBuiltIn(t *testing.T, host *pluginhost.Host, manifest []byte, serve func(map[string]string) (http.Handler, error)) {
 	t.Helper()
 	if err := host.Discovery.RegisterBuiltIn(manifest, serve); err != nil {
 		t.Fatalf("RegisterBuiltIn: %v", err)
 	}
 }
 
-func getAgentPrompt(t *testing.T, host *Host, endpoint transport.Endpoint) string {
+func getAgentPrompt(t *testing.T, host *pluginhost.Host, endpoint transport.Endpoint) string {
 	t.Helper()
 	client := numenv1connect.NewAgentServiceClient(host.Activation.ClientLookup().GetClient(endpoint), transport.GetBaseURL(endpoint))
 	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
@@ -225,17 +227,17 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 	serve := newBuiltInBackend().serve("first agent")
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), serve)
 
-	if err := host.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errBuiltInRegistered) {
-		t.Errorf("second registration = %v, want errBuiltInRegistered", err)
+	if err := host.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, plugin.ErrBuiltInRegistered) {
+		t.Errorf("second registration = %v, want plugin.ErrBuiltInRegistered", err)
 	}
-	other := NewHost(testsupport.GetMachine(), "mobile.reader")
+	other := pluginhost.New(testsupport.GetMachine(), "mobile.reader")
 	t.Cleanup(func() {
 		if err := other.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
-	if err := other.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errNotForTarget) {
-		t.Errorf("registration for another target = %v, want errNotForTarget", err)
+	if err := other.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, plugin.ErrNotForTarget) {
+		t.Errorf("registration for another target = %v, want plugin.ErrNotForTarget", err)
 	}
 	if err := host.Discovery.RegisterBuiltIn([]byte(`{"id": "not a manifest"`), serve); err == nil {
 		t.Error("a manifest that does not parse is registered")
@@ -356,7 +358,7 @@ func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
 	sup := supervisorOf(host, firstBuiltInID)
 
-	endpoint, err := host.Processes.Start(t.Context(), host.Registry.set.getLaunch(p), sup)
+	endpoint, err := host.Processes.Start(t.Context(), plugin.GetLaunch(host.Registry, p), sup)
 
 	if !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("expected errActivationAborted, got %v", err)
@@ -464,7 +466,7 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
 	sup := supervisorOf(host, firstBuiltInID)
 
-	if _, err := host.Processes.Start(t.Context(), host.Registry.set.getLaunch(p), sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
+	if _, err := host.Processes.Start(t.Context(), plugin.GetLaunch(host.Registry, p), sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("activatePlugin = %v, want errActivationAborted", err)
 	}
 

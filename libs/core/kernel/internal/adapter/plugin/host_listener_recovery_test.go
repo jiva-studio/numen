@@ -1,8 +1,10 @@
-package plugin
+package plugin_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"os"
 	"slices"
@@ -17,16 +19,16 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func openListenerTarget(t *testing.T, host *Host) func() {
+func openListenerTarget(t *testing.T, host *pluginhost.Host) func() {
 	t.Helper()
-	_, release, err := host.Listeners.createTarget(listenerPlugin, "mcp")(t.Context())
+	_, release, err := plugin.CreateTarget(host.Listeners, listenerPlugin, "mcp")(t.Context())
 	if err != nil {
 		t.Fatalf("open the target of the listener: %v", err)
 	}
 	return release
 }
 
-func isEvicted(t *testing.T, host *Host) bool {
+func isEvicted(t *testing.T, host *pluginhost.Host) bool {
 	t.Helper()
 	return slices.Contains(host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond), listenerPlugin)
 }
@@ -79,7 +81,7 @@ func startKillableLauncher(t *testing.T, echoPort int) (supervision.Launcher, fu
 func TestTheReleaseOfACrashedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) {
 	root := t.TempDir()
 	createListenerPlugin(t, root, "mcp", getFreePort(t))
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	launcher, getProcesses := startKillableLauncher(t, serveEcho(t))
 	host.Processes.SetLauncher(launcher)
@@ -146,7 +148,7 @@ func TestListenerPortFreedAfterBindFailureClearsItOnDiscovery(t *testing.T) {
 func TestASyncKeepsTheFailureOfAPluginThatFailedToStart(t *testing.T) {
 	w := newListenerHost(t)
 	cause := supervision.ErrListenerNotReported
-	if failure := w.host.Failures.RecordActivationFailure(listenerPlugin, w.host.Registry.set.getName(listenerPlugin), cause); failure == nil {
+	if failure := w.host.Failures.RecordActivationFailure(listenerPlugin, plugin.GetName(w.host.Registry, listenerPlugin), cause); failure == nil {
 		t.Fatal("the failure was not recorded")
 	}
 
