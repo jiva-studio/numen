@@ -45,15 +45,15 @@ useBookPlace(
     offset: tabState.book.navigation.offset,
     isLoading: tabState.book.state.isLoading,
     chapter: tabState.book.progress.chapter,
-    getCfi: tabState.book.getCfi,
-    goToCfi: tabState.book.goToCfi,
+    getCfi: tabState.book.locator.getCfi,
+    goToCfi: tabState.book.locator.goToCfi,
   },
   () => readerTab,
 )
 useBookRanges(
   {
     isLoading: tabState.book.state.isLoading,
-    focusSpans: tabState.book.focusSpans,
+    focusSpans: tabState.book.locator.focusSpans,
     reportFailure: tabState.book.reportFailure,
   },
   () => readerTab,
