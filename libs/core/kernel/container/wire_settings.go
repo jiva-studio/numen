@@ -312,7 +312,7 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
 		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
-		ResolveProfile: func(profile string) string { return resolveProfile(profile) }, Signal: signal,
+		ResolveProfile: resolveProfile, Signal: signal,
 		Report: func(err error) { settingsHandleError(c, err) },
 	})
 }
