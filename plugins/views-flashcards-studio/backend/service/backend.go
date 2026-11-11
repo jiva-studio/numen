@@ -38,9 +38,9 @@ type Backend struct {
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
-	bound := hostports.New(cfg.Vaults, cfg.Store)
+	hostPorts := hostports.New(cfg.Vaults, cfg.Store)
 	b := &Backend{
-		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: bound.Notes}, ports: bound, now: cfg.Now, cfg: cfg,
+		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: hostPorts.Notes}, ports: hostPorts, now: cfg.Now, cfg: cfg,
 		runs: sessions.NewRegistry(), flash: nil,
 	}
 	b.flash = scenarios.NewCurrent(b.getFlashConfig())

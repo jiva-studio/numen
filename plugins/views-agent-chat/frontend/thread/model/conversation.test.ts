@@ -595,19 +595,19 @@ describe('a conversation that is over', () => {
 
     /** Collects what the window would throw as uncaught errors. */
     const collectUncaught = (): Error[] => {
-      const thrown: Error[] = []
+      const uncaught: Error[] = []
       vi.stubGlobal('queueMicrotask', (task: () => void) => {
         try {
           task()
         } catch (error) {
-          thrown.push(error as Error)
+          uncaught.push(error as Error)
         }
       })
-      return thrown
+      return uncaught
     }
 
     it('keeps the transcript and reports the refusal', async () => {
-      const thrown = collectUncaught()
+      const uncaught = collectUncaught()
       const conversation = useConversation(
         {
           ...createPort([createStopped()]),
@@ -621,12 +621,12 @@ describe('a conversation that is over', () => {
       expect(() => conversation.finish()).not.toThrow()
       await flushPromises()
 
-      expect(thrown.map((error) => error.message)).toStrictEqual(['unreachable'])
+      expect(uncaught.map((error) => error.message)).toStrictEqual(['unreachable'])
       expect(conversation.turns.value).toStrictEqual([])
     })
 
     it('keeps the transcript and reports an agent that cannot be reached at all', async () => {
-      const thrown = collectUncaught()
+      const uncaught = collectUncaught()
       const conversation = useConversation(
         {
           ...createPort([createStopped()]),
@@ -642,7 +642,7 @@ describe('a conversation that is over', () => {
       expect(() => conversation.finish()).not.toThrow()
       await flushPromises()
 
-      expect(thrown.map((error) => error.message)).toStrictEqual(['no agent'])
+      expect(uncaught.map((error) => error.message)).toStrictEqual(['no agent'])
       expect(conversation.turns.value).toStrictEqual([])
     })
   })
