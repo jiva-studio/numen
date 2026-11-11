@@ -39,3 +39,8 @@ func WaitForExit(cmd *exec.Cmd, stop func()) error {
 		return <-exited
 	}
 }
+
+// LookPath finds the executable the name gives in the directories of PATH.
+func LookPath(name string) (string, error) {
+	return exec.LookPath(name)
+}

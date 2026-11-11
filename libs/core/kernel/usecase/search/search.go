@@ -73,11 +73,19 @@ type QueryEmbedder interface {
 	Execute(ctx context.Context, queries []string) ([][]float32, error)
 }
 
+// Index is what a search asks of the index: `Passages` answers by words and by section names,
+// `Nearest` answers by meaning.
+type Index struct {
+	Passages sourceport.PassageQueries
+	Nearest  sourceport.NearestQueries
+}
+
 // Search answers a query within one vault. Without an embedder only the word search runs.
 // Floor gives the floor of a query that names none, under the recipe of the model that embeds it.
 // Extractors is how many sources are extracted at once; the default holds where it is not positive.
 type Search struct {
 	passages     sourceport.PassageQueries
+	nearest      FindNearest
 	readers      vaultport.VaultReaders
 	embedder     embeddingport.Embedder
 	queries      QueryEmbedder
@@ -93,12 +101,13 @@ type Search struct {
 // not run and the word search answers alone, since the vector index is optional.
 // A nil `texts` means only notes return their text. `queries` embeds the queries.
 // `errorHandler` receives the error of a search mode that could not answer; nil ignores such errors.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textdomain.Readers, embedder embeddingport.Embedder, queries QueryEmbedder, errorHandler window.ErrorHandler) Search {
+func New(index Index, readers vaultport.VaultReaders, texts textdomain.Readers, embedder embeddingport.Embedder, queries QueryEmbedder, errorHandler window.ErrorHandler) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
 	return Search{
-		passages:     passages,
+		passages:     index.Passages,
+		nearest:      NewFindNearest(index.Nearest),
 		readers:      readers,
 		embedder:     embedder,
 		queries:      queries,
@@ -230,7 +239,7 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	// A vector is stored under the recipe that produced it, which covers every
 	// property of the model that determines what a vector is. A lookup under any
 	// other recipe finds no vector and this mode returns nothing.
-	return u.passages.FindNearest(ctx, v.ID, sourcedomain.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
+	return u.nearest.Execute(ctx, v.ID, sourcedomain.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
 }
 
 func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {

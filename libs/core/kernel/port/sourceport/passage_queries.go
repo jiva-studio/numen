@@ -7,11 +7,11 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// PassageQueries is the two indexes a search runs over. Both are built on the
-// chunk, so a hit from either half has the same row type and the results merge.
+// PassageQueries is the word and section-name indexes a search runs over. Both are built on
+// the chunk, so a hit from either has the same row type and the results merge.
 // Every method takes the source kinds a question is about; there is no wildcard
 // value, so a question that does not restrict the kind passes every kind.
-// Neither half returns the text: a passage is a location in a file.
+// Neither returns the text: a passage is a location in a file.
 type PassageQueries interface {
 	// FindLexical returns the chunks of one vault whose text matches the words of `q.Text`,
 	// best first, at most `q.Limit` of them.
@@ -21,13 +21,4 @@ type PassageQueries interface {
 	// typed, best first. A section is returned as the chunk it opens, so each
 	// result is located where the section begins.
 	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, q source.LexicalQuery) ([]domain.Passage, error)
-
-	// FindNearest is the chunks of one vault nearest a query vector, nearest first,
-	// at most `q.Limit` of them. `q.Vector` is the full precision the model answered
-	// with, and a chunk whose similarity to it is under `q.Floor` is not an answer
-	// and is not returned.
-	//
-	// `q.Recipe` is what a vector is kept under, which is everything about the
-	// model that decides what a vector is. A name alone finds none of them.
-	FindNearest(ctx context.Context, vaultID domain.VaultID, q source.NearestQuery) ([]domain.Passage, error)
 }

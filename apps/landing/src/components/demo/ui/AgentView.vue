@@ -5,18 +5,15 @@
  */
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { Menu, Prose, type MenuItem } from '@numen/ui'
-import { MODEL_OPTIONS, type Agent, type Turn } from '../model/agent'
+import { MODEL_OPTIONS, type Agent } from '../model/agent'
 import AgentCall from './AgentCall.vue'
 import AgentFoot from './AgentFoot.vue'
 
-/* ----------------------------- Props & Emits ------------------------------ */
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ agent: Agent }>()
-
-const emit = defineEmits<{ open: [turn: Turn] }>()
 
 /* --------------------------------- State ---------------------------------- */
 const thread = useTemplateRef<HTMLElement>('thread')
-const field = useTemplateRef<HTMLTextAreaElement>('field')
 const menuAt = ref<{ x: number; y: number } | null>(null)
 const draft = computed({
   get: () => props.agent.draft.value,
@@ -36,7 +33,6 @@ watch(
     thread.value?.scrollTo({ top: thread.value.scrollHeight, behavior: 'smooth' })
   },
 )
-watch(props.agent.focusCount, () => field.value?.focus())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKeydown(event: KeyboardEvent) {
@@ -60,7 +56,7 @@ function onChooseModel(id: string) {
     <div ref="thread" class="agent__thread">
       <template v-for="turn in agent.turns.value" :key="turn.id">
         <p v-if="turn.voice === 'prompt'" class="agent__bubble">{{ turn.text }}</p>
-        <AgentCall v-else-if="turn.voice === 'doing'" :turn="turn" @click="emit('open', turn)" />
+        <AgentCall v-else-if="turn.voice === 'doing'" :turn="turn" />
         <Prose v-else class="agent__answer" :text="turn.text" />
       </template>
     </div>
@@ -69,7 +65,6 @@ function onChooseModel(id: string) {
 
     <div class="agent__composer">
       <textarea
-        ref="field"
         v-model="draft"
         class="agent__field"
         rows="1"
@@ -79,7 +74,14 @@ function onChooseModel(id: string) {
       <AgentFoot :agent="agent" @open-models="onOpenModels" />
     </div>
 
-    <Menu v-if="menuAt" :items="items" :at="menuAt" is-open @choose="onChooseModel" @dismiss="menuAt = null" />
+    <Menu
+      v-if="menuAt"
+      :items="items"
+      :at="menuAt"
+      is-open
+      @choose="onChooseModel"
+      @dismiss="menuAt = null"
+    />
   </div>
 </template>
 
@@ -164,5 +166,4 @@ function onChooseModel(id: string) {
   user-select: text;
   -webkit-user-select: text;
 }
-
 </style>

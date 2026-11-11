@@ -11,10 +11,10 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
@@ -51,8 +51,8 @@ type Scales struct {
 
 // Machine is what the hardware allows the installation to use.
 type Machine struct {
-	ResolvedCompute hardware.ResolvedCompute
-	Hardware        hardware.Specs
+	ResolvedCompute settingsdomain.ResolvedCompute
+	Hardware        settingsdomain.MachineSpecs
 }
 
 // Config is what the user may point somewhere else. Empty fields mean the platform's own locations.

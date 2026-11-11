@@ -7,12 +7,12 @@ defineProps<{ turn: Turn }>()
 </script>
 
 <template>
-  <button type="button" class="agent__call">
+  <div class="agent__call">
     <span class="agent__mark" />
     <span class="agent__tool">{{ turn.text }}</span>
     <span class="agent__subject">{{ turn.subject }}</span>
     <span class="agent__aside">{{ turn.aside }}</span>
-  </button>
+  </div>
 </template>
 
 <style scoped>

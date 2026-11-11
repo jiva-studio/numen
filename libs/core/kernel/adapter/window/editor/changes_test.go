@@ -29,7 +29,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -63,11 +62,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		TextReaders: testsupport.Texts{Readers: vaultreader.Readers{}},
 		Paths:       container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := settings.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := vaults.NewAdd(container.VaultIdentity(settings), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "watched"); err != nil {
+	if _, err := settings.AddVault(root, "watched"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -304,11 +299,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
 	})
 	writeNamingSettings(t, cfg.RegistryPath, sync)
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "quitting"); err != nil {
+	if _, err := cfg.AddVault(root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 

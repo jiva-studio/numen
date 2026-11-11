@@ -22,10 +22,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -56,12 +55,8 @@ func openTwoVaults(t *testing.T) *showing {
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	first := newListedVault(t, cfg, registry, "one", map[string]string{entropy: noteNamed("Entropy")})
-	second := newListedVault(t, cfg, registry, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
+	first := newListedVault(t, cfg, "one", map[string]string{entropy: noteNamed("Entropy")})
+	second := newListedVault(t, cfg, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
 	installation, err := container.OpenWindow(cfg, t.Context(), "one", os.Stderr)
 	if err != nil {
@@ -94,7 +89,6 @@ func openTwoVaults(t *testing.T) *showing {
 func newListedVault(
 	t *testing.T,
 	cfg container.Config,
-	registry vaultregistry.Ports,
 	name string,
 	notes map[string]string,
 ) domain.Vault {
@@ -113,7 +107,7 @@ func newListedVault(
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	v, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, name)
+	v, err := cfg.AddVault(root, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,11 +238,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	}
 
 	// The next window opens on it.
-	registry, err := f.cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	switch last, found, err := registry.Last.GetLastVault(); {
+	switch last, found, err := appstate.OpenAt(f.cfg.RegistryPath).GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case !found || last.ID != f.second.ID:
@@ -716,16 +706,11 @@ func openInstallation(t *testing.T) (*editor.Installation, *container.Index) {
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	add := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock())
-	if _, err := add.Execute(root, "one"); err != nil {
+	if _, err := cfg.AddVault(root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -733,7 +718,7 @@ func openInstallation(t *testing.T) (*editor.Installation, *container.Index) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	installation, err := container.OpenWindowOver(cfg, t.Context(), registry, db, "one", io.Discard)
+	installation, err := container.OpenWindowOver(cfg, t.Context(), db, "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -840,11 +825,7 @@ func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 		t.Error("a documents folder was made in this user's home")
 	}
 
-	registry, err := f.cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	switch last, found, err := registry.Last.GetLastVault(); {
+	switch last, found, err := appstate.OpenAt(f.cfg.RegistryPath).GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case found:
@@ -1139,11 +1120,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	}
 
 	// The next window opens on it.
-	registry, err := f.cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	switch last, found, err := registry.Last.GetLastVault(); {
+	switch last, found, err := appstate.OpenAt(f.cfg.RegistryPath).GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case !found || string(last.ID) != added.Msg.GetVault().GetId():

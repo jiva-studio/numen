@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 func failWithDialog(cfg container.Config, why error) error {
@@ -111,7 +112,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 }
 
 func getFatalReport(cfg container.Config, why error) fatalReport {
-	if outside, ok := errors.AsType[*settings.OutsideBoundsError](why); ok {
+	if outside, ok := errors.AsType[*settingsdomain.OutsideBoundsError](why); ok {
 		return getSizeFatalReport(cfg, outside)
 	}
 
@@ -152,7 +153,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 	}
 }
 
-func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBoundsError) fatalReport {
+func getSizeFatalReport(cfg container.Config, outside *settingsdomain.OutsideBoundsError) fatalReport {
 	far := fmt.Sprintf("%v to %v", outside.Min, outside.Max)
 	content := fmt.Sprint(outside.Number)
 

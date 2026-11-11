@@ -1,19 +1,16 @@
 <script setup lang="ts">
 /**
- * The landing page's simulation of the Numen window: the workspace of panes and tabs, the tab menu and
- * the palette, over a vault held in memory.
+ * The landing page's picture of the Numen window: the workspace of panes and tabs over fixed example
+ * data. It reads and changes no vault.
  */
-import { useTemplateRef, type Component } from 'vue'
-import { FileText, Link2, Link2Off } from '@lucide/vue'
-import { Menu } from '@numen/ui'
-import { Palette, WorkspaceLayout, commandKeyChord, type ActionWords } from '@numen/workbench'
+import { onBeforeUnmount, ref } from 'vue'
+import { WorkspaceLayout, closeTab } from '@numen/workbench'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
-import { NAMING_COMMAND, KEYBOARD } from '../lib/palette'
-import { getPdfPathOfTab, getKindOfTab } from '../lib/tabs'
-import { createDemoTools } from '../model/tools'
-import { createDemoWindow } from '../model/window'
-import { UNLINK_ITEM } from '../model/tabMenu'
+import { ENTROPY_BODY } from '../lib/note'
+import { DEMO_TABS, PDF_TAB_PATH, createDemoWorkspace } from '../lib/tabs'
+import { createAgent } from '../model/agent'
+import { createPlayer } from '../model/player'
 import AgentView from './AgentView.vue'
 import DeckView from './DeckView.vue'
 import FilesView from './FilesView.vue'
@@ -22,129 +19,48 @@ import NoteView from './NoteView.vue'
 import PdfView from './PdfView.vue'
 import PlexView from './PlexView.vue'
 import RecordingView from './RecordingView.vue'
-import { getCommandIcon, getFileIcon, getTabIcon } from './icons'
+import { getTabIcon } from './icons'
 
 /* --------------------------------- State ---------------------------------- */
-const tools = createDemoTools(() => demo.actions.getFocusTitle())
-const { agent, deck, player, pdf } = tools
-const demo = createDemoWindow(agent)
-const { vault, layout, files, plex, tabMenu, palette, commands, actions } = demo
-const rootElement = useTemplateRef<HTMLElement>('rootElement')
-const ACTION_KEY = commandKeyChord(KEYBOARD)
-const ACTION_WORDS: ActionWords = { name: 'Actions', placeholder: 'Search actions', silence: 'No actions found' }
+const agent = createAgent()
+const player = createPlayer()
+const workspace = ref(createDemoWorkspace())
+const tabs = ref(DEMO_TABS)
+
+onBeforeUnmount(player.pause)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onKeydown(event: KeyboardEvent) {
-  const key = event.key.toLowerCase()
-  if (!(event.metaKey || event.ctrlKey) || (key !== 'k' && key !== 'p')) return
-  event.preventDefault()
-  palette.actions.toggle(key === 'k' ? 'commands' : 'search')
+function onClose(id: string) {
+  workspace.value = closeTab(workspace.value, id)
+  tabs.value = tabs.value.filter((one) => one.id !== id)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function getMenuIcon(id: string): Component | null {
-  if (id === UNLINK_ITEM) return Link2Off
-  return tabMenu.isLinkTarget(id) ? getTabIcon(id) : null
-}
-
-function getPaletteIcon(id: string): Component | null {
-  const naming = palette.state.naming.value
-  if (palette.state.panel.value === 'naming') return getCommandIcon(naming ? NAMING_COMMAND[naming.role] : '') ?? FileText
-  if (palette.state.panel.value === 'commands') return getCommandIcon(id)
-  return getFileIcon(id, Boolean(vault.read.getNote(id)))
-}
+const getKind = (id: string) => tabs.value.find((one) => one.id === id)?.kind
 </script>
 
 <template>
-  <div ref="rootElement" class="demo-window numen" tabindex="-1" @keydown="onKeydown" @contextmenu.prevent>
-    <WorkspaceLayout
-      v-model="layout.state.held.value"
-      :tabs="layout.state.tabs.value"
-      :minimum="140"
-      :create-id="layout.actions.createPaneId"
-      @activate="actions.activateTab"
-      @close="layout.actions.close"
-      @tab-context-menu="tabMenu.open"
-    >
+  <div class="demo-window numen" tabindex="-1" @contextmenu.prevent>
+    <WorkspaceLayout v-model="workspace" :tabs="tabs" :minimum="140" @close="onClose">
       <template #icon="{ id }">
-        <component :is="getTabIcon(id)" class="tab-icon" />
-        <Link2 v-if="actions.getLinkGroup(id)" class="tab-link" :data-color="actions.getLinkGroup(id)?.colorIndex" aria-label="Linked tab" />
+        <component :is="getTabIcon(getKind(id) ?? 'note')" class="tab-icon" />
       </template>
 
       <template #tab="{ id }">
-        <FilesView v-if="getKindOfTab(id) === 'files'" :files="files" :vault="vault" @run="commands.runInTree" />
-        <PlexView
-          v-else-if="getKindOfTab(id) === 'plex'"
-          :layout="plex.layout.value"
-          @go="plex.go"
-          @open="layout.actions.openVaultFile($event)"
-          @run="commands.run"
-        />
-        <NoteView
-          v-else-if="getKindOfTab(id) === 'note' && layout.actions.getNoteOfTab(id)"
-          :body="layout.actions.getNoteOfTab(id)?.body ?? ''"
-          @update:body="actions.writeBody(id, $event)"
-          @open="actions.followLink($event, id)"
-        />
-        <PdfView
-          v-else-if="getKindOfTab(id) === 'reader:pdf'"
-          :path="getPdfPathOfTab(id)"
-          :page="pdf.pages[getPdfPathOfTab(id)] ?? 0"
-          @go="pdf.goToPage(getPdfPathOfTab(id), $event)"
-        />
-        <RecordingView v-else-if="getKindOfTab(id) === 'recording'" :player="player" />
-        <LinkView v-else-if="getKindOfTab(id) === 'link'" />
-        <DeckView v-else-if="getKindOfTab(id) === 'deck'" :deck="deck" />
-        <AgentView v-else-if="getKindOfTab(id) === 'agent'" :agent="agent" @open="actions.openTurnSource" />
+        <FilesView v-if="getKind(id) === 'files'" />
+        <PlexView v-else-if="getKind(id) === 'plex'" />
+        <NoteView v-else-if="getKind(id) === 'note'" :body="ENTROPY_BODY" />
+        <PdfView v-else-if="getKind(id) === 'pdf'" :path="PDF_TAB_PATH" />
+        <RecordingView v-else-if="getKind(id) === 'recording'" :player="player" />
+        <LinkView v-else-if="getKind(id) === 'link'" />
+        <DeckView v-else-if="getKind(id) === 'deck'" />
+        <AgentView v-else-if="getKind(id) === 'agent'" :agent="agent" />
       </template>
     </WorkspaceLayout>
-
-    <Menu
-      v-if="tabMenu.tab.value"
-      :items="tabMenu.items.value"
-      :at="tabMenu.at.value"
-      has-groups
-      is-open
-      @choose="tabMenu.choose"
-      @dismiss="tabMenu.close"
-    >
-      <template #icon="{ id }">
-        <component :is="getMenuIcon(id)" v-if="getMenuIcon(id)" class="tab-menu-icon" aria-hidden="true" />
-      </template>
-      <template #silence>No open tabs to link with</template>
-    </Menu>
-
-    <Palette
-      v-if="palette.state.panel.value"
-      v-model="palette.state.typed.value"
-      :groups="palette.view.groups.value"
-      :from="rootElement"
-      :to="rootElement ?? 'body'"
-      :crumb="palette.view.crumb.value"
-      :step="palette.view.step.value"
-      is-open
-      :placeholder="palette.view.placeholder.value"
-      name="Search the vault"
-      :action-words="ACTION_WORDS"
-      :action-key="ACTION_KEY"
-      @choose="actions.choosePalette"
-      @back="palette.actions.dismiss"
-      @dismiss="palette.actions.dismiss"
-    >
-      <template #icon="{ id }">
-        <component :is="getPaletteIcon(id)" v-if="getPaletteIcon(id)" class="command-icon" />
-      </template>
-    </Palette>
   </div>
 </template>
 
 <style scoped>
-.tab-menu-icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
-  stroke-width: 1.75;
-}
-
 .demo-window {
   position: relative;
   width: 100%;
@@ -159,45 +75,12 @@ function getPaletteIcon(id: string): Component | null {
   -webkit-user-select: none;
 }
 
-.demo-window :deep(.palette) {
-  position: absolute;
-  --drop: 4.5rem;
-  --tallest: 20rem;
-}
-
-.command-icon {
-  inline-size: 100%;
-  block-size: 100%;
-  stroke-width: 1.75;
-  opacity: 0.75;
-}
-
 .tab-icon {
   inline-size: 0.9rem;
   block-size: 0.9rem;
   flex-shrink: 0;
   stroke-width: 1.75;
   opacity: 0.75;
-}
-
-.tab-link {
-  inline-size: 0.85rem;
-  block-size: 0.85rem;
-  margin-inline-start: 0.125rem;
-  stroke-width: 2.25;
-  color: var(--numen-relation-parent);
-}
-
-.tab-link[data-color='2'] {
-  color: var(--numen-relation-child);
-}
-
-.tab-link[data-color='3'] {
-  color: var(--numen-relation-jump);
-}
-
-.tab-link[data-color='4'] {
-  color: var(--numen-relation-sibling);
 }
 
 .demo-window :deep(.tab__icon) {
