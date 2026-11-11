@@ -2,4 +2,6 @@
 
 package hardware
 
-func readPlatformHardware() Specs { return Specs{} }
+import settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+
+func readPlatformHardware() settingsdomain.MachineSpecs { return settingsdomain.MachineSpecs{} }

@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -84,11 +83,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
+	if _, err := cfg.AddVault(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
 	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)

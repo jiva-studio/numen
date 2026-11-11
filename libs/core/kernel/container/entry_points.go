@@ -19,7 +19,7 @@ import (
 // window and the configuration with the text versions the plugins share.
 func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, Config, error) {
 	start := startup.OpenEditor[vaultregistry.Ports, *vault.Index, *windowWiring]{
-		OpenRegistry: c.Registry,
+		OpenRegistry: c.registry,
 		OpenIndex:    func(ctx context.Context) (*vault.Index, error) { return OpenIndex(c, ctx) },
 		OpenTexts: func(db *vault.Index) error {
 			versions, err := newTextVersions(vaultOf(c), db)
@@ -27,7 +27,7 @@ func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*ed
 			return err
 		},
 		OpenWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index) (*windowWiring, error) {
-			return openWindowOver(c, ctx, ports, db, named, out)
+			return openWindowWith(c, ctx, ports, WindowOpening{DB: db, Named: named, Out: out})
 		},
 		FollowVault: func(opened *windowWiring) {
 			setPluginVaultPath(plugins(c), opened.inst.State.GetCurrentVault().Path)
@@ -67,7 +67,7 @@ func OpenFlashcards(c Config,
 ) (Flashcards, error) {
 	start := startup.OpenFlashcards[vaultregistry.Ports, *vault.Index, *vault.OpenVaults[*vault.Index]]{
 		Label:        label,
-		OpenRegistry: c.Registry,
+		OpenRegistry: c.registry,
 		OpenIndex:    func(ctx context.Context) (*vault.Index, error) { return OpenIndex(c, ctx) },
 		OpenVaults:   func(db *vault.Index) *vault.OpenVaults[*vault.Index] { return openVaults(c, db, out, label) },
 		BindWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index, vaults *vault.OpenVaults[*vault.Index]) {

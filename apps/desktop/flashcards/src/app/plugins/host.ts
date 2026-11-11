@@ -5,7 +5,6 @@
  * notices; the views declared for the list of vaults; and the view of the slot titleBar. Every other
  * registration has no slot in this window.
  */
-import { shallowRef, type ShallowRef } from 'vue'
 import {
   createAppInfo,
   createIdleContextHost,
@@ -20,50 +19,35 @@ import {
   type LoaderHost,
   type Manifest,
   type AgentHost,
-  type Disposable,
   type PluginContext,
   type CommandsHost,
   type VaultsHost,
   type WindowHost,
 } from '@numen/plugin-loader'
-import { createNoticeQueue } from '@numen/workbench'
+import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import { openExternalUrl } from '@numen/ui'
-import type { WindowPlatform } from '@numen/workbench'
+import { createWindowSlots } from '@/entities/plugin'
+import type { createWindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'
 
-import { createFrontView, createWindowSlots, createWindowTab, type PluginView } from './hostParts'
-
-export type { PluginView, WindowTab } from './hostParts'
-
-const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginView): Disposable => {
-  views.value = [...views.value, view]
-  return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
-}
-
 /** The commands, the vaults and the window the plugins read. */
-export interface ShellServices {
+interface ShellServices {
   readonly commands: CommandsHost
   readonly vaults: VaultsHost
   readonly window: WindowHost
 }
 
 /**
- * The one place the host and the window depend on each other: the host is made first, because the
- * services are made from its notices and its tab. The window opens the port with the
- * services it made. A read before that is a fault of the composition and throws.
+ * What the host is made from: the tabs and notices it registers into, the services it offers (a plugin
+ * gets none that is missing), the agent where the window has one, and the platform the plugins read,
+ * Windows where none is given, as the frame reports without the Wails runtime.
  */
-export function createShellPort() {
-  let made: ShellServices | undefined
-  return {
-    getServices: (): ShellServices => {
-      if (made === undefined) throw new Error('The host was asked before the window was composed')
-      return made
-    },
-    open: (services: ShellServices): void => {
-      if (made !== undefined) throw new Error('The port of the host is open already')
-      made = services
-    },
-  }
+interface ShellHostDeps {
+  readonly tabs: Pick<ReturnType<typeof createWindowTabs>, 'addView' | 'closeTab' | 'dropPlugin'>
+  readonly notices: NoticeQueue
+  readonly services?: Partial<ShellServices>
+  readonly agent?: AgentHost
+  readonly getPlatform?: () => WindowPlatform
 }
 
 const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
@@ -81,30 +65,14 @@ function mountDeclaredView(
     registry.mountView(capability, element, viewContext, requireMountAccess(capability, caller))
 }
 
-/**
- * The host of the window, whose plugins are given the agent where the window has one, and the
- * vaults and the window the services hold when the plugin starts.
- * The platform plugins read is the one `getPlatform` reports: Windows where none is given, as the
- * frame reports without the Wails runtime.
- */
-export function createShellHost(
-  agent?: AgentHost,
-  getServices: () => Partial<ShellServices> = () => ({}),
-  getPlatform: () => WindowPlatform = () => 'windows',
-) {
-  const views = shallowRef<readonly PluginView[]>([])
+export function createShellHost(deps: ShellHostDeps) {
+  const { tabs, notices, services = {}, agent, getPlatform = () => 'windows' } = deps
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
-  const notices = createNoticeQueue()
   const slotViews = createSlotViewRegistry({
     reportIssue: (pluginId, message) => notices.show(pluginId, `${pluginId}: ${message}`, 'error'),
   })
   const windowSlots = createWindowSlots(slotViews)
-
-  const front = createFrontView(views)
-  const { tab, openTab, closeTab } = createWindowTab(() => front.value)
-
-  const addView = (view: PluginView): Disposable => addPluginView(views, view)
 
   const contextHost = createIdleContextHost({
     info: {
@@ -113,7 +81,7 @@ export function createShellHost(
       openExternal: (url) => openExternalUrl(url),
     },
     registration: {
-      registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
+      registerTabKind: (pluginId, registration) => tabs.addView({ pluginId, registration }),
     },
     views: {
       registerView: (pluginId, registration, permissions) =>
@@ -123,13 +91,13 @@ export function createShellHost(
       mountView: (capability, element, viewContext, access) =>
         declaredViews.mountView(capability, element, viewContext, access),
     },
-    tabs: { closeTab: (id) => closeTab(id) },
-    vault: { getVaults: () => getServices().vaults },
+    tabs: { closeTab: (id) => tabs.closeTab(id) },
+    vault: { getVaults: () => services.vaults },
     window: {
       getSlots: () => windowSlots.slots,
       getNotices: (pluginId) => createPluginNotices(notices, pluginId),
-      getCommands: () => getServices().commands,
-      getWindow: () => getServices().window,
+      getCommands: () => services.commands,
+      getWindow: () => services.window,
       getAgent: () => agent,
     },
   })
@@ -142,11 +110,10 @@ export function createShellHost(
   }
 
   const disposePlugin = (pluginId: string) => {
-    if (tab.value?.view.pluginId === pluginId) closeTab()
+    tabs.dropPlugin(pluginId)
     const context = contexts.get(pluginId)
     if (context) disposeSubscriptions(context.plugin.subscriptions)
     contexts.delete(pluginId)
-    views.value = views.value.filter((one) => one.pluginId !== pluginId)
     slotViews.disposePlugin(pluginId)
     windowSlots.forget(pluginId)
     notices.clear(pluginId)
@@ -162,11 +129,6 @@ export function createShellHost(
 
   return {
     host,
-    front,
-    tab,
-    openTab,
-    closeTab,
-    notices,
     /** The view a plugin draws in the title bar, or null while none does. */
     titleBarView: slotViews.getSlotView(SLOT.titleBar),
     /** A view a plugin declares, drawn into an element of the window itself. */

@@ -1,6 +1,6 @@
 import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
-import type { WindowTab } from './host'
+import type { WindowTab } from '@/entities/tab'
 import { createWindowKeys } from './windowKeys'
 
 const VAULTS = [

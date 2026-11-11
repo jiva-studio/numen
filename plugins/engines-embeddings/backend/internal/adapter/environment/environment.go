@@ -8,15 +8,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/model"
 )
 
 // Variables are the variables of the process environment, read as they are when asked.
 type Variables struct{}
 
 // GetOverrides returns what the variables set for the model and the runtime.
-func (Variables) GetOverrides() engine.Overrides {
-	return engine.Overrides{
+func (Variables) GetOverrides() model.Overrides {
+	return model.Overrides{
 		Model:      os.Getenv("NUMEN_EMBEDDING_MODEL"),
 		Repository: os.Getenv("NUMEN_EMBEDDING_REPO"),
 		Dir:        os.Getenv("NUMEN_EMBEDDING_DIR"),

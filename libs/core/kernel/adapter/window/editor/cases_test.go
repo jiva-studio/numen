@@ -10,15 +10,11 @@ import (
 
 func openRegistered(cfg container.Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, *container.WindowUseCases, error) {
 	cases := &container.WindowUseCases{}
-	ports, err := cfg.Registry()
-	if err != nil {
-		return nil, nil, err
-	}
 	db, err := container.OpenIndex(cfg, ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	installation, err := container.OpenWindowWith(cfg, ctx, container.WindowOpening{Ports: ports, DB: db, Named: named, Out: out, UseCases: cases})
+	installation, err := container.OpenWindowWith(cfg, ctx, container.WindowOpening{DB: db, Named: named, Out: out, UseCases: cases})
 	if err != nil {
 		return nil, nil, err
 	}

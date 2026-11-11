@@ -3,6 +3,7 @@ package settings
 import (
 	_ "embed"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
@@ -75,9 +76,9 @@ func getAppBool(key string) bool {
 	return false
 }
 
-func getAppBounds(key string) Bounds {
+func getAppBounds(key string) settingsdomain.Bounds {
 	declared := findAppSetting(key)
-	var bounds Bounds
+	var bounds settingsdomain.Bounds
 	if declared.Min != nil {
 		bounds.Min = *declared.Min
 	}

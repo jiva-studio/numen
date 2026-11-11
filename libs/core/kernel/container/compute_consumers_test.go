@@ -3,12 +3,12 @@ package container
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
-func makePlan(workers int) hardware.ResolvedCompute {
-	return hardware.ResolvedCompute{Workers: workers}
+func makePlan(workers int) settingsdomain.ResolvedCompute {
+	return settingsdomain.ResolvedCompute{Workers: workers}
 }
 
 func TestASearchExtractsAsManySourcesAtOnceAsThePlanHasWorkers(t *testing.T) {

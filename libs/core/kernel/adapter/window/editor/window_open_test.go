@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -58,11 +57,7 @@ func vaultConfig(t *testing.T) container.Config {
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
+	if _, err := cfg.AddVault(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -180,16 +175,12 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	releaseWalk := func() { releaseOnce.Do(func() { close(release) }) }
 	t.Cleanup(releaseWalk)
 
-	ports, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
 	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	installation, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{
-		Ports: ports, DB: db, Out: os.Stderr,
+		DB: db, Out: os.Stderr,
 		Wrap: func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
 			return gateWalk(start, release)
 		},

@@ -23,12 +23,8 @@ func windowWithCases(t *testing.T) (*editor.Installation, container.Config, *con
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
 	root := t.TempDir()
-	if _, err := cfg.AddVault(registry, root, "one"); err != nil {
+	if _, err := cfg.AddVault(root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -38,7 +34,7 @@ func windowWithCases(t *testing.T) (*editor.Installation, container.Config, *con
 	}
 	cases := &container.WindowUseCases{}
 	opened, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{
-		Ports: registry, DB: db, Named: "one", Out: io.Discard, UseCases: cases,
+		DB: db, Named: "one", Out: io.Discard, UseCases: cases,
 	})
 	if err != nil {
 		t.Fatal(err)
