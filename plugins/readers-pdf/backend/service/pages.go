@@ -2,10 +2,8 @@ package service
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"net/http"
-	"os"
-	"strconv"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
@@ -29,23 +27,13 @@ func NewPageServer(reader *document.Reader) *PageServer {
 // the file is the query parameter "path", relative to the vault the Numen-Vault header names, and the
 // query parameter "wide" is how many pixels across the page is drawn.
 func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	index, err := strconv.Atoi(r.PathValue("page"))
-	if err != nil || index < 0 {
-		http.Error(w, "invalid page", http.StatusBadRequest)
+	query := r.URL.Query()
+	page, err := document.ParsePageRequest(r.PathValue("page"), query.Get("path"), query.Get("wide"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	path := r.URL.Query().Get("path")
-	if path == "" {
-		http.Error(w, "path required", http.StatusBadRequest)
-		return
-	}
-	pixelWidth, err := strconv.Atoi(r.URL.Query().Get("wide"))
-	// gomutants:disable-next-line EXPRESSION_REMOVE reason="strconv.Atoi returns pixelWidth 0 on parse failure"
-	if err != nil || pixelWidth <= 0 {
-		http.Error(w, "invalid wide", http.StatusBadRequest)
-		return
-	}
-	image, err := s.reader.RenderPage(r.Context(), host.GetRequestVault(r.Header), path, index, pixelWidth)
+	image, err := s.reader.RenderPage(r.Context(), host.GetRequestVault(r.Header), page.Path, page.Index, page.PixelWidth)
 	if err != nil {
 		http.Error(w, err.Error(), getPageStatus(err))
 		return
@@ -53,7 +41,7 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	if _, err := w.Write(image); err != nil {
-		fmt.Fprintf(os.Stderr, "readers-pdf: write the page %d of %s: %v\n", index, path, err)
+		log.Printf("readers-pdf: write the page %d of %s: %v", page.Index, page.Path, err)
 	}
 }
 
