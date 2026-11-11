@@ -118,11 +118,7 @@ function createPlexNodeActions(options: {
     }
   }
 
-  const createNode = async (
-    from: string,
-    relation: PlexRelation,
-    pos?: { x: number; y: number },
-  ) => {
+  const addNode = async (from: string, relation: PlexRelation, pos?: { x: number; y: number }) => {
     if (pos) {
       openQuickLink({ from, relation, at: pos })
       return
@@ -179,7 +175,7 @@ function createPlexNodeActions(options: {
     deps.window.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
-  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading, followMoves, getName }
+  return { activate, addNode, joinNodes, dropNodes, openNode, openHeading, followMoves, getName }
 }
 
 /** The words of the rows the menu on a node writes itself. */

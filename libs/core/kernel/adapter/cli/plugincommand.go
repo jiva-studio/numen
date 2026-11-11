@@ -17,8 +17,9 @@ import (
 // PluginCommands is the commands the enabled plugins declare, and what readies the plugins to run
 // one over a vault.
 type PluginCommands struct {
-	List plugincommand.List
-	Open func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error)
+	List   plugincommand.List
+	ByName plugincommand.RunByName
+	Open   func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error)
 }
 
 // declaredCommand is a command a plugin manifest declares, run by that plugin's backend.
@@ -73,7 +74,7 @@ func (c declaredCommand) Run(ctx context.Context, term terminal, args []string) 
 	if list.HasTargetVariable(declared) {
 		call.Path = positional[1]
 	}
-	result, err := list.RunInVault(ctx, commands.Open, positional[0], call)
+	result, err := commands.ByName.ExecuteByName(ctx, commands.Open, positional[0], call)
 	if err != nil {
 		return err
 	}

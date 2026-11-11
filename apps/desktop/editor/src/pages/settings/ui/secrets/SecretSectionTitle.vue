@@ -5,7 +5,7 @@
  * group is renamed in place; a name that is too long or is the name of another group is refused
  * with an alert and the field stays open.
  */
-import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button, type MenuItem } from '@numen/ui'
 import {
@@ -15,6 +15,7 @@ import {
   isNameTooLong,
   trimName,
 } from '@/entities/settings'
+import { runAfterRender } from '../../model/afterRender'
 import { WORDS as words } from '../../words'
 import SecretInput from './SecretInput.vue'
 import SecretMenu from './SecretMenu.vue'
@@ -50,18 +51,19 @@ const info = computed(() => getServiceInfo(props.group))
 const nameInput = useTemplateRef<InstanceType<typeof SecretInput>>('nameInput')
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
 
-onMounted(async () => {
-  if (props.isNew) await onStartRename()
+onMounted(() => {
+  if (props.isNew) onStartRename()
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-async function onStartRename(): Promise<void> {
+function onStartRename(): void {
   draftName.value = props.group
   nameProblem.value = ''
   isRenaming.value = true
-  await nextTick()
-  nameInput.value?.focus()
-  nameInput.value?.select()
+  runAfterRender(() => {
+    nameInput.value?.focus()
+    nameInput.value?.select()
+  })
 }
 
 function onCommitRename(): void {
@@ -78,8 +80,8 @@ function onCancelRename(): void {
   nameProblem.value = ''
 }
 
-async function onChoose(id: string, opener: HTMLElement): Promise<void> {
-  if (id === 'rename') await onStartRename()
+function onChoose(id: string, opener: HTMLElement): void {
+  if (id === 'rename') onStartRename()
   else emit('delete-group', opener)
 }
 

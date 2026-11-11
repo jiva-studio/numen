@@ -15,7 +15,6 @@ import (
 // lives in the list this installation keeps; the folder keeps the name assigned
 // by the filesystem.
 type Rename struct {
-	find   VaultFinding
 	vaults vaultport.VaultList
 	saver  vaultport.VaultSaver
 	index  vaultport.VaultRepository
@@ -33,19 +32,24 @@ func NewRename(vaults vaultport.VaultList, saver vaultport.VaultSaver, index vau
 	return Rename{vaults: vaults, saver: saver, index: index}
 }
 
-// WithFind sets the lookup that resolves a name, path or identity into a vault.
-func (u Rename) WithFind(find VaultFinding) Rename {
-	u.find = find
-	return u
+// RenameByName renames the vault a person names.
+type RenameByName struct {
+	find   VaultFinding
+	rename Rename
+}
+
+// NewRenameByName creates the use case that resolves the vault with find and renames it with rename.
+func NewRenameByName(find VaultFinding, rename Rename) RenameByName {
+	return RenameByName{find: find, rename: rename}
 }
 
 // ExecuteByName resolves the vault and renames it.
-func (u Rename) ExecuteByName(ctx context.Context, nameOrPath, name string) (RenameResult, error) {
+func (u RenameByName) ExecuteByName(ctx context.Context, nameOrPath, name string) (RenameResult, error) {
 	v, err := u.find(nameOrPath)
 	if err != nil {
 		return RenameResult{}, err
 	}
-	renamed, err := u.Execute(ctx, v, name)
+	renamed, err := u.rename.Execute(ctx, v, name)
 	if err != nil {
 		return RenameResult{}, err
 	}

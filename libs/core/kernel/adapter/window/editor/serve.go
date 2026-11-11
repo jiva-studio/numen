@@ -51,13 +51,17 @@ type Importer interface {
 	Execute(ctx context.Context, v domain.Vault, into string, paths []string)
 }
 
-// Lifecycle is what runs the window from its start to its close.
+// Lifecycle is what runs the window from its start to its close. OpenVault shows a vault as a user switch,
+// and NoteWritten tells the embedder that a note holds new prose; a nil one leaves the state as it is.
 type Lifecycle struct {
 	Start      Starter
 	Show       Shower
 	OpenPlugin PluginOpener
 	Flush      Flusher
 	Close      Closer
+
+	OpenVault   func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error
+	NoteWritten func()
 }
 
 // Installation is a window put together and running: the pieces the services
@@ -80,6 +84,12 @@ var errNoVault = errors.New("the window has no vault")
 // NewInstallation makes the installation of a window over its state, the lifecycle of what it shows and
 // the import of dropped files. Nothing is served and no vault is open until Start.
 func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io.Writer) *Installation {
+	if lifecycle.OpenVault != nil {
+		state.OpenVault = lifecycle.OpenVault
+	}
+	if lifecycle.NoteWritten != nil {
+		state.Writes.NotifyNoteWritten = lifecycle.NoteWritten
+	}
 	return &Installation{
 		State:     state,
 		lifecycle: lifecycle,

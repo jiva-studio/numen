@@ -54,7 +54,7 @@ func (w windowVaults) OpenPluginVault(
 }
 
 func (w windowVaults) OpenNotesShowingMoves(
-	index edit.IndexUpdater, showing func() (domain.Vault, bool), view container.MoveView,
+	index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
 ) note.Scenarios {
 	return container.NotesShowingMoves(w.cfg, w.db, index, showing, view)
 }

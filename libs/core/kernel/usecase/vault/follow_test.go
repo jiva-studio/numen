@@ -77,9 +77,8 @@ func newFollowed(t *testing.T, notes map[string]string, watcher *manualWatcher) 
 	follow := vaults.NewFollow(
 		watcher,
 		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
-		scanner(vaultreader.Readers{}, db),
+		scanner(vaultreader.Readers{}, db), func(m vaults.VaultChanges) { moved <- m }, nil,
 	)
-	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
 
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
@@ -208,9 +207,8 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	follow := vaults.NewFollow(
 		watcher,
 		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
-		scanner(vaultreader.Readers{}, db),
+		scanner(vaultreader.Readers{}, db), nil, func(err error) { reported <- err },
 	)
-	follow.ErrorHandler = func(err error) { reported <- err }
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
@@ -237,7 +235,7 @@ func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	// No refresh or scan is available: a watch that never starts uses neither.
-	_, err := vaults.NewFollow(failingWatcher{}, vaults.Refresh{}, vaults.Scan{}).Begin(t.Context(), v)
+	_, err := vaults.NewFollow(failingWatcher{}, vaults.Refresh{}, vaults.Scan{}, nil, nil).Begin(t.Context(), v)
 	if err == nil {
 		t.Fatal("a watcher that could not start was taken for one that did")
 	}
@@ -270,7 +268,7 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	follow := vaults.NewFollow(
 		watcher,
 		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
-		scanner(vaultreader.Readers{}, db),
+		scanner(vaultreader.Readers{}, db), nil, nil,
 	)
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
@@ -308,10 +306,8 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	follow := vaults.NewFollow(
 		watcher,
 		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.GetMachine()),
-		scanner(readers, db),
+		scanner(readers, db), func(m vaults.VaultChanges) { moved <- m }, func(err error) { reported <- err },
 	)
-	follow.ErrorHandler = func(err error) { reported <- err }
-	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)

@@ -60,7 +60,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List.WithFind(find),
+				List: commands.List, ByName: plugincommand.NewRunByName(find),
 				Open: func(_ context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
 					vaults = append(vaults, v)
 					return commands.Run, nil, nil
@@ -197,7 +197,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List.WithFind(find),
+				List: commands.List, ByName: plugincommand.NewRunByName(find),
 				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
 					return commands.Run, nil, nil
 				},
@@ -268,7 +268,7 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
-				List: commands.List.WithFind(find),
+				List: commands.List, ByName: plugincommand.NewRunByName(find),
 				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
 					return commands.Run, func() error { return nil }, nil
 				},

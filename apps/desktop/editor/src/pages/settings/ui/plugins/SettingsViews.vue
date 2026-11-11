@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import type { JsonValue } from '@/shared/api/json'
 /**
  * The views a plugin's frontend registered for its settings form, drawn at the top of the form
  * in the order the manifest declares them. A declared view without a registration draws nothing.
  */
-import { computed } from 'vue'
 import type { InstallationSettings, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
-import { createPluginSettings } from '../../model/createPluginSettings'
-import { getRegisteredViews, getSettingValues } from '../../lib/settingsViews'
+import { useSettingsViews } from '../../model/useSettingsViews'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -18,24 +15,15 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const pluginSettings = createPluginSettings(
-  () => props.settings,
-  () => props.plugin.id,
-)
-const views = computed(() =>
-  getRegisteredViews(
-    props.plugin.settingsViews ?? [],
-    props.host.getSettingsViews(props.plugin.id),
-  ),
-)
-const values = computed(() =>
-  getSettingValues(props.plugin, pluginSettings.get, pluginSettings.isRequested),
-)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onSettingUpdate(key: string, value: JsonValue): void {
-  pluginSettings.set(key, value)
-}
+const {
+  views,
+  values,
+  setSetting: onSettingUpdate,
+} = useSettingsViews({
+  getSettings: () => props.settings,
+  getHost: () => props.host,
+  getPlugin: () => props.plugin,
+})
 </script>
 
 <template>

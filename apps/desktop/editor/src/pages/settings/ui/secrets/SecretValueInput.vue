@@ -7,7 +7,8 @@
  * one is in flight, and sends a value that failed again only on Enter; a failed value is marked
  * invalid with a line saying so.
  */
-import { computed, ref, useId, useTemplateRef } from 'vue'
+import { computed, useId, useTemplateRef } from 'vue'
+import { useSecretValueEntry } from '../../model/useSecretValueEntry'
 import { WORDS as words } from '../../words'
 import SecretInput from './SecretInput.vue'
 
@@ -25,49 +26,26 @@ const emit = defineEmits<{
 defineExpose({ focus: () => input.value?.focus() })
 
 /* --------------------------------- State ---------------------------------- */
-const entry = ref('')
-const isSending = ref(false)
-const failedValue = ref<string | null>(null)
+const { entry, hasFailed, actions } = useSecretValueEntry({
+  getSubmit: () => props.submit,
+  emitCommit: (value) => emit('commit', value),
+})
 const input = useTemplateRef<InstanceType<typeof SecretInput>>('input')
 const stateId = useId()
 const failureId = useId()
-const hasFailed = computed(() => failedValue.value !== null)
 const describedBy = computed(() => (hasFailed.value ? `${stateId} ${failureId}` : stateId))
 
 /* -------------------------------- Handlers -------------------------------- */
-async function onCommit(): Promise<void> {
-  const value = entry.value.trim()
-  if (value === '') return
-  if (props.submit) {
-    await submitValue(props.submit, value)
-    return
-  }
-  entry.value = ''
-  emit('commit', value)
+function onCommit(): void {
+  actions.commit()
 }
 
-function onCommitAgain(): Promise<void> {
-  failedValue.value = null
-  return onCommit()
+function onCommitAgain(): void {
+  actions.commitAgain()
 }
 
 function onInput(): void {
-  failedValue.value = null
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-async function submitValue(
-  submit: (value: string) => Promise<boolean>,
-  value: string,
-): Promise<void> {
-  if (isSending.value || value === failedValue.value) return
-  isSending.value = true
-  try {
-    if (await submit(value)) entry.value = ''
-    else failedValue.value = value
-  } finally {
-    isSending.value = false
-  }
+  actions.clearFailure()
 }
 </script>
 

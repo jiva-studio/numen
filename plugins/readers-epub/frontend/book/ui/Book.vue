@@ -10,11 +10,11 @@
 import { useTemplateRef, type Directive } from 'vue'
 
 import { getPageNavigationAction, measureRect } from '@numen/ui'
-import { createBookPointer } from '../model/hand'
+import { useBookPointer } from '../model/hand'
 import { useBookColumns } from '../model/columns'
 import { useBookLayout } from '../model/layout'
 import { useBookTurns } from '../model/turns'
-import { createBookLinks } from '../model/links'
+import { useBookLinks } from '../model/links'
 import { BOOK_WORDS } from '../lib/words'
 import type { BookProps } from '../lib/props'
 import BookFoot from './BookFoot.vue'
@@ -63,7 +63,7 @@ const leaving = useTemplateRef<HTMLElement>('leaving')
 
 const getEdge = (of: HTMLElement) => measureRect(of).left
 
-const links = createBookLinks(props, {
+const links = useBookLinks(props, {
   reportMove: (pos) => emit('move', pos),
   reportFollow: (path) => emit('follow', path),
 })
@@ -91,7 +91,7 @@ const { isStood } = column
 const { isMeasured, setting } = column.sizing
 const { spreadCount, front, leftInChapter } = layout.position
 
-const hand = createBookPointer({
+const hand = useBookPointer({
   area,
   paper,
   turn: layout.turn,

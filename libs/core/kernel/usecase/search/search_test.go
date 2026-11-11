@@ -65,7 +65,7 @@ func newCorpus(t *testing.T) corpus {
 	readers := vaultreader.Readers{}
 	scan := vaults.NewScan(
 		readers, db.Vaults(), db.Notes(),
-		db.NoteQueries(), db.Maintenance(),
+		db.NoteQueries(), db.Maintenance(), nil,
 	)
 
 	c := corpus{db: db}
@@ -436,7 +436,7 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{path: getIsotherm()})
 	scan := vaults.NewScan(
 		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(),
-		c.db.NoteQueries(), c.db.Maintenance(),
+		c.db.NoteQueries(), c.db.Maintenance(), nil,
 	)
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)

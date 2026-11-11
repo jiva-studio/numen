@@ -546,7 +546,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	f.cases.Notes.Edit.Write = f.cases.Notes.Edit.Write.WithIndex(refuseToUpdate)
+	f.cases.Notes.Edit.Write = container.Notes(f.cfg, f.index, refuseToUpdate).Edit.Write
 	return f
 }
 
@@ -622,7 +622,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 
 	// The index stays behind until a later write updates it, and that write
 	// reports the state.
-	f.cases.Notes.Edit.Write = f.cases.Notes.Edit.Write.WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
+	f.cases.Notes.Edit.Write = container.Notes(f.cfg, f.index, func(context.Context, domain.Vault, []string) error { return nil }).Edit.Write
 	save()
 	if offset := findUpdateIndexTask(t, f); offset != nil {
 		t.Errorf("the index came level and the user is still shown %+v", offset)
@@ -657,7 +657,7 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	f.cases.Notes.Edit.Create = f.cases.Notes.Edit.Create.WithIndex(refuseToUpdate)
+	f.cases.Notes.Edit.Create = container.Notes(f.cfg, f.index, refuseToUpdate).Edit.Create
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -683,7 +683,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	f.cases.Notes.Place.Remove = f.cases.Notes.Place.Remove.WithIndex(refuseToUpdate)
+	f.cases.Notes.Place.Remove = container.Notes(f.cfg, f.index, refuseToUpdate).Place.Remove
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -720,7 +720,7 @@ func openInstallation(t *testing.T) (*editor.Installation, *container.Index) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	installation, err := container.OpenWindowOver(cfg, t.Context(), db, "one", io.Discard)
+	installation, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{DB: db, Named: "one", Out: io.Discard})
 	if err != nil {
 		t.Fatal(err)
 	}

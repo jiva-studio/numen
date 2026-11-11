@@ -94,12 +94,6 @@ interface PresetTally {
   problems: Set<string>
 }
 
-const createBudget = (settings: Settings): Budget => ({
-  new: settings.newADay,
-  reviews: settings.reviewsADay,
-  minutes: settings.minutesADay,
-})
-
 const groupDecksIntoPresets = (
   vault: VaultCardsDue,
   reads: readonly DeckRead[],
@@ -155,7 +149,11 @@ const getPresetFromDecks = (
   day: PresetCardsDue | undefined,
   today: string,
 ): Preset => {
-  const budget = day ?? createBudget(one.settings)
+  const budget: Budget = day ?? {
+    new: one.settings.newADay,
+    reviews: one.settings.reviewsADay,
+    minutes: one.settings.minutesADay,
+  }
   return {
     path: one.path,
     name: one.name,

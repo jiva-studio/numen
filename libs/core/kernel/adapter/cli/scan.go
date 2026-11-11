@@ -41,10 +41,9 @@ func (c scanCommand) Run(ctx context.Context, term terminal, args []string) (err
 	if open.Unembedded != nil {
 		open.Read.Unembedded = open.Unembedded
 	}
-	showProgress(&open.Read, r)
 
 	started := readClock(open.Now)
-	v, made, err := open.Read.ExecuteByName(ctx, rest[0])
+	v, made, err := open.Read.ExecuteByName(ctx, rest[0], getProgressReporting(r))
 	if err != nil {
 		return err
 	}
@@ -93,22 +92,24 @@ func describeSources(r vaultreading.IndexResult) string {
 	return s
 }
 
-func showProgress(making *indexing.ReadWholeVault, r *reporter) {
-	making.OnVaultFound = func(v domain.Vault, unembedded error) {
-		if unembedded != nil {
-			r.Printf("not embedding %s: %v\n", v.Name, unembedded)
-		}
-	}
-	making.OnNotesProgress = func(res vaultreading.ScanResult) {
-		r.Printf("  %d indexed\r", res.Indexed)
-	}
-	making.OnTextsProgress = func(res vaultreading.IndexResult) {
-		if res.CurrentSource != "" {
-			r.Printf("  cutting %s\r", res.CurrentSource)
-		}
-	}
-	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
-		r.Printf("  %d embedded\r", res.Embedded)
+func getProgressReporting(r *reporter) indexing.Reporting {
+	return indexing.Reporting{
+		OnVaultFound: func(v domain.Vault, unembedded error) {
+			if unembedded != nil {
+				r.Printf("not embedding %s: %v\n", v.Name, unembedded)
+			}
+		},
+		OnNotesProgress: func(res vaultreading.ScanResult) {
+			r.Printf("  %d indexed\r", res.Indexed)
+		},
+		OnTextsProgress: func(res vaultreading.IndexResult) {
+			if res.CurrentSource != "" {
+				r.Printf("  cutting %s\r", res.CurrentSource)
+			}
+		},
+		OnVectorsProgress: func(res vaultreading.EmbedResult) {
+			r.Printf("  %d embedded\r", res.Embedded)
+		},
 	}
 }
 

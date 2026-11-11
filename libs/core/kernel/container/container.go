@@ -6,15 +6,12 @@
 package container
 
 import (
-	"context"
-
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
@@ -22,14 +19,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
@@ -55,25 +50,18 @@ type Machine struct {
 	Hardware        settingsdomain.MachineSpecs
 }
 
-// Config is what the user may point somewhere else. Empty fields mean the platform's own locations.
+// Config is what the user may point somewhere else. Empty fields mean the platform's own locations. What the
+// parts of one installation share and what the settings and the open vault give it is in Resources.
 type Config struct {
 	Paths
-	Scales
-	Machine
-
-	Chunks *note.ChunkTokens
 
 	PluginHost *PluginHost
 
 	PluginCatalog catalog.Config
 
-	PluginDirs []string
-
 	KeyStore pluginport.KeyStore
 
 	TextVersions *textversion.Versions
-
-	TextReaders textdomain.Readers
 
 	ShouldRebuildIndex bool
 
@@ -87,9 +75,15 @@ type Config struct {
 }
 
 // Resources is what every part a container assembles shares: the write lock of each vault, the
-// folder watches and the access to the settings file. An application builds one with
-// NewResources and names it in its Config.
+// folder watches, the access to the settings file and the state the settings give the installation. An
+// application builds one with NewResources and names it in its Config. Chunks is the chunk size the embedding
+// plugin reports, which the notes are cut at; TextReaders read the text of the files of a vault for an
+// installation that has no text versions to read it from.
 type Resources struct {
+	Chunks      *note.ChunkTokens
+	TextReaders textdomain.Readers
+
+	machine         Machine
 	vaultLocks      *vaultwriter.Locks
 	watches         *vaultwatch.Hub
 	settingsFiles   *settingsadapter.Files
@@ -103,6 +97,7 @@ type Resources struct {
 // NewResources returns the resources of one container.
 func NewResources() *Resources {
 	return &Resources{
+		Chunks:        &note.ChunkTokens{},
 		vaultLocks:    vaultwriter.NewLocks(),
 		watches:       vaultwatch.NewHub(),
 		settingsFiles: settingsadapter.NewFiles(),
@@ -114,28 +109,19 @@ func NewResources() *Resources {
 }
 
 // NewConfig returns c with the resources of one container, and its plugin host in safe mode or out of it as
-// SafeMode says. A Config built without NewConfig and without Resources opens writers, watches and settings
-// that refuse to work. The plugin host of a Config that names none is one that runs nothing.
+// SafeMode says. A Config built without NewConfig and without Resources opens nothing. The plugin host of a
+// Config that names none is one that runs nothing.
 func NewConfig(c Config) Config {
 	if c.Resources == nil {
 		c.Resources = NewResources()
-	}
-	if c.Chunks == nil {
-		c.Chunks = &note.ChunkTokens{}
 	}
 	c.PluginHost = c.host()
 	c.PluginHost.Runtime.SetSafeMode(c.SafeMode)
 	return c
 }
 
-func getResources(c Config) *Resources {
-	if c.Resources != nil {
-		return c.Resources
-	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &settingsusecase.PluginChanges{}, programs: &settingsadapter.ProgramList{}}
-}
-
-func getPrograms(c Config) *settingsadapter.ProgramList { return getResources(c).programs }
+// GetMachine is what the hardware allows the installation to use, as the settings last resolved it.
+func (c Config) GetMachine() Machine { return c.Resources.machine }
 
 func (c Config) host() *PluginHost {
 	if c.PluginHost == nil {
@@ -172,57 +158,46 @@ func (c Config) GetWait() machine.Wait {
 }
 
 func settingsOf(c Config) settingsWiring {
-	res := getResources(c)
+	res := c.Resources
 	return settingsWiring{
 		settingsPlaces: settingsPlaces{
 			SettingsPath:    c.SettingsPath,
 			ThemesPath:      c.ThemesPath,
 			RegistryPath:    c.RegistryPath,
-			InterfaceScale:  c.InterfaceScale,
-			TextScale:       c.TextScale,
-			Hardware:        c.Hardware,
-			ResolvedCompute: c.ResolvedCompute,
+			ResolvedCompute: res.machine.ResolvedCompute,
 		},
 		settingsStores: settingsStores{
 			Watches:         res.watches,
 			SettingsFiles:   res.settingsFiles,
 			SettingEvents:   res.settingEvents,
-			Programs:        getPrograms(c),
+			Programs:        res.programs,
 			SecretGate:      res.secretGate,
 			PluginChanges:   res.pluginChanges,
 			SubscribedHosts: &res.subscribedHosts,
 		},
-		settingsPluginRefs: settingsPluginRefs{
-			PluginHost:       c.host(),
-			KeyStore:         c.KeyStore,
-			Plugins:          func() pluginsWiring { return plugins(c) },
-			GetAgentPrograms: c.agentPrograms,
-		},
+		PluginHost:   c.host(),
 		ErrorHandler: func(err error) { handleError(c, err) },
 	}
 }
 
 func searchOf(c Config) searchWiring {
 	v := vaultBase(c)
-	plugins := plugins(c)
 	return searchWiring{
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
-		Chunks:             c.Chunks,
-		ResolvedCompute:    c.ResolvedCompute,
+		Chunks:             c.Resources.Chunks,
+		ResolvedCompute:    c.Resources.machine.ResolvedCompute,
 		PluginHost:         c.host(),
+		RunningHost:        c.runningHost(),
 		Clock:              c.Clock(),
 		VaultReaders:       vaultReaders(v),
 		TextReaders:        getTextReaders(v),
 		ErrorHandler:       func(err error) { handleError(c, err) },
-		ResolvePlugin: func(capability string) (*PluginHost, error) {
-			return pluginsResolvePlugin(plugins, capability)
-		},
 	}
 }
 
 func vaultBase(c Config) vaultWiring {
-	res := getResources(c)
+	res := c.Resources
 	return vaultWiring{
 		IndexPath:    c.IndexPath,
 		RegistryPath: c.RegistryPath,
@@ -231,7 +206,7 @@ func vaultBase(c Config) vaultWiring {
 		PluginHost:   c.host(),
 		RunningHost:  c.runningHost(),
 		TextVersions: c.TextVersions,
-		TextReaders:  c.TextReaders,
+		TextReaders:  res.TextReaders,
 		VaultLocks:   res.vaultLocks,
 		Watches:      res.watches,
 		ErrorHandler: func(err error) { handleError(c, err) },
@@ -243,22 +218,11 @@ func vaultOf(c Config) vaultWiring {
 	s := searchOf(c)
 	v.SyncSetting = syncSetting(settingsOf(c))
 	v.CutNotes = cutNotes(s)
-	v.SetNoteCut = func(scan *vault.Scan, db *Index) { setNoteCut(s, scan, db) }
+	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(s, scan) }
 	return v
 }
 
 func plugins(c Config) pluginsWiring {
-	res := getResources(c)
-	programs := getPrograms(c)
-	v := vaultBase(c)
-	s := settingsWiring{
-		settingsPlaces: settingsPlaces{SettingsPath: c.SettingsPath, ThemesPath: c.ThemesPath, RegistryPath: c.RegistryPath},
-		settingsStores: settingsStores{
-			Watches: res.watches, SettingsFiles: res.settingsFiles, SettingEvents: res.settingEvents, Programs: programs,
-		},
-		settingsPluginRefs: settingsPluginRefs{PluginHost: c.host()},
-		ErrorHandler:       func(err error) { handleError(c, err) },
-	}
 	return pluginsWiring{
 		pluginInstall: pluginInstall{
 			PluginCachePath: c.PluginCachePath,
@@ -266,34 +230,11 @@ func plugins(c Config) pluginsWiring {
 			PluginHost:      c.host(),
 			RunningHost:     c.runningHost(),
 			PluginCatalog:   c.PluginCatalog,
-			PluginDirs:      c.PluginDirs,
 			KeyStore:        c.KeyStore,
 			CredentialsPath: secret.GetCredentialsPath(c.KeyStore),
 		},
-		pluginSettingsAccess: pluginSettingsAccess{
-			SettingsFiles:         res.settingsFiles,
-			SecretGate:            res.secretGate,
-			Programs:              programs,
-			PluginChanges:         res.pluginChanges,
-			ListAppSettings:       func() []plugindomain.Setting { return listAppSettings(s) },
-			SettingsFile:          func() (string, error) { return settingsSettingsFile(s) },
-			ReadCheckedSettings:   func() (settingsadapter.File, error) { return readCheckedSettings(s) },
-			GetSettingsOrDefaults: func() settingsadapter.File { return settingsGetSettingsOrDefaults(s) },
-			RefreshSettingEvents:  func() { refreshSettingEvents(s) },
-		},
-		pluginVaultAccess: pluginVaultAccess{
-			TextVersions: c.TextVersions,
-			VaultReaders: vaultReaders(v),
-			NoteWriters:  noteWriters(v),
-			VaultLocks:   writeLocks(v),
-			VaultWatcher: vaultWatcher(v),
-			MakeRefresh: func(db *Index, notes noteport.NoteRepository) vault.Refresh {
-				return vaultMakeRefresh(vaultOf(c), db, notes)
-			},
-			BuildNotes: func(db *Index, index edit.IndexUpdater) note.Scenarios { return Notes(c, db, index) },
-			Moves:      func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) },
-		},
-		ErrorHandler: func(err error) { handleError(c, err) },
+		settings: settingsOf(c),
+		vault:    vaultOf(c),
 	}
 }
 

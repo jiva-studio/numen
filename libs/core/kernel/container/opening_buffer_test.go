@@ -131,8 +131,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 			db.Sources(), db.Sources(), cfg.Clock(),
 		)
 		var received []error
-		opening.ErrorHandler = func(err error) { received = append(received, err) }
-		open := opening.Begin(t.Context(), v)
+		open := opening.Begin(t.Context(), v, nil, func(err error) { received = append(received, err) })
 
 		got, err := open.Read(t.Context(), func() {
 			if one.encoded {

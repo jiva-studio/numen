@@ -3,41 +3,30 @@ package container
 import (
 	"context"
 	"errors"
-	"slices"
 	"time"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
-	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
-	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -46,7 +35,7 @@ func newCompletionRouter(c pluginsWiring) (*completion.Router, error) {
 	programs := completion.NewPrograms(provider, func() completion.AgentSettings { return completionAgentSettings(c) })
 	return completion.NewRouter(
 		func() completion.Config {
-			return completion.Config{Default: completion.Route(c.GetSettingsOrDefaults().AI.Default)}
+			return completion.Config{Default: completion.Route(settingsGetSettingsOrDefaults(c.settings).AI.Default)}
 		},
 		programs, agentcase.NewAnswer(programs),
 	)
@@ -55,7 +44,7 @@ func newCompletionRouter(c pluginsWiring) (*completion.Router, error) {
 func setCompleter(c pluginsWiring) {
 	router, err := newCompletionRouter(c)
 	if err != nil {
-		pluginsHandleError(c, err)
+		c.settings.ErrorHandler(err)
 		return
 	}
 	c.RunningHost.Endpoint.SetCompleter(router)
@@ -78,68 +67,36 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	})
 }
 
-// pluginsWiring wires the plugin catalog, plugin host, agent provider and dependencies.
+// pluginInstall is where the plugins are installed from and run: the host that runs them, the catalog
+// they are offered from, and the key store their secrets are kept in.
 type pluginInstall struct {
 	PluginCachePath string
 	ServiceDir      string
 	PluginHost      *PluginHost
 	RunningHost     *PluginHost
 	PluginCatalog   catalog.Config
-	PluginDirs      []string
 	KeyStore        pluginport.KeyStore
 	CredentialsPath func(ctx context.Context) string
 }
 
-type pluginSettingsAccess struct {
-	SettingsFiles         *settingsadapter.Files
-	SecretGate            *secret.Gate
-	Programs              *settingsadapter.ProgramList
-	PluginChanges         *settingsusecase.PluginChanges
-	ListAppSettings       func() []plugindomain.Setting
-	SettingsFile          func() (string, error)
-	ReadCheckedSettings   func() (settingsadapter.File, error)
-	GetSettingsOrDefaults func() settingsadapter.File
-	RefreshSettingEvents  func()
-}
-
-type pluginVaultAccess struct {
-	TextVersions *textversion.Versions
-	VaultReaders vaultport.VaultReaders
-	NoteWriters  vaultport.NoteWriters
-	VaultLocks   vaultport.VaultLocks
-	VaultWatcher vaultport.VaultWatcher
-	MakeRefresh  func(*Index, noteport.NoteRepository) vault.Refresh
-	BuildNotes   func(*Index, edit.IndexUpdater) note.Scenarios
-	Moves        func(context.Context) (<-chan struct{}, error)
-}
-
+// pluginsWiring wires the plugin catalog, plugin host, agent provider and dependencies over the settings and
+// the vaults the plugins work with.
 type pluginsWiring struct {
 	pluginInstall
-	pluginSettingsAccess
-	pluginVaultAccess
-	ErrorHandler func(error)
+	settings settingsWiring
+	vault    vaultWiring
 }
 
 func getPluginCatalog(c pluginsWiring) *catalog.Service {
 	if c.PluginCatalog.Target == "" {
 		return nil
 	}
-	config := c.PluginCatalog
-	config.Sources = append(
-		[]catalog.Source{localsource.New(slices.Clone(c.PluginDirs), localsource.SettingsFunc(c.PluginHost.Runtime.IsPluginEnabled))},
-		config.Sources...)
-	service, err := catalog.NewService(config)
+	service, err := catalog.NewService(c.PluginCatalog)
 	if err != nil {
-		pluginsHandleError(c, err)
+		c.settings.ErrorHandler(err)
 		return nil
 	}
 	return service
-}
-
-func pluginsHandleError(c pluginsWiring, err error) {
-	if c.ErrorHandler != nil {
-		c.ErrorHandler(err)
-	}
 }
 
 // pluginGracePeriod is how long a plugin has to exit after a stop request.
@@ -158,13 +115,6 @@ func NewPluginHost(target string, dirs ...string) (*PluginHost, error) {
 	host.Services.SetDependencies(newDependencyRegistry(""))
 	err := host.Discovery.Discover()
 	return adaptPluginHost(host), err
-}
-
-func pluginsResolvePlugin(c pluginsWiring, capability string) (*PluginHost, error) {
-	if _, err := c.RunningHost.Runtime.ResolveCapability(capability); err != nil {
-		return nil, err
-	}
-	return c.RunningHost, nil
 }
 
 func setPluginVaultPath(c pluginsWiring, path string) {

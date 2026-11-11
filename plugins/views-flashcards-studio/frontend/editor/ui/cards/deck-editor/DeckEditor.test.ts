@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import DeckEditor from './DeckEditor.vue'
-import { createRunEnd, HEAD, type DeckSection, type DeckCard } from '../../../../lib/cards'
+import { getRunEndPoint, HEAD, type DeckSection, type DeckCard } from '../../../../lib/cards'
 import type { CardModel } from '../../../../lib/cards'
 
 const CUTS: readonly CardModel[] = [
@@ -354,7 +354,7 @@ describe('DeckEditor', () => {
   it('emits a card dropped past the last of them, which is where the plus remains', async () => {
     const card = mountDeck()
     await dragTo(card, 'llama', null)
-    expect(card.emitted('move')).toEqual([['llama', createRunEnd(HEAD)]])
+    expect(card.emitted('move')).toEqual([['llama', getRunEndPoint(HEAD)]])
   })
 
   it('moves nothing where the card dropped past the last of them is the last of them', async () => {
@@ -579,7 +579,7 @@ describe('DeckEditor', () => {
       await getTile(target, 'loose').get('[data-grip]').trigger('dragstart')
       await plus.trigger('dragover')
       await plus.trigger('drop')
-      expect(target.emitted('move')).toEqual([['loose', createRunEnd('roots')]])
+      expect(target.emitted('move')).toEqual([['loose', getRunEndPoint('roots')]])
     })
 
     it('emits a card dropped past the last of those standing under no section', async () => {
@@ -588,7 +588,7 @@ describe('DeckEditor', () => {
       await getTile(target, 'llama').get('[data-grip]').trigger('dragstart')
       await plus.trigger('dragover')
       await plus.trigger('drop')
-      expect(target.emitted('move')).toEqual([['llama', createRunEnd(HEAD)]])
+      expect(target.emitted('move')).toEqual([['llama', getRunEndPoint(HEAD)]])
     })
 
     it('emits a card dropped at the head of a section', async () => {

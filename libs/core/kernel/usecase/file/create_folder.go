@@ -15,10 +15,11 @@ type WriteGate interface {
 	FinishWrite()
 }
 
-type openWriteGate struct{}
+// OpenGate admits every write, for an installation with no window that waits for writes.
+type OpenGate struct{}
 
-func (openWriteGate) BeginWrite() bool { return true }
-func (openWriteGate) FinishWrite()     {}
+func (OpenGate) BeginWrite() bool { return true }
+func (OpenGate) FinishWrite()     {}
 
 // CreateFolder makes an empty folder with the folders above it.
 // Only the failure to make the folder wraps its cause.
@@ -27,13 +28,8 @@ type CreateFolder struct {
 	gate    WriteGate
 }
 
-func NewCreateFolder(writers vaultport.FolderWriters) *CreateFolder {
-	return &CreateFolder{writers: writers, gate: openWriteGate{}}
-}
-
-// WithWriteGate returns CreateFolder gated by gate.
-func (u *CreateFolder) WithWriteGate(gate WriteGate) *CreateFolder {
-	return &CreateFolder{writers: u.writers, gate: gate}
+func NewCreateFolder(writers vaultport.FolderWriters, gate WriteGate) *CreateFolder {
+	return &CreateFolder{writers: writers, gate: gate}
 }
 
 func (u *CreateFolder) Execute(ctx context.Context, v domain.Vault, path string) error {

@@ -50,7 +50,7 @@ type Deps struct {
 type Vaults struct {
 	Add        vault.Add
 	Known      registry.GetKnownVaults
-	RecordOpen vault.RecordOpen
+	RecordOpen vault.RecordOpenByName
 
 	OpenRename     func(ctx context.Context) (Renaming, error)
 	OpenUnregister func(ctx context.Context) (Unregistering, error)
@@ -69,19 +69,19 @@ func formatVaultError(err error) error {
 
 // Renaming is the rename of a vault over an open index.
 type Renaming struct {
-	Rename vault.Rename
+	Rename vault.RenameByName
 	Close  func() error
 }
 
 // Unregistering takes a vault off the list over an open index.
 type Unregistering struct {
-	Unregister vault.Unregister
+	Unregister vault.UnregisterByName
 	Close      func() error
 }
 
 // Erasing removes a vault and moves its folder to the trash, over an open index.
 type Erasing struct {
-	Erase vault.Erase
+	Erase vault.EraseByName
 	Close func() error
 }
 
@@ -103,7 +103,7 @@ type Search struct {
 
 // Links is what one note points at and what points at it.
 type Links struct {
-	Show  query.ShowLinks
+	Show  query.ShowLinksByName
 	Close func() error
 }
 
@@ -112,7 +112,7 @@ type Links struct {
 // The set of checks applied to a vault is part of the core's vocabulary and not of
 // an installation, so the terminal uses the standard set.
 type Problems struct {
-	Problems *vault.GetProblems
+	Problems vault.GetProblemsByName
 	Close    func() error
 }
 

@@ -113,7 +113,7 @@ func (m *scanVault) ReportChanges(context.Context) error {
 }
 
 func (m *scanVault) scan() vaults.Scan {
-	return vaults.NewScan(scanReaders{m}, m, m, m, m)
+	return vaults.NewScan(scanReaders{m}, m, m, m, m, nil)
 }
 
 // scanReaders is the readers of a scan, answering for the one scanVault.

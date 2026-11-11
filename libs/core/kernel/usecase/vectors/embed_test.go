@@ -114,8 +114,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	emb := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	emb.Embedder = model
 	emb.BatchCharacters = 2000
-	emb.OnProgress = func(r vaultreading.EmbedResult) { progress = append(progress, r) }
-	res, err := emb.Execute(ctx, indexfake.GetFirst())
+	res, err := emb.EmbedWithProgress(ctx, indexfake.GetFirst(), func(r vaultreading.EmbedResult) { progress = append(progress, r) }, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,11 +349,9 @@ func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 1000
-	embed.OnProgress = func(r vaultreading.EmbedResult) {
+	res, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), func(r vaultreading.EmbedResult) {
 		progressReports = append(progressReports, r)
-	}
-
-	res, err := embed.Execute(ctx, indexfake.GetFirst())
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -554,13 +551,12 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 	embed := newEmbed(indexfake.Vaults{first.ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 1
-	embed.OnProgress = log.add
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	ended := make(chan error, 1)
 	go func() {
-		_, err := embed.Execute(ctx, first)
+		_, err := embed.EmbedWithProgress(ctx, first, log.add, nil)
 		ended <- err
 	}()
 
@@ -633,15 +629,14 @@ func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	index := indexfake.NewStore()
 	var log progressLog
 	embed := newEmbed(nil, index, index)
-	embed.OnProgress = log.add
 	res := &vaultreading.EmbedResult{}
-	track := newTracker(embed.OnProgress, 1, res, &sync.Mutex{})
+	track := newTracker(log.add, 1, res, &sync.Mutex{})
 	activeID := track.enter([]string{inFlight})
 	track.publish(func(*vaultreading.EmbedResult) {})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	err := newProducer(embed).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err := newProducer(embed, nil).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 
 	if !errors.Is(err, context.Canceled) {
@@ -653,7 +648,7 @@ func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	track.leave(activeID)
 
 	res.CurrentSource = finished
-	err = newProducer(embed).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err = newProducer(embed, nil).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)

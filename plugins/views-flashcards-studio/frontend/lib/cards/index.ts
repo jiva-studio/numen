@@ -15,7 +15,7 @@ export {
 export { type CardModel, type FieldValue } from './card'
 export {
   type CardWords,
-  createRunEnd,
+  getRunEndPoint,
   DECK_WORDS,
   type DeckCard,
   type DeckProblems,
@@ -39,7 +39,7 @@ export {
   canDropField,
   checkFieldName,
   checkHeadingName,
-  createSealedMap,
+  getSealedMap,
   getDeclaredFields,
   getFreeName,
   getStepInsertionPoint,
@@ -55,4 +55,4 @@ export {
   STEP_KEYS,
   type StepDirection,
 } from './order'
-export { scheme } from './links'
+export { decodeHref, scheme } from './links'

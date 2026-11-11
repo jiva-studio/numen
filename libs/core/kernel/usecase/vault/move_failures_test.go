@@ -100,7 +100,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.Sources(), f.db.Sources(), f.db.Sources(), testsupport.Texts{Readers: vaultreader.Readers{}})
+	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.Sources(), f.db.Sources(), f.db.Sources(), testsupport.Texts{Readers: vaultreader.Readers{}}, nil, nil)
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}
@@ -405,18 +405,16 @@ func TestANoteThatCannotBeSettledIsAnErrorAfterTheFileLanded(t *testing.T) {
 	}
 }
 
-// A Move given another index files through that index, and reports which.
-func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
+// A Move over another index files through that index.
+func TestAMoveOverAnotherIndexFilesThroughIt(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the other index cannot be written")
 	other := unfiling{SourceRepository: f.db.Sources(), err: cannot}
 
-	provided := f.move().WithSources(other)
-	if _, ok := provided.Sources().(unfiling); !ok {
-		t.Fatalf("the move files through %T", provided.Sources())
-	}
-	if _, err := provided.Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md"); !errors.Is(err, cannot) {
+	w := f.wiring()
+	w.sources = other
+	if _, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md"); !errors.Is(err, cannot) {
 		t.Errorf("got %v", err)
 	}
 }

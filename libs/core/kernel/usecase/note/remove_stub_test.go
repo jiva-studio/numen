@@ -299,7 +299,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
-	removing := tr.remove().WithIndex(nil)
+	removing := note.NewRemove(tr.writers, tr.links, tr.sources, nil)
 
 	got, err := removing.Execute(t.Context(), domain.Vault{}, "Entropy.md")
 	if err != nil {

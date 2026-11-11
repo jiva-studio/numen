@@ -12,7 +12,7 @@ import (
 )
 
 func TestPluginWindowWithNoVaultReturnsErrNoWindow(t *testing.T) {
-	state := NewState(run.NewTasks())
+	state := NewState(run.NewTasks(), nil, nil)
 	window := newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, ViewOf(state)), 0)
 	ctx := t.Context()
 

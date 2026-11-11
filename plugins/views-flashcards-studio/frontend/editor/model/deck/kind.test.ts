@@ -23,11 +23,13 @@ const createInside = (open: readonly string[] = []) => {
     },
     vaultAnswers: { getTitle: (path: string) => `title of ${path}` },
     createDeck: vi.fn(async (title: string) => asValue({ path: `${title}.md` })),
-    listCardModels: vi.fn(async () => undefined),
-    listPresets: vi.fn(async () => undefined),
-    listCardModelsAgain: vi.fn(),
-    listPresetsAgain: vi.fn(),
-    refreshDeckPreset: vi.fn(async () => undefined),
+    lists: {
+      listCardModels: vi.fn(async () => undefined),
+      listPresets: vi.fn(async () => undefined),
+      listCardModelsAgain: vi.fn(),
+      listPresetsAgain: vi.fn(),
+      refreshDeckPreset: vi.fn(async () => undefined),
+    },
     createDeckTabState: vi.fn(() => state),
     component: DeckTab,
   }
@@ -41,9 +43,9 @@ describe('a deck tab opened', () => {
     expect(kind.open?.('decks/Animals.md', 'deck:decks/Animals.md')).toBe(state)
 
     expect(inside.store.open).toHaveBeenCalledWith('deck:decks/Animals.md', 'decks/Animals.md')
-    expect(inside.listCardModels).toHaveBeenCalledTimes(1)
-    expect(inside.listPresets).toHaveBeenCalledTimes(1)
-    expect(inside.refreshDeckPreset).toHaveBeenCalledWith('decks/Animals.md')
+    expect(inside.lists.listCardModels).toHaveBeenCalledTimes(1)
+    expect(inside.lists.listPresets).toHaveBeenCalledTimes(1)
+    expect(inside.lists.refreshDeckPreset).toHaveBeenCalledWith('decks/Animals.md')
     expect(inside.createDeckTabState).toHaveBeenCalledWith('deck:decks/Animals.md')
   })
 })
@@ -67,8 +69,8 @@ describe('a deck tab coming on screen', () => {
 
     kind.onShow?.(state, 'tab-1')
 
-    expect(inside.listCardModelsAgain).toHaveBeenCalledTimes(1)
-    expect(inside.listPresetsAgain).toHaveBeenCalledTimes(1)
+    expect(inside.lists.listCardModelsAgain).toHaveBeenCalledTimes(1)
+    expect(inside.lists.listPresetsAgain).toHaveBeenCalledTimes(1)
   })
 })
 

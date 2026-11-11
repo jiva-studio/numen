@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -612,8 +613,10 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	m := f.cases.Vaults.Tree.Move.WithSources(stuck{f.cases.Vaults.Tree.Move.Sources()})
-	f.cases.Vaults.Tree.Move = m
+	f.cases.Vaults.Tree.Move = vaults.NewMove(
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, f.index.NoteQueries(), f.index.Sources(),
+		stuck{f.index.Sources()}, f.cases.Notes.Place.Move,
+	)
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md",

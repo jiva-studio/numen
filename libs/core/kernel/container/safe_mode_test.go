@@ -78,7 +78,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 // plugins are set and stopped without one.
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := NewConfig(Config{})
-	_, err := pluginsResolvePlugin(plugins(cfg), bridge.CapabilityEmbedding)
+	_, err := plugins(cfg).RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)
 	var missing *plugindomain.UnavailableError
 	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilityEmbedding {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
@@ -88,7 +88,7 @@ func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
 	safe := NewConfig(Config{SafeMode: true})
-	_, err = pluginsResolvePlugin(plugins(safe), bridge.CapabilityEmbedding)
+	_, err = plugins(safe).RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)
 	if !errors.Is(err, errSafeMode) || !errors.As(err, &missing) || missing.Reason != plugindomain.Disabled {
 		t.Fatalf("resolvePlugin in safe mode = %v, want the embedding plugin disabled by safe mode", err)
 	}

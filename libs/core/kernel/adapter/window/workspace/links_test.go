@@ -21,7 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 )
 
-func newState() *editor.State { return editor.NewState(run.NewTasks()) }
+func newState() *editor.State { return editor.NewState(run.NewTasks(), nil, nil) }
 
 func scheduleNothing(time.Duration, func()) func() bool {
 	return func() bool { return true }

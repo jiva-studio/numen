@@ -16,7 +16,7 @@ export interface BookLinkReporter {
   readonly reportFollow: (path: string) => void
 }
 
-export function createBookLinks(props: SettledBookProps, listeners: BookLinkReporter) {
+export function useBookLinks(props: SettledBookProps, listeners: BookLinkReporter) {
   /** Where a link targetLink, held until the document holding that place is drawn. */
   let targetLink: BookLink | undefined
 

@@ -1,4 +1,4 @@
-package container
+package run_test
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithItsReason(t *testing.T) {
 	tasks := run.NewTasks()
 
-	newModelReadReporter(tasks)(errors.New("read model of embedding plugin md.numen.embeddings: unavailable"))
+	run.NewModelReadReporter(tasks)(errors.New("read model of embedding plugin md.numen.embeddings: unavailable"))
 
 	entries := tasks.List()
 	if len(entries) != 1 {
@@ -24,7 +24,7 @@ func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithItsReason(t *testing.T
 
 // Without tasks there is nowhere to report to, and no reporter.
 func TestNoReporterOfAFailedModelReadWithoutTasks(t *testing.T) {
-	if newModelReadReporter(nil) != nil {
+	if run.NewModelReadReporter(nil) != nil {
 		t.Error("got a reporter without tasks")
 	}
 }

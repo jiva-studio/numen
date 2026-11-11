@@ -21,8 +21,6 @@ type WriteRecorder interface {
 // index up to date with it, the watch that keeps it up to date while open, and
 // the reconciliation a write requests.
 type VaultOpener struct {
-	Told          func(VaultChanges)
-	ErrorHandler  window.ErrorHandler
 	ShouldRebuild bool
 
 	watcher  vaultport.VaultWatcher
@@ -57,16 +55,13 @@ func (o *VaultOpener) UpdateIndex(ctx context.Context, v domain.Vault, paths []s
 	return err
 }
 
-// Begin opens the vault: the watch is started, and Read is the walk beside it.
-func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
+// Begin opens the vault: the watch is started, and Read is the walk beside it. changed receives what the
+// watch collects and errorHandler the errors it meets; a nil one receives nothing.
+func (o *VaultOpener) Begin(
+	ctx context.Context, v domain.Vault, changed func(VaultChanges), errorHandler window.ErrorHandler,
+) *OpenVault {
 	scan := o.GetScan()
-	follow := NewFollow(o.watcher, o.Refresh, scan)
-	if callback := o.Told; callback != nil {
-		follow.Changed = func(m VaultChanges) {
-			callback(VaultChanges{Paths: m.Paths, Assets: m.Assets, ShouldReload: m.ShouldReload})
-		}
-	}
-	follow.ErrorHandler = o.ErrorHandler
+	follow := NewFollow(o.watcher, o.Refresh, scan, changed, errorHandler)
 	watching, err := follow.Begin(ctx, v)
 	return &OpenVault{
 		opening:   o,
@@ -95,11 +90,11 @@ func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
 	o.opening.Buffered.StartRecording()
 
-	walk := o.scan
+	var onProgress func(vaultreading.ScanResult)
 	if during != nil {
-		walk.OnProgress = func(vaultreading.ScanResult) { during() }
+		onProgress = func(vaultreading.ScanResult) { during() }
 	}
-	res, err := walk.Execute(ctx, o.vault)
+	res, err := o.scan.ScanWithProgress(ctx, o.vault, onProgress)
 
 	recSession := o.opening.Buffered.StopRecording()
 	if err != nil {
@@ -120,7 +115,7 @@ func (o *OpenVault) Run(ctx context.Context) {
 }
 
 func (o *OpenVault) handleError(err error) {
-	if o.follow.ErrorHandler != nil {
-		o.follow.ErrorHandler(err)
+	if o.follow.errorHandler != nil {
+		o.follow.errorHandler(err)
 	}
 }

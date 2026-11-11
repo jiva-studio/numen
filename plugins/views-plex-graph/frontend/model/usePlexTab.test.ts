@@ -175,7 +175,7 @@ describe('a note made from a node', () => {
   it('remains the plex on the node it was made from', async () => {
     const one = tab('Root.md', ['Child.md'])
 
-    await one.state.nodes.createNode(one.node('Child.md'), 'child')
+    await one.state.nodes.addNode(one.node('Child.md'), 'child')
 
     expect(one.made).toEqual([['Child.md', 'child']])
     expect(one.went).toEqual(['Child.md'])
@@ -184,7 +184,7 @@ describe('a note made from a node', () => {
   it('leaves the plex where it is when that node is the focus', async () => {
     const one = tab('Root.md')
 
-    await one.state.nodes.createNode(one.node('Root.md'), 'child')
+    await one.state.nodes.addNode(one.node('Root.md'), 'child')
 
     expect(one.went).toEqual(['Root.md'])
     expect(one.state.canvas.view.here.value).toBe('Root.md')
@@ -193,7 +193,7 @@ describe('a note made from a node', () => {
   it('travels nowhere when the vault made nothing', async () => {
     const one = tab('Root.md', ['Child.md'], false)
 
-    await one.state.nodes.createNode(one.node('Child.md'), 'parent')
+    await one.state.nodes.addNode(one.node('Child.md'), 'parent')
 
     expect(one.went).toEqual([])
   })
@@ -976,7 +976,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    await one.state.nodes.createNode(one.node('Heat'), 'child')
+    await one.state.nodes.addNode(one.node('Heat'), 'child')
 
     expect(one.made).toStrictEqual([['physics/Heat.md', 'child']])
   })
@@ -1000,7 +1000,7 @@ describe('a gesture the plex reports', () => {
       one.state.nodes.openNode(node, 'current')
       one.state.menu.openMenu({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
       one.state.menu.chooseMenuItem(OPEN_ROW)
-      await one.state.nodes.createNode(node, 'child')
+      await one.state.nodes.addNode(node, 'child')
       await one.state.nodes.joinNodes(node, one.node('Root'), 'jump')
     }
 
@@ -1099,7 +1099,7 @@ describe('quick-link popover from a node handle', () => {
     const one = tab('Root.md', ['Child.md'])
     const childNode = one.node('Child.md')
 
-    await one.state.nodes.createNode(childNode, 'child', { x: 450, y: 320 })
+    await one.state.nodes.addNode(childNode, 'child', { x: 450, y: 320 })
 
     expect(one.state.quickLink.quickLink.value).toStrictEqual({
       from: childNode,

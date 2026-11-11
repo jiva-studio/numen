@@ -28,8 +28,8 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
 	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetFrontendPluginIDs})
 	agentRoute, agentServed := numenv1connect.NewAgentServiceHandler(a.getAgent())
-	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.ListVaults})
-	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks, list: a.ListVaults})
+	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.listVaults()})
+	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks, list: a.listVaults()})
 	routes := []route{{windowRoute, window}, {pluginsRoute, plugins}}
 	if a.Themes != nil {
 		themesRoute, themes := numenv1connect.NewThemeServiceHandler(a.Themes)

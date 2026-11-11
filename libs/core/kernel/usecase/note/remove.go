@@ -42,12 +42,6 @@ func NewRemove(
 	return Remove{writers: writers, links: links, queries: queries, index: index}
 }
 
-// WithIndex replaces the index function.
-func (u Remove) WithIndex(index edit.IndexUpdater) Remove {
-	u.index = index
-	return u
-}
-
 type RemoveResult struct {
 	Path     string
 	Trashed  string

@@ -26,3 +26,10 @@ func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
 func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (plugin.IndexState, error) {
 	return a.Ensure.Execute(ctx, v)
 }
+
+// ReportVaultRead is what a window does each time a vault is read into the index: the failure it showed
+// for the vault is released and a change is reported.
+func (a *API) ReportVaultRead(v domain.Vault) {
+	a.ClearIndexFailure(v.ID)
+	a.ReportChange()
+}

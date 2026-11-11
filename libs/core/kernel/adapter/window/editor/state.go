@@ -49,15 +49,28 @@ type IndexState struct {
 	Embedding *indexing.Embedding
 }
 
-// NewState makes the state of a window that shows no vault.
-func NewState(tasks *run.Tasks) *State {
+// Frame is the application window around the editor.
+type Frame interface {
+	// ShowOpenTabs tells the frame which tabs are open, so that its title follows them.
+	ShowOpenTabs(open window.OpenTabs)
+	// DetachTab opens a window of its own for a tab.
+	DetachTab(ctx context.Context, tab window.DetachedTab) error
+}
+
+// NewState makes the state of a window that shows no vault. frame is the application window around the
+// editor; a nil frame is a window with no application around it, which opens no window for a tab. emit
+// tells the plugins an event of the window; a nil emit tells no one.
+func NewState(tasks *run.Tasks, frame Frame, emit func(event string)) *State {
 	tasked := &wire.Window{Name: wire.Editor, Tasks: tasks}
 	state := &State{
 		Gate:    &Gate{},
 		Writes:  &Writes{window: tasked},
 		Notices: newNotices(),
-		Events:  &Events{},
+		Events:  &Events{Emit: emit},
 		Window:  tasked,
+	}
+	if frame != nil {
+		state.NotifyOpenTabs, state.DetachTab = frame.ShowOpenTabs, frame.DetachTab
 	}
 	// The editor is open on one vault, and answers which as itself.
 	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }
@@ -105,6 +118,13 @@ func (s *State) ReportOpenTabs(open window.OpenTabs) {
 	s.Runtime.ReportOpenTabs(open)
 	if s.NotifyOpenTabs != nil {
 		s.NotifyOpenTabs(open)
+	}
+}
+
+// ShowOpenTabs tells the application the tabs that are open now.
+func (s *State) ShowOpenTabs() {
+	if s.NotifyOpenTabs != nil {
+		s.NotifyOpenTabs(s.Runtime.GetOpenTabs())
 	}
 }
 

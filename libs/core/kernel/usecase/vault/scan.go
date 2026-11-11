@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -25,23 +27,20 @@ type Scan struct {
 	notes       noteport.NoteRepository
 	indexedVal  noteport.FileStats
 	maintenance indexport.IndexMaintenance
+	backlog     sourceport.SourceBacklog
 
 	Cut chunking.CutNotes
-
-	GetOtherRecipePaths func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error)
 
 	ShouldRecut bool
 
 	Walks *Walks
 
 	ShouldRebuildIndex bool
-
-	OnProgress func(vaultreading.ScanResult)
 }
 
 // NewScan returns a Scan that reads and writes through: the vault reader, the
 // vault repository, the note repository, the file stat queries of the index,
-// and the maintenance run after the index changed.
+// the maintenance run after the index changed, and the backlog that names the notes cut by another recipe.
 //
 // Maintenance runs only when the walk found a change.
 func NewScan(
@@ -50,19 +49,17 @@ func NewScan(
 	notes noteport.NoteRepository,
 	queries noteport.FileStats,
 	maintenance indexport.IndexMaintenance,
+	backlog sourceport.SourceBacklog,
 ) Scan {
 	return Scan{
 		readers: readers, vaults: vaults, notes: notes,
-		indexedVal: queries, maintenance: maintenance,
+		indexedVal: queries, maintenance: maintenance, backlog: backlog,
 	}
 }
 
 // ScanWithProgress runs Execute with onProgress reporting each group when non-nil.
 func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult)) (vaultreading.ScanResult, error) {
-	if onProgress != nil {
-		u.OnProgress = onProgress
-	}
-	return u.Execute(ctx, v)
+	return u.run(ctx, v, onProgress)
 }
 
 // Execute traverses the vault once.
@@ -71,6 +68,12 @@ func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress f
 // One walk of a vault runs at a time among the scans sharing its turns. A walk
 // writes in groups, so its copy of a note lands last however early it was read.
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (vaultreading.ScanResult, error) {
+	return u.run(ctx, v, nil)
+}
+
+func (u Scan) run(
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult),
+) (vaultreading.ScanResult, error) {
 	var res vaultreading.ScanResult
 
 	finished, err := u.Walks.startOne(ctx, v.ID)
@@ -84,7 +87,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (vaultreading.ScanRes
 		return vaultreading.ScanResult{}, err
 	}
 
-	group := u.newGroup(v, &res)
+	group := u.newGroup(v, &res, onProgress)
 	observed, err := u.indexChanged(ctx, walk, &group, &res)
 	if err != nil {
 		return res, err
@@ -143,10 +146,11 @@ func (u Scan) readWalk(ctx context.Context, v domain.Vault) (vaultWalk, error) {
 }
 
 func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]bool, error) {
-	if !u.ShouldRecut || u.GetOtherRecipePaths == nil {
+	if !u.ShouldRecut || u.backlog == nil {
 		return nil, nil
 	}
-	paths, err := u.GetOtherRecipePaths(ctx, v.ID, u.Cut.Recipe())
+	recipes := []string{u.Cut.Recipe(), chunking.GetTextVersionRecipe(u.Cut.Sizes)}
+	paths, err := u.backlog.GetSourcesWithOtherRecipe(ctx, v.ID, domain.KindNote, recipes, math.MaxInt32)
 	if err != nil {
 		return nil, fmt.Errorf("the notes of %s chunked with another method cannot be read: %w", v.Name, err)
 	}
@@ -169,7 +173,7 @@ func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.File
 	return found, nil
 }
 
-func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult) grouping {
+func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult, onProgress func(vaultreading.ScanResult)) grouping {
 	return grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
 			// The failure is somewhere in a group, so say which one.
@@ -177,8 +181,8 @@ func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult) grouping {
 				len(notes), v.Name, notes[0].FileStat.Path, notes[len(notes)-1].FileStat.Path, err)
 		}
 		res.Indexed += len(notes)
-		if u.OnProgress != nil {
-			u.OnProgress(*res)
+		if onProgress != nil {
+			onProgress(*res)
 		}
 		return nil
 	}}

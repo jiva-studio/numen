@@ -33,7 +33,7 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	target := container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
 	})
-	target.Chunks.Set(512)
+	target.Resources.Chunks.Set(512)
 
 	trimmed, err := container.IndexTexts(target, db, domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
@@ -52,7 +52,7 @@ func TestNoBoundSplitsAtTheDefaultBound(t *testing.T) {
 
 func TestSplitNotes_LimitFollowsTheChunkTokens(t *testing.T) {
 	target := container.NewConfig(container.Config{})
-	target.Chunks.Set(512)
+	target.Resources.Chunks.Set(512)
 	if got := target.CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
 		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
 	}
@@ -74,7 +74,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	target := container.NewConfig(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
 	})
-	target.Chunks.Set(maxTokens)
+	target.Resources.Chunks.Set(maxTokens)
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	_, err = container.ReadWholeVault(target, t.Context(), db, wide{384}, v)

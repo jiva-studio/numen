@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -38,8 +37,9 @@ func (c Config) ApplySettings() (Config, []string, error) {
 }
 
 func applySettingsFile(c Config, s settingsadapter.File) Config {
-	c.Hardware, c.ResolvedCompute = resolveCompute(settingsOf(c), s)
-	configurePluginHost(settingsOf(c), s)
+	compute := settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)
+	c.Resources.machine = Machine{ResolvedCompute: compute.Resolved, Hardware: compute.Machine}
+	configurePluginHost(settingsOf(c), s, func() { setUpPluginHost(c) })
 	return c
 }
 
@@ -48,7 +48,7 @@ func models(c Config) func() []settingsdomain.Model {
 }
 
 func modelsForProvider(c Config, provider agentport.AgentProvider) func() []settingsdomain.Model {
-	return settingsModelsForProvider(settingsOf(c), provider)
+	return settingsModelsForProvider(settingsOf(c), provider, c.agentPrograms)
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.
@@ -64,8 +64,8 @@ func GetSettingsWriter(c Config) func(entries []settingsdomain.Setting) error {
 
 // SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
 // stores the selection. The window keeps the themes the binary ships when the answer is a fault.
-func SetThemes(c Config, inst *editor.Installation, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c), say)
+func SetThemes(c Config, inst *editor.Installation, scales Scales, say func(string)) error {
+	service, err := settingsThemes(settingsOf(c), scales, say)
 	inst.SetThemes(service)
 	return err
 }
@@ -77,14 +77,11 @@ func UnsubscribeHost(c Config) {
 // agentAt is the key of the agent section in the settings file.
 const agentAt = "agent"
 
-// settingsWiring wires the settings, setting change events and themes of an installation.
 type settingsPlaces struct {
-	SettingsPath              string
-	ThemesPath                string
-	RegistryPath              string
-	InterfaceScale, TextScale float64
-	Hardware                  settingsdomain.MachineSpecs
-	ResolvedCompute           settingsdomain.ResolvedCompute
+	SettingsPath    string
+	ThemesPath      string
+	RegistryPath    string
+	ResolvedCompute settingsdomain.ResolvedCompute
 }
 
 type settingsStores struct {
@@ -97,17 +94,11 @@ type settingsStores struct {
 	PluginChanges   *settingsusecase.PluginChanges
 }
 
-type settingsPluginRefs struct {
-	PluginHost       *PluginHost
-	KeyStore         pluginport.KeyStore
-	Plugins          func() pluginsWiring
-	GetAgentPrograms func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
-}
-
+// settingsWiring wires the settings, setting change events and themes of an installation.
 type settingsWiring struct {
 	settingsPlaces
 	settingsStores
-	settingsPluginRefs
+	PluginHost   *PluginHost
 	ErrorHandler func(error)
 }
 
@@ -123,10 +114,6 @@ func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
 	return settingsStore(c).ReadCheckedAt(path)
 }
 
-func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File, error) {
-	return settingsStore(c).ReadUncheckedAt(path)
-}
-
 func settingsGetSettingsOrDefaults(c settingsWiring) settingsadapter.File {
 	if path, err := settingsSettingsFile(c); err == nil {
 		if target, err := settingsStore(c).ReadCheckedAt(path); err == nil {
@@ -140,12 +127,7 @@ func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
 	return settingsStore(c).ReadCheckedFile()
 }
 
-func resolveCompute(_ settingsWiring, s settingsadapter.File) (settingsdomain.MachineSpecs, settingsdomain.ResolvedCompute) {
-	compute := settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)
-	return compute.Machine, compute.Resolved
-}
-
-func configurePluginHost(c settingsWiring, s settingsadapter.File) {
+func configurePluginHost(c settingsWiring, s settingsadapter.File, setup func()) {
 	hosts := c.SubscribedHosts
 	if hosts == nil {
 		hosts = &settingsusecase.HostSubscriptions{}
@@ -156,16 +138,15 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
-		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts, Setup: func() { setUpPluginHost(c) },
+		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts, Setup: setup,
 	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
 }
 
-func setUpPluginHost(c settingsWiring) {
-	c.PluginHost.Configuration.SetKeyStore(c.KeyStore)
-	if c.Plugins != nil {
-		setSecretSource(c.Plugins())
-		setCompleter(c.Plugins())
-	}
+func setUpPluginHost(c Config) {
+	c.host().Configuration.SetKeyStore(c.KeyStore)
+	wired := plugins(c)
+	setSecretSource(wired)
+	setCompleter(wired)
 }
 
 func unsubscribeHost(c settingsWiring) {
@@ -175,18 +156,17 @@ func unsubscribeHost(c settingsWiring) {
 	c.SubscribedHosts.Unsubscribe(c.PluginHost.Configuration)
 }
 
-func notifyHost(c settingsWiring, batch []settingsdomain.Setting) {
-	notifyPlugins(c).Execute(batch)
-}
-
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
 	return c.PluginHost.Runtime.GetPluginInfos
 }
 
-func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvider) func() []settingsdomain.Model {
+func settingsModelsForProvider(
+	c settingsWiring, provider agentport.AgentProvider,
+	programs func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program,
+) func() []settingsdomain.Model {
 	return settingsusecase.NewListAppModels(func() []settingsdomain.Model {
 		target := settingsGetSettingsOrDefaults(c)
-		return settingsadapter.AgentModels(agentAt, target.Agent, c.GetAgentPrograms(provider, target.Agent))
+		return settingsadapter.AgentModels(agentAt, target.Agent, programs(provider, target.Agent))
 	}).Execute
 }
 
@@ -210,7 +190,7 @@ func themeRegistry(c settingsWiring) settingsadapter.RegistryOptions {
 func listThemes(c settingsWiring) []themedomain.Theme {
 	files, err := openThemeFiles(c)
 	if err != nil {
-		settingsHandleError(c, err)
+		c.ErrorHandler(err)
 	}
 	return themeusecase.NewListThemes(getThemeSources(c, files)).Execute()
 }
@@ -234,7 +214,7 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 	return func() naming.SyncTitleAndFilename {
 		target, err := settingsSettings(c)
 		if err != nil {
-			settingsHandleError(c, fmt.Errorf("read settings: %w", err))
+			c.ErrorHandler(fmt.Errorf("read settings: %w", err))
 		}
 		return naming.SyncTitleAndFilename(target.Sync())
 	}
@@ -285,11 +265,11 @@ func feed(c settingsWiring) settingevents.Feed {
 		Initial: func() settingsdomain.Values {
 			values, err := list.ListDefaults()
 			if err != nil {
-				settingsHandleError(c, err)
+				c.ErrorHandler(err)
 			}
 			return values
 		},
-		Report: func(err error) { settingsHandleError(c, err) },
+		Report: func(err error) { c.ErrorHandler(err) },
 		Hub:    c.Watches.GetShared(),
 	}
 }
@@ -313,7 +293,7 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
 		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
 		ResolveProfile: resolveProfile, Signal: signal,
-		Report: func(err error) { settingsHandleError(c, err) },
+		Report: func(err error) { c.ErrorHandler(err) },
 	})
 }
 
@@ -329,13 +309,7 @@ func resolveProfile(profile string) string {
 	return settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(profile).Resolved.Profile
 }
 
-func settingsHandleError(c settingsWiring, err error) {
-	if c.ErrorHandler != nil {
-		c.ErrorHandler(err)
-	}
-}
-
-func settingsThemes(c settingsWiring, say func(string)) (*theme.Service, error) {
+func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.Service, error) {
 	files, err := openThemeFiles(c)
 	sources := getThemeSources(c, files)
 	store := settingsadapter.NewAppearanceStore(
@@ -343,14 +317,14 @@ func settingsThemes(c settingsWiring, say func(string)) (*theme.Service, error) 
 		settingsusecase.NewWriteAppearance(settingsadapter.JSONCodec{}, settingsWriteSettings(c)).Execute,
 		say,
 	)
-	scales := themeusecase.NewScales(c.InterfaceScale, c.TextScale)
+	sizes := themeusecase.NewScales(scales.InterfaceScale, scales.TextScale)
 	interfaceScale, textScale := settingsadapter.GetInterfaceScaleBounds(), settingsadapter.GetTextScaleBounds()
 	return theme.NewService(
-		themeusecase.NewGetThemes(sources, store, store, scales,
+		themeusecase.NewGetThemes(sources, store, store, sizes,
 			themeusecase.Bounds{Min: interfaceScale.Min, Max: interfaceScale.Max},
 			themeusecase.Bounds{Min: textScale.Min, Max: textScale.Max}),
 		themeusecase.NewReadTheme(sources),
-		themeusecase.NewWriteAppearance(sources, store, store, scales),
+		themeusecase.NewWriteAppearance(sources, store, store, sizes),
 		themeusecase.NewWatchThemes(sources, files, 0),
 	), err
 }

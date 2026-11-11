@@ -3,14 +3,12 @@ package container
 import (
 	"context"
 	"errors"
-	"math"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
@@ -50,7 +48,7 @@ func Embed(c Config, db *Index, embedder embeddingport.Embedder, v domain.Vault)
 
 // IndexTexts cuts the text versions of a vault's files into chunks.
 func IndexTexts(c Config, db *Index, v domain.Vault) (filetext.Index, error) {
-	return indexTexts(searchOf(c), db, v)
+	return indexTexts(searchOf(c), db, v, nil)
 }
 
 // NewSearch is the search a question is answered by, put together the one way.
@@ -68,26 +66,22 @@ type searchWiring struct {
 	Chunks             *note.ChunkTokens
 	ResolvedCompute    settingsdomain.ResolvedCompute
 	PluginHost         *PluginHost
+	RunningHost        *PluginHost
 	Clock              machineport.Clock
 	VaultReaders       vaultport.VaultReaders
 	TextReaders        textdomain.Readers
 	ErrorHandler       func(error)
-	ResolvePlugin      func(capability string) (*PluginHost, error)
 }
 
 func cutNotes(c searchWiring) chunking.CutNotes {
 	cutter := chunking.NewCutNotes(c.Chunks.Get())
-	cutter.Profiles = c.PluginHost.Runtime.ResolveNoteProfile
+	cutter.Profiles = func(t domain.NoteType) (domain.NoteProfile, bool) { return c.PluginHost.Runtime.ResolveNoteProfile(t) }
 	return cutter
 }
 
-func setNoteCut(c searchWiring, scan *vault.Scan, db *Index) {
+func setNoteCut(c searchWiring, scan *vault.Scan) {
 	scan.Cut = cutNotes(c)
 	scan.ShouldRecut = c.Chunks.Get() > 0
-	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
-		recipes := []string{recipe, filetext.Index{Sizes: scan.Cut.Sizes}.Recipe()}
-		return db.Sources().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
-	}
 }
 
 func searchScan(c searchWiring, db *Index) vault.Scan {
@@ -97,8 +91,9 @@ func searchScan(c searchWiring, db *Index) vault.Scan {
 		db.Notes(),
 		db.NoteQueries(),
 		db.Maintenance(),
+		db.Sources(),
 	)
-	setNoteCut(c, &scan, db)
+	setNoteCut(c, &scan)
 	scan.Walks = &db.Walks
 	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return scan
@@ -116,12 +111,11 @@ func readWholeVault(c searchWiring,
 func buildReadWholeVault(c searchWiring,
 	db *Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
-	texts, err := indexTexts(c, db, v)
+	refresh.Force = true
+	texts, err := indexTexts(c, db, v, file.NewReadNoteAgain(getUnreadable(refresh)).Execute)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	refresh.Force = true
-	texts.ReadNote = file.NewReadNoteAgain(getUnreadable(refresh)).Execute
 	embed, err := searchEmbed(c, db, embedder, v)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
@@ -137,9 +131,8 @@ func getUnreadable(refresh vault.Refresh) func(ctx context.Context, v domain.Vau
 }
 
 func fitIndex(c searchWiring, db *Index) vectorscase.FitIndex {
-	fit := vectorscase.NewFitIndex(db)
+	fit := vectorscase.NewFitIndex(db, c.ErrorHandler)
 	fit.ShouldRebuildIndex = c.ShouldRebuildIndex
-	fit.ErrorHandler = c.ErrorHandler
 	return fit
 }
 
@@ -155,12 +148,13 @@ func searchEmbed(c searchWiring, db *Index, embedder embeddingport.Embedder, v d
 	return embed, nil
 }
 
-func indexTexts(c searchWiring, db *Index, v domain.Vault) (filetext.Index, error) {
+func indexTexts(
+	c searchWiring, db *Index, v domain.Vault, readNote func(ctx context.Context, v domain.Vault, path string) error,
+) (filetext.Index, error) {
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders)
-	index.ErrorHandler = c.ErrorHandler
+	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.Sources(), db.Sources(), db.Sources(), c.TextReaders, c.ErrorHandler, readNote)
 	cutter := cutNotes(c)
 	index.Sizes = cutter.Sizes
 	index.Legibility = cutter.Legibility
@@ -202,29 +196,8 @@ func setPluginSearch(c searchWiring, db *Index, embedder embeddingport.Embedder,
 	}.Access())
 }
 
-func newEmbedQueries(embedder embeddingport.Embedder) *vectorscase.EmbedQueries {
-	queries, ok := embedder.(embeddingport.QueryEmbedder)
-	if !ok {
-		return vectorscase.NewEmbedQueries(embedder, nil)
-	}
-	return vectorscase.NewEmbedQueries(embedder, queries)
-}
-
-func getFloorHint(embedder embeddingport.Embedder) searchusecase.FloorHint {
-	advisor, ok := embedder.(embeddingport.FloorAdvisor)
-	if !ok {
-		return nil
-	}
-	return func(ctx context.Context) float64 { return advisor.GetFloorHint(ctx) }
-}
-
-func embedderReady(c searchWiring) bool {
-	_, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
-	return err == nil
-}
-
 func searchEmbedders(c searchWiring, ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
-	embedder, closeEmbedder, err := searchOpenEmbedder(c, ctx, newModelReadReporter(tasks))
+	embedder, closeEmbedder, err := searchOpenEmbedder(c, ctx, run.NewModelReadReporter(tasks))
 	if err != nil {
 		return nil, nil, func() error { return nil }, err
 	}
@@ -235,27 +208,13 @@ func searchEmbedder(c searchWiring, ctx context.Context) (embeddingport.Embedder
 	return searchOpenEmbedder(c, ctx, nil)
 }
 
-// readingTheModel is the ID of the task that reports a read of the embedding model that failed.
-const readingTheModel = "read embedding model"
-
-func newModelReadReporter(tasks *run.Tasks) func(error) {
-	if tasks == nil {
-		return nil
-	}
-	return func(err error) {
-		tasks.Set(work.Task{ID: readingTheModel, Title: "Read embedding model", Error: err.Error()})
-	}
-}
-
 func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
-	host, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
-	if errors.Is(err, domain.ErrUnavailable) {
+	if _, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding); errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
-	}
-	if err != nil {
+	} else if err != nil {
 		return nil, nil, err
 	}
-	return openEmbedder(c, ctx, host, onReadError)
+	return openEmbedder(c, ctx, c.RunningHost, onReadError)
 }
 
 func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
@@ -266,11 +225,18 @@ func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadE
 	if onReadError != nil {
 		opened.OnModelReadError(onReadError)
 	}
-	followChunkTokens(c.Chunks, opened, opened.OnModelChange)
+	c.Chunks.Follow(opened, opened.OnModelChange)
 	return opened, opened.Close, nil
 }
 
-func followChunkTokens(cell *note.ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {
-	cell.Set(embedder.GetModel().ChunkTokens)
-	onChange(func() { cell.Set(embedder.GetModel().ChunkTokens) })
+func newEmbedQueries(embedder embeddingport.Embedder) *vectorscase.EmbedQueries {
+	queries, _ := embedder.(embeddingport.QueryEmbedder)
+	return vectorscase.NewEmbedQueries(embedder, queries)
+}
+
+func getFloorHint(embedder embeddingport.Embedder) searchusecase.FloorHint {
+	if advisor, ok := embedder.(embeddingport.FloorAdvisor); ok {
+		return advisor.GetFloorHint
+	}
+	return nil
 }

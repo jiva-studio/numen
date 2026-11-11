@@ -147,7 +147,7 @@ export const HALVES: readonly Half[] = ['front', 'back']
 /** What is wrong with each of a number of things, under what each is known by. */
 export type Problems = ReadonlyMap<string, readonly string[]>
 
-export function createSealedMap<K, V>(): ReadonlyMap<K, V> {
+export function getSealedMap<K, V>(): ReadonlyMap<K, V> {
   const empty = new Map<K, V>()
   const refuse = (): never => {
     throw new TypeError('an empty default holds nothing')

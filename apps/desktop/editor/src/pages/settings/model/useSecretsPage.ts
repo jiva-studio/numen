@@ -53,7 +53,7 @@ function createSecretsPageActions(
       if (section.secrets.length > 0) deps.getSecrets().edit.renameSecretGroup(section.group, name)
       else drafts.renameEmptyGroup(section.group, name)
     },
-    createSecret: async (
+    saveSecret: async (
       group: string,
       name: string,
       value: string,

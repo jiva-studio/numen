@@ -12,12 +12,13 @@ type FitIndex struct {
 	index embeddingport.VectorIndex
 
 	ShouldRebuildIndex bool
-	ErrorHandler       func(error)
+	errorHandler       func(error)
 }
 
-// NewFitIndex returns the use case over the vector index given.
-func NewFitIndex(index embeddingport.VectorIndex) FitIndex {
-	return FitIndex{index: index}
+// NewFitIndex returns the use case over the vector index given. A nil errorHandler ignores the error of the
+// compaction after a rebuild.
+func NewFitIndex(index embeddingport.VectorIndex, errorHandler func(error)) FitIndex {
+	return FitIndex{index: index, errorHandler: errorHandler}
 }
 
 // Execute fits the index to the embedder's model. Without an embedder the
@@ -39,8 +40,8 @@ func (u FitIndex) Execute(ctx context.Context, embedder embeddingport.Embedder) 
 	if _, err := u.index.DeleteVectorsOfOtherRecipes(ctx, model.Recipe()); err != nil {
 		return err
 	}
-	if err := u.index.Compact(ctx); err != nil && u.ErrorHandler != nil {
-		u.ErrorHandler(err)
+	if err := u.index.Compact(ctx); err != nil && u.errorHandler != nil {
+		u.errorHandler(err)
 	}
 	return nil
 }
