@@ -3,7 +3,10 @@ import { createTimeGutter } from './timeGutter'
 import type { TranscriptState } from './transcript'
 
 /** The times in the editor's gutter, kept on the line being played. */
-export function useTranscriptGutter(state: TranscriptState, getIsPlaying: () => boolean | undefined) {
+export function useTranscriptGutter(
+  state: TranscriptState,
+  getIsPlaying: () => boolean | undefined,
+) {
   const { isPlaying: playbackIsPlaying } = state.playback.progress
   const { current, following } = state.content
   const { typing } = state.draft

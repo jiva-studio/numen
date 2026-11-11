@@ -26,7 +26,11 @@ useFollowedLine(
 
 <template>
   <ol ref="list" class="transcript">
-    <li v-for="(cue, index) in cues" :key="cue.from" :data-active="index === active ? '' : undefined">
+    <li
+      v-for="(cue, index) in cues"
+      :key="cue.from"
+      :data-active="index === active ? '' : undefined"
+    >
       <button type="button" class="transcript__line" @click="emit('seek', cue.from)">
         <time class="transcript__time">{{ clock(cue.from) }}</time>
         <span class="transcript__text">{{ cue.text }}</span>

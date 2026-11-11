@@ -5,7 +5,10 @@ import { useSecretValueEntry } from './useSecretValueEntry'
 describe('useSecretValueEntry', () => {
   it('emits the trimmed value and clears the field without a submit function', () => {
     const sent: string[] = []
-    const field = useSecretValueEntry({ getSubmit: () => undefined, emitCommit: (v) => sent.push(v) })
+    const field = useSecretValueEntry({
+      getSubmit: () => undefined,
+      emitCommit: (v) => sent.push(v),
+    })
     field.entry.value = '  tok-123  '
     field.actions.commit()
     expect(sent).toEqual(['tok-123'])
@@ -14,7 +17,10 @@ describe('useSecretValueEntry', () => {
 
   it('ignores a blank value', () => {
     const sent: string[] = []
-    const field = useSecretValueEntry({ getSubmit: () => undefined, emitCommit: (v) => sent.push(v) })
+    const field = useSecretValueEntry({
+      getSubmit: () => undefined,
+      emitCommit: (v) => sent.push(v),
+    })
     field.entry.value = '   '
     field.actions.commit()
     expect(sent).toEqual([])

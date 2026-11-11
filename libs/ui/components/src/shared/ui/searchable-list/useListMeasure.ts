@@ -1,13 +1,12 @@
-import type { Unvalidated } from '@/shared/lib/async/types'
-import { nextTick, onMounted, watch } from 'vue'
+import { nextTick, onMounted, watch, type WatchSource } from 'vue'
 
-/** Measures the popup once it is drawn and again when its items, point or query change. */
+/** Measures the popup once it is drawn and again when one of the watched sources changes. */
 export function useListMeasure(options: {
   mount: () => void
-  getChangeKey: () => readonly Unvalidated[]
+  watched: readonly WatchSource[]
   measure: () => void
 }): void {
-  const { mount, getChangeKey, measure } = options
+  const { mount, watched, measure } = options
 
   onMounted(async () => {
     mount()
@@ -15,7 +14,7 @@ export function useListMeasure(options: {
     measure()
   })
 
-  watch(getChangeKey, async () => {
+  watch([...watched], async () => {
     await nextTick()
     measure()
   })

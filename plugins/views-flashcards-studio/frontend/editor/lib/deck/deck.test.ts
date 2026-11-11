@@ -500,7 +500,9 @@ describe('a card dragged among the sections', () => {
 
   it('leaves the deck as it was where the card already remains last under that heading', () => {
     const card = createSectionedDeck()
-    expect(dropCard(card, ALPACA, getCardRunEndPoint(card.sections[0]?.id ?? ''))).toStrictEqual(card)
+    expect(dropCard(card, ALPACA, getCardRunEndPoint(card.sections[0]?.id ?? ''))).toStrictEqual(
+      card,
+    )
   })
 
   it('remains first and under no section where it was dropped at the head of the deck', () => {

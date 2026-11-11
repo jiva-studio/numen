@@ -68,7 +68,9 @@ export const createUnavailableKind = (
   options?: UnavailableKindOptions,
   services: UnavailableServices = {},
 ): AnyTabKind => {
-  const placeholder: { -readonly [K in keyof TabKind<UnavailableState>]: TabKind<UnavailableState>[K] } = {
+  const placeholder: {
+    -readonly [K in keyof TabKind<UnavailableState>]: TabKind<UnavailableState>[K]
+  } = {
     kind,
     open: (targetPath: string, _id: string, saved?: JsonValue): UnavailableState => ({
       kind,

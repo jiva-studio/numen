@@ -7,7 +7,11 @@ import { Editor } from '../editor'
 import type { Extension } from '@codemirror/state'
 import type { EditorHandle, NoteTabState } from '@numen/plugin-sdk'
 import { editorPreferences } from '../model/preferences'
-import { getEditorExtensions, getEditorLanguage, useMarkdownDocument } from '../model/useMarkdownDocument'
+import {
+  getEditorExtensions,
+  getEditorLanguage,
+  useMarkdownDocument,
+} from '../model/useMarkdownDocument'
 import { Button } from '@numen/ui'
 import { WORDS } from '../words'
 

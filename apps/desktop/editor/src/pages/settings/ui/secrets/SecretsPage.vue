@@ -27,19 +27,11 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const addGroupButton = useTemplateRef<InstanceType<typeof Button>>('addGroupButton')
-const {
-  credentialsPath,
-  drafts,
-  newGroup,
-  sections,
-  groups,
-  declarations,
-  deletion,
-  actions,
-} = useSecretsPage({
-  getSecrets: () => props.secrets,
-  getPlugins: () => props.plugins,
-})
+const { credentialsPath, drafts, newGroup, sections, groups, declarations, deletion, actions } =
+  useSecretsPage({
+    getSecrets: () => props.secrets,
+    getPlugins: () => props.plugins,
+  })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {
@@ -54,12 +46,7 @@ function onRenameGroup(section: SectionData, name: string): void {
   actions.renameGroup(section, name)
 }
 
-function onCreate(
-  group: string,
-  name: string,
-  value: string,
-  draftId?: number,
-): Promise<boolean> {
+function onCreate(group: string, name: string, value: string, draftId?: number): Promise<boolean> {
   return actions.createSecret(group, name, value, draftId)
 }
 

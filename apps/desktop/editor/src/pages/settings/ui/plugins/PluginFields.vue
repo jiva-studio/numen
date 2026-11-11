@@ -27,7 +27,13 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { enums, values, drafts, paths, setSetting: onSettingChange } = usePluginFields({
+const {
+  enums,
+  values,
+  drafts,
+  paths,
+  setSetting: onSettingChange,
+} = usePluginFields({
   getSettings: () => props.settings,
   getHost: () => props.host,
   getPlugin: () => props.plugin,
@@ -42,7 +48,12 @@ const {
 } = enums
 const { getBooleanSetting, getNumberSetting, getStringSetting } = values
 const { getDraft, setDraft, writeDraft } = drafts
-const { problems: pathProblems, hasMany: hasManyPaths, choose: onPathChoose, clear: onPathClear } = paths
+const {
+  problems: pathProblems,
+  hasMany: hasManyPaths,
+  choose: onPathChoose,
+  clear: onPathClear,
+} = paths
 </script>
 
 <template>

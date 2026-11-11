@@ -23,7 +23,12 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { searchQuery, managed, enabled, setEnabled: onTogglePlugin } = usePluginsList({
+const {
+  searchQuery,
+  managed,
+  enabled,
+  setEnabled: onTogglePlugin,
+} = usePluginsList({
   getSettings: () => props.settings,
   getCatalog: () => props.catalog,
   getQuery: () => props.query,

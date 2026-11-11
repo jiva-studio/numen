@@ -89,5 +89,14 @@ export function useTree(options: TreeOptions) {
 
   const renaming = createTreeRenaming(renamingPath, rows, emit)
 
-  return { visibleRows, layout, rows, getRowRef, picked: selection.picked, drag, gestures, renaming }
+  return {
+    visibleRows,
+    layout,
+    rows,
+    getRowRef,
+    picked: selection.picked,
+    drag,
+    gestures,
+    renaming,
+  }
 }

@@ -48,7 +48,6 @@ const onClick = (press: MouseEvent) => {
   from.value = null
   if (distanceX <= MAX_TAP_DISTANCE && !props.isShown) emit('show')
 }
-
 </script>
 
 <template>

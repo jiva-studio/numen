@@ -67,7 +67,7 @@ useListMeasure({
     frame.value = list.value?.$el ?? null
     dismissal.listen()
   },
-  getChangeKey: () => [props.items, props.at, query.value],
+  watched: [() => props.items, () => props.at, query],
   measure,
 })
 

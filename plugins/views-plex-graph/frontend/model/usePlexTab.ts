@@ -118,11 +118,7 @@ function createPlexNodeActions(options: {
     }
   }
 
-  const addNode = async (
-    from: string,
-    relation: PlexRelation,
-    pos?: { x: number; y: number },
-  ) => {
+  const addNode = async (from: string, relation: PlexRelation, pos?: { x: number; y: number }) => {
     if (pos) {
       openQuickLink({ from, relation, at: pos })
       return

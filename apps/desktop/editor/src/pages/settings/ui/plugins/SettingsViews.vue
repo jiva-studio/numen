@@ -15,7 +15,11 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { views, values, setSetting: onSettingUpdate } = useSettingsViews({
+const {
+  views,
+  values,
+  setSetting: onSettingUpdate,
+} = useSettingsViews({
   getSettings: () => props.settings,
   getHost: () => props.host,
   getPlugin: () => props.plugin,

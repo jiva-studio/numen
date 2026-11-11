@@ -19,7 +19,9 @@ export function useCardTemplate(options: CardTemplateOptions) {
   const focusedHalf = computed<Half>(() => aim.value ?? 'front')
   const front = shallowRef<PaneBox | null>(null)
   const back = shallowRef<PaneBox | null>(null)
-  const divided = computed<readonly Pane[]>(() => getPanes(options.getTemplate(), options.getWords()))
+  const divided = computed<readonly Pane[]>(() =>
+    getPanes(options.getTemplate(), options.getWords()),
+  )
 
   const getBox = (half: Half): HTMLTextAreaElement | null =>
     (half === 'front' ? front.value : back.value)?.box ?? null

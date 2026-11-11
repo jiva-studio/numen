@@ -22,7 +22,9 @@ export function useBacklogPlot(source: BacklogPlotSource) {
    * the same height as the rest.
    */
   const extent = computed<Extent>(() =>
-    getBacklogExtent(source.curve.at.flatMap((_, place) => [...getBacklogRun(source.curve, place)])),
+    getBacklogExtent(
+      source.curve.at.flatMap((_, place) => [...getBacklogRun(source.curve, place)]),
+    ),
   )
 
   const positions = computed(() => getBacklogPositions(backlog.value, extent.value))
