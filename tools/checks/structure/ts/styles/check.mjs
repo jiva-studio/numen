@@ -24,10 +24,21 @@ function listStyleFiles() {
   return (listed.stdout || "").split("\0").filter(Boolean);
 }
 
+/** The report of stylelint run from the repository root: the plugin finds the token files below the working directory. */
+async function lintInRoot(files) {
+  const previous = process.cwd();
+  process.chdir(REPO_ROOT);
+  try {
+    return await stylelint.lint({ files: files.map((file) => path.join(REPO_ROOT, file)), configFile: STYLE_CONFIG, cwd: REPO_ROOT });
+  } finally {
+    process.chdir(previous);
+  }
+}
+
 export async function verifyStyles() {
   const files = listStyleFiles();
   requireMatches("stylesheets and components read", files.length);
-  const report = await stylelint.lint({ files: files.map((file) => path.join(REPO_ROOT, file)), configFile: STYLE_CONFIG, cwd: REPO_ROOT });
+  const report = await lintInRoot(files);
   failOnFindings("stylelint rejects a style", readStyleFindings(report));
 }
 
