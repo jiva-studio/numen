@@ -30,13 +30,13 @@ type Versions struct {
 	changes versionReporter
 }
 
-// versionReporter is told of a file whose versions changed.
+// versionReporter receives the files whose versions changed.
 type versionReporter interface {
 	report(ctx context.Context, v domain.Vault, path string)
 }
 
 // NewVersions returns the versions use case over the version stores, the file stores, the enabled plugins
-// that may record versions and the clock that dates new versions. changes hears of every change.
+// that may record versions and the clock that dates new versions. changes receives every change.
 func NewVersions(
 	stores textport.VersionStores,
 	files textport.TextFileStores,

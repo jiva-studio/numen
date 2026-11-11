@@ -50,25 +50,25 @@ func busyWindow(r *registry, index, windows, rounds int) {
 	}
 }
 
-func TestWindowsWorkingAtOnceLeaveNothingBehind(t *testing.T) {
+func TestConcurrentWindowsLeaveNoState(t *testing.T) {
 	const windows, rounds = 6, 60
 	tabs, err := New(time.Millisecond, scheduleAfterDelay, &testEvents{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: tabs.Links.state.peek(), watches: map[string]*Watch{}}
+	r := &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: heldState(tabs.Links.state), watches: map[string]*Watch{}}
 
 	var working sync.WaitGroup
 	for index := range windows {
 		working.Go(func() { busyWindow(r, index, windows, rounds) })
 	}
-	done := make(chan struct{})
+	finished := make(chan struct{})
 	go func() {
 		working.Wait()
-		close(done)
+		close(finished)
 	}()
 	select {
-	case <-done:
+	case <-finished:
 	case <-time.After(60 * time.Second):
 		t.Fatal("the windows did not finish: the use cases hold each other")
 	}

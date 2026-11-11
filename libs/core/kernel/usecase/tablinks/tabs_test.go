@@ -380,7 +380,7 @@ func readUntilSync(t *testing.T, watch *Watch) received {
 
 func writeTabs(r *registry, windowID string, tabs []tablink.Tab) {
 	r.state.mu.Lock()
-	isWatched := r.state.roster.presence.hasWatch(windowID)
+	isWatched := r.state.roster.windows[windowID].hasWatch()
 	r.state.mu.Unlock()
 	if !isWatched {
 		r.watches[windowID] = r.Watch(windowID)
@@ -764,7 +764,7 @@ func newRegistry(grace time.Duration, schedule Schedule) (*registry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: tabs.Links.state.peek(), watches: map[string]*Watch{}}, nil
+	return &registry{Links: tabs.Links, Windows: tabs.Windows, Transfers: tabs.Transfers, state: heldState(tabs.Links.state), watches: map[string]*Watch{}}, nil
 }
 
 // testEvents delivers every event to every subscriber in the order published.
@@ -800,4 +800,11 @@ func (e *testEvents) Subscribe() (<-chan Event, func()) {
 			close(out)
 		}
 	}
+}
+
+// heldState is the state behind the shared handle of a use case, which a test reads under the lock.
+func heldState(host shared) *state {
+	s, release := host.hold()
+	release()
+	return s
 }

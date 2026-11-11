@@ -9,74 +9,32 @@ type expiry struct {
 	hasAccepted bool
 }
 
-// presence is which windows are watching, and the windows whose last watch ended and wait out the grace
-// period.
-type presence struct {
-	watches  map[string][]*Watch
-	removals map[string]*expiry
+// hasWatch reports whether the window is watching. A window with no entry is not.
+func (e *windowEntry) hasWatch() bool { return e != nil && len(e.watches) > 0 }
+
+// isLive reports whether the window is watching, or accepted a tab and waits out the grace period.
+func (e *windowEntry) isLive() bool {
+	return e.hasWatch() || (e != nil && e.removal != nil && e.removal.hasAccepted)
 }
 
-func newPresence() *presence {
-	return &presence{watches: map[string][]*Watch{}, removals: map[string]*expiry{}}
+func (e *windowEntry) isEmpty() bool {
+	return !e.isReported && !e.isListed && len(e.claims) == 0 && len(e.watches) == 0 && e.removal == nil
 }
 
-// windowPresence is which windows are watched, and the removal that waits for a window nobody watches.
-type windowPresence interface {
-	watchBook
-	removalBook
-}
-
-// watchBook is the watches of the windows.
-type watchBook interface {
-	hasWatch(windowID string) bool
-	isLive(windowID string) bool
-	addWatch(w *Watch)
-	removeWatch(w *Watch) bool
-	cancelWatches(windowID string)
-}
-
-// removalBook is the removals of the windows that nobody watches.
-type removalBook interface {
-	getRemoval(windowID string) (*expiry, bool)
-	setRemoval(windowID string, pending *expiry)
-	deleteRemoval(windowID string)
-}
-
-func (p *presence) hasWatch(windowID string) bool { return len(p.watches[windowID]) > 0 }
-
-func (p *presence) isLive(windowID string) bool {
-	if p.hasWatch(windowID) {
+// removeWatch drops the watch and reports whether it was the last of the window.
+func (e *windowEntry) removeWatch(w *Watch) bool {
+	if e == nil {
 		return true
 	}
-	pending, ok := p.removals[windowID]
-	return ok && pending.hasAccepted
+	e.watches = slices.DeleteFunc(e.watches, func(one *Watch) bool { return one == w })
+	return len(e.watches) == 0
 }
 
-func (p *presence) addWatch(w *Watch) {
-	p.watches[w.windowID] = append(p.watches[w.windowID], w)
-}
-
-func (p *presence) removeWatch(w *Watch) bool {
-	rest := slices.DeleteFunc(p.watches[w.windowID], func(one *Watch) bool { return one == w })
-	if len(rest) > 0 {
-		p.watches[w.windowID] = rest
-		return false
+func (e *windowEntry) cancelWatches() {
+	if e == nil {
+		return
 	}
-	delete(p.watches, w.windowID)
-	return true
-}
-
-func (p *presence) getRemoval(windowID string) (*expiry, bool) {
-	pending, ok := p.removals[windowID]
-	return pending, ok
-}
-
-func (p *presence) setRemoval(windowID string, pending *expiry) { p.removals[windowID] = pending }
-
-func (p *presence) deleteRemoval(windowID string) { delete(p.removals, windowID) }
-
-func (p *presence) cancelWatches(windowID string) {
-	for _, w := range p.watches[windowID] {
+	for _, w := range e.watches {
 		if !w.isCancelled {
 			w.isCancelled = true
 			close(w.stop)
@@ -106,12 +64,14 @@ func (w *Watch) Close() {
 	w.unsubscribe()
 	s, release := w.host.hold()
 	defer release()
-	if !s.roster.presence.removeWatch(w) {
+	if !s.roster.windows[w.windowID].removeWatch(w) {
 		return
 	}
 	s.transit.endMovesInto(w.windowID)
-	delete(s.roster.claims, w.windowID)
+	if entry := s.roster.windows[w.windowID]; entry != nil {
+		entry.claims = nil
+	}
 	s.owners.moveClaimedTabs(w.windowID)
 	s.publishSnapshot()
-	s.expiries.scheduleWindowRemoval(w.windowID)
+	s.expiries.scheduleWindowRemoval(s, w.windowID)
 }

@@ -12,37 +12,22 @@ import (
 
 // pass is the indexing of one vault, on the one goroutine that runs it.
 type pass struct {
-	worker    passWorker
+	env       passEnv
+	events    Events
+	waits     wakeWaits
+	skips     *vaultreading.Skips
 	session   *Session
 	v         domain.Vault
 	isRebuild bool
 }
 
-// passWorker is what a pass takes from the worker it runs for.
-type passWorker interface {
-	passEnvironment
-	vectorWork
-	readingOpener
-}
-
-// passEnvironment is where a pass reports, what it leaves out, and what wakes or delays it.
-type passEnvironment interface {
-	getEvents() Events
-	getSkips() skipping
-	getWakes() wakeups
-	waitQuiet() <-chan time.Time
-}
-
-// vectorWork is the embedding a pass does for a vault.
-type vectorWork interface {
-	hasEmbedder() bool
-	planVectors(ctx context.Context, v domain.Vault) vectorPlan
-	notifyVectorsReady(ctx context.Context, v domain.Vault)
-}
-
-// readingOpener opens the passes over a vault.
-type readingOpener interface {
+// passEnv is what a pass takes from the worker it runs for.
+type passEnv interface {
 	openReading(ctx context.Context, v domain.Vault, rebuild bool) (ReadWholeVault, error)
+	planVectors(ctx context.Context, v domain.Vault) vectorPlan
+	hasEmbedder() bool
+	waitQuiet() <-chan time.Time
+	notifyVectorsReady(ctx context.Context, v domain.Vault)
 }
 
 func (p *pass) run(ctx context.Context, read ReadNotes) {
@@ -56,18 +41,17 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 	// A vault whose first indexing failed still receives writes, so the wait
 	// proceeds regardless of the indexing outcome.
 	var debounceTimer <-chan time.Time
-	wakes := p.worker.getWakes()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-wakes.sourcesWoken():
+		case <-p.waits.sourcesWoken():
 			p.indexSources(ctx)
-		case <-wakes.readWoken():
+		case <-p.waits.readWoken():
 			p.embedRecognized(ctx)
-		case <-wakes.notesWoken():
+		case <-p.waits.notesWoken():
 			// Every write puts the pass off again.
-			debounceTimer = p.worker.waitQuiet()
+			debounceTimer = p.env.waitQuiet()
 		case <-debounceTimer:
 			debounceTimer = nil
 			p.embed(ctx)
@@ -76,7 +60,7 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 }
 
 func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
-	events := p.worker.getEvents()
+	events := p.events
 	defer events.FinishTask(work.WalkingNotes)
 
 	events.ReportTask(work.Task{ID: work.WalkingNotes, Title: "Indexing the vault"})
@@ -114,8 +98,8 @@ func (p *pass) embedRecognized(ctx context.Context) {
 }
 
 func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
-	events := p.worker.getEvents()
-	making, err := p.worker.openReading(ctx, p.v, rebuild)
+	events := p.events
+	making, err := p.env.openReading(ctx, p.v, rebuild)
 	if err != nil {
 		events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
 		return
@@ -123,7 +107,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	texts, cancel := newTaskCancel(ctx)
 	defer cancel.stop()
 	var current currentSources
-	reporting := Reporting{IsTextSkipped: p.worker.getSkips().isTextSkipped, OnTextsProgress: func(res vaultreading.IndexResult) {
+	reporting := Reporting{IsTextSkipped: p.skips.IsTextSkipped, OnTextsProgress: func(res vaultreading.IndexResult) {
 		if res.CurrentSource != "" {
 			current.set([]string{res.CurrentSource})
 		}
@@ -150,7 +134,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		// source a person canceled is left uncut until it changes.
 		if cancel.isRequested.Load() {
 			for _, path := range current.get() {
-				p.worker.getSkips().addTexts(path)
+				p.skips.AddTexts(path)
 			}
 		}
 		events.FinishTask(work.IndexingTexts)
@@ -163,15 +147,15 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 }
 
 func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
-	if p.worker.getSkips().isTextSkipped(path) {
+	if p.skips.IsTextSkipped(path) {
 		return
 	}
-	events := p.worker.getEvents()
+	events := p.events
 	failed := func(err error) {
 		events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, About: path, Error: err.Error()})
 	}
 
-	making, err := p.worker.openReading(ctx, v, false)
+	making, err := p.env.openReading(ctx, v, false)
 	if err != nil {
 		failed(err)
 		return
@@ -186,22 +170,21 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 }
 
 func (p *pass) embed(ctx context.Context) {
-	w := p.worker
-	if !w.hasEmbedder() {
+	if !p.env.hasEmbedder() {
 		return
 	}
-	plan := w.planVectors(ctx, p.v)
+	plan := p.env.planVectors(ctx, p.v)
 	if !plan.hasPending {
-		w.getEvents().FinishTask(work.MakingVectors)
-		w.notifyVectorsReady(ctx, p.v)
+		p.events.FinishTask(work.MakingVectors)
+		p.env.notifyVectorsReady(ctx, p.v)
 		return
 	}
 
-	limit, stop := w.getWakes().stopOnWake(ctx)
+	limit, stop := p.waits.stopOnWake(ctx)
 	defer stop()
 
 	if p.makeVectors(ctx, limit, plan) {
-		w.notifyVectorsReady(ctx, p.v)
+		p.env.notifyVectorsReady(ctx, p.v)
 	}
 }
 
@@ -215,8 +198,8 @@ type vectorPlan struct {
 }
 
 func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
-	plan := vectorPlan{generation: w.skips.getGeneration()}
-	plan.skipped = w.skips.getSkippedChunks()
+	plan := vectorPlan{generation: w.skips.GetGeneration()}
+	plan.skipped = w.skips.GetSkippedChunks()
 	if w.vectorCounts == nil {
 		plan.hasPending = true
 		return plan
@@ -241,12 +224,12 @@ func (plan vectorPlan) getTotal(res vaultreading.EmbedResult) int64 {
 }
 
 func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
-	events := p.worker.getEvents()
+	events := p.events
 	failed := func(err error) {
 		events.ReportTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: err.Error()})
 	}
 
-	making, err := p.worker.openReading(ctx, p.v, false)
+	making, err := p.env.openReading(ctx, p.v, false)
 	if err != nil {
 		failed(err)
 		return false
@@ -257,7 +240,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	items, cancel := newTaskCancel(items)
 	defer cancel.stop()
 	var current currentSources
-	reporting := Reporting{IsVectorSkipped: p.worker.getSkips().isVectorSkipped, OnVectorsProgress: func(res vaultreading.EmbedResult) {
+	reporting := Reporting{IsVectorSkipped: p.skips.IsVectorSkipped, OnVectorsProgress: func(res vaultreading.EmbedResult) {
 		current.set(getEmbeddingSources(res))
 		pos := work.Task{ID: work.MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {
@@ -268,7 +251,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 
 	switch res, err := making.MakeVectors(items, p.v, reporting); {
 	case err == nil:
-		p.worker.getSkips().setSkippedChunks(res.Skipped, plan.generation)
+		p.skips.SetSkippedChunks(res.Skipped, plan.generation)
 		events.FinishTask(work.MakingVectors)
 		return true
 	case errors.Is(err, context.Canceled):
@@ -276,7 +259,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 		// next pass embeds the others.
 		if cancel.isRequested.Load() {
 			for _, path := range current.get() {
-				p.worker.getSkips().addVectors(path)
+				p.skips.AddVectors(path)
 			}
 		}
 		events.FinishTask(work.MakingVectors)

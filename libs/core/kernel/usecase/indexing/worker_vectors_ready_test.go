@@ -20,7 +20,7 @@ func (l *readyLog) report(_ context.Context, v domain.Vault) {
 	l.vaults = append(l.vaults, v.ID)
 }
 
-func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder, log *readyLog) *pass {
+func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder, log *readyLog) *testPass {
 	t.Helper()
 	made, db := openReading(t)
 	fit(t, db, model)
@@ -29,7 +29,7 @@ func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder,
 	cut(t, made, db, v)
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
-	p.getWorker().vectorsReady = log.report
+	p.worker.vectorsReady = log.report
 	return p
 }
 

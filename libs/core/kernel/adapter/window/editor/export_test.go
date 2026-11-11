@@ -130,7 +130,7 @@ func (s *Services) pages() pageSet {
 	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
 	routes = append(routes, NewRoute(path, served, s.Plugin))
 	routes = append(routes, s.Extra...)
-	return pageSet{window: statePages{state: s.state}, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
+	return pageSet{gate: s.state.Gate, window: statePages{state: s.state}, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
 }
 
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler

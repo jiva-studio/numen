@@ -32,8 +32,3 @@ func newScenarios(
 	}
 }
 
-func (s scenarios) withVersions(versions plugincommand.VersionItems) scenarios {
-	s.RunCommand = plugincommand.NewRunCommand(s.List, s.Run, versions)
-	s.ListItems = plugincommand.NewListItems(s.List, versions)
-	return s
-}

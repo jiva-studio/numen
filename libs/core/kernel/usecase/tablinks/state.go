@@ -27,7 +27,7 @@ func New(grace time.Duration, schedule Schedule, events Events) (*Tabs, error) {
 		transit: newTransit(),
 	}
 	s.owners = &ownership{state: s}
-	s.expiries = &expiries{host: s, grace: grace, schedule: schedule}
+	s.expiries = &expiries{grace: grace, schedule: schedule}
 	return &Tabs{Links: &Links{state: s}, Windows: &Windows{state: s}, Transfers: &Transfers{state: s}}, nil
 }
 
@@ -36,16 +36,15 @@ type state struct {
 	mu       sync.Mutex
 	events   Events
 	roster   *roster
-	transit  transitBook
+	transit  *transit
 	owners   *ownership
-	expiries expiryTimers
+	expiries *expiries
 }
 
 // shared is the state of the use cases, which they take under its lock. hold waits for the lock and returns
-// the state with the function that gives it back; peek returns the state to code that holds the lock already.
+// the state with the function that gives it back.
 type shared interface {
 	hold() (*state, func())
-	peek() *state
 }
 
 func (s *state) hold() (*state, func()) {
@@ -53,13 +52,11 @@ func (s *state) hold() (*state, func()) {
 	return s, s.mu.Unlock
 }
 
-func (s *state) peek() *state { return s }
-
 func (s *state) snapshot() Snapshot {
 	return Snapshot{
 		Groups:  s.roster.groups.snapshot(),
 		Tabs:    s.roster.snapshotTabs(),
-		Windows: s.roster.listWindows(s.roster.presence.hasWatch),
+		Windows: s.roster.listWindows(),
 	}
 }
 
@@ -69,13 +66,14 @@ func (s *state) publishSnapshot() {
 }
 
 func (s *state) removeWindow(windowID string) {
-	ids, ok := s.roster.windows[windowID]
-	if !ok {
+	entry := s.roster.windows[windowID]
+	if entry == nil || !entry.isReported {
 		return
 	}
-	delete(s.roster.windows, windowID)
-	delete(s.roster.info, windowID)
+	ids := entry.tabIDs
+	entry.tabIDs, entry.isReported, entry.info, entry.isListed = nil, false, Window{}, false
 	s.roster.windowOrder = slices.DeleteFunc(s.roster.windowOrder, func(id string) bool { return id == windowID })
+	s.roster.prune(windowID)
 	for _, id := range ids {
 		s.forgetTab(id)
 	}
@@ -97,7 +95,7 @@ func (s *state) dropTab(tabID string) {
 
 func (s *state) dropUnreportedTab(tabID string) {
 	tab, isKnown := s.roster.tabs[tabID]
-	if !isKnown || slices.Contains(s.roster.windows[tab.WindowID], tabID) {
+	if !isKnown || slices.Contains(s.roster.tabIDsOf(tab.WindowID), tabID) {
 		return
 	}
 	s.dropTab(tabID)

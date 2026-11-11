@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 )
 
-// move is one pending move of a tab.
 type move struct {
 	id             string
 	targetWindowID string
@@ -14,9 +13,6 @@ type move struct {
 	cancel         func() bool
 }
 
-// detach is a pending detach: the tab with its saved state, the window that
-// read it, the id that window passes to Accept, the channel of its result and
-// the cancel function of its expiry.
 type detach struct {
 	id       string
 	tab      tablink.SavedTab
@@ -25,132 +21,109 @@ type detach struct {
 	cancel   func() bool
 }
 
-// transit is the tabs on their way to another window.
+// transfer is the move or the detach that waits for a window to accept a tab. A tab has at most one.
+type transfer struct {
+	move   *move
+	detach *detach
+}
+
+// transit is the moves and detaches that wait for a window to accept the tab, by the id of the tab, and
+// the windows that accepted a move, by the id of the move.
 type transit struct {
-	detaches   map[string]*detach
-	moves      map[string]*move
+	transfers  map[string]*transfer
 	nextMoveID int
 	accepted   map[string]string
 }
 
 func newTransit() *transit {
-	return &transit{
-		detaches: map[string]*detach{},
-		moves:    map[string]*move{},
-		accepted: map[string]string{},
-	}
+	return &transit{transfers: map[string]*transfer{}, accepted: map[string]string{}}
 }
-
-// transitBook is the moves and detaches that wait for a window to accept the tab.
-type transitBook interface {
-	moveBook
-	detachBook
-	acceptBook
-	transferFlow
-}
-
-// moveBook is the pending moves of tabs to other windows.
-type moveBook interface {
-	getMove(tabID string) (*move, bool)
-	addMove(tabID, targetWindowID string, result chan tablink.MoveError) *move
-	endMove(tabID string, pending *move, outcome tablink.MoveError)
-}
-
-// detachBook is the pending detaches of tabs to new windows.
-type detachBook interface {
-	getDetach(tabID string) (*detach, bool)
-	addDetach(tab tablink.SavedTab, result chan tablink.MoveError) *detach
-	endDetach(tabID string, pending *detach, outcome tablink.MoveError)
-}
-
-// acceptBook is the windows that accepted a move, by the id of the move.
-type acceptBook interface {
-	getAccepted(moveID string) (string, bool)
-	putAccepted(moveID, windowID string)
-	deleteAccepted(moveID string)
-}
-
-// transferFlow tells which transfers go to a window and ends them in bulk.
-type transferFlow interface {
-	isTransferringInto(windowID, tabID string) bool
-	endTransfers(tabID string, outcome tablink.MoveError)
-	endMovesInto(windowID string)
-}
-
-func (t *transit) getMove(tabID string) (*move, bool) {
-	pending, ok := t.moves[tabID]
-	return pending, ok
-}
-
-func (t *transit) addMove(tabID, targetWindowID string, result chan tablink.MoveError) *move {
-	pending := &move{id: t.createMoveID(), targetWindowID: targetWindowID, result: result}
-	t.moves[tabID] = pending
-	return pending
-}
-
-func (t *transit) getDetach(tabID string) (*detach, bool) {
-	pending, ok := t.detaches[tabID]
-	return pending, ok
-}
-
-func (t *transit) addDetach(tab tablink.SavedTab, result chan tablink.MoveError) *detach {
-	pending := &detach{id: t.createMoveID(), tab: tab, result: result}
-	t.detaches[tab.ID] = pending
-	return pending
-}
-
-func (t *transit) getAccepted(moveID string) (string, bool) {
-	windowID, ok := t.accepted[moveID]
-	return windowID, ok
-}
-
-func (t *transit) putAccepted(moveID, windowID string) { t.accepted[moveID] = windowID }
-
-func (t *transit) deleteAccepted(moveID string) { delete(t.accepted, moveID) }
 
 func (t *transit) createMoveID() string {
 	t.nextMoveID++
 	return "move-" + strconv.Itoa(t.nextMoveID)
 }
 
-func (t *transit) isTransferringInto(windowID, tabID string) bool {
-	if pending, ok := t.moves[tabID]; ok && pending.targetWindowID == windowID {
-		return true
+func (t *transit) getMove(tabID string) (*move, bool) {
+	if pending := t.transfers[tabID]; pending != nil && pending.move != nil {
+		return pending.move, true
 	}
-	pending, ok := t.detaches[tabID]
-	return ok && pending.windowID == windowID
+	return nil, false
+}
+
+func (t *transit) getDetach(tabID string) (*detach, bool) {
+	if pending := t.transfers[tabID]; pending != nil && pending.detach != nil {
+		return pending.detach, true
+	}
+	return nil, false
+}
+
+func (t *transit) ensure(tabID string) *transfer {
+	pending := t.transfers[tabID]
+	if pending == nil {
+		pending = &transfer{}
+		t.transfers[tabID] = pending
+	}
+	return pending
+}
+
+func (t *transit) addMove(tabID, targetWindowID string, result chan tablink.MoveError) *move {
+	pending := &move{id: t.createMoveID(), targetWindowID: targetWindowID, result: result}
+	t.ensure(tabID).move = pending
+	return pending
+}
+
+func (t *transit) addDetach(tab tablink.SavedTab, result chan tablink.MoveError) *detach {
+	pending := &detach{id: t.createMoveID(), tab: tab, result: result}
+	t.ensure(tab.ID).detach = pending
+	return pending
+}
+
+func (t *transit) isTransferringInto(windowID, tabID string) bool {
+	pending := t.transfers[tabID]
+	return pending != nil &&
+		((pending.move != nil && pending.move.targetWindowID == windowID) ||
+			(pending.detach != nil && pending.detach.windowID == windowID))
 }
 
 func (t *transit) endMove(tabID string, pending *move, outcome tablink.MoveError) {
 	pending.cancel()
-	delete(t.moves, tabID)
+	if held := t.transfers[tabID]; held != nil {
+		held.move = nil
+		if held.detach == nil {
+			delete(t.transfers, tabID)
+		}
+	}
 	pending.result <- outcome
 }
 
 func (t *transit) endDetach(tabID string, pending *detach, outcome tablink.MoveError) {
 	pending.cancel()
-	delete(t.detaches, tabID)
+	if held := t.transfers[tabID]; held != nil {
+		held.detach = nil
+		if held.move == nil {
+			delete(t.transfers, tabID)
+		}
+	}
 	pending.result <- outcome
 }
 
 func (t *transit) endTransfers(tabID string, outcome tablink.MoveError) {
-	if pending, ok := t.moves[tabID]; ok {
+	if pending, ok := t.getMove(tabID); ok {
 		t.endMove(tabID, pending, outcome)
 	}
-	if pending, ok := t.detaches[tabID]; ok {
+	if pending, ok := t.getDetach(tabID); ok {
 		t.endDetach(tabID, pending, outcome)
 	}
 }
 
 func (t *transit) endMovesInto(windowID string) {
-	for tabID, pending := range t.moves {
-		if pending.targetWindowID == windowID {
-			t.endMove(tabID, pending, tablink.MoveErrorWindowClosed)
+	for tabID, held := range t.transfers {
+		if held.move != nil && held.move.targetWindowID == windowID {
+			t.endMove(tabID, held.move, tablink.MoveErrorWindowClosed)
 		}
-	}
-	for tabID, pending := range t.detaches {
-		if pending.windowID == windowID {
-			t.endDetach(tabID, pending, tablink.MoveErrorWindowClosed)
+		if held.detach != nil && held.detach.windowID == windowID {
+			t.endDetach(tabID, held.detach, tablink.MoveErrorWindowClosed)
 		}
 	}
 }

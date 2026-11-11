@@ -75,8 +75,8 @@ type Worker struct {
 	events       Events
 	debounce     time.Duration
 	after        func(time.Duration) <-chan time.Time
-	wakes        wakeups
-	skips        skipping
+	wakes        *channelWakes
+	skips        *vaultreading.Skips
 }
 
 func NewWorker(cfg Config) *Worker {
@@ -89,7 +89,7 @@ func NewWorker(cfg Config) *Worker {
 		debounce:     cfg.Quiet,
 		after:        cfg.After,
 		wakes:        newChannelWakes(),
-		skips:        newSkipSet(),
+		skips:        vaultreading.NewSkips(),
 	}
 }
 
@@ -102,7 +102,7 @@ func (w *Worker) WakeNotes() { w.wakes.wakeNotes() }
 
 // ClearSkips indexes again the sources at the paths given whose indexing a
 // person canceled. The vault calls it for every path it reports changed.
-func (w *Worker) ClearSkips(paths []string) { w.skips.clear(paths) }
+func (w *Worker) ClearSkips(paths []string) { w.skips.Clear(paths) }
 
 func (w *Worker) openReading(
 	ctx context.Context, v domain.Vault, rebuild bool,
@@ -110,15 +110,11 @@ func (w *Worker) openReading(
 	return w.reading(ctx, w.embedder, v, rebuild)
 }
 
-func (w *Worker) getEvents() Events { return w.events }
-
-func (w *Worker) getSkips() skipping { return w.skips }
-
-func (w *Worker) getWakes() wakeups { return w.wakes }
-
 func (w *Worker) hasEmbedder() bool { return w.embedder != nil }
 
 func (w *Worker) waitQuiet() <-chan time.Time { return w.after(w.debounce) }
+
+func (w *Worker) wakeRead() { w.wakes.wakeRead() }
 
 func (w *Worker) notifyVectorsReady(ctx context.Context, v domain.Vault) {
 	if w.vectorsReady == nil || ctx.Err() != nil {
@@ -127,21 +123,11 @@ func (w *Worker) notifyVectorsReady(ctx context.Context, v domain.Vault) {
 	w.vectorsReady(ctx, v)
 }
 
-// wakeups are the signals that something arrived for a pass to do. Each is held until a pass takes it, and
-// several of the same kind are one.
-type wakeups interface {
-	wakeSignals
-	wakeWaits
+func (w *Worker) newPass(s *Session, v domain.Vault, rebuild bool) *pass {
+	return &pass{env: w, events: w.events, waits: w.wakes, skips: w.skips, session: s, v: v, isRebuild: rebuild}
 }
 
-// wakeSignals leave a wake held.
-type wakeSignals interface {
-	wakeSources()
-	wakeNotes()
-	wakeRead()
-}
-
-// wakeWaits wait for a wake.
+// wakeWaits waits for the signals that something arrived for a pass to do.
 type wakeWaits interface {
 	sourcesWoken() <-chan struct{}
 	notesWoken() <-chan struct{}
@@ -150,6 +136,8 @@ type wakeWaits interface {
 	stopOnWake(ctx context.Context) (context.Context, func())
 }
 
+// channelWakes are the signals that something arrived for a pass to do. Each is held until a pass takes it,
+// and several of the same kind are one.
 type channelWakes struct {
 	sources chan struct{}
 	notes   chan struct{}
@@ -247,10 +235,16 @@ func signal(wake chan struct{}) {
 	}
 }
 
+// sessionHost is the worker a session runs its passes for.
+type sessionHost interface {
+	wakeRead()
+	newPass(s *Session, v domain.Vault, rebuild bool) *pass
+}
+
 // Session is the work of one vault: the sources a recognition has written more
 // of than their chunks account for, and the passes over the vault.
 type Session struct {
-	worker passWorker
+	host sessionHost
 
 	mu      sync.Mutex
 	pending map[string]domain.Vault
@@ -258,7 +252,7 @@ type Session struct {
 
 // NewSession is the work of a vault that has not been started.
 func (w *Worker) NewSession() *Session {
-	return &Session{worker: w}
+	return &Session{host: w}
 }
 
 // RequestCut requests that the source at a path be cut again from its text. A
@@ -270,7 +264,7 @@ func (s *Session) RequestCut(v domain.Vault, path string) {
 	}
 	s.pending[path] = v
 	s.mu.Unlock()
-	s.worker.getWakes().wakeRead()
+	s.host.wakeRead()
 }
 
 // ReportVersionsChanged requests that the file be cut again from its live text
@@ -291,6 +285,5 @@ func (s *Session) drain() map[string]domain.Vault {
 // until ctx ends. rebuild indexes every file again in the first pass over the
 // file texts.
 func (s *Session) Run(ctx context.Context, v domain.Vault, rebuild bool, read ReadNotes) {
-	p := &pass{worker: s.worker, session: s, v: v, isRebuild: rebuild}
-	p.run(ctx, read)
+	s.host.newPass(s, v, rebuild).run(ctx, read)
 }

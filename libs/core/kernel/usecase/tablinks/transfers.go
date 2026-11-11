@@ -20,7 +20,7 @@ func (t *Transfers) Detach(tab tablink.SavedTab) <-chan tablink.MoveError {
 	defer release()
 	s.transit.endTransfers(tab.ID, tablink.MoveErrorCancelled)
 	pending := s.transit.addDetach(tab, result)
-	s.expiries.scheduleDetach(tab.ID, pending)
+	s.expiries.scheduleDetach(s, tab.ID, pending)
 	return result
 }
 
@@ -58,7 +58,7 @@ func (t *Transfers) Move(sourceWindowID, targetWindowID string, tab tablink.Save
 	result := make(chan tablink.MoveError, 1)
 	s, release := t.state.hold()
 	defer release()
-	if targetWindowID == sourceWindowID || !s.roster.presence.hasWatch(targetWindowID) {
+	if targetWindowID == sourceWindowID || !s.roster.windows[targetWindowID].hasWatch() {
 		result <- tablink.MoveErrorWindowClosed
 		return result
 	}
@@ -68,7 +68,7 @@ func (t *Transfers) Move(sourceWindowID, targetWindowID string, tab tablink.Save
 	}
 	s.transit.endTransfers(tab.ID, tablink.MoveErrorCancelled)
 	pending := s.transit.addMove(tab.ID, targetWindowID, result)
-	s.expiries.scheduleMove(tab.ID, pending)
+	s.expiries.scheduleMove(s, tab.ID, pending)
 	s.events.Publish(Event{Move: &MovedTab{WindowID: targetWindowID, MoveID: pending.id, Tab: tab}})
 	return result
 }
@@ -97,16 +97,16 @@ func (t *Transfers) Accept(windowID, tabID, moveID string) tablink.MoveError {
 	if pending, ok := s.transit.getMove(tabID); ok && pending.id == moveID && pending.targetWindowID == windowID {
 		s.owners.takeTab(windowID, tabID)
 		s.transit.endMove(tabID, pending, tablink.MoveErrorNone)
-		s.expiries.recordAccepted(moveID, windowID)
+		s.expiries.recordAccepted(s, moveID, windowID)
 		return tablink.MoveErrorNone
 	}
 	if pending, ok := s.transit.getDetach(tabID); ok && pending.id == moveID && pending.windowID == windowID {
 		s.transit.endDetach(tabID, pending, tablink.MoveErrorNone)
 		s.owners.takeTab(windowID, tabID)
-		s.expiries.recordAccepted(moveID, windowID)
+		s.expiries.recordAccepted(s, moveID, windowID)
 		return tablink.MoveErrorNone
 	}
-	if accepted, _ := s.transit.getAccepted(moveID); accepted == windowID {
+	if s.transit.accepted[moveID] == windowID {
 		return tablink.MoveErrorNone
 	}
 	return tablink.MoveErrorTimeout

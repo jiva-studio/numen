@@ -16,7 +16,7 @@ type Windows struct {
 func (w *Windows) Watch(windowID string) *Watch {
 	s, release := w.state.hold()
 	defer release()
-	s.expiries.cancelWindowRemoval(windowID)
+	s.expiries.cancelWindowRemoval(s, windowID)
 	events, unsubscribe := s.events.Subscribe()
 	stop := make(chan struct{})
 	watch := &Watch{
@@ -28,7 +28,8 @@ func (w *Windows) Watch(windowID string) *Watch {
 		unsubscribe: unsubscribe,
 		host:        w.state,
 	}
-	s.roster.presence.addWatch(watch)
+	entry := s.roster.ensure(windowID)
+	entry.watches = append(entry.watches, watch)
 	return watch
 }
 
@@ -36,7 +37,7 @@ func (w *Windows) Watch(windowID string) *Watch {
 func (w *Windows) Cancel(windowID string) {
 	s, release := w.state.hold()
 	defer release()
-	s.roster.presence.cancelWatches(windowID)
+	s.roster.windows[windowID].cancelWatches()
 }
 
 // GetSnapshot returns every group and every known tab.
@@ -51,7 +52,7 @@ func (w *Windows) GetSnapshot() Snapshot {
 func (w *Windows) Highlight(windowID string, isOn bool) {
 	s, release := w.state.hold()
 	defer release()
-	if !s.roster.presence.hasWatch(windowID) {
+	if !s.roster.windows[windowID].hasWatch() {
 		return
 	}
 	s.events.Publish(Event{Highlight: &Highlight{WindowID: windowID, IsOn: isOn}})
@@ -66,7 +67,7 @@ func (w *Windows) WriteTabs(window Window, tabs []tablink.Tab) {
 	s, release := w.state.hold()
 	defer release()
 	windowID := window.ID
-	if !s.roster.presence.hasWatch(windowID) {
+	if !s.roster.windows[windowID].hasWatch() {
 		return
 	}
 	s.roster.writeWindow(window)
@@ -86,13 +87,13 @@ func (w *Windows) WriteTabs(window Window, tabs []tablink.Tab) {
 			claimed = append(claimed, one)
 		}
 	}
-	for _, id := range s.roster.windows[windowID] {
+	for _, id := range s.roster.tabIDsOf(windowID) {
 		if !slices.Contains(reported, id) {
 			s.forgetTab(id)
 		}
 	}
-	s.roster.windows[windowID] = reported
-	s.roster.claims[windowID] = claimed
+	s.roster.setTabIDs(windowID, reported)
+	s.roster.ensure(windowID).claims = claimed
 	s.owners.dropUnreportedGroupMates(reported, takenFrom)
 	s.publishSnapshot()
 }

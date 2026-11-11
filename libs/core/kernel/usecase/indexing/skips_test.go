@@ -126,7 +126,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 
 	// An edit of the note, reported as the vault watch reports it, indexes it again.
 	writeNote(t, v.Path, "Held.md", noteWith(slices.Concat(getAfterWords(), getHeldWords()[:1]), 300))
-	p.getWorker().ClearSkips([]string{"Held.md"})
+	p.worker.ClearSkips([]string{"Held.md"})
 	cut(t, made, db, v)
 	p.embed(t.Context())
 
@@ -139,35 +139,5 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	}
 	if embedded != target {
 		t.Errorf("after the edit %d of %d chunks carry a vector", embedded, target)
-	}
-}
-
-// A cancel is bound to the content hash the next pass sees, and a different
-// hash ends it.
-func TestCancelledSourceIsClearedByAnotherHash(t *testing.T) {
-	skips := newSkipSet()
-	skips.addVectors("Book.pdf")
-
-	if !skips.isVectorSkipped("Book.pdf", "aa") {
-		t.Fatal("a canceled source was embedded on the next pass")
-	}
-	if !skips.isVectorSkipped("Book.pdf", "aa") {
-		t.Error("a canceled source with the same hash was embedded")
-	}
-	if skips.isVectorSkipped("Other.pdf", "aa") {
-		t.Error("a source nobody canceled was skipped")
-	}
-	if skips.isVectorSkipped("Book.pdf", "bb") {
-		t.Error("a canceled source whose content changed was skipped")
-	}
-	if skips.isVectorSkipped("Book.pdf", "aa") {
-		t.Error("a cancel outlived the change of its source")
-	}
-
-	skips.addTexts("Scan.pdf")
-	skips.addVectors("Scan.pdf")
-	skips.clear([]string{"Scan.pdf"})
-	if skips.isTextSkipped("Scan.pdf") || skips.isVectorSkipped("Scan.pdf", "aa") {
-		t.Error("a reported change left the source canceled")
 	}
 }

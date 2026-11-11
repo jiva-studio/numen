@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -61,6 +60,7 @@ func NewRoute(path string, handler http.Handler, service any) Route {
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
+	gate      *wire.Gate
 	window    pageWindow
 	routes    []Route
 	themes    numenv1connect.ThemeServiceHandler
@@ -68,21 +68,12 @@ type pageSet struct {
 	pluginDir func(id string) (string, bool)
 }
 
-// pageWindow is what the pages need of the window: the vault it shows, the door on its questions, and where
-// recordings are played from.
+// pageWindow is what the pages need of the window besides its gate: the vault it shows, where its work is
+// listed, and where recordings are played from.
 type pageWindow interface {
-	pageGate
 	shownVault
 	taskList
 	getPlayOrigins() []string
-}
-
-// pageGate is the door on every question of the window.
-type pageGate interface {
-	isClosed() bool
-	beginQuestion() bool
-	finishQuestion()
-	CountQuestions() connect.HandlerOption
 }
 
 // statePages is the window of a State, as its pages see it.
@@ -91,14 +82,6 @@ type statePages struct {
 }
 
 func (s statePages) GetCurrentVault() domain.Vault { return s.state.GetCurrentVault() }
-
-func (s statePages) isClosed() bool { return s.state.Gate.IsClosed() }
-
-func (s statePages) beginQuestion() bool { return s.state.Gate.BeginQuestion() }
-
-func (s statePages) finishQuestion() { s.state.Gate.FinishQuestion() }
-
-func (s statePages) CountQuestions() connect.HandlerOption { return s.state.Gate.CountQuestions() }
 
 func (s statePages) AddTask(pos work.Task) { s.state.Window.AddTask(pos) }
 
@@ -124,7 +107,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.
-		if s.window.isClosed() {
+		if s.gate.IsClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
@@ -160,7 +143,7 @@ func (s pageSet) newRoutes(named []string) []Route {
 	// the window together, so a build put together without a catalog serves
 	// none.
 	if s.themes != nil {
-		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.window.CountQuestions())
+		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.gate.CountQuestions())
 		if themed := NewRoute(path, handler, s.themes); isServed(named, themed) {
 			routes = append(routes, themed)
 		}
@@ -171,18 +154,18 @@ func (s pageSet) newRoutes(named []string) []Route {
 func (s pageSet) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
-		if !s.window.beginQuestion() {
+		if !s.gate.BeginQuestion() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
-		defer s.window.finishQuestion()
+		defer s.gate.FinishQuestion()
 		s.servePluginRoute(w, r, isWhole)
 	case isWhole && strings.HasPrefix(r.URL.Path, assetsRoute):
-		if !s.window.beginQuestion() {
+		if !s.gate.BeginQuestion() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
-		defer s.window.finishQuestion()
+		defer s.gate.FinishQuestion()
 		s.serveAsset(w, r)
 	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 		wire.WritePage(w, r, pages, s.themes, files)
