@@ -21,7 +21,16 @@ func TestWhatTheCopyRuleRejects(t *testing.T) {
 	}{
 		{"three equal copies", map[string]map[string][]byte{"first": same(), "second": same(), "third": same()}, nil, 0},
 		{"a file that differs in one copy", map[string]map[string][]byte{"first": same(), "second": same(), "third": {"a.go": []byte("one"), "b.go": []byte("2")}}, nil, 1},
-		{"a file that differs in two copies", map[string]map[string][]byte{"first": same(), "second": {"a.go": []byte("1"), "b.go": []byte("two")}, "third": {"a.go": []byte("1"), "b.go": []byte("two")}}, nil, 2},
+		{
+			"a file that differs in two copies",
+			map[string]map[string][]byte{
+				"first":  same(),
+				"second": {"a.go": []byte("1"), "b.go": []byte("two")},
+				"third":  {"a.go": []byte("1"), "b.go": []byte("two")},
+			},
+			nil,
+			2,
+		},
 		{"a file a copy lacks", map[string]map[string][]byte{"first": same(), "second": {"a.go": []byte("one")}, "third": same()}, nil, 1},
 		{"a file only a copy has", map[string]map[string][]byte{"first": same(), "second": same(), "third": {"a.go": []byte("one"), "b.go": []byte("two"), "c.go": nil}}, nil, 1},
 		{"a file that is allowed to differ", map[string]map[string][]byte{"first": same(), "second": same(), "third": {"a.go": []byte("one"), "b.go": []byte("2")}}, []string{"b.go"}, 0},

@@ -297,7 +297,10 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	}{
 		"the list of vaults cannot be opened": {
 			stubSession{Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-				return cli.Indexed{Problems: vaults.NewGetProblemsByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, vaults.NewGetProblems(check.Standard(fixedProblemQueries{})))}, nil
+				return cli.Indexed{Problems: vaults.NewGetProblemsByName(
+					func(string) (domain.Vault, error) { return domain.Vault{}, errRefused },
+					vaults.NewGetProblems(check.Standard(fixedProblemQueries{})),
+				)}, nil
 			}},
 			[]string{"problems", "notebook"},
 		},

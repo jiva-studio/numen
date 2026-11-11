@@ -174,7 +174,9 @@ func TestTheValidatorRejectsLinksThatLeadNowhere(t *testing.T) {
 		"an option of no dependency": `{"key":"a","type":"enum","title":"A","options":[{"value":"x","dependencies":["none"]}]}`,
 		"optionsBy on number":        `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"number","title":"A","optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
 		"optionsBy with own options": `{"key":"b","type":"enum","title":"B","options":["x"]},{"key":"a","type":"enum","title":"A","options":["1"],"optionsBy":{"setting":"b","options":{"x":["1"]}}}`,
-		"optionsBy on optionsBy":     `{"key":"c","type":"enum","title":"C","options":["x"]},{"key":"b","type":"enum","title":"B","optionsBy":{"setting":"c","options":{"x":["y"]}}},{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"y":["1"]}}}`,
+		"optionsBy on optionsBy":     `{"key":"c","type":"enum","title":"C","options":["x"]},` +
+			`{"key":"b","type":"enum","title":"B","optionsBy":{"setting":"c","options":{"x":["y"]}}},` +
+			`{"key":"a","type":"enum","title":"A","optionsBy":{"setting":"b","options":{"y":["1"]}}}`,
 		"extensions of a string":     `{"key":"a","type":"string","title":"A","accept":[".txt"]}`,
 		"an extension with no dot":   `{"key":"a","type":"file","title":"A","accept":["txt"]}`,
 		"a bare dot extension":       `{"key":"a","type":"file","title":"A","accept":["."]}`,
@@ -298,12 +300,15 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"dep duplicate id":         {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model"},{"id":"d","kind":"model"}]}`, ErrInvalidDependency},
 		"dep unknown kind":         {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"bad"}]}`, ErrInvalidDependency},
 		"dep checksum no url":      {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
-		"dep http url":             {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"http://example.com/a","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
+		"dep http url":             {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model",` +
+			`"sourceUrl":"http://example.com/a","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
 		"dep bad checksum":         {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"https://example.com/a","checksumSha256":"bad"}]}`, ErrInvalidDependency},
 		"secret bad name":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"a/b","title":"T"}]}`, ErrInvalidSecret},
 		"secret duplicate":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"},{"name":"s","title":"T"}]}`, ErrInvalidSecret},
-		"secret is setting":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"}],"settings":[{"key":"s","type":"string","title":"S"}]}`, ErrInvalidSecret},
-		"secret bad when":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T","when":{"setting":"none","is":["x"]}}]}`, ErrInvalidSetting},
+		"secret is setting":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"}],` +
+			`"settings":[{"key":"s","type":"string","title":"S"}]}`, ErrInvalidSecret},
+		"secret bad when":          {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T","when":` +
+			`{"setting":"none","is":["x"]}}]}`, ErrInvalidSetting},
 		"service bad name":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["Bad"]}`, ErrInvalidService},
 		"service duplicate":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, ErrInvalidService},
 		"setting empty key":        {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"}]}`, ErrEmptySettingKey},
@@ -313,7 +318,8 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"setting bad type":         {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"bad","title":"T"}]}`, ErrInvalidSettingType},
 		"setting enum no options":  {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T"}]}`, ErrEnumMissingOptions},
 		"setting range min > max":  {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"range","title":"T","min":20,"max":10}]}`, ErrRangeInvalidBounds},
-		"setting badoption dep":    {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d1","kind":"model"}],"settings":[{"key":"k","type":"enum","title":"T","options":[{"value":"v","dependencies":["d2"]}]}]}`, ErrInvalidSetting},
+		"setting badoption dep":    {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d1","kind":"model"}],` +
+			`"settings":[{"key":"k","type":"enum","title":"T","options":[{"value":"v","dependencies":["d2"]}]}]}`, ErrInvalidSetting},
 		"setting view no frontend": {`{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`, ErrInvalidSettingsView},
 	} {
 		_, err := manifestjson.Read(strings.NewReader(tc.json))

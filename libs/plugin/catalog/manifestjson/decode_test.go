@@ -401,7 +401,8 @@ func TestAManifestDeclaresDependencies(t *testing.T) {
 	sum := strings.Repeat("a", 64)
 	m, err := manifestjson.Read(
 		strings.NewReader(
-			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"sample-runtime","kind":"runtime"},{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`,
+			`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"sample-runtime","kind":"runtime"},` +
+				`{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`,
 		),
 	)
 	if err != nil {

@@ -62,7 +62,8 @@ func TestATypeFailureNamesTheExpectedAndTheGivenType(t *testing.T) {
 		{"book_create", `{"location":{"title":"Ferns"},"author":"Mira","tags":"moss"}`, `book_create: the argument tags must be an array, not a string`},
 		{"book_create", `{"location":{"title":"Ferns"},"author":"Mira","tags":["moss",7]}`, `book_create: the argument tags[1] must be a string, not an integer`},
 		{"catalog_update", `{"place":{"title":"Ferns"},"links":[{"target":"a.md"},{"target":"b.md","role":7}]}`, `catalog_update: the argument links[1].role must be a string, not an integer`},
-		{"catalog_update", `{"place":{"title":"Ferns"},"links":[],"groups":[{"links":[]},{"links":[]},{"links":[{"target":true}]}]}`, `catalog_update: the argument groups[2].links[0].target must be a string, not a boolean`},
+		{"catalog_update", `{"place":{"title":"Ferns"},"links":[],` +
+			`"groups":[{"links":[]},{"links":[]},{"links":[{"target":true}]}]}`, `catalog_update: the argument groups[2].links[0].target must be a string, not a boolean`},
 		{"catalog_update", `{"place":{"title":"Ferns","row":"third"},"links":[]}`, `catalog_update: the argument place.row must be an integer, not a string`},
 	} {
 		registry := books

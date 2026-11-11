@@ -8,7 +8,11 @@ func TestProfileNamingTheOldPoolingIsRejected(t *testing.T) {
 	var reported error
 	table := getShipped(
 		t,
-	).WithUserProfiles("/data/profiles", []UserFile{{Path: "h.json", Data: []byte(`{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}`)}}, func(_ string, err error) { reported = err })
+	).WithUserProfiles(
+		"/data/profiles",
+		[]UserFile{{Path: "h.json", Data: []byte(`{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}`)}},
+		func(_ string, err error) { reported = err },
+	)
 	if reported == nil {
 		t.Error("a profile with the pooling head was not reported")
 	}

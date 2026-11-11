@@ -76,7 +76,10 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		"the list of vaults cannot be opened": {
 			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
 				return cli.Indexed{Search: cli.Search{
-					Search: search.NewByName(func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }, preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil))),
+					Search: search.NewByName(
+						func(string) (domain.Vault, error) { return domain.Vault{}, errRefused },
+						preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil)),
+					),
 				}}, nil
 			},
 		},
