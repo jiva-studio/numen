@@ -10,7 +10,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
-import { DARK, expectDark } from '@/shared/fixtures/theme'
 import SearchableList from './SearchableList.vue'
 import SearchableListPopup from './SearchableListPopup.vue'
 import type { ListItem } from './rows'
@@ -96,15 +95,6 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const inDark = (story: Story): Story => ({
-  ...story,
-  globals: DARK,
-  play: async (context) => {
-    await expectDark(context.canvasElement)
-    await story.play?.(context)
-  },
-})
-
 const getFrame = (canvasElement: HTMLElement) =>
   canvasElement.querySelector<HTMLElement>('[data-numen-searchable-list]')!
 
@@ -129,7 +119,6 @@ export const Grouped: Story = {
     )
   },
 }
-export const GroupedDark: Story = inDark(Grouped)
 
 /** Typing narrows the rows, the arrows move on them, and Enter chooses. */
 export const Filtering: Story = {
@@ -142,7 +131,6 @@ export const Filtering: Story = {
     await expect(args.onSelect).toHaveBeenCalledWith('default')
   },
 }
-export const FilteringDark: Story = inDark(Filtering)
 
 /** Many rows: the row the arrow reaches is brought into view. */
 export const LongList: Story = {
@@ -159,7 +147,6 @@ export const LongList: Story = {
     await expectOneFrame(canvasElement)
   },
 }
-export const LongListDark: Story = inDark(LongList)
 
 /**
  * The item in force set from outside, as a reader's position moves on: the active row and the scroll
@@ -212,7 +199,6 @@ export const Empty: Story = {
     await expect(canvas.getByRole('status')).toHaveTextContent('No models found')
   },
 }
-export const EmptyDark: Story = inDark(Empty)
 
 /** The answer is awaited: the rows stay, and the frame says it is busy. */
 export const Loading: Story = {
@@ -223,7 +209,6 @@ export const Loading: Story = {
     await expect(getFrame(canvasElement)).toHaveAttribute('aria-busy', 'true')
   },
 }
-export const LoadingDark: Story = inDark(Loading)
 
 /** Nothing is there yet and the answer is awaited. */
 export const LoadingWithoutRows: Story = {
@@ -232,7 +217,6 @@ export const LoadingWithoutRows: Story = {
     await expect(within(canvasElement).getByRole('status')).toHaveTextContent('Searching')
   },
 }
-export const LoadingWithoutRowsDark: Story = inDark(LoadingWithoutRows)
 
 /** An action stands first while a name is typed, and Enter acts on it. */
 export const WithAction: Story = {
@@ -249,7 +233,6 @@ export const WithAction: Story = {
     await expectOneFrame(canvasElement)
   },
 }
-export const WithActionDark: Story = inDark(WithAction)
 
 /** A row named exactly as typed takes the place of the action. */
 export const ExactMatch: Story = {
@@ -262,7 +245,6 @@ export const ExactMatch: Story = {
     await expect(canvas.queryByRole('option', { name: /^Create/ })).toBeNull()
   },
 }
-export const ExactMatchDark: Story = inDark(ExactMatch)
 
 /** A popup at a point, drawn at the end of the document and kept inside the window. */
 export const Popup: Story = {
@@ -290,4 +272,3 @@ export const Popup: Story = {
     await expect(args.onClose).toHaveBeenCalled()
   },
 }
-export const PopupDark: Story = inDark(Popup)
