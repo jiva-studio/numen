@@ -33,7 +33,12 @@ const fieldDeps = {
   getPlugin: () => props.plugin,
 }
 const fields = usePluginFields(fieldDeps)
-const { getBooleanSetting, getNumberSetting, getStringSetting, setSetting: onSettingChange } = fields
+const {
+  getBooleanSetting,
+  getNumberSetting,
+  getStringSetting,
+  setSetting: onSettingChange,
+} = fields
 const { getDraft, setDraft, writeDraft } = fields
 const {
   getEnumOptions,

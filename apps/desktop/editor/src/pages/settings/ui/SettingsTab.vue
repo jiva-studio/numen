@@ -14,8 +14,15 @@ const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const { installation, initialSearchQuery } = props.state
-const { selectedPluginId, plugins, uninstalled, selectedPlugin, selectPlugin, updateQuery, goBack } =
-  useSettingsTab(props.state)
+const {
+  selectedPluginId,
+  plugins,
+  uninstalled,
+  selectedPlugin,
+  selectPlugin,
+  updateQuery,
+  goBack,
+} = useSettingsTab(props.state)
 </script>
 
 <template>

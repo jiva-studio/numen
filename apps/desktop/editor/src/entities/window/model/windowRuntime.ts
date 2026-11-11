@@ -9,7 +9,6 @@ import type { Caught } from '@/shared/api/errors'
 /** Loads the runtime module; resolves to undefined where the page is not served by Wails. */
 type WindowRuntimeLoader = WailsRuntimeLoader
 
-/** Focuses the window. */
 export async function focusWindow(load: WindowRuntimeLoader = loadWailsRuntime): Promise<void> {
   await (await load())?.Window?.Focus?.()
 }

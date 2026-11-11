@@ -28,7 +28,6 @@ const { prose, isReading, open, save } = useNoteSheet({
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(open)
-
 </script>
 
 <template>

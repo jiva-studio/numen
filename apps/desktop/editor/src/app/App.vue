@@ -53,7 +53,6 @@ const { fileFlush, getTitle } = vault.editing
 const { failure } = vault.window.health
 const { vaultList } = vault.vaults
 const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstrap
-
 </script>
 
 <template>
