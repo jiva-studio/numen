@@ -11,9 +11,9 @@ type recordedPath struct{ paths []string }
 
 func (r *recordedPath) SetVaultPath(path string) { r.paths = append(r.paths, path) }
 
-type countedView struct{ shown int }
+type countedView struct{ openedCount int }
 
-func (c *countedView) ShowOpenTabs() { c.shown++ }
+func (c *countedView) ShowOpenTabs() { c.openedCount++ }
 
 func TestSwitchVaultPointsThePluginsAtTheVaultOnlyWhereItWasShown(t *testing.T) {
 	w := newTestWindow(t, nil)
@@ -28,7 +28,7 @@ func TestSwitchVaultPointsThePluginsAtTheVaultOnlyWhereItWasShown(t *testing.T) 
 	if shownErr != nil || !errors.Is(refusedErr, window.ErrAnswerPending) {
 		t.Fatalf("errors %v and %v", shownErr, refusedErr)
 	}
-	if len(plugins.paths) != 1 || plugins.paths[0] != studio().Path || tabs.shown != 2 {
-		t.Errorf("followed %v, tabs shown %d", plugins.paths, tabs.shown)
+	if len(plugins.paths) != 1 || plugins.paths[0] != studio().Path || tabs.openedCount != 2 {
+		t.Errorf("followed %v, tabs openedCount %d", plugins.paths, tabs.openedCount)
 	}
 }
