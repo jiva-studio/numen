@@ -70,13 +70,13 @@ function createRegistrationBridge(
 ): ContextRegistrationHost {
   return {
     registerReader: (pluginId, registration) =>
-      registerReaderEntry(deps, registry.readers, {
+      registerReaderEntry(deps, registry, {
         pluginId,
         registration,
         getContext: () => registry.contexts.get(pluginId),
       }),
     registerTabKind: (pluginId, registration) =>
-      registerTabKindEntry(deps, registry.tabKinds, {
+      registerTabKindEntry(deps, registry, {
         pluginId,
         registration,
         getContext: () => registry.contexts.get(pluginId),

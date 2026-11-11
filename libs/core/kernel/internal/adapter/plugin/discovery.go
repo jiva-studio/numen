@@ -62,6 +62,7 @@ func (d *Discovery) discoverPlugins() error {
 
 	all, problems := manifestjson.Discover(d.dirs)
 	discovered := manifest.FilterByTarget(all, d.target)
+	discovered, problems = d.registry.set.refuseConflicts(discovered, problems)
 
 	if d.mode.IsClosed() {
 		return errHostClosed

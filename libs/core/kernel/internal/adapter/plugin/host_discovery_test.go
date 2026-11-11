@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
@@ -204,5 +205,39 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	}
 	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
+	}
+}
+
+func TestAPluginThatDeclaresATabKindOfAnotherPluginIsRefused(t *testing.T) {
+	tmp := t.TempDir()
+	write := func(dir, id string) {
+		path := filepath.Join(tmp, dir)
+		if err := os.Mkdir(path, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		text := `{"id":"` + id + `","name":"A","version":"1.0.0","protocol":1,"targets":["desktop.editor"],"frontend":{},` +
+			`"contributes":{"tabKinds":[{"kind":"deck","title":"Deck"}]}}`
+		if err := os.WriteFile(filepath.Join(path, "manifest.json"), []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("first", "org.example.first")
+	write("second", "org.example.second")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	var reported []error
+	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
+
+	if err := host.Discovery.Discover(); err != nil {
+		t.Fatalf("Discover failed: %v", err)
+	}
+
+	if _, ok := host.Registry.GetPlugin("org.example.first"); !ok {
+		t.Error("the plugin first in the order of ids was refused")
+	}
+	if _, ok := host.Registry.GetPlugin("org.example.second"); ok {
+		t.Error("the plugin that declares the same tab kind was registered")
+	}
+	if len(reported) == 0 || !errors.Is(reported[0], manifest.ErrInvalidContribution) {
+		t.Errorf("reported = %v, want an invalid contribution", reported)
 	}
 }

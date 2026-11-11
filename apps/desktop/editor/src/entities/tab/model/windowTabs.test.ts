@@ -901,17 +901,35 @@ describe('the registration of a kind', () => {
     expect(window.tabs.getTab(id)?.state).toMatchObject({ kind: 'thing', targetPath: 'a' })
   })
 
-  it('is kept when the disposer of a registration it replaced runs late', async () => {
+  it('is refused for a kind another registration holds, which keeps its kind', async () => {
     const window = createTestTabs()
-    const first = kind().one
-    const second = kind().one
-    const disposeFirst = window.groups.registerKind(first)
-    window.groups.registerKind(second)
+    const first = { ...kind().one, pluginId: 'md.numen.first' }
+    const second = { ...kind().one, pluginId: 'md.numen.second' }
+    window.groups.registerKind(first)
 
-    disposeFirst()
+    expect(() => window.groups.registerKind(second)).toThrowError(
+      'The tab kind "thing" is registered already by plugin "md.numen.first"',
+    )
 
     const id = await window.tabs.createTab('thing', 'a')
-    expect(window.tabs.getTab(id)?.kind).toBe(second)
+    expect(window.tabs.getTab(id)?.kind).toBe(first)
+  })
+
+  it('is refused in a list of kinds that names a kind twice, and registers none of them', () => {
+    const window = createTestTabs()
+
+    expect(() => window.groups.registerKinds([kind().one, kind().one])).toThrowError(
+      'is registered already',
+    )
+
+    expect(window.groups.hasKind('thing')).toBe(false)
+  })
+
+  it('is free again after the disposer of the registration runs', () => {
+    const window = createTestTabs()
+    window.groups.registerKind(kind().one)()
+
+    expect(() => window.groups.registerKind(kind().one)).not.toThrow()
   })
 
   it('names the plugin of the kind of a tab', async () => {
@@ -1412,8 +1430,8 @@ describe('the tabs of a plugin that stops', () => {
     expect(window.tabs.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
     expect(window.tabs.getTab('other:b.bin')?.kind.pluginId).toBeUndefined()
 
-    // Re-registering `paged` again while `paged:a.bin` is already active does not replace it
-    window.groups.registerKind(makeKind(false))
+    // Registering `paged` again while it is registered is refused and leaves `paged:a.bin` alone
+    expect(() => window.groups.registerKind(makeKind(false))).toThrowError('is registered already')
     expect(disposed).toStrictEqual(['open:paged:a.bin'])
 
     // Closing plugin when kind defines only onClose calls onClose

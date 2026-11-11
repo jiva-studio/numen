@@ -66,44 +66,7 @@ describe('a command run by its id', () => {
   })
 })
 
-describe('a registration replaced under the same id', () => {
-  it('stays when the registration it replaced is disposed', () => {
-    const host = createPluginHost(createDeps())
-    const ctx = host.lifecycle.createContext('sample.plugin', declaring('sample.plugin'))
-    const firstReader = ctx.register.reader({
-      id: 'pdf',
-      title: 'First',
-      component: STUB_COMPONENT,
-    })
-    ctx.register.reader({ id: 'pdf', title: 'Second', component: STUB_COMPONENT })
-    const firstTab = ctx.register.tabKind({
-      kind: 'custom',
-      title: 'First',
-      component: STUB_COMPONENT,
-    })
-    ctx.register.tabKind({ kind: 'custom', title: 'Second', component: STUB_COMPONENT })
-    const firstAgent = ctx.register.agentProvider({
-      id: 'agent',
-      name: 'First',
-      createAgent: vi.fn(),
-    })
-    const secondAgent = ctx.register.agentProvider({
-      id: 'agent',
-      name: 'Second',
-      createAgent: vi.fn(),
-    })
-
-    firstReader.dispose()
-    firstTab.dispose()
-    firstAgent.dispose()
-
-    expect(host.registered.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['Second'])
-    expect(host.registered.getRegisteredTabKinds().map((one) => one.title)).toStrictEqual([
-      'Second',
-    ])
-    secondAgent.dispose()
-  })
-
+describe('registrations of a plugin', () => {
   it('leaves the registrations of other plugins when one plugin is disposed', () => {
     const host = createPluginHost(createDeps())
     const handler = vi.fn()
@@ -422,6 +385,7 @@ describe('a reader opened at a selector', () => {
     expect(unregExt).toHaveBeenCalledTimes(1)
 
     // Re-register reader:bin to test selector setting and error handling
+    sub1.dispose()
     host.lifecycle
       .createContext('sample.plugin', declaring('sample.plugin'))
       .register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })

@@ -50,8 +50,10 @@ export function createRegistrations(
   const permissions = target.manifest?.permissions ?? []
   return {
     reader: (reg: ReaderRegistration) => {
-      requireDeclaredReader(target, reg.id)
-      return add(host.registration.registerReader(pluginId, reg))
+      // Copied once: a getter on the registration cannot answer the check and the host differently.
+      const snapshot = { ...reg }
+      requireDeclaredReader(target, snapshot.id)
+      return add(host.registration.registerReader(pluginId, snapshot))
     },
     settingsView: (reg: SettingsViewRegistration) => {
       requireDeclaredSettingsView(target, reg.id)
@@ -59,8 +61,9 @@ export function createRegistrations(
     },
     slotView,
     tabKind: <State extends object>(reg: TabKindRegistration<State>) => {
-      requireDeclaredTabKind(target, reg.kind)
-      return add(host.registration.registerTabKind(pluginId, reg))
+      const snapshot = { ...reg }
+      requireDeclaredTabKind(target, snapshot.kind)
+      return add(host.registration.registerTabKind(pluginId, snapshot))
     },
     command: (reg: CommandRegistration) => {
       requireDeclaredCommand(target, reg.id, isSharedCommand(reg.id))

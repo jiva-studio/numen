@@ -19,12 +19,23 @@ export function useTabGroups(store: TabStore) {
   const navigation = createTabNavigation(store, createTabOpeners(store))
   const kinds = computed(() => [...byKind.value.values()])
 
+  const requireFree = (registered: ReadonlyMap<string, AnyTabKind>, kind: AnyTabKind): void => {
+    const holder = registered.get(kind.kind)
+    if (!holder) return
+    throw new Error(
+      `The tab kind "${kind.kind}" is registered already${holder.pluginId ? ` by plugin "${holder.pluginId}"` : ''}`,
+    )
+  }
   const registerKinds = (declared: readonly AnyTabKind[]) => {
     const registered = new Map(byKind.value)
-    for (const one of declared) registered.set(one.kind, one)
+    for (const one of declared) {
+      requireFree(registered, one)
+      registered.set(one.kind, one)
+    }
     byKind.value = registered
   }
   const registerKind = (kind: AnyTabKind): (() => void) => {
+    requireFree(byKind.value, kind)
     byKind.value = new Map(byKind.value).set(kind.kind, kind)
     placeholders.reopenTabsOf(kind)
     return () => {

@@ -3,6 +3,8 @@
 package pluginmanifest
 
 import (
+	"slices"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -42,19 +44,31 @@ func (m Manifests) ListCommands() []plugindomain.CommandEntry {
 	return found
 }
 
-// ListTabKinds lists the tab kinds the manifests of the enabled plugins declare. No plugin is started.
+// ListTabKinds lists the tab kinds the manifests of the enabled plugins declare. A plugin that declares a
+// tab kind, a reader or a type of dropped data an earlier plugin already declares is left out whole.
+// No plugin is started.
 func (m Manifests) ListTabKinds() []plugindomain.TabKindEntry {
 	var found []plugindomain.TabKindEntry
-	for _, info := range m.host.GetPluginInfos() {
-		plugin, isEnabled := m.host.GetPlugin(info.ID)
-		if !isEnabled {
-			continue
-		}
+	for _, plugin := range m.listUncontested() {
 		for _, kind := range plugin.Manifest.Contributes.TabKinds {
 			found = append(found, plugindomain.TabKindEntry{PluginID: plugin.Manifest.ID, TabKind: kind})
 		}
 	}
 	return found
+}
+
+func (m Manifests) listUncontested() []manifest.Discovered {
+	var enabled []manifest.Discovered
+	for _, info := range m.host.GetPluginInfos() {
+		if plugin, isEnabled := m.host.GetPlugin(info.ID); isEnabled {
+			enabled = append(enabled, plugin)
+		}
+	}
+	conflicting := map[string]bool{}
+	for _, conflict := range manifest.ListContributionConflicts(enabled) {
+		conflicting[conflict.PluginID] = true
+	}
+	return slices.DeleteFunc(enabled, func(plugin manifest.Discovered) bool { return conflicting[plugin.Manifest.ID] })
 }
 
 // ListSlots lists the slot entries the manifests of the enabled plugins declare. No plugin is started.
