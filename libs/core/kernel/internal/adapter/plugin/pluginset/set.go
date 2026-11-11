@@ -48,6 +48,7 @@ type Set struct {
 	values *Values
 	mode   modeState
 
+	scan     ScanLock
 	mu       sync.RWMutex
 	plugins  map[string]manifest.Discovered
 	onDisk   map[string]bool
@@ -325,4 +326,9 @@ func (s *Set) AddBuiltIn(p manifest.Discovered, serve func(vars map[string]strin
 // ListProblems returns the problems the last scan met.
 func (v View) ListProblems() []manifestjson.DiscoveryProblem {
 	return v.set.problems
+}
+
+// Scan returns the lock that keeps a scan of the plugin folders apart from the start of a plugin.
+func (s *Set) Scan() *ScanLock {
+	return &s.scan
 }

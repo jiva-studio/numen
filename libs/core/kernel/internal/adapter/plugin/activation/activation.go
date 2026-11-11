@@ -20,7 +20,6 @@ import (
 // hold it, and says which plugin a caller is.
 type Activation struct {
 	set       *pluginset.Set
-	scan      *pluginset.ScanLock
 	mode      modeState
 	sups      *supervision.Supervisors
 	processes *supervision.Processes
@@ -41,13 +40,24 @@ type configurer interface {
 	ConfigureActivated(ctx context.Context, pluginID string) error
 }
 
-// New returns the activation over the set of plugins and the lock that keeps a start apart from a scan, the mode of the host, the supervisors, the processes, the failures,
+// Deps are what an activation reads: the set of plugins, the mode of the host, the supervisors, the processes, the failures,
 // the configuration push and the clock.
-func New(
-	set *pluginset.Set, scan *pluginset.ScanLock, mode modeState, sups *supervision.Supervisors, processes *supervision.Processes,
-	failures *supervision.Failures, config configurer, clock machineport.Clock,
-) *Activation {
-	return &Activation{set: set, scan: scan, mode: mode, sups: sups, processes: processes, failures: failures, config: config, clock: clock}
+type Deps struct {
+	Set       *pluginset.Set
+	Mode      modeState
+	Sups      *supervision.Supervisors
+	Processes *supervision.Processes
+	Failures  *supervision.Failures
+	Config    configurer
+	Clock     machineport.Clock
+}
+
+// New returns the activation over deps.
+func New(deps Deps) *Activation {
+	return &Activation{
+		set: deps.Set, mode: deps.Mode, sups: deps.Sups, processes: deps.Processes, failures: deps.Failures,
+		config: deps.Config, clock: deps.Clock,
+	}
 }
 
 // ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
@@ -176,8 +186,9 @@ func (a *Activation) EnsureActive(ctx context.Context, pluginID string) (transpo
 }
 
 func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	a.scan.BeginActivation()
-	defer a.scan.EndActivation()
+	scan := a.set.Scan()
+	scan.BeginActivation()
+	defer scan.EndActivation()
 
 	for {
 		p, sup, err := a.prepareSupervisor(pluginID)

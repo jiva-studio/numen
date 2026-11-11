@@ -79,7 +79,7 @@ func startKillableLauncher(t *testing.T, echoPort int) (supervision.Launcher, fu
 func TestTheReleaseOfACrashedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) {
 	root := t.TempDir()
 	createListenerPlugin(t, root, "mcp", getFreePort(t))
-	host := openHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	launcher, getProcesses := startKillableLauncher(t, serveEcho(t))
 	host.Processes.SetLauncher(launcher)
@@ -146,7 +146,7 @@ func TestListenerPortFreedAfterBindFailureClearsItOnDiscovery(t *testing.T) {
 func TestASyncKeepsTheFailureOfAPluginThatFailedToStart(t *testing.T) {
 	w := newListenerHost(t)
 	cause := supervision.ErrListenerNotReported
-	if failure := w.host.Failures.RecordActivationFailure(listenerPlugin, partsOf(w.host).set.GetName(listenerPlugin), cause); failure == nil {
+	if failure := w.host.Failures.RecordActivationFailure(listenerPlugin, w.host.Registry.Set().GetName(listenerPlugin), cause); failure == nil {
 		t.Fatal("the failure was not recorded")
 	}
 

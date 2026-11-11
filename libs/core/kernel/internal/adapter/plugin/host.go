@@ -80,20 +80,6 @@ func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPl
 // NewHost creates a new plugin host for the specified target application and search paths.
 // The host reads the time from clock.
 func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
-	host, _ := assemble(clock, target, dirs)
-	return host
-}
-
-// assembly is the parts the roles of a host share, which the tests of this package reach.
-type assembly struct {
-	sups    *supervision.Supervisors
-	set     *pluginset.Set
-	scan    *pluginset.ScanLock
-	stopper *supervision.Stopper
-	evictor *supervision.Evictor
-}
-
-func assemble(clock machineport.Clock, target string, dirs []string) (*Host, assembly) {
 	errs := &errsink.Sink{}
 	mode := hostmode.New()
 	values := pluginset.NewValues()
@@ -103,7 +89,6 @@ func assemble(clock machineport.Clock, target string, dirs []string) (*Host, ass
 	sups := supervision.NewSupervisors(errs.Report, services.ClearPlugin)
 	failures := supervision.NewFailures(sups, clock, errs)
 	set := pluginset.New(sups, values, mode)
-	scan := &pluginset.ScanLock{}
 	files := storage.New(errs.Report, func(pluginID string) string {
 		p, _ := set.GetKnown(pluginID)
 		return p.Manifest.Version
@@ -113,17 +98,26 @@ func assemble(clock machineport.Clock, target string, dirs []string) (*Host, ass
 	evictor := supervision.NewEvictor(stopper)
 
 	config := configpush.New(set, sups, errs.Report)
-	activator := activation.New(set, scan, mode, sups, processes, failures, config, clock)
+	activator := activation.New(activation.Deps{
+		Set: set, Mode: mode, Sups: sups, Processes: processes, Failures: failures, Config: config, Clock: clock,
+	})
 	bus := events.New(set, mode, sups, activator, clock)
-	listening := listeners.New(set, mode, sups, activator, failures, clock, errs.Report)
+	listening := listeners.New(listeners.Deps{
+		Set: set, Mode: mode, Sups: sups, Activator: activator, Failures: failures, Clock: clock, Report: errs.Report,
+	})
 
-	host := &Host{
-		Registry:     registry.New(set, mode, sups, failures, readers),
-		Discovery:    discovery.New(set, scan, mode, sups, stopper, listening, files, config, errs.Report, dirs, target),
-		Activation:   activator,
-		Retry:        activation.NewRetry(set, failures, activator, listening),
-		Processes:    processes,
-		Teardown:     teardown.New(mode, sups, stopper, evictor, bus, listening, errs.Report),
+	return &Host{
+		Registry: registry.New(set, mode, sups, failures, readers),
+		Discovery: discovery.New(discovery.Deps{
+			Set: set, Mode: mode, Sups: sups, Stopper: stopper, Listeners: listening, Storage: files, Scans: config,
+			Report: errs.Report, Dirs: dirs, Target: target,
+		}),
+		Activation: activator,
+		Retry:      activation.NewRetry(set, failures, activator, listening),
+		Processes:  processes,
+		Teardown: teardown.New(teardown.Deps{
+			Mode: mode, Sups: sups, Stopper: stopper, Evictor: evictor, Events: bus, Listeners: listening, Report: errs.Report,
+		}),
 		Failures:     failures,
 		Settings:     settings.New(values, set, listening, config, errs.Report),
 		Config:       config,
@@ -134,5 +128,4 @@ func assemble(clock machineport.Clock, target string, dirs []string) (*Host, ass
 		Events:       bus,
 		Mode:         mode,
 	}
-	return host, assembly{sups: sups, set: set, scan: scan, stopper: stopper, evictor: evictor}
 }

@@ -121,10 +121,10 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 				d.scanned = append(d.scanned, slices.Clone(paths))
 				return nil
 			},
+			Locks: hold.NewLocks(writers, testsupport.GetMachine(), hold.LockHold),
 		},
 		hostvault.Lookups{}, hostvault.Connections{}, hostvault.Arranger{},
 		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
-		hold.NewLocks(writers, testsupport.GetMachine(), hold.LockHold),
 	)
 }
 

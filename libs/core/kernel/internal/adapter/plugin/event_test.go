@@ -89,7 +89,7 @@ func newEventHost(t *testing.T, manifests map[string]catalogmanifest.Manifest, p
 
 func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *Host {
 	t.Helper()
-	host := openHost(clock, "desktop.editor")
+	host := NewHost(clock, "desktop.editor")
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id

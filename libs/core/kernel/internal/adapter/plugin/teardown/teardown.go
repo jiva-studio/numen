@@ -22,6 +22,7 @@ type listenerControl interface {
 // evictionTimer ends the timer that stops the idle plugins.
 type evictionTimer interface {
 	Stop()
+	IsRunning() bool
 }
 
 // modeState is what the teardown sets of the mode of the host.
@@ -42,13 +43,24 @@ type Teardown struct {
 	report    func(error)
 }
 
-// New returns the teardown over the mode of the host, the supervisors, the stopper, the timer of the evictions, the events and the listeners; report receives
-// the errors of a stop.
-func New(
-	mode modeState, sups *supervision.Supervisors, stopper *supervision.Stopper, evictor evictionTimer, events eventCloser,
-	listeners listenerControl, report func(error),
-) *Teardown {
-	return &Teardown{mode: mode, sups: sups, stopper: stopper, evictor: evictor, events: events, listeners: listeners, report: report}
+// Deps are what a teardown stops and sets: the mode of the host, the supervisors, the stopper, the timer of the evictions, the
+// events and the listeners. Report receives the errors of a stop.
+type Deps struct {
+	Mode      modeState
+	Sups      *supervision.Supervisors
+	Stopper   *supervision.Stopper
+	Evictor   evictionTimer
+	Events    eventCloser
+	Listeners listenerControl
+	Report    func(error)
+}
+
+// New returns the teardown over deps.
+func New(deps Deps) *Teardown {
+	return &Teardown{
+		mode: deps.Mode, sups: deps.Sups, stopper: deps.Stopper, evictor: deps.Evictor, events: deps.Events,
+		listeners: deps.Listeners, report: deps.Report,
+	}
 }
 
 // StopPlugin stops the process of the plugin, if one runs, and forgets its endpoint.
@@ -88,4 +100,14 @@ func (t *Teardown) TeardownAll(ctx context.Context, gracePeriod time.Duration) e
 		firstErr = err
 	}
 	return firstErr
+}
+
+// IsEvicting reports whether the idle plugins are stopped on a timer.
+func (t *Teardown) IsEvicting() bool {
+	return t.evictor.IsRunning()
+}
+
+// EvictTargets stops the targets and returns the ids of the ones it stopped.
+func (t *Teardown) EvictTargets(ctx context.Context, targets []supervision.Target, gracePeriod time.Duration) []string {
+	return t.stopper.EvictTargets(ctx, targets, gracePeriod)
 }

@@ -105,7 +105,7 @@ func newBuiltInBackend() *builtInBackend {
 
 func newBuiltInHost(t *testing.T, dirs ...string) *Host {
 	t.Helper()
-	host := openHost(testsupport.GetMachine(), "desktop.editor", dirs...)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", dirs...)
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -230,7 +230,7 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 	if err := host.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, pluginset.ErrBuiltInRegistered) {
 		t.Errorf("second registration = %v, want pluginset.ErrBuiltInRegistered", err)
 	}
-	other := openHost(testsupport.GetMachine(), "mobile.reader")
+	other := NewHost(testsupport.GetMachine(), "mobile.reader")
 	t.Cleanup(func() {
 		if err := other.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -358,7 +358,7 @@ func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
 	sup := supervisorOf(host, firstBuiltInID)
 
-	endpoint, err := host.Processes.Start(t.Context(), partsOf(host).set.GetLaunch(p), sup)
+	endpoint, err := host.Processes.Start(t.Context(), host.Registry.Set().GetLaunch(p), sup)
 
 	if !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("expected errActivationAborted, got %v", err)
@@ -466,7 +466,7 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
 	sup := supervisorOf(host, firstBuiltInID)
 
-	if _, err := host.Processes.Start(t.Context(), partsOf(host).set.GetLaunch(p), sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
+	if _, err := host.Processes.Start(t.Context(), host.Registry.Set().GetLaunch(p), sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("activatePlugin = %v, want errActivationAborted", err)
 	}
 

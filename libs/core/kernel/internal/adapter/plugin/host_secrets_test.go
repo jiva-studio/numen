@@ -193,7 +193,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	host := openHost(testsupport.GetMachine(), "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -544,7 +544,7 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 		t.Fatalf("pruned with %v, want the declarations of the installed plugin", pruned)
 	}
 
-	partsOf(host).set.ReplaceDiscovered(nil, []manifestjson.DiscoveryProblem{{Dir: "/plugins/broken", Err: errors.New("unreadable")}})
+	host.Registry.Set().ReplaceDiscovered(nil, []manifestjson.DiscoveryProblem{{Dir: "/plugins/broken", Err: errors.New("unreadable")}})
 	host.Config.PruneSecretPermissions()
 	if len(pruned) != 1 {
 		t.Errorf("a scan with a problem pruned again: %v", pruned)

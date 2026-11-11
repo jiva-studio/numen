@@ -57,7 +57,6 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 			},
 			Cache: appstate.PluginCachesAt(t.TempDir()),
 		},
-		nil,
 	), v
 }
 
@@ -202,7 +201,7 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
-		Files{}, Lookups{}, Connections{}, Arranger{}, Stores{}, nil,
+		Files{}, Lookups{}, Connections{}, Arranger{}, Stores{},
 	)
 
 	_, _, readErr := access.Files.Read(t.Context(), "a.md")

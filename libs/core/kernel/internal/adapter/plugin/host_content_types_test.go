@@ -15,7 +15,7 @@ import (
 )
 
 func newReaderHost(manifests ...catalogmanifest.Manifest) *Host {
-	host := openHost(testsupport.GetMachine(), "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}

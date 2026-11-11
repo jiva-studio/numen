@@ -51,7 +51,6 @@ type cacheRemover interface {
 // left the disk.
 type Discovery struct {
 	set       *pluginset.Set
-	scan      *pluginset.ScanLock
 	mode      modeState
 	sups      *supervision.Supervisors
 	stopper   pluginStopper
@@ -63,16 +62,26 @@ type Discovery struct {
 	target    string
 }
 
-// New returns the discovery of the plugins in dirs that target the target, over the set of plugins and the lock that keeps a scan apart
-// from a start, the mode of the host and the
-// parts it informs of a scan; report receives the errors of a scan.
-func New(
-	set *pluginset.Set, scan *pluginset.ScanLock, mode modeState, sups *supervision.Supervisors, stopper pluginStopper, listeners listenerSync,
-	storage cacheRemover, scans scanRecorder, report func(error), dirs []string, target string,
-) *Discovery {
+// Deps are what a discovery of the plugins in Dirs that target Target reads and informs: the set of plugins, the mode of the
+// host, the supervisors, the stopper, the listeners, the storage and the record of scans. Report receives the errors of a scan.
+type Deps struct {
+	Set       *pluginset.Set
+	Mode      modeState
+	Sups      *supervision.Supervisors
+	Stopper   pluginStopper
+	Listeners listenerSync
+	Storage   cacheRemover
+	Scans     scanRecorder
+	Report    func(error)
+	Dirs      []string
+	Target    string
+}
+
+// New returns the discovery over deps.
+func New(deps Deps) *Discovery {
 	return &Discovery{
-		set: set, scan: scan, mode: mode, sups: sups, stopper: stopper, listeners: listeners,
-		storage: storage, scans: scans, report: report, dirs: dirs, target: target,
+		set: deps.Set, mode: deps.Mode, sups: deps.Sups, stopper: deps.Stopper, listeners: deps.Listeners,
+		storage: deps.Storage, scans: deps.Scans, report: deps.Report, dirs: deps.Dirs, target: deps.Target,
 	}
 }
 
@@ -88,8 +97,9 @@ func (d *Discovery) Discover() error {
 }
 
 func (d *Discovery) discoverPlugins() error {
-	d.scan.BeginScan()
-	defer d.scan.EndScan()
+	scan := d.set.Scan()
+	scan.BeginScan()
+	defer scan.EndScan()
 
 	all, problems := manifestjson.Discover(d.dirs)
 	discovered := manifest.FilterByTarget(all, d.target)

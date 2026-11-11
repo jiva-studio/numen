@@ -55,15 +55,23 @@ type Listeners struct {
 	bindings map[string]map[string]listenerBinding
 }
 
-// New returns the listeners over the set of plugins, the mode of the host, the supervisors, the activator, the failures and the
-// clock; report receives the errors the listeners meet.
-func New(
-	set *pluginset.Set, mode modeState, sups *supervision.Supervisors, activator pluginActivator, failures *supervision.Failures,
-	clock machineport.Clock, report func(error),
-) *Listeners {
+// Deps are what the listeners read: the set of plugins, the mode of the host, the supervisors, the activator, the failures and
+// the clock. Report receives the errors the listeners meet.
+type Deps struct {
+	Set       *pluginset.Set
+	Mode      modeState
+	Sups      *supervision.Supervisors
+	Activator pluginActivator
+	Failures  *supervision.Failures
+	Clock     machineport.Clock
+	Report    func(error)
+}
+
+// New returns the listeners over deps.
+func New(deps Deps) *Listeners {
 	return &Listeners{
-		set: set, mode: mode, sups: sups, activator: activator, failures: failures, clock: clock, report: report,
-		bindings: make(map[string]map[string]listenerBinding),
+		set: deps.Set, mode: deps.Mode, sups: deps.Sups, activator: deps.Activator, failures: deps.Failures, clock: deps.Clock,
+		report: deps.Report, bindings: make(map[string]map[string]listenerBinding),
 	}
 }
 

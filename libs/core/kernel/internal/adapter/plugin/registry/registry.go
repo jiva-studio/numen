@@ -143,3 +143,13 @@ func (r *Registry) IsEnabled(pluginID string) bool {
 	_, ok := r.GetPlugin(pluginID)
 	return ok
 }
+
+// Set returns the set of plugins the registry answers from.
+func (r *Registry) Set() *pluginset.Set {
+	return r.set
+}
+
+// Supervisors returns the supervisors whose states the registry reports.
+func (r *Registry) Supervisors() *supervision.Supervisors {
+	return r.sups
+}

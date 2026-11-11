@@ -147,7 +147,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 // ResolveCapability reports why no plugin responds: none declares the
 // capability, or those that do are disabled or turned off by safe mode.
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
-	host := openHost(testsupport.GetMachine(), "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
 		setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}})
 	}
@@ -196,7 +196,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // A plugin EnsureActive cannot start is distinguished from one that is absent
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
-	host := openHost(testsupport.GetMachine(), "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}})
 	if err := setEnabled(t.Context(), host, "md.numen.a", false); err != nil {
 		t.Fatal(err)
@@ -214,7 +214,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 }
 
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
-	host := openHost(testsupport.GetMachine(), "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
 		setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
 	}
@@ -241,7 +241,7 @@ func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 }
 
 func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
-	host := openHost(testsupport.GetMachine(), "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 	cmd := wiretest.NewIdleCommand(t.Context())
@@ -273,7 +273,7 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	evicted := stopperOf(host).EvictTargets(canceled, []supervision.Target{{ID: "p", PID: cmd.Process.Pid, Sup: sup, Endpoint: supervision.NoEndpoint()}}, time.Millisecond)
+	evicted := host.Teardown.EvictTargets(canceled, []supervision.Target{{ID: "p", PID: cmd.Process.Pid, Sup: sup, Endpoint: supervision.NoEndpoint()}}, time.Millisecond)
 
 	if len(evicted) != 0 {
 		t.Fatalf("a failed eviction was counted: %v", evicted)

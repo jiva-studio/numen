@@ -183,7 +183,7 @@ func newUndiscoveredListenerHost(t *testing.T, name string, defaultPort int, lis
 	t.Helper()
 	root := t.TempDir()
 	createListenerPlugin(t, root, name, defaultPort)
-	host := openHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startRelayLauncher(t, &started, listenerToken))
@@ -530,7 +530,7 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	root := t.TempDir()
 	port := getFreePort(t)
 	writeFixedPortListenerPlugin(t, root, port)
-	host := openHost(testsupport.GetMachine(), "desktop.editor", root)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
