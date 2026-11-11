@@ -96,7 +96,7 @@ func TestSourceSizeRule_CountsEveryLineOfARawString(t *testing.T) {
 
 // A line wider than the limit is refused in a production file and in a test file, and a generated file is
 // not read.
-func TestSourceSizeRule_RejectsAWideLineOfAHandWrittenFile(t *testing.T) {
+func TestSourceSizeRule_RejectsAWideLineInAnyNonGeneratedFile(t *testing.T) {
 	wide := "var _ = \"" + strings.Repeat("x", 200) + "\"\n"
 	dir := writeTree(t, map[string]string{
 		"m/go.mod":       "module m\n",

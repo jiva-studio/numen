@@ -29,7 +29,7 @@ func TestNoGoTextIsSpeltInBritishEnglish(t *testing.T) {
 		t.Fatal(err)
 	}
 	var found []load.Finding
-	seen := map[string]bool{}
+	visited := map[string]bool{}
 	for _, module := range load.ListWorkspaceModules(t) {
 		err := filepath.WalkDir(module, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil {
@@ -41,10 +41,10 @@ func TestNoGoTextIsSpeltInBritishEnglish(t *testing.T) {
 				}
 				return nil
 			}
-			if !strings.HasSuffix(path, ".go") || seen[path] {
+			if !strings.HasSuffix(path, ".go") || visited[path] {
 				return nil
 			}
-			seen[path] = true
+			visited[path] = true
 			rel, err := filepath.Rel(root, path)
 			if err != nil {
 				return err
@@ -65,8 +65,8 @@ func TestNoGoTextIsSpeltInBritishEnglish(t *testing.T) {
 			t.Errorf("the allow-list entry %s %s lets nothing through", one.path, one.word)
 		}
 	}
-	if len(seen) < 1000 {
-		t.Fatalf("%d Go files read: the walk is not reading the workspace", len(seen))
+	if len(visited) < 1000 {
+		t.Fatalf("%d Go files read: the walk is not reading the workspace", len(visited))
 	}
 }
 

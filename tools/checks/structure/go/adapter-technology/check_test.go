@@ -68,7 +68,7 @@ func TestMain(m *testing.M) {
 }
 
 // The libraries that frame the wire are no technology a call reaches outside the process through.
-func TestTechnologyCallRule_LeavesOutTheWireFraming(t *testing.T) {
+func TestTechnologyCallRule_ExcludesTheWireFraming(t *testing.T) {
 	for path, want := range map[string]bool{
 		"connectrpc.com/connect": false, "google.golang.org/protobuf/proto": false,
 		"os": true, "net/http": true, "modernc.org/sqlite": true, "time": false,

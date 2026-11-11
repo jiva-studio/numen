@@ -78,7 +78,7 @@ func TestUseCasesImportOnlyDomainAndPorts(t *testing.T) {
 
 // A helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
 // whose methods change its state. A helper that does is an adapter or a use case under a helper's name.
-func TestHelperPackagesAreLeaves(t *testing.T) {
+func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
@@ -99,7 +99,7 @@ func TestHelperPackagesAreLeaves(t *testing.T) {
 // The rule refuses a helper that imports a port, a use case or a technology package and one that exports a type
 // whose method assigns to a field, increments, deletes from a map or writes through its receiver; it lets
 // through a pure function, a method that only reads, and a type of another layer.
-func TestHelperRule_RejectsAHelperThatHoldsStateOrReachesOut(t *testing.T) {
+func TestHelperRule_RejectsAHelperWithStateOrOutsideImports(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface{ Read() string }\n",
 		"usecase/find/find.go":      "package find\n\ntype Find struct{}\n",

@@ -206,12 +206,12 @@ func getAllowance(allowed []*allowance, path, word string) *allowance {
 func listHits(rel, path string, src any, dict dictionary, allowed []*allowance) ([]load.Finding, error) {
 	hits, err := listBritishWords(path, src, dict)
 	var found []load.Finding
-	for _, hit := range hits {
-		if one := getAllowance(allowed, rel, hit.british); one != nil {
+	for _, match := range hits {
+		if one := getAllowance(allowed, rel, match.british); one != nil {
 			one.used = true
 			continue
 		}
-		found = append(found, load.Finding{Position: fmt.Sprintf("%s:%d", rel, hit.line), Name: hit.british + " is British, write " + hit.american})
+		found = append(found, load.Finding{Position: fmt.Sprintf("%s:%d", rel, match.line), Name: match.british + " is British, write " + match.american})
 	}
 	return found, err
 }

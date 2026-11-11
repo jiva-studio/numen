@@ -67,11 +67,11 @@ func getReceiverTypeName(expr ast.Expr) (name string, isPointer bool) {
 	if star, ok := expr.(*ast.StarExpr); ok {
 		expr, isPointer = star.X, true
 	}
-	switch typed := expr.(type) {
+	switch node := expr.(type) {
 	case *ast.Ident:
-		return typed.Name, isPointer
+		return node.Name, isPointer
 	case *ast.IndexExpr:
-		if ident, ok := typed.X.(*ast.Ident); ok {
+		if ident, ok := node.X.(*ast.Ident); ok {
 			return ident.Name, isPointer
 		}
 	}
@@ -86,15 +86,15 @@ func isMutating(info *types.Info, body *ast.BlockStmt, receiver types.Object) bo
 	}
 	isRooted := func(expr ast.Expr) bool {
 		for {
-			switch typed := ast.Unparen(expr).(type) {
+			switch node := ast.Unparen(expr).(type) {
 			case *ast.SelectorExpr:
-				expr = typed.X
+				expr = node.X
 			case *ast.IndexExpr:
-				expr = typed.X
+				expr = node.X
 			case *ast.StarExpr:
-				expr = typed.X
+				expr = node.X
 			case *ast.Ident:
-				return info.Uses[typed] == receiver
+				return info.Uses[node] == receiver
 			default:
 				return false
 			}

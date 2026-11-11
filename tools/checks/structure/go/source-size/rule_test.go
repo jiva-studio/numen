@@ -54,17 +54,17 @@ func countCodeLines(src []byte) int {
 	scan.Init(file, src, nil, 0)
 	lines := map[int]bool{}
 	for {
-		pos, tok, lit := scan.Scan()
+		pos, tok, literal := scan.Scan()
 		if tok == token.EOF {
 			break
 		}
-		if tok == token.SEMICOLON && lit == "\n" {
+		if tok == token.SEMICOLON && literal == "\n" {
 			continue
 		}
 		first := file.Line(pos)
 		last := first
 		if tok == token.STRING {
-			last += strings.Count(lit, "\n")
+			last += strings.Count(literal, "\n")
 		}
 		for line := first; line <= last; line++ {
 			lines[line] = true
