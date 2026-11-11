@@ -37,7 +37,6 @@ type State struct {
 
 	DetachTab func(context.Context, window.DetachedTab) error
 
-
 	Window *wire.Window
 
 	Indexing IndexState
