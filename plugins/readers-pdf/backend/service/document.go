@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
 // DocumentServer answers the document methods of the plugin API. Each call works the vault its Numen-Vault
@@ -56,12 +55,12 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req api.GetHighlight
 	for _, one := range req.Ranges {
 		ranges = append(ranges, domain.ByteRange{Start: one.Start, End: one.End})
 	}
-	boxes, err := s.reader.GetHighlights(ctx, host.GetRequestVault(server.GetHeader(ctx)), req.Path, ranges)
+	runs, err := s.reader.GetHighlights(ctx, host.GetRequestVault(server.GetHeader(ctx)), req.Path, ranges)
 	if err != nil {
 		return api.GetHighlightsResponse{}, getAPIError(err)
 	}
-	out := api.GetHighlightsResponse{Runs: make([]api.DocumentRun, 0, len(boxes))}
-	for _, run := range boxes {
+	out := api.GetHighlightsResponse{Runs: make([]api.DocumentRun, 0, len(runs))}
+	for _, run := range runs {
 		out.Runs = append(out.Runs, api.DocumentRun{Places: writePlaces(run)})
 	}
 	return out, nil
@@ -83,15 +82,14 @@ func getAPIError(err error) error {
 	}
 }
 
-func writePlaces(boxes []pdf.HighlightBox) []api.DocumentPlace {
-	places := []api.DocumentPlace{}
-	for _, box := range boxes {
-		rect := api.DocumentRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
-		if n := len(places); n > 0 && places[n-1].Page == box.Page {
-			places[n-1].Rects = append(places[n-1].Rects, rect)
-			continue
+func writePlaces(places []document.Place) []api.DocumentPlace {
+	out := make([]api.DocumentPlace, 0, len(places))
+	for _, place := range places {
+		rects := make([]api.DocumentRect, 0, len(place.Rects))
+		for _, rect := range place.Rects {
+			rects = append(rects, api.DocumentRect{MinX: rect.MinX, MinY: rect.MinY, MaxX: rect.MaxX, MaxY: rect.MaxY})
 		}
-		places = append(places, api.DocumentPlace{Page: box.Page, Rects: []api.DocumentRect{rect}})
+		out = append(out, api.DocumentPlace{Page: place.Page, Rects: rects})
 	}
-	return places
+	return out
 }

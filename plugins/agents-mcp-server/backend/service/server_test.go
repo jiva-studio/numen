@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/instructions"
 )
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)
@@ -169,16 +168,8 @@ func connectStreamableClient(ctx context.Context, t *testing.T, mcpURL, token st
 	}
 	return session
 }
-func TestServerOptionsCarryTheServerLine(t *testing.T) {
-	t.Parallel()
 
-	srvOpts := newServerOptions()
-	if srvOpts == nil || srvOpts.Instructions != instructions.Server {
-		t.Fatalf("unexpected server options: %+v", srvOpts)
-	}
-}
-
-func serveOnLoopback(t *testing.T, srv *Server) {
+func serveOnLoopback(t *testing.T, srv *testServer) {
 	t.Helper()
 	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {

@@ -11,8 +11,8 @@ import (
 )
 
 func (a *App) begin() (*relevance.Floors, error) {
-	floors, _ := a.getFloors()
-	if floors == nil {
+	floors, err := a.calibration.GetFloors()
+	if err != nil {
 		return nil, errNotMounted
 	}
 	return floors, nil

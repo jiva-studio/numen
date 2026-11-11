@@ -40,7 +40,7 @@ func IsMockEnabled(value string) bool { return value == mockEnabled }
 // environment; every other provider is asked through complete. A nil getEndpoint asks complete.
 func NewAsk(complete Completer, getEndpoint func() Endpoint) func(ctx context.Context, instruction, prompt string) (string, error) {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
-		if getEndpoint != nil && !IsMockEnabled(os.Getenv(EnvMockML)) {
+		if getEndpoint != nil && !IsMockSelected() {
 			endpoint := getEndpoint()
 			if endpoint.Provider == "openrouter" || endpoint.Provider == "openai" || endpoint.Provider == "custom" {
 				return askDirectAPI(ctx, endpoint, instruction, prompt)
@@ -54,4 +54,22 @@ func NewAsk(complete Completer, getEndpoint func() Endpoint) func(ctx context.Co
 			},
 		})
 	}
+}
+
+// IsMockSelected reports whether the environment of the process selects the mock model.
+func IsMockSelected() bool { return IsMockEnabled(os.Getenv(EnvMockML)) }
+
+// WithSettings returns the endpoint with the provider, base URL and model the settings name. A
+// provider or a model the settings leave empty stays as it is.
+func (e Endpoint) WithSettings(values map[string]string) Endpoint {
+	if provider := values["provider"]; provider != "" {
+		e.Provider = provider
+	}
+	if baseURL, ok := values["baseUrl"]; ok {
+		e.BaseURL = baseURL
+	}
+	if name := values["model"]; name != "" {
+		e.Model = name
+	}
+	return e
 }
