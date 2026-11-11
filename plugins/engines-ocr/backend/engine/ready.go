@@ -2,11 +2,12 @@ package engine
 
 import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 // Ready reports whether everything needed to recognize a page is on this
 // machine.
-func Ready(library *onnx.Library, cfg Config) bool {
+func Ready(library *onnx.Library, cfg settings.Config) bool {
 	if !library.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
 		return false
 	}

@@ -3,10 +3,12 @@ package engines
 import (
 	"context"
 	"errors"
+	"image"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/settings"
 )
 
 type silentReporter struct{}
@@ -14,7 +16,7 @@ type silentReporter struct{}
 func (silentReporter) ReportCloseError(error) {}
 
 func newHolder(open Opener) *Holder {
-	return NewHolder(engine.Defaults(), open, silentReporter{})
+	return NewHolder(settings.Defaults(), open, silentReporter{})
 }
 
 // opened counts the recognisers a factory opened and the ones closed.
@@ -22,13 +24,24 @@ type opened struct {
 	opened, closed int
 }
 
-func (o *opened) open(context.Context, engine.Config) (Recogniser, error) {
+func (o *opened) open(context.Context, settings.Config) (Recogniser, error) {
 	o.opened++
 	return closing{o: o}, nil
 }
 
+// fakeRecogniser reads no page.
+type fakeRecogniser struct{}
+
+func (fakeRecogniser) Close() error { return nil }
+
+func (fakeRecogniser) GetRecognitionModel() recognition.Model { return recognition.Model{} }
+
+func (fakeRecogniser) Recognize(context.Context, image.Image) ([]recognition.Block, error) {
+	return nil, nil
+}
+
 type closing struct {
-	engine.MockRecogniser
+	fakeRecogniser
 	o *opened
 }
 
@@ -79,19 +92,8 @@ func TestUpdateConfigReopensEngine(t *testing.T) {
 	}
 }
 
-func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
-	isMock := func() bool { return true }
-	opened, err := NewOpener(engine.NewLibrary(), isMock)(t.Context(), engine.Defaults())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, isMockRecogniser := opened.(engine.MockRecogniser); !isMockRecogniser {
-		t.Fatalf("opened %T, want the mock", opened)
-	}
-}
-
 func TestGetEngineReturnsOpenError(t *testing.T) {
-	models := newHolder(func(context.Context, engine.Config) (Recogniser, error) {
+	models := newHolder(func(context.Context, settings.Config) (Recogniser, error) {
 		return nil, errors.New("no models")
 	})
 	if _, err := models.GetEngine(t.Context()); err == nil {
@@ -102,10 +104,10 @@ func TestGetEngineReturnsOpenError(t *testing.T) {
 // The recogniser opens with the model the settings name, and the paths of a custom model only
 // while the custom model is chosen.
 func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
-	var got engine.Config
-	models := newHolder(func(_ context.Context, cfg engine.Config) (Recogniser, error) {
+	var got settings.Config
+	models := newHolder(func(_ context.Context, cfg settings.Config) (Recogniser, error) {
 		got = cfg
-		return engine.MockRecogniser{}, nil
+		return fakeRecogniser{}, nil
 	})
 	for _, tc := range []struct {
 		values     map[string]string
@@ -113,7 +115,7 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 		path, dict string
 	}{
 		{map[string]string{"model": "pp-ocrv5-eslav"}, "eslav_PP-OCRv5_rec_mobile.onnx", "", ""},
-		{map[string]string{"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt"}, engine.RecogniserCustom, "/m/rec.onnx", "/m/dict.txt"},
+		{map[string]string{"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt"}, settings.RecogniserCustom, "/m/rec.onnx", "/m/dict.txt"},
 		{map[string]string{"model": "pp-ocrv6-tiny"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
 		{map[string]string{"model": "tesseract"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
 	} {
