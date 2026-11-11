@@ -5,9 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -40,9 +40,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *pluginhost.Host {
+func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *container.PluginRoles {
 	t.Helper()
-	host := pluginhost.New(clock, "desktop.editor", root)
+	host := container.NewPluginRoles(clock, "desktop.editor", root)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -124,7 +124,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	pingPort := wiretest.ServeHostPing(t)
 	wiretest.CreateTestPluginTree(t, tmp)
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -180,7 +180,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 }
 
 func TestHostEvictLoopTeardown(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	if !host.Teardown.IsEvicting() {
 		t.Fatal("expected evict loop to be running")
 	}
@@ -240,7 +240,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	pingPort := wiretest.ServeHostPing(t)
 	wiretest.CreateTestPluginTree(t, tmp)
 
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -922,7 +922,7 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 }
 
 func TestProcessExitDropsEndpoint(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	putEndpoint(host, "p", transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"})
 
 	plugin.GetSupervisors(host.Registry).Drop("p")
@@ -986,7 +986,7 @@ func TestEnsureActive_PreservesPluginInUseDuringConcurrentEviction(t *testing.T)
 }
 
 func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	oldPipe, newPipe := &testCloser{}, &testCloser{}
 	host.Processes.HoldStdin("p", 1, oldPipe)
 	host.Processes.HoldStdin("p", 2, newPipe)
@@ -1055,9 +1055,9 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 }
 
-func newHostOfProviders(t *testing.T) *pluginhost.Host {
+func newHostOfProviders(t *testing.T) *container.PluginRoles {
 	t.Helper()
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Second); err != nil {
 			t.Error(err)
@@ -1152,9 +1152,9 @@ type runningPlugin struct {
 	perms []string
 }
 
-func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *pluginhost.Host {
+func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *container.PluginRoles {
 	t.Helper()
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -1198,7 +1198,7 @@ func TestHost_GetPluginIDByToken(t *testing.T) {
 // The host endpoint serves only once something answers completions, and
 // stops when the host does.
 func TestHost_OpenHostEndpointServesOnceCompleterSet(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	services, _ := lendEndpoint(host, hostendpoint.Address)
 	if got, err := host.Services.OpenHostEndpoint(t.Context()); err != nil || got != 0 {
 		t.Fatalf("without a completer: port %d, %v", got, err)
@@ -1239,7 +1239,7 @@ func TestGetPluginVars_CarriesHostPort(t *testing.T) {
 
 // A plugin process launched while the host endpoint serves receives its port.
 func TestGetLaunchVars_ReportsHostPort(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -1263,7 +1263,7 @@ func TestGetLaunchVars_ReportsHostPort(t *testing.T) {
 
 // An endpoint that cannot start is reported and does not stop a plugin from launching.
 func TestGetLaunchVars_HostEndpointStartFailureDoesNotStopLaunch(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -1291,7 +1291,7 @@ func TestGetLaunchVars_HostEndpointStartFailureDoesNotStopLaunch(t *testing.T) {
 // The host endpoint binds the loopback interface and rejects any address that
 // would bind more.
 func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -1324,7 +1324,7 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 }
 
 func TestHostProcessLimitsConfig(t *testing.T) {
-	h := pluginhost.New(testsupport.GetMachine(), "test")
+	h := container.NewPluginRoles(testsupport.GetMachine(), "test")
 	if h.Processes.GetProcessLimits() != process.DefaultLimits() {
 		t.Fatalf("NewHost holds %v, want the default limits", h.Processes.GetProcessLimits())
 	}

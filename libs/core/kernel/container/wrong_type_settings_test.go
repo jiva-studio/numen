@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 const importerID = "md.numen.tools.media.importer"
@@ -41,7 +40,7 @@ func installationWith(t *testing.T, content string) (container.Config, string) {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(importerManifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", plugins)
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", plugins)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +49,7 @@ func installationWith(t *testing.T, content string) (container.Config, string) {
 		t.Fatal(err)
 	}
 	return container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
+		PluginHost: container.AdaptPluginHost(host),
 		Paths:      container.Paths{SettingsPath: path},
 	}), path
 }

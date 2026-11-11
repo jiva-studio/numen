@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -36,7 +36,7 @@ func checkPrivateDir(t *testing.T, dir string) {
 	}
 }
 
-func newStorageHost(t *testing.T) (*pluginhost.Host, string, string) {
+func newStorageHost(t *testing.T) (*container.PluginRoles, string, string) {
 	t.Helper()
 	host := newDiscoveredHost(t)
 	cacheRoot, dataRoot := t.TempDir(), t.TempDir()

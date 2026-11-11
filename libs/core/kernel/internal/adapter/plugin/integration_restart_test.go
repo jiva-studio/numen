@@ -3,6 +3,7 @@ package plugin_test
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
@@ -135,7 +136,7 @@ func writeRestartedPlugin(t *testing.T) string {
 func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
-			host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
+			host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
 			if err := host.Discovery.Discover(); err != nil {
 				t.Fatal(err)
 			}
