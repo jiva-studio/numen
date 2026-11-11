@@ -13,8 +13,8 @@ const mountReturning = (origin: HTMLElement | null) =>
     }),
   )
 
-describe('giving the keyboard back to where a view was asked for', () => {
-  it('focuses the origin when the view goes', () => {
+describe('returning focus to the origin of a view', () => {
+  it('focuses the origin when the view is unmounted', () => {
     const origin = document.createElement('button')
     document.body.append(origin)
 

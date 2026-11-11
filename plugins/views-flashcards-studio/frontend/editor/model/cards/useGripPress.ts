@@ -5,7 +5,7 @@ import { win } from '@numen/ui'
 const WORKED = 'input, textarea, button, a, select, [contenteditable]'
 
 export interface GripPress {
-  /** Whether the strip is taken hold of: false from a press on something worked until the pointer is released. */
+  /** False from a press on something worked until the pointer is released. */
   readonly isDraggable: Readonly<Ref<boolean>>
   readonly press: (event: PointerEvent) => void
 }

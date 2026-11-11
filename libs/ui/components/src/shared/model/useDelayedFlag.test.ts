@@ -37,7 +37,7 @@ describe('a flag that turns on after a delay', () => {
     expect(view.text()).toBe('true')
   })
 
-  it('stays off when the view is gone before the delay has passed', async () => {
+  it('stays off when the view is unmounted before the delay has passed', async () => {
     const view = mountFlag(300)
     view.unmount()
 

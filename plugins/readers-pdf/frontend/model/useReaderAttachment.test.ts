@@ -24,7 +24,7 @@ const mountAttached = (hasAttach = true) => {
 }
 
 describe('attaching a reader to the window', () => {
-  it('focuses the reader and hands the window its handle at mount', () => {
+  it('focuses the reader and attaches its handle to the tab state at mount', () => {
     const { log, attached, reader } = mountAttached()
 
     expect(log).toEqual(['focus'])

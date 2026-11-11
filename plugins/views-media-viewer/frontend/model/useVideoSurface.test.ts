@@ -43,7 +43,7 @@ describe('the surface a video is drawn in', () => {
     expect(log).toEqual(['attach DIV', 'release DIV'])
   })
 
-  it('gives the media element back when the view goes', async () => {
+  it('gives the media element back when the view is unmounted', async () => {
     const { log, view } = mountSurface(true)
     await nextTick()
 

@@ -27,7 +27,7 @@ describe('why a name cannot be used', () => {
     expect(useObjection(() => naming, () => 'back').value).toBeNull()
   })
 
-  it('follows the target it is asked for', () => {
+  it('follows a change of the target id', () => {
     const naming = createNaming({ front: 'taken' })
     const target = ref('back')
     const objection = useObjection(() => naming, () => target.value)

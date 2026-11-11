@@ -6,7 +6,7 @@ export interface VideoSurfaceHost {
   readonly release: (container: HTMLElement) => void
 }
 
-/** Draws the media element in the container while it is shown, gives it back when it is not shown, and when the view goes. */
+/** Draws the media element in the container while it is shown, releases it when it is not shown, and when the view is unmounted. */
 export function useVideoSurface(
   container: Readonly<Ref<HTMLElement | null>>,
   isShown: () => boolean,

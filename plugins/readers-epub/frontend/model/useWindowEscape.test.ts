@@ -59,7 +59,7 @@ describe('the Escape key while a view is open', () => {
     expect(escapes).toHaveLength(0)
   })
 
-  it('is no longer heard once the view is gone', async () => {
+  it('is no longer heard after the view is unmounted', async () => {
     const { isOpen, escapes, view } = mountEscape()
     isOpen.value = true
     await nextTick()
