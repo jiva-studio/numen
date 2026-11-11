@@ -2,8 +2,6 @@ package windowsession
 
 import (
 	"context"
-	"io"
-	"time"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
@@ -147,48 +145,7 @@ type TriggerSource struct {
 	Watch func() (<-chan struct{}, func())
 }
 
-// WindowPorts are the pages of the window, its writes and the lists and streams it shows.
-type WindowPorts struct {
-	Pages    Pages
-	Writes   Writes
-	Tasks    Tasks
-	Changes  Changes
-	TabFront TabFront
-}
-
-// VaultPorts are what starts and records the vault the window shows.
-type VaultPorts struct {
-	Import   FileImport
-	Identity IdentityCheck
-	Recorded OpenRecord
-	Passes   VaultPasses
-	Texts    TextVersions
-}
-
-// IndexPorts are what indexes the vault and follows the model it is read under.
-type IndexPorts struct {
-	Wake       IndexWake
-	NewSession func() IndexSession
-	Triggers   TriggerSource
-	Model      ModelSource
-}
-
-// ShutdownPorts are what the window closes: the door first, then each resource in order.
-type ShutdownPorts struct {
-	Door    Door
-	Closers []Closer
-}
-
-// Deps is what the scenarios of one window reach the world through.
-type Deps struct {
-	Window   WindowPorts
-	Vault    VaultPorts
-	Index    IndexPorts
-	Shutdown ShutdownPorts
-
-	Out           io.Writer
-	EmbedderError error
-	Closing       <-chan struct{}
-	IsRebuilding  bool
-	TabBound      time.Duration
+// currentVault is the vault the window shows.
+type currentVault interface {
+	GetCurrentVault() domain.Vault
 }

@@ -5,6 +5,7 @@ import (
 	"io"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
@@ -217,9 +218,87 @@ func (f *tabFront) Publish(id string) {
 	f.ids = append(f.ids, id)
 }
 
+// Deps is what the scenarios of a test window reach the world through.
+type Deps struct {
+	Window   WindowPorts
+	Vault    VaultPorts
+	Index    IndexPorts
+	Shutdown ShutdownPorts
+
+	Out           io.Writer
+	EmbedderError error
+	Closing       <-chan struct{}
+	IsRebuilding  bool
+	TabBound      time.Duration
+}
+
+type WindowPorts struct {
+	Pages    Pages
+	Writes   Writes
+	Tasks    Tasks
+	Changes  Changes
+	TabFront TabFront
+}
+
+type VaultPorts struct {
+	Import   FileImport
+	Identity IdentityCheck
+	Recorded OpenRecord
+	Passes   VaultPasses
+	Texts    TextVersions
+}
+
+type IndexPorts struct {
+	Wake       IndexWake
+	NewSession func() IndexSession
+	Triggers   TriggerSource
+	Model      ModelSource
+}
+
+type ShutdownPorts struct {
+	Door    Door
+	Closers []Closer
+}
+
+// Scenarios are the use cases of a test window.
+type Scenarios struct {
+	Switching struct {
+		Show       ShowVault
+		OpenPlugin OpenPluginVault
+		Rebuild    RebuildSession
+	}
+	Closing struct {
+		Flush FlushPending
+		Close CloseWindow
+	}
+	Start   StartWindow
+	ShowTab ShowTab
+	Import  ImportFiles
+}
+
+// NewScenarios builds the use cases of the window the way the container does.
+func NewScenarios(rt *Runtime, tabs *TabReports, deps Deps) *Scenarios {
+	diag := NewDiagnostics(deps.Out, deps.Window.Tasks)
+	runner := NewPassRunner(rt, diag, deps.Closing, deps.Index.NewSession, deps.Vault.Texts, deps.Window.Changes,
+		deps.Vault.Passes, deps.Index.Triggers, deps.Index.Wake)
+	session := NewSession(rt, deps.Vault.Recorded, diag, deps.EmbedderError, runner)
+	guard := &Guard{}
+	var s Scenarios
+	s.Switching.Rebuild = NewRebuildSession(rt, guard, session)
+	s.Switching.Show = NewShowVault(rt, guard, session, deps.Vault.Identity, deps.Window.Pages, deps.Window.Writes, deps.Window.Changes)
+	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages)
+	s.Closing.Flush = NewFlushPending(guard, deps.Window.Pages, deps.Window.Writes)
+	s.Closing.Close = NewCloseWindow(deps.Shutdown.Door, session, deps.Shutdown.Closers...)
+	s.Start = NewStartWindow(diag, deps.EmbedderError, deps.Index.Model, deps.Index.Wake, rt, session, s.Switching.Rebuild, deps.IsRebuilding)
+	s.ShowTab = NewShowTab(tabs, deps.Window.TabFront, deps.TabBound)
+	s.Import = NewImportFiles(deps.Vault.Import, deps.Window.Writes, deps.Window.Tasks, deps.Window.Changes)
+	return &s
+}
+
 // window is one window over fakes of every port, with no vault open.
 type testWindow struct {
 	rt        *Runtime
+	tabs      *TabReports
 	scenarios *Scenarios
 	pages     *pageSet
 	writes    *writeSet
@@ -240,6 +319,7 @@ func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow 
 	t.Helper()
 	w := &testWindow{
 		rt:      &Runtime{},
+		tabs:    &TabReports{},
 		pages:   &pageSet{log: log},
 		writes:  &writeSet{},
 		tasks:   &taskList{},
@@ -267,7 +347,7 @@ func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow 
 	if edit != nil {
 		edit(&deps)
 	}
-	w.scenarios = NewScenarios(w.rt, deps)
+	w.scenarios = NewScenarios(w.rt, w.tabs, deps)
 	t.Cleanup(func() {
 		if err := w.scenarios.Closing.Close.Execute(t.Context()); err != nil {
 			t.Log(err)

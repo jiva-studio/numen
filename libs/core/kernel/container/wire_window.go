@@ -131,42 +131,22 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	listing := vaultListing(vaultOf(w.cfg), w.ports)
 	w.cases.Listing = &listing
 
-	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Window: windowsession.WindowPorts{
-			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
-		},
-		Vault: windowsession.VaultPorts{
-			Import: moves.Tree.Import, Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: wrapPasses(w, startVault(w.cfg, w.db, current)),
-			Texts: getTextVersions(w.cfg),
-		},
-		Index: windowsession.IndexPorts{
-			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: getTriggerSource(w.cfg), Model: embedding,
-		},
-		Shutdown: windowsession.ShutdownPorts{
-			Door: state.Gate,
-			Closers: []windowsession.Closer{
-				windowsession.CloseFunc(state.ClosePlaying),
-				windowsession.CloseFunc(func(context.Context) error { return closeEmbedder() }),
-				windowsession.CloseFunc(func(context.Context) error { return w.db.Close() }),
-			},
-		},
-		Out:           out,
-		EmbedderError: why,
-		Closing:       ctx.Done(),
-		IsRebuilding:  w.cfg.ShouldRebuildIndex,
+	session := windowSession(w, state, ctx, windowParts{
+		indexer: indexer, embedding: embedding, moves: &moves, current: current, out: out,
+		embedderError: why, closeEmbedder: closeEmbedder,
 	})
 	switching := startup.SwitchVault[*windowsession.PluginOpen]{
-		Show:        session.Switching.Show.Execute,
+		Show:        session.show.Execute,
 		FollowVault: func(path string) { setPluginVaultPath(plugins(w.cfg), path) },
 		After:       func(domain.Vault, error) { state.ShowOpenTabs() },
 	}
 	inst := editor.NewInstallation(state, editor.Lifecycle{
-		Start: session.Start, Show: session.Switching.Show, OpenPlugin: session.Switching.OpenPlugin,
-		Flush: session.Closing.Flush, Close: session.Closing.Close,
+		Start: session.start, Show: session.show, OpenPlugin: session.openPlugin,
+		Flush: session.flush, Close: session.close,
 		OpenVault: switching.Execute, NoteWritten: indexer.WakeNotes,
-	}, session.Import, out)
+	}, session.importFiles, out)
 	w.inst = inst
-	w.cases.ShowTab = session.ShowTab
+	w.cases.ShowTab = session.showTab
 
 	if err := startWindow(ctx, w, first); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), w.db.Close())

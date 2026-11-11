@@ -54,12 +54,14 @@ type VaultOps struct {
 // PluginVaults lets the plugins that have vault:manage change the list of vaults and the vault the
 // window shows. It uses the operations of the window, so a plugin and the user see the same errors.
 type PluginVaults struct {
-	rt  *Runtime
-	ops VaultOps
+	current currentVault
+	ops     VaultOps
 }
 
 // NewPluginVaults makes the list of vaults plugins change, over the runtime of the window.
-func NewPluginVaults(rt *Runtime, ops VaultOps) PluginVaults { return PluginVaults{rt: rt, ops: ops} }
+func NewPluginVaults(rt *Runtime, ops VaultOps) PluginVaults {
+	return PluginVaults{current: rt, ops: ops}
+}
 
 // AddVault adds the folder at the absolute root. An empty name means the folder's name.
 func (l PluginVaults) AddVault(_ context.Context, root, name string) (domain.Vault, error) {
@@ -77,7 +79,7 @@ func (l PluginVaults) RenameVault(ctx context.Context, id domain.VaultID, name s
 
 // RemoveVault removes the vault from the list and from the index, and does not delete its folder.
 func (l PluginVaults) RemoveVault(ctx context.Context, id domain.VaultID) error {
-	return l.ops.Edit.Remove.Execute(ctx, string(id), l.rt.GetCurrentVault().ID, false)
+	return l.ops.Edit.Remove.Execute(ctx, string(id), l.current.GetCurrentVault().ID, false)
 }
 
 // OpenVault shows the vault the id names in the window.

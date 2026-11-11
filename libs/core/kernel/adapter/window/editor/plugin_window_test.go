@@ -34,17 +34,14 @@ import (
 func newPluginWindow(
 	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, limit time.Duration,
 ) hostendpoint.WindowControl {
-	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Window:   windowsession.WindowPorts{Tasks: state.Window, TabFront: &state.Notices.TabIDs},
-		TabBound: limit,
-	})
 	return windowsession.NewPluginWindow(
 		&state.Runtime,
+		&state.Tabs,
 		focusNote,
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),
-		session.ShowTab,
+		windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, limit),
 	)
 }
 

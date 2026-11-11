@@ -19,7 +19,15 @@ var errNoVaultSwitch = errors.New("the window cannot switch vaults")
 // flush request; a close, a quit, a user vault switch or the end of the call
 // cancels it with ErrUnavailable. An open ASKING prompt returns ErrUnsavedChanges without a flush.
 type OpenPluginVault struct {
-	life *lifecycle
+	guard    *Guard
+	identity IdentityCheck
+	pages    Pages
+}
+
+// NewOpenPluginVault makes the use case over the guard of the window, the check of the identity of a
+// vault and the pages of the window.
+func NewOpenPluginVault(guard *Guard, identity IdentityCheck, pages Pages) OpenPluginVault {
+	return OpenPluginVault{guard: guard, identity: identity, pages: pages}
 }
 
 // Execute opens v on behalf of a plugin. show switches the window and is nil for a window that cannot.
@@ -29,16 +37,15 @@ func (u OpenPluginVault) Execute(
 	if show == nil {
 		return errNoVaultSwitch
 	}
-	deps := u.life.deps
-	if err := deps.Vault.Identity.Execute(v); err != nil {
+	if err := u.identity.Execute(v); err != nil {
 		return err
 	}
-	ctx, open, end, err := u.life.rt.guard.tryBeginPluginOpen(ctx)
+	ctx, open, end, err := u.guard.tryBeginPluginOpen(ctx)
 	if err != nil {
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, domain.ErrUnavailable, err)
 	}
 	defer end()
-	if deps.Window.Pages.IsQuestionOpen() {
+	if u.pages.IsQuestionOpen() {
 		return plugin.ErrUnsavedChanges
 	}
 	err = show(ctx, v, open)
@@ -46,8 +53,8 @@ func (u OpenPluginVault) Execute(
 	case err == nil:
 		return nil
 	case ctx.Err() != nil:
-		if !deps.Window.Pages.IsQuestionOpen() {
-			deps.Window.Pages.CancelFlush()
+		if !u.pages.IsQuestionOpen() {
+			u.pages.CancelFlush()
 		}
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, domain.ErrUnavailable, context.Cause(ctx))
 	case errors.Is(err, window.ErrAnswerPending):

@@ -23,6 +23,7 @@ import (
 // every question, the writes taken, and who is drawing what changes. Each part answers for one role.
 type State struct {
 	Runtime windowsession.Runtime
+	Tabs    windowsession.TabReports
 
 	Gate    *Gate
 	Writes  *Writes
@@ -115,7 +116,7 @@ func (s *State) GetVaultState(ctx context.Context) (window.VaultState, error) {
 // ReportOpenTabs keeps the tabs the window reported, wakes whoever waits for a report, and tells
 // the application.
 func (s *State) ReportOpenTabs(open window.OpenTabs) {
-	s.Runtime.ReportOpenTabs(open)
+	s.Tabs.ReportOpenTabs(open)
 	if s.NotifyOpenTabs != nil {
 		s.NotifyOpenTabs(open)
 	}
@@ -124,7 +125,7 @@ func (s *State) ReportOpenTabs(open window.OpenTabs) {
 // ShowOpenTabs tells the application the tabs that are open now.
 func (s *State) ShowOpenTabs() {
 	if s.NotifyOpenTabs != nil {
-		s.NotifyOpenTabs(s.Runtime.GetOpenTabs())
+		s.NotifyOpenTabs(s.Tabs.GetOpenTabs())
 	}
 }
 

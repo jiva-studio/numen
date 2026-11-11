@@ -36,19 +36,20 @@ type TabShowing interface {
 // PluginWindow lets the plugins that call the host move the window: focus a note or the passages of
 // a file, read the open tabs and show one. It refuses each call while the window shows no vault.
 type PluginWindow struct {
-	rt       *Runtime
+	current  currentVault
+	reports  *TabReports
 	note     NoteFocus
 	passages PassagesFocus
 	tabs     TabShowing
 }
 
-// NewPluginWindow makes the window plugins move, over the runtime of the window.
-func NewPluginWindow(rt *Runtime, note NoteFocus, passages PassagesFocus, tabs TabShowing) PluginWindow {
-	return PluginWindow{rt: rt, note: note, passages: passages, tabs: tabs}
+// NewPluginWindow makes the window plugins move, over the runtime and the tab reports of the window.
+func NewPluginWindow(rt *Runtime, reports *TabReports, note NoteFocus, passages PassagesFocus, tabs TabShowing) PluginWindow {
+	return PluginWindow{current: rt, reports: reports, note: note, passages: passages, tabs: tabs}
 }
 
 func (w PluginWindow) getVault() (domain.Vault, error) {
-	v := w.rt.GetCurrentVault()
+	v := w.current.GetCurrentVault()
 	if v.Path == "" {
 		return domain.Vault{}, plugin.ErrNoWindow
 	}
@@ -78,7 +79,7 @@ func (w PluginWindow) ReadOpenTabs(context.Context) (windowdomain.OpenTabs, erro
 	if _, err := w.getVault(); err != nil {
 		return windowdomain.OpenTabs{}, err
 	}
-	return w.rt.GetOpenTabs(), nil
+	return w.reports.GetOpenTabs(), nil
 }
 
 // ActivateTab makes the open tab with the id the active tab, and returns the open tabs as the window
