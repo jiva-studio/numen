@@ -99,7 +99,7 @@ A small plugin is `main.go`, `service/` and one package named after what the plu
 The imports point inward and nowhere else.
 
 - `service` imports everything below it, its own `internal/adapter/*` packages included, and is imported by `main` only. It is the one package that knows both the SDK `server` package and the plugin's adapters. It decodes a request, calls a use case and encodes the answer; the conversion between `api` messages and domain values is in `wire`.
-- `wire` sits between `service` and `api`, the domain, the use cases and `ports`: the service imports it, it imports them, and nothing below it imports it. A `wire` package imports no `service`, no `engine`, no adapter and touches no machine. Scenario logic is not wire: a package that decides something goes to `usecase`.
+- `wire` is the layer between `service` and `api`, the domain, the use cases and `ports`: the service imports it, it imports them, and nothing below it imports it. A `wire` package imports no `service`, no `engine`, no adapter and touches no machine. Scenario logic is not wire: a package that decides something goes to `usecase`.
 - A use case imports `ports` and the domain. A port file imports the domain and the SDK's domain types.
 - A domain package imports the standard library and `plugin/sdk-go/host/domain`. It reads no file, opens no socket, and takes no clock.
 - An adapter imports the domain and, when it names the interface it satisfies, the package that declares it. It imports no `service`, no `wire` and no other adapter. An engine that runs a model is an adapter and owns its runtime as a package below it (`internal/adapter/engine/onnx`); a clock reaches an adapter as the SDK `clock` port or a parameter.

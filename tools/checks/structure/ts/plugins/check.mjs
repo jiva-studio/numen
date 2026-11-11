@@ -141,7 +141,7 @@ const isBackendPackageImport = (value, name) => value.endsWith(`/backend/${name}
 
 /**
  * Finds the imports that run against the layers of a plugin backend: an inner package (below `service` and `wire`)
- * imports `service`, `engine` or `wire`; a `wire` package imports `service`, `engine` or an adapter. `wire` sits between
+ * imports `service`, `engine` or `wire`; a `wire` package imports `service`, `engine` or an adapter. `wire` is the layer between
  * `service` and `api`, the domain, the use cases and the ports: the service imports it, it imports them, nothing below
  * imports it. `files` holds `{ file, imports }` with each import as `{ line, value }`.
  */

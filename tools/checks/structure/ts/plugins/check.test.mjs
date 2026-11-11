@@ -272,7 +272,7 @@ const layerImports = (file, imports) => {
   return findPluginBackendLayerInversions([{ file, imports: getGoReferences(source).imports }]).map((one) => one.file)
 }
 
-test('wire sits between service and the inner packages: an inner package importing it, or wire importing service, engine or an adapter, is refused', () => {
+test('an inner package importing wire, and wire importing service, engine or an adapter, are refused', () => {
   const own = 'github.com/jiva-studio/numen/plugins/a/backend'
   assert.deepEqual(layerImports('plugins/a/backend/usecase/x/x.go', [`${own}/wire/cardwire`, `${own}/service`, `${own}/engine`]), [
     'plugins/a/backend/usecase/x/x.go',
