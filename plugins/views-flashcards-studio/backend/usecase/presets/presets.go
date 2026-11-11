@@ -137,7 +137,10 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]Summary, error) {
 
 // CreateDefault returns the preset of a deck scheduled by no preset.
 func CreateDefault() Contents {
-	return Contents{Path: "", Outcome: note.Ok, Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
+	return Contents{
+		Path: "", Outcome: note.Ok, Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil,
+		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+	}
 }
 
 // GetForDeck is the preset the deck at path is scheduled by.

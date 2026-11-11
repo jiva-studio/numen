@@ -112,7 +112,7 @@ func getBacklinked() map[string]string {
 // neighborhood.
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 	handler, target := newAPI(t, getJoined())
-	*handler.neighborhood() = neighborhood.NewShow(
+	handler.neighborhood = neighborhood.NewShow(
 		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(hostports.Readers{Vaults: handler.vaults}))
 
 	_, err := handler.GetDeckNeighborhood(t.Context(), &api.GetDeckNeighborhoodRequest{

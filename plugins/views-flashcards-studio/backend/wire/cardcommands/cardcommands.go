@@ -38,7 +38,7 @@ type kind struct {
 
 // New returns the commands. A command run on a row of the file list makes its note in the folder
 // of that row.
-func New(current func() cards.Create, files cards.FileStatter, createNote CreateNote) (*command.Registry, error) {
+func New(create cards.Create, files cards.FileStatter, createNote CreateNote) (*command.Registry, error) {
 	registry := command.New()
 	for id, one := range map[string]kind{
 		CreateDeck:      {create: cards.Create.Deck, fields: nil},
@@ -46,14 +46,14 @@ func New(current func() cards.Create, files cards.FileStatter, createNote Create
 		CreatePreset:    {create: cards.Create.Preset, fields: nil},
 	} {
 		// gomutants:disable-next-line BRANCH_IF reason="Static command identifiers are non-empty and unique."
-		if err := registry.Add(id, newRun(one, current, files, createNote)); err != nil {
+		if err := registry.Add(id, newRun(one, create, files, createNote)); err != nil {
 			return nil, err
 		}
 	}
 	return registry, nil
 }
 
-func newRun(one kind, current func() cards.Create, files cards.FileStatter, createNote CreateNote) command.Run {
+func newRun(one kind, create cards.Create, files cards.FileStatter, createNote CreateNote) command.Run {
 	return func(ctx context.Context, request command.Request) (command.Result, error) {
 		folder, err := cards.GetRowFolder(ctx, files, request.Path)
 		if err != nil {
@@ -61,7 +61,7 @@ func newRun(one kind, current func() cards.Create, files cards.FileStatter, crea
 		}
 		made, code, _, err := createNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 			in.Fields = one.fields
-			return one.create(current(), ctx, showing, in)
+			return one.create(create, ctx, showing, in)
 		}, request.Arguments.GetString(ArgumentTitle), folder)
 		if err != nil {
 			return command.Result{}, err

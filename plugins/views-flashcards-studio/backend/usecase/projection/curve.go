@@ -322,9 +322,10 @@ func getDaysToLearnWithoutForgetting(
 	ctx context.Context, run Simulation, now time.Time, p Preset,
 	pos map[ReviewCardID]Schedule, unbegunCount int,
 ) (int, error) {
-	run.Recalls = GetFullRecall
 	// The day the material is learned is all this run is read for.
-	run.Retains = nil
+	run = Simulation{
+		By: run.By, Day: run.Day, Cost: run.Cost, Days: run.Days, Retains: nil, Recalls: GetFullRecall, Spent: run.Spent,
+	}
 	ran, err := run.Run(ctx, now, p, pos, unbegunCount)
 	if err != nil {
 		return 0, err

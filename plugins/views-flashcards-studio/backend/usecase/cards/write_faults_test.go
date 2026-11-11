@@ -89,8 +89,7 @@ func TestAStaleWritePassesBackNothing(t *testing.T) {
 // A deck written to disk whose index could not be updated is an error
 func TestADeckSavedAndNotIndexedPassesBackWhatItExistsAt(t *testing.T) {
 	vs := newVaults(t)
-	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck).
-		WithIndex(func(_ context.Context, _ domain.Vault, _ []string) error { return errOutOfReach })
+	w := newWriteForDeckIndexed(t, vs, "decks/Wrens.md", wrenDeck, func(_ context.Context, _ domain.Vault, _ []string) error { return errOutOfReach })
 
 	got, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, domain.FileStat{})
 	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, errOutOfReach) {

@@ -59,8 +59,12 @@ func NewRead(readers ports.VaultReaders, links ports.LinkQueries) Read {
 // An error means the vault is unavailable. A problem with the file itself is
 // reported in the outcome.
 func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckContents, error) {
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before Deck returns."
-	out := DeckContents{Path: path, Outcome: "", Type: "", Body: format.Deck{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Preamble: "", Tail: "", Sections: nil, Cards: nil, Problems: nil}, Raw: "", CardModels: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
+	out := DeckContents{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before Deck returns."
+		Path: path, Outcome: "", Type: "", Body: format.Deck{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Preamble: "", Tail: "", Sections: nil, Cards: nil, Problems: nil},
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before Deck returns."
+		Raw: "", CardModels: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+	}
 	n, ref, outcome, err := u.readNote(ctx, v, path, MaxBytes)
 	if err != nil {
 		return DeckContents{}, err
@@ -180,8 +184,14 @@ func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.P
 
 // CardModel reads the card model at path. A card model is a note and is bounded as one.
 func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardModelContents, error) {
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before CardModel returns."
-	out := CardModelContents{Path: path, Title: "", Outcome: "", Type: "", Body: format.CardModel{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, Fields: nil, Preamble: "", Tail: "", Templates: nil, Problems: nil}, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
+	out := CardModelContents{
+		Path: path, Title: "", Outcome: "", Type: "",
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before CardModel returns."
+		Body: format.CardModel{Ref: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+			Fields: nil, Preamble: "", Tail: "", Templates: nil, Problems: nil},
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial FileStat is overwritten before CardModel returns."
+		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
+	}
 	n, ref, outcome, err := u.readNote(ctx, v, path, note.MaxBytes)
 	if err != nil {
 		return CardModelContents{}, err

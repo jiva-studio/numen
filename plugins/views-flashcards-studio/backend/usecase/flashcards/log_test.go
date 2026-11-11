@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
 
-// A run file is listed and then removed by another machine's synchroniser before
+// A run file is listed and then removed by another machine's synchronizer before
 // it can be read. That is a missing file, not a vault whose history cannot be
 // read: every other recorded answer remains valid.
 func TestARunTakenAwayBeforeItWasReadIsMissing(t *testing.T) {
@@ -83,7 +83,7 @@ func TestWhatAVaultContainsIsEveryRunItWasReadFrom(t *testing.T) {
 }
 
 // phantom is a vault's store that lists one run that is not there. It is a
-// synchroniser taking a file away between the listing and the reading, which is
+// synchronizer taking a file away between the listing and the reading, which is
 // the one moment nothing else can arrange.
 type phantom struct {
 	ports.LogStores

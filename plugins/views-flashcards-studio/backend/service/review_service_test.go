@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"os"
 	"path/filepath"
@@ -226,7 +225,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck())
 	v := target[0]
-	reviewCards := handler.flash().CardsDue.ReviewCards()
+	reviewCards := handler.flash().Schedules.Schedules.ReviewCards()
 
 	before, err := reviewCards.Execute(t.Context(), v)
 	if err != nil || len(before) != 1 {
@@ -285,7 +284,7 @@ func (unopenable) Open(domain.Vault) (ports.LogStore, error) {
 // handed no run to answer on.
 func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Log = flashcards.Log{Stores: unopenable{}}
+	handler.flash().Reviews.Log = flashcards.Log{Stores: unopenable{}}
 
 	out, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: string(target[0].ID)})
@@ -301,8 +300,8 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 // days.
 func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().GetReviewDays = flashcards.NewGetReviewDays(
-		flashcards.NewCountReviews(unopenable{}, handler.flash().Schedules, getReviewDay(), vaulttest.NewClock()))
+	handler.flash().Counts.GetReviewDays = flashcards.NewGetReviewDays(
+		flashcards.NewCountReviews(unopenable{}, handler.flash().Schedules.Schedules, getReviewDay(), vaulttest.NewClock()))
 
 	out, err := handler.ListReviewDays(t.Context(),
 		&api.ListReviewDaysRequest{Vault: string(target[0].ID)})
@@ -408,7 +407,7 @@ func (refusingStores) Open(domain.Vault) (ports.LogStore, error) { return append
 // taking back of one.
 func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Log = flashcards.Log{Stores: refusingStores{}}
+	handler.flash().Reviews.Log = flashcards.Log{Stores: refusingStores{}}
 	v := target[0]
 	session := startSession(t, handler, v)
 	card := session.Cards[0]
@@ -441,9 +440,9 @@ func TestASessionThatCannotBeWorkedOutIsRefused(t *testing.T) {
 	}
 }
 
-func (u unreadable) vaults() func(domain.VaultID) hostports.Vault {
-	return func(id domain.VaultID) hostports.Vault {
+func (u unreadable) vaults() func(domain.VaultID) ports.HostVault {
+	return func(id domain.VaultID) ports.HostVault {
 		on := u.With(id)
-		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+		return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
 	}
 }

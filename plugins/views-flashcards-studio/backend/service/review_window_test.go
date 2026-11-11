@@ -82,11 +82,18 @@ func getFirstMorning() time.Time {
 func setNow(handler *API, now time.Time) {
 	pos := clock.NewFake(now)
 	handler.now = pos
-	*handler.day() = getReviewDay()
-	handler.flash().Record = flashcards.NewRecord(pos)
-	handler.flash().CardsDue = handler.flash().CardsDue.WithDay(getReviewDay()).WithNow(pos)
-	handler.flash().Session = handler.flash().Session.WithDay(getReviewDay()).WithNow(pos)
-	handler.flash().GetReviewDays = handler.flash().GetReviewDays.WithDay(getReviewDay()).WithNow(pos)
+	day := getReviewDay()
+	handler.flash().Day = day
+	flash := handler.flash()
+	schedules, deckPresets := flash.Schedules.Schedules, flash.Schedules.Presets
+	flash.Reviews.Record = flashcards.NewRecord(pos)
+	flash.Counts.CardsDue = flashcards.NewCountCardsDue(schedules.ReviewCards(), schedules, deckPresets, day, pos)
+	flash.Reviews.Session = flashcards.NewSession(
+		flash.Reviews.AssignCardIDs, schedules.ReviewCards(), schedules, deckPresets, day, pos)
+	counted := flashcards.NewCountReviews(flash.Reviews.Log.Stores, schedules, day, pos)
+	counted.Cache, counted.Report = flash.Counts.Counted.Cache, flash.Counts.Counted.Report
+	flash.Counts.Counted = counted
+	flash.Counts.GetReviewDays = flashcards.NewGetReviewDays(counted)
 }
 
 func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
@@ -151,7 +158,7 @@ func countSessionCards(due *api.VaultCardsDue, decks []string) int {
 
 func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
-	found, err := handler.flash().Presets.Read(t.Context(), v, path)
+	found, err := handler.flash().Schedules.Presets.Read(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +167,7 @@ func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) r
 
 func writePreset(t *testing.T, handler *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
-	if _, err := handler.flash().Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
+	if _, err := handler.flash().Schedules.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -176,10 +183,10 @@ func getCurve(t *testing.T, handler *API, v domain.Vault, path string, p review.
 
 func curves(handler *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
-		handler.flash().Schedules.ReviewCards(),
-		handler.flash().Schedules,
-		handler.flash().Presets,
-		*handler.day(),
+		handler.flash().Schedules.Schedules.ReviewCards(),
+		handler.flash().Schedules.Schedules,
+		handler.flash().Schedules.Presets,
+		handler.flash().Day,
 		handler.now,
 	)
 	c.Cores = runtime.GOMAXPROCS(0)

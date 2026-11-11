@@ -183,7 +183,7 @@ func (t *Tools) readCards(ctx context.Context, in cardReadInput) (cardReadOutput
 	if err != nil {
 		return cardReadOutput{}, err
 	}
-	read, err := t.deckedit.GetCardPage.Execute(ctx, v, deckedit.Query{
+	read, err := t.deckCards.GetCardPage.Execute(ctx, v, deckedit.Query{
 		Path: in.Path, From: in.Offset, Limit: limit, CardID: in.CardID, Fields: in.Fields,
 	})
 	if err != nil {

@@ -25,14 +25,19 @@ const (
 
 // Tools provides MCP tools for interacting with flashcards.
 type Tools struct {
-	vaults   func(domain.VaultID) host.VaultSelector
-	cards    cards.Scenarios
-	deckedit deckedit.Scenarios
+	vaults       func(domain.VaultID) host.VaultSelector
+	cards        cards.Scenarios
+	bounded      cards.RenameField
+	deckCards    deckedit.CardScenarios
+	deckSections deckedit.SectionScenarios
 }
 
-// New creates a Tools instance.
-func New(vaults func(domain.VaultID) host.VaultSelector, cards cards.Scenarios, deckedit deckedit.Scenarios) *Tools {
-	return &Tools{vaults: vaults, cards: cards, deckedit: deckedit}
+// New creates a Tools instance. The rename an agent runs is bounded; the one in cards is not.
+func New(
+	vaults func(domain.VaultID) host.VaultSelector, cards cards.Scenarios, bounded cards.RenameField,
+	deckCards deckedit.CardScenarios, deckSections deckedit.SectionScenarios,
+) *Tools {
+	return &Tools{vaults: vaults, cards: cards, bounded: bounded, deckCards: deckCards, deckSections: deckSections}
 }
 
 // Registry builds the tools registry.

@@ -59,18 +59,6 @@ func NewSession(
 	}
 }
 
-// WithDay returns a copy of Session with the given Day.
-func (u Session) WithDay(day review.Day) Session {
-	u.day = day
-	return u
-}
-
-// WithNow returns a copy of Session with the given Clock.
-func (u Session) WithNow(now ports.Clock) Session {
-	u.now = now
-	return u
-}
-
 // Execute returns the ordered review queue for the given scope.
 func (u Session) Execute(
 	ctx context.Context, v domain.Vault, scope Scope,

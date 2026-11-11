@@ -823,7 +823,7 @@ func TestCountReviewsInternalsAndErrors(t *testing.T) {
 	if _, err := daysFail.Execute(ctx, v, "", ""); !errors.Is(err, errBoom) {
 		t.Fatalf("expected GetReviewDays error propagation, got %v", err)
 	}
-	daysOK := NewGetReviewDays(uWithRetained).WithDay(day)
+	daysOK := NewGetReviewDays(uWithRetained)
 	filtered, err := daysOK.Execute(ctx, v, "2099-01-01", "2099-01-02")
 	if err != nil {
 		t.Fatal(err)
@@ -1067,14 +1067,14 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 	v := domain.Vault{ID: "v1"}
 	errBoom := errors.New("boom")
 
-	// Test AssignCardIDs: WithIndex, nil notes, GetPathsOfType error, deck read error followed by valid deck.
+	// Test AssignCardIDs: index, nil notes, GetPathsOfType error, deck read error followed by valid deck.
 	indexed := false
-	ac := NewAssignCardIDs(nil, nil, nil, nil, nil, nil).WithIndex(func(_ context.Context, _ domain.Vault, _ []string) error {
+	ac := NewAssignCardIDs(nil, nil, nil, nil, func(_ context.Context, _ domain.Vault, _ []string) error {
 		indexed = true
 		return nil
-	})
+	}, nil)
 	if err := ac.index(ctx, v, nil); err != nil || !indexed {
-		t.Fatal("expected WithIndex to set index callback")
+		t.Fatal("expected the index callback to be set")
 	}
 	resNil, err := ac.Execute(ctx, v)
 	if err != nil || len(resNil.Unwritten) != 0 {
@@ -1365,29 +1365,29 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	schedCache := &stubScheduleStore{}
 	dayCountCache := &stubScheduleStore{}
 	probs := stubProblemQueries{}
-	sc := NewScenarios(Config{
+	reviewSet, scheduleSet, countSet := NewScenarios(Config{
 		Problems:  probs,
 		Schedules: schedCache,
 		DayCounts: dayCountCache,
-		DayStart:  func() time.Duration { return 3 * time.Hour },
+		Day:       review.Day{Starts: 3 * time.Hour, In: nil},
 		Now:       clock.NewFake(now),
 		Cores:     4,
 		Scheduler: stubAlgorithm{},
 	})
-	if sc.ReviewCards.Cores != 4 || sc.Curves.Cores != 4 {
+	if reviewSet.ReviewCards.Cores != 4 || scheduleSet.Curves.Cores != 4 {
 		t.Fatalf("expected Cores=4 propagated to ReviewCards and Curves, got %d, %d",
-			sc.ReviewCards.Cores, sc.Curves.Cores)
+			reviewSet.ReviewCards.Cores, scheduleSet.Curves.Cores)
 	}
-	if sc.Day.Starts != 3*time.Hour {
-		t.Fatalf("expected DayStart 3h, got %v", sc.Day.Starts)
+	if countSet.CardsDue.day.Starts != 3*time.Hour {
+		t.Fatalf("expected a day start of 3h, got %v", countSet.CardsDue.day.Starts)
 	}
-	if sc.Presets.Problems == nil {
+	if scheduleSet.Presets.Problems == nil {
 		t.Fatal("expected Presets.Problems wired")
 	}
-	if sc.Schedules.Cache != schedCache || sc.Counted.Cache != dayCountCache {
+	if scheduleSet.Schedules.Cache != schedCache || countSet.Counted.Cache != dayCountCache {
 		t.Fatal("expected Schedules.Cache and Counted.Cache wired")
 	}
-	if sc.Schedules.At == nil || sc.Curves.By == nil || sc.Schedules.scheduler == nil {
+	if scheduleSet.Schedules.At == nil || scheduleSet.Curves.By == nil || scheduleSet.Schedules.scheduler == nil {
 		t.Fatal("expected custom Scheduler wired to Schedules and Curves")
 	}
 

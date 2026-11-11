@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // ReportError writes a non-fatal error to stderr.
@@ -21,8 +21,8 @@ func ReportError(what string, err error) {
 
 // Clients is what the use cases reach the host through.
 type Clients struct {
-	Vaults  func(domain.VaultID) hostports.Vault
-	Folders func(domain.VaultID) hostports.Folder
+	Vaults  func(domain.VaultID) ports.HostVault
+	Folders func(domain.VaultID) ports.HostFolder
 }
 
 // NewFromEnv returns the clients of the host the environment names.
@@ -53,10 +53,10 @@ func NewFromVars(vars map[string]string) (Clients, error) {
 
 func newClients(client *host.Client, store *host.StoreClient) Clients {
 	return Clients{
-		Vaults: func(id domain.VaultID) hostports.Vault {
+		Vaults: func(id domain.VaultID) ports.HostVault {
 			on := client.With(id)
-			return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+			return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
 		},
-		Folders: func(id domain.VaultID) hostports.Folder { return store.With(id) },
+		Folders: func(id domain.VaultID) ports.HostFolder { return store.With(id) },
 	}
 }

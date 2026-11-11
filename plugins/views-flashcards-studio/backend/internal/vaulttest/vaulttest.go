@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // GetEpoch returns the moment that the clock of a test reports.
@@ -32,8 +33,8 @@ type Queries struct {
 }
 
 // Folders gives the plugin folder in the store of the vault with an identity, seen from the vault.
-func Folders(host *hosttest.Vault) func(domain.VaultID) hostports.Folder {
-	return func(id domain.VaultID) hostports.Folder { return host.Store().With(id) }
+func Folders(host *hosttest.Vault) func(domain.VaultID) ports.HostFolder {
+	return func(id domain.VaultID) ports.HostFolder { return host.Store().With(id) }
 }
 
 // Env is a vault written to a folder of the test's own, and the ports over it.
@@ -122,9 +123,9 @@ func WaitFor(tb testing.TB, condition func() bool) {
 }
 
 // Vaults gives the ports' calls on the vault of v with an identity; the empty identity is v itself.
-func Vaults(v *hosttest.Vault) func(domain.VaultID) hostports.Vault {
-	return func(id domain.VaultID) hostports.Vault {
+func Vaults(v *hosttest.Vault) func(domain.VaultID) ports.HostVault {
+	return func(id domain.VaultID) ports.HostVault {
 		on := v.With(id)
-		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+		return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
 	}
 }

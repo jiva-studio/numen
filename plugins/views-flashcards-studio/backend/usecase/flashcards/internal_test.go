@@ -147,7 +147,7 @@ func TestARunThatMayNotBeOpenedIsOneSkippedRun(t *testing.T) {
 	}
 }
 
-// A file another machine's synchroniser took away between the listing and the
+// A file another machine's synchronizer took away between the listing and the
 // reading is no run at all, and nothing was skipped by it.
 func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 	store := answering{why: &os.PathError{Op: "open", Path: "run.jsonl", Err: fs.ErrNotExist}}
@@ -171,7 +171,7 @@ func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 }
 
 // A run file locked by another program is one skipped run of the log. A
-// synchroniser and a backup reader each lock a file briefly, and the store
+// synchronizer and a backup reader each lock a file briefly, and the store
 // reports it as ErrLockedByAnother whatever the underlying system is.
 func TestLogReadFile_CountsLockedRunAsSkipped(t *testing.T) {
 	store := answering{why: fmt.Errorf("run.jsonl: %w", ports.ErrLockedByAnother)}

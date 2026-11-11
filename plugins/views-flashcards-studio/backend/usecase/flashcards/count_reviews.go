@@ -45,18 +45,6 @@ func NewCountReviews(
 	return CountReviews{logs: logs, Cache: nil, Report: nil, schedules: schedules, day: day, now: now}
 }
 
-// WithDay returns a copy of CountReviews with the given Day.
-func (u CountReviews) WithDay(day review.Day) CountReviews {
-	u.day = day
-	return u
-}
-
-// WithNow returns a copy of CountReviews with the given Clock.
-func (u CountReviews) WithNow(now ports.Clock) CountReviews {
-	u.now = now
-	return u
-}
-
 // Execute counts one vault.
 func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
 	log := Log{Stores: u.logs}
@@ -283,18 +271,6 @@ func (u GetReviewDays) Execute(
 	counts.Due = keepDays(counts.Due, from, to)
 	counts.Retained = keepDays(counts.Retained, from, to)
 	return counts, nil
-}
-
-// WithDay returns a copy of GetReviewDays with the given Day.
-func (u GetReviewDays) WithDay(day review.Day) GetReviewDays {
-	u.counted = u.counted.WithDay(day)
-	return u
-}
-
-// WithNow returns a copy of GetReviewDays with the given Clock.
-func (u GetReviewDays) WithNow(now ports.Clock) GetReviewDays {
-	u.counted = u.counted.WithNow(now)
-	return u
 }
 
 func keepDays[T any](days map[string]T, from, to string) map[string]T {

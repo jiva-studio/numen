@@ -85,9 +85,9 @@ func Recall(away time.Duration, stability float64) float64 {
 // assumption it was given, so a caller naming a figure states which.
 type RecallChance func(Schedule, time.Time) float64
 
-// GetModelledRecall is the recall probability from the scheduler's own
+// GetModeledRecall is the recall probability from the scheduler's own
 // forgetting curve for a review card. A run with no other probability uses this one.
-func GetModelledRecall(c Schedule, now time.Time) float64 {
+func GetModeledRecall(c Schedule, now time.Time) float64 {
 	return Recall(now.Sub(c.Last), c.Stability)
 }
 
