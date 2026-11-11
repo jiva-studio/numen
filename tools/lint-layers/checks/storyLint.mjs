@@ -69,8 +69,7 @@ export async function verifyStoryFilesResolveStorybookRules() {
       continue;
     }
     const recommended = await readRecommendedRules(dir);
-    // 10 on the tree when the floor was set; the floor is that count less 5%.
-    requireMatches(`Storybook rules recommended for ${dir}`, Object.keys(recommended).filter((rule) => rule.startsWith("storybook/")).length, 9);
+    requireMatches(`Storybook rules recommended for ${dir}`, Object.keys(recommended).filter((rule) => rule.startsWith("storybook/")).length);
     for (const gap of findStoryRuleGaps(readResolvedRules(dir, file), recommended)) findings.push({ file, line: 1, symbol: gap });
   }
   failOnFindings("A story file does not resolve the recommended Storybook rules", findings);

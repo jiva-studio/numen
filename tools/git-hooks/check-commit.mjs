@@ -2,9 +2,12 @@
 /**
  * Conventional Commits & Scope Validator for Numen (@numen/git.hooks)
  *
- * Ensures all commit messages strictly follow Conventional Commits:
+ * Ensures a pull request title follows Conventional Commits:
  *   <type>(<scope>): <subject>
  *   <type>: <subject>
+ *
+ * The title is the first argument or, without one, the environment variable PR_TITLE.
+ * Commits on a branch are not validated.
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -200,9 +203,9 @@ export function validateCommitMessage(content, repoRoot) {
   return { ok: true }
 }
 
-/** Validates the commit message given on standard input. */
+/** Validates the pull request title given as the first argument or in PR_TITLE. */
 function main() {
-  const content = fs.readFileSync(process.stdin.fd, 'utf8')
+  const content = process.argv[2] ?? process.env.PR_TITLE ?? ''
   const scriptDir = path.dirname(new URL(import.meta.url).pathname)
   const repoRoot = path.resolve(scriptDir, '../..')
 

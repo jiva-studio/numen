@@ -20,14 +20,16 @@
  *   the `module` of each verifier; `node check.mjs --help` lists them
  */
 import process from "node:process";
-import { CORE_VERIFIERS } from "./checks/core.mjs";
+import { APP_LOGIC_VERIFIERS } from "./checks/appLogic.mjs";
 import { CORE_CLIENT_VERIFIERS } from "./checks/coreClient.mjs";
 import { DEPENDENCY_VERIFIERS } from "./checks/dependencies.mjs";
 import { DISCIPLINE_VERIFIERS } from "./checks/discipline.mjs";
+import { DOCUMENT_VERIFIERS } from "./checks/documents.mjs";
 import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
 import { LINT_CONFIG_VERIFIERS } from "./checks/lintConfig.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
+import { REGISTRATION_VERIFIERS } from "./checks/registrations.mjs";
 import { SDK_VERIFIERS } from "./checks/sdkProtocol.mjs";
 import { STYLE_VERIFIERS } from "./checks/styles.mjs";
 import { STORY_VERIFIERS } from "./checks/stories.mjs";
@@ -38,7 +40,6 @@ import { FRONTEND_GRAPH_VERIFIERS } from "./checks/frontendGraph.mjs";
 import { FRONTEND_LAYOUT_VERIFIERS } from "./checks/frontendLayout.mjs";
 
 const VERIFIERS = [
-  ...CORE_VERIFIERS,
   ...SDK_VERIFIERS,
   ...LIBRARY_VERIFIERS,
   ...CORE_CLIENT_VERIFIERS,
@@ -46,6 +47,9 @@ const VERIFIERS = [
   ...FRONTEND_GRAPH_VERIFIERS.filter((v) => v.scope === "libs"),
   ...FRONTEND_LAYOUT_VERIFIERS.filter((v) => v.scope === "libs"),
   ...STYLE_VERIFIERS,
+  ...APP_LOGIC_VERIFIERS.filter((v) => v.scope === "libs"),
+  ...DOCUMENT_VERIFIERS,
+  ...REGISTRATION_VERIFIERS,
   ...STORY_VERIFIERS,
   ...STORY_LINT_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
@@ -57,6 +61,7 @@ const VERIFIERS = [
   ...FRONTEND_LAYOUT_VERIFIERS.filter((v) => v.scope === "plugins"),
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "apps"),
   ...FRONTEND_GRAPH_VERIFIERS.filter((v) => v.scope === "apps"),
+  ...APP_LOGIC_VERIFIERS.filter((v) => v.scope === "apps"),
   ...FRONTEND_LAYOUT_VERIFIERS.filter((v) => v.scope === "apps"),
 ];
 
@@ -64,12 +69,12 @@ const SCOPES = ["all", "libs", "plugins", "apps"];
 const MODULE_NAMES = Array.from(new Set(VERIFIERS.map((v) => v.module)));
 
 /** The options of a run; every other argument is a target. */
-const FLAGS = ["--list", "--help", "-h", "--without-lint", "--without-go-tests"];
+const FLAGS = ["--list", "--help", "-h", "--without-lint"];
 const flags = new Set(process.argv.slice(2).filter((arg) => FLAGS.includes(arg)));
 const args = process.argv.slice(2).filter((arg) => !FLAGS.includes(arg));
 
 if (flags.has("--help") || flags.has("-h")) {
-  console.log("Usage: node check.mjs [target...] [--without-lint] [--without-go-tests] [--list] [--help]");
+  console.log("Usage: node check.mjs [target...] [--without-lint] [--list] [--help]");
   console.log("");
   console.log("Targets can be scopes or module names:");
   console.log("  Scopes:  " + SCOPES.join(", "));
@@ -117,14 +122,10 @@ function resolveSelectedVerifiers(targets) {
   return VERIFIERS.filter((v) => selected.has(v));
 }
 
-/** A verifier whose whole work another selected verifier already does (`coveredBy`) is not run twice. */
 const selectedVerifiers = resolveSelectedVerifiers(args);
 const activeVerifiers = selectedVerifiers
-  .filter((v) => !v.coveredBy || !selectedVerifiers.some((other) => other.id === v.coveredBy))
   // `isLint` runs the ESLint or golangci-lint configuration of a package, which its own lint target runs as well.
-  .filter((v) => !(flags.has("--without-lint") && v.isLint))
-  // `isGoTest` runs Go tests that the Go test suite of the module runs as well.
-  .filter((v) => !(flags.has("--without-go-tests") && v.isGoTest));
+  .filter((v) => !(flags.has("--without-lint") && v.isLint));
 
 console.log("\x1b[1mNumen Architectural Layer & Boundary Validator\x1b[0m");
 console.log("Selected targets: " + (args.length === 0 ? "all" : args.join(", ")));

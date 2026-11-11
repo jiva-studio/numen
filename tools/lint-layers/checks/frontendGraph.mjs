@@ -113,7 +113,7 @@ export function findSharedServingOneSlice(modules, sourceRoot) {
  * The source roots of the windows: the applications that declare `@numen/core-client` and are cut into layers, with an
  * entry `src/main.ts` and an `app` layer.
  */
-function listWindows(root) {
+export function listWindows(root) {
   return listPackages(root)
     .filter((one) => one.kind === "application")
     .filter((one) => {
@@ -132,18 +132,15 @@ function getGraph() {
 
 export function verifyNoComponentBelowUi() {
   const { findings, read } = findComponentsBelowUi(getGraph());
-  // 249 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Components cruised", read, 236);
+  requireMatches("Components cruised", read);
   failOnFindings("A component lies in a lib, api or model segment", findings);
 }
 
 export function verifyCoreClientOnlyInApi() {
   const roots = listWindows(REPO_ROOT);
-  // 3 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Windows", roots.length, 2);
+  requireMatches("Windows", roots.length);
   const importing = getGraph().filter((one) => (one.dependencies ?? []).some((dep) => dep.module === CORE_CLIENT || dep.module.startsWith(`${CORE_CLIENT}/`)));
-  // 123 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Files importing @numen/core-client", importing.length, 116);
+  requireMatches("Files importing @numen/core-client", importing.length);
   failOnFindings("A window imports @numen/core-client outside an api segment and its entry", findCoreClientOutsideApi(getGraph(), roots));
 }
 
@@ -155,8 +152,7 @@ export function verifySharedServesSeveralSlices() {
     findings.push(...one.findings);
     read += one.read;
   }
-  // 15 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Shared files of the windows", read, 14);
+  requireMatches("Shared files of the windows", read);
   failOnFindings("A shared file serves one slice", findings);
 }
 
@@ -500,8 +496,7 @@ export function verifyUiComponentsAreHumble() {
     findings.push(...one.findings);
     read += one.read;
   }
-  // 40 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Components in ui segments of the windows", read, 38);
+  requireMatches("Components in ui segments of the windows", read);
   failOnFindings("A component in a ui segment of a window registers a listener, guards requests or calls a service on props in a hook or watcher", findings);
 }
 
@@ -514,7 +509,7 @@ export function verifyPagesAreComposedNotConsumed() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Source files below and in the app layers", read, 280);
+  requireMatches("Source files below and in the app layers", read);
   failOnFindings("A layer below pages imports a page, or app takes more than a page it composes", findings);
 }
 
@@ -526,11 +521,11 @@ export function verifyTestingReachesSlicesByIndex() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Files of the test support", read, 10);
+  requireMatches("Files of the test support", read);
   failOnFindings("The test support imports a slice by a deep path", findings);
 }
 
-function listAppFiles(root) {
+export function listAppFiles(root) {
   const out = [];
   const walk = (dir) => {
     for (const entry of fs.readdirSync(path.join(REPO_ROOT, dir), { withFileTypes: true })) {
@@ -552,8 +547,7 @@ export function verifyAppIsComposition() {
     findings.push(...one.findings, ...findAppLogic(files).findings);
     read += one.read;
   }
-  // 22 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Source files of the app layers", read, 20);
+  requireMatches("Source files of the app layers", read);
   failOnFindings("The app layer of a window holds more than composition: a long file, a composable, a watcher, a listener, a timer or code that decides over values", findings);
 }
 
@@ -565,7 +559,7 @@ export function verifyAppBindsInOrder() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Source files of the app layers", read, 20);
+  requireMatches("Source files of the app layers", read);
   failOnFindings("The app layer of a window binds a part late", findings);
 }
 

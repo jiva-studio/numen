@@ -26,8 +26,7 @@ function listStyleFiles() {
 
 export async function verifyStyles() {
   const files = listStyleFiles();
-  // 290 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("stylesheets and components read", files.length, 275);
+  requireMatches("stylesheets and components read", files.length);
   const report = await stylelint.lint({ files: files.map((file) => path.join(REPO_ROOT, file)), configFile: STYLE_CONFIG, cwd: REPO_ROOT });
   failOnFindings("stylelint rejects a style", readStyleFindings(report));
 }

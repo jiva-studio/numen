@@ -1,0 +1,18 @@
+{
+  "go": {
+    "note": [],
+    "core/protocol": [],
+    "plugin/catalog": ["note", "core/protocol"],
+    "plugin/sdk-go": ["note", "core/protocol"],
+    "core/kernel": ["note", "plugin/catalog", "core/protocol"]
+  },
+  "packages": {
+    "@numen/ui": [],
+    "@numen/workbench": ["@numen/ui"],
+    "@numen/protocol": [],
+    "@numen/core-client": ["@numen/protocol"],
+    "@numen/plugin-sdk": ["@numen/protocol", "@numen/ui"],
+    "@numen/plugin-loader": ["@numen/plugin-sdk", "@numen/core-client"],
+    "@numen/plugin-manager": ["@numen/ui"]
+  }
+}

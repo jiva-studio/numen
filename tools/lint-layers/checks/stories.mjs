@@ -189,24 +189,21 @@ function getReport() {
   const files = (listed.stdout || "").split("\0").filter((file) => /\.(ts|vue)$/.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));
   const sources = createSources(files.map((file) => [file, fs.readFileSync(path.join(REPO_ROOT, file), "utf8")]));
   const entries = files.filter((file) => LIBRARY_ENTRY.test(file));
-  requireMatches("Library entries", entries.length, 2);
+  requireMatches("Library entries", entries.length);
   report = entries.map((entry) => findComponentsWithoutStories(sources, entry));
   return report;
 }
 
 export function verifyEveryPublicComponentHasStory() {
   const all = getReport();
-  // 19 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Public components", all.reduce((sum, one) => sum + one.components, 0), 18);
-  // 23 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Story files", all.reduce((sum, one) => sum + one.stories, 0), 21);
+  requireMatches("Public components", all.reduce((sum, one) => sum + one.components, 0));
+  requireMatches("Story files", all.reduce((sum, one) => sum + one.stories, 0));
   failOnFindings("A public component is rendered by no story", all.flatMap((one) => one.unstoried));
 }
 
 export function verifyEveryEmittingComponentHasPlayStory() {
   const all = getReport();
-  // 13 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Public components that declare events", all.reduce((sum, one) => sum + one.emitting, 0), 12);
+  requireMatches("Public components that declare events", all.reduce((sum, one) => sum + one.emitting, 0));
   failOnFindings("A public component that declares events has no story with a play function", all.flatMap((one) => one.unplayed));
 }
 

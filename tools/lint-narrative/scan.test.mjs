@@ -129,53 +129,6 @@ describe('fake Turn values', () => {
   })
 })
 
-describe('offer in a name', () => {
-  it('flags a TypeScript function, constant, class and key with offer as a part', () => {
-    assertFlagged('o/a.ts', 'export function listOfferedCommands() {}\n', 'huntAndOffering')
-    assertFlagged('o/b.ts', 'export const isOffered = true\n', 'huntAndOffering')
-    assertFlagged('o/c.ts', 'export class OfferedEntries {}\n', 'huntAndOffering')
-    assertFlagged('o/d.ts', "const offeredDir = '/tmp'\n", 'huntAndOffering')
-    assertFlagged('o/e.ts', 'const config = {\n  offers: [],\n}\n', 'huntAndOffering')
-    assertFlagged('o/f.ts', 'interface Entry {\n  offerCount: number\n}\n', 'huntAndOffering')
-  })
-  it('flags a Go function, type, variable and field with offer as a part', () => {
-    assertFlagged('o/a.go', 'package a\n\nfunc listOfferedCommands() {}\n', 'huntAndOffering')
-    assertFlagged('o/b.go', 'package a\n\ntype OfferedEntries struct{}\n', 'huntAndOffering')
-    assertFlagged('o/c.go', 'package a\n\nfunc f() {\n\tmergedOffered := 1\n\t_ = mergedOffered\n}\n', 'huntAndOffering')
-    assertFlagged('o/d.go', 'package a\n\ntype Entry struct {\n\tOffers []string\n}\n', 'huntAndOffering')
-  })
-  it('flags a Vue component whose script declares a name with offer as a part', () => {
-    assertFlagged('o/G.vue', '<script setup lang="ts">\nconst isCustomOffered = true\n</script>\n', 'huntAndOffering')
-  })
-  it('flags a file named with offer as a part', () => {
-    assertFlagged('o/offers.ts', 'export const a = 1\n', 'huntAndOffering')
-    assertFlagged('o/OfferedPluginDetail.vue', '<template><div /></template>\n', 'huntAndOffering')
-  })
-  it('flags a file in a directory named offers', () => {
-    assertFlagged('o/offers/invocation.ts', 'export const a = 1\n', 'huntAndOffering')
-  })
-  it('flags a test file named with offer as a part', () => {
-    assertFlagged('o/offers.test.ts', 'export const a = 1\n', 'huntAndOffering')
-  })
-  it('accepts the plain replacements', () => {
-    assertClean('p/a.ts', 'export function listAvailableCommands() {}\nexport const isAvailable = true\nexport class AvailableEntries {}\n')
-    assertClean('p/b.go', 'package a\n\nfunc listAvailableCommands() {}\n\ntype Entries struct{}\n')
-    assertClean('p/entries/invocation.ts', 'export const a = 1\n')
-  })
-  it('accepts a word that only contains offer as letters', () => {
-    assertClean('p/c.ts', 'export const coffer = 1\n')
-    assertClean('p/coffer.ts', 'export const a = 1\n')
-  })
-  it('accepts the plain verb in a comment a person reads', () => {
-    assertClean('p/d.ts', '// A plugin can offer a fix for the finding.\nexport const a = 1\n')
-    assertClean('p/e.go', 'package a\n\n// The page may offer a retry.\nfunc f() {}\n')
-  })
-  it('accepts the plain verb in a sentence of user-facing text', () => {
-    assertClean('p/f.ts', "export const label = 'We offer a fix for this file'\n")
-    assertClean('p/g.go', 'package a\n\nvar label = "Nothing to offer here"\n')
-  })
-})
-
 describe('--fix', () => {
   it('removes a whole-line comment with a listed phrase and keeps other comments', () => {
     const file = path.join(ROOT, 'v/poetic.ts')

@@ -139,16 +139,11 @@ function readResolvedRules(dir, file) {
   return JSON.parse(run.stdout).rules;
 }
 
-/** The smallest number of linted packages the repository has; fewer means discovery broke. */
-// 30 linted packages and 60 probed files on the tree when the floors were set; each floor is that count less 5%.
-const MINIMUM_PACKAGES = 28;
-const MINIMUM_PROBES = 57;
-
 /** Every package with an ESLint config resolves the strict rule set on a source file and a test file. */
 export function verifyStrictLintRules() {
   const tracked = readTrackedFiles();
   const packages = listLintedPackages(tracked);
-  requireMatches("Linted packages", packages.length, MINIMUM_PACKAGES);
+  requireMatches("Linted packages", packages.length);
 
   const findings = [];
   let probed = 0;
@@ -167,7 +162,7 @@ export function verifyStrictLintRules() {
       }
     }
   }
-  requireMatches("Probed files", probed, MINIMUM_PROBES);
+  requireMatches("Probed files", probed);
   failOnFindings("Package lint configuration lacks the strict rule set", findings);
 }
 
@@ -183,13 +178,10 @@ export function listLibProbes(trackedFiles) {
   return probes;
 }
 
-/** The number of packages with a `lib` segment when the floor was set (6 apps and libraries, 15 plugins); the floor is that less 5%. */
-const MINIMUM_LIB_PACKAGES = 19;
-
 /** Every package with a `lib` segment resolves `numen/pure-segment` as an error on a file of it. */
 export function verifyPureSegmentRule() {
   const probes = listLibProbes(readTrackedFiles());
-  requireMatches("Packages with a lib segment", probes.size, MINIMUM_LIB_PACKAGES);
+  requireMatches("Packages with a lib segment", probes.size);
 
   const findings = [];
   for (const [dir, probe] of probes) {

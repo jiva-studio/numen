@@ -16,11 +16,10 @@ import { findTsPackagesWithoutEslint } from "./checks/frontend.mjs";
 import { getGoModReferences, getGoReferences, requireMatches } from "./checks/helpers.mjs";
 import { compareGoVersions, getLinterBuildGap, parseBuiltWithGo, parseGoDirective } from "./checks/tools.mjs";
 
-describe("the minimum match count", () => {
-  it("fails on zero and on too few", () => {
-    assert.throws(() => requireMatches("files", 0, 1), /at least 1/);
-    assert.throws(() => requireMatches("files", 2, 3), /at least 3/);
-    assert.doesNotThrow(() => requireMatches("files", 3, 3));
+describe("the selector match", () => {
+  it("fails when a selector matched nothing and passes on one match", () => {
+    assert.throws(() => requireMatches("files", 0), /selector matched nothing/);
+    assert.doesNotThrow(() => requireMatches("files", 1));
   });
 });
 

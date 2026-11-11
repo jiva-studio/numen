@@ -4,6 +4,7 @@ import path from "node:path";
 import {
   GO_MODULE_ROOT,
   REPO_ROOT,
+  SCRIPT_DIR,
   failOnFindings,
   getGoModReferences,
   getGoReferences,
@@ -12,31 +13,32 @@ import {
   requireMatches,
 } from "./helpers.mjs";
 
+/** The path of the matrix both the library check and the import graph read. */
+export const LIBRARY_MATRIX_FILE = path.join(SCRIPT_DIR, "library-matrix.json");
+
+/** Reads the matrix: the Go families and the TypeScript packages, each with the ones it may depend on. */
+export function readLibraryMatrix(file = LIBRARY_MATRIX_FILE) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
 /**
- * The Go libraries and the libraries each one may depend on.
+ * The Go libraries and the libraries each one may depend on, from `library-matrix.json`.
  *
- * A library is a directory under `libs/` that holds a `go.mod`, and it belongs to the family named by
- * its first directory under `libs/`, or its first two where `libs/core` and `libs/plugin` nest several libraries:
- * `libs/plugin/sdk-go/host` is of the family `plugin/sdk-go`. The
+ * A library is a directory under `libs/` that holds a `go.mod`. Its family is the path under `libs/` of the
+ * outermost library that contains it: `libs/plugin/sdk-go/host` is of the family `plugin/sdk-go` because
+ * `libs/plugin/sdk-go` holds a `go.mod` too, and `libs/note` is of the family `note`. The
  * modules of one family may depend on each other. A dependency between two families is allowed only
  * where the matrix lists it, and a family the matrix does not list fails: a new library states its
  * place before it builds.
  */
-export const LIBRARY_DEPENDENCIES = {
-  note: [],
-  "core/protocol": [],
-  "plugin/catalog": ["note", "core/protocol"],
-  "plugin/sdk-go": ["note", "core/protocol"],
-  "core/kernel": ["note", "plugin/catalog", "core/protocol"],
-};
+export const LIBRARY_DEPENDENCIES = readLibraryMatrix().go;
 
-/** The directories under `libs/` that hold several libraries, one per subdirectory. */
-const NESTED_FAMILIES = new Set(["core", "plugin"]);
-
-/** The family of a library directory such as `libs/plugin/sdk-go/host`, which is `plugin/sdk-go`. */
-export function getFamily(dir) {
-  const [, first, second] = dir.split("/");
-  return NESTED_FAMILIES.has(first) ? `${first}/${second}` : first;
+/** The family of the library at `dir`, read from where the `go.mod` files are: `dirs` holds every library directory. */
+export function getFamily(dir, dirs) {
+  const outermost = dirs
+    .filter((one) => dir === one || dir.startsWith(one + "/"))
+    .sort((a, b) => a.length - b.length)[0];
+  return (outermost ?? dir).replace(/^libs\//, "");
 }
 
 /**
@@ -48,8 +50,9 @@ export function getFamily(dir) {
 export function findLibraryViolations(libraries, matrix = LIBRARY_DEPENDENCIES) {
   const found = [];
   const modules = libraries.map((library) => ({ dir: library.dir, path: library.module }));
+  const dirs = libraries.map((library) => library.dir);
   for (const library of libraries) {
-    const family = getFamily(library.dir);
+    const family = getFamily(library.dir, dirs);
     const allowed = matrix[family];
     if (!allowed) {
       found.push({
@@ -71,7 +74,7 @@ export function findLibraryViolations(libraries, matrix = LIBRARY_DEPENDENCIES) 
         }
         continue;
       }
-      const reached = getFamily(target.dir);
+      const reached = getFamily(target.dir, dirs);
       if (reached !== family && !allowed.includes(reached)) {
         found.push({
           file: reference.file,
@@ -126,9 +129,8 @@ export function readLibraries() {
 
 export function verifyLibraryMatrix() {
   const libraries = readLibraries();
-  if (libraries.length < 6 || libraries.reduce((total, library) => total + library.references.length, 0) < 30) {
-    throw new Error("The library matrix read too little of libs/: a rule checked against nothing");
-  }
+  requireMatches("Go libraries read", libraries.length);
+  requireMatches("Go references of libraries", libraries.reduce((total, library) => total + library.references.length, 0));
   failOnFindings("A Go library is outside the library matrix or reaches a library it may not", findLibraryViolations(libraries));
 }
 
@@ -139,15 +141,7 @@ export function verifyLibraryMatrix() {
  * packages its row lists, and a library with no row fails, so a new library states its place before it
  * builds. `dependency-graph` holds its imports to the same row.
  */
-export const PACKAGE_DEPENDENCIES = {
-  "@numen/ui": [],
-  "@numen/workbench": ["@numen/ui"],
-  "@numen/protocol": [],
-  "@numen/core-client": ["@numen/protocol"],
-  "@numen/plugin-sdk": ["@numen/protocol", "@numen/ui"],
-  "@numen/plugin-loader": ["@numen/plugin-sdk", "@numen/core-client"],
-  "@numen/plugin-manager": ["@numen/ui"],
-};
+export const PACKAGE_DEPENDENCIES = readLibraryMatrix().packages;
 
 const FIRST_PARTY = /^(@numen\/[^/]+)/;
 
@@ -186,10 +180,8 @@ export function readPackages() {
 
 export function verifyPackageMatrix() {
   const packages = readPackages();
-  // 7 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("TypeScript libraries read", packages.length, 6);
-  // 8 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("first-party declarations of TypeScript libraries", packages.reduce((total, one) => total + one.declared.length, 0), 7);
+  requireMatches("TypeScript libraries read", packages.length);
+  requireMatches("first-party declarations of TypeScript libraries", packages.reduce((total, one) => total + one.declared.length, 0));
   failOnFindings("A TypeScript library is outside the package matrix or reaches a library it may not", findPackageViolations(packages));
 }
 

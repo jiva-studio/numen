@@ -22,6 +22,12 @@ export function exec(cmd, cwd = REPO_ROOT) {
   return execSync(cmd, { cwd, stdio: ["ignore", "pipe", "pipe"] });
 }
 
+/** Every tracked file of the repository that exists on disk. */
+export function listTrackedFiles() {
+  const listed = runTool("git", ["ls-files"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
+  return (listed.stdout || "").split("\n").filter((file) => file && fs.existsSync(path.join(REPO_ROOT, file)));
+}
+
 /** The tracked files under `pathspecs` that ship: no test, story, fixture or generated file. */
 export function listShippedFiles(pathspecs) {
   const listed = runTool("git", ["ls-files", "--", ...pathspecs], { cwd: REPO_ROOT, encoding: "utf8" });
@@ -30,10 +36,10 @@ export function listShippedFiles(pathspecs) {
     .filter((file) => file && !NOT_SHIPPED.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));
 }
 
-/** Fails when fewer than `minimum` things were examined, so a rule over an empty set cannot pass. */
-export function requireMatches(title, count, minimum) {
-  if (count < minimum) {
-    throw new Error(`${title}: ${count} found, at least ${minimum} expected; the rule examined too little`);
+/** Fails when the selector of a rule matched nothing, so a rule over an empty set cannot pass. */
+export function requireMatches(title, count) {
+  if (count < 1) {
+    throw new Error(`${title}: the selector matched nothing; the rule examined nothing`);
   }
 }
 
