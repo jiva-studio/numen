@@ -7,9 +7,8 @@ const LEADING = 27
 
 const DOCS_BY_PATH: ReadonlyMap<string, PdfDoc> = new Map(Object.entries(PDF_DOCS))
 
-export const hasPdfDoc = (path: string): boolean => DOCS_BY_PATH.has(path)
-
-export const getPdfDoc = (path: string): PdfDoc => DOCS_BY_PATH.get(path) ?? PDF_DOCS[BOLTZMANN_PATH]
+export const getPdfDoc = (path: string): PdfDoc =>
+  DOCS_BY_PATH.get(path) ?? PDF_DOCS[BOLTZMANN_PATH]
 
 function escapeXml(line: string): string {
   return line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -26,7 +25,9 @@ export function getPagePicture(path: string, pageNumber: number): string {
   const doc = getPdfDoc(path)
   const count = doc.pages.length
   const leaf = (((pageNumber - doc.firstPage) % count) + count) % count
-  const lines = (doc.pages[leaf] ?? []).map((line, index) => drawLine(line, index, index === 0 && leaf === 0))
+  const lines = (doc.pages[leaf] ?? []).map((line, index) =>
+    drawLine(line, index, index === 0 && leaf === 0),
+  )
   const number = `<text x="${PAPER.width / 2}" y="${PAPER.height - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#5a5a5a">${pageNumber + 1}</text>`
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.width}" height="${PAPER.height}"><rect width="100%" height="100%" fill="#fbfaf7"/>${lines.join('')}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`

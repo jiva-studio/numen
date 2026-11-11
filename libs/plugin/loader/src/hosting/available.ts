@@ -13,7 +13,7 @@ export interface AvailableCommand {
 export interface CommandIssue {
   readonly pluginId: string
   readonly id: string
-  readonly kind: 'undeclared' | 'unbound'
+  readonly kind: 'unbound'
 }
 
 /** The key an issue is reported once under: its plugin, id and kind. */
@@ -22,9 +22,7 @@ export const getIssueKey = (issue: CommandIssue): string =>
 
 /** What a mismatch is reported as. */
 export const getIssueMessage = (issue: CommandIssue): string =>
-  issue.kind === 'undeclared'
-    ? `the command ${issue.id} has a handler and no declaration in the manifest`
-    : `the command ${issue.id} is declared in the manifest and has no handler`
+  `the command ${issue.id} is declared in the manifest and has no handler`
 
 /** What a listing of the listed commands returns. */
 export interface AvailableList {
@@ -57,11 +55,9 @@ export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegist
   const commands: AvailableCommand[] = []
   const issues = new Map<string, CommandIssue>()
   const addIssue = (issue: CommandIssue) => issues.set(getIssueKey(issue), issue)
-  const declaredIds = new Set<string>()
   for (const declaration of declarations) {
     if (registry.disposed.has(declaration.pluginId)) continue
     const id = formatCommandId(declaration.pluginId, declaration.id)
-    declaredIds.add(id)
     const entry = registry.commands.value.get(id)
     if (entry) {
       commands.push({ id, declaration, entry })
@@ -73,14 +69,7 @@ export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegist
       addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })
     }
   }
-  for (const issue of listUndeclared(registry, declaredIds)) addIssue(issue)
   return { commands, issues: [...issues.values()] }
-}
-
-function listUndeclared(registry: HostRegistry, declaredIds: ReadonlySet<string>): CommandIssue[] {
-  return [...registry.commands.value]
-    .filter(([id, entry]) => !declaredIds.has(id) && !registry.disposed.has(entry.pluginId))
-    .map(([, entry]) => ({ pluginId: entry.pluginId, id: entry.reg.id, kind: 'undeclared' }))
 }
 
 /** The palette's view of a listed command. */
