@@ -31,11 +31,19 @@ describe('createDropRegistry', () => {
     })
 
     expect(() =>
-      drops.registerDropHandler('md.numen.other', { types: [URI_LIST, 'text/plain'], drop: async () => [] }),
-    ).toThrowError('Plugin "md.numen.other" registers a drop handler for "text/uri-list", which plugin "md.numen.links" already takes')
+      drops.registerDropHandler('md.numen.other', {
+        types: [URI_LIST, 'text/plain'],
+        drop: async () => [],
+      }),
+    ).toThrowError(
+      'Plugin "md.numen.other" registers a drop handler for "text/uri-list", which plugin "md.numen.links" already takes',
+    )
     expect(drops.canDrop(['text/plain'])).toBe(false)
     first.dispose()
-    drops.registerDropHandler('md.numen.other', { types: [URI_LIST], drop: async () => ['other.md'] })
+    drops.registerDropHandler('md.numen.other', {
+      types: [URI_LIST],
+      drop: async () => ['other.md'],
+    })
     expect(await drops.drop('', { [URI_LIST]: 'x' })).toEqual(['other.md'])
   })
 

@@ -2,7 +2,15 @@
  * How a plugin view is rendered inside its pane: its component, its stylesheet
  * and the shadow root that contains it.
  */
-import { defineAsyncComponent, h, isRef, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
+import {
+  defineAsyncComponent,
+  h,
+  isRef,
+  Teleport,
+  type Component,
+  type Ref,
+  type VNodeChild,
+} from 'vue'
 import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
 import { getPluginStyle } from '../../styles'
 import { adoptHostStyles, parseStatePath, PANE_HOST_STYLE, PANE_LAYOUT_STYLE } from './paneHost'

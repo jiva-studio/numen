@@ -19,7 +19,8 @@ interface DeclaringManifest {
     | undefined
 }
 
-type Registration = 'drop type' | 'reader' | 'tab kind' | 'command' | 'settings view' | 'agent provider'
+type Registration =
+  'drop type' | 'reader' | 'tab kind' | 'command' | 'settings view' | 'agent provider'
 
 interface Undeclared {
   readonly kind: Registration

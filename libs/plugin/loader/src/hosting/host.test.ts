@@ -502,9 +502,9 @@ describe('createPluginHost', () => {
         }),
       )
       .register.dropHandler?.({
-      types: ['text/uri-list'],
-      drop: async (folder, data) => [`${folder}/${data['text/uri-list']}.md`],
-    })
+        types: ['text/uri-list'],
+        drop: async (folder, data) => [`${folder}/${data['text/uri-list']}.md`],
+      })
     const drops = host.lifecycle.createContext(
       'md.numen.views.file.tree',
       createMockManifest('md.numen.views.file.tree', {
