@@ -19,8 +19,7 @@
     {
       "name": "go/adapter-role",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -36,8 +35,7 @@
     {
       "name": "go/adapter-technology",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -53,8 +51,7 @@
     {
       "name": "go/adapters-claim-no-ports",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -87,8 +84,7 @@
     {
       "name": "go/composition-root",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -104,8 +100,7 @@
     {
       "name": "go/container-closures",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -121,8 +116,7 @@
     {
       "name": "go/container-downcast",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -138,8 +132,7 @@
     {
       "name": "go/core-reexport",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -155,8 +148,7 @@
     {
       "name": "go/core-tests-use-external-packages",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -172,8 +164,7 @@
     {
       "name": "go/direction",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -190,9 +181,10 @@
     {
       "name": "go/domain-layer",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
-        "go.work"
+        "libs/core/kernel/**",
+        "go.work",
+        "libs/plugin/sdk-go/**",
+        "libs/plugin/catalog/**"
       ],
       "tags": [
         "structure",
@@ -208,8 +200,7 @@
     {
       "name": "go/driving-calls",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work",
         ".golangci*.yml"
       ],
@@ -226,8 +217,7 @@
     {
       "name": "go/driving-one-use-case",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -262,8 +252,7 @@
     {
       "name": "go/handler-separation",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -279,8 +268,7 @@
     {
       "name": "go/identities",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -296,8 +284,7 @@
     {
       "name": "go/instants",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -351,8 +338,7 @@
     {
       "name": "go/layers",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -389,8 +375,7 @@
     {
       "name": "go/loggers",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -406,8 +391,7 @@
     {
       "name": "go/machine-access",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -423,8 +407,7 @@
     {
       "name": "go/machine-clock",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -457,9 +440,9 @@
     {
       "name": "go/plugin-adapter-layers",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
-        "go.work"
+        "libs/core/kernel/**",
+        "go.work",
+        ".golangci*.yml"
       ],
       "tags": [
         "structure",
@@ -586,8 +569,7 @@
     {
       "name": "go/port-calls",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -603,8 +585,7 @@
     {
       "name": "go/port-shape",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -620,8 +601,7 @@
     {
       "name": "go/ports",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -637,8 +617,7 @@
     {
       "name": "go/ports-referenced",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -654,8 +633,7 @@
     {
       "name": "go/scan-complete",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -671,8 +649,7 @@
     {
       "name": "go/schema-driving",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -707,8 +684,8 @@
     {
       "name": "go/serialization",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**/*.go",
+        "libs/note/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -765,8 +742,11 @@
     {
       "name": "go/struct-context",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**/*.go",
+        "libs/note/**/*.go",
+        "libs/plugin/sdk-go/**/*.go",
+        "plugins/**/*.go",
+        "apps/desktop/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -782,8 +762,7 @@
     {
       "name": "go/struct-size",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -816,8 +795,7 @@
     {
       "name": "go/transports",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -833,8 +811,7 @@
     {
       "name": "go/use-case-fields",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -850,8 +827,7 @@
     {
       "name": "go/usecase-edges",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -867,8 +843,7 @@
     {
       "name": "go/usecases-import-no-os",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -884,8 +859,7 @@
     {
       "name": "go/window-adapter-session",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -901,8 +875,7 @@
     {
       "name": "go/wiring-only",
       "paths": [
-        "**/*.go",
-        "**/go.mod",
+        "libs/core/kernel/**",
         "go.work"
       ],
       "tags": [
@@ -1524,7 +1497,8 @@
         "--test",
         "tools/checks/registry.test.mjs",
         "tools/checks/lib/graph.test.mjs",
-        "tools/checks/lib/golangci.test.mjs"
+        "tools/checks/lib/golangci.test.mjs",
+        "tools/checks/lib/changed.test.mjs"
       ]
     }
   ]

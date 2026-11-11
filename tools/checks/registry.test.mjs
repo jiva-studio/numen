@@ -5,7 +5,7 @@ import path from "node:path";
 import { describe, it, after } from "node:test";
 import { getPathPattern } from "./lib/changed.mjs";
 import { listTrackedFiles, plantTree } from "./lib/plant.mjs";
-import { isTagged, readRegistry } from "./run.mjs";
+import { isTagged, readRegistry, selectChecks } from "./run.mjs";
 
 const CHECKS_DIR = import.meta.dirname;
 const REPO_ROOT = path.resolve(CHECKS_DIR, "../..");
@@ -84,6 +84,36 @@ describe("the registry", () => {
     assert.ok(!isTagged(entry, "fast,ts"));
     assert.ok(isTagged(entry, "ts|go"));
     assert.ok(!isTagged(entry, "ts|window"));
+  });
+});
+
+describe("the selection of changed checks", () => {
+  const options = { tags: "", exclude: "", only: "", changed: true, list: false, selftest: false, withoutLint: false, withoutGoTests: false };
+  const getRunning = (changed) => selectChecks(registry, options, changed).filter((one) => one.run).map((one) => one.entry.name);
+
+  it("selects no Go check for a change outside every Go path", () => {
+    const goNames = new Set(registry.checks.filter((entry) => entry.runner === "go").map((entry) => entry.name));
+    assert.deepEqual(getRunning(["unrelated/none.bin"]).filter((name) => goNames.has(name)), []);
+  });
+
+  it("selects the kernel checks for a kernel file and not for a plugin file", () => {
+    assert.ok(getRunning(["libs/core/kernel/usecase/note/note.go"]).includes("go/layers"));
+    assert.ok(!getRunning(["plugins/views-flashcards-studio/backend/main.go"]).includes("go/layers"));
+  });
+
+  it("selects the check whose own code changed, with the reason", () => {
+    const one = selectChecks(registry, options, ["tools/checks/structure/go/layers/check_test.go"]).find((s) => s.entry.name === "go/layers");
+    assert.ok(one.run);
+    assert.match(one.reason, /^changed tools\/checks\/structure\/go\/layers\//);
+  });
+
+  it("selects every check when the runner or the registry changed", () => {
+    assert.equal(getRunning(["tools/checks/rules.json"]).length, registry.checks.length);
+  });
+
+  it("selects every check when no changed-file list is given", () => {
+    const all = selectChecks(registry, { ...options, changed: false }, null);
+    assert.ok(all.every((one) => one.run));
   });
 });
 
