@@ -5,7 +5,7 @@
  *
  * A path chosen for another plugin than the one shown when the dialog was opened is dropped.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import { formatError } from '@/shared/api/errors'
@@ -76,11 +76,12 @@ export function usePluginFields(deps: PluginFieldsDeps) {
 /** The choices of the enum settings, the settings shown and the secrets placed among them. */
 export function useEnumFields(deps: PluginFieldsDeps) {
   const pluginSettings = createFieldSettings(deps)
+  const platform = computed(() => deps.getSettings().getPlatform())
   return createEnumFields(
     () => deps.getPlugin(),
     pluginSettings.get,
     pluginSettings.isRequested,
-    () => deps.getSettings().getPlatform(),
+    () => platform.value,
   )
 }
 
