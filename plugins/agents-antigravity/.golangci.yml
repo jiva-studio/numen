@@ -14,7 +14,7 @@
 # a forbidigo rule: a type-aware test in
 # libs/core/kernel/container (clock_port_test.go) permits them only inside the Now method
 # of a clock port implementation. Plugin directories and libs/plugin/sdk-go carry
-# byte-identical copies of both files; tools/lint-layers verifies the copies.
+# byte-identical copies of both files; tools/checks verifies the copies.
 #
 # Run from the directory of a module.
 
@@ -457,7 +457,7 @@ linters:
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
 
         # A plugin reaches the host through the plugin SDK. The rule covers every
-        # file outside libs/ and apps/, which includes a plugin checked out alone.
+        # file outside libs/, apps/ and tools/, which includes a plugin checked out alone.
         # The longer match wins, so the SDK is allowed under the denied libs/.
         plugin-isolation:
           list-mode: lax
@@ -465,6 +465,7 @@ linters:
             - "$all"
             - "!**/libs/**"
             - "!**/apps/**"
+            - "!**/tools/**"
           allow:
             - "github.com/jiva-studio/numen/libs/plugin/sdk-go"
           deny:

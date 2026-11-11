@@ -28,10 +28,8 @@ COMMANDS := tools/ci-commands
 PLUGIN_VERSIONS := tools/plugin-versions
 PLUGIN_INDEX := tools/build-plugin-index
 PLUGIN_BUNDLE := tools/bundle-plugins
-LAYERS   := tools/lint-layers
+CHECKS   := tools/checks
 QUALITY  := tools/lint-quality
-NARRATIVE := tools/lint-narrative
-COMMENTS := tools/lint-comments
 PLUGINS  := plugins
 # Every directory under plugins/ holding a manifest.json is a plugin.
 PLUGIN_DIRS := $(patsubst %/manifest.json,%,$(wildcard $(PLUGINS)/*/manifest.json))
@@ -42,6 +40,14 @@ INSTALL  ?= npm install
 # The race detector runs in CI only: it makes the Go tests 3 to 4 times slower. CI passes GO_RACE=1.
 GO_RACE  ?=
 LAYERS_FLAGS ?=
+# Selection of `make checks`: TAGS=a,b (and), TAGS=a|b (or), EXCLUDE=tag, ONLY=names, CHANGED=1, LIST=1, SELFTEST=1.
+TAGS     ?=
+EXCLUDE  ?=
+ONLY     ?=
+CHANGED  ?=
+LIST     ?=
+SELFTEST ?=
+CHECKS_ARGS = $(if $(TAGS),--tags '$(TAGS)') $(if $(EXCLUDE),--exclude '$(EXCLUDE)') $(if $(ONLY),--only '$(ONLY)') $(if $(CHANGED),--changed) $(if $(LIST),--list) $(if $(SELFTEST),--selftest)
 GO_TEST_FLAGS := $(if $(GO_RACE),-race,)
 
 # How many jobs the parallel targets (the gate, the plugin lint) run at once.
@@ -578,22 +584,29 @@ plugin_versions_bump: ## write the next version into every changed plugin (usage
 plugin_versions_test: ## test the plugin version check
 	node --test $(PLUGIN_VERSIONS)/check.test.mjs
 
-.PHONY: check_layers tool_layers_check
-check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>] [LAYERS_FLAGS=--without-lint])
-	node $(LAYERS)/check.mjs $(LAYERS_FLAGS) $(target)
+.PHONY: checks
+checks: ## run the registered checks of tools/checks (usage: make checks [TAGS=fast,ts|go] [EXCLUDE=slow] [ONLY=go/layers] [CHANGED=1] [LIST=1] [SELFTEST=1]; TAGS=? lists the tags)
+	node $(CHECKS)/run.mjs $(CHECKS_ARGS)
+
+.PHONY: checks_selftest
+checks_selftest: ## run the planted-violation tests of the registered checks
+	node $(CHECKS)/run.mjs --selftest $(CHECKS_ARGS)
+
+.PHONY: lint_layers check_layers tool_layers_check
+lint_layers check_layers tool_layers_check: ## run the structural checks (alias of make checks TAGS=structure; LAYERS_FLAGS=--without-lint --without-go-tests)
+	node $(CHECKS)/run.mjs --tags structure $(LAYERS_FLAGS) $(CHECKS_ARGS)
 
 .PHONY: check_dependencies
 check_dependencies: ## run dependency-cruiser over the frontend sources: package boundaries, segment direction, import cycles
-	node $(LAYERS)/check.mjs dependency-graph
+	node $(CHECKS)/run.mjs --only ts/dependency-graph
 
 .PHONY: check_styles
 check_styles: ## run stylelint over every stylesheet and component style: tokens, no colour literal, no var() fallback
-	node $(LAYERS)/check.mjs styles-use-tokens
+	node $(CHECKS)/run.mjs --only ts/styles
 
 # Dead code is judged across packages: the apps import the shell through its build, so it is built first.
 .PHONY: check_quality
 check_quality: lib_workbench_build ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
-	node --test $(QUALITY)/checks/apiTypes.test.mjs
 	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
 
 .PHONY: check_knip
@@ -602,13 +615,13 @@ check_knip: lib_workbench_build ## check dead code and unused dependencies of ev
 
 .PHONY: lint_narrative
 lint_narrative: ## reject narrative identifiers, test names, comments, documents and the strings a person reads across the repository
-	node --test $(NARRATIVE)/scan.test.mjs
-	node $(NARRATIVE)/scan.mjs . --check
+	node $(CHECKS)/run.mjs --selftest --only style/names
+	node $(CHECKS)/run.mjs --only style/names
 
 .PHONY: lint_comments
 lint_comments: ## reject comments on fields and properties and doc comments on unexported functions (Go, TypeScript, Vue)
-	cd $(COMMENTS) && npm test
-	node $(COMMENTS)/check.mjs
+	node $(CHECKS)/run.mjs --selftest --only style/comments
+	node $(CHECKS)/run.mjs --only style/comments
 
 
 .PHONY: check_typecheck
@@ -638,7 +651,7 @@ gate_parts: typecheck_workspaces typecheck_plugins lint_narrative lint_comments 
 
 .PHONY: gate_layers
 gate_layers:
-	node $(LAYERS)/check.mjs --without-lint
+	node $(CHECKS)/run.mjs --tags structure --without-lint --without-go-tests
 
 .PHONY: gate_quality
 gate_quality:
@@ -660,5 +673,5 @@ all_quality:
 
 .PHONY: all_narrative
 all_narrative:
-	node $(NARRATIVE)/scan.mjs . --check
+	node $(CHECKS)/run.mjs --only style/names
 

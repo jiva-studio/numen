@@ -54,7 +54,7 @@ Resolve the repository root and determine the target:
      git -C "$REPO_ROOT" diff "$BASE_SHA...$HEAD_SHA" --name-only
      git -C "$REPO_ROOT" diff "$BASE_SHA...$HEAD_SHA"
      ```
-   - State the base branch (when known), `$BASE_SHA...$HEAD_SHA`, and the changed files before proceeding. Review only the files in `$BASE_SHA...$HEAD_SHA` and ignore uncommitted working-tree changes. When a changed file in the working tree differs from `HEAD_SHA` (such as `.agents`, `.claude/skills`, `AGENTS.md`, `tools/lint-narrative` or `tools/shared/tools.mjs` in CI), read the version at `HEAD_SHA` with `git -C "$REPO_ROOT" show "$HEAD_SHA:<path>"`.
+   - State the base branch (when known), `$BASE_SHA...$HEAD_SHA`, and the changed files before proceeding. Review only the files in `$BASE_SHA...$HEAD_SHA` and ignore uncommitted working-tree changes. When a changed file in the working tree differs from `HEAD_SHA` (such as `.agents`, `.claude/skills`, `AGENTS.md`, `tools/checks` or `tools/shared/tools.mjs` in CI), read the version at `HEAD_SHA` with `git -C "$REPO_ROOT" show "$HEAD_SHA:<path>"`.
 3. **Explicit path**: a path (`/nm-review libs/ui/components/src/plex`) focuses the audit on those files.
 4. **Local auto-detection (no argument and no open pull request)**:
    - `git -C "$REPO_ROOT" status --short` and `git -C "$REPO_ROOT" diff HEAD`.

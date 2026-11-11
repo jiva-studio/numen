@@ -19,7 +19,7 @@ The counts were taken by reading the code and with read-only scripts over `libs/
 
 ## Reading the table
 
-- Cheap means a configuration of an installed tool or one verifier in `tools/lint-layers` over an AST or the import graph, with a violation fixture in `tools/lint-layers/checks.test.mjs`. Needs design means the rule depends on a decision the owner has not made, or on a dependency the owner approves.
+- Cheap means a configuration of an installed tool or one check in `tools/checks` over an AST or the import graph, with a planted-violation test beside it. Needs design means the rule depends on a decision the owner has not made, or on a dependency the owner approves.
 - A check that fails on `main` today is fixed in the code, not by a list of exceptions (`AGENTS.md` section 15, rule 11). The two checks with violations that are rewrites (style text, lengths) are therefore built together with the change that removes the findings.
 
 ## Recommendation

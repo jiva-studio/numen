@@ -35,7 +35,7 @@ flowchart TD
    - Backend (Go): [`.agents/rules/coding-style-backend.md`](../../rules/coding-style-backend.md)
    - Frontend (Vue/TS): [`.agents/rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md)
    - Architecture & Layers: [`.agents/rules/architecture.md`](../../rules/architecture.md)
-   - Rule 13 of `AGENTS.md`: plain technical names — nouns for values (`entries`, `request`, `draft`), base-form verbs for functions (`listCommands`). Run `node tools/lint-narrative/scan.mjs <files>` before committing.
+   - Rule 13 of `AGENTS.md`: plain technical names — nouns for values (`entries`, `request`, `draft`), base-form verbs for functions (`listCommands`). Run `make lint_narrative` before committing.
 
 ---
 
@@ -61,7 +61,7 @@ From the touched module:
 ```bash
 go vet ./...
 go test ./...
-go test ./container/...        # in libs/core/kernel (architecture check)
+make checks CHANGED=1          # the checks whose files the change touches
 ```
 
 **Frontend modules (`apps/desktop/*`, `libs/ui/components`):**

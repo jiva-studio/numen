@@ -1,6 +1,6 @@
 # The libraries in detail
 
-For each library: what it holds, what it may import, who may import it, and the test for "does this belong here". The import rows are those of the package matrix in `tools/lint-layers/checks/libraries.mjs`.
+For each library: what it holds, what it may import, who may import it, and the test for "does this belong here". The import rows are those of the package matrix in `tools/checks/structure/ts/libraries/check.mjs`.
 
 ## `@numen/ui` (`libs/ui/components`)
 

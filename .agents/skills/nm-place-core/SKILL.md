@@ -120,7 +120,7 @@ A structure is judged by what one object does, not by the interfaces it is cut i
 
 ## What the checks enforce
 
-The structural checks live in `libs/core/kernel/container/*_test.go`, `libs/note/*_test.go` and `tools/lint-layers`. Each walks the type-checked tree and fails when it reads nothing. They forbid:
+The structural checks live in `tools/checks/structure/go` (one folder per check), `libs/note/*_test.go` and `tools/checks/structure/ts`; `make checks TAGS=core` runs the ones for the kernel. Each walks the type-checked tree and fails when it reads nothing. They forbid:
 
 - a package importing from a layer above it, and any package the core is compiled from importing an adapter;
 - `domain`, `port` and `usecase` using `os`, the filesystem, the network, the machine clock (`time.Now`, `Since`, `Until`) outside a method of a clock port, or a logging library; timers and randomness are not checked;

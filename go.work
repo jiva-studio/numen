@@ -32,7 +32,8 @@ use (
 	./plugins/tools-search-relevance
 	./plugins/tools-updater
 	./plugins/views-flashcards-studio
-	./tools/lint-comments
+	./tools/checks/structure/go
+	./tools/checks/style/comments
 )
 
 replace (

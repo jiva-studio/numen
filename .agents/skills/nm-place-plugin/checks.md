@@ -1,11 +1,11 @@
 # What the checks enforce
 
-Each entry names a check or a lint rule by what it forbids. `node tools/lint-layers/check.mjs --list` prints the registered verifiers; the rules are in `.agents/rules/architecture.md` §5, §8, §9, §10 and §11. A red check is fixed in the code, not by changing the check or moving code out of its sight.
+Each entry names a check or a lint rule by what it forbids. `make checks LIST=1` prints the registered checks and `make checks TAGS=plugin` runs them; the rules are in `.agents/rules/architecture.md` §5, §8, §9, §10 and §11. A red check is fixed in the code, not by changing the check or moving code out of its sight.
 
 ## Dependencies of a plugin
 
-- `go.mod` of a plugin (`go test ./container/...` in `libs/core/kernel`, tests `TestNoPluginModuleRequiresMoreThanTheSDK`, `TestWhatThePluginGoModRulesReject`): the module path is the folder's; it requires directly only the plugin SDK modules and third-party code; it names no `libs/note`, `libs/core/protocol`, connect or protobuf module, no other plugin and no core package; it has no `replace` to a folder.
-- The import graph of the plugins on fourteen platform targets (`go test ./container/...` in `libs/core/kernel`): a plugin reaches no other plugin, no core package, no application.
+- `go.mod` of a plugin (`make checks ONLY=go/plugin-gomod`, tests `TestNoPluginModuleRequiresMoreThanTheSDK`, `TestWhatThePluginGoModRulesReject`): the module path is the folder's; it requires directly only the plugin SDK modules and third-party code; it names no `libs/note`, `libs/core/protocol`, connect or protobuf module, no other plugin and no core package; it has no `replace` to a folder.
+- The import graph of the plugins on fourteen platform targets (`make checks ONLY=go/plugin-boundary,go/plugin-isolation-packages`): a plugin reaches no other plugin, no core package, no application.
 - `plugins-isolation-capture`: a file under `plugins/<name>/` references no other plugin.
 - `package.json` of a plugin (`package-matrix`, `protocol-declared-only-by-clients`, `core-client-private`): it declares no `@numen/protocol` and no `@numen/core-client`, and among the packages of this repository only `@numen/plugin-sdk` and `@numen/ui`.
 - `plugins-use-main-entry`: the SDK and the UI library are imported through the entries their `exports` declare.
@@ -49,6 +49,6 @@ Each entry names a check or a lint rule by what it forbids. `node tools/lint-lay
 ## Everywhere
 
 - `no-suppressions`: no `nolint`, `eslint-disable`, `@ts-ignore`, `@ts-expect-error` or `@ts-nocheck`; no `exclusions` or `exclude-functions` in a linter configuration; no file named in an `ignores` entry to avoid a rule.
-- `lint-narrative`: identifiers, test titles, comments and commit subjects are written in plain technical English.
+- `style/names` (`make lint_narrative`): identifiers, test titles, comments and commit subjects are written in plain technical English.
 - Version of a changed plugin: `<year>.<month>.<build>` raised once relative to the merge base with main.
 

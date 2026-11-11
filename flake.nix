@@ -48,7 +48,7 @@
       # The versions CI runs. Go and Node are read from go.work and
       # .node-version, the Go plugins from the tool block of libs/core/protocol/go.mod;
       # golangci-lint and buf are also named in .github/workflows, and
-      # golangci-lint in tools/lint-layers/checks/tools.mjs.
+      # golangci-lint in tools/checks/lib/golangci.mjs.
       versions = {
         go = findVersion ./go.work "go ";
         node = lib.trim (builtins.readFile ./.node-version);
