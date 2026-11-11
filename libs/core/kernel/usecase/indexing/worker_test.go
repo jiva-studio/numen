@@ -354,7 +354,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
-	p.worker.read = model.wake
+	p.getWorker().getChannels().read = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -404,7 +404,7 @@ func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) 
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
-	p.worker.sources = model.wake
+	p.getWorker().getChannels().sources = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -436,7 +436,7 @@ func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
-	p.worker.notes = model.wake
+	p.getWorker().getChannels().notes = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -463,7 +463,7 @@ func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {
 	for range 3 {
 		worker.WakeNotes()
 	}
-	if got := len(worker.notes); got != 1 {
+	if got := len(worker.getChannels().notes); got != 1 {
 		t.Errorf("%d wakes are waiting, want 1", got)
 	}
 }
@@ -478,7 +478,7 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 	session.ReportVersionsChanged(v, "talks/a.mp3")
 
 	select {
-	case <-worker.read:
+	case <-worker.getChannels().read:
 	default:
 		t.Fatal("a change of versions woke nothing")
 	}
@@ -499,7 +499,7 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "books/scan.pdf")
-	<-p.worker.read
+	<-p.getWorker().getChannels().read
 	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
@@ -529,7 +529,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "Note.md")
-	<-p.worker.read
+	<-p.getWorker().getChannels().read
 	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())

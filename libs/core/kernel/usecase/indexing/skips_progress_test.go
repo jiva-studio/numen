@@ -58,7 +58,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	}
 
 	p := newPass(made, db, events, model, recipe, v)
-	p.worker.vectorsReady = log.report
+	p.getWorker().vectorsReady = log.report
 	ended := make(chan struct{})
 	go func() {
 		defer close(ended)
@@ -131,7 +131,7 @@ func testVectorsReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc)
 	if calls := model.getHeldCalls(); calls != 0 {
 		t.Errorf("the canceled note was sent to the model %d times", calls)
 	}
-	target, embedded, err := p.worker.vectorCounts(t.Context(), p.v)
+	target, embedded, err := p.getWorker().vectorCounts(t.Context(), p.v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,9 +139,9 @@ func testVectorsReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc)
 		t.Errorf("%d of %d chunks lack a vector, want the %d of the canceled note", target-embedded, target, heldChunks)
 	}
 
-	p.worker.ClearSkips([]string{"Held.md"})
+	p.getWorker().ClearSkips([]string{"Held.md"})
 	p.embed(t.Context())
-	if target, embedded, err = p.worker.vectorCounts(t.Context(), p.v); err != nil {
+	if target, embedded, err = p.getWorker().vectorCounts(t.Context(), p.v); err != nil {
 		t.Fatal(err)
 	}
 	if embedded != target {

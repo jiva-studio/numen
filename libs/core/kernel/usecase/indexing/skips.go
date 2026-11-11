@@ -98,3 +98,15 @@ func (c *skipSet) getSkippedChunks() int64 {
 	defer c.mu.Unlock()
 	return c.chunks
 }
+
+// skipping tells which sources a person canceled the indexing of.
+type skipping interface {
+	addVectors(path string)
+	addTexts(path string)
+	isVectorSkipped(path, hash string) bool
+	isTextSkipped(path string) bool
+	clear(paths []string)
+	getGeneration() uint64
+	setSkippedChunks(n int, generation uint64)
+	getSkippedChunks() int64
+}

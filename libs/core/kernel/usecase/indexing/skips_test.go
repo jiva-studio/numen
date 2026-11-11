@@ -126,7 +126,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 
 	// An edit of the note, reported as the vault watch reports it, indexes it again.
 	writeNote(t, v.Path, "Held.md", noteWith(slices.Concat(getAfterWords(), getHeldWords()[:1]), 300))
-	p.worker.ClearSkips([]string{"Held.md"})
+	p.getWorker().ClearSkips([]string{"Held.md"})
 	cut(t, made, db, v)
 	p.embed(t.Context())
 

@@ -75,12 +75,8 @@ type Worker struct {
 	events       Events
 	debounce     time.Duration
 	after        func(time.Duration) <-chan time.Time
-
-	sources chan struct{}
-	notes   chan struct{}
-	read    chan struct{}
-
-	skips *skipSet
+	wakes        wakeups
+	skips        skipping
 }
 
 func NewWorker(cfg Config) *Worker {
@@ -92,19 +88,17 @@ func NewWorker(cfg Config) *Worker {
 		events:       cfg.Events,
 		debounce:     cfg.Quiet,
 		after:        cfg.After,
-		sources:      make(chan struct{}, 1),
-		notes:        make(chan struct{}, 1),
-		read:         make(chan struct{}, 1),
+		wakes:        newChannelWakes(),
 		skips:        newSkipSet(),
 	}
 }
 
 // WakeSources leaves one pass over the file texts waiting.
-func (w *Worker) WakeSources() { signal(w.sources) }
+func (w *Worker) WakeSources() { w.wakes.wakeSources() }
 
 // WakeNotes leaves one pass over the notes' vectors waiting. Several changes at
 // once are one pass.
-func (w *Worker) WakeNotes() { signal(w.notes) }
+func (w *Worker) WakeNotes() { w.wakes.wakeNotes() }
 
 // ClearSkips indexes again the sources at the paths given whose indexing a
 // person canceled. The vault calls it for every path it reports changed.
@@ -114,6 +108,77 @@ func (w *Worker) openReading(
 	ctx context.Context, v domain.Vault, rebuild bool,
 ) (ReadWholeVault, error) {
 	return w.reading(ctx, w.embedder, v, rebuild)
+}
+
+func (w *Worker) getEvents() Events { return w.events }
+
+func (w *Worker) getSkips() skipping { return w.skips }
+
+func (w *Worker) getWakes() wakeups { return w.wakes }
+
+func (w *Worker) hasEmbedder() bool { return w.embedder != nil }
+
+func (w *Worker) waitQuiet() <-chan time.Time { return w.after(w.debounce) }
+
+func (w *Worker) notifyVectorsReady(ctx context.Context, v domain.Vault) {
+	if w.vectorsReady == nil || ctx.Err() != nil {
+		return
+	}
+	w.vectorsReady(ctx, v)
+}
+
+// wakeups are the signals that something arrived for a pass to do. Each is held until a pass takes it, and
+// several of the same kind are one.
+type wakeups interface {
+	wakeSources()
+	wakeNotes()
+	wakeRead()
+	sourcesWoken() <-chan struct{}
+	notesWoken() <-chan struct{}
+	readWoken() <-chan struct{}
+	// stopOnWake returns a context that ends when any of the signals arrives, and leaves that signal held.
+	stopOnWake(ctx context.Context) (context.Context, func())
+}
+
+type channelWakes struct {
+	sources chan struct{}
+	notes   chan struct{}
+	read    chan struct{}
+}
+
+func newChannelWakes() *channelWakes {
+	return &channelWakes{sources: make(chan struct{}, 1), notes: make(chan struct{}, 1), read: make(chan struct{}, 1)}
+}
+
+func (c *channelWakes) wakeSources() { signal(c.sources) }
+
+func (c *channelWakes) wakeNotes() { signal(c.notes) }
+
+func (c *channelWakes) wakeRead() { signal(c.read) }
+
+func (c *channelWakes) sourcesWoken() <-chan struct{} { return c.sources }
+
+func (c *channelWakes) notesWoken() <-chan struct{} { return c.notes }
+
+func (c *channelWakes) readWoken() <-chan struct{} { return c.read }
+
+func (c *channelWakes) stopOnWake(ctx context.Context) (context.Context, func()) {
+	underCtx, end := context.WithCancel(ctx)
+	var watchers sync.WaitGroup
+	for _, wake := range []chan struct{}{c.read, c.sources, c.notes} {
+		watchers.Go(func() {
+			select {
+			case <-underCtx.Done():
+			case <-wake:
+				signal(wake)
+				end()
+			}
+		})
+	}
+	return underCtx, func() {
+		end()
+		watchers.Wait()
+	}
 }
 
 // taskCancel ends the context of one pass, and records whether a person asked
@@ -175,7 +240,7 @@ func signal(wake chan struct{}) {
 // Session is the work of one vault: the sources a recognition has written more
 // of than their chunks account for, and the passes over the vault.
 type Session struct {
-	worker *Worker
+	worker passWorker
 
 	mu      sync.Mutex
 	pending map[string]domain.Vault
@@ -195,7 +260,7 @@ func (s *Session) RequestCut(v domain.Vault, path string) {
 	}
 	s.pending[path] = v
 	s.mu.Unlock()
-	signal(s.worker.read)
+	s.worker.getWakes().wakeRead()
 }
 
 // ReportVersionsChanged requests that the file be cut again from its live text
