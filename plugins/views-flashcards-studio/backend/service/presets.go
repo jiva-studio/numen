@@ -15,20 +15,16 @@ import (
 
 // presetsHandler answers about the presets decks are scheduled by.
 type presetsHandler struct {
-	getCurrentVault func(context.Context) (domain.Vault, error)
-	createCardNote  func(context.Context, func(domain.Vault, cards.New) (cards.CreateNoteResult, error), string, string) (cards.CreateNoteResult, api.ErrorCode, bool, error)
-	newTitler       func(context.Context, domain.Vault) func(string) string
-	create          cards.Create
-	flash           func() *scenarios.Review
+	*session
+	create cards.Create
+	flash  func() *scenarios.Review
 }
 
 func (b *Backend) newPresetsHandler() *presetsHandler {
 	return &presetsHandler{
-		getCurrentVault: b.getCurrentVault,
-		createCardNote:  b.createCardNote,
-		newTitler:       b.newTitler,
-		create:          cards.NewCreate(b.ports.Writers, b.updateIndex, b.now),
-		flash:           b.flash.Get,
+		session: b.session,
+		create:  cards.NewCreate(b.ports.Writers, b.updateIndex, b.now),
+		flash:   b.flash.Get,
 	}
 }
 

@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/scenarios"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
 )
 
 // Config is what the backend is made from.
@@ -29,18 +28,19 @@ type Config struct {
 
 // Backend answers the cards, the presets and the review.
 type Backend struct {
-	vaults func(domain.VaultID) ports.HostVault
-	ports  hostports.Ports
-	now    ports.Clock
-	cfg    Config
-	runs   *sessions.Registry
-	flash  *scenarios.Current
+	*session
+	ports hostports.Ports
+	now   ports.Clock
+	cfg   Config
+	runs  *sessions.Registry
+	flash *scenarios.Current
 }
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
+	bound := hostports.New(cfg.Vaults, cfg.Store)
 	b := &Backend{
-		vaults: cfg.Vaults, ports: hostports.New(cfg.Vaults, cfg.Store), now: cfg.Now, cfg: cfg,
+		session: &session{vaults: cfg.Vaults, notes: bound.Notes}, ports: bound, now: cfg.Now, cfg: cfg,
 		runs: sessions.NewRegistry(), flash: nil,
 	}
 	b.flash = scenarios.NewCurrent(b.getFlashConfig())
@@ -49,37 +49,6 @@ func New(cfg Config) *Backend {
 
 func (b *Backend) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
 	return b.vaults(v.ID).Index.Scan(ctx, paths)
-}
-
-func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
-	v, err := b.vaults("").Selector.GetVault(ctx)
-	if err != nil {
-		return domain.Vault{}, apierror.NewCurrentVaultError(err)
-	}
-	return v, nil
-}
-
-func (b *Backend) getVault(ctx context.Context, id string) (domain.Vault, error) {
-	v, err := b.vaults(domain.VaultID(id)).Selector.GetVault(ctx)
-	if err != nil {
-		return domain.Vault{}, apierror.NewVaultError(err)
-	}
-	return v, nil
-}
-
-func (b *Backend) getTitle(ctx context.Context, v domain.Vault, path string) string {
-	if path == "" {
-		return ""
-	}
-	found, err := b.ports.Notes.GetNotes(ctx, v.ID, []string{path})
-	if err != nil {
-		return ""
-	}
-	return found[path].Title
-}
-
-func (b *Backend) newTitler(ctx context.Context, v domain.Vault) func(path string) string {
-	return func(path string) string { return b.getTitle(ctx, v, path) }
 }
 
 // getFlashConfig is what the review is built over; the host's cache keeps the schedules and the days counted.
