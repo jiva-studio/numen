@@ -3,8 +3,8 @@ package workspace
 import (
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tablinks"
 )
 
 // maxPendingEvents is the queue size of one watch.
@@ -13,11 +13,11 @@ const maxPendingEvents = 1024
 // linkEvents delivers the events of the tab links to the windows that watch them. A watch keeps the latest
 // event of a topic, in order.
 type linkEvents struct {
-	*broadcast.Broadcaster[tablink.Event]
+	*broadcast.Broadcaster[tablinks.Event]
 }
 
 func newLinkEvents() linkEvents {
-	return linkEvents{&broadcast.Broadcaster[tablink.Event]{
+	return linkEvents{&broadcast.Broadcaster[tablinks.Event]{
 		IsLatest:  true,
 		IsOrdered: true,
 		GetTopic:  getEventTopic,
@@ -27,7 +27,7 @@ func newLinkEvents() linkEvents {
 	}}
 }
 
-func getEventTopic(e tablink.Event) string {
+func getEventTopic(e tablinks.Event) string {
 	switch {
 	case e.Sync != nil:
 		return "sync:" + e.Sync.GroupID

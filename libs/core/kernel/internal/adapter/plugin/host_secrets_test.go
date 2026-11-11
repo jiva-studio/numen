@@ -19,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -208,7 +209,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	putSupervisor(host, secretPluginID, sup)
-	putEndpoint(host, secretPluginID, plugindomain.Endpoint{
+	putEndpoint(host, secretPluginID, transport.Endpoint{
 		Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "launch-name",
 	})
 	if store != nil {

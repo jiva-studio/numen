@@ -24,12 +24,6 @@ type PluginResolver interface {
 	GetPlugin(id string) (manifest.Discovered, bool)
 }
 
-// PluginActivator activates plugins and manages active references.
-type PluginActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (plugin.Endpoint, error)
-	Release(pluginID string)
-}
-
 // PluginRetrier starts a plugin once, as any use of it does.
 type PluginRetrier interface {
 	// RetryPlugin answers why the start failed where it did.

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -22,8 +23,8 @@ func (r AbsentRuntime) unavailable(capability, pluginID string) error {
 }
 
 // EnsureActive reports that the plugin is unavailable.
-func (r AbsentRuntime) EnsureActive(_ context.Context, pluginID string) (plugindomain.Endpoint, error) {
-	return plugindomain.Endpoint{}, r.unavailable("", pluginID)
+func (r AbsentRuntime) EnsureActive(_ context.Context, pluginID string) (transport.Endpoint, error) {
+	return transport.Endpoint{}, r.unavailable("", pluginID)
 }
 
 // RetryPlugin reports that the plugin is unavailable.

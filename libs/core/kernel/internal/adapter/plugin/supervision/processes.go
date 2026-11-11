@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
@@ -101,7 +100,7 @@ func (p *Processes) getLauncher() Launcher {
 
 // Start starts the plugin, in a process of its own or, for a built-in plugin, in this one, and
 // returns its endpoint.
-func (p *Processes) Start(ctx context.Context, launch Launch, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
+func (p *Processes) Start(ctx context.Context, launch Launch, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	if p.getLauncher() != nil || launch.BuiltIn == nil {
 		return p.startPluginProcess(ctx, launch, sup)
 	}
@@ -196,7 +195,7 @@ func (p *Processes) waitForReady(ctx context.Context, stdout io.Reader) (transpo
 	return transport.WaitForHandshake(ctx, stdout)
 }
 
-func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
+func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	plug := launch.Plugin
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
@@ -233,7 +232,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 		closeResource(p.report, "stdout of plugin "+plug.Manifest.ID, stdout)
 	}()
 
-	endpoint := plugindomain.Endpoint{Host: "127.0.0.1", Port: handshake.Port, Token: token}
+	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: handshake.Port, Token: token}
 	p.sups.Clients().Add(token, transport.NewNetworkTransport())
 	if err := transport.CheckPluginProtocol(ctx, p.sups.Clients().Get(endpoint), plug.Manifest, endpoint); err != nil {
 		p.sups.Clients().Remove(token)

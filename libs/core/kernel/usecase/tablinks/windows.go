@@ -42,7 +42,7 @@ func (w *Windows) Cancel(windowID string) {
 }
 
 // GetSnapshot returns every group and every known tab.
-func (w *Windows) GetSnapshot() tablink.Snapshot {
+func (w *Windows) GetSnapshot() Snapshot {
 	s := w.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -58,7 +58,7 @@ func (w *Windows) Highlight(windowID string, isOn bool) {
 	if !s.roster.presence.hasWatch(windowID) {
 		return
 	}
-	s.events.Publish(tablink.Event{Highlight: &tablink.Highlight{WindowID: windowID, IsOn: isOn}})
+	s.events.Publish(Event{Highlight: &Highlight{WindowID: windowID, IsOn: isOn}})
 }
 
 // WriteTabs stores the report of a window and its linkable tabs. A report from
@@ -66,7 +66,7 @@ func (w *Windows) Highlight(windowID string, isOn bool) {
 // unlinked unless it has a pending detach. A tab of another live window moves
 // to this window only by Accept; outside a pending move or detach into this
 // window it is claimed and moves when the last watch of its owner closes.
-func (w *Windows) WriteTabs(window tablink.Window, tabs []tablink.Tab) {
+func (w *Windows) WriteTabs(window Window, tabs []tablink.Tab) {
 	s := w.state
 	s.mu.Lock()
 	defer s.mu.Unlock()

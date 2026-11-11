@@ -22,7 +22,7 @@ func TestSlowWatchReceivesLastSyncOfEachGroup(t *testing.T) {
 	for index := range groups * 2 {
 		tabs = append(tabs, tablink.Tab{ID: "plex:" + strconv.Itoa(index), Kind: "plex"})
 	}
-	links.Windows.WriteTabs(tablink.Window{ID: "window-a"}, tabs)
+	links.Windows.WriteTabs(tablinks.Window{ID: "window-a"}, tabs)
 	for index := 0; index < groups*2; index += 2 {
 		links.Links.Link(tabs[index].ID, tabs[index+1].ID)
 	}

@@ -36,7 +36,7 @@ func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) sup
 	}
 }
 
-func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
+func TestEnsureActive_RefusesPluginWithMismatchedProtocol(t *testing.T) {
 	cases := []struct {
 		name     string
 		protocol int32
@@ -76,7 +76,7 @@ func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 	}
 }
 
-func TestAPluginThatUsesTheHostsProtocolIsActivated(t *testing.T) {
+func TestEnsureActive_ActivatesPluginWithHostProtocol(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
@@ -92,7 +92,7 @@ func TestAPluginThatUsesTheHostsProtocolIsActivated(t *testing.T) {
 
 func TestCheckPluginProtocol_RejectsUnsupportedProtocol(t *testing.T) {
 	newer := manifest.ProtocolVersion + 1
-	endpoint := plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
+	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
 	declared := manifest.Manifest{ID: "md.numen.newer", Protocol: newer}
 
 	err := transport.CheckPluginProtocol(t.Context(), transport.NewClients().Get(endpoint), declared, endpoint)
@@ -108,7 +108,7 @@ func TestCheckPluginProtocolNamesAPluginThatDoesNotAnswerPing(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected *net.TCPAddr, got %T", srv.Listener.Addr())
 	}
-	endpoint := plugindomain.Endpoint{Host: "127.0.0.1", Port: addr.Port, Token: ""}
+	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: addr.Port, Token: ""}
 
 	err := transport.CheckPluginProtocol(t.Context(), transport.NewClients().Get(endpoint), manifest.Manifest{ID: "md.numen.silent"}, endpoint)
 	if err == nil || !strings.Contains(err.Error(), "ping plugin md.numen.silent") {

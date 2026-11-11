@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tablinks"
 )
 
 // LinkGrace is how long a detached tab, and the tabs of a window whose last
@@ -62,7 +63,7 @@ func (h *Handler) WatchTabLinks(
 	}
 }
 
-func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], windowID string, event tablink.Event) error {
+func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], windowID string, event tablinks.Event) error {
 	if !event.IsFor(windowID) {
 		return nil
 	}
@@ -114,8 +115,8 @@ func convertTabsFromWire(tabs []*v1.LinkableTab) []tablink.Tab {
 	return out
 }
 
-func convertWindowFromWire(windowID string, window *v1.TabWindow) tablink.Window {
-	return tablink.Window{
+func convertWindowFromWire(windowID string, window *v1.TabWindow) tablinks.Window {
+	return tablinks.Window{
 		ID:          windowID,
 		IsMain:      window.GetIsMain(),
 		ActiveTitle: window.GetActiveTitle(),
@@ -124,7 +125,7 @@ func convertWindowFromWire(windowID string, window *v1.TabWindow) tablink.Window
 	}
 }
 
-func convertEventToWire(event tablink.Event) *v1.WatchTabLinksResponse {
+func convertEventToWire(event tablinks.Event) *v1.WatchTabLinksResponse {
 	switch {
 	case event.Sync != nil:
 		return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_Sync{Sync: &v1.TabPathSync{
@@ -148,7 +149,7 @@ func convertEventToWire(event tablink.Event) *v1.WatchTabLinksResponse {
 	}
 }
 
-func convertSnapshotToWire(snapshot tablink.Snapshot) *v1.WatchTabLinksResponse {
+func convertSnapshotToWire(snapshot tablinks.Snapshot) *v1.WatchTabLinksResponse {
 	links := &v1.TabLinks{
 		Groups: make([]*v1.TabLinkGroup, 0, len(snapshot.Groups)),
 		Tabs:   make([]*v1.LinkableTab, 0, len(snapshot.Tabs)),

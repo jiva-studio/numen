@@ -12,14 +12,14 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 )
 
 // stubModelHost resolves every capability to one plugin listening at the endpoint given.
 type stubModelHost struct {
-	endpoint plugin.Endpoint
+	endpoint transport.Endpoint
 	acquired atomic.Int32
 	released atomic.Int32
 }
@@ -39,7 +39,7 @@ func (h *stubModelHost) GetPlugin(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, true
 }
 
-func (h *stubModelHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
+func (h *stubModelHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
@@ -54,7 +54,7 @@ func newDownModelHost(t *testing.T) *stubModelHost {
 	server := httptest.NewServer(http.NotFoundHandler())
 	serverPort := plugintest.GetPort(t, server)
 	server.Close()
-	return &stubModelHost{endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: serverPort}}
+	return &stubModelHost{endpoint: transport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
 func newSilentModelHost(t *testing.T) *stubModelHost {
@@ -63,7 +63,7 @@ func newSilentModelHost(t *testing.T) *stubModelHost {
 		<-r.Context().Done()
 	}))
 	t.Cleanup(server.Close)
-	return &stubModelHost{endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server)}}
+	return &stubModelHost{endpoint: transport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server)}}
 }
 
 type modelOpener struct {
@@ -83,7 +83,7 @@ func modelOpeners() []modelOpener {
 	}
 }
 
-func TestABridgeIsNotOpenedOnAPluginThatIsDown(t *testing.T) {
+func TestEmbedderOpen_RefusesDownPlugin(t *testing.T) {
 	for _, tc := range modelOpeners() {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newDownModelHost(t)
@@ -99,7 +99,7 @@ func TestABridgeIsNotOpenedOnAPluginThatIsDown(t *testing.T) {
 	}
 }
 
-func TestABridgeIsNotOpenedOnAPluginThatDoesNotAnswerInTime(t *testing.T) {
+func TestEmbedderOpen_RefusesTimedOutPlugin(t *testing.T) {
 	for _, tc := range modelOpeners() {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newSilentModelHost(t)

@@ -1,9 +1,5 @@
 package tablinks
 
-import (
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
-)
-
 // Links groups tabs and carries the path of a group to its tabs.
 type Links struct {
 	state *state
@@ -46,7 +42,7 @@ func (l *Links) SyncPath(sourceTabID, path, title string) bool {
 		return false
 	}
 	group.Path, group.Title = path, title
-	s.events.Publish(tablink.Event{Sync: &tablink.PathSync{
+	s.events.Publish(Event{Sync: &PathSync{
 		GroupID: group.ID, SourceTabID: sourceTabID, Path: path, Title: title,
 	}})
 	return true

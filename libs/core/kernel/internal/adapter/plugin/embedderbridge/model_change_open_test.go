@@ -8,21 +8,21 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
 // failingActivator is a plugin host that cannot activate any plugin.
 type failingActivator struct{}
 
-func (failingActivator) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
-	return plugin.Endpoint{}, errors.New("the plugin did not start")
+func (failingActivator) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+	return transport.Endpoint{}, errors.New("the plugin did not start")
 }
 
 func (failingActivator) Release(string) {}
 
 // A plugin that cannot be opened after a setting is reported with its id, and no listener runs.
-func TestAFailedOpenOfThePluginAfterASettingIsReported(t *testing.T) {
+func TestEmbedderReportsFailedOpenAfterSettingChange(t *testing.T) {
 	b := &Embedder{
 		pluginID: embeddingPluginID,
 		service: bridge.Service[numenv1connect.EmbeddingServiceClient]{

@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
 // refusingHost fails every activation with the error given.
@@ -16,8 +17,8 @@ type refusingHost struct {
 	err error
 }
 
-func (h refusingHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
-	return plugin.Endpoint{}, h.err
+func (h refusingHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+	return transport.Endpoint{}, h.err
 }
 
 func (refusingHost) Release(string) {}

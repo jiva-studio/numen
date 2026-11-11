@@ -119,7 +119,7 @@ func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[s
 	}
 }
 
-func getAgentPrompt(t *testing.T, host *Host, endpoint plugindomain.Endpoint) string {
+func getAgentPrompt(t *testing.T, host *Host, endpoint transport.Endpoint) string {
 	t.Helper()
 	client := numenv1connect.NewAgentServiceClient(host.Activation.ClientLookup().GetClient(endpoint), transport.GetBaseURL(endpoint))
 	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))

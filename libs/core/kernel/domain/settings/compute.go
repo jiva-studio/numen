@@ -12,20 +12,20 @@ const (
 
 // MachineSpecs represents the detected host machine hardware capabilities. A zero count or size is unknown.
 type MachineSpecs struct {
-	LogicalCPUs     int      `json:"logicalCPUs"`
-	PhysicalCPUs    int      `json:"physicalCPUs"`
-	PerformanceCPUs int      `json:"performanceCPUs"`
-	TotalRAMMB      int64    `json:"totalRAMMB"`
-	AvailableRAMMB  int64    `json:"availableRAMMB"`
-	Accelerators    []string `json:"accelerators"`
+	LogicalCPUs     int
+	PhysicalCPUs    int
+	PerformanceCPUs int
+	TotalRAMMB      int64
+	AvailableRAMMB  int64
+	Accelerators    []string
 }
 
 // ResolvedCompute holds the concrete, calibrated parameters to apply to worker pools.
 type ResolvedCompute struct {
-	Profile       string `json:"profile"`
-	CoreBudget    int    `json:"coreBudget"`
-	Workers       int    `json:"workers"`
-	MemoryLimitMB int64  `json:"memoryLimitMB"`
+	Profile       string
+	CoreBudget    int
+	Workers       int
+	MemoryLimitMB int64
 }
 
 const (

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -79,7 +78,7 @@ func (p *Processes) getEnvironmentVars(ctx context.Context, pluginID, vaultPath 
 	})
 }
 
-func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
+func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	plug := launch.Plugin
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
@@ -100,7 +99,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 		return NoEndpoint(), fmt.Errorf("launch plugin %s: %w", plug.Manifest.ID, err)
 	}
 
-	endpoint := plugindomain.Endpoint{Host: "inprocess", Port: 0, Token: token}
+	endpoint := transport.Endpoint{Host: "inprocess", Port: 0, Token: token}
 	p.sups.Clients().Add(token, transport.NewInProcessTransport(handler))
 	if err := transport.CheckPluginProtocol(ctx, p.sups.Clients().Get(endpoint), plug.Manifest, endpoint); err != nil {
 		p.sups.Clients().Remove(token)
@@ -115,7 +114,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 	return endpoint, nil
 }
 
-func shutdownBuiltIn(ctx context.Context, p *Processes, endpoint plugindomain.Endpoint) {
+func shutdownBuiltIn(ctx context.Context, p *Processes, endpoint transport.Endpoint) {
 	if shutdown := createRPCShutdown(endpoint, p.sups.Clients().Get(endpoint), time.Second); shutdown != nil {
 		if err := shutdown(context.WithoutCancel(ctx)); err != nil {
 			p.report(fmt.Errorf("shut down the handler of built-in plugin that was not activated: %w", err))

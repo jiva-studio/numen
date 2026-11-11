@@ -105,7 +105,7 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 	return p, sup, nil
 }
 
-func (a *Activation) awaitActivation(ctx context.Context, pluginID string, sup *lifecycle.Supervisor) (plugindomain.Endpoint, bool, error) {
+func (a *Activation) awaitActivation(ctx context.Context, pluginID string, sup *lifecycle.Supervisor) (transport.Endpoint, bool, error) {
 	waitCh := sup.ActivatingChan()
 	select {
 	case <-ctx.Done():
@@ -127,7 +127,7 @@ func (a *Activation) settlePluginInState(
 	pluginID string,
 	sup *lifecycle.Supervisor,
 	state lifecycle.ProcessState,
-) (plugindomain.Endpoint, bool, error) {
+) (transport.Endpoint, bool, error) {
 	switch state {
 	case lifecycle.StateDeactivating:
 		err := sup.WaitWhileDeactivating(ctx)
@@ -144,13 +144,13 @@ func (a *Activation) settlePluginInState(
 }
 
 // EnsureActive ensures the plugin process is running and returns its endpoint.
-func (a *Activation) EnsureActive(ctx context.Context, pluginID string) (plugindomain.Endpoint, error) {
+func (a *Activation) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
 	endpoint, err := a.ensureActiveDuringDiscovery(ctx, pluginID)
 	a.failures.Deliver()
 	return endpoint, err
 }
 
-func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (plugindomain.Endpoint, error) {
+func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (transport.Endpoint, error) {
 	a.registry.discovering.RLock()
 	defer a.registry.discovering.RUnlock()
 
@@ -180,7 +180,7 @@ func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID s
 	}
 }
 
-func (a *Activation) runActivation(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
+func (a *Activation) runActivation(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	endpoint, err := a.processes.Start(ctx, a.registry.set.getLaunch(p), sup)
 	if err != nil {
 		a.failures.FailActivation(ctx, p.Manifest.ID, p.Manifest.Name, sup, err)

@@ -45,7 +45,7 @@ func describe(origin themedomain.Origin, file themedomain.File) themedomain.Them
 		Name:       themedomain.GetName(origin, file.Title),
 		Title:      file.Title,
 		Origin:     origin,
-		IsPinned:   themedomain.DeclaresColorScheme(file.Text),
+		IsPinned:   file.IsPinned,
 		PluginID:   "",
 		Appearance: "",
 	}

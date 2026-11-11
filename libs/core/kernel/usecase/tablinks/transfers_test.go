@@ -12,7 +12,7 @@ func newOrbits() tablink.SavedTab {
 	return tablink.SavedTab{ID: "plex:2", Kind: "plex", Path: "notes/Orbits.md", Title: "Orbits", State: `{"focus":"Kepler"}`}
 }
 
-func readEvent(t *testing.T, watch *Watch, isWanted func(tablink.Event) bool) tablink.Event {
+func readEvent(t *testing.T, watch *Watch, isWanted func(Event) bool) Event {
 	t.Helper()
 	timeout := time.After(5 * time.Second)
 	for {
@@ -38,8 +38,8 @@ func readOutcome(t *testing.T, result <-chan tablink.MoveError) tablink.MoveErro
 	}
 }
 
-func isMoveFor(windowID string) func(tablink.Event) bool {
-	return func(e tablink.Event) bool { return e.Move != nil && e.IsFor(windowID) }
+func isMoveFor(windowID string) func(Event) bool {
+	return func(e Event) bool { return e.Move != nil && e.IsFor(windowID) }
 }
 
 func TestMoveChangesTheOwnerAfterAccept(t *testing.T) {
@@ -76,15 +76,15 @@ func TestMoveChangesTheOwnerAfterAccept(t *testing.T) {
 }
 
 func TestMoveAndHighlightEventsAreForTheTargetWindowOnly(t *testing.T) {
-	event := tablink.Event{Move: &tablink.MovedTab{WindowID: "window-b", Tab: newOrbits()}}
+	event := Event{Move: &MovedTab{WindowID: "window-b", Tab: newOrbits()}}
 	if event.IsFor("window-a") || !event.IsFor("window-b") {
 		t.Error("a move is for a window other than its target")
 	}
-	highlight := tablink.Event{Highlight: &tablink.Highlight{WindowID: "window-b", IsOn: true}}
+	highlight := Event{Highlight: &Highlight{WindowID: "window-b", IsOn: true}}
 	if highlight.IsFor("window-a") || !highlight.IsFor("window-b") {
 		t.Error("a highlight is for a window other than its target")
 	}
-	if !(tablink.Event{Snapshot: &tablink.Snapshot{}}).IsFor("window-a") {
+	if !(Event{Snapshot: &Snapshot{}}).IsFor("window-a") {
 		t.Error("a snapshot is not for every window")
 	}
 }
@@ -281,20 +281,20 @@ func TestHighlightIsSentToAWatchingWindowOnly(t *testing.T) {
 	r.Highlight("window-c", true)
 	r.Highlight("window-b", true)
 
-	event := readEvent(t, target, func(e tablink.Event) bool { return e.Highlight != nil })
-	if *event.Highlight != (tablink.Highlight{WindowID: "window-b", IsOn: true}) {
+	event := readEvent(t, target, func(e Event) bool { return e.Highlight != nil })
+	if *event.Highlight != (Highlight{WindowID: "window-b", IsOn: true}) {
 		t.Errorf("the highlight is %+v", *event.Highlight)
 	}
 }
 
-func TestTheSnapshotListsTheMainWindowFirst(t *testing.T) {
+func TestSnapshotListsMainWindowFirst(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	r.Watch("window-b")
 	r.Watch("window-a")
-	r.WriteTabs(tablink.Window{ID: "window-b", ActiveTitle: "Tides", ActiveKind: "plex", TabCount: 3}, nil)
-	r.WriteTabs(tablink.Window{ID: "window-a", IsMain: true, ActiveTitle: "Orbits", ActiveKind: "note", TabCount: 1}, nil)
+	r.WriteTabs(Window{ID: "window-b", ActiveTitle: "Tides", ActiveKind: "plex", TabCount: 3}, nil)
+	r.WriteTabs(Window{ID: "window-a", IsMain: true, ActiveTitle: "Orbits", ActiveKind: "note", TabCount: 1}, nil)
 
-	want := []tablink.Window{
+	want := []Window{
 		{ID: "window-a", IsMain: true, ActiveTitle: "Orbits", ActiveKind: "note", TabCount: 1},
 		{ID: "window-b", ActiveTitle: "Tides", ActiveKind: "plex", TabCount: 3},
 	}
@@ -306,7 +306,7 @@ func TestTheSnapshotListsTheMainWindowFirst(t *testing.T) {
 func TestClosingTheLastWatchRemovesTheWindow(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	watch := r.Watch("window-b")
-	r.WriteTabs(tablink.Window{ID: "window-b", TabCount: 1}, nil)
+	r.WriteTabs(Window{ID: "window-b", TabCount: 1}, nil)
 
 	watch.Close()
 
@@ -314,7 +314,7 @@ func TestClosingTheLastWatchRemovesTheWindow(t *testing.T) {
 		t.Errorf("windows within the grace period are %+v, want none", got)
 	}
 	r.Watch("window-b")
-	want := []tablink.Window{{ID: "window-b", TabCount: 1}}
+	want := []Window{{ID: "window-b", TabCount: 1}}
 	if got := r.GetSnapshot().Windows; !reflect.DeepEqual(got, want) {
 		t.Errorf("windows after a new watch are %+v, want %+v", got, want)
 	}
@@ -519,7 +519,7 @@ func TestDetachAndMoveOfOneTabDoNotBothComplete(t *testing.T) {
 func TestReportOfTheReadingWindowCompletesTheDetach(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	source := r.Watch("window-a")
-	r.WriteTabs(tablink.Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
+	r.WriteTabs(Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
 	result := r.Detach(newOrbits())
 	detachID := readDetachID(r, "window-b", "plex:2")
 
@@ -571,7 +571,7 @@ func TestMoveEndsAPendingDetachOfTheSameTab(t *testing.T) {
 func TestDetachEndsWithCancelledOnAReportOfAnotherWindow(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	source := r.Watch("window-a")
-	r.WriteTabs(tablink.Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
+	r.WriteTabs(Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
 	result := r.Detach(newOrbits())
 	readDetachID(r, "window-b", "plex:2")
 
@@ -586,7 +586,7 @@ func TestDetachEndsWithCancelledOnAReportOfAnotherWindow(t *testing.T) {
 func TestMoveEndsWithCancelledWhenTheTabOwnerChanges(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	source := r.Watch("window-a")
-	r.WriteTabs(tablink.Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
+	r.WriteTabs(Window{ID: "window-a"}, []tablink.Tab{plex("plex:2", "Orbits")})
 	writeTabs(r, "window-t", nil)
 	writeTabs(r, "window-c", []tablink.Tab{plex("plex:2", "Orbits")})
 	result := r.Move("window-a", "window-t", newOrbits())

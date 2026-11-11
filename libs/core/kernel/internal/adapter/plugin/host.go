@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/errsink"
 
@@ -45,7 +46,7 @@ func NewToolHost(activation *Activation, registry *Registry) ToolHost {
 }
 
 // EnsureActive starts the plugin if it is not running and holds it.
-func (h ToolHost) EnsureActive(ctx context.Context, pluginID string) (plugindomain.Endpoint, error) {
+func (h ToolHost) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
 	return h.activation.EnsureActive(ctx, pluginID)
 }
 

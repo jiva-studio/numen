@@ -15,7 +15,7 @@ import (
 
 // Activator starts a plugin on demand and releases the reference the start took.
 type Activator interface {
-	EnsureActive(ctx context.Context, pluginID string) (plugin.Endpoint, error)
+	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
 	Release(pluginID string)
 }
 

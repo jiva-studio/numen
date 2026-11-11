@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
@@ -98,7 +99,7 @@ func InstallPluginVault(c Config,
 
 // PluginRuntime is what runs, finds and addresses the plugins.
 type PluginRuntime struct {
-	pluginport.PluginActivator
+	bridge.Activator
 	pluginport.PluginRetrier
 	pluginport.PluginDiscoverer
 	pluginport.PluginLister
@@ -162,7 +163,7 @@ func AdaptPluginHost(host *plugin.Host) *PluginHost {
 func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
 		Runtime: PluginRuntime{
-			PluginActivator:    host.Activation,
+			Activator:          host.Activation,
 			PluginRetrier:      host.Retry,
 			PluginDiscoverer:   host.Discovery,
 			PluginLister:       host.Registry,

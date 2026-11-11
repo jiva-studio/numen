@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"sync"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/portproxy"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -289,6 +289,6 @@ func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 	}
 }
 
-func (l *Listeners) releaseEndpoint(pluginID string, endpoint plugindomain.Endpoint) {
+func (l *Listeners) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
 	l.sups.Release(pluginID, endpoint.Token, l.clock.Now())
 }

@@ -15,7 +15,7 @@ func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHo
 	runtime, settings := bridge.AbsentRuntime{Reason: reason, Cause: cause}, bridge.AbsentSettings{}
 	return &PluginHost{
 		Runtime: PluginRuntime{
-			PluginActivator: runtime, PluginRetrier: runtime, PluginDiscoverer: runtime, PluginLister: runtime,
+			Activator: runtime, PluginRetrier: runtime, PluginDiscoverer: runtime, PluginLister: runtime,
 			PluginResolver: runtime, PluginEventEmitter: runtime, PluginBinding: runtime, TextPlugins: runtime,
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},

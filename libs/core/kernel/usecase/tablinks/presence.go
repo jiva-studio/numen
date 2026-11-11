@@ -1,10 +1,6 @@
 package tablinks
 
-import (
-	"slices"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
-)
+import "slices"
 
 // expiry is a pending removal of a window and the cancel func of its run.
 // hasAccepted marks a window that accepted a tab while it had no watch.
@@ -59,8 +55,8 @@ func (p *presence) cancelWatches(windowID string) {
 
 // Watch is one window's subscription to the tab links.
 type Watch struct {
-	Initial tablink.Snapshot
-	Events  <-chan tablink.Event
+	Initial Snapshot
+	Events  <-chan Event
 	Stop    <-chan struct{}
 
 	windowID    string

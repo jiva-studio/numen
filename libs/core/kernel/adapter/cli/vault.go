@@ -45,15 +45,9 @@ func getVaultSubcommands() map[string]vaultSubcommand {
 		"list": func(_ context.Context, out io.Writer, deps Deps, _ []string) error {
 			return listVaults(out, deps)
 		},
-		"rename": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
-			return renameVault(ctx, out, deps, args)
-		},
-		"remove": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
-			return removeVaultFromList(ctx, out, deps, args)
-		},
-		"erase": func(ctx context.Context, out io.Writer, deps Deps, args []string) error {
-			return eraseVault(ctx, out, deps, args)
-		},
+		"rename": renameVault,
+		"remove": removeVaultFromList,
+		"erase":  eraseVault,
 		"open": func(_ context.Context, out io.Writer, deps Deps, args []string) error {
 			return openVault(out, deps, args)
 		},

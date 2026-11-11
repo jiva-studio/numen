@@ -1,8 +1,8 @@
 package plugin
 
 import (
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -26,12 +26,12 @@ func putSupervisor(host *Host, id string, sup *lifecycle.Supervisor) {
 	host.Registry.sups.Put(id, sup)
 }
 
-func endpointOf(host *Host, id string) plugindomain.Endpoint {
+func endpointOf(host *Host, id string) transport.Endpoint {
 	endpoint, _ := host.Registry.sups.GetEndpoint(id)
 	return endpoint
 }
 
-func putEndpoint(host *Host, id string, endpoint plugindomain.Endpoint) {
+func putEndpoint(host *Host, id string, endpoint transport.Endpoint) {
 	host.Registry.sups.SetEndpoint(id, endpoint)
 }
 

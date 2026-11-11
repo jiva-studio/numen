@@ -57,36 +57,3 @@ func IsPlainTitle(title string) bool {
 	}
 	return title == filepath.Base(title)
 }
-
-// DeclaresColorScheme reports whether the stylesheet pins `color-scheme`, outside its comments.
-func DeclaresColorScheme(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
-
-func stripComments(css string) string {
-	var text strings.Builder
-	for {
-		start := strings.Index(css, "/*")
-		if start < 0 {
-			text.WriteString(css)
-			return text.String()
-		}
-		text.WriteString(css[:start])
-		end := strings.Index(css[start+2:], "*/")
-		if end < 0 {
-			return text.String()
-		}
-		css = css[start+2+end+2:]
-	}
-}
-
-func hasDeclared(css, property string) bool {
-	for pos := 0; ; {
-		found := strings.Index(css[pos:], property)
-		if found < 0 {
-			return false
-		}
-		pos += found + len(property)
-		if strings.HasPrefix(strings.TrimLeft(css[pos:], " \t\r\n"), ":") {
-			return true
-		}
-	}
-}

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -20,7 +20,7 @@ import (
 // downEmbeddingHost resolves an embedding plugin whose process is not listening.
 type downEmbeddingHost struct {
 	pluginport.PluginResolver
-	endpoint plugin.Endpoint
+	endpoint transport.Endpoint
 	released atomic.Int32
 	acquired atomic.Int32
 }
@@ -37,7 +37,7 @@ func (h *downEmbeddingHost) ResolveService(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
 
-func (h *downEmbeddingHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
+func (h *downEmbeddingHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
@@ -53,16 +53,16 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	}
 	serverPort := addr.Port
 	server.Close()
-	return &downEmbeddingHost{endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: serverPort}}
+	return &downEmbeddingHost{endpoint: transport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
 func (h *downEmbeddingHost) lend() *container.PluginHost {
-	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, PluginActivator: h, PluginBinding: container.AbsentBinding()}}
+	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding()}}
 }
 
 // A plugin that does not answer names no model, and a vault read without a
 // model leaves the vectors of the index where they are.
-func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) {
+func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
 	target := container.NewConfig(container.Config{

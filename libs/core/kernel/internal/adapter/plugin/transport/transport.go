@@ -15,8 +15,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 var (
@@ -44,8 +42,8 @@ func NewNetworkTransport() *http.Transport {
 
 // GetBaseURL returns the HTTP scheme, host and port of the plugin server at e.
 // An endpoint with neither host nor port is the in-process server.
-func GetBaseURL(e plugin.Endpoint) string {
-	host := e.Address()
+func GetBaseURL(e Endpoint) string {
+	host := e.GetAddress()
 	if host == "" {
 		host = "inprocess"
 	}
@@ -82,7 +80,7 @@ func (c *Clients) Remove(token string) {
 }
 
 // Get returns the client kept for the endpoint, or an unpooled client when none is kept.
-func (c *Clients) Get(e plugin.Endpoint) *http.Client {
+func (c *Clients) Get(e Endpoint) *http.Client {
 	c.mu.Lock()
 	client := c.byToken[e.Token]
 	c.mu.Unlock()
@@ -100,7 +98,7 @@ type ClientLookup struct{ clients *Clients }
 func NewClientLookup(clients *Clients) ClientLookup { return ClientLookup{clients: clients} }
 
 // GetClient returns the client kept for the endpoint, or an unpooled client when none is kept.
-func (l ClientLookup) GetClient(e plugin.Endpoint) *http.Client {
+func (l ClientLookup) GetClient(e Endpoint) *http.Client {
 	if l.clients == nil {
 		return newUnpooledClient()
 	}
@@ -109,12 +107,12 @@ func (l ClientLookup) GetClient(e plugin.Endpoint) *http.Client {
 
 // ClientSource is a plugin host that keeps the client of each endpoint it started.
 type ClientSource interface {
-	GetClient(e plugin.Endpoint) *http.Client
+	GetClient(e Endpoint) *http.Client
 }
 
 // GetClient returns the client of the endpoint from the host when it keeps one, else an unpooled
 // client, which keeps no connection open after the call.
-func GetClient(host any, e plugin.Endpoint) *http.Client {
+func GetClient(host any, e Endpoint) *http.Client {
 	if source, ok := host.(ClientSource); ok {
 		return source.GetClient(e)
 	}

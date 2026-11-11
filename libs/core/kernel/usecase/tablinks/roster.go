@@ -12,7 +12,7 @@ type roster struct {
 	tabs        map[string]tablink.Tab
 	order       []string
 	windows     map[string][]string
-	info        map[string]tablink.Window
+	info        map[string]Window
 	windowOrder []string
 	claims      map[string][]tablink.Tab
 	groups      *groupSet
@@ -23,7 +23,7 @@ func newRoster() *roster {
 	return &roster{
 		tabs:     map[string]tablink.Tab{},
 		windows:  map[string][]string{},
-		info:     map[string]tablink.Window{},
+		info:     map[string]Window{},
 		claims:   map[string][]tablink.Tab{},
 		groups:   &groupSet{},
 		presence: newPresence(),
@@ -38,14 +38,14 @@ func (r *roster) snapshotTabs() []tablink.Tab {
 	return out
 }
 
-func (r *roster) listWindows(isWatched func(windowID string) bool) []tablink.Window {
-	out := make([]tablink.Window, 0, len(r.windowOrder))
+func (r *roster) listWindows(isWatched func(windowID string) bool) []Window {
+	out := make([]Window, 0, len(r.windowOrder))
 	for _, id := range r.windowOrder {
 		if isWatched(id) {
 			out = append(out, r.info[id])
 		}
 	}
-	slices.SortStableFunc(out, func(a, b tablink.Window) int {
+	slices.SortStableFunc(out, func(a, b Window) int {
 		switch {
 		case a.IsMain == b.IsMain:
 			return 0
@@ -58,7 +58,7 @@ func (r *roster) listWindows(isWatched func(windowID string) bool) []tablink.Win
 	return out
 }
 
-func (r *roster) writeWindow(window tablink.Window) {
+func (r *roster) writeWindow(window Window) {
 	if _, ok := r.info[window.ID]; !ok {
 		r.windowOrder = append(r.windowOrder, window.ID)
 	}

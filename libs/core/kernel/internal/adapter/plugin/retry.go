@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // pluginActivator starts a plugin and counts the callers that hold it.
 type pluginActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (plugindomain.Endpoint, error)
+	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
 	Release(pluginID string)
 }
 

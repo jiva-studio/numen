@@ -101,9 +101,7 @@ func getCLICommands() map[string]cliCommand {
 		"scan": func(ctx context.Context, out, _ io.Writer, deps Deps, args []string) error {
 			return runScanCommand(ctx, out, deps, args)
 		},
-		"search": func(ctx context.Context, out, errOut io.Writer, deps Deps, args []string) error {
-			return runSearchCommand(ctx, out, errOut, deps, args)
-		},
+		"search": runSearchCommand,
 		"links": func(ctx context.Context, out, _ io.Writer, deps Deps, args []string) error {
 			return runLinksCommand(ctx, out, deps, args)
 		},

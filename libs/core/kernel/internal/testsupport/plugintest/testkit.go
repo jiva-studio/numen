@@ -22,7 +22,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -209,7 +209,7 @@ func (s *MockAgentServer) GetAgentTools(
 
 // LeaseHost resolves every capability to one stub plugin and counts the references taken and given back.
 type LeaseHost struct {
-	Endpoint  plugin.Endpoint
+	Endpoint  transport.Endpoint
 	EnsureErr error
 	Acquired  atomic.Int32
 	Released  atomic.Int32
@@ -227,9 +227,9 @@ func (h *LeaseHost) GetPlugin(string) (manifestdomain.Discovered, bool) {
 	return manifestdomain.Discovered{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, true
 }
 
-func (h *LeaseHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
+func (h *LeaseHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
 	if h.EnsureErr != nil {
-		return plugin.Endpoint{}, h.EnsureErr
+		return transport.Endpoint{}, h.EnsureErr
 	}
 	h.Acquired.Add(1)
 	return h.Endpoint, nil

@@ -95,12 +95,3 @@ func ListAllowedSecrets(page []Secret, declaration DeclarationKey) []Secret {
 	}
 	return slices.Concat(first, rest)
 }
-
-// SecretListing is the secrets as the window shows them: the sections of the page in order, the menu of
-// every declaration, and where the values are kept when it is a file. No value and no flag about a
-// value is part of it, and the key store is not read.
-type SecretListing struct {
-	Sections        []SecretSection
-	Menus           []SecretMenu
-	CredentialsPath string
-}

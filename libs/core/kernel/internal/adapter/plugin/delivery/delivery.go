@@ -25,7 +25,7 @@ const ConfigureTimeout = 3 * time.Second
 // Snapshot is what a Configure call to one plugin is made of, read while the table of plugins is locked.
 type Snapshot struct {
 	PluginID   string
-	Endpoint   plugindomain.Endpoint
+	Endpoint   transport.Endpoint
 	ConfigJSON string
 	Values     map[string]string
 	Declared   []manifest.SecretDeclaration
@@ -39,7 +39,7 @@ type Host struct {
 	GetSnapshot   func(pluginID string) (Snapshot, bool, error)
 	ListPluginIDs func() []string
 	ReportError   func(err error)
-	GetClient     func(endpoint plugindomain.Endpoint) *http.Client
+	GetClient     func(endpoint transport.Endpoint) *http.Client
 }
 
 // Delivery gives each running plugin its configuration and the secrets it declares, and sends them

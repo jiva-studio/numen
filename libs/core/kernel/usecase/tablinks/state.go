@@ -5,8 +5,6 @@ import (
 	"slices"
 	"sync"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 )
 
 // Tabs are the use cases of the tab links of one vault.
@@ -43,8 +41,8 @@ type state struct {
 	expiries *expiries
 }
 
-func (s *state) snapshot() tablink.Snapshot {
-	return tablink.Snapshot{
+func (s *state) snapshot() Snapshot {
+	return Snapshot{
 		Groups:  s.roster.groups.snapshot(),
 		Tabs:    s.roster.snapshotTabs(),
 		Windows: s.roster.listWindows(s.roster.presence.hasWatch),
@@ -53,7 +51,7 @@ func (s *state) snapshot() tablink.Snapshot {
 
 func (s *state) publishSnapshot() {
 	snapshot := s.snapshot()
-	s.events.Publish(tablink.Event{Snapshot: &snapshot})
+	s.events.Publish(Event{Snapshot: &snapshot})
 }
 
 func (s *state) removeWindow(windowID string) {

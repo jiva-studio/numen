@@ -20,7 +20,7 @@ func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 				{Key: "appearance.interfaceScale", Type: "range", DefaultJSON: "1", ValueJSON: "1"},
 			}
 		},
-	), setting.NoSecrets{}), nil, nil, nil), PluginFolders{}, SecretItems{}, SecretGroups{})
+	), nil), nil, nil, nil), PluginFolders{}, SecretItems{}, SecretGroups{})
 
 	response, err := handler.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {

@@ -213,11 +213,11 @@ func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
 
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
-	var secretLister settings.SecretLister = settings.NoSecrets{}
+	var secretLister settings.SecretLister
 	var items windowsettings.SecretItems
 	var groups windowsettings.SecretGroups
 	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
-		secretLister = secrets.List
+		secretLister = secrets.List.ListForSettings
 		items = windowsettings.NewSecretItems(secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write, secrets.Items.Delete, secrets.Items.Move)
 		groups = windowsettings.NewSecretGroups(secrets.Groups.Rename, secrets.Groups.Delete, secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates)
 	}

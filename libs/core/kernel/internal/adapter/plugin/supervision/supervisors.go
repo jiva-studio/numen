@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -21,7 +20,7 @@ const rpcShutdownGrace = 2 * time.Second
 type Supervisors struct {
 	mu            sync.RWMutex
 	byPlugin      map[string]*lifecycle.Supervisor
-	endpoints     map[string]plugindomain.Endpoint
+	endpoints     map[string]transport.Endpoint
 	listenerPorts map[string]map[string]int
 	clients       *transport.Clients
 	report        func(error)
@@ -33,7 +32,7 @@ type Supervisors struct {
 func NewSupervisors(report func(error), onDrop func(pluginID string)) *Supervisors {
 	return &Supervisors{
 		byPlugin:      make(map[string]*lifecycle.Supervisor),
-		endpoints:     make(map[string]plugindomain.Endpoint),
+		endpoints:     make(map[string]transport.Endpoint),
 		listenerPorts: make(map[string]map[string]int),
 		clients:       transport.NewClients(),
 		report:        report,
@@ -80,7 +79,7 @@ func (s *Supervisors) Forget(pluginID string) {
 }
 
 // GetEndpoint returns the endpoint of the running process of the plugin.
-func (s *Supervisors) GetEndpoint(pluginID string) (plugindomain.Endpoint, bool) {
+func (s *Supervisors) GetEndpoint(pluginID string) (transport.Endpoint, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	endpoint, ok := s.endpoints[pluginID]
@@ -177,7 +176,7 @@ func forgetEndpointLocked(s *Supervisors, pluginID string) {
 
 // Claim is what Begin found.
 type Claim struct {
-	Endpoint plugindomain.Endpoint
+	Endpoint transport.Endpoint
 	Running  bool
 	State    lifecycle.ProcessState
 	Started  bool
@@ -199,13 +198,13 @@ func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time
 }
 
 // AcquireRunning takes a hold on the plugin and returns its endpoint if a process of it runs.
-func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time) (plugindomain.Endpoint, bool) {
+func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.acquireRunningLocked(pluginID, sup, now)
 }
 
-func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor, now time.Time) (plugindomain.Endpoint, bool) {
+func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
 	endpoint := s.endpoints[pluginID]
 	if IsNoEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(now) {
 		return NoEndpoint(), false
@@ -218,7 +217,7 @@ type ProcessAttachment struct {
 	PluginID   string
 	Supervisor *lifecycle.Supervisor
 	Process    *os.Process
-	Endpoint   plugindomain.Endpoint
+	Endpoint   transport.Endpoint
 	Listeners  map[string]int
 	Now        time.Time
 	OnExit     func()
@@ -252,7 +251,7 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 
 // AttachInProcess records the endpoint of a plugin served inside this process and activates it. It
 // fails where the start was aborted meanwhile.
-func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint plugindomain.Endpoint, now time.Time) error {
+func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, now time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if sup.GetState() != lifecycle.StateActivating {
@@ -264,7 +263,7 @@ func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor
 }
 
 // SetEndpoint records the endpoint of a plugin as a process of it would have reported it.
-func (s *Supervisors) SetEndpoint(pluginID string, endpoint plugindomain.Endpoint) {
+func (s *Supervisors) SetEndpoint(pluginID string, endpoint transport.Endpoint) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.endpoints[pluginID] = endpoint

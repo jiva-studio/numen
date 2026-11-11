@@ -1,18 +1,14 @@
 package tablinks
 
-import (
-	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
-)
+import "time"
 
 // Events delivers the events of the tab links to the watching windows.
 type Events interface {
 	// Publish queues the event for every subscriber.
-	Publish(event tablink.Event)
+	Publish(event Event)
 	// Subscribe starts a subscription: the channel of the events published from now on, and the function
 	// that ends it and closes the channel.
-	Subscribe() (<-chan tablink.Event, func())
+	Subscribe() (<-chan Event, func())
 }
 
 // Schedule runs f once after d and returns a function that cancels the run. The cancel function returns

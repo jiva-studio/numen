@@ -29,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
@@ -358,7 +359,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 
 	const numGoroutines = 8
 	var wg sync.WaitGroup
-	endpoints := make([]plugindomain.Endpoint, numGoroutines)
+	endpoints := make([]transport.Endpoint, numGoroutines)
 	errs := make([]error, numGoroutines)
 
 	wg.Go(func() {
@@ -436,7 +437,7 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	})
 
 	var slowWg sync.WaitGroup
-	var slowEndpoint plugindomain.Endpoint
+	var slowEndpoint transport.Endpoint
 	var slowErr error
 
 	slowWg.Go(func() {
@@ -557,7 +558,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	})
 
 	var wg sync.WaitGroup
-	var activeEp plugindomain.Endpoint
+	var activeEp transport.Endpoint
 	var activeErr error
 
 	wg.Go(func() {
@@ -917,9 +918,9 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	}
 }
 
-func TestTheExitOfAProcessDropsItsEndpoint(t *testing.T) {
+func TestProcessExitDropsEndpoint(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	putEndpoint(host, "p", plugindomain.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"})
+	putEndpoint(host, "p", transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"})
 
 	host.Registry.sups.Drop("p")
 	_, stillThere := host.Registry.sups.GetEndpoint("p")
@@ -928,7 +929,7 @@ func TestTheExitOfAProcessDropsItsEndpoint(t *testing.T) {
 	}
 }
 
-func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
+func TestEnsureActive_PreservesPluginInUseDuringConcurrentEviction(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	clock := testsupport.NewClock()
@@ -1018,7 +1019,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 
 	type result struct {
-		endpoint plugindomain.Endpoint
+		endpoint transport.Endpoint
 		err      error
 	}
 	reply := make(chan result, 1)
@@ -1070,7 +1071,7 @@ func newHostOfProviders(t *testing.T) *Host {
 
 // Of several enabled plugins with the capability, the one with the lowest id is
 // found, at every lookup.
-func TestTheLowestIDOfSeveralProvidersIsFound(t *testing.T) {
+func TestFindPluginByCapability_SelectsLowestID(t *testing.T) {
 	host := newHostOfProviders(t)
 	for range 100 {
 		byCapability, ok := host.Registry.FindPluginByCapability(bridge.CapabilityEmbedding)
@@ -1086,7 +1087,7 @@ func TestTheLowestIDOfSeveralProvidersIsFound(t *testing.T) {
 }
 
 // The host lists its plugins in the order of their ids.
-func TestTheHostListsPluginsInIDOrder(t *testing.T) {
+func TestHost_ListsPluginsInIDOrder(t *testing.T) {
 	host := newHostOfProviders(t)
 	want := []string{"md.numen.provider-a", "md.numen.provider-b", "md.numen.provider-c"}
 	for range 20 {
@@ -1160,13 +1161,13 @@ func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 		sup := lifecycle.New(nil)
 		sup.Permissions.Set(one.perms)
 		putSupervisor(host, id, sup)
-		putEndpoint(host, id, plugindomain.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token})
+		putEndpoint(host, id, transport.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token})
 	}
 	return host
 }
 
 // The host names a running plugin by the token it was launched with.
-func TestTheHostNamesAPluginByItsToken(t *testing.T) {
+func TestHost_GetPluginIDByToken(t *testing.T) {
 	host := newRunningTestHost(t, map[string]runningPlugin{
 		"md.numen.a": {"token-a", []string{manifest.PermissionAIComplete}},
 		"md.numen.b": {"token-b", nil},
@@ -1193,7 +1194,7 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 
 // The host endpoint serves only once something answers completions, and
 // stops when the host does.
-func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
+func TestHost_OpenHostEndpointServesOnceCompleterSet(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	services, _ := lendEndpoint(host, hostendpoint.Address)
 	if got, err := host.Services.OpenHostEndpoint(t.Context()); err != nil || got != 0 {
@@ -1220,7 +1221,7 @@ func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 
 // The port is passed to a plugin process in its environment only while the
 // endpoint serves, and the token is the one issued at launch.
-func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
+func TestGetPluginVars_CarriesHostPort(t *testing.T) {
 	with := process.GetPluginVars("md.numen.a", process.LaunchEnvironment{Port: 5, HostPort: 7777, Token: "t"})
 	if !slices.Contains(with, "NUMEN_HOST_PORT=7777") || !slices.Contains(with, "NUMEN_PLUGIN_TOKEN=t") {
 		t.Errorf("environment %v lacks the host port or the token", with)
@@ -1234,7 +1235,7 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 }
 
 // A plugin process launched while the host endpoint serves receives its port.
-func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
+func TestGetLaunchVars_ReportsHostPort(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
@@ -1258,7 +1259,7 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 }
 
 // An endpoint that cannot start is reported and does not stop a plugin from launching.
-func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
+func TestGetLaunchVars_HostEndpointStartFailureDoesNotStopLaunch(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {

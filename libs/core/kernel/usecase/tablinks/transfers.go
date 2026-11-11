@@ -75,7 +75,7 @@ func (t *Transfers) Move(sourceWindowID, targetWindowID string, tab tablink.Save
 	pending := &move{id: s.transit.createMoveID(), targetWindowID: targetWindowID, result: result}
 	s.transit.moves[tab.ID] = pending
 	s.expiries.scheduleMove(tab.ID, pending)
-	s.events.Publish(tablink.Event{Move: &tablink.MovedTab{WindowID: targetWindowID, MoveID: pending.id, Tab: tab}})
+	s.events.Publish(Event{Move: &MovedTab{WindowID: targetWindowID, MoveID: pending.id, Tab: tab}})
 	return result
 }
 

@@ -7,6 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
+// PersistHandler is called when a plugin modifies its own settings.
+type PersistHandler func(pluginID string, key string, value any) error
+
 // Setting declares one configuration field managed by the core host.
 type Setting struct {
 	Key           string

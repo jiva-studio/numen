@@ -16,13 +16,14 @@ import (
 	"testing"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
 // servingHost serves the services it is given from the plugins it runs.
 type servingHost struct {
 	infos     []plugindomain.Info
 	services  map[string]string
-	endpoints map[string]plugindomain.Endpoint
+	endpoints map[string]transport.Endpoint
 	manifests map[string]catalogmanifest.Manifest
 	mu        sync.Mutex
 	released  int
@@ -42,10 +43,10 @@ func (h *servingHost) ResolveService(service string) (catalogmanifest.Discovered
 	return catalogmanifest.Discovered{Manifest: catalogmanifest.Manifest{ID: id}}, serves
 }
 
-func (h *servingHost) EnsureActive(_ context.Context, id string) (plugindomain.Endpoint, error) {
+func (h *servingHost) EnsureActive(_ context.Context, id string) (transport.Endpoint, error) {
 	endpoint, running := h.endpoints[id]
 	if !running {
-		return plugindomain.Endpoint{}, errors.New("the plugin is down")
+		return transport.Endpoint{}, errors.New("the plugin is down")
 	}
 	return endpoint, nil
 }
@@ -62,7 +63,7 @@ func (h *servingHost) getReleased() int {
 	return h.released
 }
 
-func endpointOf(t *testing.T, server *httptest.Server, token string) plugindomain.Endpoint {
+func endpointOf(t *testing.T, server *httptest.Server, token string) transport.Endpoint {
 	t.Helper()
 	host, rawPort, err := net.SplitHostPort(server.Listener.Addr().String())
 	if err != nil {
@@ -72,10 +73,10 @@ func endpointOf(t *testing.T, server *httptest.Server, token string) plugindomai
 	if err != nil {
 		t.Fatal(err)
 	}
-	return plugindomain.Endpoint{Host: host, Port: number, Token: token}
+	return transport.Endpoint{Host: host, Port: number, Token: token}
 }
 
-func TestACallReachesThePluginThatServesItsService(t *testing.T) {
+func TestProxyReachesPluginServingService(t *testing.T) {
 	var path, query, method, auth, origin, body string
 	plugin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path, query, method, auth, origin = r.URL.Path, r.URL.RawQuery, r.Method, r.Header.Get("Authorization"), r.Header.Get("Origin")
@@ -92,7 +93,7 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
 		services:  map[string]string{"numen.v1.SampleService": "md.numen.a"},
-		endpoints: map[string]plugindomain.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
+		endpoints: map[string]transport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(Open(host))
 	t.Cleanup(window.Close)
@@ -130,7 +131,7 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 	}
 }
 
-func TestAStreamReachesTheWindowMessageByMessage(t *testing.T) {
+func TestProxyStreamsToWindowMessageByMessage(t *testing.T) {
 	second := make(chan struct{})
 	plugin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if _, err := w.Write([]byte("one")); err != nil {
@@ -147,7 +148,7 @@ func TestAStreamReachesTheWindowMessageByMessage(t *testing.T) {
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
 		services:  map[string]string{"numen.v1.EventsService": "md.numen.a"},
-		endpoints: map[string]plugindomain.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
+		endpoints: map[string]transport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(Open(host))
 	t.Cleanup(window.Close)
@@ -193,7 +194,7 @@ func TestOnlyAServiceAPluginServesIsForwarded(t *testing.T) {
 	}
 }
 
-func TestAPluginThatCannotBeStartedIsAnUnavailableService(t *testing.T) {
+func TestProxyUnavailableWhenPluginCannotStart(t *testing.T) {
 	host := &servingHost{services: map[string]string{"numen.v1.SampleService": "md.numen.a"}}
 	recorded := httptest.NewRecorder()
 

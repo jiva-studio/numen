@@ -3,8 +3,8 @@ package supervision
 import (
 	"time"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
 // Target is a plugin whose process is to be stopped, with what stopping it needs.
@@ -12,7 +12,7 @@ type Target struct {
 	ID       string
 	PID      int
 	Sup      *lifecycle.Supervisor
-	Endpoint plugindomain.Endpoint
+	Endpoint transport.Endpoint
 }
 
 func takeLocked(s *Supervisors, id string, sup *lifecycle.Supervisor, pid int) Target {

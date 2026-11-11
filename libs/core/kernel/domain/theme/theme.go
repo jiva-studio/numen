@@ -8,10 +8,11 @@ type PluginTheme struct {
 	Appearance string
 }
 
-// File is a theme as a store holds it: its title and its stylesheet.
+// File is a theme as a store holds it: its title, its stylesheet, and whether it pins its color scheme.
 type File struct {
-	Title string
-	Text  string
+	Title    string
+	Text     string
+	IsPinned bool
 }
 
 // Origin is where a theme comes from. A theme carries its origin in its name, and

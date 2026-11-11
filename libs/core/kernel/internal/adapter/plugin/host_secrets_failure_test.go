@@ -19,6 +19,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -171,7 +172,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	putSupervisor(host, pluginID, sup)
-	putEndpoint(host, pluginID, plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"})
+	putEndpoint(host, pluginID, transport.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"})
 	source.allow(pluginID)
 	return probe
 }
@@ -236,7 +237,7 @@ func TestRefreshSkipsSameRejectedSecretList(t *testing.T) {
 }
 
 // A refresh sends to a plugin whose send failed once its list differs from the one that failed.
-func TestARefreshSendsToAFailedPluginWhoseListChanged(t *testing.T) {
+func TestRefresh_SendsToFailedPluginWhenListChanged(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
 	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {

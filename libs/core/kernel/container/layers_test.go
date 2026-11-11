@@ -48,7 +48,7 @@ func getDriving() map[string]bool {
 //
 // Test files are excluded: a test is external to the package it exercises and
 // builds the adapters that stand in for the real ones.
-func TestTheLayersAreWhatTheyAre(t *testing.T) {
+func TestLayerDependenciesPointInward(t *testing.T) {
 	var wrong []string
 	var read int
 	root := ".."
@@ -91,12 +91,12 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 	}
 }
 
-// TestNoAdapterNamesThePortItSatisfies checks that no adapter declares `var _ port.X = …`,
+// TestAdaptersDoNotClaimSatisfiedPorts checks that no adapter declares `var _ port.X = …`,
 // which duplicates the binding the composition root owns.
 // A method returning `port.X` is not such a declaration: where a port opens
 // another (`VaultReaders.Open` returns a `VaultReader`), the return type is part
 // of the port's signature. The rule rejects only free-standing assertions.
-func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
+func TestAdaptersDoNotClaimSatisfiedPorts(t *testing.T) {
 	var wrong []string
 	var read int
 	reached := map[string]bool{}
@@ -113,7 +113,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 			return err
 		}
 		read++
-		reached[family(pkg)] = true
+		reached[getFamily(pkg)] = true
 		for _, one := range getClaimedPorts(file) {
 			wrong = append(wrong, path+" names port."+one)
 		}
@@ -135,12 +135,12 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	}
 }
 
-// TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt checks that a test building an adapter is
+// TestCoreTestsBuildingAdaptersUseExternalPackages checks that a test building an adapter is
 // external to the package it exercises, because an adapter built from within the package is in its
 // compilation unit. The rules above skip test files for that reason.
 // An adapter's own test is not covered: it builds the adapter under test, as does the composition
 // root's.
-func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
+func TestCoreTestsBuildingAdaptersUseExternalPackages(t *testing.T) {
 	var wrong []string
 	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -191,7 +191,7 @@ func isShared(pkg string) bool {
 	return strings.HasPrefix(pkg, "internal/adapterlib/")
 }
 
-func getTheMachine() map[string]bool {
+func getMachinePackages() map[string]bool {
 	return map[string]bool{
 		"os": true, "os/exec": true, "net": true, "net/http": true, "syscall": true,
 	}
@@ -201,20 +201,22 @@ func getTheMachine() map[string]bool {
 // is one operating system's own calls and error numbers.
 const systemCalls = "golang.org/x/sys/"
 
-func isTheMachine(to string) bool { return getTheMachine()[to] || strings.HasPrefix(to, systemCalls) }
+func isMachinePackage(to string) bool {
+	return getMachinePackages()[to] || strings.HasPrefix(to, systemCalls)
+}
 
-func getLooking() map[string]bool {
+func getFilesystemCalls() map[string]bool {
 	return map[string]bool{
 		"EvalSymlinks": true, "Glob": true, "Walk": true, "WalkDir": true, "Abs": true,
 	}
 }
 
-// TestNothingOfTheCoreReachesTheMachine checks that a scenario queries a port about the machine and
+// TestCorePackagesDoNotAccessMachineDirectly checks that a scenario queries a port about the machine and
 // never the machine itself.
 // Resolving a path through every link is one such query and has no answer for a
 // folder passed as a content URI. A file, a socket and a system call are the
 // same category. Taking a path apart and joining it is string arithmetic and is allowed.
-func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
+func TestCorePackagesDoNotAccessMachineDirectly(t *testing.T) {
 	var wrong []string
 	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -235,7 +237,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if isTheMachine(to) {
+			if isMachinePackage(to) {
 				wrong = append(wrong, path+" is compiled from "+to)
 			}
 		}
@@ -245,7 +247,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 				return true
 			}
 			from, is := pos.X.(*ast.Ident)
-			if is && from.Name == "filepath" && getLooking()[pos.Sel.Name] {
+			if is && from.Name == "filepath" && getFilesystemCalls()[pos.Sel.Name] {
 				wrong = append(wrong, path+" runs filepath."+pos.Sel.Name)
 			}
 			return true
@@ -286,7 +288,7 @@ func isTransport(to string) bool {
 
 // An inner layer defines the ports for what is outside and imports no transport,
 // database driver or schema generator.
-func TestNoInnerLayerImportsATransport(t *testing.T) {
+func TestInnerLayersDoNotImportTransports(t *testing.T) {
 	var wrong []string
 	var read int
 	for _, root := range []string{"..", "../../../note/domain"} {
@@ -358,20 +360,20 @@ func TestTransportRule_RejectsTransportImports(t *testing.T) {
 	}
 }
 
-func getLogging() map[string]bool {
+func getLoggerPackages() map[string]bool {
 	return map[string]bool{
 		"log": true, "slog": true, "logrus": true, "zap": true,
 		"zerolog": true, "logr": true, "glog": true, "klog": true,
 	}
 }
 
-func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
+func isLoggerPackage(to string) bool { return getLoggerPackages()[to[strings.LastIndex(to, "/")+1:]] }
 
-// TestNothingOfTheCoreLogs checks that nothing in the core logs, adapters and
+// TestCorePackagesDoNotImportLoggers checks that nothing in the core logs, adapters and
 // the composition root included.
 // A log is a record for a reader who was not present; the user is in the
 // window, and messages are shown there or on the process output stream.
-func TestNothingOfTheCoreLogs(t *testing.T) {
+func TestCorePackagesDoNotImportLoggers(t *testing.T) {
 	var wrong []string
 	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -389,7 +391,7 @@ func TestNothingOfTheCoreLogs(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if logs(to) {
+			if isLoggerPackage(to) {
 				wrong = append(wrong, path+" imports "+to)
 			}
 		}
@@ -417,7 +419,7 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template", module + "domain",
 	} {
-		if logs(to) {
+		if isLoggerPackage(to) {
 			rejected = append(rejected, to)
 		}
 	}
@@ -447,11 +449,11 @@ func getClockReads(file *ast.File) (reads []string) {
 	return reads
 }
 
-// TestNothingOfTheCoreReadsTheMachinesClock checks that the domain has no access to the current time.
+// TestCorePackagesDoNotReadMachineClock checks that the domain has no access to the current time.
 // A clock is a port: a scenario that stamps a note or evaluates what is due
 // today receives one, and the composition root binds it to this machine's clock.
 // A scenario reading the clock itself cannot be exercised at a chosen instant.
-func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
+func TestCorePackagesDoNotReadMachineClock(t *testing.T) {
 	var wrong []string
 	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
@@ -486,7 +488,7 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	}
 }
 
-func getNumbered() map[string]bool {
+func getNumberedTypes() map[string]bool {
 	return map[string]bool{
 		"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
 		"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
@@ -497,7 +499,7 @@ func getNumbered() map[string]bool {
 // identity records an ID field: containing type, field name, and field type.
 type identity struct{ in, field, spelled string }
 
-func identities(file *ast.File) []identity {
+func getIdentities(file *ast.File) []identity {
 	return getFieldsNamed(file, "ID")
 }
 
@@ -513,20 +515,20 @@ func getTypeName(pos ast.Expr) string {
 	return ""
 }
 
-// TestTheCoresIdentitiesAreItsOwn checks that every identity in the core is a type of the core's own.
+// TestCoreIdentitiesUseDomainTypes checks that every identity in the core is a type of the core's own.
 // A row number belongs to the store: it is assigned by whatever counts rows and
 // can be ordered and paged, which the entity it names cannot. A core carrying
 // one imports the store's numbering into scenario logic, such as a use case
 // looping over ascending integer keys.
-func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
+func TestCoreIdentitiesUseDomainTypes(t *testing.T) {
 	var wrong []string
 	var read int
 	for _, item := range []string{"domain", "port"} {
 		dir := getPackageDir(item)
 		for _, file := range parseSourceFiles(t, dir) {
-			for _, found := range identities(file) {
+			for _, found := range getIdentities(file) {
 				read++
-				if getNumbered()[found.spelled] {
+				if getNumberedTypes()[found.spelled] {
 					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
 						item, found.in, found.field, found.spelled))
 				}
@@ -561,8 +563,8 @@ type Thing struct {
 		t.Fatal(err)
 	}
 	var rejected []string
-	for _, one := range identities(file) {
-		if getNumbered()[one.spelled] {
+	for _, one := range getIdentities(file) {
+		if getNumberedTypes()[one.spelled] {
 			rejected = append(rejected, one.field)
 		}
 	}
@@ -676,7 +678,7 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 		}
 		found++
 		if !isDriving(pkg) {
-			wrong = append(wrong, family(pkg)+" serves the schema and is named driven")
+			wrong = append(wrong, getFamily(pkg)+" serves the schema and is named driven")
 		}
 		return nil
 	})
@@ -706,12 +708,12 @@ func TestPorts_EveryPortTypeIsReferenced(t *testing.T) {
 	}
 }
 
-// TestEveryTypePortDeclaresIsNamedSomewhereElse checks that every type a port
+// TestPortTypesAreReferencedOutsidePort checks that every type a port
 // declares is used outside port/; a word nothing outside uses belongs to no
 // port and outlives the port that used it.
 // The rule does not decide which words belong here: domain versus boundary is
 // judged by reading.
-func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
+func TestPortTypesAreReferencedOutsidePort(t *testing.T) {
 	unnamed, err := getUnnamedTypes("..", filepath.Join("..", "port"), false)
 	if err != nil {
 		t.Fatal(err)
@@ -737,11 +739,11 @@ func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 	}
 }
 
-// TestEveryPortMethodIsCalledSomewhereElse checks that every port method has a
+// TestPortMethodsAreCalledOutsidePort checks that every port method has a
 // caller. A method with no caller is never exercised and a defect in it goes unnoticed.
 // Test files are not read here, and that asymmetry is the rule: a method called
 // only by a test exists to be tested. The two rules above read tests.
-func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
+func TestPortMethodsAreCalledOutsidePort(t *testing.T) {
 	uncalled, err := getUncalledMethods("..", filepath.Join("..", "port"))
 	if err != nil {
 		t.Fatal(err)
@@ -767,7 +769,7 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 }
 
 func getUncalledMethods(root, dir string) ([]string, error) {
-	declared, err := methodsIn(dir)
+	declared, err := getDeclaredMethods(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -809,7 +811,7 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 	return uncalled, nil
 }
 
-func methodsIn(dir string) (map[string]string, error) {
+func getDeclaredMethods(dir string) (map[string]string, error) {
 	target, err := readTree(dir)
 	if err != nil {
 		return nil, err
@@ -1035,7 +1037,7 @@ func getRefusal(from, to string) string {
 		if isUnder(to, "container") {
 			return "an adapter is given what it needs and assembles nothing"
 		}
-		if isAdapter(to) && !sibling(from, to) {
+		if isAdapter(to) && !isSibling(from, to) {
 			return "an adapter is given what it needs and takes no other adapter"
 		}
 		if strings.HasPrefix(to, "usecase/") && !isDriving(from) {
@@ -1076,13 +1078,13 @@ func isAssembled(to string) bool {
 		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 
-func sibling(from, to string) bool { return family(from) == family(to) }
+func isSibling(from, to string) bool { return getFamily(from) == getFamily(to) }
 
 func listGrouping() []string {
 	return []string{"adapter", "internal/adapter", "adapter/window", "internal/adapterlib"}
 }
 
-func family(pkg string) string {
+func getFamily(pkg string) string {
 	depth := 2
 	for _, one := range listGrouping() {
 		if strings.HasPrefix(pkg, one+"/") {
@@ -1099,7 +1101,7 @@ func family(pkg string) string {
 // holds took the name of one it does not and was given that name's baseline
 // entry, and a package holding what is true of a note reached one that holds
 // work.
-func TestWhatTheRulesRefuse(t *testing.T) {
+func TestLayerRule_RefusesForbiddenEdges(t *testing.T) {
 	for _, one := range []struct {
 		from, to  string
 		isRefused bool
@@ -1181,7 +1183,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 
 // Reading the tree is what the rules are checked against, so the tree has to be
 // where this expects it.
-func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
+func TestLayerDirectoriesExist(t *testing.T) {
 	for _, item := range []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib"} {
 		if _, err := os.Stat(getPackageDir(item)); err != nil {
 			t.Fatalf("%s: %v", item, err)
@@ -1197,11 +1199,11 @@ func getInstants(file *ast.File) []identity {
 	return getFieldsNamed(file, "Time")
 }
 
-// TestEveryInstantTheCoreCarriesIsATime checks that an instant in domain/ and port/ is a time.Time.
+// TestCoreInstantsUseTimeType checks that an instant in domain/ and port/ is a time.Time.
 // A second count and a millisecond count are both integers, so using one where
 // the other is expected compiles and is off by a factor of a thousand; the zero
 // of either is a valid instant in 1970.
-func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
+func TestCoreInstantsUseTimeType(t *testing.T) {
 	var wrong []string
 	var read int
 	for _, item := range []string{"domain", "port"} {
@@ -1295,14 +1297,14 @@ func getMethodIdentities(file *ast.File) []identity {
 // The same rule applied to port signatures. An identity passed through a port as
 // a number brings the store's numbering into the core's language, and a signature
 // is where the crossing occurs.
-func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
+func TestPortMethodIdentitiesUseDomainTypes(t *testing.T) {
 	var wrong []string
 	var read int
 	dir := filepath.Join("..", "port")
 	for _, file := range parseSourceFiles(t, dir) {
 		for _, found := range getMethodIdentities(file) {
 			read++
-			if getNumbered()[found.spelled] {
+			if getNumberedTypes()[found.spelled] {
 				wrong = append(wrong, fmt.Sprintf("port/%s(%s %s)",
 					found.in, found.field, found.spelled))
 			}
@@ -1337,7 +1339,7 @@ type Store interface {
 	}
 	var rejected []string
 	for _, one := range getMethodIdentities(file) {
-		if getNumbered()[one.spelled] {
+		if getNumberedTypes()[one.spelled] {
 			rejected = append(rejected, one.field)
 		}
 	}
@@ -1488,7 +1490,7 @@ func listSerializationTags() []string {
 // TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies that port/, usecase/, and domain/
 // import no wire/storage format packages and carry no serialization struct tags.
 func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
-	for _, root := range []string{"../port", "../usecase", "../../../note/domain"} {
+	for _, root := range []string{"../domain", "../port", "../usecase", "../../../note/domain"} {
 		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 				return err
@@ -1497,13 +1499,15 @@ func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			for _, imp := range file.Imports {
-				to, err := strconv.Unquote(imp.Path.Value)
-				if err != nil {
-					continue
-				}
-				if getSerializationImports()[to] || strings.HasPrefix(to, "google.golang.org/protobuf/") {
-					t.Errorf("%s imports %s: inner layers do not parse wire or storage formats", path, to)
+			if root != "../domain" {
+				for _, imp := range file.Imports {
+					to, err := strconv.Unquote(imp.Path.Value)
+					if err != nil {
+						continue
+					}
+					if getSerializationImports()[to] || strings.HasPrefix(to, "google.golang.org/protobuf/") {
+						t.Errorf("%s imports %s: inner layers do not parse wire or storage formats", path, to)
+					}
 				}
 			}
 			ast.Inspect(file, func(n ast.Node) bool {
