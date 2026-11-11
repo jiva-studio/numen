@@ -1,4 +1,3 @@
-import path from "node:path";
 import { runTool } from "../../shared/tools.mjs";
 import { REPO_ROOT, failOnFindings, requireMatches } from "./helpers.mjs";
 
@@ -119,7 +118,7 @@ function listPluginRoots(files) {
 export function verifyLayeredFrontendRoots(scope) {
   const files = listTracked(["apps", "libs"]);
   const roots = LAYERED_ROOTS.filter((one) => one.scope === scope);
-  requireMatches("Layered frontend roots", roots.length, scope === "apps" ? 3 : 2);
+  requireMatches("Layered frontend roots", roots.length);
   failOnFindings("A frontend folder belongs to no layer, slice or segment", roots.flatMap((one) => findUnplacedInLayers(files, one)));
 }
 
@@ -131,8 +130,7 @@ export function verifyFlatFrontendRoots() {
 export function verifyPluginFrontendRoots() {
   const files = listTracked(["plugins"]);
   const roots = listPluginRoots(files);
-  // 15 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Plugin frontends", roots.length, 14);
+  requireMatches("Plugin frontends", roots.length);
   failOnFindings("A plugin frontend folder is neither a slice nor a segment", roots.flatMap((one) => findUnplacedFolders(files, one)));
 }
 

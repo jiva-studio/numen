@@ -64,13 +64,17 @@ const maxComposableReturnProperties = {
     type: 'problem',
     docs: {
       description:
-        'Enforce a maximum number of properties a composable (use*) or a factory (create*) returns, whether it returns an object literal, a call result or a typed value, and forbid groups that only bundle',
+        'Enforce a maximum number of properties a composable (use*) or a factory (create*) returns, and a factory takes in its input object, whether it returns an object literal, a call result or a typed value, and forbid groups that only bundle',
     },
     messages: {
       tooManyReturnedProperties:
         '"{{name}}" returns {{count}} properties (max: {{max}}). Decompose into smaller focused composables or factories, or group the result into named parts.',
       spreadInReturn:
         '"{{name}}" spreads an object into what it returns, which hides how many properties it returns. Name each property.',
+      spreadOfInput:
+        '"{{name}}" spreads a value it did not build into what it returns, which hides what the result holds. Name each property.',
+      tooManyInputProperties:
+        '"{{name}}" takes {{count}} properties in its input (max: {{max}}). Narrow the input to what the function uses, or split the function.',
       singleKeyGroup:
         '"{{name}}" returns the group "{{group}}" with one key. A group of one key adds a level and no meaning: return the key itself.',
       reexposedGroup:
@@ -122,6 +126,49 @@ const maxComposableReturnProperties = {
       return most
     }
 
+    // The members of a parameter that is an object pattern, an inline type literal or a type declared in the
+    // file, or else the properties of its type when type information is available.
+    function countInputProperties(param) {
+      const target = param.type === 'AssignmentPattern' ? param.left : param
+      if (target.type === 'ObjectPattern') return target.properties.length
+      const annotation = target.typeAnnotation?.typeAnnotation
+      if (annotation?.type === 'TSTypeLiteral') return annotation.members.length
+      if (checker) {
+        const counted = countTypeProperties(target)
+        if (counted > 0) return counted
+      }
+      if (annotation?.type !== 'TSTypeReference' || annotation.typeName.type !== 'Identifier') return 0
+      const declaration = findVariable(context, annotation, annotation.typeName.name)?.defs[0]?.node
+      if (declaration?.type === 'TSInterfaceDeclaration') return declaration.body.body.length
+      if (declaration?.type === 'TSTypeAliasDeclaration' && declaration.typeAnnotation.type === 'TSTypeLiteral') {
+        return declaration.typeAnnotation.members.length
+      }
+      return 0
+    }
+
+    function checkInput(params, fnName) {
+      if (!fnName.startsWith('create')) return
+      for (const param of params) {
+        const count = countInputProperties(param)
+        if (count > max) {
+          context.report({ node: param, messageId: 'tooManyInputProperties', data: { name: fnName, count, max } })
+        }
+      }
+    }
+
+    // True when a spread takes a value from outside the function: a parameter, a captured variable, a member or a
+    // call result. A value the function builds as an object literal is a part it names itself.
+    function isSpreadOfInput(argument, fn) {
+      if (argument.type !== 'Identifier') return true
+      const declarator = findVariable(context, argument, argument.name)?.defs[0]?.node
+      const isOwn =
+        declarator?.type === 'VariableDeclarator' &&
+        declarator.init?.type === 'ObjectExpression' &&
+        declarator.range[0] >= fn.range[0] &&
+        declarator.range[1] <= fn.range[1]
+      return !isOwn
+    }
+
     function isReexport(member) {
       let value = member.value
       if (value.type === 'MemberExpression') {
@@ -146,7 +193,7 @@ const maxComposableReturnProperties = {
       }
     }
 
-    function checkReturned(argument, fnName) {
+    function checkReturned(argument, fnName, fn) {
       if (!fnName || !isPartName(fnName) || !argument) return
       const node = getReturnedObject(argument)
       let count = 0
@@ -155,10 +202,13 @@ const maxComposableReturnProperties = {
           if (prop.type === 'Property') {
             count++
           } else if (prop.type === 'SpreadElement') {
-            // A composable names every property it returns; a factory that spreads is counted by its type.
+            // A composable names every property it returns; a factory that spreads a part it built is counted by its type, and one that spreads a value it did not build is reported.
             if (fnName.startsWith('use')) {
               context.report({ node: prop, messageId: 'spreadInReturn', data: { name: fnName } })
             } else {
+              if (isSpreadOfInput(prop.argument, fn)) {
+                context.report({ node: prop, messageId: 'spreadOfInput', data: { name: fnName } })
+              }
               count = Math.max(count, countTypeProperties(node))
             }
           }
@@ -178,22 +228,26 @@ const maxComposableReturnProperties = {
 
     function checkBody(body, fnName) {
       if (body.type !== 'BlockStatement') {
-        checkReturned(body, fnName)
+        checkReturned(body, fnName, body.parent)
         return
       }
       for (const stmt of body.body) {
-        if (stmt.type === 'ReturnStatement') checkReturned(stmt.argument, fnName)
+        if (stmt.type === 'ReturnStatement') checkReturned(stmt.argument, fnName, body.parent)
       }
     }
 
     return {
       'FunctionDeclaration:exit'(node) {
-        if (node.id) checkBody(node.body, node.id.name)
+        if (node.id) {
+          checkInput(node.params, node.id.name)
+          checkBody(node.body, node.id.name)
+        }
       },
       'VariableDeclarator:exit'(node) {
         const init = node.init
         if (node.id?.type !== 'Identifier' || !init) return
         if (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression') {
+          checkInput(init.params, node.id.name)
           checkBody(init.body, node.id.name)
         }
       },

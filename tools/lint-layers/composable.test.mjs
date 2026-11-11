@@ -48,6 +48,24 @@ describe("the composable return size rule", () => {
     assert.deepEqual(findReports("function createA() { return { a: { b: 1, c: 2 }, d: 3 } }", "src/model/a.ts"), []);
   });
 
+  it("fails a factory whose input object has more members than the limit", () => {
+    assert.deepEqual(findReports("function createA({ a, b, c, d }) { return { a } }"), ["1 tooManyInputProperties"]);
+  });
+
+  it("passes a factory with a small input and a composable or helper with a large one", () => {
+    assert.deepEqual(findReports("function createA({ a, b, c }) { return { a } }"), []);
+    assert.deepEqual(findReports("function useA({ a, b, c, d }) { return { a } }"), []);
+    assert.deepEqual(findReports("function buildA({ a, b, c, d }) { return { a } }"), []);
+  });
+
+  it("fails a factory that spreads a value it did not build, and passes one that spreads its own part", () => {
+    assert.deepEqual(findReports("function createA(deps) { return { ...deps, a: 1 } }"), ["1 spreadOfInput"]);
+    assert.deepEqual(findReports("function createA(deps) { return { ...deps.tabs, a: 1 } }"), ["1 spreadOfInput"]);
+    assert.deepEqual(findReports("const createA = () => ({ ...makeParts(), a: 1 })"), ["1 spreadOfInput"]);
+    const own = ["function createA() {", "  const part = { x: 1 }", "  return { ...part, a: 1 }", "}"].join("\n");
+    assert.deepEqual(findReports(own), []);
+  });
+
   it("fails a group of one key", () => {
     assert.deepEqual(findReports("function useA() { return { a: 1, group: { only: 2 } } }"), ["1 singleKeyGroup"]);
   });
@@ -105,8 +123,19 @@ describe("the composable return size rule with type information", () => {
   });
 
   it("counts a factory that spreads by the type of what it returns, and fails a composable that spreads", () => {
-    const source = ["declare const base: { a: 1; b: 2; c: 3 }", "const createA = () => ({ ...base, d: 4 })", "const useB = () => ({ ...base })"].join("\n");
-    assert.deepEqual(findTypedReports(source), ["2 tooManyReturnedProperties", "3 spreadInReturn"]);
+    const source = ["const base = { a: 1, b: 2, c: 3 }", "const createA = () => ({ ...base, d: 4 })", "const useB = () => ({ ...base })"].join("\n");
+    assert.deepEqual(findTypedReports(source), ["2 tooManyReturnedProperties", "2 spreadOfInput", "3 spreadInReturn"]);
+  });
+
+  it("counts the members of an inline, an interface and an alias input type", () => {
+    assert.deepEqual(findTypedReports("const createA = (deps: { a: 1; b: 2; c: 3; d: 4 }) => ({ a: 1 })"), ["1 tooManyInputProperties"]);
+    const alias = ["type Deps = { a: 1; b: 2; c: 3; d: 4 }", "const createA = (deps: Deps) => ({ a: 1 })"].join("\n");
+    assert.deepEqual(findTypedReports(alias), ["2 tooManyInputProperties"]);
+  });
+
+  it("counts the members of a declared input type", () => {
+    const source = ["interface Deps { a: 1; b: 2; c: 3; d: 4 }", "declare const deps: Deps", "const createA = (input: Deps) => ({ a: 1 })"].join("\n");
+    assert.deepEqual(findTypedReports(source), ["3 tooManyInputProperties"]);
   });
 
   it("passes a returned type from a library, an array and a function", () => {

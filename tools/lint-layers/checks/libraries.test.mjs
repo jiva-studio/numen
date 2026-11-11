@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { LIBRARY_DEPENDENCIES, PACKAGE_DEPENDENCIES, findLibraryViolations, findPackageViolations, readLibraries, readPackages } from "./libraries.mjs";
+import { LIBRARY_DEPENDENCIES, PACKAGE_DEPENDENCIES, findLibraryViolations, findPackageViolations, getFamily, readLibraries, readLibraryMatrix, readPackages } from "./libraries.mjs";
+import { REPO_ROOT } from "./helpers.mjs";
+import { createCruiseConfig } from "./dependencies.mjs";
 
 const ROOT = "github.com/jiva-studio/numen/";
 
@@ -115,4 +117,26 @@ test("a plugin host that declares the schema is reported", () => {
   const found = findPackageViolations([host], PACKAGE_DEPENDENCIES);
   assert.equal(found.length, 1);
   assert.match(found[0].symbol, /declares @numen\/protocol/);
+});
+
+test("the family of a library is the path of its outermost library, read from where the go.mod files are", () => {
+  const dirs = ["libs/note", "libs/plugin/sdk-go", "libs/plugin/sdk-go/host", "libs/core/kernel"];
+  assert.equal(getFamily("libs/note", dirs), "note");
+  assert.equal(getFamily("libs/plugin/sdk-go/host", dirs), "plugin/sdk-go");
+  assert.equal(getFamily("libs/core/kernel", dirs), "core/kernel");
+});
+
+test("a nested library with no outer library is its own family, and a library with no row is reported", () => {
+  const libraries = [library("libs/group/inner")];
+  const found = findLibraryViolations(libraries, MATRIX);
+  assert.equal(found.length, 1);
+  assert.match(found[0].symbol, /no family "group\/inner"/);
+});
+
+test("the import graph and the library check read the same matrix file", () => {
+  const matrix = readLibraryMatrix();
+  assert.deepEqual(matrix.go, LIBRARY_DEPENDENCIES);
+  assert.deepEqual(matrix.packages, PACKAGE_DEPENDENCIES);
+  const rows = createCruiseConfig(REPO_ROOT, matrix.packages).forbidden.map((rule) => rule.name);
+  assert.ok(rows.some((name) => name.endsWith("-reaches-only-its-packages")));
 });

@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -121,4 +122,16 @@ test('validateCommitMessage rejects invalid types and unknown scopes', () => {
   )
   assert.equal(tooLong.ok, false)
   assert.match(tooLong.error, /too long/)
+})
+
+test('the command validates the title given as an argument or in PR_TITLE', () => {
+  const script = path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-commit.mjs')
+  const run = (args, env) =>
+    spawnSync('node', [script, ...args], { encoding: 'utf8', env: { ...process.env, PR_TITLE: '', ...env } })
+
+  assert.equal(run(['feat(core): add a port'], {}).status, 0)
+  assert.equal(run(['badtype(core): add a port'], {}).status, 1)
+  assert.equal(run([], { PR_TITLE: 'fix(tools): read a title' }).status, 0)
+  assert.equal(run([], { PR_TITLE: 'bad title' }).status, 1)
+  assert.equal(run([], {}).status, 1)
 })
