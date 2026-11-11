@@ -10,6 +10,7 @@ const request = {
   moveTab: vi.fn(),
   acceptTabMove: vi.fn(),
   detachTab: vi.fn(),
+  highlightWindow: vi.fn(),
 }
 
 const ORBITS = {
@@ -116,6 +117,19 @@ describe('tab move requests', () => {
       y: 200,
       width: 641,
       height: 480,
+    })
+  })
+})
+
+describe('highlighting a window', () => {
+  it('sends HighlightWindow for the target window', async () => {
+    request.highlightWindow.mockResolvedValue({})
+
+    await tabMoveCore.highlightWindow('window-b', true)
+
+    expect(request.highlightWindow.mock.lastCall?.[0]).toMatchObject({
+      windowId: 'window-b',
+      isOn: true,
     })
   })
 })

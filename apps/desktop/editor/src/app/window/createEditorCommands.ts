@@ -1,249 +1,126 @@
 /**
  * The kinds of tab and the commands of the window, and the few requests one makes of the other.
  */
-import { formatError } from '@/shared/api/errors'
-import { computed } from 'vue'
-import type { PluginHost, SlotHost } from '@numen/plugin-loader'
-import { cancelTask } from '@/entities/window'
 import {
-  createBackgroundTaskHost,
-  resolveTaskAction,
-  useNoticeTasks,
-} from '@/features/background-tasks'
-import type { WindowTabs } from '@/entities/tab'
-import { searchCore, type NoteLookup, type runSupport } from '@/features/command-palette'
-import type { Command, CommandTarget } from '@/entities/command'
-import { getNamedIcon } from '@/shared/ui/icons'
-import { isFieldFocused } from './isFieldFocused'
-import type { createMessageLog, MessageWriter } from '@/shared/model/notices/messages'
-import { WORDS as words } from '@/shared/ui/words'
+  createCommandNotes,
+  createInvocationRunner,
+  createNoteLookup,
+  runSupport,
+  searchCore,
+} from '@/features/command-palette'
+import { createWindowBackgroundTasks } from '@/features/background-tasks'
+import { createBufferHost } from '@/features/file-conflict'
 import {
-  type CommandItemLists,
-  type WindowFactsSource,
-  getPaletteId,
-  type useDeclaredCommands,
+  createCommandIconFinder,
   createCommandNoteReader,
+  createFileMakers,
+  createPluginServices,
+  createWindowFacts,
 } from '@/features/plugin-commands'
-import { createCommandNotes } from '../tabs/commandDeps'
-import { createCommands } from './createCommands'
-import {
-  collectFeatureCommands,
-  createFeatureDeps,
-  registerFeatureCommands,
-} from './createFeatureCommands'
-import { createNoteLookup } from '../tabs/editorTabs'
-import type { createNoteEditors } from '../tabs/createNoteEditors'
-import type { WindowCore } from './windowCore'
-import type { WindowServices, WindowSettings } from './createWindowServices'
+import { createTargetResolver } from '@/features/window-display'
 import type { TabsHold } from '@/features/vault-commands'
-import type { useVaults } from '@/entities/vault'
-import type { createWindowTabMoves } from './createTabsPart'
-import { createTargetResolver } from './displayOptions'
-import { createTabKinds } from './createTabKinds'
-
-interface WindowCommandsOptions {
-  windowTabs: WindowTabs
-  getTarget: () => CommandTarget
-  knows: NoteLookup
-  settings: WindowSettings
-  runs: ReturnType<typeof runSupport>
-  registry: WindowCore['registry']
-  vaultsModule: ReturnType<typeof useVaults>
-  editing: ReturnType<typeof createNoteEditors>
-  writeMessage: MessageWriter
-  log: ReturnType<typeof createMessageLog>
-  pluginHost: PluginHost
-  declaredCommands: ReturnType<typeof useDeclaredCommands>
-  slots?: SlotHost | undefined
-  getAppCommands: () => readonly Command[]
-  readCommandNote: ReturnType<typeof createCommandNoteReader>
-}
-
-function initWindowCommands(deps: WindowCommandsOptions) {
-  const { windowTabs, settings, vaultsModule, editing, writeMessage } = deps
-  return createCommands({
-    declaredCommands: deps.declaredCommands,
-    ...(deps.slots ? { slots: deps.slots } : {}),
-    getAppCommands: deps.getAppCommands,
-    readCommandNote: deps.readCommandNote,
-    core: searchCore,
-    words,
-    log: deps.log,
-    windowTabs,
-    getTarget: deps.getTarget,
-    knows: deps.knows,
-    paletteLists: settings.paletteLists,
-    runs: deps.runs,
-    registry: deps.registry,
-    coverage: vaultsModule.coverage,
-    reached: editing.reached,
-    settingPalette: settings.settingPalette,
-    settings: settings.rest,
-    writeMessage,
-    pluginHost: deps.pluginHost,
-  })
-}
-
-export const createNoteKindReader = (itemLists: CommandItemLists) => async (path: string) => {
-  const kind = (await itemLists.fileKinds([path])).get(path)
-  return {
-    noteType: kind?.type ?? '',
-    ...(kind?.properties ? { properties: kind.properties } : {}),
-  }
-}
-
-function isPaletteOpen(commands: ReturnType<typeof createCommands>): boolean {
-  return commands.palette.open.value || commands.commands.palette.open.value
-}
-
-function createFeatureCommands(
-  base: WindowCore,
-  services: WindowServices,
-  moves: ReturnType<typeof createWindowTabMoves>,
-  tabsHold: TabsHold,
-) {
-  const { editing, window, navigation, vaults } = services
-  const { windowTabs, tabLinks } = base.tabs
-  const featureCommands = collectFeatureCommands(
-    createFeatureDeps({
-      making: editing.making,
-      notes: createCommandNotes(editing.reached, windowTabs),
-      windowTabs,
-      travel: navigation.travel,
-      leavePath: navigation.leavePath,
-      getOpeningNote: () => window.opening.path.value,
-      tabsHold,
-      setVaultName: vaults.setVaultName,
-      reload: vaults.reload,
-      writeMessage: base.writeMessage,
-      tabs: {
-        tabLinks,
-        getTabs: () => windowTabs.tabs.tabs.value,
-        getKind: (id) => windowTabs.tabs.getTab(id)?.kind.kind,
-        isLinkable: (id) => windowTabs.tabs.getTab(id)?.kind.address?.navigate !== undefined,
-        windowId: moves.windowId,
-        isAsking: moves.isTabAsking,
-        detach: moves.detachTabInPlace,
-        move: moves.moveTab,
-      },
-      listVersionItems: base.plugins.itemLists.listItems,
-    }),
-    words,
-  )
-  registerFeatureCommands(base.registry, featureCommands)
-  return featureCommands
-}
+import { WORDS as words } from '@/shared/ui/words'
+import { createCommands } from './createCommands'
+import { collectFeatureCommands, createFeatureDeps } from './createFeatureCommands'
+import type { WindowCore } from './windowCore'
+import type { WindowServices } from './createWindowServices'
+import type { createWindowTabMover } from '@/features/tab-move'
 
 export function createEditorCommands(
   base: WindowCore,
   services: WindowServices,
-  moves: ReturnType<typeof createWindowTabMoves>,
+  moves: ReturnType<typeof createWindowTabMover>,
   tabsHold: TabsHold,
 ) {
   const { editing, settings, window, vaults } = services
-  const getTarget = createTargetResolver(base.tabs.windowTabs, vaults, window)
-  const featureCommands = createFeatureCommands(base, services, moves, tabsHold)
-  const knows: NoteLookup = createNoteLookup(editing, base.tabs.windowTabs)
-
-  const commands = initWindowCommands({
-    windowTabs: base.tabs.windowTabs,
-    getTarget,
-    knows,
-    settings,
-    runs: base.runs,
-    registry: base.registry,
-    vaultsModule: vaults,
-    editing,
-    writeMessage: base.writeMessage,
-    log: base.log,
-    pluginHost: base.plugins.host.pluginHost,
+  const { windowTabs, tabLinks } = base.tabs
+  const getTarget = createTargetResolver(windowTabs, vaults, window)
+  const featureCommands = collectFeatureCommands(
+    createFeatureDeps({
+      base,
+      services,
+      moves,
+      tabsHold,
+      notes: createCommandNotes(editing.reached, windowTabs),
+      tabLinks,
+    }),
+    words,
+  )
+  base.registry.registerAll(featureCommands.handlers)
+  const commands = createCommands({
     declaredCommands: base.plugins.declaredCommands,
-    slots: base.plugins.host.pluginHost.slots,
     getAppCommands: () => featureCommands.commands,
     readCommandNote: createCommandNoteReader(base.plugins.itemLists),
+    core: searchCore,
+    words,
+    windowTabs,
+    getTarget,
+    knows: createNoteLookup(editing, windowTabs),
+    paletteLists: settings.paletteLists,
+    runs: runSupport(),
+    registry: base.registry,
+    coverage: vaults.coverage,
+    reached: editing.reached,
+    settingPalette: settings.settingPalette,
+    settings: settings.rest,
+    writeMessage: base.writeMessage,
+    pluginHost: base.plugins.host.pluginHost,
   })
   services.renames.subscribe((renamed) => commands.commands.navigation.applyRenames(renamed))
-
-  const facts: WindowFactsSource = {
+  const facts = createWindowFacts({
     getAppCommands: () => featureCommands.commands,
-    getValues: () => {
-      const inFront = getTarget()
-      return {
-        'window.isVaultOpen': inFront.vault.id !== '',
-        'window.isVaultReady': inFront.isReady,
-        'window.isTabOpen': inFront.tab !== '',
-        'window.isFieldFocused': isFieldFocused(),
-        'window.isPaletteOpen': isPaletteOpen(commands),
-      }
-    },
-  }
+    getTarget,
+    isPaletteOpen: () => commands.palette.open.value || commands.commands.palette.open.value,
+  })
   return { getTarget, featureCommands, commands, facts }
 }
 
-/** The kinds of tab the window declares, and the services the plugins are given from them. */
+/** The services the plugins are given, made from the parts of the window. */
 export function createWindowKinds(
   base: WindowCore,
   services: WindowServices,
   parts: Pick<ReturnType<typeof createEditorCommands>, 'getTarget' | 'commands'>,
 ) {
   const { editing, settings, window, tabSync } = services
-  const { getTarget, commands } = parts
-  const kinds = createTabKinds({
-    core: searchCore,
+  const { windowTabs, tabOpeners } = base.tabs
+  const { pluginHost } = base.plugins.host
+  windowTabs.groups.registerKinds(settings.kinds)
+  const pluginServices = createPluginServices({
     log: base.log,
-    tabOpeners: base.tabs.tabOpeners,
-    windowTabs: base.tabs.windowTabs,
-    editing,
+    windowTabs,
+    search: searchCore,
+    making: editing.making,
     pluginNotes: base.plugins.pluginNotes,
-    settings,
-    window,
-    getTarget,
-    runCommand: commands.runCommand,
-    commandDeps: () => commands.commandDeps,
-    tabLinks: base.tabs.tabLinks,
+    tabOpeners,
     tabSync,
-    getPluginCommandIcon: (id) => {
-      const name =
-        base.plugins.host.pluginHost.commands.getPaletteCommands().find((one) => one.id === id)
-          ?.icon ??
-        base.plugins.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
-      return name ? getNamedIcon(name) : undefined
-    },
+    window,
+    settings,
+    getTarget: parts.getTarget,
+    runCommand: parts.commands.runCommand,
+    runInvocation: createInvocationRunner(() => parts.commands.commandDeps),
+    getPluginCommandIcon: createCommandIconFinder(pluginHost, base.plugins.declaredCommands),
   })
-
   return {
-    ...kinds,
+    findFileIcon: (path: string) => tabOpeners.findFileIcon(path),
+    made: createFileMakers({ tabOpeners, windowTabs, writeMessage: base.log.getWriter('command') }),
     services: {
-      ...kinds.services,
+      ...pluginServices,
+      buffers: createBufferHost({ fileFlush: editing.fileFlush }),
+      noteBuffer: editing.notes,
       taskList: window.tasks,
-      backgroundTasks: createBackgroundTasks(base, window, settings),
+      backgroundTasks: createWindowBackgroundTasks({
+        log: base.log,
+        plugins: base.plugins.pluginNotices,
+        window: {
+          lost: window.health.lost,
+          unwatched: window.vault.unwatched,
+          error: window.vault.error,
+          tasks: window.tasks,
+        },
+        settings,
+        writeMessage: base.writeMessage,
+        openSettings: (pluginId) => settings.configured.openSettings(pluginId),
+      }),
     },
   }
-}
-
-
-
-function createBackgroundTasks(
-  base: WindowCore,
-  window: WindowServices['window'],
-  settings: WindowSettings,
-) {
-  const noticeTasks = useNoticeTasks({
-    log: base.log,
-    plugins: base.plugins.pluginNotices,
-    window: {
-      lost: window.health.lost,
-      unwatched: window.vault.unwatched,
-      error: window.vault.error,
-    },
-    settings,
-  })
-  return createBackgroundTaskHost({
-    tasks: computed(() => [...window.tasks.value, ...noticeTasks.value]),
-    cancelTask,
-    reportCancelError: (error) =>
-      base.writeMessage(`The task was not cancelled: ${formatError(error)}`, 'error'),
-    resolveAction: resolveTaskAction,
-    openSettings: (pluginId) => settings.configured.openSettings(pluginId),
-  })
 }

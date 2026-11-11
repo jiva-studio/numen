@@ -3,27 +3,25 @@
  * `statusBar`, and absent while no plugin draws it. The tasks of the window reach the plugins as
  * their background tasks.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import type { BackgroundTask, PluginHost } from '@numen/plugin-loader'
 import { WorkspaceLayout } from '@numen/workbench'
-import { mountWindow, settle, vaultState } from '@/testing/window'
-import type * as UseWindowPluginsModule from './plugins/pluginSupport'
+import {
+  getWindowParts,
+  mountWindow as mountPlainWindow,
+  settle,
+  vaultState,
+} from '@/testing/window'
 
 /** The plugin host of the window last mounted, so a test registers a view as a plugin does. */
-const hosts = vi.hoisted(() => ({ current: undefined as PluginHost | undefined }))
+const hosts = { current: undefined as PluginHost | undefined }
 
-vi.mock('./plugins/pluginSupport', async (original) => {
-  const module = await original<typeof UseWindowPluginsModule>()
-  return {
-    ...module,
-    createPluginSupport: (deps: Parameters<typeof module.createPluginSupport>[0]) => {
-      const support = module.createPluginSupport(deps)
-      hosts.current = support.pluginHost
-      return support
-    },
-  }
-})
+const mountWindow = async () => {
+  const window = await mountPlainWindow()
+  hosts.current = getWindowParts(window).plugins.host.pluginHost
+  return window
+}
 
 const LANTERN = 'org.example.lantern'
 

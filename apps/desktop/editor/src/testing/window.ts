@@ -17,6 +17,7 @@ import { readWindowTasks, windowAnswers } from './mocks/window'
 import { mergeAnswers } from './mergeAnswers'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { WorkspaceLayout } from '@numen/workbench'
+import type { PluginHost } from '@numen/plugin-loader'
 import { requests, forgetRequests } from './requests'
 import {
   changed,
@@ -69,7 +70,7 @@ afterEach(() => {
   forgetRequests()
 })
 
-async function mountWindow() {
+function mountStartingWindow() {
   const window = mount(App, {
     global: {
       // A stub is named by the binding the component is drawn through, and the
@@ -89,6 +90,12 @@ async function mountWindow() {
     attachTo: document.body,
   })
   windows.push(window)
+  lastHost = getWindowParts(window).plugins.host.pluginHost
+  return window
+}
+
+async function mountWindow() {
+  const window = mountStartingWindow()
   await settle()
   await settle()
   await new Promise((isDone) => setTimeout(isDone, 50))
@@ -103,24 +110,37 @@ async function mountWindowWithPalette() {
     attachTo: document.body,
   })
   windows.push(window)
+  lastHost = getWindowParts(window).plugins.host.pluginHost
   await settle()
   await settle()
   await settle()
   return window
 }
 
+/** The plugin host of the window mounted last, whose tasks the cards of the window list. */
+let lastHost: PluginHost | undefined
+
 const cards = (): readonly string[] =>
-  readWindowTasks()
+  readWindowTasks(lastHost)
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 
-type WindowParts = ReturnType<typeof createWindow>
+type CreatedWindow = ReturnType<typeof createWindow>
 
-const hasWindowParts = (vm: object): vm is { parts: WindowParts } => 'parts' in vm
+const hasWindowParts = (vm: object): vm is { parts: CreatedWindow } => 'parts' in vm
 
-const getWindowParts = (window: VueWrapper): WindowParts => {
+const getWindowParts = (window: VueWrapper) => {
   if (!hasWindowParts(window.vm)) throw new Error('The mounted window has no parts')
-  return window.vm.parts
+  const { parts } = window.vm
+  return {
+    tabs: parts.base.tabs,
+    palette: {
+      getTarget: parts.commands.getTarget,
+      runCommand: parts.commands.commands.runCommand,
+      commandDeps: parts.commands.commands.commandDeps,
+    },
+    plugins: { host: parts.base.plugins.host },
+  }
 }
 
 const getPaletteField = (): HTMLInputElement | null =>
@@ -151,20 +171,13 @@ export {
   getWindowParts,
   submitPalette,
   typeInPalette,
-  
   DEBOUNCE,
   mountWindow,
+  mountStartingWindow,
   mountWindowWithPalette,
-  
-  
-  
-  
   nameAnswer,
-  
   outside,
-  
   passageAnswer,
-  
   mockVaultState,
   mockVaultState as vaultState,
   mockVaultList as listed,

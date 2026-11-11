@@ -4,6 +4,7 @@
  * the edge is a double: the navigation of a tab and the events the core is notified of.
  */
 import { ref } from 'vue'
+import { runInBackground } from '@numen/ui'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
@@ -15,13 +16,13 @@ import {
 } from '@numen/plugin-loader'
 import { runSupport } from '@/features/command-palette'
 import { createCommandRegistry, type CommandTarget } from '@/entities/command'
-import { createSlotCommandFinder } from '@/features/plugin-commands'
-import { createCommands, type CommandsDepsOptions } from '@/app/window/createCommands'
 import {
-  collectFeatureCommands,
-  createFeatureDeps,
-  registerFeatureCommands,
-} from '@/app/window/createFeatureCommands'
+  createCommandNoteReader,
+  createSlotCommandFinder,
+  useDeclaredCommands,
+} from '@/features/plugin-commands'
+import { createCommands, type CommandsDepsOptions } from '@/app/window/createCommands'
+import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'
@@ -121,11 +122,10 @@ const createHost = (parts: RealWindowParts): PluginHost => {
   return host
 }
 
-const createCore = (emitEvent: RealWindowParts['emitEvent']) => {
+const createCore = () => {
   const base = {
     fileKinds: (paths: readonly string[]) =>
       Promise.resolve(new Map(paths.map((one) => [one, { type: 'note' }]))),
-    ...(emitEvent ? { emitEvent } : {}),
   }
   return new Proxy<Record<string, (...args: never[]) => Promise<object> | void>>(base, {
     get: (target, name: string) => target[name] ?? (() => Promise.resolve([])),
@@ -140,7 +140,8 @@ export function createRealWindow(parts: RealWindowParts) {
   const pluginHost = createHost(parts)
   const registry = createCommandRegistry()
   const options = {
-    core: createCore(parts.emitEvent),
+    core: createCore(),
+    emitEvent: parts.emitEvent,
     words: WORDS,
     windowTabs: {
       panes: { onKeyPress: () => false, requestClose: () => undefined },
@@ -168,28 +169,42 @@ export function createRealWindow(parts: RealWindowParts) {
     settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage: (text: string) => messages.push(text),
     pluginHost,
-    slots: pluginHost.slots,
+    settingPalette: { getCommands: () => [], choose: () => Promise.resolve() },
+    declaredCommands: useDeclaredCommands({
+      registry,
+      list: () => Promise.resolve({ commands: [], slots: [] }),
+    }),
+    readCommandNote: createCommandNoteReader({ fileKinds: () => Promise.resolve(new Map()) }),
+  }
+  const noLinks = {
+    tabs: [],
+    windows: [],
+    linkTabs: () => undefined,
+    unlinkTab: () => undefined,
+    getGroupOf: () => null,
   }
   const features = collectFeatureCommands(
-    createFeatureDeps({
-      making: createNoteWriter(() => undefined),
-      notes: options.reached,
-      windowTabs: options.windowTabs as never,
-      travel: () => undefined,
-      leavePath: () => undefined,
-      getOpeningNote: () => '',
-      tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
-      setVaultName: () => undefined,
-      reload: () => undefined,
-      writeMessage: options.writeMessage,
-      tabs: {
-        tabLinks: {
-          tabs: [],
-          windows: [],
-          linkTabs: () => undefined,
-          unlinkTab: () => undefined,
-          getGroupOf: () => null,
+    {
+      notes: {
+        making: createNoteWriter(() => undefined),
+        notes: options.reached,
+        navigator: {
+          travel: () => Promise.resolve(),
+          leave: () => Promise.resolve(),
+          getOpeningNote: () => '',
+          showTab: (kind, path) => runInBackground(parts.navigateTab(kind, path), () => undefined),
         },
+        writeMessage: options.writeMessage,
+      },
+      files: { notes: options.reached, writeMessage: options.writeMessage },
+      vaults: {
+        tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
+        setVaultName: () => undefined,
+        reload: () => undefined,
+        writeMessage: options.writeMessage,
+      },
+      tabs: {
+        tabLinks: noLinks,
         getTabs: () => [],
         getKind: () => undefined,
         isLinkable: () => false,
@@ -197,11 +212,11 @@ export function createRealWindow(parts: RealWindowParts) {
         detach: () => undefined,
         move: () => undefined,
       },
-      listVersionItems: () => Promise.resolve([]),
-    }),
+      versions: { listItems: () => Promise.resolve([]), writeMessage: options.writeMessage },
+    },
     WORDS,
   )
-  registerFeatureCommands(registry, features)
+  registry.registerAll(features.handlers)
   const used = createCommands(toDeps({ ...options, getAppCommands: () => features.commands }))
   return { pluginHost, messages, used }
 }

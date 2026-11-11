@@ -3,7 +3,6 @@
  * is followed by the tabs and the palette step standing on it.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type * as PluginSupportModule from '@/app/plugins/pluginSupport'
 import { COMMAND } from '@/entities/command'
 import {
   changed,
@@ -17,12 +16,6 @@ import {
   typeInPalette,
 } from '@/testing/window'
 
-
-vi.mock('@/app/plugins/pluginSupport', async (original) => {
-  const { recordHosts } = await import('@/testing/mocks/pluginHost')
-  return recordHosts(await original<typeof PluginSupportModule>())
-})
-
 type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
 
 const ENTROPY = 'physics/Entropy.md'
@@ -30,7 +23,7 @@ const HEAT = 'physics/Heat.md'
 
 const mountWithNotes = async (): Promise<Window> => {
   const window = await mountWindowWithPalette()
-  registerNoteTabs()
+  registerNoteTabs(getWindowParts(window))
   return window
 }
 

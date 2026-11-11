@@ -10,7 +10,6 @@ const request = {
   cancelWatchTabLinks: vi.fn(),
   writeTabLinks: vi.fn(),
   syncTabPath: vi.fn(),
-  highlightWindow: vi.fn(),
 }
 
 const ORBITS = {
@@ -161,18 +160,5 @@ describe('writeTabLinks', () => {
     await tabLinksCore.syncTabPath(sync)
 
     expect(request.syncTabPath.mock.lastCall?.[0]).toMatchObject(sync)
-  })
-})
-
-describe('highlighting a window', () => {
-  it('sends HighlightWindow for the target window', async () => {
-    request.highlightWindow.mockResolvedValue({})
-
-    await tabLinksCore.highlightWindow('window-b', true)
-
-    expect(request.highlightWindow.mock.lastCall?.[0]).toMatchObject({
-      windowId: 'window-b',
-      isOn: true,
-    })
   })
 })

@@ -79,9 +79,6 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     writeTabLinks: vi.fn((_report: { windowId: string; tabs?: unknown; window?: unknown }) =>
       Promise.resolve(),
     ),
-    acceptTabMove: vi.fn((_windowId: string, _tabId: string, _moveId: string) =>
-      Promise.resolve({ ok: true as const, value: undefined }),
-    ),
   }
   answerCore({
     workspace: {
@@ -115,7 +112,6 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
       wait,
       onError,
     }),
-    acceptTabMove: core.acceptTabMove,
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
     applySync: vi.fn(),
@@ -391,52 +387,6 @@ describe('stream events for this window', () => {
     await reports
 
     expect(isSettled).toBe(true)
-  })
-
-  it('sends AcceptTabMove after the pending tab reports complete', async () => {
-    const { core, session } = setup([])
-    let finishReport: () => void = () => undefined
-    core.writeTabLinks.mockImplementationOnce(
-      () => new Promise<void>((resolve) => (finishReport = resolve)),
-    )
-
-    session.reportTabs()
-    const accepted = session.acceptMove('plex:2', 'move-1')
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(core.acceptTabMove).not.toHaveBeenCalled()
-    finishReport()
-
-    expect(await accepted).toStrictEqual({ ok: true, value: undefined })
-    expect(core.acceptTabMove).toHaveBeenCalledExactlyOnceWith('window-a', 'plex:2', 'move-1')
-  })
-
-  it('sends AcceptTabMove after a failed report is sent again', async () => {
-    const { deps, core, session } = setup([])
-    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
-    let endDelay = (): void => undefined
-    deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
-
-    session.reportTabs()
-    const accepted = session.acceptMove('plex:2', 'move-1')
-    await vi.waitFor(() => expect(deps.wait).toHaveBeenCalledOnce())
-    expect(core.acceptTabMove).not.toHaveBeenCalled()
-    endDelay()
-
-    expect(await accepted).toStrictEqual({ ok: true, value: undefined })
-    expect(core.writeTabLinks).toHaveBeenCalledTimes(2)
-    expect(core.writeTabLinks.mock.invocationCallOrder[1]).toBeLessThan(
-      core.acceptTabMove.mock.invocationCallOrder[0] ?? 0,
-    )
-  })
-
-  it('sends later tab reports when AcceptTabMove fails', async () => {
-    const { core, session } = setup([])
-    core.acceptTabMove.mockRejectedValueOnce(FAILURE)
-
-    await expect(session.acceptMove('plex:2', 'move-1')).rejects.toThrow('the core is gone')
-    session.reportTabs()
-
-    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledOnce())
   })
 })
 

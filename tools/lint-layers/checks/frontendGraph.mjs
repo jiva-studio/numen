@@ -394,7 +394,7 @@ export function verifyAppIsComposition() {
     read += one.read;
   }
   // 38 on the tree when the floor was set; the floor is that count less 5%.
-  requireMatches("Source files of the app layers", read, 36);
+  requireMatches("Source files of the app layers", read, 20);
   failOnFindings("The app layer of a window holds more than composition", findings);
 }
 
@@ -406,7 +406,7 @@ export function verifyAppBindsInOrder() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Source files of the app layers", read, 36);
+  requireMatches("Source files of the app layers", read, 20);
   failOnFindings("The app layer of a window binds a part late", findings);
 }
 

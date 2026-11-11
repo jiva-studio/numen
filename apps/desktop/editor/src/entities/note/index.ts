@@ -12,6 +12,7 @@ export {
   readNote,
   renameNote,
   resolveLinks,
+  resolveNameLink,
   watchEdits,
   writeNote,
 } from './api/notes'

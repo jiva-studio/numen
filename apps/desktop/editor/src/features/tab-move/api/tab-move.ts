@@ -80,3 +80,8 @@ export const acceptTabMove = async (
   const { error } = await workspace.acceptTabMove({ windowId, tabId, moveId })
   return parseMoveError(error)
 }
+
+/** Turns the outline of a window on or off. */
+export const highlightWindow = async (windowId: string, isOn: boolean): Promise<void> => {
+  await workspace.highlightWindow({ windowId, isOn })
+}

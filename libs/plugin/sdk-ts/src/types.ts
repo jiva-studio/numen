@@ -364,4 +364,6 @@ export interface NoteTabState {
   followLink?(address: string): void
   // Hands the window the editor, which it lays out again when the tab is shown.
   attachEditor?(editor: EditorHandle | null): void
+  // Lays the attached editor out again; the window calls it where the size of the text changed.
+  measure?(): void
 }

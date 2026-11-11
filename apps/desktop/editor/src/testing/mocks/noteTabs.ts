@@ -7,7 +7,6 @@ import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHost } from '@numen/plugin-loader'
 import type { createWindow } from '@/app/window/createWindow'
 import { mockVaultState } from '../answers'
-import { hosts } from './pluginHost'
 
 const NOTE_TAB = 'sample'
 
@@ -43,12 +42,14 @@ const noteTabKind: TabKindRegistration = {
   getOpenTab: (state) => ({ path: getPath(state) }),
 }
 
-type WindowParts = ReturnType<typeof createWindow>
+type WindowParts = {
+  readonly plugins: { readonly host: ReturnType<typeof createWindow>['base']['plugins']['host'] }
+  readonly tabs: ReturnType<typeof createWindow>['base']['tabs']
+}
 
 /** Makes the window open the notes of the vault in tabs of the sample kind. */
-export const registerNoteTabs = (): void => {
-  const host = hosts.current
-  if (!host) throw new Error('No window is mounted; mock the plugin support with recordHosts')
+export const registerNoteTabs = ({ plugins }: Pick<WindowParts, 'plugins'>): void => {
+  const host = plugins.host.pluginHost
   mockVaultState.tabKind = NOTE_TAB
   host.lifecycle
     .createContext(

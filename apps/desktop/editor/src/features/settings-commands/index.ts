@@ -2,4 +2,4 @@
 export { createWindowAppearance } from './model/appearance'
 export { createWindowSettings } from './model/windowSettings'
 export type { SettingWords } from './model/settingCommands'
-export { getSettingsConfig } from './lib/settingsConfig'
+export { getWindowConfig } from './model/windowConfig'

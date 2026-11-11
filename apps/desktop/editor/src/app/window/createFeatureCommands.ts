@@ -13,22 +13,16 @@ import {
   type TabsHold,
   type VaultCommandsDeps,
 } from '@/features/vault-commands'
-import {
-  type CommandRegistry,
-  type FeatureCommands,
-  type Notes,
-  type VaultRef,
-} from '@/entities/command'
-import type { NoteCreator } from '@/entities/note'
-import type { WindowTabs } from '@/entities/tab'
+import type { createWindowTabMover } from '@/features/tab-move'
+import type { FeatureCommands, Notes } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
-import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WORDS } from '@/shared/ui/words'
-
-type Words = typeof WORDS
+import { getUserAgent } from './getUserAgent'
+import type { WindowServices } from './createWindowServices'
+import type { WindowCore } from './windowCore'
 
 /** What the commands of the features use of the window. */
-export interface FeatureCommandsDeps {
+interface FeatureCommandsDeps {
   readonly notes: NoteCommandsDeps
   readonly files: FileCommandsDeps
   readonly vaults: VaultCommandsDeps
@@ -37,38 +31,34 @@ export interface FeatureCommandsDeps {
 }
 
 /** The parts of the window the commands of the features are given. */
-export interface FeatureWindow {
-  readonly making: NoteCreator
-  readonly notes: Notes
-  readonly windowTabs: Pick<WindowTabs, 'tabs'>
-  readonly travel: (path: string) => Promise<void> | void
-  readonly leavePath: (from: string, to: string) => Promise<void> | void
-  readonly getOpeningNote: () => string
+interface FeatureWindow {
+  readonly base: WindowCore
+  readonly services: WindowServices
+  readonly moves: ReturnType<typeof createWindowTabMover>
   readonly tabsHold: TabsHold
-  readonly setVaultName: (vault: VaultRef) => void
-  readonly reload: () => void
-  readonly writeMessage: MessageWriter
-  readonly tabs: TabCommandsDeps
-  readonly listVersionItems: VersionCommandsDeps['listItems']
+  readonly notes: Notes
+  readonly tabLinks: WindowCore['tabs']['tabLinks']
 }
 
-/** What each feature uses, taken from the parts of the window. */
 export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
-  const { notes, writeMessage } = parts
+  const { base, services, moves, notes } = parts
+  const { writeMessage } = base
+  const { windowTabs } = base.tabs
+  const { editing, window, navigation, vaults } = services
   return {
     notes: {
-      making: parts.making,
+      making: editing.making,
       notes,
       navigator: {
         travel: async (path) => {
-          await parts.travel(path)
+          await navigation.travel(path)
         },
         leave: async (from, to) => {
-          await parts.leavePath(from, to)
+          await navigation.leavePath(from, to)
         },
-        getOpeningNote: parts.getOpeningNote,
+        getOpeningNote: () => window.opening.path.value,
         showTab: (kind, path) =>
-          runInBackground(parts.windowTabs.tabs.navigateTab(kind, path), (error) =>
+          runInBackground(windowTabs.tabs.navigateTab(kind, path), (error) =>
             writeMessage(formatError(error), 'error'),
           ),
       },
@@ -77,12 +67,21 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
     files: { notes, writeMessage },
     vaults: {
       tabsHold: parts.tabsHold,
-      setVaultName: parts.setVaultName,
-      reload: parts.reload,
+      setVaultName: vaults.setVaultName,
+      reload: vaults.reload,
       writeMessage,
     },
-    tabs: parts.tabs,
-    versions: { listItems: parts.listVersionItems, writeMessage },
+    tabs: {
+      tabLinks: parts.tabLinks,
+      getTabs: () => windowTabs.tabs.tabs.value,
+      getKind: (id) => windowTabs.tabs.getTab(id)?.kind.kind,
+      isLinkable: (id) => windowTabs.tabs.getTab(id)?.kind.address?.navigate !== undefined,
+      windowId: moves.windowId,
+      isAsking: moves.isTabAsking,
+      detach: moves.detachTabInPlace,
+      move: moves.moveTab,
+    },
+    versions: { listItems: base.plugins.itemLists.listItems, writeMessage },
   }
 }
 
@@ -92,8 +91,8 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
  */
 export function collectFeatureCommands(
   deps: FeatureCommandsDeps,
-  words: Words,
-  agent: string = navigator.userAgent,
+  words: typeof WORDS,
+  agent: string = getUserAgent(),
 ): FeatureCommands {
   const notes = createNoteCommands(deps.notes, agent)
   const files = createFileCommands(deps.files)
@@ -117,12 +116,4 @@ export function collectFeatureCommands(
       ...versions.handlers,
     },
   }
-}
-
-/** Puts the handlers of the commands in the registry the palette carries commands out through. */
-export function registerFeatureCommands(
-  registry: Pick<CommandRegistry, 'register'>,
-  features: FeatureCommands,
-): void {
-  for (const [id, run] of Object.entries(features.handlers)) registry.register(id, run)
 }

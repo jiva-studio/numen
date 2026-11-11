@@ -2,10 +2,7 @@
  * The commands of the editor as a window collects them from its features, for a test that reads
  * the rows. Nothing runs them, so the window they use does nothing.
  */
-import {
-  collectFeatureCommands,
-  type FeatureCommandsDeps,
-} from '@/app/window/createFeatureCommands'
+import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
 import type { Command, Notes } from '@/entities/command'
 import { createNoteWriter } from '@/entities/note'
 import { WORDS } from '@/shared/ui/words'
@@ -22,7 +19,7 @@ const NO_NOTES: Notes = {
 }
 
 /** A window whose tabs hold nothing and whose core is never asked. */
-export const createEmptyWindow = (): FeatureCommandsDeps => ({
+export const createEmptyWindow = (): Parameters<typeof collectFeatureCommands>[0] => ({
   notes: {
     making: createNoteWriter(noop),
     notes: NO_NOTES,

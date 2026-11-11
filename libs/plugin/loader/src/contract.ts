@@ -54,6 +54,7 @@ export type {
   NoteNeighborhood,
   NoteRelation,
   NoteRef,
+  NoteTabState,
   NoticeHost,
   PluginContext,
   PluginEvents,

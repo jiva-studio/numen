@@ -3,7 +3,6 @@
  * tabs and the plugins, made before the parts that read and draw the vault.
  */
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
-import type { runSupport } from '@/features/command-palette'
 import type {
   CommandItemLists,
   createPluginNotes,
@@ -15,7 +14,8 @@ import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { TabReports, useTabLinks } from '@/features/tab-linking'
 import type { createMessageLog, MessageWriter } from '@/shared/model/notices/messages'
-import type { createPluginSupport } from '../plugins/pluginSupport'
+import type { createPluginSupport } from '@/features/plugin-commands'
+import type { Emitter } from '@/shared/lib/emitter'
 
 /** What the window is made of before its parts exist: the tabs, the plugins and the message log. */
 export interface WindowCore {
@@ -23,10 +23,16 @@ export interface WindowCore {
   readonly rest: SettingsStore
   readonly log: ReturnType<typeof createMessageLog>
   readonly writeMessage: MessageWriter
-  readonly runs: ReturnType<typeof runSupport>
   readonly registry: CommandRegistry
   readonly tabs: TabsCore
   readonly plugins: PluginsCore
+  readonly settingsRequests: Emitter<SettingsRequest>
+}
+
+/** The settings page a request opens: a plugin, and a filter of its settings. */
+export interface SettingsRequest {
+  readonly pluginId: string | undefined
+  readonly filter: string | undefined
 }
 
 /** The tabs of the window, the links between them and the files they open. */

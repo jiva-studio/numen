@@ -2,60 +2,45 @@
  * The commands of the window: the commands the features declare and the entries the plugins
  * declare, collected and passed to the palette, the shortcut dispatch, and the run of a command.
  */
-
-import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-loader'
+import type { PluginHost } from '@numen/plugin-loader'
 import {
-  createInvocation,
+  createAppItemRunner,
+  createChoiceRunner,
+  createCommandDeps,
   createCommandPalette,
-  useSearch,
+  createCommandRunner,
+  createPaletteSwitch,
+  createSearchRequests,
+  createValuesRunner,
   PALETTE_WORDS,
-  type SearchMenuDeps,
+  useSearch,
   type NoteLookup,
   type PaletteLists,
   type SearchDeps,
 } from '@/features/command-palette'
 import {
-  type Command,
-  type CommandTarget,
-  type Notes,
-  type RunSupport,
-  type CommandDeps,
-  type CommandRegistry,
-} from '@/entities/command'
-import { createCommandDeps } from '../tabs/commandDeps'
-import { createKeyHandler } from './createKeyHandler'
-import {
-  createChoiceRunner,
-  createCommandRunner,
-  getValues,
-  runInvocationToEnd,
-  withValues,
-} from './createCommandRunner'
-import {
-  createCommandNoteReader,
-  usePluginCommands,
-  createItemLists,
   createCommandItems,
-  createSlotPaletteCommands,
+  createItemLists,
+  createPaletteCommandList,
+  createPluginCommandPort,
+  createSearchMenu,
+  usePluginCommands,
   watchCommandLists,
+  type createCommandNoteReader,
   type DeclaredCommands,
 } from '@/features/plugin-commands'
-import type { IndexCoverage } from '@/shared/model/notices/coverage'
-import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
-import type { WindowTabs } from '@/entities/tab'
-import type { WORDS } from '@/shared/ui/words'
-import { getFileKinds } from '@/entities/file'
-import { getVaultList } from './vaultList'
-
-type Words = typeof WORDS
-
+import { createKeyHandler } from '@/features/hotkeys'
+import { getVaultList } from '@/features/window-display'
+import type { Command, CommandRegistry, CommandTarget, Notes, RunSupport } from '@/entities/command'
 import type { SettingsStore } from '@/entities/settings'
-import { createEmitter } from './createEmitter'
+import type { WindowTabs } from '@/entities/tab'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
+import type { MessageWriter } from '@/shared/model/notices/messages'
+import type { WORDS } from '@/shared/ui/words'
 
 export interface CommandsDepsOptions {
   core: SearchDeps
-  words: Words
-  log: MessageLog
+  words: typeof WORDS
   windowTabs: WindowTabs
   getTarget: () => CommandTarget
   knows: NoteLookup
@@ -64,171 +49,105 @@ export interface CommandsDepsOptions {
   registry: CommandRegistry
   coverage: () => IndexCoverage
   reached: Notes
-  settingPalette?: {
+  settingPalette: {
     getCommands: () => readonly Command[]
     choose: (command: string, item: string) => Promise<void>
   }
   settings: Pick<SettingsStore, 'read' | 'state'>
   writeMessage: MessageWriter
-  pluginHost?: PluginHost | undefined
-  slots?: SlotHost
-  getAppCommands?: () => readonly Command[]
-  declaredCommands?: DeclaredCommands
-  readCommandNote?: ReturnType<typeof createCommandNoteReader>
+  pluginHost: PluginHost
+  getAppCommands: () => readonly Command[]
+  declaredCommands: DeclaredCommands
+  readCommandNote: ReturnType<typeof createCommandNoteReader>
+  emitEvent?: ((event: string) => void) | undefined
 }
 
-const createSearchMenu = (slots: SlotHost | undefined): SearchMenuDeps => ({
-  getEntries: (target) => slots?.getEntries(SLOT.paletteSearchResult, target) ?? [],
-})
-
-const listExtraCommands = (
+function createPalettes(
   options: CommandsDepsOptions,
-  pluginEntries: readonly Command[],
-): readonly Command[] => [
-  ...(options.getAppCommands?.() ?? []),
-  ...(options.settingPalette?.getCommands() ?? []),
-  ...(options.declaredCommands?.paletteCommands.value ?? []),
-  ...(options.declaredCommands
-    ? createSlotPaletteCommands(
-        options.declaredCommands.slots.value,
-        options.declaredCommands.whenContext,
-      )
-    : []),
-  ...pluginEntries,
-]
-
-function createPaletteItems(
-  options: Pick<
-    CommandsDepsOptions,
-    'getAppCommands' | 'declaredCommands' | 'pluginHost' | 'getTarget'
-  >,
-  getCommandNote: ReturnType<typeof createCommandNoteReader>,
-  commandDeps: CommandDeps,
+  plugin: Pick<ReturnType<typeof usePluginCommands>, 'getPaletteEntries' | 'getCommandNote'>,
 ) {
-  const { pluginHost } = options
-  return createCommandItems({
-    getAppCommands: () => [
-      ...(options.getAppCommands?.() ?? []),
-      ...(options.declaredCommands?.paletteCommands.value ?? []),
-    ],
-    pluginCommands: pluginHost?.commands,
-    getTarget: options.getTarget,
-    runApp: async (id, target, itemId, values) => {
-      const invocation = withValues(createInvocation(id, target, itemId), values)
-      await runInvocationToEnd(invocation, commandDeps)
-    },
-    runPlugin: async (id, target, itemId, values) => {
-      const note = await getCommandNote(target)
-      await pluginHost?.commands.executeCommand(id, note, {
-        itemId,
-        ...getValues(values),
-        isAwaited: true,
-      })
-    },
-    readTarget: async (target) => {
-      const { type, properties } = await getCommandNote(target)
-      return { ...target, noteType: type, ...(properties ? { properties } : {}) }
-    },
-  })
-}
-
-function createWindowCommandPalette(
-  options: CommandsDepsOptions,
-  lists: PaletteLists,
-  listExtras: () => readonly Command[],
-) {
-  const { core, words, getTarget, knows, runs } = options
-  return createCommandPalette({
-    core: { ...core, vaults: getVaultList },
-    words: { ...words, ...PALETTE_WORDS },
-    at: getTarget,
-    knows,
-    lists,
-    runs,
-    getCommands: listExtras,
-  })
-}
-
-function usePluginPalette(options: CommandsDepsOptions) {
-  const { pluginHost, declaredCommands } = options
-  return usePluginCommands(
-    options.registry,
-    options.readCommandNote ?? createCommandNoteReader({ fileKinds: getFileKinds }),
-    pluginHost,
-    {
-      ...(declaredCommands ? { context: declaredCommands.whenContext } : {}),
-      getHandlers: () => declaredCommands?.contributions.handlers.value,
-    },
-  )
-}
-
-export function createCommands(options: CommandsDepsOptions) {
-  const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
-  const { pluginHost, declaredCommands, settings } = options
-  const { getPaletteEntries, getCommandNote, pluginWays } = usePluginPalette(options)
+  const { core, words, windowTabs, getTarget, writeMessage, pluginHost, declaredCommands } = options
+  const { settings, settingPalette } = options
   const palette = useSearch(
     core,
     { ...words, ...PALETTE_WORDS },
-    {
-      coverage,
-      menu: createSearchMenu(options.slots),
-      getTarget,
-    },
+    { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots), getTarget },
   )
-  const searchRequests = createEmitter<void>()
-  const commandDeps: CommandDeps = createCommandDeps({
-    core,
+  const searchRequests = createSearchRequests()
+  const commandDeps = createCommandDeps({
     windowTabs,
     reached: options.reached,
-    ...(options.settingPalette ? { settingPalette: options.settingPalette } : {}),
+    settingPalette,
     runs: options.runs,
     registry: options.registry,
     writeMessage,
-    search: () => searchRequests.emit(),
+    search: searchRequests.request,
+    emitEvent: options.emitEvent,
   })
-  const items = createPaletteItems(options, getCommandNote, commandDeps)
+  const paletteCommands = createPaletteCommandList({
+    getAppCommands: options.getAppCommands,
+    getSettingCommands: settingPalette.getCommands,
+    declaredCommands,
+    getPluginEntries: plugin.getPaletteEntries,
+  })
+  const items = createCommandItems({
+    getAppCommands: paletteCommands.listAppCommands,
+    pluginCommands: pluginHost.commands,
+    getTarget,
+    runApp: createAppItemRunner(commandDeps),
+    getCommandNote: plugin.getCommandNote,
+  })
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
-  const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
-  const commands = createWindowCommandPalette(options, lists, listExtras)
-
-  if (declaredCommands) {
-    watchCommandLists(
-      {
-        declaredCommands,
-        writeMessage,
-        plugins: settings.state.plugins,
-        getCommittedSetting: settings.read.getCommittedSetting,
-      },
-      commands.palette.open,
-    )
-  }
-  resetWhenClosed(commands.palette.open)
-  searchRequests.subscribe(() => {
-    commands.palette.setOpen(false)
-    palette.setOpen(true)
+  const commands = createCommandPalette({
+    core: { ...core, vaults: getVaultList },
+    words: { ...words, ...PALETTE_WORDS },
+    at: getTarget,
+    knows: options.knows,
+    lists,
+    runs: options.runs,
+    getCommands: () => removeEmptyCommands(paletteCommands.listCommands()),
   })
+  watchCommandLists(
+    {
+      declaredCommands,
+      writeMessage,
+      plugins: settings.state.plugins,
+      getCommittedSetting: settings.read.getCommittedSetting,
+    },
+    commands.palette.open,
+  )
+  resetWhenClosed(commands.palette.open)
+  const paletteSwitch = createPaletteSwitch(commands, palette)
+  searchRequests.connect(paletteSwitch)
+  return { palette, commands, commandDeps, items, paletteSwitch }
+}
 
+export function createCommands(options: CommandsDepsOptions) {
+  const { windowTabs, getTarget, writeMessage, pluginHost, declaredCommands, settings } = options
+  const plugin = usePluginCommands(options.registry, options.readCommandNote, pluginHost, {
+    context: declaredCommands.whenContext,
+    getHandlers: () => declaredCommands.contributions.handlers.value,
+  })
+  const { palette, commands, commandDeps, items, paletteSwitch } = createPalettes(options, plugin)
+  const pluginCommands = createPluginCommandPort(pluginHost, plugin.getCommandNote)
   const { runCommand, runCommandToEnd } = createCommandRunner({
     commands,
-    palette,
-    pluginHost,
-    getCommandNote,
+    closeSearch: paletteSwitch.closeSearch,
+    pluginCommands,
     getCommandDeps: () => commandDeps,
     writeMessage,
   })
-
   const onKeyDown = createKeyHandler({
     windowTabs,
-    pluginHost,
-    declaredCommands,
+    keybindings: pluginHost.keybindings,
+    declaredKeybindings: declaredCommands.contributions.keybindings,
     plugins: settings.state.plugins,
-    palette,
-    commands,
-    commandDeps,
+    handleShortcut: (event, runApp) => pluginCommands.handleShortcut(event, getTarget, runApp),
+    toggleSearch: paletteSwitch.toggleSearch,
+    toggleCommands: paletteSwitch.toggleCommands,
     runCommand,
+    runWithValues: createValuesRunner(commandDeps, writeMessage),
     getTarget,
-    getCommandNote,
-    writeMessage,
   })
 
   return {
@@ -239,6 +158,6 @@ export function createCommands(options: CommandsDepsOptions) {
     runCommand,
     runChoice: createChoiceRunner(runCommand, getTarget),
     onKeyDown,
-    pluginWays,
+    pluginWays: plugin.pluginWays,
   }
 }

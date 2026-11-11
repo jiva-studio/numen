@@ -3,12 +3,10 @@
  * opens tabs sent from other windows, and cancels the watch on close.
  */
 import { createFollower } from '@numen/ui'
-import type { Result } from '@/shared/lib/result'
 import type {
   WindowTabs,
   TabLinkGroup,
   MovedTab,
-  TabMoveError,
   TabPathSync,
   WindowTabsReport,
 } from '@/entities/tab'
@@ -16,21 +14,17 @@ import { cancelTabLinksWatch, watchTabLinks } from '../api/tab-links'
 import type { TabLinksState } from '../types'
 import type { TabReports } from './tabReports'
 import type { Caught } from '@/shared/api/errors'
+import { wait } from '@/shared/model/wait'
 
 export interface TabLinkSessionDeps {
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
-  readonly acceptTabMove: (
-    windowId: string,
-    tabId: string,
-    moveId: string,
-  ) => Promise<Result<void, TabMoveError>>
   readonly applySync: (sync: TabPathSync) => void
   readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
   readonly openMovedTab: (moved: MovedTab) => void
   readonly setHighlighted: (isOn: boolean) => void
   readonly reports: Pick<TabReports, 'reportTabs' | 'waitForReports' | 'stop' | 'resume'>
-  readonly wait: (ms: number) => Promise<void>
+  readonly wait?: (ms: number) => Promise<void>
   readonly onError: (error: Caught) => void
 }
 
@@ -42,17 +36,10 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   const followStream = createFollower({
     isOpen: () => isOpen,
     setLost: () => undefined,
-    wait: deps.wait,
+    wait: deps.wait ?? wait,
   })
 
   const { reportTabs, waitForReports } = deps.reports
-
-  /**
-   * Sends AcceptTabMove once the pending reports are written, so that a report
-   * made before the tab opened does not reach the core after the accept.
-   */
-  const acceptMove = (tabId: string, moveId: string): Promise<Result<void, TabMoveError>> =>
-    waitForReports().then(() => deps.acceptTabMove(deps.windowId, tabId, moveId))
 
   /** Reads the stream until close; reports the tabs again on each new stream. */
   const start = (): Promise<void> =>
@@ -105,7 +92,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     return start()
   }
 
-  return { start, close, reopen, reportTabs, acceptMove, waitForReports }
+  return { start, close, reopen, reportTabs, waitForReports }
 }
 
 type ReportedTabs = Pick<WindowTabs, 'tabs' | 'groups'>

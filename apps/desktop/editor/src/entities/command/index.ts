@@ -18,6 +18,7 @@ export { ARGUMENT, COMMAND, COMMANDS_ROW, ROW, SETTING_COMMAND_PREFIX } from './
 export { withWhen } from './model/availability'
 export { getPaletteValues } from './model/paletteValues'
 export type { StepGroup, StepRow } from './model/steps'
+export { getValues, withValues, type Values } from './model/values'
 export { createRowKeys, findShortcutKeys } from './lib/keys'
 export { findIcon } from './lib/icons'
 export { flushTab } from './model/notes'

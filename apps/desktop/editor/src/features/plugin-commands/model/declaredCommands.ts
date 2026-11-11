@@ -191,7 +191,7 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
   }
 }
 
-export type DeclaredState = ReturnType<typeof createDeclaredState>
+type DeclaredState = ReturnType<typeof createDeclaredState>
 
 /**
  * The declared commands, reloaded by `load`, each registered with a handler that runs

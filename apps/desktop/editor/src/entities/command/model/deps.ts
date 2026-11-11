@@ -46,7 +46,7 @@ interface RunContext {
 export interface CommandDeps extends TabContext, RunContext, Voice {
   readonly registry: Pick<CommandRegistry, 'get'>
   readonly settings: SettingsWriter
-  readonly emitEvent?: (event: string) => void
+  readonly emitEvent?: ((event: string) => void) | undefined
 }
 
 /** One command, carried out. A command that made a note or a folder answers with its path. */

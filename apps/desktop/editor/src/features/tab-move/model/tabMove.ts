@@ -3,6 +3,8 @@
  * sent from another window.
  */
 import { formatError, type Caught } from '@/shared/api/errors'
+import { wait as waitMs } from '@/shared/model/wait'
+import { focusWindow } from '@/entities/window'
 import type { Result } from '@/shared/lib/result'
 import {
   formatSavedState,
@@ -14,7 +16,7 @@ import {
 } from '@/entities/tab'
 import type { Notes } from '@/entities/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import { detachTab, moveTab } from '../api/tab-move'
+import { acceptTabMove, detachTab, moveTab } from '../api/tab-move'
 import {
   ACCEPT_ATTEMPTS,
   ACCEPT_RETRY_MS,
@@ -107,13 +109,24 @@ export interface MovedTabOpenerDeps {
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'restored'>
   readonly closeTab: (id: string) => void
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
-  readonly focusWindow: () => Promise<void>
-  readonly wait: (ms: number) => Promise<void>
+  readonly focusWindow?: () => Promise<void>
+  readonly wait?: (ms: number) => Promise<void>
   readonly onError: (error: Caught) => void
 }
 
+/**
+ * Sends AcceptTabMove once `waitFirst` settles, so that a report of the tabs made before the tab
+ * opened does not reach the core after the accept.
+ */
+export const createMoveAcceptor =
+  (windowId: string, waitFirst: () => Promise<void>) =>
+  (tabId: string, moveId: string): Promise<Result<void, TabMoveError>> =>
+    waitFirst().then(() => acceptTabMove(windowId, tabId, moveId))
+
 /** Opens a tab sent from another window as the active tab and focuses the window. */
 export function createMovedTabOpener(deps: MovedTabOpenerDeps) {
+  const wait = deps.wait ?? waitMs
+  const focus = deps.focusWindow ?? focusWindow
   /**
    * Sends AcceptTabMove, and sends it again after a thrown request. The core returns success for
    * a repeated accept of a completed move, so a success result means the move completed.
@@ -124,7 +137,7 @@ export function createMovedTabOpener(deps: MovedTabOpenerDeps) {
         return await deps.acceptMove(moved.tab.id, moved.moveId)
       } catch (error) {
         if (attempt >= ACCEPT_ATTEMPTS) throw error
-        await deps.wait(ACCEPT_RETRY_MS)
+        await wait(ACCEPT_RETRY_MS)
       }
     }
   }
@@ -138,7 +151,7 @@ export function createMovedTabOpener(deps: MovedTabOpenerDeps) {
         if (!wasOpen) deps.closeTab(moved.tab.id)
         return
       }
-      await deps.focusWindow()
+      await focus()
     } catch (error) {
       // The outcome of the move is unknown, so the tab stays open here.
       deps.onError(error)

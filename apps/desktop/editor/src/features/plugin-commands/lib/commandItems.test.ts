@@ -3,7 +3,7 @@
  * target, or a command a plugin registered with items; and a run of one with the item picked.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { CommandTarget as RunTarget } from '@numen/plugin-loader'
+import type { CommandNote, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { Command, CommandTarget } from '@/entities/command'
 import { createCommandItems } from './commandItems'
 
@@ -34,21 +34,38 @@ const CLOSE: Command = {
 
 const OVER_TAB: RunTarget = { path: '', title: '', isFolder: false, others: [], tab: 'note:2' }
 
+const NOTE: CommandNote = {
+  path: '',
+  title: '',
+  type: 'note',
+  isFolder: false,
+  others: [],
+  tab: 'note:2',
+}
+
+const getCommandNote = (target: RunTarget): Promise<CommandNote> =>
+  Promise.resolve({ ...NOTE, path: target.path, tab: target.tab })
+
+const createPluginCommands = (
+  override: Partial<Parameters<typeof createCommandItems>[0]['pluginCommands']> = {},
+) => ({
+  hasCommandItems: (id: string) => id === 'org.example.tide:chart.move',
+  listCommandItems: vi.fn(async () => [{ id: 'w2', title: 'Second window' }]),
+  executeCommand: vi.fn(async () => true),
+  ...override,
+})
+
 const setup = () => {
-  const pluginCommands = {
-    hasCommandItems: (id: string) => id === 'org.example.tide:chart.move',
-    listCommandItems: vi.fn(async () => [{ id: 'w2', title: 'Second window' }]),
-  }
+  const pluginCommands = createPluginCommands()
   const runApp = vi.fn(async (_id: string, _target: CommandTarget, _itemId: string) => undefined)
-  const runPlugin = vi.fn(async (_id: string, _target: RunTarget, _itemId: string) => undefined)
   const items = createCommandItems({
     getAppCommands: () => [MOVE, CLOSE],
     pluginCommands,
     getTarget: () => FRONT,
     runApp,
-    runPlugin,
+    getCommandNote,
   })
-  return { items, pluginCommands, runApp, runPlugin }
+  return { items, pluginCommands, runApp }
 }
 
 describe('the items of a command', () => {
@@ -79,10 +96,10 @@ describe('the items of a command', () => {
           },
         },
       ],
-      pluginCommands: undefined,
+      pluginCommands: createPluginCommands(),
       getTarget: () => FRONT,
       runApp: vi.fn(),
-      runPlugin: vi.fn(),
+      getCommandNote,
     })
 
     await items.listCommandItems(MOVE.id, { ...OVER_TAB, path: 'talks/a.mp3' })
@@ -116,51 +133,61 @@ describe('the items of a command', () => {
 
 describe('a run with the item picked', () => {
   it('runs a command of the window over the tab of the target, with the item picked', async () => {
-    const { items, runApp, runPlugin } = setup()
+    const { items, runApp, pluginCommands } = setup()
 
     await items.runWithItem(MOVE.id, OVER_TAB, 'w2')
 
     expect(runApp).toHaveBeenCalledWith(MOVE.id, expect.objectContaining({ tab: 'note:2' }), 'w2')
-    expect(runPlugin).not.toHaveBeenCalled()
+    expect(pluginCommands.executeCommand).not.toHaveBeenCalled()
   })
 
   it('runs a plugin command through the plugin, with the item picked', async () => {
-    const { items, runApp, runPlugin } = setup()
+    const { items, runApp, pluginCommands } = setup()
 
     await items.runWithItem('org.example.tide:chart.move', OVER_TAB, 'w2')
 
-    expect(runPlugin).toHaveBeenCalledWith('org.example.tide:chart.move', OVER_TAB, 'w2')
+    expect(pluginCommands.executeCommand).toHaveBeenCalledWith(
+      'org.example.tide:chart.move',
+      NOTE,
+      { itemId: 'w2', isAwaited: true },
+    )
     expect(runApp).not.toHaveBeenCalled()
   })
 })
 
 describe('a run with the item picked and values', () => {
   it('gives the values to the run of a command of the window and to the run of a plugin command', async () => {
-    const { items, runApp, runPlugin } = setup()
+    const { items, runApp, pluginCommands } = setup()
 
     await items.runWithItem(MOVE.id, OVER_TAB, 'w2', { keep: 'yes' })
     await items.runWithItem('org.example.tide:chart.move', OVER_TAB, 'w2', { keep: 'yes' })
 
     expect(runApp).toHaveBeenCalledWith(MOVE.id, expect.anything(), 'w2', { keep: 'yes' })
-    expect(runPlugin).toHaveBeenCalledWith('org.example.tide:chart.move', OVER_TAB, 'w2', {
-      keep: 'yes',
-    })
+    expect(pluginCommands.executeCommand).toHaveBeenCalledWith(
+      'org.example.tide:chart.move',
+      NOTE,
+      { itemId: 'w2', values: { keep: 'yes' }, isAwaited: true },
+    )
   })
 })
 
 describe('the target the items of a plugin command are read over', () => {
   it('carries the note type and the properties the window reads for its file', async () => {
-    const pluginCommands = {
+    const pluginCommands = createPluginCommands({
       hasCommandItems: () => true,
       listCommandItems: vi.fn(async () => []),
-    }
+    })
     const items = createCommandItems({
       getAppCommands: () => [],
       pluginCommands,
       getTarget: () => FRONT,
       runApp: vi.fn(),
-      runPlugin: vi.fn(),
-      readTarget: async (target) => ({ ...target, noteType: 'link', properties: { media: 'a' } }),
+      getCommandNote: async (target) => ({
+        ...NOTE,
+        path: target.path,
+        type: 'link',
+        properties: { media: 'a' },
+      }),
     })
     const target = { path: 'talk.md', title: 'talk', isFolder: false, others: [], tab: '' }
 

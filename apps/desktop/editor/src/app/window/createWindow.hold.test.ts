@@ -3,7 +3,6 @@
  * a write cannot reach the vault the window is going to, and go on where the switch is refused.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as PluginSupportModule from '@/app/plugins/pluginSupport'
 import { COMMAND } from '@/entities/command'
 import { createInvocation } from '@/features/command-palette'
 import {
@@ -16,12 +15,6 @@ import {
   settle,
   vaultState,
 } from '@/testing/window'
-
-
-vi.mock('@/app/plugins/pluginSupport', async (original) => {
-  const { recordHosts } = await import('@/testing/mocks/pluginHost')
-  return recordHosts(await original<typeof PluginSupportModule>())
-})
 
 type Window = Awaited<ReturnType<typeof mountWindow>>
 
@@ -42,7 +35,7 @@ const closeFrontTab = (): void => {
 const mountWithNotes = async (): Promise<Window> => {
   const window = await mountWindow()
   const parts = getWindowParts(window)
-  registerNoteTabs()
+  registerNoteTabs(parts)
   await openNoteTab(parts, 'physics/Entropy.md')
   await openNoteTab(parts, 'physics/Heat.md')
   await settle()

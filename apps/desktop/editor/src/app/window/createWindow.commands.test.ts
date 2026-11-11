@@ -3,9 +3,7 @@
  * what the command objects to is written as a message of the window, and the files a plugin is
  * provided run their commands with the dependencies of the window.
  */
-import { describe, expect, it, vi } from 'vitest'
-import type { PluginServices } from '@/features/plugin-commands'
-import type * as PluginSupportModule from '../plugins/pluginSupport'
+import { describe, expect, it } from 'vitest'
 import { COMMAND } from '@/entities/command'
 import { PALETTE_WORDS } from '@/features/command-palette'
 import {
@@ -18,20 +16,6 @@ import {
   submitPalette,
   typeInPalette,
 } from '@/testing/window'
-
-/** What the window gives the plugins, read as the plugin host reads it. */
-const provided = vi.hoisted(() => ({ read: undefined as (() => Partial<PluginServices>) | undefined }))
-
-vi.mock('../plugins/pluginSupport', async (original) => {
-  const module = await original<typeof PluginSupportModule>()
-  return {
-    ...module,
-    createPluginSupport: (deps: Parameters<typeof module.createPluginSupport>[0]) => {
-      provided.read = deps.getServices
-      return module.createPluginSupport(deps)
-    },
-  }
-})
 
 describe('a command run through the palette of the window', () => {
   it('is carried out by the handler registered for it', async () => {
@@ -59,9 +43,10 @@ describe('a command run through the palette of the window', () => {
 
 describe('the files a plugin is provided', () => {
   it('run their commands with the dependencies of the window', async () => {
-    await mountWindow()
+    const window = await mountWindow()
+    const { plugins } = getWindowParts(window)
 
-    await provided.read?.().files?.createFolder('Zoology')
+    await plugins.host.pluginHost.contextHost.vault.getFiles()?.createFolder('Zoology')
 
     expect(requests.folders).toStrictEqual(['Zoology'])
   })

@@ -5,6 +5,7 @@
  * close. This is implemented once for all kinds: a kind is added by declaring
  * it, with no further window configuration.
  */
+import { shallowRef } from 'vue'
 import { createTabStore } from './tabStore'
 import { useRestoredTabs } from './useRestoredTabs'
 import { useTabGroups } from './useTabGroups'
@@ -20,11 +21,24 @@ import type { PlaceholderPanes, UnavailableServices } from './unavailable'
  */
 export function createWindowTabs(panes: PlaceholderPanes, unavailable: UnavailableServices = {}) {
   const store = createTabStore(panes, unavailable)
+  const tabPanes = useTabPanes(store)
+  /** Closes a tab, or runs `hold` where its kind holds it, and returns whether the tab was released. */
+  const closeTab = (id: string, hold?: () => void): boolean => {
+    if (!tabPanes.releaseTab(id)) {
+      hold?.()
+      return false
+    }
+    if (!hold) tabPanes.finishClose(id)
+    return true
+  }
   return {
     tabs: useTabs(store),
     groups: useTabGroups(store),
-    panes: useTabPanes(store),
+    panes: tabPanes,
+    closeTab,
     restored: useRestoredTabs(store),
+    /** The ids of the tabs being dragged, which the plugins read. */
+    dragged: shallowRef<readonly string[]>([]),
   }
 }
 

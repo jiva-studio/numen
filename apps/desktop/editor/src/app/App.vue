@@ -6,7 +6,6 @@ import type { Caught } from '@/shared/api/errors'
  * The window's structure is defined in `window.ts`. This file holds what the user
  * sees of it, and the binding between the two.
  */
-import { onMounted, onUnmounted } from 'vue'
 import { WorkspaceLayout } from '@numen/workbench'
 import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
@@ -18,8 +17,8 @@ import CoreFailureNotice from './CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
+import { BootstrapFailure } from '@/features/app-start'
 import { getUserAgent } from './window/getUserAgent'
-import BootstrapFailure from './bootstrap/BootstrapFailure.vue'
 import { createWindow } from './window/createWindow'
 import { useWindowTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
@@ -37,26 +36,32 @@ const unsaved = {
 }
 
 const parts = createWindow()
-const { frame } = parts
-const { windowTabs, layout, closeTab, getTabIcon, tabLinks, isHighlighted, moves } = parts.tabs
+const { frame } = parts.base
+const { windowTabs } = parts.base.tabs
+const { tabLinks } = parts.base.tabs
+const { closeTab } = windowTabs
+const { layout } = windowTabs.panes
+const { moves, openTabs, linkSession, openCurrentVault } = parts.tabs
 const { highlightWindow, detachTab } = moves
+const { getTabIcon } = openTabs
+const { isHighlighted } = linkSession
 const {
   commands,
-  search,
+  palette: search,
   commandDeps,
   pluginWays,
-  destinations,
   runCommand,
   runChoice,
-  getTarget,
-} = parts.palette
-const { slots, windowCommands } = parts.plugins
-const { titleBarView, statusBarView } = parts.plugins.views
-const { failure, fileFlush, getTitle } = parts.notices
-const { vaultList, readNoteKind } = parts.display
-const { openSettings } = parts
-const { isStarted, isLayoutReady, bootstrapFailure, retryBootstrap, openCurrentVault } =
-  parts.lifecycle
+} = parts.commands.commands
+const { getTarget } = parts.commands
+const { findFileIcon } = parts.kinds
+const { slots, windowCommands, readNoteKind } = parts.frame
+const { titleBarView, statusBarView } = parts.frame.views
+const { fileFlush, getTitle } = parts.services.editing
+const { failure } = parts.services.window.health
+const { vaultList } = parts.services.vaults
+const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = parts.bootstrap
+const { isReady: isLayoutReady } = parts.tabs.layout
 
 const tabMenu = useWindowTabMenu({
   moveCommand: COMMAND.moveTabToWindow,
@@ -68,25 +73,7 @@ const tabMenu = useWindowTabMenu({
   reportError: (error: Caught) => commandDeps.writeMessage(formatError(error), 'error'),
 })
 
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  globalThis.addEventListener('numen:open-settings', onOpenSettings)
-})
-
-onUnmounted(() => {
-  globalThis.removeEventListener('numen:open-settings', onOpenSettings)
-})
-
 /* -------------------------------- Handlers -------------------------------- */
-function onOpenSettings(event: Event): void {
-  const detail = (event as CustomEvent<{ filter?: string; pluginId?: string } | null>).detail
-  if (detail?.filter || detail?.pluginId) {
-    openSettings(detail.pluginId, detail.filter)
-    return
-  }
-  runCommand(COMMAND.openSettings, getTarget())
-}
-
 function onCloseTab(id: string, hold?: () => void) {
   closeTab(id, hold)
 }
@@ -183,7 +170,7 @@ function onShowTab(id: string) {
       :search="search"
       :doing="commandDeps"
       :get-target="getTarget"
-      :places="destinations"
+      :places="{ findFileIcon }"
       :run-choice="runChoice"
     />
   </main>

@@ -5,7 +5,11 @@
  * runs on the note the window holds. Results are checked on the rendered window,
  * since the palette is where the user invokes commands.
  */
-import { describe, expect, it, onTestFinished } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { CATALOG_STATE } from '@numen/core-client'
+import { createMockCatalogEntry } from '@numen/core-client/testing'
+import { parseSavedTabs } from '@/entities/tab'
+import { answerTabKinds } from '@/testing/tabCatalog'
 import { Layers, LayoutTemplate } from '@lucide/vue'
 import { registerTabKindIcon } from '@/entities/note'
 // The mocked modules stand before the plugins that reach them are imported.
@@ -13,6 +17,7 @@ import {
   requests,
   cards,
   DEBOUNCE,
+  getWindowParts,
   mountWindow,
   mountWindowWithPalette,
   nameAnswer,
@@ -332,12 +337,28 @@ function drawPluginTypes(): void {
 }
 
 describe('the request to open the settings', () => {
-  it('opens the settings tab when the request names no plugin and no filter', async () => {
+  it('opens the settings tab from the placeholder of a plugin that is not running', async () => {
+    answerTabKinds([
+      createMockCatalogEntry('sample.notes', {
+        name: 'Notes',
+        feature: 'Markdown notes',
+        tabKinds: ['reader:viewer'],
+        state: CATALOG_STATE.INSTALLED,
+      }),
+    ])
     const window = await mountWindow()
     const getTabNames = () => window.findAll('[role="tab"]').map((one) => one.text())
     expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(false)
+    const saved = [
+      { id: 'tab-1', kind: 'reader:viewer', path: 'cards/Place.md', title: 'Place', state: '' },
+    ]
+    getWindowParts(window).tabs.windowTabs.restored.restoreTabs(
+      parseSavedTabs({ tabs: saved, activeId: 'tab-1' }),
+      'tab-1',
+    )
+    await vi.waitFor(() => expect(window.find('.tab-unavailable__action').exists()).toBe(true))
 
-    globalThis.dispatchEvent(new CustomEvent('numen:open-settings'))
+    await window.find('.tab-unavailable__action').trigger('click')
     await settle()
 
     expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(true)

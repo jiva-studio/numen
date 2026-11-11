@@ -10,7 +10,7 @@ import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entitie
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
-import { createPluginSupport } from '@/app/plugins/pluginSupport'
+import { createPluginSupport } from '@/features/plugin-commands'
 import { createWindowSettingsPart } from './windowSettings'
 
 const file = { current: {} as Record<string, unknown> }
@@ -183,7 +183,6 @@ describe('a setting that changes', () => {
     const { settings, feed, windowTabs } = create()
     const support = createPluginSupport({
       windowTabs,
-      tabLinks: {} as never,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
@@ -207,7 +206,6 @@ describe('a setting that changes', () => {
     const { settings, feed, windowTabs } = create()
     const support = createPluginSupport({
       windowTabs,
-      tabLinks: {} as never,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),

@@ -3,38 +3,31 @@
  * vaults.
  */
 import { formatError } from '@/shared/api/errors'
-import { createTabNavigation, createTabSync } from '@/entities/tab'
+import { createNotes } from '@/features/command-palette'
+import { createNoteEditors } from '@/features/file-conflict'
+import { createTabNavigation, createTabSync, measureTabs } from '@/entities/tab'
+import { useVaults } from '@/entities/vault'
 import { syncTabPath } from '@/features/tab-linking'
-import { useWindowDisplay } from '@/features/window-display'
-import { createWindowSettingsPart } from './windowSettings'
-import { createEmitter } from './createEmitter'
+import { createDisplayOptions, getVaultList, useWindowDisplay } from '@/features/window-display'
+import { createEmitter } from '@/shared/lib/emitter'
 import type { PathRename } from '@/shared/lib/paths'
 import { WORDS as words } from '@/shared/ui/words'
-import { createNoteEditors } from '../tabs/createNoteEditors'
-import { createDisplayOptions } from './displayOptions'
-import { useVaults } from '@/entities/vault'
-import { getVaultList } from './vaultList'
+import { createWindowSettingsPart } from './windowSettings'
 import type { WindowCore } from './windowCore'
 
 export function createWindowServices(base: WindowCore) {
-  const editing = createNoteEditors({
-    log: base.log,
-    tabOpeners: base.tabs.tabOpeners,
-    windowTabs: base.tabs.windowTabs,
-  })
+  const { windowTabs, tabLinks, tabOpeners } = base.tabs
+  const noteEditors = createNoteEditors({ log: base.log, windowTabs })
+  const editing = { ...noteEditors, reached: createNotes([noteEditors.store], tabOpeners) }
 
   const tabSync = createTabSync({
-    windowTabs: base.tabs.windowTabs,
-    tabLinks: base.tabs.tabLinks,
+    windowTabs,
+    tabLinks,
     sendSync: syncTabPath,
     onError: (error) => base.writeMessage(formatError(error), 'error'),
   })
 
-  const navigation = createTabNavigation({
-    tabOpeners: base.tabs.tabOpeners,
-    windowTabs: base.tabs.windowTabs,
-    tabSync,
-  })
+  const navigation = createTabNavigation({ tabOpeners, windowTabs, tabSync })
 
   const renames = createEmitter<readonly PathRename[]>()
 
@@ -43,8 +36,8 @@ export function createWindowServices(base: WindowCore) {
       editing,
       navigation,
       renames,
-      tabOpeners: base.tabs.tabOpeners,
-      windowTabs: base.tabs.windowTabs,
+      tabOpeners,
+      windowTabs,
       notifyPlugins: (event) => base.plugins.host.pluginHost.notifyVaultChange(event),
       writeMessage: base.writeMessage,
     }),
@@ -54,8 +47,8 @@ export function createWindowServices(base: WindowCore) {
     rest: base.rest,
     words,
     log: base.log,
-    windowTabs: base.tabs.windowTabs,
-    onSizeChanged: () => editing.noted.measureAll(),
+    windowTabs,
+    onSizeChanged: () => measureTabs(windowTabs),
     getSettingsViews: (pluginId) =>
       base.plugins.host.pluginHost.registered.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
@@ -73,4 +66,3 @@ export function createWindowServices(base: WindowCore) {
 }
 
 export type WindowServices = ReturnType<typeof createWindowServices>
-export type WindowSettings = WindowServices['settings']

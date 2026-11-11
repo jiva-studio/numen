@@ -123,8 +123,3 @@ export const syncTabPath = async (sync: {
 }): Promise<void> => {
   await workspace.syncTabPath(sync)
 }
-
-/** Turns the outline of a window on or off. */
-export const highlightWindow = async (windowId: string, isOn: boolean): Promise<void> => {
-  await workspace.highlightWindow({ windowId, isOn })
-}

@@ -117,3 +117,9 @@ export const resolveLinks = (
   text: string,
   vault?: string,
 ): Promise<readonly TextLink[]> => resolveTextLinks(notes, { from, text, vault })
+
+/** The path the note a `name://` address names resolves to from a note, empty when it resolves to none. */
+export const resolveNameLink = async (from: string, address: string): Promise<string> => {
+  const rawName = address.replace(/^name:\/\//, '')
+  return (await resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
+}

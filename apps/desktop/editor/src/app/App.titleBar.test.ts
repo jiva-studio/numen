@@ -6,10 +6,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, shallowRef } from 'vue'
 import { WorkspaceLayout } from '@numen/workbench'
 import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
-import { cards, listed, mountWindow, requests, settle } from '@/testing/window'
+import {
+  cards,
+  getWindowParts,
+  listed,
+  mountWindow as mountPlainWindow,
+  requests,
+  settle,
+} from '@/testing/window'
 import { COMMAND } from '@/entities/command'
 import type * as ShellModule from '@numen/workbench'
-import type * as UseWindowPluginsModule from './plugins/pluginSupport'
 
 const frame = vi.hoisted(() => ({
   platform: 'windows' as 'windows' | 'darwin',
@@ -42,19 +48,13 @@ vi.mock('@numen/workbench', async (importOriginal) => {
 })
 
 /** The plugin host of the window last mounted, so a test registers a view as a plugin does. */
-const hosts = vi.hoisted(() => ({ current: undefined as PluginHost | undefined }))
+const hosts = { current: undefined as PluginHost | undefined }
 
-vi.mock('./plugins/pluginSupport', async (original) => {
-  const module = await original<typeof UseWindowPluginsModule>()
-  return {
-    ...module,
-    createPluginSupport: (deps: Parameters<typeof module.createPluginSupport>[0]) => {
-      const support = module.createPluginSupport(deps)
-      hosts.current = support.pluginHost
-      return support
-    },
-  }
-})
+const mountWindow = async () => {
+  const window = await mountPlainWindow()
+  hosts.current = getWindowParts(window).plugins.host.pluginHost
+  return window
+}
 
 const LEDGER = 'org.example.ledger'
 const HARBOR = 'org.example.harbor'

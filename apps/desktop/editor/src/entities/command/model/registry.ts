@@ -6,6 +6,7 @@ import type { CommandHandler } from './deps'
  */
 export interface CommandRegistry {
   readonly register: (id: string, handler: CommandHandler) => () => void
+  readonly registerAll: (handlers: Readonly<Record<string, CommandHandler>>) => void
   readonly get: (id: string) => CommandHandler | undefined
 }
 
@@ -19,6 +20,9 @@ export function createCommandRegistry(): CommandRegistry {
           handlers.delete(id)
         }
       }
+    },
+    registerAll: (table) => {
+      for (const [id, handler] of Object.entries(table)) handlers.set(id, handler)
     },
     get: (id) => handlers.get(id),
   }
