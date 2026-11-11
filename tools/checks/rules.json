@@ -102,6 +102,23 @@
       "target": "composition-root"
     },
     {
+      "name": "go/constructors-return-no-error",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/constructors-return-no-error/check_test.go",
+      "runner": "go",
+      "target": "constructors-return-no-error"
+    },
+    {
       "name": "go/container-closures",
       "paths": [
         "**/*.go",
