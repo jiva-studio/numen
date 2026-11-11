@@ -149,7 +149,9 @@ export const Incompatible: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByRole('heading', { name: 'Plugin incompatible' })).toBeVisible()
-    await expect(canvas.getByText(/cannot run in this application: it needs protocol 9/)).toBeVisible()
+    await expect(
+      canvas.getByText(/cannot run in this application: it needs protocol 9/),
+    ).toBeVisible()
     await expect(canvas.getByRole('button')).toBeVisible()
   },
 }

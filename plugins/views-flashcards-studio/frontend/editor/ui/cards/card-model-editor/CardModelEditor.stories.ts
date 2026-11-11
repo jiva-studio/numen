@@ -345,7 +345,6 @@ export const FarTooMany: Story = {
   play: async ({ canvasElement }) => {
     await expect(getDrawnFields(canvasElement)).toHaveLength(40)
     await expect(canvasElement.querySelectorAll('[data-template]')).toHaveLength(12)
-
   },
 }
 

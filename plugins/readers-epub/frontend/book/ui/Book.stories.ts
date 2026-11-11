@@ -367,7 +367,11 @@ const turnTwice = async (canvasElement: HTMLElement) => {
  * Once the columns are set again for the new size, which shows as another page count, the spread in
  * front is the one holding the offset read before the resize, and it stays there.
  */
-const expectPassageInFront = async (canvasElement: HTMLElement, offset: number, counted: string) => {
+const expectPassageInFront = async (
+  canvasElement: HTMLElement,
+  offset: number,
+  counted: string,
+) => {
   await waitFor(
     async () => {
       await expect(getPageCount(canvasElement)).not.toBe(counted)

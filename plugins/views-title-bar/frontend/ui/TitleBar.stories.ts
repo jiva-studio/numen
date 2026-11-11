@@ -288,7 +288,9 @@ export const MacControls: Story = {
   play: async ({ canvasElement }) => {
     const close = canvasElement.querySelector('[data-control="close"]')!
     const first = canvasElement.querySelector('[data-title-bar-command]')!
-    await expect(close.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await expect(
+      close.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   },
 }
 

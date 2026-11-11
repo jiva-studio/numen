@@ -172,7 +172,6 @@ export const ADayReviewed: Story = {
 
     const recallRate = response.querySelector('[data-day-detail="recall-rate"]') as HTMLElement
     await expect(recallRate.textContent?.trim()).toBe('83% of cards you are reviewing came back')
-
   },
 }
 

@@ -12,13 +12,7 @@ import Palette from './Palette.vue'
 import { keyChord } from '@numen/ui'
 import type { PaletteGroup } from '../lib/item'
 import type { TextRange } from '@numen/ui'
-import {
-  ARABIC,
-  DEVANAGARI,
-  GRAPHEMES,
-  LONG,
-  RUSSIAN,
-} from '@/shared/fixtures/prose'
+import { ARABIC, DEVANAGARI, GRAPHEMES, LONG, RUSSIAN } from '@/shared/fixtures/prose'
 
 interface Knobs {
   groups: readonly PaletteGroup[]

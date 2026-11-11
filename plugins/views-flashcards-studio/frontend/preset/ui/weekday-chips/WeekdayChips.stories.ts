@@ -183,7 +183,6 @@ export const FarTooMany: Story = {
   play: async ({ canvasElement }) => {
     const all = chips(canvasElement)
     await expect(all).toHaveLength(31)
-
   },
 }
 
@@ -205,7 +204,6 @@ export const AwkwardNames: Story = {
     const all = chips(canvasElement)
     await expect(all.map((chip) => chip.textContent?.trim())).toEqual(['', 'Tues', 'W', 'Четв'])
     await expect(getChipLabels(canvasElement)[0]).toBe('Monday, 100%')
-
   },
 }
 

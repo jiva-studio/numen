@@ -383,7 +383,9 @@ export const WhatIsWrongWithIt: Story = {
     const response = found(canvasElement, '[data-wrong]')
     await expect(response.textContent).toContain('writes one field twice')
     const first = found(canvasElement, '.card__value')
-    await expect(response.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await expect(
+      response.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
 
     // It is reported once, after the second of the two boxes for Name.
     const underCards = [...canvasElement.querySelectorAll('[data-wrong-value="Name"]')]
