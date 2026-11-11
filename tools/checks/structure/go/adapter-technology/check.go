@@ -28,11 +28,11 @@ func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free ma
 		load.IsDriving := false
 		isTechnical := false
 		for path := range pkg.Imports {
-			load.IsDriving = load.IsDriving || isUseCaseImport(root, path)
+			isDriving = isDriving || isUseCaseImport(root, path)
 			isTechnical = isTechnical || load.IsTechnologyImport(path)
 		}
 		switch {
-		case load.IsDriving && isInternalAdapter:
+		case isDriving && isInternalAdapter:
 			found = append(found, rel+" calls a use case: a driving adapter lives under adapter/")
 		case isDriving:
 		default:

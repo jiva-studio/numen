@@ -93,15 +93,15 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 	}
 	var read int
 	for _, item := range entries {
-		if !strings.HasSuffix(item.Name, ".go") || strings.HasSuffix(item.Name, "_test.go") {
+		if !strings.HasSuffix(item.Path, ".go") || strings.HasSuffix(item.Path, "_test.go") {
 			continue
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, item.Name), nil, 0)
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, item.Path), nil, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 		read++
-		rel := "port/" + item.Name
+		rel := "port/" + item.Path
 		for _, one := range internalTypes(file) {
 			t.Errorf("%s names %s: a port uses the core own types", rel, one)
 		}
@@ -158,14 +158,14 @@ func TestPortsAreIndependentAndPure(t *testing.T) {
 		"os":            true,
 	}
 	for _, item := range entries {
-		if !strings.HasSuffix(item.Name, ".go") || strings.HasSuffix(item.Name, "_test.go") {
+		if !strings.HasSuffix(item.Path, ".go") || strings.HasSuffix(item.Path, "_test.go") {
 			continue
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, item.Name), nil, parser.ImportsOnly)
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, item.Path), nil, parser.ImportsOnly)
 		if err != nil {
 			t.Fatal(err)
 		}
-		rel := "port/" + item.Name
+		rel := "port/" + item.Path
 		for _, imp := range file.Imports {
 			target, err := strconv.Unquote(imp.Path.Value)
 			if err != nil {

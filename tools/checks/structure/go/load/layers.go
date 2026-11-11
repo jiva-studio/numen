@@ -52,7 +52,7 @@ func IsShared(pkg string) bool {
 }
 
 // Identity records an ID field: containing type, field name, and field type.
-type Identity struct{ In, field, spelled string }
+type Identity struct{ In, Field, Spelled string }
 
 func GetTypeName(pos ast.Expr) string {
 	switch target := pos.(type) {

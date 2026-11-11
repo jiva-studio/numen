@@ -10,8 +10,8 @@ import (
 )
 
 func getPluginCapture(pkgPath string) string {
-	rest, load.IsPlugin := strings.CutPrefix(pkgPath, load.PluginsPrefix)
-	if !load.IsPlugin {
+	rest, isPlugin := strings.CutPrefix(pkgPath, load.PluginsPrefix)
+	if !isPlugin {
 		return ""
 	}
 	dir, _, _ := strings.Cut(rest, "/")

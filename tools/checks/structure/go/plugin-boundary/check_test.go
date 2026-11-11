@@ -63,7 +63,7 @@ func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 		module    string
 		dir       string
 		forbidSDK bool
-		platforms []struct{ goos, goarch string }
+		platforms []load.Platform
 	}{
 		{"the core", "..", true, load.ListShippedPlatforms()},
 		{"notes", filepath.Join("..", "..", "..", "note"), true, load.ListShippedPlatforms()},
@@ -72,8 +72,8 @@ func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 	}
 	for _, build := range builds {
 		for _, one := range build.platforms {
-			t.Run(build.module+"/"+one.goos+"/"+one.goarch, func(t *testing.T) {
-				packages := listPackages(t, build.dir, one.goos, one.goarch)
+			t.Run(build.module+"/"+one.GOOS+"/"+one.GOARCH, func(t *testing.T) {
+				packages := listPackages(t, build.dir, one.GOOS, one.GOARCH)
 				if len(packages) == 0 {
 					t.Fatal("go list found no package: a rule checked against nothing")
 				}

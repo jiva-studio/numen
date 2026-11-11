@@ -68,8 +68,8 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 // builds the adapters that replace the real ones.
 func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 	for _, one := range load.ListShippedPlatforms() {
-		t.Run(one.goos+"/"+one.goarch, func(t *testing.T) {
-			inward(t, one.goos, one.goarch)
+		t.Run(one.GOOS+"/"+one.GOARCH, func(t *testing.T) {
+			inward(t, one.GOOS, one.GOARCH)
 		})
 	}
 }

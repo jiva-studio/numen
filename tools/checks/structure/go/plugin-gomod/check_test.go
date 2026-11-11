@@ -30,10 +30,10 @@ func TestWhatThePluginGoModRulesReject(t *testing.T) {
 	} {
 		file, err := modfile.Parse("go.mod", []byte(one.text), nil)
 		if err != nil {
-			t.Fatalf("%s: %v", one.Name, err)
+			t.Fatalf("%s: %v", one.name, err)
 		}
 		if got := getPluginGoModViolations("sample", file); len(got) != one.rejected {
-			t.Errorf("%s: violations %v, want %d", one.Name, got, one.rejected)
+			t.Errorf("%s: violations %v, want %d", one.name, got, one.rejected)
 		}
 	}
 }

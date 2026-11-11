@@ -14,11 +14,14 @@ import (
 // Wire is the module the schema is generated into.
 const Wire = "github.com/jiva-studio/numen/libs/core/protocol"
 
-func ListShippedPlatforms() []struct{ goos, goarch string } {
-	return []struct{ goos, goarch string }{
-		{"linux", "amd64"},
-		{"darwin", "arm64"},
-		{"windows", "amd64"},
-		{"android", "arm64"},
+// Platform is an operating system and an architecture the application ships for.
+type Platform struct{ GOOS, GOARCH string }
+
+func ListShippedPlatforms() []Platform {
+	return []Platform{
+		{GOOS: "linux", GOARCH: "amd64"},
+		{GOOS: "darwin", GOARCH: "arm64"},
+		{GOOS: "windows", GOARCH: "amd64"},
+		{GOOS: "android", GOARCH: "arm64"},
 	}
 }

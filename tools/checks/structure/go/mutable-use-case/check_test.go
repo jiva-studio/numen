@@ -94,7 +94,7 @@ func TestConstructorsReportCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks every module of the workspace")
 	}
-	workspace := loadWorkspace(t)
+	workspace := load.Workspace(t)
 	kernelDir, err := filepath.Abs(filepath.Join(load.RepoRootDir, "libs/core/kernel"))
 	if err != nil {
 		t.Fatal(err)

@@ -12,9 +12,9 @@ func getSDKRefusal(mod, dep string) string {
 	switch {
 	case !load.IsSDK(dep), dep == mod:
 		return ""
-	case mod == sdkModule:
+	case mod == load.SdkModule:
 		return "the base module requires no feature module"
-	case dep != sdkModule:
+	case dep != load.SdkModule:
 		return "a feature module requires no other feature module"
 	}
 	return ""
