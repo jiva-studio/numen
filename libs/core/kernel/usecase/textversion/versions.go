@@ -2,7 +2,6 @@ package textversion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -43,11 +42,8 @@ func NewVersions(
 	plugins textport.TextPlugins,
 	clock machineport.Clock,
 	changes *Changes,
-) (*Versions, error) {
-	if stores == nil || files == nil || plugins == nil || clock == nil || changes == nil {
-		return nil, errors.New("text versions need version stores, files, plugins, a clock and the changes")
-	}
-	return &Versions{stores: stores, files: files, plugins: plugins, clock: clock, changes: changes}, nil
+) *Versions {
+	return &Versions{stores: stores, files: files, plugins: plugins, clock: clock, changes: changes}
 }
 
 // PutVersion records a version of the plugin, or replaces the record of the

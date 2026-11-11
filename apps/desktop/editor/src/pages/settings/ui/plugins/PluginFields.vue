@@ -11,7 +11,7 @@ import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
 import type { InstallationSettings, PluginFieldsHost, SecretChoices } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
-import { usePluginFields } from '../../model/usePluginFields'
+import { useEnumFields, usePluginFields, usePluginPaths } from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -27,17 +27,19 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const {
-  enums,
-  values,
-  drafts,
-  paths,
-  setSetting: onSettingChange,
-} = usePluginFields({
+const fieldDeps = {
   getSettings: () => props.settings,
   getHost: () => props.host,
   getPlugin: () => props.plugin,
-})
+}
+const fields = usePluginFields(fieldDeps)
+const {
+  getBooleanSetting,
+  getNumberSetting,
+  getStringSetting,
+  setSetting: onSettingChange,
+} = fields
+const { getDraft, setDraft, writeDraft } = fields
 const {
   getEnumOptions,
   getEnumChoices,
@@ -45,15 +47,13 @@ const {
   getShownSettings,
   getTopSecrets,
   getSecretsAfter,
-} = enums
-const { getBooleanSetting, getNumberSetting, getStringSetting } = values
-const { getDraft, setDraft, writeDraft } = drafts
+} = useEnumFields(fieldDeps)
 const {
   problems: pathProblems,
-  hasMany: hasManyPaths,
-  choose: onPathChoose,
-  clear: onPathClear,
-} = paths
+  hasManyPaths,
+  choosePath: onPathChoose,
+  clearPath: onPathClear,
+} = usePluginPaths(fieldDeps, fields)
 </script>
 
 <template>

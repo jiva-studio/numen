@@ -166,10 +166,7 @@ func (c fixedClock) Now() time.Time { return c.now }
 
 func newTexts(t *testing.T, readers vaultport.VaultReaders, repo *mapsVersions) hosttext.Texts {
 	t.Helper()
-	versions, err := textfake.NewTextVersions(repo, textFiles{}, noPlugins{}, readers, fixedClock{now: getMapsTime().Add(time.Hour)})
-	if err != nil {
-		t.Fatal(err)
-	}
+	versions := textfake.NewTextVersions(repo, textFiles{}, noPlugins{}, readers, fixedClock{now: getMapsTime().Add(time.Hour)})
 	return hosttext.NewTexts(versions.Versions, versions.Texts)
 }
 

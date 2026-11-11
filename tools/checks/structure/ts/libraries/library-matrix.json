@@ -1,18 +1,18 @@
 {
   "go": {
-    "note": [],
-    "core/protocol": [],
-    "plugin/catalog": ["note", "core/protocol"],
-    "plugin/sdk-go": ["note", "core/protocol"],
-    "core/kernel": ["note", "plugin/catalog", "core/protocol"]
+    "libs/note": [],
+    "libs/core/protocol": [],
+    "libs/plugin/catalog": ["libs/note", "libs/core/protocol"],
+    "libs/plugin/sdk-go": ["libs/note", "libs/core/protocol"],
+    "libs/core/kernel": ["libs/note", "libs/plugin/catalog", "libs/core/protocol"]
   },
   "packages": {
-    "@numen/ui": [],
-    "@numen/workbench": ["@numen/ui"],
-    "@numen/protocol": [],
-    "@numen/core-client": ["@numen/protocol"],
-    "@numen/plugin-sdk": ["@numen/protocol", "@numen/ui"],
-    "@numen/plugin-loader": ["@numen/plugin-sdk", "@numen/core-client"],
-    "@numen/plugin-manager": ["@numen/ui"]
+    "libs/ui/components": { "name": "@numen/ui", "dependsOn": [] },
+    "libs/ui/workbench": { "name": "@numen/workbench", "dependsOn": ["libs/ui/components"] },
+    "libs/core/protocol": { "name": "@numen/protocol", "dependsOn": [] },
+    "libs/core/client": { "name": "@numen/core-client", "dependsOn": ["libs/core/protocol"] },
+    "libs/plugin/sdk-ts": { "name": "@numen/plugin-sdk", "dependsOn": ["libs/core/protocol", "libs/ui/components"] },
+    "libs/plugin/loader": { "name": "@numen/plugin-loader", "dependsOn": ["libs/plugin/sdk-ts", "libs/core/client"] },
+    "libs/plugin/manager": { "name": "@numen/plugin-manager", "dependsOn": ["libs/ui/components"] }
   }
 }

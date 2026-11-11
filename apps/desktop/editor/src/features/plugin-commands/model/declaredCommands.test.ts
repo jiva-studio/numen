@@ -8,9 +8,9 @@ import {
   type CommandInvocation,
 } from '@/shared/model/command'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { DeclaredCommand, listDeclaredCommands } from '@/entities/plugin'
+import { getPaletteId, type DeclaredCommand, type listDeclaredCommands } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/ui/icons'
-import { getPaletteId, useDeclaredCommands } from './declaredCommands'
+import { useDeclaredCommands } from './declaredCommands'
 
 type DeclaredList = Awaited<ReturnType<typeof listDeclaredCommands>>
 type DeclaredCommandsDeps = NonNullable<Parameters<typeof useDeclaredCommands>[0]>

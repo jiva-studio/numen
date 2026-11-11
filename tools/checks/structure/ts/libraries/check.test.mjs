@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { test } from "node:test";
-import { LIBRARY_DEPENDENCIES, PACKAGE_DEPENDENCIES, findLibraryViolations, findPackageViolations, getFamily, readLibraries, readLibraryMatrix, readPackages } from "./check.mjs";
+import { LIBRARY_DEPENDENCIES, PACKAGE_DEPENDENCIES, findLibraryViolations, findPackageViolations, getFamily, readLibraries, readLibraryMatrix, readPackages, LIBRARY_MATRIX_FILE } from "./check.mjs";
 import { REPO_ROOT } from "../../../lib/graph.mjs";
 import { createCruiseConfig } from "../dependency-graph/check.mjs";
 
@@ -12,7 +13,7 @@ const library = (dir, references = []) => ({
   references: references.map((value, index) => ({ file: `${dir}/a.go`, line: index + 1, value: ROOT + value })),
 });
 
-const MATRIX = { note: [], "core/protocol": [], catalog: ["note", "core/protocol"], sdk: ["core/protocol"] };
+const MATRIX = { "libs/note": [], "libs/core/protocol": [], "libs/catalog": ["libs/note", "libs/core/protocol"], "libs/sdk": ["libs/core/protocol"] };
 
 test("a library that reaches a family its row lists is clean", () => {
   const libraries = [
@@ -27,7 +28,7 @@ test("a library that reaches a family its row omits is reported with the referen
   const libraries = [library("libs/catalog"), library("libs/sdk", ["libs/catalog/manifest"])];
   const found = findLibraryViolations(libraries, MATRIX);
   assert.equal(found.length, 1);
-  assert.match(found[0].symbol, /family sdk reaches catalog/);
+  assert.match(found[0].symbol, /family libs\/sdk reaches libs\/catalog/);
   assert.equal(found[0].file, "libs/sdk/a.go");
 });
 
@@ -39,7 +40,7 @@ test("the modules of one family may depend on each other", () => {
 test("a library whose family the matrix does not list is reported", () => {
   const found = findLibraryViolations([library("libs/unclassified")], MATRIX);
   assert.equal(found.length, 1);
-  assert.match(found[0].symbol, /no family "unclassified"/);
+  assert.match(found[0].symbol, /no family "libs\/unclassified"/);
 });
 
 test("a library that reaches an application or a plugin is reported", () => {
@@ -50,7 +51,7 @@ test("a library that reaches an application or a plugin is reported", () => {
 });
 
 test("the plugin SDK family may reach the notes library and the protocol", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["plugin/sdk-go"], ["note", "core/protocol"]);
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/note", "libs/core/protocol"]);
   const libraries = [
     library("libs/note"),
     library("libs/core/protocol"),
@@ -64,7 +65,7 @@ test("the plugin SDK family is not allowed to reach the core", () => {
   const libraries = [library("libs/core/kernel"), library("libs/plugin/sdk-go", ["libs/core/kernel/port"])];
   const found = findLibraryViolations(libraries, LIBRARY_DEPENDENCIES);
   assert.equal(found.length, 1);
-  assert.match(found[0].symbol, /family plugin\/sdk-go reaches core\/kernel/);
+  assert.match(found[0].symbol, /family libs\/plugin\/sdk-go reaches libs\/core\/kernel/);
 });
 
 test("the libraries of this repository are read, each with a module path", () => {
@@ -121,16 +122,16 @@ test("a plugin host that declares the schema is reported", () => {
 
 test("the family of a library is the path of its outermost library, read from where the go.mod files are", () => {
   const dirs = ["libs/note", "libs/plugin/sdk-go", "libs/plugin/sdk-go/host", "libs/core/kernel"];
-  assert.equal(getFamily("libs/note", dirs), "note");
-  assert.equal(getFamily("libs/plugin/sdk-go/host", dirs), "plugin/sdk-go");
-  assert.equal(getFamily("libs/core/kernel", dirs), "core/kernel");
+  assert.equal(getFamily("libs/note", dirs), "libs/note");
+  assert.equal(getFamily("libs/plugin/sdk-go/host", dirs), "libs/plugin/sdk-go");
+  assert.equal(getFamily("libs/core/kernel", dirs), "libs/core/kernel");
 });
 
 test("a nested library with no outer library is its own family, and a library with no row is reported", () => {
   const libraries = [library("libs/group/inner")];
   const found = findLibraryViolations(libraries, MATRIX);
   assert.equal(found.length, 1);
-  assert.match(found[0].symbol, /no family "group\/inner"/);
+  assert.match(found[0].symbol, /no family "libs\/group\/inner"/);
 });
 
 test("the import graph and the library check read the same matrix file", () => {
@@ -139,4 +140,9 @@ test("the import graph and the library check read the same matrix file", () => {
   assert.deepEqual(matrix.packages, PACKAGE_DEPENDENCIES);
   const rows = createCruiseConfig(REPO_ROOT, matrix.packages).forbidden.map((rule) => rule.name);
   assert.ok(rows.some((name) => name.endsWith("-reaches-only-its-packages")));
+});
+
+test("the matrix file is keyed by the directory of each package, and names the package that directory holds", () => {
+  const rows = JSON.parse(fs.readFileSync(LIBRARY_MATRIX_FILE, "utf8")).packages;
+  for (const one of readPackages()) assert.equal(rows[one.dir]?.name, one.name, `${one.dir} is keyed by its directory`);
 });

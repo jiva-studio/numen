@@ -51,12 +51,12 @@ export function useSettingsTab(state: SettingsTabState) {
   }
 
   return {
-    installation,
-    searchQuery: initialSearchQuery,
     selectedPluginId,
     plugins,
     uninstalled,
     selectedPlugin,
-    actions: { selectPlugin, updateQuery, goBack },
+    selectPlugin,
+    updateQuery,
+    goBack,
   }
 }

@@ -11,7 +11,7 @@ import {
   windowValues,
   type ManifestKeybinding,
 } from '@/testing/realCommands'
-import { createWindowCommands } from '@/features/plugin-commands'
+import { createWindowCommands } from '@/features/plugin-host'
 
 const REEF: RunTarget = { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: '' }
 const REVEAL = 'app:file.reveal'

@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
-import { interceptExternalLinks, openExternalUrl, reportFailure, runInBackground } from '@numen/ui'
-import App from './app/App.vue'
+import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
+import { openExternalUrl } from '@/shared/api/wailsRuntime'
+import { createRoot } from './app/createRoot'
 
 // The window draws its own menus. The one the webview draws carries a browser's
 // idea of what is here — inspect, reload, view source — and refusing it
@@ -14,4 +15,4 @@ interceptExternalLinks((href) => {
   runInBackground(openExternalUrl(href), reportFailure)
 })
 
-createApp(App).mount('#app')
+createApp(createRoot()).mount('#app')

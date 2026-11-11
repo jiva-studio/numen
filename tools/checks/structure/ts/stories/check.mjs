@@ -172,16 +172,32 @@ function listSpyNames(tree, play) {
   return names;
 }
 
+/** The objects whose calls act as a person does: user-event, the testing library's `fireEvent` and a `user` made by `userEvent.setup()`. */
+const USER_EVENT_ROOTS = new Set(["userEvent", "fireEvent", "user"]);
+
+/** The methods of an element that act as a person does when the play calls them directly. */
+const USER_ACTIONS = new Set(["click", "dblclick", "dispatchEvent"]);
+
+/** Whether a call acts as a person does: a call on user-event or on `fireEvent`, or a click on an element. */
+function isUserAction(call) {
+  const callee = unwrap(call.expression);
+  if (!ts.isPropertyAccessExpression(callee)) return false;
+  return USER_ACTIONS.has(callee.name.text) || USER_EVENT_ROOTS.has(getRoot(callee.expression) ?? "");
+}
+
 /**
- * The `expect(...)` calls in a play function: all of them, and those whose subject is a spy or what a component
- * emitted (a call argument or a payload, rooted at `args`, at a `fn()` result or at a name that says `emitted`). A
- * helper function of the file that the play calls is read too.
+ * The `expect(...)` calls in a play function: all of them, and those after a user action whose subject is a spy or
+ * what a component emitted (a call argument or a payload, rooted at `args`, at a `fn()` result or at a name that says
+ * `emitted`). A spy assertion before any user action sees a render, not a reaction. A helper function of the file that
+ * the play calls is read too.
  */
 function readAssertions(play, spies, helpers) {
   let all = 0;
   let emission = 0;
+  let hasActed = false;
   const visited = new Set();
   const visit = (node) => {
+    if (ts.isCallExpression(node) && isUserAction(node)) hasActed = true;
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && helpers.has(node.expression.text) && !visited.has(node.expression.text)) {
       visited.add(node.expression.text);
       visit(helpers.get(node.expression.text));
@@ -190,7 +206,7 @@ function readAssertions(play, spies, helpers) {
       all += 1;
       const subject = node.arguments[0];
       const root = subject && getRoot(subject);
-      if (root && (spies.has(root) || /emitted/i.test(root))) emission += 1;
+      if (hasActed && root && (spies.has(root) || /emitted/i.test(root))) emission += 1;
     }
     ts.forEachChild(node, visit);
   };
@@ -299,7 +315,7 @@ export function findComponentsWithoutStories(sources, entry) {
       emitting += 1;
       const stories = files.flatMap((story) => story.stories).filter((story) => story.targets.has(vue));
       if (!stories.some((story) => story.emissionAssertions > 0)) {
-        unplayed.push({ file: vue, line: 1, symbol: `public component ${name} declares events and the play function of no story that draws it asserts an emitted event or a spy call` });
+        unplayed.push({ file: vue, line: 1, symbol: `public component ${name} declares events and the play function of no story that draws it asserts an emitted event or a spy call after a user action` });
       }
     }
   }
@@ -335,7 +351,7 @@ export function verifyEveryPublicComponentHasStory() {
 export function verifyEveryEmittingComponentHasPlayStory() {
   const all = getReport();
   requireMatches("Public components that declare events", all.reduce((sum, one) => sum + one.emitting, 0));
-  failOnFindings("A public component that declares events has no story whose play function asserts an emitted event or a spy call", all.flatMap((one) => one.unplayed));
+  failOnFindings("A public component that declares events has no story whose play function asserts an emitted event or a spy call after a user action", all.flatMap((one) => one.unplayed));
 }
 
 export function verifyEveryPlayAsserts() {
@@ -362,7 +378,7 @@ export const STORY_VERIFIERS = [
     id: "emitting-component-has-play-story",
     scope: "libs",
     module: "ui",
-    name: "Every Public Component That Declares Events or a Model Has a Story Whose play Function Asserts an Emitted Event or a Spy Call",
+    name: "Every Public Component That Declares Events or a Model Has a Story Whose play Function Acts as a Person Does and Then Asserts an Emitted Event or a Spy Call",
     run: verifyEveryEmittingComponentHasPlayStory,
   },
   {

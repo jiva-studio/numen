@@ -11,10 +11,7 @@ import (
 
 func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 	s := newScene(t)
-	text, err := textversion.NewFileText(s.versions.Texts, s.versions.Versions)
-	if err != nil {
-		t.Fatal(err)
-	}
+	text := textversion.NewFileText(s.versions.Texts, s.versions.Versions)
 	if _, ok, err := text.ReadLiveText(t.Context(), s.vault, scanPath); err != nil || ok {
 		t.Fatalf("a file with no version reads as live (%v, %v)", ok, err)
 	}
@@ -33,11 +30,5 @@ func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 	live, _, err = text.ReadLiveText(t.Context(), s.vault, scanPath)
 	if err != nil || live.Version().GetID() != edit.GetID() || live.Text != "layer the " {
 		t.Fatalf("after the edit the live text is %q of %s (%v)", live.Text, live.Version().GetID(), err)
-	}
-}
-
-func TestNewFileTextRequiresVersions(t *testing.T) {
-	if _, err := textversion.NewFileText(nil, nil); err == nil {
-		t.Error("a file text was made without versions")
 	}
 }

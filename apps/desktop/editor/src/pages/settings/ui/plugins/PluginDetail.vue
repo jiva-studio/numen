@@ -5,7 +5,7 @@
  */
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import type { PluginInfo } from '@/entities/settings'
-import { usePluginDetail } from '../../model/usePluginDetail'
+import { usePluginDetail, usePluginSwitch } from '../../model/usePluginDetail'
 import type { InstallationPlugin, InstallationSettings, SecretChoices } from '../../types'
 import PluginFields from './PluginFields.vue'
 
@@ -23,36 +23,18 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const {
-  managed,
-  isEnabled,
-  isPending,
-  hasSettings,
-  fileCount,
-  deleteProblem,
-  readmeText,
-  actions,
-} = usePluginDetail({
+const detailDeps = {
   getSettings: () => props.settings,
   getManager: () => props.manager,
   getPlugin: () => props.plugin,
-})
+}
+const { managed, hasSettings, fileCount, deleteProblem, readmeText, deleteData } =
+  usePluginDetail(detailDeps)
+const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
   emit('back')
-}
-
-function onToggleEnabled(isOn: boolean): void {
-  actions.setEnabled(isOn)
-}
-
-function onRetry(): void {
-  actions.retry()
-}
-
-function onDeleteData(): void {
-  actions.deleteData()
 }
 </script>
 
@@ -68,9 +50,9 @@ function onDeleteData(): void {
     :can-install="false"
     :has-settings="hasSettings"
     @back="onBack"
-    @toggle-enabled="onToggleEnabled"
-    @retry="onRetry"
-    @delete-data="onDeleteData"
+    @toggle-enabled="setEnabled"
+    @retry="retry"
+    @delete-data="deleteData"
   >
     <template #settings>
       <PluginFields

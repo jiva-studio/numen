@@ -53,5 +53,5 @@ export function useSecretValueEntry(deps: SecretValueEntryDeps) {
     failedValue.value = null
   }
 
-  return { entry, hasFailed, actions: { commit, commitAgain, clearFailure } }
+  return { entry, hasFailed, commit, commitAgain, clearFailure }
 }

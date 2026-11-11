@@ -8,7 +8,7 @@ import (
 
 func newExternalPluginHost(t *testing.T, target string, dirs ...string) *container.PluginHost {
 	t.Helper()
-	host, err := container.NewPluginHost(target, dirs...)
+	host, err := container.NewPluginHost(func(error) {}, target, dirs...)
 	if err != nil {
 		t.Fatal(err)
 	}

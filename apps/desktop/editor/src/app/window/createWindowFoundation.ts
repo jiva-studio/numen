@@ -4,7 +4,8 @@
  */
 import { useWindowFrame } from '@numen/workbench'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
-import { createWindowPluginStatus } from '@/features/plugin-commands'
+import { loadWailsRuntime } from '@/shared/api/wailsRuntime'
+import { createWindowPluginStatus } from '@/features/plugin-host'
 import { createEmitter } from '@/shared/lib/emitter'
 import { createCommandRegistry } from '@/shared/model/command'
 import { createMessageLog } from '@/shared/model/notices/messages'
@@ -16,12 +17,10 @@ export function createWindowFoundation() {
     log,
     rest,
     writeMessage: log.getWriter('command'),
-    frame: useWindowFrame(),
+    frame: useWindowFrame(loadWailsRuntime),
     status: createWindowPluginStatus(rest),
     registry: createCommandRegistry(),
     /** The plugin whose settings page a part asks for, or none for the page of the settings. */
     settingsRequests: createEmitter<string | undefined>(),
   }
 }
-
-export type WindowFoundation = ReturnType<typeof createWindowFoundation>

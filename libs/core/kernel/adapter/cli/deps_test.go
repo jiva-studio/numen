@@ -84,7 +84,7 @@ func (d stubSession) OpenIndexed(ctx context.Context, options cli.IndexOptions) 
 
 func (d stubSession) GetPluginCommands() cli.PluginCommands {
 	if d.PluginCommands == nil {
-		return cli.PluginCommands{}
+		return cli.PluginCommands{List: newScenarios(noCommands{}, noCommands{}, nil, nil, nil).List}
 	}
 	return d.PluginCommands()
 }

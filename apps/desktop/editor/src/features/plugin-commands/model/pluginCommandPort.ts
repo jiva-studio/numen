@@ -4,7 +4,7 @@
  */
 import type { PluginHost } from '@numen/plugin-loader'
 import type { CommandTarget, Values } from '@/shared/model/command'
-import { toRunTarget } from '../lib/runTarget'
+import { toRunTarget } from '@/entities/plugin'
 import type { createCommandNoteReader } from './usePluginCommands'
 
 /** How a command of a plugin is run: with the values it is given, and whether the caller awaits it. */

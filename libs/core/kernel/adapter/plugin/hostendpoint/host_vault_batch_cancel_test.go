@@ -339,7 +339,7 @@ func serveVaultCalls(t *testing.T, ctx context.Context, callers Callers) numenv1
 	t.Helper()
 	// Every call is served under ctx, so that a test ends the call from inside the vault the way a stopped plugin does.
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(&Endpoint{callers: callers}, vaultSource{callers: callers}))
+	mux.Handle(vaultapi.NewHandler(&Endpoint{callers: callers}, callers.Lent))
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux.ServeHTTP(w, r.WithContext(ctx))
 	}))

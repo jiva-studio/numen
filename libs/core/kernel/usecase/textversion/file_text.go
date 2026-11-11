@@ -30,11 +30,8 @@ type versionEdits interface {
 
 // NewFileText returns the text of the vault files from their text versions, and records the edits of
 // the user as versions.
-func NewFileText(texts *Texts, versions *Versions) (*FileText, error) {
-	if texts == nil || versions == nil {
-		return nil, errors.New("file text: texts and text versions are required")
-	}
-	return &FileText{texts: texts, edits: versions}, nil
+func NewFileText(texts *Texts, versions *Versions) *FileText {
+	return &FileText{texts: texts, edits: versions}
 }
 
 // ReadLiveText is the live version of a file and its text, and false where

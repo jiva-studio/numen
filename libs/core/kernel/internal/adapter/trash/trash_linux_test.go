@@ -4,6 +4,7 @@ package trash
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 )
 
 func folder(t *testing.T, name string) string {
@@ -56,7 +56,7 @@ func TestAFolderGoesToTheTrash(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", data)
 	pos := folder(t, "Vault")
 
-	if err := New(clock.NewFake(getDeletedOn())).Trash(pos); err != nil {
+	if err := New(testsupport.NewClockAt(getDeletedOn())).Trash(pos); err != nil {
 		t.Fatal(err)
 	}
 
@@ -93,7 +93,7 @@ func TestAFolderWithAPunctuatedName(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", data)
 	pos := folder(t, "Notes & Papers 100% #1")
 
-	if err := New(clock.NewFake(getDeletedOn())).Trash(pos); err != nil {
+	if err := New(testsupport.NewClockAt(getDeletedOn())).Trash(pos); err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,7 +119,7 @@ func TestANameAlreadyTaken(t *testing.T) {
 	first, second := folder(t, "Vault"), folder(t, "Vault")
 
 	for _, item := range []string{first, second} {
-		if err := New(clock.NewFake(getDeletedOn())).Trash(item); err != nil {
+		if err := New(testsupport.NewClockAt(getDeletedOn())).Trash(item); err != nil {
 			t.Fatal(err)
 		}
 	}

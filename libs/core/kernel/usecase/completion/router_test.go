@@ -76,25 +76,8 @@ func ask(text string) completiondomain.Question {
 
 func newRouter(t *testing.T, config completion.Config, fake *programs) *completion.Router {
 	t.Helper()
-	router, err := completion.NewRouter(func() completion.Config { return config }, fake, agentcase.NewAnswer(fake))
-	if err != nil {
-		t.Fatal(err)
-	}
+	router := completion.NewRouter(func() completion.Config { return config }, fake, agentcase.NewAnswer(fake))
 	return router
-}
-
-// A router is made with what it needs or not at all.
-func TestARouterIsRefusedWhatItCannotWorkWithout(t *testing.T) {
-	config := func() completion.Config { return completion.Config{} }
-	if _, err := completion.NewRouter(nil, &programs{}, agentcase.NewAnswer(&programs{})); err == nil {
-		t.Error("a router without settings was made")
-	}
-	if _, err := completion.NewRouter(config, nil, agentcase.NewAnswer(&programs{})); err == nil {
-		t.Error("a router without programs was made")
-	}
-	if _, err := completion.NewRouter(config, &programs{}, nil); err == nil {
-		t.Error("a router without an answerer was made")
-	}
 }
 
 // A plugin is answered by the default agent and model, through a task that names
@@ -316,10 +299,7 @@ func TestAChangedLimitAppliesToTheNextQuestions(t *testing.T) {
 	block := newBlocker()
 	config := completion.Config{Default: completion.Route{Concurrency: 1}}
 	blocked := &programs{answer: block.answer}
-	router, err := completion.NewRouter(func() completion.Config { return config }, blocked, agentcase.NewAnswer(blocked))
-	if err != nil {
-		t.Fatal(err)
-	}
+	router := completion.NewRouter(func() completion.Config { return config }, blocked, agentcase.NewAnswer(blocked))
 	var wg sync.WaitGroup
 	// One question holds the only place under the limit of one.
 	wg.Go(func() {
@@ -404,10 +384,7 @@ func TestAFailureAfterAReplacementStatesIt(t *testing.T) {
 func TestADefaultEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	fake := &programs{}
 	config := completion.Config{Default: completion.Route{Agent: "early"}}
-	router, err := completion.NewRouter(func() completion.Config { return config }, fake, agentcase.NewAnswer(fake))
-	if err != nil {
-		t.Fatal(err)
-	}
+	router := completion.NewRouter(func() completion.Config { return config }, fake, agentcase.NewAnswer(fake))
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 		t.Fatal(err)
 	}

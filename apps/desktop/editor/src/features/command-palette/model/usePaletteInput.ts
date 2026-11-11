@@ -81,5 +81,5 @@ export function usePaletteInput(deps: PaletteInputDeps) {
     if (commands.palette.open.value && commands.navigation.goBack()) search.setOpen(true)
   }
 
-  return { field, actions: { type, choose, dismiss, goBack } }
+  return { field, type, choose, dismiss, goBack }
 }

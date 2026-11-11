@@ -35,10 +35,7 @@ func newTabLinksClient(t *testing.T, state *editor.State) numenv1connect.Workspa
 
 func newHandler(t *testing.T, state *editor.State, schedule func(time.Duration, func()) func() bool) (*Handler, *tablinks.Tabs) {
 	t.Helper()
-	links, err := tablinks.New(LinkGrace, schedule, newLinkEvents())
-	if err != nil {
-		t.Fatal(err)
-	}
+	links := tablinks.New(LinkGrace, schedule, newLinkEvents())
 	store := memoryTabs{}
 	return NewHandler(state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links), links
 }

@@ -74,11 +74,3 @@ func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
 		t.Errorf("the entry came out as %+v", first)
 	}
 }
-
-func TestTheWindowListsNoMenuEntriesWhereThereIsNoPluginHost(t *testing.T) {
-	commands := newScenarios(nil, nil, getTypes(), nil, nil)
-
-	if entries := commands.List.ExecuteSlots(); len(entries) != 0 {
-		t.Errorf("the window lists %+v", entries)
-	}
-}

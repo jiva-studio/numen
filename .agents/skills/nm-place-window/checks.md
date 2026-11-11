@@ -14,6 +14,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - `core-client-only-in-api`: a window file outside an `api` segment and `main.ts` importing `@numen/core-client`.
 - `shared-serves-several-slices`: a file of `shared` that one slice imports.
 - `app-is-composition`: a file of `app` over 300 lines, named `use<Name>` or exporting a `use<Name>` composable, calling `watch`, `addEventListener` or a timer, holding a `switch`, more than one decision (`if`, `?:`, `&&`, `||`, `??`, an array method with a callback, loop, `catch`) in a function or more than three in a file.
+- `app-takes-concrete-inputs`: a function of `app` taking more than eight inputs, or an input that narrows the result of another function of `app` with `Pick`, `Omit`, `Partial`, `Required` or `Readonly`.
 - `no-component-below-ui`: a `.vue` file in a `lib`, `api` or `model` segment.
 
 ## Segments and components
@@ -21,7 +22,7 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 - ESLint on `lib/`: importing Vue, Pinia or `@vue/*`; touching `window`, `document`, `navigator`, `localStorage` or `sessionStorage`; timers (`setTimeout`, `setInterval`).
 - ESLint on `model/`: importing from `ui/`; touching `window`, `document` or `navigator` directly.
 - ESLint on `.vue`: importing a wire module, `@connectrpc/*` or `@bufbuild/*`; touching `window`, `document` or `navigator`.
-- ESLint `numen/max-composable-return-properties`: a composable returning more than eight properties, counted through a returned variable, or returning a spread.
+- ESLint `numen/max-composable-return-properties`: a composable returning more than eight properties, counted through a returned variable, returning a spread, a group of one key, a group named for what it wraps (`base`, `parts`, `services`, `actions`, `frame`, `helpers`, `utils`, `deps`).
 - ESLint `numen/vue-script-sections`, `numen/max-script-lines`, `numen/max-inline-props`, `numen/thin-computed`, `numen/handler-naming`, `numen/boolean-prop-naming`, `numen/enforce-vue-reactivity-in-composable`: a script that departs from the section order and limits of `coding-style-frontend.md`.
 - ESLint size rules `complexity`, `max-depth`, `max-lines-per-function`, `max-statements`, `max-params`: a function over the limits of `architecture.md` §8.
 

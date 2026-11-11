@@ -6,7 +6,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -31,38 +30,6 @@ type Completer interface {
 	Complete(ctx context.Context, pluginID string, question completion.Question) (string, error)
 }
 
-// CompletionSource lends the completer of the host.
-type CompletionSource interface {
-	// GetCompleter returns the completer, or nil when the host has none.
-	GetCompleter() Completer
-}
-
-// VaultSource lends the vault the host works.
-type VaultSource interface {
-	// GetPluginVault returns the open vault, or nil when the host has none.
-	GetPluginVault() *vault.Access
-}
-
-// TextSource lends the text versions of the vaults.
-type TextSource interface {
-	// GetPluginTexts returns the text versions, or nil when the host has none.
-	GetPluginTexts() TextVersions
-}
-
-// SearchSource lends the search of the vaults.
-type SearchSource interface {
-	// GetPluginSearch returns the search, or nil when the host has none.
-	GetPluginSearch() *SearchAccess
-}
-
-// WindowSource lends the window of the vault and the list of vaults it shows.
-type WindowSource interface {
-	// GetPluginWindow returns the main window of the vault, or nil when the host has no window.
-	GetPluginWindow() WindowControl
-	// GetPluginVaultList returns the list of vaults plugins change, or nil when the host has no window.
-	GetPluginVaultList() vault.List
-}
-
 // WorkQueue is the core's shared queue of heavy work and its list of tasks, as the plugins use them.
 // Every call names the plugin it is made for.
 type WorkQueue interface {
@@ -77,36 +44,15 @@ type WorkQueue interface {
 	ClearPlugin(pluginID string)
 }
 
-// WorkSource lends the queue of heavy work and the list of tasks.
-type WorkSource interface {
-	// GetPluginWork returns the queue, or nil when the host has none.
-	GetPluginWork() WorkQueue
-}
-
-// DependencySource lends what provisions the dependencies of the plugins.
-type DependencySource interface {
-	// GetDependencies returns the provisioner, or nil when the host has none.
-	GetDependencies() Dependencies
-}
-
-// ToolSource lends the tools the plugins offer.
-type ToolSource interface {
-	GetPluginTools() PluginTools
-}
-
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with.
+// plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
+// window shows a vault; the dependencies and the tools are read at each call.
 type Callers struct {
 	Identity     Identity
 	Leases       Leases
-	Completion   CompletionSource
-	Vault        VaultSource
-	Texts        TextSource
-	Search       SearchSource
-	Window       WindowSource
-	Work         WorkSource
-	Dependencies DependencySource
-	Tools        ToolSource
+	Lent         *Services
+	Dependencies func() Dependencies
+	Tools        func() PluginTools
 }
 
 // TextVersions is the text versions of the vaults, as the plugins that call the host work them.
@@ -187,14 +133,3 @@ type WindowControl interface {
 	// window does not report active in time returns plugin.ErrTabNotShown.
 	ActivateTab(ctx context.Context, id string) (windowdomain.OpenTabs, error)
 }
-
-// DependencySourceFunc lends the provisioner the function returns, or nil.
-type DependencySourceFunc func() Dependencies
-
-// GetDependencies returns the provisioner, or nil when the host has none.
-func (f DependencySourceFunc) GetDependencies() Dependencies { return f() }
-
-// ToolSourceFunc lends the tools the function returns.
-type ToolSourceFunc func() PluginTools
-
-func (f ToolSourceFunc) GetPluginTools() PluginTools { return f() }

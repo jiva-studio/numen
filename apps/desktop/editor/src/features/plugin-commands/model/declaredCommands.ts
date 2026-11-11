@@ -7,7 +7,6 @@ import type { CommandRegistry } from '@/shared/model/command'
 import { computed, shallowRef, watch } from 'vue'
 import {
   createWhenReader,
-  formatCommandId,
   type CommandDeclaration,
   type CommandItem,
   type HandlerDeclaration,
@@ -19,6 +18,7 @@ import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import { getNamedIcon } from '@/shared/ui/icons'
 import type { Writable } from '@/entities/tab'
 import {
+  getPaletteId,
   listDeclaredItemLists,
   listDeclaredCommands,
   runDeclaredCommand,
@@ -48,13 +48,6 @@ const listItemsOfOne: ListItems = async (command, path) => {
   if (!answer.result.ok) throw new Error(answer.result.error)
   return answer.result.value
 }
-
-const getPluginCommandId = (pluginId: string, commandId: string): string =>
-  formatCommandId(pluginId, commandId)
-
-/** What the palette files a declared command under. */
-export const getPaletteId = (command: DeclaredCommand): string =>
-  getPluginCommandId(command.pluginId, command.id)
 
 function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],

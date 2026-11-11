@@ -12,7 +12,7 @@ const MODELLED = "<script setup lang=\"ts\">\nconst model = defineModel<boolean>
 const PLAIN_STORY = (name) =>
   `import type { Meta } from '@storybook/vue3-vite'\nimport ${name} from './${name}.vue'\nconst meta = { component: ${name} } satisfies Meta<typeof ${name}>\nexport default meta\nexport const Idle = { render: () => ({ components: { ${name} } }) }\n`;
 const PLAYED_STORY = (name) =>
-  `import { expect } from 'storybook/test'\nimport ${name} from './${name}.vue'\nconst meta = { component: ${name} }\nexport default meta\nexport const Picks = { render: () => ({ components: { ${name} } }), play: async ({ args }) => { await expect(args.onPick).toHaveBeenCalledWith('a') } }\n`;
+  `import { expect, userEvent } from 'storybook/test'\nimport ${name} from './${name}.vue'\nconst meta = { component: ${name} }\nexport default meta\nexport const Picks = { render: () => ({ components: { ${name} } }), play: async ({ args }) => { await userEvent.click(document.body); await expect(args.onPick).toHaveBeenCalledWith('a') } }\n`;
 
 const LIBRARY = {
   [ENTRY]:
@@ -148,14 +148,24 @@ describe("the story checks over a library", () => {
 
   it("fail an emitting component whose play asserts only the page, and pass one that asserts a spy or an emitted payload", () => {
     const stories = (play) =>
-      `import Picker from './Picker.vue'\nimport { expect, fn } from 'storybook/test'\nconst onPick = fn()\nexport default { component: Picker }\nexport const A = { args: { onPick }, play: ${play} }\n`;
+      `import Picker from './Picker.vue'\nimport { expect, fn, userEvent } from 'storybook/test'\nconst onPick = fn()\nexport default { component: Picker }\nexport const A = { args: { onPick }, play: ${play} }\n`;
     const run = (play) => names(findComponentsWithoutStories(createLibrary({ [`${ROOT}/ui/picker/Picker.stories.ts`]: stories(play) }), ENTRY).unplayed);
-    const refused = ["public component Picker declares events and the play function of no story that draws it asserts an emitted event or a spy call"];
+    const refused = ["public component Picker declares events and the play function of no story that draws it asserts an emitted event or a spy call after a user action"];
     assert.deepEqual(run("async () => {}"), refused);
     assert.deepEqual(run("async ({ canvasElement }) => { await expect(canvasElement.textContent).toBe('a') }"), refused);
-    assert.deepEqual(run("async () => { await expect(onPick).toHaveBeenCalledOnce() }"), []);
-    assert.deepEqual(run("async ({ args }) => { const { onPick: spy } = args; await expect(spy.mock.calls[0]).toEqual(['a']) }"), []);
-    assert.deepEqual(run("async () => { await expect(emitted().pick).toEqual([['a']]) }"), []);
+    assert.deepEqual(run("async () => { await userEvent.click(document.body); await expect(onPick).toHaveBeenCalledOnce() }"), []);
+    assert.deepEqual(run("async ({ args }) => { await userEvent.click(document.body); const { onPick: spy } = args; await expect(spy.mock.calls[0]).toEqual(['a']) }"), []);
+    assert.deepEqual(run("async () => { await userEvent.click(document.body); await expect(emitted().pick).toEqual([['a']]) }"), []);
+    assert.deepEqual(run("async () => { await fireEvent.keyDown(document.body); await expect(onPick).toHaveBeenCalledOnce() }"), []);
+  });
+
+  it("fail an emitting component whose play asserts a spy before any user action, or after none", () => {
+    const stories = (play) =>
+      `import Picker from './Picker.vue'\nimport { expect, fn, userEvent } from 'storybook/test'\nconst onPick = fn()\nexport default { component: Picker }\nexport const A = { args: { onPick }, play: ${play} }\n`;
+    const run = (play) => names(findComponentsWithoutStories(createLibrary({ [`${ROOT}/ui/picker/Picker.stories.ts`]: stories(play) }), ENTRY).unplayed);
+    const refused = ["public component Picker declares events and the play function of no story that draws it asserts an emitted event or a spy call after a user action"];
+    assert.deepEqual(run("async () => { await expect(onPick).not.toHaveBeenCalled() }"), refused);
+    assert.deepEqual(run("async () => { await expect(onPick).not.toHaveBeenCalled(); await userEvent.click(document.body) }"), refused);
   });
 
   it("pass when every component has a story and every emitting one has a play function", () => {
@@ -181,7 +191,7 @@ describe("the story checks over a library", () => {
       [`${ROOT}/ui/chip/Chip.stories.ts`]: PLAIN_STORY("Chip"),
     });
     assert.deepEqual(names(findComponentsWithoutStories(sources, ENTRY).unplayed), [
-      "public component Picker declares events and the play function of no story that draws it asserts an emitted event or a spy call",
+      "public component Picker declares events and the play function of no story that draws it asserts an emitted event or a spy call after a user action",
     ]);
   });
 

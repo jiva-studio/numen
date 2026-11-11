@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 	"io"
 	"time"
 
@@ -34,11 +33,7 @@ func OpenEditor(
 func openEditorTexts(
 	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, opening WindowOpening,
 ) (*OpenedWindow, error) {
-	texts, err := newTextVersions(vaultOf(c), db)
-	if err != nil {
-		return nil, errors.Join(err, db.Close())
-	}
-	opened, err := openWindowWith(c, ctx, ports, opening, texts)
+	opened, err := openWindowWith(c, ctx, ports, opening, newTextVersions(vaultOf(c), db))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +43,7 @@ func openEditorTexts(
 func connectEditor(ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
 	state, a := opened.state, opened.a
 	setPluginVaultPath(a, state.GetCurrentVault().Path)
-	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: *opened.cases.PluginNotes}
+	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: opened.cases.PluginNotes}
 	if err := installPluginVault(a, ports, db, state.GetShownVault, hooks); err != nil {
 		return nil, err
 	}

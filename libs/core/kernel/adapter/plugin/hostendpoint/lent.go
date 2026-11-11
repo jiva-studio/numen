@@ -1,16 +1,20 @@
 package hostendpoint
 
 import (
-	"sync"
+	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 )
 
 // Services holds what the host lends to the plugins that call it: the completer, the vault, the
 // texts, the window, the list of vaults, the search and the queue of work. What is not set is
-// reported as nil, and a call that needs it is refused.
+// reported as nil, and a call that needs it is refused. The set is replaced whole at each change, so a
+// call reads one consistent set without a lock.
 type Services struct {
-	mu        sync.RWMutex
+	set atomic.Pointer[lentSet]
+}
+
+type lentSet struct {
 	completer Completer
 	access    *vault.Access
 	texts     TextVersions
@@ -23,98 +27,79 @@ type Services struct {
 // NewServices creates an empty set of services.
 func NewServices() *Services { return &Services{} }
 
+func (s *Services) get() *lentSet {
+	if current := s.set.Load(); current != nil {
+		return current
+	}
+	return &lentSet{}
+}
+
+func (s *Services) change(apply func(*lentSet)) {
+	for {
+		old := s.set.Load()
+		var next lentSet
+		if old != nil {
+			next = *old
+		}
+		apply(&next)
+		if s.set.CompareAndSwap(old, &next) {
+			return
+		}
+	}
+}
+
 // SetCompleter sets what answers the completions plugins ask for.
 func (s *Services) SetCompleter(completer Completer) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.completer = completer
+	s.change(func(set *lentSet) { set.completer = completer })
 }
 
 // GetCompleter returns what answers the completions plugins ask for, or nil.
-func (s *Services) GetCompleter() Completer {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.completer
-}
+func (s *Services) GetCompleter() Completer { return s.get().completer }
 
 // SetPluginVault sets the vault exposed to plugins. Nil means none.
 func (s *Services) SetPluginVault(access *vault.Access) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.access = access
+	s.change(func(set *lentSet) { set.access = access })
 }
 
 // GetPluginVault returns the vault exposed to plugins, or nil.
-func (s *Services) GetPluginVault() *vault.Access {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.access
-}
+func (s *Services) GetPluginVault() *vault.Access { return s.get().access }
 
+// SetPluginTexts sets the text versions the plugins work through the host.
 func (s *Services) SetPluginTexts(texts TextVersions) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.texts = texts
+	s.change(func(set *lentSet) { set.texts = texts })
 }
 
 // GetPluginTexts returns the text versions the plugins work, or nil.
-func (s *Services) GetPluginTexts() TextVersions {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.texts
-}
+func (s *Services) GetPluginTexts() TextVersions { return s.get().texts }
 
 // SetPluginWindow sets the window exposed to plugins. Nil means none.
 func (s *Services) SetPluginWindow(window WindowControl) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.window = window
+	s.change(func(set *lentSet) { set.window = window })
 }
 
 // GetPluginWindow returns the window exposed to plugins, or nil.
-func (s *Services) GetPluginWindow() WindowControl {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.window
-}
+func (s *Services) GetPluginWindow() WindowControl { return s.get().window }
 
 // SetPluginVaultList sets the list of vaults exposed to plugins. Nil means none.
 func (s *Services) SetPluginVaultList(list vault.List) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.vaultList = list
+	s.change(func(set *lentSet) { set.vaultList = list })
 }
 
-func (s *Services) GetPluginVaultList() vault.List {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.vaultList
-}
+// GetPluginVaultList returns the list of vaults exposed to plugins, or nil.
+func (s *Services) GetPluginVaultList() vault.List { return s.get().vaultList }
 
 // SetPluginSearch sets the search index and the search floor the plugins work through the host.
 func (s *Services) SetPluginSearch(search *SearchAccess) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.search = search
+	s.change(func(set *lentSet) { set.search = search })
 }
 
 // GetPluginSearch returns the search index the plugins work, or nil.
-func (s *Services) GetPluginSearch() *SearchAccess {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.search
-}
+func (s *Services) GetPluginSearch() *SearchAccess { return s.get().search }
 
 // SetPluginWork sets the queue and the list of tasks the plugins use.
 func (s *Services) SetPluginWork(work WorkQueue) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.work = work
+	s.change(func(set *lentSet) { set.work = work })
 }
 
 // GetPluginWork returns the queue and the list of tasks the plugins use, or nil.
-func (s *Services) GetPluginWork() WorkQueue {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.work
-}
+func (s *Services) GetPluginWork() WorkQueue { return s.get().work }

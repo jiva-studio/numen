@@ -1,69 +1,100 @@
 /**
  * The plugins of the window: the host and the loader, the commands the plugins declare and the
- * services a plugin is given.
+ * services a plugin is given, made without the host: the services reach the commands through the
+ * port, which the palettes connect once they are made.
  */
 import { createNoticeQueue } from '@numen/workbench'
 import { readNote, writeNote } from '@/entities/note'
+import { useDeclaredCommands } from '@/features/plugin-commands'
+import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
+import { syncKeybindings } from '@/features/hotkeys'
+import type { createWindowBase } from './createWindowBase'
+import { createPluginDeclarations } from './createPluginDeclarations'
+import { createPluginHostSupport, createServiceParts } from './createPluginHost'
 import {
-  createCommandIconFinder,
-  createHostPort,
-  createPluginNotes,
-  isCommandListed,
-  useDeclaredCommands,
-  type PluginServices,
-} from '@/features/plugin-commands'
-import type { WindowFeatures } from './createWindowFeatures'
-import type { WindowFoundation } from './createWindowFoundation'
-import type { WindowVault } from './createWindowVault'
-import {
+  createPluginAccess,
   createPluginBackgroundTasks,
-  createPluginDeclarations,
-  createPluginHostSupport,
-  createVaultFacingServices,
+  createPluginWorkspace,
   createWindowOwnedServices,
-} from './createPluginsPart'
+} from './createPluginServices'
 
-/** What the plugins of the window use of the other parts of it. */
+type WindowBase = ReturnType<typeof createWindowBase>
+
+/** What the plugins of the window read of the base. */
 export interface WindowPluginsDeps {
-  readonly foundation: Pick<
-    WindowFoundation,
-    'rest' | 'log' | 'writeMessage' | 'status' | 'frame' | 'registry' | 'settingsRequests'
-  >
-  readonly parts: Pick<WindowVault, 'tabsPart' | 'vault' | 'windowSettings'>
-  readonly features: Pick<WindowFeatures, 'itemLists' | 'featureCommands' | 'getTarget'>
+  readonly foundation: WindowBase['foundation']
+  readonly tabs: WindowBase['tabs']
+  readonly vault: WindowBase['vault']
+  readonly windowSettings: WindowBase['windowSettings']
+  readonly getTarget: WindowBase['getTarget']
+  readonly appCommands: WindowBase['appCommands']
 }
 
 export function createWindowPlugins(deps: WindowPluginsDeps) {
-  const { rest, log, writeMessage, status, frame, registry, settingsRequests } = deps.foundation
-  const { windowTabs, tabOpeners } = deps.parts.tabsPart
-  const { vault, windowSettings } = deps.parts
-  const { editing, window, vaults } = vault
-  const { itemLists, getTarget } = deps.features
-
+  const { foundation, tabs, vault, windowSettings, getTarget, appCommands } = deps
+  const { log, rest, frame, status, registry, settingsRequests } = foundation
+  const { windowTabs, tabOpeners } = tabs
+  const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
-  const pluginNotices = createNoticeQueue()
+  const notices = createNoticeQueue()
   const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })
   const declarations = createPluginDeclarations({
     rest,
     log,
-    writeMessage,
-    hostPort,
+    isPaletteOpen: hostPort.isPaletteOpen,
     getTarget,
-    appCommands: deps.features.featureCommands.commands,
+    appCommands,
     itemLists,
     tabOpeners,
   })
-  const getServices = (): PluginServices => services
-  const support = createPluginHostSupport({
+  const services = {
+    workspace: createPluginWorkspace({
+      log,
+      windowTabs,
+      tabOpeners,
+      window,
+      hostPort,
+      tabSync: tabs.tabSync,
+    }),
+    ...createPluginAccess({
+      making: editing.making,
+      pluginNotes,
+      window,
+      rest,
+      getTarget,
+      hostPort,
+    }),
+    ...createWindowOwnedServices({
+      editing,
+      window,
+      vaults,
+      hostPort,
+      frame,
+      log,
+      backgroundTasks: createPluginBackgroundTasks({
+        log,
+        notices,
+        window,
+        appearance: windowSettings.appearance,
+        openSettings: settingsRequests.emit,
+      }),
+    }),
+  }
+  const { pluginHost, pluginLoader } = createPluginHostSupport({
     rest,
+    catalog: declarations.catalog,
     status,
-    getPlatform: () => frame.platform.value,
+    frame,
     windowTabs,
     tabOpeners,
-    declarations,
-    access: { getServices, notices: pluginNotices, pluginNotes },
+    reports: declarations.reports,
+    parts: createServiceParts({
+      services,
+      notices,
+      pluginNotes,
+      hostParts: declarations.hostParts,
+    }),
   })
-  const { pluginHost } = support
   vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
   const declaredCommands = useDeclaredCommands({
     state: declarations.declared,
@@ -72,41 +103,10 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     hasBackend: declarations.catalog.hasBackend,
     listItems: itemLists.listItems,
   })
-  const owned = createWindowOwnedServices({
-    editing,
-    window,
-    vaults,
-    hostPort,
-    backgroundTasks: createPluginBackgroundTasks({
-      log,
-      notices: pluginNotices,
-      window,
-      windowSettings,
-      writeMessage,
-      openSettings: settingsRequests.emit,
-    }),
-    frame,
-    writeMessage,
-  })
-  const services: PluginServices = {
-    ...createVaultFacingServices({
-      foundation: deps.foundation,
-      tabsPart: deps.parts.tabsPart,
-      vault,
-      pluginNotes,
-      getTarget,
-      runInvocation: hostPort.runInvocation,
-      getPluginCommandIcon: createCommandIconFinder(pluginHost, declaredCommands),
-    }),
-    buffers: owned.buffers,
-    noteBuffer: owned.noteBuffer,
-    taskList: owned.taskList,
-    backgroundTasks: owned.backgroundTasks,
-    commands: owned.commands,
-    vaults: owned.vaults,
-    window: owned.window,
-  }
-  return { hostPort, support, declaredCommands }
+  syncKeybindings(
+    pluginHost.keybindings,
+    declaredCommands.contributions.keybindings,
+    rest.state.plugins,
+  )
+  return { hostPort, pluginHost, pluginLoader, declaredCommands }
 }
-
-export type WindowPlugins = ReturnType<typeof createWindowPlugins>

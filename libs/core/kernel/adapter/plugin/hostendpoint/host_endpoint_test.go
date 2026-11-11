@@ -64,26 +64,23 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 	return nil
 }
 
-func (c *callers) GetCompleter() Completer { return c.completer }
-
-func (c *callers) GetPluginVault() *vaultapi.Access { return c.vault }
-
-func (c *callers) GetPluginTexts() TextVersions      { return c.texts }
-func (c *callers) GetPluginSearch() *SearchAccess    { return c.search }
-func (c *callers) GetDependencies() Dependencies     { return nil }
-func (c *callers) GetPluginWork() WorkQueue          { return c.work }
-func (c *callers) GetPluginTools() PluginTools       { return c.tools }
-func (c *callers) GetPluginWindow() WindowControl    { return c.window }
-func (c *callers) GetPluginVaultList() vaultapi.List { return c.list }
-
 func (c *callers) over(list vaultapi.List, granted ...string) Callers {
 	c.list, c.granted, c.confined = list, granted, true
 	return c.asCallers()
 }
 
 func (c *callers) asCallers() Callers {
+	lent := NewServices()
+	lent.SetCompleter(c.completer)
+	lent.SetPluginVault(c.vault)
+	lent.SetPluginTexts(c.texts)
+	lent.SetPluginSearch(c.search)
+	lent.SetPluginWork(c.work)
+	lent.SetPluginWindow(c.window)
+	lent.SetPluginVaultList(c.list)
 	return Callers{
-		Identity: c, Leases: c, Completion: c, Vault: c, Texts: c, Search: c, Window: c, Work: c, Dependencies: c, Tools: c,
+		Identity: c, Leases: c, Lent: lent,
+		Dependencies: func() Dependencies { return nil }, Tools: func() PluginTools { return c.tools },
 	}
 }
 

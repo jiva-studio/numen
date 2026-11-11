@@ -31,9 +31,9 @@ import {
 } from './answers'
 import { book, editor, reader } from './stubs'
 import { openNoteTab, registerNoteTabs } from './mocks/noteTabs'
-import type { createWindow } from '@/app/window/createWindow'
+import type { WindowParts } from '@/app/window/createWindow'
 
-const App = (await import('@/app/App.vue')).default
+const Root = (await import('@/app/createRoot')).createRoot()
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
@@ -71,7 +71,7 @@ afterEach(() => {
 })
 
 function mountStartingWindow() {
-  const window = mount(App, {
+  const window = mount(Root, {
     global: {
       // A stub is named by the binding the component is drawn through, and the
       // window's command palette draws the library's under `Palette`.
@@ -90,7 +90,7 @@ function mountStartingWindow() {
     attachTo: document.body,
   })
   windows.push(window)
-  lastHost = getWindowParts(window).plugins.host.pluginHost
+  lastHost = getWindowParts(window).pluginHost
   return window
 }
 
@@ -103,14 +103,14 @@ async function mountWindow() {
 }
 
 async function mountWindowWithPalette() {
-  const window = mount(App, {
+  const window = mount(Root, {
     global: {
       stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Book: book, Tree: true },
     },
     attachTo: document.body,
   })
   windows.push(window)
-  lastHost = getWindowParts(window).plugins.host.pluginHost
+  lastHost = getWindowParts(window).pluginHost
   await settle()
   await settle()
   await settle()
@@ -125,21 +125,19 @@ const cards = (): readonly string[] =>
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 
-type CreatedWindow = ReturnType<typeof createWindow>
-
-const hasWindowParts = (vm: object): vm is { parts: CreatedWindow } => 'parts' in vm
+const hasWindowParts = (vm: object): vm is { parts: WindowParts } => 'parts' in vm
 
 const getWindowParts = (window: VueWrapper) => {
   if (!hasWindowParts(window.vm)) throw new Error('The mounted window has no parts')
   const { parts } = window.vm
   return {
-    tabs: parts.base.tabs,
+    tabs: parts.tabs,
     palette: {
-      getTarget: parts.commands.getTarget,
-      runCommand: parts.commands.commands.runCommand,
-      commandDeps: parts.commands.commands.commandDeps,
+      getTarget: parts.getTarget,
+      runCommand: parts.palettes.palette.runs.runCommand,
+      commandDeps: parts.palettes.commandDeps,
     },
-    plugins: { host: parts.base.plugins.host },
+    pluginHost: parts.views.pluginHost,
   }
 }
 

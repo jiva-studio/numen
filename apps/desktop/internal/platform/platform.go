@@ -43,7 +43,7 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 // that target.
 func GetConfigFor(target string) container.Config {
 	dirs := getPluginsDirs()
-	host, discoverErr := container.NewPluginHost(target, dirs...)
+	host, discoverErr := container.NewPluginHost(reportPluginHost, target, dirs...)
 	if discoverErr != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", discoverErr)
 	}
@@ -62,6 +62,10 @@ func GetConfigFor(target string) container.Config {
 		cfg.IndexPath = path
 	}
 	return cfg
+}
+
+func reportPluginHost(err error) {
+	fmt.Fprintf(os.Stderr, "numen: plugin host: %v\n", err)
 }
 
 func getKeyStore() *keychain.Store {

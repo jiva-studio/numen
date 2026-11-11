@@ -46,10 +46,7 @@ func (notesOnly) ListExtensions(domain.ContentType) []string { return []string{"
 func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewindow.Handler {
 	t.Helper()
 	open := window{vault: vaultfixture.NewVault(t, notes)}
-	choose, err := tabkind.NewChoose(kinds, notesOnly{}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	choose := tabkind.NewChoose(kinds, notesOnly{}, nil)
 	readers := vaultreader.Readers{}
 	fileKinds := file.NewGetFileKinds(readers, nil)
 	return filewindow.NewHandler(

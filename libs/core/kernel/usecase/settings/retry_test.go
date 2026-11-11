@@ -2,30 +2,18 @@ package settings_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-func TestARetryPluginMadeWithoutARetrierIsRefused(t *testing.T) {
-	retry, err := settings.NewRetryPlugin(nil)
-
-	if !errors.Is(err, settings.ErrNoRetrier) || retry != nil {
-		t.Fatalf("NewRetryPlugin(nil) = %v, %v, want %v", retry, err, settings.ErrNoRetrier)
-	}
-}
-
 func TestARetryPluginPassesTheIdToTheRetrier(t *testing.T) {
 	var got string
-	retry, err := settings.NewRetryPlugin(func(_ context.Context, id string) (*plugin.Failure, error) {
+	retry := settings.NewRetryPlugin(func(_ context.Context, id string) (*plugin.Failure, error) {
 		got = id
 		return &plugin.Failure{PluginID: id}, nil
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	failure, err := retry.Execute(t.Context(), "md.numen.sample")
 

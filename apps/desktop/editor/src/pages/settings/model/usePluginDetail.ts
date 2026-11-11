@@ -41,18 +41,8 @@ function createDataDeletion(
   }
 }
 
-export function usePluginDetail(deps: PluginDetailDeps) {
-  const pluginSettings = createPluginSettings(
-    () => deps.getSettings(),
-    () => deps.getPlugin().id,
-  )
-
-  const read = (key: string) => deps.getSettings().getSetting([deps.getPlugin().id, key])
-
-  const managed = computed(
-    () => createManagedFromEntries([deps.getPlugin()], deps.getManager().catalog.value)[0],
-  )
-
+/** Whether the plugin is enabled, whether a change of that is waiting to be confirmed, and the calls that change it or start it again. */
+export function usePluginSwitch(deps: PluginDetailDeps) {
   const readEnabled = (): JsonValue | undefined =>
     deps.getSettings().getConfirmedSetting([deps.getPlugin().id, 'enabled'])
   const isEnabled = computed<boolean>(() => {
@@ -62,6 +52,29 @@ export function usePluginDetail(deps: PluginDetailDeps) {
 
   const isPending = computed<boolean>(() =>
     deps.getSettings().isPending([deps.getPlugin().id, 'enabled']),
+  )
+
+  const pluginSettings = createPluginSettings(
+    () => deps.getSettings(),
+    () => deps.getPlugin().id,
+  )
+
+  function setEnabled(isOn: boolean): void {
+    pluginSettings.set('enabled', isOn)
+  }
+
+  function retry(): void {
+    deps.getManager().retryPlugin(deps.getPlugin().id)
+  }
+
+  return { isEnabled, isPending, setEnabled, retry }
+}
+
+export function usePluginDetail(deps: PluginDetailDeps) {
+  const read = (key: string) => deps.getSettings().getSetting([deps.getPlugin().id, key])
+
+  const managed = computed(
+    () => createManagedFromEntries([deps.getPlugin()], deps.getManager().catalog.value)[0],
   )
 
   const hasSettings = computed(() => hasPluginSettings(deps.getPlugin(), read))
@@ -102,28 +115,7 @@ export function usePluginDetail(deps: PluginDetailDeps) {
     { immediate: true },
   )
 
-  function setEnabled(isOn: boolean): void {
-    pluginSettings.set('enabled', isOn)
-  }
-
-  function retry(): void {
-    deps.getManager().retryPlugin(deps.getPlugin().id)
-  }
-
   const deleteData = createDataDeletion(deps, deleteProblem, readFileCount)
 
-  return {
-    managed,
-    isEnabled,
-    isPending,
-    hasSettings,
-    fileCount,
-    deleteProblem,
-    readmeText,
-    actions: {
-      setEnabled,
-      retry,
-      deleteData,
-    },
-  }
+  return { managed, hasSettings, fileCount, deleteProblem, readmeText, deleteData }
 }
