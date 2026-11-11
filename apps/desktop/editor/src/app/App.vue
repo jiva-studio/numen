@@ -20,7 +20,7 @@ import { WelcomeScreen } from '@/pages/welcome'
 import { BootstrapFailure } from '@/features/app-start'
 import { getUserAgent } from './window/getUserAgent'
 import { getWindowParts } from './getWindowParts'
-import { getWindowPartsTabMenu } from '@/entities/tab'
+import { useWindowTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
 import { WORDS as words } from '@/shared/ui/words'
 import { WINDOW_WORDS } from './window/words'
@@ -63,7 +63,7 @@ const { vaultList } = parts.services.vaults
 const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = parts.bootstrap
 const { isReady: isLayoutReady } = parts.tabs.layout
 
-const tabMenu = getWindowPartsTabMenu({
+const tabMenu = useWindowTabMenu({
   moveCommand: COMMAND.moveTabToWindow,
   windowTabs,
   onHighlight: highlightWindow,

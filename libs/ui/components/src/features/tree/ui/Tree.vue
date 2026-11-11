@@ -35,6 +35,7 @@ const { visibleRows, layout, rows, getRowRef, picked, drag, gestures, renaming }
   box,
   list,
   renamingPath,
+  select: (chosen) => emit('select', chosen),
   emit,
 })
 const { virtual, virtualRows, rowsStyle } = layout

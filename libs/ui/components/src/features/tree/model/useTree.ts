@@ -24,12 +24,13 @@ export interface TreeOptions {
   readonly box: Ref<HTMLElement | null>
   readonly list: Ref<HTMLElement | null>
   readonly renamingPath: Ref<RowId | null>
+  readonly select: (rows: readonly RowId[]) => void
   readonly emit: TreeGesturesEmit & RowDragEmit
 }
 
 /** The visible rows of a tree, their layout, selection, drag, gestures and renaming. */
 export function useTree(options: TreeOptions) {
-  const { input, box, list, renamingPath, emit } = options
+  const { input, box, list, renamingPath, select, emit } = options
 
   const visibleRows = computed(() => flatten(input.rows, new Set(input.open)))
 
@@ -52,7 +53,7 @@ export function useTree(options: TreeOptions) {
   const selection = useRowSelection(
     () => visibleRows.value,
     () => input.selected,
-    (chosen) => emit('select', chosen),
+    select,
   )
 
   const drag = useRowDrag({
