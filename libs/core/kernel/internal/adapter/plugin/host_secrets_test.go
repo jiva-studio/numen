@@ -199,7 +199,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 			t.Error(err)
 		}
 	})
-	setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{
+	setPlugin(host, secretPluginID, manifest.Discovered{Manifest: manifest.Manifest{
 		ID:      secretPluginID,
 		Secrets: []manifest.SecretDeclaration{{Name: "apiKey", Title: "API key"}},
 		Settings: []manifest.Setting{
@@ -513,7 +513,7 @@ func TestARefreshAndAConfigureRunOneAtATime(t *testing.T) {
 // The declarations are listed for every installed plugin, with the group each declares.
 func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
-	setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{
+	setPlugin(host, "md.numen.other", manifest.Discovered{Manifest: manifest.Manifest{
 		ID: "md.numen.other",
 		Secrets: []manifest.SecretDeclaration{
 			{Name: "token", Title: "Token", Group: "mistral"},
@@ -537,15 +537,17 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 		pruned = append(pruned, declared)
 		return nil
 	}})
-	host.Config.RecordScan(nil)
+	host.Config.hasScanned = true
 
-	host.Config.PruneSecretPermissions()
+	host.Config.pruneSecretPermissions()
 	if len(pruned) != 1 || len(pruned[0]) != 1 || pruned[0][0].Plugin != secretPluginID {
 		t.Fatalf("pruned with %v, want the declarations of the installed plugin", pruned)
 	}
 
-	host.Registry.Set().ReplaceDiscovered(nil, []manifestjson.DiscoveryProblem{{Dir: "/plugins/broken", Err: errors.New("unreadable")}})
-	host.Config.PruneSecretPermissions()
+	host.Registry.set.mu.Lock()
+	host.Registry.set.problems = append(host.Registry.set.problems, manifestjson.DiscoveryProblem{Dir: "/plugins/broken", Err: errors.New("unreadable")})
+	host.Registry.set.mu.Unlock()
+	host.Config.pruneSecretPermissions()
 	if len(pruned) != 1 {
 		t.Errorf("a scan with a problem pruned again: %v", pruned)
 	}
@@ -556,7 +558,7 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	host.Config.SetSecretSource(allowOne(secretPluginID))
-	host.Config.Delivery().AwaitFirstConfigure(secretPluginID)
+	host.Config.delivery.AwaitFirstConfigure(secretPluginID)
 
 	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)

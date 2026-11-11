@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/settings"
 	"os"
 	"path/filepath"
 	"slices"
@@ -45,7 +44,7 @@ func newLinkedHost(t *testing.T) *Host {
 func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	host := newLinkedHost(t)
 	getIDs := func() []string {
-		return host.Registry.Set().GetRequirementIDs("md.numen.sample")
+		return host.Registry.set.getRequirementIDs("md.numen.sample")
 	}
 	if got := getIDs(); !slices.Equal(got, []string{"large-weights"}) {
 		t.Errorf("requirements = %v, want the large weights", got)
@@ -83,10 +82,10 @@ func TestCheckPluginSettingAcceptsPathsOfItsType(t *testing.T) {
 	}{
 		{"dictionary", "", nil},
 		{"dictionary", text, nil},
-		{"dictionary", model, settings.ErrNotAccepted},
-		{"dictionary", tmp, settings.ErrNotAFile},
-		{"dictionary", filepath.Join(tmp, "absent.txt"), settings.ErrPathNotFound},
-		{"dictionary", 3.0, settings.ErrPathNotFound},
+		{"dictionary", model, errNotAccepted},
+		{"dictionary", tmp, errNotAFile},
+		{"dictionary", filepath.Join(tmp, "absent.txt"), errPathNotFound},
+		{"dictionary", 3.0, errPathNotFound},
 		{"model", "anything", nil},
 	} {
 		err := host.Settings.CheckPluginSetting("md.numen.sample", tc.key, tc.value)

@@ -15,21 +15,21 @@ type idleStopper interface {
 type Evictor struct {
 	stopper idleStopper
 
-	mu        sync.Mutex
-	ticker    *time.Ticker
-	done      chan struct{}
-	wg        sync.WaitGroup
-	isStopped bool
+	mu         sync.Mutex
+	ticker     *time.Ticker
+	stopSignal chan struct{}
+	wg         sync.WaitGroup
+	isStopped  bool
 }
 
 // NewEvictor returns the evictor that starts the timer: every thirty seconds it asks stopper to stop the plugins idle for
 // longer than IdleThreshold.
 func NewEvictor(stopper idleStopper) *Evictor {
-	e := &Evictor{stopper: stopper, ticker: time.NewTicker(evictInterval), done: make(chan struct{})}
+	e := &Evictor{stopper: stopper, ticker: time.NewTicker(evictInterval), stopSignal: make(chan struct{})}
 	e.wg.Go(func() {
 		for {
 			select {
-			case <-e.done:
+			case <-e.stopSignal:
 				return
 			case <-e.ticker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), evictTimeout)
@@ -47,7 +47,7 @@ func (e *Evictor) Stop() {
 	if !e.isStopped {
 		e.isStopped = true
 		e.ticker.Stop()
-		close(e.done)
+		close(e.stopSignal)
 	}
 	e.mu.Unlock()
 	e.wg.Wait()

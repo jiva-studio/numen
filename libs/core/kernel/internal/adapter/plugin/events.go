@@ -1,5 +1,4 @@
-// Package events sends the events of the application to the plugins that declare an activation event for them.
-package events
+package plugin
 
 import (
 	"context"
@@ -7,35 +6,27 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
-// pluginActivator starts a plugin and counts the callers that hold it.
-type pluginActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	Release(pluginID string)
-}
-
-// modeState is what the events read of the mode of the host.
-type modeState interface {
-	IsSafeMode() bool
+// pluginViews reads the set of plugins.
+type pluginViews interface {
+	view() (setView, func())
 }
 
 // Events sends the events of the application to the plugins that declare an activation event for them.
 type Events struct {
-	set       *pluginset.Set
-	mode      modeState
+	set       pluginViews
+	mode      safeModeReader
 	sups      *supervision.Supervisors
 	activator pluginActivator
 	bus       *eventbus.Bus
 }
 
-// New returns the events over the set of plugins, the mode of the host, the supervisors and the activator.
-func New(set *pluginset.Set, mode modeState, sups *supervision.Supervisors, activator pluginActivator, clock machineport.Clock) *Events {
+func newEvents(set pluginViews, mode safeModeReader, sups *supervision.Supervisors, activator pluginActivator, clock machineport.Clock) *Events {
 	e := &Events{set: set, mode: mode, sups: sups, activator: activator}
 	e.bus = eventbus.New(e, clock, 50*time.Millisecond, 250*time.Millisecond)
 	return e
@@ -54,8 +45,7 @@ func (e *Events) GetEventBus() *eventbus.Bus {
 	return e.bus
 }
 
-// CloseBus stops the delivery of the events.
-func (e *Events) CloseBus(ctx context.Context) error {
+func (e *Events) closeBus(ctx context.Context) error {
 	if e.bus == nil {
 		return nil
 	}
@@ -63,10 +53,10 @@ func (e *Events) CloseBus(ctx context.Context) error {
 }
 
 func (e *Events) listActivatedBy(event string) []string {
-	v, release := e.set.View()
+	v, release := e.set.view()
 	defer release()
 	candidates := make([]string, 0)
-	for _, p := range v.Enabled() {
+	for _, p := range v.enabled() {
 		if p.Manifest.IsActivatedBy(event) {
 			candidates = append(candidates, p.Manifest.ID)
 		}

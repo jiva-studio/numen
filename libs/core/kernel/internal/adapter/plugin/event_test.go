@@ -94,7 +94,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 	for id, manifest := range manifests {
 		manifest.ID = id
 		manifest.Backend = catalogmanifest.Backend{Entrypoint: "bin/plugin"}
-		setPlugin(host, catalogmanifest.Discovered{Manifest: manifest})
+		setPlugin(host, id, catalogmanifest.Discovered{Manifest: manifest})
 	}
 	var mu sync.Mutex
 	var procs []*os.Process

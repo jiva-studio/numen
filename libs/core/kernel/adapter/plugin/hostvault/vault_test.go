@@ -28,7 +28,7 @@ import (
 // diskHooks are what a test sets of the vault: the notice of a written file, the indexing of paths, the
 // lookup of a vault by identity and the use case that adds links.
 type diskHooks struct {
-	written  func()
+	onWrite  func()
 	index    func(ctx context.Context, v domain.Vault, paths []string) error
 	find     func(id domain.VaultID) (domain.Vault, error)
 	addLinks note.AddLinks
@@ -39,7 +39,7 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 	v := vaultfixture.NewVault(t, files)
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	return NewAccess(
-		Session{Current: func() (domain.Vault, bool) { return v, true }, Written: hooks.written, Find: hooks.find},
+		Session{Current: func() (domain.Vault, bool) { return v, true }, Written: hooks.onWrite, Find: hooks.find},
 		Files{
 			Stat:        file.NewStatFile(vaultreader.Readers{}),
 			ReadFile:    file.NewReadFile(vaultreader.Readers{}),
@@ -81,7 +81,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	var writeCount int
 	var v domain.Vault
 	access, v := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
-		written: func() { writeCount++ },
+		onWrite: func() { writeCount++ },
 		index: func(_ context.Context, got domain.Vault, paths []string) error {
 			if got.ID == v.ID {
 				indexed = append(indexed, paths...)
@@ -231,7 +231,7 @@ func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *test
 	access, _ := diskVault(t, map[string]string{
 		"Danube.md": "# Danube\n", "Rhine.md": "# Rhine\n", "Volga.md": "# Volga\n",
 	}, diskHooks{
-		written: func() { writeCount++ },
+		onWrite: func() { writeCount++ },
 		addLinks: note.NewAddLinks(note.NewEditLinks(
 			vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, cancelAfterIndex, testsupport.NewClock())),
 	})
@@ -256,7 +256,7 @@ func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 	cancel()
 	writeCount := 0
 	access, _ := diskVault(t, map[string]string{"Danube.md": "# Danube\n"}, diskHooks{
-		written: func() { writeCount++ },
+		onWrite: func() { writeCount++ },
 		addLinks: note.NewAddLinks(note.NewEditLinks(
 			vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock())),
 	})

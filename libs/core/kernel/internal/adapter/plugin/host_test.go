@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net/http"
@@ -794,7 +793,7 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 
 	lookedUp := make(chan struct{})
 	go func() {
-		host.Registry.Supervisors().Get("org.example.sample")
+		host.Registry.sups.Get("org.example.sample")
 		close(lookedUp)
 	}()
 	select {
@@ -842,7 +841,7 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 	sup := supervisorOf(host, "org.example.sample")
 	wiretest.KillProcess(t, procs[0])
 	wiretest.WaitUntil(t, "the crashed plugin to become dormant", func() bool {
-		_, hasEndpoint := host.Registry.Supervisors().GetEndpoint("org.example.sample")
+		_, hasEndpoint := host.Registry.sups.GetEndpoint("org.example.sample")
 		return sup.GetState() == lifecycle.StateDormant && !hasEndpoint
 	})
 
@@ -924,8 +923,8 @@ func TestProcessExitDropsEndpoint(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	putEndpoint(host, "p", transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"})
 
-	host.Registry.Supervisors().Drop("p")
-	_, stillThere := host.Registry.Supervisors().GetEndpoint("p")
+	host.Registry.sups.Drop("p")
+	_, stillThere := host.Registry.sups.GetEndpoint("p")
 	if stillThere {
 		t.Fatal("the endpoint of a stopped plugin was kept")
 	}
@@ -1063,7 +1062,7 @@ func newHostOfProviders(t *testing.T) *Host {
 		}
 	})
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
-		setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{
+		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{
 			ID:           id,
 			Capabilities: []string{bridge.CapabilityEmbedding},
 		}})
@@ -1082,7 +1081,7 @@ func TestFindPluginByCapability_SelectsLowestID(t *testing.T) {
 		}
 	}
 
-	host.Settings.SetSettings(map[string]map[string]any{"md.numen.provider-a": {pluginset.SettingEnabled: false}})
+	host.Settings.SetSettings(map[string]map[string]any{"md.numen.provider-a": {settingEnabled: false}})
 	if found, _ := host.Registry.FindPluginByCapability(bridge.CapabilityEmbedding); found.Manifest.ID != "md.numen.provider-b" {
 		t.Errorf("with the lowest disabled, found %q", found.Manifest.ID)
 	}

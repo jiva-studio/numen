@@ -1,10 +1,9 @@
-package registry
+package plugin
 
 import (
 	"slices"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 )
 
 // PluginStatus describes the enablement and runtime status of a plugin.
@@ -19,18 +18,18 @@ type PluginStatus struct {
 
 // GetPluginStatus returns the status of the specified plugin.
 func (r *Registry) GetPluginStatus(pluginID string) (PluginStatus, bool) {
-	v, release := r.set.View()
+	v, release := r.set.view()
 	defer release()
-	if _, ok := v.Get(pluginID); !ok {
+	if _, ok := v.get(pluginID); !ok {
 		return PluginStatus{}, false
 	}
 	return r.getStatus(v, pluginID), true
 }
 
-func (r *Registry) getStatus(v pluginset.View, pluginID string) PluginStatus {
+func (r *Registry) getStatus(v setView, pluginID string) PluginStatus {
 	status := PluginStatus{
 		ID:            pluginID,
-		Enabled:       v.IsEnabled(pluginID),
+		Enabled:       v.isEnabled(pluginID),
 		IsActive:      r.sups.IsActive(pluginID),
 		Failed:        false,
 		FailureReason: "",
@@ -47,14 +46,14 @@ func (r *Registry) getStatus(v pluginset.View, pluginID string) PluginStatus {
 
 // GetPluginStatuses returns statuses for all registered plugins, in the order of their ids.
 func (r *Registry) GetPluginStatuses() []PluginStatus {
-	v, release := r.set.View()
+	v, release := r.set.view()
 	defer release()
-	ordered := v.Ordered()
-	statuses := make([]PluginStatus, 0, len(ordered)+len(v.ListProblems()))
+	ordered := v.ordered()
+	statuses := make([]PluginStatus, 0, len(ordered)+len(v.listProblems()))
 	for _, p := range ordered {
 		statuses = append(statuses, r.getStatus(v, p.Manifest.ID))
 	}
-	for _, problem := range v.ListProblems() {
+	for _, problem := range v.listProblems() {
 		statuses = append(statuses, PluginStatus{
 			ID:            "",
 			Dir:           problem.Dir,
@@ -70,10 +69,10 @@ func (r *Registry) GetPluginStatuses() []PluginStatus {
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
 // the order of their ids.
 func (r *Registry) GetPluginInfos() []plugindomain.Info {
-	v, release := r.set.View()
+	v, release := r.set.view()
 	defer release()
-	enabled := v.Enabled()
-	ordered := v.Ordered()
+	enabled := v.enabled()
+	ordered := v.ordered()
 	result := make([]plugindomain.Info, 0, len(ordered))
 	for _, p := range ordered {
 		result = append(result, plugindomain.Info{
@@ -82,7 +81,7 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 			Version:       p.Manifest.Version,
 			Description:   p.Manifest.Description,
 			Capabilities:  p.Manifest.Capabilities,
-			Settings:      plugindomain.ListSettings(p.Manifest, v.Settings(p.Manifest.ID)),
+			Settings:      plugindomain.ListSettings(p.Manifest, v.settings(p.Manifest.ID)),
 			IsActive:      r.sups.IsActive(p.Manifest.ID),
 			Permissions:   p.Manifest.Permissions,
 			Secrets:       p.Manifest.Secrets,

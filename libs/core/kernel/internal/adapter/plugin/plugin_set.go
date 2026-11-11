@@ -1,9 +1,6 @@
-// Package pluginset holds the plugins the host knows and the values the user stored for their settings. Every part of
-// the host that answers for a plugin reads them through it.
-package pluginset
+package plugin
 
 import (
-	"errors"
 	"net/http"
 	"path/filepath"
 	"reflect"
@@ -17,69 +14,59 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
-// SettingEnabled is the key of the setting that switches a plugin on or off.
-const SettingEnabled = "enabled"
+const settingEnabled = "enabled"
 
-var (
-	// ErrNotFound is what a call fails with for a plugin the host does not know.
-	ErrNotFound = errors.New("plugin not found")
-	// ErrBuiltInRegistered is what the registration of a built-in plugin fails with when one of its id is registered.
-	ErrBuiltInRegistered = errors.New("a built-in plugin of this id is registered")
-)
-
-// modeState is what the set reads of the mode of the host.
-type modeState interface {
-	IsSafeMode() bool
-	GetVaultPath() string
-}
-
-// linkedPlugin is a plugin linked into the host's binary: the plugin its manifest describes and
+// builtInPlugin is a plugin linked into the host's binary: the plugin its manifest describes and
 // what makes the handler that serves its backend from the variables a launched process of it is
 // given.
-type linkedPlugin struct {
+type builtInPlugin struct {
 	plugin manifest.Discovered
 	serve  func(vars map[string]string) (http.Handler, error)
 }
 
-// Set is the plugins the host knows, which of them came from the disk or are linked into the
+// pluginSet is the plugins the host knows, which of them came from the disk or are linked into the
 // binary, and the problems the last scan met. It is the one owner of that state.
-type Set struct {
-	sups   *supervision.Supervisors
-	values *Values
-	mode   modeState
+// modeReader is what the set reads of the mode of the host.
+type modeReader interface {
+	IsSafeMode() bool
+	GetVaultPath() string
+}
 
-	scan     ScanLock
+type pluginSet struct {
+	sups   *supervision.Supervisors
+	values *settingValues
+	mode   modeReader
+
 	mu       sync.RWMutex
 	plugins  map[string]manifest.Discovered
 	onDisk   map[string]bool
-	builtIns map[string]linkedPlugin
+	builtIns map[string]builtInPlugin
 	problems []manifestjson.DiscoveryProblem
 }
 
-// New returns an empty set over the supervisors, the stored values and the mode of the host.
-func New(sups *supervision.Supervisors, values *Values, mode modeState) *Set {
-	return &Set{
+func newPluginSet(sups *supervision.Supervisors, values *settingValues, mode modeReader) *pluginSet {
+	return &pluginSet{
 		sups: sups, values: values, mode: mode,
 		plugins:  make(map[string]manifest.Discovered),
 		onDisk:   make(map[string]bool),
-		builtIns: make(map[string]linkedPlugin),
+		builtIns: make(map[string]builtInPlugin),
 	}
 }
 
-// View reads the set. The set holds its lock for reading until the function view returned is called.
-type View struct{ set *Set }
+// setView reads the set. The set holds its lock for reading until the function view returned is called.
+type setView struct{ set *pluginSet }
 
-func (s *Set) View() (View, func()) {
+func (s *pluginSet) view() (setView, func()) {
 	s.mu.RLock()
-	return View{set: s}, s.mu.RUnlock
+	return setView{set: s}, s.mu.RUnlock
 }
 
-func (v View) Get(pluginID string) (manifest.Discovered, bool) {
+func (v setView) get(pluginID string) (manifest.Discovered, bool) {
 	p, ok := v.set.plugins[pluginID]
 	return p, ok
 }
 
-func (v View) Ordered() []manifest.Discovered {
+func (v setView) ordered() []manifest.Discovered {
 	result := make([]manifest.Discovered, 0, len(v.set.plugins))
 	for _, p := range v.set.plugins {
 		result = append(result, p)
@@ -88,19 +75,19 @@ func (v View) Ordered() []manifest.Discovered {
 	return result
 }
 
-func (v View) IsEnabled(pluginID string) bool {
-	settings := v.set.values.Get(pluginID)
+func (v setView) isEnabled(pluginID string) bool {
+	settings := v.set.values.get(pluginID)
 	if p, ok := v.set.plugins[pluginID]; ok {
 		settings = p.Manifest.ResolveSettings(settings)
 	}
-	if val, ok := settings[SettingEnabled].(bool); ok {
+	if val, ok := settings[settingEnabled].(bool); ok {
 		return val
 	}
 	return true
 }
 
-func (v View) Settings(pluginID string) map[string]any {
-	result := v.set.values.Get(pluginID)
+func (v setView) settings(pluginID string) map[string]any {
+	result := v.set.values.get(pluginID)
 	p, ok := v.set.plugins[pluginID]
 	if ok {
 		result = p.Manifest.ResolveSettings(result)
@@ -116,97 +103,97 @@ func (v View) Settings(pluginID string) map[string]any {
 	return result
 }
 
-func (v View) Requirements(p manifest.Discovered) []manifest.DependencyRequirement {
-	return p.Manifest.GetDependencyRequirements(p.Dir, v.Settings(p.Manifest.ID))
+func (v setView) requirements(p manifest.Discovered) []manifest.DependencyRequirement {
+	return p.Manifest.GetDependencyRequirements(p.Dir, v.settings(p.Manifest.ID))
 }
 
-func (v View) Enabled() []manifest.Discovered {
+func (v setView) enabled() []manifest.Discovered {
 	if v.set.mode.IsSafeMode() {
 		return nil
 	}
-	return slices.DeleteFunc(v.Ordered(), func(p manifest.Discovered) bool { return !v.IsEnabled(p.Manifest.ID) })
+	return slices.DeleteFunc(v.ordered(), func(p manifest.Discovered) bool { return !v.isEnabled(p.Manifest.ID) })
 }
 
-func (v View) HasBackend(p manifest.Discovered) bool {
+func (v setView) hasBackend(p manifest.Discovered) bool {
 	_, isBuiltIn := v.set.builtIns[p.Manifest.ID]
 	return isBuiltIn || p.Manifest.HasBackend()
 }
 
-func (s *Set) GetKnown(pluginID string) (manifest.Discovered, bool) {
-	v, release := s.View()
+func (s *pluginSet) getKnown(pluginID string) (manifest.Discovered, bool) {
+	v, release := s.view()
 	defer release()
-	return v.Get(pluginID)
+	return v.get(pluginID)
 }
 
-func (s *Set) GetName(pluginID string) string {
-	p, _ := s.GetKnown(pluginID)
+func (s *pluginSet) getName(pluginID string) string {
+	p, _ := s.getKnown(pluginID)
 	return p.Manifest.Name
 }
 
-func (s *Set) IsRegistered(pluginID string) bool {
-	_, ok := s.GetKnown(pluginID)
+func (s *pluginSet) isRegistered(pluginID string) bool {
+	_, ok := s.getKnown(pluginID)
 	return ok
 }
 
-func (s *Set) GetPluginSettings(pluginID string) map[string]any {
-	v, release := s.View()
+func (s *pluginSet) getPluginSettings(pluginID string) map[string]any {
+	v, release := s.view()
 	defer release()
-	return v.Settings(pluginID)
+	return v.settings(pluginID)
 }
 
-func (s *Set) GetRequirementIDs(pluginID string) []string {
-	v, release := s.View()
+func (s *pluginSet) getRequirementIDs(pluginID string) []string {
+	v, release := s.view()
 	defer release()
-	p, ok := v.Get(pluginID)
+	p, ok := v.get(pluginID)
 	if !ok {
 		return nil
 	}
 	var ids []string
-	for _, req := range v.Requirements(p) {
+	for _, req := range v.requirements(p) {
 		ids = append(ids, req.ID)
 	}
 	return ids
 }
 
-func (s *Set) ListEnabled() []manifest.Discovered {
-	v, release := s.View()
+func (s *pluginSet) listEnabled() []manifest.Discovered {
+	v, release := s.view()
 	defer release()
-	return v.Enabled()
+	return v.enabled()
 }
 
-func (s *Set) ListIDs() []string {
-	v, release := s.View()
+func (s *pluginSet) listIDs() []string {
+	v, release := s.view()
 	defer release()
 	ids := make([]string, 0, len(s.plugins))
-	for _, p := range v.Ordered() {
+	for _, p := range v.ordered() {
 		ids = append(ids, p.Manifest.ID)
 	}
 	return ids
 }
 
-func (s *Set) HasProblems() bool {
+func (s *pluginSet) hasProblems() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.problems) > 0
 }
 
-func (s *Set) IsOnDisk(pluginID string) bool {
+func (s *pluginSet) isOnDisk(pluginID string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.onDisk[pluginID]
 }
 
-func (s *Set) GetLaunch(p manifest.Discovered) supervision.Launch {
-	v, release := s.View()
+func (s *pluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
+	v, release := s.view()
 	defer release()
-	launch := supervision.Launch{Plugin: p, BuiltIn: nil, Requirements: v.Requirements(p), VaultPath: s.mode.GetVaultPath()}
+	launch := supervision.Launch{Plugin: p, BuiltIn: nil, Requirements: v.requirements(p), VaultPath: s.mode.GetVaultPath()}
 	if builtIn, ok := s.builtIns[p.Manifest.ID]; ok && !s.onDisk[p.Manifest.ID] {
 		launch.BuiltIn = &supervision.BuiltIn{Serve: builtIn.serve}
 	}
 	return launch
 }
 
-func (s *Set) RefuseConflicts(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem) {
+func (s *pluginSet) refuseConflicts(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem) {
 	s.mu.RLock()
 	ordered := make([]manifest.Discovered, 0, len(s.builtIns)+len(discovered))
 	for id, builtIn := range s.builtIns {
@@ -246,7 +233,7 @@ func (s *Set) RefuseConflicts(discovered []manifest.Discovered, problems []manif
 	return accepted, problems
 }
 
-func (s *Set) ReplaceDiscovered(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) []string {
+func (s *pluginSet) replaceDiscovered(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.problems = problems
@@ -271,7 +258,7 @@ func (s *Set) ReplaceDiscovered(discovered []manifest.Discovered, problems []man
 	return stale
 }
 
-func (s *Set) removeDiskPluginLocked(pluginID string) {
+func (s *pluginSet) removeDiskPluginLocked(pluginID string) {
 	delete(s.onDisk, pluginID)
 	if builtIn, ok := s.builtIns[pluginID]; ok {
 		s.plugins[pluginID] = builtIn.plugin
@@ -281,7 +268,7 @@ func (s *Set) removeDiskPluginLocked(pluginID string) {
 	delete(s.plugins, pluginID)
 }
 
-func (s *Set) isCoveredByProblemLocked(pluginID string) bool {
+func (s *pluginSet) isCoveredByProblemLocked(pluginID string) bool {
 	dir := s.plugins[pluginID].Dir
 	for _, problem := range s.problems {
 		if problem.Dir == dir || problem.Dir == filepath.Dir(dir) {
@@ -291,19 +278,19 @@ func (s *Set) isCoveredByProblemLocked(pluginID string) bool {
 	return false
 }
 
-func (s *Set) Put(p manifest.Discovered, sup *lifecycle.Supervisor) {
+func (s *pluginSet) put(p manifest.Discovered, sup *lifecycle.Supervisor) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.plugins[p.Manifest.ID] = p
 	s.sups.Put(p.Manifest.ID, sup)
 }
 
-func (s *Set) AddBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error {
+func (s *pluginSet) addBuiltIn(p manifest.Discovered, serve func(vars map[string]string) (http.Handler, error)) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	id := p.Manifest.ID
 	if _, exists := s.builtIns[id]; exists {
-		return ErrBuiltInRegistered
+		return errBuiltInRegistered
 	}
 	others := make([]manifest.Discovered, 0, len(s.plugins))
 	for otherID, other := range s.plugins {
@@ -315,7 +302,7 @@ func (s *Set) AddBuiltIn(p manifest.Discovered, serve func(vars map[string]strin
 	if conflicts := manifest.ListContributionConflicts(append(others, p)); len(conflicts) > 0 {
 		return conflicts[len(conflicts)-1]
 	}
-	s.builtIns[id] = linkedPlugin{plugin: p, serve: serve}
+	s.builtIns[id] = builtInPlugin{plugin: p, serve: serve}
 	if _, registered := s.plugins[id]; !registered {
 		s.plugins[id] = p
 		s.sups.Register(p)
@@ -323,12 +310,6 @@ func (s *Set) AddBuiltIn(p manifest.Discovered, serve func(vars map[string]strin
 	return nil
 }
 
-// ListProblems returns the problems the last scan met.
-func (v View) ListProblems() []manifestjson.DiscoveryProblem {
+func (v setView) listProblems() []manifestjson.DiscoveryProblem {
 	return v.set.problems
-}
-
-// Scan returns the lock that keeps a scan of the plugin folders apart from the start of a plugin.
-func (s *Set) Scan() *ScanLock {
-	return &s.scan
 }

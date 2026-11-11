@@ -2,8 +2,6 @@ package plugin
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/registry"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -41,7 +39,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	if len(reported) != 1 {
 		t.Fatalf("expected one reported problem, got %v", reported)
 	}
-	var failed []registry.PluginStatus
+	var failed []PluginStatus
 	for _, status := range host.Registry.GetPluginStatuses() {
 		if status.Failed {
 			failed = append(failed, status)
@@ -77,8 +75,8 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatal("a plugin removed from disk is still registered")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, pluginset.ErrNotFound) {
-		t.Fatalf("expected pluginset.ErrNotFound, got %v", err)
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, errPluginNotFound) {
+		t.Fatalf("expected errPluginNotFound, got %v", err)
 	}
 }
 
@@ -181,7 +179,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	host.Registry.Set().Scan().BeginScan()
+	host.Discovery.scan.holdScan()
 
 	reply := make(chan error, 1)
 	calling := make(chan struct{})
@@ -198,7 +196,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
 	default:
 	}
-	host.Registry.Set().Scan().EndScan()
+	host.Discovery.scan.releaseScan()
 	if err := <-reply; err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}

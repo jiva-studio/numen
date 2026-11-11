@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
@@ -14,5 +13,5 @@ func updateSetting(ctx context.Context, host *Host, pluginID, key string, value 
 }
 
 func setEnabled(ctx context.Context, host *Host, pluginID string, enabled bool) error {
-	return updateSetting(ctx, host, pluginID, pluginset.SettingEnabled, enabled)
+	return updateSetting(ctx, host, pluginID, settingEnabled, enabled)
 }

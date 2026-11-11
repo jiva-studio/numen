@@ -19,7 +19,7 @@ import (
 
 func openListenerTarget(t *testing.T, host *Host) func() {
 	t.Helper()
-	_, release, err := host.Listeners.CreateTarget(listenerPlugin, "mcp")(t.Context())
+	_, release, err := host.Listeners.createTarget(listenerPlugin, "mcp")(t.Context())
 	if err != nil {
 		t.Fatalf("open the target of the listener: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestListenerPortFreedAfterBindFailureClearsItOnDiscovery(t *testing.T) {
 func TestASyncKeepsTheFailureOfAPluginThatFailedToStart(t *testing.T) {
 	w := newListenerHost(t)
 	cause := supervision.ErrListenerNotReported
-	if failure := w.host.Failures.RecordActivationFailure(listenerPlugin, w.host.Registry.Set().GetName(listenerPlugin), cause); failure == nil {
+	if failure := w.host.Failures.RecordActivationFailure(listenerPlugin, w.host.Registry.set.getName(listenerPlugin), cause); failure == nil {
 		t.Fatal("the failure was not recorded")
 	}
 

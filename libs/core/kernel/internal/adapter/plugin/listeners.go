@@ -1,5 +1,4 @@
-// Package listeners binds the ports the plugins declare as listeners and forwards each connection to the plugin.
-package listeners
+package plugin
 
 import (
 	"context"
@@ -12,7 +11,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/portproxy"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -22,29 +20,25 @@ import (
 
 const listenerAddressHost = "127.0.0.1"
 
-// pluginActivator starts a plugin when a connection arrives at its listener.
-type pluginActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
-}
-
-// modeState is what the listeners read of the mode of the host.
-type modeState interface {
-	IsClosed() bool
-	IsSafeMode() bool
-}
-
 var (
-	// ErrListenerPortValue marks a port setting whose value is not a port a listener can bind.
-	ErrListenerPortValue = errors.New("port setting is not a port from 1024 to 65535")
+	errListenerPortValue = errors.New("port setting is not a port from 1024 to 65535")
 	// errListenerBind marks a failure of the plugin that a sync of its listeners recorded.
 	errListenerBind = errors.New("listener port not bound")
 )
 
+// listenedPlugins is what the listeners read of the set of plugins.
+type listenedPlugins interface {
+	view() (setView, func())
+	getKnown(pluginID string) (manifest.Discovered, bool)
+	getName(pluginID string) string
+	listIDs() []string
+}
+
 // Listeners binds the ports the plugins declare as listeners and forwards each connection to the
 // plugin, which it starts when a connection arrives.
 type Listeners struct {
-	set       *pluginset.Set
-	mode      modeState
+	set       listenedPlugins
+	mode      hostState
 	sups      *supervision.Supervisors
 	activator pluginActivator
 	failures  *supervision.Failures
@@ -55,26 +49,6 @@ type Listeners struct {
 	bindings map[string]map[string]listenerBinding
 }
 
-// Deps are what the listeners read: the set of plugins, the mode of the host, the supervisors, the activator, the failures and
-// the clock. Report receives the errors the listeners meet.
-type Deps struct {
-	Set       *pluginset.Set
-	Mode      modeState
-	Sups      *supervision.Supervisors
-	Activator pluginActivator
-	Failures  *supervision.Failures
-	Clock     machineport.Clock
-	Report    func(error)
-}
-
-// New returns the listeners over deps.
-func New(deps Deps) *Listeners {
-	return &Listeners{
-		set: deps.Set, mode: deps.Mode, sups: deps.Sups, activator: deps.Activator, failures: deps.Failures, clock: deps.Clock,
-		report: deps.Report, bindings: make(map[string]map[string]listenerBinding),
-	}
-}
-
 // listenerBinding is a bound listener port and the proxy that forwards its connections.
 type listenerBinding struct {
 	port  int
@@ -82,13 +56,13 @@ type listenerBinding struct {
 }
 
 func (l *Listeners) getBindable(pluginID string) (manifest.Discovered, map[string]any, bool) {
-	v, release := l.set.View()
+	v, release := l.set.view()
 	defer release()
-	p, ok := v.Get(pluginID)
-	if !ok || l.mode.IsClosed() || l.mode.IsSafeMode() || !v.IsEnabled(pluginID) {
+	p, ok := v.get(pluginID)
+	if !ok || l.mode.IsClosed() || l.mode.IsSafeMode() || !v.isEnabled(pluginID) {
 		return manifest.Discovered{}, nil, false
 	}
-	return p, v.Settings(pluginID), true
+	return p, v.settings(pluginID), true
 }
 
 func (l *Listeners) getWantedPorts(pluginID string) (map[string]int, error) {
@@ -105,7 +79,7 @@ func (l *Listeners) getWantedPorts(pluginID string) (map[string]int, error) {
 		port, isPort := readPort(settings[declared.PortSetting])
 		if !isPort {
 			return nil, fmt.Errorf("listener %s of plugin %s: setting %s = %v: %w",
-				declared.Name, pluginID, declared.PortSetting, settings[declared.PortSetting], ErrListenerPortValue)
+				declared.Name, pluginID, declared.PortSetting, settings[declared.PortSetting], errListenerPortValue)
 		}
 		ports[declared.Name] = port
 	}
@@ -130,11 +104,10 @@ func readPort(value any) (int, bool) {
 	return int(number), true
 }
 
-// CheckPort says why a port is not one a listener of the plugin may bind.
-func (l *Listeners) CheckPort(ctx context.Context, pluginID, key string, value any) error {
+func (l *Listeners) checkPort(ctx context.Context, pluginID, key string, value any) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	p, ok := l.set.GetKnown(pluginID)
+	p, ok := l.set.getKnown(pluginID)
 	_, _, isBindable := l.getBindable(pluginID)
 	isBinding := ok && isBindable
 	if !ok {
@@ -147,7 +120,7 @@ func (l *Listeners) CheckPort(ctx context.Context, pluginID, key string, value a
 		port, isPort := readPort(value)
 		if !isPort {
 			return fmt.Errorf("listener %s of plugin %s: setting %s = %v: %w",
-				declared.Name, pluginID, key, value, ErrListenerPortValue)
+				declared.Name, pluginID, key, value, errListenerPortValue)
 		}
 		if !isBinding || l.bindings[pluginID][declared.Name].port == port {
 			continue
@@ -164,12 +137,11 @@ func (l *Listeners) CheckPort(ctx context.Context, pluginID, key string, value a
 	return nil
 }
 
-// SyncAll syncs the listeners of every plugin with its settings.
-func (l *Listeners) SyncAll(ctx context.Context) {
+func (l *Listeners) syncAll(ctx context.Context) {
 	l.mu.Lock()
 	ids := slices.Collect(maps.Keys(l.bindings))
 	l.mu.Unlock()
-	for _, id := range l.set.ListIDs() {
+	for _, id := range l.set.listIDs() {
 		if !slices.Contains(ids, id) {
 			ids = append(ids, id)
 		}
@@ -251,7 +223,7 @@ func (l *Listeners) openChangedListeners(
 			continue
 		}
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(port))
-		proxy, err := portproxy.Open(ctx, addr, l.CreateTarget(pluginID, name), l.report)
+		proxy, err := portproxy.Open(ctx, addr, l.createTarget(pluginID, name), l.report)
 		if err != nil {
 			for _, proxy := range openedProxies {
 				l.closeListener(pluginID, proxy)
@@ -269,7 +241,7 @@ func (l *Listeners) failListenerBind(pluginID string, err error) {
 	if ok && sup.Failure.IsFailed() {
 		return
 	}
-	l.failures.RecordActivationFailure(pluginID, l.set.GetName(pluginID), err)
+	l.failures.RecordActivationFailure(pluginID, l.set.getName(pluginID), err)
 	l.failures.Deliver()
 }
 
@@ -296,8 +268,7 @@ func (l *Listeners) closeListener(pluginID string, proxy *portproxy.Proxy) {
 	}
 }
 
-// CloseAll closes every port the listeners bound.
-func (l *Listeners) CloseAll() {
+func (l *Listeners) closeAll() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	for id := range l.bindings {
@@ -305,8 +276,7 @@ func (l *Listeners) CloseAll() {
 	}
 }
 
-// CreateTarget returns the target that starts the plugin when a connection arrives at its listener.
-func (l *Listeners) CreateTarget(pluginID, name string) portproxy.Target {
+func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
 		endpoint, err := l.activator.EnsureActive(ctx, pluginID)
 		isReported := l.failures.MarkTargetResult(pluginID, err)

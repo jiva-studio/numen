@@ -153,7 +153,7 @@ func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx cont
 		putSupervisor(host, secretPluginID, activating)
 	}
 	return func(ctx context.Context) error {
-		_, err := host.Activation.RunActivation(ctx, p, activating)
+		_, err := host.Activation.runActivation(ctx, p, activating)
 		return err
 	}
 }
@@ -165,7 +165,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(probe))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	setPlugin(host, manifest.Discovered{Manifest: manifest.Manifest{
+	setPlugin(host, pluginID, manifest.Discovered{Manifest: manifest.Manifest{
 		ID:      pluginID,
 		Secrets: []manifest.SecretDeclaration{{Name: declared, Title: "API key"}},
 	}})
@@ -492,18 +492,18 @@ func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
-	if err := host.Config.Delivery().Lock(t.Context()); err != nil {
+	if err := host.Config.delivery.Lock(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	wiretest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return host.Config.Delivery().IsAwaitingFirstConfigure(secretPluginID)
+		return host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
 	})
 	source.rename("Renamed")
 	refresh := make(chan error, 1)
 	go func() { refresh <- host.Config.Refresh(t.Context()) }()
-	host.Config.Delivery().Unlock()
+	host.Config.delivery.Unlock()
 
 	if err := <-activation; err != nil {
 		t.Fatal(err)

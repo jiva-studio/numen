@@ -1,29 +1,28 @@
-package pluginset
+package plugin
 
 import (
 	"maps"
 	"sync"
 )
 
-// Values keeps the values the user stores for the settings of the plugins, as the host has
+// settingValues keeps the values the user stores for the settings of the plugins, as the host has
 // them in memory.
-type Values struct {
+type settingValues struct {
 	mu       sync.RWMutex
 	byPlugin map[string]map[string]any
 }
 
-// NewValues returns the stored values of a host that has none.
-func NewValues() *Values {
-	return &Values{byPlugin: make(map[string]map[string]any)}
+func newSettingValues() *settingValues {
+	return &settingValues{byPlugin: make(map[string]map[string]any)}
 }
 
-func (v *Values) Get(pluginID string) map[string]any {
+func (v *settingValues) get(pluginID string) map[string]any {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
 	return maps.Clone(v.byPlugin[pluginID])
 }
 
-func (v *Values) Merge(all map[string]map[string]any) {
+func (v *settingValues) merge(all map[string]map[string]any) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	for pluginID, values := range all {
@@ -34,7 +33,7 @@ func (v *Values) Merge(all map[string]map[string]any) {
 	}
 }
 
-func (v *Values) Replace(pluginID, key string, value any) (previous any, hadPrevious bool) {
+func (v *settingValues) replace(pluginID, key string, value any) (previous any, hadPrevious bool) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	if _, ok := v.byPlugin[pluginID]; !ok {
@@ -45,7 +44,7 @@ func (v *Values) Replace(pluginID, key string, value any) (previous any, hadPrev
 	return previous, hadPrevious
 }
 
-func (v *Values) Restore(pluginID, key string, previous any, hadPrevious bool) {
+func (v *settingValues) restore(pluginID, key string, previous any, hadPrevious bool) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	if values, ok := v.byPlugin[pluginID]; ok && hadPrevious {
@@ -55,7 +54,7 @@ func (v *Values) Restore(pluginID, key string, previous any, hadPrevious bool) {
 	}
 }
 
-func (v *Values) Fill(pluginID, key, value string) bool {
+func (v *settingValues) fill(pluginID, key, value string) bool {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	if hasValue(v.byPlugin[pluginID], key) {
@@ -68,7 +67,7 @@ func (v *Values) Fill(pluginID, key, value string) bool {
 	return true
 }
 
-func (v *Values) Forget(pluginID, key, value string) {
+func (v *settingValues) forget(pluginID, key, value string) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	if values, ok := v.byPlugin[pluginID]; ok && values[key] == value {

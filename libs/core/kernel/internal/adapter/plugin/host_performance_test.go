@@ -33,7 +33,7 @@ func TestTheSameProfileAgainConfiguresNoPlugin(t *testing.T) {
 // A plugin that starts later receives the profile in its first Configure call.
 func TestAPluginConfiguredLaterReceivesTheProfile(t *testing.T) {
 	host, probe := newSecretHost(t, nil)
-	host.Config.SetPerformanceProfile(t.Context(), "eco")
+	host.Config.performance = "eco"
 
 	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)

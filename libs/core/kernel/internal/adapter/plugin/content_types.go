@@ -1,21 +1,25 @@
-package registry
+package plugin
 
 import (
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
 )
+
+// enabledPlugins lists the plugins that are enabled.
+type enabledPlugins interface {
+	listEnabled() []manifest.Discovered
+}
 
 // ContentTypes gives a file the type of its name, as the table of types says, over the enabled
 // plugins.
 type ContentTypes struct {
-	set    *pluginset.Set
+	set    enabledPlugins
 	lookup *contenttypes.Lookup
 }
 
-// NewContentTypes returns the content types over the set of plugins and the lookup that holds the table.
-func NewContentTypes(set *pluginset.Set, lookup *contenttypes.Lookup) *ContentTypes {
+func newContentTypes(set enabledPlugins, lookup *contenttypes.Lookup) *ContentTypes {
 	return &ContentTypes{set: set, lookup: lookup}
 }
 
@@ -33,5 +37,5 @@ func (c *ContentTypes) GetContentType(name string) domain.ContentType {
 // ListExtensions lists, lowercase, sorted and without the dot, the extensions that give a file a
 // type the mask covers.
 func (c *ContentTypes) ListExtensions(mask domain.ContentType) []string {
-	return c.lookup.ListExtensions(c.set.ListEnabled(), mask)
+	return c.lookup.ListExtensions(c.set.listEnabled(), mask)
 }

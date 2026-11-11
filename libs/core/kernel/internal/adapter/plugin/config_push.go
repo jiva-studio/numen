@@ -1,6 +1,4 @@
-// Package configpush gives the running plugins their configuration: the settings, the performance profile and the secrets
-// they declare.
-package configpush
+package plugin
 
 import (
 	"context"
@@ -12,18 +10,26 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/pluginset"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
+// configPlugins is what the push reads of the set of plugins.
+type configPlugins interface {
+	listIDs() []string
+	getPluginSettings(pluginID string) map[string]any
+	getKnown(pluginID string) (manifest.Discovered, bool)
+	view() (setView, func())
+	hasProblems() bool
+}
+
 // ConfigPush gives the running plugins their configuration: the settings, the performance profile
 // and the secrets they declare, each time one of them changes. It also keeps the secret
 // declarations of the installed plugins, and drops the permissions of the ones that are gone.
 type ConfigPush struct {
-	set      *pluginset.Set
+	set      configPlugins
 	sups     *supervision.Supervisors
 	report   func(error)
 	delivery *delivery.Delivery
@@ -34,8 +40,7 @@ type ConfigPush struct {
 	hasScanned  bool
 }
 
-// New returns the configuration push over the set of plugins and the supervisors; report receives the errors of a push.
-func New(set *pluginset.Set, sups *supervision.Supervisors, report func(error)) *ConfigPush {
+func newConfigPush(set configPlugins, sups *supervision.Supervisors, report func(error)) *ConfigPush {
 	c := &ConfigPush{set: set, sups: sups, report: report}
 	c.delivery = delivery.New(c)
 	return c
@@ -43,7 +48,7 @@ func New(set *pluginset.Set, sups *supervision.Supervisors, report func(error)) 
 
 // ListPluginIDs returns the ids of the plugins the host knows.
 func (c *ConfigPush) ListPluginIDs() []string {
-	return c.set.ListIDs()
+	return c.set.listIDs()
 }
 
 // ReportError reports an error a push meets outside a call.
@@ -65,7 +70,7 @@ func (c *ConfigPush) SetKeyStore(store pluginport.KeyStore) {
 // declarations are dropped.
 func (c *ConfigPush) SetSecretSource(source plugindomain.SecretSource) {
 	c.delivery.SetSource(source)
-	c.PruneSecretPermissions()
+	c.pruneSecretPermissions()
 }
 
 // ListDeclarations returns every secret declaration of every installed plugin, in the order of the
@@ -124,13 +129,11 @@ func (c *ConfigPush) getPerformanceProfile() string {
 	return c.performance
 }
 
-// AwaitFirstConfigure holds the plugin until the first Configure call it receives ends.
-func (c *ConfigPush) AwaitFirstConfigure(pluginID string) {
+func (c *ConfigPush) awaitFirstConfigure(pluginID string) {
 	c.delivery.AwaitFirstConfigure(pluginID)
 }
 
-// ConfigureActivated gives a plugin that has just started its configuration.
-func (c *ConfigPush) ConfigureActivated(ctx context.Context, pluginID string) error {
+func (c *ConfigPush) configureActivated(ctx context.Context, pluginID string) error {
 	if lockErr := c.delivery.Lock(ctx); lockErr != nil {
 		c.delivery.ClearFirstConfigure(pluginID)
 		return lockErr
@@ -144,7 +147,6 @@ func (c *ConfigPush) ConfigureActivated(ctx context.Context, pluginID string) er
 	return nil
 }
 
-// GetSnapshot reads what a Configure call to the running plugin is made of, and reports whether the plugin runs.
 func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, error) {
 	profile := c.getPerformanceProfile()
 	endpoint, hasEndpoint := c.sups.GetEndpoint(pluginID)
@@ -155,7 +157,7 @@ func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 	if state := sup.GetState(); state != lifecycle.StateActive && state != lifecycle.StateIdle {
 		return delivery.Snapshot{}, false, nil
 	}
-	rawSettings := c.set.GetPluginSettings(pluginID)
+	rawSettings := c.set.getPluginSettings(pluginID)
 	cfgJSON, err := json.Marshal(rawSettings)
 	if err != nil {
 		return delivery.Snapshot{}, true, fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
@@ -175,7 +177,7 @@ func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 }
 
 func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]any) []manifest.SecretDeclaration {
-	p, ok := c.set.GetKnown(pluginID)
+	p, ok := c.set.getKnown(pluginID)
 	if !ok {
 		return nil
 	}
@@ -189,7 +191,7 @@ func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]a
 }
 
 func (c *ConfigPush) listDeclarations(installed []manifest.Discovered) []plugindomain.DeclarationKey {
-	v, release := c.set.View()
+	v, release := c.set.view()
 	defer release()
 	var declarations []plugindomain.DeclarationKey
 	installedIDs := make(map[string]bool, len(installed))
@@ -197,7 +199,7 @@ func (c *ConfigPush) listDeclarations(installed []manifest.Discovered) []plugind
 		installedIDs[p.Manifest.ID] = true
 		declarations = appendDeclarations(declarations, p)
 	}
-	for _, p := range v.Ordered() {
+	for _, p := range v.ordered() {
 		if !installedIDs[p.Manifest.ID] {
 			declarations = appendDeclarations(declarations, p)
 		}
@@ -214,19 +216,17 @@ func appendDeclarations(declarations []plugindomain.DeclarationKey, p manifest.D
 	return declarations
 }
 
-// RecordScan keeps the plugins a scan of the folders found, for the permissions of the declarations that are gone.
-func (c *ConfigPush) RecordScan(installed []manifest.Discovered) {
+func (c *ConfigPush) recordScan(installed []manifest.Discovered) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.installed = installed
 	c.hasScanned = true
 }
 
-// PruneSecretPermissions drops the permissions of the declarations of the plugins that left the folders.
-func (c *ConfigPush) PruneSecretPermissions() {
+func (c *ConfigPush) pruneSecretPermissions() {
 	prune := c.delivery.GetSource().Prune
 	c.mu.RLock()
-	skip := !c.hasScanned || c.set.HasProblems()
+	skip := !c.hasScanned || c.set.hasProblems()
 	installed := c.installed
 	c.mu.RUnlock()
 	if prune == nil || skip {
@@ -235,9 +235,4 @@ func (c *ConfigPush) PruneSecretPermissions() {
 	if err := prune(c.listDeclarations(installed)); err != nil {
 		c.report(fmt.Errorf("drop the permissions of removed declarations: %w", err))
 	}
-}
-
-// Delivery returns the delivery of the secrets, whose lock a refresh and the first Configure of an activation hold.
-func (c *ConfigPush) Delivery() *delivery.Delivery {
-	return c.delivery
 }

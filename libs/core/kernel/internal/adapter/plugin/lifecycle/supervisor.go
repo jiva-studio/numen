@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/grants"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/starts"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 )
 
 var (
@@ -36,8 +36,8 @@ const (
 // Supervisor monitors and controls the execution lifecycle of a single plugin process. Failure keeps why
 // the last start failed, and Permissions what the manifest of the plugin lets it do.
 type Supervisor struct {
-	Failure     starts.Failure
-	Permissions grants.Permissions
+	Failure     process.StartFailure
+	Permissions security.Permissions
 
 	mu             sync.Mutex
 	state          ProcessState
@@ -57,7 +57,7 @@ type Supervisor struct {
 // New creates an idle supervisor for a plugin. onError receives the errors the supervisor meets outside
 // a call, such as a failed wait for the process; it may be nil.
 func New(onError func(error)) *Supervisor {
-	return &Supervisor{Permissions: grants.New(), state: StateDormant, onError: onError}
+	return &Supervisor{Permissions: security.NewPermissions(), state: StateDormant, onError: onError}
 }
 
 // SetOnExit sets a callback invoked when the plugin process terminates, before the supervisor goes Dormant.
