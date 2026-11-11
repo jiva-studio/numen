@@ -118,7 +118,8 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 
 // Start claims the recording and transcribes it in the background, and returns false when a run
 // already has it. The recording is read in the background as well, and a failed read fails the
-// task. Close cancels the transcription and waits for it.
+// task. Close cancels the transcription and waits for it. The recording stops counting as running
+// before its task is reported as ended.
 func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
 	claimed, err := t.getClaimVault(ctx, vault)
 	if err != nil {
@@ -164,14 +165,16 @@ func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, pat
 }
 
 func (t *Transcriber) runTranscription(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
-	defer t.clearRunning(key)
+	defer t.wg.Done()
+	release := sync.OnceFunc(func() { t.unclaim(key) })
+	defer release()
 	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
 
 	if err := t.reportStart(ctx, vault, path); err != nil {
 		return err
 	}
-	return t.transcribe(ctx, vault, path, read)
+	return t.transcribe(ctx, vault, path, read, release)
 }
 
 func (t *Transcriber) reportStart(ctx context.Context, vault domain.VaultID, path string) error {
@@ -235,10 +238,14 @@ func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (
 }
 
 func (t *Transcriber) clearRunning(key string) {
+	t.unclaim(key)
+	t.wg.Done()
+}
+
+func (t *Transcriber) unclaim(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.running, key)
-	t.wg.Done()
 }
 
 func (t *Transcriber) isClosing() bool {

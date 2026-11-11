@@ -10,8 +10,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
-func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string, read readRecording) error {
+func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string, read readRecording, release func()) error {
 	err := t.run(ctx, vault, path, read)
+	release()
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
 		t.finishTask(ctx, vault, path)

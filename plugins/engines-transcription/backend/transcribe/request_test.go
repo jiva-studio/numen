@@ -143,6 +143,7 @@ type requestFixture struct {
 	finishing recordingQueue
 	blocking  *blockingModel
 	requests  *Requests
+	ended     map[string]bool
 }
 
 func newRequestFixture(t *testing.T) *requestFixture {
@@ -152,7 +153,7 @@ func newRequestFixture(t *testing.T) *requestFixture {
 
 func newRequestFixtureWithFiles(t *testing.T, wrap func(Files) Files) *requestFixture {
 	t.Helper()
-	s := &requestFixture{scene: newScene(t)}
+	s := &requestFixture{scene: newScene(t), ended: map[string]bool{}}
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
 	chemistry.File(chemistryLecture, chemistrySound)
@@ -234,12 +235,10 @@ func (s *requestFixture) waitStarted(t *testing.T) {
 func (s *requestFixture) waitFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
-	for {
+	for !s.ended[id] {
 		select {
 		case got := <-s.finishing.doneCh:
-			if got == id {
-				return
-			}
+			s.ended[got] = true
 		case <-deadline:
 			t.Fatalf("the task %s did not end within %v; tasks %+v", id, workDeadline, s.queue.ListTasks())
 		}
