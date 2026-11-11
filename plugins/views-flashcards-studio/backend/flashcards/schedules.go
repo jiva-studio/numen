@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"os"
 	"slices"
 	"strings"
 
@@ -52,6 +50,7 @@ type cachedSchedule struct {
 type Schedules struct {
 	logs        ports.LogStores
 	Cache       ports.ScheduleStore
+	Report      func(what string, err error)
 	scheduler   review.Scheduler
 	day         review.Day
 	reviewCards ListReviewCards
@@ -70,7 +69,10 @@ func NewSchedules(
 	reviewCards ListReviewCards,
 	presets Presets,
 ) Schedules {
-	return Schedules{logs: logs, Cache: nil, scheduler: scheduler, day: day, reviewCards: reviewCards, presets: presets, At: nil}
+	return Schedules{
+		logs: logs, Cache: nil, Report: nil, scheduler: scheduler,
+		day: day, reviewCards: reviewCards, presets: presets, At: nil,
+	}
 }
 
 // ReviewCards returns the ListReviewCards Schedules reads through.
@@ -332,8 +334,8 @@ func (u Schedules) remember(
 	if err != nil {
 		return
 	}
-	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="Cache write failure logs to stderr without affecting the returned schedules."
-	if err := u.Cache.Write(ctx, v.ID, raw); err != nil {
-		fmt.Fprintf(os.Stderr, "views-flashcards-studio: keep the schedules of %s: %v\n", v.ID, err)
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="Cache write failure is reported without affecting the returned schedules."
+	if err := u.Cache.Write(ctx, v.ID, raw); err != nil && u.Report != nil {
+		u.Report("keep the schedules of "+string(v.ID), err)
 	}
 }

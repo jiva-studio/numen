@@ -1,7 +1,8 @@
-// Package process reads the environment of the plugin process.
+// Package process reads the environment of the plugin process and writes its standard error.
 package process
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
@@ -39,4 +40,11 @@ func (Process) GetConfig() settings.Config {
 		cfg.Runtime = runtime
 	}
 	return cfg
+}
+
+// ReportError writes a background failure of the plugin to standard error.
+func (Process) ReportError(what string, err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "engines-transcription: %s: %v\n", what, err)
+	}
 }

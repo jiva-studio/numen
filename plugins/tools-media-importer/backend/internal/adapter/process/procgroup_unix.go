@@ -1,6 +1,6 @@
 //go:build unix
 
-package download
+package process
 
 import (
 	"errors"

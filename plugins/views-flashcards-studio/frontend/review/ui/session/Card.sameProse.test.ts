@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 /**
  * A review card is written once and drawn in two windows: here, and in the
- * editor's card model pane. Both draw it through `CardProse`, so the markup a review card
+ * editor's card model pane. Both render it through `renderCardHtml`, so the markup a review card
  * evaluates to is the same in both, and this is what holds them to it.
  */
-import { CardProse } from '../card-prose'
+import { CardProse } from '../../../editor/ui/cards/card-prose'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
@@ -24,14 +24,14 @@ const REVIEW_CARDS = [
   '',
 ]
 
-const inTheReviewWindow = (text: string): string => {
+const renderInReviewWindow = (text: string): string => {
   const renderedElement = mount(Card, { props: { front: text, back: '', isShown: false } })
   const response = renderedElement.find('.prose').element.innerHTML
   renderedElement.unmount()
   return response
 }
 
-const inTheEditor = (text: string): string => {
+const renderInEditor = (text: string): string => {
   const renderedElement = mount(CardProse, { props: { text } })
   const response = renderedElement.find('.prose').element.innerHTML
   renderedElement.unmount()
@@ -41,16 +41,16 @@ const inTheEditor = (text: string): string => {
 describe('one review card, two windows', () => {
   it('evaluates to the same markup in both', () => {
     for (const reviewCard of REVIEW_CARDS) {
-      expect(inTheReviewWindow(reviewCard)).toBe(inTheEditor(reviewCard))
+      expect(renderInReviewWindow(reviewCard)).toBe(renderInEditor(reviewCard))
     }
   })
 
   // The control: the review cards above are not all empty, so the comparison above is
   // comparing something.
   it('draws what it was given', () => {
-    expect(inTheReviewWindow('<p>plain prose</p>')).toContain('plain prose')
+    expect(renderInReviewWindow('<p>plain prose</p>')).toContain('plain prose')
     expect(
-      inTheReviewWindow('<p>a <script>alert(1)</script> that must not survive</p>'),
+      renderInReviewWindow('<p>a <script>alert(1)</script> that must not survive</p>'),
     ).not.toContain('alert(1)')
   })
 })

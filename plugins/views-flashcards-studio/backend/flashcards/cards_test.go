@@ -1358,7 +1358,7 @@ func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 
 func reading(
 	t *testing.T,
-) (flashcards.ShowNeighbourhood, func(notes map[string]string) domain.Vault) {
+) (flashcards.ShowNeighborhood, func(notes map[string]string) domain.Vault) {
 	t.Helper()
 
 	installation := vaulttest.NewInstallation()
@@ -1367,21 +1367,21 @@ func reading(
 		return installation.Add(t, notes)
 	}
 
-	return flashcards.NewShowNeighbourhood(
+	return flashcards.NewShowNeighborhood(
 		note.NewShowLinks(installation.Queries),
 		installation.Queries,
 		note.NewRead(installation.Ports.Readers),
 	), add
 }
 
-func readNeighbourhood(t *testing.T, notes map[string]string, deck string) flashcards.Neighborhood {
+func readNeighborhood(t *testing.T, notes map[string]string, deck string) flashcards.Neighborhood {
 	t.Helper()
 	u, add := reading(t)
-	return getNeighbourhood(t, u, add(notes), deck)
+	return getNeighborhood(t, u, add(notes), deck)
 }
 
-func getNeighbourhood(
-	t *testing.T, u flashcards.ShowNeighbourhood, v domain.Vault, deck string,
+func getNeighborhood(
+	t *testing.T, u flashcards.ShowNeighborhood, v domain.Vault, deck string,
 ) flashcards.Neighborhood {
 	t.Helper()
 	out, err := u.Execute(t.Context(), v, deck)
@@ -1409,7 +1409,7 @@ func paths(j flashcards.Neighborhood) []string {
 
 func TestALinkSavedInsideACardArrivesWithItsText(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSwift\n" +
 			"\n### Meaning\n\nA bird that sleeps flying. See [[Migration]].\n",
@@ -1438,7 +1438,7 @@ func TestALinkSavedInsideACardArrivesWithItsText(t *testing.T) {
 // A card model is how a card is laid out and not what it was written from.
 func TestTheCardModelACardIsSplitByIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"card-models/Word.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
@@ -1458,7 +1458,7 @@ func TestTheCardModelACardIsSplitByIsNotSomethingToRead(t *testing.T) {
 // still a deck.
 func TestOnlyTheNotesADeckWasSavedFromAreRead(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
 			"\n# Sanskrit\n\nTwenty minutes a day.\n",
 		"decks/Roots.md": "---\ntype: deck\n---\n\n# Roots\n\nThe verbs.\n",
@@ -1490,7 +1490,7 @@ func TestOnlyTheNotesADeckWasSavedFromAreRead(t *testing.T) {
 
 func TestANotePointingAtTheDeckIsNotOneTheDeckPointsAt(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\n# The ones with feathers\n",
 		"Migration.md":   "# Migration\n\nWorked at with [[decks/Birds]].\n",
 	}, "decks/Birds.md")
@@ -1511,7 +1511,7 @@ func TestANotePointingAtTheDeckIsNotOneTheDeckPointsAt(t *testing.T) {
 
 func TestANoteOnBothSidesIsNamedOnce(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
 		"Migration.md":   "# Migration\n\nDrilled in [[decks/Birds]].\n",
 	}, "decks/Birds.md")
@@ -1526,7 +1526,7 @@ func TestANoteOnBothSidesIsNamedOnce(t *testing.T) {
 
 func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\nGathered in [[decks/Birds]] itself.\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nFiled under [[decks/Birds]].\n" +
@@ -1541,7 +1541,7 @@ func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
 
 func TestADanglingLinkKeepsTheNameItWasSavedBy(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nSee [[Nowhere At All]].\n",
 	}, "decks/Birds.md")
 
@@ -1559,7 +1559,7 @@ func TestADanglingLinkKeepsTheNameItWasSavedBy(t *testing.T) {
 
 func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSee [[Nowhere At All]].\n" +
 			"\n## Swallow ^3dkmf936tb\n\n### Word\n\nSee [[Nowhere At All]] again.\n",
@@ -1572,9 +1572,9 @@ func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 
 // A name shared by several notes resolves to the nearest one, and the reader
 // cannot detect the ambiguity without the mark.
-func TestReadNeighbourhood_MarksAmbiguousName(t *testing.T) {
+func TestReadNeighborhood_MarksAmbiguousName(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md":     "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
 		"north/Migration.md": "# Migration\n\nOne of the two.\n",
 		"south/Migration.md": "# Migration\n\nThe other, answering to the same name.\n",
@@ -1609,7 +1609,7 @@ func TestAVaultOutOfReachIsAnError(t *testing.T) {
 
 func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n![[asset://diagram.png]]\n\nSee [[Migration]].\n",
 		"diagram.png":  "not really a picture",
@@ -1626,7 +1626,7 @@ func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 // it as a missing note reports a question the vault does not have.
 func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: \"https://example.org/birds\"\n    role: ref\n---\n" +
 			"\n![[asset://diagram.png]]\n\nSee [[Migration]].\n",
@@ -1660,7 +1660,7 @@ func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
 		"elsewhere.md": "---\nid: " + id + "\n---\n\n# In the other vault\n",
 	})
 
-	j := getNeighbourhood(t, u, v, "decks/Birds.md")
+	j := getNeighborhood(t, u, v, "decks/Birds.md")
 	if len(j.Notes) != 0 {
 		t.Fatalf("joined to %v", paths(j))
 	}
@@ -1678,7 +1678,7 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	j := getNeighbourhood(t, u, v, "decks/Birds.md")
+	j := getNeighborhood(t, u, v, "decks/Birds.md")
 	if len(j.Notes) != 2 {
 		t.Fatalf("joined to %v", paths(j))
 	}
@@ -1705,7 +1705,7 @@ func TestPastTheThirtiethNoteTheTextIsLeftUnread(t *testing.T) {
 		name := fmt.Sprintf("Note %02d", i)
 		notes[name+".md"] = "# " + name + "\n\nDrilled in [[decks/Birds]].\n"
 	}
-	j := readNeighbourhood(t, notes, "decks/Birds.md")
+	j := readNeighborhood(t, notes, "decks/Birds.md")
 
 	if len(j.Notes) != pointing {
 		t.Fatalf("joined to %d notes", len(j.Notes))
@@ -1726,7 +1726,7 @@ func TestPastTheThirtiethNoteTheTextIsLeftUnread(t *testing.T) {
 
 func TestADeckJoinedToNothingIsAnEmptyAnswer(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\n# The ones with feathers\n",
 	}, "decks/Birds.md")
 
@@ -1748,7 +1748,7 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 		"Arithmetic.md": "# Arithmetic\n\nRemainders divide integers evenly.\n",
 	})
 
-	first := getNeighbourhood(t, u, feathers, "decks/Deck.md")
+	first := getNeighborhood(t, u, feathers, "decks/Deck.md")
 	if len(first.Notes) != 1 || first.Notes[0].Path != "Migration.md" {
 		t.Fatalf("the first vault is joined to %v", paths(first))
 	}
@@ -1756,7 +1756,7 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 		t.Errorf("the first vault read the second's note: %q", first.Notes[0].Body)
 	}
 
-	second := getNeighbourhood(t, u, sums, "decks/Deck.md")
+	second := getNeighborhood(t, u, sums, "decks/Deck.md")
 	if len(second.Notes) != 1 || second.Notes[0].Path != "Arithmetic.md" {
 		t.Fatalf("the second vault is joined to %v", paths(second))
 	}
@@ -1770,7 +1770,7 @@ func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
 // of the cards.
 func TestThePresetADeckIsScheduledByIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"presets/Steady.md": "---\ntype: preset\ngoal: retention\nretention: 0.95\n---\n" +
 			"\n# Steady\n\nA slower climb through the same cards.\n",
 		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +
@@ -1789,7 +1789,7 @@ func TestThePresetADeckIsScheduledByIsNotSomethingToRead(t *testing.T) {
 // other note: the deck's own link determines which preset schedules it.
 func TestAPresetIsLeftOutOfEveryCardsPanel(t *testing.T) {
 	t.Parallel()
-	j := readNeighbourhood(t, map[string]string{
+	j := readNeighborhood(t, map[string]string{
 		"presets/Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
 			"\n# Steady\n",
 		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +

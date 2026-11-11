@@ -9,7 +9,7 @@ import { computed, ref } from 'vue'
 
 import { formatErrorMessage, type AgentPort, type TextLink, type Caught } from '@numen/plugin-sdk'
 import { createCardAgentPort } from '../api/session/agent'
-import { getDeckNeighbourhood } from '../api/session/notes'
+import { getDeckNeighborhood } from '../api/session/notes'
 import { useAgentPanel } from './session/panel'
 import { useNotesPanel } from './session/notes'
 import type { PanelPlace } from './session/carousel'
@@ -74,7 +74,7 @@ export const usePanels = (deps: PanelsDeps) => {
     },
     vault: deps.vault,
     deck: () => deps.card()?.address.deck ?? '',
-    getDeckNeighbourhood,
+    getDeckNeighborhood,
     showNotice: deps.showNotice,
     resolveLinks: deps.resolveLinks,
   })

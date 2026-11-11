@@ -14,13 +14,18 @@ import (
 type Holder struct {
 	mu      sync.RWMutex
 	isMock  bool
+	runner  download.Runner
+	files   download.Files
 	values  settings.Values
 	current *download.Downloader
 }
 
 // New returns a holder with the default settings. It holds the mock downloader when isMock is set.
-func New(isMock bool) *Holder {
-	h := &Holder{mu: sync.RWMutex{}, isMock: isMock, values: settings.Defaults(), current: nil}
+func New(isMock bool, runner download.Runner, files download.Files) *Holder {
+	h := &Holder{
+		mu: sync.RWMutex{}, isMock: isMock, runner: runner, files: files,
+		values: settings.Defaults(), current: nil,
+	}
 	h.current = h.open()
 	return h
 }
@@ -29,7 +34,7 @@ func (h *Holder) open() *download.Downloader {
 	if h.isMock {
 		return download.NewMock()
 	}
-	return download.New(h.values.Programs)
+	return download.New(h.values.Programs, h.runner, h.files)
 }
 
 // GetFetcher returns the current downloader.

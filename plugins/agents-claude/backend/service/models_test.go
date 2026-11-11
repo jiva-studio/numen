@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
-const initializeFixture = "../models/testdata/initialize-response.json"
+const initializeFixture = "../model/testdata/initialize-response.json"
 
 func readFixture(t *testing.T) string {
 	t.Helper()
@@ -55,7 +55,7 @@ func TestGetModels_FallbackWhenListFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	for place, one := range got[0].Models {
-		if one.Name != models.GetFallback()[place].Value || len(one.ReasoningLevels) != 0 {
+		if one.Name != model.GetFallback()[place].Value || len(one.ReasoningLevels) != 0 {
 			t.Errorf("the model %v is not a fallback alias", one)
 		}
 	}

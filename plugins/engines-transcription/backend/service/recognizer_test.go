@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/models"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 )
 
 func TestTheRecognizerTranscribesThroughTheEngine(t *testing.T) {
-	model := models.NewHolder(settings.Defaults(), newOpener(engine.NewRuntime(), true))
+	holder := model.NewHolder(settings.Defaults(), newOpener(engine.NewRuntime(), true))
 
-	recognizer, err := model.GetRecognizer(t.Context())
+	recognizer, err := holder.GetRecognizer(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestTheRecognizerTranscribesThroughTheEngine(t *testing.T) {
 	if err := heard.Close(); err != nil {
 		t.Error(err)
 	}
-	if err := model.Close(); err != nil {
+	if err := holder.Close(); err != nil {
 		t.Error(err)
 	}
 }

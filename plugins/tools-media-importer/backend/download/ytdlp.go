@@ -1,14 +1,11 @@
 package download
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
-	"os"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -20,6 +17,8 @@ import (
 type ytDLP struct {
 	command      program
 	sound        program
+	runner       Runner
+	files        Files
 	getVersion   func() string
 	probeTimeout time.Duration
 	infoMu       sync.Mutex
@@ -28,11 +27,13 @@ type ytDLP struct {
 
 const defaultProbeTimeout = 2 * time.Minute
 
-func newYtDLP(c Config) *ytDLP {
-	command := resolveProgram(c.Video, "yt-dlp")
+func newYtDLP(c Config, runner Runner, files Files) *ytDLP {
+	command := resolveProgram(c.Video, "yt-dlp", runner)
 	v := &ytDLP{
 		command:      command,
-		sound:        resolveProgram(c.Sound, "ffmpeg"),
+		sound:        resolveProgram(c.Sound, "ffmpeg", runner),
+		runner:       runner,
+		files:        files,
 		getVersion:   nil,
 		probeTimeout: defaultProbeTimeout,
 		infoMu:       sync.Mutex{},
@@ -54,7 +55,7 @@ func (v *ytDLP) readVersion() string {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), v.probeTimeout)
 	defer cancel()
-	output, err := run(ctx, v.command, nil, "--version")
+	output, err := run(ctx, v.runner, v.command, nil, "--version")
 	if err != nil {
 		return ""
 	}
@@ -65,7 +66,7 @@ func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 	v.infoMu.Lock()
 	if cachedPath, ok := v.infoCache[pos]; ok {
 		v.infoMu.Unlock()
-		if raw, err := os.ReadFile(cachedPath); err == nil {
+		if raw, err := v.files.ReadFile(cachedPath); err == nil {
 			return raw, nil
 		}
 	} else {
@@ -74,29 +75,25 @@ func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 
 	probing, cancel := context.WithTimeout(ctx, v.probeTimeout)
 	defer cancel()
-	output, err := run(probing, v.command, nil, "--dump-single-json", "--no-playlist", pos)
+	output, err := run(probing, v.runner, v.command, nil, "--dump-single-json", "--no-playlist", pos)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := v.cacheInfo(pos, output); err != nil {
-		fmt.Fprintf(os.Stderr, "tools-media-importer: keep the info of %s: %v\n", pos, err)
+	if err := v.cacheInfo(pos, output); err != nil && v.runner != nil {
+		v.runner.ReportError("keep the info of "+pos, err)
 	}
 
 	return output, nil
 }
 
 func (v *ytDLP) cacheInfo(pos string, output []byte) error {
-	tempFile, err := os.CreateTemp("", "numen-info-*.json")
+	saved, err := v.files.WriteTemp("numen-info-*.json", output)
 	if err != nil {
 		return err
 	}
-	_, writeErr := tempFile.Write(output)
-	if err := errors.Join(writeErr, tempFile.Close()); err != nil {
-		return errors.Join(err, os.Remove(tempFile.Name()))
-	}
 	v.infoMu.Lock()
-	v.infoCache[pos] = tempFile.Name()
+	v.infoCache[pos] = saved
 	v.infoMu.Unlock()
 	return nil
 }
@@ -106,7 +103,7 @@ func (v *ytDLP) getTarget(pos string) []string {
 	saved, ok := v.infoCache[pos]
 	v.infoMu.Unlock()
 	if ok {
-		if _, err := os.Stat(saved); err == nil {
+		if _, err := v.files.ReadFile(saved); err == nil {
 			return []string{"--load-info-json", saved}
 		}
 	}
@@ -167,33 +164,35 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptio
 	}, nil
 }
 
-func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) (cues []Cue, err error) {
+func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]Cue, error) {
 	if language == "" {
 		return nil, ErrNothingDownloaded
 	}
-	into, err := os.MkdirTemp("", "numen-words-")
+	var raw []byte
+	err := v.files.WithTempDir("numen-words-", func(into string) error {
+		arguments := append([]string{
+			"--skip-download", "--write-subs", "--write-auto-subs",
+			"--sub-langs", language, "--sub-format", "json3",
+			"--no-playlist", "-o", filepath.Join(into, "words"),
+		}, v.getTarget(pos)...)
+		if _, err := run(ctx, v.runner, v.command, nil, arguments...); err != nil {
+			return err
+		}
+		names, err := v.files.ReadDir(into)
+		if err != nil {
+			return ErrNothingDownloaded
+		}
+		found := findWordsFile(names)
+		if found == "" {
+			return ErrNothingDownloaded
+		}
+		raw, err = v.files.ReadFile(filepath.Join(into, found))
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = errors.Join(err, os.RemoveAll(into)) }()
-
-	arguments := append([]string{
-		"--skip-download", "--write-subs", "--write-auto-subs",
-		"--sub-langs", language, "--sub-format", "json3",
-		"--no-playlist", "-o", filepath.Join(into, "words"),
-	}, v.getTarget(pos)...)
-	if _, err := run(ctx, v.command, nil, arguments...); err != nil {
-		return nil, err
-	}
-	found, err := filepath.Glob(filepath.Join(into, "words.*.json3"))
-	if err != nil || len(found) == 0 {
-		return nil, ErrNothingDownloaded
-	}
-	raw, err := os.ReadFile(found[0])
-	if err != nil {
-		return nil, err
-	}
-	cues, err = parseCues(raw)
+	cues, err := parseCues(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -201,6 +200,15 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) (cue
 		return nil, ErrNothingDownloaded
 	}
 	return cues, nil
+}
+
+func findWordsFile(names []string) string {
+	for _, name := range names {
+		if strings.HasPrefix(name, "words.") && strings.HasSuffix(name, ".json3") {
+			return name
+		}
+	}
+	return ""
 }
 
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
@@ -216,47 +224,39 @@ func getFormatArguments(media Media) []string {
 	return []string{"-f", copyFormat, "--merge-output-format", "mp4"}
 }
 
-func (v *ytDLP) Download(ctx context.Context, target string, media Media, into io.Writer) (result Copy, err error) {
-	folder, err := os.MkdirTemp("", "numen-copy-")
-	if err != nil {
-		return Copy{}, err
-	}
-	defer func() { err = errors.Join(err, os.RemoveAll(folder)) }()
-
-	arguments := append(getFormatArguments(media), "--no-playlist", "-o", filepath.Join(folder, "copy.%(ext)s"))
-	arguments = append(arguments, v.getTarget(target)...)
-	if where := v.sound.getPath(); where != "" {
-		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
-	}
-	taking := v.command.buildCommand(ctx, arguments...)
-	var logBuffer bytes.Buffer
-	taking.Stdout, taking.Stderr = &logBuffer, &logBuffer
-	if err := taking.Run(); err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return Copy{}, ctxErr
+func (v *ytDLP) Download(ctx context.Context, target string, media Media, into io.Writer) (Copy, error) {
+	var result Copy
+	err := v.files.WithTempDir("numen-copy-", func(folder string) error {
+		arguments := append(getFormatArguments(media), "--no-playlist", "-o", filepath.Join(folder, "copy.%(ext)s"))
+		arguments = append(arguments, v.getTarget(target)...)
+		if where := v.sound.getPath(); where != "" {
+			arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 		}
-		return Copy{}, fmt.Errorf("%w: %s", err, getLastLine(logBuffer.String()))
-	}
-
-	entries, err := os.ReadDir(folder)
+		_, combined, err := v.runner.Run(ctx, v.command.command, v.command.env, nil, arguments...)
+		if err != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return ctxErr
+			}
+			return fmt.Errorf("%w: %s", err, getLastLine(combined))
+		}
+		entries, err := v.files.ReadDir(folder)
+		if err != nil {
+			return err
+		}
+		if len(entries) != 1 {
+			return fmt.Errorf("%w: %s", ErrNothingDownloaded, getLastLine(combined))
+		}
+		name := filepath.Join(folder, entries[0])
+		if err := v.files.CopyFile(name, into); err != nil {
+			return err
+		}
+		result = Copy{MediaType: getMediaType(name), Extension: filepath.Ext(name)}
+		return nil
+	})
 	if err != nil {
 		return Copy{}, err
 	}
-	if len(entries) != 1 {
-		return Copy{}, fmt.Errorf("%w: %s", ErrNothingDownloaded, getLastLine(logBuffer.String()))
-	}
-	name := filepath.Join(folder, entries[0].Name())
-
-	copied, err := os.Open(name)
-	if err != nil {
-		return Copy{}, err
-	}
-	defer func() { err = errors.Join(err, copied.Close()) }()
-	if _, err := io.Copy(into, copied); err != nil {
-		return Copy{}, err
-	}
-	extension := filepath.Ext(name)
-	return Copy{MediaType: getMediaType(name), Extension: extension}, nil
+	return result, nil
 }
 
 // mediaTypeMP4Audio is the media type of the audio containers of MPEG-4.

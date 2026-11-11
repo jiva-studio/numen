@@ -18,6 +18,7 @@ const (
 )
 
 var (
+	errNoVault     = errors.New("the call names no vault")
 	errNotFound    = errors.New("the file is not found")
 	errNoRecording = errors.New("the file is not an audio or video recording")
 )
@@ -47,6 +48,9 @@ func NewRequests(transcriber *Transcriber, vaults func(domain.VaultID) Vault) *R
 // being transcribed starts nothing and reports the state running; a recording whose whole
 // transcript is the live version, or the source of it, starts nothing and reports the state done.
 func (r *Requests) Create(ctx context.Context, vault domain.VaultID, path string) (Outcome, error) {
+	if vault == "" {
+		return Outcome{}, errNoVault
+	}
 	if path == "" {
 		return Outcome{}, errors.New("path required")
 	}

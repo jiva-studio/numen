@@ -1,6 +1,6 @@
-// Package models holds the models the Antigravity program lists, read from its output and grouped
+// Package model holds the models the Antigravity program lists, read from its output and grouped
 // by reasoning level.
-package models
+package model
 
 import (
 	"bufio"

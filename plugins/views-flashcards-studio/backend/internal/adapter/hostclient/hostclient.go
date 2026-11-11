@@ -3,10 +3,21 @@
 package hostclient
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 )
+
+// ReportError writes a non-fatal error to stderr.
+func ReportError(what string, err error) {
+	if err == nil {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "views-flashcards-studio: %s: %v\n", what, err)
+}
 
 // Clients is what the use cases reach the host through.
 type Clients struct {

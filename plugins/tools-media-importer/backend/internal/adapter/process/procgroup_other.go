@@ -1,6 +1,6 @@
 //go:build !unix && !windows
 
-package download
+package process
 
 import "os/exec"
 

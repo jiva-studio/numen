@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/reloads"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/sessions"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/vaultcount"
 )
 
@@ -166,6 +167,9 @@ func ParseRating(r api.Rating) review.Rating {
 
 // NewRecordError is why an answer could not be written down, as an API error.
 func NewRecordError(err error) error {
+	if errors.Is(err, sessions.ErrNoRun) {
+		return NewRunError(err)
+	}
 	if errors.Is(err, flashcards.ErrNoRating) {
 		return apierror.NewError(server.CodeInvalidArgument, err)
 	}
@@ -174,6 +178,9 @@ func NewRecordError(err error) error {
 
 // NewUndoError is why an answer could not be taken back, as an API error.
 func NewUndoError(err error) error {
+	if errors.Is(err, sessions.ErrNoRun) {
+		return NewRunError(err)
+	}
 	if errors.Is(err, flashcards.ErrNoAnswer) {
 		return apierror.NewError(server.CodeInvalidArgument, err)
 	}
@@ -220,17 +227,17 @@ func sortReviewDays(days []*api.ReviewDay) []*api.ReviewDay {
 	return days
 }
 
-// NewNeighbourhoodResponse is what a deck is linked to.
-func NewNeighbourhoodResponse(joined flashcards.Neighborhood, err error) (*api.GetDeckNeighbourhoodResponse, error) {
+// NewNeighborhoodResponse is what a deck is linked to.
+func NewNeighborhoodResponse(joined flashcards.Neighborhood, err error) (*api.GetDeckNeighborhoodResponse, error) {
 	if err != nil {
 		return nil, apierror.NewInternal(err)
 	}
-	out := &api.GetDeckNeighbourhoodResponse{
-		Notes:  make([]*api.DeckNeighbour, 0, len(joined.Notes)),
+	out := &api.GetDeckNeighborhoodResponse{
+		Notes:  make([]*api.DeckNeighbor, 0, len(joined.Notes)),
 		Unread: int32(joined.Unread),
 	}
 	for _, one := range joined.Notes {
-		next := &api.DeckNeighbour{
+		next := &api.DeckNeighbor{
 			Address:     one.Written,
 			Path:        one.Path,
 			Title:       one.Title,

@@ -53,11 +53,11 @@ func TestTheCommandsRunTheProgramTheInstallationSet(t *testing.T) {
 		t.Errorf("the tools command runs %q, want %q", tools.Path, shPath)
 	}
 
-	answer, cleanup, err := Commands{}.MakeAnswerCommand(t.Context(), &agentrun.Request{Prompt: "p"}, shPath)
-	if err != nil || answer.Path != shPath || cleanup == nil {
-		t.Fatalf("the answer command is %q, hasCleanup=%v, err=%v", answer.Path, cleanup != nil, err)
+	answer, err := Commands{}.MakeAnswerCommand(t.Context(), &agentrun.Request{Prompt: "p"}, shPath)
+	if err != nil || answer.Path != shPath || answer.Release == nil {
+		t.Fatalf("the answer command is %q, hasCleanup=%v, err=%v", answer.Path, answer.Release != nil, err)
 	}
-	if err := cleanup(); err != nil {
+	if err := answer.Release(); err != nil {
 		t.Error(err)
 	}
 }
@@ -73,7 +73,7 @@ func sliceContainsSubstr(items []string, sub string) bool {
 
 func TestTheAnswerCommandFailsWhenTheFolderCannotBeCreated(t *testing.T) {
 	t.Setenv("TMPDIR", "/dev/null/nonexistent")
-	if _, _, err := (Commands{}).MakeAnswerCommand(t.Context(), &agentrun.Request{Prompt: "p"}, ""); err == nil {
+	if _, err := (Commands{}).MakeAnswerCommand(t.Context(), &agentrun.Request{Prompt: "p"}, ""); err == nil {
 		t.Error("expected MakeAnswerCommand error when TMPDIR is invalid")
 	}
 }

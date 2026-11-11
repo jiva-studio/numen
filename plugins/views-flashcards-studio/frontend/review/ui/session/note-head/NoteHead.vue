@@ -3,13 +3,13 @@
  * The title of one note where it is read, and the secondary text under it.
  */
 import { WORDS as words } from '../../../lib/session/notesWords'
-import type { Neighbour } from '../../../api/session/notes'
+import type { Neighbor } from '../../../api/session/notes'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ note: Neighbour }>()
+const props = defineProps<{ note: Neighbor }>()
 
 /* -------------------------------- Helpers --------------------------------- */
-const getNoteName = (one: Neighbour) => one.title || one.written
+const getNoteName = (one: Neighbor) => one.title || one.written
 </script>
 
 <template>

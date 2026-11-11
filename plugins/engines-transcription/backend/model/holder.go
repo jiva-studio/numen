@@ -1,6 +1,6 @@
-// Package models opens the transcription model once, under the configuration the settings last
+// Package model opens the transcription model once, under the configuration the settings last
 // named, and keeps it until the plugin stops.
-package models
+package model
 
 import (
 	"context"

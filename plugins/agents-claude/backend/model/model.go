@@ -1,5 +1,5 @@
-// Package models holds the models Claude Code lists and the depths of reasoning each supports.
-package models
+// Package model holds the models Claude Code lists and the depths of reasoning each supports.
+package model
 
 import (
 	"bufio"

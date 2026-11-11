@@ -9,8 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
@@ -26,16 +24,33 @@ const (
 
 var errNoOutput = errors.New("the program ended without output")
 
-// Commands builds the command that runs a request, and the function that releases what it needs.
+// Command is the program and environment of a run.
+type Command struct {
+	Path    string
+	Args    []string
+	Dir     string
+	Env     []string
+	Token   string
+	Release func() error
+}
+
+// Process is a started program of a run.
+type Process interface {
+	Output() io.ReadCloser
+	Stderr() string
+	Wait() error
+}
+
+// Commands builds the command that runs a request.
 type Commands interface {
 	Build(
 		ctx context.Context, req *agentrun.Request, reg *agentrun.Registry, executablePath string,
-	) (*exec.Cmd, func() error, error)
+	) (Command, error)
 }
 
-// Supervisor ends the whole process group of a command when its context is canceled.
-type Supervisor interface {
-	Supervise(cmd *exec.Cmd)
+// Launcher starts a command and ends its process group when its context is canceled.
+type Launcher interface {
+	Start(ctx context.Context, cmd Command) (Process, error)
 }
 
 // ModelResolver replaces the model of a request with the listed model that the request names.
@@ -45,15 +60,15 @@ type ModelResolver interface {
 
 // Runner runs the requests of one agent service.
 type Runner struct {
-	registry   *agentrun.Registry
-	commands   Commands
-	supervisor Supervisor
-	resolver   ModelResolver
+	registry *agentrun.Registry
+	commands Commands
+	launcher Launcher
+	resolver ModelResolver
 }
 
 // New returns a runner that records its runs and their sessions in registry.
-func New(registry *agentrun.Registry, commands Commands, supervisor Supervisor, resolver ModelResolver) *Runner {
-	return &Runner{registry: registry, commands: commands, supervisor: supervisor, resolver: resolver}
+func New(registry *agentrun.Registry, commands Commands, launcher Launcher, resolver ModelResolver) *Runner {
+	return &Runner{registry: registry, commands: commands, launcher: launcher, resolver: resolver}
 }
 
 type spec struct {
@@ -61,7 +76,7 @@ type spec struct {
 	MaxSteps     int
 	Root         string
 	Token        string
-	Build        func(ctx context.Context) (*exec.Cmd, func() error, error)
+	Build        func(ctx context.Context) (Command, error)
 	NewHandler   func(sink events.Sink) func(event map[string]any)
 }
 
@@ -102,7 +117,7 @@ func (r *Runner) newSpec(req *agentrun.Request, executablePath string) spec {
 		s.Root = req.Root
 		s.Token = req.ToolsToken
 	}
-	s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
+	s.Build = func(ctx context.Context) (Command, error) {
 		return r.commands.Build(ctx, req, r.registry, executablePath)
 	}
 	return s
@@ -110,66 +125,52 @@ func (r *Runner) newSpec(req *agentrun.Request, executablePath string) spec {
 
 func (r *Runner) start(ctx context.Context, s spec) (*agentrun.Work, error) {
 	runCtx, stop := context.WithCancel(ctx)
-	cmd, cleanup, err := s.Build(runCtx)
+	cmd, err := s.Build(runCtx)
 	if err != nil {
 		stop()
 		return nil, err
 	}
+	cleanup := cmd.Release
 	if cleanup == nil {
 		cleanup = func() error { return nil }
 	}
-	configureCommand(cmd, s)
-	var stderr strings.Builder
-	if cmd.Stderr == nil {
-		cmd.Stderr = &stderr
-	}
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
-	r.supervisor.Supervise(cmd)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		stop()
-		return nil, errors.Join(err, cleanup())
-	}
+	configureCommand(&cmd, s)
 	w := agentrun.NewWork(s.Conversation, outputBuffer, agentrun.StopByCancel(stop))
 	if !r.registry.Add(w) {
 		stop()
-		return nil, errors.Join(errors.New("agent runner is terminating"), stdout.Close(), cleanup())
+		return nil, errors.Join(errors.New("agent runner is terminating"), cleanup())
 	}
-	if err := cmd.Start(); err != nil {
+	proc, err := r.launcher.Start(runCtx, cmd)
+	if err != nil {
 		w.End()
 		r.registry.Remove(w)
 		stop()
-		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), stdout.Close(), cleanup())
+		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), cleanup())
 	}
 
-	go runReader(runCtx, &runProcess{stop: stop, cmd: cmd, stdout: stdout, stderr: &stderr, cleanup: cleanup}, w, r.registry, s)
+	go runReader(runCtx, &runProcess{stop: stop, proc: proc, cleanup: cleanup}, w, r.registry, s)
 	return w, nil
 }
 
-func configureCommand(cmd *exec.Cmd, s spec) {
+func configureCommand(cmd *Command, s spec) {
 	if s.Root != "" {
 		cmd.Dir = s.Root
 	}
-	if len(cmd.Env) == 0 {
-		cmd.Env = os.Environ()
-	}
 	if s.Token != "" {
-		cmd.Env = append(cmd.Env, "NUMEN_TOKEN="+s.Token)
+		cmd.Token = s.Token
 	}
 }
 
 // runProcess holds the started command of a run and what its reader needs to stop and release it.
 type runProcess struct {
 	stop    func()
-	cmd     *exec.Cmd
-	stdout  io.ReadCloser
-	stderr  *strings.Builder
+	proc    Process
 	cleanup func() error
 }
 
 func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *agentrun.Registry, s spec) {
-	stop, cleanup, stdout, cmd, stderr := p.stop, p.cleanup, p.stdout, p.cmd, p.stderr
+	stop, cleanup, proc := p.stop, p.cleanup, p.proc
+	stdout := proc.Output()
 	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps,
 		completed: 0, sentCount: 0, isFinished: false}
 	defer func() {
@@ -191,11 +192,11 @@ func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *age
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="Stopping the context on scanner error cancels the child before defer calls stop()."
 		stop()
 	}
-	waitErr := errors.Join(stdout.Close(), cmd.Wait())
+	waitErr := errors.Join(stdout.Close(), proc.Wait())
 	if isEnded || isCancelled {
 		return
 	}
-	reportExit(r, scanErr, waitErr, stderr.String())
+	reportExit(r, scanErr, waitErr, proc.Stderr())
 }
 
 func scanOutput(

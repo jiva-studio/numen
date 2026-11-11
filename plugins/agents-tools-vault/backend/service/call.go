@@ -34,27 +34,27 @@ func (t *Tools) open(ctx context.Context) (*call, error) {
 	return c, nil
 }
 
-func (c *call) notes() *notes.UseCase {
+func (c *call) createNotes() *notes.UseCase {
 	return notes.New(c.vault.Files, c.vault.Writer, c.vault.Index, c.vault.Notes)
 }
 
-func (c *call) files() *files.UseCase {
+func (c *call) createFiles() *files.UseCase {
 	return files.New(c.vault.Files, c.vault.Writer, c.vault.Index)
 }
 
-func (c *call) links() *links.UseCase {
+func (c *call) createLinks() *links.UseCase {
 	return links.New(c.vault.Links, c.vault.Editor, notepath.NewResolver(c.vault.Notes, c.vault.Files))
 }
 
-func (c *call) arrange() *arrange.UseCase {
+func (c *call) createArrange() *arrange.UseCase {
 	return arrange.New(c.vault.Arranger)
 }
 
-func (c *call) library() *library.UseCase {
+func (c *call) createLibrary() *library.UseCase {
 	return library.New(c.vault.Files, c.vault.Notes, c.texts.Versions, c.texts.Texts, c.texts.Search)
 }
 
-func (c *call) vaults() *vaults.UseCase {
+func (c *call) createVaults() *vaults.UseCase {
 	open := func(id domain.VaultID) vaults.Vault {
 		vault := c.tools.vaults(id)
 		return vaults.Vault{Selector: vault.Selector, Notes: vault.Notes}

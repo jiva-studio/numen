@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"sync"
 
@@ -34,6 +33,7 @@ type Writer struct {
 	texts  func(domain.VaultID) host.TextVersions
 	store  func(domain.VaultID) host.StoreWriter
 	queue  host.Queue
+	report func(what string, err error)
 
 	wg sync.WaitGroup
 
@@ -58,9 +58,20 @@ func NewWriter(
 	vaults func(domain.VaultID) Files, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue, workers *pdf.Workers,
 ) *Writer {
 	return &Writer{
-		vaults: vaults, texts: texts, store: store, queue: queue,
+		vaults: vaults, texts: texts, store: store, queue: queue, report: nil,
 		wg: sync.WaitGroup{}, mu: sync.Mutex{}, isClosed: false, last: layer{hash: "", raw: nil, book: nil},
 		running: map[string]context.CancelFunc{}, workers: workers,
+	}
+}
+
+// SetReport sets the callback that receives background failures of the writer.
+func (s *Writer) SetReport(report func(what string, err error)) {
+	s.report = report
+}
+
+func (s *Writer) reportError(what string, err error) {
+	if s.report != nil && err != nil {
+		s.report(what, err)
 	}
 }
 
@@ -147,12 +158,12 @@ func (s *Writer) writeLayer(ctx context.Context, req Request) {
 	if err != nil && ctx.Err() == nil {
 		task.FailureReason = err.Error()
 		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
-			fmt.Fprintf(os.Stderr, "readers-pdf: show the task %s: %v\n", task.ID, reportErr)
+			s.reportError("show the task "+task.ID, reportErr)
 		}
 		return
 	}
 	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
-		fmt.Fprintf(os.Stderr, "readers-pdf: finish the task %s: %v\n", task.ID, finishErr)
+		s.reportError("finish the task "+task.ID, finishErr)
 	}
 }
 

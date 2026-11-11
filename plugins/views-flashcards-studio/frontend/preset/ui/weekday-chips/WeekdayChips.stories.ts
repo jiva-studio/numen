@@ -11,8 +11,8 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import WeekdayChips from './WeekdayChips.vue'
 import { rotateWeek, WEEK, type DayName } from './week'
-import { lightness } from '../fixtures/colour'
-import { DARK, expectDark } from '../fixtures/theme'
+import { lightness } from '../../../testing/colour'
+import { DARK, expectDark } from '../../../testing/theme'
 
 /** The week as Russian names it, for the names that are not Latin. */
 const RUSSIAN: readonly DayName[] = [

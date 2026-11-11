@@ -10,8 +10,8 @@ import { expect, within } from 'storybook/test'
 import DueCount from './DueCount.vue'
 import { Button } from '@numen/ui'
 import { DUE_WORDS } from './due'
-import { lightness } from '../fixtures/colour'
-import { DARK, expectDark } from '../fixtures/theme'
+import { lightness } from '../../../testing/colour'
+import { DARK, expectDark } from '../../../testing/theme'
 
 interface Knobs {
   due: number | null

@@ -140,7 +140,7 @@ func (brokenPresetLinks) GetLinks(context.Context, domain.VaultID, string) ([]do
 // defaults.
 func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 	handler, target := newAPI(t, getPointed())
-	handler.scenarios().Flash.Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, nil).WithDay(handler.scenarios().Day)
+	handler.flash().Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, nil).WithDay(*handler.day())
 
 	_, err := handler.GetVaultDeckPreset(t.Context(),
 		&api.GetVaultDeckPresetRequest{Vault: string(target[0].ID), Deck: "decks/Words.md"})

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 
 import { useNotesPanel } from './notes'
-import type { DeckNeighbourhood, Neighbour } from '../../api/session/notes'
+import type { DeckNeighborhood, Neighbor } from '../../api/session/notes'
 
-const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
+const createNeighbor = (more: Partial<Neighbor> = {}): Neighbor => ({
   written: 'Leaf mould',
   path: 'notes/Leaf mould.md',
   title: 'Leaf mould',
@@ -28,10 +28,10 @@ const panel = (more: { deck?: string; failure?: boolean } = {}) => {
     },
     vault: () => 'one',
     deck: () => deck.value,
-    getDeckNeighbourhood: async (vault, of) => {
+    getDeckNeighborhood: async (vault, of) => {
       request.push({ vault, deck: of })
       if (more.failure) throw new Error('out of reach')
-      return { notes: [createNeighbour({ written: of })], unread: 2 } satisfies DeckNeighbourhood
+      return { notes: [createNeighbor({ written: of })], unread: 2 } satisfies DeckNeighborhood
     },
     showNotice: (one) => notices.push(one),
     resolveLinks: async () => [],
@@ -108,9 +108,9 @@ describe('what is read belongs to the deck', () => {
       },
       vault: () => 'one',
       deck: () => deck.value,
-      getDeckNeighbourhood: async (_vault, of) =>
+      getDeckNeighborhood: async (_vault, of) =>
         new Promise((then) =>
-          pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingCallbacks.push(() => then({ notes: [createNeighbor({ path: of })], unread: 0 })),
         ),
       showNotice: () => undefined,
       resolveLinks: async () => [],
@@ -141,9 +141,9 @@ describe('what is read belongs to the deck', () => {
       },
       vault: () => 'one',
       deck: () => deck.value,
-      getDeckNeighbourhood: async (_vault, of) =>
+      getDeckNeighborhood: async (_vault, of) =>
         new Promise((then) =>
-          pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
+          pendingCallbacks.push(() => then({ notes: [createNeighbor({ path: of })], unread: 0 })),
         ),
       showNotice: () => undefined,
       resolveLinks: async () => [],
@@ -216,11 +216,11 @@ describe('the asking', () => {
       showPanel: () => undefined,
       vault: () => 'one',
       deck: () => deck.value,
-      getDeckNeighbourhood: (_vault, of) =>
+      getDeckNeighborhood: (_vault, of) =>
         new Promise((then, fail) =>
           pendingRequests.push({
             deck: of,
-            answer: () => then({ notes: [createNeighbour({ path: of })], unread: 1 }),
+            answer: () => then({ notes: [createNeighbor({ path: of })], unread: 1 }),
             refuse: () => fail(new Error('out of reach')),
           }),
         ),
@@ -296,7 +296,7 @@ describe('the links of a note read in the panel', () => {
       showPanel: () => undefined,
       vault: () => 'one',
       deck: () => 'decks/Words.md',
-      getDeckNeighbourhood: async () => ({ notes: [createNeighbour({ body })], unread: 0 }),
+      getDeckNeighborhood: async () => ({ notes: [createNeighbor({ body })], unread: 0 }),
       showNotice: () => undefined,
       resolveLinks: async (text) => {
         bodies.push(text)
@@ -331,7 +331,7 @@ describe('the links of a note read in the panel', () => {
       showPanel: () => undefined,
       vault: () => 'one',
       deck: () => 'decks/Words.md',
-      getDeckNeighbourhood: async () => ({ notes: [createNeighbour()], unread: 0 }),
+      getDeckNeighborhood: async () => ({ notes: [createNeighbor()], unread: 0 }),
       showNotice: () => undefined,
       resolveLinks: async () => [{ raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' }],
     })

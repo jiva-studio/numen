@@ -1,6 +1,6 @@
 //go:build unix
 
-package download
+package process
 
 import (
 	"context"
@@ -14,6 +14,17 @@ import (
 	"testing"
 	"time"
 )
+
+func runTestProgram(ctx context.Context, command []string, arguments ...string) ([]byte, error) {
+	out, combined, err := (Runner{}).Run(ctx, command, nil, nil, arguments...)
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
+		return nil, errors.New(combined)
+	}
+	return out, nil
+}
 
 func waitFor(t *testing.T, what string, holds func() bool) {
 	t.Helper()
@@ -41,7 +52,7 @@ func readPID(path string) (int, bool) {
 	return pid, err == nil
 }
 
-func spawningScript(t *testing.T) program {
+func spawningScript(t *testing.T) []string {
 	t.Helper()
 	pos := filepath.Join(t.TempDir(), "tool")
 	body := "#!/bin/sh\nsleep 600 >/dev/null 2>&1 &\necho $! > \"$1/child.tmp\"\n" +
@@ -49,7 +60,7 @@ func spawningScript(t *testing.T) program {
 	if err := os.WriteFile(pos, []byte(body), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	return program{command: []string{pos}}
+	return []string{pos}
 }
 
 // Canceling a run ends the process the tool started as well as the tool, and
@@ -61,7 +72,7 @@ func TestCancellingARunEndsEveryProcessTheToolStarted(t *testing.T) {
 
 	returned := make(chan error, 1)
 	go func() {
-		_, err := run(ctx, spawningScript(t), nil, folder)
+		_, err := runTestProgram(ctx, spawningScript(t), folder)
 		returned <- err
 	}()
 
@@ -96,7 +107,7 @@ func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
 	isDone := make(chan struct{})
 	go func() {
 		defer close(isDone)
-		if _, err := run(ctx, spawningScript(t), nil, folder); err == nil {
+		if _, err := runTestProgram(ctx, spawningScript(t), folder); err == nil {
 			t.Error("a canceled run reported no error")
 		}
 	}()
@@ -126,11 +137,11 @@ func TestARunThatEndsByItselfAnswersAsBefore(t *testing.T) {
 	if err := os.WriteFile(bad, []byte("#!/bin/sh\necho no good >&2\nexit 3\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	out, err := run(t.Context(), program{command: []string{good}}, nil)
+	out, err := runTestProgram(t.Context(), []string{good})
 	if err != nil || strings.TrimSpace(string(out)) != "fine" {
 		t.Errorf("a run that succeeded answered %q, %v", out, err)
 	}
-	_, err = run(t.Context(), program{command: []string{bad}}, nil)
+	_, err = runTestProgram(t.Context(), []string{bad})
 	if err == nil || !strings.Contains(err.Error(), "no good") {
 		t.Errorf("a run that failed answered %v", err)
 	}

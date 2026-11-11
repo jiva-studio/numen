@@ -15,7 +15,19 @@ import (
 
 // cardsHandler answers about the decks and card models a vault is arranged into.
 type cardsHandler struct {
-	*Backend
+	getCurrentVault func(context.Context) (domain.Vault, error)
+	createCardNote  func(context.Context, func(domain.Vault, cards.New) (cards.CreateNoteResult, error), string, string) (cards.CreateNoteResult, api.ErrorCode, bool, error)
+	newTitler       func(context.Context, domain.Vault) func(string) string
+	cards           func() cards.Scenarios
+}
+
+func (b *Backend) newCardsHandler() *cardsHandler {
+	return &cardsHandler{
+		getCurrentVault: b.getCurrentVault,
+		createCardNote:  b.createCardNote,
+		newTitler:       b.newTitler,
+		cards:           func() cards.Scenarios { return b.scenarios().Cards },
+	}
 }
 
 func (h *cardsHandler) ListCardModels(ctx context.Context, req *api.ListCardModelsRequest) (*api.ListCardModelsResponse, error) {
@@ -23,14 +35,14 @@ func (h *cardsHandler) ListCardModels(ctx context.Context, req *api.ListCardMode
 	if err != nil {
 		return nil, err
 	}
-	found, total, err := h.scenarios().Cards.List.Execute(ctx, showing, cardwire.GetLimit(req.Limit))
+	found, total, err := h.cards().List.Execute(ctx, showing, cardwire.GetLimit(req.Limit))
 	return cardwire.NewListResponse(found, total, err)
 }
 
 func (h *cardsHandler) CreateCardModel(ctx context.Context, req *api.CreateCardModelRequest) (*api.CreateCardModelResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = req.Fields
-		return h.scenarios().Cards.Create.CardModel(ctx, showing, in)
+		return h.cards().Create.CardModel(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
@@ -40,7 +52,7 @@ func (h *cardsHandler) CreateCardModel(ctx context.Context, req *api.CreateCardM
 
 func (h *cardsHandler) CreateDeck(ctx context.Context, req *api.CreateDeckRequest) (*api.CreateDeckResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return h.scenarios().Cards.Create.Deck(ctx, showing, in)
+		return h.cards().Create.Deck(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
@@ -65,7 +77,7 @@ func (h *cardsHandler) RenameCardModelField(
 	if err != nil {
 		return nil, err
 	}
-	renamed, err := h.scenarios().Cards.RenameField.Execute(ctx, showing, cards.Rename{
+	renamed, err := h.cards().RenameField.Execute(ctx, showing, cards.Rename{
 		CardModel: req.Path, From: req.From, To: req.To, FileStat: filewire.GetStat(req.Baseline),
 	})
 	return cardwire.ConvertRename(renamed, err)
@@ -76,7 +88,7 @@ func (h *cardsHandler) ReadCardModel(ctx context.Context, req *api.ReadCardModel
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().Cards.Read.CardModel(ctx, showing, req.Path)
+	found, err := h.cards().Read.CardModel(ctx, showing, req.Path)
 	return cardwire.NewReadCardModelResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -85,7 +97,7 @@ func (h *cardsHandler) ReadDeck(ctx context.Context, req *api.ReadDeckRequest) (
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().Cards.Read.Deck(ctx, showing, req.Path)
+	found, err := h.cards().Read.Deck(ctx, showing, req.Path)
 	return cardwire.NewReadDeckResponse(found, err, h.newTitler(ctx, showing))
 }
 
@@ -98,7 +110,7 @@ func (h *cardsHandler) WriteDeck(ctx context.Context, req *api.WriteDeckRequest)
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	wrote, err := h.scenarios().Cards.Write.Deck(ctx, showing, req.Path, body, filewire.GetStat(req.Baseline))
+	wrote, err := h.cards().Write.Deck(ctx, showing, req.Path, body, filewire.GetStat(req.Baseline))
 	return cardwire.NewWriteDeckResponse(wrote.FileStat, err)
 }
 
@@ -112,6 +124,6 @@ func (h *cardsHandler) WriteCardModel(ctx context.Context, req *api.WriteCardMod
 	if err != nil {
 		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	pos, err := h.scenarios().Cards.Write.CardModel(ctx, showing, req.Path, body, req.Fields, filewire.GetStat(req.Baseline))
+	pos, err := h.cards().Write.CardModel(ctx, showing, req.Path, body, req.Fields, filewire.GetStat(req.Baseline))
 	return cardwire.NewWriteCardModelResponse(pos, err)
 }

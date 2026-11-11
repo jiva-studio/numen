@@ -34,7 +34,7 @@ func getMessageTypes() map[string]struct{ request, response func() any } {
 		"UndoReview":           {func() any { return new(api.UndoReviewRequest) }, func() any { return new(api.UndoReviewResponse) }},
 		"WatchReloads":         {func() any { return new(api.WatchReloadsRequest) }, func() any { return new(api.WatchReloadsResponse) }},
 		"ListReviewDays":       {func() any { return new(api.ListReviewDaysRequest) }, func() any { return new(api.ListReviewDaysResponse) }},
-		"GetDeckNeighbourhood": {func() any { return new(api.GetDeckNeighbourhoodRequest) }, func() any { return new(api.GetDeckNeighbourhoodResponse) }},
+		"GetDeckNeighborhood": {func() any { return new(api.GetDeckNeighborhoodRequest) }, func() any { return new(api.GetDeckNeighborhoodResponse) }},
 		"GetVaultDeckPreset":   {func() any { return new(api.GetVaultDeckPresetRequest) }, func() any { return new(api.GetVaultDeckPresetResponse) }},
 	}
 }

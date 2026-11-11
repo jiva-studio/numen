@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/scenarios"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/sessions"
@@ -51,7 +52,7 @@ func New(cfg Config) *Backend {
 func (b *Backend) getInputs(dayStart func() time.Duration) scenarios.Inputs {
 	return scenarios.Inputs{
 		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, Types: b.ports.Notes, CardModels: b.ports.Notes, Links: b.ports.Links,
-		Problems: b.ports.Problems, Logs: b.ports.Logs, Schedules: b.ports.Schedules,
+		Problems: b.ports.Problems, Logs: b.ports.Logs, Schedules: b.ports.Schedules, Report: hostclient.ReportError,
 		Index: func(ctx context.Context, v domain.Vault, paths []string) error {
 			return b.vaults(v.ID).Index.Scan(ctx, paths)
 		},

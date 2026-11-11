@@ -3,9 +3,7 @@ package flashcards
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"maps"
-	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -45,6 +43,7 @@ type ReviewCounts struct {
 type CountReviews struct {
 	logs      ports.LogStores
 	Cache     ports.ScheduleStore
+	Report    func(what string, err error)
 	schedules Schedules
 	day       review.Day
 	now       ports.Clock
@@ -56,7 +55,7 @@ type CountReviews struct {
 func NewCountReviews(
 	logs ports.LogStores, schedules Schedules, day review.Day, now ports.Clock,
 ) CountReviews {
-	return CountReviews{logs: logs, Cache: nil, schedules: schedules, day: day, now: now}
+	return CountReviews{logs: logs, Cache: nil, Report: nil, schedules: schedules, day: day, now: now}
 }
 
 // WithDay returns a copy of CountReviews with the given Day.
@@ -267,9 +266,9 @@ func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCac
 	if err != nil {
 		return
 	}
-	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="Cache write failure logs to stderr without affecting the returned counts."
-	if err := u.Cache.Write(ctx, v.ID, raw); err != nil {
-		fmt.Fprintf(os.Stderr, "views-flashcards-studio: keep the count of reviews of %s: %v\n", v.ID, err)
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="Cache write failure is reported without affecting the returned counts."
+	if err := u.Cache.Write(ctx, v.ID, raw); err != nil && u.Report != nil {
+		u.Report("keep the count of reviews of "+string(v.ID), err)
 	}
 }
 

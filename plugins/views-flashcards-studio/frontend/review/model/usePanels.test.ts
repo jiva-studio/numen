@@ -14,7 +14,7 @@ import type { ReviewCard } from '../lib/card/cards'
 vi.mock('../../api/client', async (original) => ({
   ...(await original<typeof import('../../api/client')>()),
   reviewService: {
-    getDeckNeighbourhood: async () => ({ notes: [], unread: 0 }),
+    getDeckNeighborhood: async () => ({ notes: [], unread: 0 }),
   },
 }))
 

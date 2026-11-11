@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -11,11 +12,17 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/arguments"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/environment"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 
 // Lister asks a started program for its models over the control protocol on its input.
 type Lister struct{}
+
+// ReportError writes a model-listing error to standard error.
+func (Lister) ReportError(err error) {
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Diagnostic log to os.Stderr does not affect the returned fallback models."
+	fmt.Fprintf(os.Stderr, "list models of claude: %v\n", err)
+}
 
 func isStopped(err error) bool {
 	var exit *exec.ExitError
@@ -24,9 +31,9 @@ func isStopped(err error) bool {
 }
 
 // ListModels starts the command, sends it the initialize request, and reads the models from its
-// answer. The program is ended when the models are read or models.Timeout has passed.
-func (Lister) ListModels(ctx context.Context, command, env []string) (list []models.Model, err error) {
-	ctx, cancel := context.WithTimeout(ctx, models.Timeout)
+// answer. The program is ended when the models are read or model.Timeout has passed.
+func (Lister) ListModels(ctx context.Context, command, env []string) (list []model.Model, err error) {
+	ctx, cancel := context.WithTimeout(ctx, model.Timeout)
 	defer cancel()
 	args := slices.Concat(command[1:], arguments.GetModelListing())
 	cmd := exec.CommandContext(ctx, command[0], args...)
@@ -56,9 +63,9 @@ func (Lister) ListModels(ctx context.Context, command, env []string) (list []mod
 	}()
 	const requestID = "numen-models"
 	request := `{"type":"control_request","request_id":"` + requestID + `","request":{"subtype":"initialize"}}` + "\n"
-	// gomutants:disable-next-line BRANCH_IF reason="Writing the small initialize payload to a newly started pipe fails only if the child closes stdin immediately, which models.Parse also detects."
+	// gomutants:disable-next-line BRANCH_IF reason="Writing the small initialize payload to a newly started pipe fails only if the child closes stdin immediately, which model.Parse also detects."
 	if _, err := io.WriteString(in, request); err != nil {
 		return nil, err
 	}
-	return models.Parse(out, requestID)
+	return model.Parse(out, requestID)
 }

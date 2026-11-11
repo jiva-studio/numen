@@ -36,38 +36,38 @@ type Neighbor struct {
 	Outcome     note.ReadOutcome
 }
 
-// neighbourNotes is what the neighborhood asks the index of the notes it found.
-type neighbourNotes interface {
+// neighborNotes is what the neighborhood asks the index of the notes it found.
+type neighborNotes interface {
 	ports.NoteRefQueries
 	ports.NoteTypeQueries
 }
 
-// ShowNeighbourhood is what the deck being reviewed is joined to, with the text
+// ShowNeighborhood is what the deck being reviewed is joined to, with the text
 // of each.
 //
 // A card's links are written in the deck's file, so a deck already points at
 // everything its cards name: this is the reading beside the review.
-type ShowNeighbourhood struct {
+type ShowNeighborhood struct {
 	linked note.ShowLinks
-	notes  neighbourNotes
+	notes  neighborNotes
 	reads  note.Read
 }
 
-// NewShowNeighbourhood constructs a ShowNeighbourhood from the source of the
+// NewShowNeighborhood constructs a ShowNeighborhood from the source of the
 // deck's links, the note queries that identify which of those notes are decks and
 // card models, and the reader of each note's prose.
 //
 // The prose is read only where a deck names something.
-func NewShowNeighbourhood(
-	linked note.ShowLinks, notes neighbourNotes, reads note.Read,
-) ShowNeighbourhood {
-	return ShowNeighbourhood{linked: linked, notes: notes, reads: reads}
+func NewShowNeighborhood(
+	linked note.ShowLinks, notes neighborNotes, reads note.Read,
+) ShowNeighborhood {
+	return ShowNeighborhood{linked: linked, notes: notes, reads: reads}
 }
 
 // Execute gathers what the deck is joined to: what it points at first, then what points at it.
 // An error is the vault or the index being out of reach. What is wrong with one note (gone, too
 // long, not a note) is an outcome on that note's own entry, and the rest are still read.
-func (u ShowNeighbourhood) Execute(
+func (u ShowNeighborhood) Execute(
 	ctx context.Context, v domain.Vault, deck string,
 ) (Neighborhood, error) {
 	linked, err := u.linked.Execute(ctx, v, deck)
@@ -75,7 +75,7 @@ func (u ShowNeighbourhood) Execute(
 		return Neighborhood{}, err
 	}
 
-	found := getNeighbours(v, deck, linked)
+	found := getNeighbors(v, deck, linked)
 	paths := make([]string, 0, len(found))
 	for _, one := range found {
 		if one.Path != "" {
@@ -93,7 +93,7 @@ func (u ShowNeighbourhood) Execute(
 
 	var out Neighborhood
 	for _, one := range found {
-		titled, isShown := getNeighbourTitle(one, notes, kinds)
+		titled, isShown := getNeighborTitle(one, notes, kinds)
 		if isShown {
 			out.Notes = append(out.Notes, titled)
 		}
@@ -107,11 +107,11 @@ func (u ShowNeighbourhood) Execute(
 	return out, nil
 }
 
-func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbor {
+func getNeighbors(v domain.Vault, deck string, linked note.Links) []Neighbor {
 	observed := map[string]bool{deck: true}
 	var found []Neighbor
 	for _, l := range linked.Links {
-		one, isKept := getLinkedNeighbour(v, l, observed)
+		one, isKept := getLinkedNeighbor(v, l, observed)
 		if isKept {
 			found = append(found, one)
 		}
@@ -128,7 +128,7 @@ func getNeighbours(v domain.Vault, deck string, linked note.Links) []Neighbor {
 	return found
 }
 
-func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[string]bool) (Neighbor, bool) {
+func getLinkedNeighbor(v domain.Vault, l domain.ResolvedLink, visited map[string]bool) (Neighbor, bool) {
 	// Only an address that names a note can name a missing note. Attachments and web
 	// addresses are neither read here nor missing, and drawing them as notes with
 	// unresolved names would report a vault problem that does not exist.
@@ -159,7 +159,7 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[strin
 	return one, true
 }
 
-func getNeighbourTitle(
+func getNeighborTitle(
 	one Neighbor, notes map[string]domain.NoteRef, kinds map[string]domain.NoteType,
 ) (Neighbor, bool) {
 	if one.Path == "" {
@@ -197,7 +197,7 @@ func getNeighbourTitle(
 	return one, true
 }
 
-func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neighbors []Neighbor) error {
+func (u ShowNeighborhood) readBodies(ctx context.Context, v domain.Vault, neighbors []Neighbor) error {
 	for i := range neighbors {
 		if i == MostRead {
 			break

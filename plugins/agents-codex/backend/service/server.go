@@ -26,7 +26,7 @@ func newAgentServer(isAsync bool) *agentServer {
 		Service:  agentrun.Service{},
 		settings: new(settings.Settings),
 		programs: programs.New(codexcli.Installation{}, models),
-		runner:   run.NewRunner(codexcli.Commands{}, process.Group{}),
+		runner:   run.NewRunner(codexcli.Commands{}, process.Launcher{}),
 	}
 }
 

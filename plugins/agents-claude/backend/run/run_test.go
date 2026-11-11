@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/ports"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/settings"
 )
@@ -96,7 +96,7 @@ func TestTheDefaultModelIsNotNamedToTheProgram(t *testing.T) {
 	r := newRun(t, "claude", new(failingLauncher), toolConfig, "")
 
 	args, configFile, err := r.prepareArguments(&agentrun.Request{
-		Model: models.DefaultName, Tools: []string{"note_read"}, ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tok",
+		Model: model.DefaultName, Tools: []string{"note_read"}, ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tok",
 	}, "", settings.Values{})
 	if err != nil {
 		t.Fatal(err)

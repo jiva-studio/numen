@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
 )
 
 type fakeProgram struct {
 	installed bool
-	items     []models.Model
+	items     []model.Model
 	err       error
 	commands  [][]string
 }
 
 func (f *fakeProgram) IsInstalled(string) bool { return f.installed }
 
-func (f *fakeProgram) List(_ context.Context, command []string) ([]models.Model, error) {
+func (f *fakeProgram) List(_ context.Context, command []string) ([]model.Model, error) {
 	f.commands = append(f.commands, command)
 	return f.items, f.err
 }
@@ -59,7 +59,7 @@ func TestTheStateNamesAMissingProgram(t *testing.T) {
 }
 
 func TestTheProgramListsTheModelsOfTheExecutablePath(t *testing.T) {
-	program := &fakeProgram{installed: true, items: []models.Model{{Name: "m-custom", Title: "Custom"}}}
+	program := &fakeProgram{installed: true, items: []model.Model{{Name: "m-custom", Title: "Custom"}}}
 
 	got := New(program, program, false).GetPrograms(t.Context(), "/opt/agy", nil)
 
@@ -83,11 +83,11 @@ func TestAProgramWhoseListFailsHasNoModels(t *testing.T) {
 
 func TestADefaultModelIsNotResolved(t *testing.T) {
 	program := &fakeProgram{installed: true}
-	req := &agentrun.Request{Model: models.DefaultName, Reasoning: "high"}
+	req := &agentrun.Request{Model: model.DefaultName, Reasoning: "high"}
 
 	New(program, program, false).ResolveModel(t.Context(), req)
 
-	if req.Model != models.DefaultName || len(program.commands) != 0 {
+	if req.Model != model.DefaultName || len(program.commands) != 0 {
 		t.Errorf("the model is %q after listing with %v", req.Model, program.commands)
 	}
 }

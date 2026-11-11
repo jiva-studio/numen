@@ -5,7 +5,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 
 // ProgramFinder finds the Claude Code program on the machine.
@@ -17,7 +17,7 @@ type ProgramFinder interface {
 
 // ModelLister asks the program for the models it accepts.
 type ModelLister interface {
-	ListModels(ctx context.Context, command, env []string) ([]models.Model, error)
+	ListModels(ctx context.Context, command, env []string) ([]model.Model, error)
 }
 
 // Environment gives the variables a program is started with.

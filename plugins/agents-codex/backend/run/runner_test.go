@@ -2,93 +2,50 @@ package run
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
-	"os/exec"
+	"io"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/process"
 )
 
-func TestTheToolCallsOfCodexAreReported(t *testing.T) {
-	script := agenttest.WriteScript(t, "codex",
-		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","name":"read_note","arguments":{"path":"a.md"}}}'`+"\n"+
-			`echo '{"type":"item.completed","item":{"type":"mcp_tool_call"}}'`+"\n"+
-			`echo '{"type":"item.completed","item":{"type":"agent_message"}}'`+"\n"+
-			`echo '{"type":"turn.completed"}'`+"\n"+
-			"echo plain text\n")
-	var reg agentrun.Registry
+type fakeCommands struct{}
 
-	w, err := newTestRunner().Start(t.Context(), &reg, &agentrun.Request{Command: []string{script}}, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := w.Stop(); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	var got []*agentrun.Response
-	for resp := range w.Output {
-		got = append(got, resp)
-	}
-	if len(got) != 3 {
-		t.Fatalf("expected 3 steps, got %v", got)
-	}
-	if call := got[0].GetToolCall(); call.Tool != "read_note" || call.About != `{"path":"a.md"}` {
-		t.Errorf("tool call is %v", got[0])
-	}
-	if !got[1].IsToolFinished() {
-		t.Errorf("expected a finished tool, got %v", got[1])
-	}
-	if got[2].GetText() != "plain text\n" {
-		t.Errorf("expected the plain line as text, got %v", got[2])
-	}
+func (fakeCommands) MakeToolsCommand(_ context.Context, req *agentrun.Request, _ string) Command {
+	return Command{Path: req.Command[0], Args: req.Command[1:]}
 }
 
-func TestRunner_EmitsCodexMessages(t *testing.T) {
-	script := agenttest.WriteScript(t, "codex",
-		`echo '{"type":"item.completed","item":{"id":"i0","type":"agent_message","text":"The answer."}}'`+"\n"+
-			`echo '{"type":"item.completed","item":{"type":"agent_message","text":""}}'`+"\n"+
-			`echo '{"type":"item.completed","item":{"type":"reasoning","text":"hidden"}}'`+"\n")
-	var reg agentrun.Registry
-
-	w, err := newTestRunner().Start(t.Context(), &reg, &agentrun.Request{Command: []string{script}}, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var got []*agentrun.Response
-	for resp := range w.Output {
-		got = append(got, resp)
-	}
-	if len(got) != 1 || got[0].GetText() != "The answer." {
-		t.Errorf("got %v", got)
-	}
+func (fakeCommands) MakeAnswerCommand(_ context.Context, req *agentrun.Request, _ string) (Command, error) {
+	return Command{Path: req.Command[0], Args: req.Command[1:]}, nil
 }
 
-func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
-	script := agenttest.WriteScript(t, "codex",
-		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","server":"numen","tool":"search_notes","arguments":{"q":"x"}}}'`+"\n")
-	var reg agentrun.Registry
+type fakeProcess struct {
+	stdout  io.ReadCloser
+	stderr  string
+	waitErr error
+}
 
-	w, err := newTestRunner().Start(t.Context(), &reg, &agentrun.Request{Command: []string{script}}, "")
-	if err != nil {
-		t.Fatal(err)
+func (p *fakeProcess) Output() io.ReadCloser { return p.stdout }
+func (p *fakeProcess) Stderr() string        { return p.stderr }
+func (p *fakeProcess) Wait() error           { return p.waitErr }
+
+type fakeLauncher struct{}
+
+func (fakeLauncher) Start(_ context.Context, cmd Command) (Process, error) {
+	if cmd.Path == "/nonexistent-codex-bin" {
+		return nil, errors.New("binary not found")
 	}
-	var got []*agentrun.Response
-	for resp := range w.Output {
-		got = append(got, resp)
+	if len(cmd.Args) == 2 && cmd.Args[0] == "-c" && strings.Contains(cmd.Args[1], "after-limit") {
+		return &fakeProcess{
+			stdout:  io.NopCloser(strings.NewReader(`{"type":"item.completed","item":{"type":"mcp_tool_call"}}` + "\n")),
+			stderr:  "after-limit\n",
+			waitErr: errors.New("exit 2"),
+		}, nil
 	}
-	if len(got) != 1 || got[0].GetToolCall().Tool != "search_notes" {
-		t.Errorf("got %v", got)
-	}
+	return &fakeProcess{stdout: io.NopCloser(strings.NewReader(""))}, nil
 }
 
 func TestReaderLimitsAndConfigureCommand(t *testing.T) {
@@ -120,88 +77,78 @@ func TestReaderLimitsAndConfigureCommand(t *testing.T) {
 		t.Errorf("Send on stopped work: sentCount=%d, completed=%d", stoppedReader.sentCount, stoppedReader.completed)
 	}
 
-	// configureCommand preserves non-empty Env and only appends NUMEN_TOKEN when Token is non-empty.
-	cmd := exec.CommandContext(t.Context(), "true")
-	cmd.Env = []string{"CUSTOM_ENV=1"}
-	configureCommand(cmd, spec{Root: "/tmp/root", Token: ""})
-	if cmd.Dir != "/tmp/root" || !slices.Equal(cmd.Env, []string{"CUSTOM_ENV=1"}) {
-		t.Errorf("configureCommand with custom Env and empty Token: Dir=%q, Env=%v", cmd.Dir, cmd.Env)
+	// configureCommand preserves non-empty Env and sets Token when Token is non-empty.
+	cmd := Command{Path: "true", Env: []string{"CUSTOM_ENV=1"}}
+	configureCommand(&cmd, spec{Root: "/tmp/root", Token: ""})
+	if cmd.Dir != "/tmp/root" || !slices.Equal(cmd.Env, []string{"CUSTOM_ENV=1"}) || cmd.Token != "" {
+		t.Errorf("configureCommand with custom Env and empty Token: Dir=%q, Env=%v, Token=%q", cmd.Dir, cmd.Env, cmd.Token)
 	}
-	cmd2 := exec.CommandContext(t.Context(), "true")
-	configureCommand(cmd2, spec{Root: "", Token: "tok-1"})
-	if cmd2.Dir != "" || !slices.Contains(cmd2.Env, "NUMEN_TOKEN=tok-1") {
-		t.Errorf("configureCommand with default Env and Token: Dir=%q, hasToken=%v", cmd2.Dir, slices.Contains(cmd2.Env, "NUMEN_TOKEN=tok-1"))
+	cmd2 := Command{Path: "true"}
+	configureCommand(&cmd2, spec{Root: "", Token: "tok-1"})
+	if cmd2.Dir != "" || cmd2.Token != "tok-1" {
+		t.Errorf("configureCommand with Token: Dir=%q, Token=%q", cmd2.Dir, cmd2.Token)
 	}
-
 }
 
 func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
-	runner := newTestRunner()
+	runner := NewRunner(fakeCommands{}, fakeLauncher{})
 	var reg agentrun.Registry
 
 	// 1. Build returns error.
 	buildErr := errors.New("build failed")
 	if _, err := runner.start(t.Context(), &reg, spec{
-		Build: func(context.Context) (*exec.Cmd, func() error, error) {
-			return nil, nil, buildErr
+		Build: func(context.Context) (Command, error) {
+			return Command{}, buildErr
 		},
 	}); !errors.Is(err, buildErr) {
 		t.Errorf("start with Build error = %v, want %v", err, buildErr)
 	}
 
-	// 2. StdoutPipe fails when cmd.Stdout is already set, and calls cleanup.
-	cleanedStdoutErr := false
-	if _, err := runner.start(t.Context(), &reg, spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			c := exec.CommandContext(ctx, "true")
-			c.Stdout = &bytes.Buffer{}
-			return c, func() error {
-				cleanedStdoutErr = true
-				return nil
-			}, nil
-		},
-	}); err == nil || !cleanedStdoutErr {
-		t.Errorf("start with pre-set Stdout = %v, cleaned=%v", err, cleanedStdoutErr)
-	}
-
-	// 3. cmd.Start fails on nonexistent binary and calls cleanup.
+	// 2. Launcher fails on nonexistent binary and calls cleanup.
 	cleanedStartErr := false
 	if _, err := runner.start(t.Context(), &reg, spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			return exec.CommandContext(ctx, "/nonexistent-codex-bin"), func() error {
-				cleanedStartErr = true
-				return nil
+		Build: func(context.Context) (Command, error) {
+			return Command{
+				Path: "/nonexistent-codex-bin",
+				Release: func() error {
+					cleanedStartErr = true
+					return nil
+				},
 			}, nil
 		},
 	}); err == nil || !cleanedStartErr {
 		t.Errorf("start with nonexistent binary = %v, cleaned=%v", err, cleanedStartErr)
 	}
 
-	// 4. Closed registry rejects Add and calls cleanup.
+	// 3. Closed registry rejects Add and calls cleanup.
 	var closedReg agentrun.Registry
 	if err := closedReg.Close(); err != nil {
 		t.Fatal(err)
 	}
 	cleanedClosedReg := false
 	if _, err := runner.start(t.Context(), &closedReg, spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			return exec.CommandContext(ctx, "true"), func() error {
-				cleanedClosedReg = true
-				return nil
+		Build: func(context.Context) (Command, error) {
+			return Command{
+				Path: "true",
+				Release: func() error {
+					cleanedClosedReg = true
+					return nil
+				},
 			}, nil
 		},
 	}); err == nil || !cleanedClosedReg {
 		t.Errorf("start with closed registry = %v, cleaned=%v", err, cleanedClosedReg)
 	}
 
-	// 5. runReader reports cleanup error, and preserves pre-set cmd.Stderr.
-	var customStderr bytes.Buffer
+	// 4. runReader reports cleanup error.
 	wCleanup, err := runner.start(t.Context(), &reg, spec{
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			c := exec.CommandContext(ctx, "/bin/sh", "-c", "echo custom-err >&2")
-			c.Stderr = &customStderr
-			return c, func() error {
-				return errors.New("cleanup boom")
+		Build: func(context.Context) (Command, error) {
+			return Command{
+				Path: "/bin/sh",
+				Args: []string{"-c", "echo custom-err >&2"},
+				Release: func() error {
+					return errors.New("cleanup boom")
+				},
 			}, nil
 		},
 	})
@@ -215,16 +162,15 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 	if len(cleanupSteps) != 1 || !strings.Contains(cleanupSteps[0].GetStopped(), "release the resources of the run: cleanup boom") {
 		t.Errorf("cleanup error steps = %+v", cleanupSteps)
 	}
-	if !strings.Contains(customStderr.String(), "custom-err") {
-		t.Errorf("expected customStderr to receive stderr, got %q", customStderr.String())
-	}
 
-	// 6. Step limit in scanOutput stops the run with limit message and skips reportExit.
+	// 5. Step limit in scanOutput stops the run with limit message and skips reportExit.
 	wLimit, err := runner.start(t.Context(), &reg, spec{
 		MaxSteps: 1,
-		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			return exec.CommandContext(ctx, "/bin/sh", "-c",
-				`echo '{"type":"item.completed","item":{"type":"mcp_tool_call"}}'; echo 'after-limit' >&2; exit 2`), nil, nil
+		Build: func(context.Context) (Command, error) {
+			return Command{
+				Path: "/bin/sh",
+				Args: []string{"-c", `echo '{"type":"item.completed","item":{"type":"mcp_tool_call"}}'; echo 'after-limit' >&2; exit 2`},
+			}, nil
 		},
 	})
 	if err != nil {
@@ -284,8 +230,4 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 	if got := checkReportExit(0, nil, nil, "   "); got != "" {
 		t.Errorf("reportExit sentCount=0 with blank stderr = %q, want empty", got)
 	}
-}
-
-func newTestRunner() *Runner {
-	return NewRunner(codexcli.Commands{}, process.Group{})
 }

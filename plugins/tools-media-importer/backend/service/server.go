@@ -14,6 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/fetchers"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/tempfiles"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
@@ -34,9 +36,10 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 			on := store.With(id)
 			return link.Folder{Files: on, Writer: on}
 		},
-		Texts: func(id domain.VaultID) link.Texts { return texts.With(id) },
-		Queue: host.NewQueueClient(endpoint),
-		Clock: clock.System{},
+		Texts:  func(id domain.VaultID) link.Texts { return texts.With(id) },
+		Queue:  host.NewQueueClient(endpoint),
+		Clock:  clock.System{},
+		Report: process.Runner{}.ReportError,
 	}
 }
 
@@ -44,7 +47,7 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 // given. A video site is fetched through the mock downloader when isMock is set. The fetches end
 // with s.
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
-	f := fetchers.New(isMock)
+	f := fetchers.New(isMock, process.Runner{}, tempfiles.Files{})
 	links := link.New(hosted, f.GetFetcher, f.GetSettings)
 	commands, err := newCommands(links)
 	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"

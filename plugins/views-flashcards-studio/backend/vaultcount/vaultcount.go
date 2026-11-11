@@ -10,7 +10,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 )
+
+// Interval is the interval at which a stream with no counts sends a message, so a page can tell an
+// open stream from a closed one.
+const Interval = time.Second
 
 // atOnce is how many vaults are counted alongside each other.
 //
@@ -114,4 +119,31 @@ func Forward[T any](counted <-chan T, idle <-chan time.Time, onCounted func(T) e
 		}
 	}
 	return nil
+}
+
+// Watch counts each vault in vaults and calls onCounted as each finishes, calling onIdle initially
+// and whenever Interval elapses without a count completing.
+func Watch[T any](
+	ctx context.Context,
+	vaults []domain.Vault,
+	count func(context.Context, domain.Vault) T,
+	onCounted func(T) error,
+	onIdle func() error,
+) error {
+	if err := onIdle(); err != nil {
+		return err
+	}
+	ctx, stop := context.WithCancel(ctx)
+	defer stop()
+
+	repeat := clock.NewTicker(Interval)
+	defer repeat.Stop()
+
+	return Forward(Start(ctx, vaults, count), repeat.C, func(one T) error {
+		if err := onCounted(one); err != nil {
+			return err
+		}
+		repeat.Reset(Interval)
+		return nil
+	}, onIdle)
 }

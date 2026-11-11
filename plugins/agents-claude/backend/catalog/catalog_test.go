@@ -9,13 +9,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/plugintest"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 
 // listerFunc is the outer edge of the catalog: the program that lists the models.
-type listerFunc func(ctx context.Context, command, env []string) ([]models.Model, error)
+type listerFunc func(ctx context.Context, command, env []string) ([]model.Model, error)
 
-func (f listerFunc) ListModels(ctx context.Context, command, env []string) ([]models.Model, error) {
+func (f listerFunc) ListModels(ctx context.Context, command, env []string) ([]model.Model, error) {
 	return f(ctx, command, env)
 }
 
@@ -30,19 +30,19 @@ func newCatalog(t *testing.T, lister listerFunc, isAsync bool, extra ...cache.Op
 
 func neverCalled(t *testing.T) listerFunc {
 	t.Helper()
-	return func(context.Context, []string, []string) ([]models.Model, error) {
+	return func(context.Context, []string, []string) ([]model.Model, error) {
 		t.Error("the program was asked for its models")
 		return nil, errors.New("not expected")
 	}
 }
 
-func readFixtureModels(t *testing.T) []models.Model {
+func readFixtureModels(t *testing.T) []model.Model {
 	t.Helper()
-	raw, err := os.ReadFile("../models/testdata/initialize-response.json")
+	raw, err := os.ReadFile("../model/testdata/initialize-response.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	list, err := models.Parse(strings.NewReader(string(raw)), "r1")
+	list, err := model.Parse(strings.NewReader(string(raw)), "r1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,8 +75,8 @@ func TestDepthLimitedToModelLevels(t *testing.T) {
 
 func TestAnEmptyModelNameIsTheDefaultModel(t *testing.T) {
 	c := newCatalog(t, neverCalled(t), false)
-	c.lists.Put("claude", []models.Model{
-		{Value: models.DefaultName, SupportsEffort: true, EffortLevels: []string{"low", "high"}},
+	c.lists.Put("claude", []model.Model{
+		{Value: model.DefaultName, SupportsEffort: true, EffortLevels: []string{"low", "high"}},
 	})
 	if got := c.GetReasoning("", "xhigh"); got != "" {
 		t.Errorf("GetReasoning(\"\", \"xhigh\") = %q, want empty when default model lacks xhigh", got)
@@ -85,7 +85,7 @@ func TestAnEmptyModelNameIsTheDefaultModel(t *testing.T) {
 
 func TestCachedListIsNotRequeried(t *testing.T) {
 	c := newCatalog(t, neverCalled(t), false)
-	c.lists.Put("x", []models.Model{{Value: "m"}})
+	c.lists.Put("x", []model.Model{{Value: "m"}})
 	got, err := c.Get(t.Context(), []string{"x"}, nil)
 	if err != nil || len(got) != 1 {
 		t.Fatalf("got %v, %v", got, err)
@@ -93,7 +93,7 @@ func TestCachedListIsNotRequeried(t *testing.T) {
 }
 
 func TestASynchronousCatalogReturnsTheErrorOfTheProgram(t *testing.T) {
-	c := newCatalog(t, func(context.Context, []string, []string) ([]models.Model, error) {
+	c := newCatalog(t, func(context.Context, []string, []string) ([]model.Model, error) {
 		return nil, errors.New("sync fetch failed")
 	}, false)
 	if _, err := c.Get(t.Context(), []string{"claude"}, nil); err == nil {
@@ -103,9 +103,9 @@ func TestASynchronousCatalogReturnsTheErrorOfTheProgram(t *testing.T) {
 
 func TestTheProgramIsAskedWithTheCommandAndTheEnvironment(t *testing.T) {
 	var asked []string
-	c := newCatalog(t, func(_ context.Context, command, env []string) ([]models.Model, error) {
+	c := newCatalog(t, func(_ context.Context, command, env []string) ([]model.Model, error) {
 		asked = append(append([]string{}, command...), env...)
-		return []models.Model{{Value: "m"}}, nil
+		return []model.Model{{Value: "m"}}, nil
 	}, false)
 	if _, err := c.Get(t.Context(), []string{"claude", "--extra"}, []string{"A=1"}); err != nil {
 		t.Fatal(err)
@@ -122,7 +122,7 @@ func TestAsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	plugintest.GrantStorage(t)
 	fail := make(chan struct{})
 	reported := make(chan error, 2)
-	c := newCatalog(t, func(ctx context.Context, _, _ []string) ([]models.Model, error) {
+	c := newCatalog(t, func(ctx context.Context, _, _ []string) ([]model.Model, error) {
 		select {
 		case <-fail:
 			return nil, errors.New("the program lists no model")
@@ -145,19 +145,24 @@ func TestAsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 		t.Fatal("the load did not report its failure")
 	}
 	got, err = c.Get(t.Context(), command, nil)
-	if err != nil || len(got) != len(models.GetFallback()) {
+	if err != nil || len(got) != len(model.GetFallback()) {
 		t.Fatalf("failed async cache returned %v, %v", got, err)
 	}
 }
 
 func TestAProgramThatIsNotInstalledListsTheFallbackModels(t *testing.T) {
 	c := newCatalog(t, neverCalled(t), false)
+	var reported error
+	c.SetReport(func(err error) { reported = err })
 	list := c.List(t.Context(), "", nil, nil)
-	if len(list) != len(models.GetFallback()) {
+	if reported == nil {
+		t.Error("expected List to report error when program is not installed")
+	}
+	if len(list) != len(model.GetFallback()) {
 		t.Fatalf("the models are %v", list)
 	}
 	for place, one := range list {
-		if one.Name != models.GetFallback()[place].Value || len(one.ReasoningLevels) != 0 {
+		if one.Name != model.GetFallback()[place].Value || len(one.ReasoningLevels) != 0 {
 			t.Errorf("the model %v is not a fallback alias", one)
 		}
 	}

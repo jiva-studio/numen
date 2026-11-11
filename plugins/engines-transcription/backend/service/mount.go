@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/models"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/model"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/settings"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcribe"
 )
@@ -43,10 +43,11 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 }
 
 func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) error {
-	model := models.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock))
-	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, model.GetRecognizer)
+	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock))
+	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer)
+	transcriber.SetReport(process.Process{}.ReportError)
 	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { model.UpdateSettings(values) })
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { holder.UpdateSettings(values) })
 	commands, err := newCommands(transcriber)
 	if err != nil {
 		return err
@@ -59,7 +60,7 @@ func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock
 	registry.Mount(s)
 	s.OnClose(func() error {
 		transcriber.Close()
-		return model.Close()
+		return holder.Close()
 	})
 	return nil
 }

@@ -34,6 +34,7 @@ type Inputs struct {
 	Problems   ports.ProblemQueries
 	Logs       ports.LogStores
 	Schedules  func(name string) ports.ScheduleStore
+	Report     func(what string, err error)
 	Index      func(ctx context.Context, v domain.Vault, paths []string) error
 	DayStart   func() time.Duration
 	Now        ports.Clock
@@ -47,7 +48,7 @@ type Scenarios struct {
 	DeckEdit     deckedit.Scenarios
 	Flash        flashcards.Scenarios
 	Day          review.Day
-	Neighborhood flashcards.ShowNeighbourhood
+	Neighborhood flashcards.ShowNeighborhood
 }
 
 // New builds the scenarios. A count of cores that is not positive is the cores the process may use.
@@ -78,6 +79,7 @@ func New(in Inputs) *Scenarios {
 		Logs:      in.Logs,
 		Schedules: in.Schedules(schedulesCache),
 		DayCounts: in.Schedules(daysCache),
+		Report:    in.Report,
 		DayStart:  in.DayStart,
 		Now:       in.Now,
 		Cores:     cores,
@@ -85,7 +87,7 @@ func New(in Inputs) *Scenarios {
 	})
 	return &Scenarios{
 		Cards: set, DeckEdit: deckedit.NewScenarios(read, write), Flash: running, Day: running.Day,
-		Neighborhood: flashcards.NewShowNeighbourhood(
+		Neighborhood: flashcards.NewShowNeighborhood(
 			note.NewShowLinks(in.Links),
 			struct {
 				ports.NoteRefQueries

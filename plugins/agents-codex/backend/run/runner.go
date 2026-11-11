@@ -7,9 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/codexevent"
@@ -24,30 +21,46 @@ const (
 
 var errNoOutput = errors.New("the program ended without output")
 
+// Command is the program and environment of a run.
+type Command struct {
+	Path    string
+	Args    []string
+	Dir     string
+	Env     []string
+	Token   string
+	Release func() error
+}
+
+// Process is a started program of a run.
+type Process interface {
+	Output() io.ReadCloser
+	Stderr() string
+	Wait() error
+}
+
 // Commands builds the command of a run. customPath is the program the installation set, or empty.
 type Commands interface {
 	// MakeToolsCommand builds the command of a run that may call the tools of the request.
-	MakeToolsCommand(ctx context.Context, req *agentrun.Request, customPath string) *exec.Cmd
-	// MakeAnswerCommand builds the command of a run that only answers, and the function that
-	// releases what the command needs.
-	MakeAnswerCommand(ctx context.Context, req *agentrun.Request, customPath string) (*exec.Cmd, func() error, error)
+	MakeToolsCommand(ctx context.Context, req *agentrun.Request, customPath string) Command
+	// MakeAnswerCommand builds the command of a run that only answers.
+	MakeAnswerCommand(ctx context.Context, req *agentrun.Request, customPath string) (Command, error)
 }
 
-// Supervisor prepares a command so that ending its context ends everything it started.
-type Supervisor interface {
-	Supervise(cmd *exec.Cmd)
+// Launcher starts a command and ends its process group when its context is canceled.
+type Launcher interface {
+	Start(ctx context.Context, cmd Command) (Process, error)
 }
 
 // Runner starts runs.
 type Runner struct {
-	commands   Commands
-	supervisor Supervisor
+	commands Commands
+	launcher Launcher
 }
 
-// NewRunner creates a runner that builds its commands with commands and supervises them with
-// supervisor.
-func NewRunner(commands Commands, supervisor Supervisor) *Runner {
-	return &Runner{commands: commands, supervisor: supervisor}
+// NewRunner creates a runner that builds its commands with commands and starts them with
+// launcher.
+func NewRunner(commands Commands, launcher Launcher) *Runner {
+	return &Runner{commands: commands, launcher: launcher}
 }
 
 type spec struct {
@@ -55,7 +68,7 @@ type spec struct {
 	MaxSteps     int
 	Root         string
 	Token        string
-	Build        func(ctx context.Context) (*exec.Cmd, func() error, error)
+	Build        func(ctx context.Context) (Command, error)
 }
 
 // Start starts the program for req and returns the work whose output carries the steps of the run.
@@ -65,52 +78,39 @@ func (r *Runner) Start(ctx context.Context, reg *agentrun.Registry, req *agentru
 
 func (r *Runner) start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
 	runCtx, stop := context.WithCancel(ctx)
-	cmd, cleanup, err := s.Build(runCtx)
+	cmd, err := s.Build(runCtx)
 	if err != nil {
 		stop()
 		return nil, err
 	}
+	cleanup := cmd.Release
 	if cleanup == nil {
 		cleanup = func() error { return nil }
 	}
-	configureCommand(cmd, s)
-	var stderr strings.Builder
-	if cmd.Stderr == nil {
-		cmd.Stderr = &stderr
-	}
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
-	r.supervisor.Supervise(cmd)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		stop()
-		return nil, errors.Join(err, cleanup())
-	}
+	configureCommand(&cmd, s)
 	w := agentrun.NewWork(s.Conversation, outputBuffer, agentrun.StopByCancel(stop))
 	if !reg.Add(w) {
 		stop()
-		return nil, errors.Join(errors.New("agent runner is terminating"), stdout.Close(), cleanup())
+		return nil, errors.Join(errors.New("agent runner is terminating"), cleanup())
 	}
-	if err := cmd.Start(); err != nil {
+	proc, err := r.launcher.Start(runCtx, cmd)
+	if err != nil {
 		w.End()
 		reg.Remove(w)
 		stop()
-		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), stdout.Close(), cleanup())
+		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), cleanup())
 	}
 
-	go runReader(runCtx, &runProcess{stop: stop, cmd: cmd, stdout: stdout, stderr: &stderr, cleanup: cleanup}, w, reg, s)
+	go runReader(runCtx, &runProcess{stop: stop, proc: proc, cleanup: cleanup}, w, reg, s)
 	return w, nil
 }
 
-func configureCommand(cmd *exec.Cmd, s spec) {
+func configureCommand(cmd *Command, s spec) {
 	if s.Root != "" {
 		cmd.Dir = s.Root
 	}
-	if len(cmd.Env) == 0 {
-		cmd.Env = os.Environ()
-	}
 	if s.Token != "" {
-		cmd.Env = append(cmd.Env, "NUMEN_TOKEN="+s.Token)
+		cmd.Token = s.Token
 	}
 }
 
@@ -125,12 +125,12 @@ func (r *Runner) newSpec(req *agentrun.Request, customPath string) spec {
 	if agentrun.HasTools(req) {
 		s.Root = req.Root
 		s.Token = req.ToolsToken
-		s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
-			return r.commands.MakeToolsCommand(ctx, req, customPath), nil, nil
+		s.Build = func(ctx context.Context) (Command, error) {
+			return r.commands.MakeToolsCommand(ctx, req, customPath), nil
 		}
 		return s
 	}
-	s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
+	s.Build = func(ctx context.Context) (Command, error) {
 		return r.commands.MakeAnswerCommand(ctx, req, customPath)
 	}
 	return s
@@ -139,14 +139,13 @@ func (r *Runner) newSpec(req *agentrun.Request, customPath string) spec {
 // runProcess holds the started command of a run and what its reader needs to stop and release it.
 type runProcess struct {
 	stop    func()
-	cmd     *exec.Cmd
-	stdout  io.ReadCloser
-	stderr  *strings.Builder
+	proc    Process
 	cleanup func() error
 }
 
 func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *agentrun.Registry, s spec) {
-	stop, cleanup, stdout, cmd, stderr := p.stop, p.cleanup, p.stdout, p.cmd, p.stderr
+	stop, cleanup, proc := p.stop, p.cleanup, p.proc
+	stdout := proc.Output()
 	r := &reader{
 		work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps,
 		completed: 0, sentCount: 0,
@@ -169,11 +168,11 @@ func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *age
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="Stopping the context on scanner error cancels the child before defer calls stop()."
 		stop()
 	}
-	waitErr := errors.Join(stdout.Close(), cmd.Wait())
+	waitErr := errors.Join(stdout.Close(), proc.Wait())
 	if isLimited || isCancelled {
 		return
 	}
-	reportExit(r, scanErr, waitErr, stderr.String())
+	reportExit(r, scanErr, waitErr, proc.Stderr())
 }
 
 // Ask runs req and sends the steps of the run. A run that cannot start ends with a stopped step.

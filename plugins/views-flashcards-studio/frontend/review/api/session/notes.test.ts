@@ -3,14 +3,14 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 
-import { getDeckNeighbourhood } from './notes'
+import { getDeckNeighborhood } from './notes'
 
 const { requests } = vi.hoisted(() => ({ requests: [] as unknown[] }))
 
 vi.mock('../../../api/client', async (original) => ({
   ...(await original<typeof import('../../../api/client')>()),
   reviewService: {
-    getDeckNeighbourhood: async (request: unknown) => {
+    getDeckNeighborhood: async (request: unknown) => {
       requests.push(request)
       return {
         notes: [
@@ -43,12 +43,12 @@ vi.mock('../../../api/client', async (original) => ({
 
 describe("a deck's notes", () => {
   it('asks about the deck of the vault it was given', async () => {
-    await getDeckNeighbourhood('garden', 'decks/Words.md')
+    await getDeckNeighborhood('garden', 'decks/Words.md')
     expect(requests).toContainEqual({ vault: 'garden', deck: 'decks/Words.md' })
   })
 
   it('passes every note over in the order it came, and how many were left unread', async () => {
-    expect(await getDeckNeighbourhood('garden', 'decks/Words.md')).toEqual({
+    expect(await getDeckNeighborhood('garden', 'decks/Words.md')).toEqual({
       notes: [
         {
           written: 'Leaf mould',

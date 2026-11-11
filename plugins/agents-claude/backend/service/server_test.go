@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/executable"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/hostenv"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/ports"
 )
 
@@ -153,7 +153,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(programs) != 1 || programs[0].IsInstalled || len(programs[0].Models) != len(models.GetFallback()) {
+	if len(programs) != 1 || programs[0].IsInstalled || len(programs[0].Models) != len(model.GetFallback()) {
 		t.Errorf("the programs are %v", programs)
 	}
 }
@@ -648,7 +648,7 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if listing := got[0].Models; len(listing) != len(models.GetFallback()) {
+	if listing := got[0].Models; len(listing) != len(model.GetFallback()) {
 		t.Errorf("the models are %v", listing)
 	}
 }

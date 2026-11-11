@@ -3,10 +3,10 @@ package codexcli
 import (
 	"context"
 	"fmt"
-	"os/exec"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/run"
 )
 
 // Commands builds the command lines of a Codex run.
@@ -28,7 +28,7 @@ func resolveCommand(command []string, customPath string) (string, []string) {
 
 // MakeToolsCommand returns the command of a run that may call the tools the request names. The
 // program is given the tools server and runs without approvals or a sandbox.
-func (Commands) MakeToolsCommand(runCtx context.Context, req *agentrun.Request, customPath string) *exec.Cmd {
+func (Commands) MakeToolsCommand(_ context.Context, req *agentrun.Request, customPath string) run.Command {
 	binName, baseArgs := resolveCommand(req.Command, customPath)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
@@ -42,15 +42,14 @@ func (Commands) MakeToolsCommand(runCtx context.Context, req *agentrun.Request, 
 	}
 	args = appendModelArguments(args, req)
 	args = append(args, req.Prompt)
-	return exec.CommandContext(runCtx, binName, args...)
+	return run.Command{Path: binName, Args: args, Dir: "", Env: nil, Token: "", Release: nil}
 }
 
-// MakeAnswerCommand returns the command of a run that only answers, in a new empty folder, and the
-// function that removes the folder.
-func (Commands) MakeAnswerCommand(runCtx context.Context, req *agentrun.Request, customPath string) (*exec.Cmd, func() error, error) {
+// MakeAnswerCommand returns the command of a run that only answers, in a new empty folder.
+func (Commands) MakeAnswerCommand(_ context.Context, req *agentrun.Request, customPath string) (run.Command, error) {
 	dir, cleanDir, err := agentrun.CreateTempDir("numen-codex-*")
 	if err != nil {
-		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
+		return run.Command{}, fmt.Errorf("create the folder to run in: %w", err)
 	}
 	binName, baseArgs := resolveCommand(req.Command, customPath)
 	args := append([]string{}, baseArgs...)
@@ -68,9 +67,7 @@ func (Commands) MakeAnswerCommand(runCtx context.Context, req *agentrun.Request,
 	}
 	args = appendModelArguments(args, req)
 	args = append(args, "--", agentrun.WritePrompt(req.Instructions, req.Prompt))
-	cmd := exec.CommandContext(runCtx, binName, args...)
-	cmd.Dir = dir
-	return cmd, cleanDir, nil
+	return run.Command{Path: binName, Args: args, Dir: dir, Env: nil, Token: "", Release: cleanDir}, nil
 }
 
 func appendModelArguments(args []string, req *agentrun.Request) []string {
