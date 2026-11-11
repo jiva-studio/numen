@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // windowParts are what the use cases of one window are built over besides its state.
