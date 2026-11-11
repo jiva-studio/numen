@@ -1,0 +1,3 @@
+# Words the check lets through, because the file quotes a name that is not ours to respell.
+# One entry per line: the path from the repository root, the British word as written, then the reason.
+# The check fails on an entry that lets nothing through and on an entry without a reason.

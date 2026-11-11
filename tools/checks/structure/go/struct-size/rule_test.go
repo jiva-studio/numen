@@ -75,7 +75,7 @@ func getOversizedTypes(pkgs []*packages.Package, getLimit func(path string) (str
 				methods := types.NewMethodSet(types.NewPointer(named)).Len()
 				fields := 0
 				if st, ok := named.Underlying().(*types.Struct); ok {
-					fields = countStructFields(st, map[*types.Struct]bool{})
+					fields = countStructFields(st, pkg.Types, map[*types.Struct]bool{})
 				}
 				if methods > limit.methods {
 					found = append(found, load.NewFinding(pkg.Fset, spec.Name.Pos(),
@@ -135,15 +135,19 @@ func checkNoTypeExceedsItsLayersSize(t *testing.T, workspace load.WorkspacePacka
 	}
 }
 
-func countStructFields(shape *types.Struct, visited map[*types.Struct]bool) int {
-	if visited[shape] {
+// countStructFields returns the fields of a struct with the fields of the structs it embeds and the leaf
+// fields of the named structs of its own package that it holds in a field, so a type that groups its ports
+// into sub-structs counts them all. A struct of another package is a value the field holds, one field.
+func countStructFields(shape *types.Struct, home *types.Package, visiting map[*types.Struct]bool) int {
+	if visiting[shape] {
 		return 0
 	}
-	visited[shape] = true
+	visiting[shape] = true
+	defer delete(visiting, shape)
 	count := 0
 	for field := range shape.Fields() {
-		if inner, ok := getEmbeddedStruct(field); ok {
-			count += countStructFields(inner, visited)
+		if inner, ok := getGroupedStruct(field, home); ok {
+			count += countStructFields(inner, home, visiting)
 			continue
 		}
 		count++
@@ -151,16 +155,15 @@ func countStructFields(shape *types.Struct, visited map[*types.Struct]bool) int 
 	return count
 }
 
-func getEmbeddedStruct(field *types.Var) (*types.Struct, bool) {
-	if !field.Embedded() {
-		return nil, false
-	}
+// getGroupedStruct returns the struct a field adds its fields from: an embedded struct of any package, or a
+// field typed by a named struct of the package home.
+func getGroupedStruct(field *types.Var, home *types.Package) (*types.Struct, bool) {
 	t := field.Type()
 	if pointer, ok := types.Unalias(t).(*types.Pointer); ok {
 		t = pointer.Elem()
 	}
 	named, ok := types.Unalias(t).(*types.Named)
-	if !ok {
+	if !ok || !field.Embedded() && named.Obj().Pkg() != home {
 		return nil, false
 	}
 	shape, ok := named.Underlying().(*types.Struct)

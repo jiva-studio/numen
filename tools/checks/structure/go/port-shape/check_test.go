@@ -4,7 +4,6 @@ package portshape
 import (
 	"go/parser"
 	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -15,72 +14,92 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// TestNoCodeOfTheCoreProbesAValueForAnotherInterface checks that a value is
-// used as the port it was received as. Probing for another type creates a
-// second port that no constructor, composition root or fake references.
-// A case clause of an expression switch is checked as well: it names a port
-// only where the switch is over a type.
+// A value is used as the port it was received as. Probing it for another interface creates a second port
+// that no constructor, composition root or fake references, so a type assertion or a type-switch case whose
+// target is an interface that no port declares, on a value of a port type, is refused, whether the target is
+// a named interface of the package that probes or an interface spelled in place.
 func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
-	var wrong []string
-	var read int
-	err := filepath.WalkDir("..", func(pos string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !strings.HasSuffix(pos, ".go") {
-			return err
-		}
-		pkg := load.GetPackage("..", pos)
-		if strings.HasSuffix(pos, "_test.go") || load.IsAdapter(pkg) || load.IsShared(pkg) || load.IsMachinery(pkg) {
-			return nil
-		}
-		file, err := parser.ParseFile(token.NewFileSet(), pos, nil, 0)
-		if err != nil {
-			return err
-		}
-		read++
-		for _, one := range getInterfaceProbes(file) {
-			wrong = append(wrong, pos+" asserts to "+one)
-		}
-		return nil
+	if testing.Short() {
+		t.Skip("loads and type-checks the modules of the workspace")
+	}
+	workspace := load.Workspace(t, "libs/core/kernel")
+	pkgs := load.GetModulePackages(t, workspace, "libs/core/kernel")
+	var found []load.Finding
+	for _, pkg := range pkgs {
+		found = append(found, getInterfaceProbes(pkg, load.CoreImportPath)...)
+	}
+	for _, one := range load.SortFindings(found) {
+		t.Errorf("%s: %s: a value is used as the port it was handed as", one.Position, one.Name)
+	}
+	if len(pkgs) < 100 {
+		t.Fatalf("%d packages of the core read: the walk is not reading it", len(pkgs))
+	}
+}
+
+// The rule refuses an assertion of a port value to a named interface of the asserting package, to an
+// interface spelled in place and to an interface of a package that is no port, in a type switch as well,
+// and lets through an assertion to a port, to a concrete type and a probe of a value that is no port.
+func TestInterfaceProbeRule_RejectsInterfaceAssertionsOnPorts(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"port/vaultport/vaultport.go": `package vaultport
+
+type Reader interface{ Read() string }
+
+type Opener interface{ Open() }
+`,
+		"usecase/probe/probe.go": `package probe
+
+import (
+	"io"
+
+	"fixture/port/vaultport"
+)
+
+type watcher interface{ OnChange() }
+
+type Locator interface{ Path() string }
+
+func probe(reader vaultport.Reader, anything any, failure error) {
+	_, _ = reader.(watcher)
+	_, _ = reader.(Locator)
+	_, _ = reader.(io.Closer)
+	_, _ = reader.(interface{ Concurrency() int })
+	switch reader.(type) {
+	case watcher:
+	case *concrete:
+	}
+	switch value := reader.(type) {
+	case Locator:
+		_ = value
+	}
+	_, _ = reader.(vaultport.Opener)
+	_, _ = reader.(*concrete)
+	_, _ = anything.(watcher)
+	_, _ = anything.(string)
+	_, _ = failure.(Locator)
+	_, _ = anything.(interface{ Concurrency() int })
+}
+
+type concrete struct{}
+
+func (*concrete) Read() string { return "" }
+`,
 	})
-	if err != nil {
-		t.Fatal(err)
+	var got []string
+	for _, pkg := range load.LoadFixture(t, dir) {
+		got = append(got, load.FormatFindings(getInterfaceProbes(pkg, "fixture"))...)
 	}
-	for _, one := range wrong {
-		t.Error(one + ": a value is used as the port it was handed as")
+	want := []string{
+		"probe.go:14 asserts fixture/port/vaultport.Reader to fixture/usecase/probe.watcher",
+		"probe.go:15 asserts fixture/port/vaultport.Reader to fixture/usecase/probe.Locator",
+		"probe.go:16 asserts fixture/port/vaultport.Reader to io.Closer",
+		"probe.go:17 asserts fixture/port/vaultport.Reader to interface{Concurrency() int}",
+		"probe.go:19 asserts fixture/port/vaultport.Reader to fixture/usecase/probe.watcher",
+		"probe.go:23 asserts fixture/port/vaultport.Reader to fixture/usecase/probe.Locator",
+		"probe.go:31 asserts any to interface{Concurrency() int}",
 	}
-
-	// A walk that read no file of the core is a rule checked against nothing,
-	// and it passes.
-	if read < 100 {
-		t.Fatalf("%d files of the core read: the walk is not reading it", read)
-	}
-}
-
-// assertion to an anonymous interface and to a port, in a type switch as well,
-// and lets through an assertion to a concrete type and to an error.
-func TestInterfaceProbeRule_RejectsInterfaceAssertions(t *testing.T) {
-	file, err := parser.ParseFile(token.NewFileSet(), "probe.go", `package p
-
-func probe(target any, reader vaultport.VaultReader) {
-	_, _ = target.(interface{ Concurrency() int })
-	_, _ = reader.(vaultport.SharedOpener)
-	switch target.(type) {
-	case machineport.Trash:
-	case *os.File:
-	}
-	_, _ = target.(string)
-	_, _ = target.(*Embedder)
-	_, _ = target.(error)
-	switch target {
-	case 1:
-	}
-}
-`, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []string{"interface{...}", "vaultport.SharedOpener", "machineport.Trash"}
-	if got := getInterfaceProbes(file); !slices.Equal(got, want) {
-		t.Errorf("the rule refuses %v, want %v", got, want)
+	if !slices.Equal(got, want) {
+		t.Errorf("the rule refuses\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 }
 
@@ -155,7 +174,6 @@ func TestPortsAreIndependentAndPure(t *testing.T) {
 		"net/url":       true,
 		"encoding/json": true,
 		"path/filepath": true,
-		"io/fs":         true,
 		"os":            true,
 	}
 	for _, item := range entries {

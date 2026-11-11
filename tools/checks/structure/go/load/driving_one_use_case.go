@@ -10,15 +10,55 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func IsDrivingHandlerPackage(path, root string) bool {
-	return IsInLayer(path, root, "adapter/window") || IsInLayer(path, root, "adapter/cli") ||
-		IsInLayer(path, root, "adapter/plugin/hostendpoint") ||
-		IsInLayer(path, root, "adapter/plugin/hostsearch") ||
-		IsInLayer(path, root, "adapter/plugin/hostvault") ||
-		IsInLayer(path, root, "adapter/plugin/hosttext") ||
-		IsInLayer(path, root, "adapter/plugin/hoststore") ||
-		IsInLayer(path, root, "adapter/plugin/hostqueue") ||
-		IsInLayer(path, root, "adapter/plugin/hostwindow")
+// IsDrivingAdapter reports whether pkg is an adapter of the core that imports a use case package: whatever
+// calls a use case drives the core, wherever its folder lies below adapter/ and internal/adapter/.
+func IsDrivingAdapter(pkg *packages.Package, root string) bool {
+	if !IsInLayer(pkg.PkgPath, root, "adapter") && !IsInLayer(pkg.PkgPath, root, "internal/adapter") {
+		return false
+	}
+	for path := range pkg.Imports {
+		if IsInLayer(path, root, "usecase") {
+			return true
+		}
+	}
+	return false
+}
+
+// ListExecuteSignatures returns the signatures of the Execute methods of the named types that the use case
+// packages imported by pkg declare. A signature without parameters and results is left out: every callback
+// has it.
+func ListExecuteSignatures(pkg *packages.Package, root string) []*types.Signature {
+	var found []*types.Signature
+	for path, imported := range pkg.Imports {
+		if IsInLayer(path, root, "usecase") && imported.Types != nil {
+			found = append(found, listPackageExecuteSignatures(imported.Types)...)
+		}
+	}
+	return found
+}
+
+func listPackageExecuteSignatures(pkg *types.Package) []*types.Signature {
+	var found []*types.Signature
+	for _, name := range pkg.Scope().Names() {
+		object, ok := pkg.Scope().Lookup(name).(*types.TypeName)
+		if !ok || types.IsInterface(object.Type()) {
+			continue
+		}
+		for method := range types.NewMethodSet(types.NewPointer(object.Type())).Methods() {
+			signature, ok := method.Obj().Type().(*types.Signature)
+			if ok && strings.HasPrefix(method.Obj().Name(), "Execute") && (signature.Params().Len() > 0 || signature.Results().Len() > 0) {
+				found = append(found, signature)
+			}
+		}
+	}
+	return found
+}
+
+// IsExecuteFunctionField reports whether a field holds a function of the signature of a use case's Execute:
+// the use case reached as a function value.
+func IsExecuteFunctionField(field *types.Var, signatures []*types.Signature) bool {
+	signature, ok := types.Unalias(field.Type()).(*types.Signature)
+	return ok && slices.ContainsFunc(signatures, func(one *types.Signature) bool { return types.Identical(one, signature) })
 }
 
 func IsUseCaseFieldType(t types.Type, root string) bool {
@@ -68,22 +108,31 @@ func GetUsedField(info *types.Info, expr ast.Expr, root string) *types.Var {
 	return nil
 }
 
-// FunctionUse is what one function of a package reaches: the use case fields it selects a method of, called
+// FunctionUse is what one function of a package reaches: the use case fields it selects a method of, the
+// fields that hold a use case as a function, the Execute methods it takes as values, called
 // or passed on, and the functions of the same package it calls.
 type FunctionUse struct {
 	Position Finding
-	Direct   []*types.Var
+	Direct   []types.Object
 	Callees  []*types.Func
 }
 
 func (u *FunctionUse) Add(field *types.Var) {
-	if field != nil && !slices.Contains(u.Direct, field) {
-		u.Direct = append(u.Direct, field)
+	if field != nil {
+		u.AddObject(field)
+	}
+}
+
+// AddObject records a use case reached: a field, or the Execute method of a use case that no field holds.
+func (u *FunctionUse) AddObject(object types.Object) {
+	if !slices.Contains(u.Direct, object) {
+		u.Direct = append(u.Direct, object)
 	}
 }
 
 func GetFunctionUses(pkg *packages.Package, root string) map[*types.Func]*FunctionUse {
 	uses := map[*types.Func]*FunctionUse{}
+	signatures := ListExecuteSignatures(pkg, root)
 	for _, file := range pkg.Syntax {
 		for _, declaration := range file.Decls {
 			function, is := declaration.(*ast.FuncDecl)
@@ -94,7 +143,7 @@ func GetFunctionUses(pkg *packages.Package, root string) map[*types.Func]*Functi
 			if !is {
 				continue
 			}
-			uses[object] = readFunctionUse(pkg, function, root)
+			uses[object] = readFunctionUse(pkg, function, root, signatures)
 		}
 	}
 	return uses
@@ -111,7 +160,7 @@ func listFunctionLiterals(body *ast.BlockStmt) []*ast.FuncLit {
 	return literals
 }
 
-func readFunctionUse(pkg *packages.Package, function *ast.FuncDecl, root string) *FunctionUse {
+func readFunctionUse(pkg *packages.Package, function *ast.FuncDecl, root string, signatures []*types.Signature) *FunctionUse {
 	use := &FunctionUse{Position: NewFinding(pkg.Fset, function.Pos(), function.Name.Name)}
 	literals := listFunctionLiterals(function.Body)
 	// A function literal runs when its caller decides, which is not when the function that builds it runs.
@@ -127,6 +176,7 @@ func readFunctionUse(pkg *packages.Package, function *ast.FuncDecl, root string)
 		switch one := node.(type) {
 		case *ast.SelectorExpr:
 			use.Add(GetUsedField(pkg.TypesInfo, one.X, root))
+			readFunctionValueUse(pkg.TypesInfo, one, root, signatures, use)
 			addCallee(one.Sel, one.Pos())
 		case *ast.CallExpr:
 			for _, argument := range one.Args {
@@ -140,8 +190,8 @@ func readFunctionUse(pkg *packages.Package, function *ast.FuncDecl, root string)
 	return use
 }
 
-func GetReach(uses map[*types.Func]*FunctionUse, start *types.Func) []*types.Var {
-	var reach []*types.Var
+func GetReach(uses map[*types.Func]*FunctionUse, start *types.Func) []types.Object {
+	var reach []types.Object
 	visited := map[*types.Func]bool{}
 	var walk func(one *types.Func)
 	walk = func(one *types.Func) {
@@ -165,7 +215,7 @@ func GetReach(uses map[*types.Func]*FunctionUse, start *types.Func) []*types.Var
 
 func ListManyUseCaseCalls(pkgs []*packages.Package, root string) (found []Finding, functions int) {
 	for _, pkg := range pkgs {
-		if !IsDrivingHandlerPackage(pkg.PkgPath, root) {
+		if !IsDrivingAdapter(pkg, root) {
 			continue
 		}
 		uses := GetFunctionUses(pkg, root)
@@ -183,7 +233,7 @@ func ListManyUseCaseCalls(pkgs []*packages.Package, root string) (found []Findin
 	return SortFindings(found), functions
 }
 
-func getManyCallFinding(uses map[*types.Func]*FunctionUse, object *types.Func, reach []*types.Var) (Finding, bool) {
+func getManyCallFinding(uses map[*types.Func]*FunctionUse, object *types.Func, reach []types.Object) (Finding, bool) {
 	if len(reach) < 2 {
 		return Finding{}, false
 	}
@@ -197,10 +247,52 @@ func getManyCallFinding(uses map[*types.Func]*FunctionUse, object *types.Func, r
 	}
 	names := make([]string, len(reach))
 	for i, field := range reach {
-		names[i] = field.Name()
+		names[i] = getReachName(field)
 	}
 	slices.Sort(names)
 	position := use.Position
 	position.Name += " calls " + strings.Join(names, ", ")
 	return position, true
+}
+
+// readFunctionValueUse records the use cases a selector reaches as function values: a field holding a
+// function of a use case's Execute signature, and the Execute method of a use case taken as a value or
+// called on a value that no field holds.
+func readFunctionValueUse(info *types.Info, expr *ast.SelectorExpr, root string, signatures []*types.Signature, use *FunctionUse) {
+	selection, ok := info.Selections[expr]
+	if !ok {
+		return
+	}
+	switch object := selection.Obj().(type) {
+	case *types.Var:
+		if IsExecuteFunctionField(object, signatures) {
+			use.Add(object)
+		}
+	case *types.Func:
+		if !strings.HasPrefix(object.Name(), "Execute") || object.Pkg() == nil || !IsInLayer(object.Pkg().Path(), root, "usecase") {
+			return
+		}
+		if GetUsedField(info, expr.X, root) == nil {
+			use.AddObject(object)
+		}
+	}
+}
+
+func getReachName(object types.Object) string {
+	function, ok := object.(*types.Func)
+	if !ok {
+		return object.Name()
+	}
+	signature, ok := function.Type().(*types.Signature)
+	if !ok || signature.Recv() == nil {
+		return function.Name()
+	}
+	receiver := types.Unalias(signature.Recv().Type())
+	if pointer, ok := receiver.(*types.Pointer); ok {
+		receiver = pointer.Elem()
+	}
+	if named, ok := receiver.(*types.Named); ok {
+		return named.Obj().Pkg().Name() + "." + named.Obj().Name() + "." + function.Name()
+	}
+	return function.Name()
 }

@@ -1,61 +1,217 @@
 package spelling
 
 import (
+	_ "embed"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-func getBritishStems() []string {
-	var stems []string
-	for _, american := range []string{
-		"normaliz", "quantiz", "recogniz", "initializ", "serializ", "synchroniz",
-		"minimiz", "maximiz", "customiz", "authoriz", "sanitiz", "summariz", "prioritiz", "localiz", "utiliz",
-	} {
-		stems = append(stems, strings.ReplaceAll(american, "z", "s"))
+//go:embed british.txt
+var britishList string
+
+//go:embed allowed.txt
+var allowedList string
+
+// listFamilyEndings returns the endings a stem of the word list takes.
+func listFamilyEndings() []string {
+	return []string{
+		"s", "e", "es", "ed", "d", "ing", "er", "ers", "ation", "ations", "ational", "able", "ability", "ment", "ments",
+		"ful", "less", "ist", "ists", "y", "ies", "ive", "ively", "ly", "ness", "ite", "ites", "al", "ally", "hood", "hoods",
 	}
-	for _, american := range []string{"neighbor", "color", "behavior"} {
-		stems = append(stems, strings.ReplaceAll(american, "or", "our"))
-	}
-	return append(stems, "cent"+"re")
 }
 
-func getBritishStem(name string) string {
-	lower := strings.ToLower(name)
-	for _, stem := range getBritishStems() {
-		if strings.Contains(lower, stem) {
-			return stem
+type family struct {
+	british, american string
+	isBare            bool
+}
+
+// dictionary maps British words to the American spelling: whole words, and stems that take an ending.
+type dictionary struct {
+	words    map[string]string
+	families []family
+}
+
+// parseDictionary reads the word list: lines of a British and an American word, `#` comments, `stem*` for a
+// stem that is a word on its own and `stem~` for one that is a word only with an ending.
+func parseDictionary(text string) (dictionary, error) {
+	dict := dictionary{words: map[string]string{}}
+	for number, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return dict, fmt.Errorf("line %d of the word list is %q, want a British and an American word", number+1, line)
+		}
+		british, american := fields[0], fields[1]
+		switch {
+		case strings.HasSuffix(british, "*") || strings.HasSuffix(british, "~"):
+			if british[len(british)-1] != american[len(american)-1] {
+				return dict, fmt.Errorf("line %d of the word list marks only one of its stems", number+1)
+			}
+			dict.families = append(dict.families, family{
+				british: strings.TrimRight(british, "*~"), american: strings.TrimRight(american, "*~"), isBare: strings.HasSuffix(british, "*"),
+			})
+		case british == american:
+			return dict, fmt.Errorf("line %d of the word list spells %q the same in both", number+1, british)
+		default:
+			dict.words[british] = american
 		}
 	}
-	return ""
+	return dict, nil
 }
 
-func isGeneratedFile(file *ast.File) bool {
-	for _, group := range file.Comments {
-		for _, one := range group.List {
-			if strings.HasPrefix(one.Text, "// Code generated") && strings.HasSuffix(one.Text, "DO NOT EDIT.") {
-				return true
+// find returns the American spelling of a lower-case British word.
+func (d dictionary) find(word string) (string, bool) {
+	if american, ok := d.words[word]; ok {
+		return american, true
+	}
+	for _, one := range d.families {
+		if !strings.HasPrefix(word, one.british) {
+			continue
+		}
+		ending := word[len(one.british):]
+		if ending == "" && one.isBare || slices.Contains(listFamilyEndings(), ending) {
+			return one.american + ending, true
+		}
+	}
+	return "", false
+}
+
+// splitWords cuts text into lower-case words at every character that is no letter and at every change of
+// case inside a name: `isReady` is is and ready, `HTTPServer` is http and server.
+func splitWords(text string) []string {
+	var words []string
+	var current []rune
+	flush := func() {
+		if len(current) > 0 {
+			words = append(words, strings.ToLower(string(current)))
+			current = current[:0]
+		}
+	}
+	runes := []rune(text)
+	for i, r := range runes {
+		switch {
+		case !unicode.IsLetter(r):
+			flush()
+			continue
+		case unicode.IsUpper(r) && len(current) > 0 && (unicode.IsLower(runes[i-1]) ||
+			i+1 < len(runes) && unicode.IsLower(runes[i+1]) && unicode.IsUpper(runes[i-1])):
+			flush()
+		}
+		current = append(current, r)
+	}
+	flush()
+	return words
+}
+
+// spellingHit is a British word found in a file, with the line and the American spelling.
+type spellingHit struct {
+	line              int
+	british, american string
+}
+
+func (h spellingHit) String() string {
+	return fmt.Sprintf("%d %s %s", h.line, h.british, h.american)
+}
+
+// listBritishWords returns the British words in the identifiers, the comments and the string literals of the
+// source of a Go file. The path of an import is a name that is not ours to respell, and a generated file
+// follows the schema it comes from.
+func listBritishWords(path string, src any, dict dictionary) ([]spellingHit, error) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path, src, parser.ParseComments|parser.SkipObjectResolution)
+	if err != nil || ast.IsGenerated(file) {
+		return nil, err
+	}
+	var found []spellingHit
+	scan := func(pos token.Pos, text string) {
+		for offset, line := range strings.Split(text, "\n") {
+			for _, word := range splitWords(line) {
+				if american, ok := dict.find(word); ok {
+					found = append(found, spellingHit{line: fset.Position(pos).Line + offset, british: word, american: american})
+				}
 			}
 		}
 	}
-	return false
-}
-
-func listBritishIdentifiers(path string, src any) ([]load.Finding, error) {
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, path, src, parser.ParseComments|parser.SkipObjectResolution)
-	if err != nil || isGeneratedFile(file) {
-		return nil, err
+	for _, group := range file.Comments {
+		for _, one := range group.List {
+			scan(one.Pos(), one.Text)
+		}
 	}
-	var found []load.Finding
 	ast.Inspect(file, func(node ast.Node) bool {
-		if one, is := node.(*ast.Ident); is && getBritishStem(one.Name) != "" {
-			found = append(found, load.NewFinding(fset, one.Pos(), one.Name))
+		switch item := node.(type) {
+		case *ast.ImportSpec:
+			if item.Name != nil {
+				scan(item.Name.Pos(), item.Name.Name)
+			}
+			return false
+		case *ast.Ident:
+			scan(item.Pos(), item.Name)
+		case *ast.BasicLit:
+			if item.Kind == token.STRING {
+				scan(item.Pos(), item.Value)
+			}
 		}
 		return true
 	})
+	slices.SortFunc(found, func(a, b spellingHit) int {
+		if a.line != b.line {
+			return a.line - b.line
+		}
+		return strings.Compare(a.british, b.british)
+	})
+	return slices.Compact(found), nil
+}
+
+// allowance is one quoted name the check lets through: a word in a file, with the reason it stays.
+type allowance struct {
+	path, word, reason string
+	used               bool
+}
+
+func parseAllowances(text string) ([]*allowance, error) {
+	var found []*allowance
+	for number, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 5 {
+			return nil, fmt.Errorf("line %d of the allow-list is %q, want a path, a word and a reason of at least three words", number+1, line)
+		}
+		found = append(found, &allowance{path: fields[0], word: fields[1], reason: strings.Join(fields[2:], " ")})
+	}
 	return found, nil
+}
+
+func getAllowance(allowed []*allowance, path, word string) *allowance {
+	for _, one := range allowed {
+		if one.path == path && one.word == word {
+			return one
+		}
+	}
+	return nil
+}
+
+func listHits(rel, path string, src any, dict dictionary, allowed []*allowance) ([]load.Finding, error) {
+	hits, err := listBritishWords(path, src, dict)
+	var found []load.Finding
+	for _, hit := range hits {
+		if one := getAllowance(allowed, rel, hit.british); one != nil {
+			one.used = true
+			continue
+		}
+		found = append(found, load.Finding{Position: fmt.Sprintf("%s:%d", rel, hit.line), Name: hit.british + " is British, write " + hit.american})
+	}
+	return found, err
 }
