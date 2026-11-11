@@ -7,9 +7,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
-// getProvider resolves the onnxruntime Provider. A model that names none runs
-// on the provider the host chose, which is auto when it chose none.
 func getProvider(m model.LocalModel) onnx.Provider {
+	// A model that names no provider runs on the one the host chose, which is auto when it chose none.
 	name := m.Provider
 	if name == "" {
 		name = string(onnx.GetProvider())
@@ -21,7 +20,6 @@ func getProvider(m model.LocalModel) onnx.Provider {
 	return p
 }
 
-// getThreads resolves the thread count.
 func getThreads(m model.LocalModel) int {
 	if m.Threads > 0 {
 		return m.Threads
@@ -34,7 +32,6 @@ const (
 	passLadderHigh = 4
 )
 
-// getPasses calculates the concurrency level.
 func getPasses(m model.LocalModel, provider onnx.Provider) int {
 	switch {
 	case m.Sessions > 0:
