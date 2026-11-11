@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/markdown"
 )
 
 type VaultProvider interface {
@@ -37,14 +36,6 @@ func NewHandler(vaults VaultProvider, names *search.FindNames, passages *search.
 // errNoMode is a search that named no mode to ask it in.
 var errNoMode = errors.New("a search requires a mode")
 
-// The default number of results when a client specifies none, and the maximum
-// it may request. A window displays a list for reading; a larger number is a
-// corpus query and is clamped to the maximum.
-const (
-	mostFound      = 20
-	maxQueryLength = 200
-)
-
 // SearchNames hands the client the names in the vault that match what was
 // typed: a note's own title, and the headings inside notes. A window standing
 // on nothing holds no names.
@@ -55,7 +46,7 @@ func (h *Handler) SearchNames(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
-	found, err := h.findNames.Execute(ctx, showing, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	found, err := h.findNames.Execute(ctx, showing, r.Msg.GetQuery(), int(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -94,18 +85,14 @@ func (h *Handler) SearchPassages(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
 
-	found, err := h.findPassages.Execute(ctx, showing, query, mode, atMost(r.Msg.GetLimit()))
+	found, err := h.findPassages.Execute(ctx, showing, query, mode, int(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found.Passages))}
 	for _, p := range found.Passages {
-		// A passage is the whole window enclosing its hit, so what is drawn is the
-		// words about the first run that matched. A hit by meaning relies on no
-		// word, and the window opens where the chunk that matched begins.
-		read, matched := nearby(p.Text, p.HitAt)
-		text, pos := getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
+		text, pos := search.CutSnippet(p.Text, p.HitAt, query)
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
@@ -152,13 +139,6 @@ func ConvertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
 	default:
 		return search.Hybrid, false
 	}
-}
-
-func atMost(limit int32) int {
-	if limit <= 0 {
-		return mostFound
-	}
-	return min(int(limit), maxQueryLength)
 }
 
 func convertUnitRangesToWire(pos []domain.UnitRange) []*v1.Range {

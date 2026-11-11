@@ -2,7 +2,6 @@ package settings
 
 import (
 	"os"
-	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
@@ -37,18 +36,14 @@ func GetTextScaleBounds() settings.Bounds { return getAppBounds(keyTextScale) }
 const DefaultTheme = "preset:numen"
 
 func getDesktopScale() float64 {
-	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
-	if err != nil || !GetInterfaceScaleBounds().Contains(scale) {
-		return getAppNumber(keyInterfaceScale)
-	}
-	return scale
+	return settings.ResolveDesktopScale(os.Getenv, GetInterfaceScaleBounds(), getAppNumber(keyInterfaceScale))
 }
 
 // Check returns the first of the two scales that is outside the bounds the declaration gives it,
 // and nothing where both are within.
 func (a Appearance) Check() error {
-	if err := GetInterfaceScaleBounds().Check(settings.AppOwner+"."+keyInterfaceScale, a.InterfaceScale); err != nil {
-		return err
-	}
-	return GetTextScaleBounds().Check(settings.AppOwner+"."+keyTextScale, a.TextScale)
+	return settings.CheckAppearanceScales(
+		settings.AppOwner+"."+keyInterfaceScale, GetInterfaceScaleBounds(), a.InterfaceScale,
+		settings.AppOwner+"."+keyTextScale, GetTextScaleBounds(), a.TextScale,
+	)
 }

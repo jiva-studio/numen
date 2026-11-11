@@ -128,7 +128,7 @@ func TestSearchNamesAsksForAtMostTheLimitOfTheWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(byDefault.Msg.GetFound()) != mostFound || len(asked.Msg.GetFound()) != 3 {
+	if len(byDefault.Msg.GetFound()) != search.MostFound || len(asked.Msg.GetFound()) != 3 {
 		t.Errorf("answered %d by default and %d when asked for 3", len(byDefault.Msg.GetFound()), len(asked.Msg.GetFound()))
 	}
 }

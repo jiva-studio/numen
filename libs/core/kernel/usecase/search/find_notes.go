@@ -29,9 +29,24 @@ func NewFindNames(matches noteport.NameMatches, tabKinds TabKinds) *FindNames {
 	return &FindNames{matches: NewGetNameMatches(matches), tabKinds: tabKinds}
 }
 
+// The default number of results when a client specifies none, and the maximum
+// it may request. A window displays a list for reading; a larger number is a
+// corpus query and is clamped to the maximum.
+const (
+	MostFound      = 20
+	maxWindowLimit = 200
+)
+
+func clampWindowLimit(limit int) int {
+	if limit <= 0 {
+		return MostFound
+	}
+	return min(limit, maxWindowLimit)
+}
+
 // Execute finds at most `limit` names.
 func (u *FindNames) Execute(ctx context.Context, v domain.Vault, query string, limit int) (NameResults, error) {
-	found, err := u.matches.Execute(ctx, v, query, limit)
+	found, err := u.matches.Execute(ctx, v, query, clampWindowLimit(limit))
 	if err != nil {
 		return NameResults{}, err
 	}
@@ -70,7 +85,7 @@ func NewFindPassages(finds Search, notes noteport.NoteRefs, types noteport.NoteT
 
 // Execute searches the way `mode` names while the query is being typed, and returns at most `limit` passages.
 func (u *FindPassages) Execute(ctx context.Context, v domain.Vault, query string, mode Mode, limit int) (PassageResults, error) {
-	found, err := u.finds.Execute(ctx, v, query, GetTypingParameters(mode, limit))
+	found, err := u.finds.Execute(ctx, v, query, GetTypingParameters(mode, clampWindowLimit(limit)))
 	if err != nil {
 		return PassageResults{}, err
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
+func TestSpansFindsMatchedWordsInPassage(t *testing.T) {
 	for _, c := range []struct {
 		name  string
 		text  string
@@ -145,7 +145,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 	}
 }
 
-func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
+func TestGetTextAroundSplitsPassageToGlanceWindow(t *testing.T) {
 	long := func(n int) string {
 		out := make([]rune, n)
 		for i := range out {
@@ -263,7 +263,7 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 	})
 }
 
-func TestAPassageOpensOnTheHitWhenNoWordMatched(t *testing.T) {
+func TestGetTextAroundOpensOnHitWhenNoWordMatched(t *testing.T) {
 	long := strings.Repeat("a", 500)
 	text := long + " Alice Fenn was there " + long
 

@@ -95,25 +95,8 @@ func (s *State) ReportFloorError(err error) {
 
 // GetVaultState is what the window knows about the vault it shows: whether the first scan is done,
 // what stopped it, and how far the vault has been read for meaning.
-func (s *State) GetVaultState(ctx context.Context) window.VaultState {
-	showing := s.GetCurrentVault()
-	name, recipe := s.Runtime.GetModel()
-	out := window.VaultState{
-		Vault:       showing,
-		IsReady:     s.Runtime.IsReady(),
-		Error:       s.Runtime.GetError(),
-		WatchError:  s.Runtime.GetWatchError(),
-		IsEmbedding: name != "",
-	}
-	// A count that cannot be taken leaves the pair at nothing, and the rest of
-	// the state is answered currently. A window standing on nothing holds no
-	// chunks and counts none.
-	if s.Indexing.Embedding.HasProgress() && showing.ID != "" {
-		if target, embedded, err := s.Indexing.Embedding.CountProgress(ctx, showing.ID, recipe); err == nil {
-			out.ChunkCount, out.EmbeddedCount = target, embedded
-		}
-	}
-	return out
+func (s *State) GetVaultState(ctx context.Context) (window.VaultState, error) {
+	return windowsession.GetVaultState(ctx, &s.Runtime, s.Indexing.Embedding)
 }
 
 // ReportOpenTabs keeps the tabs the window reported, wakes whoever waits for a report, and tells

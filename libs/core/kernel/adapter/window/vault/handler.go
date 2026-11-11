@@ -19,7 +19,7 @@ import (
 // Window is the window that holds the vault.
 type Window interface {
 	// GetVaultState is what the window knows about the vault it shows now.
-	GetVaultState(ctx context.Context) window.VaultState
+	GetVaultState(ctx context.Context) (window.VaultState, error)
 }
 
 // Changes delivers the changes of the vault.
@@ -50,7 +50,10 @@ func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Han
 func (h *Handler) GetVaultState(
 	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
-	state := h.window.GetVaultState(ctx)
+	state, err := h.window.GetVaultState(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	return connect.NewResponse(&v1.GetVaultStateResponse{
 		Id:   string(state.Vault.ID),
 		Name: state.Vault.Name,

@@ -7,7 +7,14 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/markdown"
 )
+
+// CutSnippet returns the window around the hit of a passage and the matched query spans inside it.
+func CutSnippet(text string, hitAt int, query string) (string, []domain.UnitRange) {
+	read, matched := nearby(text, hitAt)
+	return getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
+}
 
 func spans(text, query string) []domain.UnitRange {
 	words := strings.Fields(query)

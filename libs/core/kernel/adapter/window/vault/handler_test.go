@@ -24,7 +24,7 @@ type showing struct {
 	changes broadcast.Broadcaster[window.Change]
 }
 
-func (s *showing) GetVaultState(context.Context) window.VaultState { return s.state }
+func (s *showing) GetVaultState(context.Context) (window.VaultState, error) { return s.state, nil }
 
 func (s *showing) SubscribeChanges() (<-chan window.Change, func()) { return s.changes.Subscribe() }
 

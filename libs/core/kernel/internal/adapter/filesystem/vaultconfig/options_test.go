@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func TestAFileIsTheKindItsNameMakesIt(t *testing.T) {
+func TestOptionsKindClassifiesFilesByExtension(t *testing.T) {
 	cases := []struct {
 		name string
 		want domain.SourceKind
