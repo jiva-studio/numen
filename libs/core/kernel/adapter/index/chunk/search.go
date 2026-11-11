@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
@@ -92,16 +91,11 @@ func (q *Search) findPassages(ctx context.Context, vaultID domain.VaultID, query
 	return out, rows.Err()
 }
 
-// FindNearest returns the chunks of one vault nearest a query vector, nearest
-// first, at most `search.Limit` of them.
-// The coarse pass over the bit vectors keeps several times `search.Limit`
-// candidates and the full-precision vectors order them.
-// A chunk below the similarity floor is not a result.
-func (q *Search) FindNearest(ctx context.Context, vaultID domain.VaultID, search source.NearestQuery) ([]domain.Passage, error) {
-	if search.Limit <= 0 {
-		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", search.Limit)
-	}
-	if len(search.Vector) == 0 {
+// FindCoarseCandidates returns the chunks of one vault whose one-bit vectors are nearest the query
+// vector, nearest first. It fails with source.ErrOtherRecipe where the failure comes from vectors
+// kept under another recipe.
+func (q *Search) FindCoarseCandidates(ctx context.Context, vaultID domain.VaultID, query source.CoarseQuery) ([]domain.ChunkID, error) {
+	if len(query.Vector) == 0 {
 		return nil, nil
 	}
 	vault, err := vaultRow(ctx, q.db, vaultID)
@@ -111,54 +105,18 @@ func (q *Search) FindNearest(ctx context.Context, vaultID domain.VaultID, search
 	if err != nil {
 		return nil, err
 	}
-
-	item, err := q.findNearestWithPrefix(ctx, vault, search.Vector, search.Limit*coarseCandidates, search.PathPrefix)
+	rows, err := q.findNearestWithPrefix(ctx, vault, query.Vector, query.Limit, query.PathPrefix)
 	if err != nil {
-		if q.hasOtherCoarseRecipe(ctx, search.Recipe) {
-			return nil, nil
+		if q.hasOtherCoarseRecipe(ctx, query.Recipe) {
+			return nil, fmt.Errorf("%w: %w", source.ErrOtherRecipe, err)
 		}
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, search.Recipe, search.Vector, item, search.Kinds, search.Floor)
-	if err != nil {
-		return nil, err
+	ids := make([]domain.ChunkID, len(rows))
+	for i, row := range rows {
+		ids[i] = ID(row)
 	}
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated test is >= : cutting a list of exactly limit entries to limit entries leaves it unchanged"
-	if len(ranked) > search.Limit {
-		ranked = ranked[:search.Limit]
-	}
-	return q.getEnclosingPassages(ctx, vault, ranked)
-}
-
-// GetBestSimilarity returns the cosine similarity of the chunk of one vault
-// nearest a query vector, found by the coarse pass and the full-precision
-// rerank that FindNearest runs, and zero where the vault has none.
-func (q *Search) GetBestSimilarity(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error) {
-	if len(query) == 0 {
-		return 0, nil
-	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return 0, nil
-	}
-	if err != nil {
-		return 0, err
-	}
-	item, err := q.findNearestByBits(ctx, vault, query, coarseCandidates)
-	if err != nil {
-		if q.hasOtherCoarseRecipe(ctx, recipe) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	ranked, err := q.rankCandidates(ctx, recipe, query, item, nil, math.Inf(-1))
-	if err != nil {
-		return 0, err
-	}
-	if len(ranked) == 0 {
-		return 0, nil
-	}
-	return ranked[0].similarity, nil
+	return ids, nil
 }
 
 func (q *Search) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool {
@@ -229,9 +187,18 @@ func (q *Search) findNearestByBits(ctx context.Context, vault int64, query []flo
 	return val, rows.Err()
 }
 
-func (q *Search) getEnclosingPassages(ctx context.Context, vault int64, chunks []int64) (_ []domain.Passage, err error) {
-	if len(chunks) == 0 {
+// GetEnclosingPassages returns the passage that encloses each chunk of one vault, in the order of
+// the chunks, leaving out a chunk the vault does not hold.
+func (q *Search) GetEnclosingPassages(ctx context.Context, vaultID domain.VaultID, ids []domain.ChunkID) (_ []domain.Passage, err error) {
+	if len(ids) == 0 {
 		return nil, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 	enclosing, err := q.db.PrepareContext(ctx, enclosingSQL)
 	if err != nil {
@@ -239,10 +206,14 @@ func (q *Search) getEnclosingPassages(ctx context.Context, vault int64, chunks [
 	}
 	defer func() { err = sqlwrite.JoinClose(err, enclosing.Close()) }()
 
-	out := make([]domain.Passage, 0, len(chunks))
-	for _, chunk := range chunks {
-		p := domain.Passage{ChunkID: ID(chunk)}
-		err := enclosing.QueryRowContext(ctx, chunk, vault).
+	out := make([]domain.Passage, 0, len(ids))
+	for _, id := range ids {
+		chunk, err := Row(id)
+		if err != nil {
+			return nil, err
+		}
+		p := domain.Passage{ChunkID: id}
+		err = enclosing.QueryRowContext(ctx, chunk, vault).
 			Scan(&p.Source, &p.Kind, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue

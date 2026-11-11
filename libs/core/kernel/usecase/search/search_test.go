@@ -139,9 +139,9 @@ func precise(v []float32) []byte {
 func (c corpus) search(embedder embeddingport.Embedder) search.Search {
 	queries, ok := embedder.(embeddingport.QueryEmbedder)
 	if !ok {
-		return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
+		return search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
 	}
-	return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
+	return search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
 }
 
 func getModel() embedding.Model {
@@ -303,7 +303,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 
 	var errs []error
 	unreachable := outOfReach{why: errors.New("dial tcp: network is unreachable")}
-	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil,
+	finds := search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil,
 		unreachable, vectorscase.NewEmbedQueries(unreachable, nil),
 		func(err error) { errs = append(errs, err) })
 
@@ -326,7 +326,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	c := newCorpus(t)
 
 	canceled := outOfReach{why: context.Canceled}
-	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil,
+	finds := search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil,
 		canceled, vectorscase.NewEmbedQueries(canceled, nil), func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
@@ -519,7 +519,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	limit, err := c.db.ChunkSearch().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
+	limit, err := queriesOf(c.db).FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -527,7 +527,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 		t.Fatal("nothing came back under the recipe the vectors were written with")
 	}
 
-	astray, err := c.db.ChunkSearch().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
+	astray, err := queriesOf(c.db).FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}

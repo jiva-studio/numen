@@ -634,7 +634,7 @@ func meaningFixture(t *testing.T) *index.DB {
 func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	db := meaningFixture(t)
 
-	got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
+	got, err := queriesOf(db).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -678,7 +678,7 @@ func TestFindNearest_HonorsLimit(t *testing.T) {
 
 func TestASearchByMeaningAnswersNothingBelowTheFloor(t *testing.T) {
 	db := meaningFixture(t)
-	got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: 0.5})
+	got, err := queriesOf(db).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1274,7 +1274,7 @@ func TestASourceModifiedAtTheLatestInstantIsStillWalked(t *testing.T) {
 }
 
 func TestASearchByMeaningThatNothingReachesAnswersWithNoPassages(t *testing.T) {
-	got, err := meaningFixture(t).ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
+	got, err := queriesOf(meaningFixture(t)).FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
 	if err != nil || got != nil {
 		t.Errorf("a floor nothing reaches answered %v, %v", got, err)
 	}
