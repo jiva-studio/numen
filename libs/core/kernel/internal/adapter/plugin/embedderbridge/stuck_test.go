@@ -1,4 +1,4 @@
-package embedderbridge
+package embedderbridge_test
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -82,7 +83,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
 
-	bridge, err := Open(t.Context(), pluginhost.Join(host))
+	bridge, err := embedderbridge.Open(t.Context(), pluginhost.Join(host))
 	if err != nil {
 		t.Fatal(err)
 	}

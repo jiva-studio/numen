@@ -1,4 +1,4 @@
-package embedderbridge
+package embedderbridge_test
 
 import (
 	"sync"
@@ -54,10 +54,7 @@ func TestListenersRunAfterTheEmbedderReleasesItsLock(t *testing.T) {
 	}
 	outcomes := make(chan outcome, 1)
 	bridge.OnModelChange(func() {
-		unlocked := bridge.changeMu.TryLock()
-		if unlocked {
-			bridge.changeMu.Unlock()
-		}
+		unlocked := bridge.IsListenerLockFree()
 		outcomes <- outcome{unlocked: unlocked, model: bridge.GetModel().Name}
 	})
 

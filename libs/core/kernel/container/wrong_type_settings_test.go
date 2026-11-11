@@ -50,7 +50,7 @@ func installationWith(t *testing.T, content string) (container.Config, string) {
 		t.Fatal(err)
 	}
 	return container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
+		PluginHost: container.AdaptPluginHost(host),
 		Paths:      container.Paths{SettingsPath: path},
 	}), path
 }

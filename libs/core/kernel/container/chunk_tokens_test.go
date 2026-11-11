@@ -91,7 +91,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *pluginho
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
+		PluginHost: container.AdaptPluginHost(host),
 		Paths:      container.Paths{ServiceDir: ".numen"},
 	}), host, reporter
 }

@@ -1,4 +1,4 @@
-package embedderbridge
+package embedderbridge_test
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -29,7 +30,7 @@ import (
 )
 
 // The bridge makes query vectors apart from document vectors, which search relies on through the port.
-var _ embeddingport.QueryEmbedder = (*Embedder)(nil)
+var _ embeddingport.QueryEmbedder = (*embedderbridge.Embedder)(nil)
 
 type mockEmbeddingServer struct {
 	getModelCalls atomic.Int32
@@ -108,7 +109,7 @@ func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bridge, err := Open(t.Context(), pluginhost.Join(host))
+	bridge, err := embedderbridge.Open(t.Context(), pluginhost.Join(host))
 	if err == nil {
 		t.Fatal("expected error when no embedding plugin found, got nil")
 	}
@@ -162,7 +163,7 @@ func TestEmbedderBridge(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	bridge, err := Open(ctx, pluginhost.Join(host))
+	bridge, err := embedderbridge.Open(ctx, pluginhost.Join(host))
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge failed: %v", err)
 	}

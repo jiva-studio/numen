@@ -1,4 +1,4 @@
-package embedderbridge
+package embedderbridge_test
 
 import (
 	"context"

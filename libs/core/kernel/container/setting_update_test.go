@@ -8,7 +8,7 @@ import (
 )
 
 func updateSetting(ctx context.Context, host *pluginhost.Host, pluginID, key string, value any) error {
-	return container.AdaptPluginHost((*container.PluginRoles)(host)).ApplySetting(ctx, pluginID, key, value)
+	return container.AdaptPluginHost(host).ApplySetting(ctx, pluginID, key, value)
 }
 
 func setEnabled(ctx context.Context, host *pluginhost.Host, pluginID string, enabled bool) error {

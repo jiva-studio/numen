@@ -12,6 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
+const embeddingPluginID = "md.numen.embeddings"
+
 // failingActivator is a plugin host that cannot activate any plugin.
 type failingActivator struct{}
 

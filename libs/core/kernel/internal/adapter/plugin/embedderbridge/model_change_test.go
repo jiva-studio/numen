@@ -1,4 +1,4 @@
-package embedderbridge
+package embedderbridge_test
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -38,7 +39,7 @@ func (configurable) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-func openConfigurable(t *testing.T) (*pluginhost.Host, *Embedder, *mockEmbeddingServer, *atomic.Int32) {
+func openConfigurable(t *testing.T) (*pluginhost.Host, *embedderbridge.Embedder, *mockEmbeddingServer, *atomic.Int32) {
 	t.Helper()
 	mock := &mockEmbeddingServer{}
 	mock.chunkTokens.Store(256)
@@ -70,7 +71,7 @@ func openConfigurable(t *testing.T) (*pluginhost.Host, *Embedder, *mockEmbedding
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 
-	bridge, err := Open(t.Context(), pluginhost.Join(host))
+	bridge, err := embedderbridge.Open(t.Context(), pluginhost.Join(host))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,13 +82,12 @@ func openConfigurable(t *testing.T) (*pluginhost.Host, *Embedder, *mockEmbedding
 	return host, bridge, mock, &announced
 }
 
-func settle(t *testing.T, bridge *Embedder, mock *mockEmbeddingServer, readsBefore int32) {
+func settle(t *testing.T, bridge *embedderbridge.Embedder, mock *mockEmbeddingServer, readsBefore int32) {
 	t.Helper()
 	wiretest.WaitUntil(t, "a read of the model after the plugin was configured", func() bool {
 		return mock.getModelCalls.Load() != readsBefore
 	})
-	bridge.announceMu.Lock()
-	defer bridge.announceMu.Unlock()
+	bridge.WaitForAnnouncements()
 }
 
 // A model the plugin reports differently after a setting of its own is announced.

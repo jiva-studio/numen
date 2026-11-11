@@ -73,7 +73,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
+		PluginHost: container.AdaptPluginHost(host),
 		KeyStore:   keys,
 		Paths:      container.Paths{SettingsPath: file, IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(configDir, "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
 	})
@@ -133,7 +133,7 @@ func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.K
 	})
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
+		PluginHost: container.AdaptPluginHost(host),
 		KeyStore:   keys,
 		Paths:      container.Paths{SettingsPath: file, IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(configDir, "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
 	})

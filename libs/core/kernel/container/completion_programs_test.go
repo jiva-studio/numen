@@ -21,7 +21,7 @@ func serveCompletions(t *testing.T, host *pluginhost.Host, output string) (hoste
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	lent := container.AdaptPluginHost((*container.PluginRoles)(host))
+	lent := container.AdaptPluginHost(host)
 	cfg := container.NewConfig(container.Config{PluginHost: lent, Paths: container.Paths{SettingsPath: path}})
 	target, err := cfg.Settings()
 	if err != nil {

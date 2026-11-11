@@ -1,4 +1,4 @@
-package agentbridge
+package agentbridge_test
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -119,7 +120,7 @@ func TestTheProgramsListedAreThoseOfTheEnabledProvidersThatAnswer(t *testing.T) 
 		answeringProvider: answeringServer{},
 	}, disabledProvider)
 
-	programs, err := NewRouter(host).GetPrograms(t.Context(), nil)
+	programs, err := agentbridge.NewRouter(host).GetPrograms(t.Context(), nil)
 
 	if err == nil {
 		t.Error("the failing provider was not reported")
@@ -136,7 +137,7 @@ func TestListingReportsTheEnabledProviderThatFailsAndNotTheDisabledOne(t *testin
 		answeringProvider: answeringServer{},
 	}, disabledProvider)
 
-	_, err := NewRouter(host).GetPrograms(t.Context(), nil)
+	_, err := agentbridge.NewRouter(host).GetPrograms(t.Context(), nil)
 
 	if err == nil {
 		t.Fatal("the failing provider was not reported")
@@ -160,7 +161,7 @@ func TestListingWithOnlyDisabledProvidersReportsNothing(t *testing.T) {
 		failingProvider:  &floodAgentServer{},
 	}, disabledProvider, failingProvider)
 
-	programs, err := NewRouter(host).GetPrograms(t.Context(), nil)
+	programs, err := agentbridge.NewRouter(host).GetPrograms(t.Context(), nil)
 
 	if err != nil {
 		t.Errorf("disabled providers were reported: %v", err)
@@ -192,7 +193,7 @@ func TestListingReportsNoProviderDisabledBeforeItsActivation(t *testing.T) {
 		answeringProvider: answeringServer{},
 	}, disabledProvider)
 
-	programs, err := NewRouter(staleEnabledHost{host}).GetPrograms(t.Context(), nil)
+	programs, err := agentbridge.NewRouter(staleEnabledHost{host}).GetPrograms(t.Context(), nil)
 
 	if err == nil {
 		t.Fatal("the failing provider was not reported")

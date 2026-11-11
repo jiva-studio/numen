@@ -72,7 +72,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	cfg.PluginHost = container.AdaptPluginHost((*container.PluginRoles)(host))
+	cfg.PluginHost = container.AdaptPluginHost(host)
 
 	if !cfg.EmbedderReady() {
 		t.Error("embedder is not ready when embedding plugin is present")
@@ -135,7 +135,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
-	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host))})
+	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})
 
 	if cfg.EmbedderReady() {
 		t.Error("a plugin without the embedding capability is the provider")
@@ -158,7 +158,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 	}`)
 	host.Settings.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
 	cfg, vault := makeScannedVault(t)
-	cfg.PluginHost = container.AdaptPluginHost((*container.PluginRoles)(host))
+	cfg.PluginHost = container.AdaptPluginHost(host)
 
 	embedder, closer, why := cfg.Embedder(t.Context())
 	if why != nil || embedder != nil {

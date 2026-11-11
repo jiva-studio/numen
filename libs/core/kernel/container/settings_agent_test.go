@@ -19,7 +19,7 @@ func openSettingsAgent(t *testing.T, host *pluginhost.Host, content string) agen
 		t.Fatal(err)
 	}
 	agent := (container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost((*container.PluginRoles)(host)),
+		PluginHost: container.AdaptPluginHost(host),
 		Paths:      container.Paths{SettingsPath: path},
 	})).GetSettingsAgent()
 	if agent == nil {
