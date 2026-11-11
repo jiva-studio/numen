@@ -83,8 +83,8 @@ type settingsPlaces struct {
 	ThemesPath                string
 	RegistryPath              string
 	InterfaceScale, TextScale float64
-	Hardware                  hardware.Specs
-	ResolvedCompute           hardware.ResolvedCompute
+	Hardware                  settingsdomain.MachineSpecs
+	ResolvedCompute           settingsdomain.ResolvedCompute
 }
 
 type settingsStores struct {
@@ -140,9 +140,9 @@ func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
 	return settingsStore(c).ReadCheckedFile()
 }
 
-func resolveCompute(_ settingsWiring, s settingsadapter.File) (hardware.Specs, hardware.ResolvedCompute) {
-	specs := hardware.Detect()
-	return specs, hardware.ResolveCompute(s.Performance.Profile, specs)
+func resolveCompute(_ settingsWiring, s settingsadapter.File) (settingsdomain.MachineSpecs, settingsdomain.ResolvedCompute) {
+	compute := settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)
+	return compute.Machine, compute.Resolved
 }
 
 func configurePluginHost(c settingsWiring, s settingsadapter.File) {
@@ -326,7 +326,7 @@ func refreshPluginSecrets(c settingsWiring, ctx context.Context) error {
 }
 
 func resolveProfile(c settingsWiring, profile string) string {
-	return hardware.ResolveCompute(profile, c.Hardware).Profile
+	return settingsusecase.NewResolveCompute(knownMachine{specs: c.Hardware}).Execute(profile).Resolved.Profile
 }
 
 func settingsHandleError(c settingsWiring, err error) {
@@ -355,14 +355,19 @@ func settingsThemes(c settingsWiring, say func(string)) (*theme.Service, error) 
 	), err
 }
 
+// knownMachine is the machine that was read when the settings were applied.
+type knownMachine struct{ specs settingsdomain.MachineSpecs }
+
+func (m knownMachine) ReadMachine() settingsdomain.MachineSpecs { return m.specs }
+
 // CheckInterfaceScale returns an error when scale is outside the interface scale bounds.
 func CheckInterfaceScale(name string, scale float64) error {
-	return settingsadapter.GetInterfaceScaleBounds().Check(name, scale)
+	return settingsusecase.NewCheckScale(settingsadapter.GetInterfaceScaleBounds()).Execute(name, scale)
 }
 
 // CheckTextScale returns an error when scale is outside the text scale bounds.
 func CheckTextScale(name string, scale float64) error {
-	return settingsadapter.GetTextScaleBounds().Check(name, scale)
+	return settingsusecase.NewCheckScale(settingsadapter.GetTextScaleBounds()).Execute(name, scale)
 }
 
 func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sources {

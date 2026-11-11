@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -68,4 +69,15 @@ func NewVault(tb testing.TB, notes map[string]string) domain.Vault {
 		tb.Fatal(err)
 	}
 	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: filepath.Base(root), Path: root}
+}
+
+// SaveVaults puts the vaults on the list of vaults kept at registryPath.
+func SaveVaults(tb testing.TB, registryPath string, vaults ...domain.Vault) {
+	tb.Helper()
+	list := appstate.OpenAt(registryPath)
+	for _, v := range vaults {
+		if err := list.Save(v); err != nil {
+			tb.Fatal(err)
+		}
+	}
 }

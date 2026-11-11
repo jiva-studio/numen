@@ -73,7 +73,7 @@ func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.Plu
 }
 
 func installCurrentVault(c Config, db *vault.Index, v domain.Vault) error {
-	registry, err := c.Registry()
+	registry, err := c.registry()
 	if err != nil {
 		return err
 	}
@@ -86,11 +86,15 @@ func GetPluginServices(c Config) editor.PluginServices {
 	return getPluginServices(plugins(c))
 }
 
-// InstallPluginVault lets the plugins work through the host the vault of a list and the index that
+// InstallPluginVault lets the plugins work through the host the vaults of the installation and the index that
 // holds them: the one current names, else the one a call names by identity.
 func InstallPluginVault(c Config,
-	vaults vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) error {
+	vaults, err := c.registry()
+	if err != nil {
+		return err
+	}
 	return installPluginVault(plugins(c), vaults, db, current, hooks)
 }
 

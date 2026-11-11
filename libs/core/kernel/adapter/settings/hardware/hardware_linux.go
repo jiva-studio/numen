@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"golang.org/x/sys/unix"
+
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 const (
@@ -19,8 +21,8 @@ const (
 	linuxCPUMaxPath     = "/sys/fs/cgroup/cpu.max"
 )
 
-func readPlatformHardware() Specs {
-	var hw Specs
+func readPlatformHardware() settingsdomain.MachineSpecs {
+	var hw settingsdomain.MachineSpecs
 	if content, err := os.ReadFile(linuxMeminfoPath); err == nil {
 		hw.TotalRAMMB, hw.AvailableRAMMB = parseMeminfo(string(content))
 	}

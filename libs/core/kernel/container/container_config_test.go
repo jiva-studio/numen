@@ -203,14 +203,14 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	}
 }
 
-func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
+func TestTheRegistryIsKeptAtTheConfiguredPathElseInTheConfigDir(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }
 
 	got, err := NewConfig(Config{
 		Paths: Paths{RegistryPath: named},
-	}).Registry()
+	}).registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,7 +218,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
 	}
 
-	got, err = NewConfig(Config{}).Registry()
+	got, err = NewConfig(Config{}).registry()
 	if err != nil {
 		t.Fatal(err)
 	}
