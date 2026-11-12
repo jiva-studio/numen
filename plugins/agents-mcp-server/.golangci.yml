@@ -257,6 +257,8 @@ linters:
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/models"

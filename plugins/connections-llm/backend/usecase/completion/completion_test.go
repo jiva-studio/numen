@@ -62,7 +62,7 @@ func TestACompletionIsAskedOfTheServiceWithTheLimitOfTheOperation(t *testing.T) 
 	}
 }
 
-func TestALevelOfReasoningTheModelDoesNotTakeIsAStopBeforeAnyRequest(t *testing.T) {
+func TestALevelOfReasoningOutsideTheLevelsOfTheModelIsAStopBeforeAnyRequest(t *testing.T) {
 	g := &gateway{}
 	subject := newCompletion(t, g)
 
