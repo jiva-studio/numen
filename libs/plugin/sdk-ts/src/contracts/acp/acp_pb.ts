@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file acp/acp.proto.
  */
 export const file_acp_acp: GenFile = /*@__PURE__*/
-  fileDesc("Cg1hY3AvYWNwLnByb3RvEgludW1lbi5hY3AifAoLVGFza1JlcXVlc3QSDgoGcHJvbXB0GAEgASgJEi0KDWNvbnRleHRfbm90ZXMYAiADKAsyFi5udW1lbi5hY3AuQ29udGV4dE5vdGUSLgoNdG9vbF9lbmRwb2ludBgDIAEoCzIXLm51bWVuLmFjcC5Ub29sRW5kcG9pbnQiOAoLQ29udGV4dE5vdGUSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgR0ZXh0GAMgASgJIi8KDFRvb2xFbmRwb2ludBILCgN1cmwYASABKAkSEgoFdG9rZW4YAiABKAlCA4ABASLPAQoJVGFza0ZyYW1lEjYKE2FnZW50X21lc3NhZ2VfY2h1bmsYASABKAsyFy5udW1lbi5hY3AuTWVzc2FnZUNodW5rSAASHwoEcGxhbhgCIAEoCzIPLm51bWVuLmFjcC5QbGFuSAASKAoJdG9vbF9jYWxsGAMgASgLMhMubnVtZW4uYWNwLlRvb2xDYWxsSAASNQoQdG9vbF9jYWxsX3VwZGF0ZRgEIAEoCzIZLm51bWVuLmFjcC5Ub29sQ2FsbFVwZGF0ZUgAQggKBnVwZGF0ZSIwCgxNZXNzYWdlQ2h1bmsSEgoKbWVzc2FnZV9pZBgBIAEoCRIMCgR0ZXh0GAIgASgJIi0KBFBsYW4SJQoHZW50cmllcxgBIAMoCzIULm51bWVuLmFjcC5QbGFuRW50cnkieAoJUGxhbkVudHJ5Eg8KB2NvbnRlbnQYASABKAkSLgoIcHJpb3JpdHkYAiABKA4yHC5udW1lbi5hY3AuUGxhbkVudHJ5UHJpb3JpdHkSKgoGc3RhdHVzGAMgASgOMhoubnVtZW4uYWNwLlBsYW5FbnRyeVN0YXR1cyIuChBUb29sQ2FsbExvY2F0aW9uEgwKBHBhdGgYASABKAkSDAoEbGluZRgCIAEoBSLWAQoIVG9vbENhbGwSFAoMdG9vbF9jYWxsX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEiEKBGtpbmQYAyABKA4yEy5udW1lbi5hY3AuVG9vbEtpbmQSKQoGc3RhdHVzGAQgASgOMhkubnVtZW4uYWNwLlRvb2xDYWxsU3RhdHVzEg8KB2NvbnRlbnQYBSADKAkSLgoJbG9jYXRpb25zGAYgAygLMhsubnVtZW4uYWNwLlRvb2xDYWxsTG9jYXRpb24SFgoOcmF3X2lucHV0X2pzb24YByABKAkiigIKDlRvb2xDYWxsVXBkYXRlEhQKDHRvb2xfY2FsbF9pZBgBIAEoCRISCgV0aXRsZRgCIAEoCUgAiAEBEiYKBGtpbmQYAyABKA4yEy5udW1lbi5hY3AuVG9vbEtpbmRIAYgBARIuCgZzdGF0dXMYBCABKA4yGS5udW1lbi5hY3AuVG9vbENhbGxTdGF0dXNIAogBARIPCgdjb250ZW50GAUgAygJEi4KCWxvY2F0aW9ucxgGIAMoCzIbLm51bWVuLmFjcC5Ub29sQ2FsbExvY2F0aW9uEhcKD3Jhd19vdXRwdXRfanNvbhgHIAEoCUIICgZfdGl0bGVCBwoFX2tpbmRCCQoHX3N0YXR1cyI2CghUYXNrRG9uZRIqCgtzdG9wX3JlYXNvbhgBIAEoDjIVLm51bWVuLmFjcC5TdG9wUmVhc29uKpMBChFQbGFuRW50cnlQcmlvcml0eRIjCh9QTEFOX0VOVFJZX1BSSU9SSVRZX1VOU1BFQ0lGSUVEEAASHAoYUExBTl9FTlRSWV9QUklPUklUWV9ISUdIEAESHgoaUExBTl9FTlRSWV9QUklPUklUWV9NRURJVU0QAhIbChdQTEFOX0VOVFJZX1BSSU9SSVRZX0xPVxADKpcBCg9QbGFuRW50cnlTdGF0dXMSIQodUExBTl9FTlRSWV9TVEFUVVNfVU5TUEVDSUZJRUQQABIdChlQTEFOX0VOVFJZX1NUQVRVU19QRU5ESU5HEAESIQodUExBTl9FTlRSWV9TVEFUVVNfSU5fUFJPR1JFU1MQAhIfChtQTEFOX0VOVFJZX1NUQVRVU19DT01QTEVURUQQAyrjAQoIVG9vbEtpbmQSGQoVVE9PTF9LSU5EX1VOU1BFQ0lGSUVEEAASEgoOVE9PTF9LSU5EX1JFQUQQARISCg5UT09MX0tJTkRfRURJVBACEhQKEFRPT0xfS0lORF9ERUxFVEUQAxISCg5UT09MX0tJTkRfTU9WRRAEEhQKEFRPT0xfS0lORF9TRUFSQ0gQBRIVChFUT09MX0tJTkRfRVhFQ1VURRAGEhMKD1RPT0xfS0lORF9USElOSxAHEhMKD1RPT0xfS0lORF9GRVRDSBAIEhMKD1RPT0xfS0lORF9PVEhFUhAJKq8BCg5Ub29sQ2FsbFN0YXR1cxIgChxUT09MX0NBTExfU1RBVFVTX1VOU1BFQ0lGSUVEEAASHAoYVE9PTF9DQUxMX1NUQVRVU19QRU5ESU5HEAESIAocVE9PTF9DQUxMX1NUQVRVU19JTl9QUk9HUkVTUxACEh4KGlRPT0xfQ0FMTF9TVEFUVVNfQ09NUExFVEVEEAMSGwoXVE9PTF9DQUxMX1NUQVRVU19GQUlMRUQQBCq2AQoKU3RvcFJlYXNvbhIbChdTVE9QX1JFQVNPTl9VTlNQRUNJRklFRBAAEhgKFFNUT1BfUkVBU09OX0VORF9UVVJOEAESGgoWU1RPUF9SRUFTT05fTUFYX1RPS0VOUxACEiEKHVNUT1BfUkVBU09OX01BWF9UVVJOX1JFUVVFU1RTEAMSFwoTU1RPUF9SRUFTT05fUkVGVVNBTBAEEhkKFVNUT1BfUkVBU09OX0NBTkNFTExFRBAFQkNaQWdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wbHVnaW4vc2RrLWdvL2NvbnRyYWN0cy9hY3A7YWNwYgZwcm90bzM");
+  fileDesc("Cg1hY3AvYWNwLnByb3RvEgludW1lbi5hY3Ai5wEKC1Rhc2tSZXF1ZXN0Eg4KBnByb21wdBgBIAEoCRItCg1jb250ZXh0X25vdGVzGAIgAygLMhYubnVtZW4uYWNwLkNvbnRleHROb3RlEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRI9Cgx0b29sX2NvbnRleHQYBCADKAsyJy5udW1lbi5hY3AuVGFza1JlcXVlc3QuVG9vbENvbnRleHRFbnRyeRIQCgh2YXVsdF9pZBgFIAEoCRoyChBUb29sQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiOAoLQ29udGV4dE5vdGUSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgR0ZXh0GAMgASgJIs8BCglUYXNrRnJhbWUSNgoTYWdlbnRfbWVzc2FnZV9jaHVuaxgBIAEoCzIXLm51bWVuLmFjcC5NZXNzYWdlQ2h1bmtIABIfCgRwbGFuGAIgASgLMg8ubnVtZW4uYWNwLlBsYW5IABIoCgl0b29sX2NhbGwYAyABKAsyEy5udW1lbi5hY3AuVG9vbENhbGxIABI1ChB0b29sX2NhbGxfdXBkYXRlGAQgASgLMhkubnVtZW4uYWNwLlRvb2xDYWxsVXBkYXRlSABCCAoGdXBkYXRlIjAKDE1lc3NhZ2VDaHVuaxISCgptZXNzYWdlX2lkGAEgASgJEgwKBHRleHQYAiABKAkiLQoEUGxhbhIlCgdlbnRyaWVzGAEgAygLMhQubnVtZW4uYWNwLlBsYW5FbnRyeSJ4CglQbGFuRW50cnkSDwoHY29udGVudBgBIAEoCRIuCghwcmlvcml0eRgCIAEoDjIcLm51bWVuLmFjcC5QbGFuRW50cnlQcmlvcml0eRIqCgZzdGF0dXMYAyABKA4yGi5udW1lbi5hY3AuUGxhbkVudHJ5U3RhdHVzIi4KEFRvb2xDYWxsTG9jYXRpb24SDAoEcGF0aBgBIAEoCRIMCgRsaW5lGAIgASgFItYBCghUb29sQ2FsbBIUCgx0b29sX2NhbGxfaWQYASABKAkSDQoFdGl0bGUYAiABKAkSIQoEa2luZBgDIAEoDjITLm51bWVuLmFjcC5Ub29sS2luZBIpCgZzdGF0dXMYBCABKA4yGS5udW1lbi5hY3AuVG9vbENhbGxTdGF0dXMSDwoHY29udGVudBgFIAMoCRIuCglsb2NhdGlvbnMYBiADKAsyGy5udW1lbi5hY3AuVG9vbENhbGxMb2NhdGlvbhIWCg5yYXdfaW5wdXRfanNvbhgHIAEoCSKKAgoOVG9vbENhbGxVcGRhdGUSFAoMdG9vbF9jYWxsX2lkGAEgASgJEhIKBXRpdGxlGAIgASgJSACIAQESJgoEa2luZBgDIAEoDjITLm51bWVuLmFjcC5Ub29sS2luZEgBiAEBEi4KBnN0YXR1cxgEIAEoDjIZLm51bWVuLmFjcC5Ub29sQ2FsbFN0YXR1c0gCiAEBEg8KB2NvbnRlbnQYBSADKAkSLgoJbG9jYXRpb25zGAYgAygLMhsubnVtZW4uYWNwLlRvb2xDYWxsTG9jYXRpb24SFwoPcmF3X291dHB1dF9qc29uGAcgASgJQggKBl90aXRsZUIHCgVfa2luZEIJCgdfc3RhdHVzIjYKCFRhc2tEb25lEioKC3N0b3BfcmVhc29uGAEgASgOMhUubnVtZW4uYWNwLlN0b3BSZWFzb24qkwEKEVBsYW5FbnRyeVByaW9yaXR5EiMKH1BMQU5fRU5UUllfUFJJT1JJVFlfVU5TUEVDSUZJRUQQABIcChhQTEFOX0VOVFJZX1BSSU9SSVRZX0hJR0gQARIeChpQTEFOX0VOVFJZX1BSSU9SSVRZX01FRElVTRACEhsKF1BMQU5fRU5UUllfUFJJT1JJVFlfTE9XEAMqlwEKD1BsYW5FbnRyeVN0YXR1cxIhCh1QTEFOX0VOVFJZX1NUQVRVU19VTlNQRUNJRklFRBAAEh0KGVBMQU5fRU5UUllfU1RBVFVTX1BFTkRJTkcQARIhCh1QTEFOX0VOVFJZX1NUQVRVU19JTl9QUk9HUkVTUxACEh8KG1BMQU5fRU5UUllfU1RBVFVTX0NPTVBMRVRFRBADKuMBCghUb29sS2luZBIZChVUT09MX0tJTkRfVU5TUEVDSUZJRUQQABISCg5UT09MX0tJTkRfUkVBRBABEhIKDlRPT0xfS0lORF9FRElUEAISFAoQVE9PTF9LSU5EX0RFTEVURRADEhIKDlRPT0xfS0lORF9NT1ZFEAQSFAoQVE9PTF9LSU5EX1NFQVJDSBAFEhUKEVRPT0xfS0lORF9FWEVDVVRFEAYSEwoPVE9PTF9LSU5EX1RISU5LEAcSEwoPVE9PTF9LSU5EX0ZFVENIEAgSEwoPVE9PTF9LSU5EX09USEVSEAkqrwEKDlRvb2xDYWxsU3RhdHVzEiAKHFRPT0xfQ0FMTF9TVEFUVVNfVU5TUEVDSUZJRUQQABIcChhUT09MX0NBTExfU1RBVFVTX1BFTkRJTkcQARIgChxUT09MX0NBTExfU1RBVFVTX0lOX1BST0dSRVNTEAISHgoaVE9PTF9DQUxMX1NUQVRVU19DT01QTEVURUQQAxIbChdUT09MX0NBTExfU1RBVFVTX0ZBSUxFRBAEKrYBCgpTdG9wUmVhc29uEhsKF1NUT1BfUkVBU09OX1VOU1BFQ0lGSUVEEAASGAoUU1RPUF9SRUFTT05fRU5EX1RVUk4QARIaChZTVE9QX1JFQVNPTl9NQVhfVE9LRU5TEAISIQodU1RPUF9SRUFTT05fTUFYX1RVUk5fUkVRVUVTVFMQAxIXChNTVE9QX1JFQVNPTl9SRUZVU0FMEAQSGQoVU1RPUF9SRUFTT05fQ0FOQ0VMTEVEEAVCQ1pBZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3BsdWdpbi9zZGstZ28vY29udHJhY3RzL2FjcDthY3BiBnByb3RvMw");
 
 /**
  * TaskRequest is the payload of acp.task.
@@ -37,11 +37,27 @@ export type TaskRequest = Message<"numen.acp.TaskRequest"> & {
   contextNotes: ContextNote[];
 
   /**
-   * tool_endpoint is where the agent reaches the tools of the application; absent gives it none.
+   * conversation names the conversation the turn belongs to: a provider answers the turns of one name in
+   * one session for as long as it keeps the session. Empty is a turn of its own.
    *
-   * @generated from field: numen.acp.ToolEndpoint tool_endpoint = 3;
+   * @generated from field: string conversation = 3;
    */
-  toolEndpoint?: ToolEndpoint | undefined;
+  conversation: string;
+
+  /**
+   * tool_context is handed to every tool the agent calls as the context of the call, under keys that
+   * start with the id of the plugin that wrote them and a slash.
+   *
+   * @generated from field: map<string, string> tool_context = 4;
+   */
+  toolContext: { [key: string]: string };
+
+  /**
+   * vault_id is the vault the tools the agent calls work, by identity. Empty is the vault the window shows.
+   *
+   * @generated from field: string vault_id = 5;
+   */
+  vaultId: string;
 };
 
 /**
@@ -77,32 +93,6 @@ export type ContextNote = Message<"numen.acp.ContextNote"> & {
  */
 export const ContextNoteSchema: GenMessage<ContextNote> = /*@__PURE__*/
   messageDesc(file_acp_acp, 1);
-
-/**
- * ToolEndpoint is an MCP server over HTTP.
- *
- * @generated from message numen.acp.ToolEndpoint
- */
-export type ToolEndpoint = Message<"numen.acp.ToolEndpoint"> & {
-  /**
-   * @generated from field: string url = 1;
-   */
-  url: string;
-
-  /**
-   * token is sent as a bearer token.
-   *
-   * @generated from field: string token = 2;
-   */
-  token: string;
-};
-
-/**
- * Describes the message numen.acp.ToolEndpoint.
- * Use `create(ToolEndpointSchema)` to create a new message.
- */
-export const ToolEndpointSchema: GenMessage<ToolEndpoint> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 2);
 
 /**
  * TaskFrame is one data frame of acp.task: one session update.
@@ -145,7 +135,7 @@ export type TaskFrame = Message<"numen.acp.TaskFrame"> & {
  * Use `create(TaskFrameSchema)` to create a new message.
  */
 export const TaskFrameSchema: GenMessage<TaskFrame> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 3);
+  messageDesc(file_acp_acp, 2);
 
 /**
  * MessageChunk is a piece of the answer of the agent. Chunks with the same message_id belong to one message.
@@ -169,7 +159,7 @@ export type MessageChunk = Message<"numen.acp.MessageChunk"> & {
  * Use `create(MessageChunkSchema)` to create a new message.
  */
 export const MessageChunkSchema: GenMessage<MessageChunk> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 4);
+  messageDesc(file_acp_acp, 3);
 
 /**
  * @generated from message numen.acp.Plan
@@ -186,7 +176,7 @@ export type Plan = Message<"numen.acp.Plan"> & {
  * Use `create(PlanSchema)` to create a new message.
  */
 export const PlanSchema: GenMessage<Plan> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 5);
+  messageDesc(file_acp_acp, 4);
 
 /**
  * @generated from message numen.acp.PlanEntry
@@ -213,7 +203,7 @@ export type PlanEntry = Message<"numen.acp.PlanEntry"> & {
  * Use `create(PlanEntrySchema)` to create a new message.
  */
 export const PlanEntrySchema: GenMessage<PlanEntry> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 6);
+  messageDesc(file_acp_acp, 5);
 
 /**
  * ToolCallLocation is a file a tool call works on.
@@ -239,7 +229,7 @@ export type ToolCallLocation = Message<"numen.acp.ToolCallLocation"> & {
  * Use `create(ToolCallLocationSchema)` to create a new message.
  */
 export const ToolCallLocationSchema: GenMessage<ToolCallLocation> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 7);
+  messageDesc(file_acp_acp, 6);
 
 /**
  * ToolCall is a tool call the agent started.
@@ -292,7 +282,7 @@ export type ToolCall = Message<"numen.acp.ToolCall"> & {
  * Use `create(ToolCallSchema)` to create a new message.
  */
 export const ToolCallSchema: GenMessage<ToolCall> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 8);
+  messageDesc(file_acp_acp, 7);
 
 /**
  * ToolCallUpdate changes a tool call. A field left unset keeps its value.
@@ -341,7 +331,7 @@ export type ToolCallUpdate = Message<"numen.acp.ToolCallUpdate"> & {
  * Use `create(ToolCallUpdateSchema)` to create a new message.
  */
 export const ToolCallUpdateSchema: GenMessage<ToolCallUpdate> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 9);
+  messageDesc(file_acp_acp, 8);
 
 /**
  * TaskDone is the done frame of acp.task.
@@ -360,7 +350,7 @@ export type TaskDone = Message<"numen.acp.TaskDone"> & {
  * Use `create(TaskDoneSchema)` to create a new message.
  */
 export const TaskDoneSchema: GenMessage<TaskDone> = /*@__PURE__*/
-  messageDesc(file_acp_acp, 10);
+  messageDesc(file_acp_acp, 9);
 
 /**
  * @generated from enum numen.acp.PlanEntryPriority

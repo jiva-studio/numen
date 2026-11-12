@@ -319,8 +319,14 @@ type TaskRequest struct {
 	Prompt string `protobuf:"bytes,1,opt,name=prompt,proto3" json:"prompt,omitempty"`
 	// context_notes are the notes the person attached to the prompt.
 	ContextNotes []*ContextNote `protobuf:"bytes,2,rep,name=context_notes,json=contextNotes,proto3" json:"context_notes,omitempty"`
-	// tool_endpoint is where the agent reaches the tools of the application; absent gives it none.
-	ToolEndpoint  *ToolEndpoint `protobuf:"bytes,3,opt,name=tool_endpoint,json=toolEndpoint,proto3" json:"tool_endpoint,omitempty"`
+	// conversation names the conversation the turn belongs to: a provider answers the turns of one name in
+	// one session for as long as it keeps the session. Empty is a turn of its own.
+	Conversation string `protobuf:"bytes,3,opt,name=conversation,proto3" json:"conversation,omitempty"`
+	// tool_context is handed to every tool the agent calls as the context of the call, under keys that
+	// start with the id of the plugin that wrote them and a slash.
+	ToolContext map[string]string `protobuf:"bytes,4,rep,name=tool_context,json=toolContext,proto3" json:"tool_context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// vault_id is the vault the tools the agent calls work, by identity. Empty is the vault the window shows.
+	VaultId       string `protobuf:"bytes,5,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -369,11 +375,25 @@ func (x *TaskRequest) GetContextNotes() []*ContextNote {
 	return nil
 }
 
-func (x *TaskRequest) GetToolEndpoint() *ToolEndpoint {
+func (x *TaskRequest) GetConversation() string {
 	if x != nil {
-		return x.ToolEndpoint
+		return x.Conversation
+	}
+	return ""
+}
+
+func (x *TaskRequest) GetToolContext() map[string]string {
+	if x != nil {
+		return x.ToolContext
 	}
 	return nil
+}
+
+func (x *TaskRequest) GetVaultId() string {
+	if x != nil {
+		return x.VaultId
+	}
+	return ""
 }
 
 type ContextNote struct {
@@ -436,60 +456,6 @@ func (x *ContextNote) GetText() string {
 	return ""
 }
 
-// ToolEndpoint is an MCP server over HTTP.
-type ToolEndpoint struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Url   string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	// token is sent as a bearer token.
-	Token         string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ToolEndpoint) Reset() {
-	*x = ToolEndpoint{}
-	mi := &file_acp_acp_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ToolEndpoint) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ToolEndpoint) ProtoMessage() {}
-
-func (x *ToolEndpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ToolEndpoint.ProtoReflect.Descriptor instead.
-func (*ToolEndpoint) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *ToolEndpoint) GetUrl() string {
-	if x != nil {
-		return x.Url
-	}
-	return ""
-}
-
-func (x *ToolEndpoint) GetToken() string {
-	if x != nil {
-		return x.Token
-	}
-	return ""
-}
-
 // TaskFrame is one data frame of acp.task: one session update.
 type TaskFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -506,7 +472,7 @@ type TaskFrame struct {
 
 func (x *TaskFrame) Reset() {
 	*x = TaskFrame{}
-	mi := &file_acp_acp_proto_msgTypes[3]
+	mi := &file_acp_acp_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +484,7 @@ func (x *TaskFrame) String() string {
 func (*TaskFrame) ProtoMessage() {}
 
 func (x *TaskFrame) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[3]
+	mi := &file_acp_acp_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,7 +497,7 @@ func (x *TaskFrame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskFrame.ProtoReflect.Descriptor instead.
 func (*TaskFrame) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{3}
+	return file_acp_acp_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TaskFrame) GetUpdate() isTaskFrame_Update {
@@ -616,7 +582,7 @@ type MessageChunk struct {
 
 func (x *MessageChunk) Reset() {
 	*x = MessageChunk{}
-	mi := &file_acp_acp_proto_msgTypes[4]
+	mi := &file_acp_acp_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -628,7 +594,7 @@ func (x *MessageChunk) String() string {
 func (*MessageChunk) ProtoMessage() {}
 
 func (x *MessageChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[4]
+	mi := &file_acp_acp_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -641,7 +607,7 @@ func (x *MessageChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageChunk.ProtoReflect.Descriptor instead.
 func (*MessageChunk) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{4}
+	return file_acp_acp_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MessageChunk) GetMessageId() string {
@@ -667,7 +633,7 @@ type Plan struct {
 
 func (x *Plan) Reset() {
 	*x = Plan{}
-	mi := &file_acp_acp_proto_msgTypes[5]
+	mi := &file_acp_acp_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -679,7 +645,7 @@ func (x *Plan) String() string {
 func (*Plan) ProtoMessage() {}
 
 func (x *Plan) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[5]
+	mi := &file_acp_acp_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -692,7 +658,7 @@ func (x *Plan) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Plan.ProtoReflect.Descriptor instead.
 func (*Plan) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{5}
+	return file_acp_acp_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Plan) GetEntries() []*PlanEntry {
@@ -713,7 +679,7 @@ type PlanEntry struct {
 
 func (x *PlanEntry) Reset() {
 	*x = PlanEntry{}
-	mi := &file_acp_acp_proto_msgTypes[6]
+	mi := &file_acp_acp_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -725,7 +691,7 @@ func (x *PlanEntry) String() string {
 func (*PlanEntry) ProtoMessage() {}
 
 func (x *PlanEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[6]
+	mi := &file_acp_acp_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -738,7 +704,7 @@ func (x *PlanEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanEntry.ProtoReflect.Descriptor instead.
 func (*PlanEntry) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{6}
+	return file_acp_acp_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PlanEntry) GetContent() string {
@@ -774,7 +740,7 @@ type ToolCallLocation struct {
 
 func (x *ToolCallLocation) Reset() {
 	*x = ToolCallLocation{}
-	mi := &file_acp_acp_proto_msgTypes[7]
+	mi := &file_acp_acp_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -786,7 +752,7 @@ func (x *ToolCallLocation) String() string {
 func (*ToolCallLocation) ProtoMessage() {}
 
 func (x *ToolCallLocation) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[7]
+	mi := &file_acp_acp_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -799,7 +765,7 @@ func (x *ToolCallLocation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolCallLocation.ProtoReflect.Descriptor instead.
 func (*ToolCallLocation) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{7}
+	return file_acp_acp_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ToolCallLocation) GetPath() string {
@@ -834,7 +800,7 @@ type ToolCall struct {
 
 func (x *ToolCall) Reset() {
 	*x = ToolCall{}
-	mi := &file_acp_acp_proto_msgTypes[8]
+	mi := &file_acp_acp_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +812,7 @@ func (x *ToolCall) String() string {
 func (*ToolCall) ProtoMessage() {}
 
 func (x *ToolCall) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[8]
+	mi := &file_acp_acp_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -859,7 +825,7 @@ func (x *ToolCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
 func (*ToolCall) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{8}
+	return file_acp_acp_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ToolCall) GetToolCallId() string {
@@ -927,7 +893,7 @@ type ToolCallUpdate struct {
 
 func (x *ToolCallUpdate) Reset() {
 	*x = ToolCallUpdate{}
-	mi := &file_acp_acp_proto_msgTypes[9]
+	mi := &file_acp_acp_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -939,7 +905,7 @@ func (x *ToolCallUpdate) String() string {
 func (*ToolCallUpdate) ProtoMessage() {}
 
 func (x *ToolCallUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[9]
+	mi := &file_acp_acp_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -952,7 +918,7 @@ func (x *ToolCallUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolCallUpdate.ProtoReflect.Descriptor instead.
 func (*ToolCallUpdate) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{9}
+	return file_acp_acp_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ToolCallUpdate) GetToolCallId() string {
@@ -1014,7 +980,7 @@ type TaskDone struct {
 
 func (x *TaskDone) Reset() {
 	*x = TaskDone{}
-	mi := &file_acp_acp_proto_msgTypes[10]
+	mi := &file_acp_acp_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1026,7 +992,7 @@ func (x *TaskDone) String() string {
 func (*TaskDone) ProtoMessage() {}
 
 func (x *TaskDone) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[10]
+	mi := &file_acp_acp_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1039,7 +1005,7 @@ func (x *TaskDone) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskDone.ProtoReflect.Descriptor instead.
 func (*TaskDone) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{10}
+	return file_acp_acp_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *TaskDone) GetStopReason() StopReason {
@@ -1053,18 +1019,20 @@ var File_acp_acp_proto protoreflect.FileDescriptor
 
 const file_acp_acp_proto_rawDesc = "" +
 	"\n" +
-	"\racp/acp.proto\x12\tnumen.acp\"\xa0\x01\n" +
+	"\racp/acp.proto\x12\tnumen.acp\"\xad\x02\n" +
 	"\vTaskRequest\x12\x16\n" +
 	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12;\n" +
-	"\rcontext_notes\x18\x02 \x03(\v2\x16.numen.acp.ContextNoteR\fcontextNotes\x12<\n" +
-	"\rtool_endpoint\x18\x03 \x01(\v2\x17.numen.acp.ToolEndpointR\ftoolEndpoint\"K\n" +
+	"\rcontext_notes\x18\x02 \x03(\v2\x16.numen.acp.ContextNoteR\fcontextNotes\x12\"\n" +
+	"\fconversation\x18\x03 \x01(\tR\fconversation\x12J\n" +
+	"\ftool_context\x18\x04 \x03(\v2'.numen.acp.TaskRequest.ToolContextEntryR\vtoolContext\x12\x19\n" +
+	"\bvault_id\x18\x05 \x01(\tR\avaultId\x1a>\n" +
+	"\x10ToolContextEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"K\n" +
 	"\vContextNote\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\";\n" +
-	"\fToolEndpoint\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url\x12\x19\n" +
-	"\x05token\x18\x02 \x01(\tB\x03\x80\x01\x01R\x05token\"\x82\x02\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\"\x82\x02\n" +
 	"\tTaskFrame\x12I\n" +
 	"\x13agent_message_chunk\x18\x01 \x01(\v2\x17.numen.acp.MessageChunkH\x00R\x11agentMessageChunk\x12%\n" +
 	"\x04plan\x18\x02 \x01(\v2\x0f.numen.acp.PlanH\x00R\x04plan\x122\n" +
@@ -1166,32 +1134,32 @@ var file_acp_acp_proto_goTypes = []any{
 	(StopReason)(0),          // 4: numen.acp.StopReason
 	(*TaskRequest)(nil),      // 5: numen.acp.TaskRequest
 	(*ContextNote)(nil),      // 6: numen.acp.ContextNote
-	(*ToolEndpoint)(nil),     // 7: numen.acp.ToolEndpoint
-	(*TaskFrame)(nil),        // 8: numen.acp.TaskFrame
-	(*MessageChunk)(nil),     // 9: numen.acp.MessageChunk
-	(*Plan)(nil),             // 10: numen.acp.Plan
-	(*PlanEntry)(nil),        // 11: numen.acp.PlanEntry
-	(*ToolCallLocation)(nil), // 12: numen.acp.ToolCallLocation
-	(*ToolCall)(nil),         // 13: numen.acp.ToolCall
-	(*ToolCallUpdate)(nil),   // 14: numen.acp.ToolCallUpdate
-	(*TaskDone)(nil),         // 15: numen.acp.TaskDone
+	(*TaskFrame)(nil),        // 7: numen.acp.TaskFrame
+	(*MessageChunk)(nil),     // 8: numen.acp.MessageChunk
+	(*Plan)(nil),             // 9: numen.acp.Plan
+	(*PlanEntry)(nil),        // 10: numen.acp.PlanEntry
+	(*ToolCallLocation)(nil), // 11: numen.acp.ToolCallLocation
+	(*ToolCall)(nil),         // 12: numen.acp.ToolCall
+	(*ToolCallUpdate)(nil),   // 13: numen.acp.ToolCallUpdate
+	(*TaskDone)(nil),         // 14: numen.acp.TaskDone
+	nil,                      // 15: numen.acp.TaskRequest.ToolContextEntry
 }
 var file_acp_acp_proto_depIdxs = []int32{
 	6,  // 0: numen.acp.TaskRequest.context_notes:type_name -> numen.acp.ContextNote
-	7,  // 1: numen.acp.TaskRequest.tool_endpoint:type_name -> numen.acp.ToolEndpoint
-	9,  // 2: numen.acp.TaskFrame.agent_message_chunk:type_name -> numen.acp.MessageChunk
-	10, // 3: numen.acp.TaskFrame.plan:type_name -> numen.acp.Plan
-	13, // 4: numen.acp.TaskFrame.tool_call:type_name -> numen.acp.ToolCall
-	14, // 5: numen.acp.TaskFrame.tool_call_update:type_name -> numen.acp.ToolCallUpdate
-	11, // 6: numen.acp.Plan.entries:type_name -> numen.acp.PlanEntry
+	15, // 1: numen.acp.TaskRequest.tool_context:type_name -> numen.acp.TaskRequest.ToolContextEntry
+	8,  // 2: numen.acp.TaskFrame.agent_message_chunk:type_name -> numen.acp.MessageChunk
+	9,  // 3: numen.acp.TaskFrame.plan:type_name -> numen.acp.Plan
+	12, // 4: numen.acp.TaskFrame.tool_call:type_name -> numen.acp.ToolCall
+	13, // 5: numen.acp.TaskFrame.tool_call_update:type_name -> numen.acp.ToolCallUpdate
+	10, // 6: numen.acp.Plan.entries:type_name -> numen.acp.PlanEntry
 	0,  // 7: numen.acp.PlanEntry.priority:type_name -> numen.acp.PlanEntryPriority
 	1,  // 8: numen.acp.PlanEntry.status:type_name -> numen.acp.PlanEntryStatus
 	2,  // 9: numen.acp.ToolCall.kind:type_name -> numen.acp.ToolKind
 	3,  // 10: numen.acp.ToolCall.status:type_name -> numen.acp.ToolCallStatus
-	12, // 11: numen.acp.ToolCall.locations:type_name -> numen.acp.ToolCallLocation
+	11, // 11: numen.acp.ToolCall.locations:type_name -> numen.acp.ToolCallLocation
 	2,  // 12: numen.acp.ToolCallUpdate.kind:type_name -> numen.acp.ToolKind
 	3,  // 13: numen.acp.ToolCallUpdate.status:type_name -> numen.acp.ToolCallStatus
-	12, // 14: numen.acp.ToolCallUpdate.locations:type_name -> numen.acp.ToolCallLocation
+	11, // 14: numen.acp.ToolCallUpdate.locations:type_name -> numen.acp.ToolCallLocation
 	4,  // 15: numen.acp.TaskDone.stop_reason:type_name -> numen.acp.StopReason
 	16, // [16:16] is the sub-list for method output_type
 	16, // [16:16] is the sub-list for method input_type
@@ -1205,13 +1173,13 @@ func file_acp_acp_proto_init() {
 	if File_acp_acp_proto != nil {
 		return
 	}
-	file_acp_acp_proto_msgTypes[3].OneofWrappers = []any{
+	file_acp_acp_proto_msgTypes[2].OneofWrappers = []any{
 		(*TaskFrame_AgentMessageChunk)(nil),
 		(*TaskFrame_Plan)(nil),
 		(*TaskFrame_ToolCall)(nil),
 		(*TaskFrame_ToolCallUpdate)(nil),
 	}
-	file_acp_acp_proto_msgTypes[9].OneofWrappers = []any{}
+	file_acp_acp_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
