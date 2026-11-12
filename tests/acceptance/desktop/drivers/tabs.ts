@@ -91,7 +91,7 @@ export class TabDriver {
             const listed = pickKindTab(kind, await this.listCandidates(kind, reference, name), reference, name)
             found = listed
             // The core lists the tabs the window wrote last: after a vault switch that is still the old window.
-            if ((await this.strip.tabById(listed.id).count()) === 0) throw new Error(`the tab ${reference} "${name}" is not shown yet`)
+            if (listed !== undefined && (await this.strip.tabById(listed.id).count()) === 0) throw new Error(`the tab ${reference} "${name}" is not shown yet`)
             problem = undefined
           } catch (error) {
             found = undefined
