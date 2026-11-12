@@ -20,10 +20,11 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 // tokenVar names the variable holding the token the host authenticates with.
-const tokenVar = "NUMEN_PLUGIN_TOKEN"
+const tokenVar = hostcall.PluginTokenEnv
 
 func parseDefaultFlags() int {
 	port := readFlagPort()
@@ -53,7 +54,7 @@ func readFlagPort() int {
 }
 
 func readEnvPort() int {
-	port, err := strconv.Atoi(os.Getenv("NUMEN_PLUGIN_PORT"))
+	port, err := strconv.Atoi(os.Getenv(hostcall.PluginPortEnv))
 	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return 0
