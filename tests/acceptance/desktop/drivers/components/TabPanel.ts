@@ -20,6 +20,11 @@ export class TabPanel {
     return this.panel.getByRole('button', { name: /^Pause/ })
   }
 
+  /** The text of a recording, which a person edits. */
+  transcript(): Locator {
+    return this.panel.getByRole('textbox', { name: 'Transcript' })
+  }
+
   /** The row of the file tree named by its path. */
   treeRow(path: string): Locator {
     return this.panel.locator(`[data-tree-row="${path}"]`)

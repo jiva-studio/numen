@@ -51,7 +51,16 @@ export class SearchDriver {
   }
 
   async expectNoResult(text: string, group: string): Promise<void> {
-    await expect(this.getResults(text, group)).toHaveCount(0)
+    const results = this.getResults(text, group)
+    if (this.query === '') {
+      await expect(results).toHaveCount(0)
+      return
+    }
+    // A file that lost its text leaves the index after a while, so the words are typed again until the result is gone.
+    await expect(async () => {
+      await this.type()
+      await expect(results).toHaveCount(0, { timeout: 3_000 })
+    }).toPass({ timeout: INDEXING_LIMIT_MS })
   }
 
   async chooseResult(text: string, group: string): Promise<void> {

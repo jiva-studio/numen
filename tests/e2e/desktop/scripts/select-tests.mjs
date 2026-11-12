@@ -5,7 +5,7 @@
 //
 // A scope is `all`, `none`, or tokens separated by spaces. A token without `/` is a folder under
 // tests/plugins/ (`readers.epub`); a token with `/` is a folder (ending in `/`) or a spec file
-// under tests/ (`scenarios/recording.spec.ts`). A scope of tokens runs them and tests/shell/.
+// under tests/ (`scenarios/recognition.spec.ts`). A scope of tokens runs them and tests/shell/.
 // A change to features/ or tests/acceptance/ adds the token `acceptance`, which runs the acceptance
 // scenarios and no spec file; `all` runs them too.
 //
@@ -46,11 +46,11 @@ export const PLUGIN_TESTS = {
   'agents-tools-window': ['agents.chat'],
   'views-agent-chat': ['agents.chat'],
   'engines-ocr': ['scenarios/recognition.spec.ts'],
-  'engines-transcription': ['scenarios/recording.spec.ts'],
+  'engines-transcription': [ACCEPTANCE],
   'readers-pdf': ['scenarios/recognition.spec.ts'],
   'tools-media-importer': [ACCEPTANCE],
   'tools-proofreading': [ACCEPTANCE],
-  'views-media-viewer': ['scenarios/recording.spec.ts'],
+  'views-media-viewer': [ACCEPTANCE],
 }
 
 /** The scenarios and the code that runs them. */
