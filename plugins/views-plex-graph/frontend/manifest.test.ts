@@ -169,3 +169,59 @@ describe('the readme', () => {
     expect(readme).toMatch(/title bar/i)
   })
 })
+
+describe('the look settings of the plex', () => {
+  const { settings } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+  ) as { settings: readonly Record<string, unknown>[] }
+
+  const NUMBERS = [
+    ['pillPaddingSides', 'Pill padding, sides', 10, 0, 24, 1],
+    ['pillPaddingEnds', 'Pill padding, top and bottom', 9.25, 0, 16, 0.25],
+    ['focusSize', 'Focus size', 1.22, 1, 2.5, 0.01],
+    ['animationLength', 'Animation', 420, 0, 2000, 20],
+    ['lineThickness', 'Line thickness', 2, 0.5, 4, 0.25],
+    ['outlineThickness', 'Outline thickness', 1, 0.5, 4, 0.25],
+    ['lineCurvature', 'Line curvature', 0.55, 0, 1, 0.05],
+    ['noteRoom', 'Room around a note', 0, 0, 40, 1],
+  ] as const
+
+  it('offers Pill background in the command palette, on by default', () => {
+    expect(settings.find((one) => one.key === 'showPills')).toMatchObject({
+      type: 'boolean',
+      title: 'Pill background',
+      default: true,
+      palette: true,
+      icon: 'waypoints',
+    })
+  })
+
+  it('declares every number with its title, default, range and step', () => {
+    for (const [key, title, value, min, max, step] of NUMBERS) {
+      expect(
+        settings.find((one) => one.key === key),
+        key,
+      ).toMatchObject({
+        type: 'number',
+        title,
+        default: value,
+        min,
+        max,
+        step,
+      })
+    }
+  })
+
+  it('declares the look after the two heading settings, which keep their keys', () => {
+    expect(settings.map((one) => one.key)).toStrictEqual([
+      'nestHeadings',
+      'headingLimit',
+      'showPills',
+      ...NUMBERS.map(([key]) => key),
+    ])
+  })
+
+  it('gives every look setting a description', () => {
+    for (const one of settings) expect(one.description, String(one.key)).toBeTruthy()
+  })
+})

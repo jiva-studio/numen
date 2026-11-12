@@ -3,7 +3,7 @@
  * where each is positioned partway through the opening.
  */
 import { describe, expect, it } from 'vitest'
-import { easeOut } from './arrange'
+import { arrangePlex, easeOut } from './arrange'
 import { getNodeHeadings as baseGetNodeHeadings, type HeadingsDeps } from './inside'
 import { getFurthestOffset, getOpenHeadings, scrollBy } from './open'
 import type { PlacedNode } from './node'
@@ -524,5 +524,30 @@ describe('the arrows at the edges of the ground', () => {
       resolved.offset,
       resolved.offset + WIDE,
     ])
+  })
+})
+
+describe('the headings of the focus at another Focus size', () => {
+  const around = {
+    nodes: [
+      { id: 'focus', title: 'Ports', relation: 'focus' as const },
+      { id: 'child-0', title: 'Domain', relation: 'child' as const },
+    ],
+    edges: [{ from: 'focus', to: 'child-0' }],
+  }
+
+  const getFocus = (focusScale: number): PlacedNode =>
+    arrangePlex(around, { options: { focusScale } }).nodes.find(
+      (node) => node.relation === 'focus',
+    )!
+
+  it('starts the first heading lower under a larger focus, by half of what the focus grew', () => {
+    const small = getFocus(1)
+    const large = getFocus(2)
+    const smallTop = getNodeHeadings(small, headings(3))!.top
+    const largeTop = getNodeHeadings(large, headings(3))!.top
+
+    expect(large.height).toBeGreaterThan(small.height)
+    expect(largeTop - smallTop).toBeCloseTo((large.height - small.height) / 2, 6)
   })
 })

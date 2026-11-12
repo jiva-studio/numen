@@ -4,7 +4,7 @@
  */
 import { computed } from 'vue'
 import { Menu, LoadingIndicator } from '@numen/ui'
-import { optionsForType, Plex, useTypeSize } from '../plex'
+import { Plex, useTypeSize } from '../plex'
 import type { MenuTrigger } from '@numen/ui'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
@@ -12,6 +12,7 @@ import type { Connection } from '@numen/plugin-sdk'
 import type { PlexTabState, PlexRelation, PlexDestination } from '../types'
 import { WORDS as words } from '../words'
 import { usePlexCanvas } from '../model/usePlexCanvas'
+import { getPlexOptions } from '../model/plexOptions'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 defineOptions({ name: 'PlexTab' })
@@ -23,12 +24,10 @@ const { request: menu, menuItems: items, getMenuIcon, getNodeIcon } = props.stat
 const { quickLink } = props.state.quickLink
 const { linkInspector } = props.state.inspector
 const { maxHeadings } = props.state.headings
+const { look } = props.state
 
 const type = useTypeSize()
-const options = computed(() => ({
-  ...optionsForType(type.value),
-  maxHeadings: maxHeadings.value,
-}))
+const options = computed(() => getPlexOptions(look, type.value, maxHeadings.value))
 
 const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
   usePlexCanvas({ state: props.state })
@@ -121,6 +120,10 @@ function onDismissLinkInspector() {
       class="plex__image"
       :neighborhood="neighborhood!"
       :options="options"
+      :show-pills="look.showPills.value"
+      :duration="look.animationLength.value"
+      :line-width="look.lineThickness.value"
+      :outline-width="look.outlineThickness.value"
       :creatable="props.state.canvas.creatable"
       :pending="pending"
       :dragged="dragged"

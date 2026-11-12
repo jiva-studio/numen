@@ -7,18 +7,18 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, shallowRef, type ShallowRef } from 'vue'
 import { useFreeSpace, type PlexSizingProps } from './room'
-import type { PlexMetrics } from './measure'
+import type { PlexMetrics, TitleRoom } from './measure'
 import type { PlacedNode } from '../../lib/node'
-import type { Size } from '../../lib/arrange'
+import { DEFAULT_OPTIONS, type Size } from '../../lib/arrange'
 import type { Viewport } from '@numen/ui'
 
 const stand = vi.hoisted(() => ({
-  icon: undefined as (() => number) | undefined,
+  room: undefined as (() => TitleRoom) | undefined,
   metrics: undefined as unknown,
 }))
 
-const measureTitles = (icon: () => number) => {
-  stand.icon = icon
+const measureTitles = (room: () => TitleRoom) => {
+  stand.room = room
   return shallowRef(stand.metrics as PlexMetrics | undefined)
 }
 
@@ -74,7 +74,7 @@ function mountFreeSpace(
 }
 
 afterEach(() => {
-  stand.icon = undefined
+  stand.room = undefined
   stand.metrics = undefined
 })
 
@@ -108,12 +108,24 @@ describe('the room a plex has', () => {
 describe('the room kept for an icon', () => {
   it('is the width of the icon where a caller draws one', () => {
     mountFreeSpace({}, undefined, () => true)
-    expect(stand.icon?.()).toBe(OPTIONS.iconWidth)
+    expect(stand.room?.().beside).toStrictEqual([OPTIONS.iconWidth])
   })
 
   it('is nothing where the slot is not filled', () => {
     mountFreeSpace({}, undefined, () => false)
-    expect(stand.icon?.()).toBe(0)
+    expect(stand.room?.().beside).toStrictEqual([])
+  })
+})
+
+describe('the room reserved for a title without a pill', () => {
+  it('is the dot, before the icon', () => {
+    mountFreeSpace({ showPills: false }, undefined, () => true)
+    expect(stand.room?.().beside).toStrictEqual([DEFAULT_OPTIONS.dotSize, OPTIONS.iconWidth])
+  })
+
+  it('holds the side padding of the options', () => {
+    mountFreeSpace({ options: { ...OPTIONS, padding: { inline: 4 } } })
+    expect(stand.room?.().padding).toBe(4)
   })
 })
 

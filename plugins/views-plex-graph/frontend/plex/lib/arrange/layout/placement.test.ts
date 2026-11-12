@@ -67,7 +67,8 @@ describe('what arrives back', () => {
     const placedLayout = place({ child: createNodes('child', 3) })
 
     expect(placedLayout.map((node) => node.width)).toStrictEqual([144, 144, 144])
-    expect(placedLayout.map((node) => node.height)).toStrictEqual([36, 36, 36])
+    const { height } = DEFAULT_OPTIONS.nodeSize
+    expect(placedLayout.map((node) => node.height)).toStrictEqual([height, height, height])
   })
 
   it('places nothing for no nodes at all', () => {

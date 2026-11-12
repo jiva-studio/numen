@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.17",
+  "version": "2026.11.18",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -138,6 +138,95 @@
       "default": 6,
       "min": 1,
       "max": 12,
+      "step": 1
+    },
+    {
+      "key": "showPills",
+      "type": "boolean",
+      "title": "Pill background",
+      "description": "Draw a pill behind each title. Off: the title alone, with a dot in the color of its relation.",
+      "default": true,
+      "palette": true,
+      "icon": "waypoints"
+    },
+    {
+      "key": "pillPaddingSides",
+      "type": "number",
+      "title": "Pill padding, sides",
+      "description": "Space between a title and the left and right edge of its pill.",
+      "default": 10,
+      "min": 0,
+      "max": 24,
+      "step": 1
+    },
+    {
+      "key": "pillPaddingEnds",
+      "type": "number",
+      "title": "Pill padding, top and bottom",
+      "description": "Space between a title and the top and bottom edge of its pill.",
+      "default": 9.25,
+      "min": 0,
+      "max": 16,
+      "step": 0.25
+    },
+    {
+      "key": "focusSize",
+      "type": "number",
+      "title": "Focus size",
+      "description": "How much larger the pill of the note in the middle is. Its title keeps its size.",
+      "default": 1.22,
+      "min": 1,
+      "max": 2.5,
+      "step": 0.01
+    },
+    {
+      "key": "animationLength",
+      "type": "number",
+      "title": "Animation",
+      "description": "How long moving to another note takes, in milliseconds. 0 moves at once.",
+      "default": 420,
+      "min": 0,
+      "max": 2000,
+      "step": 20
+    },
+    {
+      "key": "lineThickness",
+      "type": "number",
+      "title": "Line thickness",
+      "description": "Width of the lines between notes, in pixels.",
+      "default": 2,
+      "min": 0.5,
+      "max": 4,
+      "step": 0.25
+    },
+    {
+      "key": "outlineThickness",
+      "type": "number",
+      "title": "Outline thickness",
+      "description": "Width of the outline of a pill, in pixels.",
+      "default": 1,
+      "min": 0.5,
+      "max": 4,
+      "step": 0.25
+    },
+    {
+      "key": "lineCurvature",
+      "type": "number",
+      "title": "Line curvature",
+      "description": "How far a line between two notes bends. 0 is a straight line.",
+      "default": 0.55,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "key": "noteRoom",
+      "type": "number",
+      "title": "Room around a note",
+      "description": "Extra empty space kept around every note. Larger is sparser.",
+      "default": 0,
+      "min": 0,
+      "max": 40,
       "step": 1
     }
   ],

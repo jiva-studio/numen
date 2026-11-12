@@ -12,11 +12,18 @@ import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
 import type { PlexHeading, PlexNeighborhood, PlexRelation, PlexDestination } from '../../types'
 
+/**
+ * With `showPills` off each title is drawn without its pill, after a dot in the hue of its
+ * relation. `lineWidth` and `outlineWidth` are in pixels.
+ */
 export interface PlexProps {
   neighborhood: PlexNeighborhood
   options?: PlexOptionsInput
   placement?: Placement
   showEdgeLabels?: boolean
+  showPills?: boolean
+  lineWidth?: number
+  outlineWidth?: number
   duration?: number
   clock?: Clock
   viewport?: Viewport

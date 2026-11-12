@@ -226,8 +226,9 @@ describe('what a column asks of the rows', () => {
 
   it('leaves the row whole when the column reaches exactly where the rows begin', () => {
     // Three nodes stand 70 from the axis; the first row begins 22 + 48 away.
-    expect(getRows(3, { focusGap: 48 })).toBe(6)
-    expect(getRows(3, { focusGap: 47 })).toBeLessThan(6)
+    const sizes = { nodeSize: { width: 144, height: 36 }, focusSize: { width: 176, height: 44 } }
+    expect(getRows(3, { ...sizes, focusGap: 48 })).toBe(6)
+    expect(getRows(3, { ...sizes, focusGap: 47 })).toBeLessThan(6)
   })
 
   it('keeps the widest row the window holds when no row width fits a column alongside it', () => {

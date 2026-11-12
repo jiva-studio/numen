@@ -17,11 +17,15 @@ import { browserViewport } from '@numen/ui'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
+import { getFrameStyle } from './frameStyle'
 import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {
   showEdgeLabels: true,
+  showPills: true,
+  lineWidth: 2,
+  outlineWidth: 1,
   duration: 420,
   clock: () => DEFAULT_BEHAVIOR.clock,
   viewport: () => browserViewport,
@@ -138,9 +142,7 @@ const overflow = computed(() =>
   ),
 )
 
-const frameStyle = computed(() => ({
-  '--plex-move': `${props.duration}ms`,
-}))
+const frameStyle = computed(() => getFrameStyle(props, options.value))
 
 /**
  * A neighborhood is drawn from the node it is seen from, so every node walks
@@ -166,6 +168,7 @@ watch(
       :viewport="room"
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
+      :show-pills="showPills"
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"

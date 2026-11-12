@@ -15,6 +15,7 @@ import { useNodeViews } from '../../model/useNodeViews'
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
+  showPills: true,
   canReach: true,
   relationName: getRelationName,
   behavior: () => DEFAULT_BEHAVIOR,
@@ -148,6 +149,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
       :behavior="behavior"
+      :show-pills="showPills"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"

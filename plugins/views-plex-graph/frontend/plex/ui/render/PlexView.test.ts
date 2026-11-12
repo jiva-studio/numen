@@ -487,3 +487,44 @@ describe('edge arrowheads', () => {
     expect(view.findAll('.plex__edge-arrow')).toHaveLength(2)
   })
 })
+
+describe('the gesture with Pill background off', () => {
+  const mountBare = (props: Record<string, unknown>) =>
+    mount(PlexView, {
+      props: {
+        frame: arrangePlex(before),
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+        showPills: false,
+        ...props,
+      },
+    })
+
+  it('draws no pill on any node', () => {
+    const view = mountBare({})
+    expect(view.findAll('.plex__node')).toHaveLength(3)
+    expect(view.findAll('.plex__box')).toHaveLength(0)
+  })
+
+  it('draws the ring of the note a link is dragged over', () => {
+    const view = mountBare({
+      gestureFrom: 'focus',
+      gestureAt: { x: 0, y: 200 },
+      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', relation: 'child' },
+    })
+    const target = view.get('[aria-label^="Going"]')
+    const other = view.get('[aria-label^="Staying"]')
+
+    expect(target.classes()).toContain('plex__node--target')
+    expect(target.findAll('rect').length).toBeGreaterThan(other.findAll('rect').length)
+  })
+
+  it('draws the dashed outline of the note about to be made', () => {
+    const view = mountBare({
+      gestureFrom: 'focus',
+      gestureAt: { x: 40, y: -200 },
+      gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
+    })
+    expect(view.get('.plex__node--ghost').find('.plex__box').exists()).toBe(true)
+  })
+})
