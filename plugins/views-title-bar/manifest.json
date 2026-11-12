@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.titleBar",
   "name": "Title bar",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Draws the bar at the top of each window: the commands, the vault and the window buttons",
   "targets": ["desktop.editor", "desktop.flashcards"],
@@ -15,7 +15,7 @@
       "key": "buttons",
       "type": "enum",
       "title": "Window buttons",
-      "description": "Where the bar draws the window buttons",
+      "description": "Where the bar draws the window buttons; macOS always uses the left",
       "default": "windows",
       "options": [
         { "value": "mac", "title": "Left", "detail": "Round buttons at the left, as on macOS." },

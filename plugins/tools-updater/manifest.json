@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.updater",
   "name": "Update Notifier",
-  "version": "2026.11.10",
+  "version": "2026.11.11",
   "protocol": 1,
   "description": "Notifies when a newer build of Numen is published",
   "targets": ["desktop.editor"],
@@ -49,7 +49,7 @@
       "key": "endpoint",
       "type": "string",
       "title": "Release feed address",
-      "description": "Address of latest.json for the Custom channel",
+      "description": "Required. Address of latest.json for the Custom channel",
       "default": "",
       "when": {
         "setting": "channel",

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.18",
+  "version": "2026.11.19",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
@@ -121,7 +121,7 @@
       "key": "downloadCaptionsAutomatically",
       "type": "boolean",
       "title": "Download captions automatically",
-      "description": "Download captions or the article of every new link note",
+      "description": "Download captions or the article of every link note that has none",
       "default": false
     },
     {
