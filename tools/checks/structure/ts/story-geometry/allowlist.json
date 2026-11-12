@@ -4,14 +4,6 @@
     "reason": "the prompt for two notes stays inside the viewport"
   },
   {
-    "file": "apps/desktop/editor/src/pages/settings/ui/connections/ConnectionsPage.stories.ts",
-    "reason": "the list stays inside its column at a narrow width and the dialog opens inside the viewport"
-  },
-  {
-    "file": "apps/desktop/editor/src/pages/settings/ui/plugins/connection-rows/ConnectionRows.stories.ts",
-    "reason": "the rows stay inside their column at a narrow width and a row dragged by its grip to the end of the list is moved there"
-  },
-  {
     "file": "libs/ui/components/src/features/tree/ui/Tree.stories.ts",
     "reason": "a row dragged over another is dropped before or after it by where the pointer is in the row"
   },

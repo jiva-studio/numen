@@ -117,6 +117,7 @@ describe('every setting', () => {
         version: '1.0.0',
         description: 'Sample plugin',
         isActive: true,
+        isOffByDefault: false,
         capabilities: ['tools'],
         hasFrontend: true,
         hasBackend: false,
