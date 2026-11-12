@@ -27,6 +27,12 @@ func getSources(chunks []domain.Passage) []string {
 }
 
 // preparedBatch is one batch of chunks whose text was read and whose cached vectors were resolved.
+// batchTarget is the search source a batch is embedded by and the place its vectors are stored in.
+type batchTarget struct {
+	model searchsource.Description
+	place searchsource.Place
+}
+
 type preparedBatch struct {
 	model       searchsource.Description
 	place       searchsource.Place
@@ -86,8 +92,8 @@ func (u producer) produceBatches(
 			return err
 		}
 		sortBySource(chunks, texts)
-		place := searchsource.Place{VaultID: v.ID, Recipe: model.Recipe()}
-		if err := u.sendBatches(ctx, model, place, chunks, texts, track, out); err != nil {
+		target := batchTarget{model: model, place: searchsource.Place{VaultID: v.ID, Recipe: model.Recipe()}}
+		if err := u.sendBatches(ctx, target, chunks, texts, track, out); err != nil {
 			return err
 		}
 	}
@@ -95,8 +101,7 @@ func (u producer) produceBatches(
 
 func (u producer) sendBatches(
 	ctx context.Context,
-	model searchsource.Description,
-	place searchsource.Place,
+	target batchTarget,
 	chunks []domain.Passage,
 	texts []string,
 	track *tracker,
@@ -104,7 +109,7 @@ func (u producer) sendBatches(
 ) error {
 	pos := 0
 	for _, batch := range splitBatches(texts, u.batchCharacters) {
-		prep, err := u.prepareBatch(ctx, model, place, chunks[pos:pos+len(batch)], batch)
+		prep, err := u.prepareBatch(ctx, target.model, target.place, chunks[pos:pos+len(batch)], batch)
 		if err != nil {
 			return err
 		}

@@ -64,10 +64,8 @@ type Shell struct {
 
 // OpenShell opens the registry and the cache, gives api the window of target, binds the notes, the vault list,
 // the vault indexer, the plugin vault, the change feed and the themes of the shell window to api, and tells
-// notify what it cannot follow.
-func OpenShell(c Config,
-	ctx context.Context, target string, api *shell.API, out io.Writer, label string, notify func(message string),
-) (Shell, error) {
+// log.Notify what it cannot follow.
+func OpenShell(c Config, ctx context.Context, target string, api *shell.API, log ShellLog) (Shell, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return Shell{}, err
@@ -77,21 +75,23 @@ func OpenShell(c Config,
 		return Shell{}, err
 	}
 	api.Window = shell.NewWindow(target, nil)
-	return bindShell(c, ctx, ports, db, api, shellLog{out: out, label: label, notify: notify})
+	return bindShell(c, ctx, ports, db, api, log)
 }
 
-type shellLog struct {
-	out    io.Writer
-	label  string
-	notify func(message string)
+// ShellLog is where a shell window writes what it reports: Out under Label, and Notify for what the user
+// must see.
+type ShellLog struct {
+	Out    io.Writer
+	Label  string
+	Notify func(message string)
 }
 
 func bindShell(
-	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log shellLog,
+	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log ShellLog,
 ) (Shell, error) {
 	a := plugins(c)
 	setModelCalls(a, connectionlog.NewLogNotices().ReportSetAside)
-	vaults := openVaults(a.vault, db, log.out, log.label, api.ReportVaultRead)
+	vaults := openVaults(a.vault, db, log.Out, log.Label, api.ReportVaultRead)
 	closers := Shell{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	SetShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
@@ -102,7 +102,7 @@ func bindShell(
 	if err := installPluginVault(a, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}
-	closers.Themes = followShell(a, ctx, api, log.label, log.notify)
+	closers.Themes = followShell(a, ctx, api, log.Label, log.Notify)
 	return closers, nil
 }
 

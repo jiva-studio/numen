@@ -640,7 +640,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	err := newProducer(embed, nil).sendBatches(ctx, searchsource.Description{Name: "m", Width: dimensions}, searchsource.Place{},
+	err := newProducer(embed, nil).sendBatches(ctx, batchTarget{model: searchsource.Description{Name: "m", Width: dimensions}},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 
 	if !errors.Is(err, context.Canceled) {
@@ -652,7 +652,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	track.leave(activeID)
 
 	res.CurrentSource = finished
-	err = newProducer(embed, nil).sendBatches(ctx, searchsource.Description{Name: "m", Width: dimensions}, searchsource.Place{},
+	err = newProducer(embed, nil).sendBatches(ctx, batchTarget{model: searchsource.Description{Name: "m", Width: dimensions}},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)
