@@ -131,7 +131,7 @@ func (r *Runner) open(ctx context.Context, conv *conversation, agent agents.Agen
 	opening, cancel := context.WithTimeout(ctx, r.getOpenLimit())
 	defer cancel()
 	session, err := acp.Open(opening, r.deps.Launcher, acp.Start{
-		Command: agent.Command, Servers: servers, Meta: agent.GetTaskMeta(conv.listNames()),
+		Command: agent.Command, Servers: servers,
 	})
 	if err != nil {
 		return errors.Join(connection.NewTryNextError(connection.ReasonUnavailable, 0), closeServedTools(ctx, served))

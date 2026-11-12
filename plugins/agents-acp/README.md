@@ -1,24 +1,18 @@
 # ACP Agents
 
-Use the AI assistants installed on your computer, such as Claude Code, Codex and Antigravity, in the Agent Chat panel and for AI tasks across your vault.
+Use the AI assistants installed on your computer that speak the Agent Client Protocol, such as Gemini CLI, OpenCode, Goose, Cursor Agent, Kimi and Qwen Code, in the Agent Chat panel and for AI tasks across your vault.
 
 <!-- more -->
 
 ## What You Can Do
 
-- **Chat with your favorite AI tools**: Add a connection of the type Claude Code, OpenAI Codex, Antigravity or ACP agent, and choose it as an agent of the chat. The assistant answers in the chat as it writes.
-- **Work directly with your vault**: The assistant can call the tools of your vault, such as searching your notes and reading passages from books and documents. It may call these tools and no others: it reads no file of your computer, runs no command, and of its own tools Claude Code keeps web search alone.
+- **Chat with your favorite AI tools**: Add a connection of the type ACP agent, choose its program, and choose the connection as an agent of the chat. The assistant answers in the chat as it writes.
+- **Work directly with your vault**: The assistant can call the tools of your vault, such as searching your notes and reading passages from books and documents. It may call these tools and no others: it reads no file of your computer and runs no command.
 - **Continue a conversation**: The turns of one chat continue one session of the assistant. A session unused for 30 minutes is closed, and at most 8 are kept.
-- **Any ACP assistant**: The type ACP agent runs any program that implements the Agent Client Protocol, such as `gemini --acp`, `opencode acp`, `cursor-agent acp`, `goose acp`, `kimi acp` and `qwen --acp`. Choose the program of the connection.
+- **Any ACP assistant**: The connection runs any program that implements the Agent Client Protocol, such as `gemini --acp`, `opencode acp`, `cursor-agent acp`, `goose acp`, `kimi acp` and `qwen --acp`.
 - **Answer requests of other plugins**: A request of another plugin runs in an empty temporary folder, with no tools and without writing to disk.
 
-## Programs
-
-Claude Code, Codex and Antigravity speak ACP through an adapter. Leave the program of the connection empty to use the one on your PATH:
-
-- Claude Code: `claude-agent-acp` (npm `@agentclientprotocol/claude-agent-acp`) or `claude-code-acp`.
-- Codex: `codex-acp`.
-- Antigravity: `agy`, started as `agy acp`.
+Claude Code, Codex and Antigravity have plugins of their own: Claude Code Agent, OpenAI Codex Agent and Antigravity Agent.
 
 ## Settings
 

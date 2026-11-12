@@ -70,22 +70,21 @@ func TestManifestProvidesTheTypesOfACPProgramsThatCompleteAndRunTasks(t *testing
 			t.Errorf("%s: fields = %v, want the program and then the parallel requests", one.ID, keys)
 		}
 	}
-	want := []string{"acp=ACP agent", "claude-code=Claude Code", "codex=OpenAI Codex", "antigravity=Antigravity"}
+	want := []string{"acp=ACP agent"}
 	if !slices.Equal(ids, want) {
 		t.Fatalf("types = %v, want %v", ids, want)
 	}
 }
 
-// The program is a file. The type acp names no program of its own, so a person chooses one; the others
-// find their known program where the field is empty.
-func TestTheProgramIsAFileThatOnlyTheTypeACPRequires(t *testing.T) {
+// The program is a file the person chooses: the type names no program of its own.
+func TestTheProgramIsARequiredFile(t *testing.T) {
 	for _, one := range readConnectionShape(t).Contributes.ConnectionTypes {
 		if len(one.Fields) == 0 {
 			t.Fatalf("%s has no fields", one.ID)
 		}
 		program := one.Fields[0]
-		if program.Key != "program" || program.Type != "file" || program.IsRequired != (one.ID == "acp") {
-			t.Errorf("%s: first field = %+v, want the file field program, required for acp alone", one.ID, program)
+		if program.Key != "program" || program.Type != "file" || !program.IsRequired {
+			t.Errorf("%s: first field = %+v, want the required file field program", one.ID, program)
 		}
 	}
 }

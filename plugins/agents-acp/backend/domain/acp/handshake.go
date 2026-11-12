@@ -39,9 +39,6 @@ func (s *Session) initialize(ctx context.Context) error {
 
 func (s *Session) create(ctx context.Context, start Start) error {
 	params := map[string]any{"cwd": s.proc.Dir(), "mcpServers": listServers(start.Servers)}
-	if start.Meta != nil {
-		params["_meta"] = start.Meta
-	}
 	result, err := s.call(ctx, "session/new", params, nil)
 	if err != nil {
 		return err

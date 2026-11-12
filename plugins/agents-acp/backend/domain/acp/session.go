@@ -67,12 +67,10 @@ type Server struct {
 	Token string
 }
 
-// Start is what a session is opened with: the command of the program, the MCP servers of the session and
-// the _meta of session/new, nil for none.
+// Start is what a session is opened with: the command of the program and the MCP servers of the session.
 type Start struct {
 	Command []string
 	Servers []Server
-	Meta    map[string]any
 }
 
 // Handler receives the updates of a turn and decides the permission requests of the agent.

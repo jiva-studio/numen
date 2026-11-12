@@ -93,7 +93,7 @@ func (c *Completion) Complete(
 }
 
 func (c *Completion) answer(ctx context.Context, agent agents.Agent, call connection.Call, texts []string) (text string, err error) {
-	session, err := acp.Open(ctx, c.deps.Launcher, acp.Start{Command: agent.Command, Servers: nil, Meta: agent.GetAnswerMeta()})
+	session, err := acp.Open(ctx, c.deps.Launcher, acp.Start{Command: agent.Command, Servers: nil})
 	if err != nil {
 		return "", err
 	}
