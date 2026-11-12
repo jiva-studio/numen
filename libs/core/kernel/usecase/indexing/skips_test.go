@@ -75,7 +75,7 @@ func testCanceledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc)
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
 	made, db := openReading(t)
 	fit(t, db, model)
-	recipe := model.GetModel().Recipe()
+	recipe := model.Describe().Recipe()
 
 	v := made.newVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)

@@ -37,7 +37,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 		for _, v := range target {
 			hash := hex.EncodeToString(v.Hash)
 			bought[hash] = v
-			index.Kept[v.Model.Recipe()+"/"+hash] = v.Value
+			index.Kept[v.Recipe+"/"+hash] = v.Value
 		}
 	}
 	if len(bought) == 0 {

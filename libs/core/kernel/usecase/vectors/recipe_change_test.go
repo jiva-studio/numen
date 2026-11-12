@@ -68,7 +68,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 	}
 	for _, chunk := range small {
 		stored := index.GetVectors(chunk)
-		if len(stored) != 2 || stored[0].Model != narrow.Describe() || stored[1].Model != large.Describe() {
+		if len(stored) != 2 || stored[0].Recipe != narrow.Describe().Recipe() || stored[1].Recipe != large.Describe().Recipe() {
 			t.Fatalf("chunk %d holds %d vectors, want the old one and the new one", chunk.ID, len(stored))
 		}
 	}
