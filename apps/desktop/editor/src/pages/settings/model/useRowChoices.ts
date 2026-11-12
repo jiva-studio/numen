@@ -71,9 +71,9 @@ export function useRowChoices(source: RowChoicesSource) {
   const readProblem = (
     field: ConnectionFieldInfo,
     index: number,
-    asked: Listed | undefined,
+    listing: Listed | undefined,
   ): string => {
-    if (asked && asked.problem !== '') return asked.problem
+    if (listing && listing.problem !== '') return listing.problem
     if (!field.isRequired || getValue(field) !== '' || isWaiting(index)) return ''
     return words.connectionRowsChooseValue(field.title)
   }
