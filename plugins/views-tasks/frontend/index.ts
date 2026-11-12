@@ -24,7 +24,7 @@ export function createTasksView(host: BackgroundTaskHost | undefined) {
           onCancel: (id: string) => host.cancel(id).catch(() => undefined),
           onRetry: (id: string) => host.retry(id),
           onDismiss: (id: string) => host.dismiss(id),
-          onOpenSettings: (pluginId: string) => host.openSettings(pluginId),
+          onRunAction: (id: string) => host.runAction(id),
         })
     },
   })

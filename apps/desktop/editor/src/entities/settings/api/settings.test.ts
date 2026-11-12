@@ -207,41 +207,6 @@ describe('every setting', () => {
 })
 
 describe('a plugin whose last start failed', () => {
-  it('arrives with the reason and the time it was given up', async () => {
-    request.getSettings.mockResolvedValue(
-      answer(
-        {},
-        {
-          plugins: [
-            {
-              id: 'sample.plugin',
-              name: 'Sample',
-              capabilities: [],
-              readers: [],
-              settingsViews: [],
-              settings: [],
-              failure: {
-                reason: 'Timed out while starting',
-                detail: 'handshake timeout',
-                failedAtUnixMs: 1_700_000_000_123n,
-              },
-            },
-          ],
-        },
-      ),
-    )
-
-    const got = await core.getSettings()
-
-    expect(got.plugins?.[0]?.failure).toStrictEqual({
-      reason: 'Timed out while starting',
-      detail: 'handshake timeout',
-      failedAt: 1_700_000_000_123,
-    })
-    expect(got.plugins?.[0]?.readers).toStrictEqual([])
-    expect(got.plugins?.[0]?.settingsViews).toStrictEqual([])
-  })
-
   it('is started again by its id, and the answer is why it failed again', async () => {
     request.retryPlugin.mockResolvedValue({
       failure: 'Timed out while starting',

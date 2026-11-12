@@ -45,6 +45,7 @@ export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId
 export * from './contract'
 export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
 export { createPluginTasks, type WindowTask } from './pluginTasks'
+export type { HealthReports } from './pluginHealth'
 export {
   createCustomTabKind,
   createPluginHost,

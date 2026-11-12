@@ -6,6 +6,7 @@
 import { createPluginNotices, createPluginTasks, type PluginHostDeps } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
+import { healthReports } from '@/entities/plugin'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
 
@@ -88,7 +89,7 @@ export function createVaultServiceParts(deps: {
   }
 }
 
-/** The buffers and the tasks the window gives a plugin. */
+/** The buffers, the tasks and the health items the window gives a plugin. */
 export function createTaskServiceParts(deps: {
   readonly services: Pick<PluginServices, 'buffers' | 'noteBuffer' | 'taskList' | 'backgroundTasks'>
 }): HostParts {
@@ -98,6 +99,7 @@ export function createTaskServiceParts(deps: {
     getNoteBuffer: () => services.noteBuffer,
     getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
     getBackgroundTasks: () => services.backgroundTasks,
+    health: healthReports,
   }
 }
 

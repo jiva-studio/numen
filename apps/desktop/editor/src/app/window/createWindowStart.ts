@@ -118,6 +118,8 @@ export function createWindowStart(deps: WindowStartDeps) {
     pluginHost,
     frame,
     settingsRequests,
+    health: window.pluginHealth,
+    commands: plugins.hostPort.commands,
   })
   createWindowKeys({
     windowTabs,

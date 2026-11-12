@@ -3,7 +3,7 @@
  * The plugin list of the settings tab: the plugin manager drawn over the installation's plugins,
  * the catalog and the enabled settings.
  */
-import { PluginsList as PluginsListView } from '@numen/plugin-manager'
+import { PluginsList as PluginsListView, type PluginHealth } from '@numen/plugin-manager'
 import { usePluginsList } from '../../model/usePluginsList'
 import type { InstallationSettings } from '../../types'
 import type { CatalogEntry } from '@/entities/plugin'
@@ -15,6 +15,7 @@ const props = defineProps<{
   catalog: readonly CatalogEntry[]
   query: string
   plugins: readonly PluginInfo[]
+  health?: Readonly<Record<string, readonly PluginHealth[]>>
 }>()
 
 const emit = defineEmits<{
@@ -47,6 +48,7 @@ function onSelectPlugin(pluginId: string): void {
     v-model:query="searchQuery"
     :plugins="managed"
     :enabled="enabled"
+    :health="props.health ?? {}"
     @select-plugin="onSelectPlugin"
     @toggle-enabled="onTogglePlugin"
   />

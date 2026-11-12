@@ -23,6 +23,6 @@ export function createTask({ progress, allowed, action, ...fields }: TaskFields)
     ...fields,
     progress: { completedCount: 0, total: 0, counting: '', ...progress },
     allowed: { cancel: false, retry: false, ...allowed },
-    action: { label: '', pluginId: '', ...action },
+    action: { label: '', ...action },
   }
 }

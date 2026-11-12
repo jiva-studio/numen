@@ -33,7 +33,7 @@ const emit = defineEmits<{
   (event: 'cancel', id: string): void
   (event: 'retry', id: string): void
   (event: 'dismiss', id: string): void
-  (event: 'open-settings', pluginId: string): void
+  (event: 'run-action', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -85,8 +85,8 @@ function onDismiss() {
   emit('dismiss', props.task.id)
 }
 
-function onOpenSettings() {
-  emit('open-settings', props.task.action.pluginId)
+function onRunAction() {
+  emit('run-action', props.task.id)
 }
 </script>
 
@@ -114,7 +114,7 @@ function onOpenSettings() {
         {{ subtext }}
       </span>
       <div v-if="isFailed && task.action.label" class="task-item__failure-row">
-        <button type="button" class="task-item__action-link" @click.stop="onOpenSettings">
+        <button type="button" class="task-item__action-link" @click.stop="onRunAction">
           {{ task.action.label }} &rarr;
         </button>
       </div>

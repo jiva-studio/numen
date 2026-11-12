@@ -48,6 +48,9 @@ const window = (override: Partial<CommandDeps> = {}) => {
       openTab: (kind) => {
         actions.push(`openTab ${kind}`)
       },
+      openSettings: (request) => {
+        actions.push(`openSettings ${request.pluginId ?? ''} ${request.setting ?? ''}`.trim())
+      },
       closeTab: (tab) => {
         actions.push(`closeTab ${tab}`)
       },
@@ -158,7 +161,21 @@ describe('a command over the window', () => {
     await carry(createInvocation('app:settings.open', front()), one.on)
     await carry(createInvocation('app:tab.close', front()), one.on)
 
-    expect(one.actions).toStrictEqual(['openTab settings', 'closeTab tab'])
+    expect(one.actions).toStrictEqual(['openSettings', 'closeTab tab'])
+  })
+
+  it('opens the settings at the plugin and the setting its values name', async () => {
+    const one = window()
+
+    await carry(
+      {
+        ...createInvocation('app:settings.open', front()),
+        values: { plugin: 'org.example.atlas', setting: 'source' },
+      },
+      one.on,
+    )
+
+    expect(one.actions).toStrictEqual(['openSettings org.example.atlas source'])
   })
 
   it('passes the field back to the search', async () => {
