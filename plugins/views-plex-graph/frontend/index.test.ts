@@ -57,7 +57,8 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.plugin.subscriptions).toHaveLength(5)
+    // The tab kind, the vault, the command, and one for each of the eleven settings.
+    expect(ctx.plugin.subscriptions).toHaveLength(14)
 
     ctx.dispose()
     expect(ctx.plugin.subscriptions).toHaveLength(0)

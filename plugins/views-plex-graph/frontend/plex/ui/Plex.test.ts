@@ -170,22 +170,28 @@ describe('how wide a box is drawn', () => {
     plex.findAll('.plex__node--child .plex__box').map((box) => box.attributes('width'))
 
   /** The type the page is set in, which a theme may rewrite at any moment. */
-  let theme = { size: 13, padding: 10, gap: 6, label: 10 }
+  let theme = { size: 13, gap: 6, label: 10 }
 
   const readThemeType = () => ({
     font: `${theme.size}px Test Sans`,
     labelFont: `${theme.label}px Test Sans`,
-    padding: theme.padding,
     gap: theme.gap,
   })
 
-  /** A canvas that measures by the character. jsdom has none of its own. */
+  /**
+   * A canvas that measures by the character, seven pixels each at 13 pixels and more in a
+   * larger type. jsdom has none of its own.
+   */
   const stubCanvas = () => {
     vi.stubGlobal('CanvasRenderingContext2D', class {})
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    const context = {
       font: '',
-      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
-    } as unknown as CanvasRenderingContext2D)
+      measureText: (text: string) =>
+        ({ width: (text.length * 7 * (Number.parseFloat(context.font) || 13)) / 13 }) as TextMetrics,
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      context as unknown as CanvasRenderingContext2D,
+    )
   }
 
   /** A window that reports a size change when a test triggers it. */
@@ -209,7 +215,7 @@ describe('how wide a box is drawn', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
-    theme = { size: 13, padding: 10, gap: 6, label: 10 }
+    theme = { size: 13, gap: 6, label: 10 }
     document.body.replaceChildren()
   })
 
@@ -261,7 +267,7 @@ describe('how wide a box is drawn', () => {
     const plex = mountPlex({ readType: readThemeType })
     const painted = boxes(plex)
 
-    theme = { ...theme, size: 20, padding: 24 }
+    theme = { ...theme, size: 26 }
     for (const ring of rings) ring()
     await nextTick()
 

@@ -142,7 +142,8 @@ describe('dropping on a node makes a link', () => {
   it('takes the direction from the node landed on, not the exact point', () => {
     // Anywhere inside the box is the same landing, so a link does not change
     // its meaning depending on which corner the pointer stopped in.
-    const corner = { x: child.x - child.width / 2, y: child.y + child.height / 2 }
+    // Half a pixel in, so a height that is not a whole number does not round the corner out.
+    const corner = { x: child.x - child.width / 2 + 0.5, y: child.y + child.height / 2 - 0.5 }
     expect(drop(focus.id, corner)).toStrictEqual(drop(focus.id, { x: child.x, y: child.y }))
   })
 
