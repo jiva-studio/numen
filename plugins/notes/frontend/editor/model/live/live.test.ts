@@ -319,7 +319,9 @@ describe('the marks of whole lines retained in the state', () => {
   it('carry on unchanged when text is typed after a rule', () => {
     const { state } = createLinesState(RULE)
     const [was] = getStandingMarks(state)
-    const [now] = getStandingMarks(state.update({ changes: { from: RULE.length, insert: 'xy' } }).state)
+    const [now] = getStandingMarks(
+      state.update({ changes: { from: RULE.length, insert: 'xy' } }).state,
+    )
     expect(now?.deco).toBe(was?.deco)
   })
 

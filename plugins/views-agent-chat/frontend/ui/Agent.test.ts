@@ -58,7 +58,11 @@ describe('a question sent', () => {
   })
 
   it('brings the foot of the conversation into view', async () => {
-    const one = createAgent([createRequestedTurn('1'), createRespondedTurn('2'), createRequestedTurn('3')])
+    const one = createAgent([
+      createRequestedTurn('1'),
+      createRespondedTurn('2'),
+      createRequestedTurn('3'),
+    ])
     await one.reads(0)
 
     await one.sends('and one more')
@@ -77,7 +81,11 @@ describe('a question sent', () => {
 
 describe('a conversation read further up', () => {
   it('keeps its read position while an answer arrives', async () => {
-    const one = createAgent([createRequestedTurn('1'), createRespondedTurn('2'), createRequestedTurn('3')])
+    const one = createAgent([
+      createRequestedTurn('1'),
+      createRespondedTurn('2'),
+      createRequestedTurn('3'),
+    ])
     await one.reads(0)
 
     await one.wrapper.setProps({

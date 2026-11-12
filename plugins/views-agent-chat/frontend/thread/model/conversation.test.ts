@@ -61,7 +61,11 @@ const createStoppedStep = (error = ''): AgentStep => ({ kind: 'stopped', error }
 describe('an answer', () => {
   it('grows as its pieces arrive and settles when they stop', async () => {
     const conversation = useConversation(
-      createPort([createTranscriptStep('Two '), createTranscriptStep('notes.'), createStoppedStep()]),
+      createPort([
+        createTranscriptStep('Two '),
+        createTranscriptStep('notes.'),
+        createStoppedStep(),
+      ]),
       words,
       called,
       now,

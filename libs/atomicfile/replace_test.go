@@ -83,7 +83,7 @@ func TestReplaceKeepsTheOldFileWhenTheSourceFails(t *testing.T) {
 
 func TestReplaceWritesATargetWhoseNameFillsTheLimit(t *testing.T) {
 	dir := t.TempDir()
-	name := strings.Repeat("é", 127) + ".md"
+	name := strings.Repeat("é", 126) + ".md"
 	if _, err := atomicfile.Replace(t.Context(), openRoot(t, dir), name, strings.NewReader("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}

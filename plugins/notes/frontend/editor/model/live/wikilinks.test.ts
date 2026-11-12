@@ -64,9 +64,9 @@ describe('a wikilink with the caret away from it', () => {
 
   it('leaves a link inside code as plain text', () => {
     const doc = `\`[[A]]\`${ELSEWHERE}`
-    expect(getDrawnWikilinks(doc, doc.length).filter((one) => one.name.includes('wikilink'))).toStrictEqual(
-      [],
-    )
+    expect(
+      getDrawnWikilinks(doc, doc.length).filter((one) => one.name.includes('wikilink')),
+    ).toStrictEqual([])
   })
 
   it('draws nothing of the single brackets the markdown parser reads inside the link', () => {

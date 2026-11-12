@@ -28,9 +28,11 @@ describe('what is drawn', () => {
 
   it('draws one element per turn', () => {
     expect(
-      thread([createRequestedTurn('1'), createRespondedTurn('2'), createRequestedTurn('3')]).findAll(
-        '.thread__turn',
-      ),
+      thread([
+        createRequestedTurn('1'),
+        createRespondedTurn('2'),
+        createRequestedTurn('3'),
+      ]).findAll('.thread__turn'),
     ).toHaveLength(3)
   })
 
@@ -42,7 +44,9 @@ describe('what is drawn', () => {
   })
 
   it('says which voice each turn is in', () => {
-    const turns = thread([createRequestedTurn('1'), createRespondedTurn('2')]).findAll('.thread__turn')
+    const turns = thread([createRequestedTurn('1'), createRespondedTurn('2')]).findAll(
+      '.thread__turn',
+    )
     expect(turns[0]?.attributes('data-voice')).toBe('prompt')
     expect(turns[1]?.attributes('data-voice')).toBe('response')
   })

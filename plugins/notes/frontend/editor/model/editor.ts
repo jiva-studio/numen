@@ -149,7 +149,8 @@ export function useEditor(options: EditorStateOptions) {
 
   watch(
     () => options.props.isReadonly,
-    (off) => view?.dispatch({ effects: editableCompartment.reconfigure(createEditableExtension(!off)) }),
+    (off) =>
+      view?.dispatch({ effects: editableCompartment.reconfigure(createEditableExtension(!off)) }),
   )
 
   watch(
