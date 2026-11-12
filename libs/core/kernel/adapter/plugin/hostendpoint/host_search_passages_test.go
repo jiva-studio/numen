@@ -13,6 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 )
 
 func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q plugin.PassageQuery) ([]domain.Passage, error) {
@@ -22,6 +24,11 @@ func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q pl
 		{Source: "library/Birds.pdf", Text: "the gray heron", Location: "page 12", Start: 400, Length: 700, Selector: domain.Selector(`{"page":12}`)},
 		{Source: "notes/Heron.md", Text: "herons fish", Start: 20, Length: 40, Line: 4},
 	}, s.err
+}
+
+func (s *recordingSearch) FindNearestPassages(_ context.Context, v domain.Vault, _ sourcedomain.NearestQuery) ([]searchsource.Match, error) {
+	s.vaults = append(s.vaults, v.ID)
+	return nil, s.err
 }
 
 func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {

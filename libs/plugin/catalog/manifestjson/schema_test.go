@@ -57,12 +57,13 @@ const everyFieldManifest = `{
 		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}],
 		"viewCapabilities": ["conversation"],
 		"dropHandlers": [{"types": ["text/uri-list"]}],
-		"connectionTypes": [{"id": "svc", "title": "Service", "description": "d", "operations": ["llm.complete"], "fields": [
+		"connectionTypes": [{"id": "svc", "title": "Service", "description": "d", "operations": ["llm.complete", "llm.models"], "rowFields": [
+			{"key": "model", "type": "enum", "title": "Model", "optionsFrom": "llm.models"}], "fields": [
 			{"key": "baseUrl", "type": "string", "title": "Address", "description": "d", "isAddress": true, "fixedValue": "https://svc.example/v1"},
 			{"key": "mode", "type": "enum", "title": "Mode", "options": ["a", "b"], "default": "a"},
 			{"key": "apiKey", "type": "secret", "title": "Key", "required": true},
 			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]}],
-		"operations": [{"name": "llm.complete", "title": "complete text"}]}
+		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

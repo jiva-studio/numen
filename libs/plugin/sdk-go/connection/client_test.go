@@ -65,6 +65,9 @@ func collectCall(t *testing.T, client *Client, priority Priority) ([]string, str
 		return nil, "", err
 	}
 	data, done, err := Collect(frames)
+	if err != nil {
+		return nil, "", err
+	}
 	texts := make([]string, len(data))
 	for i, one := range data {
 		texts[i] = string(one)

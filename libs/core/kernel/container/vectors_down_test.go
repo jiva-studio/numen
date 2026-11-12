@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -59,7 +60,7 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 func (h *downEmbeddingHost) lend() *container.PluginHost {
-	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding()}}
+	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding()}, Health: pluginhealth.NewItems()}
 }
 
 // A plugin that does not answer names no model: the window opens its source undescribed, and a vault read
