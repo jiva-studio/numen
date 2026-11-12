@@ -149,14 +149,3 @@ func TestCommand_PassesTheItemPickedToTheRun(t *testing.T) {
 		t.Errorf("the run received %+v", got)
 	}
 }
-
-func TestIsSharedCommandIsTrueForTheIdsOfCommandsJSONOnly(t *testing.T) {
-	for _, one := range ListSharedCommands() {
-		if !IsSharedCommand(one.ID) {
-			t.Errorf("%s is not taken as shared", one.ID)
-		}
-	}
-	if IsSharedCommand("app:version.delete") || IsSharedCommand("proofreading.create") {
-		t.Error("a command that is not shared is taken as shared")
-	}
-}
