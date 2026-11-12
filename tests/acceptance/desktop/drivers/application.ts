@@ -55,11 +55,11 @@ export class ApplicationDriver {
     if (!this.scenario.hasServer) {
       throw new Error(`the application "${name}" has not started, so it cannot restart: begin with the application "${name}" starts`)
     }
+    // The application keeps the tabs it shows; a person ends it after that.
     if (this.scenario.isOpen) await this.waitForTabsSaved()
     await this.startApplication(name)
   }
 
-  /** The application keeps the tabs it shows; a person ends it after that, so the step waits for it. */
   private async waitForTabsSaved(): Promise<void> {
     const { page } = this.scenario
     await expect

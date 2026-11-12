@@ -123,7 +123,10 @@ describe('the menu of a row', () => {
 
 describe('the shortcut', () => {
   it('opens the file tree on the window key with Shift and E', () => {
-    expect(manifest.contributes.keybindings).toContainEqual({ key: 'mod+shift+e', command: 'tree.open' })
+    expect(manifest.contributes.keybindings).toContainEqual({
+      key: 'mod+shift+e',
+      command: 'tree.open',
+    })
   })
 })
 
