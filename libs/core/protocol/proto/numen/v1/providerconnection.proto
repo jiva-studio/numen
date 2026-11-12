@@ -108,6 +108,9 @@ message ListProviderConnectionTypesRequest {}
 
 message ListProviderConnectionTypesResponse {
   repeated ProviderConnectionType types = 1;
+  // operations are the titles the enabled plugins give operations, one per name: the first
+  // declaration in the order of plugin ids.
+  repeated ManifestOperation operations = 2;
 }
 
 message ListProviderConnectionsRequest {}

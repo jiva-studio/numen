@@ -93,3 +93,36 @@ func TestTheRegistryDoesNotListTheTypesOfADisabledPlugin(t *testing.T) {
 		t.Error("the type of a disabled plugin was found")
 	}
 }
+
+func titling(id string, operations ...manifest.Operation) manifest.Discovered {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: id, Name: id, Contributes: manifest.Contributes{Operations: operations}}}
+}
+
+// The first title of an operation in the order of the plugin ids is the one listed, and a disabled
+// plugin titles nothing.
+func TestTheRegistryListsTheFirstTitleOfEachOperation(t *testing.T) {
+	registry := plugin.NewConnectionTypes(fakeConnectionHost{
+		plugins: []manifest.Discovered{
+			titling("md.numen.agents.acp", manifest.Operation{Name: "acp.task", Title: "run agent tasks"}),
+			titling("md.numen.agents.numen", manifest.Operation{Name: "acp.task", Title: "run tasks"}),
+			titling("md.numen.connections.llm",
+				manifest.Operation{Name: "llm.complete", Title: "complete text"}, manifest.Operation{Name: "llm.chat", Title: "chat"}),
+			titling("md.numen.tools.off", manifest.Operation{Name: "tools.off", Title: "switch off"}),
+		},
+		enabled: map[string]bool{"md.numen.agents.acp": true, "md.numen.agents.numen": true, "md.numen.connections.llm": true},
+	})
+
+	got := registry.ListOperationTitles()
+
+	want := []manifest.Operation{
+		{Name: "acp.task", Title: "run agent tasks"}, {Name: "llm.complete", Title: "complete text"}, {Name: "llm.chat", Title: "chat"},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("titles = %+v, want %+v", got, want)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Errorf("titles = %+v, want %+v", got, want)
+		}
+	}
+}

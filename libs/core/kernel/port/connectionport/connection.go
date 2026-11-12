@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // Repository is the ordered list of connections kept in the settings file.
@@ -21,6 +22,13 @@ type Types interface {
 	ListTypes() []connection.Type
 	// GetType returns the type with the id, and false where no installed plugin declares it.
 	GetType(typeID string) (connection.Type, bool)
+}
+
+// OperationTitles names the operations of the connection types in words a person reads.
+type OperationTitles interface {
+	// ListOperationTitles returns one title for each operation an enabled plugin titles: the first
+	// declaration of the name in the order of the plugin ids.
+	ListOperationTitles() []manifest.Operation
 }
 
 // Uses connects a connection to the settings of rows that name it.

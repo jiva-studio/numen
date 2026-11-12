@@ -12,14 +12,12 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/plugin.proto";
-import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
 // SettingsService answers about that file, one setting at a time.
 service SettingsService {
-  // GetSettings is every setting of the file, and the models the settings that
-  // name one can be set to.
+  // GetSettings is every setting of the file.
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
 
   // WriteSettings writes settings into that file. The file is patched as an
@@ -65,9 +63,6 @@ message GetSettingsResponse {
   // The file itself, absolute on this machine.
   string path = 2;
 
-  // The models the settings that name one can be set to.
-  repeated Model models = 3;
-
   // Active plugins and their declarative settings schema.
   repeated PluginInfo plugins = 7;
 
@@ -77,54 +72,6 @@ message GetSettingsResponse {
 
   reserved 9;
 
-}
-
-// Model is one model a setting that names a model can be set to.
-message Model {
-  // The setting the model is read from, as a path through the file. The model
-  // in force is the one whose name stands there.
-  repeated string named_at = 1;
-
-  // What stands there while this model is the one in force.
-  string name = 2;
-
-  // What is drawn on the row, and the group the rows around it stand under.
-  string title = 3;
-  string group = 4;
-
-  // Set on the model an installation with no configuration runs on.
-  bool is_default = 5;
-
-  // What choosing it writes. One model is several keys where the model decides
-  // more than its own name.
-  repeated Setting writes = 6;
-
-  // What this model's files are on this machine.
-  Presence presence = 7;
-
-  // The depths of reasoning the model can be asked to work at, from the least to the most. Empty
-  // where the model offers no choice.
-  repeated ReasoningLevel reasoning_levels = 8;
-
-  // The level the model works at unasked. Empty where it names none.
-  string default_reasoning = 9;
-}
-
-// Presence is what a model's files are on this machine. It says where files
-// stand and nothing else: it is no reason to prefer one model to another.
-enum Presence {
-  // Nothing was said about this model's files.
-  PRESENCE_UNSPECIFIED = 0;
-
-  // The files stand where a fetch puts them.
-  PRESENCE_PRESENT = 1;
-
-  // The files are not on this machine. They are fetched when the model is next
-  // needed.
-  PRESENCE_NOT_FETCHED = 2;
-
-  // The model is reached over the network, and nothing of it is fetched.
-  PRESENCE_NOTHING_TO_FETCH = 3;
 }
 
 // Setting is one setting of the file and what to put there.

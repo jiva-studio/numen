@@ -11,7 +11,6 @@ import (
 func listPluginServedServices() []string {
 	// Several plugins implement these; any other service of the numen.v1 protocol is served by the core itself.
 	return []string{
-		"numen.v1.AgentService",
 		"numen.v1.PluginToolService",
 		"numen.v1.ProviderService",
 		"numen.v1.SearchSourceService",

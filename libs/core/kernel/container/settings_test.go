@@ -64,7 +64,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 }`)
 
 	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{
-		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
+		{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -82,22 +82,21 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target.Agent.GetProgram("claude").Model != "opus" {
-		t.Errorf("the model reads %q", target.Agent.GetProgram("claude").Model)
+	if target.Sync() {
+		t.Error("the titles and filenames are still kept as one name")
 	}
 	if target.Appearance.Theme != "mine:sea" {
 		t.Errorf("the theme reads %q", target.Appearance.Theme)
 	}
 }
 
-// Several settings are written together, as when choosing one model that
-// determines more than its own name.
+// Several settings are written together.
 func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
 	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{
-		{Path: []string{"app", "agent", "use"}, JSON: `"claude"`},
-		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
+		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
+		{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -107,8 +106,8 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target.Agent.GetUse() != "claude" || target.Agent.GetProgram("claude").Model != "opus" {
-		t.Errorf("the agent reads %+v", target.Agent)
+	if target.Appearance.Mode != "dark" || target.Sync() {
+		t.Errorf("the settings read %+v and %+v", target.Appearance, target.Titles)
 	}
 }
 
@@ -175,49 +174,6 @@ func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 	target.AddNotice("second")
 	if !slices.Equal(target.Notices, []string{"first", "second"}) {
 		t.Errorf("said %v", target.Notices)
-	}
-}
-
-// Settings that cannot be read are answered with the defaults, and ones that
-// can are answered as they stand.
-func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-
-	cfg, _ := writeSettings(t, `{"app": {"agent": {"use": "somebody-else"}}}`)
-	if got := settingsGetSettingsOrDefaults(settingsOf(cfg)).Agent.GetUse(); got != "somebody-else" {
-		t.Errorf("the agent is %q", got)
-	}
-
-	cfg, _ = writeSettings(t, `{"app": {"agent": `)
-	if got := settingsGetSettingsOrDefaults(settingsOf(cfg)); !reflect.DeepEqual(got, DefaultSettings()) {
-		t.Errorf("an unreadable file gave %+v", got)
-	}
-
-	t.Setenv("HOME", "")
-	t.Setenv("XDG_CONFIG_HOME", "")
-	if got := settingsGetSettingsOrDefaults(settingsOf((NewConfig(Config{})))); !reflect.DeepEqual(got, DefaultSettings()) {
-		t.Errorf("a machine with nowhere for settings gave %+v", got)
-	}
-}
-
-// The models a setting can take are listed as the window requests them, against
-// the active settings.
-func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	cfg, _ := writeSettings(t, `{}`)
-
-	models := models(cfg)()
-	if len(models) == 0 {
-		t.Fatal("no models are listed")
-	}
-	for _, one := range models {
-		if len(one.Path) == 0 {
-			t.Errorf("a model stands nowhere: %+v", one)
-		}
 	}
 }
 

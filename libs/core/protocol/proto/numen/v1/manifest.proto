@@ -75,6 +75,9 @@ message ManifestContributes {
   repeated ManifestListener listeners = 14;
   // connection_types are the kinds of connection the plugin provides.
   repeated ManifestConnectionType connection_types = 22;
+  // operations title the operations of connection types, of this plugin or of another, in words a
+  // person reads. Each name is declared once in a manifest.
+  repeated ManifestOperation operations = 23;
   // keybindings bind keys to commands, see the keybindings list of commands.json for the keys of the
   // application.
   repeated ManifestKeybinding keybindings = 19;
@@ -126,6 +129,14 @@ message ManifestConnectionType {
   // row_fields are the values a row that names a connection of the type holds besides the connection,
   // such as a model. The core hands them to the provider as the options of the call.
   repeated ManifestConnectionField row_fields = 6;
+}
+
+// ManifestOperation titles an operation a connection type serves.
+message ManifestOperation {
+  // name is the operation, such as "acp.task": lowercase words joined by dots.
+  string name = 1;
+  // title is a lowercase verb phrase that completes "This type cannot ...", such as "run agent tasks".
+  string title = 2;
 }
 
 // ManifestConnectionField is one value a connection of a type holds.

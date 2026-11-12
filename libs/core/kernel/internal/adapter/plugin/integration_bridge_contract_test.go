@@ -14,7 +14,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -23,7 +22,6 @@ import (
 // bridgeHost is what every bridge is opened on.
 type bridgeHost interface {
 	sourcebridge.Host
-	agentbridge.Host
 }
 
 // bridgeCall makes one call through an open bridge and reports whether the
@@ -55,17 +53,8 @@ func getBridgeContracts() []bridgeContract {
 				return isZeroResult(b.IndexTexts(ctx, searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "a"}}))
 			})
 		}},
-		{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-			b, err := agentbridge.OpenForPlugin(ctx, h, contractPluginID)
-			return createContract(b, err, func(b *agentbridge.Agent, ctx context.Context) (bool, error) {
-				return isZeroResult(b.GetPrograms(ctx, nil))
-			})
-		}},
 	}
 }
-
-// contractPluginID is the plugin the bridges that are opened by id are opened on.
-const contractPluginID = "md.numen.stub"
 
 func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context.Context, bridgeHost) (io.Closer, bridgeCall, error), isRefusal func(error) bool) (problems []string) {
 	bridge, call, err := open(ctx, host)

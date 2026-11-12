@@ -49,6 +49,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		ViewCapabilities: wire.GetViewCapabilities(),
 		DropHandlers:     newDropHandlers(wire.GetDropHandlers()),
 		ConnectionTypes:  connectionTypes,
+		Operations:       newOperations(wire.GetOperations()),
 	}, nil
 }
 
@@ -192,6 +193,14 @@ func newListeners(wire []*v1.ManifestListener) []manifest.Listener {
 			PortSetting: one.GetPortSetting(),
 			Protocol:    one.GetProtocol(),
 		})
+	}
+	return out
+}
+
+func newOperations(wire []*v1.ManifestOperation) []manifest.Operation {
+	var out []manifest.Operation
+	for _, one := range wire {
+		out = append(out, manifest.Operation{Name: one.GetName(), Title: one.GetTitle()})
 	}
 	return out
 }

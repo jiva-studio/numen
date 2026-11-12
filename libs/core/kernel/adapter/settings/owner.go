@@ -48,8 +48,7 @@ type Registries func(name string) ([]string, bool)
 
 // CheckWrite returns why a value is not one the setting at the path takes. The first path element
 // is the owner and the rest is the key path under it. It checks the declared key, the type, enum
-// membership and range bounds, and for rows of connections the rows (see RegistryConnections). The
-// key `agent` of the owner app is outside the check.
+// membership and range bounds, and for rows of connections the rows (see RegistryConnections).
 func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	label := strings.Join(path, ".")
 	if len(path) < 2 {
@@ -73,9 +72,6 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 
 func getSettingName(owner string, key []string, value any) (string, error) {
 	if owner == settingsdomain.AppOwner {
-		if isOutsideDeclaration(key[0]) {
-			return "", nil
-		}
 		return strings.Join(key, "."), nil
 	}
 	if len(key) != 1 {

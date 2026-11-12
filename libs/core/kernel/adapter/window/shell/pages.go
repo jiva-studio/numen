@@ -20,14 +20,12 @@ func getPolicy() string { return csp.Sources{Images: []string{"data:"}}.Policy()
 // binary. A binary built without it reports that.
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
-// NewHandler is everything this window answers: the window itself, its themes, the agent, the list of
-// vaults, where the links of a text land, its plugins and the files of their frontends, the services
-// they serve, and the files the page is made of. The agent is answered here and never forwarded to a
-// plugin that serves AgentService.
+// NewHandler is everything this window answers: the window itself, its themes, the list of vaults,
+// where the links of a text land, its plugins and the files of their frontends, the services they
+// serve, and the files the page is made of.
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
 	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetFrontendPluginIDs})
-	agentRoute, agentServed := numenv1connect.NewAgentServiceHandler(a.getAgent())
 	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.listVaults()})
 	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks})
 	routes := []route{{windowRoute, window}, {pluginsRoute, plugins}}
@@ -35,7 +33,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 		themesRoute, themes := numenv1connect.NewThemeServiceHandler(a.Themes)
 		routes = append(routes, route{themesRoute, themes})
 	}
-	routes = append(routes, route{agentRoute, agentServed}, route{vaultsRoute, vaults}, route{notesRoute, notes})
+	routes = append(routes, route{vaultsRoute, vaults}, route{notesRoute, notes})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", getPolicy())
@@ -47,13 +45,6 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 		}
 		a.serveOther(w, r, files)
 	})
-}
-
-func (a *API) getAgent() numenv1connect.AgentServiceHandler {
-	if a.Agent == nil {
-		return numenv1connect.UnimplementedAgentServiceHandler{}
-	}
-	return a.Agent
 }
 
 // route is a prefix of the request path and the handler that answers it.

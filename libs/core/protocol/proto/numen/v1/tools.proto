@@ -4,12 +4,11 @@ package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
-// PluginToolService is what a plugin that declares the tools capability serves
-// so that an agent can work through it. The host lists the tools of every
-// running plugin that declares it and offers them on the agent servers it
-// builds; a call an agent makes is handed to the plugin that listed the tool.
-// The host holds a tool to the permission its effect needs, so a plugin that
-// lacks it is offered nowhere.
+// PluginToolService is what a plugin that declares the tools capability serves.
+// The host serves it too: it lists the tools of every running plugin that
+// declares it and hands a call to the plugin that listed the tool. The host
+// holds a tool to the permission its effect needs, so a tool of a plugin that
+// lacks it is listed nowhere.
 service PluginToolService {
   // ListTools lists the tools the plugin offers. A tool is named by the plugin
   // alone; a name another plugin or the host already serves is not offered.
@@ -49,37 +48,16 @@ message PluginTool {
   // hold and whether the tool is offered where nothing may be changed.
   ToolEffect effect = 6;
 
-  // The agent servers the tool is offered on. None is the full server alone.
-  repeated ToolServer servers = 7;
-
-  ToolStep step = 8;
-
   // The instructions about this tool, each one sentence of plain English. A
   // sentence about several tools is attached to each of them with identical
-  // text. An agent server sends an agent the distinct sentences of the tools it
-  // offers, in listing order.
-  repeated string instructions = 9;
+  // text. Whoever offers the tools to an agent sends it the distinct sentences
+  // of the tools it offers, in listing order.
+  repeated string instructions = 7;
 
   // The permissions the caller must have besides the one of the effect, such
   // as vault:manage. The host lists and runs the tool only for a caller that
   // has all of them.
-  repeated string requires = 10;
-
-  // The hints an agent reads about the tool, set by the SDK from the effect,
-  // the step and the required permissions.
-  ToolHints hints = 11;
-}
-
-// ToolHints are the MCP annotations of a tool.
-message ToolHints {
-  // The tool changes nothing: the effect is READ_ONLY.
-  bool read_only = 1;
-  // The tool removes something: the effect is READ_WRITE and the step REMOVE.
-  bool destructive = 2;
-  // A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
-  bool idempotent = 3;
-  // The tool reaches outside the machine: requires contains link:open.
-  bool open_world = 4;
+  repeated string requires = 8;
 }
 
 // ToolEffect is what a tool does to the vault. The zero value means no effect
@@ -94,34 +72,6 @@ enum ToolEffect {
   TOOL_EFFECT_READ_WRITE = 2;
 }
 
-// ToolStep is how a call is shown to a person: as what it does. The zero value
-// leaves it to the tool's effect, a look for a tool that reads and an edit for
-// one that writes.
-enum ToolStep {
-  TOOL_STEP_UNSPECIFIED = 0;
-
-  // The call looks for notes.
-  TOOL_STEP_SEARCH = 1;
-
-  // The call takes something out of the vault.
-  TOOL_STEP_REMOVE = 2;
-
-  // The call files something elsewhere or under another name.
-  TOOL_STEP_MOVE = 3;
-}
-
-// ToolServer is one of the servers the host builds for an agent. The zero value
-// means none was named.
-enum ToolServer {
-  TOOL_SERVER_UNSPECIFIED = 0;
-
-  // The server an agent works the whole vault through.
-  TOOL_SERVER_FULL = 1;
-
-  // The server an agent answers from, whose every tool reads.
-  TOOL_SERVER_READING = 2;
-}
-
 message CallToolRequest {
   // The name the plugin listed the tool under.
   string name = 1;
@@ -129,16 +79,15 @@ message CallToolRequest {
   // The arguments, as a JSON object that meets the tool's input schema.
   bytes arguments = 2;
 
-  // The context of the AskAgentRequest the call was made under: what the asking
+  // The tool context of the task the call was made under: what the asking
   // view shows, under keys that start with the id of the plugin that wrote them
   // and a slash. It is data about the call and no part of the arguments, and it
-  // is empty for a question asked with none, and for a call from a program
-  // outside Numen.
+  // is empty for a task given none.
   map<string, string> context = 3;
 
-  // The vault the call works, by identity: the one the agent run was started
-  // on, or for a call from a program outside Numen the one the host shows.
-  // Empty where there is none.
+  // The vault the call works, by identity: the one the task was started on.
+  // Empty on a call to the host is the vault the Numen-Vault header names, else
+  // the one the host shows.
   string vault_id = 4;
 }
 

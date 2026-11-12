@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -374,5 +375,38 @@ func TestListRowOptionsOfAConnectionThatIsNotInTheListIsNotFound(t *testing.T) {
 
 	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND {
 		t.Errorf("response = %v, %v", response, err)
+	}
+}
+
+// fixedTitles is the titles a set of plugins gives operations.
+type fixedTitles []manifest.Operation
+
+func (t fixedTitles) ListOperationTitles() []manifest.Operation { return t }
+
+func TestListProviderConnectionTypesReturnsTheTitlesOfTheOperations(t *testing.T) {
+	handler := newHandler(newKeys())
+	handler.connections.ListOperationTitles = connections.NewListOperationTitles(fixedTitles{
+		{Name: "llm.complete", Title: "complete text"}, {Name: "acp.task", Title: "run agent tasks"},
+	})
+
+	response, err := handler.ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := response.Msg.GetOperations()
+	if len(got) != 2 || got[0].GetName() != "llm.complete" || got[0].GetTitle() != "complete text" ||
+		got[1].GetName() != "acp.task" || got[1].GetTitle() != "run agent tasks" {
+		t.Errorf("operations = %v", got)
+	}
+}
+
+func TestListProviderConnectionTypesReturnsNoTitleWithoutTheirUseCase(t *testing.T) {
+	response, err := newHandler(newKeys()).ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := response.Msg.GetOperations(); len(got) != 0 {
+		t.Errorf("operations = %v", got)
 	}
 }

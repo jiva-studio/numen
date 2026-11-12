@@ -4,7 +4,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 )
 
 func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Services, hostendpoint.Callers) {
@@ -19,7 +19,7 @@ func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Se
 			return nil
 		},
 		Tools: func() hostendpoint.PluginTools {
-			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
+			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry))
 		},
 	}
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(address, callers))

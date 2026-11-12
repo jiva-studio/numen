@@ -37,6 +37,4 @@ type Stored interface {
 	GetValue(path ...string) (any, bool)
 	// GetConnectionsJSON is the connections section as JSON, and empty where the file holds no connection.
 	GetConnectionsJSON() (string, error)
-	// GetAgentUse is the program the agent section names, and empty where it names none.
-	GetAgentUse() string
 }

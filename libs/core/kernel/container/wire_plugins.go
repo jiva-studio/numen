@@ -5,25 +5,19 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
-	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settingsagent"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -112,10 +106,11 @@ type PluginWatch struct {
 // nothing: the settings then accept every plugin value and list no plugin, and no connection type exists. Follow returns the
 // subscription to the setting changes that the host follows, or none.
 type PluginViews struct {
-	Types  connectionport.Types
-	Infos  settingsport.PluginInfos
-	Checks settingsport.PluginSettings
-	Follow func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
+	Types      connectionport.Types
+	Operations connectionport.OperationTitles
+	Infos      settingsport.PluginInfos
+	Checks     settingsport.PluginSettings
+	Follow     func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
 }
 
 // PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from the
@@ -172,7 +167,8 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
 		}).Execute,
 		Views: PluginViews{
-			Types: plugin.NewConnectionTypes(host.Registry), Infos: host.Registry, Checks: host.Settings,
+			Types: plugin.NewConnectionTypes(host.Registry), Operations: plugin.NewConnectionTypes(host.Registry),
+			Infos: host.Registry, Checks: host.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
 		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
@@ -192,21 +188,8 @@ func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 			return nil
 		},
 		Tools: func() hostendpoint.PluginTools {
-			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
+			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry))
 		},
 	}))
 	return services
-}
-
-func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
-	return agentbridge.NewRouter(c.RunningHost.Runtime)
-}
-
-func getAgentPrograms(c pluginsWiring, provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
-	list := agentcase.NewListPrograms(provider, c.settings.Programs, func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
-	return list.Execute(target.GetCommands())
-}
-
-func getAgentSettings(c pluginsWiring) settingsagent.AgentSettings {
-	return settingsagent.NewAgentSettings(settingsGetSettingsOrDefaults(c.settings).Agent)
 }

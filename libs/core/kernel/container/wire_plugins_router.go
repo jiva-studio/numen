@@ -15,29 +15,15 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settingsagent"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
-
-func getSettingsAgent(c pluginsWiring) agentport.Agent {
-	return settingsagent.NewSettingsAgent(settingsagent.NewPrograms(getToolProvider(c), func() settingsagent.AgentSettings { return getAgentSettings(c) }))
-}
-
-func getToolProvider(c pluginsWiring) agentport.AgentProvider {
-	return agentbridge.NewServingRouter(c.RunningHost.Runtime, func(agent agentport.Agent, pluginID string) agentport.Agent {
-		return agenttoolsbridge.NewAgent(agent, c.RunningHost.Runtime, agenttoolsbridge.Full, pluginID)
-	})
-}
 
 func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	show := run.NewDependencyTasks(tasks)
@@ -57,7 +43,7 @@ type pluginInstall struct {
 	KeyStore        pluginport.KeyStore
 }
 
-// pluginsWiring wires the plugin catalog, plugin host, agent provider and dependencies over the settings and
+// pluginsWiring wires the plugin catalog, plugin host and dependencies over the settings and
 // the vaults the plugins work with.
 type pluginsWiring struct {
 	pluginInstall

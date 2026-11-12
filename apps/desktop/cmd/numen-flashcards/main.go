@@ -103,7 +103,6 @@ func run(cfg container.Config, debug debugOptions) error {
 
 func makeWindowAPI(cfg container.Config) *shell.API {
 	return &shell.API{
-		Agent:                container.GetSettingsAgentHandler(cfg),
 		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg) },
 		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
 		PluginServices:       container.GetPluginServices(cfg),

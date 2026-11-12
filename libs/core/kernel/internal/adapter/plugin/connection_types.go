@@ -40,6 +40,26 @@ func (r *ConnectionTypes) ListTypes() []connection.Type {
 	return types
 }
 
+// ListOperationTitles returns the titles the enabled plugins give operations, one for each name: the
+// first declaration in the order of the plugin ids.
+func (r *ConnectionTypes) ListOperationTitles() []manifest.Operation {
+	var titles []manifest.Operation
+	named := map[string]bool{}
+	for _, discovered := range r.host.GetPlugins() {
+		plugin, isEnabled := r.host.GetPlugin(discovered.Manifest.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, declared := range plugin.Manifest.Contributes.Operations {
+			if !named[declared.Name] {
+				named[declared.Name] = true
+				titles = append(titles, declared)
+			}
+		}
+	}
+	return titles
+}
+
 // GetType returns the type with the id, and false where no enabled plugin declares it.
 func (r *ConnectionTypes) GetType(typeID string) (connection.Type, bool) {
 	pluginID, localID, isValid := manifest.SplitConnectionTypeID(typeID)

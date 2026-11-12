@@ -19,7 +19,6 @@ import (
 type File struct {
 	Version     int
 	Appearance  Appearance  `json:"appearance"`
-	Agent       Agent       `json:"agent"`
 	Titles      Titles      `json:"naming"`
 	Performance Performance `json:"performance"`
 	Plugins     map[string]map[string]any
@@ -30,7 +29,6 @@ type File struct {
 // appObject is the object of the owner app as the file lays it out.
 type appObject struct {
 	Appearance  Appearance  `json:"appearance"`
-	Agent       Agent       `json:"agent"`
 	Titles      Titles      `json:"naming"`
 	Performance Performance `json:"performance"`
 }
@@ -39,12 +37,9 @@ type appObject struct {
 // file leaves out keeps the value it had.
 type appSections struct {
 	Appearance  *Appearance  `json:"appearance"`
-	Agent       *Agent       `json:"agent"`
 	Titles      *Titles      `json:"naming"`
 	Performance *Performance `json:"performance"`
 }
-
-func isOutsideDeclaration(section string) bool { return section == "agent" }
 
 const keyVersion = "v"
 
@@ -78,7 +73,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Agent, f.Titles, f.Performance}},
+		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Performance}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -168,16 +163,11 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	for _, path := range listUndeclaredKeys(app) {
 		f.AddNotice(fmt.Sprintf("numen.json: %q: no such setting; the value is ignored", settings.AppOwner+"."+path))
 	}
-	for section := range app {
-		if isOutsideDeclaration(section) {
-			valid[section] = app[section]
-		}
-	}
 	content, err := json.Marshal(valid)
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Agent, &f.Titles, &f.Performance}
+	sections := appSections{&f.Appearance, &f.Titles, &f.Performance}
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
@@ -222,8 +212,6 @@ func listUndeclaredKeys(app map[string]any) []string {
 			path := key
 			if prefix != "" {
 				path = prefix + "." + key
-			} else if isOutsideDeclaration(key) {
-				continue
 			}
 			nested, isObject := object[key].(map[string]any)
 			switch {

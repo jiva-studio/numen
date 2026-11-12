@@ -6,21 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"strings"
 	"testing"
 	"time"
-
-	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -58,8 +53,8 @@ func getInstructionsAt(id string, permissions []string, served *toolPluginFixtur
 	}
 }
 
-func newToolWithInstructions(name string, effect v1.ToolEffect, sentences []string, servers ...v1.ToolServer) *v1.PluginTool {
-	tool := newPluginTool(name, effect, servers...)
+func newToolWithInstructions(name string, effect v1.ToolEffect, sentences []string) *v1.PluginTool {
+	tool := newPluginTool(name, effect)
 	tool.Instructions = sentences
 	return tool
 }
@@ -73,7 +68,7 @@ func newReadOnlyTool(name string, sentences ...string) *v1.PluginTool {
 }
 
 func newMCPCaller() testPlugin {
-	return testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}}
+	return newCaller("vault:read")
 }
 
 func openToolsOfHost(t *testing.T, host *container.PluginRoles) numenv1connect.PluginToolServiceClient {
@@ -83,7 +78,9 @@ func openToolsOfHost(t *testing.T, host *container.PluginRoles) numenv1connect.P
 			t.Error(err)
 		}
 	})
-	container.AdaptPluginHost(host).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
+	container.AdaptPluginHost(host).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{
+		vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}, other: domain.Vault{ID: "v-garden", Name: "Garden"},
+	}})
 	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -150,16 +147,13 @@ func TestTheHostListsEachToolWithItsOwnSentencesInPluginIdOrder(t *testing.T) {
 	}
 }
 
-// The MCP plugin has vault:read only, so a read-write tool is not listed to it, and the host
-// endpoint offers the full server, so a tool offered on the reading server only is not listed.
+// The caller has vault:read only, so a read-write tool and its sentence are not listed to it.
 func TestListedToolsHaveNoSentenceOfAnOmittedTool(t *testing.T) {
 	burnSentence := "Burn the old maps with atlas_burn after you copy them."
-	lensSentence := "Read the small print with atlas_lens."
 	host := hostOver(t,
 		getInstructionsAt(atlasPlugin, []string{"vault:read", "vault:write"}, newToolsPlugin(
 			newReadOnlyTool("atlas_open", atlasOpenSentence),
 			newToolWithInstructions("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
-			newToolWithInstructions("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
 		)),
 		newMCPCaller(),
 	)
@@ -219,108 +213,5 @@ func TestTheToolsOfTheCallerItselfAreNotListed(t *testing.T) {
 
 	if names := getToolNames(listToolsOfHost(t, openToolsOfHost(t, host))); !slices.Equal(names, []string{"atlas_open"}) {
 		t.Errorf("the host lists the caller the tools %v", names)
-	}
-}
-
-func TestReadingCatalogListsOnlyReadingToolsWithSentences(t *testing.T) {
-	glanceSentence := "Glance at the atlas index with atlas_glance."
-	host := hostOver(t,
-		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
-			newToolWithInstructions("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasOpenSentence},
-				v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),
-			newToolWithInstructions("atlas_find", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasFindSentence}, v1.ToolServer_TOOL_SERVER_FULL),
-			newReadOnlyTool("atlas_glance", glanceSentence),
-		)),
-		newMCPCaller(),
-	)
-	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
-			t.Error(err)
-		}
-	})
-
-	specs := agenttoolsbridge.NewCatalog(pluginhost.Join(host), agenttoolsbridge.Server(v1.ToolServer_TOOL_SERVER_READING)).ListTools(t.Context(), mcpPlugin)
-
-	if len(specs) != 1 || specs[0].GetName() != "atlas_open" || !slices.Equal(specs[0].GetInstructions(), []string{atlasOpenSentence}) {
-		t.Errorf("the reading catalog lists %v, want atlas_open alone with its sentence", specs)
-	}
-}
-
-func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
-	t.Helper()
-	agent := &toolAgent{}
-	host := hostOver(t, append([]testPlugin{agentAt(agent)}, plugins...)...)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
-
-	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Instructions: instructions})
-
-	requests := agent.getRequests()
-	if len(requests) != 1 {
-		t.Fatalf("the agent received %d requests, want one", len(requests))
-	}
-	return requests[0].GetInstructions()
-}
-
-func TestInAppRunReceivesDistinctToolSentencesAfterInstructions(t *testing.T) {
-	got := runInApp(t, "Answer the gardener in short sentences.",
-		getInstructionsAt(zitherPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("zither_tune", zitherTuneSentence))),
-		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
-			newReadOnlyTool("atlas_open", atlasOpenSentence),
-			newReadOnlyTool("atlas_find", atlasFindSentence, atlasSharedSentence),
-			newReadOnlyTool("atlas_close", atlasSharedSentence),
-		)),
-	)
-
-	want := "Answer the gardener in short sentences.\n\n" +
-		strings.Join([]string{atlasOpenSentence, atlasFindSentence, atlasSharedSentence, zitherTuneSentence}, " ")
-	if got != want {
-		t.Errorf("the run received the instructions %q, want %q", got, want)
-	}
-}
-
-func TestInAppRunWithoutInstructionsReceivesOnlyToolSentences(t *testing.T) {
-	got := runInApp(t, "",
-		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
-			newReadOnlyTool("atlas_open", atlasOpenSentence),
-			newReadOnlyTool("atlas_find", atlasFindSentence),
-		)),
-	)
-
-	if want := atlasOpenSentence + " " + atlasFindSentence; got != want {
-		t.Errorf("the run received the instructions %q, want %q", got, want)
-	}
-}
-
-// The atlas plugin has vault:read only, so its read-write tool is not served, and a tool offered on
-// the reading server only is not served on the full server an in-app run uses.
-func TestAToolLeftOutOfAnInAppRunAddsNoSentenceToItsInstructions(t *testing.T) {
-	burnSentence := "Burn the old maps with atlas_burn after you copy them."
-	lensSentence := "Read the small print with atlas_lens."
-	got := runInApp(t, "Answer the gardener in short sentences.",
-		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
-			newReadOnlyTool("atlas_open", atlasOpenSentence),
-			newToolWithInstructions("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
-			newToolWithInstructions("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
-		)),
-	)
-
-	if want := "Answer the gardener in short sentences.\n\n" + atlasOpenSentence; got != want {
-		t.Errorf("the run received the instructions %q, want %q", got, want)
-	}
-}
-
-func TestInAppRunWithoutToolSentencesKeepsItsInstructions(t *testing.T) {
-	got := runInApp(t, "Answer the gardener in short sentences.",
-		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("atlas_open"))),
-	)
-
-	if want := "Answer the gardener in short sentences."; got != want {
-		t.Errorf("the run received the instructions %q, want %q", got, want)
-	}
-}
-
-func TestAnInAppRunWithNoToolsKeepsItsInstructions(t *testing.T) {
-	if got, want := runInApp(t, "Answer the gardener in short sentences."), "Answer the gardener in short sentences."; got != want {
-		t.Errorf("the run received the instructions %q, want %q", got, want)
 	}
 }

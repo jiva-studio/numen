@@ -78,7 +78,6 @@ func PluginCapabilities() []string {
 	return []string{
 		"search.source",
 		"tools",
-		"ai.agent.provider",
 	}
 }
 

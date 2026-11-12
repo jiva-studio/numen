@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
@@ -13,9 +12,8 @@ var errRead = errors.New("the file cannot be read")
 
 func read() (string, string, error) { return `{"v":1}`, "/home/settings.json", nil }
 
-func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
+func TestGetAnswersTheSettingsAndThePlugins(t *testing.T) {
 	t.Parallel()
-	models := []settingsdomain.Model{{Name: "base"}}
 	pluginList := []plugin.Info{
 		{
 			ID:   "md.numen.test",
@@ -26,7 +24,7 @@ func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 		},
 	}
 	get := settings.NewGet(
-		read, func() []settingsdomain.Model { return models }, func() []plugin.Info { return pluginList }, nil,
+		read, func() []plugin.Info { return pluginList }, nil,
 	)
 
 	got, err := get.Execute()
@@ -37,24 +35,18 @@ func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 	if got.Written != `{"v":1}` || got.Path != "/home/settings.json" {
 		t.Errorf("the settings stand as %q at %q", got.Written, got.Path)
 	}
-	if len(got.Models) != 1 || got.Models[0].Name != "base" {
-		t.Errorf("the models are %v", got.Models)
-	}
 	if len(got.Plugins) != 1 || got.Plugins[0].ID != "md.numen.test" {
 		t.Errorf("the plugins are %v", got.Plugins)
 	}
 }
 
-func TestGetAnswersNoModelsWhereNoneAreBound(t *testing.T) {
+func TestGetAnswersNoPluginsWhereNoneAreBound(t *testing.T) {
 	t.Parallel()
-	get := settings.NewGet(read, nil, nil, nil)
+	get := settings.NewGet(read, nil, nil)
 
 	got, err := get.Execute()
 	if err != nil {
 		t.Fatal(err)
-	}
-	if len(got.Models) != 0 {
-		t.Errorf("the models are %v", got.Models)
 	}
 	if len(got.Plugins) != 0 {
 		t.Errorf("the plugins are %v", got.Plugins)
@@ -65,7 +57,7 @@ func TestGet_ErrorWhenFileUnreadable(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		func() (string, string, error) { return "", "", errRead },
-		nil, nil, nil,
+		nil, nil,
 	)
 
 	if _, err := get.Execute(); !errors.Is(err, errRead) {
@@ -76,7 +68,7 @@ func TestGet_ErrorWhenFileUnreadable(t *testing.T) {
 func TestGetAnswersTheDeclarationOfTheShell(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
-		read, nil, nil,
+		read, nil,
 		func() []plugin.Setting {
 			return []plugin.Setting{{Key: "appearance.mode", Type: "enum", Title: "Mode"}}
 		},
