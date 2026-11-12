@@ -5,25 +5,30 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 
-type fakeAsker struct{}
+// slowProgram is the outer edge of a completion: a program that answers once the request has ended.
+type slowProgram struct{}
 
-func (fakeAsker) Ask(context.Context, *agentrun.Request, func(*agentrun.Response) error) error {
-	return nil
+func (slowProgram) FindProgram() string { return "/usr/bin/claude" }
+
+func (slowProgram) GetEnvironment() []string { return nil }
+
+func (slowProgram) Answer(ctx context.Context, _ connection.Call, _, _ string) (string, error) {
+	<-ctx.Done()
+	return "", ctx.Err()
 }
 
-type fakePrograms struct{}
+type noModels struct{}
 
-func (fakePrograms) GetState() *agentrun.State { return &agentrun.State{} }
-
-func (fakePrograms) List(context.Context, []agentrun.ProgramCommand) []*agentrun.Program { return nil }
+func (noModels) List(context.Context, string, []string, []string) []model.Model { return nil }
 
 func TestRequestLimitIsTheSettingElseTwoMinutes(t *testing.T) {
 	values := new(settings.Settings)
-	subject, err := New(Dependencies{Settings: values, Asker: fakeAsker{}, Programs: fakePrograms{}})
+	subject, err := New(Dependencies{Settings: values, Answerer: slowProgram{}, Models: noModels{}})
 	if err != nil {
 		t.Fatal(err)
 	}

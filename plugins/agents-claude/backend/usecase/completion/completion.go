@@ -9,39 +9,38 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 
 const (
 	roleSystem          = "system"
 	roleUser            = "user"
 	roleAssistant       = "assistant"
-	stoppedDone         = "done"
 	defaultRequestLimit = 120 * time.Second
 )
 
 var errNoQuestion = errors.New("the request holds no message to answer")
 
-// Asker runs a task of the agent service.
-type Asker interface {
-	Ask(ctx context.Context, msg *agentrun.Request, send func(*agentrun.Response) error) error
+// Answerer runs the program once on a prompt, with no tool.
+type Answerer interface {
+	FindProgram() string
+	GetEnvironment() []string
+	Answer(ctx context.Context, call connection.Call, instructions, prompt string) (string, error)
 }
 
-// Programs reports on the program the plugin runs.
-type Programs interface {
-	GetState() *agentrun.State
-	List(ctx context.Context, commands []agentrun.ProgramCommand) []*agentrun.Program
+// Models lists the models of the program on a command line.
+type Models interface {
+	List(ctx context.Context, command string, extra, env []string) []model.Model
 }
 
 // Dependencies are what a Completion needs.
 type Dependencies struct {
 	Settings *settings.Settings
-	Asker    Asker
-	Programs Programs
+	Answerer Answerer
+	Models   Models
 }
 
 // Completion serves the provider roles of the plugin.
@@ -51,7 +50,7 @@ type Completion struct {
 
 // New creates a Completion, and refuses dependencies that are missing.
 func New(deps Dependencies) (*Completion, error) {
-	if deps.Settings == nil || deps.Asker == nil || deps.Programs == nil {
+	if deps.Settings == nil || deps.Answerer == nil || deps.Models == nil {
 		return nil, errors.New("completion: every dependency is required")
 	}
 	return &Completion{deps: deps}, nil
@@ -63,35 +62,30 @@ func New(deps Dependencies) (*Completion, error) {
 func (c *Completion) Complete(
 	ctx context.Context, call connection.Call, request *llm.CompleteRequest,
 ) (*llm.CompleteResult, error) {
-	task, err := newTask(call, request)
+	instructions, prompt, err := splitMessages(request.GetMessages())
 	if err != nil {
 		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	if !c.isInstalled() {
+	if c.deps.Answerer.FindProgram() == "" {
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	limited, cancel := context.WithTimeout(ctx, c.getRequestLimit())
 	defer cancel()
 
-	var answer strings.Builder
-	stopReason := ""
-	runErr := c.deps.Asker.Ask(limited, task, func(response *agentrun.Response) error {
-		answer.WriteString(response.GetText())
-		if reason := response.GetStopped(); reason != "" {
-			stopReason = reason
-		}
-		return nil
-	})
+	answer, runErr := c.deps.Answerer.Answer(limited, call, instructions, prompt)
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	switch {
 	case limited.Err() != nil:
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
-	case runErr != nil, stopReason != "" && stopReason != stoppedDone, strings.TrimSpace(answer.String()) == "":
+	case runErr != nil:
+		if _, isTryNext := connection.IsTryNext(runErr); isTryNext {
+			return nil, runErr
+		}
 		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	return &llm.CompleteResult{Text: answer.String()}, nil
+	return &llm.CompleteResult{Text: answer}, nil
 }
 
 // ListModels lists the models Claude Code offers.
@@ -102,11 +96,11 @@ func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []stri
 	}
 	models := make([]connection.Option, 0, len(programModels))
 	for _, one := range programModels {
-		title := one.Title
+		title := one.DisplayName
 		if title == "" {
-			title = one.Name
+			title = one.Value
 		}
-		models = append(models, connection.Option{Value: one.Name, Title: title})
+		models = append(models, connection.Option{Value: one.Value, Title: title})
 	}
 	return models, nil
 }
@@ -120,10 +114,10 @@ func (c *Completion) ListReasoningLevels(ctx context.Context, call connection.Ca
 	}
 	var levels []connection.Option
 	for _, one := range programModels {
-		if one.Name != call.Options[llm.OptionModel] {
+		if one.Value != call.Options[llm.OptionModel] {
 			continue
 		}
-		for _, level := range one.ReasoningLevels {
+		for _, level := range one.GetLevels() {
 			levels = append(levels, connection.Option{Value: level.Name, Title: level.Title})
 		}
 	}
@@ -137,55 +131,44 @@ func (c *Completion) getRequestLimit() time.Duration {
 	return defaultRequestLimit
 }
 
-func (c *Completion) isInstalled() bool {
-	return c.deps.Programs.GetState().Unreachable == ""
-}
-
-func (c *Completion) getProgramModels(ctx context.Context) ([]*reasoning.Model, error) {
-	if !c.isInstalled() {
+func (c *Completion) getProgramModels(ctx context.Context) ([]model.Model, error) {
+	program := c.deps.Answerer.FindProgram()
+	if program == "" {
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
-	var models []*reasoning.Model
-	for _, one := range c.deps.Programs.List(ctx, nil) {
-		models = append(models, one.Models...)
-	}
-	return models, nil
+	return c.deps.Models.List(ctx, program, nil, c.deps.Answerer.GetEnvironment()), nil
 }
 
-func newTask(call connection.Call, request *llm.CompleteRequest) (*agentrun.Request, error) {
+func splitMessages(messages []*llm.Message) (instructions, prompt string, err error) {
 	var system []string
 	var turns []*llm.Message
-	for _, message := range request.Messages {
-		switch message.Role {
+	for _, message := range messages {
+		switch message.GetRole() {
 		case roleSystem:
-			system = append(system, message.Text)
+			system = append(system, message.GetText())
 		case "", roleUser, roleAssistant:
 			turns = append(turns, message)
 		default:
-			return nil, fmt.Errorf("unknown role %q", message.Role)
+			return "", "", fmt.Errorf("unknown role %q", message.GetRole())
 		}
 	}
 	if len(turns) == 0 {
-		return nil, errNoQuestion
+		return "", "", errNoQuestion
 	}
-	return &agentrun.Request{
-		Prompt: writePrompt(turns), Focus: "", Conversation: "", Context: nil, Agent: "", Model: call.Options[llm.OptionModel],
-		Instructions: strings.Join(system, "\n\n"), Tools: nil, MaxSteps: 0, ToolDeclarations: nil, Root: "",
-		Command: nil, ToolsURL: "", ToolsToken: "", Reasoning: call.Options[llm.OptionReasoning],
-	}, nil
+	return strings.Join(system, "\n\n"), writePrompt(turns), nil
 }
 
 func writePrompt(turns []*llm.Message) string {
 	if len(turns) == 1 {
-		return turns[0].Text
+		return turns[0].GetText()
 	}
 	parts := make([]string, 0, len(turns))
 	for _, turn := range turns {
 		role := "User"
-		if turn.Role == roleAssistant {
+		if turn.GetRole() == roleAssistant {
 			role = "Assistant"
 		}
-		parts = append(parts, role+":\n"+turn.Text)
+		parts = append(parts, role+":\n"+turn.GetText())
 	}
 	return strings.Join(parts, "\n\n")
 }

@@ -41,16 +41,6 @@ func TestHooksAndSkillsAreNotReadFromTheSnakeCaseKey(t *testing.T) {
 	}
 }
 
-func TestApply_EmptyModelKeepsModel(t *testing.T) {
-	var s Settings
-	s.Apply(map[string]string{"model": "m1"})
-	s.Apply(map[string]string{"model": ""})
-
-	if got := s.Get().DefaultModel; got != "m1" {
-		t.Errorf("default model = %q, want m1 kept when an empty model is configured", got)
-	}
-}
-
 func TestRequestTimeoutIsReadInSecondsAndInvalidValuesLeaveNone(t *testing.T) {
 	var s Settings
 	s.Apply(map[string]string{"requestTimeout": "45"})

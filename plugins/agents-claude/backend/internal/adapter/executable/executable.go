@@ -6,9 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
 func getSearchPlaces() []string {
@@ -39,7 +38,7 @@ func (Finder) Find(customPath string) string {
 }
 
 func findIn(places []string, customPath string) string {
-	if customPath != "" && agentrun.IsRunnable(customPath) {
+	if customPath != "" && isRunnable(customPath) {
 		return customPath
 	}
 	if cmd := os.Getenv("NUMEN_CLAUDE_COMMAND"); cmd != "" {
@@ -78,7 +77,7 @@ func findInPlaces(places []string) string {
 			continue
 		}
 		for _, match := range matches {
-			if agentrun.IsRunnable(match) {
+			if isRunnable(match) {
 				return match
 			}
 		}
@@ -99,4 +98,16 @@ func escapeGlob(path string) string {
 		}
 	}
 	return pattern.String()
+}
+
+// isRunnable reports whether path is an executable file.
+func isRunnable(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	if runtime.GOOS == "windows" {
+		return slices.Contains([]string{".exe", ".cmd", ".bat"}, strings.ToLower(filepath.Ext(path)))
+	}
+	return info.Mode()&0o111 != 0
 }

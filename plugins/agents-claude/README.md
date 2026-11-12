@@ -6,9 +6,10 @@ Use Anthropic Claude Code (`claude`) installed on your computer to answer questi
 
 ## What You Can Do
 
-- **Research across your vault**: Use Claude Opus, Sonnet, or Haiku through your Claude Code subscription to search notes, books, and transcripts.
-- **Guided note editing**: Ask Claude to reorganize notes, extract key ideas, or link related passages, with interactive previews for every edit.
-- **Answer requests of other plugins**: Add a connection of the type Claude Code, then choose the model and the level of reasoning in a row. A request from a connection runs the program with no tools and without writing to disk.
+- **Chat in the Agent Chat panel**: Add a connection of the type Claude Code, choose its model and level of reasoning in a row of the Agents setting of Agent Chat, and Claude answers in the chat as it writes.
+- **Research across your vault**: Use Claude Opus, Sonnet, or Haiku through your Claude Code subscription to search notes, books, and transcripts. Claude Code may call the tools of your vault and the web search; it reads no file of your computer and runs no command.
+- **Continue a conversation**: The turns of one chat continue one session of Claude Code.
+- **Answer requests of other plugins**: A request from a connection runs the program with no tools and without writing to disk.
 
 ## Settings
 

@@ -1,7 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"io"
 	"maps"
@@ -16,9 +19,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
 
 const writeTargetVariable = "NUMEN_TEST_WRITE_TARGET"
@@ -39,22 +44,19 @@ done
 if [ "$tools" != "" ]; then echo written > "$` + writeTargetVariable + `"; fi
 ` + textEvent
 
-func newClaude(t *testing.T, script string) *agent {
-	t.Helper()
-	svc := newTestAgent(t)
-	svc.settings.Apply(map[string]string{"executablePath": writeScript(t, "claude", script)})
-	return svc
-}
-
 func userMessage(text string) *llm.CompleteRequest {
 	return &llm.CompleteRequest{Messages: []*llm.Message{{Role: "user", Text: text}}}
 }
 
+func completeCall(options map[string]string) connection.Call {
+	return connection.Call{ConnectionID: "conn-orchard", Type: "claude-code", Options: options}
+}
+
 func TestCompleteReturnsTheAnswerOfClaude(t *testing.T) {
-	svc := newClaude(t, answerScript)
+	svc := newClaude(t, nil, writeScript(t, "claude", answerScript))
 	t.Setenv(writeTargetVariable, filepath.Join(t.TempDir(), "written"))
 
-	result, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("fix this"))
+	result, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("fix this"))
 
 	if err != nil || result.GetText() != "fixed" {
 		t.Errorf("Complete = %q, %v, want %q", result.GetText(), err, "fixed")
@@ -62,17 +64,17 @@ func TestCompleteReturnsTheAnswerOfClaude(t *testing.T) {
 }
 
 func TestCompleteStartsClaudeWithTheModelTheInstructionsAndNoTool(t *testing.T) {
-	out := filepath.Join(t.TempDir(), "argv")
-	svc := newClaude(t, "cat > "+out+".stdin\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+textEvent)
+	dir := t.TempDir()
+	svc := newClaude(t, nil, writeScript(t, "claude", recordArgs(dir)+textEvent))
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code", Options: map[string]string{llm.OptionModel: "opus"}}, &llm.CompleteRequest{
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(map[string]string{llm.OptionModel: "opus"}), &llm.CompleteRequest{
 		Messages: []*llm.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "fix this"}},
 	})
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	argv := readArgv(t, out)
+	argv := readArgv(t, filepath.Join(dir, "argv"))
 	assertPair(t, argv, "--tools", "")
 	assertPair(t, argv, "--append-system-prompt", "be brief")
 	assertPair(t, argv, "--model", "opus")
@@ -82,17 +84,17 @@ func TestCompleteStartsClaudeWithTheModelTheInstructionsAndNoTool(t *testing.T) 
 			t.Errorf("%q is among %v", forbidden, argv)
 		}
 	}
-	stdin, err := os.ReadFile(out + ".stdin")
+	stdin, err := os.ReadFile(filepath.Join(dir, "stdin"))
 	if err != nil || string(stdin) != "fix this" {
 		t.Errorf("the program was asked %q, %v, want %q", stdin, err, "fix this")
 	}
 }
 
 func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
-	out := filepath.Join(t.TempDir(), "stdin")
-	svc := newClaude(t, "cat > "+out+"\n"+textEvent)
+	dir := t.TempDir()
+	svc := newClaude(t, nil, writeScript(t, "claude", recordArgs(dir)+textEvent))
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, &llm.CompleteRequest{
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), &llm.CompleteRequest{
 		Messages: []*llm.Message{
 			{Role: "user", Text: "one"}, {Role: "assistant", Text: "two"}, {Role: "user", Text: "three"},
 		},
@@ -101,7 +103,7 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stdin, err := os.ReadFile(out)
+	stdin, err := os.ReadFile(filepath.Join(dir, "stdin"))
 	if err != nil || string(stdin) != "User:\none\n\nAssistant:\ntwo\n\nUser:\nthree" {
 		t.Errorf("the program was asked %q, %v", stdin, err)
 	}
@@ -122,10 +124,9 @@ func TestACompleteCallLetsClaudeWriteNothing(t *testing.T) {
 	if err := os.Remove(target); err != nil {
 		t.Fatal(err)
 	}
-	svc := newTestAgent(t)
-	svc.settings.Apply(map[string]string{"executablePath": script})
+	svc := newClaude(t, nil, script)
 
-	if _, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("write a file")); err != nil {
+	if _, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("write a file")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -135,14 +136,14 @@ func TestACompleteCallLetsClaudeWriteNothing(t *testing.T) {
 }
 
 func TestCompleteRefusesARequestWithNoMessageToAnswer(t *testing.T) {
-	svc := newClaude(t, "exit 0\n")
+	svc := newClaude(t, nil, writeScript(t, "claude", "exit 0\n"))
 
 	for name, request := range map[string]*llm.CompleteRequest{
 		"no message":   {},
 		"system only":  {Messages: []*llm.Message{{Role: "system", Text: "be brief"}}},
 		"unknown role": {Messages: []*llm.Message{{Role: "tool", Text: "x"}}},
 	} {
-		_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, request)
+		_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), request)
 		if !connection.IsStop(err) {
 			t.Errorf("%s: Complete = %v, want a stop", name, err)
 		}
@@ -151,22 +152,19 @@ func TestCompleteRefusesARequestWithNoMessageToAnswer(t *testing.T) {
 
 func TestAMissingClaudeIsUnreachable(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	svc := newTestAgent(t)
+	svc := newTestAgent(t, nil)
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
-	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
-		t.Fatalf("Complete = %v, want try the next", err)
-	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
-		t.Errorf("reason = %v, want unreachable", reason)
+	if reason, isTryNext := connection.IsTryNext(err); !isTryNext || reason != connection.ReasonUnavailable {
+		t.Fatalf("Complete = %v, want try the next as unavailable", err)
 	}
 }
 
 func TestAFailedRunOfClaudeIsAStopWithNoTextOfTheProgram(t *testing.T) {
-	svc := newClaude(t, "cat > /dev/null\necho 'not signed in as sk-secret' >&2\nexit 2\n")
+	svc := newClaude(t, nil, writeScript(t, "claude", "cat > /dev/null\necho 'not signed in as sk-secret' >&2\nexit 2\n"))
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Fatalf("Complete = %v, want a stop", err)
@@ -177,9 +175,9 @@ func TestAFailedRunOfClaudeIsAStopWithNoTextOfTheProgram(t *testing.T) {
 }
 
 func TestAnEmptyAnswerIsAStop(t *testing.T) {
-	svc := newClaude(t, "cat > /dev/null\nprintf '%s\\n' '{\"type\":\"result\",\"is_error\":false}'\n")
+	svc := newClaude(t, nil, writeScript(t, "claude", "cat > /dev/null\nprintf '%s\\n' '{\"type\":\"result\",\"is_error\":false}'\n"))
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Errorf("Complete = %v, want a stop", err)
@@ -187,25 +185,22 @@ func TestAnEmptyAnswerIsAStop(t *testing.T) {
 }
 
 func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
-	svc := newClaude(t, "sleep 30\n")
+	svc := newClaude(t, nil, writeScript(t, "claude", "sleep 30\n"))
 	svc.settings.Apply(map[string]string{"requestTimeout": "0.2"})
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
-	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
-		t.Fatalf("Complete = %v, want try the next", err)
-	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
-		t.Errorf("reason = %v, want timeout", reason)
+	if reason, isTryNext := connection.IsTryNext(err); !isTryNext || reason != connection.ReasonUnavailable {
+		t.Fatalf("Complete = %v, want try the next as unavailable", err)
 	}
 }
 
 func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
-	svc := newClaude(t, "sleep 30\n")
+	svc := newClaude(t, nil, writeScript(t, "claude", "sleep 30\n"))
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)
 
-	_, err := svc.completion.Complete(ctx, connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := llmtest.Complete(ctx, svc.Provider(), completeCall(nil), userMessage("hi"))
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("Complete = %v, want the cancellation", err)
@@ -215,15 +210,17 @@ func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 // listingAnswer is the answer of a Claude Code that lists two models.
 const listingAnswer = `{"type":"control_response","response":{"subtype":"success","request_id":"numen-models","response":{"models":[{"value":"opus","displayName":"Opus","supportsEffort":true,"supportedEffortLevels":["high","low"]},{"value":"haiku","displayName":"Haiku","supportsEffort":false,"supportedEffortLevels":[]}]}}}`
 
-func newListingClaude(t *testing.T) *agent {
+func newListingClaude(t *testing.T, request string) *agent {
 	t.Helper()
-	return newClaude(t, "read line\nprintf '%s\\n' '"+listingAnswer+"'\nsleep 30\n")
+	return newClaude(t, nil, writeScript(t, "claude", "read line\nprintf '%s\\n' \"$line\" > "+request+"\nprintf '%s\\n' '"+listingAnswer+"'\nsleep 30\n"))
 }
 
+// The program is asked for its models with the initialize request of its control protocol.
 func TestTheModelsOfClaudeAreListedForTheRow(t *testing.T) {
-	svc := newListingClaude(t)
+	request := filepath.Join(t.TempDir(), "asked")
+	svc := newListingClaude(t, request)
 
-	models, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "claude-code"}, []string{llm.OperationComplete})
+	models, err := svc.completion.ListModels(t.Context(), completeCall(nil), []string{llm.OperationComplete})
 
 	if err != nil {
 		t.Fatal(err)
@@ -235,66 +232,122 @@ func TestTheModelsOfClaudeAreListedForTheRow(t *testing.T) {
 	if !slices.Equal(ids, []string{"opus", "haiku"}) || models[0].Title != "Opus" {
 		t.Errorf("models = %+v", models)
 	}
+	asked, err := os.ReadFile(request)
+	if err != nil || !strings.Contains(string(asked), `"subtype":"initialize"`) {
+		t.Errorf("the program was asked %s, %v", asked, err)
+	}
 }
 
 func TestTheLevelsOfTheModelOfTheCallAreListedFromTheLeastToTheMost(t *testing.T) {
-	svc := newListingClaude(t)
+	svc := newListingClaude(t, filepath.Join(t.TempDir(), "asked"))
 
-	levels, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "claude-code", Options: map[string]string{llm.OptionModel: "opus"}})
+	levels, err := svc.completion.ListReasoningLevels(t.Context(), completeCall(map[string]string{llm.OptionModel: "opus"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(levels) != 2 || levels[0].Value != "low" || levels[1].Value != "high" || levels[1].Title != "High" {
 		t.Errorf("levels = %+v", levels)
 	}
-	none, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "claude-code", Options: map[string]string{llm.OptionModel: "haiku"}})
+	none, err := svc.completion.ListReasoningLevels(t.Context(), completeCall(map[string]string{llm.OptionModel: "haiku"}))
 	if err != nil || len(none) != 0 {
 		t.Errorf("levels of a model with none = %+v, %v", none, err)
 	}
 }
 
+// A level the listed model does not take is not given to the program.
+func TestATaskGivesClaudeNoLevelTheModelDoesNotTake(t *testing.T) {
+	svc := newListingClaude(t, filepath.Join(t.TempDir(), "asked"))
+	if _, err := svc.completion.ListModels(t.Context(), completeCall(nil), nil); err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	svc.settings.Apply(map[string]string{"executablePath": writeScript(t, "claude", recordArgs(dir))})
+
+	call := completeCall(map[string]string{llm.OptionModel: "haiku", llm.OptionReasoning: "high"})
+	if _, _, err := runTask(t.Context(), svc, call, &acp.TaskRequest{Prompt: "hi"}); err != nil {
+		t.Fatal(err)
+	}
+	if argv := readArgv(t, filepath.Join(dir, "argv")); slices.Contains(argv, "--effort") {
+		t.Errorf("a level haiku does not take was given: %q", argv)
+	}
+}
+
+func TestAClaudeThatListsNoModelListsTheFallbackModels(t *testing.T) {
+	svc := newClaude(t, nil, writeScript(t, "claude", "exit 1\n"))
+
+	models, err := svc.completion.ListModels(t.Context(), completeCall(nil), nil)
+
+	if err != nil || len(models) != len(model.GetFallback()) {
+		t.Fatalf("ListModels = %+v, %v", models, err)
+	}
+	for place, one := range models {
+		if one.Value != model.GetFallback()[place].Value {
+			t.Errorf("the model %v is not a fallback alias", one)
+		}
+	}
+}
+
 func TestListingTheModelsOfAMissingClaudeIsUnreachable(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	svc := newTestAgent(t)
+	svc := newTestAgent(t, nil)
 
-	_, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "claude-code"}, []string{llm.OperationComplete})
+	_, err := svc.completion.ListModels(t.Context(), completeCall(nil), []string{llm.OperationComplete})
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("ListModels = %v, want try the next", err)
 	}
 }
 
-func TestTheProviderServesCompleteAndTheListsOfModelsAndReasoningLevels(t *testing.T) {
-	provider := newTestAgent(t).Provider()
-	served := slices.Sorted(maps.Keys(provider))
-	want := []string{llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
+	served := slices.Sorted(maps.Keys(newTestAgent(t, nil).Provider()))
+	want := []string{acp.OperationTask, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)
 	}
 }
 
+// The plugin linked into a host reads the models of the program in the background and lists none until
+// they are read.
 func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
-	t.Setenv(writeTargetVariable, filepath.Join(t.TempDir(), "written"))
-	script := writeScript(t, "claude", answerScript)
+	program := writeScript(t, "claude", "read line\nprintf '%s\\n' '"+listingAnswer+"'\nsleep 30\n")
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	lifecycle := server.NewLifecycleClient(http.DefaultClient, web.URL, hostcall.WithBearer("tok"))
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": script}); err != nil {
+	lifecycle := servertest.NewLifecycleClient(http.DefaultClient, web.URL, "tok")
+	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": program}); err != nil {
 		t.Fatal(err)
 	}
 
-	body := `{"call":{"type":"claude-code"},"messages":[{"role":"user","text":"fix this"}]}`
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.ProviderService/Complete", strings.NewReader(body))
+	deadline := time.After(5 * time.Second)
+	for {
+		answer := callModels(t, web.URL)
+		if bytes.Contains(readDoneFrame(t, answer), []byte("Opus")) {
+			return
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("the service answered %q", answer)
+		case <-time.After(20 * time.Millisecond):
+		}
+	}
+}
+
+func callModels(t *testing.T, url string) []byte {
+	t.Helper()
+	body, err := json.Marshal(map[string]any{"operation": llm.OperationModels, "call": map[string]any{"type": "claude-code"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	request.Header.Set("Content-Type", "application/json")
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url+"/numen.v1.ProviderService/Call", bytes.NewReader(writeEnvelope(body)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/connect+json")
 	request.Header.Set("Authorization", "Bearer tok")
-	response, err := web.Client().Do(request)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,12 +356,37 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-
 	answer, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if response.StatusCode != http.StatusOK || string(answer) != `{"text":"fixed"}` {
-		t.Errorf("the service answered %d %q", response.StatusCode, answer)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("the service answered %d %q", response.StatusCode, answer)
 	}
+	return answer
+}
+
+func writeEnvelope(message []byte) []byte {
+	framed := make([]byte, 5, 5+len(message))
+	binary.BigEndian.PutUint32(framed[1:], uint32(len(message)))
+	return append(framed, message...)
+}
+
+func readDoneFrame(t *testing.T, answer []byte) []byte {
+	t.Helper()
+	for len(answer) >= 5 {
+		size := binary.BigEndian.Uint32(answer[1:5])
+		if uint32(len(answer)-5) < size {
+			return nil
+		}
+		message := answer[5 : 5+size]
+		answer = answer[5+size:]
+		var frame struct {
+			Done []byte `json:"done"`
+		}
+		if json.Unmarshal(message, &frame) == nil && frame.Done != nil {
+			return frame.Done
+		}
+	}
+	return nil
 }

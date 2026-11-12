@@ -4,15 +4,15 @@
   "version": "2026.11.11",
   "protocol": 1,
   "description": "Anthropic Claude Code assistant for chat and note editing",
-  "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": {
     "category": "agents",
+    "operations": [{ "name": "acp.task", "title": "run agent tasks" }],
     "connectionTypes": [
       {
         "id": "claude-code",
         "title": "Claude Code",
-        "operations": ["llm.complete", "llm.models", "llm.reasoning"],
+        "operations": ["llm.complete", "llm.models", "llm.reasoning", "acp.task"],
         "rowFields": [
           {
             "key": "model",
@@ -51,7 +51,7 @@
     "index:read"
   ],
   "backend": { "entrypoint": "bin/agents-claude" },
-  "services": ["numen.v1.AgentService", "numen.v1.ProviderService"],
+  "services": ["numen.v1.ProviderService"],
   "settings": [
     {
       "key": "executablePath",

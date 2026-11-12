@@ -18,7 +18,6 @@ const requestTimeoutSetting = "requestTimeout"
 
 // Values are the settings in force.
 type Values struct {
-	DefaultModel   string
 	ExecutablePath string
 	MayReadHooks   bool
 	RequestTimeout time.Duration
@@ -30,13 +29,10 @@ type Settings struct {
 	values Values
 }
 
-// Apply takes the settings the host sends. A model that is empty leaves the model in force.
+// Apply takes the settings the host sends.
 func (s *Settings) Apply(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if model, ok := values["model"]; ok && model != "" {
-		s.values.DefaultModel = model
-	}
 	if execPath, ok := values["executablePath"]; ok {
 		s.values.ExecutablePath = strings.TrimSpace(execPath)
 	}

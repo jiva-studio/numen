@@ -14,6 +14,9 @@ use (
 	./libs/plugin/sdk-go/wasm
 	./libs/core/protocol
 	./plugins/agents-acp
+	./plugins/agents-antigravity
+	./plugins/agents-claude
+	./plugins/agents-codex
 	./plugins/agents-mcp-server
 	./plugins/agents-numen
 	./plugins/agents-tools-vault

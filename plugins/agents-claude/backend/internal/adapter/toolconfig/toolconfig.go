@@ -3,9 +3,10 @@ package toolconfig
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"io/fs"
+	"os"
 )
 
 // Files keeps the tool configuration files of runs in files only this user can read, because the
@@ -35,15 +36,44 @@ func (Files) Write(url, token string) (string, error) {
 		},
 	}
 	data, err := json.Marshal(config)
-	// gomutants:disable-next-line BRANCH_IF reason="Marshaling a static struct of string fields and string maps cannot fail."
 	if err != nil {
 		return "", fmt.Errorf("marshal mcp config: %w", err)
 	}
-
-	return agentrun.WriteTempFile("numen-tools-*.json", data)
+	return writeTempFile("numen-tools-*.json", data)
 }
 
 // Remove deletes the file; a path of none or of a file that is gone is not an error.
 func (Files) Remove(path string) error {
-	return agentrun.RemoveFile(path)
+	if path == "" {
+		return nil
+	}
+	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("remove %s: %w", path, err)
+	}
+	return nil
+}
+
+func writeTempFile(pattern string, data []byte) (path string, err error) {
+	file, err := os.CreateTemp("", pattern)
+	if err != nil {
+		return "", fmt.Errorf("create temp config: %w", err)
+	}
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("close config: %w", closeErr))
+		}
+		if err != nil {
+			if removeErr := os.Remove(file.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+				err = errors.Join(err, fmt.Errorf("remove config: %w", removeErr))
+			}
+			path = ""
+		}
+	}()
+	if err := file.Chmod(0o600); err != nil {
+		return "", fmt.Errorf("chmod config: %w", err)
+	}
+	if _, err := file.Write(data); err != nil {
+		return "", fmt.Errorf("write config: %w", err)
+	}
+	return file.Name(), nil
 }

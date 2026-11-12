@@ -197,6 +197,9 @@ fs.writeFileSync(
       },
       'md.numen.views.agent.chat': { connections: [{ connection: NUMEN_AGENT_CONNECTION }] },
       'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
+      'md.numen.agents.claude': { enabled: false },
+      'md.numen.agents.codex': { enabled: false },
+      'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
       // The host binds the MCP server's listener port 5000 above the server's port, outside the ports
       // of the other servers of a parallel run (10 apart) and of the flashcards server (3457).
