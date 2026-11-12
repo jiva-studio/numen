@@ -119,11 +119,3 @@ func AppendText(ctx context.Context, store StoreWriter, name string, segments []
 	return store.Append(ctx, name, raw)
 }
 
-// ReadTextFile reads the segments of a version file of the plugin's folder.
-func ReadTextFile(ctx context.Context, store StoreReader, name string) ([]domain.TextSegment, error) {
-	raw, err := store.Read(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-	return textfile.Decode(raw)
-}
