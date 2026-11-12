@@ -1,9 +1,6 @@
 package service
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
@@ -52,7 +49,7 @@ func Mount(srv *server.Server) error {
 	if err != nil {
 		dir = ""
 	}
-	built, err := newService(clock.System{}, models.Lists{Dir: dir, Report: reportListError})
+	built, err := newService(clock.System{}, models.Lists{Dir: dir, Report: openaiapi.ReportListError})
 	if err != nil {
 		return err
 	}
@@ -63,9 +60,4 @@ func Mount(srv *server.Server) error {
 	})
 	connection.Mount(srv, built.provider.roles())
 	return nil
-}
-
-func reportListError(err error) {
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="a diagnostic line on stderr; the list kept before is still answered"
-	fmt.Fprintf(os.Stderr, "list models: %v\n", err)
 }
