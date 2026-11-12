@@ -54,7 +54,6 @@ func GetConfigFor(target string) container.Config {
 		PluginHost:    host,
 		PluginCatalog: getCatalogConfig(target, dirs, host),
 		KeyStore:      keys,
-		Credentials:   keys,
 		Resources:     container.NewResources(),
 	})
 	// A machine with no data folder leaves the path empty, and the core fails to start.
