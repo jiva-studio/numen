@@ -298,9 +298,12 @@ describe('a title finds room on its line', () => {
     expect(Math.abs(tightest.titles[0]!.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
 
     // A line with spare length yields: it is not set at the middle, or not set at all.
+    const named = graphs.labelledRows.edges.filter((edge) => edge.labels?.[0]?.text)
     const yielding = crossing.edges.filter(
       (edge) =>
-        edge.titles[0]?.words === undefined || Math.abs(edge.titles[0].wordsAt - MIDDLE) >= A_NUDGE,
+        named.some((one) => one.from === edge.from && one.to === edge.to) &&
+        (edge.titles[0]?.words === undefined ||
+          Math.abs(edge.titles[0].wordsAt - MIDDLE) >= A_NUDGE),
     )
     expect(yielding.length).toBeGreaterThan(0)
   })

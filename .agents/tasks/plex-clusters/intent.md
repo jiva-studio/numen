@@ -43,7 +43,7 @@
 | A large group next to a small one | The small group still gets the space next to the note in the middle, because the groups take turns. |
 | Two groups grow towards the same free space | Each note goes to the free spot nearest the middle of its own group; no two notes overlap. |
 | Large Room around a note (#1836) | The room shrinks with the gaps in a tight window; notes that still do not fit are counted. |
-| The same note opened twice | The plex is drawn the same way both times, whatever order the connections arrived in. |
+| The same note opened twice | The plex is drawn the same way both times, whichever relation is listed first. Within one relation the notes keep the order they arrived in, and the first ones are the ones shown. |
 
 ## 4. Invariants
 

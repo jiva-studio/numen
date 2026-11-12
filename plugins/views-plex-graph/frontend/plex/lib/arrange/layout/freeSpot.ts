@@ -143,8 +143,8 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
   )
 }
 
-export function isFree(spot: Spot, taken: readonly Spot[], gaps: Gaps): boolean {
-  return taken.every((other) => isClear(spot, other, gaps))
+export function isFree(spot: Spot, spots: readonly Spot[], gaps: Gaps): boolean {
+  return spots.every((other) => isClear(spot, other, gaps))
 }
 
 /**
@@ -153,9 +153,9 @@ export function isFree(spot: Spot, taken: readonly Spot[], gaps: Gaps): boolean 
  * equal costs the one nearer the start wins, which fills a group across its
  * axis before it goes deeper; of those the earlier candidate wins.
  */
-export function findFreeSpot(taken: readonly Spot[] | SpotIndex, request: SpotRequest): Spot {
+export function findFreeSpot(spots: readonly Spot[] | SpotIndex, request: SpotRequest): Spot {
   const { size, gaps } = request
-  const index = taken instanceof SpotIndex ? taken : new SpotIndex(taken)
+  const index = spots instanceof SpotIndex ? spots : new SpotIndex(spots)
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
   let best: { point: Vector; cost: number; along: number } | undefined
@@ -170,9 +170,9 @@ export function findFreeSpot(taken: readonly Spot[] | SpotIndex, request: SpotRe
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
 }
 
-function findSpotBeyond(taken: SpotIndex, request: SpotRequest): Spot {
+function findSpotBeyond(index: SpotIndex, request: SpotRequest): Spot {
   const { middle, direction, size, gaps } = request
-  const { minX, maxX, minY, maxY } = taken.getExtent()
+  const { minX, maxX, minY, maxY } = index.getExtent()
   if (Math.abs(direction.x) >= Math.abs(direction.y)) {
     const x =
       direction.x >= 0 ? maxX + gaps.gap + size.width / 2 + 1 : minX - gaps.gap - size.width / 2 - 1
@@ -225,7 +225,7 @@ function measureCost(point: Vector, request: SpotRequest): number {
   )
 }
 
-function findFreeSpotOutward(taken: SpotIndex, request: SpotRequest): Spot | undefined {
+function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | undefined {
   const { middle, direction, size, gaps } = request
   const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
   const stride = size.height / 4
@@ -237,7 +237,7 @@ function findFreeSpotOutward(taken: SpotIndex, request: SpotRequest): Spot | und
         y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
         ...size,
       }
-      if (taken.isFree(spot, gaps)) return spot
+      if (index.isFree(spot, gaps) && measureAlong(spot, request) >= -TOLERANCE) return spot
     }
   }
   return undefined

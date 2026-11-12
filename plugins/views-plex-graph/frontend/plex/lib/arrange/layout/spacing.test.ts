@@ -74,7 +74,9 @@ describe('the gap an edge crosses opens first', () => {
     const frame = arrangePlex(build('A node', { child: 1 }), {
       options: { viewport: { width: 2400, height: 1400 } },
     })
-    expect(getNearestY(frame)).toBeGreaterThan(focusSize.height / 2 + focusGap + nodeSize.height / 2)
+    expect(getNearestY(frame)).toBeGreaterThan(
+      focusSize.height / 2 + focusGap + nodeSize.height / 2,
+    )
   })
 })
 

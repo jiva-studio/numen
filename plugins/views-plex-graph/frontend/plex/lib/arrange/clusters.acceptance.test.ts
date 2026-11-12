@@ -126,12 +126,14 @@ describe('each relation is placed on its own side of the focus', () => {
     const right = focus.x + focus.width / 2
 
     expect(getShownNodes(frame, 'parent').length).toBeGreaterThan(0)
-    for (const node of getShownNodes(frame, 'parent')) expect(node.y + node.height / 2).toBeLessThan(top)
+    for (const node of getShownNodes(frame, 'parent'))
+      expect(node.y + node.height / 2).toBeLessThan(top)
     for (const node of getShownNodes(frame, 'child'))
       expect(node.y - node.height / 2).toBeGreaterThan(bottom)
     for (const node of getShownNodes(frame, 'sibling'))
       expect(node.x - node.width / 2).toBeGreaterThan(right)
-    for (const node of getShownNodes(frame, 'jump')) expect(node.x + node.width / 2).toBeLessThan(left)
+    for (const node of getShownNodes(frame, 'jump'))
+      expect(node.x + node.width / 2).toBeLessThan(left)
   })
 
   it.each([
@@ -139,7 +141,9 @@ describe('each relation is placed on its own side of the focus', () => {
     ['eight, twenty, eight and eight', full],
   ])('leans the jumps down in %s', (_name, graph) => {
     const frame = arrange(graph, inWindow(window))
-    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(getFocus(frame).y)
+    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(
+      getFocus(frame).y,
+    )
   })
 })
 
@@ -471,7 +475,9 @@ describe('any placement strategy is admitted by the window', () => {
     const frame = arrange(graph, {}, { placement: ring })
     for (const relation of RELATION_NAMES) {
       const arrived = getArrivedNodes(graph, relation).length
-      expect(getShownNodes(frame, relation)).toHaveLength(Math.min(arrived, DEFAULT_MAX_PER_CLUSTER))
+      expect(getShownNodes(frame, relation)).toHaveLength(
+        Math.min(arrived, DEFAULT_MAX_PER_CLUSTER),
+      )
     }
   })
 })
@@ -503,7 +509,9 @@ describe('a big group is cut to what fits, not dropped whole', () => {
   ])('shows forty children no fewer than twenty in $width×$height', (viewport) => {
     const twenty = arrange(build('A note', { child: 20 }), inWindow(viewport))
     const more = arrange(forty, inWindow(viewport))
-    expect(getShownNodes(more, 'child').length).toBeGreaterThanOrEqual(getShownNodes(twenty, 'child').length)
+    expect(getShownNodes(more, 'child').length).toBeGreaterThanOrEqual(
+      getShownNodes(twenty, 'child').length,
+    )
   })
 })
 

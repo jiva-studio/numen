@@ -199,8 +199,8 @@ Every criterion runs through `arrangePlex` unless it names a unit. The counts an
 - **Then** every sibling has an edge from a shown parent and no edge to the focus; every other neighbor's edge joins it to the focus — the same pairs as `TODAY_EDGES` in `look.test.ts`.
 
 ### AC-13: The same input gives the same picture
-- **Given** every fixture, and `typical` with its nodes reversed
-- **Then** two arrangements are strictly equal, and the reversed one equals the original.
+- **Given** every fixture arranged twice, and `typical` with its relations listed in another order and the nodes of each relation kept in their order
+- **Then** the two arrangements of a fixture are strictly equal, and every node of the reordered `typical` has the position it has in the original.
 
 ### AC-14: Free spot unit (`freeSpot.ts`)
 - **Given** a taken box and a box of the same size exactly one `gap` to its right (and one `lineGap` below)

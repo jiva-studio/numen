@@ -73,7 +73,7 @@ function placeClusters(
   const { options, width, shouldStop } = context
   const gaps = { gap: options.gap, lineGap: options.lineGap }
   const { height } = options.nodeSize
-  const taken = new SpotIndex([
+  const index = new SpotIndex([
     { x: focus.x, y: focus.y, width: focus.width, height: focus.height },
   ])
   const groups = new Map<PlexRelation, Spot[]>()
@@ -88,14 +88,15 @@ function placeClusters(
     const size = { width: width(node), height }
     const direction = getClusterDirection(options.direction[relation], RELATIONS[relation].lean)
     const anchor = getAnchor(direction, focus, options)
-    const reach =
-      Math.abs(direction.x) * (size.width / 2) + Math.abs(direction.y) * (size.height / 2)
+    const getReach = (boxWidth: number) =>
+      Math.abs(direction.x) * (boxWidth / 2) + Math.abs(direction.y) * (height / 2)
+    const reach = Math.max(getReach(size.width), getReach(width(members[0] ?? node)))
     const start = { x: anchor.x + direction.x * reach, y: anchor.y + direction.y * reach }
     const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
     const middle = getClusterMiddle(start, direction, { size: members.length, cell })
 
-    const spot = findFreeSpot(taken, { start, middle, direction, size, group, gaps })
-    taken.add(spot)
+    const spot = findFreeSpot(index, { start, middle, direction, size, group, gaps })
+    index.add(spot)
     group.push(spot)
     const box: PlacedNode = {
       ...node,
