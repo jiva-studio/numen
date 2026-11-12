@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
@@ -18,16 +17,14 @@ type ListSettingValues struct {
 	defaults settingsport.Defaults
 	app      settingsport.AppDeclarations
 	plugins  settingsport.PluginInfos
-	late     settingsport.LatePrograms
 }
 
-// NewListSettingValues makes the use case. plugins and late are nil where there are no plugin host
-// and no program list.
+// NewListSettingValues makes the use case. plugins is nil where there is no plugin host.
 func NewListSettingValues(
 	codec settingsport.ValueCodec, file settingsport.SettingsFile, defaults settingsport.Defaults, app settingsport.AppDeclarations,
-	plugins settingsport.PluginInfos, late settingsport.LatePrograms,
+	plugins settingsport.PluginInfos,
 ) *ListSettingValues {
-	return &ListSettingValues{codec: codec, file: file, defaults: defaults, app: app, plugins: plugins, late: late}
+	return &ListSettingValues{codec: codec, file: file, defaults: defaults, app: app, plugins: plugins}
 }
 
 // Execute lists the values the file holds, with the defaults for the rest.
@@ -72,22 +69,7 @@ func (u *ListSettingValues) list(stored settingsdomain.Stored) (settingsdomain.V
 	} else if connections != "" {
 		values[settingsdomain.JoinPath([]string{settingsdomain.ConnectionsKey})] = connections
 	}
-	if u.late != nil {
-		if late := u.late.GetLate(); len(late) > 0 {
-			add([]string{settingsdomain.AppOwner, "agent", "use"}, getAgentUse(stored.GetAgentUse(), late))
-		}
-	}
 	return values, errors.Join(failures...)
-}
-
-func getAgentUse(configured string, programs []agent.Program) string {
-	if configured != "" {
-		return configured
-	}
-	if def, ok := agent.GetDefaultProgram(programs); ok {
-		return def.Name
-	}
-	return programs[0].Name
 }
 
 func listPluginValues(stored settingsdomain.Stored, one plugin.Info, add func([]string, any), values settingsdomain.Values) {

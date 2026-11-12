@@ -12,19 +12,17 @@
 // shape and does not describe it, and a setting is written by naming the path
 // through the file. It is the only tree here that goes undescribed.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { PluginInfo, PluginSetting } from "./plugin_pb.js";
 import { file_numen_v1_plugin } from "./plugin_pb.js";
-import type { ReasoningLevel } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IqgBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nSgQICRAKIvEBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlEjIKEHJlYXNvbmluZ19sZXZlbHMYCCADKAsyGC5udW1lbi52MS5SZWFzb25pbmdMZXZlbBIZChFkZWZhdWx0X3JlYXNvbmluZxgJIAEoCSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSIkCg5PcHRpb25zUmVxdWVzdBISCgpvcGVyYXRpb25zGAEgAygJIiwKB09wdGlvbnMSIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbiI1CgZPcHRpb24SDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkSDQoFZ3JvdXAYAyABKAkqcwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABIUChBQUkVTRU5DRV9QUkVTRU5UEAESGAoUUFJFU0VOQ0VfTk9UX0ZFVENIRUQQAhIdChlQUkVTRU5DRV9OT1RISU5HX1RPX0ZFVENIEAMy1wQKD1NldHRpbmdzU2VydmljZRJKCgtHZXRTZXR0aW5ncxIcLm51bWVuLnYxLkdldFNldHRpbmdzUmVxdWVzdBodLm51bWVuLnYxLkdldFNldHRpbmdzUmVzcG9uc2USUAoNV3JpdGVTZXR0aW5ncxIeLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEkoKC1JldHJ5UGx1Z2luEhwubnVtZW4udjEuUmV0cnlQbHVnaW5SZXF1ZXN0Gh0ubnVtZW4udjEuUmV0cnlQbHVnaW5SZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUAoNR2V0UGx1Z2luRGF0YRIeLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlc3BvbnNlElkKEERlbGV0ZVBsdWdpbkRhdGESIS5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVxdWVzdBoiLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZRJSCg1XYXRjaFNldHRpbmdzEh4ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IocBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nSgQICRAKIiQKB1NldHRpbmcSCgoCYXQYASADKAkSDQoFdmFsdWUYAiABKAkiFgoUV2F0Y2hTZXR0aW5nc1JlcXVlc3QiOwoVV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlEiIKB2NoYW5nZWQYASADKAsyES5udW1lbi52MS5TZXR0aW5nIjsKFFdyaXRlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIXChVXcml0ZVNldHRpbmdzUmVzcG9uc2UiJwoSUmV0cnlQbHVnaW5SZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSImChNSZXRyeVBsdWdpblJlc3BvbnNlEg8KB2ZhaWx1cmUYASABKAkiOQoXQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgsKA2tleRgCIAEoCSJMChhDaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgSDwoHcHJvYmxlbRgDIAEoCSIpChRHZXRQbHVnaW5EYXRhUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiPwoVR2V0UGx1Z2luRGF0YVJlc3BvbnNlEhIKCmZpbGVfY291bnQYASABKAUSEgoKYnl0ZV9jb3VudBgCIAEoAyIsChdEZWxldGVQbHVnaW5EYXRhUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiGgoYRGVsZXRlUGx1Z2luRGF0YVJlc3BvbnNlIiQKDk9wdGlvbnNSZXF1ZXN0EhIKCm9wZXJhdGlvbnMYASADKAkiLAoHT3B0aW9ucxIhCgdvcHRpb25zGAEgAygLMhAubnVtZW4udjEuT3B0aW9uIjUKBk9wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRINCgVncm91cBgDIAEoCTLXBAoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USSgoLUmV0cnlQbHVnaW4SHC5udW1lbi52MS5SZXRyeVBsdWdpblJlcXVlc3QaHS5udW1lbi52MS5SZXRyeVBsdWdpblJlc3BvbnNlElkKEENob29zZVBsdWdpblBhdGgSIS5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBoiLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXNwb25zZRJQCg1HZXRQbHVnaW5EYXRhEh4ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlcXVlc3QaHy5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVzcG9uc2USWQoQRGVsZXRlUGx1Z2luRGF0YRIhLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXF1ZXN0GiIubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlc3BvbnNlElIKDVdhdGNoU2V0dGluZ3MSHi5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXNwb25zZTABQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -60,13 +58,6 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   path: string;
 
   /**
-   * The models the settings that name one can be set to.
-   *
-   * @generated from field: repeated numen.v1.Model models = 3;
-   */
-  models: Model[];
-
-  /**
    * Active plugins and their declarative settings schema.
    *
    * @generated from field: repeated numen.v1.PluginInfo plugins = 7;
@@ -88,84 +79,6 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
  */
 export const GetSettingsResponseSchema: GenMessage<GetSettingsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 1);
-
-/**
- * Model is one model a setting that names a model can be set to.
- *
- * @generated from message numen.v1.Model
- */
-export type Model = Message<"numen.v1.Model"> & {
-  /**
-   * The setting the model is read from, as a path through the file. The model
-   * in force is the one whose name stands there.
-   *
-   * @generated from field: repeated string named_at = 1;
-   */
-  namedAt: string[];
-
-  /**
-   * What stands there while this model is the one in force.
-   *
-   * @generated from field: string name = 2;
-   */
-  name: string;
-
-  /**
-   * What is drawn on the row, and the group the rows around it stand under.
-   *
-   * @generated from field: string title = 3;
-   */
-  title: string;
-
-  /**
-   * @generated from field: string group = 4;
-   */
-  group: string;
-
-  /**
-   * Set on the model an installation with no configuration runs on.
-   *
-   * @generated from field: bool is_default = 5;
-   */
-  isDefault: boolean;
-
-  /**
-   * What choosing it writes. One model is several keys where the model decides
-   * more than its own name.
-   *
-   * @generated from field: repeated numen.v1.Setting writes = 6;
-   */
-  writes: Setting[];
-
-  /**
-   * What this model's files are on this machine.
-   *
-   * @generated from field: numen.v1.Presence presence = 7;
-   */
-  presence: Presence;
-
-  /**
-   * The depths of reasoning the model can be asked to work at, from the least to the most. Empty
-   * where the model offers no choice.
-   *
-   * @generated from field: repeated numen.v1.ReasoningLevel reasoning_levels = 8;
-   */
-  reasoningLevels: ReasoningLevel[];
-
-  /**
-   * The level the model works at unasked. Empty where it names none.
-   *
-   * @generated from field: string default_reasoning = 9;
-   */
-  defaultReasoning: string;
-};
-
-/**
- * Describes the message numen.v1.Model.
- * Use `create(ModelSchema)` to create a new message.
- */
-export const ModelSchema: GenMessage<Model> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 2);
 
 /**
  * Setting is one setting of the file and what to put there.
@@ -194,7 +107,7 @@ export type Setting = Message<"numen.v1.Setting"> & {
  * Use `create(SettingSchema)` to create a new message.
  */
 export const SettingSchema: GenMessage<Setting> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 3);
+  messageDesc(file_numen_v1_settings, 2);
 
 /**
  * @generated from message numen.v1.WatchSettingsRequest
@@ -207,7 +120,7 @@ export type WatchSettingsRequest = Message<"numen.v1.WatchSettingsRequest"> & {
  * Use `create(WatchSettingsRequestSchema)` to create a new message.
  */
 export const WatchSettingsRequestSchema: GenMessage<WatchSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 4);
+  messageDesc(file_numen_v1_settings, 3);
 
 /**
  * @generated from message numen.v1.WatchSettingsResponse
@@ -227,7 +140,7 @@ export type WatchSettingsResponse = Message<"numen.v1.WatchSettingsResponse"> & 
  * Use `create(WatchSettingsResponseSchema)` to create a new message.
  */
 export const WatchSettingsResponseSchema: GenMessage<WatchSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 5);
+  messageDesc(file_numen_v1_settings, 4);
 
 /**
  * @generated from message numen.v1.WriteSettingsRequest
@@ -246,7 +159,7 @@ export type WriteSettingsRequest = Message<"numen.v1.WriteSettingsRequest"> & {
  * Use `create(WriteSettingsRequestSchema)` to create a new message.
  */
 export const WriteSettingsRequestSchema: GenMessage<WriteSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 6);
+  messageDesc(file_numen_v1_settings, 5);
 
 /**
  * @generated from message numen.v1.WriteSettingsResponse
@@ -259,7 +172,7 @@ export type WriteSettingsResponse = Message<"numen.v1.WriteSettingsResponse"> & 
  * Use `create(WriteSettingsResponseSchema)` to create a new message.
  */
 export const WriteSettingsResponseSchema: GenMessage<WriteSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 7);
+  messageDesc(file_numen_v1_settings, 6);
 
 /**
  * @generated from message numen.v1.RetryPluginRequest
@@ -278,7 +191,7 @@ export type RetryPluginRequest = Message<"numen.v1.RetryPluginRequest"> & {
  * Use `create(RetryPluginRequestSchema)` to create a new message.
  */
 export const RetryPluginRequestSchema: GenMessage<RetryPluginRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 8);
+  messageDesc(file_numen_v1_settings, 7);
 
 /**
  * @generated from message numen.v1.RetryPluginResponse
@@ -297,7 +210,7 @@ export type RetryPluginResponse = Message<"numen.v1.RetryPluginResponse"> & {
  * Use `create(RetryPluginResponseSchema)` to create a new message.
  */
 export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 9);
+  messageDesc(file_numen_v1_settings, 8);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathRequest
@@ -321,7 +234,7 @@ export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"
  * Use `create(ChoosePluginPathRequestSchema)` to create a new message.
  */
 export const ChoosePluginPathRequestSchema: GenMessage<ChoosePluginPathRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 10);
+  messageDesc(file_numen_v1_settings, 9);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathResponse
@@ -354,7 +267,7 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
  * Use `create(ChoosePluginPathResponseSchema)` to create a new message.
  */
 export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 11);
+  messageDesc(file_numen_v1_settings, 10);
 
 /**
  * @generated from message numen.v1.GetPluginDataRequest
@@ -371,7 +284,7 @@ export type GetPluginDataRequest = Message<"numen.v1.GetPluginDataRequest"> & {
  * Use `create(GetPluginDataRequestSchema)` to create a new message.
  */
 export const GetPluginDataRequestSchema: GenMessage<GetPluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 12);
+  messageDesc(file_numen_v1_settings, 11);
 
 /**
  * @generated from message numen.v1.GetPluginDataResponse
@@ -393,7 +306,7 @@ export type GetPluginDataResponse = Message<"numen.v1.GetPluginDataResponse"> & 
  * Use `create(GetPluginDataResponseSchema)` to create a new message.
  */
 export const GetPluginDataResponseSchema: GenMessage<GetPluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 13);
+  messageDesc(file_numen_v1_settings, 12);
 
 /**
  * @generated from message numen.v1.DeletePluginDataRequest
@@ -410,7 +323,7 @@ export type DeletePluginDataRequest = Message<"numen.v1.DeletePluginDataRequest"
  * Use `create(DeletePluginDataRequestSchema)` to create a new message.
  */
 export const DeletePluginDataRequestSchema: GenMessage<DeletePluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 14);
+  messageDesc(file_numen_v1_settings, 13);
 
 /**
  * @generated from message numen.v1.DeletePluginDataResponse
@@ -423,7 +336,7 @@ export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataRespons
  * Use `create(DeletePluginDataResponseSchema)` to create a new message.
  */
 export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 15);
+  messageDesc(file_numen_v1_settings, 14);
 
 /**
  * OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
@@ -444,7 +357,7 @@ export type OptionsRequest = Message<"numen.v1.OptionsRequest"> & {
  * Use `create(OptionsRequestSchema)` to create a new message.
  */
 export const OptionsRequestSchema: GenMessage<OptionsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 16);
+  messageDesc(file_numen_v1_settings, 15);
 
 /**
  * Options is the done frame of an operation a row field names in options_from: the values the field can
@@ -464,7 +377,7 @@ export type Options = Message<"numen.v1.Options"> & {
  * Use `create(OptionsSchema)` to create a new message.
  */
 export const OptionsSchema: GenMessage<Options> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 17);
+  messageDesc(file_numen_v1_settings, 16);
 
 /**
  * Option is one value of a field.
@@ -497,50 +410,7 @@ export type Option = Message<"numen.v1.Option"> & {
  * Use `create(OptionSchema)` to create a new message.
  */
 export const OptionSchema: GenMessage<Option> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 18);
-
-/**
- * Presence is what a model's files are on this machine. It says where files
- * stand and nothing else: it is no reason to prefer one model to another.
- *
- * @generated from enum numen.v1.Presence
- */
-export enum Presence {
-  /**
-   * Nothing was said about this model's files.
-   *
-   * @generated from enum value: PRESENCE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The files stand where a fetch puts them.
-   *
-   * @generated from enum value: PRESENCE_PRESENT = 1;
-   */
-  PRESENT = 1,
-
-  /**
-   * The files are not on this machine. They are fetched when the model is next
-   * needed.
-   *
-   * @generated from enum value: PRESENCE_NOT_FETCHED = 2;
-   */
-  NOT_FETCHED = 2,
-
-  /**
-   * The model is reached over the network, and nothing of it is fetched.
-   *
-   * @generated from enum value: PRESENCE_NOTHING_TO_FETCH = 3;
-   */
-  NOTHING_TO_FETCH = 3,
-}
-
-/**
- * Describes the enum numen.v1.Presence.
- */
-export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
-  enumDesc(file_numen_v1_settings, 0);
+  messageDesc(file_numen_v1_settings, 17);
 
 /**
  * SettingsService answers about that file, one setting at a time.
@@ -549,8 +419,7 @@ export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
  */
 export const SettingsService: GenService<{
   /**
-   * GetSettings is every setting of the file, and the models the settings that
-   * name one can be set to.
+   * GetSettings is every setting of the file.
    *
    * @generated from rpc numen.v1.SettingsService.GetSettings
    */

@@ -7,7 +7,6 @@ package container
 
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -16,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -85,7 +83,6 @@ type Resources struct {
 	settingsFiles   *settingsadapter.Files
 	settingEvents   *settingevents.Events
 	pluginChanges   *settingsusecase.PluginChanges
-	programs        *settingsadapter.ProgramList
 	subscribedHosts settingsusecase.HostSubscriptions
 }
 
@@ -97,7 +94,6 @@ func NewResources() *Resources {
 		settingsFiles: settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
-		programs:      &settingsadapter.ProgramList{},
 	}
 }
 
@@ -157,7 +153,6 @@ func settingsOf(c Config) settingsWiring {
 			Watches:         res.watches,
 			SettingsFiles:   res.settingsFiles,
 			SettingEvents:   res.settingEvents,
-			Programs:        res.programs,
 			PluginChanges:   res.pluginChanges,
 			SubscribedHosts: &res.subscribedHosts,
 		},
@@ -230,7 +225,3 @@ func plugins(c Config) pluginsWiring { return assemble(c, nil) }
 func vaultOf(c Config) vaultWiring { return plugins(c).vault }
 
 func searchOf(c Config) searchWiring { return plugins(c).search }
-
-func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
-	return getAgentPrograms(plugins(c), provider, target)
-}

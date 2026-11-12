@@ -23,6 +23,8 @@ type UseCases struct {
 	Delete    *connections.Delete
 	List      *connections.List
 	ListTypes *connections.ListTypes
+	// ListOperationTitles lists the titles of the operations; nil answers no title.
+	ListOperationTitles *connections.ListOperationTitles
 	// RowOptions lists the values of row fields; nil answers every list with no options.
 	RowOptions *rowoptions.Options
 }
@@ -37,7 +39,8 @@ func NewHandler(useCases UseCases) *Handler {
 	return &Handler{connections: useCases}
 }
 
-// ListProviderConnectionTypes returns the kinds of connection the plugins declare.
+// ListProviderConnectionTypes returns the kinds of connection the plugins declare, and the titles the
+// plugins give their operations.
 func (h *Handler) ListProviderConnectionTypes(
 	_ context.Context, _ *connect.Request[v1.ListProviderConnectionTypesRequest],
 ) (*connect.Response[v1.ListProviderConnectionTypesResponse], error) {
@@ -48,6 +51,11 @@ func (h *Handler) ListProviderConnectionTypes(
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		response.Types = append(response.Types, wire)
+	}
+	if h.connections.ListOperationTitles != nil {
+		for _, one := range h.connections.ListOperationTitles.Execute() {
+			response.Operations = append(response.Operations, &v1.ManifestOperation{Name: one.Name, Title: one.Title})
+		}
 	}
 	return connect.NewResponse(response), nil
 }

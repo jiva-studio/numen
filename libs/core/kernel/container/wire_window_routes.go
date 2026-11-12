@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
@@ -23,9 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -169,33 +166,8 @@ func mountNote(w *windowWiring) {
 	w.inst.Mount(editor.NewNoteRoute(state, handler))
 }
 
-func mountAgent(w *windowWiring) {
-	state := w.state
-	handler := &windowagent.Handler{
-		GetRoot:  func() string { return state.GetCurrentVault().Path },
-		GetVault: func() domain.VaultID { return state.GetCurrentVault().ID },
-	}
-	if taking := getToolProvider(w.a); taking != nil {
-		handler.Start = agent.NewStartTask(taking)
-		handler.End = agent.NewEndConversation(taking)
-	}
-	path, served := windowagent.NewRoute(handler, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
-}
-
-// GetSettingsAgentHandler is the window handler of the agent tasks, over the agent of the settings; it
-// has no use case where no agent is configured.
-func GetSettingsAgentHandler(c Config) *windowagent.Handler {
-	handler := &windowagent.Handler{}
-	if taking := getSettingsAgent(plugins(c)); taking != nil {
-		handler.Start = agent.NewStartTask(taking)
-		handler.End = agent.NewEndConversation(taking)
-	}
-	return handler
-}
-
-func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
-	return settings.NewGet(readSettings(settingsOf(c)), modelsForProvider(c, provider), settingsPlugins(settingsOf(c)), func() []plugin.Setting { return listAppSettings(settingsOf(c)) })
+func openGetSettings(c Config) *settings.Get {
+	return settings.NewGet(readSettings(settingsOf(c)), settingsPlugins(settingsOf(c)), func() []plugin.Setting { return listAppSettings(settingsOf(c)) })
 }
 
 func mountSettings(w *windowWiring) {
@@ -206,7 +178,7 @@ func mountSettings(w *windowWiring) {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
 	values := windowsettings.NewValues(
-		openGetSettings(w.cfg, pluginsAgentProvider(w.a)),
+		openGetSettings(w.cfg),
 		openWriteSettings(w.a.settings), openWatchSettings(w.a.settings), nil,
 	)
 	handler := windowsettings.NewHandler(values, folders)

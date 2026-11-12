@@ -140,9 +140,6 @@ func (f *File) GetConnectionsJSON() (string, error) {
 	return f.WriteConnectionsJSON()
 }
 
-// GetAgentUse is the program the agent section names, and empty where it names none.
-func (f *File) GetAgentUse() string { return f.Agent.GetUse() }
-
 // Validator checks a value against the declaration of the setting it is written to.
 type Validator struct {
 	declared   Declarations

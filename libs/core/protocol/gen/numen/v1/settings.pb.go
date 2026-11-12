@@ -31,65 +31,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Presence is what a model's files are on this machine. It says where files
-// stand and nothing else: it is no reason to prefer one model to another.
-type Presence int32
-
-const (
-	// Nothing was said about this model's files.
-	Presence_PRESENCE_UNSPECIFIED Presence = 0
-	// The files stand where a fetch puts them.
-	Presence_PRESENCE_PRESENT Presence = 1
-	// The files are not on this machine. They are fetched when the model is next
-	// needed.
-	Presence_PRESENCE_NOT_FETCHED Presence = 2
-	// The model is reached over the network, and nothing of it is fetched.
-	Presence_PRESENCE_NOTHING_TO_FETCH Presence = 3
-)
-
-// Enum value maps for Presence.
-var (
-	Presence_name = map[int32]string{
-		0: "PRESENCE_UNSPECIFIED",
-		1: "PRESENCE_PRESENT",
-		2: "PRESENCE_NOT_FETCHED",
-		3: "PRESENCE_NOTHING_TO_FETCH",
-	}
-	Presence_value = map[string]int32{
-		"PRESENCE_UNSPECIFIED":      0,
-		"PRESENCE_PRESENT":          1,
-		"PRESENCE_NOT_FETCHED":      2,
-		"PRESENCE_NOTHING_TO_FETCH": 3,
-	}
-)
-
-func (x Presence) Enum() *Presence {
-	p := new(Presence)
-	*p = x
-	return p
-}
-
-func (x Presence) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (Presence) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_settings_proto_enumTypes[0].Descriptor()
-}
-
-func (Presence) Type() protoreflect.EnumType {
-	return &file_numen_v1_settings_proto_enumTypes[0]
-}
-
-func (x Presence) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use Presence.Descriptor instead.
-func (Presence) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{0}
-}
-
 type GetSettingsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -134,8 +75,6 @@ type GetSettingsResponse struct {
 	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
 	// The file itself, absolute on this machine.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// The models the settings that name one can be set to.
-	Models []*Model `protobuf:"bytes,3,rep,name=models,proto3" json:"models,omitempty"`
 	// Active plugins and their declarative settings schema.
 	Plugins []*PluginInfo `protobuf:"bytes,7,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// The settings of the owner app, declared by the core in the format of a manifest setting. The
@@ -189,13 +128,6 @@ func (x *GetSettingsResponse) GetPath() string {
 	return ""
 }
 
-func (x *GetSettingsResponse) GetModels() []*Model {
-	if x != nil {
-		return x.Models
-	}
-	return nil
-}
-
 func (x *GetSettingsResponse) GetPlugins() []*PluginInfo {
 	if x != nil {
 		return x.Plugins
@@ -208,126 +140,6 @@ func (x *GetSettingsResponse) GetApp() []*PluginSetting {
 		return x.App
 	}
 	return nil
-}
-
-// Model is one model a setting that names a model can be set to.
-type Model struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The setting the model is read from, as a path through the file. The model
-	// in force is the one whose name stands there.
-	NamedAt []string `protobuf:"bytes,1,rep,name=named_at,json=namedAt,proto3" json:"named_at,omitempty"`
-	// What stands there while this model is the one in force.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// What is drawn on the row, and the group the rows around it stand under.
-	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Group string `protobuf:"bytes,4,opt,name=group,proto3" json:"group,omitempty"`
-	// Set on the model an installation with no configuration runs on.
-	IsDefault bool `protobuf:"varint,5,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
-	// What choosing it writes. One model is several keys where the model decides
-	// more than its own name.
-	Writes []*Setting `protobuf:"bytes,6,rep,name=writes,proto3" json:"writes,omitempty"`
-	// What this model's files are on this machine.
-	Presence Presence `protobuf:"varint,7,opt,name=presence,proto3,enum=numen.v1.Presence" json:"presence,omitempty"`
-	// The depths of reasoning the model can be asked to work at, from the least to the most. Empty
-	// where the model offers no choice.
-	ReasoningLevels []*ReasoningLevel `protobuf:"bytes,8,rep,name=reasoning_levels,json=reasoningLevels,proto3" json:"reasoning_levels,omitempty"`
-	// The level the model works at unasked. Empty where it names none.
-	DefaultReasoning string `protobuf:"bytes,9,opt,name=default_reasoning,json=defaultReasoning,proto3" json:"default_reasoning,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *Model) Reset() {
-	*x = Model{}
-	mi := &file_numen_v1_settings_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Model) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Model) ProtoMessage() {}
-
-func (x *Model) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Model.ProtoReflect.Descriptor instead.
-func (*Model) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *Model) GetNamedAt() []string {
-	if x != nil {
-		return x.NamedAt
-	}
-	return nil
-}
-
-func (x *Model) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Model) GetTitle() string {
-	if x != nil {
-		return x.Title
-	}
-	return ""
-}
-
-func (x *Model) GetGroup() string {
-	if x != nil {
-		return x.Group
-	}
-	return ""
-}
-
-func (x *Model) GetIsDefault() bool {
-	if x != nil {
-		return x.IsDefault
-	}
-	return false
-}
-
-func (x *Model) GetWrites() []*Setting {
-	if x != nil {
-		return x.Writes
-	}
-	return nil
-}
-
-func (x *Model) GetPresence() Presence {
-	if x != nil {
-		return x.Presence
-	}
-	return Presence_PRESENCE_UNSPECIFIED
-}
-
-func (x *Model) GetReasoningLevels() []*ReasoningLevel {
-	if x != nil {
-		return x.ReasoningLevels
-	}
-	return nil
-}
-
-func (x *Model) GetDefaultReasoning() string {
-	if x != nil {
-		return x.DefaultReasoning
-	}
-	return ""
 }
 
 // Setting is one setting of the file and what to put there.
@@ -344,7 +156,7 @@ type Setting struct {
 
 func (x *Setting) Reset() {
 	*x = Setting{}
-	mi := &file_numen_v1_settings_proto_msgTypes[3]
+	mi := &file_numen_v1_settings_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -356,7 +168,7 @@ func (x *Setting) String() string {
 func (*Setting) ProtoMessage() {}
 
 func (x *Setting) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[3]
+	mi := &file_numen_v1_settings_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -369,7 +181,7 @@ func (x *Setting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Setting.ProtoReflect.Descriptor instead.
 func (*Setting) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Setting) GetAt() []string {
@@ -394,7 +206,7 @@ type WatchSettingsRequest struct {
 
 func (x *WatchSettingsRequest) Reset() {
 	*x = WatchSettingsRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[4]
+	mi := &file_numen_v1_settings_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -406,7 +218,7 @@ func (x *WatchSettingsRequest) String() string {
 func (*WatchSettingsRequest) ProtoMessage() {}
 
 func (x *WatchSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[4]
+	mi := &file_numen_v1_settings_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,7 +231,7 @@ func (x *WatchSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchSettingsRequest.ProtoReflect.Descriptor instead.
 func (*WatchSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{3}
 }
 
 type WatchSettingsResponse struct {
@@ -433,7 +245,7 @@ type WatchSettingsResponse struct {
 
 func (x *WatchSettingsResponse) Reset() {
 	*x = WatchSettingsResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[5]
+	mi := &file_numen_v1_settings_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -445,7 +257,7 @@ func (x *WatchSettingsResponse) String() string {
 func (*WatchSettingsResponse) ProtoMessage() {}
 
 func (x *WatchSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[5]
+	mi := &file_numen_v1_settings_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -458,7 +270,7 @@ func (x *WatchSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchSettingsResponse.ProtoReflect.Descriptor instead.
 func (*WatchSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *WatchSettingsResponse) GetChanged() []*Setting {
@@ -478,7 +290,7 @@ type WriteSettingsRequest struct {
 
 func (x *WriteSettingsRequest) Reset() {
 	*x = WriteSettingsRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[6]
+	mi := &file_numen_v1_settings_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -490,7 +302,7 @@ func (x *WriteSettingsRequest) String() string {
 func (*WriteSettingsRequest) ProtoMessage() {}
 
 func (x *WriteSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[6]
+	mi := &file_numen_v1_settings_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -503,7 +315,7 @@ func (x *WriteSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteSettingsRequest.ProtoReflect.Descriptor instead.
 func (*WriteSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *WriteSettingsRequest) GetSettings() []*Setting {
@@ -521,7 +333,7 @@ type WriteSettingsResponse struct {
 
 func (x *WriteSettingsResponse) Reset() {
 	*x = WriteSettingsResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[7]
+	mi := &file_numen_v1_settings_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -533,7 +345,7 @@ func (x *WriteSettingsResponse) String() string {
 func (*WriteSettingsResponse) ProtoMessage() {}
 
 func (x *WriteSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[7]
+	mi := &file_numen_v1_settings_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +358,7 @@ func (x *WriteSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteSettingsResponse.ProtoReflect.Descriptor instead.
 func (*WriteSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{6}
 }
 
 type RetryPluginRequest struct {
@@ -559,7 +371,7 @@ type RetryPluginRequest struct {
 
 func (x *RetryPluginRequest) Reset() {
 	*x = RetryPluginRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[8]
+	mi := &file_numen_v1_settings_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -571,7 +383,7 @@ func (x *RetryPluginRequest) String() string {
 func (*RetryPluginRequest) ProtoMessage() {}
 
 func (x *RetryPluginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[8]
+	mi := &file_numen_v1_settings_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -584,7 +396,7 @@ func (x *RetryPluginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetryPluginRequest.ProtoReflect.Descriptor instead.
 func (*RetryPluginRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RetryPluginRequest) GetPluginId() string {
@@ -604,7 +416,7 @@ type RetryPluginResponse struct {
 
 func (x *RetryPluginResponse) Reset() {
 	*x = RetryPluginResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[9]
+	mi := &file_numen_v1_settings_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -616,7 +428,7 @@ func (x *RetryPluginResponse) String() string {
 func (*RetryPluginResponse) ProtoMessage() {}
 
 func (x *RetryPluginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[9]
+	mi := &file_numen_v1_settings_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -629,7 +441,7 @@ func (x *RetryPluginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetryPluginResponse.ProtoReflect.Descriptor instead.
 func (*RetryPluginResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RetryPluginResponse) GetFailure() string {
@@ -650,7 +462,7 @@ type ChoosePluginPathRequest struct {
 
 func (x *ChoosePluginPathRequest) Reset() {
 	*x = ChoosePluginPathRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[10]
+	mi := &file_numen_v1_settings_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -662,7 +474,7 @@ func (x *ChoosePluginPathRequest) String() string {
 func (*ChoosePluginPathRequest) ProtoMessage() {}
 
 func (x *ChoosePluginPathRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[10]
+	mi := &file_numen_v1_settings_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -675,7 +487,7 @@ func (x *ChoosePluginPathRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChoosePluginPathRequest.ProtoReflect.Descriptor instead.
 func (*ChoosePluginPathRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ChoosePluginPathRequest) GetPluginId() string {
@@ -706,7 +518,7 @@ type ChoosePluginPathResponse struct {
 
 func (x *ChoosePluginPathResponse) Reset() {
 	*x = ChoosePluginPathResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[11]
+	mi := &file_numen_v1_settings_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -718,7 +530,7 @@ func (x *ChoosePluginPathResponse) String() string {
 func (*ChoosePluginPathResponse) ProtoMessage() {}
 
 func (x *ChoosePluginPathResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[11]
+	mi := &file_numen_v1_settings_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -731,7 +543,7 @@ func (x *ChoosePluginPathResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChoosePluginPathResponse.ProtoReflect.Descriptor instead.
 func (*ChoosePluginPathResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ChoosePluginPathResponse) GetPath() string {
@@ -764,7 +576,7 @@ type GetPluginDataRequest struct {
 
 func (x *GetPluginDataRequest) Reset() {
 	*x = GetPluginDataRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[12]
+	mi := &file_numen_v1_settings_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -776,7 +588,7 @@ func (x *GetPluginDataRequest) String() string {
 func (*GetPluginDataRequest) ProtoMessage() {}
 
 func (x *GetPluginDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[12]
+	mi := &file_numen_v1_settings_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -789,7 +601,7 @@ func (x *GetPluginDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginDataRequest.ProtoReflect.Descriptor instead.
 func (*GetPluginDataRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetPluginDataRequest) GetPluginId() string {
@@ -809,7 +621,7 @@ type GetPluginDataResponse struct {
 
 func (x *GetPluginDataResponse) Reset() {
 	*x = GetPluginDataResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[13]
+	mi := &file_numen_v1_settings_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -821,7 +633,7 @@ func (x *GetPluginDataResponse) String() string {
 func (*GetPluginDataResponse) ProtoMessage() {}
 
 func (x *GetPluginDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[13]
+	mi := &file_numen_v1_settings_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -834,7 +646,7 @@ func (x *GetPluginDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginDataResponse.ProtoReflect.Descriptor instead.
 func (*GetPluginDataResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetPluginDataResponse) GetFileCount() int32 {
@@ -860,7 +672,7 @@ type DeletePluginDataRequest struct {
 
 func (x *DeletePluginDataRequest) Reset() {
 	*x = DeletePluginDataRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	mi := &file_numen_v1_settings_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -872,7 +684,7 @@ func (x *DeletePluginDataRequest) String() string {
 func (*DeletePluginDataRequest) ProtoMessage() {}
 
 func (x *DeletePluginDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	mi := &file_numen_v1_settings_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -885,7 +697,7 @@ func (x *DeletePluginDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePluginDataRequest.ProtoReflect.Descriptor instead.
 func (*DeletePluginDataRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DeletePluginDataRequest) GetPluginId() string {
@@ -903,7 +715,7 @@ type DeletePluginDataResponse struct {
 
 func (x *DeletePluginDataResponse) Reset() {
 	*x = DeletePluginDataResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	mi := &file_numen_v1_settings_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -915,7 +727,7 @@ func (x *DeletePluginDataResponse) String() string {
 func (*DeletePluginDataResponse) ProtoMessage() {}
 
 func (x *DeletePluginDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	mi := &file_numen_v1_settings_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -928,7 +740,7 @@ func (x *DeletePluginDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePluginDataResponse.ProtoReflect.Descriptor instead.
 func (*DeletePluginDataResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{14}
 }
 
 // OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
@@ -942,7 +754,7 @@ type OptionsRequest struct {
 
 func (x *OptionsRequest) Reset() {
 	*x = OptionsRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	mi := &file_numen_v1_settings_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -954,7 +766,7 @@ func (x *OptionsRequest) String() string {
 func (*OptionsRequest) ProtoMessage() {}
 
 func (x *OptionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	mi := &file_numen_v1_settings_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -967,7 +779,7 @@ func (x *OptionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OptionsRequest.ProtoReflect.Descriptor instead.
 func (*OptionsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *OptionsRequest) GetOperations() []string {
@@ -988,7 +800,7 @@ type Options struct {
 
 func (x *Options) Reset() {
 	*x = Options{}
-	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	mi := &file_numen_v1_settings_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1000,7 +812,7 @@ func (x *Options) String() string {
 func (*Options) ProtoMessage() {}
 
 func (x *Options) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	mi := &file_numen_v1_settings_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1013,7 +825,7 @@ func (x *Options) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Options.ProtoReflect.Descriptor instead.
 func (*Options) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Options) GetOptions() []*Option {
@@ -1037,7 +849,7 @@ type Option struct {
 
 func (x *Option) Reset() {
 	*x = Option{}
-	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	mi := &file_numen_v1_settings_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1049,7 +861,7 @@ func (x *Option) String() string {
 func (*Option) ProtoMessage() {}
 
 func (x *Option) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	mi := &file_numen_v1_settings_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1062,7 +874,7 @@ func (x *Option) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Option.ProtoReflect.Descriptor instead.
 func (*Option) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *Option) GetValue() string {
@@ -1090,26 +902,14 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xcd\x01\n" +
+	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\"\x14\n" +
+	"\x12GetSettingsRequest\"\xa4\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
-	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12.\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12.\n" +
 	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\x12)\n" +
 	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03appJ\x04\b\t\x10\n" +
-	"\"\xce\x02\n" +
-	"\x05Model\x12\x19\n" +
-	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\x12\x14\n" +
-	"\x05group\x18\x04 \x01(\tR\x05group\x12\x1d\n" +
-	"\n" +
-	"is_default\x18\x05 \x01(\bR\tisDefault\x12)\n" +
-	"\x06writes\x18\x06 \x03(\v2\x11.numen.v1.SettingR\x06writes\x12.\n" +
-	"\bpresence\x18\a \x01(\x0e2\x12.numen.v1.PresenceR\bpresence\x12C\n" +
-	"\x10reasoning_levels\x18\b \x03(\v2\x18.numen.v1.ReasoningLevelR\x0freasoningLevels\x12+\n" +
-	"\x11default_reasoning\x18\t \x01(\tR\x10defaultReasoning\"/\n" +
+	"\"/\n" +
 	"\aSetting\x12\x0e\n" +
 	"\x02at\x18\x01 \x03(\tR\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"\x16\n" +
@@ -1149,12 +949,7 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x06Option\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
-	"\x05group\x18\x03 \x01(\tR\x05group*s\n" +
-	"\bPresence\x12\x18\n" +
-	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +
-	"\x14PRESENCE_NOT_FETCHED\x10\x02\x12\x1d\n" +
-	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x032\xd7\x04\n" +
+	"\x05group\x18\x03 \x01(\tR\x05group2\xd7\x04\n" +
 	"\x0fSettingsService\x12J\n" +
 	"\vGetSettings\x12\x1c.numen.v1.GetSettingsRequest\x1a\x1d.numen.v1.GetSettingsResponse\x12P\n" +
 	"\rWriteSettings\x12\x1e.numen.v1.WriteSettingsRequest\x1a\x1f.numen.v1.WriteSettingsResponse\x12J\n" +
@@ -1176,62 +971,54 @@ func file_numen_v1_settings_proto_rawDescGZIP() []byte {
 	return file_numen_v1_settings_proto_rawDescData
 }
 
-var file_numen_v1_settings_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_numen_v1_settings_proto_goTypes = []any{
-	(Presence)(0),                    // 0: numen.v1.Presence
-	(*GetSettingsRequest)(nil),       // 1: numen.v1.GetSettingsRequest
-	(*GetSettingsResponse)(nil),      // 2: numen.v1.GetSettingsResponse
-	(*Model)(nil),                    // 3: numen.v1.Model
-	(*Setting)(nil),                  // 4: numen.v1.Setting
-	(*WatchSettingsRequest)(nil),     // 5: numen.v1.WatchSettingsRequest
-	(*WatchSettingsResponse)(nil),    // 6: numen.v1.WatchSettingsResponse
-	(*WriteSettingsRequest)(nil),     // 7: numen.v1.WriteSettingsRequest
-	(*WriteSettingsResponse)(nil),    // 8: numen.v1.WriteSettingsResponse
-	(*RetryPluginRequest)(nil),       // 9: numen.v1.RetryPluginRequest
-	(*RetryPluginResponse)(nil),      // 10: numen.v1.RetryPluginResponse
-	(*ChoosePluginPathRequest)(nil),  // 11: numen.v1.ChoosePluginPathRequest
-	(*ChoosePluginPathResponse)(nil), // 12: numen.v1.ChoosePluginPathResponse
-	(*GetPluginDataRequest)(nil),     // 13: numen.v1.GetPluginDataRequest
-	(*GetPluginDataResponse)(nil),    // 14: numen.v1.GetPluginDataResponse
-	(*DeletePluginDataRequest)(nil),  // 15: numen.v1.DeletePluginDataRequest
-	(*DeletePluginDataResponse)(nil), // 16: numen.v1.DeletePluginDataResponse
-	(*OptionsRequest)(nil),           // 17: numen.v1.OptionsRequest
-	(*Options)(nil),                  // 18: numen.v1.Options
-	(*Option)(nil),                   // 19: numen.v1.Option
-	(*PluginInfo)(nil),               // 20: numen.v1.PluginInfo
-	(*PluginSetting)(nil),            // 21: numen.v1.PluginSetting
-	(*ReasoningLevel)(nil),           // 22: numen.v1.ReasoningLevel
+	(*GetSettingsRequest)(nil),       // 0: numen.v1.GetSettingsRequest
+	(*GetSettingsResponse)(nil),      // 1: numen.v1.GetSettingsResponse
+	(*Setting)(nil),                  // 2: numen.v1.Setting
+	(*WatchSettingsRequest)(nil),     // 3: numen.v1.WatchSettingsRequest
+	(*WatchSettingsResponse)(nil),    // 4: numen.v1.WatchSettingsResponse
+	(*WriteSettingsRequest)(nil),     // 5: numen.v1.WriteSettingsRequest
+	(*WriteSettingsResponse)(nil),    // 6: numen.v1.WriteSettingsResponse
+	(*RetryPluginRequest)(nil),       // 7: numen.v1.RetryPluginRequest
+	(*RetryPluginResponse)(nil),      // 8: numen.v1.RetryPluginResponse
+	(*ChoosePluginPathRequest)(nil),  // 9: numen.v1.ChoosePluginPathRequest
+	(*ChoosePluginPathResponse)(nil), // 10: numen.v1.ChoosePluginPathResponse
+	(*GetPluginDataRequest)(nil),     // 11: numen.v1.GetPluginDataRequest
+	(*GetPluginDataResponse)(nil),    // 12: numen.v1.GetPluginDataResponse
+	(*DeletePluginDataRequest)(nil),  // 13: numen.v1.DeletePluginDataRequest
+	(*DeletePluginDataResponse)(nil), // 14: numen.v1.DeletePluginDataResponse
+	(*OptionsRequest)(nil),           // 15: numen.v1.OptionsRequest
+	(*Options)(nil),                  // 16: numen.v1.Options
+	(*Option)(nil),                   // 17: numen.v1.Option
+	(*PluginInfo)(nil),               // 18: numen.v1.PluginInfo
+	(*PluginSetting)(nil),            // 19: numen.v1.PluginSetting
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
-	20, // 1: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
-	21, // 2: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
-	4,  // 3: numen.v1.Model.writes:type_name -> numen.v1.Setting
-	0,  // 4: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	22, // 5: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
-	4,  // 6: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
-	4,  // 7: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	19, // 8: numen.v1.Options.options:type_name -> numen.v1.Option
-	1,  // 9: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	7,  // 10: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	9,  // 11: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
-	11, // 12: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
-	13, // 13: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
-	15, // 14: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
-	5,  // 15: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
-	2,  // 16: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	8,  // 17: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	10, // 18: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
-	12, // 19: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
-	14, // 20: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
-	16, // 21: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
-	6,  // 22: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
-	16, // [16:23] is the sub-list for method output_type
-	9,  // [9:16] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	18, // 0: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
+	19, // 1: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
+	2,  // 2: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
+	2,  // 3: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
+	17, // 4: numen.v1.Options.options:type_name -> numen.v1.Option
+	0,  // 5: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	5,  // 6: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	7,  // 7: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	9,  // 8: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
+	11, // 9: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
+	13, // 10: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
+	3,  // 11: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
+	1,  // 12: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 13: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 14: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	10, // 15: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
+	12, // 16: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
+	14, // 17: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
+	4,  // 18: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
+	12, // [12:19] is the sub-list for method output_type
+	5,  // [5:12] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }
@@ -1240,20 +1027,18 @@ func file_numen_v1_settings_proto_init() {
 		return
 	}
 	file_numen_v1_plugin_proto_init()
-	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_settings_proto_rawDesc), len(file_numen_v1_settings_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   19,
+			NumEnums:      0,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_settings_proto_goTypes,
 		DependencyIndexes: file_numen_v1_settings_proto_depIdxs,
-		EnumInfos:         file_numen_v1_settings_proto_enumTypes,
 		MessageInfos:      file_numen_v1_settings_proto_msgTypes,
 	}.Build()
 	File_numen_v1_settings_proto = out.File

@@ -28,7 +28,7 @@ const arranged = `{
             "mode": "system"
         },
 
-        "agent": {"use": "claude"}
+        "naming": {"syncTitleAndFilename": false}
     },
 
     "md.numen.sample": {
@@ -127,7 +127,7 @@ func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
     "appearance": {
       "textScale": 1.5
     },
-    "agent": {"use": "claude"}
+    "naming": {"syncTitleAndFilename": false}
   }
 }
 `)
@@ -145,7 +145,7 @@ func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
       "textScale": 1.5,
       "theme": "mine:dracula"
     },
-    "agent": {"use": "claude"}
+    "naming": {"syncTitleAndFilename": false}
   }
 }
 `
@@ -160,7 +160,7 @@ func TestASectionTheFileHasNotGotIsMadeAtTheEnd(t *testing.T) {
 	path := write(t, `{
   "v": 1,
   "app": {
-    "agent": {"use": "claude"}
+    "naming": {"syncTitleAndFilename": false}
   }
 }
 `)
@@ -175,7 +175,7 @@ func TestASectionTheFileHasNotGotIsMadeAtTheEnd(t *testing.T) {
 	want := `{
   "v": 1,
   "app": {
-    "agent": {"use": "claude"},
+    "naming": {"syncTitleAndFilename": false},
     "appearance": {
       "theme": "mine:dracula"
     }

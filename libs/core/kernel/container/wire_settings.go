@@ -7,7 +7,6 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -17,7 +16,6 @@ import (
 	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -39,14 +37,6 @@ func applySettingsFile(c Config, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
 	configurePluginHost(settingsOf(c), s)
 	return c
-}
-
-func models(c Config) func() []settingsdomain.Model {
-	return modelsForProvider(c, pluginsAgentProvider(plugins(c)))
-}
-
-func modelsForProvider(c Config, provider agentport.AgentProvider) func() []settingsdomain.Model {
-	return settingsModelsForProvider(settingsOf(c), provider, c.agentPrograms)
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.
@@ -72,9 +62,6 @@ func UnsubscribeHost(c Config) {
 	unsubscribeHost(settingsOf(c))
 }
 
-// agentAt is the key of the agent section in the settings file.
-const agentAt = "agent"
-
 type settingsPlaces struct {
 	SettingsPath    string
 	ThemesPath      string
@@ -86,7 +73,6 @@ type settingsStores struct {
 	Watches         *vaultwatch.Hub
 	SettingsFiles   *settingsadapter.Files
 	SettingEvents   *settingevents.Events
-	Programs        *settingsadapter.ProgramList
 	SubscribedHosts *settingsusecase.HostSubscriptions
 	PluginChanges   *settingsusecase.PluginChanges
 }
@@ -109,15 +95,6 @@ func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
 		return settingsadapter.File{}, err
 	}
 	return settingsStore(c).ReadCheckedAt(path)
-}
-
-func settingsGetSettingsOrDefaults(c settingsWiring) settingsadapter.File {
-	if path, err := settingsSettingsFile(c); err == nil {
-		if target, err := settingsStore(c).ReadCheckedAt(path); err == nil {
-			return target
-		}
-	}
-	return defaultSettings()
 }
 
 func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
@@ -148,16 +125,6 @@ func unsubscribeHost(c settingsWiring) {
 
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
 	return c.PluginHost.Runtime.GetPluginInfos
-}
-
-func settingsModelsForProvider(
-	c settingsWiring, provider agentport.AgentProvider,
-	programs func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program,
-) func() []settingsdomain.Model {
-	return settingsusecase.NewListAppModels(func() []settingsdomain.Model {
-		target := settingsGetSettingsOrDefaults(c)
-		return settingsadapter.AgentModels(agentAt, target.Agent, programs(provider, target.Agent))
-	}).Execute
 }
 
 func getDeclarations(c settingsWiring) settingsadapter.Declarations {
@@ -281,7 +248,7 @@ func feed(c settingsWiring) settingevents.Feed {
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c.PluginHost.Views.Infos, c.Programs,
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c.PluginHost.Views.Infos,
 	)
 }
 

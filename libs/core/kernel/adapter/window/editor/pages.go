@@ -134,8 +134,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 			return
 		}
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
-		isAgent := strings.HasPrefix(r.URL.Path, "/numen.v1.AgentService/")
-		if !isAgent && isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
+		if isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
 			s.setRequestVault(r)
 			s.plugins.ServeHTTP(w, r)
 			return

@@ -238,7 +238,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 	}
 	store := settingsadapter.NewStore(settingsadapter.NewFiles(), getPath, declarations, registries)
 	list := settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, store, settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, nil, nil,
+		settingsadapter.JSONCodec{}, store, settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, nil,
 	)
 	feed := settingevents.Feed{
 		Events:  settingevents.New(),

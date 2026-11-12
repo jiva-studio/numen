@@ -10,7 +10,6 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -62,8 +61,7 @@ func NewPluginFolders(retry *setting.RetryPlugin, data PluginData, vaults VaultP
 // errNoSettings is what a build that serves no settings answers.
 var errNoSettings = errors.New("this build serves no settings")
 
-// GetSettings returns every setting of the file this installation is configured in,
-// and the models that settings naming a model can be set to.
+// GetSettings returns every setting of the file this installation is configured in.
 func (h *Values) GetSettings(
 	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
@@ -77,7 +75,6 @@ func (h *Values) GetSettings(
 	reply := &v1.GetSettingsResponse{
 		Written: got.Written,
 		Path:    got.Path,
-		Models:  NewWireModels(got.Models),
 		Plugins: NewWirePluginInfos(got.Plugins),
 		App:     newWirePluginSettings(got.App),
 	}
@@ -104,35 +101,6 @@ func (h *Values) WriteSettings(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.WriteSettingsResponse{}), nil
-}
-
-// NewWireModels is the models as the wire carries them.
-func NewWireModels(target []settingsdomain.Model) []*v1.Model {
-	models := make([]*v1.Model, 0, len(target))
-	for _, one := range target {
-		models = append(models, &v1.Model{
-			NamedAt:          one.Path,
-			Name:             one.Name,
-			Title:            one.Title,
-			Group:            one.Group,
-			IsDefault:        one.IsDefault,
-			Writes:           newWireSettings(one.Writes),
-			Presence:         GetPresences()[one.Presence],
-			ReasoningLevels:  newWireReasoningLevels(one.ReasoningLevels),
-			DefaultReasoning: one.DefaultReasoning,
-		})
-	}
-	return models
-}
-
-// Presences is what a model's files are on this machine, as the wire carries
-// it.
-func GetPresences() map[settingsdomain.Presence]v1.Presence {
-	return map[settingsdomain.Presence]v1.Presence{
-		settingsdomain.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
-		settingsdomain.Present:        v1.Presence_PRESENCE_PRESENT,
-		settingsdomain.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
-	}
 }
 
 func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {
@@ -224,17 +192,6 @@ func (h *PluginFolders) RetryPlugin(
 		reply.Failure = failure.Reason
 	}
 	return connect.NewResponse(reply), nil
-}
-
-func newWireReasoningLevels(target []domain.ReasoningLevel) []*v1.ReasoningLevel {
-	if len(target) == 0 {
-		return nil
-	}
-	levels := make([]*v1.ReasoningLevel, 0, len(target))
-	for _, one := range target {
-		levels = append(levels, &v1.ReasoningLevel{Name: one.Name, Title: one.Title})
-	}
-	return levels
 }
 
 func newWireOptions(target manifest.SettingOptions) []*v1.PluginSettingOption {

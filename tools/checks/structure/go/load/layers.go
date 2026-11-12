@@ -20,7 +20,6 @@ const Module = "github.com/jiva-studio/numen/libs/core/kernel/"
 func GetDriving() map[string]bool {
 	return map[string]bool{
 		"adapter/cli":                 true,
-		"adapter/window/agent":        true,
 		"adapter/window/catalog":      true,
 		"adapter/window/command":      true,
 		"adapter/window/connection":   true,

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -18,7 +17,6 @@ import (
 type stored struct {
 	values      map[string]any
 	connections string
-	use         string
 }
 
 func (s stored) GetValue(path ...string) (any, bool) {
@@ -27,8 +25,6 @@ func (s stored) GetValue(path ...string) (any, bool) {
 }
 
 func (s stored) GetConnectionsJSON() (string, error) { return s.connections, nil }
-
-func (s stored) GetAgentUse() string { return s.use }
 
 // memoryFile is the settings file as the use cases see it, and records what happens to it.
 type memoryFile struct {
@@ -113,10 +109,6 @@ func (d appDeclarations) GetAppDeclaration() []manifest.Setting { return d }
 type pluginInfos []plugin.Info
 
 func (p pluginInfos) GetPluginInfos() []plugin.Info { return p }
-
-type latePrograms []agent.Program
-
-func (l latePrograms) GetLate() []agent.Program { return l }
 
 type jsonCodec struct{}
 

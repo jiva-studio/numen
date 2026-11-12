@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // List reads the connections from the list, without any value of a secret.
@@ -25,6 +27,21 @@ func (u *List) Execute(ctx context.Context) ([]Entry, error) {
 		entries = append(entries, entry)
 	}
 	return entries, nil
+}
+
+// ListOperationTitles reads the titles the enabled plugins give the operations of connection types.
+type ListOperationTitles struct {
+	titles connectionport.OperationTitles
+}
+
+// NewListOperationTitles returns the use case over the titles of the plugins.
+func NewListOperationTitles(titles connectionport.OperationTitles) *ListOperationTitles {
+	return &ListOperationTitles{titles: titles}
+}
+
+// Execute returns one title for each titled operation, in the order of the plugin ids.
+func (u *ListOperationTitles) Execute() []manifest.Operation {
+	return u.titles.ListOperationTitles()
 }
 
 // ListTypes reads the kinds of connection the installed plugins provide.

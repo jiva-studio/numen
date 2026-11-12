@@ -45,27 +45,27 @@ func newBuiltInManifest(id string, runtimes ...string) []byte {
 	}
 	return fmt.Appendf(nil, `{
 		"id": %q,
-		"name": "Example Agent",
+		"name": "Example Tools",
 		"version": "1.0.0",
-		"capabilities": ["ai.agent.provider"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"permissions": [],
 		%s
-		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/example"},
+		"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/example"},
 		"settings": [{"key": "model", "type": "string", "title": "Model", "default": "small-model"}]
 	}`, id, declared)
 }
 
-// agentPrompt answers GetAgentTools with its own prompt.
-type agentPrompt struct {
-	numenv1connect.UnimplementedAgentServiceHandler
-	prompt string
+// titledTools lists one tool, titled with the text it was made with.
+type titledTools struct {
+	numenv1connect.UnimplementedPluginToolServiceHandler
+	title string
 }
 
-func (a *agentPrompt) GetAgentTools(
-	_ context.Context, _ *connect.Request[v1.GetAgentToolsRequest],
-) (*connect.Response[v1.GetAgentToolsResponse], error) {
-	return connect.NewResponse(&v1.GetAgentToolsResponse{SystemPromptExtension: a.prompt}), nil
+func (a *titledTools) ListTools(
+	_ context.Context, _ *connect.Request[v1.ListToolsRequest],
+) (*connect.Response[v1.ListToolsResponse], error) {
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: []*v1.PluginTool{{Name: "note_read", Title: a.title}}}), nil
 }
 
 // builtInBackend is the backend of one built-in plugin: the variables it was made with and the
@@ -76,14 +76,14 @@ type builtInBackend struct {
 	probe *configured
 }
 
-func (b *builtInBackend) serve(prompt string) func(map[string]string) (http.Handler, error) {
+func (b *builtInBackend) serve(title string) func(map[string]string) (http.Handler, error) {
 	return func(vars map[string]string) (http.Handler, error) {
 		b.mu.Lock()
 		b.vars = append(b.vars, vars)
 		b.mu.Unlock()
 		mux := http.NewServeMux()
 		mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(b.probe))
-		mux.Handle(numenv1connect.NewAgentServiceHandler(&agentPrompt{prompt: prompt}))
+		mux.Handle(numenv1connect.NewPluginToolServiceHandler(&titledTools{title: title}))
 		return mux, nil
 	}
 }
@@ -120,23 +120,23 @@ func registerBuiltIn(t *testing.T, host *container.PluginRoles, manifest []byte,
 	}
 }
 
-func getAgentPrompt(t *testing.T, host *container.PluginRoles, endpoint transport.Endpoint) string {
+func getToolTitle(t *testing.T, host *container.PluginRoles, endpoint transport.Endpoint) string {
 	t.Helper()
-	client := numenv1connect.NewAgentServiceClient(host.Activation.ClientLookup().GetClient(endpoint), transport.GetBaseURL(endpoint))
-	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
+	client := numenv1connect.NewPluginToolServiceClient(host.Activation.ClientLookup().GetClient(endpoint), transport.GetBaseURL(endpoint))
+	res, err := client.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
-		t.Fatalf("GetAgentTools: %v", err)
+		t.Fatalf("ListTools: %v", err)
 	}
-	return res.Msg.GetSystemPromptExtension()
+	return res.Msg.GetTools()[0].GetTitle()
 }
 
 // Two built-in plugins serving the same service each answer from their own handler.
 func TestEachBuiltInPluginAnswersFromItsOwnHandler(t *testing.T) {
 	host := newBuiltInHost(t)
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
-	registerBuiltIn(t, host, newBuiltInManifest(secondBuiltInID), newBuiltInBackend().serve("second agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first tools"))
+	registerBuiltIn(t, host, newBuiltInManifest(secondBuiltInID), newBuiltInBackend().serve("second tools"))
 
-	for id, want := range map[string]string{firstBuiltInID: "first agent", secondBuiltInID: "second agent"} {
+	for id, want := range map[string]string{firstBuiltInID: "first tools", secondBuiltInID: "second tools"} {
 		endpoint, err := host.Activation.EnsureActive(t.Context(), id)
 		if err != nil {
 			t.Fatalf("EnsureActive(%s): %v", id, err)
@@ -144,7 +144,7 @@ func TestEachBuiltInPluginAnswersFromItsOwnHandler(t *testing.T) {
 		if endpoint.Port != 0 || endpoint.Host != "inprocess" {
 			t.Fatalf("%s is not served in-process: %+v", id, endpoint)
 		}
-		if got := getAgentPrompt(t, host, endpoint); got != want {
+		if got := getToolTitle(t, host, endpoint); got != want {
 			t.Errorf("%s answered %q, want %q", id, got, want)
 		}
 	}
@@ -153,11 +153,11 @@ func TestEachBuiltInPluginAnswersFromItsOwnHandler(t *testing.T) {
 // A built-in plugin is registered without being found on disk, so a capability finds it.
 func TestABuiltInPluginIsFoundByItsCapability(t *testing.T) {
 	host := newBuiltInHost(t)
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first tools"))
 
-	found, ok := host.Registry.FindPluginByCapability("ai.agent.provider")
+	found, ok := host.Registry.FindPluginByCapability("tools")
 	if !ok || found.Manifest.ID != firstBuiltInID {
-		t.Fatalf("FindPluginByCapability(agent) = %+v, %v", found, ok)
+		t.Fatalf("FindPluginByCapability(tools) = %+v, %v", found, ok)
 	}
 }
 
@@ -167,7 +167,7 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 	host := newBuiltInHost(t)
 	host.Mode.SetVaultPath("/vaults/example")
 	backend := newBuiltInBackend()
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
 
 	endpoint, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
 	if err != nil {
@@ -190,7 +190,7 @@ func TestABuiltInPluginIsConfiguredWithItsSettings(t *testing.T) {
 	host := newBuiltInHost(t)
 	host.Settings.SetSettings(map[string]map[string]any{firstBuiltInID: {"model": "large-model"}})
 	backend := newBuiltInBackend()
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
 
 	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
@@ -218,7 +218,7 @@ func TestABuiltInPluginWhoseBackendFailsIsNotActivated(t *testing.T) {
 // A built-in plugin is registered once, and only for the target it names.
 func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 	host := newBuiltInHost(t)
-	serve := newBuiltInBackend().serve("first agent")
+	serve := newBuiltInBackend().serve("first tools")
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), serve)
 
 	if err := host.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, plugin.ErrBuiltInRegistered) {
@@ -291,7 +291,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
-	if got := getAgentPrompt(t, host, endpoint); got != "built-in sample" {
+	if got := getToolTitle(t, host, endpoint); got != "built-in sample" {
 		t.Fatalf("answered %q", got)
 	}
 }
@@ -314,7 +314,7 @@ func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
 	host := newBuiltInHost(t)
 	host.Services.SetDependencies(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
 	backend := newBuiltInBackend()
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first tools"))
 
 	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
@@ -336,7 +336,7 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 	failure := errors.New("the archive is not the pinned one")
 	host := newBuiltInHost(t)
 	host.Services.SetDependencies(newFixedCatalog("", "", failure))
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first tools"))
 
 	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
@@ -350,7 +350,7 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 // An activation that lost the race with a shutdown leaves the plugin dormant and gives no endpoint.
 func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
 	host := newBuiltInHost(t)
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first tools"))
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
 	sup := supervisorOf(host, firstBuiltInID)
 
@@ -456,7 +456,7 @@ func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
 func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 	host := newBuiltInHost(t)
 	backend := newBuiltInBackend()
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
 	sup := supervisorOf(host, firstBuiltInID)
 
@@ -558,7 +558,7 @@ func TestABuiltInPluginIsNotGivenTheVariablesOfTheHostProcess(t *testing.T) {
 	t.Setenv("DESKTOP_API_KEY", "secret")
 	host := newBuiltInHost(t)
 	backend := newBuiltInBackend()
-	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
+	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
 
 	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)

@@ -11,11 +11,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 )
 
@@ -32,44 +29,8 @@ func (stubEmbeddingServer) DescribeSearchSource(
 func newLeaseHost(t *testing.T) *plugintest.LeaseHost {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewAgentServiceHandler(&wiretest.MockAgentServer{}))
 	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(stubEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return &plugintest.LeaseHost{Endpoint: transport.Endpoint{Host: "127.0.0.1", Port: wiretest.GetPort(t, server)}}
-}
-
-func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
-	host := newLeaseHost(t)
-	bridge, err := agentbridge.OpenForPlugin(t.Context(), host, "md.numen.stub")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	const runs = 3
-	for range runs {
-		run, err := bridge.StartRun(t.Context(), agent.Task{Question: "q"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		for range run.GetSteps() {
-		}
-		for range 2 {
-			if err := run.Stop(); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	if got := host.Acquired.Load(); got != 1+runs {
-		t.Errorf("acquired %d times, want %d", got, 1+runs)
-	}
-	if got := host.Released.Load(); got != runs {
-		t.Errorf("gave back %d before Close, want %d", got, runs)
-	}
-
-	testsupport.Close(t, bridge)
-	testsupport.Close(t, bridge)
-	if got := host.Released.Load(); got != 1+runs {
-		t.Errorf("gave back %d after Close, want %d", got, 1+runs)
-	}
 }

@@ -6,7 +6,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
@@ -104,7 +103,6 @@ func createServices(state *State) *Services {
 	services.Extra = []Route{
 		RouteOf(state, search.NewHandler(state, nil, nil), search.NewRoute),
 		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}), settings.NewRoute),
-		RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
 		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}
 	services.UseNotes()

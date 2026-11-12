@@ -46,24 +46,11 @@ func (p *restartedPlugin) IndexTexts(
 	return connect.NewResponse(&v1.IndexTextsResponse{}), nil
 }
 
-type restartedAgent struct {
-	numenv1connect.UnimplementedAgentServiceHandler
-	plugin *restartedPlugin
-}
-
-func (r restartedAgent) GetAgentPrograms(
-	context.Context, *connect.Request[v1.GetAgentProgramsRequest],
-) (*connect.Response[v1.GetAgentProgramsResponse], error) {
-	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.GetAgentProgramsResponse{}), nil
-}
-
 func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	t.Helper()
 	plugin := &restartedPlugin{}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(plugin))
-	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(restartedTools{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(wiretest.PluginLifecycle{}))
 	server := httptest.NewServer(mux)

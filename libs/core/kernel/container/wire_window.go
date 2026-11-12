@@ -233,7 +233,6 @@ func mountServices(w *windowWiring) {
 	mountVaults(w)
 	mountSettings(w)
 	mountMedia(w)
-	mountAgent(w)
 	mountCommand(w)
 	mountConnection(w)
 	mountConnectionCall(w)

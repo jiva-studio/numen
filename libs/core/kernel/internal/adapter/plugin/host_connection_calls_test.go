@@ -79,7 +79,7 @@ func TestAPluginOnDiskDoesNotReplaceABuiltInProvider(t *testing.T) {
 func TestAPluginOnDiskReplacesABuiltInThatProvidesNoConnectionType(t *testing.T) {
 	host, _, dir := newProviderHost(t)
 	simple := `{"id": "md.example.plain", "name": "Plain", "version": "1.0.0", "targets": ["desktop.editor"],
-		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/plain"}}`
+		"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/plain"}}`
 	registerBuiltIn(t, host, []byte(simple), newBuiltInBackend().serve("built-in plain"))
 	writeProviderOnDisk(t, dir, simple)
 
