@@ -243,10 +243,10 @@ func (r *chatReader) merge(pieces []streamPiece) error {
 			r.calls = append(r.calls, &llm.ToolCall{})
 		}
 		call := r.calls[piece.Index]
-		if call.Id == "" {
+		if call.GetId() == "" {
 			call.Id = piece.ID
 		}
-		if call.Name == "" {
+		if call.GetName() == "" {
 			call.Name = piece.Function.Name
 		}
 		call.ArgumentsJson += piece.Function.Arguments

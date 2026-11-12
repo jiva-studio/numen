@@ -74,7 +74,7 @@ func TestChatStreamsTheTextAsDeltasAndEndsWithAFinish(t *testing.T) {
 		t.Fatal(err)
 	}
 	last := events[len(events)-1]
-	if joinText(events) != "echo: hello there" || len(events) < 3 || last.Finish == nil || last.Finish.Reason != llm.FinishReason_FINISH_REASON_STOP {
+	if joinText(events) != "echo: hello there" || len(events) < 3 || last.Finish == nil || last.Finish.GetReason() != llm.FinishReason_FINISH_REASON_STOP {
 		t.Errorf("events = %+v", events)
 	}
 	for _, one := range events[:len(events)-1] {
@@ -158,7 +158,7 @@ func TestChatJoinsTheStreamedPiecesOfAToolCallIntoOneEvent(t *testing.T) {
 	if events[0].TextDelta != "Let me look." ||
 		*events[1].ToolCall != (toolCall{ID: "call-1", Name: "list_notes", Arguments: `{"limit":3}`}) ||
 		*events[2].ToolCall != (toolCall{ID: "call-2", Name: "read_note", Arguments: `{}`}) ||
-		events[3].Finish == nil || events[3].Finish.Reason != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
+		events[3].Finish == nil || events[3].Finish.GetReason() != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
 		t.Errorf("events = %+v", events)
 	}
 }
@@ -185,7 +185,7 @@ func TestAnAnswerTruncatedAtTheLengthLimitFinishesWithLength(t *testing.T) {
 
 	events, err := runChat(t, newTestService(t), newCall("openai-compatible", address, "", "m"), chatUser("go"))
 
-	if err != nil || events[len(events)-1].Finish == nil || events[len(events)-1].Finish.Reason != llm.FinishReason_FINISH_REASON_LENGTH {
+	if err != nil || events[len(events)-1].Finish == nil || events[len(events)-1].Finish.GetReason() != llm.FinishReason_FINISH_REASON_LENGTH {
 		t.Errorf("events = %+v, err = %v", events, err)
 	}
 }
@@ -198,7 +198,7 @@ func TestAServerThatAnswersAWholeMessageToAStreamRequestIsRead(t *testing.T) {
 
 	events, err := runChat(t, newTestService(t), newCall("openai-compatible", address, "", "m"), chatUser("go"))
 
-	if err != nil || len(events) != 3 || events[0].TextDelta != "whole" || events[1].ToolCall.Name != "ping" || events[2].Finish.Reason != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
+	if err != nil || len(events) != 3 || events[0].TextDelta != "whole" || events[1].ToolCall.Name != "ping" || events[2].Finish.GetReason() != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
 		t.Errorf("events = %+v, err = %v", events, err)
 	}
 }

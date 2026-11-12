@@ -184,7 +184,8 @@ func TestACallOfAConnectionWithNoLimitIsNeverQueued(t *testing.T) {
 	w := modelcalltest.New()
 	entry := w.AddServer(t, "First", addressOne, keyOne)
 	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(entry, "m"))
-	s := &queueSetup{world: w, calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
+	connections := modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}
+	s := &queueSetup{world: w, calls: modelcall.NewCalls(connections, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
 	w.Provider.Block(addressOne)
 	var calls []<-chan error
 	for _, text := range []string{"a", "b", "c", "d", "e"} {

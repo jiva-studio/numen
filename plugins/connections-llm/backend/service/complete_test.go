@@ -17,7 +17,7 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
 	temperature := 0.25
 	request := oneUserMessage("fix this line")
-	request.Messages = append([]*llm.Message{{Role: "system", Text: "You proofread."}}, request.Messages...)
+	request.Messages = append([]*llm.Message{{Role: "system", Text: "You proofread."}}, request.GetMessages()...)
 	request.Temperature = &temperature
 	request.MaxTokens = 300
 
@@ -25,8 +25,8 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Text != "echo: fix this line" {
-		t.Errorf("text = %q", result.Text)
+	if result.GetText() != "echo: fix this line" {
+		t.Errorf("text = %q", result.GetText())
 	}
 	requests := fake.Requests()
 	if len(requests) != 1 || requests[0].Method != http.MethodPost || requests[0].Path != "/chat/completions" {

@@ -14,11 +14,11 @@ import (
 //numen:api
 type Option struct {
 	// Value is what the row stores.
-	Value string
+	Value string `json:"value"`
 	// Title is what the person reads.
-	Title string
+	Title string `json:"title"`
 	// Group is the heading the option is shown under.
-	Group string
+	Group string `json:"group"`
 }
 
 // ListOptions lists the values of a row field for the connection of call. operations are the operations

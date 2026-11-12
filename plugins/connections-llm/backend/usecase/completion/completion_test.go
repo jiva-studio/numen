@@ -65,7 +65,7 @@ func TestACompletionIsAskedOfTheServiceWithTheLimitOfTheOperation(t *testing.T) 
 
 	result, err := newCompletion(t, g).Complete(t.Context(), call("openai", "gpt-4o", ""), &llm.CompleteRequest{})
 
-	if err != nil || result.Text != "answer" || g.limit != limits.DefaultCompleteLimit {
+	if err != nil || result.GetText() != "answer" || g.limit != limits.DefaultCompleteLimit {
 		t.Errorf("result = %v, err = %v, limit = %v", result, err, g.limit)
 	}
 }
