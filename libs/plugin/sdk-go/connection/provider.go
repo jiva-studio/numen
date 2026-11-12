@@ -6,8 +6,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 // Call is the connection one call of a provider is made for. The provider holds it for the length of the
@@ -30,7 +30,6 @@ type Call struct {
 // Message is one message of a completion. Role is system, user or assistant.
 type Message struct{ Role, Text string }
 
-// ProviderCompleteRequest is what a provider completes.
 type ProviderCompleteRequest struct {
 	Messages    []Message
 	Temperature *float64

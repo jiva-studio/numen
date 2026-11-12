@@ -21,7 +21,6 @@ type Values struct {
 	DefaultModel   string
 	ExecutablePath string
 	MayReadHooks   bool
-	// RequestTimeout limits one request of a connection; zero when the setting holds no valid value.
 	RequestTimeout time.Duration
 }
 

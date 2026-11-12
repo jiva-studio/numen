@@ -53,7 +53,6 @@ type ConnectionField struct {
 	Step        *float64
 }
 
-// GetField returns the field of the key.
 func (t ConnectionType) GetField(key string) (ConnectionField, bool) {
 	for _, one := range t.Fields {
 		if one.Key == key {
@@ -68,7 +67,6 @@ func (t ConnectionType) HasOperation(operation string) bool {
 	return slices.Contains(t.Operations, operation)
 }
 
-// GetConnectionType returns the type with the local id.
 func (c Contributes) GetConnectionType(id string) (ConnectionType, bool) {
 	for _, one := range c.ConnectionTypes {
 		if one.ID == id {

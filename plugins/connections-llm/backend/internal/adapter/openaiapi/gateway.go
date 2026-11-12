@@ -86,8 +86,6 @@ func (g *Gateway) Complete(ctx context.Context, call connection.Call, limit time
 	return connection.CompleteResult{Text: answer.Choices[0].Message.Content}, nil
 }
 
-// splitTokenLimit names the limit as the service of the type expects it: OpenAI as the completion
-// tokens, the others as the tokens.
 func splitTokenLimit(typeID string, limit int) (maxTokens, maxCompletionTokens int) {
 	if typeID == servicetype.OpenAI {
 		return 0, limit
@@ -95,8 +93,6 @@ func splitTokenLimit(typeID string, limit int) (maxTokens, maxCompletionTokens i
 	return limit, 0
 }
 
-// splitReasoning names the level as the service of the type expects it: OpenRouter in an object, the
-// others as the effort.
 func splitReasoning(typeID, level string) (effort string, object *reasoningBody) {
 	if typeID == servicetype.OpenRouter && level != "" {
 		return "", &reasoningBody{Effort: level}

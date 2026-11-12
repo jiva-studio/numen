@@ -49,7 +49,6 @@ type Condition struct {
 	Is      []string
 }
 
-// GetSetting returns the declaration of the setting with the key.
 func (m Manifest) GetSetting(key string) (Setting, bool) {
 	for _, s := range m.Settings {
 		if s.Key == key {

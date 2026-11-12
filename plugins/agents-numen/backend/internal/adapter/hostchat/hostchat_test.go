@@ -38,7 +38,6 @@ func (s *fakeStream) Close() error {
 	return nil
 }
 
-// ask runs one turn against a stream with the events and the end, and returns the request the host got.
 func ask(t *testing.T, stream *fakeStream, openErr error) (conversation.Reply, []string, connection.ChatRequest, error) {
 	t.Helper()
 	var request connection.ChatRequest

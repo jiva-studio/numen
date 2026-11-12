@@ -15,7 +15,6 @@ type ForwardedCalls struct {
 	get func() connectionport.ModelCalls
 }
 
-// NewForwardedCalls returns the calls that forward to what get returns.
 func NewForwardedCalls(get func() connectionport.ModelCalls) *ForwardedCalls {
 	return &ForwardedCalls{get: get}
 }
@@ -42,7 +41,6 @@ func (f *ForwardedCalls) Embed(
 	return calls.Embed(ctx, callerPluginID, texts, priority)
 }
 
-// GetEmbeddingProfile forwards to the calls of the moment.
 func (f *ForwardedCalls) GetEmbeddingProfile(ctx context.Context, callerPluginID string) (modelcall.EmbeddingProfile, error) {
 	calls := f.get()
 	if calls == nil {

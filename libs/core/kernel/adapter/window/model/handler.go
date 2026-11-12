@@ -56,7 +56,6 @@ func (h *Handler) ListModels(
 	return connect.NewResponse(&v1.ListModelsResponse{Models: wire}), nil
 }
 
-// ListReasoningLevels returns the reasoning levels of a model of a connection.
 func (h *Handler) ListReasoningLevels(
 	ctx context.Context, request *connect.Request[v1.ListReasoningLevelsRequest],
 ) (*connect.Response[v1.ListReasoningLevelsResponse], error) {

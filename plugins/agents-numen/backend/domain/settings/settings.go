@@ -99,7 +99,6 @@ func readPositiveInt(text string) (int, bool) {
 	return val, err == nil && val > 0
 }
 
-// readRow reads the first row of the setting. isRows is false for a text that is no list of rows.
 func readRow(text string) (row Row, hasRow, isRows bool) {
 	if text == "" {
 		return Row{Connection: "", Model: "", Reasoning: ""}, false, false

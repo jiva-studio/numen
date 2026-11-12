@@ -48,7 +48,6 @@ type Completion struct {
 	deps Dependencies
 }
 
-// New creates a Completion.
 func New(deps Dependencies) *Completion {
 	return &Completion{deps: deps}
 }

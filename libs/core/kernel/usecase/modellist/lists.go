@@ -28,7 +28,6 @@ type Lists struct {
 	source      connectionport.CatalogSource
 }
 
-// NewLists returns the lists over the resolver of connections and the catalogs the source opens.
 func NewLists(
 	resolve connectionport.ResolveConnection, readSecrets connectionport.ReadConnectionSecrets, source connectionport.CatalogSource,
 ) *Lists {

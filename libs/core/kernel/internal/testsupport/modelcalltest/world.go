@@ -42,7 +42,6 @@ type Notices struct {
 	list []Notice
 }
 
-// ReportSetAside records the report.
 func (n *Notices) ReportSetAside(connectionID, connectionName string, reason connection.FailureReason) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -63,7 +62,6 @@ type Rows struct {
 	Err  error
 }
 
-// Set replaces the rows of the plugin for the operation.
 func (r *Rows) Set(pluginID, operation string, rows ...connection.Row) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -73,7 +71,6 @@ func (r *Rows) Set(pluginID, operation string, rows ...connection.Row) {
 	r.rows[pluginID+"\x00"+operation] = rows
 }
 
-// ListRows returns the rows of the plugin for the operation.
 func (r *Rows) ListRows(pluginID, operation string) ([]connection.Row, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -89,7 +86,6 @@ type Source struct {
 	failOpen map[string]error
 }
 
-// NewSource creates a source that opens provider.
 func NewSource(provider *Provider) *Source {
 	return &Source{provider: provider, failOpen: map[string]error{}}
 }
@@ -203,7 +199,6 @@ func (k *Keys) GetKey(_ context.Context, name string) (string, error) {
 	return value, nil
 }
 
-// SetKey stores the key under the name.
 func (k *Keys) SetKey(_ context.Context, name, key string) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
@@ -328,7 +323,6 @@ func (w *World) ChangeRevision(t *testing.T, connectionID string) {
 	}
 }
 
-// Row returns a row of the connection with the model.
 func Row(entry Entry, model string) connection.Row {
 	return connection.Row{ConnectionID: entry.ID, Model: model}
 }
@@ -367,7 +361,6 @@ const apiKeyField = "apiKey"
 // NoUses is the settings of rows of an installation where no plugin has one.
 type NoUses struct{}
 
-// ListUses returns no use.
 func (NoUses) ListUses(string) ([]connection.Use, error) { return nil, nil }
 
 // RemoveRows removes nothing.

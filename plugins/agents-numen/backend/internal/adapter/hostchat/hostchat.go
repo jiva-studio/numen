@@ -129,7 +129,6 @@ func readCall(call connection.ToolCall) conversation.ToolCall {
 	return conversation.ToolCall{ID: call.ID, Name: call.Name, Arguments: call.Arguments}
 }
 
-// readError names each connection that failed and the reason, or says that the agent has none.
 func readError(err error) error {
 	var allFailed *connection.AllFailedError
 	var rejected *connection.RejectedError

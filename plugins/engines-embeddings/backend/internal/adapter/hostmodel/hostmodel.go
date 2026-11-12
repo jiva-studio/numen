@@ -61,7 +61,6 @@ func (m Models) Embed(ctx context.Context, role model.Role, texts []string) ([][
 	return result.Vectors, nil
 }
 
-// GetEmbeddingProfile returns the profile of the model of the connection that answers.
 func (m Models) GetEmbeddingProfile(ctx context.Context) (model.ConnectionProfile, error) {
 	profile, err := m.client.GetEmbeddingProfile(ctx)
 	if err != nil {

@@ -23,8 +23,6 @@ const maxResponseBytes = 64 << 20
 // endpoint is the method and the path of a request.
 type endpoint struct{ method, path string }
 
-// send makes one request to the service of the call and decodes a successful answer into out. A
-// failure is a connection failure with a reason, or the error of the context of the call.
 func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Duration, target endpoint, in, out any) error {
 	if err := ctx.Err(); err != nil {
 		return err

@@ -337,7 +337,6 @@ func TestTheRemovedProviderSettingIsIgnored(t *testing.T) {
 	}
 }
 
-// The mock model of the tests stands for the local model only.
 func TestTheMockModelServesTheLocalSourceOnly(t *testing.T) {
 	t.Setenv("NUMEN_MOCK_ML", "true")
 	host := &hostModels{profile: openAIProfile()}

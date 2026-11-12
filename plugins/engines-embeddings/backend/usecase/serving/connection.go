@@ -41,7 +41,6 @@ func newConnectionSource(open ports.OpenModels) *connectionSource {
 	return &connectionSource{open: open, mu: sync.Mutex{}, models: nil, fetch: nil, profile: nil}
 }
 
-// reset forgets the profile and ends the read in progress, so the next call reads the profile again.
 func (c *connectionSource) reset() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -117,8 +116,6 @@ func (c *connectionSource) startFetchLocked(caller context.Context, models ports
 	return fetch
 }
 
-// readConnectionError makes a failure of the connections a failed precondition. The cancellation of
-// a call and any other fault stay as they are.
 func readConnectionError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err

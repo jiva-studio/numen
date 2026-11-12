@@ -12,7 +12,6 @@ import (
 // MaxNameLength is the longest name of a connection, in characters.
 const MaxNameLength = 64
 
-// connectionIDLength is the length of the id of a connection.
 const connectionIDLength = 9
 
 // Connection is a stored place to send requests to and the way in. Fields holds the values of the

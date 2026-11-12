@@ -97,7 +97,6 @@ type Model struct {
 	Operations []string
 }
 
-// ReasoningLevel is a level of reasoning a model takes.
 type ReasoningLevel struct{ Value, Title string }
 
 // ModelProfile is what a provider knows about an embedding model. IsKnown is false for a model it has
