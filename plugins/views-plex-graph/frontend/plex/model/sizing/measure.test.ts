@@ -179,8 +179,8 @@ describe('where a caller draws an icon', () => {
   })
 })
 
-describe('the padding and what is drawn beside a title', () => {
-  it('takes the padding the plex hands it, whatever the theme says', () => {
+describe('the padding of a title and the widths drawn before it', () => {
+  it('uses the padding from the plex options, not a theme token', () => {
     stubCanvas()
     stubStyles()
     setTheme()

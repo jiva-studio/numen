@@ -117,7 +117,7 @@ describe('the room kept for an icon', () => {
   })
 })
 
-describe('the room kept beside a title without a pill', () => {
+describe('the room reserved for a title without a pill', () => {
   it('is the dot, before the icon', () => {
     mountFreeSpace({ showPills: false }, undefined, () => true)
     expect(stand.room?.().beside).toStrictEqual([DEFAULT_OPTIONS.dotSize, OPTIONS.iconWidth])
