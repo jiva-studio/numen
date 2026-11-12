@@ -30,7 +30,7 @@ func NewReport(items *Items, plugins Plugins) *Report {
 // Execute puts the item in the list as the plugin's, or replaces the one under its key; an item at
 // HealthOK removes the key. It returns plugin.ErrInvalidHealth for a key of the core, an item past
 // the limits, a ninth key, an action naming a command other than an app: command or one of the
-// plugin's own, and values the command does not take. The value plugin of app:settings.open is set to
+// plugin's own, and values the command does not accept. The value plugin of app:settings.open is set to
 // the plugin.
 func (u *Report) Execute(pluginID string, item plugin.HealthItem) error {
 	item.PluginID = pluginID

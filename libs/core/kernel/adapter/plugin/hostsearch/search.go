@@ -69,8 +69,6 @@ func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q plugin.Pas
 	})
 }
 
-// describe returns the description of the search source in use, and ErrNoModel without a source or for a
-// source that has not described itself.
 func (s Search) describe() (searchsource.Description, error) {
 	if s.Source == nil {
 		return searchsource.Description{}, plugin.ErrNoModel

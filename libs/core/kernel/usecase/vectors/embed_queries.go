@@ -14,7 +14,6 @@ type EmbedQueries struct {
 	queries searchsourceport.QueryEmbedder
 }
 
-// NewEmbedQueries makes the vectors of queries with the queries of a search source.
 func NewEmbedQueries(queries searchsourceport.QueryEmbedder) *EmbedQueries {
 	return &EmbedQueries{queries: queries}
 }

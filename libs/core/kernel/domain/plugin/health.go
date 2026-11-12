@@ -33,8 +33,6 @@ const (
 	MaxHealthDetail    = 500
 )
 
-// AppCommandOpenSettings is the command that opens the settings, at the plugin and the setting its
-// values name.
 const AppCommandOpenSettings = "app:settings.open"
 
 // The arguments of AppCommandOpenSettings.

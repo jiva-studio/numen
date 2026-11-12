@@ -153,7 +153,9 @@ func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, tex
 
 // Execute asks the participants the parameters name, merges their rankings by rank,
 // and returns one passage per document.
-// A chunk that two of them place well outranks one that any of them placed first alone.
+// A chunk that two of them place well outranks one that any of them placed first alone. The rankings are
+// fused by reciprocal rank fusion, which does not know which participant answered which ranking. The answer
+// keeps at most p.Each passages of one source and p.Limit in all.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -175,7 +177,7 @@ type asked struct {
 	isTolerated bool
 }
 
-func (u Search) getAsked(p Parameters) []asked {
+func (u Search) getAskedParticipants(p Parameters) []asked {
 	var out []asked
 	if p.Lexical > 0 && u.words != nil {
 		out = append(out, asked{participant: u.words, limit: p.Lexical})
@@ -192,7 +194,7 @@ func (u Search) getAsked(p Parameters) []asked {
 }
 
 func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Parameters) ([]Ranking, error) {
-	asks := u.getAsked(p)
+	asks := u.getAskedParticipants(p)
 	answers := make([]*Ranking, len(asks))
 	g, gctx := errgroup.WithContext(ctx)
 	for i, one := range asks {

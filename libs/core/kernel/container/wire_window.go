@@ -146,7 +146,9 @@ func buildWindow(
 	setModelCalls(a, run.NewConnectionNoticeTasks(tasks).Execute)
 
 	// Opened once, for as long as the window is. A local model is fetched and
-	// compiled behind this, so the window is drawn while it arrives.
+	// compiled behind this, so the window is drawn while it arrives. A source that cannot describe itself
+	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
+	// indexing once a configuration of its plugin lets it describe itself.
 	embedder, asking, closeEmbedder, why := searchSources(a.search, ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })

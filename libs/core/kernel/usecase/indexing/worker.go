@@ -66,7 +66,8 @@ type Config struct {
 // time, and never while another pass is running.
 // After the first pass, work arrives as a file with text, found and cut before
 // anything is embedded; a note, which arrives already cut and needs only its
-// vectors; and a file a plugin extended with more text.
+// vectors; and a file a plugin extended with more text. A search source that has not described itself is
+// not indexed for yet: the change of its description starts the pass that indexes for it.
 type Worker struct {
 	reading           OpenReading
 	source            searchsourceport.Source
@@ -110,8 +111,6 @@ func (w *Worker) openReading(
 	return w.reading(ctx, w.source, v, rebuild)
 }
 
-// hasSource reports whether a source is there to index for. A source that has not described itself is not
-// there yet: the change of its description wakes the pass that indexes for it.
 func (w *Worker) hasSource() bool { return w.source != nil && w.source.Describe().IsDescribed() }
 
 func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }

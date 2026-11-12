@@ -106,7 +106,6 @@ func (s *connectionSource) DescribeCoverage(
 	return connect.NewResponse(&v1.DescribeCoverageResponse{Text: text}), nil
 }
 
-// startConnectionSource runs the plugin edge as the plugin that declares the search source capability.
 func startConnectionSource(t *testing.T, plugin *connectionSource) *container.PluginRoles {
 	t.Helper()
 	mux := http.NewServeMux()

@@ -40,7 +40,7 @@ func connectionItem() plugin.HealthItem {
 	return plugin.HealthItem{Key: "connection", Severity: plugin.HealthError, Text: "Choose a connection for the tiles"}
 }
 
-func TestAReportReplacesTheItemUnderItsKeyAndKeepsItsPlace(t *testing.T) {
+func TestAReportReplacesTheItemOfItsKeyAndKeepsItsPosition(t *testing.T) {
 	report, items := newReport()
 	tiles := plugin.HealthItem{Key: "tiles", Severity: plugin.HealthWarning, Text: "The tiles are a year old"}
 	for _, item := range []plugin.HealthItem{connectionItem(), tiles} {

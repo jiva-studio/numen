@@ -66,7 +66,6 @@ func (t ConnectionType) GetField(key string) (ConnectionField, bool) {
 	return ConnectionField{}, false
 }
 
-// GetRowField returns the row field with the key.
 func (t ConnectionType) GetRowField(key string) (ConnectionField, bool) {
 	for _, one := range t.RowFields {
 		if one.Key == key {
