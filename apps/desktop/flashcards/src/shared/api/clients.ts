@@ -2,6 +2,7 @@
 export {
   agentService,
   notes,
+  models,
   pluginService,
   theme,
   vaultsService,

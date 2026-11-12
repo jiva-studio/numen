@@ -26,7 +26,7 @@ import {
 } from '@numen/plugin-loader'
 import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import { openExternalUrl } from '@/features/external-links'
-import { createSlotIssueReporter, createWindowSlots } from '@/entities/plugin'
+import { createSlotIssueReporter, createWindowSlots, getPluginModels } from '@/entities/plugin'
 import type { createWindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'
 
@@ -97,6 +97,7 @@ export function createShellHost(deps: ShellHostDeps) {
       getCommands: () => services.commands,
       getWindow: () => services.window,
       getAgent: () => agent,
+      getModels: (pluginId) => getPluginModels(pluginId),
     },
   })
 
