@@ -106,7 +106,6 @@ function onKeepFocus(event: KeyboardEvent): void {
           is-searchable
           @update:model-value="form.actions.chooseType"
         />
-        <p v-if="type?.description" class="connection-dialog__hint">{{ type.description }}</p>
       </div>
 
       <ConnectionFormFields

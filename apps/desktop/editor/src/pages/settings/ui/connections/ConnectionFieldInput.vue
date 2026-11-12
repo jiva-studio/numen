@@ -8,7 +8,6 @@ import { computed, useId } from 'vue'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '../../types'
 import type { ConnectionFieldInfo, ConnectionValue } from '@/entities/connection'
-import { getFieldHint } from '@/entities/connection'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -23,21 +22,11 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const HINTS = {
-  stored: words.connectionKeyStored,
-  requiredKey: words.connectionKeyHint,
-  optionalKey: words.connectionOptionalKey,
-  address: words.connectionAddressHint,
-}
 const id = useId()
-const hintId = useId()
 const choices = computed<readonly SelectChoice[]>(() =>
   props.field.options.map((one) => ({ id: one.value, text: one.title })),
 )
 const text = computed(() => (typeof props.value === 'string' ? props.value : ''))
-const hint = computed(() =>
-  getFieldHint(props.field, { isStored: props.isStored }, HINTS),
-)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInput(event: Event): void {
@@ -78,8 +67,7 @@ function onInput(event: Event): void {
         class="connection-field__input"
         type="password"
         autocomplete="off"
-        :aria-describedby="hintId"
-        :placeholder="isStored ? words.secretMasked : ''"
+        :placeholder="isStored ? words.connectionKeyReplace : ''"
         :value="text"
         @input="onInput"
       />
@@ -91,12 +79,10 @@ function onInput(event: Event): void {
       :class="{ 'connection-field__input--address': field.isAddress }"
       type="text"
       autocomplete="off"
-      :aria-describedby="hintId"
       :value="text"
       @input="onInput"
     />
 
-    <p v-if="hint !== ''" :id="hintId" class="connection-field__hint">{{ hint }}</p>
   </div>
 </template>
 
@@ -143,9 +129,4 @@ function onInput(event: Event): void {
   outline: var(--numen-stroke) solid var(--numen-accent);
 }
 
-.connection-field__hint {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
 </style>

@@ -56,7 +56,6 @@ function getValue(field: ConnectionFieldInfo): ConnectionValue | undefined {
         autocomplete="off"
         :placeholder="type.title"
       />
-      <p class="connection-form__hint">{{ words.connectionNameHint }}</p>
     </div>
 
     <ConnectionFieldInput

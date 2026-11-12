@@ -37,12 +37,9 @@ export const WORDS = {
   connectionDeleteFailed: 'The connection was not deleted:',
   connectionType: 'Type',
   connectionName: 'Name',
-  connectionNameHint: 'Shown in lists. Leave empty to use the name of the type.',
   connectionAddress: 'Address',
   connectionAddressFixed: 'The address is part of this type.',
-  connectionAddressHint: 'The key is sent only to this address.',
-  connectionKeyStored: 'A key is stored. Type to replace it.',
-  connectionKeyHint: 'Stored in the system keychain. Not shown again after saving.',
+  connectionKeyReplace: '•••••••• Replace key',
   connectionAddressChanged: 'Changing the address removes the stored key. Enter it again.',
   connectionAgentNote: (pluginName: string) =>
     `${pluginName} runs the program on this computer with your own login. No other field is needed.`,
