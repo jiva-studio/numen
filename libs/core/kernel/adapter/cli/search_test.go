@@ -42,7 +42,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) stubSes
 		Vaults: createVaultList(newVault(folder)),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
 			return cli.Indexed{Search: cli.Search{
-				Search: search.NewByName(registry.NewFind(singleVaultList{newVault(folder)}).Execute, preparing(search.New(search.Index{Passages: index}, vaultreader.Readers{}, nil, nil, nil, nil))),
+				Search: search.NewByName(registry.NewFind(singleVaultList{newVault(folder)}).Execute, preparing(search.New(index, vaultreader.Readers{}, nil, nil, nil))),
 				Words:  words,
 			}}, nil
 		},
@@ -73,7 +73,7 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		"the list of vaults cannot be opened": {
 			Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
 				notFound := func(string) (domain.Vault, error) { return domain.Vault{}, errRefused }
-				prepared := preparing(search.New(search.Index{Passages: fakeSearchIndex{}}, vaultreader.Readers{}, nil, nil, nil, nil))
+				prepared := preparing(search.New(fakeSearchIndex{}, vaultreader.Readers{}, nil, nil, nil))
 				return cli.Indexed{Search: cli.Search{Search: search.NewByName(notFound, prepared)}}, nil
 			},
 		},
