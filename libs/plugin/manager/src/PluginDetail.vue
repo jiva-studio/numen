@@ -1,18 +1,20 @@
 <script setup lang="ts">
 /**
  * The page of one plugin: a header card with the README and the enabled switch (or the install
- * button for a plugin that is not installed), the failure card of a suspended plugin, the
- * settings the application draws in the `settings` slot, and the plugin's data.
+ * button for a plugin that is not installed), the failure card of a suspended plugin or the bar of
+ * its worst health item, the settings the application draws in the `settings` slot, and the plugin's data.
  */
 import { computed, ref, type VNode } from 'vue'
 import { Button, Prose, Switch } from '@numen/ui'
 import ChevronIcon from './ChevronIcon.vue'
 import PluginData from './PluginData.vue'
+import PluginHealthBar from './PluginHealthBar.vue'
 import PluginSettingsCard from './PluginSettingsCard.vue'
 import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
 import { isInstalled } from './plugins'
 import { parsePluginReadme } from './readme'
+import { getStartItem, getWorstItem } from './state'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -24,6 +26,7 @@ const emit = defineEmits<{
   (e: 'retry'): void
   (e: 'install'): void
   (e: 'delete-data'): void
+  (e: 'run-action', key: string): void
 }>()
 
 defineSlots<{
@@ -35,6 +38,8 @@ defineSlots<{
 
 /* --------------------------------- State ---------------------------------- */
 const isExpanded = ref(false)
+const startItem = computed(() => getStartItem(props.health ?? []))
+const worstItem = computed(() => getWorstItem(props.health ?? []))
 const readmeParts = computed(() =>
   parsePluginReadme(props.readme, props.plugin.id, props.plugin.description),
 )
@@ -66,6 +71,10 @@ function onInstall(): void {
 
 function onDeleteData(): void {
   emit('delete-data')
+}
+
+function onRunAction(key: string): void {
+  emit('run-action', key)
 }
 </script>
 
@@ -119,12 +128,8 @@ function onDeleteData(): void {
       </button>
     </div>
 
-    <PluginStopped
-      v-if="props.plugin.info?.failure"
-      :failure="props.plugin.info.failure"
-      @retry="onRetry"
-      @disable="onDisable"
-    />
+    <PluginStopped v-if="startItem" :item="startItem" @retry="onRetry" @disable="onDisable" />
+    <PluginHealthBar v-else-if="worstItem" :item="worstItem" @run-action="onRunAction" />
 
     <PluginSettingsCard v-if="props.hasSettings" class="plugin-detail__settings">
       <slot name="settings" />

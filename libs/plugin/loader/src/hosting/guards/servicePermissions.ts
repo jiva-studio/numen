@@ -9,6 +9,7 @@
  * endpoints, `fetch` and `import` without this table.
  */
 import type {
+  HealthHost,
   PluginEvents,
   PluginIdentity,
   PluginRegistrations,
@@ -101,6 +102,7 @@ export interface GuardedParts {
   readonly vault: PluginVault
   readonly ui: Omit<PluginUi, 'mountView'>
   readonly work: PluginWork
+  readonly health: HealthHost
 }
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
@@ -270,8 +272,12 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       cancel: requirePermissionsAsync(WRITE),
       retry: requirePermissions(WRITE),
       dismiss: requireNothing('it takes a task out of the list the user sees'),
-      openSettings: requireNothing('it opens the settings of a plugin, which holds no vault data'),
+      runAction: requireNothing('it runs the fix the core checked when the item was reported'),
     },
+  },
+  health: {
+    report: requireNothing('the item is filed under the id of the plugin'),
+    clear: requireNothing('it clears an item of the plugin itself'),
   },
 }
 

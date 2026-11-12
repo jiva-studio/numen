@@ -112,15 +112,6 @@ const toWirePlugin = (plugin: PluginInfo) => ({
   hasBackend: plugin.hasBackend,
   readers: (plugin.readers ?? []).map((one) => ({ id: one.id, extensions: [...one.extensions] })),
   settingsViews: plugin.settingsViews ?? [],
-  ...(plugin.failure
-    ? {
-        failure: {
-          reason: plugin.failure.reason,
-          detail: plugin.failure.detail,
-          failedAtUnixMs: BigInt(plugin.failure.failedAt),
-        },
-      }
-    : {}),
   settings: plugin.settings.map(toWireSetting),
 })
 

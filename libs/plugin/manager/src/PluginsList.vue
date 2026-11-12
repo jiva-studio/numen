@@ -13,6 +13,7 @@ import {
   parsePluginQuery,
   type PluginFilterContext,
 } from './filter'
+import type { PluginHealth } from './pluginInfo'
 import type { ManagedPlugin } from './plugins'
 import { PLUGIN_WORDS as words } from './words'
 
@@ -20,6 +21,7 @@ import { PLUGIN_WORDS as words } from './words'
 const props = defineProps<{
   plugins: readonly ManagedPlugin[]
   enabled: Readonly<Record<string, boolean>>
+  health?: Readonly<Record<string, readonly PluginHealth[]>>
 }>()
 
 const searchQuery = defineModel<string>('query', { default: '' })
@@ -92,6 +94,7 @@ function isPluginEnabled(pluginId: string): boolean {
         :plugin="item.plugin"
         :category-prefix="item.categoryLabel"
         :is-enabled="isPluginEnabled(item.plugin.id)"
+        :health="props.health?.[item.plugin.id] ?? []"
         @select-plugin="onSelectPlugin(item.plugin.id)"
         @toggle-enabled="(isEnabled) => onTogglePlugin(item.plugin.id, isEnabled)"
       />

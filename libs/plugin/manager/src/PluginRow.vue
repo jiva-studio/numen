@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
  * One installed plugin row in the plugins registry: its name, version,
- * single-line description, failure/disabled badge, and navigation chevron.
+ * single-line description, the badge of its worst health item, and navigation chevron.
  */
 import { computed, ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
+import type { PluginHealth } from './pluginInfo'
 import { isInstalled, type ManagedPlugin } from './plugins'
 import { getPluginState, type PluginState } from './state'
 import { PLUGIN_WORDS as words } from './words'
@@ -14,6 +15,7 @@ const props = defineProps<{
   plugin: ManagedPlugin
   isEnabled: boolean
   categoryPrefix?: string
+  health?: readonly PluginHealth[]
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -32,7 +34,11 @@ const rowTitle = computed(
   () => `${categoryPrefixText.value}${props.plugin.name}${versionSuffix.value}`,
 )
 const pluginState = computed<PluginState>(() =>
-  props.plugin.info ? getPluginState(props.plugin.info, props.isEnabled) : 'available',
+  props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
+)
+
+const isBadgeShown = computed(
+  () => pluginState.value !== 'enabled' && pluginState.value !== 'disabled',
 )
 
 const menuItems = computed<readonly MenuItem[]>(() => [
@@ -100,7 +106,7 @@ function onChooseMenuItem(id: string): void {
 
     <div class="plugin-row__trail">
       <span
-        v-if="pluginState === 'stopped' || pluginState === 'available'"
+        v-if="isBadgeShown"
         class="plugin-row__badge"
         :class="`plugin-row__badge--${pluginState}`"
       >
@@ -240,9 +246,15 @@ function onChooseMenuItem(id: string): void {
   background-color: var(--numen-bubble-bg);
 }
 
-.plugin-row__badge--stopped {
+.plugin-row__badge--stopped,
+.plugin-row__badge--error {
   color: var(--numen-alarm);
   background-color: var(--numen-alarm-bg);
+}
+
+.plugin-row__badge--warning {
+  color: var(--numen-ink);
+  background-color: var(--numen-bubble-bg);
 }
 
 .plugin-row__chevron {

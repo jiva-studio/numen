@@ -23,15 +23,16 @@ export interface WorkTask {
   }
   readonly isCancellable: boolean
   readonly kind: 'work' | 'notice'
+  /** The fix of a failed task, which the host runs by the id of the task. */
+  readonly action?: BackgroundTaskAction | undefined
 }
 
 /** How a task stands: running, being cancelled, ended in failure, or a notice. */
 export type BackgroundTaskState = 'running' | 'cancelling' | 'failed' | 'notice'
 
-/** The settings link of a failed task of a plugin; both fields are empty where it has none. */
+/** The fix a failed task offers; the label is empty where it offers none. */
 export interface BackgroundTaskAction {
   readonly label: string
-  readonly pluginId: string
 }
 
 /** One task as the list draws it. `counting` is empty where the task counts items one by one. */
@@ -82,12 +83,8 @@ function getState(task: WorkTask, isCancelling: boolean): BackgroundTaskState {
   return isCancelling ? 'cancelling' : 'running'
 }
 
-/** One task as the list draws it, with the settings link of a failed one where it has one. */
-export function createBackgroundTask(
-  task: WorkTask,
-  isCancelling: boolean,
-  action: BackgroundTaskAction | undefined,
-): BackgroundTask {
+/** One task as the list draws it, with the fix of a failed one where it has one. */
+export function createBackgroundTask(task: WorkTask, isCancelling: boolean): BackgroundTask {
   const hasTotal = task.progress.total > 0
   const isFailed = Boolean(task.error)
   return {
@@ -102,6 +99,6 @@ export function createBackgroundTask(
     },
     error: task.error,
     allowed: { cancel: !isFailed && task.isCancellable, retry: false },
-    action: { label: action?.label ?? '', pluginId: action?.pluginId ?? '' },
+    action: { label: isFailed ? (task.action?.label ?? '') : '' },
   }
 }

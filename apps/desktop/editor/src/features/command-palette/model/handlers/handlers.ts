@@ -14,11 +14,14 @@ import {
   type CommandHandler,
   type CommandInvocation,
 } from '@/shared/model/command'
-import { SETTINGS } from '@/entities/tab'
 
 /** What each command of the palette evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
-  [COMMAND.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
+  [COMMAND.openSettings]: (invocation, on) =>
+    on.navigator.openSettings({
+      pluginId: invocation.values?.['plugin'],
+      setting: invocation.values?.['setting'],
+    }),
   [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.target.tab),
   [COMMAND.searchVault]: (_, on) => on.navigator.search(),
 }

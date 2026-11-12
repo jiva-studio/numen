@@ -1,26 +1,29 @@
 /**
- * Plugin state for the plugin list and page, and the failure time format.
+ * The state of a plugin for the plugin list and page, from its enabled setting and its health items.
  */
-import type { PluginInfo } from './pluginInfo'
+import type { PluginHealth } from './pluginInfo'
 
 /** What a plugin's state badge shows. */
-export type PluginState = 'enabled' | 'disabled' | 'stopped' | 'available'
+export type PluginState = 'enabled' | 'disabled' | 'stopped' | 'error' | 'warning' | 'available'
 
-/** The plugins the host suspends, in the order they are listed. */
-export const getFailedPlugins = (plugins: readonly PluginInfo[]): readonly PluginInfo[] =>
-  plugins.filter((one) => one.failure !== undefined)
+/** The key of the item of a plugin whose start failed, which the host holds suspended. */
+export const START_HEALTH_KEY = 'start'
 
-/** The state of a plugin: a failure outranks the enabled setting. */
+/** The item a plugin whose start failed has, or none. */
+export const getStartItem = (health: readonly PluginHealth[]): PluginHealth | undefined =>
+  health.find((one) => one.key === START_HEALTH_KEY)
+
+/** The worst of the items: an error over a warning, the first reported among equals. */
+export const getWorstItem = (health: readonly PluginHealth[]): PluginHealth | undefined =>
+  health.find((one) => one.severity === 'error') ?? health[0]
+
+/** The state of a plugin: a failed start outranks an error, an error a warning, and those the setting. */
 export const getPluginState = (
-  plugin: PluginInfo,
   isEnabled: boolean,
+  health: readonly PluginHealth[] = [],
 ): Exclude<PluginState, 'available'> => {
-  if (plugin.failure !== undefined) return 'stopped'
+  if (getStartItem(health)) return 'stopped'
+  const worst = getWorstItem(health)
+  if (worst) return worst.severity
   return isEnabled ? 'enabled' : 'disabled'
 }
-
-/** The time a plugin was given up, in the locale's medium date and short time. */
-export const formatFailedAt = (failedAt: number, locale?: string): string =>
-  new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
-    new Date(failedAt),
-  )

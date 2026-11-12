@@ -2,6 +2,7 @@
  * The settings of a window made the way the window makes them: the state its appearance and palette
  * read, and the settings tab.
  */
+import { shallowRef } from 'vue'
 import { createConnectionStore, type ConnectionStore } from '@/entities/connection'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
@@ -20,6 +21,8 @@ export interface WindowSettingsDeps {
   readonly onSizeChanged: () => void
   readonly getSettingsViews: PageDeps['getSettingsViews']
   readonly getPlatform: PageDeps['getPlatform']
+  readonly health?: PageDeps['health']
+  readonly commands?: PageDeps['commands']
 }
 
 export function createWindowSettingsPart(deps: WindowSettingsDeps) {
@@ -34,6 +37,8 @@ export function createWindowSettingsPart(deps: WindowSettingsDeps) {
     windowTabs: deps.windowTabs,
     getSettingsViews: deps.getSettingsViews,
     getPlatform: deps.getPlatform,
+    health: deps.health ?? shallowRef([]),
+    commands: deps.commands ?? { getIds: () => [], run: () => Promise.resolve('') },
   })
   return {
     rest,

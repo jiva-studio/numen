@@ -12,7 +12,7 @@ export {
   type PluginListing,
 } from './plugins'
 export type {
-  PluginFailure,
+  PluginHealth,
   PluginInfo,
   PluginReader,
   PluginSettingCondition,
@@ -33,6 +33,12 @@ export {
   type ParsedPluginQuery,
   type PluginFilterContext,
 } from './filter'
-export { formatFailedAt, getFailedPlugins, getPluginState, type PluginState } from './state'
+export {
+  getPluginState,
+  getStartItem,
+  getWorstItem,
+  START_HEALTH_KEY,
+  type PluginState,
+} from './state'
 export { parsePluginReadme, type PluginReadmeParts } from './readme'
 export { PLUGIN_WORDS } from './words'

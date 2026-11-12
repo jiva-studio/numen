@@ -31,11 +31,13 @@ import { createMockNoticeHost } from './mockNotices'
 import {
   createMockBackgroundTaskHost,
   createMockCommandsHost,
+  createMockHealthHost,
   createMockSlotHost,
   createMockVaultsHost,
   createMockWindowHost,
   type MockBackgroundTaskHost,
   type MockCommandsHost,
+  type MockHealthHost,
   type MockSlotHost,
   type MockVaultsHost,
   type MockWindowHost,
@@ -89,6 +91,7 @@ export interface MockPluginContext extends PluginContext {
   readonly ui: MockPluginUi
   readonly vault: MockPluginVault
   readonly work: MockPluginWork
+  readonly health: MockHealthHost
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
   getRegisteredSlotViews(): SlotViewRegistration[]
@@ -299,6 +302,7 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       ...pickDefinedParts<Pick<PluginWork, 'agent'>>({ agent: init.agent }),
       backgroundTasks: createMockBackgroundTaskHost(),
     },
+    health: createMockHealthHost(),
 
     setSetting(key: string, value: JsonValue): void {
       settings.set(key, value)

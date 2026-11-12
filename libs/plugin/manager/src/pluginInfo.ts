@@ -1,6 +1,6 @@
 /**
- * The plugins as the manager shows them: the settings of a plugin decoded, and the state the host
- * reports for it.
+ * The plugins as the manager shows them: the settings of a plugin decoded, and the health items the
+ * host reports for it.
  */
 
 /** A value a setting holds: anything that survives JSON.stringify and JSON.parse unchanged. */
@@ -66,11 +66,16 @@ export interface PluginSettingInfo {
   readonly value?: SettingValue | undefined
 }
 
-/** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
-export interface PluginFailure {
-  readonly reason: string
+/**
+ * One concern of a plugin that does not work, as the manager draws it. An empty action label offers
+ * no button. The key `start` is the start of the plugin that failed, which the host holds suspended.
+ */
+export interface PluginHealth {
+  readonly key: string
+  readonly severity: 'warning' | 'error'
+  readonly text: string
   readonly detail: string
-  readonly failedAt: number
+  readonly actionLabel: string
 }
 
 /** Information about an installed and active plugin, including declarative settings. */
@@ -86,7 +91,6 @@ export interface PluginInfo {
   readonly capabilities: readonly string[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
-  readonly failure?: PluginFailure | undefined
 }
 
 /** A view a plugin's frontend registers under `id` and the settings form mounts. */

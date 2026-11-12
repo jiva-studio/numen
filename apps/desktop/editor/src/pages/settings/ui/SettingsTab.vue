@@ -3,7 +3,9 @@
  * The settings tab: every numen.json setting the user can change, grouped by
  * the part of the application it governs.
  */
+import { computed } from 'vue'
 import type { SettingsTabState } from '../types'
+import { groupManagedHealth } from '../lib/pluginHealth'
 import { useSettingsTab } from '../model/useSettingsTab'
 import SystemDetail from './SystemDetail.vue'
 import ConnectionsPage from './connections/ConnectionsPage.vue'
@@ -13,7 +15,10 @@ import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { installation, initialSearchQuery } = props.state
+const { installation, initialSearchQuery, markedSetting } = props.state
+const health = computed(() =>
+  groupManagedHealth(installation.plugin.health.value, installation.plugin.canRunCommand),
+)
 const {
   selectedPluginId,
   plugins,
@@ -49,6 +54,7 @@ const {
           :manager="installation.plugin"
           :connections="installation.connections"
           :plugin="selectedPlugin"
+          :marked-setting="markedSetting"
           @back="goBack"
           @open-connections="selectPlugin('connections')"
         />
@@ -59,6 +65,7 @@ const {
           :catalog="installation.plugin.catalog.value"
           :query="initialSearchQuery"
           :plugins="plugins"
+          :health="health"
           @select-plugin="selectPlugin"
           @update:query="updateQuery"
         />

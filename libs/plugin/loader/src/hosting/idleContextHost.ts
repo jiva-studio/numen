@@ -34,6 +34,7 @@ const NO_WINDOW: Omit<ContextWindowHost, 'getSlots' | 'getNotices'> = {
   getWindow: () => undefined,
   getTasks: () => undefined,
   getBackgroundTasks: () => undefined,
+  getHealth: () => undefined,
   getConnections: () => undefined,
 }
 

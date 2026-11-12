@@ -1,41 +1,45 @@
 import { describe, expect, it } from 'vitest'
-import { createMockPluginInfo as createPluginInfo } from './testing/listing'
-import { formatFailedAt, getFailedPlugins, getPluginState } from './state'
+import type { PluginHealth } from './pluginInfo'
+import { getPluginState, getWorstItem } from './state'
 
-describe('the plugins suspended', () => {
-  it('are those with a failure, in the order listed', () => {
-    const failure = { reason: 'Timed out while starting', detail: 'handshake timeout', failedAt: 0 }
-    const items = [
-      createPluginInfo('sample.b', 'B', { failure }),
-      createPluginInfo('sample.ok', 'Ok'),
-      createPluginInfo('sample.a', 'A', { failure }),
-    ]
-    expect(getFailedPlugins(items).map((one) => one.id)).toStrictEqual(['sample.b', 'sample.a'])
-  })
-
-  it('are none where every plugin starts', () => {
-    expect(getFailedPlugins([createPluginInfo('sample.ok', 'Ok')])).toStrictEqual([])
-  })
+const item = (key: string, severity: PluginHealth['severity']): PluginHealth => ({
+  key,
+  severity,
+  text: `The ${key} does not work`,
+  detail: '',
+  actionLabel: '',
 })
 
-describe('the time a plugin was given up', () => {
-  it('is failure as a date and a time', () => {
-    const failure = formatFailedAt(Date.UTC(2026, 9, 19, 12, 30), 'en-US')
-    expect(failure).toMatch(/2026/)
-    expect(failure).toMatch(/\d{1,2}:\d{2}/)
+describe('the worst item of a plugin', () => {
+  it('is the first error, before any warning', () => {
+    const health = [item('quota', 'warning'), item('connection', 'error'), item('model', 'error')]
+
+    expect(getWorstItem(health)?.key).toBe('connection')
+  })
+
+  it('is the first warning where there is no error, and none where there is no item', () => {
+    expect(getWorstItem([item('quota', 'warning'), item('cache', 'warning')])?.key).toBe('quota')
+    expect(getWorstItem([])).toBeUndefined()
   })
 })
 
 describe('getPluginState', () => {
-  const failure = { reason: 'Failed to start', detail: 'exec format error', failedAt: 0 }
+  it('is stopped for a plugin whose start failed, whatever its setting and its other items', () => {
+    const health = [item('connection', 'error'), item('start', 'error')]
 
-  it('is stopped for a failed plugin, whatever its setting', () => {
-    expect(getPluginState(createPluginInfo('sample.a', 'A', { failure }), true)).toBe('stopped')
-    expect(getPluginState(createPluginInfo('sample.a', 'A', { failure }), false)).toBe('stopped')
+    expect(getPluginState(true, health)).toBe('stopped')
+    expect(getPluginState(false, health)).toBe('stopped')
   })
 
-  it('follows the enabled setting for a plugin that has not failed', () => {
-    expect(getPluginState(createPluginInfo('sample.a', 'A'), true)).toBe('enabled')
-    expect(getPluginState(createPluginInfo('sample.a', 'A'), false)).toBe('disabled')
+  it('is the severity of the worst item of a plugin that runs', () => {
+    expect(getPluginState(true, [item('quota', 'warning'), item('connection', 'error')])).toBe(
+      'error',
+    )
+    expect(getPluginState(true, [item('quota', 'warning')])).toBe('warning')
+  })
+
+  it('follows the enabled setting for a plugin without items', () => {
+    expect(getPluginState(true)).toBe('enabled')
+    expect(getPluginState(false, [])).toBe('disabled')
   })
 })

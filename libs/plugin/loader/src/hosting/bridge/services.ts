@@ -1,6 +1,7 @@
 import type { Manifest } from '@numen/core-client'
 import type { NoticeHost, SlotHost } from '@numen/plugin-sdk'
 import { formatCommandId } from '../../commandId'
+import { createPluginHealth } from '../../pluginHealth'
 import type { DeclaredSlotEntry } from '../../slots'
 import type { ContextVaultHost, ContextWindowHost, PluginHostDeps } from '../types'
 
@@ -65,6 +66,7 @@ export function createWindowServiceBridge(
     getNotices: (pluginId) => deps.getNotices?.(pluginId) ?? DISCARDING_NOTICES,
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
     getBackgroundTasks: () => deps.getBackgroundTasks?.(),
+    getHealth: (pluginId) => deps.health && createPluginHealth(deps.health, pluginId),
     getConnections: (pluginId) => deps.getConnections?.(pluginId),
     getSlots: () => slots,
   }

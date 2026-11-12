@@ -1,10 +1,10 @@
 import { type CommandDeps } from '@/shared/model/command'
 import { runInBackground } from '@numen/ui'
-import type { CommandRegistry, Notes, RunSupport } from '@/shared/model/command'
+import type { CommandRegistry, Notes, RunSupport, SettingsRequest } from '@/shared/model/command'
 import { createCommandNotes } from '../notes/createCommandNotes'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import type { WindowTabs } from '@/entities/tab'
+import { SETTINGS, type WindowTabs } from '@/entities/tab'
 
 export interface CommandDepsOptions {
   windowTabs: Pick<WindowTabs, 'tabs' | 'panes'>
@@ -14,16 +14,20 @@ export interface CommandDepsOptions {
   registry: Pick<CommandRegistry, 'get'>
   writeMessage: MessageWriter
   search: () => void
+  openSettings?: ((request: SettingsRequest) => void) | undefined
   emitEvent?: ((event: string) => void) | undefined
 }
 
 function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
   const { windowTabs, search, writeMessage } = options
+  const openTab = (kind: string) =>
+    runInBackground(windowTabs.tabs.openTabOfKind(kind), (error) =>
+      writeMessage(formatError(error), 'error'),
+    )
   return {
-    openTab: (kind) =>
-      runInBackground(windowTabs.tabs.openTabOfKind(kind), (error) =>
-        writeMessage(formatError(error), 'error'),
-      ),
+    openTab,
+    openSettings: (request) =>
+      options.openSettings ? options.openSettings(request) : openTab(SETTINGS),
     closeTab: (tab) => windowTabs.panes.requestClose(tab),
     search,
   }

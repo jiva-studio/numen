@@ -10,6 +10,7 @@ import { createInstallation, createPluginInfo } from '@/pages/settings/testing/i
 import type { Installation } from '../../types'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
 import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type { PluginHealthItem } from '@/entities/plugin'
 import { WORDS as words } from '../../words'
 
 beforeEach(() => {
@@ -32,10 +33,14 @@ const createDetail = (
   file: JsonObject = {},
   platform?: string,
   attachTo?: HTMLElement,
+  health: readonly PluginHealthItem[] = [],
 ) => {
   const recordedWrites: SettingEdit[] = []
   const retryPlugin = vi.fn()
+  const runCommand = vi.fn()
   const installation: Installation = createInstallation({
+    health: ref(health),
+    runCommand,
     getSetting: (path) => at(file, path),
     write: (edits) => {
       recordedWrites.push(...edits)
@@ -57,6 +62,7 @@ const createDetail = (
     wrapper,
     recordedWrites,
     retryPlugin,
+    runCommand,
     installation,
   }
 }
@@ -109,14 +115,17 @@ describe('PluginDetail', () => {
   })
 
   it('renders failure card, calls retryPlugin on retry, and writes disabled on disable', async () => {
-    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
-      failure: {
-        reason: 'Timed out while starting',
+    const plugin = createPluginInfo('test.plugin', 'Super Engine')
+    const { wrapper, retryPlugin, recordedWrites } = createDetail(plugin, {}, undefined, undefined, [
+      {
+        pluginId: 'test.plugin',
+        key: 'start',
+        severity: 'error',
+        text: 'Timed out while starting',
         detail: 'handshake timeout after 10s',
-        failedAt: 1_700_000_000_000,
+        action: { command: 'app:settings.open', values: { plugin: 'test.plugin' }, title: '' },
       },
-    })
-    const { wrapper, retryPlugin, recordedWrites } = createDetail(plugin)
+    ])
 
     const stoppedCard = wrapper.find('.plugin-stopped')
     expect(stoppedCard.exists()).toBe(true)
@@ -315,9 +324,67 @@ describe('PluginDetail', () => {
   })
 
   it('draws no stopped details disclosure when failure detail is empty', () => {
-    const failure = { reason: 'Failed to start', detail: '', failedAt: 0 }
-    const { wrapper } = createDetail(createPluginInfo('a', 'A', { failure }))
+    const start: PluginHealthItem = {
+      pluginId: 'a',
+      key: 'start',
+      severity: 'error',
+      text: 'Failed to start',
+      detail: '',
+    }
+    const { wrapper } = createDetail(createPluginInfo('a', 'A'), {}, undefined, undefined, [start])
     expect(wrapper.find('.plugin-stopped details').exists()).toBe(false)
+  })
+})
+
+describe('PluginDetail with a health item', () => {
+  const ATLAS = createPluginInfo('org.example.atlas', 'Atlas', {
+    settings: [
+      {
+        key: 'source',
+        type: 'enum',
+        title: 'Source',
+        description: 'Where the atlas reads its maps',
+        default: 'local',
+        options: [
+          { value: 'local', title: 'Local maps', detail: '' },
+          { value: 'connection', title: 'Connection', detail: '' },
+        ],
+      },
+      { key: 'zoom', type: 'number', title: 'Zoom', description: '', default: 3 },
+    ],
+  })
+  const CONNECTION: PluginHealthItem = {
+    pluginId: 'org.example.atlas',
+    key: 'connection',
+    severity: 'error',
+    text: 'Choose a connection',
+    detail: 'The atlas has no connection to ask.',
+    action: {
+      command: 'app:settings.open',
+      values: { plugin: 'org.example.atlas', setting: 'source' },
+      title: '',
+    },
+  }
+
+  it('shows the item in a bar and runs its fix with its values', async () => {
+    const { wrapper, runCommand } = createDetail(ATLAS, {}, undefined, undefined, [CONNECTION])
+    const bar = wrapper.find('.plugin-health')
+
+    expect(bar.text()).toContain('Choose a connection')
+    expect(bar.text()).toContain('The atlas has no connection to ask.')
+    await bar.find('button').trigger('click')
+
+    expect(runCommand).toHaveBeenCalledExactlyOnceWith('app:settings.open', {
+      plugin: 'org.example.atlas',
+      setting: 'source',
+    })
+  })
+
+  it('marks the setting the fix names and no other', () => {
+    const { wrapper } = createDetail(ATLAS, {}, undefined, undefined, [CONNECTION])
+
+    const marked = wrapper.findAllComponents(SettingRow).filter((one) => one.props('isMarked'))
+    expect(marked.map((one) => one.props('name'))).toStrictEqual(['Source'])
   })
 })
 

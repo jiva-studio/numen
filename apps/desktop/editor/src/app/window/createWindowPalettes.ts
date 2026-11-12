@@ -11,7 +11,7 @@ import {
 import { getVaultList } from '@/features/window-display'
 import { watchCommandLists } from '@/features/plugin-commands'
 import { createCommandIconFinder, createSearchMenu } from '@/features/plugin-host'
-import type { CommandRegistry, Notes } from '@/shared/model/command'
+import type { CommandRegistry, Notes, SettingsRequest } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import { createHostConnection } from './createHostConnection'
@@ -26,6 +26,7 @@ export interface PaletteBaseDeps {
   readonly settingPalette: { choose: (command: string, item: string) => Promise<void> }
   readonly registry: Pick<CommandRegistry, 'get'>
   readonly writeMessage: MessageWriter
+  readonly openSettings: (request: SettingsRequest) => void
 }
 
 function createPaletteBase(deps: PaletteBaseDeps) {
@@ -40,6 +41,7 @@ function createPaletteBase(deps: PaletteBaseDeps) {
       registry: deps.registry,
       writeMessage: deps.writeMessage,
       search: searchRequests.request,
+      openSettings: deps.openSettings,
     }),
   }
 }
@@ -69,6 +71,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     settingPalette: windowSettings.settingPalette,
     registry: foundation.registry,
     writeMessage,
+    openSettings: foundation.settingsRequests.emit,
   })
   const pluginPalette = createPluginPalette({
     pluginHost,

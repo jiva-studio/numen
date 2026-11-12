@@ -15,6 +15,8 @@ export const PLUGIN_WORDS = {
     enabled: 'Enabled',
     disabled: 'Disabled',
     stopped: 'Stopped',
+    error: 'Error',
+    warning: 'Warning',
     available: 'Not installed',
   },
   /** Plugin list and plugin page. */

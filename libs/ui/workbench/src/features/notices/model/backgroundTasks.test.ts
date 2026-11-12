@@ -28,8 +28,7 @@ const createDeps = (
   tasks: ref<readonly Task[]>(tasks),
   cancelTask: vi.fn(() => Promise.resolve()),
   reportCancelError: vi.fn(),
-  resolveAction: () => undefined,
-  openSettings: vi.fn(),
+  runAction: vi.fn(),
   ...extra,
 })
 
@@ -58,7 +57,7 @@ describe('the tasks of the window as background tasks', () => {
       progress: { completedCount: 1, total: 4, counting: '' },
       error: '',
       allowed: { cancel: true, retry: false },
-      action: { label: '', pluginId: '' },
+      action: { label: '' },
     })
   })
 
@@ -98,24 +97,19 @@ describe('the tasks of the window as background tasks', () => {
     expect(first({ ...base, isCancellable: false }).allowed.cancel).toBe(false)
   })
 
-  it('carries the settings action of a failed task of a plugin', () => {
-    const task: Task = {
-      ...base,
-      error: 'OAuth session expired',
-      source: { ...base.source, pluginId: 'md.example.agent' },
-    }
+  it('offers the action of a task only while it is failed', () => {
+    const action = { label: 'Open settings' }
     const host = createBackgroundTaskHost(
-      createDeps([base, task], {
-        resolveAction: (one) => ({ label: 'Configure', pluginId: one.source.pluginId }),
-      }),
+      createDeps([
+        { ...base, action },
+        { ...base, id: 'u', error: 'Choose a connection', action },
+      ]),
     )
 
     const [running, failed] = readTasks(host)
 
-    expect(running).toMatchObject({ action: { label: '', pluginId: '' } })
-    expect(failed).toMatchObject({
-      action: { label: 'Configure', pluginId: 'md.example.agent' },
-    })
+    expect(running).toMatchObject({ action: { label: '' } })
+    expect(failed).toMatchObject({ action: { label: 'Open settings' } })
   })
 
   it('calls a watcher again when the tasks of the window change, and not after dispose', async () => {
@@ -203,12 +197,12 @@ describe('the actions on a background task', () => {
     expect(deps.reportCancelError).toHaveBeenCalledWith(error)
   })
 
-  it('opens the settings of the plugin the action names', () => {
+  it('runs the action of the task it is asked for', () => {
     const deps = createDeps([])
     const host = createBackgroundTaskHost(deps)
 
-    host.openSettings('md.example.agent')
+    host.runAction('health:md.example.atlas:connection')
 
-    expect(deps.openSettings).toHaveBeenCalledWith('md.example.agent')
+    expect(deps.runAction).toHaveBeenCalledWith('health:md.example.atlas:connection')
   })
 })

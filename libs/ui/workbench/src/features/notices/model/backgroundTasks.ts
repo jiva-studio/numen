@@ -6,7 +6,6 @@ import { computed, ref, watch, type Ref } from 'vue'
 import {
   createBackgroundTask,
   type BackgroundTask,
-  type BackgroundTaskAction,
   type WorkTask,
 } from '../lib/backgroundTask'
 
@@ -16,10 +15,8 @@ export interface BackgroundTaskHostDeps {
   cancelTask(id: string): Promise<void>
   /** Receives the error of a cancel the core did not accept. */
   reportCancelError(error: unknown): void
-  /** The settings link of a failed task; a window without one leaves it out. */
-  resolveAction?(task: WorkTask): BackgroundTaskAction | undefined
-  /** Opens the settings of a plugin; a window without settings leaves it out. */
-  openSettings?(pluginId: string): void
+  /** Runs the action of the task; a window whose tasks offer none leaves it out. */
+  runAction?(id: string): void
 }
 
 /** The background tasks of a window, as the plugin that lists them reads and acts on them. */
@@ -31,7 +28,7 @@ export interface BackgroundTaskHost {
   retry(id: string): void
   /** Takes a task out of the list while it is listed. */
   dismiss(id: string): void
-  openSettings(pluginId: string): void
+  runAction(id: string): void
 }
 
 export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): BackgroundTaskHost {
@@ -43,11 +40,7 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
     deps.tasks.value
       .filter((task) => !dismissedIds.value.has(task.id))
       .map((task) =>
-        createBackgroundTask(
-          task,
-          cancellingIds.value.has(task.id),
-          task.error ? deps.resolveAction?.(task) : undefined,
-        ),
+        createBackgroundTask(task, cancellingIds.value.has(task.id)),
       ),
   )
 
@@ -86,6 +79,6 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
     dismiss: (id) => {
       dismissedIds.value.add(id)
     },
-    openSettings: (pluginId) => deps.openSettings?.(pluginId),
+    runAction: (id) => deps.runAction?.(id),
   }
 }

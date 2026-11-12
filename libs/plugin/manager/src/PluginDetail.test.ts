@@ -5,6 +5,8 @@ import { Button, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import PluginData from './PluginData.vue'
 import PluginStopped from './PluginStopped.vue'
+import PluginHealthBar from './PluginHealthBar.vue'
+import type { PluginHealth } from './pluginInfo'
 import type { PluginDetailProps } from './PluginDetail.types'
 import { createManagedPlugin, createAvailablePlugin } from './testing/managed'
 
@@ -72,12 +74,19 @@ describe('PluginDetail', () => {
   })
 
   it('draws the failure card of a suspended plugin and emits retry and disable', async () => {
-    const failure = { reason: 'Failed to start', detail: 'exec error', failedAt: 0 }
-    const wrapper = mountDetail({ plugin: createManagedPlugin('sample.notes', 'Notes', { failure }) })
+    const start: PluginHealth = {
+      key: 'start',
+      severity: 'error',
+      text: 'Failed to start',
+      detail: 'exec error',
+      actionLabel: 'Open settings',
+    }
+    const wrapper = mountDetail({ health: [start] })
     const failureCard = wrapper.findComponent(PluginStopped)
 
     expect(failureCard.text()).toContain('Failed to start')
     expect(failureCard.find('details').text()).toContain('exec error')
+    expect(wrapper.findComponent(PluginHealthBar).exists()).toBe(false)
 
     const [retry, disable] = failureCard.findAllComponents(Button)
     await retry?.trigger('click')
@@ -90,9 +99,55 @@ describe('PluginDetail', () => {
   it('draws no failure card and no details disclosure without a failure detail', () => {
     expect(mountDetail().findComponent(PluginStopped).exists()).toBe(false)
 
-    const failure = { reason: 'Failed to start', detail: '', failedAt: 0 }
-    const wrapper = mountDetail({ plugin: createManagedPlugin('sample.notes', 'Notes', { failure }) })
-    expect(wrapper.find('details').exists()).toBe(false)
+    const start: PluginHealth = {
+      key: 'start',
+      severity: 'error',
+      text: 'Failed to start',
+      detail: '',
+      actionLabel: '',
+    }
+    expect(mountDetail({ health: [start] }).find('details').exists()).toBe(false)
+  })
+
+  it('draws the bar of the worst item with its text, detail and fix, and emits the fix', async () => {
+    const quota: PluginHealth = {
+      key: 'quota',
+      severity: 'warning',
+      text: 'Half of the quota is used',
+      detail: '',
+      actionLabel: '',
+    }
+    const connection: PluginHealth = {
+      key: 'connection',
+      severity: 'error',
+      text: 'Choose a connection',
+      detail: 'The atlas has no connection to ask.',
+      actionLabel: 'Open settings',
+    }
+    const wrapper = mountDetail({ health: [quota, connection] })
+    const bar = wrapper.findComponent(PluginHealthBar)
+
+    expect(bar.attributes('role')).toBe('alert')
+    expect(bar.text()).toContain('Choose a connection')
+    expect(bar.text()).toContain('The atlas has no connection to ask.')
+    expect(bar.text()).not.toContain('Half of the quota')
+    await bar.findComponent(Button).trigger('click')
+
+    expect(wrapper.emitted('run-action')).toStrictEqual([['connection']])
+  })
+
+  it('draws a warning without a button where it offers no fix', () => {
+    const quota: PluginHealth = {
+      key: 'quota',
+      severity: 'warning',
+      text: 'Half of the quota is used',
+      detail: '',
+      actionLabel: '',
+    }
+    const bar = mountDetail({ health: [quota] }).findComponent(PluginHealthBar)
+
+    expect(bar.attributes('role')).toBe('status')
+    expect(bar.findComponent(Button).exists()).toBe(false)
   })
 
   it('draws no settings block without settings', () => {

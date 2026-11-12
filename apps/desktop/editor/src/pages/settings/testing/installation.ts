@@ -25,7 +25,17 @@ const SETTINGS_KEYS = [
   'write',
   'file',
 ]
-const PLUGIN_KEYS = ['plugins', 'app', 'catalog', 'retryPlugin', 'choosePath', 'getSettingsViews']
+const PLUGIN_KEYS = [
+  'plugins',
+  'app',
+  'catalog',
+  'health',
+  'canRunCommand',
+  'runCommand',
+  'retryPlugin',
+  'choosePath',
+  'getSettingsViews',
+]
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const CONNECTIONS_KEYS = [
   'list',
@@ -66,6 +76,9 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     plugins: ref([]),
     app: ref([]),
     catalog: ref([]),
+    health: ref([]),
+    canRunCommand: () => true,
+    runCommand: fn(),
     getSettingsViews: () => new Map(),
     files: {
       getPluginData: () => Promise.resolve(0),
@@ -115,5 +128,6 @@ export const createSettingsState = (
   installation,
   initialPluginId: ref<string | null>(null),
   initialSearchQuery: ref(''),
+  markedSetting: ref(''),
   ...overrides,
 })

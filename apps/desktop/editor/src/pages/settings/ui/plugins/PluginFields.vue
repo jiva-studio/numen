@@ -18,6 +18,8 @@ const props = defineProps<{
   settings: InstallationSettings
   host: PluginFieldsHost
   plugin: PluginInfo
+  marked?: readonly string[]
+  focused?: string
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -55,6 +57,8 @@ const {
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
       :detail="setting.description"
+      :is-marked="props.marked?.includes(setting.key) ?? false"
+      :is-focused="props.focused === setting.key"
     >
       <Switch
         v-if="setting.type === 'boolean'"

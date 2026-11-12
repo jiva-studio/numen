@@ -82,12 +82,12 @@ describe('the settings tab', () => {
     settings.kind.open(undefined as never, 'tab')
     expect(settings.state.initialPluginId?.value).toBe('plugin-a')
 
-    settings.openSettings('plugin-b')
+    settings.openSettings({ pluginId: 'plugin-b' })
     expect(settings.isOpen.value).toBe(true)
     expect(settings.state.initialPluginId?.value).toBe('plugin-b')
     expect(settings.state.initialSearchQuery?.value).toBe('')
 
-    settings.openSettings('plugin-c', 'theme')
+    settings.openSettings({ pluginId: 'plugin-c', filter: 'theme' })
     expect(settings.state.initialPluginId?.value).toBeNull()
     expect(settings.state.initialSearchQuery?.value).toBe('theme')
 
@@ -95,5 +95,16 @@ describe('the settings tab', () => {
     settings.openSettings()
     expect(settings.state.initialPluginId?.value).toBe('kept')
     expect(settings.state.initialSearchQuery?.value).toBe('theme')
+  })
+
+  it('marks the setting it is opened at, and marks none for the plugin alone', () => {
+    const settings = useSettingsTab(window_().handle, installation(), vi.fn())
+
+    settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
+    expect(settings.state.initialPluginId.value).toBe('org.example.atlas')
+    expect(settings.state.markedSetting.value).toBe('source')
+
+    settings.openSettings({ pluginId: 'org.example.atlas' })
+    expect(settings.state.markedSetting.value).toBe('')
   })
 })

@@ -7,7 +7,7 @@ import { createConnectionStore } from '@/entities/connection'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { createWindowPluginStatus } from '@/features/plugin-host'
 import { createEmitter } from '@/shared/lib/emitter'
-import { createCommandRegistry } from '@/shared/model/command'
+import { createCommandRegistry, type SettingsRequest } from '@/shared/model/command'
 import { createMessageLog } from '@/shared/model/notices/messages'
 
 export function createWindowFoundation() {
@@ -21,7 +21,7 @@ export function createWindowFoundation() {
     frame: useWindowFrame(loadFrameRuntime),
     status: createWindowPluginStatus(rest),
     registry: createCommandRegistry(),
-    /** The plugin whose settings page a part asks for, or none for the page of the settings. */
-    settingsRequests: createEmitter<string | undefined>(),
+    /** The settings a part asks for: the page of a plugin and a setting of it, or the settings tab. */
+    settingsRequests: createEmitter<SettingsRequest>(),
   }
 }

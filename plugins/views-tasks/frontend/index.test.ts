@@ -368,25 +368,25 @@ describe('the actions of a task', () => {
     ])
   })
 
-  it('opens the settings of the plugin a failed task names', async () => {
+  it('runs the action of a failed task', async () => {
     const { context, view } = activateTasks()
     context.work.backgroundTasks.setTasks([
       createTask({
         id: 'a',
         state: 'failed',
-        error: 'api key missing',
-        action: { label: 'Configure', pluginId: 'org.example.agent' },
+        error: 'Choose a connection',
+        action: { label: 'Open settings' },
       }),
     ])
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
     const link = wrapper.find('.task-item__action-link')
-    expect(link.text()).toContain('Configure')
+    expect(link.text()).toContain('Open settings')
     await link.trigger('click')
 
     expect(context.work.backgroundTasks.getActions()).toStrictEqual([
-      { action: 'openSettings', id: 'org.example.agent' },
+      { action: 'runAction', id: 'a' },
     ])
   })
 })
