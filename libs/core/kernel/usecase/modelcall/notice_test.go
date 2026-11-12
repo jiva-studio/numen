@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectionuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 )
@@ -83,7 +84,7 @@ func TestThePersonIsNotNotifiedWhenEveryRowFails(t *testing.T) {
 
 func TestThePersonIsNotNotifiedAboutARowThatWasOnlySkipped(t *testing.T) {
 	s := newSetup(t, "complete")
-	delete(s.world.Keys.Values, modelcalltest.GetKeyName(s.one.ID, "apiKey"))
+	delete(s.world.Keys.Values, connectionuse.GetEntryName(s.one.ID, "apiKey"))
 
 	result, err := s.complete(t)
 

@@ -416,8 +416,3 @@ type Entry struct {
 func newEntry(created connectionuse.Entry) Entry {
 	return Entry{ID: created.ID, Name: created.Name, Revision: created.Revision, Fields: created.Fields}
 }
-
-// GetKeyName returns the name under which the key store holds a secret field of a connection.
-func GetKeyName(connectionID, key string) string {
-	return connectionuse.GetEntryName(connectionID, key)
-}
