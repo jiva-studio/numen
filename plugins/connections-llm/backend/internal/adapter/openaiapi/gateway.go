@@ -4,6 +4,7 @@
 package openaiapi
 
 import (
+	"cmp"
 	"context"
 	"net/http"
 	"slices"
@@ -185,11 +186,7 @@ func (g *Gateway) ListModels(ctx context.Context, call connection.Call, limit ti
 		if isLabeled && isText && !makesText(one.Architecture.OutputModalities) {
 			continue
 		}
-		title := one.Name
-		if title == "" {
-			title = one.ID
-		}
-		models = append(models, connection.Option{Value: one.ID, Title: title})
+		models = append(models, connection.Option{Value: one.ID, Title: cmp.Or(one.Name, one.ID)})
 	}
 	slices.SortFunc(models, func(a, b connection.Option) int { return strings.Compare(a.Value, b.Value) })
 	return models, nil

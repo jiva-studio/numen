@@ -86,20 +86,24 @@ func readLines(ctx context.Context, reader *bufio.Reader) <-chan streamLine {
 	return lines
 }
 
+func readWholeReply(reader *bufio.Reader, state *chatReader) (*llm.ChatFinish, error) {
+	answer, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := state.read(answer); err != nil {
+		return nil, err
+	}
+	if !state.isDone {
+		return nil, errStreamEnded
+	}
+	return &llm.ChatFinish{Reason: state.reason}, nil
+}
+
 func readChatStream(ctx context.Context, reader *bufio.Reader, wait time.Duration, send func(*llm.ChatFrame) error) (*llm.ChatFinish, error) {
 	state := &chatReader{send: send, calls: nil, finish: "", reason: llm.FinishReason_FINISH_REASON_STOP, isDone: false}
 	if isWholeReply(reader) {
-		answer, err := io.ReadAll(reader)
-		if err != nil {
-			return nil, err
-		}
-		if err := state.read(answer); err != nil {
-			return nil, err
-		}
-		if !state.isDone {
-			return nil, errStreamEnded
-		}
-		return &llm.ChatFinish{Reason: state.reason}, nil
+		return readWholeReply(reader, state)
 	}
 	lines := readLines(ctx, reader)
 	var data bytes.Buffer
