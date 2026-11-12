@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 func getConnectionRoles() [3]domain.LinkRole {
@@ -35,8 +34,8 @@ type connectionEditor struct {
 	now     machineport.Clock
 	links   noteport.LinkQueries
 	names   edit.NameQueries
-	gate    windowport.WriteGate
-	follow  windowport.IndexFollow
+	gate    WriteGate
+	follow  IndexFollow
 }
 
 // ConnectionDeps are what the use cases that write connections work over. A write passes Gate. Where Follow
@@ -48,8 +47,8 @@ type ConnectionDeps struct {
 	Now     machineport.Clock
 	Links   noteport.LinkQueries
 	Names   edit.NameQueries
-	Gate    windowport.WriteGate
-	Follow  windowport.IndexFollow
+	Gate    WriteGate
+	Follow  IndexFollow
 }
 
 func newConnectionEditor(d ConnectionDeps) connectionEditor {

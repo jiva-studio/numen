@@ -26,7 +26,6 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
@@ -643,7 +642,7 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 	f.cases.Notes.Place.Rename = note.NewRename(note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, Now: testsupport.NewClock(),
 	}, failingAfterMove{f.cases.Notes.Place.Move},
-		windowdomain.OpenGate{},
+		note.OpenGate{},
 	)
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{

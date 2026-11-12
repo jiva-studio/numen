@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // Create makes a note.
@@ -27,14 +26,14 @@ type Create struct {
 	names   edit.NameQueries
 	index   edit.IndexUpdater
 	now     machineport.Clock
-	gate    windowport.WriteGate
+	gate    WriteGate
 }
 
 // NewCreate builds the use case that creates notes. It takes the vault the note
 // is written into, the query for which names are taken, the index update for
 // the new file, the clock, and the gate a write passes.
 func NewCreate(
-	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock, gate windowport.WriteGate,
+	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock, gate WriteGate,
 ) Create {
 	return Create{writers: writers, names: names, index: index, now: now, gate: gate}
 }

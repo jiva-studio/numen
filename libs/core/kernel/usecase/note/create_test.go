@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -101,7 +100,7 @@ func TestATitleTheFilenameCarriesWritesNoTitleKey(t *testing.T) {
 func TestCreatingNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, nil)
-	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), nil, testsupport.NewClock(), windowdomain.OpenGate{})
+	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), nil, testsupport.NewClock(), note.OpenGate{})
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 	if err != nil {
@@ -117,7 +116,7 @@ func TestCreatingInAVaultThatWillNotOpenForWritingMakesNothing(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, nil)
 	writers := brokenWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, open: errDiskGone}
-	create := note.NewCreate(writers, c.db.NoteQueries(), c.index, testsupport.NewClock(), windowdomain.OpenGate{})
+	create := note.NewCreate(writers, c.db.NoteQueries(), c.index, testsupport.NewClock(), note.OpenGate{})
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 
@@ -136,7 +135,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 	create := note.NewCreate(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(),
 		func(context.Context, domain.Vault, []string) error { return errDiskGone }, testsupport.NewClock(),
-		windowdomain.OpenGate{},
+		note.OpenGate{},
 	)
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
@@ -155,7 +154,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 func TestCreate_ReportsNoteBeforeVaultNamesAvailable(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, nil)
-	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, unreachable{}, c.index, testsupport.NewClock(), windowdomain.OpenGate{})
+	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, unreachable{}, c.index, testsupport.NewClock(), note.OpenGate{})
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 

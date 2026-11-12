@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -199,7 +198,7 @@ func TestAWriteUsesThePortsItIsGiven(t *testing.T) {
 			updated++
 			return nil
 		}, testsupport.NewClock(),
-		windowdomain.OpenGate{},
+		note.OpenGate{},
 	)
 
 	if _, err := w.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", domain.FileStat{}); err != nil {

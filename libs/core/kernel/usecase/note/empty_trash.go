@@ -7,16 +7,15 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // EmptyTrash deletes everything the vault's trash holds.
 type EmptyTrash struct {
 	writers vaultport.TrashEmptiers
-	gate    windowport.WriteGate
+	gate    WriteGate
 }
 
-func NewEmptyTrash(writers vaultport.TrashEmptiers, gate windowport.WriteGate) EmptyTrash {
+func NewEmptyTrash(writers vaultport.TrashEmptiers, gate WriteGate) EmptyTrash {
 	return EmptyTrash{writers: writers, gate: gate}
 }
 

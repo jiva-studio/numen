@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
@@ -88,7 +87,7 @@ func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
-	renaming := note.NewRename(c.moveDeps(), c.move(), windowdomain.OpenGate{})
+	renaming := note.NewRename(c.moveDeps(), c.move(), note.OpenGate{})
 	if _, err := renaming.Execute(t.Context(), c.vault, "Old.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}

@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -62,8 +61,8 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 // index to follow every write.
 type noteViews struct {
 	Moves  note.TellMove
-	Writes windowport.WriteGate
-	Follow windowport.IndexFollow
+	Writes note.WriteGate
+	Follow note.IndexFollow
 }
 
 func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteUseCases {
