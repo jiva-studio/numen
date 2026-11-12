@@ -57,3 +57,5 @@ refactoring-plan.md
 
 # output of a local e2e run
 /e2e-merged.out
+# Scenarios of features/ as Playwright tests, written by bddgen.
+tests/acceptance/desktop/.features-gen/

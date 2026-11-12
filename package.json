@@ -14,7 +14,8 @@
     "apps/*",
     "apps/desktop/*",
     "tools/*",
-    "tests/e2e/desktop"
+    "tests/e2e/desktop",
+    "tests/acceptance/desktop"
   ],
   "scripts": {
     "format": "prettier --write \"{libs,apps}/**/*.{ts,vue,json,css}\"",

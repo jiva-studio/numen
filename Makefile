@@ -490,6 +490,7 @@ app_desktop_compile: lib_workbench_build ## compile desktop Go code and typechec
 	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run typecheck
 	cd $(TESTS)/e2e/desktop && npm run lint
+	$(MAKE) app_desktop_acceptance_lint
 
 .PHONY: app_desktop_test
 app_desktop_test: lib_workbench_build ## run desktop tests
@@ -507,6 +508,16 @@ app_desktop_e2e: lib_workbench_build app_desktop_editor_build app_desktop_flashc
 	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd $(TESTS)/e2e/desktop && npm test
 	cd $(TESTS)/e2e/desktop && npm run test:flashcards
+
+.PHONY: app_desktop_acceptance
+app_desktop_acceptance: lib_workbench_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run the acceptance scenarios
+	cd $(DESKTOP) && go build -tags numen_debug -ldflags "-X 'github.com/jiva-studio/numen/apps/desktop/internal/version.version=1.0.0 (build 1000, commit acceptance)'" -o numen-debug ./cmd/numen
+	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
+	cd $(TESTS)/acceptance/desktop && npm run acceptance:test
+
+.PHONY: app_desktop_acceptance_lint
+app_desktop_acceptance_lint: ## lint the acceptance scenarios, steps and driver
+	cd $(TESTS)/acceptance/desktop && npm run acceptance:lint
 
 .PHONY: app_desktop_lint
 app_desktop_lint: ## lint desktop module

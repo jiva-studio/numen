@@ -279,14 +279,16 @@ describe('the pages requested', () => {
   it('changes by the settled width alone, not by the zoom pressed', async () => {
     vi.useFakeTimers()
     const wrapper = await reader(1000, 800)
-    const before = getWidths(wrapper).length
+    const first = getWidths(wrapper)
 
     await wrapper.find('[aria-label="Closer"]').trigger('click')
     await wrapper.find('[aria-label="Closer"]').trigger('click')
 
-    expect(getWidths(wrapper)).toHaveLength(before)
+    expect(getWidths(wrapper)).toStrictEqual(first)
     await vi.advanceTimersByTimeAsync(1000)
-    expect(getWidths(wrapper)).toHaveLength(before + 1)
+    const newWidths = getWidths(wrapper).slice(first.length)
+    expect(newWidths).toHaveLength(1)
+    expect(newWidths[0]).toBeGreaterThan(first[0]!)
     vi.useRealTimers()
   })
 })

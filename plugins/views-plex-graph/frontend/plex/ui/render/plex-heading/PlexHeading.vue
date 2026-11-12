@@ -24,7 +24,7 @@ const place = computed(() => ({
 }))
 
 const headingStyle = computed(() => ({
-  paddingInlineStart: `calc(var(--numen-node-padding) + ${props.heading.indent}px)`,
+  paddingInlineStart: `calc(var(--plex-pad-inline) + ${props.heading.indent}px)`,
 }))
 </script>
 
@@ -55,7 +55,7 @@ const headingStyle = computed(() => ({
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  padding-inline-end: var(--numen-node-padding);
+  padding-inline-end: var(--plex-pad-inline);
   border-radius: var(--heading-border-radius);
   cursor: pointer;
   transition: background var(--numen-motion-hover) var(--numen-easing);

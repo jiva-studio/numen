@@ -117,3 +117,48 @@ func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 		t.Fatal("the folder that arrived was never reported")
 	}
 }
+
+// TestAFolderWithNoFileIsAChange. A folder holding no file, or only folders,
+// adds no source, yet it is drawn in the tree, so the vault is read again.
+func TestAFolderWithNoFileIsAChange(t *testing.T) {
+	for name, build := range map[string]func(string) string{
+		"empty folder": func(root string) string {
+			pos := filepath.Join(root, "Saltworks")
+			if err := os.Mkdir(pos, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			return pos
+		},
+		"folder holding an empty folder": func(root string) string {
+			pos := filepath.Join(root, "Saltworks")
+			if err := os.MkdirAll(filepath.Join(pos, "Brine tanks"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			return pos
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root, shape := makeVaultAndShape(t)
+			pos := build(root)
+
+			raw := make(chan notify.EventInfo, 4)
+			changes := make(chan []string, 1)
+			missing := make(chan struct{}, 1)
+			ctx, stop := context.WithCancel(t.Context())
+			defer stop()
+			queue := newQueue(64)
+			go forwardEvents(ctx, raw, queue)
+			go debounce(ctx, shape, vaultconfig.Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
+
+			raw <- event{path: pos}
+
+			select {
+			case <-missing:
+			case change := <-changes:
+				t.Fatalf("the folder was reported as the sources %v", change)
+			case <-time.After(10 * time.Second):
+				t.Fatal("the folder that arrived was never reported")
+			}
+		})
+	}
+}

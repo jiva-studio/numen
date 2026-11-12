@@ -21,12 +21,20 @@ export interface PlexMetrics {
   readonly labelType: LabelType
 }
 
-/** The type and the lengths a plex is drawn with, in pixels. */
+/** The type a plex is drawn with, and the gap between the things set in one row, in pixels. */
 export interface PlexType {
   readonly font: string
   readonly labelFont: string
-  readonly padding: number
   readonly gap: number
+}
+
+/**
+ * What a title is set in beside its text: the padding on each side, and the widths of what
+ * is drawn before it, each a gap away from the next.
+ */
+export interface TitleRoom {
+  readonly padding: number
+  readonly beside: readonly number[]
 }
 
 /**
@@ -45,7 +53,6 @@ const PROBE = [
   'display:inline-flex',
   'font-family:var(--numen-font-sans)',
   'font-size:var(--numen-font-size)',
-  'padding-inline:var(--numen-node-padding)',
   'column-gap:var(--numen-node-gap)',
 ].join(';')
 
@@ -68,11 +75,11 @@ const parsePixels = (value: string): number => {
 /**
  * The measurers for the titles a plex draws, taking their type and lengths from the document and rebuilt whenever that type changes.
  * The first measurement is taken before anything is drawn, and a measurement equal to the last changes nothing.
- * `icon` is the space reserved beside a title for an icon the caller draws there.
+ * `room` is the padding of a title and the space reserved beside it for what the caller draws there.
  * Undefined where there is no canvas to measure against; the arrangement then draws every box at its widest.
  */
 export function useTitleWidths(
-  icon: () => number,
+  room: () => TitleRoom,
   readType: (probe: Probe) => PlexType = getType,
 ): Ref<PlexMetrics | undefined> {
   const probe = openProbe()
@@ -95,7 +102,7 @@ export function useTitleWidths(
     }, true)
   }
 
-  return computed(() => createMetrics(type.value, icon()))
+  return computed(() => createMetrics(type.value, room()))
 }
 
 function openProbe(): Probe | null {
@@ -129,31 +136,26 @@ function getType(probe: Probe): PlexType {
   return {
     font: `${box.fontSize} ${family}`,
     labelFont: `${label.fontSize} ${family}`,
-    padding: parsePixels(box.paddingInlineStart),
     gap: parsePixels(box.columnGap),
   }
 }
 
 const sameType = (one: PlexType, other: PlexType): boolean =>
-  one.font === other.font &&
-  one.labelFont === other.labelFont &&
-  one.padding === other.padding &&
-  one.gap === other.gap
+  one.font === other.font && one.labelFont === other.labelFont && one.gap === other.gap
 
-function createMetrics(type: PlexType, icon: number): PlexMetrics | undefined {
+function createMetrics(type: PlexType, { padding, beside }: TitleRoom): PlexMetrics | undefined {
   const context = getMeasuringContext()
   if (!context) return undefined
 
   const title = textWidths(context, type.font)
   const label = textWidths(context, type.labelFont)
 
-  // An icon is a gap away from the title, and both are inside the padding.
-  const room = 2 * type.padding + (icon > 0 ? icon + type.gap : 0)
+  const room = beside.reduce((sum, width) => sum + width + type.gap, 2 * padding)
 
   return {
     node: (node) => Math.ceil(title(node.title) + room),
     label: (words) => Math.ceil(label(words)),
-    heading: (text) => Math.ceil(label(text) + 2 * type.padding),
+    heading: (text) => Math.ceil(label(text) + 2 * padding),
     labelType: getLabelType(context, type.labelFont),
   }
 }

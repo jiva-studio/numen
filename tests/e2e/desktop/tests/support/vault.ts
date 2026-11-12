@@ -19,22 +19,6 @@ export const getVaultPath = (): string =>
     )
     .trim()
 
-/** The vault of the installation list that is the run's vault. */
-export const getRunVault = async (request: APIRequestContext): Promise<Vault> => {
-  const folder = getVaultPath()
-  const vault = (await listVaults(request)).find((one) => safeRealpath(one.path) === folder)
-  if (!vault) throw new Error('the installation lists no vault of the run')
-  return vault
-}
-
-const safeRealpath = (one: string): string => {
-  try {
-    return fs.realpathSync(one)
-  } catch {
-    return one
-  }
-}
-
 /** Calls a unary RPC of the debug server with a JSON body, and gives back its JSON answer. */
 export const callRPC = async (
   request: APIRequestContext,
@@ -51,7 +35,7 @@ export const callRPC = async (
 }
 
 /** One link a note is made with, as CreateNote takes it. */
-export interface NewLink {
+interface NewLink {
   readonly to: string
   readonly role: 'ROLE_PARENT' | 'ROLE_CHILD' | 'ROLE_JUMP' | 'ROLE_REF'
 }
@@ -102,13 +86,13 @@ export const waitForSavedBody = async (
 }
 
 /** One entry of a folder listing. */
-export interface Entry {
+interface Entry {
   readonly path: string
   readonly name: string
   readonly isFolder: boolean
 }
 
-const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
+export const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
   const answer = await callRPC(request, 'FileService/ListFiles', { path: folder })
   return ((answer['entries'] as Partial<Entry>[] | undefined) ?? []).map((one) => ({
     path: one.path ?? '',
@@ -161,26 +145,20 @@ export const destroyIndexedNote = async (
   await expect.poll(() => isIndexedNote(request, notePath), { timeout: 45_000 }).toBe(false)
 }
 
-/** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
-export const findTrashedNotes = (request: APIRequestContext, name: string): Promise<string[]> =>
-  new Promise((resolve) => {
-    const trash = path.join(getVaultPath(), '.trash')
-    if (!fs.existsSync(trash)) {
-      resolve([])
-      return
-    }
-    resolve(
-      fs
-        .readdirSync(trash, { recursive: true, encoding: 'utf8' })
-        .filter((one) => path.basename(one) === name)
-        .map((one) => path.posix.join('.trash', one.split(path.sep).join('/'))),
-    )
-  })
+const findTrashedPaths = (name: string): string[] => {
+  const vault = getVaultPath()
+  const trash = path.join(vault, '.trash')
+  if (!fs.existsSync(trash)) return []
+  return fs
+    .readdirSync(trash, { recursive: true, encoding: 'utf8' })
+    .filter((one) => path.basename(one) === name)
+    .map((one) => path.posix.join('.trash', one.split(path.sep).join('/')))
+}
 
 /** Takes the files of the vault's trash named `name` off the disk. */
-export const destroyTrashed = async (request: APIRequestContext, name: string): Promise<void> => {
+export const destroyTrashed = (name: string): void => {
   const vault = getVaultPath()
-  for (const one of await findTrashedNotes(request, name)) fs.rmSync(path.join(vault, one))
+  for (const one of findTrashedPaths(name)) fs.rmSync(path.join(vault, one))
 }
 
 /** One record a connection holds: the role it was written with, its type, label and marker. */
@@ -191,7 +169,7 @@ interface ConnectionRecord {
 }
 
 /** The relationship between two notes, as the core reads it from both. */
-export interface Connection {
+interface Connection {
   readonly role?: string
   readonly firstSide?: ConnectionRecord
   readonly secondSide?: ConnectionRecord
@@ -219,7 +197,7 @@ export const listBacklinks = async (
 }
 
 /** One vault of the installation's list. */
-export interface Vault {
+interface Vault {
   readonly id: string
   readonly name: string
   readonly path: string
@@ -259,11 +237,6 @@ export const openVault = async (request: APIRequestContext, id: string): Promise
   if (answer['error']) throw new Error(`OpenVault refused: ${JSON.stringify(answer)}`)
 }
 
-/** Takes a vault off the installation's list, leaving its folder where it is. */
-export const removeVault = async (request: APIRequestContext, id: string): Promise<void> => {
-  await callRPC(request, 'VaultsService/RemoveVault', { id, trash: false })
-}
-
 /** Writes one setting of numen.json, the value given as JSON. */
 export const writeSetting = async (
   request: APIRequestContext,
@@ -275,8 +248,7 @@ export const writeSetting = async (
   })
 }
 
-/** Every setting in force, as the core answers them. */
-export const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
+const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
   JSON.parse(
     String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),
   ) as JsonObject
@@ -285,17 +257,13 @@ export const readSettings = async (request: APIRequestContext): Promise<JsonObje
 export const readOwner = async (request: APIRequestContext, owner: string): Promise<JsonObject> =>
   ((await readSettings(request))[owner] ?? {}) as JsonObject
 
-/** Whether a note's title and the name of its file are kept as one name. */
-export const isSyncingTitles = async (request: APIRequestContext): Promise<boolean> =>
-  ((await readOwner(request, 'app'))['naming'] as { syncTitleAndFilename?: boolean } | undefined)
-    ?.syncTitleAndFilename !== false
-
 /** A title no other test or earlier run uses, so a retry starts from a vault without it. */
 export const createUniqueTitle = (words: string): string =>
   `${words} ${Math.random().toString(36).slice(2, 7)}`
 
-const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
-  await page.getByRole('tab', { name: /^Files/ }).click()
+/** The row of the files tab for the path, with the folder above it opened. */
+export const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
+  await page.getByRole('tab', { name: /^(Linked tab )?Files/ }).click()
   const folder = path.posix.dirname(filePath)
   if (folder !== '.') {
     const parent = page.locator(`[data-tree-row="${folder}"]`)
@@ -344,14 +312,3 @@ export const typeAtEnd = async (page: Page, text: Locator, typed: string): Promi
   await page.keyboard.press('ControlOrMeta+End')
   await page.keyboard.type(typed)
 }
-
-/** Puts text into a file of the vault as another program would, frontmatter included. */
-export const writeVaultFile = (
-  request: APIRequestContext,
-  filePath: string,
-  content: string,
-): Promise<void> =>
-  new Promise((resolve) => {
-    fs.writeFileSync(path.join(getVaultPath(), filePath), content)
-    resolve()
-  })

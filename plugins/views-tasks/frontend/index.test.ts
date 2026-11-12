@@ -232,6 +232,18 @@ describe('the list', () => {
     expect(wrapper.find('.task-popover').exists()).toBe(false)
   })
 
+  it('closes on its close button', async () => {
+    const { view } = activateTasks()
+    const wrapper = mountTasks(view)
+    await openList(wrapper)
+    expect(wrapper.find('.tasks-status__trigger').attributes('aria-expanded')).toBe('true')
+
+    await wrapper.find('.task-popover__close-btn').trigger('click')
+
+    expect(wrapper.find('.task-popover').exists()).toBe(false)
+    expect(wrapper.find('.tasks-status__trigger').attributes('aria-expanded')).toBe('false')
+  })
+
   it('shows what a task is done to and how much of it is done', async () => {
     const { context, view } = activateTasks()
     context.work.backgroundTasks.setTasks([

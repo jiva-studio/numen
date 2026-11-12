@@ -36,6 +36,12 @@ func (r *Repository) GetVersions(ctx context.Context, vaultID domain.VaultID, pa
 	return r.query(ctx, getPathSQL, string(vaultID), path)
 }
 
+// GetVersionsUnder is the versions of a file, or of everything under a folder, in the order they were first recorded.
+func (r *Repository) GetVersionsUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.TextVersion, error) {
+	first, past := getRangeUnder(path)
+	return r.query(ctx, listUnderSQL, string(vaultID), path, first, past)
+}
+
 // ListVersions is the versions of every file of a vault, in the order they were first recorded.
 func (r *Repository) ListVersions(ctx context.Context, vaultID domain.VaultID) ([]domain.TextVersion, error) {
 	return r.query(ctx, listSQL, string(vaultID))

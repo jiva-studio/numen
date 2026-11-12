@@ -266,3 +266,7 @@ func TestListVersionsOfAPDFInAnIgnoredFolderListsItsLiveVersion(t *testing.T) {
 	listing, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, mapsPath)
 	assertLive(t, listing, err)
 }
+
+func (m *mapsVersions) GetVersionsUnder(context.Context, string) ([]domain.TextVersion, error) {
+	return nil, nil
+}

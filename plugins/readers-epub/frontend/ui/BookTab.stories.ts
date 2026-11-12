@@ -7,7 +7,7 @@
  * is a count of characters. The highlighted text is read from CSS.highlights.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { shallowRef, watch } from 'vue'
 import type { Selector } from '@numen/plugin-sdk'
 import BookTab from './BookTab.vue'
@@ -235,5 +235,81 @@ export const PlaceSavedAfterTheFocusMoves: Story = {
         }),
       { timeout: LAYOUT_TIMEOUT },
     )
+  },
+}
+
+const openContents = async (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement)
+  await userEvent.click(
+    await canvas.findByRole('button', { name: words.showContents }, { timeout: LAYOUT_TIMEOUT }),
+  )
+  return await canvas.findByRole('group', { name: words.contents })
+}
+
+const findHeading = (canvasElement: HTMLElement, name: string) =>
+  within(canvasElement).findByRole('heading', { name }, { timeout: LAYOUT_TIMEOUT })
+
+const getOptionTexts = (scope: HTMLElement): (string | undefined)[] =>
+  within(scope)
+    .getAllByRole('option')
+    .map((one) => one.textContent?.trim())
+
+/** The toggle names the action it takes, the list is one searchable list, and Escape puts it away. */
+export const ContentsShownAndHiddenWithEscape: Story = {
+  render: openAt([]),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const contents = await openContents(canvasElement)
+
+    const frames = canvasElement.querySelectorAll('[data-numen-searchable-list]')
+    await expect(frames).toHaveLength(1)
+    await expect(
+      frames[0]!.querySelector(':scope > input[role="combobox"]:first-child'),
+    ).not.toBeNull()
+    await expect(getOptionTexts(contents)).toHaveLength(BOOK.parts.length)
+    await expect(canvas.getByRole('button', { name: words.hideContents })).toBeVisible()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(
+      async () => await expect(canvas.queryByRole('group', { name: words.contents })).toBeNull(),
+    )
+    await expect(canvas.getByRole('button', { name: words.showContents })).toBeVisible()
+  },
+}
+
+/** Choosing a chapter in the contents opens that chapter and puts the contents away. */
+export const ChapterChosenInTheContents: Story = {
+  render: openAt([]),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const contents = await openContents(canvasElement)
+    await expect(getOptionTexts(contents)).toStrictEqual(BOOK.parts.map((one) => one.title))
+
+    await userEvent.click(within(contents).getAllByRole('option').at(-1)!)
+
+    await waitFor(
+      async () => await expect(canvas.queryByRole('group', { name: words.contents })).toBeNull(),
+    )
+    await findHeading(canvasElement, THIRD_HEADING)
+  },
+}
+
+/** Words typed narrow the chapters, and Enter opens the one the keyboard is on. */
+export const ChapterFoundByWordsTyped: Story = {
+  render: openAt([]),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const contents = await openContents(canvasElement)
+
+    await userEvent.type(within(contents).getByRole('combobox', { name: words.find }), 'crossing')
+    await waitFor(
+      async () => await expect(getOptionTexts(contents)).toStrictEqual(['Dvitīya: the crossing']),
+    )
+    await userEvent.keyboard('{Enter}')
+
+    await waitFor(
+      async () => await expect(canvas.queryByRole('group', { name: words.contents })).toBeNull(),
+    )
+    await findHeading(canvasElement, 'Dvitīya: the crossing')
   },
 }

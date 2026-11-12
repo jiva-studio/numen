@@ -64,7 +64,7 @@ func (c changeFixture) move() note.Move { return note.NewMove(c.moveDeps()) }
 
 func (c changeFixture) remove() note.Remove {
 	return note.NewRemove(
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index,
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.db.Sources(), c.index,
 		note.OpenGate{},
 	)
 }

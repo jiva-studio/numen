@@ -10,10 +10,10 @@ import {
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import type { PlexTabDeps } from '../types'
+import type { PlexLook, PlexTabDeps } from '../types'
 import type { Nesting } from './nesting'
 
-/** The host services a plex tab is made from, and the plugin's nesting settings. */
+/** The host services a plex tab is made from, and the plugin's settings. */
 export interface PlexHost {
   readonly workspace: WorkspaceHost
   readonly commands?: CommandsHost
@@ -21,15 +21,17 @@ export interface PlexHost {
   readonly notes: VaultNotes
   readonly relations: VaultRelations
   readonly nesting: Nesting
+  readonly look: PlexLook
 }
 
 /** What the plex tab `id` requests of the window. A note it opens goes to its linked tabs first. */
 export function createPlexTabDeps(
-  { workspace, commands, slots, notes, relations, nesting }: PlexHost,
+  { workspace, commands, slots, notes, relations, nesting, look }: PlexHost,
   id: string,
 ): PlexTabDeps {
   return {
     tabId: id,
+    look,
     editor: {
       createRelated: (request) => relations.createRelated(request),
       join: (from, to, side) => relations.join(from, to, side),

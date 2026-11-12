@@ -24,29 +24,3 @@ export const waitForCurrentVectors = async (page: Page): Promise<void> => {
     .poll(async () => Number(((await label.textContent()) ?? '').replace(/\D/g, '')))
     .toBe(vectors ?? 0)
 }
-
-/** The part of an answer of the index stats item a spec reads. */
-interface IndexStats {
-  readonly waiting: number
-  readonly kinds: readonly { readonly kind: string; readonly chunks: number }[]
-}
-
-/** The counts of the notes in an answer of the index stats item. */
-export interface NoteCounts {
-  readonly chunks: number
-  readonly isEmbedded: boolean
-}
-
-/**
- * Waits for the next answer of the index stats item and returns the counts of its notes. A spec that
- * compares the chunks of notes reads them apart from the file texts, whose texts the plugins can
- * write after the window opens.
- */
-export const readNoteCounts = async (page: Page): Promise<NoteCounts> => {
-  const response = await page.waitForResponse((one) => one.url().endsWith(STATS_PATH), {
-    timeout: 10_000,
-  })
-  const stats = (await response.json()) as IndexStats
-  const notes = stats.kinds.find((one) => one.kind === 'notes')
-  return { chunks: notes?.chunks ?? 0, isEmbedded: stats.waiting === 0 }
-}

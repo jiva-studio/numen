@@ -90,7 +90,7 @@ func newTrashScene() *trashScene {
 }
 
 func (tr *trashScene) remove() note.Remove {
-	return note.NewRemove(tr.writers, tr.links, tr.sources, func(_ context.Context, _ domain.Vault, paths []string) error {
+	return note.NewRemove(tr.writers, tr.links, tr.sources, tr.sources, func(_ context.Context, _ domain.Vault, paths []string) error {
 		*tr.updated = append(*tr.updated, slices.Clone(paths))
 		return tr.levelErr
 	},
@@ -301,7 +301,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	t.Parallel()
 	tr := newTrashScene()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
-	removing := note.NewRemove(tr.writers, tr.links, tr.sources, nil, note.OpenGate{})
+	removing := note.NewRemove(tr.writers, tr.links, tr.sources, tr.sources, nil, note.OpenGate{})
 
 	got, err := removing.Execute(t.Context(), domain.Vault{}, "Entropy.md")
 	if err != nil {
@@ -403,3 +403,5 @@ func TestDestroyingReportsAFileThatCannotBeRemoved(t *testing.T) {
 		t.Errorf("the index was updated for a file that is still there: %v", *tr.updated)
 	}
 }
+
+func (s trashSources) MoveVersions(context.Context, domain.VaultID, string, string) error { return nil }

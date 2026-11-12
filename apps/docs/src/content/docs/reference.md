@@ -221,6 +221,15 @@ The settings of the plugin Plex Graph.
 | --- | --- | --- |
 | `nestHeadings` | yes or no | show the headings of a note under its node. |
 | `headingLimit` | a number | maximum number of headings shown under a node. The rest scroll. From 1 to 12. |
+| `showPills` | yes or no | draw a pill behind each title. Off: the title alone, with a dot in the color of its relation. |
+| `pillPaddingSides` | a number | space between a title and the left and right edge of its pill. From 0 to 24. |
+| `pillPaddingEnds` | a number | space between a title and the top and bottom edge of its pill. From 0 to 16. |
+| `focusSize` | a number | how much larger the pill of the note in the middle is. Its title keeps its size. From 1 to 2.5. |
+| `animationLength` | a number | how long moving to another note takes, in milliseconds. 0 moves at once. From 0 to 2000. |
+| `lineThickness` | a number | width of the lines between notes, in pixels. From 0.5 to 4. |
+| `outlineThickness` | a number | width of the outline of a pill, in pixels. From 0.5 to 4. |
+| `lineCurvature` | a number | how far a line between two notes bends. 0 is a straight line. From 0 to 1. |
+| `noteRoom` | a number | extra empty space kept around every note. Larger is sparser. From 0 to 40. |
 
 ### `md.numen.views.titleBar`
 

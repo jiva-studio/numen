@@ -15,6 +15,7 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PlexHost } from '../model/tabDeps'
+import { getDefaultLook } from '../model/look'
 
 export interface HostOptions {
   readonly opening?: string
@@ -132,6 +133,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     notes,
     relations,
     nesting: { isNesting, headings: ref(6) },
+    look: getDefaultLook(),
   }
   return { host, openingPath, isNesting, requested: request, requestLog: request, recorded }
 }

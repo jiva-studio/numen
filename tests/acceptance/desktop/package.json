@@ -1,0 +1,31 @@
+{
+  "name": "@numen/acceptance-desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Acceptance scenarios of the desktop application, in Gherkin",
+  "scripts": {
+    "acceptance:gen": "bddgen -c playwright.config.ts",
+    "acceptance:test": "bddgen -c playwright.config.ts && node ../../e2e/desktop/scripts/run-offline.mjs -c playwright.config.ts",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "acceptance:lint": "node scripts/lint-features.mjs && eslint . && npm run -s acceptance:unit && node scripts/check-acceptance.mjs",
+    "acceptance:unit": "vitest run",
+    "acceptance:check": "node scripts/check-acceptance.mjs",
+    "acceptance:steps": "node scripts/list-acceptance-steps.mjs"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber-expressions": "^19.0.0",
+    "@cucumber/gherkin": "^42.0.1",
+    "@cucumber/messages": "^34.2.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "globals": "^17.12.0",
+    "gplint": "^2.6.1",
+    "playwright": "^1.64.1",
+    "playwright-bdd": "^9.2.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.3"
+  }
+}

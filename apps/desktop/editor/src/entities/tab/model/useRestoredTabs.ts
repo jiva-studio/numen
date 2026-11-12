@@ -68,6 +68,8 @@ export function useRestoredTabs(store: TabStore) {
   /**
    * The tabs the core kept, opened again with the state each kind saved and laid out by the
    * placement of their kind. A tab whose kind is not registered opens as a placeholder.
+   * The core lists the tab shown last at the end, so the last tab of each pane is the one in front
+   * there; the active tab is shown after them and takes the focus.
    */
   const restoreTabs = (saved: readonly SavedTab[], activeId: string) => {
     const main: string[] = []
@@ -79,6 +81,9 @@ export function useRestoredTabs(store: TabStore) {
       else main.push(one.id)
     }
     layout.value = createWorkspace(main, aside)
+    for (const front of [main.at(-1), aside.at(-1)]) {
+      if (front) layout.value = openTab(layout.value, front)
+    }
     if (open.value.has(activeId)) layout.value = openTab(layout.value, activeId)
   }
 

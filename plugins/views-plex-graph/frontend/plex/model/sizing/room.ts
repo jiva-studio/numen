@@ -8,7 +8,13 @@
  */
 import { computed, onMounted, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
 import { getWideBox } from './expansion'
-import { useTitleWidths, type PlexMetrics, type PlexType, type Probe } from './measure'
+import {
+  useTitleWidths,
+  type PlexMetrics,
+  type PlexType,
+  type Probe,
+  type TitleRoom,
+} from './measure'
 import { getNodeHeadings } from '../../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arrange'
 import type { PlacedNode } from '../../lib/node'
@@ -24,6 +30,7 @@ export interface PlexSizingProps {
   readonly viewport: Viewport
   readonly headings?: ((id: string) => readonly PlexHeading[]) | undefined
   readonly readType?: ((probe: Probe) => PlexType) | undefined
+  readonly showPills?: boolean | undefined
 }
 
 /**
@@ -35,7 +42,7 @@ export function useFreeSpace(
   props: PlexSizingProps,
   hasIcon: () => boolean,
   measureTitles: (
-    icon: () => number,
+    room: () => TitleRoom,
     readType?: (probe: Probe) => PlexType,
   ) => Ref<PlexMetrics | undefined> = useTitleWidths,
 ) {
@@ -62,13 +69,24 @@ export function useFreeSpace(
    */
   const iconWidthReserve = computed(() => (hasIcon() ? options.value.iconWidth : 0))
 
+  /** Space reserved for the dot drawn before a title that has no pill. */
+  const dotWidthReserve = computed(() => (props.showPills === false ? options.value.dotSize : 0))
+
+  const padding = computed(() => options.value.padding.inline)
+
   /**
    * How wide each title needs its box to be, and each label its line, measured
    * against the type the theme is written in. Taken before the first arrangement,
    * so a box is drawn at the size it keeps, and taken again when a theme changes
    * that type.
    */
-  const measures = measureTitles(() => iconWidthReserve.value, props.readType)
+  const measures = measureTitles(
+    () => ({
+      padding: padding.value,
+      beside: [dotWidthReserve.value, iconWidthReserve.value].filter((width) => width > 0),
+    }),
+    props.readType,
+  )
 
   /**
    * The width of a box drawn while it has attention: the width its whole title

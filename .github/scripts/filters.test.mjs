@@ -176,7 +176,7 @@ describe('the filters of the changed areas', () => {
   })
 
   it('lints the end-to-end package for a change to its tests', () => {
-    assert.ok(getAreas('tests/e2e/desktop/tests/plugins/system/lifecycle.spec.ts').includes('desktop_fe'))
+    assert.ok(getAreas('tests/e2e/desktop/tests/plugins/system/startup.spec.ts').includes('desktop_fe'))
     assert.ok(getAreas('tests/e2e/cli/plugin-commands.sh').includes('desktop'))
   })
 

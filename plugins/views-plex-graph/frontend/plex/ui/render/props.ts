@@ -22,6 +22,7 @@ export interface PlexViewProps {
   viewport: { width: number; height: number }
   nodeSize: { width: number; height: number }
   showEdgeLabels?: boolean
+  showPills?: boolean
   canReach?: boolean
   relationName?: (relation: PlexRelation) => string
   widen?: ((node: PlacedNode) => WideBox | null) | undefined
@@ -59,6 +60,7 @@ export interface PlexNodeProps {
   wide?: WideBox | null
   hung?: NodeHeadings | null
   behavior?: PlexBehavior
+  showPills?: boolean
 }
 
 export interface PlexNodeEvents {
