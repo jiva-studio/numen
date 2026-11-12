@@ -22,9 +22,9 @@ flowchart TD
 
 ## Step 1: Locate Active Task and Read Intent
 
-1. Identify the task directory from arguments or git branch:
-   - Example: `.agents/tasks/<slug>`
-2. Read `.agents/tasks/<slug>/intent.md`.
+   - The task folder is named after the task, under the tasks folder of `.agents`.
+   - Example: the task folder
+2. Read `intent.md` in the task folder.
    - If `intent.md` does not exist, ask the user to run `/nm-clarify` first.
 
 ---
@@ -39,16 +39,16 @@ Before proposing new files, types, or methods, search the codebase:
 
 ---
 
-## Step 3: Author `.agents/tasks/<slug>/spec.md`
+## Step 3: Author `spec.md` in the task folder
 
-Generate `.agents/tasks/<slug>/spec.md` with:
+Generate `spec.md` in the task folder with:
 
 ```markdown
 # Specification: <Task Title>
 
 **Task Slug:** `<slug>`
 **Date:** `<YYYY-MM-DD>`
-**Intent:** `.agents/tasks/<slug>/intent.md`
+**Intent:** `intent.md` in the task folder
 
 ## 1. Target Architecture & Interfaces
 
@@ -90,7 +90,7 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 
 Present a concise summary of the specification to the user and request confirmation:
 
-> 📐 **Specification created in `.agents/tasks/<slug>/spec.md`.**
+> 📐 **Specification created in `spec.md` in the task folder.**
 >
 > - **Blast Radius:** `<N> files touched across <modules>`
 > - **Acceptance Criteria:** `<Count> verifiable behaviors defined`

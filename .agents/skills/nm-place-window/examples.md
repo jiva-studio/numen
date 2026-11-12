@@ -66,13 +66,13 @@ export function useScenario(deps: ScenarioDeps): ScenarioState {
 
 A scenario like this is a feature because it is something a person resolves, and it reads the note entity through a port instead of importing a sibling slice.
 
-## Wiring is `app`: adapt a slice's state to a host contract
+## Wiring is `app`: hand a slice's state to a host contract
 
-`apps/desktop/flashcards/src/app/windowVaults.ts`: `createWindowVaults(deps)` (line 15) turns the list of vaults, the vault of the shown tab and the function that opens a tab into the plugin host's `VaultsHost`. It holds no rule of its own; it connects three lower things to a contract of `@numen/plugin-loader`. That is what `app` holds.
+`apps/desktop/editor/src/app/window/createPluginServices.ts` builds the services a plugin is given from slices of the window: it passes `createWindowVaults` of `apps/desktop/editor/src/features/plugin-host/model/window/createWindowVaults.ts` the vault list and the function that opens a vault, and gets the plugin host's `VaultsHost` back. `createWindowVaults(deps)` holds no rule of its own; it connects two lower things to a contract of `@numen/plugin-loader`. The `app` file holds only the choice of what is connected to what.
 
-`windowVaults.test.ts` calls it with real reactive refs and checks the state a plugin reads and the tab it opens; a spy is only on `openTab`, the edge.
+`createWindowVaults.test.ts` beside it calls the function with a real reactive vault list and checks the state a plugin reads and the vault it opens; a spy is only on `openVault`, the edge.
 
-The same section of the target flashcards tree puts the vault list in `entities/vault`, so `deps.list` comes from that slice.
+The vault list comes from the `entities/vault` slice.
 
 ## The shape of a slice with a public file and few segments
 

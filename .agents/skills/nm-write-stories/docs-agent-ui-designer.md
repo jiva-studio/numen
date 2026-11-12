@@ -26,7 +26,7 @@ Before writing, read:
 2. `.agents/skills/nm-place-library/SKILL.md` — whether the component belongs in `@numen/ui`, `@numen/workbench` or in a window.
 3. `.agents/rules/coding-style-frontend.md` and `.agents/rules/architecture.md` sections 2, 4 and 5.
 4. `libs/ui/components/src/shared/tokens/tokens.css` and `theme.css` — the tokens that exist — and `docs/themes.md` for how a theme redeclares them.
-5. `.agents/tasks/<task-slug>/spec.md` if an active task exists.
+5. `spec.md` in the task folder if an active task exists.
 
 Core rules:
 

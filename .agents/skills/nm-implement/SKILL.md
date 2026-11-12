@@ -42,7 +42,7 @@ flowchart TD
 ## Step-by-Step Execution
 
 ### Step 1: Read Spec & Verify Initial State
-- Read `.agents/tasks/<slug>/spec.md` (or the task description).
+- Read `spec.md` in the task folder (or the task description).
 - Verify the red acceptance tests exist and fail with expected errors using a targeted test runner.
 
 ### Step 2: Implement Code (Fast Inner Loop)
