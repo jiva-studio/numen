@@ -16,16 +16,25 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
-// UseCases are the use cases ProviderConnectionService is answered through. A nil ListOperationTitles
-// answers no title, and a nil RowOptions answers every list with no options.
+// Edits are the use cases that change the list of connections.
+type Edits struct {
+	Create *connections.Create
+	Update *connections.Update
+	Delete *connections.Delete
+}
+
+// Reads are the use cases that read the connections, their kinds and the values of their row fields. A nil
+// RowOptions answers every list with no options.
+type Reads struct {
+	List       *connections.List
+	ListTypes  *connections.ListTypes
+	RowOptions *rowoptions.Options
+}
+
+// UseCases are the use cases ProviderConnectionService is answered through.
 type UseCases struct {
-	Create              *connections.Create
-	Update              *connections.Update
-	Delete              *connections.Delete
-	List                *connections.List
-	ListTypes           *connections.ListTypes
-	ListOperationTitles *connections.ListOperationTitles
-	RowOptions          *rowoptions.Options
+	Edits
+	Reads
 }
 
 // Handler serves ProviderConnectionService over the use cases on connections.
@@ -44,17 +53,16 @@ func (h *Handler) ListProviderConnectionTypes(
 	_ context.Context, _ *connect.Request[v1.ListProviderConnectionTypesRequest],
 ) (*connect.Response[v1.ListProviderConnectionTypesResponse], error) {
 	response := &v1.ListProviderConnectionTypesResponse{}
-	for _, one := range h.connections.ListTypes.Execute() {
+	list := h.connections.ListTypes.Execute()
+	for _, one := range list.Types {
 		wire, err := writeType(one)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		response.Types = append(response.Types, wire)
 	}
-	if h.connections.ListOperationTitles != nil {
-		for _, one := range h.connections.ListOperationTitles.Execute() {
-			response.Operations = append(response.Operations, &v1.ManifestOperation{Name: one.Name, Title: one.Title})
-		}
+	for _, one := range list.Operations {
+		response.Operations = append(response.Operations, &v1.ManifestOperation{Name: one.Name, Title: one.Title})
 	}
 	return connect.NewResponse(response), nil
 }

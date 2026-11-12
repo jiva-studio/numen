@@ -119,8 +119,6 @@ func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, er
 
 func (*fakeEmbedder) Close() error { return nil }
 
-func (*fakeEmbedder) Concurrency() int { return 1 }
-
 func direction(text string, dims int) []float32 {
 	sum := fnv.New64a()
 	sum.Write([]byte(text))
@@ -141,8 +139,6 @@ type sulking struct {
 func (*sulking) Embed(context.Context, []string) ([][]float32, error) {
 	return nil, errors.New("the model is not answering")
 }
-
-func (*sulking) Concurrency() int { return 1 }
 
 func testAPassThatCouldNotEmbedStaysInTheList(t *testing.T, openReading openFunc) {
 	t.Helper()
@@ -200,8 +196,6 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 	p.mu.Unlock()
 	return p.fakeEmbedder.Embed(ctx, texts)
 }
-
-func (*peeking) Concurrency() int { return 1 }
 
 func (p *peeking) opening(id string) (work.Task, bool) {
 	p.mu.Lock()
@@ -277,8 +271,6 @@ func (o *overheard) Embed(ctx context.Context, texts []string) ([][]float32, err
 	return o.fakeEmbedder.Embed(ctx, texts)
 }
 
-func (*overheard) Concurrency() int { return 1 }
-
 func (o *overheard) keep() {
 	o.mu.Lock()
 	o.visited = append(o.visited, o.tasks.List())
@@ -341,8 +333,6 @@ func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error
 	}
 	return n.fakeEmbedder.Embed(ctx, texts)
 }
-
-func (*nudging) Concurrency() int { return 1 }
 
 func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	t.Helper()
@@ -560,8 +550,6 @@ func (b *blocking) Embed(ctx context.Context, _ []string) ([][]float32, error) {
 	}
 	return nil, ctx.Err()
 }
-
-func (*blocking) Concurrency() int { return 1 }
 
 func testCancelingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openFunc) {
 	t.Helper()

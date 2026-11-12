@@ -27,12 +27,14 @@ func dialEndpoint(t *testing.T, served *Endpoint) net.Conn {
 
 func waitFor(t *testing.T, isReady func() bool) {
 	t.Helper()
-	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(time.Millisecond) {
-		if isReady() {
-			return
+	deadline := time.After(5 * time.Second)
+	for !isReady() {
+		select {
+		case <-deadline:
+			t.Fatal("the endpoint did not reach the expected state")
+		case <-time.After(time.Millisecond):
 		}
 	}
-	t.Fatal("the endpoint did not reach the expected state")
 }
 
 func TestCloseDoesNotWaitForAConnectionThatSentNoRequest(t *testing.T) {
@@ -47,12 +49,15 @@ func TestCloseDoesNotWaitForAConnectionThatSentNoRequest(t *testing.T) {
 		return len(served.states) > 0
 	})
 
-	started := time.Now()
-	if err := served.Close(t.Context()); err != nil {
-		t.Errorf("close reported %v for a connection with no request", err)
-	}
-	if took := time.Since(started); took >= shutdownLimit/2 {
-		t.Errorf("close took %v", took)
+	closed := make(chan error, 1)
+	go func() { closed <- served.Close(t.Context()) }()
+	select {
+	case err := <-closed:
+		if err != nil {
+			t.Errorf("close reported %v for a connection with no request", err)
+		}
+	case <-time.After(shutdownLimit / 2):
+		t.Errorf("close took %v or longer", shutdownLimit/2)
 	}
 }
 

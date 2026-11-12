@@ -10,10 +10,9 @@ import (
 	"sync"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
@@ -132,27 +131,15 @@ func rowsJSON(rows ...row) string {
 
 func runTask(ctx context.Context, t *testing.T, s *agent, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason, error) {
 	t.Helper()
-	payload, err := proto.Marshal(task)
-	if err != nil {
-		t.Fatal(err)
-	}
 	var frames []*acp.TaskFrame
-	done, err := s.provider[acp.OperationTask](ctx, connection.Call{Type: "numen"}, payload, func(data []byte) error {
-		frame := &acp.TaskFrame{}
-		if err := proto.Unmarshal(data, frame); err != nil {
-			t.Fatal(err)
-		}
+	done, err := acptest.RunTask(ctx, s.provider, connection.Call{Type: "numen"}, task, func(frame *acp.TaskFrame) error {
 		frames = append(frames, frame)
 		return nil
 	})
 	if err != nil {
 		return frames, acp.StopReason_STOP_REASON_UNSPECIFIED, err
 	}
-	reason := &acp.TaskDone{}
-	if err := proto.Unmarshal(done, reason); err != nil {
-		t.Fatal(err)
-	}
-	return frames, reason.GetStopReason(), nil
+	return frames, done.GetStopReason(), nil
 }
 
 func describeFrames(frames []*acp.TaskFrame) string {
@@ -296,13 +283,9 @@ func startBlockedTask(ctx context.Context, t *testing.T) (*agent, *blockingModel
 	host := &fakeHost{}
 	s := newTestAgent(t, model, host.serve(t))
 	finish := make(chan error, 1)
-	payload, err := proto.Marshal(&acp.TaskRequest{Prompt: "Hello?"})
-	if err != nil {
-		t.Fatal(err)
-	}
 	firstText := make(chan struct{}, 1)
 	go func() {
-		_, err := s.provider[acp.OperationTask](ctx, connection.Call{Type: "numen"}, payload, func([]byte) error {
+		_, err := acptest.RunTask(ctx, s.provider, connection.Call{Type: "numen"}, &acp.TaskRequest{Prompt: "Hello?"}, func(*acp.TaskFrame) error {
 			firstText <- struct{}{}
 			return nil
 		})

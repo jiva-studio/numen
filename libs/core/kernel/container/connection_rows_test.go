@@ -73,7 +73,8 @@ func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 2 || len(entries[0].Uses) != 1 || entries[0].Uses[0].PluginID != rowsPlugin || entries[0].Uses[0].PluginName != "Rows" || !slices.Equal(entries[0].Uses[0].Operations, []string{"llm.complete"}) {
+	if len(entries) != 2 || len(entries[0].Uses) != 1 || entries[0].Uses[0].PluginID != rowsPlugin ||
+		entries[0].Uses[0].PluginName != "Rows" || !slices.Equal(entries[0].Uses[0].Operations, []string{"llm.complete"}) {
 		t.Errorf("uses of the first connection = %+v", entries[0].Uses)
 	}
 }

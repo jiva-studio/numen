@@ -4,13 +4,12 @@ import (
 	"errors"
 	"os"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
-// The environment variables a user sets to relocate the models home, disable
-// fetching or choose the execution provider. The models home and the offline
-// switch are read by every plugin, so they name one folder and one rule.
+// The environment variables a user sets to relocate the models home or choose
+// the execution provider. The models home is read by every plugin, so it names
+// one folder.
 const (
 	// EnvDir names the folder the models are kept in.
 	EnvDir = "NUMEN_MODELS_DIR"
@@ -30,10 +29,10 @@ func GetHome() (string, error) {
 }
 
 // FromEnvironment returns the configuration the environment names: the
-// provider, and whether fetching is forbidden. The models home is resolved when
-// the runtime is provisioned.
+// provider. The caller sets whether fetching is forbidden, and the models home
+// is resolved when the runtime is provisioned.
 func FromEnvironment(clock machineport.Clock) Config {
-	return Config{Provider: os.Getenv(EnvProvider), Offline: provision.IsOffline(), Clock: clock}
+	return Config{Provider: os.Getenv(EnvProvider), Clock: clock}
 }
 
 // EnvMockML names the variable that runs the plugins on mock models.

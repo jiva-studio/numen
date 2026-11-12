@@ -94,9 +94,9 @@ func (u fixedUses) Refresh(context.Context, string) error { return nil }
 
 func newHandler(keys *memoryKeys) *Handler { return newHandlerWithUses(keys, fixedUses{}) }
 
-func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
+func getTypes() fixedTypes {
 	fixed := "https://openrouter.ai/api/v1"
-	types := fixedTypes{{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{
+	return fixedTypes{{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{
 		ID: "openrouter", Title: "OpenRouter", Description: "One key for many models.", Operations: []string{"llm.complete", "llm.embed", "llm.models"},
 		RowFields: []manifest.ConnectionField{{Key: "model", Type: "string", Title: "Model", IsRequired: true, OptionsFrom: "llm.models"}},
 		Fields: []manifest.ConnectionField{
@@ -106,8 +106,11 @@ func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 			{Key: "parallelRequests", Type: "number", Title: "Parallel requests", Default: float64(4), Min: new(1.0), Max: new(32.0), Step: new(1.0)},
 		},
 	}}}
+}
+
+func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 	next := 0
-	return NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, types, keys, uses, func() (string, error) {
+	return NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, getTypes(), keys, uses, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
 	}), &modelList{}))
@@ -115,8 +118,8 @@ func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 
 func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderSource) UseCases {
 	return UseCases{
-		Create: all.Create, Update: all.Update, Delete: all.Delete, List: all.List, ListTypes: all.ListTypes,
-		RowOptions: rowoptions.NewOptions(all.Resolve.Execute, all.ReadSecrets.Execute, source),
+		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
+		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(all.Resolve.Execute, all.ReadSecrets.Execute, source)},
 	}
 }
 
@@ -385,7 +388,8 @@ func (t fixedTitles) ListOperationTitles() []manifest.Operation { return t }
 
 func TestListProviderConnectionTypesReturnsTheTitlesOfTheOperations(t *testing.T) {
 	handler := newHandler(newKeys())
-	handler.connections.ListOperationTitles = connections.NewListOperationTitles(fixedTitles{
+	deps := connections.NewDeps(&memoryRepository{}, getTypes(), newKeys(), fixedUses{})
+	handler.connections.ListTypes = connections.NewListTypes(deps, fixedTitles{
 		{Name: "llm.complete", Title: "complete text"}, {Name: "acp.task", Title: "run agent tasks"},
 	})
 

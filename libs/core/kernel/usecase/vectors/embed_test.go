@@ -608,7 +608,9 @@ func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
 
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	aware := &queryAware{embedder: &embedder{dims: dimensions}}
-	embed.Source = sourcefake.Wrap(aware)
+	source := sourcefake.Wrap(aware)
+	source.Queries = aware.EmbedQueries
+	embed.Source = source
 	if _, err := embed.Execute(t.Context(), indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
