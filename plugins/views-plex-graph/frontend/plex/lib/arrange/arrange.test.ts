@@ -243,9 +243,7 @@ describe('the same input gives the same numbers', () => {
         .map((node) => node.id)
     // Order follows the input and not a sort; the set of relations is equal.
     expect(byRelation(shuffled)).toHaveLength(byRelation(graphs.typical).length)
-    expect([...byRelation(shuffled)].sort()).toStrictEqual(
-      [...byRelation(graphs.typical)].sort(),
-    )
+    expect([...byRelation(shuffled)].sort()).toStrictEqual([...byRelation(graphs.typical)].sort())
   })
 })
 
@@ -261,8 +259,7 @@ describe('order within a group follows the order given', () => {
       nodes: [...before.nodes, { id: 'child-6', title: 'One more', relation: 'child' }],
       edges: [...before.edges, { from: 'focus', to: 'child-6' }],
     }
-    const ids = (n: PlexGraph) =>
-      getNodesByRelation(arrangePlex(n), 'child').map((node) => node.id)
+    const ids = (n: PlexGraph) => getNodesByRelation(arrangePlex(n), 'child').map((node) => node.id)
     expect(ids(after).slice(0, ids(before).length)).toStrictEqual(ids(before))
   })
 })
@@ -307,12 +304,9 @@ describe('the extent', () => {
     hasEveryNode(arrangePlex(graph))
   })
 
-  it.each(every)(
-    'contains every node of %s, sized to its titles',
-    (_name, graph: PlexGraph) => {
-      hasEveryNode(arrangePlex(graph, { measure: byTitle }))
-    },
-  )
+  it.each(every)('contains every node of %s, sized to its titles', (_name, graph: PlexGraph) => {
+    hasEveryNode(arrangePlex(graph, { measure: byTitle }))
+  })
 
   it('is the focus box alone when the note remains alone', () => {
     const { extent } = arrangePlex(graphs.solitary)

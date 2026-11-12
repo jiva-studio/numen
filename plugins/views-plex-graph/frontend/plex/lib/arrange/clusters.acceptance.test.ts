@@ -281,14 +281,11 @@ describe('what is left out is counted, and only the last notes go', () => {
   it.each([
     ['overcrowded', graphs.overcrowded],
     ['nine, forty, nine and nine', many],
-  ])(
-    'leaves out at least one note and keeps every box in the window in %s',
-    (_name, graph) => {
-      const frame = arrange(graph, inWindow(tiny))
-      expect(Object.values(frame.overflow).some((count) => count > 0)).toBe(true)
-      expect(getOutside(frame.nodes, tiny)).toStrictEqual([])
-    },
-  )
+  ])('leaves out at least one note and keeps every box in the window in %s', (_name, graph) => {
+    const frame = arrange(graph, inWindow(tiny))
+    expect(Object.values(frame.overflow).some((count) => count > 0)).toBe(true)
+    expect(getOutside(frame.nodes, tiny)).toStrictEqual([])
+  })
 
   it('draws no line to a note that is not shown', () => {
     const frame = arrange(many, inWindow(tiny))

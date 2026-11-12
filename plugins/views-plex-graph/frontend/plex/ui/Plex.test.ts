@@ -100,9 +100,7 @@ describe('what a screen reader and a keyboard are given', () => {
     // The focus cannot be chosen but is still a stop: a menu is requested from
     // wherever the keyboard is.
     const plex = mountPlex()
-    expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(
-      graphs.typical.nodes.length,
-    )
+    expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(graphs.typical.nodes.length)
     expect(plex.findAll('.plex__node[tabindex="-1"]')).toHaveLength(0)
   })
 
