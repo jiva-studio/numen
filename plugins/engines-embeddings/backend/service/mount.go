@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/hostmodel"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
