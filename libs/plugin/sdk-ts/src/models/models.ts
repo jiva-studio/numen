@@ -1,5 +1,5 @@
-import type { Result } from './result'
-import type { JsonObject } from './types'
+import type { Result } from '../result'
+import type { JsonObject } from '../types'
 
 // ModelPriority says whose action a call serves. A call that names none is background, so it waits
 // behind the calls of a person's actions when its connection runs as many calls as it may.

@@ -1,5 +1,5 @@
-import { asFailure, asValue, type Result } from './result'
-import type { JsonObject, JsonValue } from './types'
+import { asFailure, asValue, type Result } from '../result'
+import type { JsonObject, JsonValue } from '../types'
 
 /**
  * One entry of a setting of rows: the connection, the model and the reasoning level the person chose.
