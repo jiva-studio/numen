@@ -31,8 +31,8 @@ export interface SpotRequest {
  */
 export const TOLERANCE = 0.5
 
-/** Float error forgiven when boxes touch and no gap is left to spend. */
-const FLOAT_ERROR = 1e-6
+/** Candidates keep at least this much room from a neighbor, so with no gap they do not touch on float error. */
+const LEAST_GAP = 1e-6
 
 /** How many quarter-box steps the walk outward takes before it gives up. */
 const WALK_STEPS = 400
@@ -138,12 +138,9 @@ function roundAlong(along: number): number {
   return Math.round(along * COST_PRECISION)
 }
 
-/**
- * The gap that must be kept: the gap less the tolerance, never below nothing.
- * With no gap boxes may touch but not cross; only float error is forgiven.
- */
+/** The gap that must be kept: the gap less the tolerance, never below nothing. */
 function getRequiredGap(gap: number): number {
-  return gap > TOLERANCE ? gap - TOLERANCE : -FLOAT_ERROR
+  return Math.max(0, gap - TOLERANCE)
 }
 
 function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
@@ -200,7 +197,8 @@ function findSpotBeyond(taken: SpotIndex, request: SpotRequest): Spot {
 }
 
 function listCandidates(request: SpotRequest): Vector[] {
-  const { start, middle, size, group, gaps } = request
+  const { start, middle, size, group } = request
+  const gaps = { gap: Math.max(request.gaps.gap, LEAST_GAP), lineGap: Math.max(request.gaps.lineGap, LEAST_GAP) }
   const candidates: Vector[] = [middle, start]
 
   for (const box of group) {
