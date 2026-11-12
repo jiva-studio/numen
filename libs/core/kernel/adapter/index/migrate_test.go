@@ -283,7 +283,7 @@ func (f *faults) breakOn(t *testing.T, text string) {
 
 func (f *faults) stop() { f.breaks.Store(nil) }
 
-func openBreakingDB(t *testing.T, path string) (*sql.DB, *faults) {
+func openBreakingMigration(t *testing.T, path string) (*sql.DB, *faults) {
 	t.Helper()
 	base, err := sql.Open("sqlite", ":memory:")
 	if err != nil {

@@ -23,7 +23,7 @@ func containing(text string) func(string) bool {
 
 func openAtVersionOne(t *testing.T) (*sql.DB, *faults) {
 	t.Helper()
-	db, faults := openBreakingDB(t, filepath.Join(t.TempDir(), "index.db"))
+	db, faults := openBreakingMigration(t, filepath.Join(t.TempDir(), "index.db"))
 	start := migration{version: 1, name: "0001_start.sql", body: "CREATE TABLE start (x INTEGER);"}
 	if err := apply(t.Context(), db, start); err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestAMigrationStepThatFailsPreservesTheIndexAtItsVersion(t *testing.T) {
 
 // An index whose version cannot be read is reported, and nothing is built in it.
 func TestAnIndexWhoseVersionCannotBeReadIsNotMigrated(t *testing.T) {
-	db, faults := openBreakingDB(t, filepath.Join(t.TempDir(), "index.db"))
+	db, faults := openBreakingMigration(t, filepath.Join(t.TempDir(), "index.db"))
 	faults.breakWhere(t, func(query string) bool { return query == "PRAGMA user_version" })
 
 	err := migrate(t.Context(), db, "index.db")
@@ -98,7 +98,7 @@ func TestAnIndexWhoseVersionCannotBeReadIsNotMigrated(t *testing.T) {
 }
 
 func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
-	db, faults := openBreakingDB(t, filepath.Join(t.TempDir(), "index.db"))
+	db, faults := openBreakingMigration(t, filepath.Join(t.TempDir(), "index.db"))
 	faults.breakOn(t, "PRAGMA user_version = 1")
 
 	err := migrate(t.Context(), db, "index.db")
@@ -132,7 +132,7 @@ func TestCommentsAreTakenOutLineByLine(t *testing.T) {
 }
 
 func TestMigrationsThatCannotBeReadMigrateNothing(t *testing.T) {
-	db, _ := openBreakingDB(t, filepath.Join(t.TempDir(), "index.db"))
+	db, _ := openBreakingMigration(t, filepath.Join(t.TempDir(), "index.db"))
 	saved := files
 	files = embed.FS{}
 	t.Cleanup(func() { files = saved })

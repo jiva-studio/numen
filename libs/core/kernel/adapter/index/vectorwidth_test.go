@@ -11,7 +11,7 @@ func openBreakingDB(t *testing.T) (*DB, *faults) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "index.db")
 	newMigratedTemplate().CopyTo(t, path)
-	pool, faults := openBreakingDB(t, path)
+	pool, faults := openBreakingMigration(t, path)
 	db := &DB{write: pool, read: pool}
 	if err := db.Vaults().Register(t.Context(), getFirstVault().ID); err != nil {
 		t.Fatal(err)

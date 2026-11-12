@@ -142,7 +142,9 @@ type walkCountingReaders struct {
 	walks atomic.Int64
 }
 
-func newWalkCountingReaders() *walkCountingReaders { return &walkCountingReaders{VaultReaders: vaultreader.Readers{}} }
+func newWalkCountingReaders() *walkCountingReaders {
+	return &walkCountingReaders{VaultReaders: vaultreader.Readers{}}
+}
 
 func (w *walkCountingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := w.VaultReaders.Open(v)
