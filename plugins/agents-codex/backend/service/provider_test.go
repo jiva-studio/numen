@@ -104,7 +104,7 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := readArgv(t, dir)
-	if got := strings.Join(lines[len(lines)-8:], "\n"); got != "User:\none\n\nAssistant:\ntwo\n\nUser:\nthree" {
+	if got := lines[len(lines)-1]; got != "User:\none\n\nAssistant:\ntwo\n\nUser:\nthree" {
 		t.Errorf("the prompt is %q", got)
 	}
 }
