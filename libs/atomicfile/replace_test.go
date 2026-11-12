@@ -17,7 +17,11 @@ func openRoot(t *testing.T, dir string) *os.Root {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = root.Close() })
+	t.Cleanup(func() {
+		if err := root.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	return root
 }
 
