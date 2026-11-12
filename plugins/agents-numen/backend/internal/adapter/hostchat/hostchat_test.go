@@ -138,43 +138,23 @@ func TestEveryStreamOfTheModelIsClosed(t *testing.T) {
 	}
 }
 
-func TestEveryRowFailingNamesEachConnectionAndReason(t *testing.T) {
-	failure := &connection.AllFailedError{Failures: []connection.Failure{
-		{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unreachable"},
-	}}
+// The use case decides what a failure of the rows means, so the error of the core reaches it as it is.
+func TestTheErrorOfTheCoreReachesTheCaller(t *testing.T) {
+	failure := &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ferry API", Reason: "unavailable"}}}
 
 	_, _, _, err := ask(t, nil, failure)
 
-	if err == nil || err.Error() != "OpenRouter: payment required; Ollama: unreachable" {
-		t.Errorf("err = %v", err)
+	if !errors.Is(err, failure) {
+		t.Errorf("err = %v, want the failure of the rows", err)
 	}
 }
 
-func TestARejectionNamesTheConnectionAndTheReason(t *testing.T) {
-	_, _, _, err := ask(t, nil, &connection.StoppedError{ConnectionName: "OpenRouter", Reason: "bad request"})
-
-	if err == nil || err.Error() != "OpenRouter: bad request" {
-		t.Errorf("err = %v", err)
-	}
-}
-
-func TestACoreWithNoConnectionForTheAgentIsReportedSo(t *testing.T) {
-	_, _, _, err := ask(t, nil, connection.ErrNoConnection)
-
-	if !errors.Is(err, conversation.ErrNoConnection) {
-		t.Errorf("err = %v, want ErrNoConnection", err)
-	}
-}
-
-func TestAFailureInTheMiddleOfTheStreamKeepsTheTextAndNamesTheConnection(t *testing.T) {
-	stream := &fakeStream{
-		frames: []*llm.ChatFrame{text("The plan is ")},
-		err:    &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "OpenRouter", Reason: "unreachable"}}},
-	}
+func TestAFailureInTheMiddleOfTheStreamKeepsTheText(t *testing.T) {
+	stream := &fakeStream{frames: []*llm.ChatFrame{text("The plan is ")}, err: connection.ErrNoConnection}
 
 	reply, spoken, _, err := ask(t, stream, nil)
 
-	if err == nil || err.Error() != "OpenRouter: unreachable" || strings.Join(spoken, "") != "The plan is " || reply.Message.Text != "The plan is " {
+	if !errors.Is(err, connection.ErrNoConnection) || strings.Join(spoken, "") != "The plan is " || reply.Message.Text != "The plan is " {
 		t.Errorf("err = %v, spoken %v, reply %+v", err, spoken, reply)
 	}
 }

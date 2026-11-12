@@ -36,13 +36,13 @@ func TestASettingAbsentFromTheValuesKeepsItsValue(t *testing.T) {
 	}
 }
 
-func TestATaskLimitOverridesTheConfiguredOne(t *testing.T) {
+func TestTheStepLimitIsTwentyFiveUntilOneIsConfigured(t *testing.T) {
 	store := settings.NewStore()
+	before := store.Get().GetMaxSteps()
 	store.Configure(map[string]string{"maxSteps": "5"})
-	got := store.Get()
 
-	if got.GetMaxSteps(2) != 2 || got.GetMaxSteps(0) != 5 {
-		t.Errorf("the limits are %d and %d", got.GetMaxSteps(2), got.GetMaxSteps(0))
+	if after := store.Get().GetMaxSteps(); before != 25 || after != 5 {
+		t.Errorf("the limits are %d and %d", before, after)
 	}
 }
 

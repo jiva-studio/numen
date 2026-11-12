@@ -1,117 +1,171 @@
-// Package answer works a task: it asks the model for each message of a conversation, calls the
-// vault's tools the model requests, and reports each step and why the work stopped.
+// Package answer carries out acp.task: it asks the model for each message of a conversation through the
+// rows of llm.chat of the plugin, calls the tools of the host the model requests, and sends each update of
+// the turn.
 package answer
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
+	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 )
 
-var errClosing = errors.New("this agent is closing")
-
-// Answerer works the tasks of the agent. A conversation continues from the transcript stored for it.
+// Answerer carries out the tasks of the agent. A conversation continues from the transcript kept for it.
 type Answerer struct {
-	store    *settings.Store
-	chat     ports.Chat
-	tools    ports.ToolOpener
-	history  *history
-	registry agentrun.Registry
+	store   *settings.Store
+	chat    ports.Chat
+	tools   ports.Tools
+	history *history
+	running *running
 }
 
-// New returns an answerer that reads its settings from store.
-func New(store *settings.Store, chat ports.Chat, tools ports.ToolOpener) (*Answerer, error) {
-	if store == nil || chat == nil || tools == nil {
-		return nil, errors.New("an answerer needs settings, a chat and a tool opener")
+var _ acp.Runner = (*Answerer)(nil)
+
+// New returns an answerer that reads its settings from store and keeps conversations by clock.
+func New(store *settings.Store, chat ports.Chat, tools ports.Tools, clock ports.Clock) (*Answerer, error) {
+	if store == nil || chat == nil || tools == nil || clock == nil {
+		return nil, errors.New("an answerer needs settings, a chat, the tools and a clock")
 	}
 	return &Answerer{
 		store: store, chat: chat, tools: tools,
-		history: newHistory(), registry: agentrun.Registry{},
+		history: newHistory(clock), running: &running{mu: sync.Mutex{}, cancels: map[*context.CancelFunc]bool{}, isClosed: false},
 	}, nil
 }
 
-// Ask works the task and reports each request to the model, its output, each tool call and the
-// stop reason to send. A task stops at once while the settings name no connection.
-func (a *Answerer) Ask(ctx context.Context, task *agentrun.Request, send func(*agentrun.Response) error) (err error) {
+// RunTask carries out one turn of the task and sends its updates. A task whose model cannot be asked,
+// because no row of llm.chat is set or every row failed, stops for a reason of unavailable.
+func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	id := task.Conversation
-	work := agentrun.NewWork(id, 0, agentrun.StopByCancel(cancel))
-	if !a.registry.Add(work) {
-		return rpcerror.New(rpcerror.Unavailable, errClosing)
+	if !a.running.add(&cancel) {
+		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	defer a.registry.Remove(work)
-	defer work.End()
+	defer a.running.remove(&cancel)
 
 	cfg := a.store.Get()
 	if !cfg.HasRow {
-		return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: conversation.ReasonNoConnection}})
+		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	toolServer := conversation.ToolServer{URL: task.ToolsURL, Token: task.ToolsToken, Names: task.Tools, Meta: task.Context}
-	tools, err := a.tools.OpenTools(taskCtx, toolServer)
+	offered, err := a.tools.ListTools(taskCtx)
 	if err != nil {
-		if taskCtx.Err() != nil {
-			return nil
+		if ctxErr := taskCtx.Err(); ctxErr != nil {
+			return nil, ctxErr
 		}
-		return send(&agentrun.Response{Step: &agentrun.StoppedStep{
-			Stopped: fmt.Sprintf("the agent could not reach this vault: %v", err),
-		}})
+		return nil, fmt.Errorf("the tools of the host: %w", err)
 	}
-	defer func() { err = errors.Join(err, tools.Close()) }()
+	listed := make(map[string]conversation.Tool, len(offered))
+	for _, one := range offered {
+		listed[one.Name] = one
+	}
 
-	messages := a.getMessages(id, task)
+	id := task.GetConversation()
+	messages := a.getMessages(id, task, offered)
 	taskRun := &run{
 		chat:        a.chat,
 		temperature: cfg.Temperature,
 		maxTokens:   cfg.GetMaxTokens(),
-		tools:       tools,
-		words:       toolcall.IndexDeclarations(task.ToolDeclarations),
-		turns:       cfg.GetMaxSteps(int(task.MaxSteps)),
+		tools:       a.tools,
+		offered:     offered,
+		listed:      listed,
+		scope:       conversation.Scope{Context: task.GetToolContext(), VaultID: task.GetVaultId()},
+		turns:       cfg.GetMaxSteps(),
 		send:        send,
 	}
 	transcript, reason, err := taskRun.answer(taskCtx, messages)
-	if taskCtx.Err() != nil {
-		return nil
+	if ctxErr := taskCtx.Err(); ctxErr != nil {
+		return nil, ctxErr
 	}
-	if failed := (*chatError)(nil); errors.As(err, &failed) {
-		reason = failed.Error()
-	} else if err != nil {
-		return err
+	if _, isChat := errors.AsType[*chatError](err); isChat {
+		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	if reason == ReasonDone || reason == ReasonTurns || reason == ReasonCut {
-		a.history.append(id, transcript[len(messages)-1:])
+	if err != nil {
+		return nil, err
 	}
-	return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
+	a.history.append(id, transcript[len(messages)-1:])
+	return &acp.TaskDone{StopReason: reason}, nil
 }
 
-func (a *Answerer) getMessages(id string, task *agentrun.Request) []conversation.Message {
-	history := a.history.get(id)
-	messages := make([]conversation.Message, 0, len(history)+2)
-	if instructions := task.Instructions; instructions != "" {
+// getMessages is the conversation the model is asked: the instructions of the tools, the transcript kept
+// for the conversation and the prompt with the notes attached to it.
+func (a *Answerer) getMessages(id string, task *acp.TaskRequest, offered []conversation.Tool) []conversation.Message {
+	kept := a.history.get(id)
+	messages := make([]conversation.Message, 0, len(kept)+2)
+	if instructions := joinInstructions(offered); instructions != "" {
 		messages = append(messages, conversation.Message{Role: "system", Text: instructions, ToolCalls: nil, ToolCallID: ""})
 	}
-	messages = append(messages, history...)
-	return append(messages, conversation.Message{Role: "user", Text: task.Prompt, ToolCalls: nil, ToolCallID: ""})
+	messages = append(messages, kept...)
+	return append(messages, conversation.Message{Role: "user", Text: writePrompt(task), ToolCalls: nil, ToolCallID: ""})
 }
 
-// FinishConversation stops what is still running in the conversation and discards its history.
-func (a *Answerer) FinishConversation(ctx context.Context, id string) error {
-	if err := a.registry.EndConversation(ctx, id); err != nil {
-		return rpcerror.New(rpcerror.Internal, err)
+// joinInstructions joins the distinct instruction sentences of the tools, in the order of the listing.
+func joinInstructions(offered []conversation.Tool) string {
+	var sentences []string
+	for _, one := range offered {
+		for _, sentence := range one.Instructions {
+			if !slices.Contains(sentences, sentence) {
+				sentences = append(sentences, sentence)
+			}
+		}
 	}
-	a.history.discard(id)
-	return nil
+	return strings.Join(sentences, " ")
+}
+
+func writePrompt(task *acp.TaskRequest) string {
+	notes := task.GetContextNotes()
+	if len(notes) == 0 {
+		return task.GetPrompt()
+	}
+	var text strings.Builder
+	text.WriteString(task.GetPrompt())
+	for _, note := range notes {
+		fmt.Fprintf(&text, "\n\nAttached note %q (%s):\n%s", note.GetTitle(), note.GetPath(), note.GetText())
+	}
+	return text.String()
 }
 
 // Close stops every running task and rejects new ones.
 func (a *Answerer) Close() error {
-	return a.registry.Close()
+	a.running.close()
+	return nil
+}
+
+// running holds the cancel of every task that has not ended.
+type running struct {
+	mu       sync.Mutex
+	cancels  map[*context.CancelFunc]bool
+	isClosed bool
+}
+
+func (r *running) add(cancel *context.CancelFunc) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.isClosed {
+		return false
+	}
+	r.cancels[cancel] = true
+	return true
+}
+
+func (r *running) remove(cancel *context.CancelFunc) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.cancels, cancel)
+}
+
+func (r *running) close() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.isClosed = true
+	for cancel := range r.cancels {
+		(*cancel)()
+	}
+	r.cancels = map[*context.CancelFunc]bool{}
 }

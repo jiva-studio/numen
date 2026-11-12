@@ -2,105 +2,89 @@ package answer
 
 import (
 	"context"
-	"errors"
+	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 )
 
-// defaultTurns is how many requests to the model one task may make where the task names no limit.
-const defaultTurns = 25
-
-// ReasonDone is why a run stops when the model has answered.
-const ReasonDone = "done"
-
-// ReasonTurns is why a run stops when the model is still calling tools after its last turn.
-const ReasonTurns = "the agent reached the limit of steps without finishing"
-
-// ReasonCut is why a run stops when the model's answer was cut off at its length limit.
-const ReasonCut = "the answer was cut off at the model's length limit"
-
-// chatError is a run stopped by a turn that failed. It stops the run and is reported as why it stopped.
+// chatError is a turn the model could not be asked for. It stops the run.
 type chatError struct{ err error }
 
-func (f *chatError) Error() string {
-	if errors.Is(f.err, conversation.ErrNoConnection) {
-		return conversation.ReasonNoConnection
-	}
-	return f.err.Error()
-}
+func (f *chatError) Error() string { return f.err.Error() }
 
 func (f *chatError) Unwrap() error { return f.err }
 
-// run is one task worked by the model: the way to ask it, the tools, and where its steps go.
+// run is one task worked by the model: the way to ask it, the tools, and where its frames go.
 type run struct {
 	chat        ports.Chat
 	temperature *float64
 	maxTokens   int
-	tools       ports.Toolbox
-	words       map[string]toolcall.Declaration
+	tools       ports.Tools
+	offered     []conversation.Tool
+	listed      map[string]conversation.Tool
+	scope       conversation.Scope
 	turns       int
-	send        func(*agentrun.Response) error
+	send        func(*acp.TaskFrame) error
 }
 
-func (r *run) answer(ctx context.Context, messages []conversation.Message) ([]conversation.Message, string, error) {
-	turns := r.turns
-	if turns <= 0 {
-		turns = defaultTurns
-	}
-	for range turns {
+// answer asks the model turn by turn until it answers without a tool call, its answer is cut off or the
+// limit of turns is reached, and returns the transcript and the stop reason.
+func (r *run) answer(ctx context.Context, messages []conversation.Message) ([]conversation.Message, acp.StopReason, error) {
+	for index := range r.turns {
 		var (
-			reason string
+			reason acp.StopReason
 			isDone bool
 			err    error
 		)
-		messages, reason, isDone, err = r.turn(ctx, messages)
+		messages, reason, isDone, err = r.turn(ctx, messages, "message-"+strconv.Itoa(index+1))
 		if err != nil {
-			return messages, "", err
+			return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, err
 		}
 		if isDone {
 			return messages, reason, nil
 		}
 	}
-	return messages, ReasonTurns, nil
+	return messages, acp.StopReason_STOP_REASON_MAX_TURN_REQUESTS, nil
 }
 
-func (r *run) turn(ctx context.Context, messages []conversation.Message) ([]conversation.Message, string, bool, error) {
-	if err := r.send(&agentrun.Response{Step: &agentrun.ModelStartedStep{}}); err != nil {
-		return messages, "", false, err
-	}
+func (r *run) turn(ctx context.Context, messages []conversation.Message, messageID string) ([]conversation.Message, acp.StopReason, bool, error) {
 	var unsent error
 	emit := func(text string) error {
-		unsent = r.send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
+		if text == "" {
+			return nil
+		}
+		unsent = r.send(&acp.TaskFrame{Update: &acp.TaskFrame_AgentMessageChunk{
+			AgentMessageChunk: &acp.MessageChunk{MessageId: messageID, Text: text},
+		}})
 		return unsent
 	}
 	reply, err := r.chat.Stream(ctx, conversation.Turn{
-		Messages: messages, Tools: r.tools.Tools(), Temperature: r.temperature, MaxTokens: r.maxTokens,
+		Messages: messages, Tools: r.offered, Temperature: r.temperature, MaxTokens: r.maxTokens,
 	}, emit)
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		return messages, "", false, ctxErr
+		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, ctxErr
 	}
 	if unsent != nil {
-		return messages, "", false, unsent
+		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, unsent
 	}
 	if err != nil {
-		return messages, "", false, &chatError{err: err}
+		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, &chatError{err: err}
 	}
 	message := reply.Message
 	if reply.IsCut {
 		message.ToolCalls = nil
-		return append(messages, message), ReasonCut, true, nil
+		return append(messages, message), acp.StopReason_STOP_REASON_MAX_TOKENS, true, nil
 	}
 	cleanToolCalls(message.ToolCalls)
 	messages = append(messages, message)
 	if len(message.ToolCalls) == 0 {
-		return messages, ReasonDone, true, nil
+		return messages, acp.StopReason_STOP_REASON_END_TURN, true, nil
 	}
 	messages, err = r.runToolCalls(ctx, messages, message.ToolCalls)
-	return messages, "", false, err
+	return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, err
 }
 
 func cleanToolCalls(calls []conversation.ToolCall) {
@@ -123,16 +107,24 @@ func (r *run) runToolCalls(ctx context.Context, messages []conversation.Message,
 }
 
 func (r *run) callTool(ctx context.Context, call conversation.ToolCall) (string, error) {
-	described := toolcall.Describe(r.words, call.Name, call.ID, call.Arguments)
-	if err := r.send(&agentrun.Response{Step: &agentrun.ToolCallStep{ToolCall: described}}); err != nil {
+	if err := r.send(&acp.TaskFrame{Update: &acp.TaskFrame_ToolCall{ToolCall: describeCall(r.listed, call)}}); err != nil {
 		return "", err
 	}
-	result := r.tools.Call(ctx, call.Name, call.Arguments)
+	result := conversation.ToolResult{Text: "error: there is no tool " + strconv.Quote(call.Name), IsError: true}
+	if _, isListed := r.listed[call.Name]; isListed {
+		result = r.tools.CallTool(ctx, call.Name, call.Arguments, r.scope)
+	}
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	if err := r.send(&agentrun.Response{Step: &agentrun.ToolFinishedStep{}}); err != nil {
+	status := acp.ToolCallStatus_TOOL_CALL_STATUS_COMPLETED
+	if result.IsError {
+		status = acp.ToolCallStatus_TOOL_CALL_STATUS_FAILED
+	}
+	if err := r.send(&acp.TaskFrame{Update: &acp.TaskFrame_ToolCallUpdate{
+		ToolCallUpdate: &acp.ToolCallUpdate{ToolCallId: call.ID, Status: &status},
+	}}); err != nil {
 		return "", err
 	}
-	return result, nil
+	return result.Text, nil
 }
