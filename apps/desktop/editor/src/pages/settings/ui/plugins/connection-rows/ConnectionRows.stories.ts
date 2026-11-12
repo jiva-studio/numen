@@ -113,7 +113,6 @@ const setting = (overrides: Partial<PluginSettingInfo> = {}): PluginSettingInfo 
   ...overrides,
 })
 
-/** A row as the value of the setting holds it: a row field without a value is left out. */
 const row = (connectionId: string, model: string, reasoning = '') => ({
   connection: connectionId,
   model,
