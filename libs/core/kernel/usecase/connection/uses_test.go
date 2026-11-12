@@ -2,6 +2,7 @@ package connection_test
 
 import (
 	"errors"
+	"reflect"
 	"slices"
 	"testing"
 
@@ -27,7 +28,7 @@ func TestListReturnsTheUsesOfEachConnection(t *testing.T) {
 
 	entries := f.listEntries(t)
 
-	if !slices.Equal(entries[0].Uses, []connectiondomain.Use{proofreading(), embeddings()}) {
+	if !reflect.DeepEqual(entries[0].Uses, []connectiondomain.Use{proofreading(), embeddings()}) {
 		t.Errorf("uses of %s = %v", work.Name, entries[0].Uses)
 	}
 	if len(entries[1].Uses) != 0 {
@@ -45,7 +46,7 @@ func TestDeleteRemovesTheRowsThatNameTheConnectionAndReturnsWhereTheyWere(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(removed, []connectiondomain.Use{proofreading(), embeddings()}) {
+	if !reflect.DeepEqual(removed, []connectiondomain.Use{proofreading(), embeddings()}) {
 		t.Errorf("removed uses = %v", removed)
 	}
 	if !slices.Equal(f.uses.removed, []string{work.ID}) {
@@ -87,7 +88,7 @@ func TestDeleteReportsRowsThatCannotBeRemoved(t *testing.T) {
 	if !errors.Is(err, errDisk) {
 		t.Errorf("err = %v, want the failure to write the rows", err)
 	}
-	if !slices.Equal(removed, []connectiondomain.Use{proofreading()}) {
+	if !reflect.DeepEqual(removed, []connectiondomain.Use{proofreading()}) {
 		t.Errorf("removed uses = %v, want the settings that still name the connection", removed)
 	}
 }

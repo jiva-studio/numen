@@ -128,10 +128,10 @@ func (c *Client) Call(ctx context.Context, operation string, payload []byte, pri
 		}
 		return nil, fmt.Errorf("connection: call %s: %w", operation, err)
 	}
-	return &stream{stream: stream, contextErr: ctx.Err, operation: operation}, nil
+	return &callStream{stream: stream, contextErr: ctx.Err, operation: operation}, nil
 }
 
-type stream struct {
+type callStream struct {
 	stream     *connect.ServerStreamForClient[v1.HostConnectionServiceCallResponse]
 	contextErr func() error
 	operation  string
@@ -141,7 +141,7 @@ type stream struct {
 	isDone     bool
 }
 
-func (s *stream) Next() bool {
+func (s *callStream) Next() bool {
 	for !s.isDone {
 		if !s.stream.Receive() {
 			s.isDone = true
@@ -162,15 +162,15 @@ func (s *stream) Next() bool {
 	return false
 }
 
-func (s *stream) Data() []byte { return s.data }
+func (s *callStream) Data() []byte { return s.data }
 
-func (s *stream) Done() []byte { return s.done }
+func (s *callStream) Done() []byte { return s.done }
 
-func (s *stream) Err() error { return s.err }
+func (s *callStream) Err() error { return s.err }
 
-func (s *stream) Close() error { return s.stream.Close() }
+func (s *callStream) Close() error { return s.stream.Close() }
 
-func (s *stream) readEnd() error {
+func (s *callStream) readEnd() error {
 	if err := s.stream.Err(); err != nil {
 		if ctxErr := s.contextErr(); ctxErr != nil {
 			return ctxErr
