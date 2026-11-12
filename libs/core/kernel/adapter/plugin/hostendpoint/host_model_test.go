@@ -281,7 +281,7 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 		world.Rows.Set("md.numen.b", "complete", modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		world.Rows.Set("md.numen.b", "embed", modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		arrange(world)
-		client, recording := newModelClient(t, modelcalls.NewCalls(world.Resolve, world.ReadSecrets, world.Rows, world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
+		client, recording := newModelClient(t, modelcalls.NewCalls(modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows}, world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
 
 		_, completeErr := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
 		_, embedErr := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: []string{"a"}}))

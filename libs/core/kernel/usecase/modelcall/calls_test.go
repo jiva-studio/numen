@@ -38,7 +38,7 @@ func newSetup(t *testing.T, operation string) *setup {
 	w.Rows.Set(consumerID, operation, modelcalltest.Row(one, "model-one"), modelcalltest.Row(two, "model-two"))
 	return &setup{
 		world: w, one: one, two: two,
-		calls: modelcall.NewCalls(w.Resolve, w.ReadSecrets, w.Rows, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }
 

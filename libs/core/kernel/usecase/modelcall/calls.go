@@ -30,14 +30,20 @@ type Calls struct {
 	cooldown    *cooldown
 }
 
-// NewCalls returns the calls over the connections, the rows of the plugins and the providers the source
+// Connections is where the calls find a connection, its secrets and the rows of the plugins that name it.
+type Connections struct {
+	Resolve     connectionport.ResolveConnection
+	ReadSecrets connectionport.ReadConnectionSecrets
+	Rows        connectionport.Rows
+}
+
+// NewCalls returns the calls over the connections and the providers the source
 // opens. wait times the calls that wait for a slot of their connection. notices is called when a connection was set aside and a row after it answered.
 func NewCalls(
-	resolve connectionport.ResolveConnection, readSecrets connectionport.ReadConnectionSecrets, rows connectionport.Rows, source connectionport.ProviderSource,
-	clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
+	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
 ) *Calls {
 	return &Calls{
-		resolve: resolve, readSecrets: readSecrets, rows: rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
+		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
 		cooldown: newCooldown(),
 	}
 }
