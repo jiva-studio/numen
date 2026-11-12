@@ -32,7 +32,6 @@ type LookNumber = keyof typeof LOOK_NUMBERS
 
 const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 
-/** A finite number clamped into its range; anything else is the default. */
 const parseNumber = (value: Unvalidated, range: NumberRange): number =>
   typeof value === 'number' && Number.isFinite(value)
     ? Math.min(Math.max(value, range.min), range.max)

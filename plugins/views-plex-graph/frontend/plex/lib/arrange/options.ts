@@ -9,15 +9,17 @@ export type { Size }
 
 export type { Padding }
 
+/**
+ * `focusScale` is how much larger the focus pill is than the box its title would have as a
+ * neighbor. `room` is empty space kept on every side of a box, on top of the gaps.
+ * `dotSize` is the dot drawn before a title that has no pill.
+ */
 interface BoxOptions {
   readonly focusSize: Size
   readonly nodeSize: Size
-  /** How much larger the focus pill is than the box its title would have as a neighbor. */
   readonly focusScale: number
   readonly padding: Padding
-  /** Empty space kept on every side of a box, on top of the gaps. */
   readonly room: number
-  /** The dot drawn before a title that has no pill. */
   readonly dotSize: number
   readonly minWidth: number
   readonly iconWidth: number

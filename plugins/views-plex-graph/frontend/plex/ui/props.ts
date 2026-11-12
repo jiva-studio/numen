@@ -12,16 +12,17 @@ import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
 import type { PlexHeading, PlexNeighborhood, PlexRelation, PlexDestination } from '../../types'
 
+/**
+ * With `showPills` off each title is drawn without its pill, after a dot in the hue of its
+ * relation. `lineWidth` and `outlineWidth` are in pixels.
+ */
 export interface PlexProps {
   neighborhood: PlexNeighborhood
   options?: PlexOptionsInput
   placement?: Placement
   showEdgeLabels?: boolean
-  /** Off draws each title without its pill, with a dot in the hue of its relation before it. */
   showPills?: boolean
-  /** The width of the lines between nodes, in pixels. */
   lineWidth?: number
-  /** The width of the outline of a pill, in pixels. */
   outlineWidth?: number
   duration?: number
   clock?: Clock
