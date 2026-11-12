@@ -13,6 +13,12 @@ const frame = arrangePlex(build('A node', { parent: 2, child: 4, jump: 2, siblin
 const focus = frame.nodes.find((n) => n.relation === 'focus')!
 const child = frame.nodes.find((n) => n.relation === 'child')!
 
+/** The child of a large group that reaches furthest sideways compared with its distance down. */
+const getWidest = () =>
+  arrangePlex(build('A node', { child: 20 }))
+    .nodes.filter((n) => n.relation === 'child')
+    .reduce((a, b) => (Math.abs(b.x) - Math.abs(b.y) > Math.abs(a.x) - Math.abs(a.y) ? b : a))
+
 const drop = (from: string, point: { x: number; y: number }, relations = ALLOWED) =>
   resolveDrop({ frame, options: DEFAULT_OPTIONS, from, point, relations })
 
@@ -60,8 +66,8 @@ describe('the relation a direction remains for', () => {
     expect(getRelationTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
   })
 
-  it('counts a wide row as down, though it reaches further sideways', () => {
-    // The outermost child of a row is further from the focus sideways than it
+  it('counts a wide group as down, though its outer note reaches further sideways', () => {
+    // The outermost child of a wide group is further from the focus sideways than it
     // is downwards. Splitting the space on the diagonal would name it a jump,
     // and dragging towards where the children plainly are would miss them.
     const leftmost = frame.nodes
@@ -221,13 +227,11 @@ describe('the relation something dragged in evaluates to', () => {
     expect(getRelationAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
   })
 
-  it('counts a wide row as down, though it reaches further sideways', () => {
+  it('counts a wide group as down, though its outer note reaches further sideways', () => {
     // The outermost child of a row is further from the focus sideways than it
     // is downwards, and dragging a note to where the children plainly are has
     // to name a child.
-    const leftmost = frame.nodes
-      .filter((n) => n.relation === 'child')
-      .reduce((a, b) => (a.x <= b.x ? a : b))
+    const leftmost = getWidest()
     expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
     expect(getRelationAt(leftmost)).toBe('child')
 

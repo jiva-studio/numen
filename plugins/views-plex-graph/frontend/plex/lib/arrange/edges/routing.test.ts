@@ -319,11 +319,11 @@ describe('the arrowhead a line carries', () => {
         { id: 'third', title: 'Third', relation: 'child' },
       ],
       edges: [
-        { from: 'focus', to: 'wide', arrows: ['to'] },
+        { from: 'focus', to: 'wide' },
         { from: 'focus', to: 'other' },
-        { from: 'focus', to: 'third' },
+        { from: 'focus', to: 'third', arrows: ['to'] },
       ],
-    }).edges.find((edge) => edge.to === 'wide')!
+    }).edges.find((edge) => edge.to === 'third')!
 
     const covered = ARROW_LENGTH / getLength(aside)
     const precedingPoint = createPointOnCurve(aside)(1 - covered)
