@@ -138,7 +138,6 @@ func (c *Completion) getFamilies(ctx context.Context) ([]reasoning.Family, error
 	return c.deps.Models.List(ctx, program), nil
 }
 
-// writeRequest returns the prompt of a request: the system messages, then the turns.
 func writeRequest(messages []*llm.Message) (string, error) {
 	var system []string
 	var turns []*llm.Message

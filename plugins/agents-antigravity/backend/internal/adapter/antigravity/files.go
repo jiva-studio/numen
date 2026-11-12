@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-// createTempDir creates a temporary directory matching pattern, and returns its path and a function that
-// deletes it.
 func createTempDir(pattern string) (string, func() error, error) {
 	dir, err := os.MkdirTemp("", pattern)
 	if err != nil {
@@ -26,7 +24,6 @@ func createTempDir(pattern string) (string, func() error, error) {
 	}, nil
 }
 
-// isRunnable reports whether path is an executable file.
 func isRunnable(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {
@@ -38,9 +35,6 @@ func isRunnable(path string) bool {
 	return info.Mode()&0o111 != 0
 }
 
-// linkEntries symlinks each entry in from into into, skipping except. A missing from folder and an entry
-// already present in into are not errors. A failing entry does not stop the remaining ones; the failures
-// are returned joined.
 func linkEntries(from, into, except string) error {
 	entries, err := os.ReadDir(from)
 	if err != nil {

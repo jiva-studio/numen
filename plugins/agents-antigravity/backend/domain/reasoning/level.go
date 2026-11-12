@@ -8,11 +8,9 @@ import (
 	"strings"
 )
 
-// Level is one depth of reasoning.
+// Level is one depth of reasoning. A row chooses it by Name; Title is what a person reads.
 type Level struct {
-	// Name is the identifier a row chooses the level by.
-	Name string
-	// Title is the display name of the level.
+	Name  string
 	Title string
 }
 

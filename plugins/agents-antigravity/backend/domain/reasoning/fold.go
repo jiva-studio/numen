@@ -8,15 +8,13 @@ type Listed struct {
 	Title string
 }
 
-// Family is a model the user can choose, with the reasoning depths it supports.
-// A model listed with no depth in its title is a family with no levels.
+// Family is a model the user can choose, with the reasoning depths it supports. Name is the name a task
+// requests the model by. Levels run from the least reasoning to the most, and Default is the level used
+// where a task names none. A model listed with no depth in its title is a family with no levels.
 type Family struct {
-	// Name is the name tasks use to request the model.
-	Name  string
-	Title string
-	// Levels run from the least reasoning to the most. None where the model offers no choice.
-	Levels []Level
-	// Default is the level the model works at where a task names none.
+	Name    string
+	Title   string
+	Levels  []Level
 	Default string
 
 	variants map[string]string

@@ -143,8 +143,6 @@ func (r *Runner) RunTask(
 	return endTurn(frames, reason)
 }
 
-// endTurn returns the stop reason of a run that ended with the reason, or sends what the program said
-// of a failure as a message of its own and stops.
 func endTurn(frames *turn, reason string) (*contract.TaskDone, error) {
 	switch reason {
 	case "":
@@ -158,8 +156,6 @@ func endTurn(frames *turn, reason string) (*contract.TaskDone, error) {
 	return nil, connection.NewStopError(connection.ReasonUnavailable)
 }
 
-// releaseTools ends the endpoint of a run and removes its configuration. Their errors are kept for
-// Close: the turn has ended either way.
 func (r *Runner) releaseTools(ctx context.Context, served ServedTools, configFile string) {
 	var err error
 	if served != nil {
@@ -213,9 +209,6 @@ func (r *Runner) chooseModel(call connection.Call) (string, string) {
 	return modelName, level
 }
 
-// runProgram starts the program, hands what it writes to sink and returns the reason the run failed:
-// what the program reported, else what it wrote of an exit that failed, else none. A run whose context
-// ends returns no reason.
 func (r *Runner) runProgram(
 	ctx context.Context, program string, args []string, input string, sink stream.Sink, opts stream.Options,
 ) (string, error) {
@@ -295,7 +288,6 @@ func (r *Runner) serveTools(ctx context.Context, listed []*tools.ToolInfo, reque
 	return served, configFile, nil
 }
 
-// begin counts a run that Close waits for, and returns its context, which Close cancels.
 func (r *Runner) begin(ctx context.Context) (context.Context, func(), error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -384,7 +376,6 @@ func listNames(listed []*tools.ToolInfo) []string {
 	return names
 }
 
-// writeInstructions joins the distinct instruction sentences of the tools, in the order of the listing.
 func writeInstructions(listed []*tools.ToolInfo) string {
 	var sentences []string
 	for _, one := range listed {

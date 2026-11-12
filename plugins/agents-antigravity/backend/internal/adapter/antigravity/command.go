@@ -15,9 +15,6 @@ const (
 	streamJSON       = "stream-json"
 )
 
-// makeTaskCommand returns the command of a run that may call the tools served at the address of run,
-// without asking, in a home of its own whose MCP configuration names them. A run with no address is an
-// answer.
 func makeTaskCommand(path string, run task.Run) (task.Command, error) {
 	if run.ToolsURL == "" {
 		return makeAnswerCommand(path, run)
@@ -26,8 +23,6 @@ func makeTaskCommand(path string, run task.Run) (task.Command, error) {
 	return makeCommand(path, args, &endpoint{URL: run.ToolsURL, Token: run.ToolsToken})
 }
 
-// makeAnswerCommand returns the command of a run that only answers, in an empty folder and a home with
-// no MCP server.
 func makeAnswerCommand(path string, run task.Run) (task.Command, error) {
 	args := appendRunFlags([]string{flagPrompt, run.Prompt, flagOutputFormat, streamJSON}, run)
 	return makeCommand(path, args, nil)

@@ -37,8 +37,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// runFakeAntigravity calls note_read on the server of tools its home names, and writes what it did as
-// Antigravity does.
 func runFakeAntigravity(out io.Writer) int {
 	answer, err := callNoteRead(filepath.Join(os.Getenv("HOME"), ".gemini", "config", "mcp_config.json"))
 	if err != nil {
@@ -115,7 +113,6 @@ type roundTripper func(*http.Request) (*http.Response, error)
 
 func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
-// fakeAntigravity returns a program that runs the test binary as a fake Antigravity.
 func fakeAntigravity(t *testing.T) string {
 	t.Helper()
 	return writeScript(t, "agy", "exec "+quoteShell(os.Args[0])+" fake-agy\n")
@@ -202,7 +199,6 @@ func newTestAgent(t *testing.T, host task.Tools) *agent {
 	return built
 }
 
-// newAntigravity returns the plugin running the program, in a home of the test's own.
 func newAntigravity(t *testing.T, host task.Tools, program string) *agent {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
@@ -242,9 +238,6 @@ func describeFrame(frame *acp.TaskFrame) string {
 	return "unknown"
 }
 
-// recordRun is the part of a script that writes its folder to out.dir, each argument on a line of its
-// own to out.argv, the files of its folder to out.files, and the MCP configuration and the config.json
-// of its home to out.mcp and out.cfg.
 func recordRun(out string) string {
 	return "pwd > " + quoteShell(out+".dir") + "\n" +
 		"ls -A > " + quoteShell(out+".files") + "\n" +

@@ -38,8 +38,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// runFakeClaude records its arguments and its input, calls note_read on the server of tools its
-// configuration names, and writes what it did as Claude Code does.
 func runFakeClaude(record string, args []string, in io.Reader, out io.Writer) int {
 	prompt, err := io.ReadAll(in)
 	if err != nil {
@@ -136,8 +134,6 @@ type roundTripper func(*http.Request) (*http.Response, error)
 
 func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
-// fakeClaude returns a program that runs the test binary as a fake Claude Code, and the file it records
-// its arguments and its input in.
 func fakeClaude(t *testing.T) (program, record string) {
 	t.Helper()
 	record = filepath.Join(t.TempDir(), "record")
@@ -305,8 +301,6 @@ func assertPair(t *testing.T, argv []string, flag, value string) {
 	t.Errorf("%s is not among %q", flag, argv)
 }
 
-// recordArgs is the part of a script that writes each argument on a line of its own to dir/argv, and
-// its input to dir/stdin.
 func recordArgs(dir string) string {
 	return "cat > " + dir + "/stdin\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + dir + "/argv\n"
 }

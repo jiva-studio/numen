@@ -122,9 +122,6 @@ func (r *Runner) RunTask(
 	return endTask(ctx, runCtx, frames, reason, err)
 }
 
-// endTask returns how a run that ended with reason and err ends the task: the error of ctx, of the
-// frame that could not be sent or of the run, a stop for a run the plugin ended, the end of the turn,
-// or the reason the run failed sent as a message of its own and a stop.
 func endTask(ctx, runCtx context.Context, frames *turn, reason string, err error) (*contract.TaskDone, error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, ctxErr
@@ -204,10 +201,6 @@ func (r *Runner) Answer(ctx context.Context, call connection.Call, instructions,
 	return answer.text.String(), nil
 }
 
-// runProgram starts the command, hands what it writes to sink and returns the reason the run failed:
-// what the program wrote of an exit that failed, or of a run that wrote nothing else, else none. A
-// line that is no event is text. A run whose context ends returns no reason. The command is released
-// when the run ends.
 func (r *Runner) runProgram(ctx context.Context, cmd Command, sink codexevent.Sink) (reason string, err error) {
 	if cmd.Release != nil {
 		defer func() { err = errors.Join(err, cmd.Release()) }()
@@ -304,7 +297,6 @@ func (r *Runner) listTools(ctx context.Context) ([]*tools.ToolInfo, error) {
 	return listed.Tools, nil
 }
 
-// begin counts a run that Close waits for, and returns its context, which Close cancels.
 func (r *Runner) begin(ctx context.Context) (context.Context, func(), error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -378,7 +370,6 @@ func indexTools(listed []*tools.ToolInfo) map[string]*tools.ToolInfo {
 	return byName
 }
 
-// writeInstructions joins the distinct instruction sentences of the tools, in the order of the listing.
 func writeInstructions(listed []*tools.ToolInfo) string {
 	var sentences []string
 	for _, one := range listed {
@@ -391,7 +382,6 @@ func writeInstructions(listed []*tools.ToolInfo) string {
 	return strings.Join(sentences, " ")
 }
 
-// writePrompt returns the instructions, the notes of the request and its prompt, a paragraph apart.
 func writePrompt(instructions string, request *contract.TaskRequest) string {
 	texts := make([]string, 0, len(request.GetContextNotes())+2)
 	texts = append(texts, instructions)
@@ -405,7 +395,6 @@ func writePrompt(instructions string, request *contract.TaskRequest) string {
 	return joinParagraphs(append(texts, request.GetPrompt())...)
 }
 
-// joinParagraphs joins the texts that are not blank with a blank line between them.
 func joinParagraphs(texts ...string) string {
 	kept := slices.DeleteFunc(slices.Clone(texts), func(text string) bool { return strings.TrimSpace(text) == "" })
 	return strings.Join(kept, "\n\n")

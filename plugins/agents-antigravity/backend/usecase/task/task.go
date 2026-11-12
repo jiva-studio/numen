@@ -142,8 +142,6 @@ func (r *Runner) RunTask(
 	return endTurn(frames, reason)
 }
 
-// endTurn ends the calls of a run that ended with no reason and returns the end of the turn, or sends
-// what the program said of a failure as a message of its own and stops.
 func endTurn(frames *turn, reason string) (*contract.TaskDone, error) {
 	if reason == "" {
 		if err := frames.finishCalls(); err != nil {
@@ -157,7 +155,6 @@ func endTurn(frames *turn, reason string) (*contract.TaskDone, error) {
 	return nil, connection.NewStopError(connection.ReasonUnavailable)
 }
 
-// releaseTools ends the endpoint of a run. Its error is kept for Close: the turn has ended either way.
 func (r *Runner) releaseTools(ctx context.Context, served ServedTools) {
 	err := served.Close(context.WithoutCancel(ctx))
 	if err == nil {
@@ -233,9 +230,6 @@ func (s *runSink) Stop(reason string) {
 
 func (s *runSink) Finish() { s.isFinished = true }
 
-// runProgram starts the command, hands what the program writes to out until it reports its result, and
-// returns the reason the run failed: what the program reported, else what it wrote of an exit that
-// failed, else none. A run whose context ends returns no reason.
 func (r *Runner) runProgram(ctx context.Context, command Command, out output, record func(string)) (reason string, err error) {
 	if command.Release != nil {
 		defer func() { err = errors.Join(err, command.Release()) }()
@@ -271,8 +265,6 @@ type readResult struct {
 	handleErr error
 }
 
-// readOutput hands each line the program writes to the sink, an event as what it reports and any other
-// line as text, until the program reports its result or the sink refuses a report.
 func readOutput(stdout io.Reader, sink *runSink) readResult {
 	handler := events.NewHandler(sink)
 	scanner := bufio.NewScanner(stdout)
@@ -291,8 +283,6 @@ func readOutput(stdout io.Reader, sink *runSink) readResult {
 	return readResult{isWritten: isWritten, scanErr: scanner.Err(), handleErr: handler.Err()}
 }
 
-// getRunReason returns the reason a run failed: what the program reported, else what it wrote of an
-// exit that failed, else none.
 func getRunReason(sink *runSink, read readResult, waitErr error, stderr string) string {
 	switch {
 	case sink.reason != "":
@@ -332,7 +322,6 @@ func (r *Runner) serveTools(ctx context.Context, listed []*tools.ToolInfo, reque
 	})
 }
 
-// begin counts a run that Close waits for, and returns its context, which Close cancels.
 func (r *Runner) begin(ctx context.Context) (context.Context, func(), error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -393,8 +382,6 @@ func indexTools(listed []*tools.ToolInfo) map[string]*tools.ToolInfo {
 	return byName
 }
 
-// writePrompt joins the distinct instruction sentences of the tools, in the order of the listing, the
-// notes of the task under their paths and titles, and the prompt.
 func writePrompt(listed []*tools.ToolInfo, request *contract.TaskRequest) string {
 	var sentences []string
 	for _, one := range listed {

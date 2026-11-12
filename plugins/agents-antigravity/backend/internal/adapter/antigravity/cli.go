@@ -37,7 +37,9 @@ func (c *CLI) Find(path string) string {
 	return findProgram(path)
 }
 
-// MakeTaskCommand returns the command of a task run.
+// MakeTaskCommand returns the command of a run that may call the tools served at the address of run
+// without asking, in a home of its own whose MCP configuration names them. A run with no address only
+// answers.
 func (c *CLI) MakeTaskCommand(path string, run task.Run) (task.Command, error) {
 	return makeTaskCommand(path, run)
 }

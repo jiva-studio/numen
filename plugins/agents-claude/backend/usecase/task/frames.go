@@ -44,7 +44,8 @@ func (t *turn) SendText(text string) error {
 	}})
 }
 
-// SendMessage sends text as a message of its own.
+// SendMessage ends the current message and sends text as a message of its own, so the next text starts
+// another.
 func (t *turn) SendMessage(text string) error {
 	t.endMessage()
 	if err := t.SendText(text); err != nil {

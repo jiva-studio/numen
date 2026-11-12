@@ -38,8 +38,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// runFakeCodex calls note_read on the server of tools its arguments name, with the token of
-// NUMEN_TOKEN, and writes what it did as `codex exec --json` does.
 func runFakeCodex(args []string, out io.Writer) int {
 	url := ""
 	for _, one := range args {
@@ -114,7 +112,6 @@ type roundTripper func(*http.Request) (*http.Response, error)
 
 func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
-// fakeCodex returns a program that runs the test binary as a fake Codex.
 func fakeCodex(t *testing.T) string {
 	t.Helper()
 	return writeScript(t, "codex", "exec "+quoteShell(os.Args[0])+" fake-codex run \"$@\"\n")
@@ -150,8 +147,6 @@ func withoutAgentsAnywhere(t *testing.T) {
 	}
 }
 
-// recordArgs is the part of a script that writes the folder it runs in to dir/pwd, each argument on a
-// line of its own to dir/argv, and NUMEN_TOKEN to dir/token.
 func recordArgs(dir string) string {
 	return "pwd > " + dir + "/pwd\n" +
 		"for a in \"$@\"; do printf '%s\\0' \"$a\"; done > " + dir + "/argv\n" +

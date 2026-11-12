@@ -138,7 +138,6 @@ func truncateName(name string, limit int) string {
 	return strings.TrimSpace(string(runes[:limit]))
 }
 
-// listConnections returns the stored connections in list order, followed by the built-in ones.
 func (o operation) listConnections() ([]connection.Connection, error) {
 	list, err := o.repository.ListConnections()
 	if err != nil {

@@ -74,7 +74,6 @@ type toolAnswer struct {
 	IsError bool
 }
 
-// getToolAnswers returns the ends of the calls a user message reports.
 func (e event) getToolAnswers() []toolAnswer {
 	var msg struct {
 		Content []map[string]json.RawMessage `json:"content"`

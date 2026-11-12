@@ -100,7 +100,6 @@ func escapeGlob(path string) string {
 	return pattern.String()
 }
 
-// isRunnable reports whether path is an executable file.
 func isRunnable(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {
