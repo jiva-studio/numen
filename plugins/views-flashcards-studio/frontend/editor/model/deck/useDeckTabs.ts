@@ -204,8 +204,12 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
       },
       actions,
       file: {
-        keepMine: () => store.keep(id),
-        takeFile: () => store.take(id),
+        keepMine: () => {
+          store.keep(id).catch(reportFailure)
+        },
+        takeFile: () => {
+          store.take(id).catch(reportFailure)
+        },
         close: (tab) => {
           const path = store.getPath(id)
           store

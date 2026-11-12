@@ -80,8 +80,12 @@ function createCardModelTabItem(
     fields: actions.fields,
     templates: actions.templates,
     file: {
-      keepMine: () => store.keep(id),
-      takeFile: () => store.take(id),
+      keepMine: () => {
+        store.keep(id).catch(reportFailure)
+      },
+      takeFile: () => {
+        store.take(id).catch(reportFailure)
+      },
       close,
     },
   }
