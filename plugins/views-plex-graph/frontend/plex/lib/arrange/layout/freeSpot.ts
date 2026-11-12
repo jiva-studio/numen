@@ -34,42 +34,122 @@ export const TOLERANCE = 0.5
 /** How many quarter-box steps the walk outward takes before it gives up. */
 const WALK_STEPS = 400
 
-/** The offsets, in cells across the direction, tried at each step of the walk. */
 /** Costs are compared to this many parts of a box. */
 const COST_PRECISION = 1e6
 
+/** The offsets, in cells across the direction, tried at each step of the walk. */
 const WALK_OFFSETS = [0, 1, -1, 2, -2, 3, -3] as const
 
-export function isFree(spot: Spot, taken: readonly Spot[], gaps: Gaps): boolean {
-  return taken.every(
-    (other) =>
-      Math.abs(spot.x - other.x) >= (spot.width + other.width) / 2 + gaps.gap - TOLERANCE ||
-      Math.abs(spot.y - other.y) >= (spot.height + other.height) / 2 + gaps.lineGap - TOLERANCE,
+/** The side of a grid cell in the index. */
+const CELL = 64
+const CELL_OFFSET = 1 << 20
+const CELL_STRIDE = 1 << 21
+
+interface Rect {
+  readonly minX: number
+  readonly maxX: number
+  readonly minY: number
+  readonly maxY: number
+}
+
+/** Placed boxes, bucketed on a grid, so a spot is checked against the boxes near it and not against all of them. */
+export class SpotIndex {
+  private readonly cells = new Map<number, Spot[]>()
+
+  constructor(spots: readonly Spot[] = []) {
+    for (const spot of spots) this.add(spot)
+  }
+
+  add(spot: Spot): void {
+    this.visitCells(
+      {
+        minX: spot.x - spot.width / 2,
+        maxX: spot.x + spot.width / 2,
+        minY: spot.y - spot.height / 2,
+        maxY: spot.y + spot.height / 2,
+      },
+      (cell) => {
+        const bucket = this.cells.get(cell)
+        if (bucket) bucket.push(spot)
+        else this.cells.set(cell, [spot])
+        return false
+      },
+    )
+  }
+
+  /** Whether the spot keeps the gaps from every box in the index. */
+  isFree(spot: Spot, gaps: Gaps): boolean {
+    let free = true
+    this.visitCells(
+      {
+        minX: spot.x - spot.width / 2 - gaps.gap,
+        maxX: spot.x + spot.width / 2 + gaps.gap,
+        minY: spot.y - spot.height / 2 - gaps.lineGap,
+        maxY: spot.y + spot.height / 2 + gaps.lineGap,
+      },
+      (cell) => {
+        for (const other of this.cells.get(cell) ?? []) {
+          if (!isClear(spot, other, gaps)) {
+            free = false
+            return true
+          }
+        }
+        return false
+      },
+    )
+    return free
+  }
+
+  /** Calls `visit` for each cell the rectangle touches, until it returns true. */
+  private visitCells(rect: Rect, visit: (cell: number) => boolean): void {
+    const toX = Math.floor(rect.maxX / CELL)
+    const fromY = Math.floor(rect.minY / CELL)
+    const toY = Math.floor(rect.maxY / CELL)
+    for (let x = Math.floor(rect.minX / CELL); x <= toX; x++) {
+      for (let y = fromY; y <= toY; y++) {
+        if (visit((x + CELL_OFFSET) * CELL_STRIDE + y + CELL_OFFSET)) return
+      }
+    }
+  }
+}
+
+/** Whether a candidate beats the best so far: a lower cost, or an equal cost nearer the start. */
+function isBetter(cost: number, along: number, best: { cost: number; along: number }): boolean {
+  return cost < best.cost || (cost === best.cost && along < best.along)
+}
+
+function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
+  return (
+    Math.abs(spot.x - other.x) >= (spot.width + other.width) / 2 + gaps.gap - TOLERANCE ||
+    Math.abs(spot.y - other.y) >= (spot.height + other.height) / 2 + gaps.lineGap - TOLERANCE
   )
 }
 
-export function findFreeSpot(taken: readonly Spot[], request: SpotRequest): Spot {
+export function isFree(spot: Spot, taken: readonly Spot[], gaps: Gaps): boolean {
+  return taken.every((other) => isClear(spot, other, gaps))
+}
+
+/**
+ * The free spot of least cost: the nearest to the middle, with costs rounded
+ * before they are compared so floating-point error does not decide a tie. Of
+ * equal costs the one nearer the start wins, which fills a group across its
+ * axis before it goes deeper; of those the earlier candidate wins.
+ */
+export function findFreeSpot(taken: readonly Spot[] | SpotIndex, request: SpotRequest): Spot {
   const { middle, size, gaps } = request
+  const index = taken instanceof SpotIndex ? taken : new SpotIndex(taken)
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
-  // Costs are rounded before they are compared, so floating-point error does not
-  // decide a tie. Of equal costs the one nearer the start wins, which fills a
-  // group across its axis before it goes deeper; a stable sort keeps the
-  // candidate order for the rest.
-  const ranked = listCandidates(request)
-    .map((point) => ({ point, along: measureAlong(point, request) }))
-    .filter((each) => each.along >= -TOLERANCE)
-    .map((each) => ({
-      ...each,
-      cost: Math.round(measureCost(each.point, request) * COST_PRECISION),
-    }))
-    .sort((a, b) => a.cost - b.cost || a.along - b.along)
-
-  for (const { point } of ranked) {
-    const spot = toSpot(point)
-    if (isFree(spot, taken, gaps)) return spot
+  let best: { point: Vector; cost: number; along: number } | undefined
+  for (const point of listCandidates(request)) {
+    const along = measureAlong(point, request)
+    if (along < -TOLERANCE) continue
+    const cost = Math.round(measureCost(point, request) * COST_PRECISION)
+    if (best && !isBetter(cost, along, best)) continue
+    if (index.isFree(toSpot(point), gaps)) best = { point, cost, along }
   }
-  return findFreeSpotOutward(taken, request) ?? toSpot(middle)
+  if (best) return toSpot(best.point)
+  return findFreeSpotOutward(index, request) ?? toSpot(middle)
 }
 
 function listCandidates(request: SpotRequest): Vector[] {
@@ -111,7 +191,7 @@ function measureCost(point: Vector, request: SpotRequest): number {
 }
 
 /** Nothing beside the group is free: walk outward from the middle until something is. */
-function findFreeSpotOutward(taken: readonly Spot[], request: SpotRequest): Spot | undefined {
+function findFreeSpotOutward(taken: SpotIndex, request: SpotRequest): Spot | undefined {
   const { middle, direction, size, gaps } = request
   const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
   const stride = size.height / 4
@@ -123,7 +203,7 @@ function findFreeSpotOutward(taken: readonly Spot[], request: SpotRequest): Spot
         y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
         ...size,
       }
-      if (isFree(spot, taken, gaps)) return spot
+      if (taken.isFree(spot, gaps)) return spot
     }
   }
   return undefined

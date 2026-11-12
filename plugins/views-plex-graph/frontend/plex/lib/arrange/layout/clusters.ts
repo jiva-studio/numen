@@ -2,7 +2,7 @@
 import { RELATION_NAMES, RELATIONS, type Lean } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { Direction, PlexOptions } from '../options'
-import { findFreeSpot, type Spot, type Vector } from './freeSpot'
+import { findFreeSpot, SpotIndex, type Spot, type Vector } from './freeSpot'
 import type { NodesByRelation, Placement, PlacementContext } from './placement'
 import type { PlexNode, PlexRelation } from '../../../../types'
 
@@ -71,10 +71,12 @@ function placeClusters(
   focus: PlacedNode,
   context: PlacementContext,
 ): PlacedNode[] {
-  const { options, width } = context
+  const { options, width, shouldStop } = context
   const gaps = { gap: options.gap, lineGap: options.lineGap }
   const { height } = options.nodeSize
-  const taken: Spot[] = [{ x: focus.x, y: focus.y, width: focus.width, height: focus.height }]
+  const taken = new SpotIndex([
+    { x: focus.x, y: focus.y, width: focus.width, height: focus.height },
+  ])
   const groups = new Map<PlexRelation, Spot[]>()
   const placed = new Map<string, PlacedNode>()
 
@@ -94,9 +96,9 @@ function placeClusters(
     const middle = getClusterMiddle(start, direction, { size: members.length, cell })
 
     const spot = findFreeSpot(taken, { start, middle, direction, size, group, gaps })
-    taken.push(spot)
+    taken.add(spot)
     group.push(spot)
-    placed.set(node.id, {
+    const box: PlacedNode = {
       ...node,
       x: spot.x,
       y: spot.y,
@@ -104,11 +106,13 @@ function placeClusters(
       height: spot.height,
       order: members.indexOf(node),
       opacity: 1,
-    })
+    }
+    placed.set(node.id, box)
+    if (shouldStop?.(box)) break
   }
 
   return RELATION_NAMES.flatMap((relation) =>
-    (nodesByRelation[relation] ?? []).map((node) => placed.get(node.id)!),
+    (nodesByRelation[relation] ?? []).flatMap((node) => placed.get(node.id) ?? []),
   )
 }
 

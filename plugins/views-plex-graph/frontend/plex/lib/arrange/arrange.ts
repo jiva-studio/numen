@@ -14,7 +14,7 @@ import { clusters } from './layout/clusters'
 import { measureCrowding } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
-import type { Placement, NodesByRelation, Widths } from './layout/placement'
+import type { Placement, NodesByRelation, PlacementContext, Widths } from './layout/placement'
 import { routeEdges, createRouting } from './edges/routing'
 import { findSpacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
@@ -37,7 +37,12 @@ export function arrangePlex(
   const requested = requestNodes(neighborhood.nodes, request)
 
   // Lays the nodes out at the given options: the focus, then the placement.
-  const lay = (laid: PlexOptions, nodesByRelation: NodesByRelation) => {
+  // A caller that does not need every box passes `shouldStop`.
+  const lay = (
+    laid: PlexOptions,
+    nodesByRelation: NodesByRelation,
+    shouldStop?: PlacementContext['shouldStop'],
+  ) => {
     const width = createWidthLookup(laid, measure)
     const focus: PlacedNode = {
       ...focusNode,
@@ -48,13 +53,20 @@ export function arrangePlex(
       order: 0,
       opacity: 1,
     }
-    return { focus, placed: placement.place(nodesByRelation, focus, { options: laid, width }) }
+    return {
+      focus,
+      placed: placement.place(nodesByRelation, focus, { options: laid, width, shouldStop }),
+    }
   }
 
   // Packed as closely as this window needs and no closer, so a box narrows
   // and a gap closes before a note is given up.
   const resolved = measureCrowding(request, (packed) =>
-    isHeld(lay(packed, requested).placed, packed.viewport, packed.margin),
+    isHeld(
+      lay(packed, requested, stopAtOutside(packed.viewport, packed.margin)).placed,
+      packed.viewport,
+      packed.margin,
+    ),
   )
 
   // Admission is settled at that packing, and the gaps then expand into the
@@ -64,14 +76,18 @@ export function arrangePlex(
   const admitted = viewport
     ? admitNodes(
         requested,
-        (nodesByRelation) => lay(resolved, nodesByRelation).placed,
+        (nodesByRelation, shouldStop) => lay(resolved, nodesByRelation, shouldStop).placed,
         (node) => isInside(node, viewport, margin),
       )
     : requested
   const overflow = countOverflow(neighborhood.nodes, admitted)
 
   const spacing = findSpacing(resolved, (candidate, window) =>
-    isHeld(lay({ ...resolved, ...candidate }, admitted).placed, window, margin),
+    isHeld(
+      lay({ ...resolved, ...candidate }, admitted, stopAtOutside(window, margin)).placed,
+      window,
+      margin,
+    ),
   )
   const { focus, placed } = lay({ ...resolved, ...spacing }, admitted)
   const nodes = [focus, ...placed]
@@ -106,6 +122,10 @@ function isInside(node: PlacedNode, viewport: Size, margin: number): boolean {
     Math.abs(node.x) + node.width / 2 <= viewport.width / 2 - margin &&
     Math.abs(node.y) + node.height / 2 <= viewport.height / 2 - margin
   )
+}
+
+function stopAtOutside(viewport: Size | undefined, margin: number): PlacementContext['shouldStop'] {
+  return viewport ? (node) => !isInside(node, viewport, margin) : undefined
 }
 
 function isHeld(nodes: readonly PlacedNode[], viewport: Size | undefined, margin: number): boolean {
