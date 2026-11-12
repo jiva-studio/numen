@@ -29,23 +29,25 @@ const waitForAbort = (signal: AbortSignal | undefined): Promise<void> =>
     signal?.addEventListener('abort', () => resolve(), { once: true })
   })
 
-export function createAgentConnections(
-  answer: TaskScript | ((request: acp.TaskRequest) => TaskScript),
-) {
-  const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] =
-    []
-  const host = acptest.createTaskHost(async function* (request, options) {
-    calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
-    const script = typeof answer === 'function' ? answer(request) : answer
-    const signal = options?.signal
-    for (const [index, frame] of (script.frames ?? []).entries()) {
-      await script.pace?.(index)
-      if (signal?.aborted) return CANCELED
-      yield frame
-    }
-    if (script.hold) await Promise.race([script.hold, waitForAbort(signal)])
+async function* playScript(
+  script: TaskScript,
+  signal: AbortSignal | undefined,
+): AsyncGenerator<FrameInit, Result<acp.StopReason, ConnectionError>> {
+  for (const [index, frame] of (script.frames ?? []).entries()) {
+    await script.pace?.(index)
     if (signal?.aborted) return CANCELED
-    return script.end ?? { ok: true, value: acp.StopReason.END_TURN }
+    yield frame
+  }
+  if (script.hold) await Promise.race([script.hold, waitForAbort(signal)])
+  if (signal?.aborted) return CANCELED
+  return script.end ?? { ok: true, value: acp.StopReason.END_TURN }
+}
+
+export function createAgentConnections(answer: TaskScript | ((request: acp.TaskRequest) => TaskScript)) {
+  const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] = []
+  const host = acptest.createTaskHost((request, options) => {
+    calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
+    return playScript(typeof answer === 'function' ? answer(request) : answer, options?.signal)
   })
   return { host, calls }
 }
