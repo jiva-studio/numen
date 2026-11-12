@@ -209,7 +209,7 @@ export const AddDialogOfAService: Story = {
     await expect(dialog.getByLabelText('API key')).toBeVisible()
     await expect(dialog.getByText('Parallel requests')).toBeVisible()
     await expect(dialog.queryByLabelText('Address')).toBeNull()
-    await expect(dialog.getByRole('link', { name: /How to get a key/ })).toBeVisible()
+    await expect(dialog.queryByRole('link')).toBeNull()
   },
 }
 
@@ -250,9 +250,9 @@ export const RequiredValueIsAsked: Story = {
 export const DeletionAsksFirst: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const [first] = canvas.getAllByRole('button', { name: 'Connection actions' })
-    await userEvent.click(first!)
-    await userEvent.click(within(document.body).getByRole('menuitem', { name: 'Delete' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Work' }))
+    const edit = within(document.body).getByRole('dialog', { name: 'Edit connection' })
+    await userEvent.click(within(edit).getByRole('button', { name: 'Delete' }))
     const dialog = within(canvas.getByRole('alertdialog'))
     await expect(dialog.getByText(/Delete "Work"/)).toBeVisible()
     await userEvent.click(dialog.getByRole('button', { name: 'Cancel' }))

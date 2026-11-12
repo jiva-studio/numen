@@ -18,8 +18,6 @@ import {
   dispose,
   enterText,
   findButton,
-  findButtons,
-  findMenuItem,
   findText,
   maskedInputs,
   nameOf,
@@ -148,7 +146,12 @@ describe('the page of connections', () => {
     const rows = Array.from(root().querySelectorAll('li[aria-label]'))
     expect(rows.map((one) => one.getAttribute('aria-label'))).toStrictEqual(['Work', 'Local'])
     expect(rows[0]?.textContent).toContain('Sample service')
-    expect(rows[0]?.textContent).toContain('Completion · Embeddings')
+    expect(
+      Array.from(rows[0]?.querySelectorAll('.connection-row__chip') ?? []).map((one) =>
+        one.textContent?.trim(),
+      ),
+    ).toStrictEqual(['Completion', 'Embeddings'])
+    expect(rows[0]?.querySelector('button')).toBeNull()
     expect(rows[1]?.textContent).toContain('http://localhost:11434/v1')
     dispose(wrapper)
   })
@@ -205,10 +208,8 @@ describe('the Add dialog', () => {
     const labels = Array.from(dialog().querySelectorAll('label')).map(nameOf)
     expect(labels).toStrictEqual(['Name', 'API key', 'Parallel requests'])
     expect(dialog().textContent).not.toContain('Address')
-    expect(dialog().textContent).toContain('Choose the model on the page of the plugin')
-    expect(dialog().querySelector('a')?.getAttribute('href')).toBe(
-      'https://docs.numen.md/connections/',
-    )
+    expect(dialog().textContent).not.toContain('Choose the model on the page')
+    expect(dialog().querySelector('a')).toBeNull()
     dispose(wrapper)
   })
 
@@ -303,8 +304,7 @@ describe('editing and deleting', () => {
     const updateConnection = vi.fn(() => Promise.resolve(asValue(connection({ revision: 3 }))))
     const { wrapper } = mountPage([connection()], [SERVICE], { update: updateConnection })
     await flushPromises()
-    await click(findButton(/connection actions/i))
-    await click(findMenuItem(/^edit$/i))
+    await click(root().querySelector('li[aria-label="Work"]')!)
 
     expect(maskedInputs(dialog())[0]?.value).toBe('')
     expect(dialog().textContent).toContain('A key is stored. Type to replace it.')
@@ -321,6 +321,19 @@ describe('editing and deleting', () => {
     dispose(wrapper)
   })
 
+  it('opens a row with Enter and with Space from the keyboard', async () => {
+    const { wrapper } = mountPage([connection()], [SERVICE])
+    await flushPromises()
+    const row = root().querySelector<HTMLElement>('li[aria-label="Work"]')!
+    expect(row.getAttribute('tabindex')).toBe('0')
+
+    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await flushPromises()
+
+    expect(textInputs(dialog())[0]?.value).toBe('Work')
+    dispose(wrapper)
+  })
+
   it('says that a changed address removes the stored key', async () => {
     const { wrapper } = mountPage(
       [
@@ -333,8 +346,7 @@ describe('editing and deleting', () => {
       [SERVER],
     )
     await flushPromises()
-    await click(findButton(/connection actions/i))
-    await click(findMenuItem(/^edit$/i))
+    await click(root().querySelector('li[aria-label="Work"]')!)
     expect(dialog().textContent).not.toContain('Changing the address removes the stored key')
 
     const address = textInputs(dialog()).find((one) => one.value === 'https://a.example/v1')!
@@ -348,8 +360,7 @@ describe('editing and deleting', () => {
     const updateConnection = vi.fn(() => Promise.resolve(asValue(connection({ revision: 3 }))))
     const { wrapper } = mountPage([connection()], [SERVICE], { update: updateConnection })
     await flushPromises()
-    await click(findButton(/connection actions/i))
-    await click(findMenuItem(/^edit$/i))
+    await click(root().querySelector('li[aria-label="Work"]')!)
 
     await click(findButton(/remove key/i, dialog()))
     await click(findButton(/^save$/i))
@@ -364,8 +375,8 @@ describe('editing and deleting', () => {
     const deleteConnection = vi.fn(() => Promise.resolve(asValue(undefined)))
     const { wrapper } = mountPage([connection()], [SERVICE], { delete: deleteConnection })
     await flushPromises()
-    await click(findButton(/connection actions/i))
-    await click(findMenuItem(/^delete$/i))
+    await click(root().querySelector('li[aria-label="Work"]')!)
+    await click(findButton(/^delete$/i, dialog()))
 
     const confirmation = root().querySelector('[role="alertdialog"]')
     expect(confirmation?.textContent).toContain(
@@ -397,8 +408,8 @@ describe('editing and deleting', () => {
     const rows = root().querySelectorAll('.connection-row')
     expect(rows[0]?.textContent).toContain('Used by Proofreading and Embeddings.')
     expect(rows[1]?.textContent).not.toContain('Used by')
-    await click(findButtons(/connection actions/i)[0]!)
-    await click(findMenuItem(/^delete$/i))
+    await click(root().querySelector('li[aria-label="Work"]')!)
+    await click(findButton(/^delete$/i, dialog()))
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'Used by Proofreading and Embeddings. Their rows for it are removed.',
     )
@@ -408,8 +419,8 @@ describe('editing and deleting', () => {
   it('keeps the connection when the person cancels the deletion', async () => {
     const { installation, wrapper } = mountPage([connection()], [SERVICE])
     await flushPromises()
-    await click(findButton(/connection actions/i))
-    await click(findMenuItem(/^delete$/i))
+    await click(root().querySelector('li[aria-label="Work"]')!)
+    await click(findButton(/^delete$/i, dialog()))
 
     await click(findButton(/^cancel$/i))
 

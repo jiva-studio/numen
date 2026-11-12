@@ -7,6 +7,7 @@ import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import type { PluginInfo } from '@/entities/settings'
 import { usePluginDetail, usePluginSwitch } from '../../model/usePluginDetail'
 import type { InstallationConnections, InstallationPlugin, InstallationSettings } from '../../types'
+import PluginConnectionSections from './PluginConnectionSections.vue'
 import PluginFields from './PluginFields.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -57,6 +58,13 @@ function onBack(): void {
     <template #settings>
       <PluginFields
         v-if="hasSettings"
+        :settings="props.settings"
+        :host="props.manager"
+        :plugin="props.plugin"
+      />
+    </template>
+    <template #sections>
+      <PluginConnectionSections
         :settings="props.settings"
         :host="props.manager"
         :connections="props.connections"

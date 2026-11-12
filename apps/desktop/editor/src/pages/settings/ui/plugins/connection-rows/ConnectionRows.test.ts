@@ -85,6 +85,7 @@ interface Options {
   readonly listModels?: InstallationConnections['models']['listModels']
   readonly operation?: string
   readonly countNotes?: InstallationConnections['countNotes']
+  readonly create?: InstallationConnections['create']
 }
 
 const mountRows = (options: Options = {}) => {
@@ -95,6 +96,7 @@ const mountRows = (options: Options = {}) => {
     listModels,
     listReasoningLevels: vi.fn(() => Promise.resolve(asValue([]))),
     ...(options.countNotes ? { countNotes: options.countNotes } : {}),
+    ...(options.create ? { create: options.create } : {}),
   })
   const wrapper = mount(ConnectionRows, {
     attachTo: document.body,
@@ -244,10 +246,61 @@ describe('the rows of a setting of connections', () => {
 
     const choices = wrapper.findAllComponents(Select)[0]?.props('choices') ?? []
 
-    expect(choices.map((one) => one.text)).toStrictEqual(['Work', 'Home', 'Embed only', 'Retired'])
-    expect(choices.map((one) => one.isDisabled === true)).toStrictEqual([false, false, true, true])
+    expect(choices.map((one) => one.text)).toStrictEqual([
+      'Work',
+      'Home',
+      'Embed only',
+      'Retired',
+      'New connection…',
+    ])
+    expect(choices.map((one) => one.isDisabled === true)).toStrictEqual([
+      false,
+      false,
+      true,
+      true,
+      false,
+    ])
     expect(choices[2]?.detail).toBe('This type cannot complete')
     expect(choices[3]?.detail).toBe('Type unavailable')
+    dispose(wrapper)
+  })
+
+  it('opens the dialog of a new connection from the last entry, and leaves the row alone when it is closed', async () => {
+    const { wrapper } = mountRows({ value: [row(WORK.id, 'alpha')] })
+    await flushPromises()
+
+    wrapper.findAllComponents(Select)[0]?.vm.$emit('update:modelValue', 'new-connection')
+    await flushPromises()
+    expect(root().querySelector('[role="dialog"]')).not.toBeNull()
+    await click(findButton(/^cancel$/i, root().querySelector('[role="dialog"]')!))
+
+    expect(root().querySelector('[role="dialog"]')).toBeNull()
+    expect(wrapper.findAllComponents(Select)[0]?.props('modelValue')).toBe(WORK.id)
+    expect(changes(wrapper)).toStrictEqual([])
+    dispose(wrapper)
+  })
+
+  it('chooses the saved connection in the row and asks for its models, without a model chosen', async () => {
+    const fresh = connection({ id: 'c00000009', name: 'Fresh' })
+    const create = vi.fn(() => Promise.resolve(asValue(fresh)))
+    const { wrapper, listModels } = mountRows({
+      operation: 'embed',
+      value: [row(WORK.id, 'alpha')],
+      create,
+    })
+    await flushPromises()
+
+    wrapper.findAllComponents(Select)[0]?.vm.$emit('update:modelValue', 'new-connection')
+    await flushPromises()
+    await click(findButton(/^save$/i, root().querySelector('[role="dialog"]')!))
+    await flushPromises()
+
+    expect(create).toHaveBeenCalledOnce()
+    expect(root().querySelector('[role="dialog"]')).toBeNull()
+    expect(wrapper.findAllComponents(Select)[0]?.props('modelValue')).toBe(fresh.id)
+    expect(wrapper.findAllComponents(Select)[1]?.props('modelValue')).toBe('')
+    expect(listModels).toHaveBeenCalledWith(fresh.id, 'embed')
+    expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
   })
 

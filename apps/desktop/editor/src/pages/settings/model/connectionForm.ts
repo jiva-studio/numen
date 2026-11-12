@@ -32,7 +32,7 @@ export interface ConnectionFormInput {
   readonly connection: () => ConnectionInfo | undefined
   readonly create: (draft: ConnectionDraft) => Promise<Result<ConnectionInfo, string>>
   readonly update: (change: ConnectionChange) => Promise<Result<ConnectionInfo, string>>
-  readonly onSaved: () => void
+  readonly onSaved: (connection: ConnectionInfo) => void
 }
 
 /** What is typed in the form. */
@@ -122,29 +122,29 @@ function createActions(
     return input.create({ ...request, typeId: target.id })
   }
 
-  /** Sends the form. Resolves to whether it was saved; the reason it was not is in `problem`. */
-  const save = async (): Promise<boolean> => {
+  /** Sends the form. Resolves to the saved connection, or to none; the reason is in `problem`. */
+  const save = async (): Promise<ConnectionInfo | null> => {
     const { type, storedKeys } = view()
-    if (!type || state.isSaving) return false
+    if (!type || state.isSaving) return null
     const missing = getMissingFields(type, state.values, state.secrets, storedKeys)
     if (missing.length > 0) {
       const titles = type.fields.filter((one) => missing.includes(one.key)).map((one) => one.title)
       state.problem = `${words.connectionRequired} ${titles.join(', ')}`
-      return false
+      return null
     }
     state.isSaving = true
     state.problem = ''
     const answer = await send(type)
     state.isSaving = false
     if (!answer.ok) state.problem = answer.error
-    return answer.ok
+    return answer.ok ? answer.value : null
   }
 
   /** Sends the form and calls `onSaved` where it was saved. */
   const submit = (): void => {
     runInBackground(
-      save().then((isSaved) => {
-        if (isSaved) input.onSaved()
+      save().then((saved) => {
+        if (saved) input.onSaved(saved)
       }),
       (error) => {
         state.isSaving = false

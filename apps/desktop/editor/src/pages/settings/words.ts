@@ -8,16 +8,13 @@ export const WORDS = {
   file: 'numen.json in the configuration folder',
   /** Accessible name of the search field in a long model list. */
   searchModels: 'Search models',
+  searchConnections: 'Search connections',
   /** Accessible name of the info button next to a setting title. */
   aboutSetting: (name: string) => `About ${name}`,
   /** The page of connections. */
   secretMasked: '••••••••',
-  connectionsIntro:
-    'A connection is a service you pay for, a server you run, or an agent on this computer. Keys are kept in the system keychain.',
   connectionAdd: 'Add connection',
   connectionEdit: 'Edit connection',
-  connectionActions: 'Connection actions',
-  connectionMenuEdit: 'Edit',
   connectionMenuDelete: 'Delete',
   connectionsEmpty: 'No connections yet.',
   connectionsEmptyDetail:
@@ -47,11 +44,10 @@ export const WORDS = {
   connectionKeyClear: 'Remove key',
   connectionKeyClearing: 'The key will be removed when you save.',
   connectionAddressChanged: 'Changing the address removes the stored key. Enter it again.',
-  connectionModelNote: 'Choose the model on the page of the plugin, not here.',
   connectionAgentNote: (pluginName: string) =>
     `${pluginName} runs the program on this computer with your own login. No other field is needed.`,
-  connectionGuide: 'How to get a key and what leaves this computer',
-  connectionGuideAddress: 'https://docs.numen.md/connections/',
+  connectionNew: 'New connection…',
+  searchConnectionTypes: 'Search types',
   connectionSave: 'Save',
   connectionCancel: 'Cancel',
   connectionFieldSelect: 'Choose',
@@ -62,7 +58,8 @@ export const WORDS = {
     limit === 1
       ? 'The text of your notes is sent to the connection chosen here.'
       : 'The text of your notes is sent to each connection listed, in this order.',
-  connectionRowsNone: 'No connections yet. Add one on the Connections page.',
+  connectionRowsNone: 'No connections yet. Add a connection first.',
+  connectionRowsUse: 'Use a connection',
   connectionRowsOpen: 'Open Connections',
   connectionRowsChoose: 'Choose a connection',
   connectionRowsConnection: 'Connection',

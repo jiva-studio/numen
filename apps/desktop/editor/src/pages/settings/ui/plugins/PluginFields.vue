@@ -8,9 +8,7 @@ import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import SettingsViews from './SettingsViews.vue'
-import ConnectionRows from './connection-rows/ConnectionRows.vue'
-import type { InstallationConnections, InstallationSettings, PluginFieldsHost } from '../../types'
-import type { StoredRow } from '@/entities/connection'
+import type { InstallationSettings, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
 import { useEnumFields, usePluginFields, usePluginPaths } from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
@@ -19,12 +17,7 @@ import { WORDS as words } from '../../words'
 const props = defineProps<{
   settings: InstallationSettings
   host: PluginFieldsHost
-  connections: InstallationConnections
   plugin: PluginInfo
-}>()
-
-const emit = defineEmits<{
-  (e: 'open-connections'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -50,34 +43,14 @@ const {
   clearPath: onPathClear,
 } = usePluginPaths(fieldDeps, fields)
 
-/* -------------------------------- Handlers -------------------------------- */
-function onRowsChange(key: string, rows: readonly StoredRow[]): void {
-  onSettingChange(
-    key,
-    rows.map((row) => ({ connection: row.connection, model: row.model, reasoning: row.reasoning })),
-  )
-}
 </script>
 
 <template>
   <SettingsViews :settings="props.settings" :host="props.host" :plugin="props.plugin" />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
-    <div v-if="setting.type === 'connections'" class="settings__rows">
-      <div class="settings__rows-head">
-        <span class="settings__rows-name">{{ setting.title }}</span>
-        <p v-if="setting.description" class="settings__rows-detail">{{ setting.description }}</p>
-      </div>
-      <ConnectionRows
-        :setting="setting"
-        :value="getValue(setting.key)"
-        :connections="props.connections"
-        @change="(rows) => onRowsChange(setting.key, rows)"
-        @open-connections="emit('open-connections')"
-      />
-    </div>
     <SettingRow
-      v-else
+      v-if="setting.type !== 'connections'"
       v-slot="{ labelledBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
@@ -178,31 +151,6 @@ function onRowsChange(key: string, rows: readonly StoredRow[]): void {
 </template>
 
 <style scoped>
-.settings__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-block: 0.625rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
-}
-
-.settings__rows-head {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.settings__rows-name {
-  color: var(--numen-ink);
-  font-weight: 500;
-}
-
-.settings__rows-detail {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
 .settings__number {
   inline-size: var(--settings-value);
   text-align: end;

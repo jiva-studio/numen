@@ -19,9 +19,14 @@ function getOperationTitle(operation: string): string {
   return OPERATION_TITLES[operation] ?? operation.charAt(0).toUpperCase() + operation.slice(1)
 }
 
+/** The titles of what a type can do, one for each operation; none where the type is not known. */
+export function getOperationTitles(type: ConnectionTypeInfo | undefined): readonly string[] {
+  return (type?.operations ?? []).map(getOperationTitle)
+}
+
 /** The titles of what a type can do, joined; empty where the type is not known. */
 export function getOperationsText(type: ConnectionTypeInfo | undefined): string {
-  return (type?.operations ?? []).map(getOperationTitle).join(' · ')
+  return getOperationTitles(type).join(' · ')
 }
 
 /** The address the person entered for a connection; empty for a fixed address or an unknown type. */

@@ -1,16 +1,15 @@
 <script setup lang="ts">
 /**
- * One connection as a row: its name and type, the address when the person entered one, what the type
- * can do or why the connection cannot be used, and the menu to edit and delete it.
+ * One connection as a row of a list, drawn like the rows of the plugin list: its name and type, the
+ * address when the person entered one, what the type can do (a chip for each operation) or why the
+ * connection cannot be used. The whole row is a button that opens the connection for editing.
  */
-import { computed, ref } from 'vue'
-import { Ellipsis } from '@lucide/vue'
-import { Button, Menu, measureRect, measureWindow, type MenuItem } from '@numen/ui'
+import { computed } from 'vue'
 import type { ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
 import {
   getAddressText,
   getConnectionState,
-  getOperationsText,
+  getOperationTitles,
   getUsedByNames,
 } from '@/entities/connection'
 import { WORDS as words } from '../../words'
@@ -22,46 +21,37 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'edit'): void
-  (e: 'delete', opener: HTMLElement): void
+  (e: 'edit', opener: HTMLElement): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const MARGIN = 8
-const items: readonly MenuItem[] = [
-  { id: 'edit', text: words.connectionMenuEdit },
-  { id: 'delete', text: words.connectionMenuDelete },
-]
 const state = computed(() => getConnectionState(props.connection))
 const typeTitle = computed(() => props.type?.title ?? props.connection.typeId)
 const address = computed(() => getAddressText(props.type, props.connection))
-const operations = computed(() => getOperationsText(props.type))
+const operations = computed(() => getOperationTitles(props.type))
 const usedBy = computed(() => getUsedByNames(props.connection.uses))
-const anchor = ref<{ x: number; y: number; height: number } | null>(null)
-const opener = ref<HTMLElement | null>(null)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onOpen(event: MouseEvent): void {
-  if (!(event.currentTarget instanceof HTMLElement)) return
-  const box = measureRect(event.currentTarget)
-  opener.value = event.currentTarget
-  anchor.value = { x: box.right, y: box.bottom, height: measureWindow().height }
+function onEdit(event: Event): void {
+  if (event.currentTarget instanceof HTMLElement) emit('edit', event.currentTarget)
 }
 
-function onClose(): void {
-  anchor.value = null
-}
-
-function onChoose(id: string): void {
-  const from = opener.value
-  onClose()
-  if (id === 'edit') emit('edit')
-  else if (id === 'delete' && from) emit('delete', from)
+function onKeydown(event: KeyboardEvent): void {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  onEdit(event)
 }
 </script>
 
 <template>
-  <li class="connection-row" :aria-label="connection.name">
+  <li
+    class="connection-row"
+    role="button"
+    tabindex="0"
+    :aria-label="connection.name"
+    @click="onEdit"
+    @keydown="onKeydown"
+  >
     <div class="connection-row__main">
       <div class="connection-row__title">
         <span class="connection-row__name">{{ connection.name }}</span>
@@ -80,53 +70,49 @@ function onChoose(id: string): void {
         <span v-if="state === 'incomplete'" class="connection-row__chip connection-row__chip--warn">
           {{ words.connectionIncomplete }}
         </span>
-        <span v-if="operations !== ''" class="connection-row__chip">{{ operations }}</span>
+        <span
+          v-for="operation in operations"
+          :key="operation"
+          class="connection-row__chip connection-row__chip--operation"
+        >
+          {{ operation }}
+        </span>
       </template>
-      <Button
-        variant="outline"
-        size="icon"
-        class="connection-row__menu"
-        aria-haspopup="menu"
-        :aria-expanded="anchor !== null"
-        :aria-label="words.connectionActions"
-        :title="words.connectionActions"
-        @click="onOpen"
-      >
-        <Ellipsis :size="14" aria-hidden="true" />
-      </Button>
-      <Menu
-        v-if="anchor"
-        :items="items"
-        :at="{ x: anchor.x, y: anchor.y }"
-        :viewport="{ width: anchor.x + MARGIN, height: anchor.height }"
-        :margin="MARGIN"
-        :from="opener"
-        :name="words.connectionActions"
-        trigger="keyboard"
-        is-open
-        @choose="onChoose"
-        @dismiss="onClose"
-      />
     </div>
   </li>
 </template>
 
 <style scoped>
 .connection-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
+  --row-min-size: 3.5rem;
+  --row-pad-block: 0.625rem;
+  --row-pad-inline: 0.75rem;
+  --focus-width: 0.125rem;
+  --focus-inset: -0.125rem;
+  display: flex;
   align-items: center;
-  padding: 0.625rem 0.875rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
+  justify-content: space-between;
+  gap: var(--numen-panel-gap);
+  min-block-size: var(--row-min-size);
+  padding: var(--row-pad-block) var(--row-pad-inline);
+  border-radius: var(--numen-radius-tight);
+  cursor: pointer;
   list-style: none;
+  user-select: none;
+  transition: background-color 0.15s ease;
 }
 
-.connection-row:last-child {
-  border-block-end: none;
+.connection-row:hover {
+  background-color: var(--numen-bubble-bg);
+}
+
+.connection-row:focus-visible {
+  outline: var(--focus-width) solid var(--numen-accent);
+  outline-offset: var(--focus-inset);
 }
 
 .connection-row__main {
+  flex: 1 1 auto;
   min-inline-size: 0;
 }
 
@@ -138,6 +124,8 @@ function onChoose(id: string): void {
 }
 
 .connection-row__name {
+  color: var(--numen-ink);
+  font-size: var(--numen-text-2);
   font-weight: 500;
 }
 
@@ -155,17 +143,19 @@ function onChoose(id: string): void {
 .connection-row__state {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-shrink: 0;
+  gap: 0.25rem;
   align-items: center;
   justify-content: flex-end;
 }
 
 .connection-row__chip {
-  padding: 0.0625rem 0.5rem;
+  padding: 0.125rem 0.4375rem;
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-pill);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -176,9 +166,5 @@ function onChoose(id: string): void {
 
 .connection-row__chip--warn {
   color: var(--numen-ink);
-}
-
-.connection-row__menu {
-  border-radius: var(--numen-radius);
 }
 </style>

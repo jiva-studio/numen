@@ -29,6 +29,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
   settings(): VNode[]
+  /** Sections of the page under the card of the settings, drawn by the application. */
+  sections(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -127,6 +129,8 @@ function onDeleteData(): void {
     <PluginSettingsCard v-if="props.hasSettings" class="plugin-detail__settings">
       <slot name="settings" />
     </PluginSettingsCard>
+
+    <slot name="sections" />
 
     <PluginData
       :plugin-id="props.plugin.id"

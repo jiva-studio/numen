@@ -3,7 +3,8 @@
  * The dialog that adds a connection or edits one. The form is built from the fields the chosen type
  * declares: a type that fixes its address shows no address, a type of an agent program shows no
  * field at all. The model is not part of a connection. A key is typed here once and is never shown
- * again; changing the address removes the stored key.
+ * again; changing the address removes the stored key. The type is chosen from a list that filters
+ * as one types. A saved connection is announced with `saved` before the dialog closes.
  */
 import { computed, onMounted, useId, useTemplateRef } from 'vue'
 import { Button, Select } from '@numen/ui'
@@ -29,6 +30,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'saved', connection: ConnectionInfo): void
+  (e: 'delete', connection: ConnectionInfo): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -39,10 +42,13 @@ const form = useConnectionForm({
   connection: () => props.connection,
   create: props.create,
   update: props.update,
-  onSaved: () => emit('close'),
+  onSaved: (saved) => {
+    emit('saved', saved)
+    emit('close')
+  },
 })
 const typeChoices = computed<readonly SelectChoice[]>(() =>
-  form.availableTypes.value.map((one) => ({ id: one.id, text: one.title, detail: one.pluginName })),
+  form.availableTypes.value.map((one) => ({ id: one.id, text: one.title })),
 )
 const type = computed(() => form.view.value.type)
 
@@ -94,6 +100,8 @@ function onKeepFocus(event: KeyboardEvent): void {
           :model-value="form.state.typeId"
           :choices="typeChoices"
           :name="words.connectionType"
+          :search-name="words.searchConnectionTypes"
+          is-searchable
           @update:model-value="form.actions.chooseType"
         />
         <p v-if="type?.description" class="connection-dialog__hint">{{ type.description }}</p>
@@ -118,6 +126,15 @@ function onKeepFocus(event: KeyboardEvent): void {
       </p>
 
       <div class="connection-dialog__actions">
+        <Button
+          v-if="connection"
+          type="button"
+          variant="outline"
+          class="connection-dialog__delete"
+          @click="emit('delete', connection)"
+        >
+          {{ words.connectionMenuDelete }}
+        </Button>
         <Button type="button" variant="outline" @click="emit('close')">
           {{ words.connectionCancel }}
         </Button>
@@ -190,6 +207,10 @@ function onKeepFocus(event: KeyboardEvent): void {
 
 .connection-dialog__problem {
   color: var(--numen-alarm);
+}
+
+.connection-dialog__delete {
+  margin-inline-end: auto;
 }
 
 .connection-dialog__actions {

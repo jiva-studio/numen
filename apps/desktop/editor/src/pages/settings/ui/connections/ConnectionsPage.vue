@@ -2,7 +2,7 @@
 /**
  * The page of connections: every connection by the order it was made, with its type and what it can
  * do, and the dialog that adds or edits one. A connection whose type no installed plugin provides is
- * listed as "Type unavailable". The model of a connection is chosen where it is used, not here.
+ * listed as "Type unavailable". A row opens its connection for editing; the dialog holds Delete. The model of a connection is chosen where it is used, not here.
  */
 import { nextTick, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
@@ -26,23 +26,31 @@ const emit = defineEmits<{
 const page = useConnectionsPage(() => props.connections)
 const { dialog, deletion } = page
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
+let rowOpener: HTMLElement | null = null
 let deleteOpener: HTMLElement | null = null
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCloseDialog(): void {
+  const wasEditing = dialog.editing.value !== null
   dialog.close()
   runInBackground(
     nextTick(() => {
-      const element = addButton.value?.$el
+      const element = wasEditing ? rowOpener : addButton.value?.$el
       if (element instanceof HTMLElement) element.focus()
     }),
     () => undefined,
   )
 }
 
-function onAskDelete(connection: ConnectionInfo, opener: HTMLElement): void {
+function onEdit(connection: ConnectionInfo, opener: HTMLElement): void {
+  rowOpener = opener
+  dialog.openEdit(connection)
+}
+
+function onAskDelete(connection: ConnectionInfo): void {
   deletion.ask(connection)
-  deleteOpener = opener
+  deleteOpener = rowOpener
+  dialog.close()
 }
 
 function onConfirmDelete(): void {
@@ -73,7 +81,6 @@ function onCancelDelete(): void {
         {{ words.connectionAdd }}
       </Button>
     </div>
-    <p class="connections-page__intro">{{ words.connectionsIntro }}</p>
 
     <ul
       v-if="page.connections.value.length > 0"
@@ -85,8 +92,7 @@ function onCancelDelete(): void {
         :key="connection.id"
         :connection="connection"
         :type="page.types.value.find((one) => one.id === connection.typeId)"
-        @edit="dialog.openEdit(connection)"
-        @delete="(opener) => onAskDelete(connection, opener)"
+        @edit="(opener) => onEdit(connection, opener)"
       />
     </ul>
     <div v-else class="connections-page__empty">
@@ -106,6 +112,7 @@ function onCancelDelete(): void {
       v-bind="dialog.editing.value ? { connection: dialog.editing.value } : {}"
       :create="page.create"
       :update="page.update"
+      @delete="onAskDelete"
       @close="onCloseDialog"
     />
 
@@ -143,13 +150,16 @@ function onCancelDelete(): void {
   justify-content: space-between;
 }
 
+.connections-page__head {
+  margin-block-end: var(--settings-apart);
+}
+
 .connections-page__title {
   margin: 0;
   font-size: var(--numen-title-size);
   font-weight: 500;
 }
 
-.connections-page__intro,
 .connections-page__legend {
   margin: 0.25rem 0 var(--settings-apart);
   color: var(--numen-hushed);

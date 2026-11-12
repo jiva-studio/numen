@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * The rows of a setting of type connections: one row for each connection the plugin tries, in the
- * order of use, with "Add connection" until the setting holds `max` rows. Only existing connections
- * can be chosen; one that cannot do the operation is dimmed with the reason and listed after the
- * others. A row is moved by dragging its grip, or by the keyboard: Space picks it up, the arrows
- * move it and Space drops it.
+ * The rows of a setting of type connections: one line for each connection the plugin uses, in the
+ * order of use. The person uses a connection that exists: "Use a connection" opens the list of
+ * them, which ends with "New connection…" (it opens the dialog that adds one and uses the result).
+ * A setting of one row shows that row directly. A connection that cannot do the operation is dimmed
+ * with the reason and listed after the others. A row is moved by dragging its grip, or by the
+ * keyboard: Space picks it up, the arrows move it and Space drops it.
  *
- * With no row, "Open Connections" asks the settings tab to show the Connections page.
+ * With no connection at all, the rows give way to a note and "Open Connections", which asks the
+ * settings tab to show the Connections page.
  *
  * Only a row that names a connection and a model is written. A row added and not yet complete
  * stays on the page.
@@ -15,17 +17,19 @@
  * may charge for. It is written after a question that names the notes and the connection, and a
  * row that is not complete changes nothing meanwhile.
  */
-import { computed, useTemplateRef } from 'vue'
-import { Plus } from '@lucide/vue'
-import { Button } from '@numen/ui'
-import { readRows, type StoredRow } from '@/entities/connection'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+import { Button, Select, runInBackground } from '@numen/ui'
+import { readRows, type ConnectionInfo, type StoredRow } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
+import type { SelectChoice } from '../../../types'
 import { ConfirmDialog } from '../../confirm-dialog'
+import ConnectionDialog from '../../connections/ConnectionDialog.vue'
 import { WORDS as words } from '../../../words'
 import ConnectionRowEditor from './ConnectionRowEditor.vue'
 import { useConnectionEntries } from '../../../model/useConnectionEntries'
+import { openSelect } from '../../../model/openSelect'
 import { useIndexQuestion } from '../../../model/useIndexQuestion'
 import { useRowDrafts } from '../../../model/useRowDrafts'
 import { useRowOrder } from '../../../model/useRowOrder'
@@ -41,6 +45,9 @@ const emit = defineEmits<{
   (e: 'change', rows: readonly StoredRow[]): void
   (e: 'open-connections'): void
 }>()
+
+/** The identifier of the entry that adds a connection; no stored connection has it. */
+const NEW_CONNECTION = 'new-connection'
 
 /* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
@@ -71,9 +78,52 @@ const { stored, choices, getReason } = useConnectionEntries(
   () => props.connections,
   () => operation.value,
 )
-const canAdd = computed(() => drafts.value.length < limit.value && stored.value.length > 0)
+const isSingle = computed(() => limit.value === 1)
+const isAdding = ref(false)
+const pickerChoices = computed<readonly SelectChoice[]>(() => [
+  ...choices.value,
+  { id: NEW_CONNECTION, text: words.connectionNew },
+])
+
+/* A setting of one row shows its row at once, so that its connection is chosen in place. */
+watch(
+  [() => stored.value.length, () => drafts.value.length, limit],
+  () => {
+    if (isSingle.value && stored.value.length > 0 && drafts.value.length === 0) add()
+  },
+  { immediate: true },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
+function onUse(id: string): void {
+  if (id === NEW_CONNECTION) {
+    isAdding.value = true
+    return
+  }
+  addRow(id)
+}
+
+function onConnectionSaved(saved: ConnectionInfo): void {
+  addRow(saved.id)
+}
+
+function addRow(connection: string): void {
+  add()
+  const added = drafts.value[drafts.value.length - 1]
+  if (!added) return
+  update(added.key, { connection })
+  runInBackground(
+    nextTick(() =>
+      openSelect(
+        list.value?.querySelector<HTMLElement>(
+          `[data-row-key="${added.key}"] [aria-label="${words.connectionRowsModel}"]`,
+        ),
+      ),
+    ),
+    () => undefined,
+  )
+}
+
 function onRowsChange(rows: readonly StoredRow[]): void {
   if (operation.value !== 'embed') {
     emit('change', rows)
@@ -94,8 +144,15 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
 
 <template>
   <div class="connection-rows">
+    <div v-if="stored.length === 0" class="connection-rows__empty">
+      <p class="connection-rows__note">{{ words.connectionRowsNone }}</p>
+      <Button variant="outline" @click="emit('open-connections')">
+        {{ words.connectionRowsOpen }}
+      </Button>
+    </div>
+
     <ul
-      v-if="drafts.length > 0"
+      v-if="stored.length > 0 && drafts.length > 0"
       ref="list"
       class="connection-rows__list"
       :aria-label="setting.title"
@@ -109,6 +166,10 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
         :operation="operation"
         :choices="choices"
         :reason="getReason(row.connection)"
+        :is-single="isSingle"
+        :types="props.connections.types.value"
+        :create="props.connections.create"
+        :update="props.connections.update"
         :is-held="heldKey === row.key"
         :is-dragging="drag.dragging.value?.hasMoved === true && drag.dragging.value.item === index"
         :is-drop-target="drag.dragging.value?.hasMoved === true && drag.at.value === index"
@@ -121,20 +182,30 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
       />
     </ul>
 
-    <div class="connection-rows__foot">
-      <Button v-if="drafts.length < limit" variant="outline" :disabled="!canAdd" @click="add">
-        <Plus :size="14" aria-hidden="true" />
-        {{ words.connectionAdd }}
-      </Button>
-      <Button v-if="drafts.length === 0" variant="ghost" @click="emit('open-connections')">
-        {{ words.connectionRowsOpen }}
-      </Button>
-      <p v-if="stored.length === 0" class="connection-rows__note">
-        {{ words.connectionRowsNone }}
-      </p>
+    <div v-if="stored.length > 0 && !isSingle && drafts.length < limit" class="connection-rows__foot">
+      <Select
+        :model-value="''"
+        :choices="pickerChoices"
+        :name="words.connectionRowsUse"
+        :placeholder="words.connectionRowsUse"
+        :aria-label="words.connectionRowsUse"
+        :search-name="words.searchConnections"
+        is-searchable
+        class="connection-rows__picker"
+        @update:model-value="onUse"
+      />
     </div>
 
-    <p v-if="drafts.length > 0" class="connection-rows__note">
+    <ConnectionDialog
+      v-if="isAdding"
+      :types="props.connections.types.value"
+      :create="props.connections.create"
+      :update="props.connections.update"
+      @saved="onConnectionSaved"
+      @close="isAdding = false"
+    />
+
+    <p v-if="stored.length > 0 && drafts.length > 0" class="connection-rows__note">
       {{ words.connectionRowsPrivacy(limit) }}
     </p>
     <p class="sr-only" role="status" aria-live="assertive">{{ announcement }}</p>
@@ -162,9 +233,18 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
 .connection-rows__list {
   margin: 0;
   padding: 0;
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  overflow: hidden;
+}
+
+.connection-rows__empty {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+}
+
+.connection-rows__picker {
+  inline-size: 14rem;
+  max-inline-size: 100%;
 }
 
 .connection-rows__foot {

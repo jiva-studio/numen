@@ -96,11 +96,17 @@ const render =
     components: { ConnectionRows },
     setup: () => {
       const value = shallowRef<JsonValue | undefined>(rows)
+      const list = ref(connections)
       const installation = createInstallation({
-        list: ref(connections),
+        list,
+        create: fn((draft: { name: string; typeId: string }) => {
+          const made = connection({ id: 'c00000099', name: draft.name || 'Fresh', typeId: draft.typeId })
+          list.value = [...list.value, made]
+          return Promise.resolve(asValue(made))
+        }),
         types: ref([SERVICE, SERVER, EMBEDDER]),
         listModels: fn((connectionId: string) =>
-          Promise.resolve(asValue(MODELS[connectionId] ?? [])),
+          Promise.resolve(asValue(MODELS[connectionId] ?? MODELS[WORK.id] ?? [])),
         ),
         listReasoningLevels: fn((connectionId: string, model: string) =>
           Promise.resolve(
@@ -265,6 +271,26 @@ export const ChoosingAConnectionFillsTheModel: Story = {
     await expect(canvas.getByRole('button', { name: 'Model' })).toHaveTextContent(
       'Gemini 2.5 Flash',
     )
+  },
+}
+
+/** The last entry of the connection list adds a connection; the saved one is chosen and the models open. */
+export const NewConnectionEntryChoosesTheModelNext: Story = {
+  render: render({ rows: [row(WORK.id, 'google/gemini-2.5-flash')] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
+    await userEvent.click(within(document.body).getByRole('menuitemradio', { name: /New connection/ }))
+
+    const dialog = await within(document.body).findByRole('dialog', { name: 'Add connection' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
+    await expect(canvas.getByRole('button', { name: 'Connection' })).toHaveTextContent('Fresh')
+    await expect(await within(document.body).findByRole('combobox')).toBeVisible()
+    await expect(readWritten(canvasElement)).toStrictEqual([
+      { connection: WORK.id, model: 'google/gemini-2.5-flash', reasoning: '' },
+    ])
   },
 }
 

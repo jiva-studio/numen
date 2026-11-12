@@ -78,15 +78,6 @@ function getValue(field: ConnectionFieldInfo): ConnectionValue | undefined {
     <p v-if="view.isKeyLost" role="status" class="connection-form__warning">
       {{ words.connectionAddressChanged }}
     </p>
-    <p class="connection-form__hint">{{ words.connectionModelNote }}</p>
-    <a
-      class="connection-form__guide"
-      :href="words.connectionGuideAddress"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {{ words.connectionGuide }}
-    </a>
   </div>
 </template>
 
@@ -140,10 +131,5 @@ function getValue(field: ConnectionFieldInfo): ConnectionValue | undefined {
 
 .connection-form__warning {
   color: var(--numen-alarm);
-}
-
-.connection-form__guide {
-  color: var(--numen-accent);
-  font-size: var(--numen-text-1);
 }
 </style>

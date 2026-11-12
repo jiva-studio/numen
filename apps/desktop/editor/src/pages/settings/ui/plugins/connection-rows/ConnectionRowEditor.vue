@@ -3,14 +3,23 @@
  * One row of a setting of rows: the grip that moves it, the connection, the model and the reasoning
  * level, and the button that removes it. The models and the levels are asked from the provider of the
  * connection; the model field also takes a typed name. Choosing a connection fills the model with the
- * first model of its list.
+ * first model of its list. The list of connections ends with "New connection…", which opens the
+ * dialog that adds one; the saved connection is chosen in the row and the list of its models opens,
+ * so the person chooses the model at once. Closing the dialog leaves the row as it was.
  */
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { GripVertical, X } from '@lucide/vue'
-import { Button, Select } from '@numen/ui'
-import type { StoredRow } from '@/entities/connection'
+import { Button, Select, runInBackground } from '@numen/ui'
+import type { ConnectionInfo, StoredRow } from '@/entities/connection'
 import { WORDS as words } from '../../../words'
 import type { ConnectionRowEditorProps } from './ConnectionRowEditor.types'
+import { openSelect } from '../../../model/openSelect'
 import { useRowChoices } from '../../../model/useRowChoices'
+import type { SelectChoice } from '../../../types'
+import ConnectionDialog from '../../connections/ConnectionDialog.vue'
+
+/** The identifier of the entry that adds a connection; no stored connection has it. */
+const NEW_CONNECTION = 'new-connection'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<ConnectionRowEditorProps>()
@@ -31,10 +40,29 @@ const { modelChoices, levelChoices, problem } = useRowChoices({
   update: (patch) => emit('update', patch),
 })
 
+const isAdding = ref(false)
+const modelSelect = useTemplateRef<InstanceType<typeof Select>>('modelSelect')
+const connectionChoices = computed<readonly SelectChoice[]>(() => [
+  ...props.choices,
+  { id: NEW_CONNECTION, text: words.connectionNew },
+])
+
 /* -------------------------------- Handlers -------------------------------- */
 function onConnectionChoose(connection: string): void {
+  if (connection === NEW_CONNECTION) {
+    isAdding.value = true
+    return
+  }
   if (connection === props.row.connection) return
   emit('update', { connection, model: '', reasoning: '' })
+}
+
+function onConnectionSaved(saved: ConnectionInfo): void {
+  emit('update', { connection: saved.id, model: '', reasoning: '' })
+  runInBackground(
+    nextTick(() => openSelect(modelSelect.value?.element)),
+    () => undefined,
+  )
 }
 
 function onModelChoose(model: string): void {
@@ -58,6 +86,7 @@ function onReasoningChoose(reasoning: string): void {
     :data-row-key="row.key"
   >
     <button
+      v-if="!isSingle"
       type="button"
       class="connection-rows__grip"
       :data-grip="row.key"
@@ -72,14 +101,17 @@ function onReasoningChoose(reasoning: string): void {
     <div class="connection-rows__fields">
       <Select
         :model-value="row.connection"
-        :choices="choices"
+        :choices="connectionChoices"
         :name="words.connectionRowsConnection"
         :placeholder="words.connectionRowsChoose"
         :aria-label="words.connectionRowsConnection"
+        :search-name="words.searchConnections"
+        is-searchable
         class="connection-rows__select"
         @update:model-value="onConnectionChoose"
       />
       <Select
+        ref="modelSelect"
         :model-value="row.model"
         :choices="modelChoices"
         :name="words.connectionRowsModel"
@@ -93,17 +125,18 @@ function onReasoningChoose(reasoning: string): void {
         @update:model-value="onModelChoose"
       />
       <Select
+        v-if="levelChoices.length > 1 && row.connection !== '' && row.model !== ''"
         :model-value="row.reasoning"
         :choices="levelChoices"
         :name="words.connectionRowsReasoning"
         :aria-label="words.connectionRowsReasoning"
-        :is-disabled="row.connection === '' || row.model === ''"
         class="connection-rows__select connection-rows__select--narrow"
         @update:model-value="onReasoningChoose"
       />
     </div>
 
     <Button
+      v-if="!isSingle"
       variant="ghost"
       size="icon"
       class="connection-rows__remove"
@@ -114,6 +147,15 @@ function onReasoningChoose(reasoning: string): void {
       <X :size="14" aria-hidden="true" />
     </Button>
 
+    <ConnectionDialog
+      v-if="isAdding"
+      :types="types"
+      :create="create"
+      :update="update"
+      @saved="onConnectionSaved"
+      @close="isAdding = false"
+    />
+
     <p v-if="reason !== ''" class="connection-rows__problem">{{ reason }}</p>
     <p v-if="problem !== ''" class="connection-rows__problem">
       {{ words.connectionRowsModelsFailed }} {{ problem }}
@@ -123,18 +165,18 @@ function onReasoningChoose(reasoning: string): void {
 
 <style scoped>
 .connection-rows__row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.375rem 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
   align-items: center;
-  padding: 0.5rem 0.625rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
-  background: var(--numen-field-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--numen-radius-tight);
   list-style: none;
+  transition: background-color 0.15s ease;
 }
 
-.connection-rows__row:last-child {
-  border-block-end: none;
+.connection-rows__row:hover {
+  background-color: var(--numen-bubble-bg);
 }
 
 .connection-rows__row--dragging {
@@ -176,6 +218,7 @@ function onReasoningChoose(reasoning: string): void {
 
 .connection-rows__fields {
   display: flex;
+  flex: 1 1 18rem;
   flex-wrap: wrap;
   gap: 0.375rem;
   min-inline-size: 0;
@@ -191,7 +234,7 @@ function onReasoningChoose(reasoning: string): void {
 }
 
 .connection-rows__problem {
-  grid-column: 2 / -1;
+  flex: 1 0 100%;
   margin: 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);

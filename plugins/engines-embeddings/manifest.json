@@ -69,7 +69,7 @@
       "key": "connections",
       "type": "connections",
       "title": "Connection",
-      "description": "The connection and the embedding model that turn texts into vectors. Changing either indexes the vault again.",
+      "description": "Changing the connection or the model indexes the vault again.",
       "operation": "embed",
       "max": 1,
       "when": {
