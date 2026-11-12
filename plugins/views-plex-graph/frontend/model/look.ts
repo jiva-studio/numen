@@ -17,18 +17,18 @@ interface NumberRange {
 }
 
 /** The number settings under the keys the manifest declares them. */
-const LOOK_NUMBERS = {
-  pillPaddingSides: { fallback: 10, min: 0, max: 24 },
-  pillPaddingEnds: { fallback: 9.25, min: 0, max: 16 },
-  focusSize: { fallback: 1.22, min: 1, max: 2.5 },
-  animationLength: { fallback: 420, min: 0, max: 2000 },
-  lineThickness: { fallback: 2, min: 0.5, max: 4 },
-  outlineThickness: { fallback: 1, min: 0.5, max: 4 },
-  lineCurvature: { fallback: 0.55, min: 0, max: 1 },
-  noteRoom: { fallback: 0, min: 0, max: 40 },
-} as const satisfies Record<string, NumberRange>
+const LOOK_NUMBERS = [
+  ['pillPaddingSides', { fallback: 10, min: 0, max: 24 }],
+  ['pillPaddingEnds', { fallback: 9.25, min: 0, max: 16 }],
+  ['focusSize', { fallback: 1.22, min: 1, max: 2.5 }],
+  ['animationLength', { fallback: 420, min: 0, max: 2000 }],
+  ['lineThickness', { fallback: 2, min: 0.5, max: 4 }],
+  ['outlineThickness', { fallback: 1, min: 0.5, max: 4 }],
+  ['lineCurvature', { fallback: 0.55, min: 0, max: 1 }],
+  ['noteRoom', { fallback: 0, min: 0, max: 40 }],
+] as const satisfies readonly (readonly [string, NumberRange])[]
 
-type LookNumber = keyof typeof LOOK_NUMBERS
+type LookNumber = (typeof LOOK_NUMBERS)[number][0]
 
 const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 
@@ -52,7 +52,7 @@ function followSetting<T>(
 /** The look read from the context, and followed while the plugin is active. */
 export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
   const numbers = Object.fromEntries(
-    Object.entries(LOOK_NUMBERS).map(([key, range]) => [
+    LOOK_NUMBERS.map(([key, range]) => [
       key,
       followSetting(context, key, (value) => parseNumber(value, range)),
     ]),
