@@ -109,7 +109,7 @@ func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 
-	client := numenv1connect.NewPluginCommandServiceClient(srv.Client(), srv.URL, hostcall.WithBearer("tok"))
+	client := numenv1connect.NewPluginCommandServiceClient(srv.Client(), srv.URL, connect.WithInterceptors(hostcall.Bearer("tok")))
 	res, err := client.RunCommand(t.Context(), connect.NewRequest(&v1.RunCommandRequest{
 		Command:   "greet",
 		Arguments: map[string]string{"name": "Bob"},

@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/task"
@@ -285,7 +284,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	lifecycle := servertest.NewLifecycleClient(http.DefaultClient, web.URL, hostcall.WithBearer("tok"))
+	lifecycle := servertest.NewLifecycleClient(http.DefaultClient, web.URL, "tok")
 	if _, err := lifecycle.Configure(t.Context(), map[string]string{}); err != nil {
 		t.Fatal(err)
 	}
