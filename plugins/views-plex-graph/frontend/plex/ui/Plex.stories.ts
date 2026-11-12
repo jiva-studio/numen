@@ -2,12 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
-import {
-  resolveOptions,
-  clusters,
-  type Placement,
-  type PlexOptionsInput,
-} from '../lib/arrange'
+import { resolveOptions, clusters, type Placement, type PlexOptionsInput } from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing/plexScale'
 import { EXPANSION_DELAY } from '../model/sizing/expansion'
 import { neighborhoods } from '../fixtures/neighborhoods'

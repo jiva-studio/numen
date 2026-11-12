@@ -11,9 +11,7 @@ export function requestNodes(nodes: readonly PlexNode[], options: PlexOptions): 
   for (const relation of RELATION_NAMES) {
     const ofRelation = nodes.filter((node) => node.relation === relation)
     if (ofRelation.length === 0) continue
-    requested[relation] = options.viewport
-      ? ofRelation
-      : ofRelation.slice(0, options.maxPerCluster)
+    requested[relation] = options.viewport ? ofRelation : ofRelation.slice(0, options.maxPerCluster)
   }
   return requested
 }

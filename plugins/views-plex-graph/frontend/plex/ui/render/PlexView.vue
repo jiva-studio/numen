@@ -62,7 +62,9 @@ const renderedNodes = computed(() => {
   return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
 })
 
-const thread = computed(() => getReachThread(props.frame, props.gestureFrom, props.gestureAt, props.curvature))
+const thread = computed(() =>
+  getReachThread(props.frame, props.gestureFrom, props.gestureAt, props.curvature),
+)
 
 const pendingThread = computed(() =>
   getPendingThread(props.frame, {

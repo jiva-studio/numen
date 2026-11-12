@@ -292,15 +292,15 @@ describe('a title finds room on its line', () => {
       ...measured,
     })
     // Its line is barely longer than its words, and it keeps the middle of it.
-    const spare = (edge: PlacedEdge) =>
-      getLength(edge) - measureLabel(edge.titles[0]!.words)
+    const spare = (edge: PlacedEdge) => getLength(edge) - measureLabel(edge.titles[0]!.words)
     const titled = crossing.edges.filter((edge) => edge.titles[0]?.words)
     const tightest = titled.reduce((a, b) => (spare(b) < spare(a) ? b : a))
     expect(Math.abs(tightest.titles[0]!.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
 
     // A line with spare length yields: it is not set at the middle, or not set at all.
     const yielding = crossing.edges.filter(
-      (edge) => edge.titles[0]?.words === undefined || Math.abs(edge.titles[0].wordsAt - MIDDLE) >= A_NUDGE,
+      (edge) =>
+        edge.titles[0]?.words === undefined || Math.abs(edge.titles[0].wordsAt - MIDDLE) >= A_NUDGE,
     )
     expect(yielding.length).toBeGreaterThan(0)
   })

@@ -59,7 +59,10 @@ export function findFreeSpot(taken: readonly Spot[], request: SpotRequest): Spot
   const ranked = listCandidates(request)
     .map((point) => ({ point, along: measureAlong(point, request) }))
     .filter((each) => each.along >= -TOLERANCE)
-    .map((each) => ({ ...each, cost: Math.round(measureCost(each.point, request) * COST_PRECISION) }))
+    .map((each) => ({
+      ...each,
+      cost: Math.round(measureCost(each.point, request) * COST_PRECISION),
+    }))
     .sort((a, b) => a.cost - b.cost || a.along - b.along)
 
   for (const { point } of ranked) {

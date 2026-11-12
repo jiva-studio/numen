@@ -97,7 +97,6 @@ describe('where the relations sit', () => {
     expect(getNodesByRelation(layout, 'jump').length).toBeGreaterThan(0)
     expect(getNodesByRelation(layout, 'sibling').length).toBeGreaterThan(0)
   })
-
 })
 
 describe('a box is as wide as its title needs', () => {
@@ -445,7 +444,9 @@ describe('a window that holds the arrangement exactly', () => {
     const frame = arrangePlex(two, { options: { viewport } })
     const [first, second] = getNodesByRelation(frame, 'child')
 
-    expect(Math.max(...[first!, second!].map((node) => node.y + node.height / 2))).toBeCloseTo(bottom)
+    expect(Math.max(...[first!, second!].map((node) => node.y + node.height / 2))).toBeCloseTo(
+      bottom,
+    )
     expect(Math.abs(second!.x - first!.x)).toBeGreaterThan(nodeSize.width + gap)
   })
 })

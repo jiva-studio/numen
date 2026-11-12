@@ -48,4 +48,3 @@ export function measureCrowding(
   }
   return packOptions(options, tight)
 }
-

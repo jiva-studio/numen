@@ -9,8 +9,28 @@ const getNumbers = (path: string): number[] =>
 
 const frame: PlexFrame = {
   nodes: [
-    { id: 'a', title: 'a', relation: 'focus', x: 0, y: 0, width: 40, height: 20, order: 0, opacity: 1 },
-    { id: 'b', title: 'b', relation: 'child', x: 100, y: 50, width: 40, height: 20, order: 0, opacity: 1 },
+    {
+      id: 'a',
+      title: 'a',
+      relation: 'focus',
+      x: 0,
+      y: 0,
+      width: 40,
+      height: 20,
+      order: 0,
+      opacity: 1,
+    },
+    {
+      id: 'b',
+      title: 'b',
+      relation: 'child',
+      x: 100,
+      y: 50,
+      width: 40,
+      height: 20,
+      order: 0,
+      opacity: 1,
+    },
   ],
   edges: [],
   extent: { minX: 0, minY: 0, maxX: 0, maxY: 0 },

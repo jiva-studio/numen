@@ -87,7 +87,8 @@ function placeClusters(
     const size = { width: width(node), height }
     const direction = getClusterDirection(options.direction[relation], RELATIONS[relation].lean)
     const anchor = getAnchor(direction, focus, options)
-    const reach = Math.abs(direction.x) * (size.width / 2) + Math.abs(direction.y) * (size.height / 2)
+    const reach =
+      Math.abs(direction.x) * (size.width / 2) + Math.abs(direction.y) * (size.height / 2)
     const start = { x: anchor.x + direction.x * reach, y: anchor.y + direction.y * reach }
     const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
     const middle = getClusterMiddle(start, direction, { size: members.length, cell })

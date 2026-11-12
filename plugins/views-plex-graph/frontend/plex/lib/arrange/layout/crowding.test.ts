@@ -23,7 +23,9 @@ const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: n
 /** Whether the window holds every node of the neighborhood at the given packing. */
 const canHoldAll = (packed: PlexOptions): boolean => {
   const { viewport } = packed
-  const frame = arrangePlex(build('A node', COUNTS), { options: { ...packed, viewport: undefined } })
+  const frame = arrangePlex(build('A node', COUNTS), {
+    options: { ...packed, viewport: undefined },
+  })
   return holdsAll(frame) && findEscapedNodes(frame, viewport!).length === 0
 }
 
