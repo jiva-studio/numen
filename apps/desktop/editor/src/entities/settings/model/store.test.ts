@@ -146,8 +146,8 @@ describe('what remains at a setting', () => {
 describe('a setting written', () => {
   it('is requested of the vault as it was given', async () => {
     const { kept, requests } = createStore('{}')
-    await kept.write.writeSetting(['agent', 'use'], 'claude')
-    expect(requests).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
+    await kept.write.writeSetting(['appearance', 'mode'], 'dark')
+    expect(requests).toStrictEqual([[{ at: ['appearance', 'mode'], value: '"dark"' }]])
   })
 
   it('clears what was last returned before it is written', async () => {
@@ -165,7 +165,7 @@ describe('a setting written', () => {
 
   it('is returned where it failed', async () => {
     const { kept, notify } = createStore('{}', 'the file could not be written')
-    await kept.write.writeSetting(['agent', 'use'], 'claude')
+    await kept.write.writeSetting(['appearance', 'mode'], 'dark')
     expect(notify).toHaveBeenLastCalledWith(
       'Setting not saved: Numen is not responding; retrying',
       'error',
@@ -178,7 +178,7 @@ describe('a setting written', () => {
       settingsService: {
         getSettings: () => {
           if (shouldFailRead) throw createLostConnection('offline')
-          return answerWith('{"agent":{"keep":1},"nullBranch":null,"primBranch":42}')
+          return answerWith('{"appearance":{"keep":1},"nullBranch":null,"primBranch":42}')
         },
         writeSettings: () => ({}),
       },
@@ -188,14 +188,14 @@ describe('a setting written', () => {
 
     shouldFailRead = true
     await store.write.writeSettings([
-      { at: ['agent', 'use'], value: '"claude"' },
+      { at: ['appearance', 'mode'], value: '"dark"' },
       { at: ['nullBranch', 'nested'], value: '"ok"' },
       { at: ['primBranch', 'nested'], value: '"ok2"' },
-      { at: ['agent', 'keep'], value: 'not-json' },
+      { at: ['appearance', 'keep'], value: 'not-json' },
     ])
 
-    expect(store.read.getCommittedSetting(['agent', 'keep'])).toBe(1)
-    expect(store.read.getCommittedSetting(['agent', 'use'])).toBe('claude')
+    expect(store.read.getCommittedSetting(['appearance', 'keep'])).toBe(1)
+    expect(store.read.getCommittedSetting(['appearance', 'mode'])).toBe('dark')
     expect(store.read.getCommittedSetting(['nullBranch', 'nested'])).toBe('ok')
     expect(store.read.getCommittedSetting(['primBranch', 'nested'])).toBe('ok2')
   })
