@@ -9,6 +9,7 @@ export {
   createPluginStatus,
   INTERFACE_WAIT_MS,
   PLUGIN_START_LIMIT_MS,
+  waitWithinInterfaceLimit,
   type PluginStatus,
 } from './loading'
 export type { LoaderHost } from './host'
