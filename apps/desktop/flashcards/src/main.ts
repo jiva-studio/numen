@@ -1,4 +1,6 @@
 import { createApp } from 'vue'
+import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
+import { openExternalUrl } from '@numen/workbench'
 import { createRoot } from './app/createRoot'
 import './app/app.css'
 
@@ -8,6 +10,11 @@ import './app/app.css'
 document.addEventListener('contextmenu', (event) => {
   if (!document.getSelection()?.isCollapsed) return
   event.preventDefault()
+})
+
+// The window has no address bar: an external address opens in the system browser.
+interceptExternalLinks((href) => {
+  runInBackground(openExternalUrl(href), reportFailure)
 })
 
 createApp(createRoot()).mount('#app')

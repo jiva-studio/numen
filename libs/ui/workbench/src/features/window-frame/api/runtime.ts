@@ -1,20 +1,19 @@
 /**
- * The Wails runtime the window serves beside its pages. A page served without it (stories, tests)
+ * The runtime the desktop shell serves beside its pages. A page served without it (stories, tests)
  * gets no runtime, and what needs one does nothing or falls back to the browser.
  */
+import type { FrameRuntime, FrameRuntimeLoader } from '../lib/runtime'
 
-import type { WailsRuntime, WailsRuntimeLoader } from '../lib/runtime/wailsRuntime'
-
-/** The path the window serves its Wails runtime module at. */
+/** The path the desktop shell serves its runtime module at. */
 const RUNTIME_PATH = '/wails/runtime.js'
 
-let runtime: Promise<WailsRuntime | undefined> | undefined
+let runtime: Promise<FrameRuntime | undefined> | undefined
 
 // Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
-export const loadWailsRuntime: WailsRuntimeLoader = () => {
+export const loadFrameRuntime: FrameRuntimeLoader = () => {
   // An address built at run time is not resolved by a bundler of the package that imports this one.
   runtime ??= import(/* @vite-ignore */ new URL(RUNTIME_PATH, window.location.href).href).then(
-    (loaded: WailsRuntime) => loaded,
+    (loaded: FrameRuntime) => loaded,
     () => undefined,
   )
   return runtime
@@ -27,7 +26,7 @@ export const loadWailsRuntime: WailsRuntimeLoader = () => {
  */
 export async function openExternalUrl(
   href: string,
-  load: WailsRuntimeLoader = loadWailsRuntime,
+  load: FrameRuntimeLoader = loadFrameRuntime,
 ): Promise<void> {
   const open = (await load())?.Browser?.OpenURL
   if (open) {

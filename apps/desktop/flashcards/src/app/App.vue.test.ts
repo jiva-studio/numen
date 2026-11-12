@@ -416,48 +416,6 @@ describe('the work behind the window', () => {
   })
 })
 
-describe('external links in the window', () => {
-  it('intercepts external anchor clicks, reports errors to notices, and stops on unmount', async () => {
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {
-      throw new Error('blocked popup')
-    })
-    let shell: ReturnType<typeof createWindow> | undefined
-    const wrapper = mount(
-      defineComponent({
-        setup: () => {
-          shell = createWindow(createDeps())
-          return () => h('a', { href: 'https://example.test/docs' }, 'Docs')
-        },
-      }),
-      { attachTo: document.body },
-    )
-    mounted.push(wrapper)
-    await flushPromises()
-
-    wrapper.find('a').element.click()
-    await vi.waitFor(() => {
-      expect(openSpy).toHaveBeenCalledWith('https://example.test/docs', '_blank')
-      expect(shell?.notices.notices.value).toMatchObject([
-        {
-          text: formatErrorMessage(new Error('blocked popup')),
-          severity: 'error',
-        },
-      ])
-    })
-
-    openSpy.mockClear()
-    const anchor = document.createElement('a')
-    anchor.href = 'https://example.test/after'
-    document.body.appendChild(anchor)
-    wrapper.unmount()
-    anchor.click()
-    await flushPromises()
-    anchor.remove()
-    expect(openSpy).not.toHaveBeenCalled()
-    openSpy.mockRestore()
-  })
-})
-
 describe('the appearance palette', () => {
   const openPalette = async () => {
     wire.listThemes.mockResolvedValue({

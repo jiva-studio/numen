@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { openExternalUrl } from './wailsRuntime'
+import { openExternalUrl } from './runtime'
 
 afterEach(() => {
   vi.restoreAllMocks()

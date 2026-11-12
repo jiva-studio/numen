@@ -1,7 +1,5 @@
-/** The Wails runtime module as the pages use it. */
-
-/** The part of the Wails runtime module the pages use, under the names Wails gives it. */
-export interface WailsRuntime {
+/** The part of the runtime of the desktop shell the pages use, under the names the shell gives it. */
+export interface FrameRuntime {
   readonly Window?: {
     readonly Focus?: () => Promise<void>
     readonly Minimise?: () => Promise<void>
@@ -19,5 +17,5 @@ export interface WailsRuntime {
   readonly Browser?: { readonly OpenURL?: (href: string) => void | Promise<void> }
 }
 
-/** Loads the runtime module; resolves to undefined where the page is not served by Wails. */
-export type WailsRuntimeLoader = () => Promise<WailsRuntime | undefined>
+/** Loads the runtime module; resolves to undefined where the page is not served by the desktop shell. */
+export type FrameRuntimeLoader = () => Promise<FrameRuntime | undefined>

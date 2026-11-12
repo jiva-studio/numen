@@ -24,8 +24,7 @@ import {
   type VaultsHost,
   type WindowHost,
 } from '@numen/plugin-loader'
-import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
-import { openExternalUrl } from '@/features/external-links'
+import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/workbench'
 import { createSlotIssueReporter, createWindowSlots, getPluginModels } from '@/entities/plugin'
 import type { createWindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'
