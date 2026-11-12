@@ -9,6 +9,8 @@ import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@numen/ui'
 import { neighborhoods } from '../fixtures/neighborhoods'
+import { stubClock } from '../../fixtures/clock'
+import type { PlexNeighborhood } from '../../types'
 
 const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   mount(Plex, {
@@ -339,5 +341,154 @@ describe('how much room the plex has', () => {
     })
     plex.unmount()
     expect(stop).toHaveBeenCalledOnce()
+  })
+})
+
+/** A focus with one parent and one child, the smallest plex with every kind of line. */
+const FAMILY: PlexNeighborhood = {
+  nodes: [
+    { id: 'focus', title: 'Watershed', relation: 'focus' },
+    { id: 'parent-0', title: 'Hydrology', relation: 'parent' },
+    { id: 'child-0', title: 'River delta', relation: 'child' },
+  ],
+  edges: [
+    { from: 'parent-0', to: 'focus' },
+    { from: 'focus', to: 'child-0' },
+  ],
+}
+
+describe('Pill background', () => {
+  it('draws no pill on any node when it is off, the focus included', () => {
+    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+
+    expect(plex.findAll('.plex__node')).toHaveLength(3)
+    expect(plex.findAll('.plex__box')).toHaveLength(0)
+  })
+
+  it('draws every node as a dot and its title when it is off', () => {
+    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+
+    for (const node of plex.findAll('.plex__node')) {
+      expect(node.findAll('.plex__dot')).toHaveLength(1)
+      expect(node.find('.plex__title-text').exists()).toBe(true)
+    }
+    expect(plex.findAll('.plex__title-text').map((title) => title.text())).toStrictEqual(
+      expect.arrayContaining(['Watershed', 'Hydrology', 'River delta']),
+    )
+  })
+
+  it('draws the pills again once it is switched back on', async () => {
+    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+
+    await plex.setProps({ showPills: true })
+
+    expect(plex.findAll('.plex__box')).toHaveLength(3)
+    expect(plex.findAll('.plex__dot')).toHaveLength(0)
+  })
+
+  it('still travels to a note pressed on its title when it is off', async () => {
+    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+
+    await plex.get('[aria-label^="River delta"] .plex__title-text').trigger('click')
+
+    expect(plex.emitted('activate')).toStrictEqual([['child-0']])
+  })
+
+  it('still asks for the menu of a note right-clicked on its title when it is off', () => {
+    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 })
+
+    plex.get('[aria-label^="Hydrology"] .plex__title-text').element.dispatchEvent(event)
+
+    expect((plex.emitted('menu') as unknown[][] | undefined)?.map(([id]) => id)).toStrictEqual([
+      'parent-0',
+    ])
+  })
+})
+
+describe('the pill padding and the focus size, measured', () => {
+  const ONE_CHILD: PlexNeighborhood = {
+    nodes: [
+      { id: 'focus', title: 'Port wine', relation: 'focus' },
+      { id: 'child-0', title: 'Watershed ab', relation: 'child' },
+    ],
+    edges: [{ from: 'focus', to: 'child-0' }],
+  }
+
+  /** The theme's own padding, which the plex no longer takes. */
+  const readThemeType = () => ({
+    font: '13px Test Sans',
+    labelFont: '10px Test Sans',
+    padding: 10,
+    gap: 6,
+  })
+
+  const stubCanvas = () => {
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
+    } as unknown as CanvasRenderingContext2D)
+  }
+
+  const getWidth = (plex: ReturnType<typeof mountPlex>, relation: string) =>
+    Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('width'))
+
+  const getHeight = (plex: ReturnType<typeof mountPlex>, relation: string) =>
+    Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('height'))
+
+  const mountMeasured = (options: Record<string, unknown>) =>
+    mountPlex({ neighborhood: ONE_CHILD, readType: readThemeType, options })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    document.body.replaceChildren()
+  })
+
+  it('widens a box by twice the difference in Pill padding, sides', () => {
+    stubCanvas()
+    const narrow = getWidth(mountMeasured({ padding: { inline: 4, block: 9.25 } }), 'child')
+    const wide = getWidth(mountMeasured({ padding: { inline: 20, block: 9.25 } }), 'child')
+
+    expect(wide - narrow).toBeCloseTo(32, 6)
+  })
+
+  it('grows a short focus title in width and height, and leaves the neighbor as it was', () => {
+    stubCanvas()
+    const small = mountMeasured({ focusScale: 1 })
+    const large = mountMeasured({ focusScale: 2 })
+
+    expect(getWidth(large, 'focus')).toBeCloseTo(2 * getWidth(small, 'focus'), 6)
+    expect(getHeight(large, 'focus')).toBeCloseTo(2 * getHeight(small, 'focus'), 6)
+    expect(getWidth(large, 'child')).toBe(getWidth(small, 'child'))
+    expect(getHeight(large, 'child')).toBe(getHeight(small, 'child'))
+  })
+})
+
+describe('Animation', () => {
+  it('is moving just before the length it is given, and still at that length', async () => {
+    const time = stubClock()
+    const plex = mountPlex({ duration: 1000, clock: time.clock })
+
+    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    time.tick(0)
+    time.tick(900)
+    expect(plex.vm.isMoving).toBe(true)
+
+    time.tick(1000)
+    await nextTick()
+    expect(plex.vm.isMoving).toBe(false)
+  })
+
+  it('jumps to the next note with no movement at 0', async () => {
+    const time = stubClock()
+    const plex = mountPlex({ duration: 0, clock: time.clock })
+
+    await plex.setProps({ neighborhood: neighborhoods.leaf })
+
+    expect(plex.vm.isMoving).toBe(false)
+    expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
+    expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
   })
 })

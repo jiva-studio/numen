@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest'
-import type { TabKindRegistration } from '@numen/plugin-sdk'
+import { afterEach, describe, expect, it } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
+import type { JsonValue, TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, PlexGraphView, PLEX } from './index'
 import { createHost } from './fixtures/host'
 import { settle } from './fixtures'
 import type { PlexTabState } from './types'
+import { Plex } from './plex'
 
 const createContext = () => {
   const { host, requested } = createHost({ opening: 'Root.md' })
@@ -222,5 +225,136 @@ describe('view-plex-graph plugin', () => {
     await plugin.activate(ctx)
 
     expect(ctx.getRegisteredTabKinds()[0]?.kind).toBe(PLEX)
+  })
+})
+
+describe('the look of an open plex', () => {
+  const openPlex = async (initialSettings: Record<string, JsonValue> = {}) => {
+    const { host } = createHost({ opening: 'Root.md' })
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      workspace: host.workspace,
+      notes: host.notes,
+      relations: host.relations,
+      initialSettings,
+    })
+    activate(ctx)
+    const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
+    await settle()
+    const tab = mount(PlexGraphView, { props: { state }, attachTo: document.body })
+    await settle()
+    await nextTick()
+    return { ctx, state, tab, getPlex: () => tab.findComponent(Plex) }
+  }
+
+  afterEach(() => {
+    document.body.replaceChildren()
+  })
+
+  it('draws the plex with the values the settings hold when the tab opens', async () => {
+    const { getPlex } = await openPlex({
+      showPills: false,
+      animationLength: 900,
+      lineThickness: 3,
+      outlineThickness: 1.5,
+      lineCurvature: 0.2,
+      focusSize: 1.6,
+      pillPaddingSides: 4,
+      pillPaddingEnds: 3.5,
+      noteRoom: 12,
+    })
+
+    expect(getPlex().props('showPills')).toBe(false)
+    expect(getPlex().props('duration')).toBe(900)
+    expect(getPlex().props('lineWidth')).toBe(3)
+    expect(getPlex().props('outlineWidth')).toBe(1.5)
+    expect(getPlex().props('options')).toMatchObject({
+      focusScale: 1.6,
+      padding: { inline: 4, block: 3.5 },
+      room: 12,
+      routing: { curvature: 0.2 },
+    })
+  })
+
+  it('hands the open plex the default look where nothing is set', async () => {
+    const { getPlex } = await openPlex()
+
+    expect(getPlex().props('showPills')).toBe(true)
+    expect(getPlex().props('duration')).toBe(420)
+    expect(getPlex().props('lineWidth')).toBe(2)
+    expect(getPlex().props('outlineWidth')).toBe(1)
+    expect(getPlex().props('options')).toMatchObject({
+      focusScale: 1.22,
+      padding: { inline: 10, block: 9.25 },
+      room: 0,
+      routing: { curvature: 0.55 },
+    })
+  })
+
+  it('redraws the open plex without its pills when Pill background is turned off, and with them when it is turned on', async () => {
+    const { ctx, tab } = await openPlex()
+    expect(tab.findAll('.plex__box').length).toBeGreaterThan(0)
+
+    ctx.setSetting('showPills', false)
+    await nextTick()
+    expect(tab.findAll('.plex__box')).toHaveLength(0)
+    expect(tab.findAll('.plex__dot').length).toBeGreaterThan(0)
+
+    ctx.setSetting('showPills', true)
+    await nextTick()
+    expect(tab.findAll('.plex__box').length).toBeGreaterThan(0)
+  })
+
+  it('hands every changed setting to the plex that is already open', async () => {
+    const { ctx, getPlex } = await openPlex()
+
+    ctx.setSetting('animationLength', 1000)
+    ctx.setSetting('lineThickness', 3)
+    ctx.setSetting('outlineThickness', 1)
+    ctx.setSetting('lineCurvature', 0)
+    ctx.setSetting('focusSize', 2)
+    ctx.setSetting('pillPaddingSides', 20)
+    ctx.setSetting('pillPaddingEnds', 2)
+    ctx.setSetting('noteRoom', 20)
+    await nextTick()
+
+    expect(getPlex().props('duration')).toBe(1000)
+    expect(getPlex().props('lineWidth')).toBe(3)
+    expect(getPlex().props('outlineWidth')).toBe(1)
+    expect(getPlex().props('options')).toMatchObject({
+      focusScale: 2,
+      padding: { inline: 20, block: 2 },
+      room: 20,
+      routing: { curvature: 0 },
+    })
+  })
+
+  it('hands the line thickness to the lines and the outline thickness to the pills, each its own', async () => {
+    const { ctx, getPlex } = await openPlex({ lineThickness: 3, outlineThickness: 1 })
+    expect([getPlex().props('lineWidth'), getPlex().props('outlineWidth')]).toStrictEqual([3, 1])
+
+    ctx.setSetting('lineThickness', 1)
+    ctx.setSetting('outlineThickness', 3)
+    await nextTick()
+
+    expect([getPlex().props('lineWidth'), getPlex().props('outlineWidth')]).toStrictEqual([1, 3])
+  })
+
+  it('moves at once once Animation is set to 0', async () => {
+    const { ctx, getPlex } = await openPlex({ animationLength: 1000 })
+
+    ctx.setSetting('animationLength', 0)
+    await nextTick()
+
+    expect(getPlex().props('duration')).toBe(0)
+  })
+
+  it('keeps the heading settings beside the look', async () => {
+    const { ctx, state } = await openPlex({ showPills: false })
+
+    ctx.setSetting('headingLimit', 3)
+    await nextTick()
+
+    expect(state.headings.maxHeadings.value).toBe(3)
   })
 })
