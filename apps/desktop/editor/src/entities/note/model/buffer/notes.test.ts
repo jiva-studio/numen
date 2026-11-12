@@ -279,7 +279,7 @@ describe('closing', () => {
     expect(notes.has('a.md')).toBe(true)
   })
 
-  it('answers both of two closes asked of one note', async () => {
+  it('returns the same result for two closes of one note', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
