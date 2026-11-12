@@ -26,6 +26,8 @@ interface FakeServer {
 }
 
 const buildFakeServer = (): string => {
+  const prebuilt = path.join(PLUGIN_DIR, 'bin', 'fakeopenai')
+  if (fs.existsSync(prebuilt)) return prebuilt
   const binary = test.info().outputPath('fakeopenai')
   fs.mkdirSync(path.dirname(binary), { recursive: true })
   execFileSync('go', ['build', '-o', binary, './backend/cmd/fakeopenai'], {

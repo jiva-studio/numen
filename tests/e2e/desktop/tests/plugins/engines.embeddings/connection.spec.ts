@@ -84,6 +84,11 @@ test.describe('Embeddings through a connection', () => {
   const servers: FakeServer[] = []
 
   test.beforeAll(() => {
+    const prebuilt = path.join(providerRoot, 'bin', 'fakeopenai')
+    if (fs.existsSync(prebuilt)) {
+      binary = prebuilt
+      return
+    }
     binary = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'numen-fakeopenai-')), 'fakeopenai')
     execFileSync('go', ['build', '-o', binary, './backend/cmd/fakeopenai'], { cwd: providerRoot })
   })
