@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -187,7 +186,7 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("mcpClient.Connect over Streamable HTTP failed: %v", err)
 	}
-	defer cleanup.Close(t, session)
+	defer closeAndCheck(t, session)
 
 	verifyStreamableToolCall(ctx, t, session)
 }

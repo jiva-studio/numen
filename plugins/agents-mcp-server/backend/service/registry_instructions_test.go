@@ -10,7 +10,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
@@ -75,7 +74,7 @@ func openSession(t *testing.T, srv *testServer) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, session)
+	t.Cleanup(func() { closeAndCheck(t, session) })
 	return session.InitializeResult().Instructions
 }
 

@@ -9,7 +9,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
@@ -74,7 +73,7 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 	callNoteGetTool(ctx, t, session)
 	assertDynamicDiscovery(ctx, t, session, hostClient)
 
-	cleanup.Close(t, session)
+	closeAndCheck(t, session)
 
 	if err := srv.Close(t.Context()); err != nil {
 		t.Fatalf("srv.Close failed: %v", err)
@@ -176,7 +175,7 @@ func serveOnLoopback(t *testing.T, srv *testServer) {
 		t.Fatal(err)
 	}
 	if err := srv.Serve(ln); err != nil {
-		cleanup.Close(t, ln)
+		closeAndCheck(t, ln)
 		t.Fatalf("Serve failed: %v", err)
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
@@ -119,7 +118,7 @@ func TestMountServesMCPOnTheListenerTheReadyLineReports(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	session := connectStreamableClient(ctx, t, "http://127.0.0.1:"+strconv.Itoa(port)+"/mcp", listenerMCPToken)
-	defer cleanup.Close(t, session)
+	defer closeAndCheck(t, session)
 	if result := session.InitializeResult(); result == nil || result.ServerInfo == nil {
 		t.Errorf("initialize result = %+v, want the server info", result)
 	}
@@ -181,7 +180,7 @@ func TestAConfiguredPortOpensNoListener(t *testing.T) {
 	dialer := net.Dialer{Timeout: time.Second}
 	conn, err := dialer.DialContext(t.Context(), "tcp", net.JoinHostPort("127.0.0.1", port))
 	if err == nil {
-		cleanup.Close(t, conn)
+		closeAndCheck(t, conn)
 		t.Errorf("a connection to the configured port %s was accepted", port)
 	}
 }
