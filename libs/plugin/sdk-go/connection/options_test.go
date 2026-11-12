@@ -58,7 +58,7 @@ func TestServeOptionsRefusesAPayloadThatIsNoOptionsRequest(t *testing.T) {
 
 	_, err := operation(t.Context(), Call{}, []byte{0xff, 0xff}, nil)
 
-	if reason, _ := GetReason(err); !IsStop(err) || reason != ReasonInvalidRequest {
+	if reason, _ := getReason(err); !IsStop(err) || reason != ReasonInvalidRequest {
 		t.Errorf("err = %v, want a stop of an invalid request", err)
 	}
 }

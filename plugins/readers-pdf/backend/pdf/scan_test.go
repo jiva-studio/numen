@@ -5,8 +5,6 @@ import (
 	"math"
 	"os"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 )
 
 func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {
@@ -18,7 +16,7 @@ func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, scan)
+	defer closeAndCheck(t, scan)
 
 	width, height, err := scan.GetPageSize(0)
 	if err != nil {
@@ -60,7 +58,7 @@ func TestRenderPageScanDefaultDPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, scan)
+	defer closeAndCheck(t, scan)
 
 	drawnDefault, err := scan.RenderPage(0, 0)
 	if err != nil {
@@ -87,7 +85,7 @@ func TestRenderPageAtWidthDrawsThePageThatWide(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, scan)
+	defer closeAndCheck(t, scan)
 	width, height, err := scan.GetPageSize(0)
 	if err != nil {
 		t.Fatal(err)
@@ -182,7 +180,7 @@ func TestGetFittingWidthKeepsThePageWithinTheMostPixels(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, turnedScan)
+	defer closeAndCheck(t, turnedScan)
 	tw, th, err := turnedScan.GetPageSize(0)
 	if err != nil {
 		t.Fatal(err)

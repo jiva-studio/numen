@@ -38,9 +38,6 @@ var (
 	// ErrNoVault is returned by a vault call while the host shows no vault.
 	ErrNoVault = errors.New("the host is showing no vault")
 
-	// ErrNoConnections is returned when the host was built without the operations on connections.
-	ErrNoConnections = errors.New("the host has no operations on connections")
-
 	// ErrNoWindow is returned by a window call when the host shows no window.
 	ErrNoWindow = errors.New("the host has no window")
 	// ErrInvalidFocus is returned by a focus call for an argument the use case rejects: an empty path,

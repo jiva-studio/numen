@@ -102,23 +102,6 @@ func (e *textEndpoint) PutTextVersion(
 	return connect.NewResponse(res), nil
 }
 
-func (e *textEndpoint) RemoveTextVersion(
-	ctx context.Context, req *connect.Request[v1.RemoveTextVersionRequest],
-) (*connect.Response[v1.RemoveTextVersionResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
-	if err != nil {
-		return nil, err
-	}
-	if call.texts == nil {
-		return connect.NewResponse(&v1.RemoveTextVersionResponse{Error: noTexts}), nil
-	}
-	code, err := answerText(ctx, call.texts.RemoveVersion(ctx, call.vault, call.pluginID, req.Msg.GetPath(), req.Msg.GetKey()))
-	if err != nil {
-		return nil, err
-	}
-	return connect.NewResponse(&v1.RemoveTextVersionResponse{Error: code}), nil
-}
-
 func (e *textEndpoint) ListTextVersions(
 	ctx context.Context, req *connect.Request[v1.ListTextVersionsRequest],
 ) (*connect.Response[v1.ListTextVersionsResponse], error) {

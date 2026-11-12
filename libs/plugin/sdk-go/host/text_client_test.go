@@ -56,11 +56,6 @@ func (h *textHost) ReadText(_ context.Context, req *connect.Request[v1.ReadTextR
 	return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "two"}}}), nil
 }
 
-func (h *textHost) RemoveTextVersion(_ context.Context, req *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error) {
-	h.vaults = append(h.vaults, req.Header().Get("Numen-Vault"))
-	return connect.NewResponse(&v1.RemoveTextVersionResponse{}), nil
-}
-
 func newTextClient(t *testing.T, h *textHost) *host.TextClient {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -128,14 +123,11 @@ func TestATextClientOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
 	if _, err := chemistry.ReadText(ctx, "a.pdf", "p/k", ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := chemistry.RemoveVersion(ctx, "a.pdf", "k"); err != nil {
-		t.Fatal(err)
-	}
 	if _, err := client.ListVersions(ctx, "a.pdf"); err != nil {
 		t.Fatal(err)
 	}
 
-	want := []string{"Chemistry", "Chemistry", "Chemistry", "Chemistry", ""}
+	want := []string{"Chemistry", "Chemistry", "Chemistry", ""}
 	if !slices.Equal(h.vaults, want) {
 		t.Errorf("the vaults named were %q, want %q", h.vaults, want)
 	}

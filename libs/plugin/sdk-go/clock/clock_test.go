@@ -7,9 +7,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 )
 
-func TestFakeReportsConfiguredTimeUntilMoved(t *testing.T) {
+func TestFakeReportsTheTimeItIsSetToUntilMoved(t *testing.T) {
 	start := time.Date(2026, time.March, 1, 9, 0, 0, 0, time.UTC)
-	fake := clock.NewFake(start)
+	fake := new(clock.Fake)
+	fake.Set(start)
 	if got := fake.Now(); !got.Equal(start) {
 		t.Fatalf("Now() = %v, want %v", got, start)
 	}

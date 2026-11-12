@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
@@ -80,7 +79,7 @@ func getFirstMorning() time.Time {
 }
 
 func setNow(handler *API, now time.Time) {
-	pos := clock.NewFake(now)
+	pos := newFakeClock(now)
 	handler.now = pos
 	day := getReviewDay()
 	handler.flash().Day = day

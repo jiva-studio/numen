@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -33,7 +32,7 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 		Store:    foldersOf(vault),
 		Texts:    textsOf(texts),
 		Queue:    hosttest.NewQueue(),
-		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock(webpage.New()) },
@@ -201,7 +200,7 @@ func TestCommandErrorPaths(t *testing.T) {
 		Store:    func(domain.VaultID) link.Folder { return link.Folder{Files: es, Writer: es} },
 		Texts:    textsOf(texts),
 		Queue:    hosttest.NewQueue(),
-		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	cf := &configurableFetcher{}
 	links := link.New(hosted,
@@ -281,7 +280,7 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 		Store:    foldersOf(vault),
 		Texts:    textsOf(texts),
 		Queue:    queue,
-		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },

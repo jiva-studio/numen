@@ -75,7 +75,7 @@ func (c *callers) asCallers() Callers {
 	lent.SetPluginVaultList(c.list)
 	return Callers{
 		Identity: c, Leases: c, Lent: lent,
-		Dependencies: func() Dependencies { return nil }, Tools: func() PluginTools { return c.tools },
+		Tools: func() PluginTools { return c.tools },
 	}
 }
 
@@ -93,7 +93,6 @@ func vaultOf(fake any) *vaultapi.Access {
 		Notes: capability[vaultapi.NoteLookup](fake), Links: capability[vaultapi.LinkLookup](fake),
 		Files: capability[vaultapi.FileReader](fake), Writer: capability[vaultapi.FileWriter](fake),
 		Arranger: capability[vaultapi.Arranger](fake), LinkEditor: capability[vaultapi.LinkEditor](fake),
-		Connections: capability[vaultapi.Connections](fake), Related: capability[vaultapi.RelatedNotes](fake),
 		Watch: capability[vaultapi.Watch](fake), Switch: capability[vaultapi.Switch](fake),
 		Stores: capability[vaultapi.StoreOpener](fake), Cache: capability[vaultapi.CacheStore](fake),
 	}

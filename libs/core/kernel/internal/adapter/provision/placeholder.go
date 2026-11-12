@@ -58,17 +58,6 @@ func (p *PlaceholderProvisioner) Provision(
 	return resolved, nil
 }
 
-// Status answers ready, with the placeholder made.
-func (p *PlaceholderProvisioner) Status(ctx context.Context, req manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
-	resolved, err := p.Provision(ctx, req, nil)
-	if err != nil {
-		return plugin.DependencyStatus{}, err
-	}
-	return plugin.DependencyStatus{
-		ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved,
-	}, nil
-}
-
 // GetPlaceholderDir returns where placeholders are kept: the numen folder of the user's cache, or a
 // temporary folder while the machine names no cache, or a folder under the working folder where it cannot make
 // one, which still lets a mock run start.

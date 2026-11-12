@@ -979,13 +979,6 @@ func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 			_, err := f.vault.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{Title: "One"}))
 			return err
 		},
-		"join a note to another": func() error {
-			_, err := f.vault.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
-				Path: "One.md",
-				Link: &v1.Link{To: "Two.md", Role: v1.Role_ROLE_JUMP},
-			}))
-			return err
-		},
 		"rename a note": func() error {
 			_, err := f.vault.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: "One.md", Title: "Two",

@@ -47,31 +47,3 @@ func resolveNamedLinks(ctx context.Context, names edit.NameQueries, v domain.Vau
 	}
 	return out, nil
 }
-
-// WriteLink writes one link into a note: what is already written there is kept, and the note at the other
-// end is left alone.
-type WriteLink struct {
-	links EditLinks
-	names edit.NameQueries
-	gate  WriteGate
-}
-
-// NewWriteLink returns the use case over the editing of links, the names that give a link its address and
-// the gate a write passes.
-func NewWriteLink(links EditLinks, names edit.NameQueries, gate WriteGate) WriteLink {
-	return WriteLink{links: links, names: names, gate: gate}
-}
-
-// Execute writes the link into the note at from. A link that names no note, or one with no address, is
-// ErrInvalidLink and nothing is written. It fails with window.ErrClosing once the window is closing.
-func (u WriteLink) Execute(ctx context.Context, v domain.Vault, from string, link NamedLink) error {
-	resolved, err := resolveNamedLink(ctx, u.names, v, link)
-	if err != nil {
-		return err
-	}
-	_, err = writeUnder(u.gate, func() (struct{}, error) {
-		_, addErr := u.links.Add(ctx, v, from, domain.FileStat{}, resolved)
-		return struct{}{}, addErr
-	})
-	return err
-}

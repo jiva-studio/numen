@@ -23,27 +23,6 @@ export const SHARED_COMMANDS: readonly SharedCommand[] = [
   { id: 'app:file.createText', title: 'Create text', arguments: [] },
 ]
 
-/** One argument of an app command; an `enum` argument lists the values it allows in `options`. */
-export interface AppCommandArgument {
-  readonly name: string
-  readonly title: string
-  readonly type: string
-  readonly options: readonly string[]
-}
-
-// APP_COMMANDS are the app commands that take arguments. A slot entry passes values only
-// for these arguments and these values.
-export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]>> = {
-  'app:file.open': [
-    { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
-  ],
-  'app:settings.open': [
-    { name: 'plugin', title: 'Plugin', type: 'string', options: [] },
-    { name: 'setting', title: 'Setting', type: 'string', options: [] },
-  ],
-  'app:file.reveal': [{ name: 'kind', title: 'Place', type: 'string', options: [] }],
-}
-
 /** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */
 export interface AppKeybinding {
   readonly key: string

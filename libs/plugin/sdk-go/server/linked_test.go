@@ -109,7 +109,7 @@ func TestALinkedHandlerWhoseMountFailsClosesWhatItAdded(t *testing.T) {
 // result on a later call.
 func TestCloseJoinsTheErrorsOfItsClosers(t *testing.T) {
 	first, second := errors.New("first failed"), errors.New("second failed")
-	s := New(WithPort(0), WithToken("close-token"))
+	s := New(withPort(0), withToken("close-token"))
 	s.OnClose(func() error { return first })
 	s.OnClose(func() error { return nil })
 	s.OnClose(func() error { return second })

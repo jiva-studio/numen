@@ -371,7 +371,7 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	}, Texts: func(id domain.VaultID) Texts {
 		ht.withVault = id
 		return ht
-	}, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
+	}, Queue: hq, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
 		func() Fetcher { return sf },
 		func() Settings { return Settings{CopyMaxSize: *copyMaxSize} })
 	return l, v, hv, hs, ht, hq, sf, copyMaxSize
@@ -630,4 +630,11 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	if _, err := hs.Read(ctx, made.Key+".video.mp4"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("the copy no note refers to is kept: %v", err)
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

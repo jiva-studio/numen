@@ -196,11 +196,8 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	if readEffect(v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED) != 0 {
 		t.Fatal("expected 0 for unspecified effect")
 	}
-	if readToolInfo(nil) != nil || writeToolInfo(nil) != nil || readCallResponse(nil) != nil {
+	if readToolInfo(nil) != nil || readCallResponse(nil) != nil {
 		t.Fatal("expected nil for nil conversions")
-	}
-	if got := writeCallResponse(nil); got == nil || got.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || got.GetResult() != nil {
-		t.Fatalf("writeCallResponse(nil) = %v", got)
 	}
 	if res := writeResult(make(chan int)); !res.GetIsError() || !strings.HasPrefix(res.GetText(), "the result cannot be encoded:") {
 		t.Fatalf("writeResult(chan) = %v", res)

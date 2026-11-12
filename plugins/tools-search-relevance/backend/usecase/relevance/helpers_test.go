@@ -17,7 +17,7 @@ func getMeasuredAt() time.Time {
 	return time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
 }
 
-func newClock() *clock.Fake { return clock.NewFake(getMeasuredAt()) }
+func newClock() *clock.Fake { return newFakeClock(getMeasuredAt()) }
 
 func newHost(hint float64) (*hosttest.Search, *hosttest.Vault) {
 	search := hosttest.NewSearch("physics", "chemistry")
@@ -70,4 +70,11 @@ func abs(x float64) float64 {
 		return -x
 	}
 	return x
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

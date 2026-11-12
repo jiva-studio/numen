@@ -39,9 +39,14 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	_, describeErr := h.Describe(t.Context())
 	_, indexErr := h.IndexTexts(t.Context(), searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "text"}})
 
-	if rpcerror.GetCode(describeErr) != rpcerror.FailedPrecondition || rpcerror.GetCode(indexErr) != rpcerror.FailedPrecondition {
+	if !hasCode(describeErr, rpcerror.FailedPrecondition) || !hasCode(indexErr, rpcerror.FailedPrecondition) {
 		t.Fatalf("Describe error %v and IndexTexts error %v, want FailedPrecondition", describeErr, indexErr)
 	}
+}
+
+// hasCode reports whether err is the failure of a call with the code, which prints the code first.
+func hasCode(err error, code rpcerror.Code) bool {
+	return err != nil && strings.HasPrefix(err.Error(), code.String()+": ")
 }
 
 func TestTheHandlerDescribesAndIndexesWithTheModelTheEnvironmentNames(t *testing.T) {

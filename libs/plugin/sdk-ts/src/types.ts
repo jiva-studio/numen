@@ -47,13 +47,6 @@ export interface SettingsViewRegistration {
   readonly component: Component
 }
 
-// SettingsViewProps are the props the settings page passes the component of a settings view. The
-// component emits `update:setting` with a key and a value; the host writes it to that setting.
-export interface SettingsViewProps {
-  readonly pluginId: string
-  readonly values: Readonly<Record<string, JsonValue>>
-}
-
 // SlotViewRegistration registers a component a slot draws. The manifest places it, as an entry
 // `{ "slot", "view" }` of `contributes.slots` with the same id, in the slots it is drawn in.
 export interface SlotViewRegistration {
@@ -99,15 +92,6 @@ export interface ReaderTabState {
   reportPlace(place: TabPlace): void
   // Hands the window the reader, which it focuses and lays out when the tab is shown.
   attachReader?(reader: ReaderHandle | null): void
-}
-
-// ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
-export interface ReaderPaneProps {
-  readonly path: string
-  readonly file?: string
-  readonly pluginId?: string
-  readonly title?: string
-  readonly state?: ReaderTabState
 }
 
 // TabTarget identifies the tab a command applies to.

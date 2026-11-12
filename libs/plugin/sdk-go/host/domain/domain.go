@@ -2,9 +2,6 @@
 package domain
 
 import (
-	"path/filepath"
-	"strings"
-
 	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -20,10 +17,6 @@ type Link = notesdomain.Link
 type Address = notesdomain.Address
 type LinkRole = notesdomain.LinkRole
 type LinkMarker = notesdomain.LinkMarker
-type Connection = notesdomain.Connection
-type Side = notesdomain.Side
-type RelatedNote = notesdomain.RelatedNote
-type Backlink = notesdomain.Backlink
 type VaultProblem = notesdomain.VaultProblem
 type MoveResult = notesdomain.MoveResult
 type TextVersion = notesdomain.TextVersion
@@ -75,9 +68,3 @@ func NewVersionText(version TextVersion, segments []TextSegment) VersionText {
 }
 
 func HashContent(raw []byte) string { return notesdomain.HashContent(raw) }
-
-// IsNotePath reports whether a vault path is a note: its extension is NoteExtension, in any case, as
-// target.isNote of a when condition holds it.
-func IsNotePath(path string) bool {
-	return strings.EqualFold(filepath.Ext(path), NoteExtension)
-}

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hosttext.proto.
  */
 export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiMAoSVGV4dFNvdXJjZVByb3BlcnR5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSL5AQoLVGV4dFZlcnNpb24SCgoCaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCglwbHVnaW5faWQYAyABKAkSCwoDa2V5GAQgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAUgASgJEgwKBGtpbmQYBiABKAkSEgoKaW5wdXRfaGFzaBgHIAEoCRIRCgl0ZXh0X2hhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgLIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSK0AQoVUHV0VGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAMgASgJEgwKBGtpbmQYBCABKAkSEgoKaW5wdXRfaGFzaBgFIAEoCRIMCgRmaWxlGAYgASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgHIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSJoChZQdXRUZXh0VmVyc2lvblJlc3BvbnNlEiYKB3ZlcnNpb24YASABKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhImCgVlcnJvchgCIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiNQoYUmVtb3ZlVGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJIkMKGVJlbW92ZVRleHRWZXJzaW9uUmVzcG9uc2USJgoFZXJyb3IYASABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIicKF0xpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0EgwKBHBhdGgYASABKAkihAEKGExpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRInCgh2ZXJzaW9ucxgBIAMoCzIVLm51bWVuLnYxLlRleHRWZXJzaW9uEhcKD2xpdmVfdmVyc2lvbl9pZBgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUicgoPUmVhZFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSEgoKdmVyc2lvbl9pZBgCIAEoCRIOCgZjdXJzb3IYAyABKAkSDQoFc3RhcnQYBCABKAMSEwoGbGVuZ3RoGAUgASgDSACIAQFCCQoHX2xlbmd0aCKVAQoQUmVhZFRleHRSZXNwb25zZRInCghzZWdtZW50cxgBIAMoCzIVLm51bWVuLnYxLlRleHRTZWdtZW50EhMKC25leHRfY3Vyc29yGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZRINCgVzdGFydBgEIAEoAxIMCgRzaXplGAUgASgDMuICCg9Ib3N0VGV4dFNlcnZpY2USUwoOUHV0VGV4dFZlcnNpb24SHy5udW1lbi52MS5QdXRUZXh0VmVyc2lvblJlcXVlc3QaIC5udW1lbi52MS5QdXRUZXh0VmVyc2lvblJlc3BvbnNlElwKEVJlbW92ZVRleHRWZXJzaW9uEiIubnVtZW4udjEuUmVtb3ZlVGV4dFZlcnNpb25SZXF1ZXN0GiMubnVtZW4udjEuUmVtb3ZlVGV4dFZlcnNpb25SZXNwb25zZRJZChBMaXN0VGV4dFZlcnNpb25zEiEubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USQQoIUmVhZFRleHQSGS5udW1lbi52MS5SZWFkVGV4dFJlcXVlc3QaGi5udW1lbi52MS5SZWFkVGV4dFJlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_textsegment]);
+  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiMAoSVGV4dFNvdXJjZVByb3BlcnR5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSL5AQoLVGV4dFZlcnNpb24SCgoCaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCglwbHVnaW5faWQYAyABKAkSCwoDa2V5GAQgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAUgASgJEgwKBGtpbmQYBiABKAkSEgoKaW5wdXRfaGFzaBgHIAEoCRIRCgl0ZXh0X2hhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgLIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSK0AQoVUHV0VGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAMgASgJEgwKBGtpbmQYBCABKAkSEgoKaW5wdXRfaGFzaBgFIAEoCRIMCgRmaWxlGAYgASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgHIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSJoChZQdXRUZXh0VmVyc2lvblJlc3BvbnNlEiYKB3ZlcnNpb24YASABKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhImCgVlcnJvchgCIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiJwoXTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKEAQoYTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEicKCHZlcnNpb25zGAEgAygLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SFwoPbGl2ZV92ZXJzaW9uX2lkGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSJyCg9SZWFkVGV4dFJlcXVlc3QSDAoEcGF0aBgBIAEoCRISCgp2ZXJzaW9uX2lkGAIgASgJEg4KBmN1cnNvchgDIAEoCRINCgVzdGFydBgEIAEoAxITCgZsZW5ndGgYBSABKANIAIgBAUIJCgdfbGVuZ3RoIpUBChBSZWFkVGV4dFJlc3BvbnNlEicKCHNlZ21lbnRzGAEgAygLMhUubnVtZW4udjEuVGV4dFNlZ21lbnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlEg0KBXN0YXJ0GAQgASgDEgwKBHNpemUYBSABKAMyhAIKD0hvc3RUZXh0U2VydmljZRJTCg5QdXRUZXh0VmVyc2lvbhIfLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVxdWVzdBogLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVzcG9uc2USWQoQTGlzdFRleHRWZXJzaW9ucxIhLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0GiIubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEkEKCFJlYWRUZXh0EhkubnVtZW4udjEuUmVhZFRleHRSZXF1ZXN0GhoubnVtZW4udjEuUmVhZFRleHRSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_textsegment]);
 
 /**
  * TextSourceProperty is a frontmatter property of a note that a text version
@@ -193,45 +193,6 @@ export const PutTextVersionResponseSchema: GenMessage<PutTextVersionResponse> = 
   messageDesc(file_numen_v1_hosttext, 3);
 
 /**
- * @generated from message numen.v1.RemoveTextVersionRequest
- */
-export type RemoveTextVersionRequest = Message<"numen.v1.RemoveTextVersionRequest"> & {
-  /**
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * @generated from field: string key = 2;
-   */
-  key: string;
-};
-
-/**
- * Describes the message numen.v1.RemoveTextVersionRequest.
- * Use `create(RemoveTextVersionRequestSchema)` to create a new message.
- */
-export const RemoveTextVersionRequestSchema: GenMessage<RemoveTextVersionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 4);
-
-/**
- * @generated from message numen.v1.RemoveTextVersionResponse
- */
-export type RemoveTextVersionResponse = Message<"numen.v1.RemoveTextVersionResponse"> & {
-  /**
-   * @generated from field: numen.v1.TextErrorCode error = 1;
-   */
-  error: TextErrorCode;
-};
-
-/**
- * Describes the message numen.v1.RemoveTextVersionResponse.
- * Use `create(RemoveTextVersionResponseSchema)` to create a new message.
- */
-export const RemoveTextVersionResponseSchema: GenMessage<RemoveTextVersionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 5);
-
-/**
  * @generated from message numen.v1.ListTextVersionsRequest
  */
 export type ListTextVersionsRequest = Message<"numen.v1.ListTextVersionsRequest"> & {
@@ -246,7 +207,7 @@ export type ListTextVersionsRequest = Message<"numen.v1.ListTextVersionsRequest"
  * Use `create(ListTextVersionsRequestSchema)` to create a new message.
  */
 export const ListTextVersionsRequestSchema: GenMessage<ListTextVersionsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 6);
+  messageDesc(file_numen_v1_hosttext, 4);
 
 /**
  * @generated from message numen.v1.ListTextVersionsResponse
@@ -275,7 +236,7 @@ export type ListTextVersionsResponse = Message<"numen.v1.ListTextVersionsRespons
  * Use `create(ListTextVersionsResponseSchema)` to create a new message.
  */
 export const ListTextVersionsResponseSchema: GenMessage<ListTextVersionsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 7);
+  messageDesc(file_numen_v1_hosttext, 5);
 
 /**
  * @generated from message numen.v1.ReadTextRequest
@@ -322,7 +283,7 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
  * Use `create(ReadTextRequestSchema)` to create a new message.
  */
 export const ReadTextRequestSchema: GenMessage<ReadTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 8);
+  messageDesc(file_numen_v1_hosttext, 6);
 
 /**
  * @generated from message numen.v1.ReadTextResponse
@@ -364,7 +325,7 @@ export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
  * Use `create(ReadTextResponseSchema)` to create a new message.
  */
 export const ReadTextResponseSchema: GenMessage<ReadTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 9);
+  messageDesc(file_numen_v1_hosttext, 7);
 
 /**
  * HostTextService serves the text versions of a vault to the plugins. The host
@@ -392,16 +353,6 @@ export const HostTextService: GenService<{
     methodKind: "unary";
     input: typeof PutTextVersionRequestSchema;
     output: typeof PutTextVersionResponseSchema;
-  },
-  /**
-   * RemoveTextVersion removes the record of a version of the calling plugin.
-   *
-   * @generated from rpc numen.v1.HostTextService.RemoveTextVersion
-   */
-  removeTextVersion: {
-    methodKind: "unary";
-    input: typeof RemoveTextVersionRequestSchema;
-    output: typeof RemoveTextVersionResponseSchema;
   },
   /**
    * ListTextVersions lists the versions of a file and names the live one.

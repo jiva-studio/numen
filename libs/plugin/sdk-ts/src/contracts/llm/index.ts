@@ -4,7 +4,6 @@
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../connections'
-import { collectCall } from '../../connections'
 import { asValue, type Result } from '../../result'
 import {
   ChatFinishSchema,
@@ -36,6 +35,20 @@ export const OPERATION_REASONING = 'llm.reasoning'
 /** The keys of the row fields a connection type of the contract declares. */
 export const OPTION_MODEL = 'model'
 export const OPTION_REASONING = 'reasoning'
+
+// collectCall reads a call to its end and returns its done payload, or the error of the call.
+const collectCall = async (
+  host: ConnectionHost,
+  operation: string,
+  payload: Uint8Array,
+  options?: ConnectionCallOptions,
+): Promise<Result<Uint8Array, ConnectionError>> => {
+  const frames = host.call(operation, payload, options)
+  for (;;) {
+    const next = await frames.next()
+    if (next.done === true) return next.value
+  }
+}
 
 const decode = <T>(
   answer: Result<Uint8Array, ConnectionError>,

@@ -62,8 +62,6 @@ type TextVersions interface {
 	// PutVersion records a version of the plugin from the file it wrote, or replaces the one it has
 	// under the key, and reindexes the file.
 	PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error)
-	// RemoveVersion removes the record of a version of the plugin.
-	RemoveVersion(ctx context.Context, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, path string) (TextListing, error)
 }
@@ -119,13 +117,4 @@ func AppendText(ctx context.Context, store StoreWriter, name string, segments []
 		return err
 	}
 	return store.Append(ctx, name, raw)
-}
-
-// ReadTextFile reads the segments of a version file of the plugin's folder.
-func ReadTextFile(ctx context.Context, store StoreReader, name string) ([]domain.TextSegment, error) {
-	raw, err := store.Read(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-	return textfile.Decode(raw)
 }
