@@ -216,7 +216,7 @@ describe('groups take turns', () => {
   })
 })
 
-describe('a group fills the free space beside another group', () => {
+describe('a group fills the free space next to another group', () => {
   const window = { width: 1600, height: 1000 }
 
   it('shows twenty-four children and spreads them sideways instead of running down one column', () => {

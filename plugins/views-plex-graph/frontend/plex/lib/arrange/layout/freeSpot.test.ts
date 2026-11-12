@@ -70,7 +70,7 @@ describe('the free spot of a group', () => {
     expect(findFreeSpot([at(0, 0)], request([], middle))).toStrictEqual({ ...middle, ...SIZE })
   })
 
-  it('moves further out along the direction when every candidate beside the group is occupied', () => {
+  it('moves further out along the direction when every candidate next to the group is occupied', () => {
     const first = at(start.x, start.y)
     const wall = [-3, -2, -1, 0, 1, 2, 3].flatMap((column) =>
       [-1, 0, 1, 2].map((row) =>
