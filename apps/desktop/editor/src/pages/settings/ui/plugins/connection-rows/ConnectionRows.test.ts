@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref, type Ref } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { Select } from '@numen/ui'
+import { Select, Switch } from '@numen/ui'
 import type {
   ConnectionFieldInfo,
   ConnectionInfo,
@@ -115,6 +115,8 @@ interface Options {
   readonly operation?: string
   readonly countNotes?: InstallationConnections['countNotes']
   readonly create?: InstallationConnections['create']
+  readonly discover?: boolean
+  readonly isDiscovering?: boolean
 }
 
 const mountRows = (options: Options = {}) => {
@@ -133,9 +135,11 @@ const mountRows = (options: Options = {}) => {
       setting: setting({
         max: options.max ?? 3,
         operations: [options.operation ?? 'llm.complete'],
+        ...(options.discover ? { discover: true } : {}),
       }),
       value: options.value ?? [],
       connections: installation.connections,
+      ...(options.isDiscovering === undefined ? {} : { isDiscovering: options.isDiscovering }),
     },
   })
   return { wrapper, installation, listRowOptions }
@@ -505,6 +509,75 @@ describe('the rows of a setting of connections', () => {
     await wrapper.setProps({ value: [row(HOME.id, 'beta')] })
 
     expect(root().querySelectorAll('li')).toHaveLength(1)
+    dispose(wrapper)
+  })
+})
+
+describe('the rows of a setting that discovers', () => {
+  const discoverSwitch = (wrapper: VueWrapper) => wrapper.findComponent(Switch)
+
+  it('shows the switch on and names the connections that serve, in their order, while no row is chosen', async () => {
+    const { wrapper } = mountRows({ discover: true, isDiscovering: true })
+    await flushPromises()
+
+    expect(root().textContent).toContain('Discover automatically')
+    expect(discoverSwitch(wrapper).props('modelValue')).toBe(true)
+    expect(root().textContent).toContain('Automatic: Work, Home')
+    dispose(wrapper)
+  })
+
+  it('says that no connection serves while none can', async () => {
+    const { wrapper } = mountRows({ discover: true, isDiscovering: true, connections: [EMBED_ONLY, RETIRED] })
+    await flushPromises()
+
+    expect(root().textContent).toContain('No connection serves this yet')
+    dispose(wrapper)
+  })
+
+  it('uses the chosen rows instead, and names no automatic connection', async () => {
+    const { wrapper } = mountRows({ discover: true, isDiscovering: true, value: [row(HOME.id, 'beta')] })
+    await flushPromises()
+
+    expect(root().querySelectorAll('li')).toHaveLength(1)
+    expect(root().textContent).not.toContain('Automatic:')
+    dispose(wrapper)
+  })
+
+  it('names the automatic connections again once the last row is removed', async () => {
+    const { wrapper } = mountRows({ discover: true, isDiscovering: true, value: [row(HOME.id, 'beta')] })
+    await flushPromises()
+
+    await wrapper.setProps({ value: [] })
+
+    expect(root().textContent).toContain('Automatic: Work, Home')
+    dispose(wrapper)
+  })
+
+  it('names no automatic connection while the switch is off', async () => {
+    const { wrapper } = mountRows({ discover: true, isDiscovering: false })
+    await flushPromises()
+
+    expect(discoverSwitch(wrapper).props('modelValue')).toBe(false)
+    expect(root().textContent).not.toContain('Automatic:')
+    dispose(wrapper)
+  })
+
+  it('asks to turn discovery off from the switch', async () => {
+    const { wrapper } = mountRows({ discover: true, isDiscovering: true })
+    await flushPromises()
+
+    discoverSwitch(wrapper).vm.$emit('update:modelValue', false)
+
+    expect(wrapper.emitted('discover')).toStrictEqual([[false]])
+    dispose(wrapper)
+  })
+
+  it('has no switch for a setting that does not declare discover', async () => {
+    const { wrapper } = mountRows()
+    await flushPromises()
+
+    expect(discoverSwitch(wrapper).exists()).toBe(false)
+    expect(root().textContent).not.toContain('Discover automatically')
     dispose(wrapper)
   })
 })

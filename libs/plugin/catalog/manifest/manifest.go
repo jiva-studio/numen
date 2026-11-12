@@ -117,7 +117,12 @@ func IsValidID(id string) bool { return manifestIDPattern.MatchString(id) }
 // host runs the plugin. No setting of a manifest takes the name.
 const SettingEnabled = "enabled"
 
-func listReservedSettingKeys() []string { return []string{SettingEnabled} }
+// SettingDiscover is the field of the object of a plugin in the settings file that holds, for each setting
+// of type connections that declares discover, whether it uses every connection that serves its
+// operations while it holds no row. No setting of a manifest takes the name.
+const SettingDiscover = "discover"
+
+func listReservedSettingKeys() []string { return []string{SettingEnabled, SettingDiscover} }
 
 var (
 	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
@@ -183,6 +188,7 @@ type Setting struct {
 	OptionsFrom string
 	Generate    string
 	Operations  []string
+	Discover    bool
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.

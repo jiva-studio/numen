@@ -22,7 +22,7 @@ const (
 type Calls struct {
 	resolve     connectionport.ResolveConnection
 	readSecrets connectionport.ReadConnectionSecrets
-	rows        connectionport.Rows
+	rows        connectionport.ListRows
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
@@ -34,7 +34,7 @@ type Calls struct {
 type Connections struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
-	Rows        connectionport.Rows
+	Rows        connectionport.ListRows
 }
 
 // NewCalls returns the calls over the connections and the providers the source

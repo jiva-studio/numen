@@ -84,6 +84,12 @@ func NewListTypes(deps Deps, titles connectionport.OperationTitles) *ListTypes {
 // NewResolve returns the use case that finds a connection by its id.
 func NewResolve(deps Deps) *Resolve { return &Resolve{operation: deps.base} }
 
+// NewListRows returns the use case that lists the rows a plugin calls an operation through, from the settings
+// of rows of the plugins.
+func NewListRows(deps Deps, settings connectionport.RowSettings) *ListRows {
+	return &ListRows{operation: deps.base, settings: settings}
+}
+
 // NewReadSecrets returns the use case that reads the secret fields of a connection.
 func NewReadSecrets(deps Deps) *ReadSecrets { return &ReadSecrets{operation: deps.base} }
 

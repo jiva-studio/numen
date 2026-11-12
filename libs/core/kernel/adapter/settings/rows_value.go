@@ -155,3 +155,27 @@ func dropInvalidRowsOf(f *File, owner string, settings []manifest.Setting) {
 		}
 	}
 }
+
+// checkDiscover returns why a value is not one the plugin field fieldDiscover takes: an object that holds
+// true or false under the key of a setting of rows that declares discover.
+func checkDiscover(settings []manifest.Setting, value any) error {
+	if value == nil {
+		return nil
+	}
+	choices, isObject := value.(map[string]any)
+	if !isObject {
+		return fmt.Errorf("%w: expected an object of true or false by the key of a setting of rows", ErrWrongType)
+	}
+	for _, key := range slices.Sorted(maps.Keys(choices)) {
+		isDiscoverable := slices.ContainsFunc(settings, func(one manifest.Setting) bool {
+			return one.Key == key && one.Type == manifest.SettingTypeConnections && one.Discover
+		})
+		if !isDiscoverable {
+			return fmt.Errorf("%s: %w that discovers connections", key, ErrUndeclared)
+		}
+		if _, isBool := choices[key].(bool); !isBool {
+			return fmt.Errorf("%s: %w: expected true or false", key, ErrWrongType)
+		}
+	}
+	return nil
+}

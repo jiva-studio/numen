@@ -73,3 +73,11 @@ type Row struct {
 	ConnectionID string
 	Options      map[string]string
 }
+
+// RowSetting is the setting of rows a plugin uses for an operation. Rows are the rows the person chose, in
+// their order. IsDiscovering is whether, while Rows is empty, the plugin uses every connection whose type
+// serves the operation.
+type RowSetting struct {
+	Rows          []Row
+	IsDiscovering bool
+}

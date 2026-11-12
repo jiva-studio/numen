@@ -48,6 +48,9 @@ export const WORDS = {
   /** The rows of connections on the page of a plugin. */
   connectionRowsNone: 'No connections yet. Add a connection first.',
   connectionRowsOpen: 'Open Connections',
+  connectionRowsDiscover: 'Discover automatically',
+  connectionRowsAutomatic: (names: readonly string[]) => `Automatic: ${names.join(', ')}`,
+  connectionRowsNoneServes: 'No connection serves this yet',
   connectionRowsChoose: 'Choose a connection',
   connectionRowsConnection: 'Connection',
   connectionRowsChooseValue: (title: string) => `Choose a ${title.toLowerCase()}`,

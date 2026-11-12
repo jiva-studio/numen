@@ -74,10 +74,10 @@ func newRowsWorld() *rowsWorld {
 	}}
 }
 
-func TestListRowsReturnsTheRowsOfThePluginInTheOrderOfUse(t *testing.T) {
+func TestReadRowSettingReturnsTheRowsOfThePluginInTheOrderOfUse(t *testing.T) {
 	world := newRowsWorld()
 
-	rows, err := world.rows().ListRows(rowsPluginID, "llm.complete")
+	rows, err := readRows(world, rowsPluginID, "llm.complete")
 
 	if err != nil {
 		t.Fatal(err)
@@ -91,55 +91,55 @@ func TestListRowsReturnsTheRowsOfThePluginInTheOrderOfUse(t *testing.T) {
 	}
 }
 
-func TestListRowsAnswersOnlyForTheOperationOfTheSetting(t *testing.T) {
+func TestReadRowSettingAnswersOnlyForTheOperationOfTheSetting(t *testing.T) {
 	world := newRowsWorld()
 
-	rows, err := world.rows().ListRows(rowsPluginID, "llm.embed")
+	rows, err := readRows(world, rowsPluginID, "llm.embed")
 
 	if err != nil || len(rows) != 0 {
 		t.Errorf("rows = %v, %v, want none: proofreading has no setting for llm.embed", rows, err)
 	}
 }
 
-func TestListRowsAnswersNothingForAPluginThatHasNoSuchSetting(t *testing.T) {
+func TestReadRowSettingAnswersNothingForAPluginThatHasNoSuchSetting(t *testing.T) {
 	world := newRowsWorld()
 
-	rows, err := world.rows().ListRows("md.numen.nobody", "llm.complete")
+	rows, err := readRows(world, "md.numen.nobody", "llm.complete")
 
 	if err != nil || len(rows) != 0 {
 		t.Errorf("rows = %v, %v, want none", rows, err)
 	}
 }
 
-func TestListRowsReturnsNoRowForAHiddenSetting(t *testing.T) {
+func TestReadRowSettingReturnsNoRowForAHiddenSetting(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings",
 		rowsSetting("connections", "llm.embed", false, `[{"connection":"`+workID+`","model":"m"}]`))
 
-	rows, err := world.rows().ListRows(embeddingsID, "llm.embed")
+	rows, err := readRows(world, embeddingsID, "llm.embed")
 
 	if err != nil || len(rows) != 0 {
 		t.Errorf("rows = %v, %v: the rows of a local-model source must not be used", rows, err)
 	}
 }
 
-func TestListRowsReturnsOnlyRowsOfExistingConnections(t *testing.T) {
+func TestReadRowSettingReturnsOnlyRowsOfExistingConnections(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "llm.complete", true,
 		`[{"connection":"c00000000","model":"a"},{"connection":"`+homeID+`","model":"b"}]`))
 
-	rows, err := world.rows().ListRows(rowsPluginID, "llm.complete")
+	rows, err := readRows(world, rowsPluginID, "llm.complete")
 
 	if err != nil || len(rows) != 1 || rows[0].ConnectionID != homeID {
 		t.Errorf("rows = %v, %v, want the row of the connection that exists", rows, err)
 	}
 }
 
-func TestListRowsIgnoresAValueThatIsNoListOfRows(t *testing.T) {
+func TestReadRowSettingIgnoresAValueThatIsNoListOfRows(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "llm.complete", true, `"c1f0a9e20"`))
 
-	rows, err := world.rows().ListRows(rowsPluginID, "llm.complete")
+	rows, err := readRows(world, rowsPluginID, "llm.complete")
 
 	if err != nil || len(rows) != 0 {
 		t.Errorf("rows = %v, %v, want none", rows, err)
@@ -311,5 +311,36 @@ func TestRefreshStopsWhenTheContextEnds(t *testing.T) {
 
 	if !errors.Is(err, context.Canceled) || len(world.refreshed) != 0 {
 		t.Errorf("err = %v, refreshed = %v", err, world.refreshed)
+	}
+}
+
+func readRows(world *rowsWorld, pluginID, operation string) ([]connection.Row, error) {
+	setting, err := world.rows().ReadRowSetting(pluginID, operation)
+	return setting.Rows, err
+}
+
+func TestReadRowSettingSaysWhetherTheSettingDiscovers(t *testing.T) {
+	world := newRowsWorld()
+	discovering := rowsSetting("connections", "acp.task", true, "")
+	discovering.IsDiscovering = true
+	world.plugins = append(world.plugins, rowsPlugin("md.numen.views.agent.chat", "Agent Chat", discovering))
+
+	setting, err := world.rows().ReadRowSetting("md.numen.views.agent.chat", "acp.task")
+
+	if err != nil || !setting.IsDiscovering || len(setting.Rows) != 0 {
+		t.Errorf("setting = %+v, %v, want no row and discovery", setting, err)
+	}
+}
+
+func TestReadRowSettingDoesNotDiscoverForAHiddenSetting(t *testing.T) {
+	world := newRowsWorld()
+	hidden := rowsSetting("connections", "acp.task", false, "")
+	hidden.IsDiscovering = true
+	world.plugins = append(world.plugins, rowsPlugin("md.numen.views.agent.chat", "Agent Chat", hidden))
+
+	setting, err := world.rows().ReadRowSetting("md.numen.views.agent.chat", "acp.task")
+
+	if err != nil || setting.IsDiscovering {
+		t.Errorf("setting = %+v, %v, want no discovery", setting, err)
 	}
 }

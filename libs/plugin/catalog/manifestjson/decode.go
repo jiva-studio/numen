@@ -201,6 +201,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			OptionsFrom: one.GetOptionsFrom(),
 			Generate:    one.GetGenerate(),
 			Operations:  one.GetOperations(),
+			Discover:    one.GetDiscover(),
 		})
 	}
 	return out, nil

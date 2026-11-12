@@ -111,6 +111,7 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     ...(s.preview ? { preview: true } : {}),
     ...(s.optionsFrom ? { optionsFrom: s.optionsFrom } : {}),
     ...(s.operations.length > 0 ? { operations: s.operations } : {}),
+    ...(s.discover ? { discover: true } : {}),
     min: s.min,
     max: s.max,
     step: s.step,

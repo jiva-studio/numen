@@ -29,6 +29,8 @@ type Setting struct {
 	Multiple      bool
 	Preview       bool
 	Operations    []string
+	Discover      bool
+	IsDiscovering bool
 	OptionsFrom   string
 	ActiveOptions manifest.SettingOptions
 	IsShown       bool
@@ -57,6 +59,7 @@ func NewSetting(declared manifest.Setting, defaultJSON string, options manifest.
 		Preview:     declared.Preview,
 		OptionsFrom: declared.OptionsFrom,
 		Operations:  declared.Operations,
+		Discover:    declared.Discover,
 	}
 }
 
@@ -78,6 +81,7 @@ func ListSettings(declared manifest.Manifest, values map[string]any) []Setting {
 			setting.ActiveOptions = setting.Options
 		}
 		setting.IsShown = declared.IsSettingShown(one, values)
+		setting.IsDiscovering = isDiscovering(one, values)
 		if value, ok := values[one.Key]; ok {
 			if encoded, err := json.Marshal(value); err == nil {
 				setting.ValueJSON = string(encoded)
@@ -104,4 +108,18 @@ func FormatSettingValues(values map[string]any) map[string]string {
 		}
 	}
 	return formatted
+}
+
+// isDiscovering reports whether a setting of rows that holds no row uses every connection that serves
+// its operations: the choice stored in the plugin field manifest.SettingDiscover, else the declaration.
+// A setting that does not declare discover never discovers.
+func isDiscovering(declared manifest.Setting, values map[string]any) bool {
+	if !declared.Discover {
+		return false
+	}
+	choices, _ := values[manifest.SettingDiscover].(map[string]any)
+	if choice, isSet := choices[declared.Key].(bool); isSet {
+		return choice
+	}
+	return true
 }

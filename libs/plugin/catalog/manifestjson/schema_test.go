@@ -33,7 +33,7 @@ const everyFieldManifest = `{
 			"when": {"setting": "mode", "is": ["a"]}},
 		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true},
 		{"key": "token", "type": "string", "title": "Token", "generate": "token"},
-		{"key": "rows", "type": "connections", "title": "Rows", "operations": ["llm.complete"], "max": 2}
+		{"key": "rows", "type": "connections", "title": "Rows", "operations": ["llm.complete"], "max": 2, "discover": true}
 	],
 	"services": ["numen.v1.Full"],
 	"settingsViews": [{"id": "v", "title": "V"}],

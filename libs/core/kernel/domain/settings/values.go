@@ -10,6 +10,10 @@ const AppOwner = "app"
 // stored value for it is enabled, unless its manifest keeps it off by default.
 const HostFieldEnabled = "enabled"
 
+// HostFieldDiscover is the field of the object of a plugin that holds, by the key of each setting of rows that
+// declares discover, whether it uses every connection that serves its operations while it holds no row.
+const HostFieldDiscover = "discover"
+
 // ConnectionsKey is the first-level key of the connections section.
 const ConnectionsKey = "connections"
 

@@ -17,6 +17,10 @@ import (
 // enabled holds a boolean.
 const fieldEnabled = settingsdomain.HostFieldEnabled
 
+// fieldDiscover is the field of the object of a plugin that holds an object: for the key of each setting of
+// rows that declares discover, true or false.
+const fieldDiscover = settingsdomain.HostFieldDiscover
+
 // The reasons CheckWrite rejects a write.
 var (
 	// ErrUndeclared is a key that its owner does not declare, or an owner that has no declaration.
@@ -58,6 +62,9 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 	settings, found := declared(owner)
 	if !found {
 		return noDeclaringPluginError{owner: owner}
+	}
+	if owner != settingsdomain.AppOwner && len(key) == 1 && key[0] == fieldDiscover {
+		return wrapAt(label, checkDiscover(settings, value))
 	}
 	name, err := getSettingName(owner, key, value)
 	if err != nil || name == "" {

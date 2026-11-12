@@ -24,7 +24,7 @@ func newAgentSetup(t *testing.T) *agentSetup {
 	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, connection.Row{ConnectionID: entry.ID, Options: map[string]string{"model": "sonnet", "reasoning": "high"}})
 	return &agentSetup{
 		world: w,
-		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }
 

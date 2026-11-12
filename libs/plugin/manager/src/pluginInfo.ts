@@ -60,6 +60,8 @@ export interface PluginSettingInfo {
   readonly preview?: boolean | undefined
   readonly optionsFrom?: string | undefined
   readonly operations?: readonly string[] | undefined
+  /** Whether a setting of type connections that holds no row may use every connection that serves its operations. */
+  readonly discover?: boolean | undefined
   readonly activeOptions?: readonly PluginSettingOption[] | undefined
   readonly isShown?: boolean | undefined
   readonly value?: SettingValue | undefined

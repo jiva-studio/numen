@@ -54,11 +54,25 @@ export function useConnectionEntries(
     })),
   )
 
+  /* The connections a setting that discovers uses while it holds no row: those whose type is available and
+   * serves every operation, in the order of the connections. */
+  const discovered = computed<readonly ConnectionInfo[]>(() =>
+    stored.value.filter((connection) => {
+      const type = types.value.find((one) => one.id === connection.typeId)
+      return (
+        connection.isTypeAvailable &&
+        type?.isAvailable === true &&
+        getOperations().every((operation) => type.operations.includes(operation))
+      )
+    }),
+  )
+
   onMounted(() => getConnections().load())
 
   return {
     stored,
     choices,
+    discovered,
     getReason: (connectionId: string): string =>
       entries.value.find((one) => one.connection.id === connectionId)?.reason ?? '',
     getRowFields: (connectionId: string): readonly ConnectionFieldInfo[] =>

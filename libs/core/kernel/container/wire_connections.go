@@ -73,10 +73,10 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	if !ok {
 		return
 	}
-	rows := openConnectionRows(c)
 	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
 		modelcall.Connections{
-			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute, Rows: rows,
+			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
+			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute,
 		},
 		providerbridge.NewSource(c.PluginHost.Runtime), clock.System{}, clock.System{}.Wait, notices,
 	))
