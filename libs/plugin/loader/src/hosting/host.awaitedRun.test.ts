@@ -33,6 +33,7 @@ function createHost(hasFrontend: boolean) {
     getContentTypes: () => ({ png: 'image/png' }),
     hasPluginFrontend: () => hasFrontend,
     runBackendHandler,
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

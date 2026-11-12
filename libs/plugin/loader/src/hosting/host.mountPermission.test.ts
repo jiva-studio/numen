@@ -19,6 +19,7 @@ const settle = async () => {
 const createHost = () => {
   const read = vi.fn(async (path: string) => ({ body: `Body of ${path}` }))
   const host = createPluginHost({
+    target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve('tab'),

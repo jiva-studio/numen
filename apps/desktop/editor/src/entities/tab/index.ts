@@ -25,7 +25,7 @@ export { formatSavedState, parseSavedTab, parseSavedTabs, useOpenTabs } from './
 export { createTabSync } from './model/useTabSync'
 export { createTabNavigation } from './model/tabNavigation'
 export { useWindowTabMenu } from './model/useWindowTabMenu'
-export { NOTE, SETTINGS } from './lib/workspace'
+export { SETTINGS } from './lib/workspace'
 export { readOpenTabs } from './api/saved-tabs'
 export { default as RestoreFailedPane } from './ui/RestoreFailedPane.vue'
 export { default as UnavailablePane } from './ui/UnavailablePane.vue'

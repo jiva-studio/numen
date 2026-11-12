@@ -24,7 +24,6 @@ export {
   getAssetUrl,
   getBytesQuery,
   getRelationErrorWords,
-  MAX_BUSY_RETRIES,
   ReportedError,
   type Caught,
   type ErrorCode,

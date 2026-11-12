@@ -200,67 +200,66 @@ describe('a shared command in a slot', () => {
   })
 
   it('is not available while no enabled plugin handles it', () => {
-    expect(find('app:link.deleteMedia', NOTE)).toBeUndefined()
+    const unhandled = createSlotCommandFinder({
+      whenReader: createWhenReader(),
+      getPluginCommands: () => [],
+      getDeclaredCommands: () => [],
+      getEditorCommands: () => [],
+      getHandlerDeclarations: () => [],
+      getWhenValues: (target) => getTargetValues(target, {}),
+    })
+
+    expect(unhandled('app:file.createText', NOTE)).toBeUndefined()
   })
 })
 
 describe('a shared command over what the window knows of the target', () => {
   const PDF = 'application/pdf'
+  const CREATE_TEXT = 'app:file.createText'
   const DECK: CommandTarget = { ...NOTE, path: 'cards/Bees.md', noteType: 'deck' }
   const LINK: CommandTarget = { ...NOTE, path: 'links/Bees.md', noteType: 'link' }
   const PAPER: CommandTarget = { ...NOTE, path: 'papers/Bees.pdf' }
-  const find = createSlotCommandFinder({
-    whenReader: createWhenReader(),
-    getPluginCommands: () => [],
-    getDeclaredCommands: () => [],
-    getEditorCommands: () => [],
-    getHandlerDeclarations: () => [
-      {
-        pluginId: TIDE,
-        command: 'app:file.createText',
-        title: 'Extract text',
-        when: `target.contentType == '${PDF}'`,
-        hasItems: false,
-      },
-      {
-        pluginId: TIDE,
-        command: 'app:link.deleteMedia',
-        title: 'Delete media',
-        when: "target.noteType == 'link' && has(target.properties.media)",
-        hasItems: false,
-      },
-      {
-        pluginId: TIDE,
-        command: 'app:link.downloadMedia',
-        title: 'Download media',
-        when: "!target.versions.exists(v, v.kind == 'captions')",
-        hasItems: true,
-      },
-    ],
-    getWhenValues: (target) =>
-      getTargetValues(target, { pdf: PDF, md: 'text/markdown' }, { type: target?.noteType }),
-  })
+  const createFinder = (...conditions: readonly string[]) =>
+    createSlotCommandFinder({
+      whenReader: createWhenReader(),
+      getPluginCommands: () => [],
+      getDeclaredCommands: () => [],
+      getEditorCommands: () => [],
+      getHandlerDeclarations: () =>
+        conditions.map((when) => ({
+          pluginId: TIDE,
+          command: CREATE_TEXT,
+          title: 'Extract text',
+          when,
+          hasItems: false,
+        })),
+      getWhenValues: (target) =>
+        getTargetValues(target, { pdf: PDF, md: 'text/markdown' }, { type: target?.noteType }),
+    })
+  const OVER_PDF = `target.contentType == '${PDF}'`
+  const OVER_MEDIA = "target.noteType == 'link' && has(target.properties.media)"
 
   it('is not drawn where every handler is false over the note type and the content type', () => {
-    expect(find('app:file.createText', DECK)).toBeUndefined()
-    expect(find('app:link.deleteMedia', DECK)).toBeUndefined()
+    expect(createFinder(OVER_PDF, OVER_MEDIA)(CREATE_TEXT, DECK)).toBeUndefined()
   })
 
   it('is drawn where a handler is true over what is known', () => {
-    expect(find('app:file.createText', PAPER)).toMatchObject({ title: 'Create text' })
+    expect(createFinder(OVER_PDF)(CREATE_TEXT, PAPER)).toMatchObject({ title: 'Create text' })
   })
 
   it('is drawn where a handler depends on the properties of the note, which are not read yet', () => {
-    expect(find('app:link.deleteMedia', LINK)).toMatchObject({ title: 'Delete media' })
+    expect(createFinder(OVER_MEDIA)(CREATE_TEXT, LINK)).toMatchObject({ title: 'Create text' })
   })
 
   it('is drawn where a handler depends on the versions of the file', () => {
-    expect(find('app:link.downloadMedia', DECK)).toMatchObject({ title: 'Download media' })
+    const find = createFinder("!target.versions.exists(v, v.kind == 'captions')")
+
+    expect(find(CREATE_TEXT, DECK)).toMatchObject({ title: 'Create text' })
   })
 
   it('is drawn where the place has not read the type of the note', () => {
-    expect(find('app:link.deleteMedia', { ...NOTE, path: 'links/Bees.md' })).toMatchObject({
-      title: 'Delete media',
-    })
+    expect(createFinder(OVER_MEDIA)(CREATE_TEXT, { ...NOTE, path: 'links/Bees.md' })).toMatchObject(
+      { title: 'Create text' },
+    )
   })
 })

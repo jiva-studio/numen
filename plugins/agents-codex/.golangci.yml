@@ -13,8 +13,9 @@
 # expressions, embedded files and blank identifiers. Reads of the machine clock are not
 # a forbidigo rule: a type-aware test in
 # libs/core/kernel/container (clock_port_test.go) permits them only inside the Now method
-# of a clock port implementation. Plugin directories and libs/plugin/sdk-go carry
-# byte-identical copies of both files; tools/checks verifies the copies.
+# of a clock port implementation. Plugin directories carry byte-identical copies of both
+# files; libs/plugin/sdk-go has a .golangci.yml of its own and a copy of
+# .golangci-structure.yml. tools/checks verifies the copies.
 #
 # Run from the directory of a module.
 

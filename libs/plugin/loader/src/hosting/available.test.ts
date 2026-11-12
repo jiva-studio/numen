@@ -13,6 +13,7 @@ const TREE_MANIFEST = createMockManifest('md.tree', { commands: ['tree.open'] })
 
 function createHost(extra: Partial<PluginHostDeps> = {}) {
   return createPluginHost({
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

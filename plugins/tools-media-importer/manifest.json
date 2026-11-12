@@ -29,36 +29,49 @@
       },
       {
         "slot": "fileTree.context",
-        "command": "app:link.downloadMedia",
+        "command": "link.downloadMedia",
         "group": "3-text",
         "order": 30
       },
       {
         "slot": "fileTree.context",
-        "command": "app:link.deleteMedia",
+        "command": "link.deleteMedia",
         "group": "3-text",
         "order": 40
       }
     ],
-    "handlers": [
+    "commands": [
       {
-        "command": "app:link.import",
-        "title": "Import link"
+        "id": "link.import",
+        "title": "Import link",
+        "icon": "link",
+        "arguments": [
+          {
+            "name": "address",
+            "title": "Web address",
+            "type": "string",
+            "required": true
+          }
+        ]
       },
+      {
+        "id": "link.downloadMedia",
+        "title": "Download media",
+        "icon": "download",
+        "when": "target.noteType == 'link'"
+      },
+      {
+        "id": "link.deleteMedia",
+        "title": "Delete media",
+        "icon": "trash-2",
+        "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
+      }
+    ],
+    "handlers": [
       {
         "command": "app:file.createText",
         "title": "Download captions",
         "when": "target.noteType == 'link'"
-      },
-      {
-        "command": "app:link.downloadMedia",
-        "title": "Download media",
-        "when": "target.noteType == 'link'"
-      },
-      {
-        "command": "app:link.deleteMedia",
-        "title": "Delete media",
-        "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
       }
     ],
     "triggers": [

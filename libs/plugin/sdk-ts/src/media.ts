@@ -3,7 +3,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { MediaService } from '@numen/protocol'
-import { retryWhileBusy } from './errors'
+import { retryWhileBusy } from './errors/answers'
 import { transport } from './transport'
 
 const mediaClient = createClient(MediaService, transport)

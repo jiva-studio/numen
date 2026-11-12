@@ -27,9 +27,9 @@ function createLinks(isCopyable: boolean) {
 }
 
 const getHandler = (ctx: ReturnType<typeof createMockPluginContext>) =>
-  ctx.getRegisteredCommands().find((one) => one.id === 'app:link.downloadMedia')
+  ctx.getRegisteredCommands().find((one) => one.id === 'link.downloadMedia')
 
-describe('the handler of app:link.downloadMedia', () => {
+describe('the handler of link.downloadMedia', () => {
   it('offers the video and the sound of a link whose address publishes a video, and downloads the one picked', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
     const { links, copied } = createLinks(true)

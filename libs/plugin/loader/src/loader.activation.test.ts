@@ -21,6 +21,7 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
   const reportCommandIssue = vi.fn()
   const onError = vi.fn()
   const deps: PluginHostDeps = {
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

@@ -3,7 +3,7 @@
  * hands the vault to write.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { AGENT_PROVIDER_CAPABILITY, MODEL_PRESENCE } from '@numen/core-client'
+import { MODEL_PRESENCE } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import * as settingsApi from './settings'
 
@@ -90,7 +90,7 @@ describe('every setting', () => {
               version: '1.0.0',
               description: 'Sample plugin',
               isActive: true,
-              capabilities: [AGENT_PROVIDER_CAPABILITY],
+              capabilities: ['tools'],
               hasFrontend: true,
               hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
@@ -143,7 +143,7 @@ describe('every setting', () => {
         version: '1.0.0',
         description: 'Sample plugin',
         isActive: true,
-        capabilities: [AGENT_PROVIDER_CAPABILITY],
+        capabilities: ['tools'],
         hasFrontend: true,
         hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],

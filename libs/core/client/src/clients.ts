@@ -4,7 +4,6 @@
 import { createClient, type Client, type Transport } from '@connectrpc/connect'
 import {
   AgentService,
-  CAPABILITY_AGENT_PROVIDER,
   CommandErrorCode,
   CommandService,
   ErrorCode as ProtoErrorCode,
@@ -100,8 +99,6 @@ export type ThemeOriginCode = Origin
 
 export const NOTE_ERROR_CODE = ProtoErrorCode
 export type NoteErrorCodeValue = ProtoErrorCode
-
-export const AGENT_PROVIDER_CAPABILITY = CAPABILITY_AGENT_PROVIDER
 
 /** The calls of TextService the texts are read and edited through. */
 export type TextClient = Pick<Client<typeof TextService>, 'readLiveText' | 'createTextEdit'>

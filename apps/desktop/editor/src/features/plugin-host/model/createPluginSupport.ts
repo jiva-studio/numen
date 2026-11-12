@@ -9,6 +9,7 @@ import type { WindowPlatform } from '@numen/workbench'
 import { getPluginModels, getPluginTexts } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
+import { TARGET } from '@/shared/lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
 import { createPluginSettingsAccessor } from './pluginSettings'
@@ -38,6 +39,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     deps.reports.reportError,
   )
   const pluginHost = createPluginHost({
+    target: TARGET,
     ...mergeHostParts(deps.parts),
     ...deps.kinds,
     ...deps.tabs,

@@ -56,7 +56,7 @@ cli vault add "$work/vault" --name talks >/dev/null
 expect "numen-cli app:file.createText <vault> <file>" help
 expect "transcribing talks/lecture.wav" app:file.createText talks talks/lecture.wav
 expect "recognizing books/flywheel.pdf" app:file.createText talks books/flywheel.pdf --plugin md.numen.engines.ocr
-expect "http---numen.dev-.md" app:link.import talks --address http://numen.dev/
+expect "http---numen.dev-.md" link.import talks --address http://numen.dev/
 expect "Fetching the text of http---numen.dev-.md" app:file.createText talks http---numen.dev-.md
 expect "proofread 1 lines of talks/lecture.wav" proofreading.create talks talks/lecture.wav
 expect "3 sources: 3 read" scan talks

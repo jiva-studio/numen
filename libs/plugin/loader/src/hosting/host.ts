@@ -46,9 +46,6 @@ import type {
 
 export { createPluginPaneWrapper }
 
-/** The target the editor activates its plugins in. */
-const EDITOR_TARGET = 'desktop.editor'
-
 function getEntryKey(pluginId: string, id: string): string {
   return `${pluginId}:${id}`
 }
@@ -153,7 +150,7 @@ function createHostContextBridge(
   return {
     info: {
       app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
-      target: EDITOR_TARGET,
+      target: deps.target,
       openExternal: (url) =>
         deps.openExternal
           ? deps.openExternal(url)

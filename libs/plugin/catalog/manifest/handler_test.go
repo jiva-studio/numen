@@ -26,7 +26,7 @@ func TestReadManifest_ReadsTheHandlersAndTriggersOfAPlugin(t *testing.T) {
 	if !ok || handler != want {
 		t.Errorf("handler = %+v, %v; want %+v", handler, ok, want)
 	}
-	if _, ok := m.GetHandler("app:link.import"); ok {
+	if _, ok := m.GetHandler("app:note.create"); ok {
 		t.Error("a command the plugin does not handle has a handler")
 	}
 	wantTriggers := []manifest.Trigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
@@ -61,7 +61,7 @@ func TestReadManifest_RejectsAnInvalidTrigger(t *testing.T) {
 	const handlers = `"handlers":[{"command":"app:file.createText","title":"Read"}]`
 	for name, triggers := range map[string]string{
 		"an event that is not declared": `[{"event":"file.opened","command":"app:file.createText"}]`,
-		"a command it does not handle":  `[{"event":"file.added","command":"app:link.import"}]`,
+		"a command it does not handle":  `[{"event":"file.added","command":"app:note.create"}]`,
 		"a when that does not parse":    `[{"event":"file.added","command":"app:file.createText","when":"target.isScan"}]`,
 	} {
 		_, err := manifestjson.Read(strings.NewReader(handlerManifestHead + `{` + handlers + `,"triggers":` + triggers + `}}`))
