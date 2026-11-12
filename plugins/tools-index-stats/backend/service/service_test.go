@@ -45,7 +45,7 @@ func TestAHostWithoutAModelOrAVaultIsAFailedPrecondition(t *testing.T) {
 	noVault := newIndex()
 	noVault.HideVault()
 	for name, index := range map[string]indexstats.Index{"no model": noModel, "no vault": noVault} {
-		_, err := getStats(indexstats.NewStats(index, clock.NewFake(getStart()), 8))(t.Context(), api.GetStatsRequest{})
+		_, err := getStats(indexstats.NewStats(index, newFakeClock(getStart()), 8))(t.Context(), api.GetStatsRequest{})
 
 		var failure *server.APIError
 		if !errors.As(err, &failure) || failure.Code != server.CodeFailedPrecondition {
@@ -57,13 +57,13 @@ func TestAHostWithoutAModelOrAVaultIsAFailedPrecondition(t *testing.T) {
 func TestAPluginWithoutThePermissionIsDeniedAndAnyOtherFailureIsInternal(t *testing.T) {
 	denied := newIndex()
 	denied.Deny(host.PermissionIndexRead)
-	_, err := getStats(indexstats.NewStats(denied, clock.NewFake(getStart()), 8))(t.Context(), api.GetStatsRequest{})
+	_, err := getStats(indexstats.NewStats(denied, newFakeClock(getStart()), 8))(t.Context(), api.GetStatsRequest{})
 	var failure *server.APIError
 	if !errors.As(err, &failure) || failure.Code != server.CodePermissionDenied {
 		t.Errorf("error = %v, want permission_denied", err)
 	}
 
-	_, err = getStats(indexstats.NewStats(failingIndex{}, clock.NewFake(getStart()), 8))(t.Context(), api.GetStatsRequest{})
+	_, err = getStats(indexstats.NewStats(failingIndex{}, newFakeClock(getStart()), 8))(t.Context(), api.GetStatsRequest{})
 	if !errors.Is(err, errHostUnreachable) || errors.As(err, &failure) {
 		t.Errorf("error = %v, want wrapped errHostUnreachable", err)
 	}
@@ -103,7 +103,7 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 
 func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
-		return mount(s, indexstats.NewStats(newIndex(), clock.NewFake(getStart()), 16))
+		return mount(s, indexstats.NewStats(newIndex(), newFakeClock(getStart()), 16))
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -124,4 +124,11 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	if status != http.StatusOK || got.Vectors != 12480 || got.Profile != "eco" || got.Threads != 1 {
 		t.Errorf("GetStats = %d %s", status, body)
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

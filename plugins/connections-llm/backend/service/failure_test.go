@@ -50,7 +50,7 @@ func TestARetryAfterGivenAsADateIsReadAsTheWaitFromNow(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	now := time.Date(2026, time.March, 4, 10, 0, 0, 0, time.UTC)
 	fake.Fail("/chat/completions", http.StatusTooManyRequests, now.Add(90*time.Second).Format(http.TimeFormat))
-	svc := newTestServiceWith(t, clock.NewFake(now))
+	svc := newTestServiceWith(t, newFakeClock(now))
 	_, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 	retryAfter, ok := connection.IsTryNext(err)
 	if !ok || retryAfter != 90*time.Second {
@@ -167,4 +167,11 @@ func waitForRequest(t *testing.T, fake *fakeopenai.Server) {
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

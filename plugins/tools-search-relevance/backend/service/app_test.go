@@ -75,7 +75,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	app := service.NewAppOver(service.Hosts{
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  queue,
-	}, clock.NewFake(getMeasuredAt()))
+	}, newFakeClock(getMeasuredAt()))
 
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
 	if err != nil {
@@ -328,7 +328,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	search := hosttest.NewSearch("physics")
 	vault := hosttest.New("physics")
 	queue := hosttest.NewQueue()
-	clk := clock.NewFake(getMeasuredAt())
+	clk := newFakeClock(getMeasuredAt())
 
 	for _, tc := range []struct {
 		name  string
@@ -402,4 +402,11 @@ func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Records {
 // getReadyEvent is the event the host emits once the search source has indexed the vault.
 func getReadyEvent(vault string) string {
 	return "onSearchSourceReady:" + vault
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

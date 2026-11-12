@@ -141,7 +141,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
 		}.vaults(),
 		Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
-		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
+		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
 		func() link.Fetcher { return sites },
@@ -481,4 +481,11 @@ func TestTheImportToolHasItsInstructions(t *testing.T) {
 			t.Errorf("an instruction of url_import is not one sentence: %q", sentence)
 		}
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

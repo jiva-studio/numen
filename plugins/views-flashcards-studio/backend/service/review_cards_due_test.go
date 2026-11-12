@@ -115,7 +115,7 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			handler.now = clock.NewFake(c.currentTime)
+			handler.now = newFakeClock(c.currentTime)
 			if got := front(t, handler).Day; got != c.want {
 				t.Errorf("at %v the counts stand in %q, want %q", c.currentTime, got, c.want)
 			}
@@ -314,4 +314,11 @@ func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDa
 			card++
 		}
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

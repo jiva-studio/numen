@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -59,7 +58,7 @@ func newReviewedVault(t *testing.T, cards int) vaulted {
 func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	u := flashcards.NewProjectCurve(
 		s.standings, s.schedules, s.presets,
-		getToday(), clock.NewFake(now),
+		getToday(), newFakeClock(now),
 	)
 	u.Cores = runtime.GOMAXPROCS(0)
 	return u
@@ -1157,7 +1156,7 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 4)
 	noIndex := flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil)
-	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, getToday(), clock.NewFake(getNoon()))
+	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, getToday(), newFakeClock(getNoon()))
 
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -1352,7 +1351,7 @@ func TestProjectCurve_ErrorsOnCanceledContext(t *testing.T) {
 	t.Cleanup(cancel)
 
 	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
-	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, getToday(), clock.NewFake(getNoon()))
+	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, getToday(), newFakeClock(getNoon()))
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)
