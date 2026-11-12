@@ -84,10 +84,7 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
  * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
  * Labels are set by how many records there are, not by the arrowheads.
  */
-export function convertNoteGraph(
-  noteGraph: NoteGraph,
-  token: (path: string) => string,
-): PlexGraph {
+export function convertNoteGraph(noteGraph: NoteGraph, token: (path: string) => string): PlexGraph {
   const focus: PlexNode = {
     id: token(noteGraph.focus.path),
     title: noteGraph.focus.title,
@@ -139,10 +136,7 @@ const areConnectionsEqual = (one: Connection, other: Connection): boolean =>
  * and the same lines with the label and arrowhead of each record.
  * A vault that changed elsewhere returns a note graph equal to the one on screen, and an equal graph is left unchanged.
  */
-export function areNoteGraphsEqual(
-  one: NoteGraph | null,
-  other: NoteGraph | null,
-): boolean {
+export function areNoteGraphsEqual(one: NoteGraph | null, other: NoteGraph | null): boolean {
   if (one === null || other === null) return one === other
   if (one.focus.path !== other.focus.path) return false
   if (one.focus.title !== other.focus.title) return false

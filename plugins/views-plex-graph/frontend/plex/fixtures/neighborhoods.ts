@@ -80,9 +80,7 @@ const leaf: PlexGraph = neighborhood('Nothing below', [
 ])
 
 /** One past what a side can hold, where an off-by-one in the overflow shows. */
-const crowded: PlexGraph = neighborhood('Verbs', [
-  ...run('child', 21, (i) => `Child ${i + 1}`),
-])
+const crowded: PlexGraph = neighborhood('Verbs', [...run('child', 21, (i) => `Child ${i + 1}`)])
 
 /** Past every limit. What the overflow report is for. */
 const overcrowded: PlexGraph = neighborhood('Everything, again', [
