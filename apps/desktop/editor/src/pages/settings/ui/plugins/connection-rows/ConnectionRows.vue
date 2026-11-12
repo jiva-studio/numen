@@ -19,6 +19,7 @@
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button, runInBackground } from '@numen/ui'
+import { PluginSettingsCard } from '@numen/plugin-manager'
 import { readRows, type StoredRow } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
@@ -119,55 +120,57 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
 </script>
 
 <template>
-  <div class="connection-rows">
-    <div v-if="stored.length === 0" class="connection-rows__empty">
-      <p class="connection-rows__note">{{ words.connectionRowsNone }}</p>
-      <Button variant="outline" @click="emit('open-connections')">
-        {{ words.connectionRowsOpen }}
-      </Button>
-    </div>
-
-    <ul
-      v-if="stored.length > 0 && drafts.length > 0"
-      ref="list"
-      class="connection-rows__list"
-      :aria-label="setting.title"
-    >
-      <ConnectionRowEditor
-        v-for="(row, index) in drafts"
-        :key="row.key"
-        :row="row"
-        :position="index + 1"
-        :count="drafts.length"
-        :operation="operation"
-        :choices="choices"
-        :reason="getReason(row.connection)"
-        :is-single="isSingle"
-        :types="props.connections.types.value"
-        :create="props.connections.create"
-        :update="props.connections.update"
-        :is-held="heldKey === row.key"
-        :is-dragging="drag.dragging.value?.hasMoved === true && drag.dragging.value.item === index"
-        :is-drop-target="drag.dragging.value?.hasMoved === true && drag.at.value === index"
-        :list-models="props.connections.models.listModels"
-        :list-reasoning-levels="props.connections.models.listReasoningLevels"
-        @update="(patch) => update(row.key, patch)"
-        @remove="remove(row.key)"
-        @grip-press="(event) => onGripPress(index, event)"
-        @grip-key="(event) => onGripKey(row.key, event)"
-      />
-    </ul>
-
-    <div v-if="stored.length > 0 && !isSingle && drafts.length < limit" class="connection-rows__foot">
-      <Button variant="outline" @click="onAdd">
+  <section class="connection-rows">
+    <div class="connection-rows__head">
+      <h3 class="connection-rows__title">{{ setting.title }}</h3>
+      <Button
+        v-if="stored.length > 0 && !isSingle"
+        variant="outline"
+        :disabled="drafts.length >= limit"
+        @click="onAdd"
+      >
         <Plus :size="14" aria-hidden="true" />
         {{ words.connectionAdd }}
       </Button>
     </div>
 
-    <p v-if="!isSingle && drafts.length > 0" class="connection-rows__note">
-      {{ words.connectionRowsPrivacy(limit) }}
-    </p>
+    <PluginSettingsCard v-if="stored.length === 0 || drafts.length > 0">
+      <div v-if="stored.length === 0" class="connection-rows__empty">
+        <p class="connection-rows__note">{{ words.connectionRowsNone }}</p>
+        <Button variant="outline" @click="emit('open-connections')">
+          {{ words.connectionRowsOpen }}
+        </Button>
+      </div>
+
+      <ul v-else ref="list" class="connection-rows__list" :aria-label="setting.title">
+        <ConnectionRowEditor
+          v-for="(row, index) in drafts"
+          :key="row.key"
+          :row="row"
+          :position="index + 1"
+          :count="drafts.length"
+          :operation="operation"
+          :choices="choices"
+          :reason="getReason(row.connection)"
+          :is-single="isSingle"
+          :types="props.connections.types.value"
+          :create="props.connections.create"
+          :update="props.connections.update"
+          :is-held="heldKey === row.key"
+          :is-dragging="
+            drag.dragging.value?.hasMoved === true && drag.dragging.value.item === index
+          "
+          :is-drop-target="drag.dragging.value?.hasMoved === true && drag.at.value === index"
+          :list-models="props.connections.models.listModels"
+          :list-reasoning-levels="props.connections.models.listReasoningLevels"
+          @update="(patch) => update(row.key, patch)"
+          @remove="remove(row.key)"
+          @grip-press="(event) => onGripPress(index, event)"
+          @grip-key="(event) => onGripKey(row.key, event)"
+        />
+      </ul>
+    </PluginSettingsCard>
+
     <p class="sr-only" role="status" aria-live="assertive">{{ announcement }}</p>
 
     <ConfirmDialog
@@ -179,33 +182,34 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
       @confirm="confirm"
       @cancel="cancel"
     />
-  </div>
+  </section>
 </template>
 
 <style scoped>
 .connection-rows {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
   inline-size: 100%;
+  margin-block-start: 1.25rem;
+}
+
+.connection-rows__head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.connection-rows__title {
+  margin: 0;
+  color: var(--numen-ink);
+  font-size: var(--numen-text-2);
+  font-weight: 500;
 }
 
 .connection-rows__list {
   margin: 0;
-  padding: 0;
-}
-
-.connection-rows__empty,
-.connection-rows__foot,
-.connection-rows__note {
-  padding-block: 0.625rem;
-}
-
-.connection-rows__list ~ .connection-rows__foot,
-.connection-rows__list ~ .connection-rows__note {
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
-}
-
-.connection-rows__empty .connection-rows__note {
   padding: 0;
 }
 
@@ -214,14 +218,7 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
   flex-wrap: wrap;
   gap: 0.5rem 0.75rem;
   align-items: center;
-}
-
-
-.connection-rows__foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
+  padding-block: 0.625rem;
 }
 
 .connection-rows__note {

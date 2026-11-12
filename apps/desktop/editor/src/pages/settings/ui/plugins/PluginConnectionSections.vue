@@ -4,12 +4,10 @@
  * the other settings: a row with the title and what the setting is for, then the rows of connections. A setting
  * whose condition fails is not shown.
  */
-import { PluginSettingsCard } from '@numen/plugin-manager'
 import type { StoredRow } from '@/entities/connection'
 import type { PluginInfo } from '@/entities/settings'
 import { useEnumFields, usePluginFields } from '../../model/usePluginFields'
 import type { InstallationConnections, InstallationSettings, PluginFieldsHost } from '../../types'
-import SettingRow from '../setting-row/SettingRow.vue'
 import ConnectionRows from './connection-rows/ConnectionRows.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -44,17 +42,13 @@ function onRowsChange(key: string, rows: readonly StoredRow[]): void {
 
 <template>
   <template v-for="setting in getShownSettings()" :key="setting.key">
-    <PluginSettingsCard v-if="setting.type === 'connections'">
-      <SettingRow :at="`${props.plugin.id}-${setting.key}`" :name="setting.title" :detail="setting.description">
-        <span />
-      </SettingRow>
-      <ConnectionRows
-        :setting="setting"
-        :value="getValue(setting.key)"
-        :connections="props.connections"
-        @change="(rows) => onRowsChange(setting.key, rows)"
-        @open-connections="emit('open-connections')"
-      />
-    </PluginSettingsCard>
+    <ConnectionRows
+      v-if="setting.type === 'connections'"
+      :setting="setting"
+      :value="getValue(setting.key)"
+      :connections="props.connections"
+      @change="(rows) => onRowsChange(setting.key, rows)"
+      @open-connections="emit('open-connections')"
+    />
   </template>
 </template>

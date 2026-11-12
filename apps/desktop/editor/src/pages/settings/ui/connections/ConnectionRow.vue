@@ -10,7 +10,6 @@ import type { ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
 import {
   getAddressText,
   getConnectionState,
-  getOperationTitles,
   getUsedByNames,
 } from '@/entities/connection'
 import { WORDS as words } from '../../words'
@@ -29,7 +28,6 @@ const emit = defineEmits<{
 const state = computed(() => getConnectionState(props.connection))
 const typeTitle = computed(() => props.type?.title ?? props.connection.typeId)
 const address = computed(() => getAddressText(props.type, props.connection))
-const operations = computed(() => getOperationTitles(props.type))
 const usedBy = computed(() => getUsedByNames(props.connection.uses))
 const row = useTemplateRef<InstanceType<typeof SystemRow>>('row')
 const detail = computed(() =>
@@ -58,13 +56,6 @@ function onEdit(): void {
       <template v-else>
         <span v-if="state === 'incomplete'" class="connection-row__chip connection-row__chip--warn">
           {{ words.connectionIncomplete }}
-        </span>
-        <span
-          v-for="operation in operations"
-          :key="operation"
-          class="connection-row__chip"
-        >
-          {{ operation }}
         </span>
       </template>
     </template>

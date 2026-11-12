@@ -70,7 +70,6 @@ function onCancelDelete(): void {
     </Button>
 
     <div class="connections-page__head">
-      <p class="connections-page__intro">{{ words.connectionsIntro }}</p>
       <Button
         ref="addButton"
         variant="outline"
@@ -143,24 +142,13 @@ function onCancelDelete(): void {
   display: flex;
   gap: 0.75rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 
 .connections-page__head {
   margin-block-end: var(--settings-apart);
 }
 
-.connections-page__intro {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-.connections-page__title {
-  margin: 0;
-  font-size: var(--numen-title-size);
-  font-weight: 500;
-}
 
 .connections-page__legend {
   margin: 0.25rem 0 var(--settings-apart);

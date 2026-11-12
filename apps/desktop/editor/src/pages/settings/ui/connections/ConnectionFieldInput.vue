@@ -67,7 +67,7 @@ function onInput(event: Event): void {
         class="connection-field__input"
         type="password"
         autocomplete="off"
-        :placeholder="isStored ? words.connectionKeyReplace : ''"
+        :placeholder="isStored ? words.secretMasked : ''"
         :value="text"
         @input="onInput"
       />

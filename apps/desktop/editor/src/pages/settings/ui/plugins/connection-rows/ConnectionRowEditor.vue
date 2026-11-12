@@ -125,11 +125,11 @@ function onReasoningChoose(reasoning: string): void {
         @update:model-value="onModelChoose"
       />
       <Select
-        v-if="levelChoices.length > 1 && row.connection !== '' && row.model !== ''"
         :model-value="row.reasoning"
         :choices="levelChoices"
         :name="words.connectionRowsReasoning"
         :aria-label="words.connectionRowsReasoning"
+        :is-disabled="levelChoices.length <= 1 || row.connection === '' || row.model === ''"
         class="connection-rows__select connection-rows__select--narrow"
         @update:model-value="onReasoningChoose"
       />
@@ -215,20 +215,22 @@ function onReasoningChoose(reasoning: string): void {
 }
 
 .connection-rows__fields {
-  display: flex;
+  display: grid;
   flex: 1 1 0;
-  flex-wrap: wrap;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 1.2fr);
   gap: 0.375rem;
   min-inline-size: 0;
 }
 
 .connection-rows__select {
-  flex: 1 1 7rem;
+  inline-size: 100%;
   min-inline-size: 0;
 }
 
-.connection-rows__select--narrow {
-  flex: 0 1 6rem;
+@container (max-width: 34rem) {
+  .connection-rows__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .connection-rows__problem {

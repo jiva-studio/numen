@@ -13,8 +13,6 @@ export const WORDS = {
   aboutSetting: (name: string) => `About ${name}`,
   /** The page of connections. */
   secretMasked: '••••••••',
-  connectionsIntro:
-    'A connection is a service you pay for, a server you run, or an agent on this computer. Keys are kept in the system keychain.',
   connectionAdd: 'Add connection',
   connectionEdit: 'Edit connection',
   connectionMenuDelete: 'Delete',
@@ -39,7 +37,6 @@ export const WORDS = {
   connectionName: 'Name',
   connectionAddress: 'Address',
   connectionAddressFixed: 'The address is part of this type.',
-  connectionKeyReplace: '•••••••• Replace key',
   connectionAddressChanged: 'Changing the address removes the stored key. Enter it again.',
   connectionAgentNote: (pluginName: string) =>
     `${pluginName} runs the program on this computer with your own login. No other field is needed.`,

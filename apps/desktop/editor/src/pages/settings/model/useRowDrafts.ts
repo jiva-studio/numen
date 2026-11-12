@@ -44,11 +44,23 @@ export function useRowDrafts(source: RowDraftsSource) {
 
   const write = (): void => {
     const complete = getCompleteRows(drafts.value)
-    if (!sameRows(complete, readRows(source.getValue()))) source.onChange(complete)
+    if (sameRows(complete, readRows(source.getValue())) && inFlight.length === 0) return
+    inFlight = [...inFlight, complete]
+    source.onChange(complete)
   }
+
+  /* The rows written and not yet answered, oldest first. An answer that is one of the older ones is
+   * stale: a newer write is on its way, and the rows on the page already hold it. */
+  let inFlight: (readonly StoredRow[])[] = []
 
   watch(source.getValue, (next) => {
     const stored = readRows(next)
+    const at = inFlight.findIndex((one) => sameRows(one, stored))
+    if (at >= 0) {
+      inFlight = inFlight.slice(at + 1)
+      return
+    }
+    inFlight = []
     if (!sameRows(stored, getCompleteRows(drafts.value))) drafts.value = createDrafts(stored)
   })
 
@@ -60,6 +72,7 @@ export function useRowDrafts(source: RowDraftsSource) {
      * with no stored rows behind it stays with its connection, and its model is chosen again.
      */
     revert: (): void => {
+      inFlight = []
       const stored = readRows(source.getValue())
       drafts.value =
         stored.length > 0
