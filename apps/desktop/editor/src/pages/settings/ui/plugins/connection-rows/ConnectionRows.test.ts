@@ -3,7 +3,7 @@
  * models and every name here are invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { Select } from '@numen/ui'
 import type {
@@ -16,7 +16,7 @@ import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
 import { asFailure, asValue, createInstallation } from '@/pages/settings/testing/installation'
-import { click, dispose, findButton, root } from '@/testing/dom'
+import { click, dispose, findButton, findButtons, root } from '@/testing/dom'
 import ConnectionRows from './ConnectionRows.vue'
 
 const rowField = (
@@ -112,6 +112,8 @@ interface Options {
   readonly value?: JsonValue
   readonly max?: number
   readonly connections?: readonly ConnectionInfo[]
+  /** The list of connections itself, for a test that changes it as the core does. */
+  readonly list?: Ref<readonly ConnectionInfo[]>
   readonly listRowOptions?: InstallationConnections['listRowOptions']
   readonly operation?: string
   readonly countNotes?: InstallationConnections['countNotes']
@@ -121,7 +123,7 @@ interface Options {
 const mountRows = (options: Options = {}) => {
   const listRowOptions = vi.fn(options.listRowOptions ?? listModelsOnly(MODELS))
   const installation = createInstallation({
-    list: ref(options.connections ?? [EMBED_ONLY, WORK, RETIRED, HOME]),
+    list: options.list ?? ref(options.connections ?? [EMBED_ONLY, WORK, RETIRED, HOME]),
     types: ref([SERVICE, EMBEDDER]),
     operationTitles: ref({ 'llm.complete': 'complete text' }),
     listRowOptions,
@@ -145,6 +147,10 @@ const mountRows = (options: Options = {}) => {
 const changes = (wrapper: VueWrapper): unknown[] =>
   (wrapper.emitted('change') ?? []).map((one) => one[0])
 
+/** Why the control named `label` cannot serve, as it is announced; empty where nothing is wrong. */
+const problemOf = (label: string): string =>
+  root().querySelector(`button[aria-label="${label}"]`)?.getAttribute('aria-description') ?? ''
+
 const grips = (): HTMLElement[] => Array.from(root().querySelectorAll<HTMLElement>('[data-grip]'))
 
 const press = (element: HTMLElement, key: string): void => {
@@ -156,7 +162,7 @@ afterEach(() => {
 })
 
 describe('the rows of a setting of connections', () => {
-  it('draws a row for each stored row, in order, with the line about the text of the notes', async () => {
+  it('draws a row for each stored row, in order', async () => {
     const { wrapper } = mountRows({ value: [row(WORK.id, 'alpha'), row(HOME.id, 'beta')] })
     await flushPromises()
 
@@ -164,29 +170,24 @@ describe('the rows of a setting of connections', () => {
     expect(items).toHaveLength(2)
     expect(items[0]?.textContent).toContain('Work')
     expect(items[1]?.textContent).toContain('Home')
-    expect(root().textContent).toContain(
-      'The text of your notes is sent to each connection listed, in this order.',
-    )
     dispose(wrapper)
   })
 
-  it('names the one connection, without an order, where the setting holds one row', async () => {
+  it('shows the one row of a setting of one row, which cannot be moved or removed', async () => {
     const { wrapper } = mountRows({ max: 1, value: [row(WORK.id, 'alpha')] })
     await flushPromises()
 
-    expect(root().textContent).toContain(
-      'The text of your notes is sent to the connection chosen here.',
-    )
-    expect(root().textContent).not.toContain('in this order')
+    expect(root().querySelectorAll('li')).toHaveLength(1)
+    expect(grips()).toHaveLength(0)
+    expect(findButtons(/remove row/i)).toHaveLength(0)
     dispose(wrapper)
   })
 
-  it('draws only the button when there is no row, and says nothing about the notes', async () => {
+  it('draws only the Add button when there is no row', async () => {
     const { wrapper } = mountRows()
     await flushPromises()
 
     expect(root().querySelectorAll('li')).toHaveLength(0)
-    expect(root().textContent).not.toContain('The text of your notes')
     expect(findButton(/add connection/i)).toBeTruthy()
     dispose(wrapper)
   })
@@ -199,17 +200,17 @@ describe('the rows of a setting of connections', () => {
     dispose(wrapper)
   })
 
-  it('turns Add off, and says where to make a connection, while there is none', async () => {
+  it('offers no Add button, and says to add a connection first, while there is none', async () => {
     const { wrapper } = mountRows({ connections: [] })
     await flushPromises()
 
-    expect(findButton(/add connection/i).hasAttribute('disabled')).toBe(true)
-    expect(root().textContent).toContain('Add one on the Connections page.')
+    expect(findButtons(/add connection/i)).toHaveLength(0)
+    expect(root().textContent).toContain('No connections yet. Add a connection first.')
     dispose(wrapper)
   })
 
-  it('offers a way to the Connections page while no row is set, and asks to open it', async () => {
-    const { wrapper } = mountRows()
+  it('offers a way to the Connections page while there is no connection, and asks to open it', async () => {
+    const { wrapper } = mountRows({ connections: [] })
     await flushPromises()
 
     await click(findButton(/open connections/i))
@@ -315,8 +316,13 @@ describe('the rows of a setting of connections', () => {
 
   it('chooses the saved connection in the row and asks for its models, without a model chosen', async () => {
     const fresh = connection({ id: 'c00000009', name: 'Fresh' })
-    const create = vi.fn(() => Promise.resolve(asValue(fresh)))
+    const list = ref<readonly ConnectionInfo[]>([WORK, HOME])
+    const create = vi.fn(() => {
+      list.value = [...list.value, fresh]
+      return Promise.resolve(asValue(fresh))
+    })
     const { wrapper, listRowOptions } = mountRows({
+      list,
       operation: 'llm.embed',
       value: [row(WORK.id, 'alpha')],
       create,
@@ -338,7 +344,7 @@ describe('the rows of a setting of connections', () => {
   })
 
   it('asks for a connection in the one row of a setting that names none yet', async () => {
-    const { wrapper } = mountRows({ max: 1, operation: 'embed' })
+    const { wrapper } = mountRows({ max: 1, operation: 'llm.embed' })
     await flushPromises()
 
     expect(wrapper.findAllComponents(Select)[0]?.props('problem')).toBe('Choose a connection')
@@ -347,18 +353,18 @@ describe('the rows of a setting of connections', () => {
   })
 
   it('asks for nothing once the one row names a connection', async () => {
-    const { wrapper } = mountRows({ max: 1, operation: 'embed', value: [row(WORK.id, 'alpha')] })
+    const { wrapper } = mountRows({ max: 1, operation: 'llm.embed', value: [row(WORK.id, 'alpha')] })
     await flushPromises()
 
     expect(wrapper.findAllComponents(Select)[0]?.props('problem')).toBe('')
     dispose(wrapper)
   })
 
-  it('says under a row why the connection it names cannot serve', async () => {
+  it('says in the row why the connection it names cannot serve', async () => {
     const { wrapper } = mountRows({ value: [row(EMBED_ONLY.id, 'any')] })
     await flushPromises()
 
-    expect(root().textContent).toContain('This type cannot complete text')
+    expect(problemOf('Connection')).toBe('This type cannot complete text')
     dispose(wrapper)
   })
 
@@ -367,9 +373,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows({ value: [row(WORK.id, 'typed-by-hand')], listRowOptions })
     await flushPromises()
 
-    expect(root().textContent).toContain(
-      'The values of Model could not be listed: the key was rejected',
-    )
+    expect(problemOf('Model')).toBe('The values of Model could not be listed: the key was rejected')
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
   })
@@ -505,7 +509,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
   it('waits for a model after a connection is chosen, and asks nothing yet', async () => {
     const { wrapper } = mountEmbedRows()
-    await click(findButton(/add connection/i))
+    await flushPromises()
 
     await choose(wrapper, 0, HOME.id)
 
@@ -517,13 +521,13 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
   it('asks before it writes a connection, naming the notes and the connection', async () => {
     const { wrapper } = mountEmbedRows()
-    await click(findButton(/add connection/i))
+    await flushPromises()
 
     await choose(wrapper, 0, HOME.id)
     await choose(wrapper, 1, 'alpha')
 
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
-      'This indexes 120 notes through Home. It may cost money.',
+      'The vault will be indexed again: 120 notes through Home. This can take a while and may cost money.',
     )
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
@@ -531,7 +535,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
   it('writes the row once the question is confirmed', async () => {
     const { wrapper } = mountEmbedRows()
-    await click(findButton(/add connection/i))
+    await flushPromises()
     await choose(wrapper, 0, HOME.id)
     await choose(wrapper, 1, 'alpha')
 
@@ -558,7 +562,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
   it('keeps the row with its connection when the question about a first row is cancelled', async () => {
     const { wrapper } = mountEmbedRows()
-    await click(findButton(/add connection/i))
+    await flushPromises()
     await choose(wrapper, 0, HOME.id)
     await choose(wrapper, 1, 'alpha')
 
@@ -578,14 +582,14 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await flushPromises()
 
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
-      'This indexes 120 notes through Work.',
+      'The vault will be indexed again: 120 notes through Work.',
     )
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
   })
 
   it('does not ask when the row is removed', async () => {
-    const { wrapper } = mountEmbedRows({ value: [row(WORK.id, 'alpha')] })
+    const { wrapper } = mountEmbedRows({ max: 3, value: [row(WORK.id, 'alpha')] })
     await flushPromises()
 
     await click(findButton(/remove row 1/i))
@@ -613,13 +617,13 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     const { wrapper } = mountEmbedRows({
       countNotes: vi.fn(() => Promise.reject(new Error('no list'))),
     })
-    await click(findButton(/add connection/i))
+    await flushPromises()
 
     await choose(wrapper, 0, HOME.id)
     await choose(wrapper, 1, 'alpha')
 
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
-      'This indexes your notes through Home. It may cost money.',
+      'The vault will be indexed again through Home. This can take a while and may cost money.',
     )
     dispose(wrapper)
   })

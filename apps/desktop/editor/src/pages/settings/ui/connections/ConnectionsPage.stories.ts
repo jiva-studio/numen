@@ -214,13 +214,12 @@ export const AddDialogOfAService: Story = {
   },
 }
 
-/** A server asks for the address, takes a key that may stay empty. */
+/** A server asks for the address, and a key. */
 export const AddDialogOfAServer: Story = {
   render: render([], [SERVER]),
   play: async ({ canvasElement }) => {
     const dialog = await openDialog(canvasElement)
     await expect(dialog.getByLabelText('Address')).toBeVisible()
-    await expect(dialog.getByText('May stay empty for a server on this computer.')).toBeVisible()
     await expect(dialog.getByText('Mode')).toBeVisible()
     await expect(dialog.getByText('Stream the answer')).toBeVisible()
   },

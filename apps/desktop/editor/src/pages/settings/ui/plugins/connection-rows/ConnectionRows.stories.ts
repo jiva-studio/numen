@@ -212,15 +212,12 @@ const readModels = (canvasElement: HTMLElement): string[] =>
     .getAllByRole('button', { name: 'Model' })
     .map((one) => one.textContent.trim())
 
-/** Several rows fit the column in order, with Add connection under them and the line about the text of the notes. */
+/** Several rows fit the column in order, with Add connection above them. */
 export const SeveralRows: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('button', { name: 'Connection' })).toHaveLength(3)
     await expect(canvas.getByRole('button', { name: 'Add connection' })).toBeEnabled()
-    await expect(
-      canvas.getByText('The text of your notes is sent to each connection listed, in this order.'),
-    ).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
     for (const one of canvasElement.querySelectorAll('li')) {
       await expect(one.getBoundingClientRect().right).toBeLessThanOrEqual(column.right + 0.5)
@@ -236,9 +233,6 @@ export const OneRowHasNoAddButton: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('button', { name: 'Connection' })).toHaveLength(1)
     await expect(canvas.queryByRole('button', { name: 'Add connection' })).toBeNull()
-    await expect(
-      canvas.getByText('The text of your notes is sent to the connection chosen here.'),
-    ).toBeVisible()
   },
 }
 
