@@ -6,6 +6,7 @@ import {
   DeleteProviderConnectionResponseSchema,
   ListProviderConnectionsResponseSchema,
   ListProviderConnectionTypesResponseSchema,
+  ListRowOptionsResponseSchema,
   ProviderConnectionErrorCode,
   UpdateProviderConnectionResponseSchema,
 } from '@numen/protocol'
@@ -24,8 +25,17 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
             pluginName: 'LLM connections',
             title: 'OpenRouter',
             description: 'One key for many models.',
-            operations: ['complete', 'embed'],
+            operations: ['llm.complete', 'llm.embed', 'llm.models'],
             isAvailable: true,
+            rowFields: [
+              {
+                key: 'model',
+                type: 'string',
+                title: 'Model',
+                isRequired: true,
+                optionsFrom: 'llm.models',
+              },
+            ],
             fields: [
               {
                 key: 'baseUrl',
@@ -73,7 +83,7 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
               {
                 pluginId: 'md.numen.tools.proofreading',
                 pluginName: 'Proofreading',
-                operation: 'complete',
+                operations: ['llm.complete'],
               },
             ],
           },
@@ -94,6 +104,7 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
     ),
   deleteProviderConnection: () =>
     Promise.resolve(create(DeleteProviderConnectionResponseSchema, {})),
+  listRowOptions: () => Promise.resolve(create(ListRowOptionsResponseSchema, {})),
   ...overrides,
 })
 
@@ -107,7 +118,7 @@ describe('createConnectionClient', () => {
       id: 'md.numen.connections.llm/openrouter',
       pluginName: 'LLM connections',
       title: 'OpenRouter',
-      operations: ['complete', 'embed'],
+      operations: ['llm.complete', 'llm.embed', 'llm.models'],
       isAvailable: true,
     })
     const [address, key, mode, parallel] = type?.fields ?? []
@@ -123,6 +134,9 @@ describe('createConnectionClient', () => {
     ])
     expect(mode?.defaultValue).toBe('fast')
     expect(parallel).toMatchObject({ defaultValue: 4, min: 1, max: 32, step: 1 })
+    expect(type?.rowFields).toStrictEqual([
+      expect.objectContaining({ key: 'model', isRequired: true, optionsFrom: 'llm.models' }),
+    ])
   })
 
   it('lists the connections with plain values', async () => {
@@ -142,7 +156,7 @@ describe('createConnectionClient', () => {
           {
             pluginId: 'md.numen.tools.proofreading',
             pluginName: 'Proofreading',
-            operation: 'complete',
+            operations: ['llm.complete'],
           },
         ],
       },
@@ -225,6 +239,7 @@ describe('createConnectionClient', () => {
       [ProviderConnectionErrorCode.TYPE_UNAVAILABLE, 'type_unavailable'],
       [ProviderConnectionErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
       [ProviderConnectionErrorCode.STALE_REVISION, 'stale_revision'],
+      [ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE, 'provider_unavailable'],
     ]
     for (const [code, expected] of codes) {
       const client = createConnectionClient(
@@ -267,6 +282,64 @@ describe('createConnectionClient', () => {
     expect(await createConnectionClient(createRpc()).delete('c00000001')).toStrictEqual({
       ok: true,
       value: undefined,
+    })
+  })
+
+  it('lists the options of a row field with the values of the row and the operations of the setting', async () => {
+    const requests: unknown[] = []
+    const client = createConnectionClient(
+      createRpc({
+        listRowOptions: (request) => {
+          requests.push(request)
+          return Promise.resolve(
+            create(ListRowOptionsResponseSchema, {
+              options: [
+                { value: 'low', title: 'Low', group: '' },
+                { value: 'qwen2.5:14b', title: '', group: 'Local' },
+              ],
+            }),
+          )
+        },
+      }),
+    )
+
+    const answer = await client.listRowOptions('c00000001', 'reasoning', { model: 'm' }, [
+      'llm.complete',
+    ])
+
+    expect(requests).toStrictEqual([
+      expect.objectContaining({
+        connectionId: 'c00000001',
+        field: 'reasoning',
+        options: { model: 'm' },
+        operations: ['llm.complete'],
+      }),
+    ])
+    expect(answer).toStrictEqual({
+      ok: true,
+      value: [
+        { value: 'low', title: 'Low', group: '' },
+        { value: 'qwen2.5:14b', title: 'qwen2.5:14b', group: 'Local' },
+      ],
+    })
+  })
+
+  it('reads a provider that cannot list as a failure', async () => {
+    const client = createConnectionClient(
+      createRpc({
+        listRowOptions: () =>
+          Promise.resolve(
+            create(ListRowOptionsResponseSchema, {
+              error: ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE,
+              detail: 'key rejected',
+            }),
+          ),
+      }),
+    )
+
+    expect(await client.listRowOptions('c00000001', 'model', {}, [])).toStrictEqual({
+      ok: false,
+      error: { errorCode: 'provider_unavailable', detail: 'key rejected' },
     })
   })
 })

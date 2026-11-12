@@ -3,6 +3,7 @@ package settings_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -28,7 +29,7 @@ func (c fixedConnections) ChangeConnections(func([]connection.Connection) ([]con
 }
 
 func rowsSetting(key, operation string, isShown bool, value string) plugin.Setting {
-	return plugin.Setting{Key: key, Type: "connections", Operation: operation, IsShown: isShown, ValueJSON: value}
+	return plugin.Setting{Key: key, Type: "connections", Operations: []string{operation}, IsShown: isShown, ValueJSON: value}
 }
 
 func rowsPlugin(id, name string, rows ...plugin.Setting) plugin.Info {
@@ -66,9 +67,9 @@ func (w *rowsWorld) rows() *settings.ConnectionRows {
 func newRowsWorld() *rowsWorld {
 	return &rowsWorld{plugins: []plugin.Info{
 		rowsPlugin(embeddingsID, "Embeddings",
-			rowsSetting("connections", "embed", true, `[{"connection":"`+workID+`","model":"text-embedding-3-small"}]`)),
+			rowsSetting("connections", "llm.embed", true, `[{"connection":"`+workID+`","model":"text-embedding-3-small"}]`)),
 		rowsPlugin(rowsPluginID, "Proofreading",
-			rowsSetting("connections", "complete", true,
+			rowsSetting("connections", "llm.complete", true,
 				`[{"connection":"`+workID+`","model":"google/gemini-2.5-flash","reasoning":"low"},{"connection":"`+homeID+`","model":"qwen2.5:14b"}]`)),
 	}}
 }
@@ -76,16 +77,16 @@ func newRowsWorld() *rowsWorld {
 func TestListRowsReturnsTheRowsOfThePluginInTheOrderOfUse(t *testing.T) {
 	world := newRowsWorld()
 
-	rows, err := world.rows().ListRows(rowsPluginID, "complete")
+	rows, err := world.rows().ListRows(rowsPluginID, "llm.complete")
 
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []connection.Row{
-		{ConnectionID: workID, Model: "google/gemini-2.5-flash", Reasoning: "low"},
-		{ConnectionID: homeID, Model: "qwen2.5:14b"},
+		{ConnectionID: workID, Options: map[string]string{"model": "google/gemini-2.5-flash", "reasoning": "low"}},
+		{ConnectionID: homeID, Options: map[string]string{"model": "qwen2.5:14b"}},
 	}
-	if !slices.Equal(rows, want) {
+	if !reflect.DeepEqual(rows, want) {
 		t.Errorf("rows = %v, want %v", rows, want)
 	}
 }
@@ -93,17 +94,17 @@ func TestListRowsReturnsTheRowsOfThePluginInTheOrderOfUse(t *testing.T) {
 func TestListRowsAnswersOnlyForTheOperationOfTheSetting(t *testing.T) {
 	world := newRowsWorld()
 
-	rows, err := world.rows().ListRows(rowsPluginID, "embed")
+	rows, err := world.rows().ListRows(rowsPluginID, "llm.embed")
 
 	if err != nil || len(rows) != 0 {
-		t.Errorf("rows = %v, %v, want none: proofreading has no setting for embed", rows, err)
+		t.Errorf("rows = %v, %v, want none: proofreading has no setting for llm.embed", rows, err)
 	}
 }
 
 func TestListRowsAnswersNothingForAPluginThatHasNoSuchSetting(t *testing.T) {
 	world := newRowsWorld()
 
-	rows, err := world.rows().ListRows("md.numen.nobody", "complete")
+	rows, err := world.rows().ListRows("md.numen.nobody", "llm.complete")
 
 	if err != nil || len(rows) != 0 {
 		t.Errorf("rows = %v, %v, want none", rows, err)
@@ -113,9 +114,9 @@ func TestListRowsAnswersNothingForAPluginThatHasNoSuchSetting(t *testing.T) {
 func TestListRowsReturnsNoRowForAHiddenSetting(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings",
-		rowsSetting("connections", "embed", false, `[{"connection":"`+workID+`","model":"m"}]`))
+		rowsSetting("connections", "llm.embed", false, `[{"connection":"`+workID+`","model":"m"}]`))
 
-	rows, err := world.rows().ListRows(embeddingsID, "embed")
+	rows, err := world.rows().ListRows(embeddingsID, "llm.embed")
 
 	if err != nil || len(rows) != 0 {
 		t.Errorf("rows = %v, %v: the rows of a local-model source must not be used", rows, err)
@@ -124,10 +125,10 @@ func TestListRowsReturnsNoRowForAHiddenSetting(t *testing.T) {
 
 func TestListRowsReturnsOnlyRowsOfExistingConnections(t *testing.T) {
 	world := newRowsWorld()
-	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "complete", true,
+	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "llm.complete", true,
 		`[{"connection":"c00000000","model":"a"},{"connection":"`+homeID+`","model":"b"}]`))
 
-	rows, err := world.rows().ListRows(rowsPluginID, "complete")
+	rows, err := world.rows().ListRows(rowsPluginID, "llm.complete")
 
 	if err != nil || len(rows) != 1 || rows[0].ConnectionID != homeID {
 		t.Errorf("rows = %v, %v, want the row of the connection that exists", rows, err)
@@ -136,9 +137,9 @@ func TestListRowsReturnsOnlyRowsOfExistingConnections(t *testing.T) {
 
 func TestListRowsIgnoresAValueThatIsNoListOfRows(t *testing.T) {
 	world := newRowsWorld()
-	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "complete", true, `"c1f0a9e20"`))
+	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "llm.complete", true, `"c1f0a9e20"`))
 
-	rows, err := world.rows().ListRows(rowsPluginID, "complete")
+	rows, err := world.rows().ListRows(rowsPluginID, "llm.complete")
 
 	if err != nil || len(rows) != 0 {
 		t.Errorf("rows = %v, %v, want none", rows, err)
@@ -154,17 +155,17 @@ func TestListUsesNamesEachSettingOfRowsThatNamesTheConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []connection.Use{
-		{PluginID: embeddingsID, PluginName: "Embeddings", Operation: "embed"},
-		{PluginID: rowsPluginID, PluginName: "Proofreading", Operation: "complete"},
+		{PluginID: embeddingsID, PluginName: "Embeddings", Operations: []string{"llm.embed"}},
+		{PluginID: rowsPluginID, PluginName: "Proofreading", Operations: []string{"llm.complete"}},
 	}
-	if !slices.Equal(uses, want) {
+	if !reflect.DeepEqual(uses, want) {
 		t.Errorf("uses = %v, want %v", uses, want)
 	}
 }
 
 func TestListUsesNamesASettingOnceWhateverTheNumberOfItsRowsForTheConnection(t *testing.T) {
 	world := newRowsWorld()
-	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "complete", true,
+	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "llm.complete", true,
 		`[{"connection":"`+homeID+`","model":"a"},{"connection":"`+homeID+`","model":"b"}]`))
 
 	uses, err := world.rows().ListUses(homeID)
@@ -177,7 +178,7 @@ func TestListUsesNamesASettingOnceWhateverTheNumberOfItsRowsForTheConnection(t *
 func TestListUsesReturnsNoUseForAHiddenSetting(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings",
-		rowsSetting("connections", "embed", false, `[{"connection":"`+workID+`","model":"m"}]`))
+		rowsSetting("connections", "llm.embed", false, `[{"connection":"`+workID+`","model":"m"}]`))
 
 	uses, err := world.rows().ListUses(workID)
 
@@ -240,7 +241,7 @@ func TestRemoveRowsWritesNothingWhenNoRowNamesTheConnection(t *testing.T) {
 func TestRemoveRowsReachesRowsOfASettingThatIsNotShown(t *testing.T) {
 	world := newRowsWorld()
 	world.stored = readStoredFile(t, `{"md.numen.engines.embeddings": {"source":"local","connections": [{"connection":"c1f0a9e20","model":"m"}]}}`)
-	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings", rowsSetting("connections", "embed", false, ""))
+	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings", rowsSetting("connections", "llm.embed", false, ""))
 
 	if err := world.rows().RemoveRows(workID); err != nil {
 		t.Fatal(err)

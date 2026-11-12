@@ -2,8 +2,10 @@ import { ref, watch } from 'vue'
 import type { JsonValue } from '@/shared/api/json'
 import {
   getCompleteRows,
+  getRowKey,
   moveRow,
   readRows,
+  type ConnectionFieldInfo,
   type RowDraft,
   type StoredRow,
 } from '@/entities/connection'
@@ -11,6 +13,8 @@ import {
 /** Where the rows come from and where a change of them goes. */
 export interface RowDraftsSource {
   readonly getValue: () => JsonValue | undefined
+  /** The row fields of the type of a connection; a row is complete once each required one has a value. */
+  readonly getRowFields: (connectionId: string) => readonly ConnectionFieldInfo[]
   readonly onChange: (rows: readonly StoredRow[]) => void
 }
 
@@ -19,19 +23,14 @@ function sameRows(first: readonly StoredRow[], second: readonly StoredRow[]): bo
     first.length === second.length &&
     first.every((one, index) => {
       const other = second[index]
-      return (
-        other !== undefined &&
-        one.connection === other.connection &&
-        one.model === other.model &&
-        one.reasoning === other.reasoning
-      )
+      return other !== undefined && getRowKey(one) === getRowKey(other)
     })
   )
 }
 
 /**
  * The rows on the page: the rows of the value in force, and the rows added and not yet complete. A
- * change writes only the rows that name a connection and a model. A value that differs from the
+ * change writes only the rows that name a connection and a value for each required row field. A value that differs from the
  * complete rows on the page replaces them.
  */
 export function useRowDrafts(source: RowDraftsSource) {
@@ -43,7 +42,7 @@ export function useRowDrafts(source: RowDraftsSource) {
   const drafts = ref<readonly RowDraft[]>(createDrafts(readRows(source.getValue())))
 
   const write = (): void => {
-    const complete = getCompleteRows(drafts.value)
+    const complete = getCompleteRows(drafts.value, source.getRowFields)
     if (sameRows(complete, readRows(source.getValue())) && inFlight.length === 0) return
     inFlight = [...inFlight, complete]
     source.onChange(complete)
@@ -61,7 +60,8 @@ export function useRowDrafts(source: RowDraftsSource) {
       return
     }
     inFlight = []
-    if (!sameRows(stored, getCompleteRows(drafts.value))) drafts.value = createDrafts(stored)
+    if (!sameRows(stored, getCompleteRows(drafts.value, source.getRowFields)))
+      drafts.value = createDrafts(stored)
   })
 
   return {
@@ -69,7 +69,7 @@ export function useRowDrafts(source: RowDraftsSource) {
     write,
     /**
      * Drops a change that was not confirmed. The rows go back to the stored ones, except that a row
-     * with no stored rows behind it stays with its connection, and its model is chosen again.
+     * with no stored rows behind it stays with its connection, and its row fields are chosen again.
      */
     revert: (): void => {
       inFlight = []
@@ -77,13 +77,10 @@ export function useRowDrafts(source: RowDraftsSource) {
       drafts.value =
         stored.length > 0
           ? createDrafts(stored)
-          : drafts.value.map((one) => ({ ...one, model: '', reasoning: '' }))
+          : drafts.value.map((one) => ({ ...one, options: {} }))
     },
     add: (): void => {
-      drafts.value = [
-        ...drafts.value,
-        { key: createKey(), connection: '', model: '', reasoning: '' },
-      ]
+      drafts.value = [...drafts.value, { key: createKey(), connection: '', options: {} }]
     },
     remove: (key: string): void => {
       drafts.value = drafts.value.filter((one) => one.key !== key)

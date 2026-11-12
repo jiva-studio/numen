@@ -13,29 +13,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 )
 
-// noModelCalls answers every call with an empty result.
+// noModelCalls answers every call with an empty done payload.
 type noModelCalls struct{}
 
-func (noModelCalls) Complete(context.Context, string, modelcall.CompleteRequest, modelcall.Priority) (modelcall.CompleteResult, error) {
-	return modelcall.CompleteResult{}, nil
-}
-
-func (noModelCalls) Chat(context.Context, string, modelcall.ChatRequest, modelcall.Priority, func(modelcall.ChatEvent) error) error {
-	return nil
-}
-
-func (noModelCalls) Embed(context.Context, string, []string, modelcall.Priority) ([][]float32, error) {
+func (noModelCalls) Call(context.Context, string, modelcall.Request, modelcall.Send) ([]byte, error) {
 	return nil, nil
-}
-
-func (noModelCalls) GetEmbeddingProfile(context.Context, string) (modelcall.EmbeddingProfile, error) {
-	return modelcall.EmbeddingProfile{}, nil
 }
 
 const providerManifest = `{
 	"id": "md.example.provider", "name": "Provider", "version": "1.0.0", "targets": ["desktop.editor"],
 	"services": ["numen.v1.ProviderService"], "backend": {"entrypoint": "bin/provider"},
-	"contributes": {"connectionTypes": [{"id": "server", "title": "Server", "operations": ["complete"],
+	"contributes": {"connectionTypes": [{"id": "server", "title": "Server", "operations": ["llm.complete"],
 		"fields": [{"key": "baseUrl", "type": "string", "title": "Address", "isAddress": true}]}]}
 }`
 

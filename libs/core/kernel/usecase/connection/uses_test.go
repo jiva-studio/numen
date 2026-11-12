@@ -12,11 +12,11 @@ import (
 )
 
 func proofreading() connectiondomain.Use {
-	return connectiondomain.Use{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operation: "complete"}
+	return connectiondomain.Use{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operations: []string{"llm.complete"}}
 }
 
 func embeddings() connectiondomain.Use {
-	return connectiondomain.Use{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operation: "embed"}
+	return connectiondomain.Use{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operations: []string{"llm.embed"}}
 }
 
 func TestListReturnsTheUsesOfEachConnection(t *testing.T) {

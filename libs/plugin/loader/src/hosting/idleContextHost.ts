@@ -34,7 +34,7 @@ const NO_WINDOW: Omit<ContextWindowHost, 'getSlots' | 'getNotices'> = {
   getWindow: () => undefined,
   getTasks: () => undefined,
   getBackgroundTasks: () => undefined,
-  getModels: () => undefined,
+  getConnections: () => undefined,
 }
 
 /** What a window must give to host plugin contexts; everything else it leaves idle. */

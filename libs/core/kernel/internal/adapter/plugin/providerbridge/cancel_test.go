@@ -3,57 +3,46 @@ package providerbridge_test
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 )
 
 const cancelWait = 5 * time.Second
 
-// blockingProvider answers Complete when its context ends, and tells the test which way it ended.
-type blockingProvider struct {
-	numenv1connect.UnimplementedProviderServiceHandler
-	started chan struct{}
-	ended   chan error
+func newBlockedService() *scriptedService {
+	return &scriptedService{
+		frames: []*v1.ProviderServiceCallResponse{data("partial")}, block: true,
+		started: make(chan struct{}), ended: make(chan error, 1),
+	}
 }
 
-func (p *blockingProvider) Complete(
-	ctx context.Context, _ *connect.Request[v1.ProviderServiceCompleteRequest],
-) (*connect.Response[v1.ProviderServiceCompleteResponse], error) {
-	close(p.started)
-	<-ctx.Done()
-	p.ended <- ctx.Err()
-	return nil, ctx.Err()
-}
-
-func newBlockingProvider() *blockingProvider {
-	return &blockingProvider{started: make(chan struct{}), ended: make(chan error, 1)}
-}
-
-func cancelRunningCall(t *testing.T, client numenv1connect.ProviderServiceClient, provider *blockingProvider) {
+func cancelRunningCall(t *testing.T, provider connectionport.Provider, service *scriptedService) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
-	failed := make(chan error, 1)
+	outcome := make(chan error, 1)
+	var frames []string
 	go func() {
-		_, err := client.Complete(ctx, connect.NewRequest(&v1.ProviderServiceCompleteRequest{Call: &v1.ProviderCall{Model: "m"}}))
-		failed <- err
+		_, err := callCollecting(ctx, provider, &frames)
+		outcome <- err
 	}()
 	select {
-	case <-provider.started:
+	case <-service.started:
 	case <-time.After(cancelWait):
 		t.Fatal("the provider never received the call")
 	}
 	cancel()
 	select {
-	case got := <-provider.ended:
+	case got := <-service.ended:
 		if !errors.Is(got, context.Canceled) {
 			t.Fatalf("the handler context ended with %v, want context.Canceled", got)
 		}
@@ -61,30 +50,35 @@ func cancelRunningCall(t *testing.T, client numenv1connect.ProviderServiceClient
 		t.Fatal("the context of the provider's handler did not end after the caller canceled")
 	}
 	select {
-	case err := <-failed:
-		if connect.CodeOf(err) != connect.CodeCanceled {
-			t.Fatalf("the caller got code %v, want canceled: %v", connect.CodeOf(err), err)
+	case err := <-outcome:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("Call = %v, want context.Canceled", err)
 		}
 	case <-time.After(cancelWait):
-		t.Fatal("the caller's call did not return after it was canceled")
+		t.Fatal("Call did not return after it was canceled")
 	}
 }
 
 func TestACanceledCallReachesTheProviderOverTheInProcessPipe(t *testing.T) {
-	provider := newBlockingProvider()
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewProviderServiceHandler(provider))
-	client := numenv1connect.NewProviderServiceClient(
-		&http.Client{Transport: transport.NewInProcessTransport(mux)}, "http://inprocess")
-	cancelRunningCall(t, client, provider)
+	service := newBlockedService()
+	provider, _, _ := newBridge(t, service)
+	cancelRunningCall(t, provider, service)
 }
 
 func TestACanceledCallReachesTheProviderOverTheLoopback(t *testing.T) {
-	provider := newBlockingProvider()
+	service := newBlockedService()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewProviderServiceHandler(provider))
+	mux.Handle(numenv1connect.NewProviderServiceHandler(service))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := numenv1connect.NewProviderServiceClient(server.Client(), server.URL)
-	cancelRunningCall(t, client, provider)
+	address, isTCP := server.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatal("the test server does not listen on TCP")
+	}
+	host := &activator{endpoint: transport.Endpoint{Host: address.IP.String(), Port: address.Port, Token: token}}
+	provider, _, err := providerbridge.NewSource(host).OpenProvider(t.Context(), pluginID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelRunningCall(t, provider, service)
 }

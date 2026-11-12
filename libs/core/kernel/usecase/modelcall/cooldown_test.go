@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 )
 
@@ -19,7 +19,7 @@ func TestTheTimeoutsAreTheDecidedOnes(t *testing.T) {
 func callsToFirst(s *setup) int { return len(s.world.Provider.CallsTo(addressOne)) }
 
 func TestARowSetAsideIsSkippedFor60SecondsWhenTheServiceGaveNoWait(t *testing.T) {
-	s := newSetup(t, "complete")
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRateLimited, 0))
 	s.attempt(t)
 
@@ -37,7 +37,7 @@ func TestARowSetAsideIsSkippedFor60SecondsWhenTheServiceGaveNoWait(t *testing.T)
 }
 
 func TestTheWaitTheServiceAskedForReplacesTheDefault(t *testing.T) {
-	s := newSetup(t, "complete")
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRateLimited, 5*time.Second))
 	s.attempt(t)
 
@@ -50,7 +50,7 @@ func TestTheWaitTheServiceAskedForReplacesTheDefault(t *testing.T) {
 }
 
 func TestAWaitOfMoreThanTenMinutesIsLimitedToTenMinutes(t *testing.T) {
-	s := newSetup(t, "complete")
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRateLimited, 3*time.Hour))
 	s.attempt(t)
 
@@ -69,7 +69,7 @@ func TestAWaitOfMoreThanTenMinutesIsLimitedToTenMinutes(t *testing.T) {
 
 func TestARejectedKeyOrAPaymentRequiredLastsUntilTheConnectionIsEdited(t *testing.T) {
 	for _, reason := range []connection.FailureReason{connection.FailureReasonRejectedKey, connection.FailureReasonPaymentRequired} {
-		s := newSetup(t, "complete")
+		s := newSetup(t, modelcalltest.CompleteOperation)
 		s.world.Provider.Fail(addressOne, tryNext(reason, 0))
 		s.attempt(t)
 
@@ -88,7 +88,7 @@ func TestARejectedKeyOrAPaymentRequiredLastsUntilTheConnectionIsEdited(t *testin
 }
 
 func TestACooldownIsTrackedPerConnection(t *testing.T) {
-	s := newSetup(t, "complete")
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRateLimited, 0))
 	s.attempt(t)
 
@@ -104,12 +104,12 @@ func TestACooldownIsTrackedPerConnection(t *testing.T) {
 }
 
 func TestACooldownIsSharedByEveryPluginThatUsesTheConnection(t *testing.T) {
-	s := newSetup(t, "complete")
-	s.world.Rows.Set("md.example.other-consumer", "complete", modelcalltestRow(s))
+	s := newSetup(t, modelcalltest.CompleteOperation)
+	s.world.Rows.Set("md.example.other-consumer", modelcalltest.CompleteOperation, modelcalltest.Row(s.one, "m"))
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
 	s.attempt(t)
 
-	_, err := s.calls.Complete(t.Context(), "md.example.other-consumer", modelcalldomain.CompleteRequest{}, modelcalldomain.PriorityBackground)
+	_, err := s.callAs(t.Context(), "md.example.other-consumer", modelcalltest.CompleteOperation)
 
 	if err == nil || err.Error() != "First: payment required" {
 		t.Errorf("err = %v", err)
@@ -119,12 +119,8 @@ func TestACooldownIsSharedByEveryPluginThatUsesTheConnection(t *testing.T) {
 	}
 }
 
-func modelcalltestRow(s *setup) connection.Row {
-	return connection.Row{ConnectionID: s.one.ID, Model: "m"}
-}
-
-func TestATimeoutIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T) {
-	s := newSetup(t, "complete")
+func TestAnUnavailableServiceIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T) {
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
 
 	result, err := s.complete(t)
@@ -137,8 +133,8 @@ func TestATimeoutIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T) {
 	}
 }
 
-func TestAnUnreachableServiceIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T) {
-	s := newSetup(t, "complete")
+func TestAServiceUnavailableTwiceSetsTheRowAside(t *testing.T) {
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonUnavailable, 0), tryNext(connection.FailureReasonUnavailable, 0))
 
 	result, err := s.complete(t)
@@ -149,7 +145,7 @@ func TestAnUnreachableServiceIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T)
 }
 
 func TestOnlyOneRetryIsMade(t *testing.T) {
-	s := newSetup(t, "complete")
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
 
 	s.attempt(t)
@@ -159,12 +155,12 @@ func TestOnlyOneRetryIsMade(t *testing.T) {
 	}
 }
 
-func TestAReasonOtherThanATimeoutOrAnUnreachableServiceIsNotRetried(t *testing.T) {
+func TestAReasonOtherThanAnUnavailableServiceIsNotRetried(t *testing.T) {
 	for _, reason := range []connection.FailureReason{
 		connection.FailureReasonRejectedKey, connection.FailureReasonPaymentRequired,
-		connection.FailureReasonRateLimited, connection.FailureReasonUnavailable,
+		connection.FailureReasonRateLimited,
 	} {
-		s := newSetup(t, "complete")
+		s := newSetup(t, modelcalltest.CompleteOperation)
 		s.world.Provider.FailAlways(addressOne, tryNext(reason, 0))
 
 		s.attempt(t)
@@ -176,7 +172,7 @@ func TestAReasonOtherThanATimeoutOrAnUnreachableServiceIsNotRetried(t *testing.T
 }
 
 func TestARowSetAsideAfterARetryStartsItsCooldown(t *testing.T) {
-	s := newSetup(t, "complete")
+	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
 	s.attempt(t)
 

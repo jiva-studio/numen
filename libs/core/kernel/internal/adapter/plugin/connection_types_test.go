@@ -26,7 +26,7 @@ func (h fakeConnectionHost) GetPlugin(id string) (manifest.Discovered, bool) {
 func connectionProvider(id, name string, types ...string) manifest.Discovered {
 	var declared []manifest.ConnectionType
 	for _, one := range types {
-		declared = append(declared, manifest.ConnectionType{ID: one, Title: one, Operations: []string{"complete"}})
+		declared = append(declared, manifest.ConnectionType{ID: one, Title: one, Operations: []string{"llm.complete"}})
 	}
 	return manifest.Discovered{Manifest: manifest.Manifest{
 		ID: id, Name: name, Contributes: manifest.Contributes{ConnectionTypes: declared},

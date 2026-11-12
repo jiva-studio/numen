@@ -1,9 +1,8 @@
 package service
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/completion"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/embedding"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/models"
@@ -16,34 +15,10 @@ type provider struct {
 	models     *models.Models
 }
 
+// roles returns the operations of the llm contract the plugin serves.
 func (p *provider) roles() connection.Provider {
-	return connection.Provider{Completer: p, Chatter: p, Embedder: p, Models: p, Profiles: p}
-}
-
-func (p *provider) Complete(ctx context.Context, call connection.Call, request connection.ProviderCompleteRequest) (connection.CompleteResult, error) {
-	return p.completion.Complete(ctx, call, request)
-}
-
-func (p *provider) Chat(ctx context.Context, call connection.Call, request connection.ProviderChatRequest, send func(connection.ChatEvent) error) error {
-	return p.completion.Chat(ctx, call, request, send)
-}
-
-func (p *provider) Embed(ctx context.Context, call connection.Call, texts []string) ([][]float32, error) {
-	return p.embedding.Embed(ctx, call, texts)
-}
-
-func (p *provider) ProbeEmbeddingWidth(ctx context.Context, call connection.Call) (int, error) {
-	return p.embedding.ProbeWidth(ctx, call)
-}
-
-func (p *provider) GetModelProfile(ctx context.Context, call connection.Call) (connection.ModelProfile, error) {
-	return p.embedding.GetProfile(ctx, call)
-}
-
-func (p *provider) ListModels(ctx context.Context, call connection.Call, operation string) ([]connection.Model, error) {
-	return p.models.ListModels(ctx, call, operation)
-}
-
-func (p *provider) ListReasoningLevels(ctx context.Context, call connection.Call) ([]connection.ReasoningLevel, error) {
-	return p.models.ListReasoningLevels(ctx, call)
+	return llm.Provide(nil, llm.Roles{
+		Completer: p.completion, Chatter: p.completion, Embedder: p.embedding, Profiler: p.embedding,
+		Models: p.models, Reasoning: p.models,
+	})
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
@@ -16,7 +17,7 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
 	temperature := 0.25
 	request := oneUserMessage("fix this line")
-	request.Messages = append([]connection.Message{{Role: "system", Text: "You proofread."}}, request.Messages...)
+	request.Messages = append([]*llm.Message{{Role: "system", Text: "You proofread."}}, request.Messages...)
 	request.Temperature = &temperature
 	request.MaxTokens = 300
 
@@ -108,8 +109,7 @@ func TestCompleteNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 	}
 	for typeID, one := range cases {
 		fake, address := startFakeServer(t, fakeopenai.Config{})
-		call := newCall(typeID, address, "", one.model)
-		call.Reasoning = "low"
+		call := withReasoning(newCall(typeID, address, "", one.model), "low")
 		if _, err := newTestService(t).Complete(newContext(t), call, oneUserMessage("hi")); err != nil {
 			t.Fatal(err)
 		}
@@ -126,10 +126,9 @@ func TestCompleteNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 func TestCompleteStopsOnAReasoningLevelThatTheModelRejects(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	for typeID, model := range map[string]string{"openai-compatible": "qwen2.5:14b", "openai": "gpt-4o-mini"} {
-		call := newCall(typeID, address, "", model)
-		call.Reasoning = "low"
+		call := withReasoning(newCall(typeID, address, "", model), "low")
 		_, err := newTestService(t).Complete(newContext(t), call, oneUserMessage("hi"))
-		checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
+		checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 	}
 	if len(fake.Requests()) != 0 {
 		t.Errorf("the service received %d requests, want none", len(fake.Requests()))
@@ -144,11 +143,11 @@ func TestCompleteStopsOnAnAnswerWithoutChoices(t *testing.T) {
 	}))
 	t.Cleanup(ts.Close)
 	_, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{reason: connection.ReasonUnknown})
+	checkFailure(t, err, failureWant{reason: connection.ReasonUnavailable})
 }
 
 func TestCompleteStopsOnAnUnknownType(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{})
 	_, err := newTestService(t).Complete(newContext(t), newCall("nope", address, "", "m"), oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
+	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 }

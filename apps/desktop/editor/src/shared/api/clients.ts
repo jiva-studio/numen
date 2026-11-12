@@ -17,5 +17,5 @@ export {
   keepaliveWorkspace,
   pluginCatalog,
   connections,
-  models,
+  connectionCalls,
 } from '@numen/core-client'

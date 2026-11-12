@@ -8,13 +8,14 @@ import (
 )
 
 type connectionField struct {
-	Key        string   `json:"key"`
-	Type       string   `json:"type"`
-	IsRequired bool     `json:"required"`
-	Default    *float64 `json:"default"`
-	Min        *float64 `json:"min"`
-	Max        *float64 `json:"max"`
-	Step       *float64 `json:"step"`
+	Key         string   `json:"key"`
+	Type        string   `json:"type"`
+	IsRequired  bool     `json:"required"`
+	OptionsFrom string   `json:"optionsFrom"`
+	Default     *float64 `json:"default"`
+	Min         *float64 `json:"min"`
+	Max         *float64 `json:"max"`
+	Step        *float64 `json:"step"`
 }
 
 type connectionShape struct {
@@ -26,6 +27,7 @@ type connectionShape struct {
 			Title      string            `json:"title"`
 			Operations []string          `json:"operations"`
 			Fields     []connectionField `json:"fields"`
+			RowFields  []connectionField `json:"rowFields"`
 		} `json:"connectionTypes"`
 	} `json:"contributes"`
 	Settings []struct {
@@ -49,8 +51,8 @@ func TestManifestProvidesOneTypeThatCompletesWithAProgramFieldAndNoKey(t *testin
 	if len(types) != 1 || types[0].ID != "acp" || types[0].Title != "ACP agent" {
 		t.Fatalf("types = %+v, want the type acp alone", types)
 	}
-	if !slices.Equal(types[0].Operations, []string{"complete"}) {
-		t.Errorf("operations = %v, want complete alone", types[0].Operations)
+	if !slices.Equal(types[0].Operations, []string{"llm.complete", "llm.models", "llm.reasoning"}) {
+		t.Errorf("operations = %v, want llm.complete with the lists of models and reasoning levels", types[0].Operations)
 	}
 	var keys []string
 	for _, field := range types[0].Fields {
@@ -119,5 +121,20 @@ func TestThePluginRunsInDesktopWindowsAlone(t *testing.T) {
 		if !strings.HasPrefix(target, "desktop.") {
 			t.Errorf("target %q is not a desktop window", target)
 		}
+	}
+}
+
+// A row names the model, from the list the program offers, and a reasoning level of that model.
+func TestARowHoldsAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
+	types := readConnectionShape(t).Contributes.ConnectionTypes
+	if len(types) != 1 || len(types[0].RowFields) != 2 {
+		t.Fatalf("types = %+v, want one type with two row fields", types)
+	}
+	model, reasoning := types[0].RowFields[0], types[0].RowFields[1]
+	if model.Key != "model" || !model.IsRequired || model.OptionsFrom != "llm.models" {
+		t.Errorf("first row field = %+v, want the required model listed by llm.models", model)
+	}
+	if reasoning.Key != "reasoning" || reasoning.IsRequired || reasoning.OptionsFrom != "llm.reasoning" {
+		t.Errorf("second row field = %+v, want the optional reasoning listed by llm.reasoning", reasoning)
 	}
 }

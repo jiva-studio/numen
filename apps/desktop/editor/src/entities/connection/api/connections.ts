@@ -1,8 +1,8 @@
 /**
  * The calls of the connections: the kinds of connection the plugins provide, the connections the
- * person made, and the models a connection lists. A call that cannot reach the core rejects.
+ * person made, and the options a row field of a connection lists. A call that cannot reach the core rejects.
  */
-import { connections, models } from '@/shared/api/clients'
+import { connections } from '@/shared/api/clients'
 import type { Result } from '@/shared/lib/result'
 import type {
   ConnectionChange,
@@ -10,9 +10,7 @@ import type {
   ConnectionFailure,
   ConnectionInfo,
   ConnectionTypeInfo,
-  ModelInfo,
-  ModelListFailure,
-  ReasoningLevelInfo,
+  RowOption,
 } from '../lib/types'
 
 /** Every kind of connection the installed plugins provide, available or not. */
@@ -34,16 +32,14 @@ export const updateConnection = async (
 export const deleteConnection = async (id: string): Promise<Result<undefined, ConnectionFailure>> =>
   connections.delete(id)
 
-/** The models a connection offers for an operation, from the provider of its type. */
-export const listModels = async (
+/**
+ * The values a row field of the type of a connection can take, from the provider of its type, for the
+ * values the row holds so far. `operations` are the operations the setting of rows is used for.
+ */
+export const listRowOptions = async (
   connectionId: string,
-  operation: string,
-): Promise<Result<readonly ModelInfo[], ModelListFailure>> =>
-  models.listModels(connectionId, operation)
-
-/** The levels of reasoning effort the provider lets a model run at; none where it has no such setting. */
-export const listReasoningLevels = async (
-  connectionId: string,
-  model: string,
-): Promise<Result<readonly ReasoningLevelInfo[], ModelListFailure>> =>
-  models.listReasoningLevels(connectionId, model)
+  field: string,
+  options: Readonly<Record<string, string>>,
+  operations: readonly string[],
+): Promise<Result<readonly RowOption[], ConnectionFailure>> =>
+  connections.listRowOptions(connectionId, field, options, operations)

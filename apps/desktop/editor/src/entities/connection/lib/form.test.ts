@@ -30,8 +30,9 @@ const type = (fields: readonly ConnectionFieldInfo[]): ConnectionTypeInfo => ({
   pluginName: 'A',
   title: 'X',
   description: '',
-  operations: ['complete'],
+  operations: ['llm.complete'],
   fields,
+  rowFields: [],
   isAvailable: true,
 })
 

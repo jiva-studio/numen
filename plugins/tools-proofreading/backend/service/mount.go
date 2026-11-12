@@ -42,7 +42,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	complete := model.Completer(client.Complete)
+	complete := model.NewCompleter(client)
 	if model.IsMockSelected() {
 		complete = model.WithMock(complete)
 	}
@@ -61,7 +61,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	complete := model.Completer(client.Complete)
+	complete := model.NewCompleter(client)
 	if model.IsMockEnabled(vars[model.EnvMockML]) {
 		complete = model.WithMock(complete)
 	}

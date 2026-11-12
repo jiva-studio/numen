@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -29,7 +30,7 @@ type scene struct {
 	queue    *hosttest.Queue
 	host     proofread.Host
 	settings *settings.Store
-	requests []connection.CompleteRequest
+	requests []*llm.CompleteRequest
 	script   func(prompt string) string
 	run      *proofread.Proofreading
 }
@@ -46,9 +47,9 @@ func newScene(t *testing.T) *scene {
 	s.texts.File(scanPath, []byte("the scan"))
 	store := vault.Store()
 	s.texts.SetStore(PluginID, store)
-	complete := func(_ context.Context, request connection.CompleteRequest) (connection.CompleteResult, error) {
+	complete := func(_ context.Context, request *llm.CompleteRequest, _ connection.Priority) (*llm.CompleteResult, error) {
 		s.requests = append(s.requests, request)
-		return connection.CompleteResult{Text: s.script(request.Messages[1].Text)}, nil
+		return &llm.CompleteResult{Text: s.script(request.GetMessages()[1].GetText())}, nil
 	}
 	s.host = proofread.Host{
 		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
@@ -161,8 +162,8 @@ func TestTheMockMarksTheLinesTheGatesLetThrough(t *testing.T) {
 }
 
 func failWith(err error) model.Completer {
-	return func(context.Context, connection.CompleteRequest) (connection.CompleteResult, error) {
-		return connection.CompleteResult{}, err
+	return func(context.Context, *llm.CompleteRequest, connection.Priority) (*llm.CompleteResult, error) {
+		return nil, err
 	}
 }
 
@@ -209,11 +210,11 @@ func TestProofreadNamesEveryConnectionThatFailedInTheTask(t *testing.T) {
 func TestAMistakeInTheRequestEndsTheProofreadingWithTheConnectionThatFoundIt(t *testing.T) {
 	s := newScene(t)
 	scan := s.holdScan(t)
-	s.run = newProofreading(s.host, failWith(&connection.RejectedError{ConnectionName: "OpenRouter", Reason: "bad request"}), s.settings)
+	s.run = newProofreading(s.host, failWith(&connection.StoppedError{ConnectionName: "OpenRouter", Reason: "bad request"}), s.settings)
 
 	_, err := s.run.Proofread(t.Context(), proofread.Request{Path: scanPath, Source: scan.GetID()})
 
-	var rejected *connection.RejectedError
+	var rejected *connection.StoppedError
 	if !errors.As(err, &rejected) || rejected.ConnectionName != "OpenRouter" {
 		t.Fatalf("got %v, want a rejection by OpenRouter", err)
 	}

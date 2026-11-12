@@ -6,7 +6,7 @@ import {
   type PluginStatus,
 } from '@numen/plugin-loader'
 import type { WindowPlatform } from '@numen/workbench'
-import { getPluginModels, getPluginTexts } from '@/entities/plugin'
+import { getPluginConnections, getPluginTexts } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
@@ -56,7 +56,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getSetting,
     onSettingChange,
     getTexts: (pluginId) => getPluginTexts(pluginId),
-    getModels: (pluginId) => getPluginModels(pluginId),
+    getConnections: (pluginId) => getPluginConnections(pluginId),
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,

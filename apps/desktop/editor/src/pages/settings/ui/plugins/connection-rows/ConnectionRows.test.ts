@@ -7,10 +7,10 @@ import { ref } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { Select } from '@numen/ui'
 import type {
+  ConnectionFieldInfo,
   ConnectionInfo,
   ConnectionTypeInfo,
-  ModelInfo,
-  ModelListFailure,
+  RowOption,
 } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
@@ -19,19 +19,41 @@ import { asFailure, asValue, createInstallation } from '@/pages/settings/testing
 import { click, dispose, findButton, root } from '@/testing/dom'
 import ConnectionRows from './ConnectionRows.vue'
 
+const rowField = (
+  key: string,
+  title: string,
+  overrides: Partial<ConnectionFieldInfo> = {},
+): ConnectionFieldInfo => ({
+  key,
+  type: 'string',
+  title,
+  description: '',
+  isRequired: true,
+  isAddress: false,
+  options: [],
+  optionsFrom: `llm.${key}s`,
+  ...overrides,
+})
+
+const ROW_FIELDS = [
+  rowField('model', 'Model'),
+  rowField('reasoning', 'Reasoning', { type: 'enum', isRequired: false }),
+]
+
 const type = (id: string, operations: readonly string[]): ConnectionTypeInfo => ({
   id,
   pluginId: 'a.b',
   pluginName: 'A',
   title: id,
   description: '',
-  operations,
+  operations: [...operations, 'llm.models', 'llm.reasonings'],
   fields: [],
+  rowFields: ROW_FIELDS,
   isAvailable: true,
 })
 
-const SERVICE = type('a.b/service', ['complete', 'embed'])
-const EMBEDDER = type('a.b/embedder', ['embed'])
+const SERVICE = type('a.b/service', ['llm.complete', 'llm.embed'])
+const EMBEDDER = type('a.b/embedder', ['llm.embed'])
 
 const connection = (overrides: Partial<ConnectionInfo>): ConnectionInfo => ({
   id: 'c00000001',
@@ -56,10 +78,15 @@ const RETIRED = connection({
   isTypeAvailable: false,
 })
 
-const MODELS: readonly ModelInfo[] = [
-  { id: 'alpha', title: 'Alpha', operations: ['complete'] },
-  { id: 'beta', title: 'Beta', operations: ['complete'] },
+const MODELS: readonly RowOption[] = [
+  { value: 'alpha', title: 'Alpha', group: '' },
+  { value: 'beta', title: 'Beta', group: '' },
 ]
+
+const listModelsOnly =
+  (models: readonly RowOption[]): InstallationConnections['listRowOptions'] =>
+  (_connectionId, field) =>
+    Promise.resolve(asValue(field === 'model' ? models : []))
 
 const setting = (overrides: Partial<PluginSettingInfo> = {}): PluginSettingInfo => ({
   key: 'connections',
@@ -67,46 +94,51 @@ const setting = (overrides: Partial<PluginSettingInfo> = {}): PluginSettingInfo 
   title: 'Connections',
   description: '',
   default: undefined,
-  operation: 'complete',
+  operations: ['llm.complete'],
   max: 3,
   ...overrides,
 })
 
-const row = (connectionId: string, model: string, reasoning = '') => ({
+/** A row as the value of the setting holds it. */
+const row = (connectionId: string, model: string) => ({ connection: connectionId, model })
+
+/** A row as the rows hand it on to be written. */
+const stored = (connectionId: string, model: string) => ({
   connection: connectionId,
-  model,
-  reasoning,
+  options: { model },
 })
 
 interface Options {
   readonly value?: JsonValue
   readonly max?: number
   readonly connections?: readonly ConnectionInfo[]
-  readonly listModels?: InstallationConnections['models']['listModels']
+  readonly listRowOptions?: InstallationConnections['listRowOptions']
   readonly operation?: string
   readonly countNotes?: InstallationConnections['countNotes']
   readonly create?: InstallationConnections['create']
 }
 
 const mountRows = (options: Options = {}) => {
-  const listModels = options.listModels ?? vi.fn(() => Promise.resolve(asValue(MODELS)))
+  const listRowOptions = vi.fn(options.listRowOptions ?? listModelsOnly(MODELS))
   const installation = createInstallation({
     list: ref(options.connections ?? [EMBED_ONLY, WORK, RETIRED, HOME]),
     types: ref([SERVICE, EMBEDDER]),
-    listModels,
-    listReasoningLevels: vi.fn(() => Promise.resolve(asValue([]))),
+    listRowOptions,
     ...(options.countNotes ? { countNotes: options.countNotes } : {}),
     ...(options.create ? { create: options.create } : {}),
   })
   const wrapper = mount(ConnectionRows, {
     attachTo: document.body,
     props: {
-      setting: setting({ max: options.max ?? 3, operation: options.operation ?? 'complete' }),
+      setting: setting({
+        max: options.max ?? 3,
+        operations: [options.operation ?? 'llm.complete'],
+      }),
       value: options.value ?? [],
       connections: installation.connections,
     },
   })
-  return { wrapper, installation, listModels }
+  return { wrapper, installation, listRowOptions }
 }
 
 const changes = (wrapper: VueWrapper): unknown[] =>
@@ -211,14 +243,14 @@ describe('the rows of a setting of connections', () => {
   })
 
   it('fills the model with the first model of the list once a connection is chosen, and writes the row', async () => {
-    const { wrapper, listModels } = mountRows()
+    const { wrapper, listRowOptions } = mountRows()
     await click(findButton(/add connection/i))
 
     wrapper.findAllComponents(Select)[0]?.vm.$emit('update:modelValue', HOME.id)
     await flushPromises()
 
-    expect(listModels).toHaveBeenCalledWith(HOME.id, 'complete')
-    expect(changes(wrapper)).toStrictEqual([[row(HOME.id, 'alpha')]])
+    expect(listRowOptions).toHaveBeenCalledWith(HOME.id, 'model', {}, ['llm.complete'])
+    expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha')]])
     dispose(wrapper)
   })
 
@@ -236,7 +268,7 @@ describe('the rows of a setting of connections', () => {
 
     await click(findButton(/remove row 1/i))
 
-    expect(changes(wrapper)).toStrictEqual([[row(HOME.id, 'beta')]])
+    expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'beta')]])
     dispose(wrapper)
   })
 
@@ -260,7 +292,7 @@ describe('the rows of a setting of connections', () => {
       true,
       false,
     ])
-    expect(choices[2]?.detail).toBe('This type cannot complete')
+    expect(choices[2]?.detail).toBe('This type cannot llm.complete')
     expect(choices[3]?.detail).toBe('Type unavailable')
     dispose(wrapper)
   })
@@ -283,8 +315,8 @@ describe('the rows of a setting of connections', () => {
   it('chooses the saved connection in the row and asks for its models, without a model chosen', async () => {
     const fresh = connection({ id: 'c00000009', name: 'Fresh' })
     const create = vi.fn(() => Promise.resolve(asValue(fresh)))
-    const { wrapper, listModels } = mountRows({
-      operation: 'embed',
+    const { wrapper, listRowOptions } = mountRows({
+      operation: 'llm.embed',
       value: [row(WORK.id, 'alpha')],
       create,
     })
@@ -299,7 +331,7 @@ describe('the rows of a setting of connections', () => {
     expect(root().querySelector('[role="dialog"]')).toBeNull()
     expect(wrapper.findAllComponents(Select)[0]?.props('modelValue')).toBe(fresh.id)
     expect(wrapper.findAllComponents(Select)[1]?.props('modelValue')).toBe('')
-    expect(listModels).toHaveBeenCalledWith(fresh.id, 'embed')
+    expect(listRowOptions).toHaveBeenCalledWith(fresh.id, 'model', {}, ['llm.embed'])
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
   })
@@ -308,24 +340,55 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows({ value: [row(EMBED_ONLY.id, 'any')] })
     await flushPromises()
 
-    expect(root().textContent).toContain('This type cannot complete')
+    expect(root().textContent).toContain('This type cannot llm.complete')
     dispose(wrapper)
   })
 
   it('shows why the models could not be listed and keeps the typed model', async () => {
-    const listModels = vi.fn(() =>
-      Promise.resolve(
-        asFailure<ModelListFailure>({
-          errorCode: 'provider_unavailable',
-          detail: 'the key was rejected',
-        }),
-      ),
-    )
-    const { wrapper } = mountRows({ value: [row(WORK.id, 'typed-by-hand')], listModels })
+    const listRowOptions = () => Promise.resolve(asFailure('the key was rejected'))
+    const { wrapper } = mountRows({ value: [row(WORK.id, 'typed-by-hand')], listRowOptions })
     await flushPromises()
 
-    expect(root().textContent).toContain('The models could not be listed: the key was rejected')
+    expect(root().textContent).toContain(
+      'The values of Model could not be listed: the key was rejected',
+    )
     expect(changes(wrapper)).toStrictEqual([])
+    dispose(wrapper)
+  })
+
+  it('asks the reasoning levels of the chosen model, and clears the level when the model changes', async () => {
+    const listRowOptions = vi.fn<InstallationConnections['listRowOptions']>(
+      (_connectionId, field, options) =>
+        Promise.resolve(
+          asValue(
+            field === 'model'
+              ? MODELS
+              : [{ value: 'deep', title: `Deep for ${options['model'] ?? ''}`, group: '' }],
+          ),
+        ),
+    )
+    const { wrapper } = mountRows({
+      value: [{ connection: WORK.id, model: 'alpha', reasoning: 'deep' }],
+      listRowOptions,
+    })
+    await flushPromises()
+
+    expect(listRowOptions).toHaveBeenCalledWith(
+      WORK.id,
+      'reasoning',
+      { model: 'alpha', reasoning: 'deep' },
+      ['llm.complete'],
+    )
+    expect(
+      wrapper
+        .findAllComponents(Select)[2]
+        ?.props('choices')
+        .map((one) => one.text),
+    ).toStrictEqual(['Default', 'Deep for alpha'])
+    wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'beta')
+    await flushPromises()
+
+    expect(changes(wrapper)).toStrictEqual([[stored(WORK.id, 'beta')]])
     dispose(wrapper)
   })
 
@@ -346,7 +409,7 @@ describe('the rows of a setting of connections', () => {
     await flushPromises()
 
     expect(changes(wrapper)).toStrictEqual([
-      [row(HOME.id, 'beta'), row(WORK.id, 'alpha'), row(WORK.id, 'beta')],
+      [stored(HOME.id, 'beta'), stored(WORK.id, 'alpha'), stored(WORK.id, 'beta')],
     ])
     expect(root().querySelector('[role="status"]')?.textContent).toBe('Dropped at position 2 of 3.')
     dispose(wrapper)
@@ -403,16 +466,16 @@ describe('the rows of a setting of connections', () => {
 })
 
 describe('the rows of embeddings, whose change indexes the vault again', () => {
-  const EMBED_MODELS: readonly ModelInfo[] = [
-    { id: 'alpha', title: 'Alpha', operations: ['embed'] },
-    { id: 'beta', title: 'Beta', operations: ['embed'] },
+  const EMBED_MODELS: readonly RowOption[] = [
+    { value: 'alpha', title: 'Alpha', group: '' },
+    { value: 'beta', title: 'Beta', group: '' },
   ]
 
   const mountEmbedRows = (options: Options = {}) =>
     mountRows({
-      operation: 'embed',
+      operation: 'llm.embed',
       max: 1,
-      listModels: vi.fn(() => Promise.resolve(asValue(EMBED_MODELS))),
+      listRowOptions: listModelsOnly(EMBED_MODELS),
       countNotes: vi.fn(() => Promise.resolve(120)),
       ...options,
     })
@@ -456,7 +519,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
     await click(findButton(/^index$/i))
 
-    expect(changes(wrapper)).toStrictEqual([[row(HOME.id, 'alpha')]])
+    expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha')]])
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()
     dispose(wrapper)
   })
@@ -516,7 +579,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
   it('does not ask for the rows of another operation', async () => {
     const { wrapper } = mountRows({
-      operation: 'complete',
+      operation: 'llm.complete',
       countNotes: vi.fn(() => Promise.resolve(5)),
     })
     await click(findButton(/add connection/i))
@@ -524,7 +587,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await choose(wrapper, 0, HOME.id)
 
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()
-    expect(changes(wrapper)).toStrictEqual([[row(HOME.id, 'alpha')]])
+    expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha')]])
     dispose(wrapper)
   })
 

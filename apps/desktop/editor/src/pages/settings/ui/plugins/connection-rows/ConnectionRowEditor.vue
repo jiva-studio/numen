@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
- * One row of a setting of rows: the grip that moves it, the connection, the model and the reasoning
- * level, and the button that removes it. The models and the levels are asked from the provider of the
- * connection; the model field also takes a typed name. Choosing a connection fills the model with the
- * first model of its list. The list of connections ends with "New connection…", which opens the
- * dialog that adds one; the saved connection is chosen in the row and the list of its models opens,
- * so the person chooses the model at once. Closing the dialog leaves the row as it was.
+ * One row of a setting of rows: the grip that moves it, the connection, one control for each row field
+ * of the type of the connection, such as a model and a reasoning level, and the button that removes it.
+ * The values of a field are asked from the provider of the connection; a text field also takes a typed
+ * value. Choosing a value clears the fields after it, whose values depend on it. The list of connections
+ * ends with "New connection…", which opens the dialog that adds one; the saved connection is chosen in
+ * the row and the list of its first field opens, so the person chooses it at once. Closing the dialog
+ * leaves the row as it was.
  */
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { GripVertical, X } from '@lucide/vue'
 import { Button, Select, runInBackground } from '@numen/ui'
 import type { ConnectionInfo, StoredRow } from '@/entities/connection'
@@ -32,19 +33,16 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { modelChoices, levelChoices, problem, levelsProblem } = useRowChoices({
+const { fields } = useRowChoices({
   getRow: () => props.row,
-  getOperation: () => props.operation,
-  getListModels: () => props.listModels,
-  getListReasoningLevels: () => props.listReasoningLevels,
-  update: (patch) => emit('update', patch),
+  getRowFields: () => props.rowFields,
+  getOperations: () => props.operations,
+  getListRowOptions: () => props.listRowOptions,
+  update: (options) => emit('update', { options }),
 })
 
 const isAdding = ref(false)
-const modelsProblem = computed(() =>
-  problem.value === '' ? '' : `${words.connectionRowsModelsFailed} ${problem.value}`,
-)
-const modelSelect = useTemplateRef<InstanceType<typeof Select>>('modelSelect')
+const fieldSelects = ref<InstanceType<typeof Select>[]>([])
 const connectionChoices = computed<readonly SelectChoice[]>(() => [
   ...props.choices,
   { id: NEW_CONNECTION, text: words.connectionNew },
@@ -57,25 +55,35 @@ function onConnectionChoose(connection: string): void {
     return
   }
   if (connection === props.row.connection) return
-  emit('update', { connection, model: '', reasoning: '' })
+  emit('update', { connection, options: {} })
 }
 
 function onConnectionSaved(saved: ConnectionInfo): void {
-  emit('update', { connection: saved.id, model: '', reasoning: '' })
+  emit('update', { connection: saved.id, options: {} })
   runInBackground(
-    nextTick(() => openSelect(modelSelect.value?.element)),
+    nextTick(() => openSelect(fieldSelects.value[0]?.element)),
     () => undefined,
   )
 }
 
-function onModelChoose(model: string): void {
-  if (model === props.row.model) return
-  emit('update', { model, reasoning: '' })
+function onFieldChoose(index: number, value: string): void {
+  const field = props.rowFields[index]
+  if (!field || value === (props.row.options[field.key] ?? '')) return
+  const kept = props.rowFields
+    .slice(0, index)
+    .map((one) => [one.key, props.row.options[one.key] ?? ''])
+  emit('update', {
+    options: Object.fromEntries([...kept, [field.key, value]].filter(([, one]) => one !== '')),
+  })
 }
 
-function onReasoningChoose(reasoning: string): void {
-  emit('update', { reasoning })
-}
+/* -------------------------------- Helpers --------------------------------- */
+const columns = computed(() =>
+  [
+    'minmax(0, 2fr)',
+    ...props.rowFields.map((one) => (one.isRequired ? 'minmax(0, 3fr)' : 'minmax(0, 1.2fr)')),
+  ].join(' '),
+)
 </script>
 
 <template>
@@ -101,7 +109,7 @@ function onReasoningChoose(reasoning: string): void {
       <GripVertical :size="14" aria-hidden="true" />
     </button>
 
-    <div class="connection-rows__fields">
+    <div class="connection-rows__fields" :style="{ '--connection-rows-columns': columns }">
       <Select
         :model-value="row.connection"
         :choices="connectionChoices"
@@ -115,29 +123,27 @@ function onReasoningChoose(reasoning: string): void {
         @update:model-value="onConnectionChoose"
       />
       <Select
-        ref="modelSelect"
-        :model-value="row.model"
-        :choices="modelChoices"
-        :name="words.connectionRowsModel"
-        :placeholder="words.connectionRowsModelPlaceholder"
-        :aria-label="words.connectionRowsModel"
-        :search-name="words.searchModels"
-        :problem="modelsProblem"
-        :is-disabled="row.connection === ''"
-        is-searchable
-        can-enter-custom
+        v-for="(one, index) in fields"
+        :key="one.field.key"
+        ref="fieldSelects"
+        :model-value="one.value"
+        :choices="one.choices"
+        :name="one.field.title"
+        :aria-label="one.field.title"
+        :problem="one.problem"
+        :is-disabled="one.isDisabled"
+        v-bind="
+          one.field.type === 'string'
+            ? {
+                placeholder: words.connectionRowsValuePlaceholder(one.field.title),
+                searchName: words.searchValues(one.field.title),
+                isSearchable: true,
+                canEnterCustom: true,
+              }
+            : {}
+        "
         class="connection-rows__select"
-        @update:model-value="onModelChoose"
-      />
-      <Select
-        :model-value="row.reasoning"
-        :choices="levelChoices"
-        :name="words.connectionRowsReasoning"
-        :aria-label="words.connectionRowsReasoning"
-        :problem="levelsProblem"
-        :is-disabled="levelChoices.length <= 1 || row.connection === '' || row.model === ''"
-        class="connection-rows__select connection-rows__select--narrow"
-        @update:model-value="onReasoningChoose"
+        @update:model-value="(value: string) => onFieldChoose(index, value)"
       />
     </div>
 
@@ -161,7 +167,6 @@ function onReasoningChoose(reasoning: string): void {
       @saved="onConnectionSaved"
       @close="isAdding = false"
     />
-
   </li>
 </template>
 
@@ -219,7 +224,7 @@ function onReasoningChoose(reasoning: string): void {
 .connection-rows__fields {
   display: grid;
   flex: 1 1 0;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) minmax(0, 1.2fr);
+  grid-template-columns: var(--connection-rows-columns);
   gap: 0.375rem;
   min-inline-size: 0;
 }
@@ -234,5 +239,4 @@ function onReasoningChoose(reasoning: string): void {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-
 </style>

@@ -116,7 +116,7 @@ func newTypes() fixedTypes {
 	fixed := "https://openrouter.ai/api/v1"
 	return fixedTypes{types: []connectiondomain.Type{
 		{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{
-			ID: "openrouter", Title: "OpenRouter", Operations: []string{"complete", "embed"},
+			ID: "openrouter", Title: "OpenRouter", Operations: []string{"llm.complete", "llm.embed"},
 			Fields: []manifest.ConnectionField{
 				{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, FixedValue: &fixed},
 				{Key: "apiKey", Type: "secret", Title: "API key", IsRequired: true},
@@ -124,7 +124,7 @@ func newTypes() fixedTypes {
 			},
 		}},
 		{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{
-			ID: "openai-compatible", Title: "OpenAI-compatible server", Operations: []string{"complete", "embed"},
+			ID: "openai-compatible", Title: "OpenAI-compatible server", Operations: []string{"llm.complete", "llm.embed"},
 			Fields: []manifest.ConnectionField{
 				{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, IsRequired: true},
 				{Key: "apiKey", Type: "secret", Title: "API key"},

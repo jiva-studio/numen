@@ -12,9 +12,11 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -94,7 +96,8 @@ func newHandler(keys *memoryKeys) *Handler { return newHandlerWithUses(keys, fix
 func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 	fixed := "https://openrouter.ai/api/v1"
 	types := fixedTypes{{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{
-		ID: "openrouter", Title: "OpenRouter", Description: "One key for many models.", Operations: []string{"complete", "embed"},
+		ID: "openrouter", Title: "OpenRouter", Description: "One key for many models.", Operations: []string{"llm.complete", "llm.embed", "llm.models"},
+		RowFields: []manifest.ConnectionField{{Key: "model", Type: "string", Title: "Model", IsRequired: true, OptionsFrom: "llm.models"}},
 		Fields: []manifest.ConnectionField{
 			{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, FixedValue: &fixed},
 			{Key: "apiKey", Type: "secret", Title: "API key", IsRequired: true},
@@ -106,11 +109,29 @@ func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 	return NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, types, keys, uses, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
-	})))
+	}), &modelList{}))
 }
 
-func useCasesOf(all *connectiontest.Connections) UseCases {
-	return UseCases{Create: all.Create, Update: all.Update, Delete: all.Delete, List: all.List, ListTypes: all.ListTypes}
+func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderSource) UseCases {
+	return UseCases{
+		Create: all.Create, Update: all.Update, Delete: all.Delete, List: all.List, ListTypes: all.ListTypes,
+		RowOptions: rowoptions.NewOptions(all.Resolve.Execute, all.ReadSecrets.Execute, source),
+	}
+}
+
+// modelList is a provider that lists two models.
+type modelList struct{}
+
+func (m *modelList) OpenProvider(context.Context, string) (connectionport.Provider, func(), error) {
+	return m, func() {}, nil
+}
+
+func (m *modelList) Call(context.Context, string, modelcall.ProviderCall, []byte, modelcall.Send) ([]byte, error) {
+	return nil, nil
+}
+
+func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall, []string) ([]modelcall.Option, error) {
+	return []modelcall.Option{{Value: "google/gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: "Google"}, {Value: "qwen/qwen3-8b"}}, nil
 }
 
 func newKeys() *memoryKeys { return &memoryKeys{values: map[string]string{}} }
@@ -136,7 +157,7 @@ func TestListProviderConnectionTypesReturnsTheFieldsOfEachType(t *testing.T) {
 	if one.GetTypeId() != "md.numen.connections.llm/openrouter" || one.GetPluginName() != "LLM connections" || !one.GetIsAvailable() {
 		t.Errorf("type = %v", one)
 	}
-	if !slices.Equal(one.GetOperations(), []string{"complete", "embed"}) || len(one.GetFields()) != 4 {
+	if !slices.Equal(one.GetOperations(), []string{"llm.complete", "llm.embed", "llm.models"}) || len(one.GetFields()) != 4 {
 		t.Fatalf("type = %v", one)
 	}
 	address, key, mode, parallel := one.GetFields()[0], one.GetFields()[1], one.GetFields()[2], one.GetFields()[3]
@@ -149,6 +170,9 @@ func TestListProviderConnectionTypesReturnsTheFieldsOfEachType(t *testing.T) {
 	options := mode.GetOptions().GetValues()
 	if len(options) != 2 || options[0].GetStringValue() != "fast" || options[1].GetStructValue().GetFields()["title"].GetStringValue() != "Slow" {
 		t.Errorf("options = %v", options)
+	}
+	if rows := one.GetRowFields(); len(rows) != 1 || rows[0].GetKey() != "model" || rows[0].GetOptionsFrom() != "llm.models" || !rows[0].GetIsRequired() {
+		t.Errorf("row fields = %v", rows)
 	}
 	if parallel.GetDefault().GetNumberValue() != 4 || parallel.GetMin() != 1 || parallel.GetMax() != 32 || parallel.GetStep() != 1 {
 		t.Errorf("parallel = %v", parallel)
@@ -282,7 +306,7 @@ func mustCreate(t *testing.T, handler *Handler) *connect.Response[v1.CreateProvi
 }
 
 func TestListProviderConnectionsNamesThePluginSettingsThatUseEachConnection(t *testing.T) {
-	uses := fixedUses{"c00000001": {{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operation: "complete"}}}
+	uses := fixedUses{"c00000001": {{PluginID: "md.numen.tools.proofreading", PluginName: "Proofreading", Operations: []string{"llm.complete"}}}}
 	handler := newHandlerWithUses(newKeys(), uses)
 	mustCreate(t, handler)
 
@@ -292,13 +316,13 @@ func TestListProviderConnectionsNamesThePluginSettingsThatUseEachConnection(t *t
 		t.Fatal(err)
 	}
 	got := listed.Msg.GetConnections()[0].GetUses()
-	if len(got) != 1 || got[0].GetPluginId() != "md.numen.tools.proofreading" || got[0].GetPluginName() != "Proofreading" || got[0].GetOperation() != "complete" {
+	if len(got) != 1 || got[0].GetPluginId() != "md.numen.tools.proofreading" || got[0].GetPluginName() != "Proofreading" || !slices.Equal(got[0].GetOperations(), []string{"llm.complete"}) {
 		t.Errorf("uses = %v", got)
 	}
 }
 
 func TestDeleteProviderConnectionNamesThePluginSettingsWhoseRowsWereRemoved(t *testing.T) {
-	uses := fixedUses{"c00000001": {{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operation: "embed"}}}
+	uses := fixedUses{"c00000001": {{PluginID: "md.numen.engines.embeddings", PluginName: "Embeddings", Operations: []string{"llm.embed", "llm.profile"}}}}
 	handler := newHandlerWithUses(newKeys(), uses)
 	created := mustCreate(t, handler)
 
@@ -308,7 +332,47 @@ func TestDeleteProviderConnectionNamesThePluginSettingsWhoseRowsWereRemoved(t *t
 		t.Fatal(err)
 	}
 	got := response.Msg.GetRemovedUses()
-	if len(got) != 1 || got[0].GetPluginId() != "md.numen.engines.embeddings" || got[0].GetOperation() != "embed" {
+	if len(got) != 1 || got[0].GetPluginId() != "md.numen.engines.embeddings" || !slices.Equal(got[0].GetOperations(), []string{"llm.embed", "llm.profile"}) {
 		t.Errorf("removed uses = %v", got)
+	}
+}
+
+func TestListRowOptionsAsksTheProviderOfTheConnectionWithTheRowSoFar(t *testing.T) {
+	handler := newHandler(newKeys())
+	created := mustCreate(t, handler)
+
+	response, err := handler.ListRowOptions(t.Context(), connect.NewRequest(&v1.ListRowOptionsRequest{
+		ConnectionId: created.Msg.GetConnection().GetId(), Field: "model",
+		Options: map[string]string{"reasoning": "low"}, Operations: []string{"llm.embed"},
+	}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := response.Msg.GetOptions()
+	if response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED || len(got) != 2 ||
+		got[0].GetValue() != "google/gemini-2.5-flash" || got[0].GetTitle() != "Gemini 2.5 Flash" || got[0].GetGroup() != "Google" {
+		t.Errorf("response = %v", response.Msg)
+	}
+}
+
+func TestListRowOptionsOfAFieldWithNoOptionsIsAnInvalidField(t *testing.T) {
+	handler := newHandler(newKeys())
+	created := mustCreate(t, handler)
+
+	response, err := handler.ListRowOptions(t.Context(), connect.NewRequest(&v1.ListRowOptionsRequest{
+		ConnectionId: created.Msg.GetConnection().GetId(), Field: "temperature",
+	}))
+
+	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD {
+		t.Errorf("response = %v, %v", response, err)
+	}
+}
+
+func TestListRowOptionsOfAConnectionThatIsNotInTheListIsNotFound(t *testing.T) {
+	response, err := newHandler(newKeys()).ListRowOptions(t.Context(), connect.NewRequest(&v1.ListRowOptionsRequest{ConnectionId: "c0000dead", Field: "model"}))
+
+	if err != nil || response.Msg.GetError() != v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND {
+		t.Errorf("response = %v, %v", response, err)
 	}
 }

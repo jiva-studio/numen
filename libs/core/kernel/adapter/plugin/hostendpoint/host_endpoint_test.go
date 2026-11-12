@@ -15,7 +15,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -163,7 +162,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 // The endpoint binds the loopback interface and responds for a token.
 func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	fakeCallers := newCallers()
-	fakeCallers.modelCalls = &scriptedCalls{complete: modelcall.CompleteResult{Text: "ok"}}
+	fakeCallers.modelCalls = &scriptedCalls{done: "ok"}
 	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers())
 	if err != nil {
 		t.Fatal(err)
@@ -177,19 +176,19 @@ func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 		t.Fatalf("port = %d", endpoint.GetPort())
 	}
 
-	client := numenv1connect.NewHostModelServiceClient(http.DefaultClient,
+	client := numenv1connect.NewHostConnectionServiceClient(http.DefaultClient,
 		fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort()),
 		connect.WithInterceptors(transport.AuthInterceptor("token-a")))
-	request := connect.NewRequest(&v1.HostModelServiceCompleteRequest{Messages: []*v1.HostModelMessage{{Role: "user", Text: "u"}}})
-	res, err := client.Complete(t.Context(), request)
-	if err != nil || res.Msg.GetText() != "ok" {
-		t.Fatalf("answered %v, %v", res, err)
+	request := &v1.HostConnectionServiceCallRequest{Operation: "llm.complete", Payload: []byte("u")}
+	got, err := call(t.Context(), client, request)
+	if err != nil || string(got.done) != "ok" {
+		t.Fatalf("answered %+v, %v", got, err)
 	}
 
 	if err := endpoint.Close(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Complete(t.Context(), request); err == nil {
+	if _, err := call(t.Context(), client, request); err == nil {
 		t.Error("a closed endpoint answered")
 	}
 }

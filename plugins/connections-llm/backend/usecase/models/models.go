@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/operation"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/reasoning"
@@ -27,18 +28,18 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Models, error) {
 	return &Models{gateway: gateway, limits: requestLimits}, nil
 }
 
-// ListModels lists the models of the service that fit the operation.
-func (m *Models) ListModels(ctx context.Context, call connection.Call, op string) ([]connection.Model, error) {
-	limit := m.limits.Get(call.Type, call.Fields[servicetype.FieldBaseURL], call.Model, operation.List)
-	return m.gateway.ListModels(ctx, call, limit, op)
+// ListModels lists the models of the service that fit the operations of a setting of rows.
+func (m *Models) ListModels(ctx context.Context, call connection.Call, operations []string) ([]connection.Option, error) {
+	limit := m.limits.Get(call.Type, call.Fields[servicetype.FieldBaseURL], call.Options[llm.OptionModel], operation.List)
+	return m.gateway.ListModels(ctx, call, limit, operations)
 }
 
-// ListReasoningLevels returns the levels the model of the call takes, or none.
-func (m *Models) ListReasoningLevels(_ context.Context, call connection.Call) ([]connection.ReasoningLevel, error) {
-	levels := reasoning.GetLevels(call.Type, call.Model)
-	out := make([]connection.ReasoningLevel, len(levels))
+// ListReasoningLevels returns the levels the model of the row takes, or none.
+func (m *Models) ListReasoningLevels(_ context.Context, call connection.Call) ([]connection.Option, error) {
+	levels := reasoning.GetLevels(call.Type, call.Options[llm.OptionModel])
+	out := make([]connection.Option, len(levels))
 	for i, one := range levels {
-		out[i] = connection.ReasoningLevel{Value: one.Value, Title: one.Title}
+		out[i] = connection.Option{Value: one.Value, Title: one.Title}
 	}
 	return out, nil
 }

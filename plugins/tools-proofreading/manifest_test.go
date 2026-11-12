@@ -10,11 +10,11 @@ type manifestShape struct {
 	Permissions []string          `json:"permissions"`
 	Secrets     []json.RawMessage `json:"secrets"`
 	Settings    []struct {
-		Key       string `json:"key"`
-		Type      string `json:"type"`
-		Operation string `json:"operation"`
-		Max       *int   `json:"max"`
-		When      any    `json:"when"`
+		Key        string   `json:"key"`
+		Type       string   `json:"type"`
+		Operations []string `json:"operations"`
+		Max        *int     `json:"max"`
+		When       any      `json:"when"`
 	} `json:"settings"`
 }
 
@@ -34,8 +34,8 @@ func TestManifestDeclaresOneSettingOfFiveRowsOfConnectionsToComplete(t *testing.
 			continue
 		}
 		found++
-		if one.Key != "connections" || one.Operation != "complete" || one.Max == nil || *one.Max != 5 || one.When != nil {
-			t.Errorf("setting = %+v, want key connections, operation complete, max 5 and no condition", one)
+		if one.Key != "connections" || !slices.Equal(one.Operations, []string{"llm.complete"}) || one.Max == nil || *one.Max != 5 || one.When != nil {
+			t.Errorf("setting = %+v, want key connections, operations llm.complete, max 5 and no condition", one)
 		}
 	}
 	if found != 1 {

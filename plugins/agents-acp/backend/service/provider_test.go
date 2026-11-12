@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
@@ -34,19 +35,19 @@ func programCall(program string) connection.Call {
 	return connection.Call{Type: "acp", Fields: map[string]string{"program": program}}
 }
 
-func userMessage(text string) connection.ProviderCompleteRequest {
-	return connection.ProviderCompleteRequest{Messages: []connection.Message{{Role: "user", Text: text}}}
+func userMessage(text string) *llm.CompleteRequest {
+	return &llm.CompleteRequest{Messages: []*llm.Message{{Role: "user", Text: text}}}
 }
 
 func TestCompleteReturnsTheAnswerOfTheProgram(t *testing.T) {
 	program, record := fakeProgram(t, "plain")
 
-	result, err := newTestServer(t).completion.Complete(t.Context(), programCall(program), connection.ProviderCompleteRequest{
-		Messages: []connection.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "why?"}},
+	result, err := newTestServer(t).completion.Complete(t.Context(), programCall(program), &llm.CompleteRequest{
+		Messages: []*llm.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "why?"}},
 	})
 
-	if err != nil || result.Text != "the answer" {
-		t.Fatalf("Complete = %q, %v, want %q", result.Text, err, "the answer")
+	if err != nil || result.GetText() != "the answer" {
+		t.Fatalf("Complete = %q, %v, want %q", result.GetText(), err, "the answer")
 	}
 	prompts := readRecord(t, record)["session/prompt"]
 	if len(prompts) != 1 {
@@ -64,7 +65,7 @@ func TestCompleteReturnsTheAnswerOfTheProgram(t *testing.T) {
 func TestCompleteAsksTheProgramForTheModelAndTheLevelOfTheCall(t *testing.T) {
 	program, record := fakeProgram(t, "thought")
 	call := programCall(program)
-	call.Model, call.Reasoning = "m2", "high"
+	call.Options = map[string]string{llm.OptionModel: "m2", llm.OptionReasoning: "high"}
 
 	if _, err := newTestServer(t).completion.Complete(t.Context(), call, userMessage("why?")); err != nil {
 		t.Fatal(err)
@@ -147,12 +148,12 @@ func TestCompleteRefusesARequestWithNoProgramOrNoMessageToAnswer(t *testing.T) {
 			return err
 		},
 		"no message": func() error {
-			_, err := svc.completion.Complete(t.Context(), programCall(program), connection.ProviderCompleteRequest{})
+			_, err := svc.completion.Complete(t.Context(), programCall(program), &llm.CompleteRequest{})
 			return err
 		},
 		"unknown role": func() error {
-			_, err := svc.completion.Complete(t.Context(), programCall(program), connection.ProviderCompleteRequest{
-				Messages: []connection.Message{{Role: "tool", Text: "x"}},
+			_, err := svc.completion.Complete(t.Context(), programCall(program), &llm.CompleteRequest{
+				Messages: []*llm.Message{{Role: "tool", Text: "x"}},
 			})
 			return err
 		},
@@ -169,7 +170,7 @@ func TestAProgramThatIsNotThereIsUnreachable(t *testing.T) {
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
 	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnreachable {
+	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
 		t.Errorf("reason = %v, want unreachable", reason)
 	}
 }
@@ -207,7 +208,7 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
 	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonTimeout {
+	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
 		t.Errorf("reason = %v, want timeout", reason)
 	}
 }
@@ -227,14 +228,14 @@ func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 func TestTheModelsOfTheProgramAreListedForTheRow(t *testing.T) {
 	program, _ := fakeProgram(t, "config")
 
-	models, err := newTestServer(t).completion.ListModels(t.Context(), programCall(program), "complete")
+	models, err := newTestServer(t).completion.ListModels(t.Context(), programCall(program), []string{llm.OperationComplete})
 
 	if err != nil {
 		t.Fatal(err)
 	}
 	var titles []string
 	for _, one := range models {
-		titles = append(titles, one.ID+"="+one.Title)
+		titles = append(titles, one.Value+"="+one.Title)
 	}
 	if !slices.Equal(titles, []string{"m1=Model One", "m2=Model Two"}) {
 		t.Errorf("models = %v", titles)
@@ -259,7 +260,7 @@ func TestTheLevelsOfTheCurrentModelOfTheProgramAreListed(t *testing.T) {
 }
 
 func TestListingTheModelsOfAProgramThatIsNotThereIsUnreachable(t *testing.T) {
-	_, err := newTestServer(t).completion.ListModels(t.Context(), programCall(filepath.Join(t.TempDir(), "gone")), "complete")
+	_, err := newTestServer(t).completion.ListModels(t.Context(), programCall(filepath.Join(t.TempDir(), "gone")), []string{llm.OperationComplete})
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("ListModels = %v, want try the next", err)

@@ -29,7 +29,7 @@ const MANAGE = 'vault:manage'
 /** Consent to open external links; it does not restrict the requests a plugin makes itself, as plugins are trusted code. */
 const LINK_OPEN = 'link:open'
 /** A model call uses the connections the plugin names in its own settings; the person granted them there. */
-const MODEL_GRANT = `the rows of the plugin's own settings are the grant`
+const CONNECTION_GRANT = `the rows of the plugin's own settings are the grant`
 
 /**
  * How a refusal of a rule reaches the caller: a sync member throws, an async member rejects, and a
@@ -246,11 +246,8 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     },
   },
   work: {
-    models: {
-      complete: requireNothing(MODEL_GRANT),
-      embed: requireNothing(MODEL_GRANT),
-      getEmbeddingProfile: requireNothing(MODEL_GRANT),
-      chat: requireNothing(MODEL_GRANT),
+    connections: {
+      call: requireNothing(CONNECTION_GRANT),
     },
     agent: {
       ask: requirePermissions(WRITE),

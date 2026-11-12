@@ -7,11 +7,33 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'
-import type { ConnectionInfo, ConnectionTypeInfo, ModelInfo } from '@/entities/connection'
+import type {
+  ConnectionFieldInfo,
+  ConnectionInfo,
+  ConnectionTypeInfo,
+  RowOption,
+} from '@/entities/connection'
 import type { JsonValue } from '@/shared/api/json'
 import type { PluginSettingInfo } from '@/entities/settings'
 import { asValue, createInstallation } from '@/pages/settings/testing/installation'
 import ConnectionRows from './ConnectionRows.vue'
+
+const rowField = (key: string, title: string, overrides: Partial<ConnectionFieldInfo> = {}) => ({
+  key,
+  type: 'string' as const,
+  title,
+  description: '',
+  isRequired: true,
+  isAddress: false,
+  options: [],
+  optionsFrom: `sample.${key}s`,
+  ...overrides,
+})
+
+const ROW_FIELDS: readonly ConnectionFieldInfo[] = [
+  rowField('model', 'Model'),
+  rowField('reasoning', 'Reasoning', { type: 'enum', isRequired: false }),
+]
 
 const type = (id: string, title: string, operations: readonly string[]): ConnectionTypeInfo => ({
   id,
@@ -19,14 +41,15 @@ const type = (id: string, title: string, operations: readonly string[]): Connect
   pluginName: 'Sample connections',
   title,
   description: '',
-  operations,
+  operations: [...operations, 'sample.models', 'sample.reasonings'],
   fields: [],
+  rowFields: ROW_FIELDS,
   isAvailable: true,
 })
 
-const SERVICE = type('md.numen.sample/service', 'Sample service', ['complete', 'embed'])
-const SERVER = type('md.numen.sample/server', 'Sample server', ['complete'])
-const EMBEDDER = type('md.numen.sample/embedder', 'Sample embedder', ['embed'])
+const SERVICE = type('md.numen.sample/service', 'Sample service', ['llm.complete', 'llm.embed'])
+const SERVER = type('md.numen.sample/server', 'Sample server', ['llm.complete'])
+const EMBEDDER = type('md.numen.sample/embedder', 'Sample embedder', ['llm.embed'])
 
 const connection = (overrides: Partial<ConnectionInfo>): ConnectionInfo => ({
   id: 'c00000001',
@@ -52,14 +75,30 @@ const RETIRED = connection({
 })
 const ALL = [EMBED_ONLY, WORK, RETIRED, LOCAL]
 
-const MODELS: Readonly<Record<string, readonly ModelInfo[]>> = {
+/** The models of each connection, each with the operations the sample service lists it for. */
+const MODELS: Readonly<Record<string, readonly (RowOption & { readonly operation: string })[]>> = {
   [WORK.id]: [
-    { id: 'google/gemini-2.5-flash', title: 'Gemini 2.5 Flash', operations: ['complete'] },
-    { id: 'openai/gpt-5-mini', title: 'GPT-5 mini', operations: ['complete'] },
-    { id: 'openai/text-embedding-3-small', title: 'Embedding small', operations: ['embed'] },
+    {
+      value: 'google/gemini-2.5-flash',
+      title: 'Gemini 2.5 Flash',
+      group: '',
+      operation: 'llm.complete',
+    },
+    { value: 'openai/gpt-5-mini', title: 'GPT-5 mini', group: '', operation: 'llm.complete' },
+    {
+      value: 'openai/text-embedding-3-small',
+      title: 'Embedding small',
+      group: '',
+      operation: 'llm.embed',
+    },
   ],
-  [LOCAL.id]: [{ id: 'qwen2.5:14b', title: 'qwen2.5:14b', operations: [] }],
+  [LOCAL.id]: [{ value: 'qwen2.5:14b', title: '', group: '', operation: '' }],
 }
+
+const listModels = (connectionId: string, operations: readonly string[]): readonly RowOption[] =>
+  (MODELS[connectionId] ?? MODELS[WORK.id] ?? [])
+    .filter((one) => one.operation === '' || operations.includes(one.operation))
+    .map(({ value, title, group }) => ({ value, title, group }))
 
 const setting = (overrides: Partial<PluginSettingInfo> = {}): PluginSettingInfo => ({
   key: 'connections',
@@ -67,7 +106,7 @@ const setting = (overrides: Partial<PluginSettingInfo> = {}): PluginSettingInfo 
   title: 'Connections',
   description: 'Services tried in order.',
   default: undefined,
-  operation: 'complete',
+  operations: ['llm.complete'],
   max: 5,
   ...overrides,
 })
@@ -100,25 +139,37 @@ const render =
       const installation = createInstallation({
         list,
         create: fn((draft: { name: string; typeId: string }) => {
-          const made = connection({ id: 'c00000099', name: draft.name || 'Fresh', typeId: draft.typeId })
+          const made = connection({
+            id: 'c00000099',
+            name: draft.name || 'Fresh',
+            typeId: draft.typeId,
+          })
           list.value = [...list.value, made]
           return Promise.resolve(asValue(made))
         }),
         types: ref([SERVICE, SERVER, EMBEDDER]),
-        listModels: fn((connectionId: string) =>
-          Promise.resolve(asValue(MODELS[connectionId] ?? MODELS[WORK.id] ?? [])),
-        ),
-        listReasoningLevels: fn((connectionId: string, model: string) =>
-          Promise.resolve(
-            asValue(
-              connectionId === WORK.id && model.startsWith('google/')
-                ? [
-                    { value: 'low', title: 'Low' },
-                    { value: 'high', title: 'High' },
-                  ]
-                : [],
-            ),
-          ),
+        listRowOptions: fn(
+          (
+            connectionId: string,
+            field: string,
+            options: Readonly<Record<string, string>>,
+            operations: readonly string[],
+          ) => {
+            if (field === 'model')
+              return Promise.resolve(asValue(listModels(connectionId, operations)))
+            const isGoogle =
+              connectionId === WORK.id && (options['model'] ?? '').startsWith('google/')
+            return Promise.resolve(
+              asValue(
+                isGoogle
+                  ? [
+                      { value: 'low', title: 'Low', group: '' },
+                      { value: 'high', title: 'High', group: '' },
+                    ]
+                  : [],
+              ),
+            )
+          },
         ),
       })
       const onChange = (next: JsonValue) => {
@@ -236,7 +287,7 @@ export const DimmedConnection: Story = {
     ])
     const embeddings = menu.getByRole('menuitemradio', { name: /Embeddings only/ })
     await expect(embeddings).toBeDisabled()
-    await expect(embeddings).toHaveTextContent('This type cannot complete')
+    await expect(embeddings).toHaveTextContent('This type cannot llm.complete')
     await expect(menu.getByRole('menuitemradio', { name: /Retired/ })).toHaveTextContent(
       'Type unavailable',
     )
@@ -248,7 +299,7 @@ export const DimmedConnection: Story = {
 export const RowOfAnUnusableConnection: Story = {
   render: render({ rows: [row(EMBED_ONLY.id, 'any')] }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('This type cannot complete')).toBeVisible()
+    await expect(within(canvasElement).getByText('This type cannot llm.complete')).toBeVisible()
   },
 }
 
@@ -265,7 +316,7 @@ export const ChoosingAConnectionFillsTheModel: Story = {
 
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
-        { connection: WORK.id, model: 'google/gemini-2.5-flash', reasoning: '' },
+        { connection: WORK.id, model: 'google/gemini-2.5-flash' },
       ]),
     )
     await expect(canvas.getByRole('button', { name: 'Model' })).toHaveTextContent(
@@ -280,7 +331,9 @@ export const NewConnectionEntryChoosesTheModelNext: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
-    await userEvent.click(within(document.body).getByRole('menuitemradio', { name: /New connection/ }))
+    await userEvent.click(
+      within(document.body).getByRole('menuitemradio', { name: /New connection/ }),
+    )
 
     const dialog = await within(document.body).findByRole('dialog', { name: 'Add connection' })
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
@@ -289,7 +342,7 @@ export const NewConnectionEntryChoosesTheModelNext: Story = {
     await expect(canvas.getByRole('button', { name: 'Connection' })).toHaveTextContent('Fresh')
     await expect(await within(document.body).findByRole('combobox')).toBeVisible()
     await expect(readWritten(canvasElement)).toStrictEqual([
-      { connection: WORK.id, model: 'google/gemini-2.5-flash', reasoning: '' },
+      { connection: WORK.id, model: 'google/gemini-2.5-flash' },
     ])
   },
 }
@@ -319,7 +372,7 @@ export const ModelComboboxFollowsTheKeyboard: Story = {
 
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
-        { connection: WORK.id, model: 'openai/gpt-5-mini', reasoning: '' },
+        { connection: WORK.id, model: 'openai/gpt-5-mini' },
       ]),
     )
   },
@@ -339,7 +392,7 @@ export const ModelNameCanBeTyped: Story = {
 
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
-        { connection: WORK.id, model: 'my-own-model', reasoning: '' },
+        { connection: WORK.id, model: 'my-own-model' },
       ]),
     )
   },

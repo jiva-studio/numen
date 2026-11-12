@@ -6,14 +6,15 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
-func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T) {
+func TestOpenRouterListsTheModelsThatFitTheOperationsOfTheSetting(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{
-		APIKey:     testKey,
+		APIKey:    testKey,
 		IsLabeled: true,
-		Models:     []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}, {ID: "anthropic/claude-3.5-haiku", Name: "Claude 3.5 Haiku"}},
+		Models:    []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}, {ID: "anthropic/claude-3.5-haiku", Name: "Claude 3.5 Haiku"}},
 		EmbeddingModels: []fakeopenai.Model{
 			{ID: "openai/text-embedding-3-small", Name: "Text Embedding 3 Small"},
 		},
@@ -21,24 +22,24 @@ func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T
 	svc := newTestService(t)
 	call := newCall("openrouter", address, testKey, "")
 
-	complete, err := svc.ListModels(newContext(t), call, "complete")
+	complete, err := svc.ListModels(newContext(t), call, llm.OperationComplete)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []connection.Model{
-		{ID: "anthropic/claude-3.5-haiku", Title: "Claude 3.5 Haiku", Operations: []string{"complete"}},
-		{ID: "openai/gpt-4o-mini", Title: "GPT-4o mini", Operations: []string{"complete"}},
+	want := []connection.Option{
+		{Value: "anthropic/claude-3.5-haiku", Title: "Claude 3.5 Haiku"},
+		{Value: "openai/gpt-4o-mini", Title: "GPT-4o mini"},
 	}
-	if !slices.EqualFunc(complete, want, equalModel) {
+	if !slices.Equal(complete, want) {
 		t.Errorf("complete models = %+v, want %+v", complete, want)
 	}
 
-	embed, err := svc.ListModels(newContext(t), call, "embed")
+	embed, err := svc.ListModels(newContext(t), call, llm.OperationEmbed)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantEmbed := []connection.Model{{ID: "openai/text-embedding-3-small", Title: "Text Embedding 3 Small", Operations: []string{"embed"}}}
-	if !slices.EqualFunc(embed, wantEmbed, equalModel) {
+	wantEmbed := []connection.Option{{Value: "openai/text-embedding-3-small", Title: "Text Embedding 3 Small"}}
+	if !slices.Equal(embed, wantEmbed) {
 		t.Errorf("embed models = %+v, want %+v", embed, wantEmbed)
 	}
 	paths := []string{fake.Requests()[0].Path, fake.Requests()[1].Path}
@@ -47,15 +48,25 @@ func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T
 	}
 }
 
-func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperation(t *testing.T) {
+func TestOpenRouterListsNoModelForASettingOfNoOperationOfText(t *testing.T) {
+	fake, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey, IsLabeled: true, Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini"}}})
+
+	models, err := newTestService(t).ListModels(newContext(t), newCall("openrouter", address, testKey, ""), "acp.task")
+
+	if err != nil || len(models) != 0 || len(fake.Requests()) != 0 {
+		t.Errorf("models = %+v, %v, requests = %d, want none", models, err, len(fake.Requests()))
+	}
+}
+
+func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperationUnderTheirID(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{Models: []fakeopenai.Model{{ID: "qwen2.5:14b"}, {ID: "nomic-embed-text"}}})
-	for _, operation := range []string{"complete", "embed"} {
+	for _, operation := range []string{llm.OperationComplete, llm.OperationEmbed} {
 		models, err := newTestService(t).ListModels(newContext(t), newCall("openai-compatible", address, "", ""), operation)
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []connection.Model{{ID: "nomic-embed-text"}, {ID: "qwen2.5:14b"}}
-		if !slices.EqualFunc(models, want, equalModel) {
+		want := []connection.Option{{Value: "nomic-embed-text", Title: "nomic-embed-text"}, {Value: "qwen2.5:14b", Title: "qwen2.5:14b"}}
+		if !slices.Equal(models, want) {
 			t.Errorf("%s: models = %+v, want %+v", operation, models, want)
 		}
 	}
@@ -63,22 +74,22 @@ func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperation(t *testing.T) {
 
 func TestListModelsReportsAKeyTheServiceRejects(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
-	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, "wrong-key", ""), "complete")
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonKeyRejected})
+	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, "wrong-key", ""), llm.OperationComplete)
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonRejectedKey})
 }
 
 func TestListModelsReportsAServiceThatIsDown(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Fail("/models", http.StatusServiceUnavailable, "")
-	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, testKey, ""), "complete")
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
+	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, testKey, ""), llm.OperationComplete)
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
 func TestReasoningLevelsAreListedWhereTheTypeKnowsThem(t *testing.T) {
-	levels := []connection.ReasoningLevel{{Value: "low", Title: "Low"}, {Value: "medium", Title: "Medium"}, {Value: "high", Title: "High"}}
+	levels := []connection.Option{{Value: "low", Title: "Low"}, {Value: "medium", Title: "Medium"}, {Value: "high", Title: "High"}}
 	cases := map[string]struct {
 		typeID, model string
-		want          []connection.ReasoningLevel
+		want          []connection.Option
 	}{
 		"openrouter":                {"openrouter", "openai/gpt-5", levels},
 		"openai reasoning model":    {"openai", "gpt-5-mini", levels},
@@ -98,20 +109,16 @@ func TestReasoningLevelsAreListedWhereTheTypeKnowsThem(t *testing.T) {
 	}
 }
 
-func equalModel(a, b connection.Model) bool {
-	return a.ID == b.ID && a.Title == b.Title && slices.Equal(a.Operations, b.Operations)
-}
-
 func TestOpenRouterListsTheTextModelsForChatAsForComplete(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{
 		APIKey: testKey, IsLabeled: true,
 		Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}},
 	})
 
-	models, err := newTestService(t).ListModels(newContext(t), newCall("openrouter", address, testKey, ""), "chat")
+	models, err := newTestService(t).ListModels(newContext(t), newCall("openrouter", address, testKey, ""), llm.OperationChat)
 
-	want := []connection.Model{{ID: "openai/gpt-4o-mini", Title: "GPT-4o mini", Operations: []string{"chat"}}}
-	if err != nil || !slices.EqualFunc(models, want, equalModel) {
+	want := []connection.Option{{Value: "openai/gpt-4o-mini", Title: "GPT-4o mini"}}
+	if err != nil || !slices.Equal(models, want) {
 		t.Errorf("chat models = %+v, %v, want %+v", models, err, want)
 	}
 }

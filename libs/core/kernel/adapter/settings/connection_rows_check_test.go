@@ -16,13 +16,13 @@ func declaredWithRows(owner string) ([]manifest.Setting, bool) {
 	switch owner {
 	case rowsPluginID:
 		return []manifest.Setting{
-			{Key: "connections", Type: "connections", Title: "Connections", Operation: "complete", Max: new(float64(2))},
+			{Key: "connections", Type: "connections", Title: "Connections", Operations: []string{"llm.complete"}, Max: new(float64(2))},
 			{Key: "label", Type: "string", Title: "Label"},
 		}, true
 	case "md.numen.engines.embeddings":
 		return []manifest.Setting{
 			{Key: "source", Type: "enum", Title: "Source", Options: manifest.SettingOptions{{Value: "local"}, {Value: "connection"}}},
-			{Key: "connections", Type: "connections", Title: "Connections", Operation: "embed", Max: new(float64(1))},
+			{Key: "connections", Type: "connections", Title: "Connections", Operations: []string{"llm.embed"}, Max: new(float64(1))},
 		}, true
 	}
 	return nil, false
@@ -51,6 +51,9 @@ func TestRowsOfExistingConnectionsAreAccepted(t *testing.T) {
 		"a row with a reasoning level": `[{"connection":"c1f0a9e20","model":"m","reasoning":"low"}]`,
 		"two connections":              `[{"connection":"c1f0a9e20","model":"m"},{"connection":"c77b01d40","model":"m"}]`,
 		"two models of one connection": `[{"connection":"c1f0a9e20","model":"a"},{"connection":"c1f0a9e20","model":"b"}]`,
+		"a row with no option":         `[{"connection":"c1f0a9e20"}]`,
+		"an option the core reads as a name only": `[{"connection":"c1f0a9e20","model":"m","temperature":"1"}]`,
+		"one model at two reasoning levels":       `[{"connection":"c1f0a9e20","model":"m"},{"connection":"c1f0a9e20","model":"m","reasoning":"low"}]`,
 	} {
 		if err := checkRows(t, rows); err != nil {
 			t.Errorf("%s was rejected: %v", what, err)
@@ -66,17 +69,14 @@ func TestRowsThatBreakTheRulesOfTheSettingAreRejected(t *testing.T) {
 		"a text":                        {`"c1f0a9e20"`, settings.ErrWrongType},
 		"an object":                     {`{"connection":"c1f0a9e20","model":"m"}`, settings.ErrWrongType},
 		"a row that is a text":          {`["c1f0a9e20"]`, settings.ErrWrongType},
-		"a key the row has not":         {`[{"connection":"c1f0a9e20","model":"m","temperature":"1"}]`, settings.ErrWrongType},
 		"a connection that is a number": {`[{"connection":7,"model":"m"}]`, settings.ErrWrongType},
 		"a model that is a number":      {`[{"connection":"c1f0a9e20","model":7}]`, settings.ErrWrongType},
 		"a reasoning that is a flag":    {`[{"connection":"c1f0a9e20","model":"m","reasoning":true}]`, settings.ErrWrongType},
 		"no connection":                 {`[{"model":"m"}]`, settings.ErrWrongType},
 		"an empty connection":           {`[{"connection":"","model":"m"}]`, settings.ErrWrongType},
-		"no model":                      {`[{"connection":"c1f0a9e20"}]`, settings.ErrWrongType},
-		"an empty model":                {`[{"connection":"c1f0a9e20","model":""}]`, settings.ErrWrongType},
 		"a connection that is gone":     {`[{"connection":"c00000000","model":"m"}]`, settings.ErrNotAnOption},
-		"the same connection and model twice": {
-			`[{"connection":"c1f0a9e20","model":"m"},{"connection":"c1f0a9e20","model":"m","reasoning":"low"}]`, settings.ErrWrongType,
+		"the same connection and options twice": {
+			`[{"connection":"c1f0a9e20","model":"m","reasoning":"low"},{"reasoning":"low","connection":"c1f0a9e20","model":"m"}]`, settings.ErrWrongType,
 		},
 		"more rows than max": {
 			`[{"connection":"c1f0a9e20","model":"a"},{"connection":"c1f0a9e20","model":"b"},{"connection":"c77b01d40","model":"a"}]`, settings.ErrOutOfRange,

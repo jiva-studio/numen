@@ -57,7 +57,7 @@ func (oneType) GetType(typeID string) (connection.Type, bool) {
 
 func keychainType() connection.Type {
 	return connection.Type{PluginID: "md.numen.connections.llm", PluginName: "LLM", IsAvailable: true, Declaration: manifest.ConnectionType{
-		ID: "openai-compatible", Title: "OpenAI-compatible server", Operations: []string{"complete"},
+		ID: "openai-compatible", Title: "OpenAI-compatible server", Operations: []string{"llm.complete"},
 		Fields: []manifest.ConnectionField{
 			{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, IsRequired: true},
 			{Key: "apiKey", Type: "secret", Title: "API key"},
