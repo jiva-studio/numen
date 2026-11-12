@@ -154,7 +154,7 @@ func withoutAgentsAnywhere(t *testing.T) {
 // line of its own to dir/argv, and NUMEN_TOKEN to dir/token.
 func recordArgs(dir string) string {
 	return "pwd > " + dir + "/pwd\n" +
-		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + dir + "/argv\n" +
+		"for a in \"$@\"; do printf '%s\\0' \"$a\"; done > " + dir + "/argv\n" +
 		"printf '%s' \"$NUMEN_TOKEN\" > " + dir + "/token\n"
 }
 
@@ -169,7 +169,7 @@ func readFile(t *testing.T, path string) string {
 
 func readArgv(t *testing.T, dir string) []string {
 	t.Helper()
-	return strings.Split(strings.TrimSuffix(readFile(t, filepath.Join(dir, "argv")), "\n"), "\n")
+	return strings.Split(strings.TrimSuffix(readFile(t, filepath.Join(dir, "argv")), "\x00"), "\x00")
 }
 
 // gardenHost is a stand-in for the host that lists two tools of a garden vault and records the calls it
