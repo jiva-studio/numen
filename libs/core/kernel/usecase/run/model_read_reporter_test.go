@@ -27,3 +27,15 @@ func TestNoReporterOfAFailedModelReadWithoutTasks(t *testing.T) {
 		t.Error("got a reporter without tasks")
 	}
 }
+
+func TestASuccessfulReadOfTheEmbeddingModelRemovesTheTask(t *testing.T) {
+	tasks := run.NewTasks()
+	report := run.NewModelReadReporter(tasks)
+	report(errors.New("read model of embedding plugin md.numen.embeddings: unavailable"))
+
+	report(nil)
+
+	if entries := tasks.List(); len(entries) != 0 {
+		t.Errorf("%d tasks after a successful read, want none", len(entries))
+	}
+}
