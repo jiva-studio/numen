@@ -22,19 +22,28 @@ const maxResponseBytes = 64 << 20
 // endpoint is the method and the path of a request.
 type endpoint struct{ method, path string }
 
-func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Duration, target endpoint, in, out any) error {
+// readTarget reads the address and the key of the service a call goes to, and whether the address must be
+// on loopback: a key sent over plain http stays on this machine.
+func readTarget(ctx context.Context, call connection.Call) (*url.URL, string, bool, error) {
 	if err := ctx.Err(); err != nil {
-		return err
+		return nil, "", false, err
 	}
 	if !servicetype.IsKnown(call.Type) {
-		return connection.NewStopError(connection.ReasonInvalidRequest)
+		return nil, "", false, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	key := call.Secrets[servicetype.SecretAPIKey].Value
 	base, err := address.Parse(call.Fields[servicetype.FieldBaseURL], key != "")
 	if err != nil {
-		return connection.NewStopError(connection.ReasonInvalidRequest)
+		return nil, "", false, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	isLoopbackRequired := base.Scheme == address.SchemeHTTP && key != ""
+	return base, key, base.Scheme == address.SchemeHTTP && key != "", nil
+}
+
+func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Duration, target endpoint, in, out any) error {
+	base, key, isLoopbackRequired, err := readTarget(ctx, call)
+	if err != nil {
+		return err
+	}
 
 	limited, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()

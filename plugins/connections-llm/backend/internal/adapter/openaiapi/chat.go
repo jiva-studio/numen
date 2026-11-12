@@ -10,8 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/address"
-	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/servicetype"
 )
 
 type chatToolCall struct {
@@ -42,15 +40,12 @@ type toolDefinitionBody struct {
 }
 
 type streamBody struct {
-	Model               string               `json:"model"`
-	Messages            []streamMessage      `json:"messages"`
-	Tools               []toolDefinitionBody `json:"tools,omitempty"`
-	Stream              bool                 `json:"stream"`
-	Temperature         *float64             `json:"temperature,omitempty"`
-	MaxTokens           int                  `json:"max_tokens,omitempty"`
-	MaxCompletionTokens int                  `json:"max_completion_tokens,omitempty"`
-	ReasoningEffort     string               `json:"reasoning_effort,omitempty"`
-	Reasoning           *reasoningBody       `json:"reasoning,omitempty"`
+	Model       string               `json:"model"`
+	Messages    []streamMessage      `json:"messages"`
+	Tools       []toolDefinitionBody `json:"tools,omitempty"`
+	Stream      bool                 `json:"stream"`
+	Temperature *float64             `json:"temperature,omitempty"`
+	answerBounds
 }
 
 // Chat asks the chat completions endpoint of the service for the next turn and sends its frames as they
@@ -112,30 +107,19 @@ func newStreamBody(call connection.Call, request *llm.ChatRequest) streamBody {
 			tools[i].Function.Parameters = json.RawMessage(parameters)
 		}
 	}
-	body := streamBody{
+	return streamBody{
 		Model: call.Options[llm.OptionModel], Messages: messages, Tools: tools, Stream: true, Temperature: request.Temperature,
-		MaxTokens: 0, MaxCompletionTokens: 0, ReasoningEffort: "", Reasoning: nil,
+		answerBounds: newAnswerBounds(call, int(request.GetMaxTokens())),
 	}
-	body.MaxTokens, body.MaxCompletionTokens = splitTokenLimit(call.Type, int(request.GetMaxTokens()))
-	body.ReasoningEffort, body.Reasoning = splitReasoning(call.Type, call.Options[llm.OptionReasoning])
-	return body
 }
 
 func (g *Gateway) openStream(
 	ctx context.Context, call connection.Call, limit time.Duration, body streamBody,
 ) (*http.Response, context.Context, context.CancelFunc, error) {
-	if err := ctx.Err(); err != nil {
+	base, key, isLoopbackRequired, err := readTarget(ctx, call)
+	if err != nil {
 		return nil, nil, nil, err
 	}
-	if !servicetype.IsKnown(call.Type) {
-		return nil, nil, nil, connection.NewStopError(connection.ReasonInvalidRequest)
-	}
-	key := call.Secrets[servicetype.SecretAPIKey].Value
-	base, err := address.Parse(call.Fields[servicetype.FieldBaseURL], key != "")
-	if err != nil {
-		return nil, nil, nil, connection.NewStopError(connection.ReasonInvalidRequest)
-	}
-	isLoopbackRequired := base.Scheme == address.SchemeHTTP && key != ""
 	requestCtx, cancel := context.WithCancel(ctx)
 	limited := context.WithValue(requestCtx, loopbackOnlyKey{}, isLoopbackRequired)
 	request, err := newRequest(limited, endpoint{http.MethodPost, "/chat/completions"}, base, key, body)

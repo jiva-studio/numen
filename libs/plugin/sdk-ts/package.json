@@ -8,8 +8,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./contracts/llm": "./src/contracts/llm/index.ts",
-    "./contracts/acp": "./src/contracts/acp/index.ts",
+    "./contracts": "./src/contracts/index.ts",
     "./testing": "./src/testing/index.ts",
     "./host-modules": "./src/hostModules.ts",
     "./vite": "./src/vite.ts"

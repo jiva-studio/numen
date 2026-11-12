@@ -133,7 +133,6 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     },
     icons: { getCommand: () => null, getEntry: renderDeps.getEntryIcon },
     getNoteInFocus: () => ({ path: '', title: '' }),
-    ask: () => undefined,
   }
 
   const record = (what: string) => async (folder: string, name?: string) => {

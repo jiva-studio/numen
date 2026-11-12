@@ -10,8 +10,8 @@ import (
 )
 
 func TestListTabKinds_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
-	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "target.noteType == 'deck'", Rank: domain.RankDefault}
-	note := manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate}
+	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "target.noteType == 'deck'", Rank: domain.RankDefault, IsNoteEditor: false}
+	note := manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate, IsNoteEditor: false}
 	host := &manifestHost{
 		plugins: []manifest.Discovered{
 			{Manifest: manifest.Manifest{ID: "org.example.cards", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
@@ -52,8 +52,8 @@ func TestListFrontendPluginIDs_ListsThePluginsWithAFrontendInOrder(t *testing.T)
 }
 
 func TestListTabKinds_ExcludesAPluginWithATabKindOfAnEarlierPlugin(t *testing.T) {
-	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "", Rank: domain.RankDefault}
-	other := manifest.TabKind{Kind: "other", Title: "Other", Icon: "", When: "", Rank: domain.RankDefault}
+	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "", Rank: domain.RankDefault, IsNoteEditor: false}
+	other := manifest.TabKind{Kind: "other", Title: "Other", Icon: "", When: "", Rank: domain.RankDefault, IsNoteEditor: false}
 	host := &manifestHost{
 		plugins: []manifest.Discovered{
 			{Manifest: manifest.Manifest{ID: "org.example.cards", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
@@ -69,7 +69,7 @@ func TestListTabKinds_ExcludesAPluginWithATabKindOfAnEarlierPlugin(t *testing.T)
 }
 
 func TestListTabKinds_ExcludesAPluginWhoseReaderDuplicatesATabKind(t *testing.T) {
-	kind := manifest.TabKind{Kind: "reader:pdf", Title: "PDF", Icon: "", When: "", Rank: domain.RankDefault}
+	kind := manifest.TabKind{Kind: "reader:pdf", Title: "PDF", Icon: "", When: "", Rank: domain.RankDefault, IsNoteEditor: false}
 	host := &manifestHost{
 		plugins: []manifest.Discovered{
 			{Manifest: manifest.Manifest{ID: "org.example.pdf", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{kind}}}},

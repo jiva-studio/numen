@@ -27,6 +27,8 @@ type TabKind struct {
 	Icon  string
 	When  string
 	Rank  domain.HandlerRank
+	// IsNoteEditor says the kind edits the text of the note its tab opens on.
+	IsNoteEditor bool
 }
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.

@@ -1,16 +1,10 @@
-import {
-  CONVERSATION,
-  definePlugin,
-  SETTINGS_OPEN_COMMAND,
-  type Caught,
-  type PluginContext,
-} from '@numen/plugin-sdk'
-import { runInBackground } from '@numen/ui'
+import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import ConversationView from './ui/ConversationView.vue'
 import { AGENT, createAgentKind } from './model/kind'
 import { useAgentConversation } from './model/useAgentConversation'
+import { createSettingsOpener } from './model/settings'
 import { WORDS } from './words'
 
 export { AgentTab }
@@ -26,8 +20,6 @@ export function activate(context: PluginContext): void {
   if (!workspace) return
   const { connections } = context.work
   const { relations } = context.vault
-  const reportError = (error: Caught): void =>
-    context.ui.notices.show(error instanceof Error ? error.message : String(error), 'error')
   if (!connections || !relations) {
     throw new Error('an agent chat requires a window, its connections and the links of the vault')
   }
@@ -35,14 +27,7 @@ export function activate(context: PluginContext): void {
     {
       workspace,
       relations,
-      openSettings: () => {
-        const { commands } = context.ui
-        if (!commands) return
-        runInBackground(
-          commands.run(SETTINGS_OPEN_COMMAND, undefined, undefined, { plugin: context.plugin.id }),
-          reportError,
-        )
-      },
+      openSettings: createSettingsOpener(context),
     },
     (deps) =>
       useAgentConversation(

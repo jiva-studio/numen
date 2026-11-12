@@ -50,8 +50,8 @@ describe('the connections of a plugin', () => {
 
   it('reads the failure the core serves as the error of the call', async () => {
     const client: ConnectionCallClient = {
-      // eslint-disable-next-line require-yield
       call: async function* () {
+        yield* []
         return {
           ok: false,
           error: {
@@ -80,8 +80,8 @@ describe('the connections of a plugin', () => {
   it('reads a call whose signal aborted as canceled', async () => {
     const controller = new AbortController()
     const client: ConnectionCallClient = {
-      // eslint-disable-next-line require-yield
       call: async function* () {
+        yield* []
         controller.abort()
         throw new Error('aborted')
       },
@@ -101,8 +101,8 @@ describe('the connections of a plugin', () => {
 
   it('lets a call that fails for another reason throw', async () => {
     const client: ConnectionCallClient = {
-      // eslint-disable-next-line require-yield
       call: async function* () {
+        yield* []
         throw new Error('the core is gone')
       },
     }

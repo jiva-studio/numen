@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/querycache"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
@@ -26,17 +27,17 @@ type handler struct {
 	model   *serving.Server
 	places  openPlace
 	queries *querycache.Cache
-	health  *sourceHealth
+	health  *sourcehealth.Reporter
 }
 
-func newHandler(model *serving.Server, places openPlace, health *sourceHealth) handler {
+func newHandler(model *serving.Server, places openPlace, health *sourcehealth.Reporter) handler {
 	return handler{model: model, places: places, queries: querycache.New(querycache.DefaultCapacity), health: health}
 }
 
 // Describe describes the vectors the plugin makes with the model it serves.
 func (h handler) Describe(ctx context.Context) (searchsource.Description, error) {
 	info, err := h.model.GetModelInfo(ctx)
-	h.health.observe(ctx, err)
+	observeSource(ctx, h.health, err)
 	if err != nil {
 		return searchsource.Description{}, getRPCError(err)
 	}
@@ -117,7 +118,7 @@ func (h handler) getQueryVector(ctx context.Context, recipe, query string) ([]fl
 
 func (h handler) embed(ctx context.Context, role model.Role, texts []string) ([][]float32, error) {
 	vectors, err := h.model.EmbedTexts(ctx, role, texts)
-	h.health.observe(ctx, err)
+	observeSource(ctx, h.health, err)
 	if err != nil {
 		return nil, getRPCError(err)
 	}

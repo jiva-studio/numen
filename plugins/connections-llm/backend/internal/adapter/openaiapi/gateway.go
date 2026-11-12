@@ -51,13 +51,26 @@ type chatMessage struct {
 }
 
 type chatBody struct {
-	Model               string         `json:"model"`
-	Messages            []chatMessage  `json:"messages"`
-	Temperature         *float64       `json:"temperature,omitempty"`
+	Model       string        `json:"model"`
+	Messages    []chatMessage `json:"messages"`
+	Temperature *float64      `json:"temperature,omitempty"`
+	answerBounds
+}
+
+// answerBounds is the part of a request body that bounds the answer: its tokens and its reasoning, in the
+// fields the type of the service reads.
+type answerBounds struct {
 	MaxTokens           int            `json:"max_tokens,omitempty"`
 	MaxCompletionTokens int            `json:"max_completion_tokens,omitempty"`
 	ReasoningEffort     string         `json:"reasoning_effort,omitempty"`
 	Reasoning           *reasoningBody `json:"reasoning,omitempty"`
+}
+
+func newAnswerBounds(call connection.Call, maxTokens int) answerBounds {
+	bounds := answerBounds{MaxTokens: 0, MaxCompletionTokens: 0, ReasoningEffort: "", Reasoning: nil}
+	bounds.MaxTokens, bounds.MaxCompletionTokens = splitTokenLimit(call.Type, maxTokens)
+	bounds.ReasoningEffort, bounds.Reasoning = splitReasoning(call.Type, call.Options[llm.OptionReasoning])
+	return bounds
 }
 
 type chatAnswer struct {
@@ -76,10 +89,8 @@ func (g *Gateway) Complete(ctx context.Context, call connection.Call, limit time
 	}
 	body := chatBody{
 		Model: call.Options[llm.OptionModel], Messages: messages, Temperature: request.Temperature,
-		MaxTokens: 0, MaxCompletionTokens: 0, ReasoningEffort: "", Reasoning: nil,
+		answerBounds: newAnswerBounds(call, int(request.GetMaxTokens())),
 	}
-	body.MaxTokens, body.MaxCompletionTokens = splitTokenLimit(call.Type, int(request.GetMaxTokens()))
-	body.ReasoningEffort, body.Reasoning = splitReasoning(call.Type, call.Options[llm.OptionReasoning])
 
 	var answer chatAnswer
 	if err := g.send(ctx, call, limit, endpoint{http.MethodPost, "/chat/completions"}, body, &answer); err != nil {

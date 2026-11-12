@@ -16,7 +16,7 @@ func plugin(id string, contributes manifest.Contributes) manifest.Discovered {
 func tabKinds(kinds ...string) []manifest.TabKind {
 	var out []manifest.TabKind
 	for _, kind := range kinds {
-		out = append(out, manifest.TabKind{Kind: kind, Title: kind, Icon: "", When: "", Rank: domain.RankDefault})
+		out = append(out, manifest.TabKind{Kind: kind, Title: kind, Icon: "", When: "", Rank: domain.RankDefault, IsNoteEditor: false})
 	}
 	return out
 }

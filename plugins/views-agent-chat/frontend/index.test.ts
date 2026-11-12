@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { CONVERSATION, type TabKindRegistration, type VaultRelations } from '@numen/plugin-sdk'
+import {
+  CONVERSATION,
+  SETTINGS_OPEN_COMMAND,
+  type TabKindRegistration,
+  type VaultRelations,
+} from '@numen/plugin-sdk'
 import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, AgentTab, AGENT, ConversationView } from './index'
 import { createAgentConnections, createHost, say } from './fixtures'
@@ -29,6 +34,7 @@ const createWindow = () => {
   return { tabOpens, tabs, navigateTab, bind }
 }
 
+/** A mock context of the editor, with the connections of the plugin and the links of the vault. */
 const createContext = (
   answer: Parameters<typeof createAgentConnections>[0] = { frames: [say('Twelve.')] },
   navigateTab?: (kind: string, path: string) => Promise<string>,
@@ -118,7 +124,7 @@ describe('view-agent-chat plugin', () => {
 
     expect(ctx.ui.commands.getRuns()).toStrictEqual([
       {
-        command: 'app:settings.open',
+        command: SETTINGS_OPEN_COMMAND,
         target: undefined,
         itemId: undefined,
         values: { plugin: PLUGIN_ID },

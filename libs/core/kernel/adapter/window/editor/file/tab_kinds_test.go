@@ -65,8 +65,8 @@ func TestAPathNamesTheKindOfTabItsNoteOpensIn(t *testing.T) {
 		"links/tide.md": "---\ntype: link\nurl: https://tides.example/mill\nmedia: plugin://org.example.links/tide.mp4\n---\n",
 		"Physics.epub":  "an epub\n",
 	}, tabKinds{
-		{PluginID: "org.example.editor", TabKind: manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate}},
-		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", Icon: "", When: "has(target.properties.media)", Rank: domain.RankDefault}},
+		{PluginID: "org.example.editor", TabKind: manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate, IsNoteEditor: false}},
+		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", Icon: "", When: "has(target.properties.media)", Rank: domain.RankDefault, IsNoteEditor: false}},
 	})
 
 	answer, err := handler.ListFileKinds(t.Context(), connect.NewRequest(&v1.ListFileKindsRequest{
@@ -97,7 +97,7 @@ func TestAListingOfAFolderNamesTheKindOfTabEachNoteOpensIn(t *testing.T) {
 		"links/plain.md": "# Plain\n",
 		"links/map.png":  "pixels",
 	}, tabKinds{
-		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", When: "has(target.properties.media)", Rank: domain.RankDefault}},
+		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", When: "has(target.properties.media)", Rank: domain.RankDefault, IsNoteEditor: false}},
 	})
 
 	answer, err := handler.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: "links"}))

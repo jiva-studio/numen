@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
 )
 
 // nearestPlace is the index of the host as a search source asks it: it records the queries and answers
@@ -32,7 +33,7 @@ func noHealth() (*health.Client, error) { return nil, hostcall.ErrNoHost }
 
 func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MODEL", "owner/model")
-	h := newHandler(newServer(nil), noPlaces, newSourceHealth(noHealth))
+	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(noHealth))
 
 	_, describeErr := h.Describe(t.Context())
 	_, indexErr := h.IndexTexts(t.Context(), searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "text"}})
@@ -44,7 +45,7 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 
 func TestTheHandlerDescribesAndIndexesWithTheModelTheEnvironmentNames(t *testing.T) {
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
-	h := newHandler(newServer(nil), noPlaces, newSourceHealth(noHealth))
+	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(noHealth))
 
 	described, err := h.Describe(t.Context())
 	if err != nil {
@@ -67,7 +68,7 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 	h := newHandler(newServer(nil), func(vaultID string) (host.PlaceSearch, error) {
 		vaults = append(vaults, vaultID)
 		return place, nil
-	}, newSourceHealth(noHealth))
+	}, sourcehealth.New(noHealth))
 
 	found, err := h.SearchPassages(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"},
 		searchsource.Query{Text: "entropy", Limit: 5, Kinds: []string{"file"}, PathPrefix: "books/", Floor: 0.4})
@@ -85,8 +86,8 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 	}
 }
 
-func TestTheCoverageReportsTheIndexAsNotBuiltUntilAChunkHasAVector(t *testing.T) {
-	h := newHandler(newServer(nil), noPlaces, newSourceHealth(noHealth))
+func TestTheCoverageSaysTheIndexIsNotBuiltUntilAChunkHasAVector(t *testing.T) {
+	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(noHealth))
 
 	empty, _ := h.DescribeCoverage(t.Context(), searchsource.Place{}, searchsource.Counts{Chunks: 12})
 	started, _ := h.DescribeCoverage(t.Context(), searchsource.Place{}, searchsource.Counts{Chunks: 12, Indexed: 1})

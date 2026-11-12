@@ -5,6 +5,8 @@
 import { createHealthClient, type HealthReport, type PluginHealthItem } from '@numen/core-client'
 import { pluginHealth } from '@/shared/api/clients'
 
+export type { PluginHealthItem }
+
 const health = createHealthClient(pluginHealth)
 
 /** The items of every plugin until the signal aborts: at once and again on every change. */

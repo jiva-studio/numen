@@ -21,8 +21,8 @@ const card: ReviewCard = {
 }
 
 const connections: ConnectionHost = {
-  // eslint-disable-next-line require-yield
   call: async function* () {
+    yield* []
     return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
   },
 }
