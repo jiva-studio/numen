@@ -8,10 +8,10 @@ import { getPlan, getPluginTokens, getScope, getScopePaths, planJobs } from './s
 const e2eRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const pluginsRoot = path.resolve(e2eRoot, '../../../plugins')
 
-await test('a plugin change selects its folder, the specs that name it and its scenarios', () => {
+await test('a plugin change selects its folder, the specs that name it and the acceptance scenarios', () => {
   assert.equal(
     getScope(['plugins/readers-pdf/frontend/reader.ts']),
-    'plugins/system/settings-effects.spec.ts readers.pdf scenarios/recognition.spec.ts',
+    'readers.pdf acceptance',
   )
 })
 
@@ -27,7 +27,7 @@ await test('a change to a spec folder selects that folder', () => {
       'tests/e2e/desktop/tests/plugins/system/settings.spec.ts',
       'plugins/tools-updater/backend/main.go',
     ]),
-    'system tools.updater',
+    'system acceptance',
   )
 })
 
@@ -69,9 +69,9 @@ await test('a change outside the desktop window, or to its documentation, select
   assert.equal(getScope(['tests/e2e/desktop/scripts/select-tests.mjs']), 'all')
   assert.deepEqual(getPlan('none'), [
     'desktop=false',
+    'acceptance=false',
     'paths=',
     'flashcards=false',
-    'acceptance=false',
     'matrix={"include":[]}',
   ])
 })
@@ -81,9 +81,9 @@ await test('a change to a scenario or its steps selects the acceptance scenarios
   assert.equal(getScope(['tests/acceptance/desktop/drivers/person.ts']), 'acceptance')
   assert.deepEqual(getPlan('acceptance'), [
     'desktop=false',
+    'acceptance=true',
     'paths=',
     'flashcards=false',
-    'acceptance=true',
     'matrix={"include":[]}',
   ])
   assert.equal(
@@ -95,6 +95,13 @@ await test('a change to a scenario or its steps selects the acceptance scenarios
   assert.ok(getPlan('notes').includes('acceptance=false'))
 })
 
+await test('a change to the flashcards plugin or its tests starts the flashcards job', () => {
+  const scope = getScope(['plugins/views-flashcards-studio/frontend/index.ts'])
+  assert.equal(scope, 'flashcards acceptance')
+  assert.ok(getPlan(scope).includes('flashcards=true'))
+  assert.equal(getScope(['tests/e2e/desktop/flashcards/review.spec.ts']), 'flashcards')
+})
+
 await test('a scope of folders runs them and the shell', () => {
   assert.deepEqual(getScopePaths('readers.epub notes'), [
     'tests/plugins/notes/',
@@ -102,7 +109,8 @@ await test('a scope of folders runs them and the shell', () => {
     'tests/shell/',
   ])
   assert.ok(getPlan('notes').includes('flashcards=false'))
-  assert.ok(getPlan('views.flashcards.studio').includes('flashcards=true'))
+  assert.ok(getPlan('flashcards').includes('flashcards=true'))
+  assert.deepEqual(getScopePaths('flashcards'), ['tests/shell/'])
 })
 
 await test('every plugin maps to tests that exist, and every plugin test folder has a plugin', () => {

@@ -85,9 +85,11 @@ Feature: Plex
     Scenario: A found note has no plex action
       Given the person disables the plugin "Plex Graph"
       When the person searches the vault for "Quay"
-      Then the search result "Quay" in the group "Names" contains the following actions:
-        | action    |
-        | Open note |
+      Then the search result "Quay" in the group "Names" has only the following actions:
+        | action             |
+        | Open note          |
+        | Show in file tree  |
+        | Create note “Quay” |
       And the search result "Quay" in the group "Names" does not contain the following actions:
         | action       |
         | Show in plex |

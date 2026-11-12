@@ -6,13 +6,13 @@ on:
   workflow_call:
     inputs:
       scope:
-        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), and acceptance for the scenarios of features/, separated by spaces'
+        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
   workflow_dispatch:
     inputs:
       scope:
-        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), and acceptance for the scenarios of features/, separated by spaces'
+        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
 

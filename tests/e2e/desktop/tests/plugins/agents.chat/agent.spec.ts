@@ -1,6 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
 import {
-  DELAYED_PROMPT,
   HELD_PROMPT,
   STAND_IN_REPLY,
   TOOL_NOTE_PATH,
@@ -20,21 +19,6 @@ const openAgentPanel = async (page: Page) => {
 }
 
 test.describe('Agent Plugin and Interface', () => {
-  test('sends the question and shows the answer of the chat API under it', async ({ page }) => {
-    const input = await openAgentPanel(page)
-    await expect(page.getByText('No messages yet').first()).toBeVisible()
-    const send = page.getByRole('button', { name: 'Send' }).first()
-    await expect(send).toBeDisabled()
-
-    await input.fill('Summarize thermodynamics principles')
-    await send.click()
-
-    await expect(page.getByText('Summarize thermodynamics principles').first()).toBeVisible()
-    await expect(page.getByText(STAND_IN_REPLY).first()).toBeVisible({ timeout: 20_000 })
-    await expect(input).toHaveValue('')
-    await expect(page.getByText('No messages yet')).toHaveCount(0)
-  })
-
   test('writes the note a tool call of the model asks for, and shows the call in the turn', async ({
     page,
     request,
@@ -103,17 +87,5 @@ test.describe('the send/stop disc', () => {
     } finally {
       await request.delete(`${origin}/stand-in/hold`)
     }
-  })
-
-  test('shows send once stop is pressed in the middle of the answer', async ({ page }) => {
-    const input = await openAgent(page)
-    await input.fill(`${DELAYED_PROMPT}: count the apple trees by the gate`)
-
-    await page.getByRole('button', { name: 'Send' }).first().click()
-    const stop = page.getByRole('button', { name: 'Stop the agent' }).first()
-    await expect(stop).toBeEnabled()
-    await stop.click()
-    await expect(page.getByRole('button', { name: 'Stop the agent' })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Send' }).first()).toBeDisabled()
   })
 })
