@@ -61,7 +61,7 @@ export function createWindow(deps: WindowDeps = {}) {
 
   onUnmounted(() => windowAgent.dispose())
 
-  usePluginStyles(() => tabs.frontViews.value)
+  usePluginStyles(() => tabs.frontPlugins.value)
 
   return {
     tabs,

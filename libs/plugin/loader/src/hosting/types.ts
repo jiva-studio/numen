@@ -35,6 +35,7 @@ import type {
   WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
+import type { Manifest } from '@numen/core-client'
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots'
 import type { WhenValues, WhenReader } from '../when'
@@ -98,6 +99,8 @@ export type SlotCommandFinder = (
 ) => SlotCommandLook | undefined
 
 export interface PluginHostDeps {
+  /** The target the plugins are activated in; the editor's where none is given. */
+  readonly target?: string
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
   readonly whenReader?: WhenReader
@@ -116,7 +119,7 @@ export interface PluginHostDeps {
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
   readonly reportViewIssue?: (pluginId: string, message: string) => void
   readonly registerKind: (kind: AnyTabKind) => () => void
-  readonly registerExtensionReader: (
+  readonly registerExtensionReader?: (
     extension: string,
     readItem: SourceReader,
     icon?: Component,
@@ -130,7 +133,8 @@ export interface PluginHostDeps {
       options?: FilePlacement | { readonly where?: FilePlacement | undefined },
     ) => void,
   ) => (() => void) | void
-  readonly openTab: (kind: string, at?: string) => Promise<string>
+  /** Opens a tab of a kind; a window that opens no tab for a plugin leaves it out. */
+  readonly openTab?: (kind: string, at?: string) => Promise<string>
   readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>
   readonly navigateTab?: (kind: string, path: string) => Promise<string>
   readonly closeTab?: (id: string) => void
@@ -162,7 +166,10 @@ export interface PluginHostDeps {
   readonly getNotices?: (pluginId: string) => NoticeHost
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
   readonly getModels?: (pluginId: string) => ModelHost
-  readonly getSlotEntries?: () => readonly DeclaredSlotEntry[] | undefined
+  /** The entries of the slots, read from the manifests of the plugins whose context the host made, by plugin id. */
+  readonly getSlotEntries?: (
+    manifests: ReadonlyMap<string, Manifest>,
+  ) => readonly DeclaredSlotEntry[] | undefined
   readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
   readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly reportSlotIssue?: (

@@ -14,7 +14,7 @@ import { ReportedError, type Manifest } from '@numen/core-client'
 import { createAppInfo } from '../appInfo'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
-import { createSlotRegistry } from '../slots'
+import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
@@ -46,7 +46,7 @@ import type {
 
 export { createPluginPaneWrapper }
 
-/** The target the editor activates its plugins in. */
+/** The target the plugins are activated in where the window names none. */
 const EDITOR_TARGET = 'desktop.editor'
 
 function getEntryKey(pluginId: string, id: string): string {
@@ -131,7 +131,7 @@ function createViewBridge(shared: SharedRegistries): ContextViewHost {
 
 function createTabBridge(deps: PluginHostDeps): ContextTabHost {
   return {
-    openTab: (kind, target) => deps.openTab(kind, target),
+    openTab: (kind, target) => deps.openTab?.(kind, target),
     navigateTab: (kind, target) => deps.navigateTab?.(kind, target),
     closeTab: (id) => deps.closeTab?.(id),
   }
@@ -143,6 +143,7 @@ interface SharedRegistries {
   readonly drops: DropRegistry
   readonly slotViews: SlotViewRegistry
   readonly slots: SlotHost
+  readonly readSlotEntries: () => readonly DeclaredSlotEntry[] | undefined
 }
 
 function createHostContextBridge(
@@ -153,7 +154,7 @@ function createHostContextBridge(
   return {
     info: {
       app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
-      target: EDITOR_TARGET,
+      target: deps.target ?? EDITOR_TARGET,
       openExternal: (url) =>
         deps.openExternal
           ? deps.openExternal(url)
@@ -165,7 +166,11 @@ function createHostContextBridge(
     events: createEventBridge(deps, registry),
     tabs: createTabBridge(deps),
     vault: createVaultServiceBridge(deps),
-    window: createWindowServiceBridge(deps, shared.slots, registry.manifests),
+    window: createWindowServiceBridge(deps, {
+      slots: shared.slots,
+      manifests: registry.manifests,
+      readSlotEntries: shared.readSlotEntries,
+    }),
   }
 }
 
@@ -232,6 +237,12 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
         const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
         ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
         registry.contexts.set(pluginId, ctx)
+        if (effectiveManifest && registry.contextManifests) {
+          registry.contextManifests.value = new Map(registry.contextManifests.value).set(
+            pluginId,
+            effectiveManifest,
+          )
+        }
         registry.disposed.delete(pluginId)
         registry.activated.value = new Set(registry.activated.value).add(pluginId)
       }
@@ -272,6 +283,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     settingsViews: shallowRef(new Map()),
     contexts: new Map(),
     manifests: new Map(),
+    contextManifests: shallowRef(new Map()),
     activated: shallowRef(new Set()),
     starting: shallowRef(new Set()),
     disposed: new Set(),
@@ -288,9 +300,10 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     getPluginCommands: commands.getPaletteCommands,
     hasPluginItems: commands.hasCommandItems,
   })
+  const readSlotEntries = () => deps.getSlotEntries?.(registry.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
-    getEntries: () => deps.getSlotEntries?.(),
+    getEntries: readSlotEntries,
     findCommand: (command, target) => findSlotCommand?.(command, target),
     findView: slotViews.findView,
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
@@ -302,6 +315,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     drops: createDropRegistry(),
     slotViews,
     slots,
+    readSlotEntries,
   })
   const entries = { registry, slotViews, deps }
 

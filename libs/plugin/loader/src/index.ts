@@ -26,17 +26,14 @@ export {
   unregisterPluginStyle,
   type StyleRoot,
 } from './styles'
-export { createViewRegistry, type ViewRegistry } from './views'
 export { createDropRegistry } from './drops'
 export {
-  createSlotViewRegistry,
   findSlotView,
   getDeclaredSlots,
   SlotViewHost,
   usePluginStyles,
   type DeclaredSlotView,
   type SlotViewManifest,
-  type SlotViewRegistry,
 } from './slot-views'
 export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export { createExternalOpener, isWebAddress, type ExternalOpener } from './externalOpener'
@@ -50,19 +47,15 @@ export { createPluginNotices, type NoticeList, type NoticeListTask } from './plu
 export { createPluginTasks, type WindowTask } from './pluginTasks'
 export {
   createCustomTabKind,
-  createIdleContextHost,
-  createPluginContext,
   createPluginHost,
   createPluginPaneWrapper,
   createWindowHost,
-  disposeSubscriptions,
   requireMountAccess,
   type AnyTabKind,
   type BackendHandlerRun,
   type CommandDeclaration,
   type HandlerDeclaration,
   type HostCommandReads,
-  type IdleContextHostParts,
   type NoteBuffer,
   type OpenTab,
   type PluginContextHost,
