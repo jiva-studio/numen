@@ -1,6 +1,10 @@
 Feature: Update notice
   A person is told when a newer release of Numen is published.
 
+  As a person who uses the editor
+  I want to be told in the title bar about a newer release
+  So that I know when I can download it
+
   Background:
     Given the empty vault "Test"
 

@@ -1,6 +1,10 @@
 Feature: Plugin settings
   A person reads and changes the settings of a plugin in the Settings tab.
 
+  As a person who uses the editor
+  I want to see the plugins in the Settings tab and change their settings
+  So that I set up each plugin in one place and see only the settings that apply
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

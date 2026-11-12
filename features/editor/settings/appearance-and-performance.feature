@@ -1,6 +1,10 @@
 Feature: Appearance and performance settings
   A person chooses how the window looks and runs, and the choice stays.
 
+  As a person who uses the editor
+  I want to choose the theme, light or dark, and the performance profile
+  So that the window looks and runs the way I want each time I start it
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

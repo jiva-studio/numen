@@ -1,6 +1,10 @@
 Feature: Cancel a task
   A person stops work that runs in the background.
 
+  As a person who uses the editor
+  I want to see the tasks that run in the background and cancel one
+  So that I stop work I do not need
+
   Background:
     Given the empty vault "Test"
     And the environment is set to the following:

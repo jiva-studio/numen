@@ -1,6 +1,10 @@
 Feature: Switch vault
   A person works in one vault at a time and switches to another.
 
+  As a person who keeps notes in more than one vault
+  I want to open another vault in the same window
+  So that I work in one vault at a time and see only its notes
+
   Background:
     Given the empty vault "Test"
     And the empty vault "Coastline"

@@ -1,6 +1,10 @@
 Feature: Status bar
   A person turns on a bar at the bottom of the window.
 
+  As a person who uses the editor
+  I want to turn on the status bar with its plugin
+  So that the bar shows what other plugins place in it, and is not there when I do not want it
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

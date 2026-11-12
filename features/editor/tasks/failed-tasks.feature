@@ -1,6 +1,10 @@
 Feature: Failed tasks
   A thing that fails in the background shows as a failed task in the task list.
 
+  As a person who uses the editor
+  I want to see a task that fails and the reason
+  So that I know what went wrong
+
   Scenario: A text that cannot be fetched is a failed task
     Given the empty vault "Test"
     And the application "editor" starts

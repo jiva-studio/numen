@@ -1,6 +1,10 @@
 Feature: Window commands
   A person runs the commands of the window from the palette and with keys.
 
+  As a person who uses the editor
+  I want to run the commands of the window from the palette and with keys
+  So that I work without leaving the keyboard
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:
