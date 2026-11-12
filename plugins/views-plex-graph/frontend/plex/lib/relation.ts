@@ -5,16 +5,20 @@
 
 import type { PlexRelation } from '../../types'
 
+export type Lean = 'up' | 'down'
+
 export interface RelationDescriptor {
   readonly grows: 'up' | 'down' | 'left' | 'right'
+  /** The cross-axis tilt of the group, or null for a group that grows straight out. */
+  readonly lean: Lean | null
   readonly plural: readonly [one: string, many: string]
 }
 
 export const RELATIONS = {
-  parent: { grows: 'up', plural: ['parent', 'parents'] },
-  child: { grows: 'down', plural: ['child', 'children'] },
-  jump: { grows: 'left', plural: ['jump', 'jumps'] },
-  sibling: { grows: 'right', plural: ['sibling', 'siblings'] },
+  parent: { grows: 'up', lean: null, plural: ['parent', 'parents'] },
+  child: { grows: 'down', lean: null, plural: ['child', 'children'] },
+  jump: { grows: 'left', lean: 'down', plural: ['jump', 'jumps'] },
+  sibling: { grows: 'right', lean: null, plural: ['sibling', 'siblings'] },
 } as const satisfies Record<PlexRelation, RelationDescriptor>
 
 export const RELATION_NAMES = Object.keys(RELATIONS) as readonly PlexRelation[]

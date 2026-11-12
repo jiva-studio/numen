@@ -34,8 +34,7 @@ interface BoxOptions {
 }
 
 interface LimitOptions {
-  readonly maxPerLine: number
-  readonly maxLines: number
+  readonly maxPerCluster: number
   readonly maxHeadings: number
 }
 
@@ -93,8 +92,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   margin: 16,
   spread: 2.5,
   squeeze: 0.35,
-  maxPerLine: 5,
-  maxLines: 4,
+  maxPerCluster: 20,
   maxHeadings: 6,
   routing: { curvature: 0.55, minReach: 22, arrowClearance: 20, minRun: 52 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },

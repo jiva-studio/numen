@@ -66,7 +66,7 @@ describe('a label half again as large', () => {
         .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
         .filter(
           ([name]) =>
-            !['maxPerLine', 'maxLines', 'maxHeadings', 'spread', 'squeeze', 'focusScale'].includes(
+            !['maxPerCluster', 'maxHeadings', 'spread', 'squeeze', 'focusScale'].includes(
               name,
             ),
         )
@@ -81,8 +81,7 @@ describe('a label half again as large', () => {
   })
 
   it('leaves the counts, the fractions and the directions where they were', () => {
-    expect(larger.maxPerLine).toBe(DEFAULT_OPTIONS.maxPerLine)
-    expect(larger.maxLines).toBe(DEFAULT_OPTIONS.maxLines)
+    expect(larger.maxPerCluster).toBe(DEFAULT_OPTIONS.maxPerCluster)
     expect(larger.maxHeadings).toBe(DEFAULT_OPTIONS.maxHeadings)
     expect(larger.focusScale).toBe(DEFAULT_OPTIONS.focusScale)
     expect(larger.routing.curvature).toBe(DEFAULT_OPTIONS.routing.curvature)

@@ -1,5 +1,5 @@
 /**
- * Turn a neighborhood into a frame: canPlace, place, route.
+ * Turn a neighborhood into a frame: request, fit to the window, admit, place, route.
  *
  * Pure — the same inputs give the same numbers on any machine. Nothing here
  * reads the clock, measures text or touches the DOM: the width of a title is
@@ -9,21 +9,16 @@ import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
 import { assertNeighborhood } from '../neighborhood'
 import type { PlacedNode } from '../node'
-import { RELATION_NAMES } from '../relation'
+import { admitNodes, countOverflow, requestNodes } from './layout/admission'
+import { clusters } from './layout/clusters'
 import { measureCrowding } from './layout/crowding'
 import { applyRoom } from './look'
-import { getLimits, type Limits } from './layout/limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
-import {
-  rowsAndColumns,
-  type Placement,
-  type NodesByRelation,
-  type Widths,
-} from './layout/placement'
+import type { Placement, NodesByRelation, Widths } from './layout/placement'
 import { routeEdges, createRouting } from './edges/routing'
-import { findSpacing, type Spacing } from './layout/spacing'
+import { findSpacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
-import type { PlexNeighborhood, PlexNode, PlexRelation } from '../../../types'
+import type { PlexNeighborhood, PlexNode } from '../../../types'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -35,45 +30,51 @@ export interface ArrangeInput {
 
 export function arrangePlex(
   neighborhood: PlexNeighborhood,
-  { options, placement = rowsAndColumns, measure, measureLabel, labelType }: ArrangeInput = {},
+  { options, placement = clusters, measure, measureLabel, labelType }: ArrangeInput = {},
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
   const focusNode = assertNeighborhood(neighborhood)
-  const counts = countRelations(neighborhood.nodes)
+  const requested = requestNodes(neighborhood.nodes, request)
 
-  // Packed as closely as this window needs and no closer, so a box narrows
-  // and a gap closes before a relation is given up.
-  const resolved = measureCrowding(request, counts)
-  const getWidth = createWidthLookup(resolved, measure)
-
-  const focus: PlacedNode = {
-    ...focusNode,
-    x: 0,
-    y: 0,
-    width: getWidth(focusNode),
-    height: resolved.focusSize.height,
-    order: 0,
-    opacity: 1,
+  // Lays the nodes out at the given options: the focus, then the placement.
+  const lay = (laid: PlexOptions, nodesByRelation: NodesByRelation) => {
+    const width = createWidthLookup(laid, measure)
+    const focus: PlacedNode = {
+      ...focusNode,
+      x: 0,
+      y: 0,
+      width: width(focusNode),
+      height: laid.focusSize.height,
+      order: 0,
+      opacity: 1,
+    }
+    return { focus, placed: placement.place(nodesByRelation, focus, { options: laid, width }) }
   }
 
-  const limits = getLimits(resolved, counts)
-
-  const { nodesByRelation, overflow } = canPlace(neighborhood.nodes, limits)
-
-  // Admission is settled at that packing, and the gaps then expand into the
-  // remaining space. The expansion is measured against the arrangement itself, so
-  // a placement of any shape fits the window.
-  const lay = (spacing: Spacing) =>
-    placement.place(nodesByRelation, focus, {
-      options: { ...resolved, ...spacing },
-      limits,
-      width: getWidth,
-    })
-  const spacing = findSpacing(resolved, (candidate, viewport) =>
-    isInsideViewport(lay(candidate), viewport, resolved.margin),
+  // Packed as closely as this window needs and no closer, so a box narrows
+  // and a gap closes before a note is given up.
+  const resolved = measureCrowding(request, (packed) =>
+    isHeld(lay(packed, requested).placed, packed.viewport, packed.margin),
   )
 
-  const nodes = [focus, ...lay(spacing)]
+  // Admission is settled at that packing, and the gaps then expand into the
+  // remaining space. Both are measured against the arrangement itself, so a
+  // placement of any shape fits the window.
+  const { viewport, margin } = resolved
+  const admitted = viewport
+    ? admitNodes(
+        requested,
+        (nodesByRelation) => lay(resolved, nodesByRelation).placed,
+        (node) => isInside(node, viewport, margin),
+      )
+    : requested
+  const overflow = countOverflow(neighborhood.nodes, admitted)
+
+  const spacing = findSpacing(resolved, (candidate, window) =>
+    isHeld(lay({ ...resolved, ...candidate }, admitted).placed, window, margin),
+  )
+  const { focus, placed } = lay({ ...resolved, ...spacing }, admitted)
+  const nodes = [focus, ...placed]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const edgeRouting = createRouting(resolved, measureLabel, labelType)
@@ -100,42 +101,13 @@ function createWidthLookup(
   }
 }
 
-function isInsideViewport(nodes: readonly PlacedNode[], viewport: Size, margin: number): boolean {
-  const halfWidth = viewport.width / 2 - margin
-  const halfHeight = viewport.height / 2 - margin
-  return nodes.every(
-    (node) =>
-      Math.abs(node.x) + node.width / 2 <= halfWidth &&
-      Math.abs(node.y) + node.height / 2 <= halfHeight,
+function isInside(node: PlacedNode, viewport: Size, margin: number): boolean {
+  return (
+    Math.abs(node.x) + node.width / 2 <= viewport.width / 2 - margin &&
+    Math.abs(node.y) + node.height / 2 <= viewport.height / 2 - margin
   )
 }
 
-function countRelations(nodes: readonly PlexNode[]): Record<PlexRelation, number> {
-  return Object.fromEntries(
-    RELATION_NAMES.map((relation) => [
-      relation,
-      nodes.filter((node) => node.relation === relation).length,
-    ]),
-  ) as Record<PlexRelation, number>
-}
-
-function canPlace(
-  nodes: readonly PlexNode[],
-  limits: Limits,
-): { nodesByRelation: NodesByRelation; overflow: Partial<Record<PlexRelation, number>> } {
-  const nodesByRelation: Partial<Record<PlexRelation, readonly PlexNode[]>> = {}
-  const overflow: Partial<Record<PlexRelation, number>> = {}
-
-  for (const relation of RELATION_NAMES) {
-    const ofRelation = nodes.filter((node) => node.relation === relation)
-    if (ofRelation.length === 0) continue
-
-    const capacity = limits[relation].perLine * limits[relation].lines
-    const visibleRelations = ofRelation.slice(0, capacity)
-    if (ofRelation.length > visibleRelations.length)
-      overflow[relation] = ofRelation.length - visibleRelations.length
-    nodesByRelation[relation] = visibleRelations
-  }
-
-  return { nodesByRelation, overflow }
+function isHeld(nodes: readonly PlacedNode[], viewport: Size | undefined, margin: number): boolean {
+  return !viewport || nodes.every((node) => isInside(node, viewport, margin))
 }

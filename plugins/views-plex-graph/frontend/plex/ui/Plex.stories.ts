@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
 import {
   resolveOptions,
-  rowsAndColumns,
+  clusters,
   type Placement,
   type PlexOptionsInput,
 } from '../lib/arrange'
@@ -53,8 +53,7 @@ interface Knobs {
   margin: number
   spread: number
   squeeze: number
-  maxPerLine: number
-  maxLines: number
+  maxPerCluster: number
   maxHeadings: number
   orientation: 'parents above' | 'parents below'
 
@@ -90,8 +89,7 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   margin: a.margin,
   squeeze: a.squeeze,
   spread: a.spread,
-  maxPerLine: a.maxPerLine,
-  maxLines: a.maxLines,
+  maxPerCluster: a.maxPerCluster,
   maxHeadings: a.maxHeadings,
   routing: {
     curvature: a.curvature,
@@ -270,8 +268,7 @@ const meta = {
     margin: range(0, 160, 4),
     spread: range(1, 4, 0.1),
     squeeze: range(0.2, 1, 0.05),
-    maxPerLine: range(1, 12),
-    maxLines: range(1, 8),
+    maxPerCluster: range(1, 40),
     maxHeadings: range(1, 12),
     orientation: {
       control: 'inline-radio',
@@ -280,8 +277,8 @@ const meta = {
     },
     placement: {
       control: 'inline-radio',
-      options: ['rows and columns', 'ring'],
-      mapping: { 'rows and columns': rowsAndColumns, ring },
+      options: ['clusters', 'ring'],
+      mapping: { clusters, ring },
       table: { category: 'Layout' },
     },
 
@@ -325,7 +322,7 @@ const meta = {
   },
 
   args: {
-    placement: rowsAndColumns,
+    placement: clusters,
     showEdgeLabels: true,
     duration: 420,
     expansionDelay: EXPANSION_DELAY,
@@ -352,8 +349,7 @@ const meta = {
     margin: 16,
     spread: 2.5,
     squeeze: 0.35,
-    maxPerLine: 5,
-    maxLines: 4,
+    maxPerCluster: 20,
     maxHeadings: 6,
     orientation: 'parents above',
 
@@ -377,7 +373,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const invented = {
-  args: { neighborhood: neighborhoods.typical, maxPerLine: 9 },
+  args: { neighborhood: neighborhoods.typical, maxPerCluster: 9 },
   render: createNavigableStory((args: Knobs) => build(args.title, createCounts(args))),
 }
 

@@ -1,11 +1,5 @@
-import { RELATION_NAMES } from '../../relation'
-import { getLimits } from './limits'
 import { lerp } from '../math'
 import type { PlexOptions } from '../options'
-import type { PlexRelation } from '../../../../types'
-
-/** How many of each relation arrived. */
-export type RelationCounts = Readonly<Record<PlexRelation, number>>
 
 /** How finely the loosest packing is found, as halvings of the range. */
 const HALVINGS = 7
@@ -35,26 +29,23 @@ export function packOptions(options: PlexOptions, tightness: number): PlexOption
 }
 
 /**
- * How tightly this neighborhood must be packed for the window to hold all of it: the loosest packing that fits every node, and the tightest one when no packing does.
+ * How tightly this neighborhood must be packed for the window to hold all of it, as `canHoldAll` judges a packing: the loosest packing that fits every node, and the tightest one when no packing does.
  * A box narrows and a gap closes before a relation is dropped, since a reader can act on a node drawn small but not on one that is not drawn.
  */
-export function measureCrowding(options: PlexOptions, counts: RelationCounts): PlexOptions {
+export function measureCrowding(
+  options: PlexOptions,
+  canHoldAll: (packed: PlexOptions) => boolean,
+): PlexOptions {
   if (!options.viewport || options.squeeze >= 1) return options
-  if (canRelationAll(options, counts)) return options
+  if (canHoldAll(options)) return options
 
   let tight = 0
   let maxSqueeze = 1
   for (let halving = 0; halving < HALVINGS; halving++) {
     const middle = (tight + maxSqueeze) / 2
-    if (canRelationAll(packOptions(options, middle), counts)) tight = middle
+    if (canHoldAll(packOptions(options, middle))) tight = middle
     else maxSqueeze = middle
   }
   return packOptions(options, tight)
 }
 
-function canRelationAll(options: PlexOptions, counts: RelationCounts): boolean {
-  const limits = getLimits(options, counts)
-  return RELATION_NAMES.every(
-    (relation) => limits[relation].perLine * limits[relation].lines >= counts[relation],
-  )
-}
