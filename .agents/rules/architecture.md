@@ -164,7 +164,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `golangci-lint` in `libs/note`: depguard rules of `libs/note`, which depends on nothing of this repository.
 - `sdk-isolation`: the Go SDK imports no core and no application.
 - `sdk-ts-encapsulates-protocol`: no exported declaration of an entry in the `exports` of `@numen/plugin-sdk` reaches a declaration of `libs/core/protocol`.
-- `go/single-consumer`: every RPC of a service of `libs/core/protocol` and every export of `libs/plugin/sdk-go` and `libs/plugin/sdk-ts` has consumers other than one plugin or the plugins of one family; an item with one such consumer belongs in that plugin, an item with none is dead, and an entry of its `allowlist.json` keeps an item only with a stated reason (§11 (l)).
+- `go/single-consumer`: every RPC of a service of `libs/core/protocol` and every export of `libs/plugin/sdk-go` and `libs/plugin/sdk-ts` has consumers other than one plugin or the plugins of one family; an item with one such consumer belongs in that plugin, an item with none is dead; the check keeps no list of allowed items (§11 (l)).
 - `ts/contracts-imports`: no file under `libs/` outside `libs/plugin/sdk-go/contracts` and `libs/plugin/sdk-ts/src/contracts` imports a contract; only plugins and applications do (§11 (l)).
 - `library-matrix`: every `go.mod` under `libs/` depends only on the families its row allows.
 - `package-matrix`: every `package.json` under `libs/` declares only the libraries its row allows.

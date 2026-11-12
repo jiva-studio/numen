@@ -327,8 +327,10 @@ func newPlantedLayout(t *testing.T, dir string) layout {
 	}
 }
 
-// The walk follows a use through the SDK functions, the methods behind an interface and the core
-// client to the plugins and applications, in Go, TypeScript and Vue, and reads no test.
+// The walk follows a use through the SDK functions, the methods behind an interface of the SDK or of a
+// plugin port, the objects and classes of the core client behind its interfaces, and a client handed to
+// an interface a consumer declares, to the plugins and applications, in Go, TypeScript and Vue, and reads
+// no test.
 func TestSingleConsumerWalk_FindsThePlantedItems(t *testing.T) {
 	files := map[string]string{}
 	for name, text := range plantedFiles {
