@@ -306,3 +306,7 @@ func assertPair(t *testing.T, argv []string, flag, value string) {
 func recordArgs(dir string) string {
 	return "cat > " + dir + "/stdin\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + dir + "/argv\n"
 }
+
+func hasReason(err error, want connection.Reason) bool {
+	return err != nil && err.Error() == want.String()
+}

@@ -156,7 +156,7 @@ func TestAMissingClaudeIsUnreachable(t *testing.T) {
 
 	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
-	if reason, isTryNext := connection.IsTryNext(err); !isTryNext || reason != connection.ReasonUnavailable {
+	if _, isTryNext := connection.IsTryNext(err); !isTryNext || !hasReason(err, connection.ReasonUnavailable) {
 		t.Fatalf("Complete = %v, want try the next as unavailable", err)
 	}
 }
@@ -190,7 +190,7 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 
 	_, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
 
-	if reason, isTryNext := connection.IsTryNext(err); !isTryNext || reason != connection.ReasonUnavailable {
+	if _, isTryNext := connection.IsTryNext(err); !isTryNext || !hasReason(err, connection.ReasonUnavailable) {
 		t.Fatalf("Complete = %v, want try the next as unavailable", err)
 	}
 }

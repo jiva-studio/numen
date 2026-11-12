@@ -264,7 +264,7 @@ func TestAMissingClaudeIsAFailureToTryTheNextConnectionAfter(t *testing.T) {
 
 	frames, _, err := runTask(t.Context(), svc, taskCall(nil), &acp.TaskRequest{Prompt: "hi"})
 
-	if reason, isTryNext := connection.IsTryNext(err); !isTryNext || reason != connection.ReasonUnavailable || len(frames) != 0 {
+	if _, isTryNext := connection.IsTryNext(err); !isTryNext || !hasReason(err, connection.ReasonUnavailable) || len(frames) != 0 {
 		t.Errorf("RunTask = %q, %v, want try the next as unavailable", frames, err)
 	}
 }
