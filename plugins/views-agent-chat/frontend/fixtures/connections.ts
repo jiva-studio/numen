@@ -1,12 +1,11 @@
 /**
  * The connections of a plugin as a test serves them: every acp.task is answered with the frames of a
- * script, encoded as the core passes them, and the requests are kept decoded.
+ * script, and the requests are kept.
  */
-import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import type { ConnectionCallOptions, ConnectionError, ConnectionHost, Result } from '@numen/plugin-sdk'
-import { acp } from '@numen/plugin-sdk/contracts'
+import type { ConnectionCallOptions, ConnectionError, Result } from '@numen/plugin-sdk'
+import { acp, acptest } from '@numen/plugin-sdk/contracts'
 
-export type FrameInit = MessageInitShape<typeof acp.TaskFrameSchema>
+export type FrameInit = acptest.TaskFrameInit
 
 /**
  * What one task answers: its frames, then its end. `pace` is awaited before the frame of each index,
@@ -19,7 +18,7 @@ export interface TaskScript {
   readonly hold?: Promise<void>
 }
 
-const CANCELED: Result<Uint8Array, ConnectionError> = {
+const CANCELED: Result<acp.StopReason, ConnectionError> = {
   ok: false,
   error: { error: 'canceled', message: 'the call was canceled', failures: [] },
 }
@@ -30,48 +29,29 @@ const waitForAbort = (signal: AbortSignal | undefined): Promise<void> =>
     signal?.addEventListener('abort', () => resolve(), { once: true })
   })
 
-/** Yields the frames of the script; false where the call was aborted before the last one. */
-async function* playFrames(
+async function* playScript(
   script: TaskScript,
   signal: AbortSignal | undefined,
-): AsyncGenerator<Uint8Array, boolean> {
+): AsyncGenerator<FrameInit, Result<acp.StopReason, ConnectionError>> {
   for (const [index, frame] of (script.frames ?? []).entries()) {
     await script.pace?.(index)
-    if (signal?.aborted) return false
-    yield toBinary(acp.TaskFrameSchema, create(acp.TaskFrameSchema, frame))
+    if (signal?.aborted) return CANCELED
+    yield frame
   }
-  return true
-}
-
-/** The end of the task the script names, once its hold settles. */
-async function endTask(
-  script: TaskScript,
-  signal: AbortSignal | undefined,
-): Promise<Result<Uint8Array, ConnectionError>> {
   if (script.hold) await Promise.race([script.hold, waitForAbort(signal)])
   if (signal?.aborted) return CANCELED
-  const end = script.end ?? { ok: true, value: acp.StopReason.END_TURN }
-  if (!end.ok) return end
-  return {
-    ok: true,
-    value: toBinary(acp.TaskDoneSchema, create(acp.TaskDoneSchema, { stopReason: end.value })),
-  }
+  return script.end ?? { ok: true, value: acp.StopReason.END_TURN }
 }
 
-/** Connections that answer each task with the script `answer` gives for it. */
-export function createAgentConnections(answer: TaskScript | ((request: acp.TaskRequest) => TaskScript)) {
-  const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] = []
-  const host: ConnectionHost = {
-    call: async function* (operation, payload, options) {
-      const request = fromBinary(acp.TaskRequestSchema, payload)
-      calls.push({ operation, request, ...(options ? { options } : {}) })
-      const script = typeof answer === 'function' ? answer(request) : answer
-      const signal = options?.signal
-      const isPlayed = yield* playFrames(script, signal)
-      if (!isPlayed) return CANCELED
-      return endTask(script, signal)
-    },
-  }
+export function createAgentConnections(
+  answer: TaskScript | ((request: acp.TaskRequest) => TaskScript),
+) {
+  const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] =
+    []
+  const host = acptest.createTaskHost((request, options) => {
+    calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
+    return playScript(typeof answer === 'function' ? answer(request) : answer, options?.signal)
+  })
   return { host, calls }
 }
 
@@ -118,4 +98,7 @@ export const stopFor = (reason: acp.StopReason): Result<acp.StopReason, Connecti
 export const failWith = (
   error: ConnectionError['error'],
   message: string,
-): Result<acp.StopReason, ConnectionError> => ({ ok: false, error: { error, message, failures: [] } })
+): Result<acp.StopReason, ConnectionError> => ({
+  ok: false,
+  error: { error, message, failures: [] },
+})

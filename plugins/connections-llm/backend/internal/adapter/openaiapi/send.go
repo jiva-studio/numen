@@ -22,8 +22,6 @@ const maxResponseBytes = 64 << 20
 // endpoint is the method and the path of a request.
 type endpoint struct{ method, path string }
 
-// readTarget reads the address and the key of the service a call goes to, and whether the address must be
-// on loopback: a key sent over plain http stays on this machine.
 func readTarget(ctx context.Context, call connection.Call) (*url.URL, string, bool, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, "", false, err

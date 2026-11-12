@@ -13,9 +13,6 @@ import (
 // maxHealthText is the longest text the host takes for an item.
 const maxHealthText = 120
 
-// observeSource takes the outcome of a call of the model: a precondition the settings do not meet (no
-// connection, a connection that fails, a local model that is missing) reports the item, a call that
-// succeeded clears it, and any other failure leaves it as it is.
 func observeSource(ctx context.Context, reporter *sourcehealth.Reporter, err error) {
 	failure, isPrecondition := errors.AsType[serving.PreconditionError](err)
 	switch {
@@ -26,8 +23,6 @@ func observeSource(ctx context.Context, reporter *sourcehealth.Reporter, err err
 	}
 }
 
-// getHealthText is the message as a sentence that fits an item: its first letter upper case, cut at the
-// limit of the host.
 func getHealthText(message string) string {
 	if message == "" {
 		return ""

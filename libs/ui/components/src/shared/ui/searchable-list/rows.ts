@@ -4,14 +4,16 @@
  */
 import { stepTo } from '@/shared/lib/dom/roving'
 
-/** One entry of a searchable list. The identifier is the caller's, returned as given. */
+/**
+ * One entry of a searchable list. The identifier is the caller's, returned as given. A disabled item is
+ * shown and cannot be chosen; the keyboard skips it.
+ */
 export interface ListItem {
   readonly id: string
   readonly text: string
   readonly detail?: string
   readonly group?: string
   readonly hasSeparator?: boolean
-  /** An item that is shown and cannot be chosen; the keyboard passes over it. */
   readonly isDisabled?: boolean
 }
 

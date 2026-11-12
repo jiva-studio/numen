@@ -68,8 +68,6 @@ type target struct {
 	limit   time.Duration
 }
 
-// getTarget is the target of a request of operation op over call. A level of reasoning outside those the
-// model supports is a stop.
 func (c *Completion) getTarget(call connection.Call, op string) (target, error) {
 	model := call.Options[llm.OptionModel]
 	if !reasoning.IsSupported(call.Type, model, call.Options[llm.OptionReasoning]) {

@@ -23,7 +23,8 @@ type Clock interface {
 
 // Gateway is the OpenAI API as the use cases see it. A request that gets no answer ends with the end of the
 // call where the call has ended, stops for an address the domain refuses, and is unavailable, to try the
-// next connection after, for a service that is unreachable or slow.
+// next connection after, for a service that is unreachable or slow. A key sent over plain http goes only
+// to a loopback address, so it stays on this machine.
 type Gateway struct {
 	clients clients
 	clock   Clock

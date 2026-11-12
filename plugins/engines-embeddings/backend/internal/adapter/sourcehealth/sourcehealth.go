@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
 )
 
 // key is the key of the health item that says the source of the vectors does not work.
@@ -25,18 +24,22 @@ const reportLimit = 2 * time.Second
 // OpenHealth connects to the list of health items of the host.
 type OpenHealth func() (*health.Client, error)
 
+// ReportFault writes a fault that nothing else handles.
+type ReportFault func(what string, err error)
+
 // Reporter reports the source of the vectors as the health item source of the plugin. A process started
 // without a host reports nothing.
 type Reporter struct {
-	open OpenHealth
+	open   OpenHealth
+	report ReportFault
 
 	mu       sync.Mutex
 	reported string
 }
 
-// New returns a Reporter that reaches the host through open.
-func New(open OpenHealth) *Reporter {
-	return &Reporter{open: open, mu: sync.Mutex{}, reported: ""}
+// New returns a Reporter that reaches the host through open and writes a failed call to report.
+func New(open OpenHealth, report ReportFault) *Reporter {
+	return &Reporter{open: open, report: report, mu: sync.Mutex{}, reported: ""}
 }
 
 // Set reports text as an error of the source, and an empty text clears the item.
@@ -51,7 +54,7 @@ func (r *Reporter) Set(ctx context.Context, text string) {
 		return
 	}
 	if err != nil {
-		console.Report("embeddings: report the health of the source", err)
+		r.report("embeddings: report the health of the source", err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), reportLimit)
@@ -64,7 +67,7 @@ func (r *Reporter) Set(ctx context.Context, text string) {
 		})
 	}
 	if err != nil {
-		console.Report("embeddings: report the health of the source", err)
+		r.report("embeddings: report the health of the source", err)
 		return
 	}
 	r.reported = text
