@@ -74,14 +74,14 @@ func GetUsage(clock machineport.Clock, dir string) (int64, error) {
 		}
 		sum += info.Size()
 		if strings.HasSuffix(name, reserveSuffix) {
-			sum += getUnwritten(clock, name, info)
+			sum += getUnwrittenBytes(clock, name, info)
 		}
 		return nil
 	})
 	return sum, err
 }
 
-func getUnwritten(clock machineport.Clock, reservation string, info fs.FileInfo) int64 {
+func getUnwrittenBytes(clock machineport.Clock, reservation string, info fs.FileInfo) int64 {
 	if clock.Now().Sub(info.ModTime()) > staleReservation {
 		return 0
 	}
