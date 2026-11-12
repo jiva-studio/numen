@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 )
 
 // DerivedStore stores the application's own files inside one vault: files it

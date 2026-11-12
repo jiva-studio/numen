@@ -10,9 +10,9 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 // claimSuffix names the file a claim on a name is held on. It outlives the
