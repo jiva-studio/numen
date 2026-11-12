@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 	usecases "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -75,7 +76,7 @@ func TestTheKeyOfAConnectionIsInTheKeyStoreAndNotInTheFile(t *testing.T) {
 	no := settings.NewConnectionRows(settings.ConnectionRowsSource{
 		Connections: repository, Plugins: func() []plugin.Info { return nil },
 	})
-	connections := usecases.NewConnections(repository, oneType{}, keys, no, func() (string, error) {
+	connections := connectiontest.New(repository, oneType{}, keys, no, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
 	})

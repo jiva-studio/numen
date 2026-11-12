@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
@@ -66,7 +67,7 @@ func TestDeleteRemovesNoRowsWhenASecretCannotBeRemoved(t *testing.T) {
 	f := newFixture(t)
 	work := f.createOpenRouter(t, "Work")
 	f.uses.use(work.ID, proofreading())
-	f.connection = connection.NewConnections(f.repository, f.types, &failingDelete{memoryKeys: f.keys}, f.uses, nil)
+	f.connection = connectiontest.New(f.repository, f.types, &failingDelete{memoryKeys: f.keys}, f.uses, nil)
 
 	_, err := f.connection.Delete.Execute(t.Context(), work.ID)
 

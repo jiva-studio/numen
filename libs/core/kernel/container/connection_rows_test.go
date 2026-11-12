@@ -68,7 +68,7 @@ func openRowsInstallation(t *testing.T) (Config, string) {
 func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
 
-	entries, err := openConnections(plugins(cfg)).List.Execute(t.Context())
+	entries, err := openConnectionUseCases(plugins(cfg)).List.Execute(t.Context())
 
 	if err != nil {
 		t.Fatal(err)
@@ -81,7 +81,7 @@ func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 func TestDeletingAConnectionRemovesTheRowsThatNameItFromTheFile(t *testing.T) {
 	cfg, path := openRowsInstallation(t)
 
-	removed, err := openConnections(plugins(cfg)).Delete.Execute(t.Context(), rowsConnection)
+	removed, err := openConnectionUseCases(plugins(cfg)).Delete.Execute(t.Context(), rowsConnection)
 
 	if err != nil {
 		t.Fatal(err)

@@ -76,10 +76,29 @@ func carry[R, T any](
 	return none, &connection.AllFailedError{Failures: failures}
 }
 
+// callServices is what a row call takes from Calls: a slot of its connection, the provider and the secrets.
+type callServices interface {
+	acquire(ctx context.Context, connectionID string, capacity int, priority modelcall.Priority) (func(), error)
+	openProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error)
+	readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error)
+}
+
+func (c *Calls) acquire(ctx context.Context, connectionID string, capacity int, priority modelcall.Priority) (func(), error) {
+	return c.queues.acquire(ctx, connectionID, capacity, priority)
+}
+
+func (c *Calls) openProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
+	return c.source.OpenProvider(ctx, pluginID)
+}
+
+func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error) {
+	return c.readSecrets(ctx, resolved)
+}
+
 // rowCall is one row being called: the connection as resolved, the secrets once they are read, and the
 // operation to carry out.
 type rowCall[R, T any] struct {
-	calls    *Calls
+	calls    callServices
 	resolved connection.Resolved
 	row      connection.Row
 	pick     func(connectionport.Provider) R
@@ -194,18 +213,18 @@ func isRetried(reason connection.FailureReason) bool {
 
 func (r *rowCall[R, T]) callOnce(ctx context.Context) (T, error) {
 	var none T
-	freeSlot, err := r.calls.queues.acquire(ctx, r.resolved.ID, r.resolved.ParallelRequests, r.priority)
+	freeSlot, err := r.calls.acquire(ctx, r.resolved.ID, r.resolved.ParallelRequests, r.priority)
 	if err != nil {
 		return none, err
 	}
 	defer freeSlot()
-	provider, release, err := r.calls.source.OpenProvider(ctx, r.resolved.PluginID)
+	provider, release, err := r.calls.openProvider(ctx, r.resolved.PluginID)
 	if err != nil {
 		return none, &openError{err: err}
 	}
 	defer release()
 	if r.secrets == nil {
-		secrets, err := r.calls.readSecrets(ctx, r.resolved)
+		secrets, err := r.calls.readConnectionSecrets(ctx, r.resolved)
 		if err != nil {
 			return none, err
 		}
@@ -216,7 +235,7 @@ func (r *rowCall[R, T]) callOnce(ctx context.Context) (T, error) {
 
 func (c *Calls) reportSetAside(rows []asideRow) {
 	for _, one := range rows {
-		if c.noticeLog.claim(notice{version: connectionVersion{id: one.id, revision: one.revision}, reason: one.reason}) {
+		if c.cooldown.claim(notice{version: connectionVersion{id: one.id, revision: one.revision}, reason: one.reason}) {
 			c.notices.ReportSetAside(one.id, one.name, one.reason)
 		}
 	}

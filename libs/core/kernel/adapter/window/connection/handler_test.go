@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -103,10 +104,14 @@ func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 		},
 	}}}
 	next := 0
-	return NewHandler(connections.NewConnections(&memoryRepository{}, types, keys, uses, func() (string, error) {
+	return NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, types, keys, uses, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
-	}))
+	})))
+}
+
+func useCasesOf(all *connectiontest.Connections) UseCases {
+	return UseCases{Create: all.Create, Update: all.Update, Delete: all.Delete, List: all.List, ListTypes: all.ListTypes}
 }
 
 func newKeys() *memoryKeys { return &memoryKeys{values: map[string]string{}} }

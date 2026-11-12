@@ -15,13 +15,22 @@ import (
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
 
+// UseCases are the use cases ProviderConnectionService is answered through.
+type UseCases struct {
+	Create    *connections.Create
+	Update    *connections.Update
+	Delete    *connections.Delete
+	List      *connections.List
+	ListTypes *connections.ListTypes
+}
+
 // Handler serves ProviderConnectionService over the use cases on connections.
 type Handler struct {
-	connections *connections.Connections
+	connections UseCases
 }
 
 // NewHandler is the handler over the connections of this installation.
-func NewHandler(useCases *connections.Connections) *Handler {
+func NewHandler(useCases UseCases) *Handler {
 	return &Handler{connections: useCases}
 }
 

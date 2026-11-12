@@ -18,14 +18,18 @@ type cooldownEntry struct {
 	reason    connection.FailureReason
 }
 
-// cooldown is the connections set aside, by id and revision. An edit changes the revision, so the entry
-// of the old revision no longer matches. It is kept in memory.
+// cooldown is the connections set aside, by id and revision, and the notices already given for them. An edit
+// changes the revision, so the entry of the old revision no longer matches. A new cooldown of a connection
+// allows a new notice. It is kept in memory, so a restart allows the notices again.
 type cooldown struct {
 	mu      sync.Mutex
 	entries map[connectionVersion]cooldownEntry
+	claimed map[notice]bool
 }
 
-func newCooldown() *cooldown { return &cooldown{entries: map[connectionVersion]cooldownEntry{}} }
+func newCooldown() *cooldown {
+	return &cooldown{entries: map[connectionVersion]cooldownEntry{}, claimed: map[notice]bool{}}
+}
 
 func (c *cooldown) get(version connectionVersion, now time.Time) (cooldownEntry, bool) {
 	c.mu.Lock()
@@ -58,6 +62,11 @@ func (c *cooldown) start(version connectionVersion, reason connection.FailureRea
 	default:
 		entry.until = now.Add(DefaultCooldown)
 	}
+	for given := range c.claimed {
+		if given.version == version {
+			delete(c.claimed, given)
+		}
+	}
 	c.entries[version] = entry
 }
 
@@ -70,20 +79,13 @@ type notice struct {
 	reason  connection.FailureReason
 }
 
-// noticeLog is the notices already given, for each connection revision and reason.
-type noticeLog struct {
-	mu      sync.Mutex
-	claimed map[notice]bool
-}
-
-func newNoticeLog() *noticeLog { return &noticeLog{claimed: map[notice]bool{}} }
-
-func (t *noticeLog) claim(one notice) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.claimed[one] {
+// claim reports whether the notice was not given yet and marks it as given.
+func (c *cooldown) claim(one notice) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.claimed[one] {
 		return false
 	}
-	t.claimed[one] = true
+	c.claimed[one] = true
 	return true
 }

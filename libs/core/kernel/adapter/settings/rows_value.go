@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -134,9 +135,9 @@ func (f *File) dropInvalidRows(owner string, declared manifest.Setting) {
 	f.Plugins[owner][declared.Key] = remainder
 }
 
-func (f *File) withConnectionIDs(registries Registries) Registries {
-	ids := make([]string, 0, len(f.Connections))
-	for _, one := range f.Connections {
+func withConnectionIDs(connections []connection.Connection, registries Registries) Registries {
+	ids := make([]string, 0, len(connections))
+	for _, one := range connections {
 		ids = append(ids, one.ID)
 	}
 	return func(name string) ([]string, bool) {
@@ -150,7 +151,7 @@ func (f *File) withConnectionIDs(registries Registries) Registries {
 	}
 }
 
-func (f *File) dropInvalidRowsOf(owner string, settings []manifest.Setting) {
+func dropInvalidRowsOf(f *File, owner string, settings []manifest.Setting) {
 	for _, one := range settings {
 		if one.Type == manifest.SettingTypeConnections {
 			f.dropInvalidRows(owner, one)

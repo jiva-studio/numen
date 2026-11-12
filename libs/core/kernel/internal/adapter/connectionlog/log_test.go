@@ -1,6 +1,7 @@
 package connectionlog
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -8,13 +9,21 @@ import (
 )
 
 func TestLogNoticesWritesTheConnectionAndTheReason(t *testing.T) {
-	var out strings.Builder
+	file, err := os.CreateTemp(t.TempDir(), "log")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
-	NewLogNotices(&out).ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
+	LogNotices{out: file}.ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
 
+	written, err := os.ReadFile(file.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, want := range []string{"OpenRouter", "c0000001", "payment required"} {
-		if !strings.Contains(out.String(), want) {
-			t.Errorf("log = %q, want it to contain %q", out.String(), want)
+		if !strings.Contains(string(written), want) {
+			t.Errorf("log = %q, want it to contain %q", written, want)
 		}
 	}
 }

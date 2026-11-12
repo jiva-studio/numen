@@ -140,17 +140,17 @@ func (g *Gateway) openStream(
 	}
 	opening, stopOpening := context.WithTimeout(ctx, limit)
 	defer stopOpening()
-	stopCancelling := context.AfterFunc(opening, cancel)
+	stopCanceling := context.AfterFunc(opening, cancel)
 	response, err := g.clients.get(isLoopbackRequired).Do(request)
 	if err != nil {
-		stopCancelling()
+		stopCanceling()
 		cancel()
 		if ctx.Err() == nil && opening.Err() != nil {
 			return nil, nil, nil, connection.NewTryNextError(connection.ReasonTimeout, 0)
 		}
 		return nil, nil, nil, classifyTransportError(ctx, limited, err)
 	}
-	if !stopCancelling() {
+	if !stopCanceling() {
 		closeBody(response.Body)
 		cancel()
 		if ctx.Err() != nil {

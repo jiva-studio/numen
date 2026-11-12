@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
@@ -182,7 +183,7 @@ func TestReadSecretsIsRefusedWhenTheConnectionChangedWhileTheKeyWasRead(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	editing := connection.NewConnections(f.repository, f.types, editingKeys{memoryKeys: f.keys, change: func() {
+	editing := connectiontest.New(f.repository, f.types, editingKeys{memoryKeys: f.keys, change: func() {
 		if err := f.repository.ChangeConnections(func(list []connectiondomain.Connection) ([]connectiondomain.Connection, error) {
 			list[0].Revision++
 			return list, nil
@@ -208,7 +209,7 @@ func TestReadSecretsIsRefusedWhenTheConnectionWasDeletedWhileTheKeyWasRead(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	deleting := connection.NewConnections(f.repository, f.types, editingKeys{memoryKeys: f.keys, change: func() {
+	deleting := connectiontest.New(f.repository, f.types, editingKeys{memoryKeys: f.keys, change: func() {
 		if err := f.repository.ChangeConnections(func([]connectiondomain.Connection) ([]connectiondomain.Connection, error) { return nil, nil }); err != nil {
 			t.Error(err)
 		}
@@ -226,7 +227,7 @@ func TestReadSecretsReportsAFailingKeyStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	failing := connection.NewConnections(f.repository, f.types, failingKeys{memoryKeys: f.keys}, f.uses, nil)
+	failing := connectiontest.New(f.repository, f.types, failingKeys{memoryKeys: f.keys}, f.uses, nil)
 
 	if _, err := failing.ReadSecrets.Execute(t.Context(), resolved); !errors.Is(err, connectiondomain.ErrKeyStore) {
 		t.Errorf("err = %v, want connectiondomain.ErrKeyStore", err)

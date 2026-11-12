@@ -224,7 +224,7 @@ func (f *File) GetValue(path ...string) (any, bool) {
 // the rows that fail are left out, and the rows beyond max, each with a notice. Each one adds a notice to the file
 // and is applied nowhere. The bytes of the file on disk are not touched.
 func (f *File) DropInvalid(declared Declarations, registries Registries) {
-	registries = f.withConnectionIDs(registries)
+	registries = withConnectionIDs(f.Connections, registries)
 	f.dropInvalidApp(declared, registries)
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		settings, found := declared(id)
@@ -237,7 +237,7 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
 		}
-		f.dropInvalidRowsOf(id, settings)
+		dropInvalidRowsOf(f, id, settings)
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {
 				delete(f.Plugins[id], key)

@@ -28,7 +28,6 @@ type Calls struct {
 	queues      *queues
 	notices     connectionport.Notices
 	cooldown    *cooldown
-	noticeLog   *noticeLog
 }
 
 // NewCalls returns the calls over the connections, the rows of the plugins and the providers the source
@@ -39,6 +38,6 @@ func NewCalls(
 ) *Calls {
 	return &Calls{
 		resolve: resolve, readSecrets: readSecrets, rows: rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
-		cooldown: newCooldown(), noticeLog: newNoticeLog(),
+		cooldown: newCooldown(),
 	}
 }

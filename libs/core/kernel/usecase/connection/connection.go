@@ -48,35 +48,41 @@ type Entry struct {
 	Uses            []connection.Use
 }
 
-// Connections holds every use case on the list of connections.
-type Connections struct {
-	Create      *Create
-	Update      *Update
-	Delete      *Delete
-	List        *List
-	ListTypes   *ListTypes
-	Resolve     *Resolve
-	ReadSecrets *ReadSecrets
+// Deps is what the use cases of this package share: the list, the kinds of connection, the key store and the
+// rows of settings that name a connection. Use cases built from one Deps never change the key store and the
+// list at once.
+type Deps struct{ base operation }
+
+// NewDeps returns the shared parts over the list, the registry of types and the key store. keys is nil on a
+// machine with no key store; a connection with no secret field value still works there.
+func NewDeps(
+	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
+) Deps {
+	return Deps{base: operation{repository: repository, types: types, keys: keys, uses: uses, gate: &sync.Mutex{}}}
 }
 
-// NewConnections returns the use cases over the list, the registry of types and the key store.
-// newID makes the id of a new connection. keys is nil on a machine with no key store; a connection
-// with no secret field value still works there. The use cases never change the key store and the
-// list at once.
-func NewConnections(
-	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses, newID func() (string, error),
-) *Connections {
-	base := operation{repository: repository, types: types, keys: keys, uses: uses, gate: &sync.Mutex{}}
-	return &Connections{
-		Create:      &Create{operation: base, newID: newID},
-		Update:      &Update{operation: base},
-		Delete:      &Delete{operation: base},
-		List:        &List{operation: base},
-		ListTypes:   &ListTypes{operation: base},
-		Resolve:     &Resolve{operation: base},
-		ReadSecrets: &ReadSecrets{operation: base},
-	}
+// NewCreate returns the use case that adds a connection. newID makes the id of a new connection.
+func NewCreate(deps Deps, newID func() (string, error)) *Create {
+	return &Create{operation: deps.base, newID: newID}
 }
+
+// NewUpdate returns the use case that changes a connection.
+func NewUpdate(deps Deps) *Update { return &Update{operation: deps.base} }
+
+// NewDelete returns the use case that removes a connection.
+func NewDelete(deps Deps) *Delete { return &Delete{operation: deps.base} }
+
+// NewList returns the use case that lists the connections.
+func NewList(deps Deps) *List { return &List{operation: deps.base} }
+
+// NewListTypes returns the use case that lists the kinds of connection.
+func NewListTypes(deps Deps) *ListTypes { return &ListTypes{operation: deps.base} }
+
+// NewResolve returns the use case that finds a connection by its id.
+func NewResolve(deps Deps) *Resolve { return &Resolve{operation: deps.base} }
+
+// NewReadSecrets returns the use case that reads the secret fields of a connection.
+func NewReadSecrets(deps Deps) *ReadSecrets { return &ReadSecrets{operation: deps.base} }
 
 func newInvalidError(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrInvalidField, fmt.Sprintf(format, args...))

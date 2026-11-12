@@ -9,6 +9,7 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -223,7 +224,7 @@ func (k *Keys) DeleteKey(_ context.Context, name string) error {
 
 // World is the connections, the key store, the rows and the fake provider a call goes through.
 type World struct {
-	Connections *connectionuse.Connections
+	Connections *connectiontest.Connections
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
 	Keys        *Keys
@@ -271,7 +272,7 @@ func New() *World {
 		Clock: &Clock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}, Types: types, repository: &memoryRepository{},
 	}
 	w.Source = NewSource(w.Provider)
-	w.Connections = connectionuse.NewConnections(w.repository, types, w.Keys, NoUses{}, func() (string, error) {
+	w.Connections = connectiontest.New(w.repository, types, w.Keys, NoUses{}, func() (string, error) {
 		w.next++
 		return fmt.Sprintf("c%08x", w.next), nil
 	})

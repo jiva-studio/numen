@@ -37,7 +37,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -331,19 +330,13 @@ func startVault(a pluginsWiring, db *Index, current *vault.CurrentRefresh) windo
 }
 
 func mountConnection(w *windowWiring) {
-	var handler numenv1connect.ProviderConnectionServiceHandler = numenv1connect.UnimplementedProviderConnectionServiceHandler{}
-	if connections := openConnections(w.a); connections != nil {
-		handler = windowconnection.NewHandler(connections)
-	}
+	handler := windowconnection.NewService(openConnectionUseCases(w.a))
 	path, served := windowconnection.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountModel(w *windowWiring) {
-	var handler numenv1connect.ModelServiceHandler = numenv1connect.UnimplementedModelServiceHandler{}
-	if lists := openModelLists(w.a); lists != nil {
-		handler = windowmodel.NewHandler(lists, openModelCalls(w.a))
-	}
+	handler := windowmodel.NewService(openModelLists(w.a), openModelCalls(w.a))
 	path, served := windowmodel.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

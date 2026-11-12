@@ -2,6 +2,7 @@ package container
 
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -40,25 +41,36 @@ func openConnectionRows(c pluginsWiring) *settingsadapter.ConnectionRows {
 	})
 }
 
-// openConnections returns the use cases on the connections, or nil where the installation runs no plugin host.
-func openConnections(c pluginsWiring) *connection.Connections {
+// openConnectionDeps returns the parts the use cases on the connections share, or false where the installation runs
+// no plugin host.
+func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 	if !hasPluginHost(c) {
+		return connection.Deps{}, false
+	}
+	return connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c)), true
+}
+
+// openConnectionUseCases returns the use cases a window works the connections with, or nil where the installation
+// runs no plugin host.
+func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {
+	deps, ok := openConnectionDeps(c)
+	if !ok {
 		return nil
 	}
-	return connection.NewConnections(
-		openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore,
-		openConnectionRows(c), settingsadapter.CreateConnectionID,
-	)
+	return &windowconnection.UseCases{
+		Create: connection.NewCreate(deps, settingsadapter.CreateConnectionID), Update: connection.NewUpdate(deps),
+		Delete: connection.NewDelete(deps), List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps),
+	}
 }
 
 // openModelLists returns the models and the reasoning levels a provider gives, or nil where the installation
 // runs no plugin host.
 func openModelLists(c pluginsWiring) *modellist.Lists {
-	connections := openConnections(c)
-	if connections == nil {
+	deps, ok := openConnectionDeps(c)
+	if !ok {
 		return nil
 	}
-	return modellist.NewLists(connections.Resolve.Execute, connections.ReadSecrets.Execute, providerbridge.NewSource(c.PluginHost.Runtime))
+	return modellist.NewLists(connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime))
 }
 
 // openModelCalls returns the calls on models that setModelCalls gives the plugin host, or nil where the
@@ -73,13 +85,13 @@ func openModelCalls(c pluginsWiring) connectionport.ModelCalls {
 // setModelCalls lets the plugins ask the host for the operations on models. notices tells the person of a
 // connection set aside. Nothing is set where the installation runs no plugin host.
 func setModelCalls(c pluginsWiring, notices connectionport.Notices) {
-	connections := openConnections(c)
-	if connections == nil {
+	deps, ok := openConnectionDeps(c)
+	if !ok {
 		return
 	}
 	rows := openConnectionRows(c)
 	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
-		connections.Resolve.Execute, connections.ReadSecrets.Execute, rows, providerbridge.NewSource(c.PluginHost.Runtime),
+		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, rows, providerbridge.NewSource(c.PluginHost.Runtime),
 		clock.System{}, clock.System{}.Wait, notices,
 	))
 }
