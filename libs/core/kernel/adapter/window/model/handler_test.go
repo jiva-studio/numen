@@ -27,7 +27,8 @@ func newHandler(t *testing.T) (*Handler, *modelcalltest.World, modelcalltest.Ent
 	entry := world.AddServer(t, "First", address, "sk-one")
 	world.Rows.Set(viewPluginID, "complete", modelcalltest.Row(entry, "model-1"))
 	world.Rows.Set(viewPluginID, "embed", modelcalltest.Row(entry, "model-1"))
-	calls := modelcalls.NewCalls(world.GetLookups(), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside)
+	lookups := modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows}
+	calls := modelcalls.NewCalls(lookups, world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside)
 	return NewHandler(modellist.NewLists(world.Resolve, world.ReadSecrets, world.Source), calls), world, entry
 }
 

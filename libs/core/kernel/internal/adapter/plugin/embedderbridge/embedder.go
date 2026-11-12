@@ -13,7 +13,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	domain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -211,7 +211,7 @@ func readFailure(pluginID string, err error) error {
 	if errors.As(err, &failure) && failure.Code() == connect.CodeFailedPrecondition {
 		// The plugin names the connections and the reasons it got from the enum of reasons, never a text of a
 		// service. A plugin whose settings name no connection yet is not failing: it reports nothing.
-		if strings.Contains(failure.Message(), domain.ErrNoConnection.Error()) {
+		if strings.Contains(failure.Message(), connectiondomain.ErrNoConnection.Error()) {
 			return nil
 		}
 		return fmt.Errorf("read model of embedding plugin %s: %s", pluginID, failure.Message())

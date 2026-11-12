@@ -281,7 +281,7 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 		world.Rows.Set("md.numen.b", "complete", modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		world.Rows.Set("md.numen.b", "embed", modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		arrange(world)
-		client, recording := newModelClient(t, modelcalls.NewCalls(world.GetLookups(), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
+		client, recording := newModelClient(t, modelcalls.NewCalls(lookupsOf(world), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
 
 		_, completeErr := client.Complete(t.Context(), connect.NewRequest(&v1.HostModelServiceCompleteRequest{}))
 		_, embedErr := client.Embed(t.Context(), connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: []string{"a"}}))
@@ -356,4 +356,8 @@ func TestEveryPriorityOfTheSchemaIsReadAsThePortOneIt(t *testing.T) {
 		v1.Priority_PRIORITY_BACKGROUND:  modelcall.PriorityBackground,
 	}
 	testsupport.CheckHandled(t, func(priority v1.Priority) bool { return readPriority(priority) == want[priority] })
+}
+
+func lookupsOf(world *modelcalltest.World) modelcalls.Connections {
+	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows}
 }
