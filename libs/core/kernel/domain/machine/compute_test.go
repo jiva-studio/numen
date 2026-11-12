@@ -6,13 +6,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
-type machine struct {
+type example struct {
 	name string
 	hw   machine.Specs
 }
 
-func getMachines() []machine {
-	return []machine{
+func getMachines() []example {
+	return []example{
 		{
 			"a sixteen-thread desktop with eight cores and 32 GB",
 			machine.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768, AvailableRAMMB: 24000},
