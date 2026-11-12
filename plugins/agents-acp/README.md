@@ -1,6 +1,6 @@
 # ACP Agents
 
-Use the AI assistants installed on your computer that speak the Agent Client Protocol, such as Gemini CLI, OpenCode, Goose, Cursor Agent, Kimi and Qwen Code, in the Agent Chat panel and for AI tasks across your vault.
+Use the AI assistants installed on your computer that implement the Agent Client Protocol, such as Gemini CLI, OpenCode, Goose, Cursor Agent, Kimi and Qwen Code, in the Agent Chat panel and for AI tasks across your vault.
 
 <!-- more -->
 
