@@ -3,7 +3,7 @@
  * focus, the lines, the movement and the room around a note.
  */
 import { shallowRef, type Ref } from 'vue'
-import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
 import type { PlexLook } from '../types'
 
 /** The key the manifest declares Pill background under. */
@@ -41,7 +41,7 @@ const parseNumber = (value: Unvalidated, range: NumberRange): number =>
 function followSetting<T>(
   context: Pick<PluginContext, 'settings'>,
   key: string,
-  parse: (value: Unvalidated) => T,
+  parse: (value: JsonValue | undefined) => T,
 ): Ref<T> {
   const value = shallowRef(parse(context.settings.get(key)))
   context.settings.onChange(key, (next) => {
@@ -62,5 +62,5 @@ export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
 }
 
 /** The look at its defaults, for a plex no settings are read for. */
-export const createDefaultLook = (): PlexLook =>
+export const getDefaultLook = (): PlexLook =>
   readLook({ settings: { get: () => undefined, onChange: () => ({ dispose: () => undefined }) } })

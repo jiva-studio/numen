@@ -17,6 +17,7 @@ import { browserViewport } from '@numen/ui'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
+import { getFrameStyle } from './frameStyle'
 import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -141,13 +142,7 @@ const overflow = computed(() =>
   ),
 )
 
-const frameStyle = computed(() => ({
-  '--plex-move': `${props.duration}ms`,
-  '--plex-line': `${props.lineWidth}px`,
-  '--plex-outline': `${props.outlineWidth}px`,
-  '--plex-pad-inline': `${options.value.padding.inline}px`,
-  '--plex-dot': `${options.value.dotSize}px`,
-}))
+const frameStyle = computed(() => getFrameStyle(props, options.value))
 
 /**
  * A neighborhood is drawn from the node it is seen from, so every node walks
