@@ -1,5 +1,5 @@
-// Package completion answers the completion requests of a connection with one run of Antigravity
-// and lists the models and reasoning levels the program offers a connection.
+// Package completion answers the completion requests of a connection with one run of Antigravity and
+// lists the models and reasoning levels the program offers a connection.
 package completion
 
 import (
@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/domain/reasoning"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/domain/settings"
 )
 
@@ -20,28 +19,27 @@ const (
 	roleSystem          = "system"
 	roleUser            = "user"
 	roleAssistant       = "assistant"
-	stoppedDone         = "done"
 	defaultRequestLimit = 120 * time.Second
 )
 
 var errNoQuestion = errors.New("the request holds no message to answer")
 
-// Asker runs a task of the agent service.
-type Asker interface {
-	Ask(ctx context.Context, msg *agentrun.Request, send func(*agentrun.Response) error) error
+// Answerer runs the program once on a prompt, with no tool.
+type Answerer interface {
+	FindProgram() string
+	Answer(ctx context.Context, call connection.Call, prompt string) (string, error)
 }
 
-// Programs reports on the program the plugin runs.
-type Programs interface {
-	GetState(executablePath string) *agentrun.State
-	GetPrograms(ctx context.Context, executablePath string, commands []agentrun.ProgramCommand) []*agentrun.Program
+// Models lists the models of the program, each family of levels as one model.
+type Models interface {
+	List(ctx context.Context, program string) []reasoning.Family
 }
 
 // Dependencies are what a Completion needs.
 type Dependencies struct {
 	Settings *settings.Settings
-	Asker    Asker
-	Programs Programs
+	Answerer Answerer
+	Models   Models
 }
 
 // Completion serves the provider roles of the plugin.
@@ -49,55 +47,54 @@ type Completion struct {
 	deps Dependencies
 }
 
-func New(deps Dependencies) *Completion {
-	return &Completion{deps: deps}
+// New creates a Completion, and refuses dependencies that are missing.
+func New(deps Dependencies) (*Completion, error) {
+	if deps.Settings == nil || deps.Answerer == nil || deps.Models == nil {
+		return nil, errors.New("completion: every dependency is required")
+	}
+	return &Completion{deps: deps}, nil
 }
 
-// Complete answers the request with one run of Antigravity that is given no tool and cannot write to
-// disk. A program that is not installed, and a run that outlasts the request timeout, are failures to
+// Complete answers the request with one run of Antigravity that is given no tool and runs in an empty
+// folder. A program that is not installed, and a run that outlasts the request timeout, are failures to
 // try the next connection after. The text of a failed run does not leave the plugin.
 func (c *Completion) Complete(
 	ctx context.Context, call connection.Call, request *llm.CompleteRequest,
 ) (*llm.CompleteResult, error) {
-	task, err := newTask(call, request, c.deps.Settings.ExecutablePath())
+	prompt, err := writeRequest(request.GetMessages())
 	if err != nil {
 		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	if !c.isInstalled() {
+	if c.deps.Answerer.FindProgram() == "" {
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	limited, cancel := context.WithTimeout(ctx, c.getRequestLimit())
 	defer cancel()
 
-	var answer strings.Builder
-	stopReason := ""
-	runErr := c.deps.Asker.Ask(limited, task, func(response *agentrun.Response) error {
-		answer.WriteString(response.GetText())
-		if reason := response.GetStopped(); reason != "" {
-			stopReason = reason
-		}
-		return nil
-	})
+	answer, runErr := c.deps.Answerer.Answer(limited, call, prompt)
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	switch {
 	case limited.Err() != nil:
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
-	case runErr != nil, stopReason != "" && stopReason != stoppedDone, strings.TrimSpace(answer.String()) == "":
+	case runErr != nil:
+		if _, isTryNext := connection.IsTryNext(runErr); isTryNext {
+			return nil, runErr
+		}
 		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	return &llm.CompleteResult{Text: answer.String()}, nil
+	return &llm.CompleteResult{Text: answer}, nil
 }
 
 // ListModels lists the models Antigravity offers.
 func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []string) ([]connection.Option, error) {
-	programModels, err := c.getProgramModels(ctx)
+	families, err := c.getFamilies(ctx)
 	if err != nil {
 		return nil, err
 	}
-	models := make([]connection.Option, 0, len(programModels))
-	for _, one := range programModels {
+	models := make([]connection.Option, 0, len(families))
+	for _, one := range families {
 		title := one.Title
 		if title == "" {
 			title = one.Name
@@ -110,16 +107,16 @@ func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []stri
 // ListReasoningLevels lists the levels of reasoning the model of the call takes, none for a model that
 // offers no choice.
 func (c *Completion) ListReasoningLevels(ctx context.Context, call connection.Call) ([]connection.Option, error) {
-	programModels, err := c.getProgramModels(ctx)
+	families, err := c.getFamilies(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var levels []connection.Option
-	for _, one := range programModels {
+	for _, one := range families {
 		if one.Name != call.Options[llm.OptionModel] {
 			continue
 		}
-		for _, level := range one.ReasoningLevels {
+		for _, level := range one.Levels {
 			levels = append(levels, connection.Option{Value: level.Name, Title: level.Title})
 		}
 	}
@@ -133,59 +130,49 @@ func (c *Completion) getRequestLimit() time.Duration {
 	return defaultRequestLimit
 }
 
-func (c *Completion) isInstalled() bool {
-	return c.deps.Programs.GetState(c.deps.Settings.ExecutablePath()).Unreachable == ""
-}
-
-func (c *Completion) getProgramModels(ctx context.Context) ([]*reasoning.Model, error) {
-	if !c.isInstalled() {
+func (c *Completion) getFamilies(ctx context.Context) ([]reasoning.Family, error) {
+	program := c.deps.Answerer.FindProgram()
+	if program == "" {
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
-	var models []*reasoning.Model
-	for _, one := range c.deps.Programs.GetPrograms(ctx, c.deps.Settings.ExecutablePath(), nil) {
-		models = append(models, one.Models...)
-	}
-	return models, nil
+	return c.deps.Models.List(ctx, program), nil
 }
 
-func newTask(call connection.Call, request *llm.CompleteRequest, executablePath string) (*agentrun.Request, error) {
+// writeRequest returns the prompt of a request: the system messages, then the turns.
+func writeRequest(messages []*llm.Message) (string, error) {
 	var system []string
 	var turns []*llm.Message
-	for _, message := range request.Messages {
-		switch message.Role {
+	for _, message := range messages {
+		switch message.GetRole() {
 		case roleSystem:
-			system = append(system, message.Text)
+			system = append(system, message.GetText())
 		case "", roleUser, roleAssistant:
 			turns = append(turns, message)
 		default:
-			return nil, fmt.Errorf("unknown role %q", message.Role)
+			return "", fmt.Errorf("unknown role %q", message.GetRole())
 		}
 	}
 	if len(turns) == 0 {
-		return nil, errNoQuestion
+		return "", errNoQuestion
 	}
-	var command []string
-	if executablePath != "" {
-		command = []string{executablePath}
+	prompt := writePrompt(turns)
+	if instructions := strings.Join(system, "\n\n"); strings.TrimSpace(instructions) != "" {
+		return instructions + "\n\n" + prompt, nil
 	}
-	return &agentrun.Request{
-		Prompt: writePrompt(turns), Focus: "", Conversation: "", Context: nil, Agent: "", Model: call.Options[llm.OptionModel],
-		Instructions: strings.Join(system, "\n\n"), Tools: nil, MaxSteps: 0, ToolDeclarations: nil, Root: "",
-		Command: command, ToolsURL: "", ToolsToken: "", Reasoning: call.Options[llm.OptionReasoning],
-	}, nil
+	return prompt, nil
 }
 
 func writePrompt(turns []*llm.Message) string {
 	if len(turns) == 1 {
-		return turns[0].Text
+		return turns[0].GetText()
 	}
 	parts := make([]string, 0, len(turns))
 	for _, turn := range turns {
 		role := "User"
-		if turn.Role == roleAssistant {
+		if turn.GetRole() == roleAssistant {
 			role = "Assistant"
 		}
-		parts = append(parts, role+":\n"+turn.Text)
+		parts = append(parts, role+":\n"+turn.GetText())
 	}
 	return strings.Join(parts, "\n\n")
 }

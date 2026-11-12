@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/domain/reasoning"
 )
 
 // DefaultName is the model name that selects the program's own default model.

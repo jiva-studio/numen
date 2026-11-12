@@ -1,86 +1,59 @@
 package antigravity
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/task"
 )
 
-func resolveCommand(command []string, customPath ...string) (string, []string) {
-	if len(command) > 0 {
-		return command[0], command[1:]
+const (
+	flagPrompt       = "-p"
+	flagOutputFormat = "--output-format"
+	streamJSON       = "stream-json"
+)
+
+// makeTaskCommand returns the command of a run that may call the tools served at the address of run,
+// without asking, in a home of its own whose MCP configuration names them. A run with no address is an
+// answer.
+func makeTaskCommand(path string, run task.Run) (task.Command, error) {
+	if run.ToolsURL == "" {
+		return makeAnswerCommand(path, run)
 	}
-	return findProgram(customPath...), nil
+	args := appendRunFlags([]string{flagPrompt, run.Prompt, flagOutputFormat, streamJSON, "--dangerously-skip-permissions"}, run)
+	return makeCommand(path, args, &endpoint{URL: run.ToolsURL, Token: run.ToolsToken})
 }
 
-func makeAntigravityCommand(
-	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
-) (runs.Command, error) {
-	if !agentrun.HasTools(req) {
-		return makeAnswerCommand(runCtx, req, reg, customPath...)
-	}
-	binName, baseArgs := resolveCommand(req.Command, customPath...)
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"-p", req.Prompt,
-		"--output-format", "stream-json",
-		"--dangerously-skip-permissions",
-	)
-	if modelName := req.Model; modelName != "" && modelName != model.DefaultName {
-		args = append(args, "--model", modelName)
-	}
-	if sessID := reg.GetSession(req.Conversation); sessID != "" {
-		args = append(args, "--conversation", sessID)
-	}
+// makeAnswerCommand returns the command of a run that only answers, in an empty folder and a home with
+// no MCP server.
+func makeAnswerCommand(path string, run task.Run) (task.Command, error) {
+	args := appendRunFlags([]string{flagPrompt, run.Prompt, flagOutputFormat, streamJSON}, run)
+	return makeCommand(path, args, nil)
+}
 
-	if req.ToolsURL == "" {
-		return runs.Command{Path: binName, Args: args, Dir: "", Env: nil, Token: "", Release: nil}, nil
-	}
-	tempHome, clean, err := setupAntigravityHome(&endpoint{URL: req.ToolsURL, Token: req.ToolsToken})
+func makeCommand(path string, args []string, tools *endpoint) (task.Command, error) {
+	tempHome, cleanHome, err := setupAntigravityHome(tools)
 	if err != nil {
-		return runs.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
+		return task.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
 	}
-	return runs.Command{
-		Path: binName, Args: args, Dir: "", Env: append(hostcall.GetChildEnvironment(), "HOME="+tempHome), Token: "", Release: clean,
+	dir, cleanDir, err := createTempDir("numen-antigravity-run-*")
+	if err != nil {
+		return task.Command{}, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
+	}
+	return task.Command{
+		Path: path, Args: args, Dir: dir, Env: append(hostcall.GetChildEnvironment(), "HOME="+tempHome),
+		Release: func() error { return errors.Join(cleanHome(), cleanDir()) },
 	}, nil
 }
 
-func makeAnswerCommand(
-	_ context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
-) (runs.Command, error) {
-	tempHome, cleanHome, err := setupAntigravityHome(nil)
-	if err != nil {
-		return runs.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
+func appendRunFlags(args []string, run task.Run) []string {
+	if run.Model != "" && run.Model != model.DefaultName {
+		args = append(args, "--model", run.Model)
 	}
-	dir, cleanDir, err := agentrun.CreateTempDir("numen-antigravity-run-*")
-	if err != nil {
-		return runs.Command{}, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
+	if run.Session != "" {
+		args = append(args, "--conversation", run.Session)
 	}
-	binName, baseArgs := resolveCommand(req.Command, customPath...)
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"-p", agentrun.WritePrompt(req.Instructions, req.Prompt),
-		"--output-format", "stream-json",
-	)
-	if modelName := req.Model; modelName != "" && modelName != model.DefaultName {
-		args = append(args, "--model", modelName)
-	}
-	if sessID := reg.GetSession(req.Conversation); sessID != "" {
-		args = append(args, "--conversation", sessID)
-	}
-	return runs.Command{
-		Path:  binName,
-		Args:  args,
-		Dir:   dir,
-		Env:   append(hostcall.GetChildEnvironment(), "HOME="+tempHome),
-		Token: "",
-		Release: func() error {
-			return errors.Join(cleanHome(), cleanDir())
-		},
-	}, nil
+	return args
 }

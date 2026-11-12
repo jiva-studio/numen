@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/task"
 )
 
 func withoutAgentsAnywhere(t *testing.T) {
@@ -21,36 +21,6 @@ func withoutAgentsAnywhere(t *testing.T) {
 type plainRun struct{}
 
 func (plainRun) Supervise(*exec.Cmd) {}
-
-func TestResolveCommandWithEmptyCommand(t *testing.T) {
-	withoutAgentsAnywhere(t)
-
-	bin, args := resolveCommand(nil)
-	if want := findProgram(); bin != want || len(args) != 0 {
-		t.Errorf("expected %s and empty args, got %s, %v", want, bin, args)
-	}
-}
-
-func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
-	var reg agentrun.Registry
-	reg.SetSession("c-1", "s-1")
-
-	cmd, err := makeAntigravityCommand(t.Context(), &agentrun.Request{Conversation: "c-1", Prompt: "q"}, &reg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cmd.Release != nil {
-		defer func() {
-			if err := cmd.Release(); err != nil {
-				t.Error(err)
-			}
-		}()
-	}
-
-	if !slices.Contains(cmd.Args, "--conversation") || !slices.Contains(cmd.Args, "s-1") {
-		t.Errorf("the arguments are %v", cmd.Args)
-	}
-}
 
 func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	if err := noRelease(); err != nil {
@@ -148,51 +118,56 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 	}
 }
 
-func TestTheCommandsAreMadeFromTheRequest(t *testing.T) {
+// A task with tools approves the permission requests of the program and gives it a home whose MCP
+// configuration names the tools; the default model is not named. An answer approves nothing, and names
+// the model and the conversation it continues. Each command releases the folders made for it.
+func TestTheCommandsAreMadeFromTheRun(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
-	var reg agentrun.Registry
-	reg.SetSession("conv-a", "sess-a")
-	shPath, err := exec.LookPath("sh")
-	if err == nil {
-		cmdWithTools, err := makeAntigravityCommand(t.Context(), &agentrun.Request{
-			Prompt: "p", Tools: []string{"t"}, Model: model.DefaultName, Conversation: "conv-a",
-			ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tk",
-		}, &reg, shPath)
-		if err != nil || cmdWithTools.Release == nil || cmdWithTools.Path != shPath {
-			t.Fatalf("makeAntigravityCommand with ToolsURL: Path=%q, err=%v", cmdWithTools.Path, err)
+	withTools, err := makeTaskCommand("/opt/agy", task.Run{
+		Prompt: "p", Model: model.DefaultName, Session: "sess-a", ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tk",
+	})
+	if err != nil || withTools.Release == nil || withTools.Path != "/opt/agy" {
+		t.Fatalf("makeTaskCommand = %+v, %v", withTools, err)
+	}
+	want := []string{"-p", "p", "--output-format", "stream-json", "--dangerously-skip-permissions", "--conversation", "sess-a"}
+	if !slices.Equal(withTools.Args, want) {
+		t.Errorf("the arguments are %v, want %v", withTools.Args, want)
+	}
+	home := ""
+	for _, one := range withTools.Env {
+		if value, isHome := strings.CutPrefix(one, "HOME="); isHome {
+			home = value
 		}
-		if slices.Contains(cmdWithTools.Args, "--model") || !slices.Contains(cmdWithTools.Args, "--conversation") {
-			t.Errorf("makeAntigravityCommand Args = %v", cmdWithTools.Args)
-		}
-		if err := cmdWithTools.Release(); err != nil {
-			t.Fatal(err)
-		}
+	}
+	written, err := os.ReadFile(filepath.Join(home, ".gemini", "config", "mcp_config.json"))
+	if err != nil || !strings.Contains(string(written), "http://127.0.0.1:1/mcp") || !strings.Contains(string(written), "Bearer tk") {
+		t.Errorf("the home names the servers %s, %v", written, err)
+	}
+	if err := withTools.Release(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(home); !os.IsNotExist(err) {
+		t.Errorf("the home is still there: %v", err)
+	}
 
-		ansCmd, err := makeAnswerCommand(t.Context(), &agentrun.Request{
-			Prompt: "p", Model: "m-ans", Conversation: "conv-a",
-		}, &reg, shPath)
-		if err != nil || ansCmd.Release == nil || ansCmd.Path != shPath {
-			t.Fatalf("makeAnswerCommand: Path=%q, err=%v", ansCmd.Path, err)
-		}
-		if !slices.Contains(ansCmd.Args, "--model") || !slices.Contains(ansCmd.Args, "m-ans") || !slices.Contains(ansCmd.Args, "--conversation") {
-			t.Errorf("makeAnswerCommand Args = %v", ansCmd.Args)
-		}
-		if err := ansCmd.Release(); err != nil {
-			t.Fatal(err)
-		}
+	answer, err := makeAnswerCommand("/opt/agy", task.Run{Prompt: "p", Model: "m-ans", Session: "sess-a"})
+	if err != nil || answer.Release == nil {
+		t.Fatalf("makeAnswerCommand = %+v, %v", answer, err)
+	}
+	if want := []string{"-p", "p", "--output-format", "stream-json", "--model", "m-ans", "--conversation", "sess-a"}; !slices.Equal(answer.Args, want) {
+		t.Errorf("the arguments are %v, want %v", answer.Args, want)
+	}
+	if err := answer.Release(); err != nil {
+		t.Fatal(err)
+	}
 
-		ansDefaultCmd, err := makeAnswerCommand(t.Context(), &agentrun.Request{
-			Prompt: "p", Model: model.DefaultName,
-		}, &reg, shPath)
-		if err != nil || ansDefaultCmd.Release == nil || slices.Contains(ansDefaultCmd.Args, "--model") {
-			t.Errorf("makeAnswerCommand with model.DefaultName Args = %v, err = %v", ansDefaultCmd.Args, err)
-		}
-		if ansDefaultCmd.Release != nil {
-			if err := ansDefaultCmd.Release(); err != nil {
-				t.Error(err)
-			}
-		}
+	noTools, err := makeTaskCommand("/opt/agy", task.Run{Prompt: "p"})
+	if err != nil || slices.Contains(noTools.Args, "--dangerously-skip-permissions") {
+		t.Errorf("a task with no tools = %v, %v", noTools.Args, err)
+	}
+	if err := noTools.Release(); err != nil {
+		t.Fatal(err)
 	}
 }
 

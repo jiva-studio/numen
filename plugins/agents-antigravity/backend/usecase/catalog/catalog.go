@@ -1,22 +1,19 @@
-// Package catalog lists the programs of the Antigravity plugin with the models the program offers,
-// and chooses the model that a request names.
+// Package catalog keeps the models the Antigravity program lists, folded by reasoning level, and
+// chooses the listed model that a model and a level of a row name.
 package catalog
 
 import (
 	"context"
-	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/domain/reasoning"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
 )
 
 const (
 	modelListLimit = 15 * time.Second
 	failureBackoff = 30 * time.Second
-	programName    = "antigravity"
 )
 
 // Lister lists the models of the program that command starts.
@@ -24,23 +21,16 @@ type Lister interface {
 	List(ctx context.Context, command []string) ([]model.Model, error)
 }
 
-// Installation reports if the program is installed, at path when given.
-type Installation interface {
-	IsInstalled(path string) bool
-}
-
-// Catalog keeps the last list of models the program gave.
+// Catalog keeps the last list of models each program gave.
 type Catalog struct {
-	lister       Lister
-	installation Installation
-	models       *cache.Cache[[]model.Model]
+	lister Lister
+	models *cache.Cache[[]model.Model]
 }
 
 // New returns a catalog. With isAsync, a list that is not cached is loaded in the background.
-func New(lister Lister, installation Installation, isAsync bool) *Catalog {
+func New(lister Lister, isAsync bool) *Catalog {
 	return &Catalog{
-		lister:       lister,
-		installation: installation,
+		lister: lister,
 		models: cache.New[[]model.Model](
 			"models",
 			cache.WithTimeout(modelListLimit),
@@ -50,58 +40,20 @@ func New(lister Lister, installation Installation, isAsync bool) *Catalog {
 	}
 }
 
-// GetState reports if the program is reachable, with the reason when it is not.
-func (c *Catalog) GetState(executablePath string) *agentrun.State {
-	if !c.installation.IsInstalled(executablePath) {
-		return &agentrun.State{Unreachable: "Antigravity was not found on this machine"}
-	}
-	return &agentrun.State{Unreachable: ""}
-}
-
-// GetPrograms lists Antigravity, whether it is installed, and the models it lists.
-func (c *Catalog) GetPrograms(
-	ctx context.Context, executablePath string, commands []agentrun.ProgramCommand,
-) []*agentrun.Program {
-	command := getProgramCommand(commands)
-	if len(command) == 0 && executablePath != "" {
-		command = []string{executablePath}
-	}
-	antigravity := &agentrun.Program{
-		Name: programName, Title: "Antigravity", IsInstalled: c.installation.IsInstalled(executablePath) || len(command) > 0,
-		IsDefault: false, Models: nil, LimitsTools: false,
-	}
-	if antigravity.IsInstalled {
-		for _, one := range c.getFamilies(ctx, command) {
-			antigravity.Models = append(antigravity.Models, one.GetModel())
-		}
-	}
-	return []*agentrun.Program{antigravity}
-}
-
-// ResolveModel replaces the model of req with the listed model that its name and reasoning level choose.
-func (c *Catalog) ResolveModel(ctx context.Context, req *agentrun.Request) {
-	if req.Model == "" || req.Model == model.DefaultName {
-		return
-	}
-	req.Model = reasoning.ResolveModel(c.getFamilies(ctx, req.Command), req.Model, req.Reasoning)
-}
-
-func (c *Catalog) getFamilies(ctx context.Context, command []string) []reasoning.Family {
-	list := func(ctx context.Context) ([]model.Model, error) { return c.lister.List(ctx, command) }
-	items, _, err := c.models.Get(ctx, strings.Join(command, " "), list)
-	// gomutants:disable-next-line BRANCH_IF reason="A failed load returns the cached items folded identically to a succeeded load."
-	if err != nil {
-		// A failed load leaves the last list of the cache, or none, and the program is offered with it.
-		return model.Fold(items)
-	}
+// List returns the models the program lists, each family of levels as one model. A failed load leaves
+// the last list of the cache, or none.
+func (c *Catalog) List(ctx context.Context, program string) []reasoning.Family {
+	list := func(ctx context.Context) ([]model.Model, error) { return c.lister.List(ctx, []string{program}) }
+	// A failed load returns the last list of the cache, or none, and the program is offered with it.
+	items, _, _ := c.models.Get(ctx, program, list)
 	return model.Fold(items)
 }
 
-func getProgramCommand(commands []agentrun.ProgramCommand) []string {
-	for _, one := range commands {
-		if one.Program == programName {
-			return one.Command
-		}
+// ResolveModel returns the listed model that the model name and the reasoning level choose. The default
+// model and a name that is no family stay as they are.
+func (c *Catalog) ResolveModel(ctx context.Context, program, modelName, level string) string {
+	if modelName == "" || modelName == model.DefaultName {
+		return modelName
 	}
-	return nil
+	return reasoning.ResolveModel(c.List(ctx, program), modelName, level)
 }

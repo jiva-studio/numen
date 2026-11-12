@@ -3,13 +3,14 @@ package antigravity
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 )
 
 func TestDiscoveryWithMockBins(t *testing.T) {
-	agenttest.NeedsShell(t)
+	if runtime.GOOS == "windows" {
+		t.Skip("the fixtures are shell scripts")
+	}
 	binDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(binDir, "agy"), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
 		t.Fatal(err)
