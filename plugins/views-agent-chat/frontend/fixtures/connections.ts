@@ -43,8 +43,11 @@ async function* playScript(
   return script.end ?? { ok: true, value: acp.StopReason.END_TURN }
 }
 
-export function createAgentConnections(answer: TaskScript | ((request: acp.TaskRequest) => TaskScript)) {
-  const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] = []
+export function createAgentConnections(
+  answer: TaskScript | ((request: acp.TaskRequest) => TaskScript),
+) {
+  const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] =
+    []
   const host = acptest.createTaskHost((request, options) => {
     calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
     return playScript(typeof answer === 'function' ? answer(request) : answer, options?.signal)
