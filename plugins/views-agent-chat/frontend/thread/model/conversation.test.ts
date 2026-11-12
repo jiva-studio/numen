@@ -299,11 +299,15 @@ describe('the line about work', () => {
   })
 
   it('reads the name of a tool without a title as words', async () => {
-    const { conversation } = open({ frames: [callTool('c1', 'note_search'), endTool('c1')] })
-
-    await conversation.ask('what is here?')
+    const { hold, release } = createHold()
+    const { conversation } = open({ frames: [callTool('c1', 'note_search')], hold })
+    const asked = conversation.ask('what is here?')
+    await flushPromises()
 
     expect(conversation.turns.value.map((turn) => turn.text)).toContain('note search')
+
+    release()
+    await asked
   })
 
   it('settles when its call has ended, completed or failed', async () => {

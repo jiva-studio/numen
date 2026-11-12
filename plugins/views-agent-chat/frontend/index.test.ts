@@ -117,8 +117,13 @@ describe('view-agent-chat plugin', () => {
 
     state.openSettings()
 
-    expect(ctx.work.backgroundTasks.getActions()).toStrictEqual([
-      { action: 'openSettings', id: PLUGIN_ID },
+    expect(ctx.ui.commands.getRuns()).toStrictEqual([
+      {
+        command: 'app:settings.open',
+        target: undefined,
+        itemId: undefined,
+        values: { plugin: PLUGIN_ID },
+      },
     ])
   })
 
