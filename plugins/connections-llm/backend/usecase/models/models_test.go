@@ -118,7 +118,7 @@ func TestAListOfModelsOutlivesARestartAndIsAnsweredWhileTheServiceFails(t *testi
 	}
 }
 
-func TestListModelsCallsTheServiceOncePerKeptList(t *testing.T) {
+func TestListModelsCallsTheServiceOncePerCachedList(t *testing.T) {
 	g := &gateway{}
 	subject := newModels(t, g)
 	for range 3 {
@@ -148,7 +148,7 @@ func TestAnotherKeyOrAnotherOperationIsListedApart(t *testing.T) {
 	}
 }
 
-func TestTheStoredListHoldsTheKeyDigestAndNotTheKey(t *testing.T) {
+func TestTheCacheFileContainsTheKeyDigestAndNotTheKey(t *testing.T) {
 	dir := t.TempDir()
 	if _, err := newModelsIn(t, &gateway{}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
 		t.Fatal(err)
