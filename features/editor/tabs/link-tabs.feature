@@ -1,6 +1,10 @@
 Feature: Link tabs
   A note opened in a tab opens in the tab that is linked to it.
 
+  As a person who works with several tabs
+  I want to link a tab with another tab
+  So that the tab I look at follows the note I open
+
   Scenario: A note is opened in the tab it is linked to
     Given the empty vault "Test"
     And the vault has the following:

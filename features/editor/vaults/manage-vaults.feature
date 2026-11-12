@@ -1,6 +1,10 @@
 Feature: Manage vaults
   A person adds, renames and removes the vaults of the list.
 
+  As a person who keeps notes in more than one vault
+  I want to add, rename and remove vaults in the list of vaults
+  So that the list holds the vaults I use
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

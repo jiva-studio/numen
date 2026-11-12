@@ -1,6 +1,10 @@
 Feature: Answer card
   A person reviews the cards of a deck and answers them.
 
+  As a person who learns with cards
+  I want to review the cards of a vault or of one deck and answer each card
+  So that I see the cards that are due and learn them
+
   Background:
     Given the empty vault "Test"
     And the vault has the following card models:

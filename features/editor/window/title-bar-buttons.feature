@@ -1,6 +1,10 @@
 Feature: Title bar buttons
   A person runs the commands of the plugins with the buttons of the title bar.
 
+  As a person who uses the editor
+  I want to run a command with a button of the title bar
+  So that I reach the commands I use often with one action
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts
