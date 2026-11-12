@@ -196,7 +196,9 @@ describe('Focus size', () => {
   it('leaves every neighbor box as it was', () => {
     const sort = (boxes: ReturnType<typeof getBoxes>) =>
       [...boxes].sort(([a], [b]) => a.localeCompare(b))
-    expect(sort(getBoxes(getRelatedNodes(large)))).toStrictEqual(sort(getBoxes(getRelatedNodes(small))))
+    expect(sort(getBoxes(getRelatedNodes(large)))).toStrictEqual(
+      sort(getBoxes(getRelatedNodes(small))),
+    )
   })
 
   it('keeps a large focus inside a small window', () => {
