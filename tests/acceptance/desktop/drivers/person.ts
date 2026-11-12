@@ -93,7 +93,7 @@ export class Person {
 
   /** Leaves the vault as the scenario found it; a scenario with a world of its own removes the world and its server. */
   async removeNotes(): Promise<void> {
-    await this.services.stopAll()
+    this.services.stopAll()
     if (this.scenario.hasWorld) return this.scenario.removeWorld()
     await this.plugin.enableDisabled()
     await this.scenario.removeVersions()

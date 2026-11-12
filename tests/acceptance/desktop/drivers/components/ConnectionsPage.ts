@@ -24,7 +24,7 @@ export class ConnectionsPage {
 
   /** Chooses a type in the open dialog; the list of the types is a menu. */
   async chooseType(type: string): Promise<void> {
-    await this.getDialog().locator('[data-slot="select"]').first().click()
+    await this.getDialog().locator('.connection-dialog__field button').first().click()
     await this.page.getByRole('menuitemradio', { name: new RegExp(`^${escapeRegExp(type)}`) }).click()
   }
 

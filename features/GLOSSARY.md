@@ -439,7 +439,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Texts: a failed task reads "<connection name>: rate limited" when the service asks to wait.
 
 ### service
-- Is: In a scenario, a program of the test that stands in for a language model server. It has a name and answers with a status. It is not a word of the interface.
+- Is: In a scenario, a program of the test that answers in place of a language model server. It has a name and answers with a status. It is not a word of the interface.
 
 ### plugin
 - Is: An add-on with a manifest. It gives commands, tab kinds, settings, status views, themes, note types or models.

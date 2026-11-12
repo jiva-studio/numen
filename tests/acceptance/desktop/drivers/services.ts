@@ -1,7 +1,8 @@
 /**
  * The services a scenario names: programs of the test that stand in for a language model server on
  * this computer, each with a name, an address and the way it answers. The program is the fake
- * OpenAI server of the plugin "Language model services".
+ * OpenAI server of the plugin "Language model services": the CI jobs unpack it, and a local run
+ * builds it on the first use.
  */
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
 import fs from 'node:fs'
@@ -25,7 +26,6 @@ interface RunningService {
   readonly address: string
 }
 
-/** The program is built once for the machine: the CI jobs unpack it, and a local run builds it on the first use. */
 const requireBinary = (): string => {
   if (fs.existsSync(BINARY)) return BINARY
   const partial = `${BINARY}.${process.pid}`
@@ -46,7 +46,7 @@ const start = (flags: readonly string[]): Promise<RunningService> =>
     if (child.pid !== undefined) holdForRemoval('pid', child.pid)
     child.once('error', reject)
     child.once('exit', () => reject(new Error('the service ended before it listened')))
-    child.stdout?.once('data', (chunk: Buffer) => {
+    child.stdout.once('data', (chunk: Buffer) => {
       child.removeAllListeners('exit')
       resolve({ child, address: chunk.toString().trim() })
     })
@@ -72,7 +72,7 @@ export class ServiceDriver {
     return service.address
   }
 
-  async stopAll(): Promise<void> {
+  stopAll(): void {
     for (const name of [...this.running.keys()]) this.stop(name)
   }
 

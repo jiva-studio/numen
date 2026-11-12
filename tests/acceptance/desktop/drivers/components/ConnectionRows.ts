@@ -31,10 +31,6 @@ export class ConnectionRows {
     await search.press('Enter')
   }
 
-  async remove(panel: Locator, position: number): Promise<void> {
-    await panel.getByRole('button', { name: `Remove row ${position}` }).click()
-  }
-
   getQuestion(): Locator {
     return this.page.getByRole('alertdialog')
   }

@@ -32,10 +32,11 @@ export class SettingsPage {
     return panel
   }
 
+  /** The row of a setting: a line with its value, or the block of rows of connections, which has its own name. */
   getRow(panel: Locator, name: string): Locator {
-    return panel
-      .locator('.settings__row')
-      .filter({ has: this.page.locator('.settings__name', { hasText: new RegExp(`^${escapeRegExp(name)}$`) }) })
+    const named = (row: string, title: string): Locator =>
+      panel.locator(row).filter({ has: this.page.locator(title, { hasText: new RegExp(`^${escapeRegExp(name)}$`) }) })
+    return named('.settings__row', '.settings__name').or(named('.settings__rows', '.settings__rows-name'))
   }
 
   async requireRow(panel: Locator, name: string): Promise<Locator> {

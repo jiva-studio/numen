@@ -10,16 +10,19 @@ const KEY_STORED = 'A key is stored'
 const KEY_LABEL = 'API key'
 
 export class ConnectionsDriver {
-  private readonly page: ConnectionsPage
-  private readonly rows: ConnectionRows
-
   constructor(
-    scenario: Scenario,
+    private readonly scenario: Scenario,
     private readonly settings: SettingsDriver,
     private readonly services: ServiceDriver,
-  ) {
-    this.page = new ConnectionsPage(scenario.page)
-    this.rows = new ConnectionRows(scenario.page)
+  ) {}
+
+  /** The window of a scenario with a world is opened after the driver is made, so the page is read at each use. */
+  private get page(): ConnectionsPage {
+    return new ConnectionsPage(this.scenario.page)
+  }
+
+  private get rows(): ConnectionRows {
+    return new ConnectionRows(this.scenario.page)
   }
 
   async add(name: string, type: string, service: string): Promise<void> {
@@ -79,10 +82,6 @@ export class ConnectionsDriver {
     const row = await this.rows.add(panel)
     await this.rows.chooseConnection(row, connection)
     await this.rows.chooseModel(row, model)
-  }
-
-  async removeRow(position: number, plugin: string): Promise<void> {
-    await this.rows.remove(await this.showRows(plugin), position)
   }
 
   async expectRowCount(plugin: string, count: number): Promise<void> {

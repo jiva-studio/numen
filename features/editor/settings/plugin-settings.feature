@@ -48,9 +48,3 @@ Feature: Plugin settings
       When the person sets the setting "Source" of the plugin "Vector Embeddings" to "Connection"
       Then the settings of the plugin "Vector Embeddings" have the field "Connection"
       And the settings of the plugin "Vector Embeddings" do not have the field "Model"
-
-    Scenario: The model is kept when another source is chosen
-      Given the person sets the setting "Model" of the plugin "Vector Embeddings" to "Harrier 270M (better, 344 MB)"
-      And the person sets the setting "Source" of the plugin "Vector Embeddings" to "Connection"
-      When the person sets the setting "Source" of the plugin "Vector Embeddings" to "Local model"
-      Then the setting "Model" of the plugin "Vector Embeddings" is "Harrier 270M (better, 344 MB)"

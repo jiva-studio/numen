@@ -46,10 +46,6 @@ When(
   },
 )
 
-When('the person removes the row {int} of the plugin {string}', async ({ person }, position: number, plugin: string) => {
-  await person.connections.removeRow(position, plugin)
-})
-
 Then('the plugin {string} has {int} row(s)', async ({ person }, plugin: string, count: number) => {
   await person.connections.expectRowCount(plugin, count)
 })
