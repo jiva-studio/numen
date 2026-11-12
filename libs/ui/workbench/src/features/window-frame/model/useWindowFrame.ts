@@ -13,28 +13,8 @@ import {
   WINDOW_RADIUS_VARIABLE,
   type WindowPlatform,
 } from '../lib/corners'
+import type { FrameRuntime, FrameRuntimeLoader } from '../lib/runtime'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
-
-/** The part of the runtime of the desktop shell the frame uses, under the names the shell gives it. */
-export interface FrameRuntime {
-  readonly Window?: {
-    readonly Focus?: () => Promise<void>
-    readonly Minimise?: () => Promise<void>
-    readonly ToggleMaximise?: () => Promise<void>
-    readonly Close?: () => Promise<void>
-    readonly IsMaximised?: () => Promise<boolean>
-    readonly IsFullscreen?: () => Promise<boolean>
-  }
-  readonly System?: {
-    readonly IsMac?: () => boolean
-    readonly IsWindows?: () => boolean
-    readonly IsLinux?: () => boolean
-    readonly Environment?: () => Promise<{ readonly OSInfo?: { readonly Version?: string } }>
-  }
-}
-
-/** Loads the runtime module; resolves to undefined where the page is not served by the desktop shell. */
-export type FrameRuntimeLoader = () => Promise<FrameRuntime | undefined>
 
 /** The room the system buttons take in the top corners of the window, in pixels. */
 export interface FrameEdge {

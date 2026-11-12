@@ -4,7 +4,6 @@
  * target draw on the vault chosen, or why there is none, and the command
  * palette that sets the theme and the mode.
  */
-import type { Component } from 'vue'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { Palette } from '@numen/workbench'
@@ -35,12 +34,7 @@ const { front, tab, openTab } = tabs
     class="window"
     :class="{ 'window--below-bar': titleBarView }"
   >
-    <component
-      :is="tab.view.registration.component as Component"
-      v-if="tab"
-      :key="tab.id"
-      :state="tab.state"
-    />
+    <component :is="tab.kind.pane" v-if="tab" :key="tab.id" :state="tab.state" />
 
     <VaultChooser
       v-else-if="front"

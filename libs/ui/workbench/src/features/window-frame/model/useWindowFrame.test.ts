@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
-import { getWindowEdge, useWindowFrame, type FrameRuntime } from './useWindowFrame'
+import type { FrameRuntime } from '../lib/runtime'
+import { getWindowEdge, useWindowFrame } from './useWindowFrame'
 
 function createRuntime(platform: 'windows' | 'mac' | 'linux', maximized = false) {
   const state = { maximized }

@@ -6,6 +6,8 @@ export * from './models'
 export * from './protocol'
 export { transport } from './transport'
 export * from './settings'
+export * from './themes'
+export * from './tasks'
 export {
   formatErrorCodeMessage,
   formatErrorMessage,

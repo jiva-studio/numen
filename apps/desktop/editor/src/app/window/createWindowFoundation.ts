@@ -2,10 +2,9 @@
  * What every part of the window reads: the log of messages, the store of the settings, the frame
  * and the registry of the commands, made before the parts that read the vault.
  */
-import { useWindowFrame } from '@numen/workbench'
+import { loadFrameRuntime, useWindowFrame } from '@numen/workbench'
 import { createConnectionStore } from '@/entities/connection'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
-import { loadWailsRuntime } from '@/shared/api/wailsRuntime'
 import { createWindowPluginStatus } from '@/features/plugin-host'
 import { createEmitter } from '@/shared/lib/emitter'
 import { createCommandRegistry } from '@/shared/model/command'
@@ -19,7 +18,7 @@ export function createWindowFoundation() {
     rest,
     connections: createConnectionStore(log.getWriter('connections')),
     writeMessage: log.getWriter('command'),
-    frame: useWindowFrame(loadWailsRuntime),
+    frame: useWindowFrame(loadFrameRuntime),
     status: createWindowPluginStatus(rest),
     registry: createCommandRegistry(),
     /** The plugin whose settings page a part asks for, or none for the page of the settings. */

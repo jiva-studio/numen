@@ -1,6 +1,7 @@
 import type { Manifest } from '@numen/core-client'
 import type { NoticeHost, SlotHost } from '@numen/plugin-sdk'
 import { formatCommandId } from '../../commandId'
+import type { DeclaredSlotEntry } from '../../slots'
 import type { ContextVaultHost, ContextWindowHost, PluginHostDeps } from '../types'
 
 /** The notices of a window that shows none: what a plugin reports is dropped. */
@@ -31,18 +32,24 @@ export function createVaultServiceBridge(deps: PluginHostDeps): ContextVaultHost
   }
 }
 
+/** What the window services read of the host: its slots, the manifests registered and the slot entries. */
+interface WindowServiceParts {
+  readonly slots: SlotHost
+  readonly manifests: ReadonlyMap<string, Manifest>
+  readonly readSlotEntries: () => readonly DeclaredSlotEntry[] | undefined
+}
+
 /** The services of the window itself as a plugin context reads them, each read at the moment a plugin asks. */
 export function createWindowServiceBridge(
   deps: PluginHostDeps,
-  slots: SlotHost,
-  manifests?: ReadonlyMap<string, Manifest>,
+  { slots, manifests, readSlotEntries }: WindowServiceParts,
 ): ContextWindowHost {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
     getAgent: () => deps.getAgent?.(),
     getCommands: () => deps.getCommands?.(),
     isCommandListed: (command) =>
-      (deps.getSlotEntries?.() ?? []).some(
+      (readSlotEntries() ?? []).some(
         (one) =>
           one.command !== undefined &&
           (one.command.includes(':') ? one.command : formatCommandId(one.pluginId, one.command)) ===
@@ -52,7 +59,7 @@ export function createWindowServiceBridge(
       (deps.getCommandDeclarations?.() ?? []).find(
         (one) => formatCommandId(one.pluginId, one.id) === command,
       )?.permission ||
-      (manifests && findManifestCommandPermission(command, manifests)) ||
+      findManifestCommandPermission(command, manifests) ||
       undefined,
     getWindow: () => deps.getWindow?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId) ?? DISCARDING_NOTICES,

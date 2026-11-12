@@ -16,11 +16,12 @@ const createTab = (): WindowTab & { pressed: string[] } => {
     state: { pressed },
     scope: effectScope(),
     pressed,
-    view: {
+    kind: {
+      kind: 'review',
       pluginId: 'md.numen.cards',
-      registration: {
-        kind: 'review',
-        component: {},
+      pane: {},
+      open: () => ({ pressed }),
+      events: {
         onKeyPress: (_, event) => {
           pressed.push(event.key)
           return event.key === 'Escape'
@@ -80,9 +81,8 @@ describe('a key pressed while a tab is open', () => {
 
   it('is left to the page by a kind that reads no keys', () => {
     const tab = createTab()
-    const { onKeyPress: _, ...registration } = tab.view.registration
     const onKeyDown = createWindowKeys({
-      getTab: () => ({ ...tab, view: { ...tab.view, registration } }),
+      getTab: () => ({ ...tab, kind: { ...tab.kind, events: {} } }),
       getVaults: () => VAULTS,
       openVault: vi.fn(),
     })

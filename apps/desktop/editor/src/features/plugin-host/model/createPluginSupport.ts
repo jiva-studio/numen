@@ -1,11 +1,10 @@
-import { openExternalUrl } from '@/shared/api/wailsRuntime'
 import {
   createAppInfo,
   createPluginHost,
   createPluginLoader,
   type PluginStatus,
 } from '@numen/plugin-loader'
-import type { WindowPlatform } from '@numen/workbench'
+import { openExternalUrl, type WindowPlatform } from '@numen/workbench'
 import { getPluginModels, getPluginTexts } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
