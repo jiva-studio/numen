@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { VNode } from 'vue'
 /**
- * One settings row: the title and an info tooltip on the left, the control on
- * the right. When the nearest size container (the settings column) is narrower
- * than 34rem, the control moves under the title at full width.
+ * One settings row: the title with its description under it on the left, the control on the
+ * right. A value changed from its default shows a Reset action beside the title. When the nearest
+ * size container (the settings column) is narrower than 34rem, the control moves under the title
+ * at full width.
  *
  * The title carries the id the control is labelled by, because switches,
  * segments and composite controls have no element a `<label for>` can target.
@@ -12,7 +13,7 @@ import type { VNode } from 'vue'
  * when it is drawn and whenever it becomes focused.
  */
 import { computed, onMounted, ref, watch } from 'vue'
-import SettingInfo from './SettingInfo.vue'
+import { RotateCcw } from '@lucide/vue'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -22,12 +23,18 @@ const props = defineProps<{
   detail: string
   isMarked?: boolean
   isFocused?: boolean
+  isChanged?: boolean
+  isDependent?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'reset'): void
 }>()
 
 defineSlots<{
   /** The control, given the id of the title that labels it. */
   default(props: { labelledBy: string }): VNode[]
-  /** An action placed after the title and its info tooltip. */
+  /** An action placed after the title. */
   action?(): VNode[]
 }>()
 
@@ -52,25 +59,45 @@ watch(
 function scrollIntoView(): void {
   row.value?.scrollIntoView?.({ block: 'center' })
 }
+
+/* -------------------------------- Handlers -------------------------------- */
+function onReset(): void {
+  emit('reset')
+}
 </script>
 
 <template>
   <div
     ref="row"
     class="settings__row"
-    :class="{ 'settings__row--marked': props.isMarked }"
+    :class="{
+      'settings__row--marked': props.isMarked,
+      'settings__row--dependent': props.isDependent,
+    }"
     :data-marked="props.isMarked ? '' : undefined"
   >
     <div class="settings__label">
       <span class="settings__title">
         <span :id="nameId" class="settings__name">{{ name }}</span>
-        <SettingInfo
-          v-if="trimmedDetail"
-          :at="`${nameId}-more`"
-          :label="words.aboutSetting(name)"
-          :text="trimmedDetail"
-        />
+        <button
+          v-if="props.isChanged"
+          type="button"
+          class="settings__reset"
+          :aria-label="words.resetSettingOf(name)"
+          :title="words.resetSettingOf(name)"
+          @click="onReset"
+        >
+          <RotateCcw :size="14" aria-hidden="true" />
+        </button>
         <slot name="action" />
+      </span>
+      <span
+        v-if="trimmedDetail"
+        :id="`${nameId}-more`"
+        class="settings__detail"
+        :title="trimmedDetail"
+      >
+        {{ trimmedDetail }}
       </span>
     </div>
     <div class="settings__value">
@@ -81,14 +108,14 @@ function scrollIntoView(): void {
 
 <style scoped>
 .settings__row {
-  --aside-width: 24rem;
   --gap: 0.5rem;
-  --pad-block: 0.625rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) fit-content(var(--aside-width));
+  grid-template-columns: minmax(0, 1fr) var(--settings-control, 16.25rem);
   align-items: center;
   gap: var(--gap) var(--numen-panel-gap);
-  padding-block: var(--pad-block);
+  box-sizing: border-box;
+  min-block-size: var(--settings-row-min, 3.25rem);
+  padding-block: var(--settings-row-pad, 0.625rem);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
@@ -111,11 +138,9 @@ function scrollIntoView(): void {
 
 .settings__title {
   --gap: 0.375rem;
-  --min-height: 2rem;
   display: inline-flex;
   align-items: center;
   gap: var(--gap);
-  min-block-size: var(--min-height);
   min-inline-size: 0;
 }
 
@@ -124,6 +149,34 @@ function scrollIntoView(): void {
   overflow-wrap: anywhere;
   color: var(--numen-ink);
   font-weight: 500;
+}
+
+.settings__reset {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  margin-block: -0.25rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--numen-radius-tight);
+  background: none;
+  color: var(--numen-hushed);
+  cursor: pointer;
+}
+
+.settings__reset:hover {
+  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
+  color: var(--numen-ink);
+}
+
+.settings__detail {
+  overflow: hidden;
+  margin-block-start: 0.125rem;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings__value {
@@ -140,9 +193,14 @@ function scrollIntoView(): void {
 }
 
 .settings__value :deep(.settings__choice),
-.settings__value :deep(.settings__text-input) {
-  inline-size: var(--settings-choice);
-  max-inline-size: 100%;
+.settings__value :deep(.settings__text-input),
+.settings__value :deep(.settings__number),
+.settings__value :deep(.settings__enum) {
+  inline-size: 100%;
+}
+
+.settings__value :deep(.settings__enum) {
+  align-items: stretch;
 }
 
 @container (max-width: 34rem) {
@@ -151,7 +209,6 @@ function scrollIntoView(): void {
   }
 
   .settings__value {
-    --settings-choice: 100%;
     justify-content: flex-start;
   }
 

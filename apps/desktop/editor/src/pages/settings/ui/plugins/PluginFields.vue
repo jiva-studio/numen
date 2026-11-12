@@ -9,7 +9,7 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import SettingsViews from './SettingsViews.vue'
 import type { InstallationSettings, PluginFieldsHost } from '../../types'
-import type { PluginInfo } from '@/entities/settings'
+import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import { useEnumFields, usePluginFields, usePluginPaths } from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
 
@@ -44,6 +44,16 @@ const {
   choosePath: onPathChoose,
   clearPath: onPathClear,
 } = usePluginPaths(fieldDeps, fields)
+
+/* -------------------------------- Helpers --------------------------------- */
+function isChanged(setting: PluginSettingInfo): boolean {
+  const stored = props.settings.getSetting([props.plugin.id, ...setting.key.split('.')])
+  return stored !== undefined && JSON.stringify(stored) !== JSON.stringify(setting.default ?? null)
+}
+
+function onReset(setting: PluginSettingInfo): void {
+  onSettingChange(setting.key, setting.default ?? '')
+}
 </script>
 
 <template>
@@ -58,6 +68,9 @@ const {
       :detail="setting.description"
       :is-marked="props.marked?.includes(setting.key) ?? false"
       :is-focused="props.focused === setting.key"
+      :is-changed="isChanged(setting)"
+      :is-dependent="setting.when !== undefined"
+      @reset="onReset(setting)"
     >
       <Switch
         v-if="setting.type === 'boolean'"

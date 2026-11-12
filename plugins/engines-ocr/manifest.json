@@ -206,7 +206,7 @@
       "key": "customDictPath",
       "type": "file",
       "title": "Character dictionary",
-      "description": "UTF-8 text, one character per line. Empty for a model that includes its own",
+      "description": "One character per line; empty if the model has its own",
       "accept": [".txt"],
       "default": "",
       "when": {
@@ -247,7 +247,7 @@
       "key": "recognizeAutomatically",
       "type": "boolean",
       "title": "Recognize automatically",
-      "description": "Recognize the text of every PDF and image in the vault that has none. A text removed with Delete text is recognized again",
+      "description": "Recognize every PDF and image that has no text",
       "default": false
     }
   ]

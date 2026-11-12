@@ -12,6 +12,8 @@ export {
   type PluginListing,
 } from './plugins'
 export type {
+  PluginContribution,
+  PluginContributionItem,
   PluginHealth,
   PluginInfo,
   PluginReader,

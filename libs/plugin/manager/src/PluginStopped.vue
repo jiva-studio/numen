@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * The card of a plugin the host suspended: why it stopped, and the ways to bring it back.
+ * The card of a plugin the host suspended: why it stopped, a retry, and the error the host recorded.
  */
-import { Button } from '@numen/ui'
+import { ref } from 'vue'
+import { TriangleAlert } from '@lucide/vue'
 import type { PluginHealth } from './pluginInfo'
 import { PLUGIN_WORDS as words } from './words'
 
@@ -13,89 +14,105 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'retry'): void
-  (e: 'disable'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const isDetailShown = ref(false)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onRetry(): void {
   emit('retry')
 }
 
-function onDisable(): void {
-  emit('disable')
+function onToggleDetail(): void {
+  isDetailShown.value = !isDetailShown.value
 }
 </script>
 
 <template>
   <div class="plugin-stopped" role="group" :aria-label="words.pluginState.stopped">
-    <span class="plugin-stopped__reason">{{ props.item.text }}</span>
-    <details v-if="props.item.detail" class="plugin-stopped__detail">
-      <summary>{{ words.pluginDetails }}</summary>
-      <code>{{ props.item.detail }}</code>
-    </details>
-    <div class="plugin-stopped__actions">
-      <Button size="small" @click="onRetry">{{ words.pluginRetry }}</Button>
-      <Button variant="outline" size="small" @click="onDisable">
-        {{ words.pluginDisable }}
-      </Button>
+    <TriangleAlert class="plugin-stopped__icon" :size="20" :stroke-width="1.75" aria-hidden="true" />
+    <div class="plugin-stopped__text">
+      <span class="plugin-stopped__reason">{{ props.item.text }}</span>
+      <code v-if="isDetailShown" class="plugin-stopped__detail">{{ props.item.detail }}</code>
+      <span class="plugin-stopped__actions">
+        <button type="button" class="plugin-stopped__action" @click="onRetry">
+          {{ words.pluginRetry }}
+        </button>
+        <button
+          v-if="props.item.detail"
+          type="button"
+          class="plugin-stopped__action"
+          :aria-expanded="isDetailShown"
+          @click="onToggleDetail"
+        >
+          {{ isDetailShown ? words.pluginHideDetails : words.pluginShowDetails }}
+        </button>
+      </span>
     </div>
   </div>
 </template>
 
 <style scoped>
 .plugin-stopped {
-  --stopped-row-gap: 0.125rem;
-  --stopped-spacing: 1.75rem;
-  --stopped-pad-block: 0.5rem;
-  --stopped-pad-inline: 0.75rem;
-  --stopped-detail-offset: 0.25rem;
-  --stopped-action-gap: 0.375rem;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'reason  actions'
-    'detail  detail';
-  column-gap: var(--numen-panel-gap);
-  row-gap: var(--stopped-row-gap);
-  align-items: start;
-  margin-block-end: var(--stopped-spacing);
-  padding: var(--stopped-pad-block) var(--stopped-pad-inline);
-  border: var(--numen-stroke) solid var(--numen-alarm);
-  border-radius: var(--numen-radius-tight);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-block-end: 1.5rem;
+  padding: var(--settings-card-pad, 1rem);
+  min-block-size: var(--settings-row-min, 3.25rem);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
   color: var(--numen-ink);
 }
 
-.plugin-stopped:last-child {
-  margin-block-end: 0;
+.plugin-stopped__icon {
+  flex: none;
+  margin-block-start: 0.0625rem;
+  color: var(--numen-alarm);
+}
+
+.plugin-stopped__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-inline-size: 0;
 }
 
 .plugin-stopped__reason {
-  grid-area: reason;
   overflow-wrap: anywhere;
 }
 
 .plugin-stopped__detail {
-  grid-area: detail;
-  margin-block-start: var(--stopped-detail-offset);
+  margin-block-start: 0.375rem;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-.plugin-stopped__detail summary {
-  cursor: pointer;
-}
-
-.plugin-stopped__detail code {
-  display: block;
-  margin-block-start: var(--stopped-detail-offset);
   font-family: var(--numen-font-mono);
+  font-size: var(--numen-text-1);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
 .plugin-stopped__actions {
-  grid-area: actions;
   display: flex;
-  gap: var(--stopped-action-gap);
+  font-size: var(--numen-text-2);
+  gap: 1rem;
+  margin-block-start: 0.375rem;
+}
+
+.plugin-stopped__action {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--numen-accent);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.plugin-stopped__action:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 </style>

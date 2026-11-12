@@ -48,7 +48,13 @@ function onEdit(): void {
 </script>
 
 <template>
-  <SystemRow ref="row" :name="connection.name" :detail="detail" @select="onEdit">
+  <SystemRow
+    ref="row"
+    page="connections"
+    :name="connection.name"
+    :detail="detail"
+    @select="onEdit"
+  >
     <template #trail>
       <span v-if="state === 'unavailable'" class="connection-row__chip connection-row__chip--bad">
         {{ words.connectionUnavailable }}

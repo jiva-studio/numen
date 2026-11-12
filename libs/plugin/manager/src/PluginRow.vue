@@ -1,10 +1,14 @@
 <script setup lang="ts">
 /**
- * One installed plugin row in the plugins registry: its name, version,
- * single-line description, the badge of its worst health item, and navigation chevron.
+ * One plugin row in the plugins registry: the category icon, the name, a single-line description,
+ * a state label when the plugin is not installed or has an error or a warning, and the navigation
+ * chevron.
  */
 import { computed, ref } from 'vue'
+import { ChevronRight } from '@lucide/vue'
 import { Menu, type MenuItem } from '@numen/ui'
+import { getCategoryIcon } from './categoryIcons'
+import { getPluginCategory } from './filter'
 import type { PluginHealth } from './pluginInfo'
 import { isInstalled, type ManagedPlugin } from './plugins'
 import { getPluginState, type PluginState } from './state'
@@ -14,7 +18,6 @@ import { PLUGIN_WORDS as words } from './words'
 const props = defineProps<{
   plugin: ManagedPlugin
   isEnabled: boolean
-  categoryPrefix?: string
   health?: readonly PluginHealth[]
 }>()
 
@@ -26,20 +29,13 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const menuPosition = ref<{ x: number; y: number } | null>(null)
-const versionSuffix = computed(() => (props.plugin.version ? ` v${props.plugin.version}` : ''))
-const categoryPrefixText = computed(() =>
-  props.categoryPrefix ? `${props.categoryPrefix} / ` : '',
-)
-const rowTitle = computed(
-  () => `${categoryPrefixText.value}${props.plugin.name}${versionSuffix.value}`,
-)
+const icon = computed(() => getCategoryIcon(getPluginCategory(props.plugin)))
 const pluginState = computed<PluginState>(() =>
   props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
 )
 
-const isBadgeShown = computed(
-  () => pluginState.value !== 'enabled' && pluginState.value !== 'disabled',
-)
+const LABELED_STATES: readonly PluginState[] = ['available', 'error', 'warning']
+const hasStateLabel = computed(() => LABELED_STATES.includes(pluginState.value))
 
 const menuItems = computed<readonly MenuItem[]>(() => [
   ...(isInstalled(props.plugin)
@@ -54,6 +50,7 @@ function onClick(): void {
 }
 
 function onKeydown(e: KeyboardEvent): void {
+  if (e.target !== e.currentTarget) return
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault()
     emit('select-plugin')
@@ -81,24 +78,19 @@ function onChooseMenuItem(id: string): void {
 <template>
   <div
     class="plugin-row"
-    :class="{ 'plugin-row--disabled': !props.isEnabled }"
+    :class="{ 'plugin-row--disabled': pluginState === 'disabled' }"
     role="button"
     tabindex="0"
-    :aria-label="rowTitle"
+    :aria-label="props.plugin.name"
     @click="onClick"
     @keydown="onKeydown"
     @contextmenu.prevent="onContextMenu"
   >
+    <span class="plugin-row__glyph" aria-hidden="true">
+      <component :is="icon" :size="20" :stroke-width="1.75" />
+    </span>
     <div class="plugin-row__main">
-      <div class="plugin-row__header">
-        <span v-if="props.categoryPrefix" class="plugin-row__category">
-          {{ props.categoryPrefix }} /
-        </span>
-        <span class="plugin-row__name">{{ props.plugin.name }}</span>
-        <span v-if="props.plugin.version" class="plugin-version-badge">
-          v{{ props.plugin.version }}
-        </span>
-      </div>
+      <span class="plugin-row__name">{{ props.plugin.name }}</span>
       <p v-if="props.plugin.description" class="plugin-row__description">
         {{ props.plugin.description }}
       </p>
@@ -106,13 +98,13 @@ function onChooseMenuItem(id: string): void {
 
     <div class="plugin-row__trail">
       <span
-        v-if="isBadgeShown"
-        class="plugin-row__badge"
-        :class="`plugin-row__badge--${pluginState}`"
+        v-if="hasStateLabel"
+        class="plugin-row__state"
+        :class="`plugin-row__state--${pluginState}`"
       >
         {{ words.pluginState[pluginState] }}
       </span>
-      <span class="plugin-row__chevron" aria-hidden="true">&rsaquo;</span>
+      <ChevronRight class="plugin-row__chevron" :size="16" aria-hidden="true" />
     </div>
 
     <Menu
@@ -129,71 +121,48 @@ function onChooseMenuItem(id: string): void {
 
 <style scoped>
 .plugin-row {
-  --row-min-size: 3.5rem;
-  --row-pad-block: 0.625rem;
-  --row-pad-inline: 0.75rem;
-  --row-text-gap: 0.125rem;
-  --row-header-gap: 0.25rem;
-  --focus-width: 0.125rem;
-  --focus-inset: -0.125rem;
-  --chevron-size: 1.25rem;
-  --badge-pad-block: 0.125rem;
-  --badge-pad-inline: 0.4375rem;
-  --badge-offset: 0.25rem;
-  --state-pad-block: 0.125rem;
-  --state-pad-inline: 0.375rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--numen-panel-gap);
-  min-block-size: var(--row-min-size);
-  padding: var(--row-pad-block) var(--row-pad-inline);
+  gap: 0.75rem;
+  box-sizing: border-box;
+  min-block-size: var(--settings-row-min, 3.25rem);
+  padding: var(--settings-row-pad, 0.625rem) var(--settings-card-pad, 1rem);
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
   cursor: pointer;
   user-select: none;
-  transition:
-    background-color 0.15s ease,
-    opacity 0.15s ease;
-  border-radius: var(--numen-radius-tight);
+  transition: background-color var(--numen-motion-hover) ease;
+}
+
+.plugin-row:first-child {
+  border-block-start: none;
 }
 
 .plugin-row:hover {
-  background-color: var(--numen-bubble-bg);
+  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 5%);
 }
 
 .plugin-row:focus-visible {
-  outline: var(--focus-width) solid var(--numen-accent);
-  outline-offset: var(--focus-inset);
+  outline: var(--numen-stroke) solid var(--numen-accent);
+  outline-offset: calc(-1 * var(--numen-stroke));
 }
 
-.plugin-row--disabled {
-  opacity: 0.5;
-}
-
-.plugin-row--disabled .plugin-row__name,
-.plugin-row--disabled .plugin-row__category,
-.plugin-row--disabled .plugin-row__description,
-.plugin-row--disabled .plugin-row__chevron {
+.plugin-row__glyph {
+  display: grid;
+  place-items: center;
+  flex: none;
   color: var(--numen-hushed);
+}
+
+.plugin-row--disabled .plugin-row__glyph,
+.plugin-row--disabled .plugin-row__name {
+  opacity: 0.55;
 }
 
 .plugin-row__main {
   display: flex;
   flex-direction: column;
-  gap: var(--row-text-gap);
   flex: 1 1 auto;
   min-inline-size: 0;
-}
-
-.plugin-row__header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--row-header-gap);
-}
-
-.plugin-row__category {
-  color: var(--numen-hushed);
-  font-weight: 400;
-  font-size: var(--numen-text-2);
 }
 
 .plugin-row__name {
@@ -202,64 +171,36 @@ function onChooseMenuItem(id: string): void {
   font-size: var(--numen-text-2);
 }
 
-.plugin-version-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--badge-pad-block) var(--badge-pad-inline);
-  border-radius: var(--numen-radius-pill);
-  background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
-  color: var(--numen-ink);
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  vertical-align: middle;
-  margin-inline-start: var(--badge-offset);
-}
-
 .plugin-row__description {
   margin: 0;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-inline-size: 100%;
 }
 
 .plugin-row__trail {
   display: flex;
   align-items: center;
-  gap: var(--numen-panel-gap);
+  gap: 0.75rem;
   flex-shrink: 0;
 }
 
-.plugin-row__badge {
-  font-size: var(--numen-text-1);
-  padding: var(--state-pad-block) var(--state-pad-inline);
-  border-radius: var(--numen-radius-tight);
-}
-
-.plugin-row__badge--available {
+.plugin-row__state {
   color: var(--numen-hushed);
-  background-color: var(--numen-bubble-bg);
+  font-size: var(--numen-text-2);
 }
 
-.plugin-row__badge--stopped,
-.plugin-row__badge--error {
+.plugin-row__state--error {
   color: var(--numen-alarm);
-  background-color: var(--numen-alarm-bg);
 }
 
-.plugin-row__badge--warning {
+.plugin-row__state--warning {
   color: var(--numen-ink);
-  background-color: var(--numen-bubble-bg);
 }
 
 .plugin-row__chevron {
-  font-size: var(--chevron-size);
-  line-height: 1;
   color: var(--numen-hushed);
 }
 </style>

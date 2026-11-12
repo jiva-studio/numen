@@ -13,9 +13,9 @@
 
 <style scoped>
 .plugin-settings-card {
-  --card-pad-inline: 1rem;
+  padding-block: calc(var(--settings-card-pad, 1rem) - var(--settings-row-pad, 0.75rem));
   --card-spacing: 1.25rem;
-  padding-inline: var(--card-pad-inline);
+  padding-inline: var(--settings-card-pad, 1rem);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);

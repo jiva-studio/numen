@@ -3,18 +3,25 @@
  * An entry row of the settings list that opens a page of settings: System by default, others by props.
  * The `trail` slot holds tags drawn before the chevron.
  */
+import { computed } from 'vue'
+import { ChevronRight } from '@lucide/vue'
+import { getCategoryIcon } from './categoryIcons'
 import { PLUGIN_WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(defineProps<{ name?: string; detail?: string }>(), {
+const props = withDefaults(defineProps<{ name?: string; detail?: string; page?: string }>(), {
   name: words.systemSettings,
   detail: words.systemSettingsDetail,
+  page: 'system',
 })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (e: 'select'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const icon = computed(() => getCategoryIcon(props.page))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClick(): void {
@@ -31,100 +38,80 @@ function onKeydown(e: KeyboardEvent): void {
 
 <template>
   <div
-    class="plugin-row system-row"
+    class="system-row"
     role="button"
     tabindex="0"
     :aria-label="props.name"
     @click="onClick"
     @keydown="onKeydown"
   >
-    <div class="plugin-row__main">
-      <div class="plugin-row__header">
-        <span class="plugin-row__name">{{ props.name }}</span>
-      </div>
-      <p v-if="props.detail" class="plugin-row__description">{{ props.detail }}</p>
+    <span class="system-row__glyph" aria-hidden="true">
+      <component :is="icon" :size="20" :stroke-width="1.75" />
+    </span>
+    <div class="system-row__main">
+      <span class="system-row__name">{{ props.name }}</span>
+      <p v-if="props.detail" class="system-row__description">{{ props.detail }}</p>
     </div>
-
-    <div class="plugin-row__trail">
-      <slot name="trail" />
-      <span class="plugin-row__chevron" aria-hidden="true">&rsaquo;</span>
-    </div>
+    <slot name="trail" />
+    <ChevronRight class="system-row__chevron" :size="16" aria-hidden="true" />
   </div>
 </template>
 
 <style scoped>
-.plugin-row {
-  --row-min-size: 3.5rem;
-  --row-pad-block: 0.625rem;
-  --row-pad-inline: 0.75rem;
-  --row-text-gap: 0.125rem;
-  --row-header-gap: 0.5rem;
-  --focus-width: 0.125rem;
-  --focus-inset: -0.125rem;
-  --chevron-size: 1.25rem;
+.system-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--numen-panel-gap);
-  min-block-size: var(--row-min-size);
-  padding: var(--row-pad-block) var(--row-pad-inline);
+  gap: 0.75rem;
+  box-sizing: border-box;
+  min-block-size: var(--settings-row-min, 3.25rem);
+  padding: var(--settings-row-pad, 0.625rem) var(--settings-card-pad, 1rem);
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
   cursor: pointer;
   user-select: none;
-  transition:
-    background-color 0.15s ease,
-    opacity 0.15s ease;
-  border-radius: var(--numen-radius-tight);
+  transition: background-color var(--numen-motion-hover) ease;
 }
 
-.plugin-row:hover {
-  background-color: var(--numen-bubble-bg);
+.system-row:first-child {
+  border-block-start: none;
 }
 
-.plugin-row:focus-visible {
-  outline: var(--focus-width) solid var(--numen-accent);
-  outline-offset: var(--focus-inset);
+.system-row:hover {
+  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 5%);
 }
 
-.plugin-row__main {
+.system-row:focus-visible {
+  outline: var(--numen-stroke) solid var(--numen-accent);
+  outline-offset: calc(-1 * var(--numen-stroke));
+}
+
+.system-row__glyph {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--numen-hushed);
+}
+
+.system-row__main {
   display: flex;
   flex-direction: column;
-  gap: var(--row-text-gap);
   flex: 1 1 auto;
   min-inline-size: 0;
 }
 
-.plugin-row__header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--row-header-gap);
-}
-
-.plugin-row__name {
+.system-row__name {
   color: var(--numen-ink);
   font-weight: 500;
-  font-size: var(--numen-text-2);
 }
 
-.plugin-row__description {
+.system-row__description {
   margin: 0;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-inline-size: 100%;
 }
 
-.plugin-row__trail {
-  display: flex;
-  align-items: center;
-  gap: var(--numen-panel-gap);
-  flex-shrink: 0;
-}
-
-.plugin-row__chevron {
-  font-size: var(--chevron-size);
-  line-height: 1;
+.system-row__chevron {
   color: var(--numen-hushed);
 }
 </style>

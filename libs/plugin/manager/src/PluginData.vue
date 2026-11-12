@@ -73,14 +73,14 @@ function onConfirm(): void {
 
 <style scoped>
 .plugin-data {
-  --data-pad-inline: 1rem;
   --asking-gap: 0.375rem;
   --asking-pad-block: 0.5rem;
   --asking-pad-inline: 0.75rem;
 }
 
 .plugin-data__card {
-  padding-inline: var(--data-pad-inline);
+  padding-block: calc(var(--settings-card-pad, 1rem) - var(--settings-row-pad, 0.75rem));
+  padding-inline: var(--settings-card-pad, 1rem);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);

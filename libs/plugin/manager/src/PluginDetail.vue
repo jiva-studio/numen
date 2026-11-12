@@ -1,20 +1,25 @@
 <script setup lang="ts">
 /**
- * The page of one plugin: a header card with the README and the enabled switch (or the install
- * button for a plugin that is not installed), the failure card of a suspended plugin or the bar of
- * its worst health item, the settings the application draws in the `settings` slot, and the plugin's data.
+ * The page of one plugin: a header with its icon, name, version, state and enabled switch (or the
+ * install button for a plugin that is not installed), the failure of a suspended plugin or the bar
+ * of its worst health item, then tabs: the README (the tab the page opens on), the settings the
+ * application draws in the `settings` and `sections` slots (a quiet line when there are none), what
+ * the plugin adds to the window, and its data.
  */
-import { computed, ref, type VNode } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { ChevronLeft, ChevronRight } from '@lucide/vue'
 import { Button, Prose, Switch } from '@numen/ui'
-import ChevronIcon from './ChevronIcon.vue'
+import { getCategoryIcon } from './categoryIcons'
+import { formatCategoryLabel, getPluginCategory } from './filter'
+import PluginContributions from './PluginContributions.vue'
 import PluginData from './PluginData.vue'
 import PluginHealthBar from './PluginHealthBar.vue'
 import PluginSettingsCard from './PluginSettingsCard.vue'
 import PluginStopped from './PluginStopped.vue'
+import PluginTabs from './PluginTabs.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
 import { isInstalled } from './plugins'
-import { parsePluginReadme } from './readme'
-import { getStartItem, getWorstItem } from './state'
+import { getPluginState, getStartItem, getWorstItem } from './state'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -31,18 +36,45 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
-  settings(): VNode[]
-  /** Sections of the page under the card of the settings, drawn by the application. */
-  sections(): VNode[]
+  settings(): unknown
+  /** Sections of the settings tab under the card of the settings, drawn by the application. */
+  sections(): unknown
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isExpanded = ref(false)
 const startItem = computed(() => getStartItem(props.health ?? []))
 const worstItem = computed(() => getWorstItem(props.health ?? []))
-const readmeParts = computed(() =>
-  parsePluginReadme(props.readme, props.plugin.id, props.plugin.description),
+const icon = computed(() => getCategoryIcon(getPluginCategory(props.plugin)))
+const categoryLabel = computed(() => formatCategoryLabel(getPluginCategory(props.plugin)))
+const hasConnectionSettings = computed(
+  () => props.plugin.info?.settings.some((one) => one.type === 'connections') ?? false,
 )
+const contributions = computed(() => props.plugin.info?.contributions ?? [])
+const readmeText = computed(() => props.readme.replace(/<!--[\s\S]*?-->/g, '').trim())
+const state = computed(() =>
+  props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
+)
+const stateText = computed(() =>
+  state.value === 'enabled' ? words.pluginRunning : words.pluginState[state.value],
+)
+
+const tabs = computed(() => [
+  { id: 'about', text: words.pluginTabs.about },
+  { id: 'settings', text: words.pluginTabs.settings },
+  { id: 'contributions', text: words.pluginTabs.contributions },
+  ...(props.dataFileCount > 0 || props.problem ? [{ id: 'data', text: words.pluginTabs.data }] : []),
+])
+const chosenTab = ref(props.initialTab ?? 'about')
+watch(
+  () => props.initialTab,
+  (tab) => {
+    if (tab) chosenTab.value = tab
+  },
+)
+
+watch(tabs, (now) => {
+  if (!now.some((one) => one.id === chosenTab.value)) chosenTab.value = now[0]?.id ?? 'about'
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
@@ -53,17 +85,10 @@ function onToggleEnabled(isEnabled: boolean): void {
   emit('toggle-enabled', isEnabled)
 }
 
-function onToggleReadme(): void {
-  isExpanded.value = !isExpanded.value
-}
-
 function onRetry(): void {
   emit('retry')
 }
 
-function onDisable(): void {
-  emit('toggle-enabled', false)
-}
 
 function onInstall(): void {
   emit('install')
@@ -80,17 +105,42 @@ function onRunAction(key: string): void {
 
 <template>
   <div class="plugin-detail">
-    <Button variant="ghost" size="small" class="plugin-detail__back" @click="onBack">
-      &larr; {{ words.backToPlugins }}
-    </Button>
+    <div class="plugin-detail__bar">
+      <button
+        type="button"
+        class="plugin-detail__back"
+        :aria-label="words.backToPlugins"
+        @click="onBack"
+      >
+        <ChevronLeft :size="16" aria-hidden="true" />
+      </button>
+      <nav class="plugin-detail__crumbs">
+        <button type="button" class="plugin-detail__crumb" @click="onBack">
+          {{ words.settings }}
+        </button>
+        <ChevronRight :size="12" aria-hidden="true" />
+        <span>{{ categoryLabel }}</span>
+      </nav>
+    </div>
 
     <div class="plugin-detail__header">
-      <h2 class="plugin-detail__title">
-        <span>{{ props.plugin.name }}</span>
-        <span v-if="props.plugin.version" class="plugin-version-badge">
-          v{{ props.plugin.version }}
-        </span>
-      </h2>
+      <component :is="icon" class="plugin-detail__glyph" :size="32" :stroke-width="1.5" aria-hidden="true" />
+      <div class="plugin-detail__heading">
+        <div class="plugin-detail__name-line">
+          <h2 class="plugin-detail__title">{{ props.plugin.name }}</h2>
+          <code class="plugin-detail__id">{{ props.plugin.id }}</code>
+        </div>
+        <div class="plugin-detail__meta">
+          <span v-if="props.plugin.version">v{{ props.plugin.version }}</span>
+          <span class="plugin-detail__state">
+            <i class="plugin-detail__dot" :class="`plugin-detail__dot--${state}`" />
+            {{ stateText }}
+          </span>
+        </div>
+        <p v-if="props.plugin.description" class="plugin-detail__description">
+          {{ props.plugin.description }}
+        </p>
+      </div>
       <div class="plugin-detail__master-switch">
         <Switch
           v-if="isInstalled(props.plugin)"
@@ -102,179 +152,237 @@ function onRunAction(key: string): void {
         <Button v-else-if="props.canInstall" size="small" @click="onInstall">
           {{ words.pluginInstall }}
         </Button>
-        <span v-else class="plugin-detail__absent">{{ words.pluginState.available }}</span>
       </div>
-
-      <div v-if="readmeParts.summary" class="plugin-detail__description">
-        <Prose :text="readmeParts.summary" />
-      </div>
-
-      <div v-if="isExpanded && readmeParts.more" class="plugin-detail__more">
-        <Prose :text="readmeParts.more" />
-      </div>
-
-      <button
-        v-if="readmeParts.more"
-        type="button"
-        class="plugin-detail__toggle"
-        :aria-expanded="isExpanded"
-        @click="onToggleReadme"
-      >
-        <span>{{ isExpanded ? words.showLess : words.readMore }}</span>
-        <ChevronIcon
-          class="plugin-detail__toggle-icon"
-          :class="{ 'plugin-detail__toggle-icon--open': isExpanded }"
-        />
-      </button>
     </div>
 
-    <PluginStopped v-if="startItem" :item="startItem" @retry="onRetry" @disable="onDisable" />
+    <PluginStopped v-if="startItem" :item="startItem" @retry="onRetry" />
     <PluginHealthBar v-else-if="worstItem" :item="worstItem" @run-action="onRunAction" />
 
-    <PluginSettingsCard v-if="props.hasSettings" class="plugin-detail__settings">
-      <slot name="settings" />
-    </PluginSettingsCard>
+    <PluginTabs v-model="chosenTab" :tabs="tabs" :label="words.pluginSections" />
 
-    <slot name="sections" />
+    <div v-if="chosenTab === 'settings'" class="plugin-detail__section">
+      <PluginSettingsCard v-if="props.hasSettings" class="plugin-detail__settings">
+        <slot name="settings" />
+      </PluginSettingsCard>
+      <slot name="sections" />
+      <p v-if="!props.hasSettings && !hasConnectionSettings" class="plugin-detail__nothing">
+        {{ words.noSettings }}
+      </p>
+    </div>
 
-    <PluginData
-      :plugin-id="props.plugin.id"
-      :plugin-name="props.plugin.name"
-      :file-count="props.dataFileCount"
-      :problem="props.problem"
-      @delete-data="onDeleteData"
-    />
+    <div v-else-if="chosenTab === 'contributions'" class="plugin-detail__section">
+      <PluginContributions v-if="contributions.length > 0" :contributions="contributions" />
+      <p v-else class="plugin-detail__nothing">{{ words.noContributions }}</p>
+    </div>
+
+    <div v-else-if="chosenTab === 'data'" class="plugin-detail__section">
+      <PluginData
+        :plugin-id="props.plugin.id"
+        :plugin-name="props.plugin.name"
+        :file-count="props.dataFileCount"
+        :problem="props.problem"
+        @delete-data="onDeleteData"
+      />
+    </div>
+
+    <div v-else class="plugin-detail__section">
+      <div v-if="readmeText" class="plugin-detail__card plugin-detail__readme">
+        <Prose :text="readmeText" />
+      </div>
+      <p v-else class="plugin-detail__nothing">{{ props.plugin.description }}</p>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .plugin-detail {
-  --detail-max-size: 54rem;
-  --back-spacing: 0.75rem;
-  --header-row-gap: 0.625rem;
-  --header-pad-block: 0.875rem;
-  --header-pad-inline: 1rem;
-  --header-spacing: 1.25rem;
-  --more-pad: 0.625rem;
-  --toggle-gap: 0.25rem;
-  --toggle-pad-block: 0.125rem;
-  --badge-pad-block: 0.125rem;
-  --badge-pad-inline: 0.4375rem;
-  --badge-offset: 0.375rem;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-inline-size: var(--detail-max-size);
-  margin-inline: auto;
+  gap: 1rem;
+}
+
+.plugin-detail__bar {
+  position: sticky;
+  inset-block-start: calc(-1 * var(--numen-gutter));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block: calc(-1 * var(--numen-gutter)) 0;
+  padding-block: var(--numen-gutter) 0.5rem;
+  background-color: var(--numen-surface);
 }
 
 .plugin-detail__back {
-  align-self: flex-start;
-  margin-block-end: var(--back-spacing);
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: none;
+  border-radius: var(--numen-radius);
+  background: none;
+  color: var(--numen-hushed);
+  cursor: pointer;
+}
+
+.plugin-detail__back:hover,
+.plugin-detail__crumb:hover {
+  background-color: var(--numen-bubble-bg);
+  color: var(--numen-ink);
+}
+
+.plugin-detail__crumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--numen-hushed);
+}
+
+.plugin-detail__crumb {
+  padding: 0.125rem 0.25rem;
+  border: none;
+  border-radius: var(--numen-radius-tight);
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--numen-text-2);
+  cursor: pointer;
 }
 
 .plugin-detail__header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--numen-panel-gap);
-  row-gap: var(--header-row-gap);
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  column-gap: 1rem;
+  align-items: start;
+}
+
+.plugin-detail__glyph {
+  color: var(--numen-hushed);
+}
+
+.plugin-detail__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-inline-size: 0;
+}
+
+.plugin-detail__name-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.plugin-detail__title {
+  margin: 0;
+  color: var(--numen-ink);
+  font-size: var(--numen-text-3);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.plugin-detail__id {
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-mono);
+  font-size: var(--numen-text-1);
+}
+
+.plugin-detail__master-switch {
+  display: flex;
   align-items: center;
-  padding: var(--header-pad-block) var(--header-pad-inline);
-  margin-block-end: var(--header-spacing);
+  block-size: calc(var(--numen-text-3) * 1.3);
+}
+
+.plugin-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.75rem;
+  margin-block-start: 0.125rem;
+  line-height: 1;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.plugin-detail__state {
+  display: inline;
+  line-height: 1;
+}
+
+.plugin-detail__dot {
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  inset-block-start: -0.09em;
+  inline-size: 6px;
+  block-size: 6px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background-color: var(--numen-hushed);
+}
+
+.plugin-detail__dot--stopped {
+  background-color: var(--numen-alarm);
+}
+
+.plugin-detail__description {
+  margin: 0;
+  color: var(--numen-hushed);
+  max-inline-size: 62ch;
+}
+
+.plugin-detail__nothing {
+  margin: 0;
+  padding-inline: var(--settings-card-pad, 1rem);
+  color: var(--numen-hushed);
+}
+
+.plugin-detail__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plugin-detail__card {
+  padding-block: calc(var(--settings-card-pad, 1rem) - var(--settings-row-pad, 0.75rem));
+  padding-inline: var(--settings-card-pad, 1rem);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);
 }
 
-.plugin-detail__title {
-  margin: 0;
-  font-size: var(--numen-text-3);
-  font-weight: 600;
-  color: var(--numen-ink);
+.plugin-detail__readme {
+  padding-block: var(--settings-card-pad, 1rem);
 }
 
-.plugin-version-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--badge-pad-block) var(--badge-pad-inline);
-  border-radius: var(--numen-radius-pill);
-  background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
-  color: var(--numen-ink);
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  vertical-align: middle;
-  margin-inline-start: var(--badge-offset);
+.plugin-detail__readme :deep(.prose) {
+  max-inline-size: 66ch;
 }
 
-.plugin-detail__master-switch {
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.plugin-detail__absent {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-.plugin-detail__description {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
-}
-
-.plugin-detail__description :deep(.prose) {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
-}
-
-.plugin-detail__description :deep(p:first-child),
-.plugin-detail__more :deep(:first-child) {
+.plugin-detail__readme :deep(.prose > :first-child) {
   margin-block-start: 0;
 }
 
-.plugin-detail__description :deep(p:last-child),
-.plugin-detail__more :deep(:last-child) {
+.plugin-detail__readme :deep(.prose > :last-child) {
   margin-block-end: 0;
 }
 
-.plugin-detail__more {
-  grid-column: 1 / -1;
-  padding-block-start: var(--more-pad);
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
-  font-size: var(--numen-text-2);
-}
-
-.plugin-detail__toggle {
-  grid-column: 1 / -1;
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--toggle-gap);
-  padding: var(--toggle-pad-block) 0;
-  border: none;
-  background: none;
+.plugin-detail__group {
+  margin: 1rem 0 0 0.125rem;
   color: var(--numen-hushed);
-  font-family: inherit;
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  cursor: pointer;
+  font-size: var(--numen-text-2);
+  font-weight: 600;
 }
 
-.plugin-detail__toggle:hover {
-  color: var(--numen-ink);
+.plugin-detail__value {
+  font-variant-numeric: tabular-nums;
 }
 
-.plugin-detail__toggle-icon {
-  transition: transform var(--numen-motion-hover) ease;
-}
-
-.plugin-detail__toggle-icon--open {
-  transform: rotate(180deg);
+.plugin-detail__code {
+  font-family: var(--numen-font-mono);
+  font-size: var(--numen-text-2);
 }
 </style>

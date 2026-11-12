@@ -6,6 +6,8 @@ export const WORDS = {
   ...PLUGIN_WORDS,
   /** Shown in place of the settings file path until the path is known. */
   file: 'numen.json in the configuration folder',
+  /** The sentence under the System breadcrumb. */
+  systemLede: 'How Numen looks and how it treats files. Each plugin keeps its own settings on its page.',
   /** Accessible name of the search field in a long model list. */
   searchModels: 'Search models',
   searchValues: (title: string) => `Search ${title.toLowerCase()}`,
@@ -14,6 +16,9 @@ export const WORDS = {
   healthAction: 'Fix',
   /** Accessible name of the info button next to a setting title. */
   aboutSetting: (name: string) => `About ${name}`,
+  resetSetting: 'Reset',
+  resetSettingOf: (name: string) => `Reset ${name} to its default`,
+  changedSetting: 'Changed from the default',
   /** The page of connections. */
   secretMasked: '••••••••',
   connectionAdd: 'Add connection',

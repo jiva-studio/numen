@@ -130,7 +130,7 @@
       "key": "dayStartTime",
       "type": "string",
       "title": "Day starts at",
-      "description": "Time a review day starts. Answers before it count toward the day before. HH:MM from 00:00 to 12:00; other values use 04:00.",
+      "description": "Time a review day starts, HH:MM up to 12:00",
       "default": "04:00"
     },
     {

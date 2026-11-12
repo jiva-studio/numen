@@ -12,4 +12,6 @@ export interface PluginDetailProps {
   readonly canInstall: boolean
   readonly hasSettings: boolean
   readonly health?: readonly PluginHealth[]
+  /** The tab the page opens on, `about` when none is given. */
+  readonly initialTab?: string
 }

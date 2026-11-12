@@ -163,7 +163,10 @@ function onCancelDelete(): void {
 .connections-page__list {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
+  overflow: hidden;
 }
 
 .connections-page__empty {

@@ -91,6 +91,20 @@ export interface PluginInfo {
   readonly capabilities: readonly string[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
+  readonly contributions?: readonly PluginContribution[]
+}
+
+/** One kind of thing a plugin adds to the window, with the items its manifest declares. */
+export interface PluginContribution {
+  readonly kind: string
+  readonly items: readonly PluginContributionItem[]
+}
+
+/** One manifest entry: its title, its id or target as the manifest writes it, and for a command the shortcut, such as `mod+shift+a`. */
+export interface PluginContributionItem {
+  readonly text: string
+  readonly detail: string
+  readonly keys: string
 }
 
 /** A view a plugin's frontend registers under `id` and the settings form mounts. */

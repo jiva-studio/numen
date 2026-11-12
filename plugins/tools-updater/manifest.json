@@ -49,7 +49,7 @@
       "key": "endpoint",
       "type": "string",
       "title": "Release feed address",
-      "description": "Required. Address of the latest.json file to ask for the newest build of the Custom channel. The Stable and Beta channels ask their own published feeds",
+      "description": "Address of latest.json for the Custom channel",
       "default": "",
       "when": {
         "setting": "channel",
@@ -60,7 +60,7 @@
       "key": "checkIntervalHours",
       "type": "number",
       "title": "Check interval",
-      "description": "Hours between two checks for a newer build",
+      "description": "Hours between two update checks",
       "default": 4,
       "min": 1,
       "max": 168,

@@ -37,13 +37,14 @@ const nameId = computed(() => `plugin-row-${props.at}`)
 <style scoped>
 .detail-row {
   --detail-gap: 0.5rem;
-  --detail-pad-block: 0.625rem;
   --detail-value-min-size: 2rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--detail-gap) var(--numen-panel-gap);
-  padding-block: var(--detail-pad-block);
+  min-block-size: var(--settings-row-min, 3.25rem);
+  box-sizing: border-box;
+  padding-block: var(--settings-row-pad, 0.625rem);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 

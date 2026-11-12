@@ -76,7 +76,10 @@ const {
 
 <style scoped>
 .settings {
-  --settings-measure: 54rem;
+  --settings-measure: 45rem;
+  --settings-card-pad: 1rem;
+  --settings-row-min: 3.25rem;
+  --settings-row-pad: 0.75rem;
   --settings-apart: 1.75rem;
   --settings-near: 0.375rem;
   --settings-value: 6rem;

@@ -69,6 +69,7 @@ function onRunAction(key: string): void {
     :can-install="false"
     :has-settings="hasSettings"
     :health="health"
+    :initial-tab="props.markedSetting ? 'settings' : undefined"
     @back="onBack"
     @toggle-enabled="setEnabled"
     @retry="retry"
