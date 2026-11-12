@@ -505,7 +505,10 @@ type PluginSetting struct {
 	// first of the options in force.
 	ValueJson string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
 	// The operations a setting of type connections is used for. max is the number of rows.
-	Operations    []string `protobuf:"bytes,23,rep,name=operations,proto3" json:"operations,omitempty"`
+	Operations []string `protobuf:"bytes,23,rep,name=operations,proto3" json:"operations,omitempty"`
+	// Whether the manifest lets a setting of type connections that holds no row use every connection
+	// whose type serves the operation. The person's choice is in the plugin field "discover".
+	Discover      bool `protobuf:"varint,24,opt,name=discover,proto3" json:"discover,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -685,6 +688,13 @@ func (x *PluginSetting) GetOperations() []string {
 		return x.Operations
 	}
 	return nil
+}
+
+func (x *PluginSetting) GetDiscover() bool {
+	if x != nil {
+		return x.Discover
+	}
+	return false
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -1499,7 +1509,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xe5\x05\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x81\x06\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1526,7 +1536,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"value_json\x18\x15 \x01(\tR\tvalueJson\x12\x1e\n" +
 	"\n" +
 	"operations\x18\x17 \x03(\tR\n" +
-	"operationsB\x06\n" +
+	"operations\x12\x1a\n" +
+	"\bdiscover\x18\x18 \x01(\bR\bdiscoverB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_stepJ\x04\b\x16\x10\x17\"m\n" +
