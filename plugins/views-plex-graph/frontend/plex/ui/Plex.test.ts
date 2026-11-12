@@ -475,7 +475,7 @@ describe('the pill padding and the focus size, measured', () => {
 })
 
 describe('Animation', () => {
-  it('is moving just before the length it is given, and still at that length', async () => {
+  it('is moving just before the length it is given and has stopped at that length', async () => {
     const time = stubClock()
     const plex = mountPlex({ duration: 1000, clock: time.clock })
 

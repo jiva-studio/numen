@@ -1,7 +1,7 @@
 /** How a line is drawn between two boxes. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
-import { DEFAULT_OPTIONS } from '../options'
+import { DEFAULT_OPTIONS, resolveOptions } from '../options'
 import {
   cutToFit,
   getLabelPositions,
@@ -940,18 +940,65 @@ describe('the curvature of a line', () => {
 
   it('draws every line straight at curvature 0, whatever relation it runs along', () => {
     const frame = arrangePlex(neighborhoods.typical, { options: { routing: { curvature: 0 } } })
-    const isBowed = (edge: (typeof frame.edges)[number]) =>
-      edge.from !== 'focus' && edge.to !== 'focus'
+    const bent = frame.edges
+      .filter(
+        (edge) =>
+          !isOnSegment(edge.control1, edge.fromPoint, edge.toPoint) ||
+          !isOnSegment(edge.control2, edge.fromPoint, edge.toPoint),
+      )
+      .map((edge) => `${edge.from} ${edge.to}`)
 
-    for (const edge of frame.edges.filter((one) => !isBowed(one))) {
-      expect(
-        isOnSegment(edge.control1, edge.fromPoint, edge.toPoint),
-        `${edge.from} ${edge.to}`,
-      ).toBe(true)
-      expect(
-        isOnSegment(edge.control2, edge.fromPoint, edge.toPoint),
-        `${edge.from} ${edge.to}`,
-      ).toBe(true)
+    expect(bent).toStrictEqual([])
+  })
+
+  it('draws a line between two neighbors side by side straight at curvature 0', () => {
+    const box = (id: string, x: number): PlacedNode => ({
+      id,
+      title: id,
+      relation: 'child',
+      x,
+      y: 200,
+      width: 100,
+      height: 40,
+      order: 0,
+      opacity: 1,
+    })
+    const routing = createRouting(
+      resolveOptions({ routing: { curvature: 0 } }),
+      (words) => 6 * words.length,
+    )
+    const nodes = [box('a', 0), box('b', 116)]
+    const edge = routeEdge(
+      { from: 'a', to: 'b' },
+      new Map(nodes.map((node) => [node.id, node])),
+      routing,
+    )!
+
+    expect(isOnSegment(edge.control1, edge.fromPoint, edge.toPoint)).toBe(true)
+    expect(isOnSegment(edge.control2, edge.fromPoint, edge.toPoint)).toBe(true)
+  })
+
+  it('draws the line between two linked children straight at curvature 0', () => {
+    const linked: PlexNeighborhood = {
+      nodes: [
+        { id: 'focus', title: 'Ports', relation: 'focus' },
+        { id: 'child-0', title: 'Domain', relation: 'child' },
+        { id: 'child-1', title: 'Adapter', relation: 'child' },
+      ],
+      edges: [
+        { from: 'focus', to: 'child-0' },
+        { from: 'focus', to: 'child-1' },
+        { from: 'child-0', to: 'child-1' },
+      ],
     }
+    const frame = arrangePlex(linked, {
+      options: { routing: { curvature: 0 }, viewport: { width: 1200, height: 800 } },
+      measure: (node) => 40 + node.title.length * 7,
+    })
+    const edge = frame.edges.find((one) => one.from === 'child-0' && one.to === 'child-1')!
+
+    expect(edge).toBeDefined()
+    expect(isOnSegment(edge.control1, edge.fromPoint, edge.toPoint)).toBe(true)
+    expect(isOnSegment(edge.control2, edge.fromPoint, edge.toPoint)).toBe(true)
   })
 })
