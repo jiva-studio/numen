@@ -52,12 +52,12 @@ type Runner struct {
 	deps     Dependencies
 	sessions sessions
 
-	mu       sync.Mutex
-	running  sync.WaitGroup
-	closing  context.Context
-	closeAll context.CancelFunc
-	isClosed bool
-	dir      string
+	mu        sync.Mutex
+	running   sync.WaitGroup
+	closing   chan struct{}
+	isClosed  bool
+	dir       string
+	cleanErrs error
 }
 
 // New creates a Runner, and refuses dependencies that are missing.
@@ -66,10 +66,9 @@ func New(deps Dependencies) (*Runner, error) {
 		deps.ToolConfig == nil || deps.Environment == nil || deps.ToolServer == nil {
 		return nil, errors.New("task: every dependency but the tools is required")
 	}
-	closing, closeAll := context.WithCancel(context.Background())
 	return &Runner{
 		deps: deps, sessions: sessions{mu: sync.Mutex{}, byKey: nil, order: nil},
-		mu: sync.Mutex{}, running: sync.WaitGroup{}, closing: closing, closeAll: closeAll, isClosed: false, dir: "",
+		mu: sync.Mutex{}, running: sync.WaitGroup{}, closing: make(chan struct{}), isClosed: false, dir: "", cleanErrs: nil,
 	}, nil
 }
 
@@ -113,13 +112,7 @@ func (r *Runner) RunTask(
 	if err != nil {
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
-	defer func() {
-		if served != nil {
-			// The endpoint ends with the run; a call cut by its shutdown has already failed the run.
-			_ = served.Close(context.WithoutCancel(ctx))
-		}
-		_ = r.deps.ToolConfig.Remove(configFile)
-	}()
+	defer r.releaseTools(ctx, served, configFile)
 
 	key := ""
 	if request.GetConversation() != "" {
@@ -141,20 +134,44 @@ func (r *Runner) RunTask(
 	if frames.sendErr != nil {
 		return nil, frames.sendErr
 	}
-	switch {
-	case err != nil:
+	if err != nil {
 		return nil, readFailure(ctx, err)
-	case runCtx.Err() != nil:
+	}
+	if runCtx.Err() != nil {
 		return nil, connection.NewStopError(connection.ReasonUnavailable)
-	case reason == "":
+	}
+	return endTurn(frames, reason)
+}
+
+// endTurn returns the stop reason of a run that ended with the reason, or sends what the program said
+// of a failure as a message of its own and stops.
+func endTurn(frames *turn, reason string) (*contract.TaskDone, error) {
+	switch reason {
+	case "":
 		return &contract.TaskDone{StopReason: contract.StopReason_STOP_REASON_END_TURN}, nil
-	case reason == stream.ReasonMaxTurns:
+	case stream.ReasonMaxTurns:
 		return &contract.TaskDone{StopReason: contract.StopReason_STOP_REASON_MAX_TURN_REQUESTS}, nil
 	}
 	if err := frames.SendMessage(reason); err != nil {
 		return nil, err
 	}
 	return nil, connection.NewStopError(connection.ReasonUnavailable)
+}
+
+// releaseTools ends the endpoint of a run and removes its configuration. Their errors are kept for
+// Close: the turn has ended either way.
+func (r *Runner) releaseTools(ctx context.Context, served ServedTools, configFile string) {
+	var err error
+	if served != nil {
+		err = served.Close(context.WithoutCancel(ctx))
+	}
+	err = errors.Join(err, r.deps.ToolConfig.Remove(configFile))
+	if err == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.cleanErrs = errors.Join(r.cleanErrs, err)
 }
 
 // Answer runs the program once on the prompt, with the instructions as the system prompt, no tool and
@@ -230,11 +247,15 @@ func (r *Runner) runProgram(
 		result = <-results
 	}
 	waitErr := errors.Join(closeErr, proc.Wait())
-	switch {
-	case result.err != nil:
+	if result.err != nil {
 		return "", result.err
-	case ctx.Err() != nil:
+	}
+	select {
+	case <-ctx.Done():
 		return "", nil
+	default:
+	}
+	switch {
 	case result.reason != "":
 		return result.reason, nil
 	case waitErr != nil:
@@ -283,9 +304,16 @@ func (r *Runner) begin(ctx context.Context) (context.Context, func(), error) {
 	}
 	r.running.Add(1)
 	runCtx, cancel := context.WithCancel(ctx)
-	stop := context.AfterFunc(r.closing, cancel)
+	ended := make(chan struct{})
+	go func() {
+		select {
+		case <-r.closing:
+			cancel()
+		case <-ended:
+		}
+	}()
 	return runCtx, func() {
-		stop()
+		close(ended)
 		cancel()
 		r.running.Done()
 	}, nil
@@ -304,7 +332,8 @@ func (r *Runner) getDir() (string, error) {
 	return r.dir, nil
 }
 
-// Close ends every run, waits for it, refuses further runs and removes the folder of the runs.
+// Close ends every run, waits for it, refuses further runs and removes the folder of the runs. It returns
+// the errors of releasing the tools of the runs as well.
 func (r *Runner) Close() error {
 	r.mu.Lock()
 	if r.isClosed {
@@ -312,16 +341,20 @@ func (r *Runner) Close() error {
 		return nil
 	}
 	r.isClosed = true
-	r.closeAll()
+	close(r.closing)
 	r.mu.Unlock()
 	r.running.Wait()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	err := r.cleanErrs
+	r.cleanErrs = nil
 	if r.dir == "" {
-		return nil
+		return err
 	}
-	if err := os.RemoveAll(r.dir); err != nil {
-		return fmt.Errorf("remove the folder of the runs: %w", err)
+	if removeErr := os.RemoveAll(r.dir); removeErr != nil {
+		return errors.Join(err, fmt.Errorf("remove the folder of the runs: %w", removeErr))
 	}
-	return nil
+	return err
 }
 
 func readFailure(ctx context.Context, err error) error {
