@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -116,7 +116,7 @@ type testPasses struct {
 }
 
 func (p testPasses) ReadWholeVault(
-	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, embedder searchsourceport.Embedder, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	return p.reading.ReadWholeVault(ctx, p.db, embedder, v, rebuild)
 }

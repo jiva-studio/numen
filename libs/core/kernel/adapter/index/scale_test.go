@@ -7,20 +7,20 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
-func getQuantizingModel() embedding.Model {
-	return embedding.Model{
-		Name: "test", Dimensions: 1024, MaxTokens: 256, Pooling: "mean",
-		From: "local:library/model.onnx",
+func getQuantizingModel() searchsource.Description {
+	return searchsource.Description{
+		Name: "test", Width: 1024, SourceRecipe: "local:library/model.onnx|test|1024|256|mean|",
 	}
 }
 
-func atScale(t *testing.T, m embedding.Model, scale float64) string {
+func atScale(t *testing.T, m searchsource.Description, scale float64) string {
 	t.Helper()
 
-	recipe, target := m.Recipe(), fmt.Sprintf("@%g", embedding.Int8Scale)
+	recipe, target := m.Recipe(), fmt.Sprintf("@%g", vector.Int8Scale)
 	if !strings.HasSuffix(recipe, target) {
 		t.Fatalf("the recipe says nothing about the scale its bytes sit on: %s", recipe)
 	}

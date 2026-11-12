@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 // readyLog records the vaults a worker told were embedded.
@@ -20,7 +20,7 @@ func (l *readyLog) report(_ context.Context, v domain.Vault) {
 	l.vaults = append(l.vaults, v.ID)
 }
 
-func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder, log *readyLog) *testPass {
+func readyPass(t *testing.T, openReading openFunc, model searchsourceport.Embedder, log *readyLog) *testPass {
 	t.Helper()
 	made, db := openReading(t)
 	fit(t, db, model)
@@ -28,7 +28,7 @@ func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder,
 	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 
-	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
+	p := newPass(made, db, newRecorder(), model, model.Describe().Recipe(), v)
 	p.worker.searchSourceReady = log.report
 	return p
 }
@@ -93,7 +93,7 @@ func testAWorkerWithoutAListenerEmbedsAsBefore(t *testing.T, openReading openFun
 	cut(t, made, db, v)
 	events := newRecorder()
 
-	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
+	newPass(made, db, events, model, model.Describe().Recipe(), v).embed(t.Context())
 
 	if pos := findTask(t, events, work.MakingVectors); pos != nil {
 		t.Errorf("a pass without a listener is still being done: %+v", *pos)

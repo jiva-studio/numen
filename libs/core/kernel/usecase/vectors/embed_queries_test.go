@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 )
 
 // documentsOnly has one kind of vector.
 type documentsOnly struct{ calls []string }
 
-func (*documentsOnly) GetModel() embedding.Model { return embedding.Model{} }
+func (*documentsOnly) Describe() searchsource.Description { return searchsource.Description{} }
 func (d *documentsOnly) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	d.calls = append(d.calls, "document")
 	return make([][]float32, len(texts)), nil

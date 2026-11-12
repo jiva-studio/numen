@@ -6,11 +6,12 @@ import (
 	"math/rand/v2"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -25,8 +26,8 @@ type embedder struct {
 	seenCount []string
 }
 
-func (e *embedder) GetModel() embedding.Model {
-	return embedding.Model{Name: "fake", Dimensions: e.dims, MinChunkLength: e.minLen}
+func (e *embedder) Describe() searchsource.Description {
+	return searchsource.Description{Name: "fake", Width: e.dims, MinTextLength: e.minLen}
 }
 
 func (*embedder) Close() error { return nil }
@@ -40,7 +41,7 @@ type interruptedStore struct {
 	saved  int
 }
 
-func (s *interruptedStore) SaveVectors(ctx context.Context, vectors []embedding.Vector) error {
+func (s *interruptedStore) SaveVectors(ctx context.Context, vectors []vector.Stored) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func vectorOf(text string, dims int) []float32 {
 	return out
 }
 
-func newEmbed(readers vaultport.VaultReaders, chunks embeddingport.VectorQueries, vectors embeddingport.VectorRepository) Embed {
+func newEmbed(readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository) Embed {
 	embed := NewEmbed(readers, chunks, vectors)
 	embed.Texts = bookTexts{readers: readers}
 	return embed

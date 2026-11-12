@@ -10,14 +10,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	_ "modernc.org/sqlite"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 func makeIndex(t *testing.T) *container.Index {
@@ -36,8 +36,8 @@ func makeIndex(t *testing.T) *container.Index {
 // for each text.
 type unit struct{ name string }
 
-func (u unit) GetModel() embedding.Model {
-	return embedding.Model{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
+func (u unit) Describe() searchsource.Description {
+	return searchsource.Description{Name: u.name, Width: 8, SourceRecipe: "mean@256"}
 }
 
 func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -130,9 +130,9 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	}
 }
 
-func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
+func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model searchsourceport.Embedder) int {
 	t.Helper()
-	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, model.Describe(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

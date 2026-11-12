@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 // scriptedVectors embeds sources in order, as the embed pipeline does, and
@@ -107,7 +107,7 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 				started:  make(chan struct{}, 1),
 			}
 			worker := NewWorker(Config{
-				Reading: func(context.Context, embeddingport.Embedder, domain.Vault, bool) (ReadWholeVault, error) {
+				Reading: func(context.Context, searchsourceport.Embedder, domain.Vault, bool) (ReadWholeVault, error) {
 					return NewReadWholeVault(nil, nil, script), nil
 				},
 				Embedder: &fakeEmbedder{dims: 8},

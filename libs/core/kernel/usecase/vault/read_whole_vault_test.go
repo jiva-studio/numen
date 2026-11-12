@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -51,7 +51,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -112,7 +112,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -142,7 +142,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -175,8 +175,8 @@ const width = 1024
 // pointing answers every text with one direction.
 type pointing struct{}
 
-func (pointing) GetModel() embedding.Model {
-	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (pointing) Describe() searchsource.Description {
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean@256"}
 }
 
 func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -194,8 +194,8 @@ func (pointing) Close() error { return nil }
 // not there looks like from here.
 type unwilling struct{}
 
-func (unwilling) GetModel() embedding.Model {
-	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (unwilling) Describe() searchsource.Description {
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean@256"}
 }
 
 func (unwilling) Embed(context.Context, []string) ([][]float32, error) {

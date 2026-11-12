@@ -21,7 +21,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -93,9 +93,9 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 	stuck.isStuck.Store(true)
 	bound, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	reply := make(chan embedding.Model, 1)
-	go func() { reply <- bridge.GetModel() }()
-	var model embedding.Model
+	reply := make(chan searchsource.Description, 1)
+	go func() { reply <- bridge.Describe() }()
+	var model searchsource.Description
 	select {
 	case model = <-reply:
 	case <-bound.Done():

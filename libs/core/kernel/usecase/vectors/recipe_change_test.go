@@ -5,7 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 )
 
@@ -16,8 +16,8 @@ type servedBy struct {
 	from string
 }
 
-func (s servedBy) GetModel() embedding.Model {
-	model := s.embedder.GetModel()
+func (s servedBy) Describe() searchsource.Description {
+	model := s.embedder.Describe()
 	model.From = s.from
 	return model
 }
@@ -33,7 +33,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 
 	narrow := servedBy{&embedder{dims: 8}, "md.numen.connections.llm/openai https://api.openai.com/v1"}
 	large := servedBy{&embedder{dims: 16}, "md.numen.connections.llm/openai-compatible http://127.0.0.1:11434/v1"}
-	if narrow.GetModel().Recipe() == large.GetModel().Recipe() {
+	if narrow.Describe().Recipe() == large.Describe().Recipe() {
 		t.Fatal("two widths at two addresses share one recipe")
 	}
 
@@ -50,10 +50,10 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 	if err := fitter.Execute(ctx, large); err != nil {
 		t.Fatal(err)
 	}
-	if fit.dims != 16 || fit.recipe != large.GetModel().Recipe() {
+	if fit.dims != 16 || fit.recipe != large.Describe().Recipe() {
 		t.Errorf("the index was fitted to %d dimensions under %q, want 16 under the recipe of the new address", fit.dims, fit.recipe)
 	}
-	if fit.calls[len(fit.calls)-2] != "delete "+large.GetModel().Recipe() {
+	if fit.calls[len(fit.calls)-2] != "delete "+large.Describe().Recipe() {
 		t.Errorf("calls = %v, want the vectors of every other recipe taken out on a rebuild", fit.calls)
 	}
 
@@ -67,7 +67,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 	}
 	for _, chunk := range small {
 		stored := index.GetVectors(chunk)
-		if len(stored) != 2 || stored[0].Model != narrow.GetModel() || stored[1].Model != large.GetModel() {
+		if len(stored) != 2 || stored[0].Model != narrow.Describe() || stored[1].Model != large.Describe() {
 			t.Fatalf("chunk %d holds %d vectors, want the old one and the new one", chunk.ID, len(stored))
 		}
 	}

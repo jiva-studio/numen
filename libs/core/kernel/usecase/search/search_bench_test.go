@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -20,26 +20,26 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 type benchEmbedder struct {
-	model embedding.Model
+	model searchsource.Description
 }
 
-func newBenchEmbedder(model embedding.Model) *benchEmbedder {
+func newBenchEmbedder(model searchsource.Description) *benchEmbedder {
 	return &benchEmbedder{model: model}
 }
 
-func (e *benchEmbedder) GetModel() embedding.Model {
+func (e *benchEmbedder) Describe() searchsource.Description {
 	return e.model
 }
 
 func (e *benchEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
 	for i, t := range texts {
-		out[i] = generateDeterministicVector(t, e.model.Dimensions)
+		out[i] = generateDeterministicVector(t, e.model.Width)
 	}
 	return out, nil
 }
@@ -86,7 +86,7 @@ type benchCorpus struct {
 	vault      domain.Vault
 	db         *container.Index
 	searchMock search.Search
-	mockModel  embeddingport.Embedder
+	mockModel  searchsourceport.Embedder
 	passages   sourceport.PassageQueries
 	candidates []domain.Passage
 	recipe     string
@@ -99,7 +99,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	v := vaultfixture.GenerateVault(b, notes)
 	const maxTokens = 256
-	model := embedding.Model{Name: "bench", Dimensions: 384, MaxTokens: maxTokens, Pooling: "mean"}
+	model := searchsource.Description{Name: "bench", Width: 384, SourceRecipe: "mean@maxTokens"}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
 	cfg := container.NewConfig(container.Config{
@@ -115,7 +115,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	if err := db.Vaults().Register(ctx, v.ID); err != nil {
 		b.Fatal(err)
 	}
-	if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
+	if err := db.FitVectors(ctx, model.Width, model.Recipe()); err != nil {
 		b.Fatal(err)
 	}
 

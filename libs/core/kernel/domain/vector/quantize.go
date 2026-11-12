@@ -3,7 +3,6 @@ package vector
 import (
 	"math"
 	"unsafe"
-
 )
 
 // Bits keeps one bit per dimension: the sign, which is the coarse pass's whole

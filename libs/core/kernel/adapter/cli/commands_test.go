@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
@@ -27,9 +27,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 var errRefused = errors.New("rejected on purpose")
@@ -459,8 +459,8 @@ type constantEmbedder struct{}
 
 const width = 1024
 
-func (constantEmbedder) GetModel() embedding.Model {
-	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (constantEmbedder) Describe() searchsource.Description {
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean@256"}
 }
 
 func (constantEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -477,7 +477,7 @@ func (constantEmbedder) Close() error { return nil }
 // scanFixture is a scan of a vault on a real index, with what the test chooses to
 // put in place of an installation's model.
 type scanFixture struct {
-	embedder   embeddingport.Embedder
+	embedder   searchsourceport.Embedder
 	unembedded error
 	summary    error
 	rebuilt    bool
@@ -505,7 +505,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
-				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {
+				if err := db.FitVectors(ctx, width, s.embedder.Describe().Recipe()); err != nil {
 					return cli.Indexed{}, err
 				}
 				embed.Embedder = s.embedder

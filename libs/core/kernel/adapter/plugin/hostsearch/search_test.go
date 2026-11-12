@@ -13,32 +13,32 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
 func getVault() domain.Vault { return domain.Vault{ID: "01VAULT"} }
 
-func getModel() embedding.Model {
-	return embedding.Model{Name: "test-model", Dimensions: 4, From: "test"}
+func getModel() searchsource.Description {
+	return searchsource.Description{Name: "test-model", Width: 4, SourceRecipe: "test"}
 }
 
 // stubEmbedder embeds every text as the vector of its length and reports a floor hint.
 type stubEmbedder struct {
 	mu       sync.Mutex
-	model    embedding.Model
+	model    searchsource.Description
 	err      error
 	short    bool
 	hint     float64
-	switchTo *embedding.Model
+	switchTo *searchsource.Description
 	calls    int
 	queried  []string
 }
 
-func (e *stubEmbedder) GetModel() embedding.Model {
+func (e *stubEmbedder) Describe() searchsource.Description {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.model
@@ -431,7 +431,7 @@ func TestAnEmbeddingThatFailsOrChangesTheModelIsRefused(t *testing.T) {
 	}
 
 	f = newFixture()
-	changed := embedding.Model{Name: "other-model", Dimensions: 4, From: "test"}
+	changed := searchsource.Description{Name: "other-model", Width: 4, SourceRecipe: "test"}
 	f.embedder.switchTo = &changed
 	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("a model that changed during the call gave %v", err)

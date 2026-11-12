@@ -8,7 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 )
 
@@ -29,7 +30,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	}
 
 	// What the index now holds, as a second vault finds it.
-	bought := map[string]embedding.Vector{}
+	bought := map[string]vector.Stored{}
 	index.Kept = map[string][]byte{}
 	for _, target := range index.Vectors {
 		for _, v := range target {
@@ -76,8 +77,8 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 // leans is what the two coarse forms have to agree about.
 type faint struct{ dims int }
 
-func (f *faint) GetModel() embedding.Model {
-	return embedding.Model{Name: "faint", Dimensions: f.dims}
+func (f *faint) Describe() searchsource.Description {
+	return searchsource.Description{Name: "faint", Width: f.dims}
 }
 
 func (*faint) Close() error { return nil }

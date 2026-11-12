@@ -13,7 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -95,7 +95,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.GetModel(), "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.Describe(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,8 +140,8 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 // wide is a model of the width given.
 type wide struct{ dimensions int }
 
-func (w wide) GetModel() embedding.Model {
-	return embedding.Model{Name: "wide", Dimensions: w.dimensions, MaxTokens: 256, Pooling: "mean"}
+func (w wide) Describe() searchsource.Description {
+	return searchsource.Description{Name: "wide", Width: w.dimensions, SourceRecipe: "mean@256"}
 }
 
 func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }

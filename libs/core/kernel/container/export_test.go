@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -42,13 +42,13 @@ func (c Config) AgentProvider() agentport.AgentProvider { return pluginsAgentPro
 
 func (c Config) CutNotes() chunking.CutNotes { return cutNotes(searchOf(c)) }
 
-func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
+func (c Config) Embedder(ctx context.Context) (searchsourceport.Embedder, func() error, error) {
 	return searchEmbedder(searchOf(c), ctx)
 }
 
 func (c Config) EmbedderReady() bool { return embedderReady(searchOf(c)) }
 
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.WatchedEmbedder, closer func() error, why error) {
+func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking searchsourceport.WatchedEmbedder, closer func() error, why error) {
 	return searchEmbedders(searchOf(c), ctx, tasks)
 }
 
@@ -58,7 +58,7 @@ func (c Config) GetSettingsAgent() agentport.Agent { return getSettingsAgent(plu
 
 func (c Config) Models() func() []settingsdomain.Model { return models(c) }
 
-func (c Config) NewSearchOver(index searchusecase.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
+func (c Config) NewSearchOver(index searchusecase.Index, asking searchsourceport.Embedder, errorHandler func(error)) searchusecase.Search {
 	return newSearchOver(searchOf(c), index, asking, errorHandler)
 }
 

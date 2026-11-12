@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -29,7 +29,7 @@ func TestWorker(t *testing.T) {
 		}
 		testsupport.CloseAfter(t, db)
 		read := func(
-			ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+			ctx context.Context, embedder searchsourceport.Embedder, v domain.Vault, rebuild bool,
 		) (indexing.ReadWholeVault, error) {
 			request := cfg
 			request.ShouldRebuildIndex = rebuild

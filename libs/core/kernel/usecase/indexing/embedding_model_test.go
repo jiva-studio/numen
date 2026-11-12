@@ -4,17 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // announcing is an embedder whose model changes when its plugin says so.
 type announcing struct {
-	model     embedding.Model
+	model     searchsource.Description
 	listeners []func()
 }
 
-func (a *announcing) GetModel() embedding.Model { return a.model }
+func (a *announcing) Describe() searchsource.Description { return a.model }
 
 func (*announcing) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
@@ -24,7 +24,7 @@ func (*announcing) Concurrency() int { return 1 }
 
 func (a *announcing) OnModelChange(fn func()) { a.listeners = append(a.listeners, fn) }
 
-func (a *announcing) change(model embedding.Model) {
+func (a *announcing) change(model searchsource.Description) {
 	a.model = model
 	for _, fn := range a.listeners {
 		fn()
@@ -34,7 +34,7 @@ func (a *announcing) change(model embedding.Model) {
 // silent is an embedder that cannot announce a change.
 type silent struct{}
 
-func (silent) GetModel() embedding.Model { return embedding.Model{} }
+func (silent) Describe() searchsource.Description { return searchsource.Description{} }
 
 func (silent) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
@@ -43,7 +43,7 @@ func (silent) Close() error { return nil }
 func (silent) Concurrency() int { return 1 }
 
 func newChunking(tokens int) *announcing {
-	return &announcing{model: embedding.Model{Name: "first", Dimensions: 8, Pooling: "mean", ChunkTokens: tokens}}
+	return &announcing{model: searchsource.Description{Name: "first", Width: 8, SourceRecipe: "mean", ChunkTokens: tokens}}
 }
 
 func watchChunkSizes(embedder *announcing, sizes ...int) []bool {

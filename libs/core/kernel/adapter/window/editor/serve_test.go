@@ -41,7 +41,7 @@ import (
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -189,7 +189,7 @@ func openingWith(
 	notes map[string]string,
 	watcher vaultport.VaultWatcher,
 	readers vaultport.VaultReaders,
-	embedder embeddingport.Embedder,
+	embedder searchsourceport.Embedder,
 	idleDuration time.Duration,
 ) *behind {
 	t.Helper()
@@ -209,10 +209,10 @@ func openingWith(
 	api.UseNotes()
 	api.state.Runtime.SetVault(v)
 	if embedder != nil {
-		if err := db.VectorIndex().FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
+		if err := db.VectorIndex().FitVectors(t.Context(), embedder.Describe().Dimensions, embedder.Describe().Recipe()); err != nil {
 			t.Fatal(err)
 		}
-		api.state.Runtime.RecordModel(embedder.GetModel().String(), "")
+		api.state.Runtime.RecordModel(embedder.Describe().String(), "")
 		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, nil, db.Chunks.Progress)
 	}
 	line, isDone := api.state.Notices.ChangeEvents.Subscribe()

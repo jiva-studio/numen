@@ -12,8 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 )
 
@@ -127,7 +128,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	}
 	for _, group := range index.Groups {
 		for _, v := range group {
-			if v.Kind != embedding.QuantizedInt8 {
+			if v.Kind != vector.QuantizedInt8 {
 				t.Errorf("chunk %s was stored as %q", v.ChunkID, v.Kind)
 			}
 			if len(v.Value) != dimensions {
@@ -136,7 +137,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 			if want := (dimensions + 7) / 8; len(v.Coarse) != want {
 				t.Errorf("chunk %s holds %d coarse bytes, want %d", v.ChunkID, len(v.Coarse), want)
 			}
-			if v.Model != model.GetModel() {
+			if v.Model != model.Describe() {
 				t.Errorf("chunk %s was stored under %s", v.ChunkID, v.Model)
 			}
 		}
@@ -636,7 +637,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	err := newProducer(embed, nil).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err := newProducer(embed, nil).sendBatches(ctx, searchsource.Description{Name: "m", Width: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 
 	if !errors.Is(err, context.Canceled) {
@@ -648,7 +649,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	track.leave(activeID)
 
 	res.CurrentSource = finished
-	err = newProducer(embed, nil).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err = newProducer(embed, nil).sendBatches(ctx, searchsource.Description{Name: "m", Width: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)

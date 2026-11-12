@@ -11,16 +11,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -60,7 +60,7 @@ func findTask(t *testing.T, r *recorder, id string) *work.Task {
 }
 
 func newPass(
-	made reading, db *WorkerIndex, events Events, embedder embeddingport.Embedder, recipe string,
+	made reading, db *WorkerIndex, events Events, embedder searchsourceport.Embedder, recipe string,
 	v domain.Vault,
 ) *testPass {
 	worker := NewWorker(Config{
@@ -91,9 +91,9 @@ func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
 	}
 }
 
-func fit(t *testing.T, db *WorkerIndex, model embeddingport.Embedder) {
+func fit(t *testing.T, db *WorkerIndex, model searchsourceport.Embedder) {
 	t.Helper()
-	if err := db.Vectors.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
+	if err := db.Vectors.FitVectors(t.Context(), model.Describe().Width, model.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -104,8 +104,8 @@ type fakeEmbedder struct {
 	dims int
 }
 
-func (a *fakeEmbedder) GetModel() embedding.Model {
-	return embedding.Model{Name: "fake", Dimensions: a.dims}
+func (a *fakeEmbedder) Describe() searchsource.Description {
+	return searchsource.Description{Name: "fake", Width: a.dims}
 }
 
 func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -153,7 +153,7 @@ func testAPassThatCouldNotEmbedStaysInTheList(t *testing.T, openReading openFunc
 	cut(t, made, db, v)
 	events := newRecorder()
 
-	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
+	newPass(made, db, events, model, model.Describe().Recipe(), v).embed(t.Context())
 
 	pos := findTask(t, events, work.MakingVectors)
 	if pos == nil {
@@ -174,7 +174,7 @@ func testAPassThatEmbeddedPreservesTheList(t *testing.T, openReading openFunc) {
 	cut(t, made, db, v)
 	events := newRecorder()
 
-	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
+	newPass(made, db, events, model, model.Describe().Recipe(), v).embed(t.Context())
 
 	if pos := findTask(t, events, work.MakingVectors); pos != nil {
 		t.Errorf("a pass that embedded what was unembedded is still being done: %+v", *pos)
@@ -223,7 +223,7 @@ func testIndexingNamesTheSourceItIsOn(t *testing.T, openReading openFunc) {
 	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 
-	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
+	newPass(made, db, events, watching, watching.Describe().Recipe(), v).embed(t.Context())
 
 	pos, target := watching.opening(work.MakingVectors)
 	if !target {
@@ -266,9 +266,9 @@ type overheard struct {
 }
 
 // GetModel is called at the start of every pass, before a source is opened.
-func (o *overheard) GetModel() embedding.Model {
+func (o *overheard) Describe() searchsource.Description {
 	o.keep()
-	return o.fakeEmbedder.GetModel()
+	return o.fakeEmbedder.Describe()
 }
 
 func (o *overheard) Embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -302,7 +302,7 @@ func testIndexingIsNeverAWordWithNothingBelowIt(t *testing.T, openReading openFu
 
 	overVal := &overheard{fakeEmbedder: model, tasks: events.tasks}
 
-	newPass(made, db, events, overVal, model.GetModel().Recipe(), v).embed(t.Context())
+	newPass(made, db, events, overVal, model.Describe().Recipe(), v).embed(t.Context())
 
 	for _, list := range overVal.lists() {
 		for _, item := range list {
@@ -353,11 +353,11 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 
-	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
+	p := newPass(made, db, events, model, model.Describe().Recipe(), v)
 	p.worker.wakes.read = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,10 +381,10 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	}
 
 	// After resuming, the pass queries the index for the vectors still pending.
-	again := newPass(made, db, events, model.fakeEmbedder, model.GetModel().Recipe(), v)
+	again := newPass(made, db, events, model.fakeEmbedder, model.Describe().Recipe(), v)
 	again.embed(t.Context())
 
-	target, embedded, err = db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err = db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -403,11 +403,11 @@ func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) 
 	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 
-	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
+	p := newPass(made, db, events, model, model.Describe().Recipe(), v)
 	p.worker.wakes.sources = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,11 +435,11 @@ func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 
-	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
+	p := newPass(made, db, events, model, model.Describe().Recipe(), v)
 	p.worker.wakes.notes = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -497,12 +497,12 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 
-	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
+	p := newPass(made, db, newRecorder(), model, model.Describe().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "books/scan.pdf")
 	<-p.worker.wakes.read
 	p.embedRecognized(t.Context())
 
-	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -519,7 +519,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 
 	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
-	unembedded, _, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	unembedded, _, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -527,12 +527,12 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 		t.Fatal("the note was cut into no chunk that needs a vector")
 	}
 
-	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
+	p := newPass(made, db, newRecorder(), model, model.Describe().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "Note.md")
 	<-p.worker.wakes.read
 	p.embedRecognized(t.Context())
 
-	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -579,7 +579,7 @@ func testCancelingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openFu
 	ended := make(chan struct{})
 	go func() {
 		defer close(ended)
-		newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
+		newPass(made, db, events, model, model.Describe().Recipe(), v).embed(t.Context())
 	}()
 
 	select {
@@ -616,7 +616,7 @@ type WorkerIndex struct {
 	FileStats   noteport.FileStats
 	Maintenance indexport.IndexMaintenance
 	Progress    indexport.IndexProgress
-	Vectors     embeddingport.VectorIndex
+	Vectors     searchsourceport.VectorIndex
 	Closer      io.Closer
 }
 

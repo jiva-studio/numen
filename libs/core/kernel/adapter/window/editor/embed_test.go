@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -50,8 +50,8 @@ type fakeEmbedder struct {
 	visited []string
 }
 
-func (a *fakeEmbedder) GetModel() embedding.Model {
-	return embedding.Model{Name: "fake", Dimensions: a.dims}
+func (a *fakeEmbedder) Describe() searchsource.Description {
+	return searchsource.Description{Name: "fake", Width: a.dims}
 }
 
 func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -164,9 +164,9 @@ func (r counts) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) e
 	return r.VaultReader.WalkFiles(ctx, fn)
 }
 
-func getVectorProgress(t *testing.T, f *behind, model embeddingport.Embedder) (target, embedded int64) {
+func getVectorProgress(t *testing.T, f *behind, model searchsourceport.Embedder) (target, embedded int64) {
 	t.Helper()
-	target, embedded, err := f.index.Chunks.Progress.GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
+	target, embedded, err := f.index.Chunks.Progress.GetProgress(t.Context(), f.vault.ID, model.Describe().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}

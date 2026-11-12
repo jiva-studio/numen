@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -22,9 +23,9 @@ const chunksPerPage = 200
 
 func getBenchVault() domain.Vault { return domain.Vault{ID: "01BENCH", Name: "bench", Path: "/bench"} }
 
-func getBenchModel() embedding.Model {
-	return embedding.Model{
-		Name: "bench-model", Dimensions: 1024, MaxTokens: 512, Pooling: "mean", From: "bench",
+func getBenchModel() searchsource.Description {
+	return searchsource.Description{
+		Name: "bench-model", Width: 1024, SourceRecipe: "bench|bench-model|1024|512|mean|",
 	}
 }
 
@@ -112,18 +113,18 @@ func BenchmarkSaveVectors(b *testing.B) {
 		b.Fatalf("wanted %d chunks to write vectors for, got %d", chunksPerPage, len(found))
 	}
 
-	value := make([]byte, getBenchModel().Dimensions)
-	coarse := make([]byte, getBenchModel().Dimensions/8)
+	value := make([]byte, getBenchModel().Width)
+	coarse := make([]byte, getBenchModel().Width/8)
 	numbered := make([]chunk.Vector, 0, len(found))
-	named := make([]embedding.Vector, 0, len(found))
+	named := make([]vector.Stored, 0, len(found))
 	for i, p := range found {
 		hash := []byte(fmt.Sprintf("%032d", i))
 		numbered = append(numbered, chunk.Vector{
 			Chunk: p.Chunk, Hash: hash, Recipe: getBenchModel().Recipe(), Value: value, Coarse: coarse,
 		})
-		named = append(named, embedding.Vector{
+		named = append(named, vector.Stored{
 			ChunkID: chunk.ID(p.Chunk), Hash: hash, Model: getBenchModel(),
-			Kind: embedding.QuantizedInt8, Value: value, Coarse: coarse,
+			Kind: vector.QuantizedInt8, Value: value, Coarse: coarse,
 		})
 	}
 

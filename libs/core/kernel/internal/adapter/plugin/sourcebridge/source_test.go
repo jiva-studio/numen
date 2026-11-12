@@ -27,11 +27,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 // The bridge makes query vectors apart from document vectors, which search relies on through the port.
-var _ embeddingport.QueryEmbedder = (*embedderbridge.Embedder)(nil)
+var _ searchsourceport.QueryEmbedder = (*embedderbridge.Embedder)(nil)
 
 type mockEmbeddingServer struct {
 	getModelCalls    atomic.Int32
@@ -174,7 +174,7 @@ func TestEmbedderBridge(t *testing.T) {
 	}
 	defer testsupport.Close(t, bridge)
 
-	model := bridge.GetModel()
+	model := bridge.Describe()
 	if model.Name != "test-model" {
 		t.Errorf("model Name = %q, want test-model", model.Name)
 	}
@@ -203,22 +203,22 @@ func TestEmbedderBridge(t *testing.T) {
 	recipe := model.Recipe()
 	mockServer.floorHint.Store(0.42)
 	mockServer.minChunk.Store(0)
-	if refreshed := bridge.GetModel(); refreshed.Recipe() != recipe {
+	if refreshed := bridge.Describe(); refreshed.Recipe() != recipe {
 		t.Errorf("a new floor hint changed the recipe: %q, was %q", refreshed.Recipe(), recipe)
 	}
-	if refreshed := bridge.GetModel(); refreshed.MinChunkLength != 0 {
+	if refreshed := bridge.Describe(); refreshed.MinChunkLength != 0 {
 		t.Errorf("a new minimum chunk length reads as %d, want 0", refreshed.MinChunkLength)
 	}
 	if hint := bridge.GetFloorHint(ctx); hint != 0.42 {
 		t.Errorf("floor hint after a read of the model = %v, want 0.42", hint)
 	}
 	mockServer.floorHint.Store(-1.0)
-	bridge.GetModel()
+	bridge.Describe()
 	if hint := bridge.GetFloorHint(ctx); hint != 0 {
 		t.Errorf("a negative floor hint reads as %v, want 0", hint)
 	}
 	mockServer.floorHint.Store(0.0)
-	bridge.GetModel()
+	bridge.Describe()
 	if hint := bridge.GetFloorHint(ctx); hint != 0 {
 		t.Errorf("no floor hint reads as %v, want 0", hint)
 	}
@@ -264,13 +264,13 @@ func TestEmbedderBridge(t *testing.T) {
 	}
 
 	mockServer.handling.Store("ffffffff")
-	if refreshed := bridge.GetModel(); refreshed.Recipe() == recipe {
+	if refreshed := bridge.Describe(); refreshed.Recipe() == recipe {
 		t.Errorf("a new handling left the recipe as it was: %q", refreshed.Recipe())
 	}
 	mockServer.handling.Store("1a2b3c4d")
 	mockServer.modelName.Store("updated-model")
 	mockServer.dimensions.Store(1024)
-	currentModel := bridge.GetModel()
+	currentModel := bridge.Describe()
 	if currentModel.Name != "updated-model" || currentModel.Dimensions != 1024 {
 		t.Errorf("GetModel() after update = %+v, want updated-model@1024", currentModel)
 	}

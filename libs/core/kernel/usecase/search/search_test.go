@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
@@ -22,7 +22,7 @@ import (
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 // dimensions is the width the vector index is built at.
@@ -137,16 +137,16 @@ func precise(v []float32) []byte {
 	return out
 }
 
-func (c corpus) search(embedder embeddingport.Embedder) search.Search {
-	queries, ok := embedder.(embeddingport.QueryEmbedder)
+func (c corpus) search(embedder searchsourceport.Embedder) search.Search {
+	queries, ok := embedder.(searchsourceport.QueryEmbedder)
 	if !ok {
 		return search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
 	}
 	return search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
 }
 
-func getModel() embedding.Model {
-	return embedding.Model{Name: "test", Dimensions: dimensions}
+func getModel() searchsource.Description {
+	return searchsource.Description{Name: "test", Width: dimensions}
 }
 
 func newVector(sign float32) []float32 {
@@ -168,7 +168,7 @@ func newNearVector() []float32 {
 // oneWay is an embedder whose vectors all point the same way.
 type oneWay struct{ direction []float32 }
 
-func (o oneWay) GetModel() embedding.Model { return getModel() }
+func (o oneWay) Describe() searchsource.Description { return getModel() }
 
 func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, 0, len(texts))
@@ -183,7 +183,7 @@ func (oneWay) Close() error { return nil }
 // outOfReach is an embedder on the other side of a network that is not there.
 type outOfReach struct{ why error }
 
-func (outOfReach) GetModel() embedding.Model { return getModel() }
+func (outOfReach) Describe() searchsource.Description { return getModel() }
 
 func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { return nil, o.why }
 
@@ -264,7 +264,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 }
 
-func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder embeddingport.Embedder) []domain.Passage {
+func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder searchsourceport.Embedder) []domain.Passage {
 	t.Helper()
 	found, err := c.search(embedder).Execute(t.Context(), v, query, search.Parameters{})
 	if err != nil {
@@ -279,7 +279,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
-	for name, embedder := range map[string]embeddingport.Embedder{
+	for name, embedder := range map[string]searchsourceport.Embedder{
 		"with no embedder at all":        nil,
 		"with an embedder and no vector": oneWay{direction: newVector(+1)},
 	} {
@@ -613,12 +613,12 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 }
 
 type countingEmbedder struct {
-	inner embeddingport.Embedder
+	inner searchsourceport.Embedder
 	count int
 }
 
-func (e *countingEmbedder) GetModel() embedding.Model {
-	return e.inner.GetModel()
+func (e *countingEmbedder) Describe() searchsource.Description {
+	return e.inner.Describe()
 }
 
 func (e *countingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
