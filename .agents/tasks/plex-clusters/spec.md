@@ -67,7 +67,7 @@ Replaces `canPlace` in `arrange.ts` and the per-line capacity of `limits.ts`.
 
 ### 1.5 Routing
 
-`edges/routing.ts` is not changed. `getAxis` still takes the axis from the side of the relation (`vertical` for parents and children, `horizontal` for jumps and siblings). Sibling edges come from the neighborhood as parent → sibling and are routed as today. Lines that pass behind a box in a second row are accepted for this issue (open question 3).
+`edges/routing.ts` is not changed. `getAxis` still takes the axis from the side of the relation (`vertical` for parents and children, `horizontal` for jumps and siblings). Sibling edges come from the graph as parent → sibling and are routed as today. Lines that pass behind a box in a second row are accepted for this issue (open question 3).
 
 ## 2. The direction table (`lib/relation.ts`)
 
@@ -136,14 +136,14 @@ No proto, wire, manifest or setting change. `apps/landing` has its own plex demo
 - The `Placement` interface stays a coordinates-only strategy: admission and fitting live in `arrange.ts` / `admission.ts` / `crowding.ts`, not in `clusters`.
 - No camera zoom, no change of box sizes by the placement, no "+N" node.
 - Files ≤ 350 lines, functions ≤ 80 lines, complexity ≤ 10, ≤ 4 params; imperative names (`placeClusters`, `takeTurns`, `getAnchor`, `getClusterMiddle`, `findFreeSpot`, `listCandidates`, `measureCost`, `isFree`, `requestNodes`, `admitNodes`); comments only for what the code cannot show (the 0.5 tolerance, the stable tie order).
-- Tests use invented fixtures (`fixtures/build.ts`, `fixtures/neighborhoods.ts`), assert behavior on the frame (positions relative to the focus and each other, counts, edges), never CSS or pixels of the rendering, and do not mock the placement or admission they verify.
+- Tests use invented fixtures (`fixtures/build.ts`, `fixtures/graphs.ts`), assert behavior on the frame (positions relative to the focus and each other, counts, edges), never CSS or pixels of the rendering, and do not mock the placement or admission they verify.
 
 ## 6. Acceptance criteria
 
 Every criterion runs through `arrangePlex` unless it names a unit. The counts and window sizes below were chosen from the prototype's behavior; if one proves false against a faithful port of it, the tester reports it with the frame before changing it. "Window" is `options.viewport`; "inside" means inside the window less `margin`. Overlap is `isOverlapping` of the boxes (`layout/boxes.ts` `getBox(node, 0)`).
 
 ### AC-1: No two boxes overlap
-- **Given** every fixture in `neighborhoods`, unmeasured and measured by title, with no window and in windows 2400×1400, 1200×800, 700×600, 420×320, and the `room` setting at 0 and 20
+- **Given** every fixture in `graphs`, unmeasured and measured by title, with no window and in windows 2400×1400, 1200×800, 700×600, 420×320, and the `room` setting at 0 and 20
 - **Then** no two nodes of the frame overlap, the focus included.
 
 ### AC-2: Each relation on its side
@@ -165,7 +165,7 @@ Every criterion runs through `arrangePlex` unless it names a unit. The counts an
 - **Then** the mean center `y` of the children grows with n.
 
 ### AC-6: Groups take turns
-- **Given** `build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 })` and the same neighborhood with only the single parent, jump and sibling, no window
+- **Given** `build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 })` and the same graph with only the single parent, jump and sibling, no window
 - **Then** the parent, the jump and the sibling sit at the same position in both frames: twenty children placed alongside do not push the first note of another group away from its start.
 
 ### AC-7: A group fills free space beside another
@@ -179,7 +179,7 @@ Every criterion runs through `arrangePlex` unless it names a unit. The counts an
 - **Then** at least 20 jumps are shown, and the shown jumps take at least three distinct columns (center `x`) and at least three distinct rows (center `y`).
 
 ### AC-9: Overflow is counted, and only the last notes go
-- **Given** `neighborhoods.overcrowded` and `build('A note', { parent: 9, child: 40, jump: 9, sibling: 9 })` in a 400×400 window
+- **Given** `graphs.overcrowded` and `build('A note', { parent: 9, child: 40, jump: 9, sibling: 9 })` in a 400×400 window
 - **Then** for each relation the shown nodes are the first ones in arrival order; `overflow[relation]` + shown = arrived; at least one relation has overflow; no box lies outside the window; edges to nodes not shown are dropped.
 - **Given** no window and a relation of 30 nodes
 - **Then** 20 are shown (`maxPerCluster`) and `overflow` is 10; with `maxPerCluster: 5`, 5 and 25.
@@ -228,6 +228,6 @@ Every criterion runs through `arrangePlex` unless it names a unit. The counts an
 
 ## 7. Performance check (reported, not a test)
 
-`admitNodes` and `measureCrowding` lay the arrangement several times. The coder measures `arrangePlex` on `crowded`, `overcrowded` and AC-11's full neighborhood in a 1200×800 window on mridanga and reports the time per call in the PR thread; above 16 ms it is raised with the owner before merge.
+`admitNodes` and `measureCrowding` lay the arrangement several times. The coder measures `arrangePlex` on `crowded`, `overcrowded` and AC-11's full graph in a 1200×800 window on mridanga and reports the time per call in the PR thread; above 16 ms it is raised with the owner before merge.
 
-Measured on mridanga in a 1200×800 window, per `arrangePlex` call: `crowded` 3.8 ms, AC-11's full neighborhood (6/21/7/7) 3.6 ms, `overcrowded` (200 children, 40 jumps) 12.2 ms, down from 1890 ms. The free-spot search keeps placed boxes in a grid; fit checks (`measureCrowding`, `findSpacing`) stop laying at the first box outside the window and admission stops a pass once every relation has met a box outside or is fully placed (`PlacementContext.shouldStop`). The results are unchanged.
+Measured on mridanga in a 1200×800 window, per `arrangePlex` call: `crowded` 3.8 ms, AC-11's full graph (6/21/7/7) 3.6 ms, `overcrowded` (200 children, 40 jumps) 12.2 ms, down from 1890 ms. The free-spot search keeps placed boxes in a grid; fit checks (`measureCrowding`, `findSpacing`) stop laying at the first box outside the window and admission stops a pass once every relation has met a box outside or is fully placed (`PlacementContext.shouldStop`). The results are unchanged.

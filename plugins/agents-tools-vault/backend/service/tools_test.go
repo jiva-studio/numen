@@ -259,7 +259,7 @@ func testNeighborhoodQuery(t *testing.T, registry *tools.Registry, toolName stri
 	}
 }
 
-func TestNoteNeighborhood(t *testing.T) {
+func TestNoteGraph(t *testing.T) {
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {

@@ -1,10 +1,11 @@
 /**
  * The handlers of shared commands that run in their plugins' backends: the declarations the core
  * lists, the items the core lists for one, and a run of one that writes its message and opens the
- * file it returns, or rejects with its error, which the caller of the run reports.
+ * file it returns, or rejects with a ReportedError of the plugin's message, which the caller of the run reports.
  */
 import type { CommandItem, HandlerDeclaration, PluginHostDeps } from '@numen/plugin-loader'
 import type { runDeclaredHandler } from '@/entities/plugin'
+import { ReportedError } from '@/shared/api/errors'
 
 export interface BackendHandlersDeps {
   readonly getHandlers: () => readonly HandlerDeclaration[] | undefined
@@ -35,7 +36,7 @@ export function createBackendHandlers(
           ...(itemId === undefined ? {} : { itemId }),
         },
       )
-      if (!outcome.ok) throw new Error(outcome.error)
+      if (!outcome.ok) throw new ReportedError(outcome.error)
       const { message, openedPath } = outcome.value
       if (message) deps.writeMessage(message, 'info')
       if (openedPath) await deps.openFile(openedPath)

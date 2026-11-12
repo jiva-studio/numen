@@ -33,6 +33,15 @@ for (const dir of [cacheDir, dataDir, stateDir]) fs.mkdirSync(dir, { recursive: 
 // tests/support/certificate.ts names the same file.
 const certificateFile = path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
 fs.rmSync(certificateFile, { force: true })
+// A run that names the port of another debug server in NUMEN_E2E_SHARED_CERTIFICATE_PORT serves the
+// certificate and key of that server, so one browser trusts both.
+const sharedPort = process.env.NUMEN_E2E_SHARED_CERTIFICATE_PORT
+const certificateEnv = sharedPort
+  ? {
+      NUMEN_DEBUG_TLS_USE_CERT: path.join(os.tmpdir(), `numen-e2e-certificate-${sharedPort}.pem`),
+      NUMEN_DEBUG_TLS_USE_KEY: path.join(os.tmpdir(), `numen-e2e-key-${sharedPort}.pem`),
+    }
+  : { NUMEN_DEBUG_TLS_CERT: certificateFile }
 
 const standIns = await startStandIns()
 
@@ -70,6 +79,10 @@ function cleanup() {
       console.warn(`could not remove ${dir}: ${error.message}`)
     }
   }
+  // A vault in a folder of its own leaves that folder.
+  if (process.env.NUMEN_FLASHCARDS_VAULT_FOLDER) {
+    fs.rmSync(path.dirname(vault), { recursive: true, force: true })
+  }
 }
 
 const child = spawn(binaryPath, [`-debug-http-addr=127.0.0.1:${port}`, `-debug-vault=${vault}`], {
@@ -82,7 +95,7 @@ const child = spawn(binaryPath, [`-debug-http-addr=127.0.0.1:${port}`, `-debug-v
     XDG_DATA_HOME: dataDir,
     XDG_STATE_HOME: stateDir,
     NUMEN_PLUGINS_PATH: pluginsPath,
-    NUMEN_DEBUG_TLS_CERT: certificateFile,
+    ...certificateEnv,
   },
 })
 

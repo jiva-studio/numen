@@ -37,7 +37,7 @@ type ConnectionWriter interface {
 // RelatedNoteCreator creates a note joined to an existing one.
 type RelatedNoteCreator interface {
 	// CreateInRelation creates a note joined to an existing one and returns its path.
-	CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error)
+	CreateInRelation(ctx context.Context, in domain.NewRelatedNote) (string, error)
 }
 
 var (
@@ -174,7 +174,7 @@ func (c *Client) Join(ctx context.Context, from, to string, side domain.Side) er
 	return fail(res.Msg.GetError())
 }
 
-func (c *Client) CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error) {
+func (c *Client) CreateInRelation(ctx context.Context, in domain.NewRelatedNote) (string, error) {
 	res, err := c.rpc.CreateRelatedNote(ctx, request(c, &v1.HostVaultServiceCreateRelatedNoteRequest{
 		From: in.From, Role: writeRole(in.Role), Title: in.Title, Type: in.Type,
 		Marker: writeMarker(in.Marker),

@@ -22,14 +22,14 @@ export interface NoteHeading {
   readonly line: number
 }
 
-// NoteRelation is how a neighboring note is linked to the focused note.
+// NoteRelation is how a related note is linked to the focused note.
 export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
 
-// NoteNeighbor is one note joined to the note in focus. The records that join notes are in NoteNeighborhood.connections.
-export interface NoteNeighbor {
+// RelatedNote is one note joined to the note in focus. The records that join notes are in NoteGraph.connections.
+export interface RelatedNote {
   readonly path: string
   readonly title: string
   readonly relation: NoteRelation
@@ -37,21 +37,21 @@ export interface NoteNeighbor {
   readonly tabKind?: string
 }
 
-// NoteNeighborhood is a note in focus, the notes joined to it, and one connection for every line drawn between
-// them. A line joins the note in focus to a neighbor, or two neighbors to each other. A connection of the
+// NoteGraph is a note in focus, the notes joined to it, and one connection for every line drawn between
+// them. A line joins the note in focus to a related note, or two related notes to each other. A connection of the
 // hierarchy has the parent as its first note and the child as its second; a connection of jumps has the note drawn
 // later as its first note.
-export interface NoteNeighborhood {
+export interface NoteGraph {
   readonly focus: NoteRef
   readonly focusType: NoteType
   readonly focusTabKind?: string
-  readonly related: readonly NoteNeighbor[]
+  readonly related: readonly RelatedNote[]
   readonly connections: readonly Connection[]
 }
 
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.
 export interface VaultNotes {
-  getNeighborhood(path: string): Promise<NoteNeighborhood>
+  listRelatedNotes(path: string): Promise<NoteGraph>
   getHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.

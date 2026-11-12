@@ -12,8 +12,8 @@ import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
 import type { PlexRelation } from '../../types'
 
-const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
-const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.relation === 'child')!.title
+const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
+const A_CHILD = GRAPH.nodes.find((n) => n.relation === 'child')!.title
 
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
@@ -37,7 +37,7 @@ type PlexProps = InstanceType<typeof Plex>['$props']
 
 const mountPlex = (props: Partial<PlexProps> = {}) => {
   const plex = mount(Plex, {
-    props: { neighborhood: NEIGHBOURHOOD, duration: 0, ...props },
+    props: { graph: GRAPH, duration: 0, ...props },
     attachTo: document.body,
   })
   const svg = plex.find('svg').element as SVGSVGElement

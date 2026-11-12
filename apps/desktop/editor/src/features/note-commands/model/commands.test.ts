@@ -171,6 +171,19 @@ describe('the commands over a note', () => {
     expect(set.commands.map((one) => one.id)).not.toContain('app:file.remove#permanent')
   })
 
+  it('is offered over every file but not over the vault root', () => {
+    const { set } = createWindow()
+    const removing = set.commands.find((one) => one.id === 'app:file.remove')
+    const runs = { canRun: () => true, cannotRun: () => undefined }
+    const over = (path: string) => removing?.isAvailable(front({ path, file: path }), runs) ?? false
+
+    expect(over('physics/Ontology.md')).toBe(true)
+    expect(over('assets/shore.pdf')).toBe(true)
+    expect(over('assets/sample.epub')).toBe(true)
+    expect(over('assets/lecture.wav')).toBe(true)
+    expect(over('')).toBe(false)
+  })
+
   it('hold no command of the old ids', () => {
     const { set } = createWindow()
     const ids = set.commands.map((one) => one.command ?? one.id)

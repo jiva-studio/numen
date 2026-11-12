@@ -13,7 +13,7 @@ import { APART, byDoubleClick, byDoubleTap, TAP } from '../model/interaction/des
 import { LONG_PRESS_DELAY } from '../model/interaction/longPress'
 import { build } from '../fixtures/build'
 
-const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
+const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
 
 function stubMatrix(element: SVGSVGElement) {
   const screen = {
@@ -32,7 +32,7 @@ function stubMatrix(element: SVGSVGElement) {
 
 const mountPlex = (props: Record<string, unknown> = {}) => {
   const plex = mount(Plex, {
-    props: { neighborhood: NEIGHBOURHOOD, duration: 0, reaching: byLongPress(), ...props },
+    props: { graph: GRAPH, duration: 0, reaching: byLongPress(), ...props },
     attachTo: document.body,
   })
   const svg = plex.find('svg').element as SVGSVGElement

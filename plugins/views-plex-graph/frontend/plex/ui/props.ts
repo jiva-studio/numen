@@ -10,14 +10,14 @@ import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
-import type { PlexHeading, PlexNeighborhood, PlexRelation, PlexDestination } from '../../types'
+import type { PlexHeading, PlexGraph, PlexRelation, PlexDestination } from '../../types'
 
 /**
  * With `showPills` off each title is drawn without its pill, after a dot in the hue of its
  * relation. `lineWidth` and `outlineWidth` are in pixels.
  */
 export interface PlexProps {
-  neighborhood: PlexNeighborhood
+  graph: PlexGraph
   options?: PlexOptionsInput
   placement?: Placement
   showEdgeLabels?: boolean

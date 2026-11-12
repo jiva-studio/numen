@@ -119,7 +119,7 @@ func TestStartAnswers(t *testing.T) {
 	for ctx.Err() == nil {
 		relations = map[string]int{}
 		var around []any
-		if related, hasRelated := ask("NoteService", "GetNeighborhood", map[string]any{"path": graphCenter})["related"]; hasRelated && related != nil {
+		if related, hasRelated := ask("NoteService", "ListRelatedNotes", map[string]any{"path": graphCenter})["related"]; hasRelated && related != nil {
 			around = asList(t, related)
 		}
 		for _, one := range around {

@@ -119,6 +119,12 @@ describe('a list', () => {
     expect(widgets('- a\n- b\n')[0]).toBeInstanceOf(Bullet)
   })
 
+  it('draws the disc as a cm-bullet element', () => {
+    const disc = (widgets('- Fundamental principle of entropy\n')[0] as Bullet).toDOM()
+    expect(disc.className).toBe('cm-bullet')
+    expect(disc.textContent).toBe('•')
+  })
+
   it('leaves the number of an ordered list alone', () => {
     expect(widgets('1. a\n2. b\n')).toHaveLength(0)
   })

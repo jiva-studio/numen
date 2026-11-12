@@ -1,0 +1,87 @@
+Feature: Decks
+  A person makes a deck of cards and edits the values of its cards.
+
+  As a person who learns with cards
+  I want to make decks and card models and to edit the values of my cards
+  So that my cards stay in their deck and I can keep them up to date
+
+  Background:
+    Given the empty vault "Test"
+
+  Rule: A deck or a card model is made
+
+    Background:
+      Given the vault has the following:
+        | path      | text |
+        | Glaciers/ |      |
+      And the application "editor" starts
+
+    Scenario: A deck is made at the top
+      When the person runs the command "Create deck" with:
+        | Title | Rivers |
+      Then the Deck tab titled "Rivers" is active
+      And the vault contains the file at "Rivers.md"
+      And the Files tab titled "Files" has "Rivers.md"
+
+    Scenario: A deck is made in a folder
+      When the person runs the command "Create deck" on the folder at "Glaciers" with:
+        | Title | Moraines |
+      Then the vault contains the file at "Glaciers/Moraines.md"
+      And the Deck tab at "Glaciers/Moraines.md" is active
+
+    Scenario: A card model is made in a folder
+      When the person runs the command "Create card model" on the folder at "Glaciers" with:
+        | Title | Ice cores |
+      Then the vault contains the file at "Glaciers/Ice cores.md"
+      And the Card Model tab at "Glaciers/Ice cores.md" is active
+
+  Rule: A value of a card is kept in its deck
+
+    Background:
+      Given the vault has the following card models:
+        | card model | fields       | template | front    | back       |
+        | Animal     | Name, Height | Size     | {{Name}} | {{Height}} |
+      And the vault has the following cards:
+        | deck        | card model | Name  | Height      |
+        | Shore birds | Animal     | Heron | about 1 m   |
+        | Shore birds | Animal     | Otter | about 30 cm |
+      And the application "editor" starts
+
+    Scenario: A value is saved
+      Given the person opens the file at "cards/Shore birds.md"
+      When the person writes "1.2 m" in the field "Height" of the card "Card 1" of the Deck tab titled "Shore birds"
+      Then the vault contains the following:
+        | path                 | text  |
+        | cards/Shore birds.md | 1.2 m |
+
+    Scenario: A saved value is shown after the application starts again
+      Given the person opens the file at "cards/Shore birds.md"
+      And the person writes "1.2 m" in the field "Height" of the card "Card 1" of the Deck tab titled "Shore birds"
+      When the application "editor" restarts
+      Then the Deck tab titled "Shore birds" has "1.2 m" in the field "Height" of the card "Card 1"
+      And the Deck tab titled "Shore birds" has "about 30 cm" in the field "Height" of the card "Card 2"
+
+  Rule: A removed deck or card model closes its tab
+
+    Background:
+      Given the vault has the following card models:
+        | card model | fields       | template | front    | back       |
+        | Animal     | Name, Height | Size     | {{Name}} | {{Height}} |
+      And the vault has the following cards:
+        | deck        | card model | Name  | Height    |
+        | Shore birds | Animal     | Heron | about 1 m |
+      And the application "editor" starts
+
+    Scenario: A removed deck closes its tab
+      Given the person opens the file at "cards/Shore birds.md"
+      And the Deck tab titled "Shore birds" is open
+      When the person runs the command "Move to trash" on the file at "cards/Shore birds.md"
+      Then the Deck tab titled "Shore birds" is not open
+      And the vault does not contain the file at "cards/Shore birds.md"
+
+    Scenario: A removed card model closes its tab
+      Given the person opens the file at "cards/Animal.md"
+      And the Card Model tab titled "Animal" is open
+      When the person runs the command "Move to trash" on the file at "cards/Animal.md"
+      Then the Card Model tab titled "Animal" is not open
+      And the vault does not contain the file at "cards/Animal.md"

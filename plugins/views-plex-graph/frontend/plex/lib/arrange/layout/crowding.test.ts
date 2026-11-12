@@ -8,7 +8,7 @@ import type { PlexFrame } from '../../frame'
 
 const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS
 
-/** The neighborhood on which a narrow window dropped relations. */
+/** The graph on which a narrow window dropped relations. */
 const COUNTS = { parent: 1, child: 6, jump: 1, sibling: 2 }
 
 const holdsAll = (frame: PlexFrame) => Object.keys(frame.overflow).length === 0
@@ -20,7 +20,7 @@ const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: n
       Math.abs(node.y) + node.height / 2 > viewport.height / 2 - margin,
   )
 
-/** Whether the window holds every node of the neighborhood at the given packing. */
+/** Whether the window holds every node of the graph at the given packing. */
 const canHoldAll = (packed: PlexOptions): boolean => {
   const { viewport } = packed
   const frame = arrangePlex(build('A node', COUNTS), {

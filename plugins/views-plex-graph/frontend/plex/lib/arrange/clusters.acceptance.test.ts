@@ -4,14 +4,14 @@ import { arrangePlex } from './arrange'
 import { getBox, isOverlapping, type Box } from './layout/boxes'
 import { measureCrowding, packOptions } from './layout/crowding'
 import { DEFAULT_OPTIONS, resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
-import { neighborhoods } from '../../fixtures/neighborhoods'
+import { graphs } from '../../fixtures/graphs'
 import { build } from '../../fixtures/build'
 import { ring } from '../../fixtures/ring'
 import { RELATION_NAMES } from '../relation'
 import type { PlexFrame } from '../frame'
 import type { PlacedNode } from '../node'
 import type { Placement } from './layout/placement'
-import type { PlexNeighborhood, PlexNode, PlexNodeRelation, PlexRelation } from '../../../types'
+import type { PlexGraph, PlexNode, PlexNodeRelation, PlexRelation } from '../../../types'
 
 type Input = PlexOptionsInput & { maxPerCluster?: number }
 type Window = { width: number; height: number }
@@ -20,18 +20,18 @@ const byTitle = (node: PlexNode): number => 40 + node.title.length * 7
 const { margin } = DEFAULT_OPTIONS
 
 const arrange = (
-  neighborhood: PlexNeighborhood,
+  graph: PlexGraph,
   options: Input = {},
   extra: { measure?: (node: PlexNode) => number; placement?: Placement } = {},
-): PlexFrame => arrangePlex(neighborhood, { options: options as PlexOptionsInput, ...extra })
+): PlexFrame => arrangePlex(graph, { options: options as PlexOptionsInput, ...extra })
 
 const inWindow = (viewport: Window, options: Input = {}) => ({ ...options, viewport })
 
 const getFocus = (frame: PlexFrame): PlacedNode => frame.nodes.find((n) => n.relation === 'focus')!
 const getShown = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode[] =>
   frame.nodes.filter((node) => node.relation === relation)
-const getArrived = (neighborhood: PlexNeighborhood, relation: PlexRelation): PlexNode[] =>
-  neighborhood.nodes.filter((node) => node.relation === relation)
+const getArrived = (graph: PlexGraph, relation: PlexRelation): PlexNode[] =>
+  graph.nodes.filter((node) => node.relation === relation)
 const mean = (values: readonly number[]): number =>
   values.reduce((sum, value) => sum + value, 0) / values.length
 
@@ -91,19 +91,19 @@ const WINDOWS: readonly (Window | undefined)[] = [
 ]
 
 describe('no two boxes overlap', () => {
-  const cases = Object.entries(neighborhoods).flatMap(([name, neighborhood]) =>
+  const cases = Object.entries(graphs).flatMap(([name, graph]) =>
     [undefined, byTitle].flatMap((measure) =>
       [0, 20].flatMap((room) =>
-        WINDOWS.map((viewport) => ({ name, neighborhood, measure, room, viewport })),
+        WINDOWS.map((viewport) => ({ name, graph, measure, room, viewport })),
       ),
     ),
   )
 
   it.each(cases)(
     '$name, measured $measure, room $room, window $viewport',
-    ({ neighborhood, measure, room, viewport }) => {
+    ({ graph, measure, room, viewport }) => {
       const frame = arrange(
-        neighborhood,
+        graph,
         { room, ...(viewport ? { viewport } : {}) },
         measure ? { measure } : {},
       )
@@ -117,10 +117,10 @@ describe('each relation stands on its side of the focus', () => {
   const window = { width: 1600, height: 1000 }
 
   it.each([
-    ['typical', neighborhoods.typical],
+    ['typical', graphs.typical],
     ['eight, twenty, eight and eight', full],
-  ])('puts every neighbor on its side in %s', (_name, neighborhood) => {
-    const frame = arrange(neighborhood, inWindow(window))
+  ])('puts every neighbor on its side in %s', (_name, graph) => {
+    const frame = arrange(graph, inWindow(window))
     const focus = getFocus(frame)
     const top = focus.y - focus.height / 2
     const bottom = focus.y + focus.height / 2
@@ -137,10 +137,10 @@ describe('each relation stands on its side of the focus', () => {
   })
 
   it.each([
-    ['typical', neighborhoods.typical],
+    ['typical', graphs.typical],
     ['eight, twenty, eight and eight', full],
-  ])('leans the jumps down in %s', (_name, neighborhood) => {
-    const frame = arrange(neighborhood, inWindow(window))
+  ])('leans the jumps down in %s', (_name, graph) => {
+    const frame = arrange(graph, inWindow(window))
     expect(mean(getShown(frame, 'jump').map((node) => node.y))).toBeGreaterThan(getFocus(frame).y)
   })
 })
@@ -266,12 +266,12 @@ describe('what is left out is counted, and only the last notes go', () => {
   const many = build('A note', { parent: 9, child: 40, jump: 9, sibling: 9 })
 
   it.each([
-    ['overcrowded', neighborhoods.overcrowded],
+    ['overcrowded', graphs.overcrowded],
     ['nine, forty, nine and nine', many],
-  ])('shows the first of each relation in arrival order in %s', (_name, neighborhood) => {
-    const frame = arrange(neighborhood, inWindow(tiny))
+  ])('shows the first of each relation in arrival order in %s', (_name, graph) => {
+    const frame = arrange(graph, inWindow(tiny))
     for (const relation of RELATION_NAMES) {
-      const arrived = getArrived(neighborhood, relation).map((node) => node.id)
+      const arrived = getArrived(graph, relation).map((node) => node.id)
       const shown = getShown(frame, relation).map((node) => node.id)
       expect(shown).toStrictEqual(arrived.slice(0, shown.length))
       expect(shown.length + (frame.overflow[relation] ?? 0)).toBe(arrived.length)
@@ -279,12 +279,12 @@ describe('what is left out is counted, and only the last notes go', () => {
   })
 
   it.each([
-    ['overcrowded', neighborhoods.overcrowded],
+    ['overcrowded', graphs.overcrowded],
     ['nine, forty, nine and nine', many],
   ])(
     'leaves out at least one note and keeps every box in the window in %s',
-    (_name, neighborhood) => {
-      const frame = arrange(neighborhood, inWindow(tiny))
+    (_name, graph) => {
+      const frame = arrange(graph, inWindow(tiny))
       expect(Object.values(frame.overflow).some((count) => count > 0)).toBe(true)
       expect(getOutside(frame.nodes, tiny)).toStrictEqual([])
     },
@@ -313,11 +313,11 @@ describe('what is left out is counted, and only the last notes go', () => {
 })
 
 describe('boxes narrow and gaps close before a note is left out', () => {
-  const neighborhood = build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })
+  const graph = build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })
   const windows = [600, 560, 540].map((width) => ({ width, height: 1000 }))
 
   const createHolder = (viewport: Window) => (packed: PlexOptions) => {
-    const frame = arrangePlex(neighborhood, { options: { ...packed, viewport: undefined } })
+    const frame = arrangePlex(graph, { options: { ...packed, viewport: undefined } })
     return (
       Object.keys(frame.overflow).length === 0 && getOutside(frame.nodes, viewport).length === 0
     )
@@ -330,7 +330,7 @@ describe('boxes narrow and gaps close before a note is left out', () => {
         128,
     ) / 128
 
-  it('has a window that cannot hold the neighborhood at the settings', () => {
+  it('has a window that cannot hold the graph at the settings', () => {
     const needs = windows.filter(
       (viewport) => !createHolder(viewport)(resolveOptions({ viewport })),
     )
@@ -363,11 +363,11 @@ describe('boxes narrow and gaps close before a note is left out', () => {
 
 describe('gaps open in a roomy window and the arrangement stays inside', () => {
   it('opens the space between neighboring children, by at most the spread', () => {
-    const neighborhood = build('A node', { child: 3 })
+    const graph = build('A node', { child: 3 })
     const children = (frame: PlexFrame) => getShown(frame, 'child')
-    const settings = getSmallestSeparation(children(arrange(neighborhood)))
+    const settings = getSmallestSeparation(children(arrange(graph)))
     const opened = getSmallestSeparation(
-      children(arrange(neighborhood, inWindow({ width: 2400, height: 1400 }))),
+      children(arrange(graph, inWindow({ width: 2400, height: 1400 }))),
     )
     const { gap, lineGap, spread } = DEFAULT_OPTIONS
 
@@ -389,7 +389,7 @@ describe('gaps open in a roomy window and the arrangement stays inside', () => {
 })
 
 describe('siblings join their parent', () => {
-  const frame = arrange(neighborhoods.typical, inWindow({ width: 1200, height: 800 }), {
+  const frame = arrange(graphs.typical, inWindow({ width: 1200, height: 800 }), {
     measure: byTitle,
   })
   const pairs = frame.edges.map((edge) => `${edge.from} ${edge.to}`)
@@ -405,21 +405,21 @@ describe('siblings join their parent', () => {
   })
 
   it('joins every other neighbor to the focus', () => {
-    const expected = neighborhoods.typical.edges.map((edge) => `${edge.from} ${edge.to}`)
+    const expected = graphs.typical.edges.map((edge) => `${edge.from} ${edge.to}`)
     expect([...pairs].sort()).toStrictEqual([...expected].sort())
   })
 })
 
 describe('the same input gives the same picture', () => {
-  it.each(Object.entries(neighborhoods))('arranges %s the same twice', (_name, neighborhood) => {
+  it.each(Object.entries(graphs))('arranges %s the same twice', (_name, graph) => {
     const options = inWindow({ width: 1200, height: 800 })
-    expect(arrange(neighborhood, options, { measure: byTitle })).toStrictEqual(
-      arrange(neighborhood, options, { measure: byTitle }),
+    expect(arrange(graph, options, { measure: byTitle })).toStrictEqual(
+      arrange(graph, options, { measure: byTitle }),
     )
   })
 
   it('places a node alike whichever relation comes first in the list', () => {
-    const { typical } = neighborhoods
+    const { typical } = graphs
     const order = (node: PlexNode) =>
       node.relation === 'focus' ? -1 : -RELATION_NAMES.indexOf(node.relation)
     const shuffled = { ...typical, nodes: [...typical.nodes].sort((a, b) => order(a) - order(b)) }
@@ -449,11 +449,11 @@ describe('the direction of a side comes from the options', () => {
 })
 
 describe('any placement strategy is admitted by the window', () => {
-  const neighborhood = neighborhoods.overcrowded
+  const graph = graphs.overcrowded
 
   it('shows only what is inside a 700×600 window and counts the rest', () => {
     const viewport = { width: 700, height: 600 }
-    const frame = arrange(neighborhood, inWindow(viewport), { placement: ring })
+    const frame = arrange(graph, inWindow(viewport), { placement: ring })
     expect(
       getOutside(
         frame.nodes.filter((n) => n.relation !== 'focus'),
@@ -462,15 +462,15 @@ describe('any placement strategy is admitted by the window', () => {
     ).toStrictEqual([])
     for (const relation of RELATION_NAMES) {
       expect(getShown(frame, relation).length + (frame.overflow[relation] ?? 0)).toBe(
-        getArrived(neighborhood, relation).length,
+        getArrived(graph, relation).length,
       )
     }
   })
 
   it('shows as many per relation as the cap allows without a window, whatever the strategy returns', () => {
-    const frame = arrange(neighborhood, {}, { placement: ring })
+    const frame = arrange(graph, {}, { placement: ring })
     for (const relation of RELATION_NAMES) {
-      const arrived = getArrived(neighborhood, relation).length
+      const arrived = getArrived(graph, relation).length
       expect(getShown(frame, relation)).toHaveLength(Math.min(arrived, DEFAULT_MAX_PER_CLUSTER))
     }
   })

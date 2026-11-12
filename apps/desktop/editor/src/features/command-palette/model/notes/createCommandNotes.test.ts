@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createTestTabs } from '@/testing/tabs'
+import type { AnyTabKind } from '@numen/plugin-loader'
 import { createCommandNotes } from './createCommandNotes'
 
 describe('the open files a command can access', () => {
@@ -43,5 +45,49 @@ describe('the open files a command can access', () => {
     notes.close('tab:1')
     expect(onCloseCalled).toHaveBeenCalledWith('tab:1')
     expect(requestClose).toHaveBeenCalledWith('tab:1')
+  })
+})
+
+describe('the tab to close when a file is removed', () => {
+  const FILE = 'cards/Shore birds.md'
+
+  const tool: AnyTabKind = {
+    kind: 'graph',
+    open: () => ({}),
+    pane: {},
+    getTitle: () => 'Graph',
+    display: { isTool: true },
+    address: { getOpenTab: () => ({ path: FILE }) },
+  }
+
+  const deck: AnyTabKind = {
+    kind: 'deck',
+    open: () => ({}),
+    pane: {},
+    getTitle: () => 'Shore birds',
+    address: { getOpenTab: () => ({ path: FILE }) },
+    events: { flushPending: () => Promise.resolve(), onClose: () => true },
+  }
+
+  const reached = {
+    getTabAt: () => null,
+    getPath: (id: string) => id,
+    asking: () => false,
+    flushPending: () => Promise.resolve(),
+    close: () => undefined,
+    openFile: () => undefined,
+  }
+
+  it('is the tab of the file, not a tool tab with the same path', async () => {
+    const windowTabs = createTestTabs()
+    windowTabs.groups.registerKinds([tool, deck])
+    const toolId = await windowTabs.tabs.openTabOfKind('graph')
+    const deckId = await windowTabs.tabs.openTabOfKind('deck', FILE)
+    const notes = createCommandNotes(reached, windowTabs)
+
+    notes.close(notes.getTabAt(FILE) ?? '')
+
+    expect(windowTabs.tabs.getTab(deckId)).toBeNull()
+    expect(windowTabs.tabs.getTab(toolId)).not.toBeNull()
   })
 })

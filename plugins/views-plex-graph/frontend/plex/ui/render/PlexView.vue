@@ -112,7 +112,7 @@ const getRole = (node: PlacedNode): GestureRole => {
     :viewBox="viewBox"
     preserveAspectRatio="xMidYMid meet"
     role="group"
-    aria-label="Neighborhood"
+    aria-label="Related notes"
   >
     <defs v-if="showEdgeLabels">
       <template v-for="line in lines" :key="`along:${line.key}`">

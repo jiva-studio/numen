@@ -624,6 +624,29 @@ describe('item with multiple actions', () => {
     expect(getSpokenKey(hint)).toBe('Option 1')
     expect(options()[1]?.querySelector('[data-palette="hint"]')).toBeNull()
   })
+
+  it('writes a keystroke that holds Shift on the row that names it', async () => {
+    mountPalette({
+      groups: [
+        {
+          id: 'names',
+          title: 'Names',
+          items: [
+            { id: 'chat', title: 'Open agent chat', keys: { icons: ['control', 'shift'], letter: 'A' } },
+            { id: 'graph', title: 'Open plex graph', keys: { icons: ['command', 'shift'], letter: 'X' } },
+          ],
+        },
+      ],
+    })
+    await settle()
+
+    const hints = options().map((row) => row.querySelector('[data-palette="hint"]'))
+    expect(hints.map(getMarks)).toEqual([
+      ['chevron-up', 'arrow-big-up'],
+      ['command', 'arrow-big-up'],
+    ])
+    expect(hints.map(getSpokenKey)).toEqual(['Control Shift A', 'Command Shift X'])
+  })
 })
 
 describe('the action panel', () => {

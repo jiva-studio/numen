@@ -1,4 +1,4 @@
-/** How much of a neighborhood is shown: the window decides, and the cap holds when there is none. */
+/** How much of a graph is shown: the window decides, and the cap holds when there is none. */
 import { RELATION_NAMES } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { PlexOptions } from '../options'

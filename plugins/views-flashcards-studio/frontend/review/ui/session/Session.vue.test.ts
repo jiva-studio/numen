@@ -109,3 +109,12 @@ describe('a session with the panel up', () => {
     expect(down.find('.carousel__here').attributes('inert')).toBeUndefined()
   })
 })
+
+describe('the line that says where the card is from', () => {
+  // The review of one deck shows which deck it is and how many cards are left in it.
+  it('names the deck of the card and says how many cards are left', () => {
+    const one = session()
+    expect(one.find('.session__deck').text()).toBe('Words')
+    expect(one.find('.session__left').text()).toBe('3 left')
+  })
+})

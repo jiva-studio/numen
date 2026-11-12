@@ -44,7 +44,7 @@ const getSharedPairEnv = (): Record<string, string> => {
 }
 
 /** What a scenario sets on the server beyond the plugins it installs. */
-export interface OwnServerOptions {
+interface OwnServerOptions {
   readonly env?: Readonly<Record<string, string>>
   readonly settings?: string
 }

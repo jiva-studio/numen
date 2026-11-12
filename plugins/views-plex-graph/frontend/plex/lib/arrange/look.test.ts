@@ -3,18 +3,18 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { resolveOptions, type PlexOptionsInput } from './options'
 import { optionsForType, DESIGNED_TYPE } from '../../model/sizing/plexScale'
-import { neighborhoods } from '../../fixtures/neighborhoods'
+import { graphs } from '../../fixtures/graphs'
 import { build } from '../../fixtures/build'
 import type { PlacedNode } from '../node'
 import type { PlexFrame } from '../frame'
-import type { PlexNeighborhood, PlexNode } from '../../../types'
+import type { PlexGraph, PlexNode } from '../../../types'
 
 const byTitle = (node: PlexNode): number => 40 + node.title.length * 7
 
 const LARGE = { width: 1200, height: 800 }
 
 /**
- * The boxes of the typical neighborhood as the plex drew them before the look settings,
+ * The boxes of the typical graph as the plex drew them before the look settings,
  * with titles measured by `byTitle`: `[id, width, height]`. Where they stand is the
  * placement's business and is not pinned here.
  */
@@ -52,7 +52,7 @@ const TODAY_EDGES = [
 ]
 
 /** A focus with a title short enough that its pill is never at its widest. */
-const shortFocus: PlexNeighborhood = {
+const shortFocus: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Ports', relation: 'focus' },
     { id: 'parent-0', title: 'Software architecture', relation: 'parent' },
@@ -108,13 +108,13 @@ const getChildSeparation = (frame: PlexFrame): number => {
 }
 
 const arrange = (
-  neighborhood: PlexNeighborhood,
+  graph: PlexGraph,
   options: PlexOptionsInput = {},
   viewport: { width: number; height: number } | undefined = LARGE,
-) => arrangePlex(neighborhood, { options: { ...options, viewport }, measure: byTitle })
+) => arrangePlex(graph, { options: { ...options, viewport }, measure: byTitle })
 
 describe('the default look', () => {
-  const frame = arrange(neighborhoods.typical)
+  const frame = arrange(graphs.typical)
   const byId = new Map(frame.nodes.map((node) => [node.id, node]))
 
   it('draws every neighbor as wide as before and 0.05 taller', () => {
@@ -144,7 +144,7 @@ describe('the default look', () => {
   })
 
   it('is the look the arrangement takes when no look is given', () => {
-    const given = arrange(neighborhoods.typical, {
+    const given = arrange(graphs.typical, {
       focusScale: 1.22,
       padding: { inline: 10, block: 9.25 },
       room: 0,
@@ -156,8 +156,8 @@ describe('the default look', () => {
 
 describe('Pill padding, top and bottom', () => {
   it('makes every box taller by twice the difference at the designed type', () => {
-    const low = arrange(neighborhoods.typical, { padding: { inline: 10, block: 2 } })
-    const high = arrange(neighborhoods.typical, { padding: { inline: 10, block: 12 } })
+    const low = arrange(graphs.typical, { padding: { inline: 10, block: 2 } })
+    const high = arrange(graphs.typical, { padding: { inline: 10, block: 12 } })
     const lowById = new Map(low.nodes.map((node) => [node.id, node]))
 
     for (const node of getNeighbors(high)) {
@@ -167,8 +167,8 @@ describe('Pill padding, top and bottom', () => {
 
   it('makes the focus taller by twice the difference times Focus size', () => {
     const options = { focusScale: 1.5 }
-    const low = arrange(neighborhoods.typical, { ...options, padding: { inline: 10, block: 2 } })
-    const high = arrange(neighborhoods.typical, { ...options, padding: { inline: 10, block: 12 } })
+    const low = arrange(graphs.typical, { ...options, padding: { inline: 10, block: 2 } })
+    const high = arrange(graphs.typical, { ...options, padding: { inline: 10, block: 12 } })
 
     expect(getFocus(high).height - getFocus(low).height).toBeCloseTo(30, 6)
   })
@@ -195,14 +195,14 @@ describe('Focus size', () => {
 
   it('keeps a large focus inside a small window', () => {
     const viewport = { width: 420, height: 300 }
-    const focus = getFocus(arrange(neighborhoods.typical, { focusScale: 2.5 }, viewport))
+    const focus = getFocus(arrange(graphs.typical, { focusScale: 2.5 }, viewport))
 
     expect(focus.width / 2).toBeLessThanOrEqual(viewport.width / 2)
     expect(focus.height / 2).toBeLessThanOrEqual(viewport.height / 2)
   })
 
   it('lets no box overlap another at the largest focus', () => {
-    expect(countOverlaps(arrange(neighborhoods.typical, { focusScale: 2.5 }))).toBe(0)
+    expect(countOverlaps(arrange(graphs.typical, { focusScale: 2.5 }))).toBe(0)
   })
 })
 
@@ -273,8 +273,8 @@ describe('a look drawn at twice the text size', () => {
   })
 
   it('doubles every box it draws', () => {
-    const small = arrangePlex(neighborhoods.typical, { options: designed })
-    const large = arrangePlex(neighborhoods.typical, { options: doubled })
+    const small = arrangePlex(graphs.typical, { options: designed })
+    const large = arrangePlex(graphs.typical, { options: doubled })
     const smallById = new Map(small.nodes.map((node) => [node.id, node]))
 
     for (const node of large.nodes) {

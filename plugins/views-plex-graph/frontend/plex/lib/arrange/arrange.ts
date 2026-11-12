@@ -1,5 +1,5 @@
 /**
- * Turn a neighborhood into a frame: request, fit to the window, admit, place, route.
+ * Turn a graph into a frame: request, fit to the window, admit, place, route.
  *
  * Pure — the same inputs give the same numbers on any machine. Nothing here
  * reads the clock, measures text or touches the DOM: the width of a title is
@@ -7,7 +7,7 @@
  */
 import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
-import { assertNeighborhood } from '../neighborhood'
+import { assertGraph } from '../graph'
 import type { PlacedNode } from '../node'
 import { admitNodes, countOverflow, requestNodes } from './layout/admission'
 import { clusters } from './layout/clusters'
@@ -18,7 +18,7 @@ import type { Placement, NodesByRelation, PlacementContext, Widths } from './lay
 import { routeEdges, createRouting } from './edges/routing'
 import { findSpacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
-import type { PlexNeighborhood, PlexNode } from '../../../types'
+import type { PlexGraph, PlexNode } from '../../../types'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -29,12 +29,12 @@ export interface ArrangeInput {
 }
 
 export function arrangePlex(
-  neighborhood: PlexNeighborhood,
+  graph: PlexGraph,
   { options, placement = clusters, measure, measureLabel, labelType }: ArrangeInput = {},
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
-  const focusNode = assertNeighborhood(neighborhood)
-  const requested = requestNodes(neighborhood.nodes, request)
+  const focusNode = assertGraph(graph)
+  const requested = requestNodes(graph.nodes, request)
 
   // Lays the nodes out at the given options: the focus, then the placement.
   // A caller that does not need every box passes `shouldStop`.
@@ -80,7 +80,7 @@ export function arrangePlex(
         (node) => isInside(node, viewport, margin),
       )
     : requested
-  const overflow = countOverflow(neighborhood.nodes, admitted)
+  const overflow = countOverflow(graph.nodes, admitted)
 
   const spacing = findSpacing(resolved, (candidate, window) =>
     isHeld(
@@ -95,7 +95,7 @@ export function arrangePlex(
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const edgeRouting = createRouting(resolved, measureLabel, labelType)
   const edges = separateTitles(
-    routeEdges(neighborhood.edges, byId, edgeRouting),
+    routeEdges(graph.edges, byId, edgeRouting),
     nodes,
     edgeRouting,
   )

@@ -40,6 +40,10 @@ func (r vaultVersions) GetVersions(ctx context.Context, path string) ([]domain.T
 	return r.repo.GetVersions(ctx, r.vault, path)
 }
 
+func (r vaultVersions) GetVersionsUnder(ctx context.Context, path string) ([]domain.TextVersion, error) {
+	return r.repo.GetVersionsUnder(ctx, r.vault, path)
+}
+
 func (r vaultVersions) SaveVersion(ctx context.Context, v domain.TextVersion) error {
 	return r.repo.SaveVersion(ctx, r.vault, v)
 }
