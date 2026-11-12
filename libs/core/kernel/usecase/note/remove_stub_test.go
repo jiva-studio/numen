@@ -3,7 +3,6 @@ package note_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"io/fs"
 	"slices"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -95,7 +95,7 @@ func (tr *trashScene) remove() note.Remove {
 		*tr.updated = append(*tr.updated, slices.Clone(paths))
 		return tr.levelErr
 	},
-		testsupport.OpenGate{},
+		windowdomain.OpenGate{},
 	)
 }
 
@@ -302,7 +302,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	t.Parallel()
 	tr := newTrashScene()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
-	removing := note.NewRemove(tr.writers, tr.links, tr.sources, nil, testsupport.OpenGate{})
+	removing := note.NewRemove(tr.writers, tr.links, tr.sources, nil, windowdomain.OpenGate{})
 
 	got, err := removing.Execute(t.Context(), domain.Vault{}, "Entropy.md")
 	if err != nil {
