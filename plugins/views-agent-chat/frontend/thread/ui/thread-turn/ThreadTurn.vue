@@ -64,7 +64,10 @@ const call = computed(() => ({
         <ToolCall v-bind="call" />
       </button>
       <ToolCall v-else-if="isDoing" v-bind="call" />
-      <ol v-else-if="entry.turn.voice === 'plan'" class="thread__plan text-hushed flex flex-col gap-1">
+      <ol
+        v-else-if="entry.turn.voice === 'plan'"
+        class="thread__plan text-hushed flex flex-col gap-1"
+      >
         <li
           v-for="(item, index) in plan"
           :key="index"

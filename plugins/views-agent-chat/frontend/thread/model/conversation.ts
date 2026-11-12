@@ -124,7 +124,12 @@ const getStopSentence = (reason: acp.StopReason, words: ConversationStrings): st
   }
 }
 
-function putFailure(answer: Answer, message: string, put: (turn: Turn) => void, nextId: () => string) {
+function putFailure(
+  answer: Answer,
+  message: string,
+  put: (turn: Turn) => void,
+  nextId: () => string,
+) {
   const cleanMessage = message.trim()
   const text = answer.getText().trim()
   if (answer.hasContent() && cleanMessage && text.endsWith(cleanMessage)) {

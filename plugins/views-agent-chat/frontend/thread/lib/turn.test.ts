@@ -93,4 +93,3 @@ describe('placing the same turns again', () => {
     expect(registry).toBeDefined()
   })
 })
-

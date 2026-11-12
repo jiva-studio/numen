@@ -34,7 +34,12 @@ describe('the line that says what the agent has in hand', () => {
     line.reach({ title: 'Read note', subject: 'Plans', path: '' })
     line.settle()
     expect(sendTurn).toHaveBeenLastCalledWith(
-      expect.objectContaining({ id: 'work', text: 'Read note', subject: 'Plans', state: 'settled' }),
+      expect.objectContaining({
+        id: 'work',
+        text: 'Read note',
+        subject: 'Plans',
+        state: 'settled',
+      }),
     )
   })
 

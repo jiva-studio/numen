@@ -62,4 +62,3 @@ export const AwkwardText: Story = {
     subject: 'a note whose title runs on well past the width of the panel it is drawn in',
   },
 }
-

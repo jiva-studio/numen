@@ -312,7 +312,10 @@ describe('the line about work', () => {
   it('settles when its call has ended, completed or failed', async () => {
     for (const status of [acp.ToolCallStatus.COMPLETED, acp.ToolCallStatus.FAILED]) {
       const { hold, release } = createHold()
-      const { conversation } = open({ frames: [callTool('c1', 'Read note'), endTool('c1', status)], hold })
+      const { conversation } = open({
+        frames: [callTool('c1', 'Read note'), endTool('c1', status)],
+        hold,
+      })
       const asked = conversation.ask('what is here?')
       await flushPromises()
 
@@ -513,7 +516,9 @@ describe('a window that is not visible', () => {
 
 describe('the names of the turns', () => {
   it('count up from one question to the next, and never repeat', async () => {
-    const { conversation } = open({ frames: [callTool('c1', 'Read note'), endTool('c1'), say('Yes.')] })
+    const { conversation } = open({
+      frames: [callTool('c1', 'Read note'), endTool('c1'), say('Yes.')],
+    })
 
     await conversation.ask('one')
     await conversation.ask('two')

@@ -56,9 +56,7 @@ describe('the agent tab with no agent set up', () => {
     const tab = mountTab()
     await ask(tab)
 
-    const button = tab.wrapper
-      .findAll('button')
-      .find((one) => one.text() === WORDS.openSettings)!
+    const button = tab.wrapper.findAll('button').find((one) => one.text() === WORDS.openSettings)!
     await button.trigger('click')
 
     expect(tab.getOpened()).toBe(1)

@@ -127,4 +127,3 @@ describe('what the field is called', () => {
     expect(wrapper.get('textarea').attributes('aria-label')).toBe('Ask about this note')
   })
 })
-

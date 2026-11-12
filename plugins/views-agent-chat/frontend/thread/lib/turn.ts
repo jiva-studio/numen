@@ -50,4 +50,3 @@ const placeTurn = (turn: Turn): PlacedTurn => {
 
 /** The turns, with what is true of each where it is located. A turn keeps the entry it was first given. */
 export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] => turns.map(placeTurn)
-

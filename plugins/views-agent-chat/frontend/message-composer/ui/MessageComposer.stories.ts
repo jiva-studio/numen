@@ -94,4 +94,3 @@ export const Grown: Story = {
 /** A word with nowhere to break, a script that is not Latin, and one that
  *  runs the other way. */
 export const AwkwardText: Story = { render: renderComposers(LINK, DEVANAGARI, ARABIC) }
-
