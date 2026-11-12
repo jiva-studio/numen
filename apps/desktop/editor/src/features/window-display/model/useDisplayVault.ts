@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { getAgentUnreachable, getVaultState } from '@/entities/vault'
 
-/** What the vault last answered about itself: its identity, its read errors and its embedding counts. */
+/** What the vault last answered about itself: its identity, its read errors and what the search source says of its index. */
 export function useDisplayVault() {
   return {
     name: ref(''),
@@ -10,9 +10,8 @@ export function useDisplayVault() {
     unwatched: ref(''),
     /** Why an agent cannot be reached, as the vault last answered. */
     unreachable: ref(''),
-    chunks: ref(0),
-    embedded: ref(0),
-    isEmbedding: ref(false),
+    /** What the search source says of its index, as the vault last answered. */
+    coverage: ref(''),
   }
 }
 
@@ -26,9 +25,7 @@ export async function askVaultState(vault: DisplayVault) {
   if (vault.at.value === '') vault.at.value = state.path
   vault.error.value = state.scan.error
   vault.unwatched.value = state.scan.unwatchedPath
-  vault.chunks.value = Number(state.coverage.chunkCount)
-  vault.embedded.value = Number(state.coverage.embeddedCount)
-  vault.isEmbedding.value = state.coverage.isEmbedding
+  vault.coverage.value = state.coverage
   return state
 }
 

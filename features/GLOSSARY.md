@@ -143,7 +143,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### command palette
 - Is: The pop-up box where you type to find notes or run commands. Two entries: search the vault and show commands (Ctrl or Cmd plus P).
-- Texts: "Search the vault", "Show commands", "Type a command", "Search notes", "Actions", "Search actions", "No actions found", "Text search only: no embedding model set" (editor/src/shared/words.ts).
+- Texts: "Search the vault", "Show commands", "Type a command", "Search notes", "Actions", "Search actions", "No actions found" (editor/src/shared/words.ts).
 - Not: not a "menu"; menus hold the same commands.
 
 ### palette step
@@ -184,7 +184,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### search
 - Is: A search of the active vault. Two questions: names (titles of notes and headings) and passages (text). Modes `words`, `meaning`, `names`, `hybrid`.
-- Texts: result groups "Names", "Text", "Meaning"; "No results found"; "Search failed"; "Semantic index not built yet"; row actions "Open note", "Open note beside", "Open at this heading"; when nothing matches: "Create note", "Create as child", "Create as parent", "Create as jump" (editor/src/features/command-palette/words.ts).
+- Texts: result groups "Names", "Text", "Meaning"; "No results found"; "Search failed"; the text the search source gives when Meaning finds nothing; row actions "Open note", "Open note beside", "Open at this heading"; when nothing matches: "Create note", "Create as child", "Create as parent", "Create as jump" (editor/src/features/command-palette/words.ts).
 - Not: "Meaning" is the search by vectors; with no embedding model only text search runs.
 
 ### passage

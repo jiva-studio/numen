@@ -92,7 +92,7 @@ func NotesShowingMoves(
 }
 
 func embedderReady(c searchWiring) bool {
-	_, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)
+	_, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	return err == nil
 }
 

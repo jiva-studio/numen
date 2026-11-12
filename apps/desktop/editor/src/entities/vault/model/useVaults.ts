@@ -16,12 +16,10 @@ export interface VaultRef {
 export interface VaultsDeps {
   listVaults: () => Promise<VaultList>
   log: MessageLog
-  chunks: Ref<number>
-  embedded: Ref<number>
-  isEmbedding: Ref<boolean>
+  coverage: Ref<string>
 }
 
-export function useVaults({ listVaults, log, chunks, embedded, isEmbedding }: VaultsDeps) {
+export function useVaults({ listVaults, log, coverage: coverageText }: VaultsDeps) {
   const reload = () => globalThis.location.reload()
   const items = ref<VaultList>({ vaults: [], showing: '' })
 
@@ -54,11 +52,7 @@ export function useVaults({ listVaults, log, chunks, embedded, isEmbedding }: Va
     }
   }
 
-  const coverage = (): IndexCoverage => ({
-    chunks: chunks.value,
-    embedded: embedded.value,
-    isEmbedding: isEmbedding.value,
-  })
+  const coverage = (): IndexCoverage => ({ text: coverageText.value })
 
   return {
     reload,

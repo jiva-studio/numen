@@ -49,9 +49,7 @@ export function createVaultServices(deps: VaultServicesDeps) {
     vaults: useVaults({
       listVaults: getVaultList,
       log,
-      chunks: window.vault.chunks,
-      embedded: window.vault.embedded,
-      isEmbedding: window.vault.isEmbedding,
+      coverage: window.vault.coverage,
     }),
     renames,
     vaultChanges,

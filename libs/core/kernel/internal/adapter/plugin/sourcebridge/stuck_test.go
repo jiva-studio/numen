@@ -62,7 +62,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	text := `{"id": "md.numen.embeddings", "name": "Vector Embeddings", "version": "1.0.0", "capabilities": ["embedding"],
+	text := `{"id": "md.numen.embeddings", "name": "Vector Embeddings", "version": "1.0.0", "capabilities": ["search.source"],
 		"targets": ["desktop.editor"], "services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/embeddings"}}`
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)

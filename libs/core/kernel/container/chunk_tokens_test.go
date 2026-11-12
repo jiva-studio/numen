@@ -76,7 +76,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *containe
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	text := `{"id": "` + chunkEmbeddingPluginID + `", "name": "Embeddings", "version": "1.0.0", "capabilities": ["embedding"],
+	text := `{"id": "` + chunkEmbeddingPluginID + `", "name": "Embeddings", "version": "1.0.0", "capabilities": ["search.source"],
 		"targets": ["desktop.editor"], "backend": {"entrypoint": "bin/run"}}`
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)

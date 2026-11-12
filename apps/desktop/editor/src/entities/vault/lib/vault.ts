@@ -69,11 +69,8 @@ export interface VaultState {
     readonly error: string
     readonly unwatchedPath: string
   }
-  readonly coverage: {
-    readonly chunkCount: bigint
-    readonly embeddedCount: bigint
-    readonly isEmbedding: boolean
-  }
+  /** What the search source says about its index, empty where it says nothing. */
+  readonly coverage: string
 }
 
 /** A change made to the files of the open vault. */

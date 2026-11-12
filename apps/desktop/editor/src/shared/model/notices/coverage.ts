@@ -1,17 +1,10 @@
 /**
- * How much of the vault the index has covered, and whether it is still working.
+ * What the search source says about how far it has indexed the vault, in its own words.
  *
- * A search by meaning queries the vectors, and a vault with none returns nothing
- * however it is queried. The corner and the palette both report this.
+ * The window shows the text as given; an installation without a search source gives none.
  */
 
-/** The vault's state with respect to being indexed for meaning. */
+/** The vault's index as the search source reports it. */
 export interface IndexCoverage {
-  readonly chunks: number
-  readonly embedded: number
-  readonly isEmbedding: boolean
+  readonly text: string
 }
-
-/** Whether the vault is searched by its words alone. */
-export const isTextSearchOnly = (readItem: IndexCoverage): boolean =>
-  readItem.chunks > 0 && !readItem.isEmbedding

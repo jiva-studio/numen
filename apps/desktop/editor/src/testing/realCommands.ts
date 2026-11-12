@@ -251,7 +251,7 @@ export function createRealWindow(parts: RealWindowParts) {
     paletteLists: { getStepGroups: () => [], previewItem: () => undefined },
     runs: runSupport(),
     registry,
-    coverage: () => ({}),
+    coverage: () => ({ text: '' }),
     reached: {
       getTabAt: () => null,
       getPath: (id: string) => id,

@@ -52,7 +52,7 @@ func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *embedderbr
 	port := wiretest.GetPort(t, server)
 
 	root := t.TempDir()
-	for id, capability := range map[string]string{embeddingPluginID: `"capabilities": ["embedding"],`, otherPluginID: ""} {
+	for id, capability := range map[string]string{embeddingPluginID: `"capabilities": ["search.source"],`, otherPluginID: ""} {
 		dir := filepath.Join(root, strings.TrimPrefix(id, "md.numen."))
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)

@@ -72,7 +72,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
-		"capabilities": ["embedding"],
+		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/embeddings"}
 	}`

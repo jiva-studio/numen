@@ -14,8 +14,6 @@ const WORDS: Words = {
   readDocument: 'Open the document',
   noneFound: 'Nothing',
   noQuery: 'Search failed',
-  wordsOnly: 'Words only',
-  notEmbedded: 'Not read for meaning yet',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',

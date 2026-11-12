@@ -33,9 +33,7 @@ const open = () => {
   return useVaults({
     listVaults: () => Promise.resolve(TWO),
     log: { getWriter: () => vi.fn() } as never,
-    chunks: ref(0),
-    embedded: ref(0),
-    isEmbedding: ref(false),
+    coverage: ref(''),
   })
 }
 
@@ -105,9 +103,7 @@ describe('the vault list before and after it is requested for', () => {
     const target = useVaults({
       listVaults: () => Promise.reject(new Error('down')),
       log: { getWriter } as never,
-      chunks: ref(0),
-      embedded: ref(0),
-      isEmbedding: ref(false),
+      coverage: ref(''),
     })
 
     await target.loadVaults()

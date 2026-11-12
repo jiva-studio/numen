@@ -180,7 +180,7 @@ func twoProviders(t *testing.T) (*container.PluginRoles, *providerServer, *provi
 		map[string][]string{
 			providerOne:      {"ai.agent.provider"},
 			providerTwo:      {"ai.agent.provider"},
-			"md.test.chatty": {"embedding"},
+			"md.test.chatty": {"search.source"},
 		},
 		map[string]*providerServer{providerOne: one, providerTwo: two})
 	return host, one, two
@@ -208,7 +208,7 @@ func assertNoAgentRuns(t *testing.T, provider agentport.AgentProvider) {
 
 // A host with no plugin that runs agent programs lists none, and takes no task.
 func TestAHostWithoutProvidersListsNoPrograms(t *testing.T) {
-	host := hostWith(t, map[string][]string{"md.test.chatty": {"embedding"}}, nil)
+	host := hostWith(t, map[string][]string{"md.test.chatty": {"search.source"}}, nil)
 	provider := (container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})).AgentProvider()
 	if provider == nil {
 		t.Fatal("a host has a provider, even where no plugin is one")

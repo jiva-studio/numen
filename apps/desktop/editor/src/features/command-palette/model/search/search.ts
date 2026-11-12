@@ -39,8 +39,6 @@ export interface Words extends EmptyWords {
   read: string
   readAt: string
   readDocument: string
-  wordsOnly: string
-  notEmbedded: string
   creates: string
   asChild: string
   asParent: string
@@ -295,7 +293,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   }
 
   const getEmptyGroupMessage = (id: SearchGroup): string =>
-    getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], words, coverage })
+    getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], coverage })
 
   const searchGroups = computed(() => {
     if (!inputValue.value.trim())

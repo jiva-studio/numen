@@ -1062,7 +1062,7 @@ func newHostOfProviders(t *testing.T) *container.PluginRoles {
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
 		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{
 			ID:           id,
-			Capabilities: []string{bridge.CapabilityEmbedding},
+			Capabilities: []string{bridge.CapabilitySearchSource},
 		}})
 	}
 	return host
@@ -1073,14 +1073,14 @@ func newHostOfProviders(t *testing.T) *container.PluginRoles {
 func TestFindPluginByCapability_SelectsLowestID(t *testing.T) {
 	host := newHostOfProviders(t)
 	for range 100 {
-		byCapability, ok := host.Registry.FindPluginByCapability(bridge.CapabilityEmbedding)
+		byCapability, ok := host.Registry.FindPluginByCapability(bridge.CapabilitySearchSource)
 		if !ok || byCapability.Manifest.ID != "md.numen.provider-a" {
 			t.Fatalf("by capability found %q, %v", byCapability.Manifest.ID, ok)
 		}
 	}
 
 	host.Settings.SetSettings(map[string]map[string]any{"md.numen.provider-a": {plugin.SettingEnabled: false}})
-	if found, _ := host.Registry.FindPluginByCapability(bridge.CapabilityEmbedding); found.Manifest.ID != "md.numen.provider-b" {
+	if found, _ := host.Registry.FindPluginByCapability(bridge.CapabilitySearchSource); found.Manifest.ID != "md.numen.provider-b" {
 		t.Errorf("with the lowest disabled, found %q", found.Manifest.ID)
 	}
 }

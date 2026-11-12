@@ -122,7 +122,7 @@ describe('the palette', () => {
     )
 
   it('draws no group for a search that answered with nothing', async () => {
-    vaultState.embedded = 4
+    vaultState.coverage = ''
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
@@ -132,14 +132,14 @@ describe('the palette', () => {
   })
 
   it('keeps the group that could not be requested, with what it has to say', async () => {
-    vaultState.embedded = 0
+    vaultState.coverage = 'Semantic index not built yet'
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
 
     expect(groupTitles()).toStrictEqual([PALETTE_WORDS.meaning])
     expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
-      PALETTE_WORDS.notEmbedded,
+      'Semantic index not built yet',
     )
   })
 })

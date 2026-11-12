@@ -147,7 +147,7 @@ func TestEmbedderBridge(t *testing.T) {
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
-		"capabilities": ["embedding"],
+		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
 		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/embeddings"}
 	}`

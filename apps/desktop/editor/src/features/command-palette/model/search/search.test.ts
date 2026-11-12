@@ -25,8 +25,6 @@ const WORDS: Words = {
   readDocument: 'Open the document',
   noneFound: 'Nothing',
   noQuery: 'Search failed',
-  wordsOnly: 'Text search only: no embedding model set',
-  notEmbedded: 'Semantic index not built yet',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -225,9 +223,9 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
-  it('says the vault holds no vectors, where meaning returned nothing', async () => {
+  it('says what the search source says of its index, where meaning returned nothing', async () => {
     const vault = createVault()
-    const readItem = { chunks: 4, embedded: 0, isEmbedding: true }
+    const readItem = { text: 'Semantic index not built yet' }
     const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
 
     palette.setTyped('ent').catch(rethrow)
@@ -236,15 +234,15 @@ describe('answers arriving', () => {
     vault.names[0]?.answer([])
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
+    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe('Semantic index not built yet')
     // The other groups query the words, which a vault with no vectors still
     // answers, and a group that returned nothing contributes no rows.
     expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
-  it('says nothing reads the vault for meaning, where nothing is set to', async () => {
+  it('shows the text of the search source as it is given', async () => {
     const vault = createVault()
-    const readItem = { chunks: 4, embedded: 0, isEmbedding: false }
+    const readItem = { text: 'Indexed 3 of 12 passages' }
     const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
 
     palette.setTyped('ent').catch(rethrow)
@@ -252,7 +250,7 @@ describe('answers arriving', () => {
     vault.mode('meaning')?.answer([])
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.wordsOnly)
+    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe('Indexed 3 of 12 passages')
   })
 
   it('shows meaning search results with meaning item ids', async () => {

@@ -10,25 +10,13 @@ interface ScanState {
   readonly watchError: string
 }
 
-interface CoverageState {
-  readonly chunkCount: bigint
-  readonly embeddedCount: bigint
-  readonly isEmbedding: boolean
-}
-
 const parseScan = (scan: ScanState | undefined) => ({
   isReady: scan?.isReady ?? false,
   error: scan?.error ?? '',
   unwatchedPath: scan?.watchError ?? '',
 })
 
-const parseCoverage = (coverage: CoverageState | undefined) => ({
-  chunkCount: coverage?.chunkCount ?? 0n,
-  embeddedCount: coverage?.embeddedCount ?? 0n,
-  isEmbedding: coverage?.isEmbedding ?? false,
-})
-
-/** The open vault: its identity, how far its scan got and how much of it is indexed. */
+/** The open vault: its identity, how far its scan got and what the search source says of its index. */
 export async function getVaultState(): Promise<VaultState> {
   const state = await vault.getVaultState({})
   return {
@@ -36,7 +24,7 @@ export async function getVaultState(): Promise<VaultState> {
     name: state.name,
     path: state.path,
     scan: parseScan(state.scan),
-    coverage: parseCoverage(state.coverage),
+    coverage: state.coverage?.text ?? '',
   }
 }
 

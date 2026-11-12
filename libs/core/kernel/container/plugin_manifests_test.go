@@ -451,7 +451,7 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 
 // The capabilities a manifest may declare are those the adapters of the core resolve a plugin by.
 func TestTheCapabilitiesAManifestMayDeclareAreTheOnesTheHostResolves(t *testing.T) {
-	want := []string{bridge.CapabilityAgentProvider, bridge.CapabilityEmbedding, bridge.CapabilityTools}
+	want := []string{bridge.CapabilityAgentProvider, bridge.CapabilitySearchSource, bridge.CapabilityTools}
 	got := slices.Sorted(slices.Values(manifest.PluginCapabilities()))
 	if !slices.Equal(got, want) {
 		t.Errorf("PluginCapabilities = %v, want %v", got, want)

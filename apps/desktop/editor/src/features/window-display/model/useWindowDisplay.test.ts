@@ -23,7 +23,7 @@ const resolved = {
   name: 'Vault',
   path: '/vaults/Physics',
   scan: { isReady: true, error: '', unwatchedPath: '' },
-  coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
+  coverage: '',
   agentUnreachable: '',
 }
 
@@ -74,7 +74,7 @@ const answerFrom = (core: Fake) => {
             error: state.scan.error,
             watchError: state.scan.unwatchedPath,
           },
-          coverage: state.coverage,
+          coverage: { text: state.coverage },
         }
       },
       watchVaultChanges: async function* (_request, context) {
@@ -581,22 +581,17 @@ describe('a vault that is not being followed', () => {
   })
 })
 
-describe('chunks with nothing to embed them', () => {
-  it('says so, since the vault is searched by its words from now on', async () => {
+describe('what the search source says of its index', () => {
+  it('is kept as it is given', async () => {
     const core = fake({
-      state: async () => ({
-        ...resolved,
-        coverage: { chunkCount: 4823n, embeddedCount: 0n, isEmbedding: false },
-      }),
+      state: async () => ({ ...resolved, coverage: 'Semantic index not built yet' }),
     })
     const window = useDisplay(core, { wait: async () => window.close() })
 
     await window.start()
     await flushPromises()
 
-    expect(window.vault.chunks.value).toBe(4823)
-    expect(window.vault.embedded.value).toBe(0)
-    expect(window.vault.isEmbedding.value).toBe(false)
+    expect(window.vault.coverage.value).toBe('Semantic index not built yet')
   })
 })
 
@@ -696,7 +691,7 @@ describe('what the application is doing', () => {
         asks++
         return {
           ...resolved,
-          coverage: { ...resolved.coverage, chunkCount: BigInt(asks * 1000) },
+          coverage: `Indexed ${asks * 1000} passages`,
         }
       },
       watchTasks: async function* () {
@@ -711,7 +706,7 @@ describe('what the application is doing', () => {
     await flushPromises()
 
     expect(asks).toBeGreaterThan(1)
-    expect(window.vault.chunks.value).toBe(asks * 1000)
+    expect(window.vault.coverage.value).toBe(`Indexed ${asks * 1000} passages`)
 
     window.close()
   })
@@ -730,7 +725,7 @@ describe('a window before it has requested the vault anything', () => {
     expect(window.vault.unreachable.value).toBe('')
     expect(window.opening.hasNote.value).toBe(false)
     expect(window.opening.path.value).toBe('')
-    expect(window.vault.isEmbedding.value).toBe(false)
+    expect(window.vault.coverage.value).toBe('')
     expect(window.tasks.value).toStrictEqual([])
   })
 })

@@ -120,7 +120,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"id": "md.numen.stub",
 		"name": "All",
 		"version": "1.0.0",
-		"capabilities": ["embedding", "tools"],
+		"capabilities": ["search.source", "tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "link:open"],
 		"backend": {"entrypoint": "bin/stub"}
