@@ -19,7 +19,6 @@ updates:
       - /libs/core/kernel
       - /libs/core/protocol
       - /libs/plugin/sdk-go
-      - /libs/plugin/sdk-go/agent
       - /libs/plugin/sdk-go/wasm
       - /libs/plugin/sdk-go/models
       - /apps/desktop

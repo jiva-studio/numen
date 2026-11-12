@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
 // The handler of a host that links the plugin in serves the local model it is configured for.
@@ -21,7 +22,7 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 	defer web.Close()
 	token := hostcall.WithBearer(linkedToken)
 
-	if _, err := server.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
+	if _, err := servertest.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
 		map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}

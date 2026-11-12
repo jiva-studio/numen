@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
 const testToken = "plugin-token"
@@ -45,7 +46,7 @@ func startPlugin(t *testing.T) string {
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	pos := startPlugin(t)
 
-	res, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).Ping(t.Context())
+	res, err := servertest.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).Ping(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +58,7 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 func TestConfigurePropagatesTheRowToTheAgent(t *testing.T) {
 	pos := startPlugin(t)
 
-	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
+	if _, err := servertest.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
 		Configure(t.Context(), map[string]string{"connections": rowsJSON(row{connection: "c1", model: "m1"})}); err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +80,7 @@ func TestNewHandlerPropagatesTheRowToTheAgent(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if _, err := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
+	if _, err := servertest.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
 		Configure(t.Context(), map[string]string{"connections": rowsJSON(row{connection: "c1", model: "m1"})}); err != nil {
 		t.Fatal(err)
 	}

@@ -253,7 +253,7 @@ func isListed(tasks []host.Task, id string) bool {
 	return slices.ContainsFunc(tasks, func(task host.Task) bool { return task.ID == id })
 }
 
-func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
+func TestRegistryListsRecognitionCreateAsAWritingTool(t *testing.T) {
 	s := newToolFixture(t)
 
 	listing, err := s.registry.ListTools(t.Context())
@@ -266,9 +266,6 @@ func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
 	}
 	if infos[0].GetEffect() != tools.ReadWrite {
 		t.Errorf("recognition_create has effect %v, want ReadWrite", infos[0].GetEffect())
-	}
-	if !slices.Equal(infos[0].GetServers(), []tools.Server{tools.Full}) {
-		t.Errorf("recognition_create is listed on %v, want the full server alone", infos[0].GetServers())
 	}
 }
 

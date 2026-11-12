@@ -63,7 +63,6 @@ func TestAggregatorSyncTools(t *testing.T) {
 				InputSchema:  []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
 				OutputSchema: []byte(`{"type":"object","properties":{"text":{"type":"string"}}}`),
 				Effect:       tools.ReadOnly,
-				Hints:        tools.Hints{ReadOnly: true, Idempotent: true},
 			},
 			{
 				Name:        "note_write",

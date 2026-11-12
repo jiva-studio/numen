@@ -10,7 +10,6 @@ use (
 	./libs/note
 	./libs/plugin/catalog
 	./libs/plugin/sdk-go
-	./libs/plugin/sdk-go/agent
 	./libs/plugin/sdk-go/host
 	./libs/plugin/sdk-go/wasm
 	./libs/core/protocol
@@ -44,7 +43,6 @@ replace (
 	github.com/jiva-studio/numen/libs/note v0.0.0 => ./libs/note
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 => ./libs/plugin/catalog
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0 => ./libs/plugin/sdk-go
-	github.com/jiva-studio/numen/libs/plugin/sdk-go/agent v0.0.0 => ./libs/plugin/sdk-go/agent
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0 => ./libs/plugin/sdk-go/host
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm v0.0.0 => ./libs/plugin/sdk-go/wasm
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 => ./libs/core/protocol

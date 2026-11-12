@@ -16,7 +16,6 @@ import (
 
 func (t *Tools) addCardCurrentGet(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "card_current_get",
 		Title: "Get the open card",
 		Description: "Get the card open in the review window: the path of its deck, the card id " +
@@ -24,7 +23,7 @@ func (t *Tools) addCardCurrentGet(registry *tools.Registry) error {
 			"before describing the open card, because the user moves to the next card while " +
 			"you work, and read the card itself with `card_read`. Between cards no card is " +
 			"open, and `path` is empty.",
-		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly,
 	}, func(ctx context.Context, _ struct{}) (CurrentCard, error) {
 		request := tools.GetCallContext(ctx)
 		return CurrentCard{Path: request[requestedDeck], CardID: request[requestedCard], TemplateName: request[requestedTemplate]}, nil
@@ -42,7 +41,6 @@ type cardModelListOutput struct {
 
 func (t *Tools) addCardCardModelList(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "card_model_list",
 		Title: "List card models",
 		Description: "List the card models of the vault: the path of each, the name used in a card's " +
@@ -51,7 +49,7 @@ func (t *Tools) addCardCardModelList(registry *tools.Registry) error {
 			"At most 50 are returned, and `total` is the number in the vault, so a list shorter " +
 			"than `total` was truncated at the limit. A card model with no fields listed could " +
 			"not be read.",
-		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly,
 	}, t.listCardCardModels)
 }
 
@@ -94,12 +92,11 @@ type cardModelReadOutput struct {
 
 func (t *Tools) addCardCardModelRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "card_model_read",
 		Title: "Read a card model",
 		Description: "Read one card model: its title, its field names in order, and its " +
 			"templates. Pass the fingerprint to `card_model_edit` to edit the card model in place.",
-		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly,
 	}, t.readCardCardModel)
 }
 
@@ -157,7 +154,6 @@ type cardReadOutput struct {
 
 func (t *Tools) addCardRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "card_read",
 		Title: "Read cards",
 		Description: "Read the cards of one deck in file order, each with the card id every " +
@@ -166,7 +162,7 @@ func (t *Tools) addCardRead(registry *tools.Registry) error {
 			"the deck, and every card has the index of its section. Problems of the file are " +
 			"returned under `problems`, on the card they concern. Pass the fingerprint to the " +
 			"write tools: a write fails when the deck changed since the read.",
-		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly,
 	}, t.readCards)
 }
 
