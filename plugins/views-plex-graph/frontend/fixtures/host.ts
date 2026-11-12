@@ -106,6 +106,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     removeSide: async () => asValue(undefined),
     removeConnection: async () => asValue(undefined),
     listBacklinks: async () => [],
+    resolveLinks: async () => [],
   }
 
   const commands: CommandsHost = {

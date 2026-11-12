@@ -66,7 +66,7 @@ const withVault = (id: string) =>
     readers: ['document'],
     commands: ['open'],
     settingsViews: ['floor'],
-    capabilities: ['ai.agent.provider'],
+    capabilities: ['tools'],
   })
 
 const view = (kind: string, order?: number) => ({
