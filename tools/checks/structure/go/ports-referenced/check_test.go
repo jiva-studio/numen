@@ -49,7 +49,7 @@ func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range []string{"Embedder", "ChangeSubscriber"} {
+	for _, one := range []string{"VectorIndex", "ChangeSubscriber"} {
 		if !slices.Contains(unnamed, one) {
 			t.Errorf("nothing outside names port.%s and the rule does not refuse it", one)
 		}
