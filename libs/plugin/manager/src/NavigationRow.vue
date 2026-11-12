@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * A row of a settings list that opens a page: the icon of its category, the name, a one-line
- * detail, the `trail` slot and a chevron. The accessible name is `label`, or the name where none is
- * given.
+ * detail, the `trail` slot and a chevron, which a tile leaves out with `isWithoutChevron`. The
+ * accessible name is `label`, or the name where none is given.
  */
 import { computed, type VNode } from 'vue'
 import { ChevronRight } from '@lucide/vue'
@@ -15,6 +15,7 @@ const props = defineProps<{
   category: string
   label?: string
   isDimmed?: boolean
+  isWithoutChevron?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -55,7 +56,12 @@ function onClick(): void {
       <span v-if="props.detail" class="navigation-row__detail">{{ props.detail }}</span>
     </span>
     <slot name="trail" />
-    <ChevronRight class="navigation-row__chevron" :size="16" aria-hidden="true" />
+    <ChevronRight
+      v-if="!props.isWithoutChevron"
+      class="navigation-row__chevron"
+      :size="16"
+      aria-hidden="true"
+    />
   </button>
 </template>
 

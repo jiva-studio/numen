@@ -80,6 +80,7 @@ function getReasonId(pluginId: string): string {
           :name="tile.name"
           :detail="tile.detail"
           :category="tile.page"
+          is-without-chevron
           @select="onSelectPlugin(tile.page)"
         />
       </div>
