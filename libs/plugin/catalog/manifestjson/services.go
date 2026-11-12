@@ -8,9 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// listPluginServedServices returns, sorted, the services of the numen.v1 protocol that several plugins
-// implement and a manifest may declare. Any other service of the protocol is served by the core itself.
 func listPluginServedServices() []string {
+	// Several plugins implement these; any other service of the numen.v1 protocol is served by the core itself.
 	return []string{
 		"numen.v1.AgentService",
 		"numen.v1.EmbeddingService",
