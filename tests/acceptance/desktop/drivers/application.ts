@@ -3,6 +3,7 @@ import { expect, type Locator } from 'playwright/test'
 import { waitForWindow } from '../../../e2e/desktop/tests/support/workspace.js'
 import { Palette } from './components/Palette.js'
 import type { JsonValue } from '../../../e2e/desktop/tests/support/json.js'
+import { readOpenTabs } from '../../../e2e/desktop/tests/support/layout.js'
 import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
 import {
@@ -54,7 +55,22 @@ export class ApplicationDriver {
     if (!this.scenario.hasServer) {
       throw new Error(`the application "${name}" has not started, so it cannot restart: begin with the application "${name}" starts`)
     }
+    if (this.scenario.isOpen) await this.waitForTabsSaved()
     await this.startApplication(name)
+  }
+
+  /** The application keeps the tabs it shows; a person ends it after that, so the step waits for it. */
+  private async waitForTabsSaved(): Promise<void> {
+    const { page } = this.scenario
+    await expect
+      .poll(async () => {
+        const shown = await page
+          .locator('[data-workspace-tab]')
+          .evaluateAll((all) => all.map((one) => one.getAttribute('data-workspace-tab')).sort())
+        const { tabs } = await readOpenTabs(page.request)
+        return JSON.stringify(tabs.map((one) => one.id).sort()) === JSON.stringify(shown)
+      })
+      .toBe(true)
   }
 
   async runCommand(label: string): Promise<void> {
