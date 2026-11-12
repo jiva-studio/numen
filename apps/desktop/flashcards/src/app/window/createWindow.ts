@@ -33,6 +33,7 @@ export function createWindow(deps: WindowDeps = {}) {
   const frame = useWindowFrame(loadFrameRuntime)
   const windowAgent = createWindowAgent()
   const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
+  const backgroundTasks = useWindowTasks(notices)
   const { host, mountView, titleBarView } = createShellHost({
     tabs,
     notices,
@@ -48,6 +49,7 @@ export function createWindow(deps: WindowDeps = {}) {
       window: createWindowHost(frame, (error) =>
         notices.show(WINDOW_SOURCE, formatError(error), 'error'),
       ),
+      backgroundTasks,
     },
   })
   const loader = createPluginLoader({
@@ -56,7 +58,6 @@ export function createWindow(deps: WindowDeps = {}) {
   })
   const start = useAppStart(loader)
   useWindowKeys({ tabs, vaults })
-  useWindowTasks(notices)
   const appearance = useAppearance(notices)
 
   onUnmounted(() => windowAgent.dispose())
@@ -69,6 +70,7 @@ export function createWindow(deps: WindowDeps = {}) {
     plugins: start,
     titleBarView,
     notices,
+    backgroundTasks,
     mountView,
     appearance,
   }

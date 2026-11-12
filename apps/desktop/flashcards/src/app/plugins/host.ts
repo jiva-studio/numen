@@ -12,6 +12,7 @@ import {
   readManifestSlotEntries,
   requireMountAccess,
   type AgentHost,
+  type BackgroundTaskHost,
   type CommandsHost,
   type Manifest,
   type VaultsHost,
@@ -23,11 +24,12 @@ import { getPluginModels } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'
 
-/** The commands, the vaults and the window the plugins read. */
+/** The commands, the vaults, the window and its background tasks the plugins read. */
 interface ShellServices {
   readonly commands: CommandsHost
   readonly vaults: VaultsHost
   readonly window: WindowHost
+  readonly backgroundTasks: BackgroundTaskHost
 }
 
 /**
@@ -69,6 +71,7 @@ export function createShellHost(deps: ShellHostDeps) {
     getCommands: () => services.commands,
     getVaults: () => services.vaults,
     getWindow: () => services.window,
+    getBackgroundTasks: () => services.backgroundTasks,
     getAgent: () => agent,
     getModels: (pluginId) => getPluginModels(pluginId),
   })

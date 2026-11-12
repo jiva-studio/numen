@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, type Ref } from 'vue'
-import type { BackgroundTask } from '@numen/plugin-loader'
-import type { Task } from '@/entities/window'
-import { pick } from '@/testing/pick'
+import type { BackgroundTask, WorkTask as Task } from '../lib/backgroundTask'
 import { createBackgroundTaskHost, type BackgroundTaskHostDeps } from './backgroundTasks'
+
+/** The entry at a place of a list; a missing one fails the test. */
+const pick = <T>(list: readonly T[], pos: number): T => {
+  const found = list[pos]
+  if (found === undefined) throw new Error(`nothing at ${pos} of ${list.length}`)
+  return found
+}
 
 const base: Task = {
   id: 't',

@@ -357,7 +357,7 @@ describe('the window over a plugin that draws the review', () => {
 })
 
 describe('the work behind the window', () => {
-  it("is followed for the window's own target and held as notices, and aborts on unmount", async () => {
+  it("is followed for the window's own target and listed as background tasks, and aborts on unmount", async () => {
     let attempts = 0
     let finishSecond: (() => void) | undefined
     wire.tasks = async function* () {
@@ -403,7 +403,12 @@ describe('the work behind the window', () => {
 
     await vi.advanceTimersByTimeAsync(1_000)
     await flushPromises()
-    expect(shell?.notices.notices.value.map((one) => one.text)).toContain('Indexing the vault')
+    let listed: readonly { label: string; state: string }[] = []
+    shell?.backgroundTasks.watch((tasks) => (listed = tasks)).dispose()
+    expect(listed.map((one) => [one.label, one.state])).toStrictEqual([
+      ['Indexing the vault', 'running'],
+      ['lost touch with numen — the window keeps trying', 'failed'],
+    ])
 
     const signal = wire.taskSignals.at(-1)
     expect(signal?.aborted).toBe(false)

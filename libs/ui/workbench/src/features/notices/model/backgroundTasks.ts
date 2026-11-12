@@ -1,55 +1,37 @@
 /**
  * The tasks of the window as the background tasks the plugins read: the work of the core and the
- * plugins, and the notices of the window and its plugins as failed tasks.
+ * plugins, and the failures the window reports as failed tasks, with a cancel and a dismissal.
  */
 import { computed, ref, watch, type Ref } from 'vue'
-import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-loader'
-import type { Task } from '@/entities/window'
-import type { Caught } from '@/shared/api/errors'
-
-/** The settings action of a failed task: the words of its link and the plugin it opens. */
-interface TaskAction {
-  readonly label: string
-  readonly pluginId: string
-}
+import {
+  createBackgroundTask,
+  type BackgroundTask,
+  type BackgroundTaskAction,
+  type WorkTask,
+} from '../lib/backgroundTask'
 
 export interface BackgroundTaskHostDeps {
-  readonly tasks: Readonly<Ref<readonly Task[]>>
+  readonly tasks: Readonly<Ref<readonly WorkTask[]>>
   /** Asks the core to stop the task; resolves once the core has cancelled it. */
   cancelTask(id: string): Promise<void>
   /** Receives the error of a cancel the core did not accept. */
-  reportCancelError(error: Caught): void
-  resolveAction(task: Task): TaskAction | undefined
+  reportCancelError(error: unknown): void
+  /** The settings link of a failed task; a window without one leaves it out. */
+  resolveAction?(task: WorkTask): BackgroundTaskAction | undefined
+  /** Opens the settings of a plugin; a window without settings leaves it out. */
+  openSettings?(pluginId: string): void
+}
+
+/** The background tasks of a window, as the plugin that lists them reads and acts on them. */
+export interface BackgroundTaskHost {
+  /** Calls the handler with the tasks at once and again on every change. */
+  watch(handler: (tasks: readonly BackgroundTask[]) => void): { dispose(): void }
+  /** Asks the core to stop the task; settles once it has, and rejects with why it did not. */
+  cancel(id: string): Promise<void>
+  retry(id: string): void
+  /** Takes a task out of the list while it is listed. */
+  dismiss(id: string): void
   openSettings(pluginId: string): void
-}
-
-function getState(task: Task, isCancelling: boolean): BackgroundTask['state'] {
-  if (task.error) return 'failed'
-  if (task.kind === 'notice') return 'notice'
-  return isCancelling ? 'cancelling' : 'running'
-}
-
-function createBackgroundTask(
-  task: Task,
-  isCancelling: boolean,
-  action: TaskAction | undefined,
-): BackgroundTask {
-  const hasTotal = task.progress.total > 0
-  const isFailed = Boolean(task.error)
-  return {
-    id: task.id,
-    label: task.label,
-    about: task.about,
-    state: getState(task, isCancelling),
-    progress: {
-      completedCount: hasTotal ? task.progress.completedCount : 0,
-      total: hasTotal ? task.progress.total : 0,
-      counting: task.progress.counting === 'items' ? '' : task.progress.counting,
-    },
-    error: task.error,
-    allowed: { cancel: !isFailed && task.isCancellable, retry: false },
-    action: { label: action?.label ?? '', pluginId: action?.pluginId ?? '' },
-  }
 }
 
 export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): BackgroundTaskHost {
@@ -64,7 +46,7 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
         createBackgroundTask(
           task,
           cancellingIds.value.has(task.id),
-          task.error ? deps.resolveAction(task) : undefined,
+          task.error ? deps.resolveAction?.(task) : undefined,
         ),
       ),
   )
@@ -99,11 +81,11 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
       return { dispose: stop }
     },
     cancel,
-    // Nothing in the editor starts a failed task again, so no task offers a retry.
+    // Nothing in a window starts a failed task again, so no task offers a retry.
     retry: () => undefined,
     dismiss: (id) => {
       dismissedIds.value.add(id)
     },
-    openSettings: (pluginId) => deps.openSettings(pluginId),
+    openSettings: (pluginId) => deps.openSettings?.(pluginId),
   }
 }
