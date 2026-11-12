@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// PluginHealthService is what the plugins say about whether they work. A plugin
+// reports a health item under a key of its own; the core reports the items
+// configure, start and search for every plugin. The core keeps the items of
+// every plugin in one list, which a window lists and watches, and clears the
+// items of a plugin that is disabled.
+//
+// A plugin calls ReportHealth and ClearHealth through the host endpoint, which
+// names the plugin by its token. A window calls them for the frontend of the
+// plugin plugin_id names. ListHealth and WatchHealth are answered to a window.
+service PluginHealthService {
+  // ReportHealth puts one item of the plugin in the list, or replaces the one
+  // under its key. An item at HEALTH_SEVERITY_OK clears the key. An item past
+  // the limits, a key of the core, a command the plugin may not run or values
+  // the command does not take answer INVALID_ARGUMENT.
+  rpc ReportHealth(ReportHealthRequest) returns (ReportHealthResponse);
+
+  // ClearHealth takes the item of the plugin under the key out of the list. An
+  // item that is not there is already cleared.
+  rpc ClearHealth(ClearHealthRequest) returns (ClearHealthResponse);
+
+  // ListHealth is the items of every plugin.
+  rpc ListHealth(ListHealthRequest) returns (ListHealthResponse);
+
+  // WatchHealth sends the items of every plugin at once and again on every
+  // change, for as long as the caller listens.
+  rpc WatchHealth(WatchHealthRequest) returns (stream WatchHealthResponse);
+}
+
+// HealthSeverity is how bad a health item is.
+enum HealthSeverity {
+  HEALTH_SEVERITY_UNSPECIFIED = 0;
+
+  // The concern of the key works; reporting it clears the key.
+  HEALTH_SEVERITY_OK = 1;
+
+  // The plugin works with less than it should. A window shows it on the page of
+  // the plugin.
+  HEALTH_SEVERITY_WARNING = 2;
+
+  // The plugin does not work until a person acts. A window shows it in the
+  // list of tasks too.
+  HEALTH_SEVERITY_ERROR = 3;
+}
+
+// HealthAction is the command a person runs to fix what a health item reports.
+message HealthAction {
+  // An app: command, or a command of the reporting plugin by its full id.
+  string command = 1;
+
+  // The values of the arguments the command declares. For app:settings.open
+  // the core sets plugin to the reporting plugin.
+  map<string, string> values = 2;
+
+  // What the button reads. Empty reads the title of the command.
+  string title = 3;
+}
+
+// HealthItem is one concern of one plugin that does not work.
+message HealthItem {
+  // The plugin the item is about. The core sets it from the caller.
+  string plugin_id = 1;
+
+  // The plugin's name for the concern: lowercase letters, digits and hyphens,
+  // starting with a letter, at most 32 characters.
+  string key = 2;
+
+  HealthSeverity severity = 3;
+
+  // One sentence, at most 120 characters.
+  string text = 4;
+
+  // More about the concern, at most 500 characters. Empty has none.
+  string detail = 5;
+
+  // The fix a person runs. Unset offers none.
+  HealthAction action = 6;
+}
+
+message ReportHealthRequest {
+  HealthItem item = 1;
+}
+
+message ReportHealthResponse {}
+
+message ClearHealthRequest {
+  // The plugin whose item is cleared, when a window calls. The host endpoint
+  // takes the plugin from the token.
+  string plugin_id = 1;
+
+  string key = 2;
+}
+
+message ClearHealthResponse {}
+
+message ListHealthRequest {}
+
+message ListHealthResponse {
+  // The items of every plugin, in the order they were first reported.
+  repeated HealthItem items = 1;
+}
+
+message WatchHealthRequest {}
+
+message WatchHealthResponse {
+  // The items of every plugin, in the order they were first reported.
+  repeated HealthItem items = 1;
+}
