@@ -11,9 +11,16 @@ export class ConnectionRows {
     return panel.locator(ROW)
   }
 
+  /** A setting of one row shows its row at once; a setting of more rows adds one with Add connection. */
   async add(panel: Locator): Promise<Locator> {
+    const addButton = panel.getByRole('button', { name: 'Add connection' })
+    await expect(addButton.or(this.getRows(panel)).first()).toBeVisible()
+    if ((await addButton.count()) === 0) {
+      await expect(this.getRows(panel)).toHaveCount(1)
+      return this.getRows(panel).first()
+    }
     const before = await this.getRows(panel).count()
-    await panel.getByRole('button', { name: 'Add connection' }).click()
+    await addButton.click()
     await expect(this.getRows(panel)).toHaveCount(before + 1)
     return this.getRows(panel).nth(before)
   }

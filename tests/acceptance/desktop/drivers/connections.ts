@@ -6,7 +6,8 @@ import type { Scenario } from './scenario.js'
 import type { ServiceDriver } from './services.js'
 import type { SettingsDriver } from './settings.js'
 
-const KEY_STORED = 'A key is stored'
+/** The key field shows this mask in place of a stored key and is empty without one. */
+const KEY_STORED = '••••••••'
 const KEY_LABEL = 'API key'
 
 export class ConnectionsDriver {
@@ -52,7 +53,10 @@ export class ConnectionsDriver {
   async expectKey(name: string, has: boolean): Promise<void> {
     const panel = await this.settings.showConnections()
     await this.page.openEdit(panel, name)
-    await expect(this.page.getDialog().getByText(KEY_STORED)).toHaveCount(has ? 1 : 0)
+    await expect(this.page.getDialog().getByLabel(KEY_LABEL, { exact: true })).toHaveAttribute(
+      'placeholder',
+      has ? KEY_STORED : '',
+    )
     await this.page.cancel()
   }
 
