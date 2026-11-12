@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
@@ -47,14 +48,6 @@ func getLexicalQuery(q Query) sourcedomain.LexicalQuery {
 	return sourcedomain.LexicalQuery{Text: q.Text, Kinds: q.Kinds, Limit: q.Limit, IsGrowing: q.IsGrowing, PathPrefix: q.PathPrefix}
 }
 
-// SourceQueries is the search source a plugin provides, as a participant asks it.
-type SourceQueries interface {
-	// Describe is the description of the source, whose recipe names its place.
-	Describe() searchsource.Description
-	// SearchPassages returns the chunks of the place that answer the query, best first.
-	SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error)
-}
-
 // EnclosingPassages reads the passages that enclose chunks of a vault.
 type EnclosingPassages interface {
 	// GetEnclosingPassages returns the passage that encloses each chunk of one vault, in the order
@@ -65,12 +58,12 @@ type EnclosingPassages interface {
 // Source is a search source of a plugin as a participant: it asks the source for the chunks of its place
 // and turns them into the passages that enclose them.
 type Source struct {
-	source    SourceQueries
+	source    searchsourceport.Source
 	enclosing EnclosingPassages
 }
 
 // NewSource returns the participant over a search source and the passages of the index.
-func NewSource(source SourceQueries, enclosing EnclosingPassages) Source {
+func NewSource(source searchsourceport.Source, enclosing EnclosingPassages) Source {
 	return Source{source: source, enclosing: enclosing}
 }
 
