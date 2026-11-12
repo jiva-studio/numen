@@ -7,12 +7,12 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 // PluginHealthService is what the plugins say about whether they work. A plugin
 // reports a health item under a key of its own; the core reports the items
 // configure, start and search for every plugin. The core keeps the items of
-// every plugin in one list, which a window lists and watches, and clears the
+// every plugin in one list, which a window watches, and clears the
 // items of a plugin that is disabled.
 //
 // A plugin calls ReportHealth and ClearHealth through the host endpoint, which
 // names the plugin by its token. A window calls them for the frontend of the
-// plugin plugin_id names. ListHealth and WatchHealth are answered to a window.
+// plugin plugin_id names. WatchHealth is answered to a window.
 service PluginHealthService {
   // ReportHealth puts one item of the plugin in the list, or replaces the one
   // under its key. An item at HEALTH_SEVERITY_OK clears the key. An item past
@@ -23,9 +23,6 @@ service PluginHealthService {
   // ClearHealth takes the item of the plugin under the key out of the list. An
   // item that is not there is already cleared.
   rpc ClearHealth(ClearHealthRequest) returns (ClearHealthResponse);
-
-  // ListHealth is the items of every plugin.
-  rpc ListHealth(ListHealthRequest) returns (ListHealthResponse);
 
   // WatchHealth sends the items of every plugin at once and again on every
   // change, for as long as the caller listens.
@@ -97,13 +94,6 @@ message ClearHealthRequest {
 }
 
 message ClearHealthResponse {}
-
-message ListHealthRequest {}
-
-message ListHealthResponse {
-  // The items of every plugin, in the order they were first reported.
-  repeated HealthItem items = 1;
-}
 
 message WatchHealthRequest {}
 
