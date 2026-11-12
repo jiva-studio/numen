@@ -2,20 +2,20 @@
 
 **Task Slug:** `plex-settings`
 **Date:** `2026-11-12`
-**Intent:** `intent.md` in the task folder (open questions there are not decided here; where a value waits on one, the spec names it)
+**Intent:** `intent.md` in the task folder (all questions answered)
 
 All paths are under `plugins/views-plex-graph/`. Placement skill: [`nm-place-plugin`](../../skills/nm-place-plugin/SKILL.md). The plex slice (`frontend/plex/`) is reached only through `frontend/plex/index.ts`; `frontend/plex/lib/` has no Vue.
 
 ## 1. Manifest entries
 
-Appended to `settings[]` after `headingLimit`. Defaults are today's values. Box lengths are in the plex's option unit: pixels at the designed text size (13, `DESIGNED_TYPE`), multiplied by the text size as every option length is today (`scaleOptions`). The two line widths are screen pixels, as the tokens they replace are today. Ranges and steps are the playground's.
+Appended to `settings[]` after `headingLimit`. Defaults are today's values, rounded where the owner accepted it. Box lengths are in the plex's option unit: pixels at the designed text size (13, `DESIGNED_TYPE`), multiplied by the text size as every option length is today (`scaleOptions`). The two line widths are screen pixels, as the tokens they replace are today. Ranges and steps are the playground's.
 
 | key | type | title | description | default | min | max | step |
 |---|---|---|---|---|---|---|---|
 | `showPills` | boolean | Pill background | Draw a pill behind each title. Off: the title alone, with a dot in the color of its relation. | `true` | | | |
 | `pillPaddingSides` | number | Pill padding, sides | Space between a title and the left and right edge of its pill. | `10` | 0 | 24 | 1 |
-| `pillPaddingEnds` | number | Pill padding, top and bottom | Space between a title and the top and bottom edge of its pill. | `9.225` (Q1) | 0 | 16 | 0.025 (Q1) |
-| `focusSize` | number | Focus size | How much larger the pill of the note in the middle is. Its title keeps its size. | `1.2222` (Q2) | 1 | 2.5 | 0.0001 (Q2) |
+| `pillPaddingEnds` | number | Pill padding, top and bottom | Space between a title and the top and bottom edge of its pill. | `9.25` | 0 | 16 | 0.25 |
+| `focusSize` | number | Focus size | How much larger the pill of the note in the middle is. Its title keeps its size. | `1.22` | 1 | 2.5 | 0.01 |
 | `animationLength` | number | Animation | How long moving to another note takes, in milliseconds. 0 moves at once. | `420` | 0 | 2000 | 20 |
 | `lineThickness` | number | Line thickness | Width of the lines between notes, in pixels. | `2` | 0.5 | 4 | 0.25 |
 | `outlineThickness` | number | Outline thickness | Width of the outline of a pill, in pixels. | `1` | 0.5 | 4 | 0.25 |
@@ -24,7 +24,7 @@ Appended to `settings[]` after `headingLimit`. Defaults are today's values. Box 
 
 `showPills` also carries `"palette": true` and `"icon": "waypoints"`, as `nestHeadings` does.
 
-Sources of the defaults: side padding `--numen-node-padding` 0.625rem (= 10 at the designed size); top and bottom `(36 − 13 × 1.35) / 2`, from `nodeSize.height` 36 and `--numen-line-height` 1.35; focus `176/144 = 44/36`; animation `Plex.vue` `duration` 420; line `--numen-edge-width` 2px; outline `--numen-stroke` 1px; curvature `routing.curvature` 0.55.
+Sources of the defaults: side padding `--numen-node-padding` 0.625rem (= 10 at the designed size); top and bottom `(36 − 13 × 1.35) / 2 = 9.225`, rounded to 9.25 (a pill 36.05 tall); focus `176/144 = 44/36 ≈ 1.2222`, rounded to 1.22; animation `Plex.vue` `duration` 420; line `--numen-edge-width` 2px; outline `--numen-stroke` 1px; curvature `routing.curvature` 0.55.
 
 ## 2. How a value reaches the drawing
 
@@ -45,13 +45,13 @@ graph TD
 - **`index.ts`**: `look: readLook(context)` next to `nesting`.
 - **`model/tabDeps.ts`, `types.ts`, `model/usePlexTab.ts`, `fixtures/host.ts`**: `PlexHost.look` → `PlexTabDeps.look` → `PlexTabState.look`, unchanged. `usePlexTab.ts` is at 309 lines; this is one field.
 - **`model/plexOptions.ts`** (new): `getPlexOptions(look, type, maxHeadings): PlexOptionsInput`, so `PlexGraphView.vue` stays under 100 script lines.
-- **Options** (`plex/lib/arrange/options.ts`): `BoxOptions` gains `focusScale` (default 11/9), `padding: { inline: 10; block: 9.225 }`, `room` (0). `focusSize` is derived; `nodeSize` keeps its width cap 144.
+- **Options** (`plex/lib/arrange/options.ts`): `BoxOptions` gains `focusScale` (1.22), `padding: { inline: 10; block: 9.25 }`, `room` (0). `focusSize` is derived; `nodeSize` keeps its width cap 144.
 - **`plex/lib/arrange/look.ts`** (new, pure) `applyLook(options): PlexOptions`, called by `resolveOptions`:
-  - `nodeSize.height = TITLE_LINE + 2 × padding.block`, `TITLE_LINE = 13 × 1.35` beside `DESIGNED_TYPE` (36 at the default).
-  - `focusSize = nodeSize × focusScale` (176 × 44 at the default).
+  - `nodeSize.height = TITLE_LINE + 2 × padding.block`, `TITLE_LINE = 13 × 1.35` beside `DESIGNED_TYPE` (36.05 at the default).
+  - `focusSize = nodeSize × focusScale` (≈ 175.7 × 44 at the default).
   - `gap`, `lineGap`, `focusGap` each grow by `2 × room`. This happens before `measureCrowding`, so the room shrinks with the gaps in a tight window.
   - `scaleOptions` scales `padding` and `room` with the text size, as every other length.
-- **Measuring** (`plex/model/sizing/measure.ts`, `room.ts`): the side padding comes from `options.padding.inline` instead of the probe's `--numen-node-padding` (Q4). The focus is measured like every other title (its text keeps its size) and capped at `focusSize.width` in `createWidthLookup` (`arrange.ts`), as today (Q3). With pills off, the dot is reserved beside the title like an icon (dot plus `--numen-node-gap`).
+- **Measuring** (`plex/model/sizing/measure.ts`, `room.ts`): the side padding comes from `options.padding.inline` instead of the probe's `--numen-node-padding`; the token no longer applies to the plex. The focus title is measured like every other title (its text keeps its size); its pill is that width × `focusScale`, capped at `focusSize.width` in `createWidthLookup` (`arrange.ts`), so a short focus title grows in width too. With pills off, the dot is reserved beside the title like an icon (dot plus `--numen-node-gap`).
 - **Headings**: `lib/inside.ts` hangs headings from `node.height / 2`, so they move with a taller focus without change.
 - **Routing** (`plex/lib/arrange/edges/routing.ts`): reach is `|span| × curvature`; the `minReach` floor applies only when `curvature > 0`, so at 0 the control points lie on the line. Every curve that reads `curvature` follows the same rule.
 - **Rendering**:
@@ -98,9 +98,9 @@ Contract: no proto, wire or shared payload change; `ManifestSetting` already car
 - **Given** an empty store, a store of text for every number, and values beyond every range
 - **Then** the first two give the defaults of section 1; the third gives each range's nearest end.
 
-### AC-3: The defaults draw today's plex
+### AC-3: The defaults draw today's plex, within the accepted rounding
 - **Given** a neighborhood arranged with the default look and with today's options (`focusSize` 176 × 44, `nodeSize` 144 × 36)
-- **Then** every box has the same position and size in both, and every edge path is the same.
+- **Then** every neighbor box has today's position within a pixel, today's width and a height 0.05 larger; the focus pill is 1.22 × its measured title width (capped) and 1.22 × a neighbor's height; edges join the same nodes.
 
 ### AC-4: A change applies live
 - **Given** an open plex tab
@@ -130,8 +130,8 @@ Contract: no proto, wire or shared payload change; `ManifestSetting` already car
 - **Then** every box is taller at 12 by twice the difference at the designed type.
 
 ### AC-10: Focus size grows only the focus pill
-- **Given** a neighborhood at Focus size 1 and 2
-- **Then** at 1 the focus and a neighbor have the same height; at 2 the focus is twice a neighbor's height; neighbor boxes and every title's measured width are the same in both.
+- **Given** a neighborhood with a short focus title, at Focus size 1 and 2
+- **Then** at 1 the focus and a neighbor have the same height; at 2 the focus pill is twice as tall and twice as wide as at 1; neighbor boxes and every title's measured width are the same in both.
 
 ### AC-11: Headings move with the focus
 - **Given** the focus with headings, at Focus size 1 and 2
@@ -170,4 +170,4 @@ Contract: no proto, wire or shared payload change; `ManifestSetting` already car
 - Nothing mocks the part it verifies: `readLook` runs against an in-memory settings object with real `onChange` callbacks; arrangement tests call `arrangePlex` with real options; component tests mount `Plex` with the injected clock and viewport ports.
 - Fixture notes are invented (`plex/fixtures/`, `fixtures/`), never a user's vault.
 - Files: `model/look.test.ts` (AC-1, AC-2), `model/setting-keys.test.ts` (keys), `manifest.test.ts` (AC-17), `index.test.ts` (AC-4), `plex/lib/arrange/look.test.ts` and `arrange.test.ts` (AC-3, AC-8–10, AC-14, AC-16), `lib/inside.test.ts` (AC-11), `edges/routing.test.ts` (AC-13), `plex/ui/Plex.test.ts` (AC-5–7, AC-12, AC-15), `render/PlexNodeView.test.ts` (AC-5, AC-6).
-- Existing tests keep passing unchanged: the defaults reproduce today's sizes.
+- Existing tests that pin today's exact sizes (pill height 36, focus 176 × 44, the width of a short focus title) move with the accepted defaults; that is the fixture moving with the type, not a weakened test.
