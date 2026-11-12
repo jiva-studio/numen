@@ -79,9 +79,8 @@ type PluginEventEmitter interface {
 	EmitEvent(event string)
 }
 
-// PluginFailures reports the plugins whose start failed.
+// PluginFailures tells the plugins whose start failed.
 type PluginFailures interface {
-	SetOnPluginFailed(fn func(plugin.Failure))
 	SetOnFailureCleared(fn func(pluginID string))
 	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
 	IsPluginSuspended(pluginID string) bool

@@ -120,6 +120,12 @@ const answerFrom = (core: Fake) => {
         }
       },
     },
+    pluginHealth: {
+      watchHealth: async function* () {
+        yield { items: [] }
+        await waitForever()
+      },
+    },
   })
 }
 

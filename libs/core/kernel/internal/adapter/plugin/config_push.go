@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -30,21 +31,24 @@ type ConfigPush struct {
 	set      configPlugins
 	sups     *supervision.Supervisors
 	report   func(error)
+	health   supervision.HealthItems
 	delivery *delivery.Delivery
 
 	mu          sync.RWMutex
 	performance string
 }
 
-// ConfigPushDeps are what a ConfigPush reads and where it reports an error.
+// ConfigPushDeps are what a ConfigPush reads, where it reports an error and the list it keeps the
+// refusals of the plugins in, as the item plugin.HealthKeyConfigure of each plugin.
 type ConfigPushDeps struct {
 	Set         *PluginSet
 	Supervisors *supervision.Supervisors
 	Report      func(error)
+	Health      supervision.HealthItems
 }
 
 func NewConfigPush(d ConfigPushDeps) *ConfigPush {
-	c := &ConfigPush{set: d.Set, sups: d.Supervisors, report: d.Report}
+	c := &ConfigPush{set: d.Set, sups: d.Supervisors, report: d.Report, health: d.Health}
 	c.delivery = delivery.New(c)
 	return c
 }
@@ -120,10 +124,32 @@ func (c *ConfigPush) configureActivated(ctx context.Context, pluginID string) er
 	configureErr := c.delivery.Configure(ctx, pluginID)
 	c.delivery.ClearFirstConfigure(pluginID)
 	c.delivery.Unlock()
-	if configureErr != nil {
+	// A refusal of the plugin is listed as its configure item.
+	if _, isRefused := errors.AsType[*delivery.RefusedError](configureErr); configureErr != nil && !isRefused {
 		c.report(fmt.Errorf("push settings to plugin %s: %w", pluginID, configureErr))
 	}
 	return nil
+}
+
+// RecordConfigureAnswer lists the refusal of a Configure call as the configure item of the plugin, with
+// the message of the plugin as its text, and takes the item out once a call is answered without one.
+func (c *ConfigPush) RecordConfigureAnswer(pluginID string, refused *delivery.RefusedError) {
+	if refused == nil {
+		c.health.Remove(pluginID, plugindomain.HealthKeyConfigure)
+		return
+	}
+	text, detail := plugindomain.FitHealthText(refused.Text)
+	c.health.Set(plugindomain.HealthItem{
+		PluginID: pluginID,
+		Key:      plugindomain.HealthKeyConfigure,
+		Severity: plugindomain.HealthError,
+		Text:     text,
+		Detail:   detail,
+		Action: &plugindomain.HealthAction{
+			Command: plugindomain.AppCommandOpenSettings,
+			Values:  map[string]string{plugindomain.OpenSettingsPlugin: pluginID},
+		},
+	})
 }
 
 func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, error) {

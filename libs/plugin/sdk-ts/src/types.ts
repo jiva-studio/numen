@@ -5,6 +5,7 @@ import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
 import type { BackgroundTaskHost } from './backgroundTasks'
+import type { HealthHost } from './health'
 import type { CommandItem, CommandsHost, CommandTarget } from './commands'
 import type { SlotHost } from './slots'
 import type { VaultsHost, WindowHost } from './window'
@@ -330,6 +331,7 @@ export interface PluginContext {
   readonly vault: PluginVault
   readonly ui: PluginUi
   readonly work: PluginWork
+  readonly health?: HealthHost
 }
 
 // JsonValue is a value that survives JSON.stringify and JSON.parse unchanged: the shape of a setting,

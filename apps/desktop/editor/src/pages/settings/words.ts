@@ -10,6 +10,8 @@ export const WORDS = {
   searchModels: 'Search models',
   searchValues: (title: string) => `Search ${title.toLowerCase()}`,
   searchConnections: 'Search connections',
+  /** The button of the fix of a health item that names no title of its own. */
+  healthAction: 'Fix',
   /** Accessible name of the info button next to a setting title. */
   aboutSetting: (name: string) => `About ${name}`,
   /** The page of connections. */

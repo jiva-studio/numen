@@ -121,8 +121,6 @@ message PluginInfo {
   bool is_active = 7;
   // The permissions the manifest declares.
   repeated string permissions = 8;
-  // Set while the last start of the plugin failed, until a start succeeds.
-  PluginFailure failure = 10;
   // Whether the plugin declares a frontend bundle a window loads.
   bool has_frontend = 11;
   // The readers the manifest declares, with the files each opens.
@@ -131,6 +129,7 @@ message PluginInfo {
   repeated PluginSettingsView settings_views = 13;
   // Whether the plugin declares a backend the host starts.
   bool has_backend = 14;
+  reserved 10;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
@@ -151,16 +150,6 @@ message PluginReader {
   // opens: those of the content types it declares where it is the default
   // reader among the enabled plugins.
   repeated string extensions = 2;
-}
-
-// PluginFailure is why the last start of a plugin failed, and when.
-message PluginFailure {
-  // A short UI label for the failure, such as "Failed to start".
-  string reason = 1;
-  // When the host gave the plugin up, in milliseconds since the Unix epoch.
-  int64 failed_at_unix_ms = 2;
-  // The underlying error, shown on request.
-  string detail = 3;
 }
 
 // PluginService allows querying discovered plugins and their settings schemas.

@@ -17,4 +17,5 @@ export {
   pluginCatalog,
   connections,
   connectionCalls,
+  pluginHealth,
 } from '@numen/core-client'

@@ -12,6 +12,7 @@ import (
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
@@ -28,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -192,6 +194,15 @@ func mountSettings(w *windowWiring) {
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.state.Gate.CountQuestions())))
+}
+
+func mountHealth(w *windowWiring) {
+	host := w.a.PluginHost
+	handler := windowhealth.NewHandler(
+		host.Health, pluginhealth.NewReport(host.Health, host.Runtime), pluginhealth.NewClear(host.Health),
+	)
+	path, served := windowhealth.NewRoute(handler, w.state.Gate.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func shareEditorWindow(db *Index, opened *windowWiring) {

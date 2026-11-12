@@ -28,6 +28,11 @@ func GetAppCommandArguments(id string) ([]AppCommandArgument, bool) {
 		return []AppCommandArgument{
 			{Name: "placement", Title: "Showing", Type: "enum", Options: []string{"current", "split"}},
 		}, true
+	case "app:settings.open":
+		return []AppCommandArgument{
+			{Name: "plugin", Title: "Plugin", Type: "string"},
+			{Name: "setting", Title: "Setting", Type: "string"},
+		}, true
 	case "app:file.reveal":
 		return []AppCommandArgument{
 			{Name: "kind", Title: "Place", Type: "string"},

@@ -125,13 +125,8 @@ func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string
 	return c.PluginHost.Runtime.RetryPlugin
 }
 
-func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
-	show := run.NewPluginFailureTasks(tasks)
-	c.PluginHost.Runtime.SetOnPluginFailed(show.Report)
-	c.PluginHost.Runtime.SetOnFailureCleared(func(pluginID string) {
-		show.Clear(pluginID)
-		signalPluginChanges(c)
-	})
+func signalFailureClears(c pluginsWiring) {
+	c.PluginHost.Runtime.SetOnFailureCleared(func(string) { signalPluginChanges(c) })
 }
 
 func setPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) {

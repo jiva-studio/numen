@@ -21,8 +21,7 @@ describe('a dismissed failed task', () => {
       tasks,
       cancelTask: vi.fn(() => Promise.resolve()),
       reportCancelError: vi.fn(),
-      resolveAction: () => undefined,
-      openSettings: vi.fn(),
+      runAction: vi.fn(),
     })
     let list: readonly BackgroundTask[] = []
     host.watch((next) => (list = next))

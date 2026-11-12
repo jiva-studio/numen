@@ -1,5 +1,5 @@
 /**
- * Controllable stand-ins of the commands, the slots, the vaults, the window and the background work of a window,
+ * Controllable stand-ins of the commands, the slots, the vaults, the window, the background work and the health items of a window,
  * for the unit tests of the plugins that draw them.
  */
 import type { Disposable } from '../types'
@@ -7,6 +7,7 @@ import type { CommandItem, CommandsHost, CommandTarget } from '../commands'
 import type { SlotHost, SlotItem, SlotPlace } from '../slots'
 import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window'
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
+import type { HealthHost, HealthItem } from '../health'
 
 function notifyAll<T>(handlers: Set<(value: T) => void>, value: T): void {
   for (const handler of handlers) handler(value)
@@ -156,7 +157,7 @@ export function createMockWindowHost(
 
 // MockTaskAction is one call on a background task a test reads back.
 export interface MockTaskAction {
-  readonly action: 'cancel' | 'retry' | 'dismiss' | 'openSettings'
+  readonly action: 'cancel' | 'retry' | 'dismiss' | 'runAction'
   readonly id: string
 }
 
@@ -184,13 +185,34 @@ export function createMockBackgroundTaskHost(
     dismiss: (id) => {
       actions.push({ action: 'dismiss', id })
     },
-    openSettings: (pluginId) => {
-      actions.push({ action: 'openSettings', id: pluginId })
+    runAction: (id) => {
+      actions.push({ action: 'runAction', id })
     },
     setTasks: (next) => {
       tasks = next
       notifyAll(watchers, tasks)
     },
     getActions: () => [...actions],
+  }
+}
+
+// MockHealthHost is a HealthHost that keeps the items of the plugin under test, in the order they
+// were first reported, for a test to read back.
+export interface MockHealthHost extends HealthHost {
+  getItems(): readonly HealthItem[]
+}
+
+export function createMockHealthHost(): MockHealthHost {
+  const items = new Map<string, HealthItem>()
+  return {
+    report: (item) => {
+      items.set(item.key, item)
+      return Promise.resolve()
+    },
+    clear: (key) => {
+      items.delete(key)
+      return Promise.resolve()
+    },
+    getItems: () => [...items.values()],
   }
 }

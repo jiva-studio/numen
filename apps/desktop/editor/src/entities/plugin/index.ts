@@ -12,6 +12,8 @@ export {
   type ItemListRequest,
 } from './api/declaredCommands'
 export { getPluginConnections, getPluginTexts } from './api/hostClients'
+export { healthReports, watchPluginHealth } from './api/health'
+export type { PluginHealthItem } from '@numen/core-client'
 export { getFrontendPluginIds } from './lib/frontendPlugins'
 export { readPluginReadme } from './api/readme'
 export { PLUGIN_FAILURE_WORDS } from './words'

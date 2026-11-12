@@ -13,6 +13,7 @@ import {
   NameSource,
   NoteService,
   Origin,
+  PluginHealthService,
   PluginService,
   Relation,
   Role,
@@ -52,6 +53,7 @@ export const theme = createClient(ThemeService, transport)
 export const texts = createClient(TextService, transport)
 export const pluginCommands = createClient(CommandService, transport)
 export const pluginService = createClient(PluginService, transport)
+export const pluginHealth = createClient(PluginHealthService, transport)
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

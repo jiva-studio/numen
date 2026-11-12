@@ -21,6 +21,23 @@
       ]
     },
     {
+      "id": "app:settings.open",
+      "arguments": [
+        {
+          "name": "plugin",
+          "title": "Plugin",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "setting",
+          "title": "Setting",
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
       "id": "app:file.reveal",
       "arguments": [
         {

@@ -8,10 +8,18 @@ import type { CommandInvocation, RunSupport } from './invocation'
 import type { Notes } from './notes'
 import type { CommandRegistry } from './registry'
 
+/** The settings asked for: the page of a plugin, and a setting of it marked. */
+export interface SettingsRequest {
+  readonly pluginId?: string | undefined
+  readonly setting?: string | undefined
+}
+
 /** Where a command of the palette takes the window. */
 interface WindowNavigator {
   /** A tab of a kind, opened and put in front. */
   openTab(kind: string): void
+  /** The settings tab, opened at the plugin and the setting asked for. */
+  openSettings(request: SettingsRequest): void
   /** A tab release. */
   closeTab(tab: string): void
   /** The search, in place of the commands. */

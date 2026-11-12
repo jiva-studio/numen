@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -33,7 +32,7 @@ func TestAContainerWithoutSettingsEmbedsWithNothing(t *testing.T) {
 		t.Errorf("closer failed: %v", err)
 	}
 
-	indexing, asking, closer, why := cfg.Embedders(t.Context(), run.NewTasks())
+	indexing, asking, closer, why := cfg.Embedders(t.Context())
 	if why != nil {
 		t.Fatalf("want no reason from Embedders, got %v", why)
 	}

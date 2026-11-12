@@ -14,6 +14,7 @@ import type {
   Caught,
   FilePlacement,
   FileSelectEvent,
+  HealthHost,
   JsonValue,
   MountedView,
   NoticeHost,
@@ -37,6 +38,7 @@ import type {
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots'
 import type { WhenValues, WhenReader } from '../when'
+import type { HealthReports } from '../pluginHealth'
 import type { Component } from 'vue'
 import type { DeclaredViewRegistration, MountAccess } from '../views'
 
@@ -171,6 +173,7 @@ export interface PluginHostDeps {
     severity: 'warning' | 'error',
   ) => void
   readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
+  readonly health?: HealthReports
   readonly clearNotices?: (pluginId: string) => void
   readonly app?: AppInfo
   readonly openExternal?: (url: string) => Promise<void>
@@ -297,6 +300,7 @@ export interface ContextWindowHost {
   readonly getTasks: (pluginId: string) => TaskHost | undefined
   readonly getConnections: (pluginId: string) => ConnectionHost | undefined
   readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
+  readonly getHealth: (pluginId: string) => HealthHost | undefined
   readonly getSlots: () => SlotHost
 }
 

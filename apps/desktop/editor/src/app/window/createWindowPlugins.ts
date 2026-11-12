@@ -32,7 +32,7 @@ export interface WindowPluginsDeps {
 
 export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { foundation, tabs, vault, windowSettings, getTarget, appCommands } = deps
-  const { log, rest, frame, status, registry, settingsRequests } = foundation
+  const { log, rest, frame, status, registry } = foundation
   const { windowTabs, tabOpeners } = tabs
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
@@ -74,7 +74,10 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
         notices,
         window,
         appearance: windowSettings.appearance,
-        openSettings: settingsRequests.emit,
+        commands: hostPort.commands,
+        getCommandTitle: (command) => appCommands.find((one) => one.id === command)?.text ?? '',
+        getPluginName: (pluginId) =>
+          rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
       }),
     }),
   }

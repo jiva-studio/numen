@@ -6,7 +6,7 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
-import type { CatalogEntry } from '@/entities/plugin'
+import type { CatalogEntry, PluginHealthItem } from '@/entities/plugin'
 import type {
   ConnectionChange,
   ConnectionDraft,
@@ -61,6 +61,11 @@ export interface InstallationPlugin {
   readonly plugins: Readonly<Ref<readonly PluginInfo[]>>
   readonly app: Readonly<Ref<readonly PluginSettingInfo[]>>
   readonly catalog: Readonly<Ref<readonly CatalogEntry[]>>
+  readonly health: Readonly<Ref<readonly PluginHealthItem[]>>
+  /** Whether the window has a handler for the command of the full id. */
+  canRunCommand(command: string): boolean
+  /** Runs the command of the full id with the values of its arguments. */
+  runCommand(command: string, values: Readonly<Record<string, string>>): void
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**
@@ -133,4 +138,5 @@ export interface SettingsTabState {
   readonly installation: Installation
   readonly initialPluginId: Ref<string | null>
   readonly initialSearchQuery: Ref<string>
+  readonly markedSetting: Ref<string>
 }

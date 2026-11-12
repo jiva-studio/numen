@@ -4,7 +4,7 @@
  * window itself.
  */
 import type { Ref } from 'vue'
-import type { BackgroundTaskHost, WindowControls } from '@numen/plugin-loader'
+import type { BackgroundTaskHost, CommandsHost, WindowControls } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
@@ -69,12 +69,14 @@ export function createPluginAccess(deps: PluginAccessDeps) {
 export interface PluginBackgroundTasksDeps {
   readonly log: MessageLog
   readonly notices: NoticeQueue
-  readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks'>
+  readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks' | 'pluginHealth'>
   readonly appearance: { readonly state: { readonly lost: Readonly<Ref<string>> } }
-  readonly openSettings: (pluginId?: string) => void
+  readonly commands: Pick<CommandsHost, 'getIds' | 'run'>
+  readonly getCommandTitle: (command: string) => string
+  readonly getPluginName: (pluginId: string) => string
 }
 
-/** The tasks of the window and the failures of the plugins, as the background tasks a plugin lists. */
+/** The tasks of the window and the health of the plugins, as the background tasks a plugin lists. */
 export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps): BackgroundTaskHost {
   const { window } = deps
   return createWindowBackgroundTasks({
@@ -87,8 +89,11 @@ export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps): Ba
       tasks: window.tasks,
     },
     settings: { appearance: deps.appearance },
+    health: window.pluginHealth,
     writeMessage: deps.log.getWriter('command'),
-    openSettings: deps.openSettings,
+    commands: deps.commands,
+    getCommandTitle: deps.getCommandTitle,
+    getPluginName: deps.getPluginName,
   })
 }
 

@@ -327,6 +327,33 @@ describe('createPluginHost', () => {
     ).toBeUndefined()
   })
 
+  it('files the health items of a plugin under its own id', async () => {
+    const { deps } = createMockDeps()
+    const filed: string[] = []
+    const host = createPluginHost({
+      ...deps,
+      health: {
+        reportHealth: (pluginId, item) => {
+          filed.push(`${pluginId} ${item.key}`)
+          return Promise.resolve()
+        },
+        clearHealth: (pluginId, key) => {
+          filed.push(`${pluginId} -${key}`)
+          return Promise.resolve()
+        },
+      },
+    })
+
+    const health = host.lifecycle.createContext('org.example.atlas').health
+    await health?.report({ key: 'connection', severity: 'error', text: 'Choose a connection' })
+    await health?.clear('connection')
+
+    expect(filed).toStrictEqual(['org.example.atlas connection', 'org.example.atlas -connection'])
+    expect(createPluginHost(deps).lifecycle.createContext('org.example.atlas').health).toBe(
+      undefined,
+    )
+  })
+
   it('delegates getSetting and onSettingChange through host', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)

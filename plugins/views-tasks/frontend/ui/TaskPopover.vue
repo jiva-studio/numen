@@ -21,7 +21,7 @@ const emit = defineEmits<{
   (event: 'cancel', id: string): void
   (event: 'retry', id: string): void
   (event: 'dismiss', id: string): void
-  (event: 'open-settings', pluginId: string): void
+  (event: 'run-action', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -56,7 +56,7 @@ const taskList = computed(() => orderTasks(props.tasks))
         @cancel="(id) => emit('cancel', id)"
         @retry="(id) => emit('retry', id)"
         @dismiss="(id) => emit('dismiss', id)"
-        @open-settings="(pluginId) => emit('open-settings', pluginId)"
+        @run-action="(id) => emit('run-action', id)"
       />
     </div>
   </div>

@@ -201,6 +201,8 @@ const create = (timing: Timing) => {
       windowTabs: createTestTabs(),
       getSettingsViews: () => new Map(),
       getPlatform: () => 'linux',
+      health: ref([]),
+      commands: { getIds: () => [], run: () => Promise.resolve('') },
     }),
   }
   const page = mount(SettingsTab, {

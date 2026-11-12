@@ -129,7 +129,7 @@ func (m Manifests) ListTriggers() []plugindomain.TriggerEntry {
 	var found []plugindomain.TriggerEntry
 	for _, info := range m.host.GetPluginInfos() {
 		plugin, isEnabled := m.host.GetPlugin(info.ID)
-		if !isEnabled || info.Failure != nil {
+		if !isEnabled || m.host.IsPluginSuspended(info.ID) {
 			continue
 		}
 		for _, trigger := range plugin.Manifest.Contributes.Triggers {

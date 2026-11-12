@@ -37,6 +37,10 @@ export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]
   'app:file.open': [
     { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
   ],
+  'app:settings.open': [
+    { name: 'plugin', title: 'Plugin', type: 'string', options: [] },
+    { name: 'setting', title: 'Setting', type: 'string', options: [] },
+  ],
   'app:file.reveal': [{ name: 'kind', title: 'Place', type: 'string', options: [] }],
 }
 

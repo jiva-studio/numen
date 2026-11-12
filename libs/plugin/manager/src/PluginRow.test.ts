@@ -50,21 +50,48 @@ describe('PluginRow', () => {
     expect(wrapper.emitted('select-plugin')).toHaveLength(1)
   })
 
-  it('renders failure badge when plugin failure is present', () => {
-    const plugin = createPluginInfo('test.engine', 'Speech Engine', {
-      failure: {
-        reason: 'Failed to start',
-        detail: 'process exited with status 1',
-        failedAt: 1_700_000_000_000,
-      },
-    })
+  it('shows Stopped for a plugin whose start failed', () => {
+    const plugin = createPluginInfo('test.engine', 'Speech Engine')
     const wrapper = mount(PluginRow, {
-      props: { plugin, isEnabled: false },
+      props: {
+        plugin,
+        isEnabled: false,
+        health: [
+          { key: 'start', severity: 'error', text: 'Failed to start', detail: '', actionLabel: '' },
+        ],
+      },
     })
 
     const badge = wrapper.find('.plugin-row__badge--stopped')
     expect(badge.exists()).toBe(true)
     expect(badge.text()).toBe('Stopped')
+  })
+
+  it('shows the badge of the worst health item of a plugin that runs', () => {
+    const plugin = createPluginInfo('test.engine', 'Speech Engine')
+    const quota = {
+      key: 'quota',
+      severity: 'warning',
+      text: 'Half used',
+      detail: '',
+      actionLabel: '',
+    } as const
+    const connection = {
+      ...quota,
+      key: 'connection',
+      severity: 'error',
+      text: 'No connection',
+    } as const
+
+    const warned = mount(PluginRow, { props: { plugin, isEnabled: true, health: [quota] } })
+    const failed = mount(PluginRow, {
+      props: { plugin, isEnabled: true, health: [quota, connection] },
+    })
+    const healthy = mount(PluginRow, { props: { plugin, isEnabled: true, health: [] } })
+
+    expect(warned.find('.plugin-row__badge').text()).toBe('Warning')
+    expect(failed.find('.plugin-row__badge').text()).toBe('Error')
+    expect(healthy.find('.plugin-row__badge').exists()).toBe(false)
   })
 
   it('applies disabled class and has no disabled badge when plugin is disabled', () => {

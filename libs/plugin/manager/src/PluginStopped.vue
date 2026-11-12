@@ -1,15 +1,14 @@
 <script setup lang="ts">
 /**
- * The card of a plugin the host suspended: why it stopped, when, and the ways to bring it back.
+ * The card of a plugin the host suspended: why it stopped, and the ways to bring it back.
  */
 import { Button } from '@numen/ui'
-import type { PluginFailure } from './pluginInfo'
-import { formatFailedAt } from './state'
+import type { PluginHealth } from './pluginInfo'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  failure: PluginFailure
+  item: PluginHealth
 }>()
 
 const emit = defineEmits<{
@@ -29,11 +28,10 @@ function onDisable(): void {
 
 <template>
   <div class="plugin-stopped" role="group" :aria-label="words.pluginState.stopped">
-    <span class="plugin-stopped__reason">{{ props.failure.reason }}</span>
-    <span class="plugin-stopped__when">{{ formatFailedAt(props.failure.failedAt) }}</span>
-    <details v-if="props.failure.detail" class="plugin-stopped__detail">
+    <span class="plugin-stopped__reason">{{ props.item.text }}</span>
+    <details v-if="props.item.detail" class="plugin-stopped__detail">
       <summary>{{ words.pluginDetails }}</summary>
-      <code>{{ props.failure.detail }}</code>
+      <code>{{ props.item.detail }}</code>
     </details>
     <div class="plugin-stopped__actions">
       <Button size="small" @click="onRetry">{{ words.pluginRetry }}</Button>
@@ -56,7 +54,6 @@ function onDisable(): void {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
     'reason  actions'
-    'when    actions'
     'detail  detail';
   column-gap: var(--numen-panel-gap);
   row-gap: var(--stopped-row-gap);
@@ -75,12 +72,6 @@ function onDisable(): void {
 .plugin-stopped__reason {
   grid-area: reason;
   overflow-wrap: anywhere;
-}
-
-.plugin-stopped__when {
-  grid-area: when;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
 }
 
 .plugin-stopped__detail {

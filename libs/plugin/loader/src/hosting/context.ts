@@ -186,6 +186,7 @@ export function createPluginContext(
     add,
   )
   const rules = SERVICE_RULES
+  const health = host.window.getHealth(pluginId)
 
   return {
     plugin: {
@@ -211,5 +212,6 @@ export function createPluginContext(
     vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
     ui: createUiService(pluginId, host, { guard: registration, check }),
     work: guardService(createWork(pluginId, host), rules.work, { check }),
+    ...(health && { health: guardService(health, rules.health, { check }) }),
   }
 }

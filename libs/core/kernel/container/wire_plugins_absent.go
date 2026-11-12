@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 )
 
 func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHost {
@@ -29,5 +30,6 @@ func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHo
 		Views:               PluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},
 		SetStorage:          func(string, string) {},
 		RefreshDependencies: func() {},
+		Health:              pluginhealth.NewItems(),
 	}
 }

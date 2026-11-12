@@ -5,6 +5,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	hostdomain "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
@@ -53,9 +54,10 @@ func newServer(open ports.OpenModels) *serving.Server {
 }
 
 // Mount registers the search source service on s, with the model the environment configures. The
-// model closes with s. The model API and the index of the host are the ones the environment names.
+// model closes with s. The model API, the index and the list of health items of the host are the ones
+// the environment names.
 func Mount(s *server.Server) error {
-	return mount(s, hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv))
+	return mount(s, hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv), health.NewClientFromEnv)
 }
 
 // getPlaces returns the search of the index of the host the connect function reaches, in a vault.
@@ -69,10 +71,10 @@ func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 	}
 }
 
-func mount(s *server.Server, open ports.OpenModels, places openPlace) error {
+func mount(s *server.Server, open ports.OpenModels, places openPlace, reports openHealth) error {
 	embedSrv := newServer(open)
 	s.SetUpdateConfig(embedSrv.Update)
-	searchsource.Mount(s, newHandler(embedSrv, places))
+	searchsource.Mount(s, newHandler(embedSrv, places, newSourceHealth(reports)))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
 	s.OnClose(embedSrv.Close)
 	return nil
@@ -85,6 +87,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
 		return mount(s, hostmodel.OpenFromVariables(vars), getPlaces(func() (*host.SearchClient, error) {
 			return host.NewSearchClientFromVars(vars)
-		}))
+		}), func() (*health.Client, error) { return health.NewClientFromVars(vars) })
 	})
 }

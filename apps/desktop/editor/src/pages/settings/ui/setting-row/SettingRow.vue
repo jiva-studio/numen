@@ -7,8 +7,11 @@ import type { VNode } from 'vue'
  *
  * The title carries the id the control is labelled by, because switches,
  * segments and composite controls have no element a `<label for>` can target.
+ *
+ * A marked row is the setting a health item of its plugin names; a focused row is scrolled into view
+ * when it is drawn and whenever it becomes focused.
  */
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import SettingInfo from './SettingInfo.vue'
 import { WORDS as words } from '../../words'
 
@@ -17,6 +20,8 @@ const props = defineProps<{
   at: string
   name: string
   detail: string
+  isMarked?: boolean
+  isFocused?: boolean
 }>()
 
 defineSlots<{
@@ -29,10 +34,33 @@ defineSlots<{
 /* --------------------------------- State ---------------------------------- */
 const nameId = computed(() => `settings-${props.at}`)
 const trimmedDetail = computed(() => props.detail.trim())
+const row = ref<HTMLElement | null>(null)
+
+/* --------------------------------- Hooks ---------------------------------- */
+onMounted(() => {
+  if (props.isFocused) scrollIntoView()
+})
+
+watch(
+  () => props.isFocused,
+  (isFocused) => {
+    if (isFocused) scrollIntoView()
+  },
+)
+
+/* -------------------------------- Helpers --------------------------------- */
+function scrollIntoView(): void {
+  row.value?.scrollIntoView?.({ block: 'center' })
+}
 </script>
 
 <template>
-  <div class="settings__row">
+  <div
+    ref="row"
+    class="settings__row"
+    :class="{ 'settings__row--marked': props.isMarked }"
+    :data-marked="props.isMarked ? '' : undefined"
+  >
     <div class="settings__label">
       <span class="settings__title">
         <span :id="nameId" class="settings__name">{{ name }}</span>
@@ -62,6 +90,13 @@ const trimmedDetail = computed(() => props.detail.trim())
   gap: var(--gap) var(--numen-panel-gap);
   padding-block: var(--pad-block);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
+}
+
+.settings__row--marked {
+  --mark-width: 0.1875rem;
+  --mark-pad: 0.5rem;
+  padding-inline-start: var(--mark-pad);
+  border-inline-start: var(--mark-width) solid var(--numen-alarm);
 }
 
 .settings__row:last-child {

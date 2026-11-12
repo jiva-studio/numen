@@ -94,15 +94,6 @@ export const getSettings = async (): Promise<Configuration> => {
       hasBackend: p.hasBackend,
       readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
       settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
-      ...(p.failure
-        ? {
-            failure: {
-              reason: p.failure.reason,
-              detail: p.failure.detail,
-              failedAt: Number(p.failure.failedAtUnixMs),
-            },
-          }
-        : {}),
       settings: p.settings.map(readPluginSetting),
     })),
     app: answer.app.map(readPluginSetting),

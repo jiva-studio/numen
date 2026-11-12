@@ -28,6 +28,8 @@ export type {
   Backlink,
   BufferHost,
   CommandItem,
+  HealthHost,
+  HealthItem,
   SlotMenu,
   SlotMenuChoice,
   SlotMenuRequest,

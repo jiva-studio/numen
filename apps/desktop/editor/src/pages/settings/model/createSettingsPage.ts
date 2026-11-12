@@ -1,6 +1,8 @@
 /**
  * The settings tab: the installation it edits and the kind of tab that shows it.
  */
+import type { Ref } from 'vue'
+import type { CommandsHost } from '@numen/plugin-loader'
 import type { createWindowAppearance } from '@/features/settings-commands'
 import {
   choosePluginPath,
@@ -12,7 +14,12 @@ import {
 } from '@/entities/settings'
 import { listRowOptions, type ConnectionStore } from '@/entities/connection'
 import { countNotes, listFiles } from '@/entities/file'
-import { PLUGIN_FAILURE_WORDS, readPluginReadme, useCatalogEntries } from '@/entities/plugin'
+import {
+  PLUGIN_FAILURE_WORDS,
+  readPluginReadme,
+  useCatalogEntries,
+  type PluginHealthItem,
+} from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { useSettingsTab } from '../kind'
@@ -28,6 +35,8 @@ export interface SettingsPageDeps {
   windowTabs: WindowTabs
   getSettingsViews: InstallationPlugin['getSettingsViews']
   getPlatform: InstallationSettings['getPlatform']
+  health: Readonly<Ref<readonly PluginHealthItem[]>>
+  commands: Pick<CommandsHost, 'getIds' | 'run'>
 }
 
 interface SettingsTabConfigDeps {
@@ -39,6 +48,8 @@ interface SettingsTabConfigDeps {
   getPlatform: InstallationSettings['getPlatform']
   catalogEntries: NonNullable<InstallationPlugin['catalog']>
   reportError: (error: Caught) => void
+  health: Readonly<Ref<readonly PluginHealthItem[]>>
+  commands: Pick<CommandsHost, 'getIds' | 'run'>
 }
 
 function createInstallationSettings(deps: SettingsTabConfigDeps) {
@@ -83,9 +94,13 @@ function createInstallationPluginFiles() {
 }
 
 function createInstallationPlugin(deps: SettingsTabConfigDeps) {
-  const { rest, retry, getSettingsViews, catalogEntries } = deps
+  const { rest, retry, getSettingsViews, catalogEntries, commands, reportError } = deps
   return {
     catalog: catalogEntries,
+    health: deps.health,
+    canRunCommand: (command: string) => commands.getIds().includes(command),
+    runCommand: (command: string, values: Readonly<Record<string, string>>) =>
+      runInBackground(commands.run(command, undefined, undefined, values), reportError),
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
       try {
@@ -144,6 +159,8 @@ export function createSettingsPage({
   windowTabs,
   getSettingsViews,
   getPlatform,
+  health,
+  commands,
 }: SettingsPageDeps) {
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
@@ -168,6 +185,8 @@ export function createSettingsPage({
       getPlatform,
       catalogEntries,
       reportError,
+      health,
+      commands,
     }),
     reportError,
   )

@@ -68,17 +68,14 @@ func (Runtime) IsEnabled(string) bool { return false }
 // EmitEvent has no plugin to tell.
 func (Runtime) EmitEvent(string) {}
 
+// SetOnFailureCleared is accepted and ignored: no failure is cleared.
+func (Runtime) SetOnFailureCleared(func(string)) {}
+
 // SetSafeMode is accepted and ignored.
 func (Runtime) SetSafeMode(bool) {}
 
 // SetVaultPath is accepted and ignored.
 func (Runtime) SetVaultPath(string) {}
-
-// SetOnPluginFailed is accepted and ignored: no plugin fails.
-func (Runtime) SetOnPluginFailed(func(plugindomain.Failure)) {}
-
-// SetOnFailureCleared is accepted and ignored: no failure is cleared.
-func (Runtime) SetOnFailureCleared(func(string)) {}
 
 // IsPluginSuspended reports that no plugin is suspended.
 func (Runtime) IsPluginSuspended(string) bool { return false }

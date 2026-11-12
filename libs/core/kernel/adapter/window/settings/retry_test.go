@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -71,22 +70,5 @@ func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
 	_, err := (&Handler{}).RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("retry answered %v", err)
-	}
-}
-
-// The failure of a plugin is delivered to the window with its reason, its detail and its time, and a plugin that has not failed carries none.
-func TestAFailedPluginTravelsWithItsReasonDetailAndTime(t *testing.T) {
-	pos := time.UnixMilli(1_700_000_000_123)
-	infos := NewWirePluginInfos([]plugin.Info{
-		{ID: "md.numen.sample", Failure: &plugin.Failure{Reason: "Timed out while starting", Detail: "handshake timeout", At: pos}},
-		{ID: "md.numen.other"},
-	})
-
-	failure := infos[0].GetFailure()
-	if failure.GetReason() != "Timed out while starting" || failure.GetDetail() != "handshake timeout" || failure.GetFailedAtUnixMs() != pos.UnixMilli() {
-		t.Errorf("traveled as %v", failure)
-	}
-	if infos[1].GetFailure() != nil {
-		t.Errorf("a plugin that has not failed traveled as %v", infos[1].GetFailure())
 	}
 }
