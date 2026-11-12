@@ -78,30 +78,12 @@ function readVueScript(file) {
   return [descriptor.script, descriptor.scriptSetup].filter(Boolean).map((block) => block.content).join("\n");
 }
 
-/**
- * The configuration scripts of the package in `dir`, such as `stories/vitest.config.ts`: every `*.config.ts`
- * in it, outside the folders of packages nested in it.
- */
-function listConfigFiles(dir) {
-  const found = [];
-  const walk = (current) => {
-    for (const one of fs.readdirSync(current, { withFileTypes: true })) {
-      const child = path.join(current, one.name);
-      if (one.isFile() && /\.config\.(ts|mts)$/.test(one.name)) found.push(child);
-      const isNested = one.isDirectory() && fs.existsSync(path.join(child, "package.json"));
-      if (one.isDirectory() && !isNested && !SKIPPED_DIRS.has(one.name) && !one.name.startsWith(".")) walk(child);
-    }
-  };
-  walk(dir);
-  return found;
-}
-
-/** A program over the package in `dir`: its tsconfig files, its configuration scripts and its Vue scripts. */
+/** A program over the package in `dir`: its tsconfig files, the configuration scripts at its root and its Vue scripts. */
 function createPackageProgram(dir) {
   const { options, fileNames } = readConfig(dir);
   const virtual = new Map();
   for (const file of listFiles(dir, /\.vue$/)) virtual.set(file + ".ts", readVueScript(file));
-  const configs = listConfigFiles(dir);
+  const configs = fs.readdirSync(dir).filter((name) => /\.config\.(ts|mts)$/.test(name)).map((name) => path.join(dir, name));
   const host = ts.createCompilerHost(options, true);
   const getSourceFile = host.getSourceFile.bind(host);
   const fileExists = host.fileExists.bind(host);
