@@ -106,6 +106,7 @@ func makeWindowAPI(cfg container.Config) *shell.API {
 		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg) },
 		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
 		PluginServices:       container.GetPluginServices(cfg),
+		ConnectionCalls:      container.GetConnectionCallHandler(cfg),
 	}
 }
 

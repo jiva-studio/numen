@@ -27,6 +27,7 @@ type API struct {
 	GetFrontendPluginIDs func() []string
 	GetPluginDir         func(id string) (string, bool)
 	PluginServices       PluginServices
+	ConnectionCalls      numenv1connect.ConnectionCallServiceHandler
 	Vaults               *registry.List
 	ResolveLinks         *query.ResolveVaultLinks
 
