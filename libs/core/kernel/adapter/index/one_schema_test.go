@@ -164,7 +164,7 @@ func TestAnIndexOfAnotherVersionIsBuiltAgain(t *testing.T) {
 	for _, version := range []int{2, 10, 110} {
 		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "index.db")
-			raw := openRaw(t, path)
+			raw := openRawDB(t, path)
 			for _, statement := range []string{
 				`CREATE TABLE old_marker_rows (marker TEXT)`,
 				`INSERT INTO old_marker_rows VALUES ('01OLDMARKER')`,
