@@ -9,8 +9,13 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import SettingsViews from './SettingsViews.vue'
 import type { InstallationSettings, PluginFieldsHost } from '../../types'
-import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
-import { useEnumFields, usePluginFields, usePluginPaths } from '../../model/usePluginFields'
+import type { PluginInfo } from '@/entities/settings'
+import {
+  useEnumFields,
+  usePluginFields,
+  usePluginPaths,
+  useSettingDefaults,
+} from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -44,16 +49,7 @@ const {
   choosePath: onPathChoose,
   clearPath: onPathClear,
 } = usePluginPaths(fieldDeps, fields)
-
-/* -------------------------------- Helpers --------------------------------- */
-function isChanged(setting: PluginSettingInfo): boolean {
-  const stored = props.settings.getSetting([props.plugin.id, ...setting.key.split('.')])
-  return stored !== undefined && JSON.stringify(stored) !== JSON.stringify(setting.default ?? null)
-}
-
-function onReset(setting: PluginSettingInfo): void {
-  onSettingChange(setting.key, setting.default ?? '')
-}
+const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
 </script>
 
 <template>
@@ -62,21 +58,21 @@ function onReset(setting: PluginSettingInfo): void {
   <template v-for="setting in getShownSettings()" :key="setting.key">
     <SettingRow
       v-if="setting.type !== 'connections'"
-      v-slot="{ labelledBy }"
+      v-slot="{ labelledBy, describedBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
       :detail="setting.description"
       :is-marked="props.marked?.includes(setting.key) ?? false"
       :is-focused="props.focused === setting.key"
       :is-changed="isChanged(setting)"
-      :is-dependent="setting.when !== undefined"
       @reset="onReset(setting)"
     >
       <Switch
         v-if="setting.type === 'boolean'"
         :model-value="getBooleanSetting(setting.key, setting.default)"
         :aria-labelledby="labelledBy"
-        @update:model-value="(val) => onSettingChange(setting.key, val)"
+        :aria-describedby="describedBy"
+        @update:model-value="(isEnabled) => onSettingChange(setting.key, isEnabled)"
       />
 
       <NumberField
@@ -86,6 +82,7 @@ function onReset(setting: PluginSettingInfo): void {
         :max="setting.max ?? 999999"
         :step="setting.step ?? 1"
         :aria-labelledby="labelledBy"
+        :aria-describedby="describedBy"
         class="settings__number"
         @commit="(val) => val !== null && onSettingChange(setting.key, val)"
       />
@@ -97,6 +94,7 @@ function onReset(setting: PluginSettingInfo): void {
           :max="setting.max ?? 100"
           :step="setting.step ?? 1"
           :aria-labelledby="labelledBy"
+          :aria-describedby="describedBy"
           class="settings__slider"
           @update:model-value="(val) => onSettingChange(setting.key, val)"
           @commit="(val) => onSettingChange(setting.key, val)"
@@ -115,6 +113,7 @@ function onReset(setting: PluginSettingInfo): void {
           v-if="getEnumOptions(setting).length === 1"
           class="settings__fixed"
           :aria-labelledby="labelledBy"
+          :aria-describedby="describedBy"
         >
           {{ getEnumOptions(setting)[0]?.title || getEnumValue(setting) }}
         </span>
@@ -124,6 +123,7 @@ function onReset(setting: PluginSettingInfo): void {
           :choices="getEnumChoices(setting)"
           :name="setting.title"
           :aria-labelledby="labelledBy"
+          :aria-describedby="describedBy"
           class="settings__choice"
           @update:model-value="(val) => onSettingChange(setting.key, val)"
         />
@@ -134,6 +134,7 @@ function onReset(setting: PluginSettingInfo): void {
         :path="getStringSetting(setting.key, setting.default)"
         :problem="pathProblems[setting.key] ?? ''"
         :labelled-by="labelledBy"
+        :described-by="describedBy"
         :is-multi="hasManyPaths(setting)"
         :words="words"
         @choose="onPathChoose(setting)"
@@ -146,6 +147,7 @@ function onReset(setting: PluginSettingInfo): void {
         :choices="getEnumChoices(setting)"
         :name="setting.title"
         :aria-labelledby="labelledBy"
+        :aria-describedby="describedBy"
         is-searchable
         can-enter-custom
         :search-name="words.searchModels"
@@ -158,6 +160,7 @@ function onReset(setting: PluginSettingInfo): void {
         type="text"
         :value="getDraft(setting.key) ?? getStringSetting(setting.key, setting.default)"
         :aria-labelledby="labelledBy"
+        :aria-describedby="describedBy"
         class="settings__text-input"
         @input="(e) => setDraft(setting.key, (e.target as HTMLInputElement).value)"
         @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"

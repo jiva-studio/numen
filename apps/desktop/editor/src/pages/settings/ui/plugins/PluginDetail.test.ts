@@ -75,19 +75,16 @@ describe('PluginDetail', () => {
     })
     const { wrapper } = createDetail(plugin)
 
-    expect(wrapper.find('.plugin-detail__title').text()).toBe('Super Engine v1.2.3')
-    expect(wrapper.find('.plugin-detail__description').text()).toBe('Engine description text')
+    expect(wrapper.get('h2').text()).toBe('Super Engine')
+    expect(wrapper.text()).toContain('v1.2.3')
+    expect(wrapper.text()).toContain('Engine description text')
   })
 
   it('renders back button and clicking it emits back', async () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine')
     const { wrapper } = createDetail(plugin)
 
-    const topBackButton = wrapper.find('.plugin-detail__back')
-    expect(topBackButton.exists()).toBe(true)
-    expect(topBackButton.text()).toContain(words.backToPlugins)
-
-    await topBackButton.trigger('click')
+    await wrapper.get(`button[aria-label="${words.backToPlugins}"]`).trigger('click')
     expect(wrapper.emitted('back')).toHaveLength(1)
   })
 
@@ -95,8 +92,7 @@ describe('PluginDetail', () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine')
     const { wrapper, recordedWrites } = createDetail(plugin)
 
-    const masterSwitch = wrapper.find('.plugin-detail__master-switch').findComponent(Switch)
-    expect(masterSwitch.exists()).toBe(true)
+    const masterSwitch = wrapper.getComponent(Switch)
     expect(masterSwitch.props('modelValue')).toBe(true)
 
     masterSwitch.vm.$emit('update:modelValue', false)
@@ -110,13 +106,13 @@ describe('PluginDetail', () => {
       'test.plugin': { enabled: false },
     })
 
-    const masterSwitch = wrapper.find('.plugin-detail__master-switch').findComponent(Switch)
+    const masterSwitch = wrapper.getComponent(Switch)
     expect(masterSwitch.props('modelValue')).toBe(false)
   })
 
-  it('renders failure card, calls retryPlugin on retry, and writes disabled on disable', async () => {
+  it('renders the failure card, shows its detail and calls retryPlugin', async () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine')
-    const { wrapper, retryPlugin, recordedWrites } = createDetail(
+    const { wrapper, retryPlugin } = createDetail(
       plugin,
       {},
       undefined,
@@ -133,24 +129,16 @@ describe('PluginDetail', () => {
       ],
     )
 
-    const stoppedCard = wrapper.find('.plugin-stopped')
-    expect(stoppedCard.exists()).toBe(true)
+    const stoppedCard = wrapper.get('[role="group"][aria-label="Stopped"]')
     expect(stoppedCard.text()).toContain('Timed out while starting')
-    expect(stoppedCard.find('details summary').text()).toBe('Details')
-    expect(stoppedCard.find('details code').text()).toBe('handshake timeout after 10s')
+    expect(stoppedCard.text()).not.toContain('handshake timeout after 10s')
 
     const buttons = stoppedCard.findAll('button')
-    const retryButton = buttons.find((btn) => btn.text() === words.pluginRetry)
-    const disableButton = buttons.find((btn) => btn.text() === words.pluginDisable)
+    await buttons.find((btn) => btn.text() === words.pluginShowDetails)!.trigger('click')
+    expect(stoppedCard.get('code').text()).toBe('handshake timeout after 10s')
 
-    expect(retryButton?.exists()).toBe(true)
-    expect(disableButton?.exists()).toBe(true)
-
-    await retryButton!.trigger('click')
+    await buttons.find((btn) => btn.text() === words.pluginRetry)!.trigger('click')
     expect(retryPlugin).toHaveBeenCalledExactlyOnceWith('test.plugin')
-
-    await disableButton!.trigger('click')
-    expect(recordedWrites).toStrictEqual([{ at: ['test.plugin', 'enabled'], value: 'false' }])
   })
 
   it('handles declarative settings controls: Switch, NumberField, Slider, Select, text input', async () => {
@@ -286,22 +274,22 @@ describe('PluginDetail', () => {
     ])
   })
 
-  it('renders clean detail view with switch when plugin has no additional settings', () => {
+  it('says there is nothing to set up for a plugin without settings, and keeps its switch', () => {
     const plugin = createPluginInfo('test.empty', 'Empty Plugin')
     const { wrapper } = createDetail(plugin)
 
-    expect(wrapper.find('.plugin-detail__title').text()).toContain('Empty Plugin')
-    expect(wrapper.find('.plugin-detail__master-switch').exists()).toBe(true)
-    expect(wrapper.find('.plugin-detail__empty').exists()).toBe(false)
+    expect(wrapper.get('h2').text()).toBe('Empty Plugin')
+    expect(wrapper.findComponent(Switch).exists()).toBe(true)
+    expect(wrapper.get('[role="tabpanel"]').text()).toBe(words.noSettings)
   })
 
   it('puts the back button first, above the title', () => {
     const { wrapper } = createDetail(createPluginInfo('test.plugin', 'Super Engine'))
-    const root = wrapper.find('.plugin-detail').element
-    expect(root.firstElementChild?.classList.contains('plugin-detail__back')).toBe(true)
+    const buttons = wrapper.findAll('button')
+    expect(buttons[0]?.attributes('aria-label')).toBe(words.backToPlugins)
   })
 
-  it('renders a header card without a state badge and expands README details on Read more', async () => {
+  it('opens on Settings and draws the README on About without its title and comments', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -316,20 +304,20 @@ describe('PluginDetail', () => {
     )
     await flushPromises()
 
-    expect(wrapper.find('.plugin-detail__state').exists()).toBe(false)
-    expect(wrapper.find('.plugin-detail__description').text()).toBe('Short summary line.')
-    expect(wrapper.find('.plugin-detail__more').exists()).toBe(false)
+    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toBe('Settings')
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((one) => one.text() === 'About')!
+      .trigger('click')
 
-    const toggle = wrapper.find('.plugin-detail__toggle')
-    expect(toggle.exists()).toBe(true)
-    expect(toggle.text()).toBe(words.readMore)
-
-    await toggle.trigger('click')
-    expect(wrapper.find('.plugin-detail__more').text()).toContain('Detailed documentation body.')
-    expect(toggle.text()).toBe(words.showLess)
+    const panel = wrapper.get('[role="tabpanel"]')
+    expect(panel.text()).toContain('Short summary line.')
+    expect(panel.text()).toContain('Detailed documentation body.')
+    expect(panel.text()).not.toContain('Super Engine')
+    expect(panel.html()).not.toContain('more')
   })
 
-  it('draws no stopped details disclosure when failure detail is empty', () => {
+  it('offers no Show details when the failure detail is empty', () => {
     const start: PluginHealthItem = {
       pluginId: 'a',
       key: 'start',
@@ -338,7 +326,8 @@ describe('PluginDetail', () => {
       detail: '',
     }
     const { wrapper } = createDetail(createPluginInfo('a', 'A'), {}, undefined, undefined, [start])
-    expect(wrapper.find('.plugin-stopped details').exists()).toBe(false)
+    const card = wrapper.get('[role="group"][aria-label="Stopped"]')
+    expect(card.findAll('button').map((one) => one.text())).toStrictEqual([words.pluginRetry])
   })
 })
 
@@ -374,7 +363,7 @@ describe('PluginDetail with a health item', () => {
 
   it('shows the item in a bar and runs its fix with its values', async () => {
     const { wrapper, runCommand } = createDetail(ATLAS, {}, undefined, undefined, [CONNECTION])
-    const bar = wrapper.find('.plugin-health')
+    const bar = wrapper.get('[role="alert"]')
 
     expect(bar.text()).toContain('Choose a connection')
     expect(bar.text()).toContain('The atlas has no connection to ask.')
@@ -789,6 +778,10 @@ describe('the data of a plugin', () => {
       },
     })
     await flushPromises()
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((one) => one.text() === 'Data')
+      ?.trigger('click')
     return { wrapper, getPluginData, deletePluginData }
   }
 
@@ -804,12 +797,11 @@ describe('the data of a plugin', () => {
 
   it('deletes the data only after the person confirms', async () => {
     const { wrapper, deletePluginData } = await createDataDetail(3)
-    expect(wrapper.find('.plugin-data__card').exists()).toBe(true)
-    expect(wrapper.text()).toContain(words.pluginDataDetail(3))
+    expect(wrapper.get('[role="tabpanel"]').text()).toContain(words.pluginDataDetail(3))
 
     await findButton(wrapper, words.pluginDataDelete)!.trigger('click')
     expect(deletePluginData).not.toHaveBeenCalled()
-    expect(wrapper.find('.plugin-data__asking').text()).toContain(
+    expect(wrapper.get(`[role="alert"][aria-label="${words.pluginDataDelete}"]`).text()).toContain(
       words.pluginDataAsking('Transcriber', 3),
     )
 
@@ -826,7 +818,7 @@ describe('the data of a plugin', () => {
     await findButton(wrapper, words.pluginDataKeep)!.trigger('click')
 
     expect(deletePluginData).not.toHaveBeenCalled()
-    expect(wrapper.find('.plugin-data__asking').exists()).toBe(false)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
   it('shows why the data was not deleted', async () => {
@@ -836,7 +828,9 @@ describe('the data of a plugin', () => {
     await findButton(wrapper, words.pluginDataConfirm)!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('.plugin-data__problem').text()).toBe('the vault is read-only')
+    expect(wrapper.findAll('[role="alert"]').map((one) => one.text())).toContain(
+      'the vault is read-only',
+    )
     expect(findButton(wrapper, words.pluginDataDelete)).toBeDefined()
   })
 })
@@ -904,5 +898,58 @@ describe('an enum whose value is not offered on this platform', () => {
 
     expect(result.selectedText).toBe('None')
     expect(result.checked).toStrictEqual(['None'])
+  })
+})
+
+describe('a setting changed from its default', () => {
+  const TUNED = createPluginInfo('test.tuned', 'Tuned', {
+    settings: [
+      {
+        key: 'temperature',
+        type: 'number',
+        title: 'Temperature',
+        description: 'Lower is steadier, higher is more varied',
+        default: 0.7,
+      },
+      { key: 'maxSteps', type: 'number', title: 'Max Steps', description: '', default: 25 },
+    ],
+  })
+
+  const findResets = (wrapper: ReturnType<typeof createDetail>['wrapper']) =>
+    wrapper.findAll('button').filter((one) => one.attributes('aria-label')?.startsWith('Reset'))
+
+  it('offers Reset on its row alone, and Reset writes the default', async () => {
+    const { wrapper, recordedWrites } = createDetail(TUNED, {
+      'test.tuned': { temperature: 0.4, maxSteps: 25 },
+    })
+
+    const resets = findResets(wrapper)
+    expect(resets.map((one) => one.attributes('aria-label'))).toStrictEqual([
+      'Reset Temperature to its default',
+    ])
+    await resets[0]!.trigger('click')
+
+    expect(recordedWrites).toStrictEqual([{ at: ['test.tuned', 'temperature'], value: '0.7' }])
+  })
+
+  it('offers no Reset while every setting holds its default', () => {
+    const { wrapper } = createDetail(TUNED)
+
+    expect(findResets(wrapper)).toHaveLength(0)
+  })
+
+  it('describes the control by the whole description the row cuts to one line', () => {
+    const { wrapper } = createDetail(TUNED)
+    const row = wrapper.findAllComponents(SettingRow)[0]!
+
+    const describedBy = row.getComponent(NumberField).attributes('aria-describedby')
+    expect(row.get(`[id="${describedBy}"]`).text()).toBe('Lower is steadier, higher is more varied')
+  })
+
+  it('describes no control whose setting has no description', () => {
+    const { wrapper } = createDetail(TUNED)
+    const row = wrapper.findAllComponents(SettingRow)[1]!
+
+    expect(row.getComponent(NumberField).attributes('aria-describedby')).toBeUndefined()
   })
 })

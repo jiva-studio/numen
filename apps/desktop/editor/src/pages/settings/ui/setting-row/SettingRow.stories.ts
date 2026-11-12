@@ -24,25 +24,25 @@ const rows = (width: string) => () => ({
     longDetail: LONG_DETAIL,
   }),
   template: `
-    <div class="numen" style="container-type:inline-size;inline-size:${width};padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
-      <SettingRow v-slot="{ labelledBy }" at="switch" name="Nest headings under notes" detail="Show the headings of a note under its node.">
-        <Switch :aria-labelledby="labelledBy" />
+    <div class="numen" style="container:settings / inline-size;inline-size:${width};padding:1rem;background:var(--numen-surface)">
+      <SettingRow v-slot="{ labelledBy, describedBy }" at="switch" name="Nest headings under notes" detail="Show the headings of a note under its node.">
+        <Switch :aria-labelledby="labelledBy" :aria-describedby="describedBy" />
       </SettingRow>
-      <SettingRow v-slot="{ labelledBy }" at="select" :name="longName" :detail="longDetail">
-        <Select :choices="choices" :aria-labelledby="labelledBy" model-value="quick" class="settings__choice" />
+      <SettingRow v-slot="{ labelledBy, describedBy }" at="select" :name="longName" :detail="longDetail">
+        <Select :choices="choices" :aria-labelledby="labelledBy" :aria-describedby="describedBy" model-value="quick" class="settings__choice" />
       </SettingRow>
-      <SettingRow v-slot="{ labelledBy }" at="text" name="Day starts at" detail="Time a review day starts. Answers before it count toward the day before.">
-        <input type="text" value="04:00" :aria-labelledby="labelledBy" class="settings__text-input" />
+      <SettingRow v-slot="{ labelledBy, describedBy }" at="text" name="Day starts at" detail="Time a review day starts. Answers before it count toward the day before.">
+        <input type="text" value="04:00" :aria-labelledby="labelledBy" :aria-describedby="describedBy" class="settings__text-input" />
       </SettingRow>
-      <SettingRow v-slot="{ labelledBy }" at="path" name="Path to the yt-dlp program on this machine" :detail="longDetail">
-        <input type="text" value="/usr/local/bin/a-very-long-folder-name/yt-dlp" :aria-labelledby="labelledBy" class="settings__text-input" />
+      <SettingRow v-slot="{ labelledBy, describedBy }" at="path" name="Path to the yt-dlp program on this machine" :detail="longDetail">
+        <input type="text" value="/usr/local/bin/a-very-long-folder-name/yt-dlp" :aria-labelledby="labelledBy" :aria-describedby="describedBy" class="settings__text-input" />
       </SettingRow>
-      <SettingRow v-slot="{ labelledBy }" at="number" :name="longName" detail="Text chunks processed in one forward pass.">
-        <NumberField :model-value="8" :min="1" :max="64" :aria-labelledby="labelledBy" style="inline-size:6rem" />
+      <SettingRow v-slot="{ labelledBy, describedBy }" at="number" :name="longName" detail="Text chunks processed in one forward pass.">
+        <NumberField :model-value="8" :min="1" :max="64" :aria-labelledby="labelledBy" :aria-describedby="describedBy" style="inline-size:6rem" />
       </SettingRow>
-      <SettingRow v-slot="{ labelledBy }" at="range" name="Temperature" :detail="longDetail">
-        <span style="display:flex;inline-size:var(--settings-choice, 16rem);max-inline-size:100%">
-          <Slider :model-value="0.7" :min="0" :max="1" :step="0.1" :aria-labelledby="labelledBy" style="flex:1 1 auto" />
+      <SettingRow v-slot="{ labelledBy, describedBy }" at="range" name="Temperature" :detail="longDetail">
+        <span style="display:flex;inline-size:var(--settings-choice);max-inline-size:100%">
+          <Slider :model-value="0.7" :min="0" :max="1" :step="0.1" :aria-labelledby="labelledBy" :aria-describedby="describedBy" style="flex:1 1 auto" />
         </span>
       </SettingRow>
     </div>
@@ -59,20 +59,16 @@ const meta: Meta<typeof SettingRow> = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The row description renders inside the info button tooltip. */
-export const LongDescriptionGoesToATooltip: Story = {
+/** The description is cut to one line in the row, and the control is described by all of it. */
+export const ControlsAreDescribedByTheDescription: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const button = canvas.getByRole('button', { name: 'About Day starts at' })
-    const tooltip = canvas.getByText(
+    await expect(canvas.getByDisplayValue('04:00')).toHaveAccessibleDescription(
       'Time a review day starts. Answers before it count toward the day before.',
     )
-    await expect(tooltip).not.toBeVisible()
-    await expect(button).toHaveAccessibleDescription(
-      'Time a review day starts. Answers before it count toward the day before.',
+    await expect(canvas.getAllByRole('switch')[0]).toHaveAccessibleDescription(
+      'Show the headings of a note under its node.',
     )
-    button.focus()
-    await expect(tooltip).toBeVisible()
   },
 }
 

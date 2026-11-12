@@ -10,6 +10,7 @@ import { runInBackground } from '@numen/ui'
 import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import { formatError } from '@/shared/api/errors'
 import type { JsonValue } from '@/shared/api/json'
+import { isChangedFromDefault } from '../lib/defaults'
 import { createEnumFields, getValueInForce } from '../lib/enums'
 import type { InstallationSettings, PluginFieldsHost } from '../types'
 import { createPluginSettings } from './createPluginSettings'
@@ -72,6 +73,18 @@ export function usePluginFields(deps: PluginFieldsDeps) {
     setDraft,
     writeDraft,
     setSetting: pluginSettings.set,
+  }
+}
+
+/** Whether each setting holds a value other than its default, and the write of the default back. */
+export function useSettingDefaults(deps: PluginFieldsDeps) {
+  const pluginSettings = createFieldSettings(deps)
+  return {
+    isChanged: (setting: PluginSettingInfo): boolean =>
+      isChangedFromDefault(setting.default, pluginSettings.get(setting.key)),
+    resetSetting: (setting: PluginSettingInfo): void => {
+      if (setting.default !== undefined) pluginSettings.set(setting.key, setting.default)
+    },
   }
 }
 
