@@ -88,11 +88,9 @@ to nothing. See [links](/links/).
 
 ## Removing
 
-**Move note to trash** moves the file into `.trash/` inside the vault, keeping the path it had. It
-is removed from search, the plex and the index. Nothing is destroyed, and the file is in that folder
-if you want it back.
+**Move to trash** moves the file into `.trash/` inside the vault, keeping the path it had. It works on any file in the vault: a note, a PDF, a book, a recording. It is removed from search, the plex and the index. The transcript, recognized text and other text versions of the file go with it. Nothing is destroyed, and the file and its text versions come back when you move the file out of that folder.
 
-**Empty trash** deletes everything in the trash of the vault. You are asked to confirm first, and it
+**Empty trash** deletes everything in the trash of the vault, with the text versions of those files. You are asked to confirm first, and it
 cannot be undone. Items that cannot be deleted stay in `.trash/`, and the command reports how many.
 
 Notes that linked to what you removed are reported and left alone. The link is not wrong. Its

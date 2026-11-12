@@ -12,6 +12,8 @@ import (
 type VersionReader interface {
 	// GetVersions is the versions of one file, in the order they were first saved.
 	GetVersions(ctx context.Context, path string) ([]domain.TextVersion, error)
+	// GetVersionsUnder is the versions of a file, or of everything under a folder.
+	GetVersionsUnder(ctx context.Context, path string) ([]domain.TextVersion, error)
 }
 
 // VersionWriter records and removes the text versions of one vault's files.

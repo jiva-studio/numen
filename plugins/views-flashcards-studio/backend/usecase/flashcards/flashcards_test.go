@@ -659,7 +659,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 	request := session.Queue
-	if len(request) != 1 || request[0].Deck != "decks/Words.md" {
+	if len(request) != 1 || request[0].Deck != "decks/Words.md" || request[0].ID.Card != "3f4g5h6j7k" {
 		t.Errorf("asked %+v, want the one card of that deck", request)
 	}
 }

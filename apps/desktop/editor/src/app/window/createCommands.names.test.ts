@@ -16,7 +16,7 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:note.createParent': 'Create parent note',
   'app:note.createJump': 'Create jump note',
   'app:note.rename': 'Rename note',
-  'app:file.remove': 'Move note to trash',
+  'app:file.remove': 'Move to trash',
   'app:file.copyPath': 'Copy note path',
   'app:file.open#note': 'Go to note',
   'app:file.open#document': 'Open the document here',

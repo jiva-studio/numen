@@ -10,6 +10,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import Reader from './Reader.vue'
+import { NEARER } from '../lib/strip'
 import { frameStory } from '../../fixtures/frame'
 
 const meta = {
@@ -188,6 +189,32 @@ export const Scrolling: Story = {
       const pageValue = Number((canvas.getByLabelText('Page') as HTMLInputElement).value)
       await expect(pageValue).toBeGreaterThan(1)
     })
+  },
+}
+
+/**
+ * Each press of Closer draws the pages 1.25 times wider, each press of Further 1.25 times
+ * narrower, and Further has no press at the width the document opened at.
+ */
+export const ZoomedByEachPress: Story = {
+  render: book(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(async () => await expect(getImage(canvasElement, 0)).toBeInTheDocument())
+    const getWidth = () => getSheet(canvasElement, 0)!.getBoundingClientRect().width
+    const base = getWidth()
+    await expect(canvas.getByLabelText('Further')).toBeDisabled()
+
+    await userEvent.click(canvas.getByLabelText('Closer'))
+    await waitFor(async () => await expect(getWidth()).toBeCloseTo(base * NEARER, -1))
+    await userEvent.click(canvas.getByLabelText('Closer'))
+    await waitFor(async () => await expect(getWidth()).toBeCloseTo(base * NEARER * NEARER, -1))
+
+    await userEvent.click(canvas.getByLabelText('Further'))
+    await waitFor(async () => await expect(getWidth()).toBeCloseTo(base * NEARER, -1))
+    await userEvent.click(canvas.getByLabelText('Further'))
+    await waitFor(async () => await expect(getWidth()).toBeCloseTo(base, -1))
+    await expect(canvas.getByLabelText('Further')).toBeDisabled()
   },
 }
 

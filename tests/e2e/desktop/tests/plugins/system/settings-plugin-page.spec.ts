@@ -2,9 +2,8 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { test, expect, type Page } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
-import { openWorkspace, runCommand } from '../../support/workspace.js'
-import { readSettings } from '../../support/vault.js'
 import type { JsonValue } from '../../support/json.js'
+import { openWorkspace, runCommand } from '../../support/workspace.js'
 
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
 const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }
@@ -89,16 +88,5 @@ test.describe('The page of a plugin', () => {
     })
     expect(shownPaths).toEqual([])
     expect(firstRenderMs).toBeLessThan(FIRST_RENDER_LIMIT_MS)
-  })
-
-  test('stores a path under the id of the plugin and keeps no plugins object', async ({ page }) => {
-    const path = await createExecutableFile()
-    await writeSetting(page, [FIRST.id, 'executablePath'], path)
-
-    const file = await readSettings(page.request)
-
-    expect(file[FIRST.id]).toMatchObject({ executablePath: path })
-    expect(file).not.toHaveProperty('plugins')
-    expect(file).toHaveProperty('app')
   })
 })

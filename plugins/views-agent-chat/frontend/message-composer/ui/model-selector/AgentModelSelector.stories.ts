@@ -55,6 +55,11 @@ export const Opened: Story = {
   play: async (context) => {
     await open(context)
     const list = await within(document.body).findByRole('listbox', { name: 'Model' })
+    const frames = document.body.querySelectorAll('[data-numen-searchable-list]')
+    await expect(frames).toHaveLength(1)
+    await expect(
+      frames[0]!.querySelector(':scope > input[role="combobox"]:first-child'),
+    ).not.toBeNull()
     await expect(within(list).getAllByRole('option')).toHaveLength(OPTIONS.length)
     await expect(within(list).getByRole('option', { name: 'Sonnet 5.5' })).toHaveAttribute(
       'aria-current',
@@ -68,11 +73,20 @@ export const Searched: Story = {
   play: async (context) => {
     await open(context)
     const body = within(document.body)
-    await userEvent.type(await body.findByRole('combobox', { name: 'Search models' }), 'haiku')
+    const search = await body.findByRole('combobox', { name: 'Search models' })
+
+    await userEvent.type(search, 'no such model')
+    await waitFor(() => expect(body.queryByRole('listbox', { name: 'Model' })).toBeNull())
+    await expect(body.getByRole('status')).toHaveTextContent('No models found')
+
+    await userEvent.clear(search)
+    await userEvent.type(search, 'haiku')
     await waitFor(() => expect(body.getAllByRole('option')).toHaveLength(1))
+    await expect(body.getByRole('option')).toHaveTextContent('Haiku 5.5')
     await userEvent.keyboard('{Enter}')
     await expect(context.args.onSelect).toHaveBeenCalledWith(
       expect.objectContaining({ modelId: 'haiku' }),
     )
+    await waitFor(() => expect(body.queryByRole('combobox', { name: 'Search models' })).toBeNull())
   },
 }

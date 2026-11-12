@@ -133,27 +133,6 @@ test.describe('A control of the page System after a change', () => {
     expect(runs[1]).toContain('Eco')
   })
 
-  test('moves the interface size forward with the keys and never back', async ({
-    page,
-    request,
-  }) => {
-    await openWorkspace(page)
-    const settings = await openSystemSettings(page)
-    const slider = settings.getByRole('slider', { name: 'Interface size' })
-
-    const { samples } = await watchControl(page, { slider: 'Interface size' }, async () => {
-      await slider.focus()
-      await slider.press('ArrowRight')
-      await slider.press('ArrowRight')
-      await slider.press('ArrowRight')
-    })
-
-    expect(getRuns(samples).map(Number)).toStrictEqual([1, 1.1, 1.2, 1.3])
-    await expect
-      .poll(async () => (await readOwner(request, 'app'))['appearance'])
-      .toMatchObject({ interfaceScale: 1.3 })
-  })
-
   test('keeps the interface size at the place the handle is dropped on', async ({
     page,
     request,

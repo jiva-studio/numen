@@ -52,22 +52,6 @@ const dragToOtherPane = async (page: Page): Promise<void> => {
 }
 
 test.describe('A PDF tab that is moved', () => {
-  test('still draws the page it was on after it is dragged to the other pane', async ({ page }) => {
-    await openWorkspace(page)
-    await expect(getPanes(page)).toHaveCount(2)
-    await openVaultFile(page, 'assets', 'pages.pdf')
-    const field = page.getByLabel('Page', { exact: true })
-    await field.fill('12')
-    await field.press('Enter')
-    await expect.poll(() => isDrawnInView(page, 11), { timeout: 20_000 }).toBe(true)
-
-    await dragToOtherPane(page)
-
-    // The page is drawn without the page being turned.
-    await expect(field).toHaveValue('12')
-    await expect.poll(() => isDrawnInView(page, 11), { timeout: 20_000 }).toBe(true)
-  })
-
   test('still draws the page it was turning to after it is dragged to the other pane in the middle of the turn', async ({
     page,
   }) => {

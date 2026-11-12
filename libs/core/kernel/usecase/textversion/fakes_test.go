@@ -300,3 +300,15 @@ func (m *memoryVersions) getSource(vault domain.VaultID, path string) (textdomai
 	row, ok := m.sources[vault][path]
 	return row, ok
 }
+
+func (r memoryRepo) GetVersionsUnder(_ context.Context, path string) ([]domain.TextVersion, error) {
+	r.store.mu.Lock()
+	defer r.store.mu.Unlock()
+	var out []domain.TextVersion
+	for _, one := range r.store.versions[r.vault] {
+		if one.Path == path || strings.HasPrefix(one.Path, path+"/") {
+			out = append(out, one)
+		}
+	}
+	return out, nil
+}

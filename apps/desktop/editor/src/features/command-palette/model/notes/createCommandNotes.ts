@@ -3,15 +3,22 @@ import type { WindowTabs } from '@/entities/tab'
 
 type TabsOfWindow = Pick<WindowTabs, 'tabs' | 'panes'>
 
+type OpenTab = NonNullable<ReturnType<TabsOfWindow['tabs']['getTab']>>
+
+function isAtPath(windowTab: OpenTab, path: string): boolean {
+  const openPath = windowTab.kind.address?.getOpenTab?.(windowTab.state).path
+  if (openPath === path) return true
+  const target = windowTab.kind.address?.getTarget?.(windowTab.state)
+  return target?.file === path || target?.path === path
+}
+
 function tabMatchesPath(
   windowTab: ReturnType<TabsOfWindow['tabs']['getTab']>,
   path: string,
 ): boolean {
   if (!windowTab) return false
-  const openPath = windowTab.kind.address?.getOpenTab?.(windowTab.state).path
-  if (openPath === path) return true
-  const target = windowTab.kind.address?.getTarget?.(windowTab.state)
-  return target?.file === path || target?.path === path
+  // A tool such as the plex follows the note in front; the tab that holds the file is another.
+  return !windowTab.kind.display?.isTool && isAtPath(windowTab, path)
 }
 
 function findActiveTabAt(windowTabs: TabsOfWindow, path: string): string | null {

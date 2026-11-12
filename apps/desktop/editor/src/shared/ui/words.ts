@@ -35,7 +35,7 @@ export const WORDS = {
   parent: 'Create parent note',
   jump: 'Create jump note',
   title: 'Rename note',
-  remove: 'Move note to trash',
+  remove: 'Move to trash',
   copy: 'Copy note path',
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable: 'Unavailable: the plugin is disabled or stopped.',

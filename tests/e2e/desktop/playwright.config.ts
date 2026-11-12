@@ -75,7 +75,8 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
       // WebKit does not report a request it was holding as cancelled.
-      testIgnore: '**/*.chromium.spec.ts',
+      // The specs of tests/requests call the server without a window: one engine is enough.
+      testIgnore: ['**/*.chromium.spec.ts', '**/requests/**'],
     },
   ],
 })

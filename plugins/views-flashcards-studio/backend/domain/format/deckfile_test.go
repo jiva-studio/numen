@@ -1535,3 +1535,19 @@ func TestWholeWritesTheLastHeadingWithoutAnEnding(t *testing.T) {
 		t.Errorf("given = %+v", provided)
 	}
 }
+
+// A template added with only its front typed is a heading and a Front side, and no
+// Back side is written for the empty half.
+func TestCardModelBodyHasAHeadingAndAFrontSideForATemplateWithOnlyAFront(t *testing.T) {
+	body, err := format.CardModelBody("", []format.CardTemplate{
+		{Name: "Card 1", Front: "What lives under {{Field 1}}?"},
+	}, "")
+	if err != nil {
+		t.Fatalf("card model body: %v", err)
+	}
+
+	want := "## Card 1\n\n### Front\n\nWhat lives under {{Field 1}}?"
+	if body != want {
+		t.Errorf("body = %q, want %q", body, want)
+	}
+}

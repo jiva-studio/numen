@@ -122,10 +122,20 @@ async function handleFocusChange(
 
 /** Follows the changes to the vault. */
 export function createVaultStream(deps: VaultStreamDeps): () => Promise<void> {
+  let isOpening = true
   return () =>
     deps.follows(
-      () => watchVaultChanges(deps.listening.signal),
-      (change) => handleVaultChange(change, deps),
+      () => {
+        isOpening = true
+        return watchVaultChanges(deps.listening.signal)
+      },
+      async (change) => {
+        if (isOpening) {
+          isOpening = false
+          await deps.onVaultChanged([], [], [])
+        }
+        await handleVaultChange(change, deps)
+      },
     )
 }
 
