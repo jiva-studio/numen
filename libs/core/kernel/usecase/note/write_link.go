@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
@@ -53,12 +54,12 @@ func resolveNamedLinks(ctx context.Context, names edit.NameQueries, v domain.Vau
 type WriteLink struct {
 	links EditLinks
 	names edit.NameQueries
-	gate  WriteGate
+	gate  windowport.WriteGate
 }
 
 // NewWriteLink returns the use case over the editing of links, the names that give a link its address and
 // the gate a write passes.
-func NewWriteLink(links EditLinks, names edit.NameQueries, gate WriteGate) WriteLink {
+func NewWriteLink(links EditLinks, names edit.NameQueries, gate windowport.WriteGate) WriteLink {
 	return WriteLink{links: links, names: names, gate: gate}
 }
 

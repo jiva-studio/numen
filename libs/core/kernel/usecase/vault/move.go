@@ -12,28 +12,18 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
-
-// WriteGate admits the writes a window waits for before it closes.
-type WriteGate interface {
-	BeginWrite() bool
-	FinishWrite()
-}
-
-// IndexFollow reports whether the index followed a write.
-type IndexFollow interface {
-	IsIndexOutdated(err error) bool
-}
 
 // MoveFile moves a file or a folder in the vault as a write of the window.
 type MoveFile struct {
 	move   *Move
-	gate   WriteGate
-	follow IndexFollow
+	gate   windowport.WriteGate
+	follow windowport.IndexFollow
 }
 
 // NewMoveFile returns the use case over the moving of a file or a folder.
-func NewMoveFile(move *Move, gate WriteGate, follow IndexFollow) MoveFile {
+func NewMoveFile(move *Move, gate windowport.WriteGate, follow windowport.IndexFollow) MoveFile {
 	return MoveFile{move: move, gate: gate, follow: follow}
 }
 

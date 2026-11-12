@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -53,7 +54,7 @@ func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {
 		Readers: vaultreader.Readers{}, Writers: staleNoteWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}},
 		Now: testsupport.NewClock(),
 	}
-	rename := notecase.NewRename(deps, notecase.NewMove(deps), notecase.OpenGate{})
+	rename := notecase.NewRename(deps, notecase.NewMove(deps), windowdomain.OpenGate{})
 	session := openSession{vault: domain.Vault{ID: "v1", Name: "v1", Path: root}}
 	prose := NewProse(session, nil, nil, nil, &rename, session)
 

@@ -19,11 +19,12 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 func (c changeFixture) rename() note.Rename {
-	return note.NewRename(c.moveDeps(), c.move(), note.OpenGate{})
+	return note.NewRename(c.moveDeps(), c.move(), windowdomain.OpenGate{})
 }
 
 func (c changeFixture) moveApartDeps() note.MoveDeps {
@@ -34,7 +35,7 @@ func (c changeFixture) moveApartDeps() note.MoveDeps {
 
 func (c changeFixture) renameApart() note.Rename {
 	deps := c.moveApartDeps()
-	return note.NewRename(deps, note.NewMove(deps), note.OpenGate{})
+	return note.NewRename(deps, note.NewMove(deps), windowdomain.OpenGate{})
 }
 
 func (c changeFixture) title(t *testing.T, path string) string {
@@ -345,7 +346,7 @@ func TestRename_ReturnsMoveWhenFollowUpFails(t *testing.T) {
 		Links: c.db.NoteQueries(), Names: c.db.NoteQueries(),
 		Sources: sulking{SourceRepository: c.db.Sources(), moveError: sulk}, Index: c.index, Now: testsupport.NewClock(),
 	}
-	rename := note.NewRename(deps, note.NewMove(deps), note.OpenGate{})
+	rename := note.NewRename(deps, note.NewMove(deps), windowdomain.OpenGate{})
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {
@@ -488,7 +489,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
-	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index, note.OpenGate{})
+	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index, windowdomain.OpenGate{})
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
