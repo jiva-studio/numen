@@ -6,6 +6,7 @@
  * again; changing the address removes the stored key. The type is chosen from a list that filters
  * as one types. A saved connection is announced with `saved` before the dialog closes.
  */
+import { Trash2 } from '@lucide/vue'
 import { computed, onMounted, useId, useTemplateRef } from 'vue'
 import { Button, Select } from '@numen/ui'
 import type {
@@ -94,13 +95,14 @@ function onKeepFocus(event: KeyboardEvent): void {
         {{ form.isEditing ? words.connectionEdit : words.connectionAdd }}
       </h2>
 
-      <div v-if="!form.isEditing" class="connection-dialog__field">
+      <div class="connection-dialog__field">
         <span class="connection-dialog__label">{{ words.connectionType }}</span>
         <Select
           :model-value="form.state.typeId"
           :choices="typeChoices"
           :name="words.connectionType"
           :search-name="words.searchConnectionTypes"
+          :is-disabled="form.isEditing"
           is-searchable
           @update:model-value="form.actions.chooseType"
         />
@@ -114,10 +116,8 @@ function onKeepFocus(event: KeyboardEvent): void {
         :view="form.view.value"
         :values="form.state.values"
         :secrets="form.state.secrets"
-        :cleared-keys="form.state.clearedKeys"
         @update-value="form.actions.updateValue"
         @update-secret="form.actions.updateSecret"
-        @clear-secret="form.actions.clearSecret"
       />
       <p v-else class="connection-dialog__hint">{{ words.connectionsNoTypes }}</p>
 
@@ -131,8 +131,11 @@ function onKeepFocus(event: KeyboardEvent): void {
           type="button"
           variant="outline"
           class="connection-dialog__delete"
+          :aria-label="words.connectionMenuDelete"
+          :title="words.connectionMenuDelete"
           @click="emit('delete', connection)"
         >
+          <Trash2 :size="14" aria-hidden="true" />
           {{ words.connectionMenuDelete }}
         </Button>
         <Button type="button" variant="outline" @click="emit('close')">

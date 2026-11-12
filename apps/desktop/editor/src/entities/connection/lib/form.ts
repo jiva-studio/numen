@@ -113,19 +113,13 @@ export function getSentFields(
   )
 }
 
-/** The keys typed, and an empty text for each key the person removed. */
-export function getSentSecrets(
-  secrets: Readonly<Record<string, string>>,
-  clearedKeys: readonly string[],
-): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(secrets).filter(([key, value]) => value !== '' || clearedKeys.includes(key)),
-  )
+/** The keys typed. */
+export function getSentSecrets(secrets: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(Object.entries(secrets).filter(([, value]) => value !== ''))
 }
 
 /** The lines under a field, by state. */
 export interface FieldHints {
-  readonly cleared: string
   readonly stored: string
   readonly requiredKey: string
   readonly optionalKey: string
@@ -135,11 +129,10 @@ export interface FieldHints {
 /** The line shown under a field: the state of a secret, the use of an address, or the description. */
 export function getFieldHint(
   field: ConnectionFieldInfo,
-  state: { readonly isStored: boolean; readonly isCleared: boolean },
+  state: { readonly isStored: boolean },
   hints: FieldHints,
 ): string {
   if (field.type !== 'secret') return field.isAddress ? hints.address : field.description
-  if (state.isCleared) return hints.cleared
   if (state.isStored) return hints.stored
   return field.isRequired ? hints.requiredKey : hints.optionalKey
 }

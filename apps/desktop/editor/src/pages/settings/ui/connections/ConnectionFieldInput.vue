@@ -16,17 +16,14 @@ const props = defineProps<{
   field: ConnectionFieldInfo
   value: ConnectionValue | undefined
   isStored?: boolean
-  isCleared?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update', value: ConnectionValue): void
-  (e: 'clear'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const HINTS = {
-  cleared: words.connectionKeyClearing,
   stored: words.connectionKeyStored,
   requiredKey: words.connectionKeyHint,
   optionalKey: words.connectionOptionalKey,
@@ -39,7 +36,7 @@ const choices = computed<readonly SelectChoice[]>(() =>
 )
 const text = computed(() => (typeof props.value === 'string' ? props.value : ''))
 const hint = computed(() =>
-  getFieldHint(props.field, { isStored: props.isStored, isCleared: props.isCleared }, HINTS),
+  getFieldHint(props.field, { isStored: props.isStored }, HINTS),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -82,18 +79,10 @@ function onInput(event: Event): void {
         type="password"
         autocomplete="off"
         :aria-describedby="hintId"
-        :placeholder="isStored && !isCleared ? words.secretMasked : ''"
+        :placeholder="isStored ? words.secretMasked : ''"
         :value="text"
         @input="onInput"
       />
-      <button
-        v-if="isStored && !isCleared"
-        type="button"
-        class="connection-field__clear"
-        @click="emit('clear')"
-      >
-        {{ words.connectionKeyClear }}
-      </button>
     </div>
     <input
       v-else
@@ -152,17 +141,6 @@ function onInput(event: Event): void {
 
 .connection-field__input:focus {
   outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
-.connection-field__clear {
-  flex: none;
-  padding: 0.25rem 0.5rem;
-  background: none;
-  border: none;
-  color: var(--numen-accent);
-  font: inherit;
-  font-size: var(--numen-text-1);
-  cursor: pointer;
 }
 
 .connection-field__hint {

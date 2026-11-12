@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * One connection as a row of a list, drawn like the rows of the plugin list: its name and type, the
- * address when the person entered one, what the type can do (a chip for each operation) or why the
- * connection cannot be used. The whole row is a button that opens the connection for editing.
+ * One connection as a row of the list, drawn by the row of the plugin list: the name, the type as
+ * the secondary text (with the address and the plugins that use it), and a chip for each operation or
+ * for the state. The whole row opens the connection for editing.
  */
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
+import { SystemRow } from '@numen/plugin-manager'
 import type { ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
 import {
   getAddressText,
@@ -30,39 +31,27 @@ const typeTitle = computed(() => props.type?.title ?? props.connection.typeId)
 const address = computed(() => getAddressText(props.type, props.connection))
 const operations = computed(() => getOperationTitles(props.type))
 const usedBy = computed(() => getUsedByNames(props.connection.uses))
+const row = useTemplateRef<InstanceType<typeof SystemRow>>('row')
+const detail = computed(() =>
+  [
+    typeTitle.value,
+    address.value,
+    usedBy.value === '' ? '' : words.connectionUsedBy(usedBy.value),
+  ]
+    .filter((one) => one !== '')
+    .join(' · '),
+)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onEdit(event: Event): void {
-  if (event.currentTarget instanceof HTMLElement) emit('edit', event.currentTarget)
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key !== 'Enter' && event.key !== ' ') return
-  event.preventDefault()
-  onEdit(event)
+function onEdit(): void {
+  const element = row.value?.$el
+  if (element instanceof HTMLElement) emit('edit', element)
 }
 </script>
 
 <template>
-  <li
-    class="connection-row"
-    role="button"
-    tabindex="0"
-    :aria-label="connection.name"
-    @click="onEdit"
-    @keydown="onKeydown"
-  >
-    <div class="connection-row__main">
-      <div class="connection-row__title">
-        <span class="connection-row__name">{{ connection.name }}</span>
-        <span class="connection-row__type">{{ typeTitle }}</span>
-      </div>
-      <div v-if="address !== ''" class="connection-row__address">{{ address }}</div>
-      <div v-if="usedBy !== ''" class="connection-row__address">
-        {{ words.connectionUsedBy(usedBy) }}
-      </div>
-    </div>
-    <div class="connection-row__state">
+  <SystemRow ref="row" :name="connection.name" :detail="detail" @select="onEdit">
+    <template #trail>
       <span v-if="state === 'unavailable'" class="connection-row__chip connection-row__chip--bad">
         {{ words.connectionUnavailable }}
       </span>
@@ -73,94 +62,27 @@ function onKeydown(event: KeyboardEvent): void {
         <span
           v-for="operation in operations"
           :key="operation"
-          class="connection-row__chip connection-row__chip--operation"
+          class="connection-row__chip"
         >
           {{ operation }}
         </span>
       </template>
-    </div>
-  </li>
+    </template>
+  </SystemRow>
 </template>
 
 <style scoped>
-.connection-row {
-  --row-min-size: 3.5rem;
-  --row-pad-block: 0.625rem;
-  --row-pad-inline: 0.75rem;
-  --focus-width: 0.125rem;
-  --focus-inset: -0.125rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--numen-panel-gap);
-  min-block-size: var(--row-min-size);
-  padding: var(--row-pad-block) var(--row-pad-inline);
-  border-radius: var(--numen-radius-tight);
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  transition: background-color 0.15s ease;
-}
-
-.connection-row:hover {
-  background-color: var(--numen-bubble-bg);
-}
-
-.connection-row:focus-visible {
-  outline: var(--focus-width) solid var(--numen-accent);
-  outline-offset: var(--focus-inset);
-}
-
-.connection-row__main {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-}
-
-.connection-row__title {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: baseline;
-}
-
-.connection-row__name {
-  color: var(--numen-ink);
-  font-size: var(--numen-text-2);
-  font-weight: 500;
-}
-
-.connection-row__type,
-.connection-row__address {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-.connection-row__address {
-  overflow-wrap: anywhere;
-  font-family: var(--numen-font-mono);
-}
-
-.connection-row__state {
-  display: flex;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-  gap: 0.25rem;
-  align-items: center;
-  justify-content: flex-end;
-}
-
 .connection-row__chip {
-  padding: 0.125rem 0.4375rem;
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-pill);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--numen-radius-tight);
+  background-color: var(--numen-bubble-bg);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
-  line-height: 1;
   white-space: nowrap;
 }
 
 .connection-row__chip--bad {
-  border-color: var(--numen-alarm);
+  background-color: var(--numen-alarm-bg);
   color: var(--numen-alarm);
 }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
  * An entry row of the settings list that opens a page of settings: System by default, others by props.
+ * The `trail` slot holds tags drawn before the chevron.
  */
 import { PLUGIN_WORDS as words } from './words'
 
@@ -45,6 +46,7 @@ function onKeydown(e: KeyboardEvent): void {
     </div>
 
     <div class="plugin-row__trail">
+      <slot name="trail" />
       <span class="plugin-row__chevron" aria-hidden="true">&rsaquo;</span>
     </div>
   </div>

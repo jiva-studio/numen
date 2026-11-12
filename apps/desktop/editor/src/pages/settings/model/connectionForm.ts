@@ -41,7 +41,6 @@ export interface ConnectionFormState {
   name: string
   values: Record<string, ConnectionValue>
   secrets: Record<string, string>
-  clearedKeys: readonly string[]
   problem: string
   isSaving: boolean
 }
@@ -61,7 +60,6 @@ function createState(input: ConnectionFormInput): ConnectionFormState {
     name: stored?.name ?? '',
     values: createInitialValues(input.types(), stored),
     secrets: {},
-    clearedKeys: [],
     problem: '',
     isSaving: false,
   })
@@ -93,7 +91,6 @@ function createActions(
     const target = input.types().find((one) => one.id === id)
     state.values = target ? createFieldValues(target) : {}
     state.secrets = {}
-    state.clearedKeys = []
     state.problem = ''
   }
 
@@ -103,12 +100,6 @@ function createActions(
 
   const updateSecret = (key: string, value: ConnectionValue): void => {
     state.secrets = { ...state.secrets, [key]: String(value) }
-    state.clearedKeys = state.clearedKeys.filter((one) => one !== key)
-  }
-
-  const clearSecret = (key: string): void => {
-    state.secrets = { ...state.secrets, [key]: '' }
-    state.clearedKeys = [...state.clearedKeys, key]
   }
 
   const send = (target: ConnectionTypeInfo): Promise<Result<ConnectionInfo, string>> => {
@@ -116,7 +107,7 @@ function createActions(
     const request = {
       name: state.name,
       fields: getSentFields(target, state.values),
-      secrets: getSentSecrets(state.secrets, state.clearedKeys),
+      secrets: getSentSecrets(state.secrets),
     }
     if (stored) return input.update({ ...request, id: stored.id, revision: stored.revision })
     return input.create({ ...request, typeId: target.id })
@@ -153,7 +144,7 @@ function createActions(
     )
   }
 
-  return { chooseType, updateValue, updateSecret, clearSecret, submit }
+  return { chooseType, updateValue, updateSecret, submit }
 }
 
 export function useConnectionForm(input: ConnectionFormInput) {

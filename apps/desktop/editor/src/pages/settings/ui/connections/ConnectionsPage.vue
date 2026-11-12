@@ -70,7 +70,7 @@ function onCancelDelete(): void {
     </Button>
 
     <div class="connections-page__head">
-      <h2 class="connections-page__title">{{ words.connections }}</h2>
+      <p class="connections-page__intro">{{ words.connectionsIntro }}</p>
       <Button
         ref="addButton"
         variant="outline"
@@ -82,11 +82,7 @@ function onCancelDelete(): void {
       </Button>
     </div>
 
-    <ul
-      v-if="page.connections.value.length > 0"
-      class="connections-page__list"
-      :aria-label="words.connections"
-    >
+    <div v-if="page.connections.value.length > 0" class="connections-page__list" role="list">
       <ConnectionRow
         v-for="connection in page.connections.value"
         :key="connection.id"
@@ -94,7 +90,7 @@ function onCancelDelete(): void {
         :type="page.types.value.find((one) => one.id === connection.typeId)"
         @edit="(opener) => onEdit(connection, opener)"
       />
-    </ul>
+    </div>
     <div v-else class="connections-page__empty">
       <p class="connections-page__empty-title">{{ words.connectionsEmpty }}</p>
       <p class="connections-page__empty-detail">
@@ -154,6 +150,12 @@ function onCancelDelete(): void {
   margin-block-end: var(--settings-apart);
 }
 
+.connections-page__intro {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+}
+
 .connections-page__title {
   margin: 0;
   font-size: var(--numen-title-size);
@@ -171,11 +173,9 @@ function onCancelDelete(): void {
 }
 
 .connections-page__list {
-  margin: 0;
-  padding: 0;
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .connections-page__empty {

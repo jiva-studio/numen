@@ -1,13 +1,15 @@
 <script setup lang="ts">
 /**
- * The settings of a plugin that hold connection rows, each as a section of the plugin page under
- * the card of the other settings: the heading, what the setting is for, and the rows. A setting
+ * The settings of a plugin that hold connection rows, each as a card of its own under the card of
+ * the other settings: a row with the title and what the setting is for, then the rows of connections. A setting
  * whose condition fails is not shown.
  */
+import { PluginSettingsCard } from '@numen/plugin-manager'
 import type { StoredRow } from '@/entities/connection'
 import type { PluginInfo } from '@/entities/settings'
 import { useEnumFields, usePluginFields } from '../../model/usePluginFields'
 import type { InstallationConnections, InstallationSettings, PluginFieldsHost } from '../../types'
+import SettingRow from '../setting-row/SettingRow.vue'
 import ConnectionRows from './connection-rows/ConnectionRows.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -42,11 +44,10 @@ function onRowsChange(key: string, rows: readonly StoredRow[]): void {
 
 <template>
   <template v-for="setting in getShownSettings()" :key="setting.key">
-    <section v-if="setting.type === 'connections'" class="connection-section">
-      <h3 class="connection-section__title">{{ setting.title }}</h3>
-      <p v-if="setting.description" class="connection-section__detail">
-        {{ setting.description }}
-      </p>
+    <PluginSettingsCard v-if="setting.type === 'connections'">
+      <SettingRow :at="`${props.plugin.id}-${setting.key}`" :name="setting.title" :detail="setting.description">
+        <span />
+      </SettingRow>
       <ConnectionRows
         :setting="setting"
         :value="getValue(setting.key)"
@@ -54,28 +55,6 @@ function onRowsChange(key: string, rows: readonly StoredRow[]): void {
         @change="(rows) => onRowsChange(setting.key, rows)"
         @open-connections="emit('open-connections')"
       />
-    </section>
+    </PluginSettingsCard>
   </template>
 </template>
-
-<style scoped>
-.connection-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  margin-block-start: 1.25rem;
-}
-
-.connection-section__title {
-  margin: 0;
-  color: var(--numen-ink);
-  font-size: var(--numen-text-2);
-  font-weight: 500;
-}
-
-.connection-section__detail {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-</style>

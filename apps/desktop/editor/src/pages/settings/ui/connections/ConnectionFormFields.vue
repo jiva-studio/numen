@@ -20,7 +20,6 @@ const props = defineProps<{
   view: ConnectionFormView
   values: Readonly<Record<string, ConnectionValue>>
   secrets: Readonly<Record<string, string>>
-  clearedKeys: readonly string[]
 }>()
 
 const name = defineModel<string>('name', { required: true })
@@ -28,7 +27,6 @@ const name = defineModel<string>('name', { required: true })
 const emit = defineEmits<{
   (e: 'update-value', key: string, value: ConnectionValue): void
   (e: 'update-secret', key: string, value: ConnectionValue): void
-  (e: 'clear-secret', key: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -67,9 +65,7 @@ function getValue(field: ConnectionFieldInfo): ConnectionValue | undefined {
       :field="field"
       :value="getValue(field)"
       :is-stored="field.type === 'secret' && view.storedKeys.includes(field.key)"
-      :is-cleared="clearedKeys.includes(field.key)"
       @update="(value) => onUpdate(field, value)"
-      @clear="emit('clear-secret', field.key)"
     />
 
     <p v-if="hasNothingToEnter" class="connection-form__hint">

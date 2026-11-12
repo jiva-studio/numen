@@ -169,14 +169,12 @@ function onReasoningChoose(reasoning: string): void {
   flex-wrap: wrap;
   gap: 0.25rem 0.5rem;
   align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--numen-radius-tight);
+  padding-block: 0.625rem;
   list-style: none;
-  transition: background-color 0.15s ease;
 }
 
-.connection-rows__row:hover {
-  background-color: var(--numen-bubble-bg);
+.connection-rows__row + .connection-rows__row {
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .connection-rows__row--dragging {
@@ -218,23 +216,24 @@ function onReasoningChoose(reasoning: string): void {
 
 .connection-rows__fields {
   display: flex;
-  flex: 1 1 18rem;
+  flex: 1 1 0;
   flex-wrap: wrap;
   gap: 0.375rem;
   min-inline-size: 0;
 }
 
 .connection-rows__select {
-  flex: 1 1 9rem;
+  flex: 1 1 7rem;
   min-inline-size: 0;
 }
 
 .connection-rows__select--narrow {
-  flex: 0 1 7rem;
+  flex: 0 1 6rem;
 }
 
 .connection-rows__problem {
   flex: 1 0 100%;
+  order: 9;
   margin: 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
