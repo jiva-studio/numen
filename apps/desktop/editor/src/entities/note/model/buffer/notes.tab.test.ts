@@ -19,7 +19,7 @@ import {
 const tab = (overrides: Partial<Tab> = {}): Tab => ({
   path: 'Note.md',
   savedText: 'one',
-  filePath: 'a1',
+  revision: 'a1',
   editorText: 'one',
   pendingWrite: null,
   hasPendingWrite: false,
@@ -77,7 +77,7 @@ describe('a read answers with a body', () => {
     })
 
     expect(next.tab.savedText).toBe('one')
-    expect(next.tab.filePath).toBe('a1')
+    expect(next.tab.revision).toBe('a1')
     expect(next.tab.editorText).toBe('one')
     expect(getState(next.tab)).toBe('clean')
     expect(next.effects).toEqual([{ kind: 'replace', body: 'one' }])
@@ -374,7 +374,7 @@ describe('a write answers ok', () => {
     })
 
     expect(next.tab.savedText).toBe('two')
-    expect(next.tab.filePath).toBe('a2')
+    expect(next.tab.revision).toBe('a2')
     expect(next.tab.since).toBeNull()
     expect(getState(next.tab)).toBe('clean')
     expect(next.effects).toEqual([])
@@ -453,7 +453,7 @@ describe('the fingerprint the file was read at', () => {
       answer: { kind: 'missing' },
     })
 
-    expect(made.tab.filePath).toBeNull()
+    expect(made.tab.revision).toBeNull()
   })
 })
 
@@ -551,7 +551,7 @@ describe('the person keeps theirs', () => {
     const next = transitionTab(writing, { kind: 'written', answer: { kind: 'ok', at: 'a3' } })
 
     expect(next.tab.savedText).toBe('mine')
-    expect(next.tab.filePath).toBe('a3')
+    expect(next.tab.revision).toBe('a3')
     expect(getState(next.tab)).toBe('clean')
   })
 
@@ -582,7 +582,7 @@ describe("the person takes the file's", () => {
     expect(next.effects).toEqual([{ kind: 'replace', body: 'theirs' }])
     expect(next.tab.editorText).toBe('theirs')
     expect(next.tab.savedText).toBe('theirs')
-    expect(next.tab.filePath).toBe('a2')
+    expect(next.tab.revision).toBe('a2')
     expect(getState(next.tab)).toBe('clean')
   })
 
@@ -898,6 +898,34 @@ describe('a close is requested for', () => {
     })
 
     expect(next.effects).toEqual([{ kind: 'reportError', error: 'unreadable' }, { kind: 'close' }])
+  })
+})
+
+describe('a flush is requested for a stuck tab', () => {
+  const stuck = (error: Tab['error']) => tab({ editorText: 'two', error, since: 10 })
+
+  it.each(['tooLarge', 'bodyUnwritable', 'unreachable'] as const)(
+    'writes again where the error is %s',
+    (error) => {
+      const next = transitionTab(stuck(error), { kind: 'flush' })
+
+      expect(kinds(next.effects)).toEqual(['cancelTimer', 'write'])
+      expect(getState(next.tab)).toBe('saving')
+    },
+  )
+
+  it('writes nothing where the error is a condition of the file', () => {
+    const next = transitionTab(stuck('notText'), { kind: 'flush' })
+
+    expect(kinds(next.effects)).toEqual(['cancelTimer'])
+    expect(getState(next.tab)).toBe('stuck')
+  })
+
+  it('gives up the unwritten text when the person takes the file\'s', () => {
+    const next = transitionTab(stuck('tooLarge'), { kind: 'takeFile' })
+
+    expect(next.effects).toEqual([{ kind: 'cancelTimer' }, { kind: 'replace', body: 'one' }])
+    expect(getState(next.tab)).toBe('clean')
   })
 })
 

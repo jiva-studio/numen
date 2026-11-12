@@ -53,6 +53,7 @@ function onSeek(ms: number) {
 <template>
   <MediaLayout :state="tab">
     <template #picture>
+      <!-- The page frames one player, which inherits these flags; without same-origin the player gets no Referer and refuses to play. -->
       <iframe
         v-if="pageUrl"
         class="recording__page"

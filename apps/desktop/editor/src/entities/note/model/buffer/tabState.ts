@@ -42,7 +42,7 @@ export interface NoteBaseline {
 export interface Tab {
   readonly path: string
   readonly savedText: string | null
-  readonly filePath: string | null
+  readonly revision: string | null
   readonly editorText: string
   readonly pendingWrite: string | null
   readonly hasPendingWrite: boolean
@@ -134,7 +134,7 @@ export const openTab = (path: string): Transition => ({
   tab: {
     path,
     savedText: null,
-    filePath: null,
+    revision: null,
     editorText: '',
     pendingWrite: null,
     hasPendingWrite: false,

@@ -60,16 +60,16 @@ const applyRequestedKind = (tab: Tab, kind: RequestedKind): Transition => {
 
 const keepTab = (tab: Tab): Transition => ({ tab, effects: [] })
 
-const applyBody = (tab: Tab, body: string, filePath: string | null): Transition => ({
-  tab: { ...tab, savedText: body, filePath, editorText: body, since: null },
+const applyBody = (tab: Tab, body: string, revision: string | null): Transition => ({
+  tab: { ...tab, savedText: body, revision, editorText: body, since: null },
   effects: body === tab.editorText ? [] : [{ kind: 'replace', body }],
 })
 
 const getBaseline = (tab: Tab): NoteBaseline | null =>
   // Stryker disable next-line ConditionalExpression: Unsaved transitions require non-null written.
-  tab.savedText === null || tab.filePath === null
+  tab.savedText === null || tab.revision === null
     ? null
-    : { prose: tab.savedText, stat: tab.filePath }
+    : { prose: tab.savedText, stat: tab.revision }
 
 const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
   tab: { ...tab, pendingWrite: tab.editorText, hasPendingWrite: false, isStale: false },
@@ -157,7 +157,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
   const content: Tab = {
     ...tab,
     savedText: tab.pendingWrite,
-    filePath: answer.at,
+    revision: answer.at,
     pendingWrite: null,
     since: null,
     isDeleted: false,
@@ -186,8 +186,16 @@ const applySave = (tab: Tab): Transition => {
   return keepTab(tab)
 }
 
+/** A tab whose dirty text an error stopped from being written, for a reason another attempt may clear. */
+export const isUnwritable = (tab: Tab): boolean =>
+  getState(tab) === 'stuck' && isRetryable(tab) && isDirty(tab)
+
 const applyFlush = (tab: Tab): Transition => {
   const state = getState(tab)
+  if (isUnwritable(tab)) {
+    const going = beginWrite({ ...tab, error: null }, getBaseline(tab))
+    return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
+  }
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))
     return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
@@ -206,6 +214,12 @@ const applyKeep = (tab: Tab): Transition => {
 
 const applyTake = (tab: Tab): Transition => {
   const state = getState(tab)
+  if (isUnwritable(tab) && tab.savedText !== null) {
+    return {
+      tab: { ...tab, editorText: tab.savedText, error: null, since: null },
+      effects: [{ kind: 'cancelTimer' }, { kind: 'replace', body: tab.savedText }],
+    }
+  }
   if (state !== 'stale') return keepTab(tab)
   const nextReading = tab.reading + 1
   return {

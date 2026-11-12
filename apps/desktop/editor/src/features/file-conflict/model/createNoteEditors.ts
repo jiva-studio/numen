@@ -9,6 +9,7 @@ import type { WindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { raiseConflicts } from './conflicts'
 import { createFileFlush } from './flush'
+import { createNoteFlushHandler } from './noteFlush'
 
 export interface NoteEditorsDeps {
   readonly log: MessageLog
@@ -42,7 +43,7 @@ export function createNoteEditors({ log, windowTabs }: NoteEditorsDeps) {
   const notes = openNotes({})
   const making = createNoteWriter(log.getWriter('made'))
   const fileFlush = createFileFlush({ watchQuit, reportFlush })
-  fileFlush.addHandler(notes.flush)
+  fileFlush.addHandler(createNoteFlushHandler(notes))
   raiseConflicts(notes, fileFlush)
 
   const store = createNoteStore(notes, windowTabs, (error) =>

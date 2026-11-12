@@ -105,14 +105,13 @@ export function createNoteQueue(deps: NoteQueueDeps) {
   }
 
   const write = async (id: string, request: NoteWriteRequest): Promise<void> => {
-    let reply: CoreWriteResult
+    let answer: WriteResult
     try {
-      reply = await writeNote(request.path, request.body, request.baseline)
+      answer = toWriteResult(await writeNote(request.path, request.body, request.baseline))
     } catch {
-      dispatch(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
-      return
+      answer = { kind: 'error', error: 'unreachable' }
     }
-    dispatch(id, { kind: 'written', answer: toWriteResult(reply) })
+    dispatch(id, { kind: 'written', answer })
     resumeClosing(id)
   }
 

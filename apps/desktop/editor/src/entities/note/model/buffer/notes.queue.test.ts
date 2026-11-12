@@ -258,7 +258,7 @@ describe('the queue of an open note', () => {
       ])
     })
 
-    it('reports a call that threw as unreachable, and does not resume closing', async () => {
+    it('reports a call that threw as unreachable, and lets a closing tab go on', async () => {
       const { queue, turned, resumed } = setup({
         write: async () => {
           throw new Error('down')
@@ -270,7 +270,7 @@ describe('the queue of an open note', () => {
       expect(turned).toEqual([
         ['a', { kind: 'written', answer: { kind: 'error', error: 'unreachable' } }],
       ])
-      expect(resumed).toEqual([])
+      expect(resumed).toEqual(['a'])
     })
   })
 })

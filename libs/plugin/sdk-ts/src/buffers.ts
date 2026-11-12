@@ -2,6 +2,7 @@ import type { Disposable } from './types'
 
 // FileBuffers are the open files of one kind a plugin's tabs edit.
 export interface FileBuffers {
+  // Writes the unwritten text. It rejects when text stays unwritten, so the window does not quit on it.
   flush(this: void): Promise<void>
 }
 

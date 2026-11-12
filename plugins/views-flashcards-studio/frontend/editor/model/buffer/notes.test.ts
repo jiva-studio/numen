@@ -167,6 +167,26 @@ describe('openNotes for flashcards studio', () => {
     expect(writes[0]?.body).toBe('updated body')
   })
 
+  it('rejects the flush while the vault would not take the text, and writes it on the next', async () => {
+    let isDown = true
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+      write: vi.fn(async () => (isDown ? asFailure('tooLarge') : asValue({ body: '', at: 'v2' }))),
+    }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+    store.setBody('tab-1', 'updated body')
+
+    await expect(store.flush()).rejects.toThrow('Decks.md')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', body: 'updated body' })
+
+    isDown = false
+    await store.flush()
+
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+  })
+
   it('marks stale on write conflict and handles keepMine and takeFile', async () => {
     let writeCount = 0
     let readCount = 0
