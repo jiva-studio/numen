@@ -3,13 +3,13 @@ package note_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -38,7 +38,7 @@ func TestEmptyTrashReturnsWhatTheWriterCouldNotDelete(t *testing.T) {
 	calls := 0
 	writers := trashWriterProviderStub{writer: trashWriterStub{undeleted: []string{".trash/locked/Heat.md"}, calls: &calls}}
 
-	got, err := note.NewEmptyTrash(writers, windowdomain.OpenGate{}).Execute(t.Context(), domain.Vault{})
+	got, err := note.NewEmptyTrash(writers, testsupport.OpenGate{}).Execute(t.Context(), domain.Vault{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestEmptyTrashStopsWhenTheVaultCannotBeOpened(t *testing.T) {
 	broken := errors.New("the vault is gone")
 	writers := trashWriterProviderStub{writer: trashWriterStub{calls: &calls}, openErr: broken}
 
-	if _, err := note.NewEmptyTrash(writers, windowdomain.OpenGate{}).Execute(t.Context(), domain.Vault{}); !errors.Is(err, broken) {
+	if _, err := note.NewEmptyTrash(writers, testsupport.OpenGate{}).Execute(t.Context(), domain.Vault{}); !errors.Is(err, broken) {
 		t.Fatalf("want the open error, got %v", err)
 	}
 	if calls != 0 {
@@ -70,7 +70,7 @@ func TestEmptyTrashReturnsTheWriterError(t *testing.T) {
 	broken := errors.New("the disk is gone")
 	writers := trashWriterProviderStub{writer: trashWriterStub{err: broken, calls: &calls}}
 
-	if _, err := note.NewEmptyTrash(writers, windowdomain.OpenGate{}).Execute(t.Context(), domain.Vault{}); !errors.Is(err, broken) {
+	if _, err := note.NewEmptyTrash(writers, testsupport.OpenGate{}).Execute(t.Context(), domain.Vault{}); !errors.Is(err, broken) {
 		t.Fatalf("want the writer error, got %v", err)
 	}
 }
@@ -81,7 +81,7 @@ func TestEmptyTrashReturnsTheUndeletedPathsTogetherWithTheWriterError(t *testing
 	broken := errors.New("the disk is gone")
 	writers := trashWriterProviderStub{writer: trashWriterStub{undeleted: []string{".trash/Heat.md"}, err: broken, calls: &calls}}
 
-	got, err := note.NewEmptyTrash(writers, windowdomain.OpenGate{}).Execute(t.Context(), domain.Vault{})
+	got, err := note.NewEmptyTrash(writers, testsupport.OpenGate{}).Execute(t.Context(), domain.Vault{})
 	if !errors.Is(err, broken) {
 		t.Fatalf("want the writer error, got %v", err)
 	}

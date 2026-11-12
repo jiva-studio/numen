@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
@@ -55,7 +54,7 @@ func BenchmarkSave(b *testing.B) {
 			v := vaultfixture.GenerateVault(b, 100)
 			write := note.NewWrite(
 				vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, indexNothing, testsupport.NewClock(),
-				windowdomain.OpenGate{},
+				testsupport.OpenGate{},
 			)
 			path := "01/note-000001.md"
 

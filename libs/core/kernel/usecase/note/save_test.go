@@ -18,13 +18,12 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func (c changeFixture) newWrite() note.Write {
-	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), windowdomain.OpenGate{})
+	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), testsupport.OpenGate{})
 }
 
 func (c changeFixture) openNote(t *testing.T, path string) *edit.Baseline {
@@ -343,7 +342,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
-		windowdomain.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	added := make(chan error, 1)
@@ -439,7 +438,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
-		windowdomain.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	moved := make(chan error, 1)

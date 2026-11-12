@@ -28,7 +28,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
@@ -162,7 +161,7 @@ func openEditor(t *testing.T, notes map[string]string) *Services {
 	t.Helper()
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
-		windowdomain.OpenGate{},
+		testsupport.OpenGate{},
 	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := newBareServices()
@@ -355,7 +354,7 @@ func TestEditLoad(t *testing.T) {
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
-		windowdomain.OpenGate{},
+		testsupport.OpenGate{},
 	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(NewState(run.NewTasks(), nil, nil))

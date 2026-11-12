@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -73,7 +72,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: windowdomain.OpenGate{}})
+	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: openGate{}})
 	connections := hostvault.Connections{
 		Reader:      query.NewGetConnection(db.NoteQueries()),
 		Saver:       useCases.Connect.SaveConnection,
