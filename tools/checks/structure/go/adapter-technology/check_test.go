@@ -130,8 +130,8 @@ func TestConnectClientCallRule_ReadsTheClientTypeOfTheLibrary(t *testing.T) {
 }
 
 // A package nested in an adapter family that a sibling of the family imports and that implements no port holds what
-// the family shares, and calls no technology of its own. One that implements a port, one nobody in its family
-// imports, and one imported from another family are adapters and still have to call a technology.
+// the family shares, and calls no technology of its own. One that implements a port, one that no other package of
+// its family imports, and one imported from another family are adapters and still have to call a technology.
 func TestTechnologyRule_LetsAFamilyShareItsPlumbing(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"port/storeport/store.go":            "package storeport\n\ntype Store interface{ Save() }\n",

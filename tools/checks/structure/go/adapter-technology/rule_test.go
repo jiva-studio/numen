@@ -14,7 +14,7 @@ import (
 
 func getTechnologyFreeAdapters() map[string]string {
 	return map[string]string{
-		"internal/adapter/clock": "the machine clock itself, read through the time package",
+		"internal/adapter/clock":         "the machine clock itself, read through the time package",
 		"internal/adapter/plugin/absent": "the stand-in of a plugin host that runs nothing: it answers unavailable and wraps no technology",
 	}
 }
