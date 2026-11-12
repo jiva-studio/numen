@@ -1,7 +1,6 @@
 package host
 
 import (
-	"context"
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -30,19 +29,4 @@ var (
 type VaultEntry struct {
 	domain.Vault
 	IsMissing bool
-}
-
-// VaultList is the installation's list of vaults and the vault the window shows. GetVaultList needs
-// vault:read; the other calls need vault:manage. A vault not on the list returns ErrUnknownVault.
-type VaultList interface {
-	GetVaultList(ctx context.Context) ([]VaultEntry, error)
-	// AddVault adds the folder at the absolute root. An empty name means the folder's name.
-	AddVault(ctx context.Context, root, name string) (domain.Vault, error)
-	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)
-	// RemoveVault removes the vault from the list and from the index, and returns its folder, which
-	// stays on the disk.
-	RemoveVault(ctx context.Context, id domain.VaultID) (folder string, err error)
-	// OpenVault makes the window show the vault and returns once the window shows it. It returns
-	// ErrUnsavedChanges when the window has unsaved changes.
-	OpenVault(ctx context.Context, id domain.VaultID) error
 }

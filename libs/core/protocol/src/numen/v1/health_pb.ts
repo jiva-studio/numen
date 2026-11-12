@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/health.proto.
  */
 export const file_numen_v1_health: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9oZWFsdGgucHJvdG8SCG51bWVuLnYxIpEBCgxIZWFsdGhBY3Rpb24SDwoHY29tbWFuZBgBIAEoCRIyCgZ2YWx1ZXMYAiADKAsyIi5udW1lbi52MS5IZWFsdGhBY3Rpb24uVmFsdWVzRW50cnkSDQoFdGl0bGUYAyABKAkaLQoLVmFsdWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKeAQoKSGVhbHRoSXRlbRIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJEioKCHNldmVyaXR5GAMgASgOMhgubnVtZW4udjEuSGVhbHRoU2V2ZXJpdHkSDAoEdGV4dBgEIAEoCRIOCgZkZXRhaWwYBSABKAkSJgoGYWN0aW9uGAYgASgLMhYubnVtZW4udjEuSGVhbHRoQWN0aW9uIjkKE1JlcG9ydEhlYWx0aFJlcXVlc3QSIgoEaXRlbRgBIAEoCzIULm51bWVuLnYxLkhlYWx0aEl0ZW0iFgoUUmVwb3J0SGVhbHRoUmVzcG9uc2UiNAoSQ2xlYXJIZWFsdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiFQoTQ2xlYXJIZWFsdGhSZXNwb25zZSITChFMaXN0SGVhbHRoUmVxdWVzdCI5ChJMaXN0SGVhbHRoUmVzcG9uc2USIwoFaXRlbXMYASADKAsyFC5udW1lbi52MS5IZWFsdGhJdGVtIhQKEldhdGNoSGVhbHRoUmVxdWVzdCI6ChNXYXRjaEhlYWx0aFJlc3BvbnNlEiMKBWl0ZW1zGAEgAygLMhQubnVtZW4udjEuSGVhbHRoSXRlbSqBAQoOSGVhbHRoU2V2ZXJpdHkSHwobSEVBTFRIX1NFVkVSSVRZX1VOU1BFQ0lGSUVEEAASFgoSSEVBTFRIX1NFVkVSSVRZX09LEAESGwoXSEVBTFRIX1NFVkVSSVRZX1dBUk5JTkcQAhIZChVIRUFMVEhfU0VWRVJJVFlfRVJST1IQAzLHAgoTUGx1Z2luSGVhbHRoU2VydmljZRJNCgxSZXBvcnRIZWFsdGgSHS5udW1lbi52MS5SZXBvcnRIZWFsdGhSZXF1ZXN0Gh4ubnVtZW4udjEuUmVwb3J0SGVhbHRoUmVzcG9uc2USSgoLQ2xlYXJIZWFsdGgSHC5udW1lbi52MS5DbGVhckhlYWx0aFJlcXVlc3QaHS5udW1lbi52MS5DbGVhckhlYWx0aFJlc3BvbnNlEkcKCkxpc3RIZWFsdGgSGy5udW1lbi52MS5MaXN0SGVhbHRoUmVxdWVzdBocLm51bWVuLnYxLkxpc3RIZWFsdGhSZXNwb25zZRJMCgtXYXRjaEhlYWx0aBIcLm51bWVuLnYxLldhdGNoSGVhbHRoUmVxdWVzdBodLm51bWVuLnYxLldhdGNoSGVhbHRoUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS9oZWFsdGgucHJvdG8SCG51bWVuLnYxIpEBCgxIZWFsdGhBY3Rpb24SDwoHY29tbWFuZBgBIAEoCRIyCgZ2YWx1ZXMYAiADKAsyIi5udW1lbi52MS5IZWFsdGhBY3Rpb24uVmFsdWVzRW50cnkSDQoFdGl0bGUYAyABKAkaLQoLVmFsdWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKeAQoKSGVhbHRoSXRlbRIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJEioKCHNldmVyaXR5GAMgASgOMhgubnVtZW4udjEuSGVhbHRoU2V2ZXJpdHkSDAoEdGV4dBgEIAEoCRIOCgZkZXRhaWwYBSABKAkSJgoGYWN0aW9uGAYgASgLMhYubnVtZW4udjEuSGVhbHRoQWN0aW9uIjkKE1JlcG9ydEhlYWx0aFJlcXVlc3QSIgoEaXRlbRgBIAEoCzIULm51bWVuLnYxLkhlYWx0aEl0ZW0iFgoUUmVwb3J0SGVhbHRoUmVzcG9uc2UiNAoSQ2xlYXJIZWFsdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiFQoTQ2xlYXJIZWFsdGhSZXNwb25zZSIUChJXYXRjaEhlYWx0aFJlcXVlc3QiOgoTV2F0Y2hIZWFsdGhSZXNwb25zZRIjCgVpdGVtcxgBIAMoCzIULm51bWVuLnYxLkhlYWx0aEl0ZW0qgQEKDkhlYWx0aFNldmVyaXR5Eh8KG0hFQUxUSF9TRVZFUklUWV9VTlNQRUNJRklFRBAAEhYKEkhFQUxUSF9TRVZFUklUWV9PSxABEhsKF0hFQUxUSF9TRVZFUklUWV9XQVJOSU5HEAISGQoVSEVBTFRIX1NFVkVSSVRZX0VSUk9SEAMy/gEKE1BsdWdpbkhlYWx0aFNlcnZpY2USTQoMUmVwb3J0SGVhbHRoEh0ubnVtZW4udjEuUmVwb3J0SGVhbHRoUmVxdWVzdBoeLm51bWVuLnYxLlJlcG9ydEhlYWx0aFJlc3BvbnNlEkoKC0NsZWFySGVhbHRoEhwubnVtZW4udjEuQ2xlYXJIZWFsdGhSZXF1ZXN0Gh0ubnVtZW4udjEuQ2xlYXJIZWFsdGhSZXNwb25zZRJMCgtXYXRjaEhlYWx0aBIcLm51bWVuLnYxLldhdGNoSGVhbHRoUmVxdWVzdBodLm51bWVuLnYxLldhdGNoSGVhbHRoUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * HealthAction is the command a person runs to fix what a health item reports.
@@ -172,38 +172,6 @@ export const ClearHealthResponseSchema: GenMessage<ClearHealthResponse> = /*@__P
   messageDesc(file_numen_v1_health, 5);
 
 /**
- * @generated from message numen.v1.ListHealthRequest
- */
-export type ListHealthRequest = Message<"numen.v1.ListHealthRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.ListHealthRequest.
- * Use `create(ListHealthRequestSchema)` to create a new message.
- */
-export const ListHealthRequestSchema: GenMessage<ListHealthRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_health, 6);
-
-/**
- * @generated from message numen.v1.ListHealthResponse
- */
-export type ListHealthResponse = Message<"numen.v1.ListHealthResponse"> & {
-  /**
-   * The items of every plugin, in the order they were first reported.
-   *
-   * @generated from field: repeated numen.v1.HealthItem items = 1;
-   */
-  items: HealthItem[];
-};
-
-/**
- * Describes the message numen.v1.ListHealthResponse.
- * Use `create(ListHealthResponseSchema)` to create a new message.
- */
-export const ListHealthResponseSchema: GenMessage<ListHealthResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_health, 7);
-
-/**
  * @generated from message numen.v1.WatchHealthRequest
  */
 export type WatchHealthRequest = Message<"numen.v1.WatchHealthRequest"> & {
@@ -214,7 +182,7 @@ export type WatchHealthRequest = Message<"numen.v1.WatchHealthRequest"> & {
  * Use `create(WatchHealthRequestSchema)` to create a new message.
  */
 export const WatchHealthRequestSchema: GenMessage<WatchHealthRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_health, 8);
+  messageDesc(file_numen_v1_health, 6);
 
 /**
  * @generated from message numen.v1.WatchHealthResponse
@@ -233,7 +201,7 @@ export type WatchHealthResponse = Message<"numen.v1.WatchHealthResponse"> & {
  * Use `create(WatchHealthResponseSchema)` to create a new message.
  */
 export const WatchHealthResponseSchema: GenMessage<WatchHealthResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_health, 9);
+  messageDesc(file_numen_v1_health, 7);
 
 /**
  * HealthSeverity is how bad a health item is.
@@ -280,12 +248,12 @@ export const HealthSeveritySchema: GenEnum<HealthSeverity> = /*@__PURE__*/
  * PluginHealthService is what the plugins say about whether they work. A plugin
  * reports a health item under a key of its own; the core reports the items
  * configure, start and search for every plugin. The core keeps the items of
- * every plugin in one list, which a window lists and watches, and clears the
+ * every plugin in one list, which a window watches, and clears the
  * items of a plugin that is disabled.
  *
  * A plugin calls ReportHealth and ClearHealth through the host endpoint, which
  * names the plugin by its token. A window calls them for the frontend of the
- * plugin plugin_id names. ListHealth and WatchHealth are answered to a window.
+ * plugin plugin_id names. WatchHealth is answered to a window.
  *
  * @generated from service numen.v1.PluginHealthService
  */
@@ -313,16 +281,6 @@ export const PluginHealthService: GenService<{
     methodKind: "unary";
     input: typeof ClearHealthRequestSchema;
     output: typeof ClearHealthResponseSchema;
-  },
-  /**
-   * ListHealth is the items of every plugin.
-   *
-   * @generated from rpc numen.v1.PluginHealthService.ListHealth
-   */
-  listHealth: {
-    methodKind: "unary";
-    input: typeof ListHealthRequestSchema;
-    output: typeof ListHealthResponseSchema;
   },
   /**
    * WatchHealth sends the items of every plugin at once and again on every

@@ -21,8 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 )
 
-const vaultWatchPoll = time.Second
-
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if err == nil {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED, nil

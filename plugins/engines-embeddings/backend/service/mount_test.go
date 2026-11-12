@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
@@ -22,9 +21,8 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	token := hostcall.WithBearer(linkedToken)
 
-	if _, err := servertest.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
+	if _, err := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken).Configure(t.Context(),
 		map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
@@ -37,7 +35,7 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 
 func TestMountRegistersCloseCallback(t *testing.T) {
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
-	s := server.New(server.WithToken("token"))
+	s := server.New()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount: %v", err)
 	}
@@ -106,7 +104,7 @@ func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *t
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(linkedToken))
+	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken)
 
 	if _, err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Example/no-such-model"}); err != nil {
 		t.Fatalf("Configure: %v", err)

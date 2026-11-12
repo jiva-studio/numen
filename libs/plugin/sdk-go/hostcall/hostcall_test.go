@@ -32,12 +32,6 @@ func TestTheTokenIsPresentedOnAStreamingCall(t *testing.T) {
 	}
 }
 
-func TestWithBearerReturnsClientOption(t *testing.T) {
-	if hostcall.WithBearer("s") == nil {
-		t.Fatal("expected non-nil client option")
-	}
-}
-
 func TestNoTokenIsPresentedAsNone(t *testing.T) {
 	conn := &fakeStreamConn{header: http.Header{}}
 

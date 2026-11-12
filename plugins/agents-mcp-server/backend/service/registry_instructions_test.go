@@ -10,9 +10,9 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 )
 
 const (
@@ -75,7 +75,7 @@ func openSession(t *testing.T, srv *testServer) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, session)
+	t.Cleanup(func() { closeAndCheck(t, session) })
 	return session.InitializeResult().Instructions
 }
 
@@ -160,7 +160,7 @@ func TestToolsWithNoSentencesLeaveOnlyTheServerLine(t *testing.T) {
 func TestHostListedSentencesAreSentToTheServerOverTheWire(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(fakeToolHostHandler{listing: tools.Listing{
+	mux.Handle(toolstest.NewServiceHandler(fakeToolHostHandler{listing: tools.Listing{
 		Tools: []*tools.ToolInfo{newToolWithSentences("orchard_pick", orchardPickSentence)},
 	}}))
 	served := httptest.NewServer(mux)

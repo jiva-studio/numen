@@ -39,9 +39,6 @@ const (
 	// PluginHealthServiceClearHealthProcedure is the fully-qualified name of the PluginHealthService's
 	// ClearHealth RPC.
 	PluginHealthServiceClearHealthProcedure = "/numen.v1.PluginHealthService/ClearHealth"
-	// PluginHealthServiceListHealthProcedure is the fully-qualified name of the PluginHealthService's
-	// ListHealth RPC.
-	PluginHealthServiceListHealthProcedure = "/numen.v1.PluginHealthService/ListHealth"
 	// PluginHealthServiceWatchHealthProcedure is the fully-qualified name of the PluginHealthService's
 	// WatchHealth RPC.
 	PluginHealthServiceWatchHealthProcedure = "/numen.v1.PluginHealthService/WatchHealth"
@@ -57,8 +54,6 @@ type PluginHealthServiceClient interface {
 	// ClearHealth takes the item of the plugin under the key out of the list. An
 	// item that is not there is already cleared.
 	ClearHealth(context.Context, *connect.Request[v1.ClearHealthRequest]) (*connect.Response[v1.ClearHealthResponse], error)
-	// ListHealth is the items of every plugin.
-	ListHealth(context.Context, *connect.Request[v1.ListHealthRequest]) (*connect.Response[v1.ListHealthResponse], error)
 	// WatchHealth sends the items of every plugin at once and again on every
 	// change, for as long as the caller listens.
 	WatchHealth(context.Context, *connect.Request[v1.WatchHealthRequest]) (*connect.ServerStreamForClient[v1.WatchHealthResponse], error)
@@ -87,12 +82,6 @@ func NewPluginHealthServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(pluginHealthServiceMethods.ByName("ClearHealth")),
 			connect.WithClientOptions(opts...),
 		),
-		listHealth: connect.NewClient[v1.ListHealthRequest, v1.ListHealthResponse](
-			httpClient,
-			baseURL+PluginHealthServiceListHealthProcedure,
-			connect.WithSchema(pluginHealthServiceMethods.ByName("ListHealth")),
-			connect.WithClientOptions(opts...),
-		),
 		watchHealth: connect.NewClient[v1.WatchHealthRequest, v1.WatchHealthResponse](
 			httpClient,
 			baseURL+PluginHealthServiceWatchHealthProcedure,
@@ -106,7 +95,6 @@ func NewPluginHealthServiceClient(httpClient connect.HTTPClient, baseURL string,
 type pluginHealthServiceClient struct {
 	reportHealth *connect.Client[v1.ReportHealthRequest, v1.ReportHealthResponse]
 	clearHealth  *connect.Client[v1.ClearHealthRequest, v1.ClearHealthResponse]
-	listHealth   *connect.Client[v1.ListHealthRequest, v1.ListHealthResponse]
 	watchHealth  *connect.Client[v1.WatchHealthRequest, v1.WatchHealthResponse]
 }
 
@@ -118,11 +106,6 @@ func (c *pluginHealthServiceClient) ReportHealth(ctx context.Context, req *conne
 // ClearHealth calls numen.v1.PluginHealthService.ClearHealth.
 func (c *pluginHealthServiceClient) ClearHealth(ctx context.Context, req *connect.Request[v1.ClearHealthRequest]) (*connect.Response[v1.ClearHealthResponse], error) {
 	return c.clearHealth.CallUnary(ctx, req)
-}
-
-// ListHealth calls numen.v1.PluginHealthService.ListHealth.
-func (c *pluginHealthServiceClient) ListHealth(ctx context.Context, req *connect.Request[v1.ListHealthRequest]) (*connect.Response[v1.ListHealthResponse], error) {
-	return c.listHealth.CallUnary(ctx, req)
 }
 
 // WatchHealth calls numen.v1.PluginHealthService.WatchHealth.
@@ -140,8 +123,6 @@ type PluginHealthServiceHandler interface {
 	// ClearHealth takes the item of the plugin under the key out of the list. An
 	// item that is not there is already cleared.
 	ClearHealth(context.Context, *connect.Request[v1.ClearHealthRequest]) (*connect.Response[v1.ClearHealthResponse], error)
-	// ListHealth is the items of every plugin.
-	ListHealth(context.Context, *connect.Request[v1.ListHealthRequest]) (*connect.Response[v1.ListHealthResponse], error)
 	// WatchHealth sends the items of every plugin at once and again on every
 	// change, for as long as the caller listens.
 	WatchHealth(context.Context, *connect.Request[v1.WatchHealthRequest], *connect.ServerStream[v1.WatchHealthResponse]) error
@@ -166,12 +147,6 @@ func NewPluginHealthServiceHandler(svc PluginHealthServiceHandler, opts ...conne
 		connect.WithSchema(pluginHealthServiceMethods.ByName("ClearHealth")),
 		connect.WithHandlerOptions(opts...),
 	)
-	pluginHealthServiceListHealthHandler := connect.NewUnaryHandler(
-		PluginHealthServiceListHealthProcedure,
-		svc.ListHealth,
-		connect.WithSchema(pluginHealthServiceMethods.ByName("ListHealth")),
-		connect.WithHandlerOptions(opts...),
-	)
 	pluginHealthServiceWatchHealthHandler := connect.NewServerStreamHandler(
 		PluginHealthServiceWatchHealthProcedure,
 		svc.WatchHealth,
@@ -184,8 +159,6 @@ func NewPluginHealthServiceHandler(svc PluginHealthServiceHandler, opts ...conne
 			pluginHealthServiceReportHealthHandler.ServeHTTP(w, r)
 		case PluginHealthServiceClearHealthProcedure:
 			pluginHealthServiceClearHealthHandler.ServeHTTP(w, r)
-		case PluginHealthServiceListHealthProcedure:
-			pluginHealthServiceListHealthHandler.ServeHTTP(w, r)
 		case PluginHealthServiceWatchHealthProcedure:
 			pluginHealthServiceWatchHealthHandler.ServeHTTP(w, r)
 		default:
@@ -203,10 +176,6 @@ func (UnimplementedPluginHealthServiceHandler) ReportHealth(context.Context, *co
 
 func (UnimplementedPluginHealthServiceHandler) ClearHealth(context.Context, *connect.Request[v1.ClearHealthRequest]) (*connect.Response[v1.ClearHealthResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginHealthService.ClearHealth is not implemented"))
-}
-
-func (UnimplementedPluginHealthServiceHandler) ListHealth(context.Context, *connect.Request[v1.ListHealthRequest]) (*connect.Response[v1.ListHealthResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginHealthService.ListHealth is not implemented"))
 }
 
 func (UnimplementedPluginHealthServiceHandler) WatchHealth(context.Context, *connect.Request[v1.WatchHealthRequest], *connect.ServerStream[v1.WatchHealthResponse]) error {

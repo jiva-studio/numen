@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
@@ -48,7 +47,7 @@ func newFixtureWithSites(t *testing.T, fetcher link.Fetcher) *importFixture {
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
 		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
-		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
+		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
 		func() link.Fetcher { return fetcher },

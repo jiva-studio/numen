@@ -15,18 +15,6 @@ func readErrorCode(code v1.ToolErrorCode) ErrorCode {
 	}
 }
 
-func writeErrorCode(code ErrorCode) v1.ToolErrorCode {
-	switch code {
-	case ErrorCodeUnknownTool:
-		return v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL
-	case ErrorCodeBadArguments:
-		return v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS
-	default:
-		// gomutants:disable-next-line reason="the returned value is the zero value of its type, so returning zero is the same value"
-		return v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED
-	}
-}
-
 func writeEffect(effect Effect) v1.ToolEffect {
 	switch effect {
 	case ReadOnly:
@@ -65,22 +53,6 @@ func readToolInfo(t *v1.PluginTool) *ToolInfo {
 	}
 }
 
-func writeToolInfo(t *ToolInfo) *v1.PluginTool {
-	if t == nil {
-		return nil
-	}
-	return &v1.PluginTool{
-		Name:         t.Name,
-		Title:        t.Title,
-		Description:  t.Description,
-		InputSchema:  t.InputSchema,
-		OutputSchema: t.OutputSchema,
-		Effect:       writeEffect(t.Effect),
-		Instructions: t.Instructions,
-		Requires:     t.Requires,
-	}
-}
-
 func readCallResponse(res *v1.CallToolResponse) *CallResponse {
 	if res == nil {
 		return nil
@@ -91,21 +63,6 @@ func readCallResponse(res *v1.CallToolResponse) *CallResponse {
 			Text:       r.GetText(),
 			Structured: r.GetStructured(),
 			IsError:    r.GetIsError(),
-		}
-	}
-	return out
-}
-
-func writeCallResponse(res *CallResponse) *v1.CallToolResponse {
-	if res == nil {
-		return &v1.CallToolResponse{}
-	}
-	out := &v1.CallToolResponse{Error: writeErrorCode(res.Error)}
-	if res.Result != nil {
-		out.Result = &v1.ToolResult{
-			Text:       res.Result.Text,
-			Structured: res.Result.Structured,
-			IsError:    res.Result.IsError,
 		}
 	}
 	return out

@@ -21,7 +21,6 @@ type Session struct {
 	Find       func(id domain.VaultID) (domain.Vault, error)
 	IndexState func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Watcher    func(ctx context.Context, v domain.Vault) (changes <-chan []string, lost <-chan struct{}, err error)
 	Written    func()
 
 	rebuild func(found domain.Vault) *vault.Access
@@ -30,7 +29,7 @@ type Session struct {
 func (s *Session) showing(found domain.Vault) Session {
 	return Session{
 		Current: func() (domain.Vault, bool) { return found, true }, Vaults: s.Vaults, Find: s.Find,
-		IndexState: s.IndexState, Moved: s.Moved, Watcher: s.Watcher, Written: s.Written,
+		IndexState: s.IndexState, Moved: s.Moved, Written: s.Written,
 	}
 }
 
@@ -90,18 +89,6 @@ func (s *Session) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 		return nil, fmt.Errorf("watch moves: %w", domain.ErrUnavailable)
 	}
 	return s.Moved(ctx)
-}
-
-// Watch reports the paths that change in the vault, and when the watch is lost.
-func (s *Session) Watch(ctx context.Context) (<-chan []string, <-chan struct{}, error) {
-	v, err := s.open()
-	if err != nil {
-		return nil, nil, err
-	}
-	if s.Watcher == nil {
-		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, domain.ErrUnavailable)
-	}
-	return s.Watcher(ctx, v)
 }
 
 func (s *Session) open() (domain.Vault, error) {

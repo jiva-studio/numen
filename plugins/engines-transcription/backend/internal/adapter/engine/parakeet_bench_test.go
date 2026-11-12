@@ -3,8 +3,6 @@ package engine
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
-
 	ort "github.com/getcharzp/onnxruntime_purego"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 )
@@ -17,7 +15,7 @@ func BenchmarkParakeetGreedyLoop(b *testing.B) {
 	if err != nil {
 		b.Skipf("parakeet models not available: %v", err)
 	}
-	defer cleanup.Close(b, delta)
+	defer closeAndCheck(b, delta)
 
 	const width = 100
 	data := make([]float32, encoded*width)
@@ -50,7 +48,7 @@ func BenchmarkSileroVAD(b *testing.B) {
 	if err != nil {
 		b.Skipf("silero VAD model not available: %v", err)
 	}
-	defer cleanup.Close(b, delta)
+	defer closeAndCheck(b, delta)
 
 	// 5 seconds of 16kHz audio = 80,000 samples (~156 windows of 512 samples)
 	audio := make([]float32, 16000*5)

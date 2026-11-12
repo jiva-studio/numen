@@ -109,7 +109,7 @@ func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 
-	client := numenv1connect.NewPluginCommandServiceClient(srv.Client(), srv.URL, hostcall.WithBearer("tok"))
+	client := numenv1connect.NewPluginCommandServiceClient(srv.Client(), srv.URL, connect.WithInterceptors(hostcall.Bearer("tok")))
 	res, err := client.RunCommand(t.Context(), connect.NewRequest(&v1.RunCommandRequest{
 		Command:   "greet",
 		Arguments: map[string]string{"name": "Bob"},
@@ -147,16 +147,5 @@ func TestCommand_PassesTheItemPickedToTheRun(t *testing.T) {
 
 	if got.ItemID != "audio" || got.Path != "talk.md" {
 		t.Errorf("the run received %+v", got)
-	}
-}
-
-func TestIsSharedCommandIsTrueForTheIdsOfCommandsJSONOnly(t *testing.T) {
-	for _, one := range ListSharedCommands() {
-		if !IsSharedCommand(one.ID) {
-			t.Errorf("%s is not taken as shared", one.ID)
-		}
-	}
-	if IsSharedCommand("app:version.delete") || IsSharedCommand("proofreading.create") {
-		t.Error("a command that is not shared is taken as shared")
 	}
 }

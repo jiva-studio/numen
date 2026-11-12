@@ -179,6 +179,34 @@
       "target": "core-tests-use-external-packages"
     },
     {
+      "name": "go/dead-exports",
+      "paths": [
+        "**/*.go",
+        "**/go.mod",
+        "go.work",
+        "apps/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue}",
+        "plugins/**/*.{ts,vue}",
+        "apps/**/package.json",
+        "libs/**/package.json",
+        "plugins/**/package.json",
+        "apps/**/tsconfig.json",
+        "libs/**/tsconfig.json",
+        "plugins/**/tsconfig.json",
+        "tsconfig.base.json"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "library",
+        "plugin",
+        "slow"
+      ],
+      "selftest": "structure/go/dead-exports/check_test.go",
+      "runner": "go",
+      "target": "dead-exports"
+    },
+    {
       "name": "go/direction",
       "paths": [
         "libs/core/kernel/**",
@@ -745,34 +773,6 @@
       "selftest": "structure/go/serialization/check_test.go",
       "runner": "go",
       "target": "serialization"
-    },
-    {
-      "name": "go/single-consumer",
-      "paths": [
-        "**/*.go",
-        "**/go.mod",
-        "go.work",
-        "apps/**/*.{ts,vue}",
-        "libs/**/*.{ts,vue}",
-        "plugins/**/*.{ts,vue}",
-        "apps/**/package.json",
-        "libs/**/package.json",
-        "plugins/**/package.json",
-        "apps/**/tsconfig.json",
-        "libs/**/tsconfig.json",
-        "plugins/**/tsconfig.json",
-        "tsconfig.base.json"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "library",
-        "plugin",
-        "slow"
-      ],
-      "selftest": "structure/go/single-consumer/check_test.go",
-      "runner": "go",
-      "target": "single-consumer"
     },
     {
       "name": "go/source-size",

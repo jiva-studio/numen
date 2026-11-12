@@ -27,12 +27,6 @@ func (f *fakeCatalog) CanProvision(req manifest.DependencyRequirement) bool {
 	return ok
 }
 
-func (f *fakeCatalog) GetStatus(context.Context, string) (plugindomain.DependencyStatus, error) {
-	return plugindomain.DependencyStatus{}, nil
-}
-
-func (f *fakeCatalog) List(context.Context) ([]plugindomain.DependencyStatus, error) { return nil, nil }
-
 func (f *fakeCatalog) SetObserver(func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
 }
 

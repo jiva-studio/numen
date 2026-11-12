@@ -19,7 +19,6 @@ import (
 
 // Items is the health items of every plugin.
 type Items interface {
-	List() []plugin.HealthItem
 	Watch(ctx context.Context) <-chan []plugin.HealthItem
 }
 
@@ -82,13 +81,6 @@ func (h *Handler) ClearHealth(
 		return nil, getHealthError(err)
 	}
 	return connect.NewResponse(&v1.ClearHealthResponse{}), nil
-}
-
-// ListHealth returns the items of every plugin.
-func (h *Handler) ListHealth(
-	context.Context, *connect.Request[v1.ListHealthRequest],
-) (*connect.Response[v1.ListHealthResponse], error) {
-	return connect.NewResponse(&v1.ListHealthResponse{Items: wire.DescribeHealthItems(h.items.List())}), nil
 }
 
 // WatchHealth sends the items at once, on every change and again every wire.ResendInterval, until the

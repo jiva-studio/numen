@@ -24,7 +24,7 @@ func (*pipeOutput) Sync() error { return syscall.EBADF }
 func TestServeKeepsServingWhenOutputCannotSync(t *testing.T) {
 	const token = "pipe-token"
 	var stdout pipeOutput
-	s := New(WithPort(0), WithToken(token), WithStdout(&stdout), WithStdin(nil), WithSignals())
+	s := New(withPort(0), withToken(token), withStdout(&stdout), withStdin(nil), withSignals())
 	port, err := s.Listen()
 	if err != nil {
 		t.Fatalf("Listen: %v", err)

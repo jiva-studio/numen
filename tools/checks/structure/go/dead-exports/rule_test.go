@@ -1,4 +1,4 @@
-package singleconsumer
+package deadexports
 
 import (
 	"encoding/json"
@@ -80,10 +80,13 @@ type usage struct {
 	edges [][2]string
 }
 
+// The node keys: "rpc:<Service>.<Method>", "go:<import path>|<Name>" with "<Type>.<Method>" for a
+// method, "ts:<file>|<Name>" with "<Name>.<member>" for a member.
 func getGoKey(pkgPath, name string) string {
 	return "go:" + pkgPath + "|" + name
 }
 
+// getContainerKey is the type of a method or the declaration of a member, or "" for a top-level node.
 func getContainerKey(key string) string {
 	if !strings.HasPrefix(key, "go:") && !strings.HasPrefix(key, "ts:") {
 		return ""
@@ -123,6 +126,8 @@ func isExportedName(name string) bool {
 	return name != "" && unicode.IsUpper([]rune(name)[0])
 }
 
+// getGoTargetKey is the node an object of a use stands for: an RPC of a generated client, or a
+// declaration of the Go SDK at package level or a method; "" for anything else.
 func (l layout) getGoTargetKey(obj types.Object) string {
 	if obj == nil || obj.Pkg() == nil {
 		return ""
@@ -177,6 +182,9 @@ func (l layout) getShortName(pkgPath string) string {
 	return strings.TrimPrefix(pkgPath, l.modulePath)
 }
 
+// collectGoUsage reads the RPCs of the generated clients, the exports of the Go SDK, the uses of both
+// in every package, and the edges from an interface method of the SDK, or of a package outside it, to
+// the SDK methods that answer it. Each module is one load, whose types are not those of another.
 func collectGoUsage(modules [][]*packages.Package, l layout) usage {
 	var found usage
 	seenItems := map[string]bool{}
@@ -271,6 +279,7 @@ func (l layout) getPosition(fset *token.FileSet, pos token.Pos) string {
 	return fmt.Sprintf("%s:%d", l.getRelative(position.Filename), position.Line)
 }
 
+// getGoDeclKey is the node of a declaration of a package, or "" for one that names no node.
 func getGoDeclKey(pkg *packages.Package, name *ast.Ident) string {
 	if name == nil || name.Name == "_" {
 		return ""
@@ -332,6 +341,8 @@ func (l layout) listGoUses(pkg *packages.Package, file *ast.File, rel string) []
 	return found
 }
 
+// listDispatchEdges links each method of an interface of the SDK to the methods of the SDK types that
+// answer it: a consumer that calls the interface method calls whichever type stands behind it.
 func (l layout) listDispatchEdges(pkg *packages.Package, seenPairs map[string]bool) [][2]string {
 	var named []*types.Named
 	addScope := func(scope *types.Scope) {
@@ -386,6 +397,8 @@ func (l layout) listDispatchEdges(pkg *packages.Package, seenPairs map[string]bo
 	return edges
 }
 
+// getOwnInterfaceMethodKey is the node of a method of an interface that a package of the repository
+// outside the SDK and the protocol declares, such as a port of a plugin; "" for anything else.
 func (l layout) getOwnInterfaceMethodKey(obj types.Object) string {
 	fn, ok := obj.(*types.Func)
 	if !ok || fn.Pkg() == nil || !isMethod(fn) {
@@ -406,6 +419,8 @@ func (l layout) getOwnInterfaceMethodKey(obj types.Object) string {
 	return getGoKey(pkgPath, name+"."+fn.Name())
 }
 
+// listSDKTypes lists the named types of the SDK packages among roots and the packages they import
+// directly or through other packages, interfaces and generic types left out.
 func (l layout) listSDKTypes(roots []*types.Package) []*types.Named {
 	var named []*types.Named
 	seen := map[string]bool{}
@@ -437,6 +452,9 @@ func (l layout) listSDKTypes(roots []*types.Package) []*types.Named {
 	return named
 }
 
+// listOwnInterfaceEdges links each method of an interface the package declares, such as a port of a
+// plugin, to the methods of the SDK types that answer it: a plugin that holds an SDK client behind a
+// port of its own calls the client when it calls the port.
 func (l layout) listOwnInterfaceEdges(pkg *packages.Package, sdkTypes []*types.Named) [][2]string {
 	var interfaces []*types.Interface
 	scope := pkg.Types.Scope()
@@ -487,9 +505,10 @@ type tsOutput struct {
 	Files    int         `json:"files"`
 }
 
+// collectTSUsage runs uses.mjs, beside this file, over the TypeScript and Vue sources of the tree.
 func collectTSUsage(t *testing.T, l layout) (usage, tsOutput) {
 	t.Helper()
-	script := filepath.Join(getRealDir(t, load.RepoRootDir), "tools", "checks", "structure", "go", "single-consumer", "uses.mjs")
+	script := filepath.Join(getRealDir(t, load.RepoRootDir), "tools", "checks", "structure", "go", "dead-exports", "uses.mjs")
 	args := append([]string{script, l.root, l.protocolDir, l.sdkTSDir}, l.libraryDirs...)
 	command := exec.CommandContext(t.Context(), "node", args...)
 	command.Stderr = os.Stderr
@@ -516,6 +535,7 @@ const (
 	placeConsumer
 )
 
+// isTestPath reports a test, a story, a test kit, a fixture or a template, which is no consumer.
 func isTestPath(rel string) bool {
 	for _, suffix := range []string{"_test.go", ".test.ts", ".spec.ts", ".stories.ts", ".test.mjs", ".d.ts"} {
 		if strings.HasSuffix(rel, suffix) {
@@ -535,6 +555,8 @@ func isWithinDir(rel, dir string) bool {
 	return rel == dir || strings.HasPrefix(rel, dir+"/")
 }
 
+// classify tells whether a use in the file rel counts, passes on, or names a consumer, and which one:
+// a plugin by its folder, an application by its folder, any other package by its directory.
 func (l layout) classify(rel string) (place, string) {
 	if rel == "" || isTestPath(rel) || isWithinDir(rel, l.protocolDir) {
 		return placeNone, ""
@@ -564,22 +586,17 @@ func getItemFile(one item) string {
 	return file
 }
 
-// finding is an item with one consumer, one family of plugins, or none.
+// finding is an item that nothing outside tests uses.
 type finding struct {
 	name     string
 	position string
-	verdict  string
 }
 
 func (f finding) String() string {
-	return f.position + ": " + f.name + ": " + f.verdict
+	return f.position + ": " + f.name + ": used by nothing outside tests: dead"
 }
 
-func getFamily(plugin string) string {
-	family, _, _ := strings.Cut(plugin, "-")
-	return family
-}
-
+// getConsumers propagates the consumers along the edges until nothing changes.
 func getConsumers(parts []usage, l layout) map[string]map[string]bool {
 	consumers := map[string]map[string]bool{}
 	users := map[string]map[string]bool{}
@@ -638,18 +655,29 @@ func getConsumers(parts []usage, l layout) map[string]map[string]bool {
 	return consumers
 }
 
-func findSingleConsumers(parts []usage, l layout) []finding {
+// isGeneratedContract reports a file generated from a contract of an SDK: a `*.pb.go` or `*_pb.ts`
+// file under a `contracts` directory, whose declarations protoc writes for the whole message set.
+func isGeneratedContract(rel string) bool {
+	if !strings.HasSuffix(rel, ".pb.go") && !strings.HasSuffix(rel, "_pb.ts") {
+		return false
+	}
+	return slices.Contains(strings.Split(path.Dir(rel), "/"), "contracts")
+}
+
+// findDeadExports lists every item that nothing outside tests uses.
+func findDeadExports(parts []usage, l layout) []finding {
 	consumers := getConsumers(parts, l)
 	var found []finding
 	seen := map[string]bool{}
 	for _, part := range parts {
 		for _, one := range part.items {
-			if seen[one.Key] || (!strings.HasPrefix(one.Key, "rpc:") && isTestPath(getItemFile(one))) {
+			file := getItemFile(one)
+			if seen[one.Key] || (!strings.HasPrefix(one.Key, "rpc:") && (isTestPath(file) || isGeneratedContract(file))) {
 				continue
 			}
 			seen[one.Key] = true
-			if verdict := getVerdict(consumers[one.Key]); verdict != "" {
-				found = append(found, finding{name: one.Name, position: one.Position, verdict: verdict})
+			if len(consumers[one.Key]) == 0 {
+				found = append(found, finding{name: one.Name, position: one.Position})
 			}
 		}
 	}
@@ -657,31 +685,7 @@ func findSingleConsumers(parts []usage, l layout) []finding {
 	return found
 }
 
-func getVerdict(consumers map[string]bool) string {
-	if len(consumers) == 0 {
-		return "used by nothing outside tests: dead"
-	}
-	var plugins []string
-	families := map[string]bool{}
-	for consumer := range consumers {
-		plugin, ok := strings.CutPrefix(consumer, "plugin ")
-		if !ok {
-			return ""
-		}
-		plugins = append(plugins, plugin)
-		families[getFamily(plugin)] = true
-	}
-	slices.Sort(plugins)
-	if len(plugins) == 1 {
-		return "used only by plugin " + plugins[0] + ": belongs to that plugin"
-	}
-	if len(families) == 1 {
-		return "used only by the " + getFamily(plugins[0]) + "-* plugins (" + strings.Join(plugins, ", ") + "): belongs to that family"
-	}
-	return ""
-}
-
-func checkSingleConsumers(t *testing.T, workspace load.WorkspacePackages) {
+func checkDeadExports(t *testing.T, workspace load.WorkspacePackages) {
 	t.Helper()
 	l := newRepositoryLayout(t)
 	var modules [][]*packages.Package
@@ -704,7 +708,7 @@ func checkSingleConsumers(t *testing.T, workspace load.WorkspacePackages) {
 	if counts["rpc"] == 0 || counts["go"] == 0 || counts["ts"] == 0 || rpcUses == 0 || read.Packages == 0 || read.Files == 0 {
 		t.Fatalf("%v items, %d uses of an RPC, %d TypeScript packages and %d files: the rule is checked against nothing", counts, rpcUses, read.Packages, read.Files)
 	}
-	for _, one := range findSingleConsumers([]usage{goUsage, tsUsage}, l) {
+	for _, one := range findDeadExports([]usage{goUsage, tsUsage}, l) {
 		t.Error(one)
 	}
 }

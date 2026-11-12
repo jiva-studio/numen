@@ -3,7 +3,6 @@ package onnxruntime
 import (
 	"context"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -20,13 +19,10 @@ const progressInterval = 100 * time.Millisecond
 type ONNXProvisioner struct {
 	inner provisioning
 	clock machineport.Clock
-
-	mu    sync.Mutex
-	ready map[string]plugin.ResolvedDependency
 }
 
 func NewONNXProvisioner(cfg Config) *ONNXProvisioner {
-	return &ONNXProvisioner{inner: New(cfg), clock: cfg.Clock, ready: make(map[string]plugin.ResolvedDependency)}
+	return &ONNXProvisioner{inner: New(cfg), clock: cfg.Clock}
 }
 
 // CanProvision reports whether the requirement is the ONNX Runtime.
@@ -62,22 +58,7 @@ func (p *ONNXProvisioner) Provision(
 		EnvVars:  map[string]string{EnvLibrary: library, EnvProvider: provider},
 		Metadata: map[string]string{"provider": provider},
 	}
-	p.mu.Lock()
-	p.ready[req.PluginDir] = resolved
-	p.mu.Unlock()
 	return resolved, nil
-}
-
-// Status returns ready for a plugin folder the library was provisioned for, and
-// missing for any other folder.
-func (p *ONNXProvisioner) Status(_ context.Context, req manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
-	p.mu.Lock()
-	resolved, ok := p.ready[req.PluginDir]
-	p.mu.Unlock()
-	if !ok {
-		return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateMissing}, nil
-	}
-	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
 }
 
 // provisioning fetches or finds the library with the progress of a download reported.

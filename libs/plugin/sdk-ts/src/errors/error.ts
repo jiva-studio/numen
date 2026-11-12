@@ -48,18 +48,9 @@ const CARRIES = new Set<Code>([
   Code.Unimplemented,
 ])
 
+// REPORTED is the name of the ReportedError of @numen/core-client, whose message is shown as it is.
+// Other errors carry backend or platform text and are shown by their code.
 const REPORTED = 'ReportedError'
-
-/**
- * An error whose message is shown as it is.
- * Other errors carry backend or platform text and are shown by their code.
- */
-export class ReportedError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = REPORTED
-  }
-}
 
 /** Whatever a try block threw or a promise rejected with: anything can be thrown. */
 export type Caught = unknown

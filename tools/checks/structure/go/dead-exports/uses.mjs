@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The TypeScript half of the check `go/single-consumer`: the exports of the TypeScript SDK, and every
+ * The TypeScript half of the check `go/dead-exports`: the exports of the TypeScript SDK, and every
  * use of them and of the protocol services in the TypeScript and Vue sources of apps, libs and plugins,
  * read with the type checker of each package. Prints JSON: `items`, `uses` as [target, file, user], and
  * the number of packages and files read.

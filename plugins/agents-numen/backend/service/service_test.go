@@ -2,17 +2,14 @@ package service
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -22,41 +19,30 @@ import (
 
 const testToken = "plugin-token"
 
+// startPlugin serves Mount, which reads the host from the environment as a launched process of the
+// plugin does, and returns the address of the plugin.
 func startPlugin(t *testing.T) string {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "4000")
 	t.Setenv(hostcall.PluginTokenEnv, testToken)
-	stdin, hold := io.Pipe()
-	cleanup.CloseAfter(t, hold)
-	s := server.New(server.WithPort(0), server.WithToken(testToken), server.WithStdin(stdin), server.WithStdout(io.Discard), server.WithSignals())
-	if err := Mount(s); err != nil {
-		t.Fatal(err)
-	}
-	port, err := s.Listen()
+	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, stop := context.WithCancel(t.Context())
-	isDone := make(chan error, 1)
-	go func() { isDone <- s.ServeContext(ctx) }()
-	t.Cleanup(func() {
-		stop()
-		if err := <-isDone; err != nil {
-			t.Error(err)
-		}
-	})
-	return "http://127.0.0.1:" + strconv.Itoa(port)
+	web := httptest.NewServer(handler)
+	t.Cleanup(web.Close)
+	return web.URL
 }
 
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	pos := startPlugin(t)
 
-	res, err := servertest.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).Ping(t.Context())
+	_, protocol, err := servertest.NewLifecycleClient(http.DefaultClient, pos, testToken).Ping(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Protocol != server.ProtocolVersion {
-		t.Errorf("the protocol is %d", res.Protocol)
+	if protocol != server.ProtocolVersion {
+		t.Errorf("the protocol is %d", protocol)
 	}
 }
 

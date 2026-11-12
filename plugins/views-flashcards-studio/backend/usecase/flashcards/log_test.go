@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -375,7 +374,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	yesterdaySession := newTimedRun(yesterdayRun, clock.NewFake(yesterday))
+	yesterdaySession := newTimedRun(yesterdayRun, newFakeClock(yesterday))
 	if _, err := yesterdaySession.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -504,7 +503,7 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	record := newTimedRun(run, clock.NewFake(now))
+	record := newTimedRun(run, newFakeClock(now))
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -594,7 +593,7 @@ func TestTheHistoryCountsTheSameDaysAtAnyHour(t *testing.T) {
 	} {
 		t.Run(item.Format("15:04"), func(t *testing.T) {
 			t.Parallel()
-			l := loadAt(t, clock.NewFake(item), loadCards, loadDays, loadPerDay)
+			l := loadAt(t, newFakeClock(item), loadCards, loadDays, loadPerDay)
 
 			got, err := l.review.Execute(t.Context(), l.vault)
 			if err != nil {

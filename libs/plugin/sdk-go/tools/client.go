@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"net/http"
 
 	"connectrpc.com/connect"
 
@@ -213,50 +212,4 @@ func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, e
 		return nil, err
 	}
 	return readCallResponse(res.Msg), nil
-}
-
-// ServiceHandler handles tool listing and invocation with request headers.
-type ServiceHandler interface {
-	ListTools(ctx context.Context, header http.Header) (Listing, error)
-	InvokeTool(ctx context.Context, header http.Header, call Call) (*CallResponse, error)
-}
-
-type serviceAdapter struct {
-	numenv1connect.UnimplementedPluginToolServiceHandler
-	h ServiceHandler
-}
-
-func (a *serviceAdapter) ListTools(
-	ctx context.Context,
-	req *connect.Request[v1.ListToolsRequest],
-) (*connect.Response[v1.ListToolsResponse], error) {
-	listing, err := a.h.ListTools(ctx, req.Header())
-	if err != nil {
-		return nil, err
-	}
-	wire := make([]*v1.PluginTool, len(listing.Tools))
-	for i, t := range listing.Tools {
-		wire[i] = writeToolInfo(t)
-	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire}), nil
-}
-
-func (a *serviceAdapter) CallTool(
-	ctx context.Context,
-	req *connect.Request[v1.CallToolRequest],
-) (*connect.Response[v1.CallToolResponse], error) {
-	res, err := a.h.InvokeTool(ctx, req.Header(), Call{
-		Name:      req.Msg.GetName(),
-		Arguments: req.Msg.GetArguments(),
-		Context:   req.Msg.GetContext(),
-		VaultID:   req.Msg.GetVaultId(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return connect.NewResponse(writeCallResponse(res)), nil
-}
-
-func NewServiceHandler(h ServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewPluginToolServiceHandler(&serviceAdapter{h: h}, opts...)
 }

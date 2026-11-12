@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -22,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -67,8 +65,6 @@ type NoteUseCases struct {
 	Write        *note.Write
 	Create       *note.Create
 	Rename       *note.Rename
-	EditLinks    *note.EditLinks
-	Names        edit.NameQueries
 	OpeningNote  *query.GetOpeningNote
 	Headings     *query.ListHeadings
 	Neighborhood *query.GetNeighborhoodView
@@ -83,7 +79,7 @@ func (s *Services) UseNotes() {
 		s.state.Notices,
 		notewindow.NewProse(s.state, use.Read, use.Write, use.Create, use.Rename, writes),
 		notewindow.NewOutline(s.state, use.OpeningNote, use.Neighborhood, use.Headings),
-		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, writes), nil, nil, writes),
+		notewindow.NewLinks(s.state, use.ResolveLinks, nil, nil, writes),
 		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)
 }
@@ -195,14 +191,6 @@ func ServicesOf(o *Installation, state *State) *Services {
 func ViewOf(state *State) windowsession.View {
 	notices := state.Notices
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
-}
-
-func writeLink(links *note.EditLinks, names edit.NameQueries, writes *wire.Writes) *note.WriteLink {
-	if links == nil {
-		return nil
-	}
-	linking := note.NewWriteLink(*links, names, writes)
-	return &linking
 }
 
 func newEmptyCommandHandler(state *State) *command.Handler {
