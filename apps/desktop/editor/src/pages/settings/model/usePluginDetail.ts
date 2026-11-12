@@ -76,6 +76,7 @@ export function usePluginDetail(deps: PluginDetailDeps) {
   )
 
   const hasSettings = computed(() => hasPluginSettings(deps.getPlugin()))
+  const isApple = computed(() => deps.getSettings().getPlatform() === 'darwin')
   /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
   const fileCount = ref(0)
   const deleteProblem = ref('')
@@ -115,5 +116,5 @@ export function usePluginDetail(deps: PluginDetailDeps) {
 
   const deleteData = createDataDeletion(deps, deleteProblem, readFileCount)
 
-  return { managed, hasSettings, fileCount, deleteProblem, readmeText, deleteData }
+  return { managed, hasSettings, isApple, fileCount, deleteProblem, readmeText, deleteData }
 }

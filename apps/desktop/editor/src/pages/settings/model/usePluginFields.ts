@@ -77,11 +77,19 @@ export function usePluginFields(deps: PluginFieldsDeps) {
 }
 
 /** Whether each setting holds a value other than its default, and the write of the default back. */
-export function createSettingDefaults(deps: PluginFieldsDeps) {
+export function useSettingDefaults(deps: PluginFieldsDeps) {
   const pluginSettings = createFieldSettings(deps)
+  const changedKeys = computed(
+    () =>
+      new Set(
+        deps
+          .getPlugin()
+          .settings.filter((one) => isChangedFromDefault(one.default, pluginSettings.get(one.key)))
+          .map((one) => one.key),
+      ),
+  )
   return {
-    isChanged: (setting: PluginSettingInfo): boolean =>
-      isChangedFromDefault(setting.default, pluginSettings.get(setting.key)),
+    isChanged: (setting: PluginSettingInfo): boolean => changedKeys.value.has(setting.key),
     resetSetting: (setting: PluginSettingInfo): void => {
       if (setting.default !== undefined) pluginSettings.set(setting.key, setting.default)
     },

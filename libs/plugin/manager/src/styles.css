@@ -13,3 +13,13 @@
   --settings-near: 0.375rem;
   --settings-hover-bg: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
 }
+
+/* The surface of every card of the settings pages. A component that adds the class sets its own
+   padding where its content is not rows. */
+:where(.settings-card) {
+  box-sizing: border-box;
+  padding: var(--settings-card-inset) var(--settings-card-pad);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
+}

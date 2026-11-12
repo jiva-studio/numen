@@ -1,6 +1,5 @@
 /** The plugin list and the plugin page: data in by props, answers out as events. */
-import './tokens/settings.css'
-import './styles/card.css'
+import './styles.css'
 
 export { default as PluginsList } from './PluginsList.vue'
 export { default as PluginDetail } from './PluginDetail.vue'

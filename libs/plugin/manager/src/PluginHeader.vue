@@ -159,6 +159,6 @@ function onInstall(): void {
 }
 
 .plugin-header__description {
-  max-inline-size: 62ch;
+  max-inline-size: 34rem;
 }
 </style>

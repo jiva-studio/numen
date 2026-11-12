@@ -193,7 +193,7 @@ function onRunAction(key: string): void {
 }
 
 .plugin-detail__readme :deep(.prose) {
-  max-inline-size: 66ch;
+  max-inline-size: 36rem;
 }
 
 .plugin-detail__readme :deep(.prose > :first-child) {

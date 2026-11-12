@@ -294,7 +294,7 @@ function getReasonId(pluginId: string): string {
 }
 
 .plugins-list__none-hint {
-  max-inline-size: 40ch;
+  max-inline-size: 22rem;
   color: var(--numen-hushed);
 }
 
