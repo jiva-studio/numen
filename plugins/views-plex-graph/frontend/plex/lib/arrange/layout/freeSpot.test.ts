@@ -59,7 +59,9 @@ describe('the free spot of a group', () => {
       (Math.abs(sideways - GAPS.gap) < 1e-6 && Math.abs(spot.y - first.y) < SIZE.height) ||
       (Math.abs(lengthways - GAPS.lineGap) < 1e-6 && Math.abs(spot.x - first.x) < SIZE.width)
     expect(touches).toBe(true)
-    expect((spot.y - start.y) * direction.y + (spot.x - start.x) * direction.x).toBeGreaterThanOrEqual(-0.5)
+    expect(
+      (spot.y - start.y) * direction.y + (spot.x - start.x) * direction.x,
+    ).toBeGreaterThanOrEqual(-0.5)
     expect(isFree(spot, [at(0, 0), first], GAPS)).toBe(true)
   })
 
@@ -72,10 +74,7 @@ describe('the free spot of a group', () => {
     const first = at(start.x, start.y)
     const wall = [-3, -2, -1, 0, 1, 2, 3].flatMap((column) =>
       [-1, 0, 1, 2].map((row) =>
-        at(
-          column * (SIZE.width + GAPS.gap),
-          start.y + row * (SIZE.height + GAPS.lineGap),
-        ),
+        at(column * (SIZE.width + GAPS.gap), start.y + row * (SIZE.height + GAPS.lineGap)),
       ),
     )
     const spot = findFreeSpot([at(0, 0), ...wall], request([first]))

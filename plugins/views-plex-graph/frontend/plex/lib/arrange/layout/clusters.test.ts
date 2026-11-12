@@ -105,6 +105,8 @@ describe('what comes back from the placement', () => {
   })
 
   it('numbers the nodes of a relation by arrival', () => {
-    expect(placed.filter((each) => each.relation === 'child').map((each) => each.order)).toStrictEqual([0, 1])
+    expect(
+      placed.filter((each) => each.relation === 'child').map((each) => each.order),
+    ).toStrictEqual([0, 1])
   })
 })

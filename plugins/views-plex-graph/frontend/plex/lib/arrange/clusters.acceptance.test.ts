@@ -56,7 +56,8 @@ const getOutside = (nodes: readonly PlacedNode[], viewport: Window): string[] =>
 function countDistinct(values: readonly number[], tolerance: number): number {
   const sorted = [...values].sort((a, b) => a - b)
   return sorted.reduce(
-    (count, value, index) => (index === 0 || value - sorted[index - 1]! > tolerance ? count + 1 : count),
+    (count, value, index) =>
+      index === 0 || value - sorted[index - 1]! > tolerance ? count + 1 : count,
     0,
   )
 }
@@ -101,7 +102,11 @@ describe('no two boxes overlap', () => {
   it.each(cases)(
     '$name, measured $measure, room $room, window $viewport',
     ({ neighborhood, measure, room, viewport }) => {
-      const frame = arrange(neighborhood, { room, ...(viewport ? { viewport } : {}) }, measure ? { measure } : {})
+      const frame = arrange(
+        neighborhood,
+        { room, ...(viewport ? { viewport } : {}) },
+        measure ? { measure } : {},
+      )
       expect(getOverlaps(frame)).toStrictEqual([])
     },
   )
@@ -124,8 +129,10 @@ describe('each relation stands on its side of the focus', () => {
 
     expect(getShown(frame, 'parent').length).toBeGreaterThan(0)
     for (const node of getShown(frame, 'parent')) expect(node.y + node.height / 2).toBeLessThan(top)
-    for (const node of getShown(frame, 'child')) expect(node.y - node.height / 2).toBeGreaterThan(bottom)
-    for (const node of getShown(frame, 'sibling')) expect(node.x - node.width / 2).toBeGreaterThan(right)
+    for (const node of getShown(frame, 'child'))
+      expect(node.y - node.height / 2).toBeGreaterThan(bottom)
+    for (const node of getShown(frame, 'sibling'))
+      expect(node.x - node.width / 2).toBeGreaterThan(right)
     for (const node of getShown(frame, 'jump')) expect(node.x + node.width / 2).toBeLessThan(left)
   })
 
@@ -147,34 +154,45 @@ describe('a group never comes nearer the focus than its start', () => {
   }
   const along = (node: PlacedNode, [dx, dy]: readonly [number, number]) => node.x * dx + node.y * dy
 
-  it.each(RELATION_NAMES.flatMap((relation) => [1, 4, 9, 20].map((count) => ({ relation, count }))))(
-    '$count $relation: no node is nearer than the first one alone',
-    ({ relation, count }) => {
-      const alone = getShown(arrange(build('A note', { [relation]: 1 })), relation)[0]!
-      const group = getShown(arrange(build('A note', { [relation]: count })), relation)
-      expect(group).toHaveLength(count)
-      const start = along(alone, DIRECTIONS[relation])
-      for (const node of group) expect(along(node, DIRECTIONS[relation])).toBeGreaterThanOrEqual(start - 0.5)
-    },
-  )
+  it.each(
+    RELATION_NAMES.flatMap((relation) => [1, 4, 9, 20].map((count) => ({ relation, count }))),
+  )('$count $relation: no node is nearer than the first one alone', ({ relation, count }) => {
+    const alone = getShown(arrange(build('A note', { [relation]: 1 })), relation)[0]!
+    const group = getShown(arrange(build('A note', { [relation]: count })), relation)
+    expect(group).toHaveLength(count)
+    const start = along(alone, DIRECTIONS[relation])
+    for (const node of group)
+      expect(along(node, DIRECTIONS[relation])).toBeGreaterThanOrEqual(start - 0.5)
+  })
 })
 
 describe('a large group is a block, not a line', () => {
-  it.each([undefined, { width: 1600, height: 1000 }])('stacks nine children in rows of at most five, window %o', (viewport) => {
-    const frame = arrange(build('A note', { child: 9 }), viewport ? { viewport } : {})
-    const rows = new Map<number, number>()
-    for (const child of getShown(frame, 'child')) {
-      const row = Math.round(child.y)
-      rows.set(row, (rows.get(row) ?? 0) + 1)
-    }
-    expect(rows.size).toBeGreaterThanOrEqual(2)
-    expect(Math.max(...rows.values())).toBeLessThanOrEqual(5)
-  })
+  it.each([undefined, { width: 1600, height: 1000 }])(
+    'stacks nine children in rows of at most five, window %o',
+    (viewport) => {
+      const frame = arrange(build('A note', { child: 9 }), viewport ? { viewport } : {})
+      const rows = new Map<number, number>()
+      for (const child of getShown(frame, 'child')) {
+        const row = Math.round(child.y)
+        rows.set(row, (rows.get(row) ?? 0) + 1)
+      }
+      expect(rows.size).toBeGreaterThanOrEqual(2)
+      expect(Math.max(...rows.values())).toBeLessThanOrEqual(5)
+    },
+  )
 
-  it.each([undefined, { width: 1600, height: 1000 }])('spreads nine siblings over two columns or more, window %o', (viewport) => {
-    const frame = arrange(build('A note', { sibling: 9 }), viewport ? { viewport } : {})
-    expect(countDistinct(getShown(frame, 'sibling').map((node) => node.x), 10)).toBeGreaterThanOrEqual(2)
-  })
+  it.each([undefined, { width: 1600, height: 1000 }])(
+    'spreads nine siblings over two columns or more, window %o',
+    (viewport) => {
+      const frame = arrange(build('A note', { sibling: 9 }), viewport ? { viewport } : {})
+      expect(
+        countDistinct(
+          getShown(frame, 'sibling').map((node) => node.x),
+          10,
+        ),
+      ).toBeGreaterThanOrEqual(2)
+    },
+  )
 })
 
 describe('a larger group stands further out', () => {
@@ -228,8 +246,18 @@ describe('a long group spreads instead of running into one column', () => {
     const frame = arrange(build('A note', { jump: 30 }), inWindow({ width: 1600, height: 1000 }))
     const jumps = getShown(frame, 'jump')
     expect(jumps.length).toBeGreaterThanOrEqual(20)
-    expect(countDistinct(jumps.map((node) => node.x), 10)).toBeGreaterThanOrEqual(3)
-    expect(countDistinct(jumps.map((node) => node.y), 10)).toBeGreaterThanOrEqual(3)
+    expect(
+      countDistinct(
+        jumps.map((node) => node.x),
+        10,
+      ),
+    ).toBeGreaterThanOrEqual(3)
+    expect(
+      countDistinct(
+        jumps.map((node) => node.y),
+        10,
+      ),
+    ).toBeGreaterThanOrEqual(3)
   })
 })
 
@@ -253,11 +281,14 @@ describe('what is left out is counted, and only the last notes go', () => {
   it.each([
     ['overcrowded', neighborhoods.overcrowded],
     ['nine, forty, nine and nine', many],
-  ])('leaves out at least one note and keeps every box in the window in %s', (_name, neighborhood) => {
-    const frame = arrange(neighborhood, inWindow(tiny))
-    expect(Object.values(frame.overflow).some((count) => count > 0)).toBe(true)
-    expect(getOutside(frame.nodes, tiny)).toStrictEqual([])
-  })
+  ])(
+    'leaves out at least one note and keeps every box in the window in %s',
+    (_name, neighborhood) => {
+      const frame = arrange(neighborhood, inWindow(tiny))
+      expect(Object.values(frame.overflow).some((count) => count > 0)).toBe(true)
+      expect(getOutside(frame.nodes, tiny)).toStrictEqual([])
+    },
+  )
 
   it('draws no line to a note that is not shown', () => {
     const frame = arrange(many, inWindow(tiny))
@@ -294,28 +325,35 @@ describe('boxes narrow and gaps close before a note is left out', () => {
 
   const getTightness = (packed: PlexOptions): number =>
     Math.round(
-      ((packed.nodeSize.width - packed.minWidth) / (DEFAULT_OPTIONS.nodeSize.width - packed.minWidth)) * 128,
+      ((packed.nodeSize.width - packed.minWidth) /
+        (DEFAULT_OPTIONS.nodeSize.width - packed.minWidth)) *
+        128,
     ) / 128
 
   it('has a window that cannot hold the neighborhood at the settings', () => {
-    const needs = windows.filter((viewport) => !createHolder(viewport)(resolveOptions({ viewport })))
+    const needs = windows.filter(
+      (viewport) => !createHolder(viewport)(resolveOptions({ viewport })),
+    )
     expect(needs.length).toBeGreaterThan(0)
   })
 
-  it.each(windows)('finds the loosest packing that holds everything in $width×$height', (viewport) => {
-    const options = resolveOptions({ viewport })
-    const canHoldAll = createHolder(viewport)
-    const packed = measureCrowding(options, canHoldAll)
+  it.each(windows)(
+    'finds the loosest packing that holds everything in $width×$height',
+    (viewport) => {
+      const options = resolveOptions({ viewport })
+      const canHoldAll = createHolder(viewport)
+      const packed = measureCrowding(options, canHoldAll)
 
-    if (canHoldAll(options)) {
-      expect(packed).toStrictEqual(options)
-      return
-    }
-    expect(canHoldAll(packed)).toBe(true)
-    const tightness = getTightness(packed)
-    expect(tightness).toBeLessThan(1)
-    expect(canHoldAll(packOptions(options, tightness + 1 / 128))).toBe(false)
-  })
+      if (canHoldAll(options)) {
+        expect(packed).toStrictEqual(options)
+        return
+      }
+      expect(canHoldAll(packed)).toBe(true)
+      const tightness = getTightness(packed)
+      expect(tightness).toBeLessThan(1)
+      expect(canHoldAll(packOptions(options, tightness + 1 / 128))).toBe(false)
+    },
+  )
 
   it('returns a window that holds everything at the settings unchanged', () => {
     const options = resolveOptions({ viewport: { width: 2400, height: 1400 } })
@@ -382,13 +420,18 @@ describe('the same input gives the same picture', () => {
 
   it('places a node alike whichever relation comes first in the list', () => {
     const { typical } = neighborhoods
-    const order = (node: PlexNode) => (node.relation === 'focus' ? -1 : -RELATION_NAMES.indexOf(node.relation))
+    const order = (node: PlexNode) =>
+      node.relation === 'focus' ? -1 : -RELATION_NAMES.indexOf(node.relation)
     const shuffled = { ...typical, nodes: [...typical.nodes].sort((a, b) => order(a) - order(b)) }
     const positions = (frame: PlexFrame) =>
-      frame.nodes.map((n) => [n.id, n.x, n.y, n.width, n.height] as const).sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      frame.nodes
+        .map((n) => [n.id, n.x, n.y, n.width, n.height] as const)
+        .sort((a, b) => (a[0] < b[0] ? -1 : 1))
     const options = inWindow({ width: 1200, height: 800 })
 
-    expect(positions(arrange(shuffled, options))).toStrictEqual(positions(arrange(typical, options)))
+    expect(positions(arrange(shuffled, options))).toStrictEqual(
+      positions(arrange(typical, options)),
+    )
   })
 })
 
@@ -411,7 +454,12 @@ describe('any placement strategy is admitted by the window', () => {
   it('shows only what is inside a 700×600 window and counts the rest', () => {
     const viewport = { width: 700, height: 600 }
     const frame = arrange(neighborhood, inWindow(viewport), { placement: ring })
-    expect(getOutside(frame.nodes.filter((n) => n.relation !== 'focus'), viewport)).toStrictEqual([])
+    expect(
+      getOutside(
+        frame.nodes.filter((n) => n.relation !== 'focus'),
+        viewport,
+      ),
+    ).toStrictEqual([])
     for (const relation of RELATION_NAMES) {
       expect(getShown(frame, relation).length + (frame.overflow[relation] ?? 0)).toBe(
         getArrived(neighborhood, relation).length,
