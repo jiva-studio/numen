@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"io"
 	"maps"
 	"slices"
 	"strings"
@@ -51,11 +52,11 @@ type Runner struct {
 	deps     Dependencies
 	sessions sessions
 
-	mu       sync.Mutex
-	running  sync.WaitGroup
-	closing  context.Context
-	closeAll context.CancelFunc
-	isClosed bool
+	mu        sync.Mutex
+	running   sync.WaitGroup
+	closing   chan struct{}
+	isClosed  bool
+	cleanErrs error
 }
 
 // New creates a Runner, and refuses dependencies that are missing.
@@ -63,10 +64,9 @@ func New(deps Dependencies) (*Runner, error) {
 	if deps.Settings == nil || deps.Program == nil || deps.Models == nil || deps.Launcher == nil || deps.ToolServer == nil {
 		return nil, errors.New("task: every dependency but the tools is required")
 	}
-	closing, closeAll := context.WithCancel(context.Background())
 	return &Runner{
 		deps: deps, sessions: sessions{mu: sync.Mutex{}, byKey: nil, order: nil},
-		mu: sync.Mutex{}, running: sync.WaitGroup{}, closing: closing, closeAll: closeAll, isClosed: false,
+		mu: sync.Mutex{}, running: sync.WaitGroup{}, closing: make(chan struct{}), isClosed: false, cleanErrs: nil,
 	}, nil
 }
 
@@ -113,8 +113,7 @@ func (r *Runner) RunTask(
 		Session: "", ToolsURL: "", ToolsToken: "",
 	}
 	if served != nil {
-		// The endpoint ends with the run; a call cut by its shutdown has already failed the run.
-		defer func() { _ = served.Close(context.WithoutCancel(ctx)) }()
+		defer r.releaseTools(ctx, served)
 		run.ToolsURL, run.ToolsToken = served.GetURL(), served.GetToken()
 	}
 	key := ""
@@ -134,12 +133,19 @@ func (r *Runner) RunTask(
 	if frames.sendErr != nil {
 		return nil, frames.sendErr
 	}
-	switch {
-	case err != nil:
+	if err != nil {
 		return nil, readFailure(ctx, err)
-	case runCtx.Err() != nil:
+	}
+	if runCtx.Err() != nil {
 		return nil, connection.NewStopError(connection.ReasonUnavailable)
-	case reason == "":
+	}
+	return endTurn(frames, reason)
+}
+
+// endTurn ends the calls of a run that ended with no reason and returns the end of the turn, or sends
+// what the program said of a failure as a message of its own and stops.
+func endTurn(frames *turn, reason string) (*contract.TaskDone, error) {
+	if reason == "" {
 		if err := frames.finishCalls(); err != nil {
 			return nil, err
 		}
@@ -149,6 +155,17 @@ func (r *Runner) RunTask(
 		return nil, err
 	}
 	return nil, connection.NewStopError(connection.ReasonUnavailable)
+}
+
+// releaseTools ends the endpoint of a run. Its error is kept for Close: the turn has ended either way.
+func (r *Runner) releaseTools(ctx context.Context, served ServedTools) {
+	err := served.Close(context.WithoutCancel(ctx))
+	if err == nil {
+		return
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.cleanErrs = errors.Join(r.cleanErrs, err)
 }
 
 // Answer runs the program once on the prompt, with no tool, in an empty folder, and returns the text of
@@ -230,8 +247,34 @@ func (r *Runner) runProgram(ctx context.Context, command Command, out output, re
 		return "", connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	sink := &runSink{output: out, record: record, reason: "", isFinished: false}
-	handler := events.NewHandler(sink)
 	stdout := proc.Output()
+	read := readOutput(stdout, sink)
+	if sink.isFinished || read.handleErr != nil || read.scanErr != nil {
+		stop()
+	}
+	waitErr := errors.Join(stdout.Close(), proc.Wait())
+	if read.handleErr != nil {
+		return "", read.handleErr
+	}
+	select {
+	case <-ctx.Done():
+		return "", nil
+	default:
+	}
+	return getRunReason(sink, read, waitErr, proc.Stderr()), nil
+}
+
+// readResult is what reading the output of a run found besides the reports.
+type readResult struct {
+	isWritten bool
+	scanErr   error
+	handleErr error
+}
+
+// readOutput hands each line the program writes to the sink, an event as what it reports and any other
+// line as text, until the program reports its result or the sink refuses a report.
+func readOutput(stdout io.Reader, sink *runSink) readResult {
+	handler := events.NewHandler(sink)
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(nil, maxLine)
 	isWritten := false
@@ -245,28 +288,25 @@ func (r *Runner) runProgram(ctx context.Context, command Command, out output, re
 			handler.SendText(text + "\n")
 		}
 	}
-	scanErr := scanner.Err()
-	if sink.isFinished || handler.Err() != nil || scanErr != nil {
-		stop()
-	}
-	waitErr := errors.Join(stdout.Close(), proc.Wait())
+	return readResult{isWritten: isWritten, scanErr: scanner.Err(), handleErr: handler.Err()}
+}
+
+// getRunReason returns the reason a run failed: what the program reported, else what it wrote of an
+// exit that failed, else none.
+func getRunReason(sink *runSink, read readResult, waitErr error, stderr string) string {
 	switch {
-	case handler.Err() != nil:
-		return "", handler.Err()
-	case ctx.Err() != nil:
-		return "", nil
 	case sink.reason != "":
-		return sink.reason, nil
+		return sink.reason
 	case sink.isFinished:
-		return "", nil
-	case scanErr != nil:
-		return scanErr.Error(), nil
+		return ""
+	case read.scanErr != nil:
+		return read.scanErr.Error()
 	case waitErr != nil:
-		return getFailureMessage(waitErr, proc.Stderr()), nil
-	case !isWritten && strings.TrimSpace(proc.Stderr()) != "":
-		return getFailureMessage(errNoOutput, proc.Stderr()), nil
+		return getFailureMessage(waitErr, stderr)
+	case !read.isWritten && strings.TrimSpace(stderr) != "":
+		return getFailureMessage(errNoOutput, stderr)
 	}
-	return "", nil
+	return ""
 }
 
 func (r *Runner) listTools(ctx context.Context) ([]*tools.ToolInfo, error) {
@@ -301,15 +341,23 @@ func (r *Runner) begin(ctx context.Context) (context.Context, func(), error) {
 	}
 	r.running.Add(1)
 	runCtx, cancel := context.WithCancel(ctx)
-	stop := context.AfterFunc(r.closing, cancel)
+	ended := make(chan struct{})
+	go func() {
+		select {
+		case <-r.closing:
+			cancel()
+		case <-ended:
+		}
+	}()
 	return runCtx, func() {
-		stop()
+		close(ended)
 		cancel()
 		r.running.Done()
 	}, nil
 }
 
-// Close ends every run, waits for it and refuses further runs.
+// Close ends every run, waits for it and refuses further runs. It returns the errors of ending the
+// endpoints of the runs.
 func (r *Runner) Close() error {
 	r.mu.Lock()
 	if r.isClosed {
@@ -317,10 +365,14 @@ func (r *Runner) Close() error {
 		return nil
 	}
 	r.isClosed = true
-	r.closeAll()
+	close(r.closing)
 	r.mu.Unlock()
 	r.running.Wait()
-	return nil
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	err := r.cleanErrs
+	r.cleanErrs = nil
+	return err
 }
 
 func readFailure(ctx context.Context, err error) error {

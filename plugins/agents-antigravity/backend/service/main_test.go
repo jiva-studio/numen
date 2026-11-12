@@ -93,7 +93,11 @@ func callNoteRead(configPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = session.Close() }()
+	defer func() {
+		if err := session.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}()
 	result, err := session.CallTool(ctx, &sdk.CallToolParams{Name: "note_read", Arguments: map[string]any{"path": "Garden/Beds.md"}})
 	if err != nil {
 		return "", err

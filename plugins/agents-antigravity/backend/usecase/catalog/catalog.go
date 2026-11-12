@@ -44,8 +44,11 @@ func New(lister Lister, isAsync bool) *Catalog {
 // the last list of the cache, or none.
 func (c *Catalog) List(ctx context.Context, program string) []reasoning.Family {
 	list := func(ctx context.Context) ([]model.Model, error) { return c.lister.List(ctx, []string{program}) }
-	// A failed load returns the last list of the cache, or none, and the program is offered with it.
-	items, _, _ := c.models.Get(ctx, program, list)
+	items, _, err := c.models.Get(ctx, program, list)
+	if err != nil {
+		// A failed load returns the last list of the cache, or none, and the program is offered with it.
+		return model.Fold(items)
+	}
 	return model.Fold(items)
 }
 

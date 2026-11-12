@@ -65,7 +65,7 @@ func Fold(models []Listed) []Family {
 		}
 		found := byBase[base]
 		if found == nil {
-			found = &group{base: base}
+			found = &group{base: base, listings: nil, levels: nil}
 			byBase[base] = found
 			groups = append(groups, found)
 		}
@@ -78,7 +78,7 @@ func Fold(models []Listed) []Family {
 		if len(one.listings) == 1 {
 			only := one.listings[0]
 			families = append(families, Family{
-				Name: only.Name, Title: only.Title, variants: map[string]string{"": only.Name},
+				Name: only.Name, Title: only.Title, Levels: nil, Default: "", variants: map[string]string{"": only.Name},
 			})
 			continue
 		}
