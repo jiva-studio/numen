@@ -273,6 +273,9 @@ message ManifestTabKind {
   // rank is default or alternate, as a reader's: among the kinds whose condition holds over a note,
   // a default kind is chosen before an alternate one. Empty is default.
   string rank = 5;
+  // is_note_editor says the kind edits the text of the note its tab opens on: the window gives its
+  // tabs the store of open notes, which saves what is typed.
+  bool is_note_editor = 6;
 }
 
 message ManifestDependency {

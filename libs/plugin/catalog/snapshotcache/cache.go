@@ -128,7 +128,7 @@ func newEntryFile(entry catalog.Entry) entryFile {
 func newEntry(stored entryFile) catalog.Entry {
 	var kinds []manifest.TabKind
 	for _, kind := range stored.TabKinds {
-		kinds = append(kinds, manifest.TabKind{Kind: kind.Kind, Title: kind.Title, Icon: kind.Icon, When: "", Rank: domain.RankDefault})
+		kinds = append(kinds, manifest.TabKind{Kind: kind.Kind, Title: kind.Title, Icon: kind.Icon, When: "", Rank: domain.RankDefault, IsNoteEditor: false})
 	}
 	return catalog.Entry{
 		ID:              stored.ID,

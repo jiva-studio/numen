@@ -49,7 +49,7 @@ import {
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredParts } from './pluginTabKind'
-import { NOTE_KIND, createBufferedNoteState } from './customTabBuffer'
+import { createBufferedNoteState } from './customTabBuffer'
 
 export function createPluginPaneWrapper(
   pluginId: string,
@@ -278,6 +278,8 @@ export function createCustomTabKind(
   registration: TabKindRegistration,
   deps?: PluginHostDeps & {
     readonly getContext?: (() => PluginContext | undefined) | undefined
+    /** The manifest declares the kind as the editor of the text of a note: its tabs hold the note in the store of open notes. */
+    readonly isNoteEditor?: boolean
   },
 ): AnyTabKind {
   const declared = pickDeclaredParts(registration)
@@ -299,7 +301,7 @@ export function createCustomTabKind(
     kind: registration.kind,
     pluginId,
     open: (targetPath, id) => {
-      const buffer = registration.kind === NOTE_KIND ? deps?.getNoteBuffer?.() : undefined
+      const buffer = deps?.isNoteEditor ? deps.getNoteBuffer?.() : undefined
       if (!buffer)
         return createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps })
       return createBufferedNoteState(

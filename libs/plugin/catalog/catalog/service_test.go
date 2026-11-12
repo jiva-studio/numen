@@ -18,7 +18,7 @@ const (
 func entry(id, version string, state catalog.State, kinds ...string) catalog.Entry {
 	tabs := make([]manifest.TabKind, 0, len(kinds))
 	for _, kind := range kinds {
-		tabs = append(tabs, manifest.TabKind{Kind: kind, Title: kind, Icon: "", When: "", Rank: ""})
+		tabs = append(tabs, manifest.TabKind{Kind: kind, Title: kind, Icon: "", When: "", Rank: "", IsNoteEditor: false})
 	}
 	return catalog.Entry{
 		ID: id, Name: id, Version: version, Description: "", Category: "",

@@ -117,11 +117,15 @@ function pick(context: PluginContext, path: readonly string[]): { target: unknow
   return { target, key: path[path.length - 1] ?? '' }
 }
 
+/** The arguments of a member whose wrapper in the context reads them; every other member takes two paths. */
+const ARGUMENTS: Readonly<Record<string, readonly unknown[]>> = {
+  'vault.buffers.track': [{ flush: async () => undefined }],
+}
+
 function call(context: PluginContext, path: readonly string[]): unknown {
   const { target, key } = pick(context, path)
   return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(
-    'a.md',
-    'b.md',
+    ...(ARGUMENTS[path.join('.')] ?? ['a.md', 'b.md']),
   )
 }
 

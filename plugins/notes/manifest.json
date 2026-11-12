@@ -13,7 +13,8 @@
         "title": "Note",
         "icon": "file-text",
         "when": "target.noteType == 'note'",
-        "rank": "alternate"
+        "rank": "alternate",
+        "isNoteEditor": true
       },
       { "kind": "reader:markdown", "title": "Markdown Note Editor", "icon": "file-text" }
     ],
