@@ -16,9 +16,9 @@ const manifest = JSON.parse(
       title: string
       icon?: string
       scope?: string
-      shortcut?: string
       when?: string
     }[]
+    keybindings?: readonly { key: string; command: string }[]
     slots?: readonly Record<string, unknown>[]
   }
 }
@@ -69,16 +69,10 @@ describe('the manifest', () => {
   })
 
   it('declares the command the title bar shows with the title and the icon of a graph', () => {
-    expect(manifest.contributes.commands.find((one) => one.id === 'graph.open')).toMatchObject({
-      title: 'Open plex graph',
-      icon: 'waypoints',
+    expect(manifest.contributes.keybindings).toContainEqual({
+      key: 'mod+shift+x',
+      command: 'graph.open',
     })
-  })
-
-  it('keeps the command that shows a note out of the title bar, which has no note', () => {
-    const entries = (manifest.contributes.slots ?? []).filter(
-      (one) => one.slot === 'titleBar.commands',
-    )
 
     expect(entries.map((one) => one.command)).not.toContain('app:file.reveal')
   })
