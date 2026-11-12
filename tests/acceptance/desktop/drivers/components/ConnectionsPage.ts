@@ -18,8 +18,11 @@ export class ConnectionsPage {
     return this.page.getByRole('dialog')
   }
 
+  /** A connection of the list is a button that opens it for editing. */
   getRow(panel: Locator, name: string): Locator {
-    return panel.getByRole('listitem', { name: new RegExp(`^${escapeRegExp(name)}$`) })
+    return panel
+      .getByRole('list')
+      .getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}$`) })
   }
 
   /** Chooses a type in the open dialog; the list of the types is a searchable list. */
@@ -44,13 +47,13 @@ export class ConnectionsPage {
 
   /** Opens the dialog that edits the connection. */
   async openEdit(panel: Locator, name: string): Promise<void> {
-    await this.getRow(panel, name).getByRole('button', { name: 'Connection actions' }).click()
-    await this.page.getByRole('menuitem', { name: 'Edit' }).click()
+    await this.getRow(panel, name).click()
     await expect(this.getDialog()).toBeVisible()
   }
 
+  /** Opens the dialog of the connection and chooses its Delete, which asks before it deletes. */
   async chooseDelete(panel: Locator, name: string): Promise<void> {
-    await this.getRow(panel, name).getByRole('button', { name: 'Connection actions' }).click()
-    await this.page.getByRole('menuitem', { name: 'Delete' }).click()
+    await this.openEdit(panel, name)
+    await this.getDialog().getByRole('button', { name: 'Delete', exact: true }).click()
   }
 }
