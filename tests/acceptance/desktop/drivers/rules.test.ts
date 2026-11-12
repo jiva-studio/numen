@@ -141,6 +141,7 @@ describe('getCurrentVersionLabel', () => {
   it('gives the title the product shows for the live version of each kind of text', () => {
     expect(getCurrentVersionLabel('recognized text')).toBe('Recognized text (current)')
     expect(getCurrentVersionLabel('transcript')).toBe('Transcript (current)')
+    expect(getCurrentVersionLabel('proofread text')).toBe('Proofread text (current)')
     expect(getCurrentVersionLabel('article')).toBe('Article (current)')
   })
 })

@@ -1,4 +1,4 @@
-import type { TextKind } from '../drivers/rules.js'
+import type { TabKindChoice, TextKind } from '../drivers/rules.js'
 import { When } from '../support/bdd.js'
 
 When('the person recognizes the text of the file at {string}', async ({ person }, filePath: string) => {
@@ -36,3 +36,14 @@ When('the person deletes the text of the link {string}', async ({ person }, addr
 When('the person deletes the video of the link {string}', async ({ person }, address: string) => {
   await person.text.deleteVideo(address)
 })
+
+When('the person deletes the {text} of the file at {string}', async ({ person }, kind: TextKind, filePath: string) => {
+  await person.text.deleteVersion(filePath, kind)
+})
+
+When(
+  'the person writes {string} in the transcript of the {tab} {reference} {string}',
+  async ({ person }, words: string, kind: TabKindChoice, reference: string, name: string) => {
+    await person.text.writeTranscript(words, kind, reference, name)
+  },
+)

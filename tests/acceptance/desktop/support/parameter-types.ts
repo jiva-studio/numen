@@ -45,7 +45,7 @@ defineParameterType({
 
 defineParameterType({
   name: 'text',
-  regexp: /recognized text|transcript/,
+  regexp: /recognized text|transcript|proofread text/,
   transformer: (text: string) => text,
 })
 

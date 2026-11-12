@@ -1,6 +1,5 @@
 {
   "tests/plugins/agents.chat/agent.spec.ts": 32,
-  "tests/plugins/engines.transcription/transcribe.spec.ts": 16,
   "tests/plugins/notes/frontmatter.spec.ts": 12,
   "tests/plugins/readers.epub/contents.spec.ts": 9,
   "tests/plugins/readers.pdf/advanced.spec.ts": 23,

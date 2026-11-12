@@ -93,11 +93,12 @@ export const assertPaletteField = (action: PaletteAction, kind: PaletteField): v
 }
 
 /** The kinds of text a file or a link has, as the product titles its versions. */
-export type TextKind = 'recognized text' | 'transcript' | 'article'
+export type TextKind = 'recognized text' | 'transcript' | 'proofread text' | 'article'
 
 const TEXT_KIND_TITLES: Record<TextKind, string> = {
   'recognized text': 'Recognized text',
   transcript: 'Transcript',
+  'proofread text': 'Proofread text',
   article: 'Article',
 }
 

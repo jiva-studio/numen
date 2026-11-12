@@ -3,7 +3,8 @@ import { expect } from 'playwright/test'
 import { getTab } from '../../../e2e/desktop/tests/support/layout.js'
 import type { ApplicationDriver } from './application.js'
 import type { WindowDriver } from './window.js'
-import { getAddressTitle, getLinkNotePath, getCurrentVersionLabel, type TextKind } from './rules.js'
+import { getAddressTitle, getLinkNotePath, getCurrentVersionLabel, type TabKindChoice, type TextKind } from './rules.js'
+import { TabPanel } from './components/TabPanel.js'
 import type { Scenario } from './scenario.js'
 import type { TabDriver } from './tabs.js'
 import { hasMadeText, hasVersions } from './text-versions.js'
@@ -18,6 +19,8 @@ const DOWNLOAD_MEDIA = 'Download media'
 const VIDEO = 'Video'
 const DELETE_TEXT = 'Delete text'
 const DELETE_MEDIA = 'Delete media'
+/** The call of the host that stores an edit of a text. */
+const CREATE_TEXT_EDIT = '/numen.v1.TextService/CreateTextEdit'
 
 export class TextDriver {
   constructor(
@@ -44,6 +47,24 @@ export class TextDriver {
     await this.tab.showFile(filePath)
     await this.application.runCommand(PROOFREAD_TEXT)
     await this.application.pickItem(getCurrentVersionLabel(kind))
+  }
+
+  async deleteVersion(filePath: string, kind: TextKind): Promise<void> {
+    await this.tab.showFile(filePath)
+    await this.application.runCommand(DELETE_TEXT)
+    await this.application.pickItem(getCurrentVersionLabel(kind))
+  }
+
+  /** The person clicks the transcript, goes to its end, types and saves with the key; the save answers once the edit is written. */
+  async writeTranscript(words: string, kind: TabKindChoice, reference: string, name: string): Promise<void> {
+    const { page } = this.scenario
+    const panel = await this.tab.getTabPanel(kind, reference, name)
+    await new TabPanel(panel).transcript().click()
+    await page.keyboard.press('ControlOrMeta+End')
+    await page.keyboard.type(` ${words}`)
+    const saved = page.waitForResponse((answer) => answer.url().includes(CREATE_TEXT_EDIT))
+    await page.keyboard.press('ControlOrMeta+s')
+    expect((await saved).ok()).toBe(true)
   }
 
   async importLink(address: string): Promise<void> {
