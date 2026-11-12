@@ -43,8 +43,8 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 
 ### What a plugin may import
 
-- Go: `libs/plugin/sdk-go` and its feature modules (`host`, `agent`, `wasm`), the standard library, third-party modules. The note types come from `plugin/sdk-go/host/domain`, `host/markdown`, `host/edit` and `host/ulid`. `go.mod` requires nothing else directly and has no `replace` to a folder; `go.work` resolves the SDK in this repository.
-- TypeScript: `@numen/plugin-sdk` and `@numen/ui` through their main entries (and the entries their `exports` declare: `@numen/plugin-sdk/testing`, `/vite`, `/host-modules`), `vue`, third-party packages, and files of the plugin by relative path.
+- Go: `libs/plugin/sdk-go` and its packages (`host`, `connection`, `searchsource`, `health`, `tools`, `wasm`) and the contracts (`contracts/llm`, `contracts/acp`), the standard library, third-party modules. The note types come from `plugin/sdk-go/host/domain`, `host/markdown`, `host/edit` and `host/ulid`. `go.mod` requires nothing else directly and has no `replace` to a folder; `go.work` resolves the SDK in this repository.
+- TypeScript: `@numen/plugin-sdk` and `@numen/ui` through their main entries (and the entries their `exports` declare: `@numen/plugin-sdk/testing`, `/vite`, `/host-modules`, `/contracts/llm`, `/contracts/acp`), `vue`, third-party packages, and files of the plugin by relative path.
 - A frontend file imports nothing from `backend/`, and a backend file imports nothing from `frontend/`. The two sides meet only in the JSON fixtures of `testdata/api/`.
 - The rest of the repository stays out of a plugin: `libs/note`, `libs/core/protocol`, `@numen/core-client`, `@numen/plugin-loader`, `@numen/workbench`, `@connectrpc/*`, `@bufbuild/*`, another plugin, the core, an application, the `@/` and `@plugins/` aliases, and any `.proto` file.
 
@@ -52,7 +52,9 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 
 | I am adding                                                                          | It goes in                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A capability the host resolves (`search.source`, `tools`, `ai.agent.provider`)       | `capabilities` in the manifest; the backend implements the SDK contract of that capability (`plugin/sdk-go/embedding`, `tools`, `agent`)                                                                                                  |
+| A capability the host resolves (`search.source`, `tools`)                            | `capabilities` in the manifest; the backend serves `numen.v1.SearchSourceService` through `plugin/sdk-go/searchsource` or `numen.v1.PluginToolService` through `plugin/sdk-go/tools` |
+| An operation other plugins call (`llm.chat`, `acp.task`)                             | A connection type in `contributes.connectionTypes` that lists the operation, served through `connection.Mount` with the typed adapter of its contract (`llm.Provide`, `acp.Provide`); a new operation shape is a contract in `plugin/sdk-go/contracts/<name>` and `sdk-ts/src/contracts/<name>`, never a message of the core protocol |
+| A state that stops the plugin from working (no connection, a missing model)          | A health item through `health.Report` (Go) or `context.health.report` (TypeScript), with an action such as `health.OpenSettings("source")`; a task reports progress only |
 | A command                                                                            | One entry in `contributes.commands` (id `object.action` in camelCase, title, icon, `when`, `arguments`). The handler is `register.command` in the frontend or an entry of a `command.Registry` mounted with `command.Mount` in the backend |
 | A handler of a shared command of the application                                     | `contributes.handlers` with a `when`; the handler is in the backend                                                                                                                                                                       |
 | An entry in a bar, a menu or a context menu                                          | `contributes.slots` (`command`, `view` or `submenu`); a view is a Vue component registered with `register.slotView` under the same id                                                                                                      |
@@ -143,12 +145,23 @@ A component of general use belongs in `@numen/ui` (what plugins need goes into `
 ## When something belongs in the SDK, is copied, or stays in the core
 
 - A helper that several plugins need is copied into each. The number of plugins that use it moves nothing into the SDK, `@numen/ui` or a shared package.
-- The SDK holds the contract between a plugin and the host: a host call and its types, the lifecycle of the server, the contracts of capabilities, a testing harness. It holds code that at least one plugin imports, and no engine, agent program or runtime.
+- The shared SDK holds the contract between a plugin and the host: a host call and its types, the lifecycle of the server, the generic connection, search source, health and tool clients, a testing harness. Its exports serve plugins of more than one family (`go/single-consumer`), and it holds no engine, agent program or runtime.
+- The shape of an operation is a contract in `plugin/sdk-go/contracts/<name>` and `sdk-ts/src/contracts/<name>`: protobuf messages, a typed client and a typed provider adapter. Plugins and applications import a contract; the core, the core protocol and the rest of the SDK never do (`ts/contracts-imports`).
 - The SDK lacks a call when the plugin reads an environment variable the host sets without an SDK function, builds a path the host owns, calls a host service without an SDK client, or parses a format the host defines (a note, a manifest, a vault path). The plugin needs that call from the SDK; it does not copy the parsing.
 - A change to the SDK reaches both SDKs: a call or field in `libs/plugin/sdk-go` is in `libs/plugin/sdk-ts` too, with the mapping in `libs/plugin/loader`. Event names are verb-object (`run-command`), booleans are `is…`, lists are plural nouns, spelling is American.
 - A mechanism lands in the same change as the first plugin that uses it, and reuses an existing service, route or host call before a new one is added.
-- The core keeps what is not the domain of one plugin: notes, vault, index and search, the plugin host, the work queue, texts, settings, agent routing, the default theme. Calibration, update checks, readers, engines and preset themes are plugins. The core names no plugin id.
-- Plugins reach each other through the core: a shared command with handlers, a capability, a service the protocol declares. A plugin does not import, start or call another.
+- The core keeps what is not the domain of any plugin: notes, vault, the index and all its storage, search over participants, the plugin host, the work queue, texts, settings, the generic connection mechanism, the default theme. Agents, models, calibration, update checks, readers, engines and preset themes are plugins. The core names no plugin id.
+- Plugins reach each other through the core: a shared command with handlers, a capability, a connection operation on the rows of the caller's settings. A plugin does not import, start or call another.
+
+## Which domain does it know
+
+Ask of every new package, type, RPC or export of the core, the core protocol (`libs/core/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
+
+- The list of agent programs was cached in the settings adapter of the core. An agent program is a connection type of agents-acp that serves `acp.task`; the core keeps the connection rows only.
+- The core held the model fields of a search source (pooling, handling, the model it came from, the token limit). A source now describes itself by an opaque recipe, a vector width and a chunk size; the model stays in engines-embeddings.
+- The shared command catalog `libs/core/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
+
+`go/single-consumer` fails on an RPC or an SDK export that one plugin or one family uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
 
 ## Permissions
 

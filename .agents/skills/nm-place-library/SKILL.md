@@ -63,7 +63,7 @@ Ask in this order. The first question answered yes names the home.
 - Between the two UI libraries: what plugins need goes into `@numen/ui`; what only applications need goes into `@numen/workbench`, which no plugin imports.
 - Is it the plugin list or the plugin page? It belongs to `@numen/plugin-manager`.
 - Does it load, start or host plugin frontends? It belongs to `@numen/plugin-loader`.
-- Does a plugin author call it? It belongs to `@numen/plugin-sdk`, and only when a plugin already imports it.
+- Does a plugin author call it? It belongs to `@numen/plugin-sdk`, and only when plugins of more than one family import it. The shape of an operation of connections is a contract in `src/contracts/<name>`, never a message of `@numen/protocol`.
 - Otherwise it stays in the window or the plugin that needs it.
 
 | I am adding | It goes in |
@@ -150,9 +150,19 @@ Behavior that depends on layout, paint order, focus-visible or pointer geometry 
 - `@numen/protocol` is edited in `.proto` files and generated with `buf generate`; one service per subject; a served negative result is an `ErrorCode` field and not a status code; a list that grows with time is paged.
 - `@numen/plugin-manager` defines `PluginInfo`, `PluginListing` and `ManagedPlugin`, draws them, and emits events. The window reads the catalog through `@numen/core-client` and maps entries to those types.
 - `@numen/plugin-loader` implements the plugin contract over `@numen/core-client`; each application implements the `LoaderHost` it declares. It imports no UI library.
-- `@numen/plugin-sdk` adds a call or field to the Go SDK and the TypeScript SDK together, exposes no `@numen/protocol` declaration, and holds no concrete engine.
+- `@numen/plugin-sdk` adds a call or field to the Go SDK and the TypeScript SDK together, exposes no `@numen/protocol` declaration, and holds no concrete engine. Its exports serve plugins of more than one family (`go/single-consumer`). The shapes of operations are contracts under `src/contracts/<name>` (`llm`, `acp`), which only plugins and applications import (`ts/contracts-imports`).
 
 [`libraries.md`](libraries.md) gives, for each, what it may import, who may import it, and the test for "does this belong here".
+
+## Which domain does it know
+
+Ask of every new package, type, RPC or export of the core, the core protocol (`libs/core/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
+
+- The list of agent programs was cached in the settings adapter of the core. An agent program is a connection type of agents-acp that serves `acp.task`; the core keeps the connection rows only.
+- The core held the model fields of a search source (pooling, handling, the model it came from, the token limit). A source now describes itself by an opaque recipe, a vector width and a chunk size; the model stays in engines-embeddings.
+- The shared command catalog `libs/core/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
+
+`go/single-consumer` fails on an RPC or an SDK export that one plugin or one family uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
 
 ## Size and role
 

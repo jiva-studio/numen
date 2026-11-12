@@ -395,9 +395,9 @@ To keep code readable, pseudo-literary prose, Anglish idioms, irregular past par
 
 ## 15. Rules for agents learned from review
 
-The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
+The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11. The core is a microkernel (§11 (l)): the core, the core protocol and the shared SDK know no plugin domain, connection operations are opaque, their shapes are SDK contracts that only plugins and applications import, the core owns all index storage, and agents are providers of `acp.task`.
 
-The plugin model, the SDK rules and the import rules for windows, plugins and libraries are [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11 (a) to (k); placement within a plugin is [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md) and placement of shared code is [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md). Time is a port (§5, §11 (i)). Size and complexity limits are one set for Go, TypeScript and Vue (§8). The numbered rules continue from 10.
+The plugin model, the SDK rules and the import rules for windows, plugins and libraries are [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11 (a) to (l); placement within a plugin is [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md) and placement of shared code is [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md). Time is a port (§5, §11 (i)). Size and complexity limits are one set for Go, TypeScript and Vue (§8). The numbered rules continue from 10.
 
 10. Checks are structural. Use an off-the-shelf tool with configuration where one exists (dependency-cruiser, depguard and gomodguard, golangci-lint linters, stylelint). Write a check by hand only over syntax trees, import graphs and type information. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
 11. Checks never get weaker: no exclusion and no workaround that bypasses a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.

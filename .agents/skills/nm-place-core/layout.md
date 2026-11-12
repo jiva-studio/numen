@@ -11,7 +11,7 @@ libs/note/                      the domain; imports nothing of this repository a
 └── ulid/                        the identifiers of notes; time and entropy come in as arguments
 
 libs/core/kernel/                       the hexagon
-├── domain/<area>/               small packages of the core's own concepts (settings, agent, theme, plugin information) and their sentinel errors; never imported by a plugin or the SDK
+├── domain/<area>/               small packages of the core's own concepts (settings, theme, connections, the index and its chunking and vector shapes, search sources, plugin information) and their sentinel errors; never imported by a plugin or the SDK
 ├── port/<name>port/             the interfaces use cases require, interfaces several use cases share, at most five methods each; an interface with one consumer is in that use case's package
 ├── usecase/<noun>/              a bounded context that holds several use cases, one scenario per file, each isolated from the others, with its request and result types and the interfaces only it consumes
 ├── adapter/
@@ -26,9 +26,8 @@ libs/core/kernel/                       the hexagon
 │   │   ├── trash/               driven: the operating system's trash
 │   │   ├── plugin/              the plugin adapter: host* packages drive the core, *bridge packages are driven by it
 │   │   ├── theme/               driving: the stylesheet catalogue a window asks for
-│   │   └── (one folder per other technology: provision, models, onnxruntime, appstate)
+│   │   └── (one folder per other technology: provision, onnxruntime, appstate, machine)
 │   ├── adapterlib/              code several adapters share and that is not a port (retry, watchhub, wire)
-│   ├── chunking, vector, text   pure helpers of the core that no application names
 │   └── testsupport/             helpers for tests
 └── container/                   the composition root: one package, wiring only
 

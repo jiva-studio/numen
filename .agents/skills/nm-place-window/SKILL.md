@@ -79,7 +79,7 @@ apps/desktop/editor/src/
 ├── app/                          composition and wiring only
 │   ├── App.vue                   the root: places the shell, the pages and the notices
 │   ├── window/                   createWindow(): creates the services (each model imports its own api), returns the few objects App.vue reads
-│   ├── plugins/                  the window's LoaderHost: binds slots, tab kinds, commands, vaults, agent and buffers of the plugin host to slice services
+│   ├── plugins/                  the window's LoaderHost: binds slots, tab kinds, commands, vaults, connections and buffers of the plugin host to slice services
 │   └── bootstrap/                the start-up order and the screen shown when it fails
 ├── pages/
 │   ├── welcome/                  the screen of a window with no tab: its rows and actions
@@ -120,7 +120,7 @@ apps/desktop/flashcards/src/
 ├── app/
 │   ├── App.vue                   the root: the chooser, or the plugin view for the chosen vault
 │   ├── window/                   createWindow(): creates the notices, the tabs and the services in the order they depend on each other, then the host
-│   ├── plugins/                  the loader's createPluginHost for the target desktop.flashcards: binds the tabs, vaults, commands (none), background tasks and agent
+│   ├── plugins/                  the loader's createPluginHost for the target desktop.flashcards: binds the tabs, vaults, commands (none) and background tasks
 │   └── app.css                   the entry style sheet
 ├── pages/
 │   └── vault-chooser/            the screen with the vaults to choose from: ui/ (VaultChooser.vue, MountedView.vue: renders a view a plugin declares into an element), lib/ (rows, the key that opens a vault)
@@ -131,8 +131,7 @@ apps/desktop/flashcards/src/
 ├── entities/
 │   ├── vault/                    the vaults of the installation: api/ (vaults service), lib/ (VaultRow)
 │   ├── tab/                      the tab kinds the plugins register and the one tab the window shows, a plugin view opened on a vault: model/ (open and close), lib/
-│   ├── plugin/                   the installed plugins and the models of a plugin: api/ (plugin catalog), model/
-│   └── agent/                    whether the agent is reachable: api/ (agent service), model/
+│   └── plugin/                   the installed plugins: api/ (plugin catalog), model/
 └── shared/
     └── api/                      clients.ts: the generated clients bound once; errors.ts: the error text helpers
 ```
@@ -153,6 +152,16 @@ The window holds:
 The window hands to the core every rule that a second client would need: reading or writing a note or a file, finding a link, searching, scheduling, validating a setting, resolving a conflict by content, permissions. It hands to a plugin every capability a person could turn off: a reader, a graph, a media player, proofreading, a chat with an agent, flashcards study. A window calls a plugin's service through the core and imports nothing from `plugins/`; a plugin never calls the window.
 
 The test for logic that grows in a window: would the CLI, the phone or an MCP client need the same answer? If yes, it is a use case in the core. Would a person turn it off with its plugin? If yes, it is in the plugin.
+
+## Which domain does it know
+
+Ask of every new package, type, RPC or export of the core, the core protocol (`libs/core/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
+
+- The list of agent programs was cached in the settings adapter of the core. An agent program is a connection type of agents-acp that serves `acp.task`; the core keeps the connection rows only.
+- The core held the model fields of a search source (pooling, handling, the model it came from, the token limit). A source now describes itself by an opaque recipe, a vector width and a chunk size; the model stays in engines-embeddings.
+- The shared command catalog `libs/core/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
+
+`go/single-consumer` fails on an RPC or an SDK export that one plugin or one family uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
 
 ## Types used by two slices
 
