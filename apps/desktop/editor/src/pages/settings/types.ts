@@ -75,7 +75,7 @@ export interface InstallationPlugin {
 }
 
 /** The health items of the plugins, and the commands their fixes run. */
-export interface InstallationHealth {
+interface InstallationHealth {
   readonly items: Readonly<Ref<readonly PluginHealthItem[]>>
   readonly canRunCommand: (command: string) => boolean
   readonly runCommand: (command: string, values: Readonly<Record<string, string>>) => void

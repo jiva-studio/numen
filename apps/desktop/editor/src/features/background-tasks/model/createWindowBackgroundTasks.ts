@@ -9,7 +9,7 @@ import { getHealthTasks, runHealthAction, type HealthTaskDeps } from './healthTa
 import { useNoticeTasks, type NoticeTasksDeps } from './useNoticeTasks'
 
 /** The health items of the plugins, and what their tasks read of the window. */
-export interface HealthSource extends HealthTaskDeps {
+interface HealthSource extends HealthTaskDeps {
   readonly items: Readonly<Ref<readonly PluginHealthItem[]>>
 }
 

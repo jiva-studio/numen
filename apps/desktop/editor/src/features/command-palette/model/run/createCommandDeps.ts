@@ -7,7 +7,7 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { SETTINGS, type WindowTabs } from '@/entities/tab'
 
 /** How the window searches and opens its settings. Without openSettings, a settings tab opens. */
-export interface NavigationOptions {
+interface NavigationOptions {
   search: () => void
   openSettings?: ((request: SettingsRequest) => void) | undefined
 }

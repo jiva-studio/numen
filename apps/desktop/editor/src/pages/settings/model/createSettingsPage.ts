@@ -28,7 +28,7 @@ import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 
 /** The health items of the plugins, and the commands of the window their fixes run. */
-export interface HealthDeps {
+interface HealthDeps {
   items: Readonly<Ref<readonly PluginHealthItem[]>>
   commands: Pick<CommandsHost, 'getIds' | 'run'>
 }
