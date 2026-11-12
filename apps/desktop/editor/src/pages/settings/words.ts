@@ -6,9 +6,6 @@ export const WORDS = {
   ...PLUGIN_WORDS,
   /** Shown in place of the settings file path until the path is known. */
   file: 'numen.json in the configuration folder',
-  /** The sentence under the System breadcrumb. */
-  systemLede:
-    'How Numen looks and how it treats files. Each plugin keeps its own settings on its page.',
   /** Accessible name of the search field in a long model list. */
   searchModels: 'Search models',
   searchValues: (title: string) => `Search ${title.toLowerCase()}`,

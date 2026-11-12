@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The System page: the breadcrumb bar, a lede, every setting the core declares for the owner `app`
+ * The System page: the breadcrumb bar, every setting the core declares for the owner `app`
  * drawn by the renderer of the plugins, and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
@@ -47,7 +47,6 @@ function onBack(): void {
   <div class="system-detail">
     <BreadcrumbBar :current="words.systemSettings" @back="onBack" />
 
-    <p class="system-detail__lede">{{ words.systemLede }}</p>
 
     <PluginSettingsCard>
       <PluginFields
@@ -71,11 +70,6 @@ function onBack(): void {
   gap: 1rem;
 }
 
-.system-detail__lede {
-  margin: 0;
-  padding-inline: var(--settings-card-pad);
-  color: var(--numen-hushed);
-}
 
 .system-detail__file {
   min-inline-size: 0;
