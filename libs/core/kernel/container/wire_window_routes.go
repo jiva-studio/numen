@@ -35,7 +35,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -321,10 +320,4 @@ func mountConnectionCall(w *windowWiring) {
 	handler := connectioncall.NewService(openModelCalls(w.a))
 	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
-}
-
-// GetConnectionCallHandler is the handler of ConnectionCallService over the calls of the plugins, for a
-// window that serves it without the routes of the editor.
-func GetConnectionCallHandler(c Config) numenv1connect.ConnectionCallServiceHandler {
-	return connectioncall.NewService(openModelCalls(plugins(c)))
 }

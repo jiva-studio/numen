@@ -82,3 +82,10 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 		providerbridge.NewSource(c.PluginHost.Runtime), clock.System{}, clock.System{}.Wait, notices,
 	))
 }
+
+// GetConnectionCalls is the calls plugin views make through their connections, for a window that serves
+// ConnectionCallService without the routes of the editor. It is nil where the installation runs no
+// plugins.
+func GetConnectionCalls(c Config) connectionport.ModelCalls {
+	return openModelCalls(plugins(c))
+}

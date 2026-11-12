@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
@@ -106,7 +107,7 @@ func makeWindowAPI(cfg container.Config) *shell.API {
 		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg) },
 		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
 		PluginServices:       container.GetPluginServices(cfg),
-		ConnectionCalls:      container.GetConnectionCallHandler(cfg),
+		ConnectionCalls:      connectioncall.NewService(container.GetConnectionCalls(cfg)),
 	}
 }
 
