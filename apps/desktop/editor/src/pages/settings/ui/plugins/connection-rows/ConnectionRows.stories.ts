@@ -326,7 +326,7 @@ export const ChoosingAConnectionFillsTheModel: Story = {
   },
 }
 
-/** The last entry of the connection list adds a connection; the saved one is chosen and the models open. */
+/** The last entry of the connection list adds a connection; the saved one is chosen with its first model, and the models open. */
 export const NewConnectionEntryChoosesTheModelNext: Story = {
   render: render({ rows: [row(WORK.id, 'google/gemini-2.5-flash')] }),
   play: async ({ canvasElement }) => {
@@ -342,9 +342,11 @@ export const NewConnectionEntryChoosesTheModelNext: Story = {
     await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
     await expect(canvas.getByRole('button', { name: 'Connection' })).toHaveTextContent('Fresh')
     await expect(await within(document.body).findByRole('combobox')).toBeVisible()
-    await expect(readWritten(canvasElement)).toStrictEqual([
-      { connection: WORK.id, model: 'google/gemini-2.5-flash' },
-    ])
+    await waitFor(() =>
+      expect(readWritten(canvasElement)).toStrictEqual([
+        { connection: 'c00000099', model: 'google/gemini-2.5-flash' },
+      ]),
+    )
   },
 }
 
