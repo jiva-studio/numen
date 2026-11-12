@@ -571,6 +571,31 @@ export const SeveralParents: Story = {
 /** Renders an overcrowded neighborhood with overflow indicators. */
 export const Overcrowded: Story = {
   args: { neighborhood: neighborhoods.overcrowded },
+  play: async ({ canvasElement }) => {
+    const status = await waitFor(() => {
+      const found = canvasElement.querySelector('[role="status"]')
+      if (!found) throw new Error('nothing says what is not shown')
+      return found
+    })
+    await expect(status.textContent).toMatch(/\d+ (children|child)\b.* not shown/)
+
+    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.plex__box')].map((box) =>
+      box.getBoundingClientRect(),
+    )
+    await expect(boxes.length).toBeGreaterThan(1)
+    const overlaps = boxes.flatMap((a, index) =>
+      boxes
+        .slice(index + 1)
+        .filter(
+          (b) =>
+            a.left < b.right - 0.5 &&
+            b.left < a.right - 0.5 &&
+            a.top < b.bottom - 0.5 &&
+            b.top < a.bottom - 0.5,
+        ),
+    )
+    await expect(overlaps).toHaveLength(0)
+  },
 }
 
 const titledLines: PlexNeighborhood = {
