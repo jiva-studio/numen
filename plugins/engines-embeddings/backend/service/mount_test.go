@@ -65,7 +65,11 @@ func getModel(t *testing.T, web *httptest.Server) servedModel {
 	if err != nil {
 		t.Fatalf("DescribeSearchSource: %v", err)
 	}
-	defer res.Body.Close()
+	t.Cleanup(func() {
+		if err := res.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	var info servedModel
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("DescribeSearchSource answered %s", res.Status)
