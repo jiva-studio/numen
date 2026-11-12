@@ -116,19 +116,20 @@ func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
 	for _, one := range target {
 		infos = append(infos, &v1.PluginInfo{
-			Id:            one.ID,
-			Name:          one.Name,
-			Version:       one.Version,
-			Description:   one.Description,
-			Capabilities:  one.Capabilities,
-			Settings:      newWirePluginSettings(one.Settings),
-			IsActive:      one.IsActive,
-			Permissions:   one.Permissions,
-			HasFrontend:   one.HasFrontend,
-			HasBackend:    one.HasBackend,
-			Readers:       newWireReaders(one.Readers),
-			SettingsViews: newWireSettingsViews(one.SettingsViews),
-			Contributions: newWireContributions(one.Contributions),
+			Id:             one.ID,
+			Name:           one.Name,
+			Version:        one.Version,
+			Description:    one.Description,
+			Capabilities:   one.Capabilities,
+			Settings:       newWirePluginSettings(one.Settings),
+			IsActive:       one.IsActive,
+			Permissions:    one.Permissions,
+			HasFrontend:    one.HasFrontend,
+			HasBackend:     one.HasBackend,
+			Readers:        newWireReaders(one.Readers),
+			SettingsViews:  newWireSettingsViews(one.SettingsViews),
+			Contributions:  newWireContributions(one.Contributions),
+			IsOffByDefault: one.IsOffByDefault,
 		})
 	}
 	return infos

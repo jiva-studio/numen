@@ -141,6 +141,52 @@ describe('what remains at a setting', () => {
     expect(store.read.getSetting(['my.plugin', 'autoRun'])).toBe(false)
     expect(store.read.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(false)
   })
+
+  /** A store over a vault with the Status bar, which its manifest keeps off by default. */
+  const createOffByDefaultStore = (text: string) => {
+    restore = installCoreAnswers({
+      settingsService: {
+        getSettings: () =>
+          answerWith(text, {
+            plugins: [
+              {
+                id: 'md.numen.views.statusBar',
+                name: 'Status bar',
+                version: '1.0.0',
+                description: 'The bar at the bottom of the window with plugin commands',
+                isActive: false,
+                isOffByDefault: true,
+              },
+            ],
+          }),
+      },
+    })
+    return createSettingsStore(words, vi.fn())
+  }
+
+  it('keeps a plugin off by default off while the file names no enabled value', async () => {
+    const store = createOffByDefaultStore('{}')
+    await store.start()
+
+    expect(store.read.getSetting(['md.numen.views.statusBar', 'enabled'])).toBe(false)
+    expect(store.read.getCommittedSetting(['md.numen.views.statusBar', 'enabled'])).toBe(false)
+  })
+
+  it('runs a plugin off by default once the file enables it', async () => {
+    const store = createOffByDefaultStore(
+      JSON.stringify({ 'md.numen.views.statusBar': { enabled: true } }),
+    )
+    await store.start()
+
+    expect(store.read.getCommittedSetting(['md.numen.views.statusBar', 'enabled'])).toBe(true)
+  })
+
+  it('leaves the enabled value of other plugins to the window default', async () => {
+    const store = createPluginStore('{}')
+    await store.start()
+
+    expect(store.read.getCommittedSetting(['my.plugin', 'enabled'])).toBeUndefined()
+  })
 })
 
 describe('a setting written', () => {

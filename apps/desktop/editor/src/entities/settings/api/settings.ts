@@ -138,6 +138,7 @@ export const getSettings = async (): Promise<Configuration> => {
       readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
       settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
       contributions: readContributions(p.contributions),
+      isOffByDefault: p.isOffByDefault,
       settings: p.settings.map(readPluginSetting),
     })),
     app: answer.app.map(readPluginSetting),

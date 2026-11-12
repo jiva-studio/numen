@@ -132,6 +132,8 @@ message PluginInfo {
   // What the manifest declares, one entry per section that declares anything, in the order of
   // PluginContributionKind.
   repeated PluginContribution contributions = 15;
+  // Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
+  bool is_off_by_default = 16;
   reserved 10;
 }
 

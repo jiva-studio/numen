@@ -935,8 +935,10 @@ type PluginInfo struct {
 	// What the manifest declares, one entry per section that declares anything, in the order of
 	// PluginContributionKind.
 	Contributions []*PluginContribution `protobuf:"bytes,15,rep,name=contributions,proto3" json:"contributions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
+	IsOffByDefault bool `protobuf:"varint,16,opt,name=is_off_by_default,json=isOffByDefault,proto3" json:"is_off_by_default,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PluginInfo) Reset() {
@@ -1058,6 +1060,13 @@ func (x *PluginInfo) GetContributions() []*PluginContribution {
 		return x.Contributions
 	}
 	return nil
+}
+
+func (x *PluginInfo) GetIsOffByDefault() bool {
+	if x != nil {
+		return x.IsOffByDefault
+	}
+	return false
 }
 
 // PluginContribution is one section of a plugin's manifest and the entries it declares, in the
@@ -1536,7 +1545,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1e.numen.v1.PluginSettingOptionsR\x05value:\x028\x01\"B\n" +
 	"\x16PluginSettingCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\x89\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xb4\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1552,7 +1561,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0esettings_views\x18\r \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViews\x12\x1f\n" +
 	"\vhas_backend\x18\x0e \x01(\bR\n" +
 	"hasBackend\x12B\n" +
-	"\rcontributions\x18\x0f \x03(\v2\x1c.numen.v1.PluginContributionR\rcontributionsJ\x04\b\n" +
+	"\rcontributions\x18\x0f \x03(\v2\x1c.numen.v1.PluginContributionR\rcontributions\x12)\n" +
+	"\x11is_off_by_default\x18\x10 \x01(\bR\x0eisOffByDefaultJ\x04\b\n" +
 	"\x10\v\"\x82\x01\n" +
 	"\x12PluginContribution\x124\n" +
 	"\x04kind\x18\x01 \x01(\x0e2 .numen.v1.PluginContributionKindR\x04kind\x126\n" +
