@@ -21,14 +21,14 @@ import type { MenuTrigger } from '@numen/ui'
 import type {
   PlexHeading,
   PlexEdge,
-  PlexNeighborhood,
+  PlexGraph,
   PlexNode,
   PlexRelation,
   PlexDestination,
 } from '../../types'
 
 interface Knobs {
-  neighborhood: PlexNeighborhood
+  neighborhood: PlexGraph
   placement: Placement
   showEdgeLabels: boolean
   duration: number
@@ -120,7 +120,7 @@ const createCounts = (a: Knobs) => ({
   sibling: a.siblings,
 })
 
-const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args: Knobs) => ({
+const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs) => ({
   components: { Plex },
   setup() {
     const type = useTypeSize()
@@ -130,7 +130,7 @@ const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args
     const createdItem = ref<PlexNode[]>([])
     const links = ref<PlexEdge[]>([])
 
-    const neighborhood = computed<PlexNeighborhood>(() => {
+    const neighborhood = computed<PlexGraph>(() => {
       const base = focus.value
         ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
@@ -573,7 +573,7 @@ export const Overcrowded: Story = {
   args: { neighborhood: neighborhoods.overcrowded },
 }
 
-const titledLines: PlexNeighborhood = {
+const titledLines: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'The meeting', relation: 'focus' },
     { id: 'parent', title: 'Minutes', relation: 'parent' },
@@ -644,7 +644,7 @@ export const TitledLines: Story = {
   },
 }
 
-const arrowedLines: PlexNeighborhood = {
+const arrowedLines: PlexGraph = {
   nodes: [
     { id: 'alice', title: 'Alice Fenn, The Chair', relation: 'focus' },
     { id: 'allotments', title: 'Marrowfield allotments', relation: 'parent' },

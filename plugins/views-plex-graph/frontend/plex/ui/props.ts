@@ -10,10 +10,10 @@ import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
-import type { PlexHeading, PlexNeighborhood, PlexRelation, PlexDestination } from '../../types'
+import type { PlexHeading, PlexGraph, PlexRelation, PlexDestination } from '../../types'
 
 export interface PlexProps {
-  neighborhood: PlexNeighborhood
+  neighborhood: PlexGraph
   options?: PlexOptionsInput
   placement?: Placement
   showEdgeLabels?: boolean

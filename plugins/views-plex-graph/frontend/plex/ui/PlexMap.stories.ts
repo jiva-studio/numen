@@ -22,7 +22,7 @@ import { Menu, type MenuItem } from '@numen/ui'
 import { hoverOver } from '../../fixtures/pointer'
 import Plex from './Plex.vue'
 import { RELATION_NAMES } from '../lib/relation'
-import type { PlexRelation, PlexEdge, PlexHeading, PlexNeighborhood, PlexNode } from '../../types'
+import type { PlexRelation, PlexEdge, PlexHeading, PlexGraph, PlexNode } from '../../types'
 
 const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
   id,
@@ -74,7 +74,7 @@ const createEdge = (neighbor: PlexNode): PlexEdge => {
   return label ? createLine('focus', neighbor.id, label, 'to') : { from: 'focus', to: neighbor.id }
 }
 
-const createNeighborhood = (neighbors: readonly PlexNode[]): PlexNeighborhood => ({
+const createNeighborhood = (neighbors: readonly PlexNode[]): PlexGraph => ({
   nodes: [node('focus', 'Entropy', 'focus'), ...neighbors],
   edges: neighbors.map(createEdge),
 })
@@ -150,7 +150,7 @@ interface MapScreen {
 const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) => ({
   components: { Plex, Menu },
   setup() {
-    const neighborhood = ref<PlexNeighborhood>(WIDE)
+    const neighborhood = ref<PlexGraph>(WIDE)
     return { neighborhood, headings, creatable, menu, MENU, menuIcon }
   },
   template: `
@@ -242,7 +242,7 @@ export const Nesting: Story = {
  * parent and a sibling have a record written by each note, one at either end of
  * their line. A line with a record and no arrowhead is the last.
  */
-const EVERY_LINE: PlexNeighborhood = {
+const EVERY_LINE: PlexGraph = {
   nodes: [
     node('focus', 'Entropy', 'focus'),
     node('thermodynamics', 'Thermodynamics', 'parent'),

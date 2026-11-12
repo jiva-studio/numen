@@ -1,4 +1,4 @@
-import type { PlexEdge, PlexNeighborhood, PlexNode } from '../../types'
+import type { PlexEdge, PlexGraph, PlexNode } from '../../types'
 /**
  * A small graph, and the rule for extracting one neighborhood from it.
  *
@@ -62,7 +62,7 @@ const getJumps = (id: string): string[] => {
 
 export const walkStart = 'hexagonal'
 
-export function createNeighborhood(id: string): PlexNeighborhood {
+export function createNeighborhood(id: string): PlexGraph {
   const focus = GRAPH[id]
   if (!focus) throw new Error(`no such node: ${id}`)
 

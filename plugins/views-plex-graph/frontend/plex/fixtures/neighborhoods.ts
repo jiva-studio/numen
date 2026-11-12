@@ -1,4 +1,4 @@
-import type { PlexEdge, PlexNeighborhood, PlexNode, PlexNodeRelation } from '../../types'
+import type { PlexEdge, PlexGraph, PlexNode, PlexNodeRelation } from '../../types'
 /**
  * Neighborhoods to build against, handwritten and deliberately awkward.
  *
@@ -10,7 +10,7 @@ function neighborhood(
   focus: string,
   neighbors: readonly PlexNode[],
   extra: readonly PlexEdge[] = [],
-): PlexNeighborhood {
+): PlexGraph {
   const nodes: PlexNode[] = [{ id: 'focus', title: focus, relation: 'focus' }, ...neighbors]
   const parent = neighbors.find((node) => node.relation === 'parent')
   const edges: PlexEdge[] = neighbors.flatMap((node) => {
@@ -38,10 +38,10 @@ function run(
 }
 
 /** Nothing points at it and it points at nothing. A vault's first note. */
-const solitary: PlexNeighborhood = neighborhood('An orphan note', [])
+const solitary: PlexGraph = neighborhood('An orphan note', [])
 
 /** The ordinary case, and the one to judge the proportions by. */
-const typical: PlexNeighborhood = neighborhood('Hexagonal architecture', [
+const typical: PlexGraph = neighborhood('Hexagonal architecture', [
   { id: 'parent-0', title: 'Software architecture', relation: 'parent' },
   { id: 'parent-1', title: 'Ports and adapters', relation: 'parent' },
   { id: 'child-0', title: 'Domain', relation: 'child' },
@@ -58,7 +58,7 @@ const typical: PlexNeighborhood = neighborhood('Hexagonal architecture', [
 ])
 
 /** Two parents, one a parent of the other: an edge inside a row. */
-const diamond: PlexNeighborhood = neighborhood(
+const diamond: PlexGraph = neighborhood(
   'Recursive CTE',
   [
     { id: 'parent-0', title: 'SQL', relation: 'parent' },
@@ -70,29 +70,29 @@ const diamond: PlexNeighborhood = neighborhood(
 )
 
 /** Nothing above it. The top of a hierarchy has to look deliberate, not broken. */
-const root: PlexNeighborhood = neighborhood('Everything', [
+const root: PlexGraph = neighborhood('Everything', [
   ...run('child', 5, (i) => ['Ideas', 'People', 'Places', 'Work', 'Reading'][i] ?? `Child ${i}`),
 ])
 
 /** Nothing below it, and the plex has to stay centered anyway. */
-const leaf: PlexNeighborhood = neighborhood('Nothing below', [
+const leaf: PlexGraph = neighborhood('Nothing below', [
   { id: 'parent-0', title: 'Inbox', relation: 'parent' },
 ])
 
 /** One past what a side can hold, where an off-by-one in the overflow shows. */
-const crowded: PlexNeighborhood = neighborhood('Verbs', [
+const crowded: PlexGraph = neighborhood('Verbs', [
   ...run('child', 21, (i) => `Child ${i + 1}`),
 ])
 
 /** Past every limit. What the overflow report is for. */
-const overcrowded: PlexNeighborhood = neighborhood('Everything, again', [
+const overcrowded: PlexGraph = neighborhood('Everything, again', [
   ...run('parent', 9, (i) => `Parent ${i + 1}`),
   ...run('child', 200, (i) => `Child ${i + 1}`),
   ...run('jump', 40, (i) => `Jump ${i + 1}`),
 ])
 
 /** Not Latin, far too long, nothing to break at, and nothing at all. */
-export const awkwardLabels: PlexNeighborhood = neighborhood(
+export const awkwardLabels: PlexGraph = neighborhood(
   'Заметка про сарай с довольно длинным названием, которое не влезает',
   [
     { id: 'parent-0', title: 'बगीचा', relation: 'parent' },
@@ -114,7 +114,7 @@ export const awkwardLabels: PlexNeighborhood = neighborhood(
  * row cross the near one, so their titles compete for space in a band the
  * near row's titles already occupy.
  */
-const labelledRows: PlexNeighborhood = {
+const labelledRows: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Marrowfield allotments', relation: 'focus' },
     { id: 'parent-0', title: 'Untitled note 3', relation: 'parent' },

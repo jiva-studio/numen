@@ -1,10 +1,10 @@
-import type { PlexNeighborhood, PlexNode } from '../../types'
+import type { PlexGraph, PlexNode } from '../../types'
 
 /**
  * Check the two invariants and return the focus. Throws: a neighborhood that
  * breaks either is a caller with a bug, not a state to be rendered.
  */
-export function assertNeighborhood(neighborhood: PlexNeighborhood): PlexNode {
+export function assertNeighborhood(neighborhood: PlexGraph): PlexNode {
   const focused = neighborhood.nodes.filter((node) => node.relation === 'focus')
   const focus = focused[0]
 

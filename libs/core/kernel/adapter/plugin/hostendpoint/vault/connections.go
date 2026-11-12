@@ -120,7 +120,7 @@ func (e *connectionsCalls) CreateRelatedNote(
 			Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION,
 		}), nil
 	}
-	path, err := vault.Related.CreateInRelation(ctx, domain.RelatedNote{
+	path, err := vault.Related.CreateInRelation(ctx, domain.NewRelatedNote{
 		From: req.Msg.GetFrom(), Role: role, Title: req.Msg.GetTitle(), Type: req.Msg.GetType(), Marker: marker,
 	})
 	code, err := answer(ctx, err)

@@ -72,7 +72,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   }
 
   const notes: VaultNotes = {
-    getNeighborhood: async (path) => ({
+    listRelatedNotes: async (path) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: NOTE_TYPE,
       related: [],

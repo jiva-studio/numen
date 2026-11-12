@@ -28,7 +28,7 @@ export function activate(context: PluginContext): void {
       relations,
       nesting: readNesting(context),
     },
-    () => usePlexView({ neighborhood: (path) => notes.getNeighborhood(path) }),
+    () => usePlexView({ listRelatedNotes: (path) => notes.listRelatedNotes(path) }),
     PlexGraphView,
   )
   context.register.tabKind(plexes.kind)

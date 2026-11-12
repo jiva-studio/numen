@@ -39,7 +39,7 @@ func NewCreateInRelation(create noteCreating, names edit.NameQueries) CreateInRe
 
 // Execute creates the note. An untitled note takes the lowest free number; a
 // title that is already taken fails with vault.ErrAlreadyExists.
-func (u CreateInRelation) Execute(ctx context.Context, v domain.Vault, in domain.RelatedNote) (CreateResult, error) {
+func (u CreateInRelation) Execute(ctx context.Context, v domain.Vault, in domain.NewRelatedNote) (CreateResult, error) {
 	if in.From == "" || !domain.IsConnectionRole(in.Role) {
 		return CreateResult{}, fmt.Errorf("%w: %q of %q", domain.ErrNotCreatable, in.Role, in.From)
 	}

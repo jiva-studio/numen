@@ -1,6 +1,6 @@
 import { RELATION_NAMES } from '../lib/relation'
 import { createName } from './names'
-import type { PlexEdge, PlexNeighborhood, PlexNode, PlexRelation } from '../../types'
+import type { PlexEdge, PlexGraph, PlexNode, PlexRelation } from '../../types'
 
 export type RelationCounts = Readonly<Partial<Record<PlexRelation, number>>>
 
@@ -18,7 +18,7 @@ const RELATION: Record<PlexRelation, string> = {
 }
 
 /** A neighborhood of the requested size, for turning knobs against. */
-export function build(title: string, counts: RelationCounts): PlexNeighborhood {
+export function build(title: string, counts: RelationCounts): PlexGraph {
   return buildAround({ id: 'focus', title }, null, counts)
 }
 
@@ -31,7 +31,7 @@ export function buildAround(
   focus: TitledNode,
   from: TitledNode | null,
   counts: RelationCounts,
-): PlexNeighborhood {
+): PlexGraph {
   let nameIndex = 0
   const invented: PlexNode[] = RELATION_NAMES.flatMap((relation) =>
     Array.from({ length: counts[relation] ?? 0 }, (_, index) => ({

@@ -1,5 +1,5 @@
 import type { Result } from '@/shared/lib/result'
-import type { NoteNeighborhood } from '@numen/plugin-loader'
+import type { NoteGraph } from '@numen/plugin-loader'
 import type { ErrorCode } from '@/shared/api/errors'
 import type { TextRange } from '@/shared/lib/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
@@ -25,10 +25,10 @@ export interface NoteEdit {
 }
 
 /**
- * A neighborhood of a note, as the vault answers one: the note in focus, and
+ * The notes related to a note, as the vault answers: the note in focus, and
  * the notes joined to it. A note the window has no relation for is not one of them.
  */
-export type Neighborhood = NoteNeighborhood
+export type { NoteGraph }
 
 /** One heading inside a note, which is one of the parts the note divides into. */
 export interface NoteHeading {

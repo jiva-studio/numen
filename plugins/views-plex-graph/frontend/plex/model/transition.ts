@@ -4,7 +4,7 @@ import { arrangePlex, easeOut, interpolatePlex } from '../lib/arrange'
 import type { ArrangeInput } from '../lib/arrange'
 import type { PlexFrame } from '../lib/frame'
 import { browserClock, type Clock } from '@numen/ui'
-import type { PlexNeighborhood } from '../../types'
+import type { PlexGraph } from '../../types'
 
 export { browserClock, type Clock }
 
@@ -23,7 +23,7 @@ export interface PlexTransitionOptions {
  * mid-movement re-aims from wherever the plex has got to.
  */
 export function usePlexTransition(
-  neighborhood: () => PlexNeighborhood,
+  neighborhood: () => PlexGraph,
   input: () => ArrangeInput | undefined,
   options: PlexTransitionOptions,
 ): PlexTransition {

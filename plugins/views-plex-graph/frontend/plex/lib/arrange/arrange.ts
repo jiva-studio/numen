@@ -22,7 +22,7 @@ import {
 import { routeEdges, createRouting } from './edges/routing'
 import { findSpacing, type Spacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
-import type { PlexNeighborhood, PlexNode, PlexRelation } from '../../../types'
+import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -33,7 +33,7 @@ export interface ArrangeInput {
 }
 
 export function arrangePlex(
-  neighborhood: PlexNeighborhood,
+  neighborhood: PlexGraph,
   { options, placement = rowsAndColumns, measure, measureLabel, labelType }: ArrangeInput = {},
 ): PlexFrame {
   const request = resolveOptions(options)

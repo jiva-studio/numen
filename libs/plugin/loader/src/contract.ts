@@ -53,7 +53,7 @@ export type {
   LinkRole,
   MessageWriter,
   MountedView,
-  NoteNeighborhood,
+  NoteGraph,
   NoteRelation,
   NoteRef,
   NoteTabState,

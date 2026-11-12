@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from 'playwright/test'
 import { forgetOpenTabs } from './test.js'
 
 /** The graph of the note the vault opens with, which the workspace draws once the vault is read. */
-export const getGraph = (page: Page): Locator => page.getByRole('group', { name: 'Neighborhood' })
+export const getGraph = (page: Page): Locator => page.getByRole('group', { name: 'Related notes' })
 
 /**
  * Waits until the window is drawn: the task status of the title bar is there. It says "Idle" only
