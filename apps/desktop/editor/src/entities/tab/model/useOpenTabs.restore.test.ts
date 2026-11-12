@@ -4,6 +4,7 @@
  */
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
+import { getPanes } from '@numen/workbench'
 import { createTestTabs } from '@/testing/tabs'
 import type { AnyTabKind } from '../lib/kinds'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
@@ -62,5 +63,36 @@ describe('the open tabs of a window whose files tab is in focus', () => {
     window.restored.restoreTabs([{ id: 'files-1', kind: 'files', path: '' }], 'files-1')
 
     expect(createOpenTabs(window).open.value.activeId).toBe('files-1')
+  })
+})
+
+describe('the tab in front of each pane after a restart', () => {
+  it('is the tab that was shown last in the pane', () => {
+    const create = () => {
+      const window = createWindow()
+      window.groups.registerKind(
+        createKind('plex', { isTool: true, placement: { pane: 'main', order: 0 } }),
+      )
+      return window
+    }
+    const window = create()
+    window.restored.restoreTabs(
+      [
+        { id: 'reader-1', kind: 'reader', path: 'assets/shore.pdf' },
+        { id: 'plex-1', kind: 'plex', path: 'notes/Entropy.md' },
+        { id: 'files-1', kind: 'files', path: '' },
+      ],
+      'files-1',
+    )
+    window.panes.show('reader-1')
+    window.panes.show('plex-1')
+    window.panes.show('files-1')
+
+    const { open } = createOpenTabs(window)
+    const restarted = create()
+    restarted.restored.restoreTabs(parseSavedTabs(open.value), open.value.activeId)
+
+    const fronts = getPanes(restarted.panes.layout.value.root).map((one) => one.active)
+    expect(fronts).toEqual(['plex-1', 'files-1'])
   })
 })
