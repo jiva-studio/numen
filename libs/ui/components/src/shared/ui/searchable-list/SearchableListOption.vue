@@ -39,6 +39,7 @@ const context = inject(LIST_CONTEXT)
     role="option"
     :aria-selected="isActive"
     :aria-current="isCurrent ? 'true' : undefined"
+    :aria-disabled="row.kind === 'item' && row.item.isDisabled ? 'true' : undefined"
     @mousedown.prevent
     @click="$emit('choose')"
     @pointerenter="$emit('hover')"
@@ -102,6 +103,10 @@ const context = inject(LIST_CONTEXT)
 
 .searchable-list__option[aria-selected='true'] {
   background: var(--numen-bubble-bg);
+}
+
+.searchable-list__option[aria-disabled='true'] {
+  opacity: 0.5;
 }
 
 .searchable-list__words {

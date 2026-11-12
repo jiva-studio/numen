@@ -11,6 +11,8 @@ export interface ListItem {
   readonly detail?: string
   readonly group?: string
   readonly hasSeparator?: boolean
+  /** An item that is shown and cannot be chosen; the keyboard passes over it. */
+  readonly isDisabled?: boolean
 }
 
 /** The key of the row that stands first, whatever it is made of. */
@@ -73,10 +75,10 @@ export const getHeadings = (rows: readonly ListRow[]): readonly (string | undefi
   })
 }
 
-/** The row a step from `from` lands on, wrapping at both ends; -1 where there is none. */
-export const stepRow = (count: number, from: number, step: number): number =>
-  stepTo(
-    Array.from({ length: count }, (_, index) => index),
-    { from, by: step },
-    () => true,
-  )
+/** Whether a row can be chosen: the action row, or an item that is not disabled. */
+export const isChoosable = (row: ListRow): boolean =>
+  row.kind === 'action' || row.item.isDisabled !== true
+
+/** The choosable row a step from `from` lands on, wrapping at both ends; -1 where there is none. */
+export const stepRow = (rows: readonly ListRow[], from: number, step: number): number =>
+  stepTo(rows, { from, by: step }, isChoosable)
