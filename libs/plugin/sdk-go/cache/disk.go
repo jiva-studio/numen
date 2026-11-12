@@ -17,6 +17,9 @@ func (c *Cache[V]) cachePath() (string, error) {
 	if c.name == "" {
 		return "", errors.New("cache name is empty")
 	}
+	if c.dir != "" {
+		return filepath.Join(c.dir, c.name+".json"), nil
+	}
 	dir, err := GetPluginDir()
 	if err != nil {
 		return "", err
@@ -113,8 +116,9 @@ func (c *Cache[V]) writeDiskEntry(key string, val V) {
 	if !isPersistable(val) {
 		return
 	}
-	// A value the disk does not take stays in memory; the disk only lets a later process start with it.
-	_ = c.storeDiskEntry(key, val)
+	if err := c.storeDiskEntry(key, val); err != nil {
+		c.reportError(fmt.Errorf("write cache entry %q: %w", key, err))
+	}
 }
 
 func (c *Cache[V]) storeDiskEntry(key string, val V) error {
@@ -127,7 +131,8 @@ func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 
 	all := make(map[string]V)
 	if existing, readErr := os.ReadFile(path); readErr == nil {
-		if json.Unmarshal(existing, &all) != nil {
+		if unmarshalErr := json.Unmarshal(existing, &all); unmarshalErr != nil {
+			c.reportError(fmt.Errorf("read cache file %s: %w", path, unmarshalErr))
 			all = make(map[string]V)
 		}
 	}
