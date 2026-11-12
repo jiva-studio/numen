@@ -47,7 +47,7 @@ func newWindowTools(t *testing.T) windowTools {
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	t.Helper()
 	registry := tools.New()
-	manager := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	manager := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	if err := service.RegisterTools(registry, manager, on); err != nil {
 		t.Fatal(err)
 	}
@@ -366,4 +366,11 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveTabID != "tab-1" {
 		t.Errorf("returned %+v, want the tab of the window", out)
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

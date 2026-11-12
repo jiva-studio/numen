@@ -450,7 +450,7 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	answer(t, evening, "zpqrstvwxy", 9*time.Second)
 	answer(t, evening, "3f4g5h6j7k", 4*time.Second)
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday().Add(10*time.Hour))).
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday().Add(10*time.Hour))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -494,7 +494,7 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 		"decks/Two.md": deckOf("", 20, 100),
 	})
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday())).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday())).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -521,7 +521,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	files["Empty.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 137\n---\n\n# Empty\n"
 	s := openVault(t, files)
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday())).
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday())).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -556,7 +556,7 @@ func TestCountCardsDue_CountsOnlyAnswersOfThatDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday().Add(time.Hour))).
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday().Add(time.Hour))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -577,7 +577,7 @@ func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	// One card of one of the two decks the Sanskrit preset schedules.
 	answer(t, s.run(t, getSaturday()), "k7m2xq9fzp", 6*time.Second)
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday().Add(time.Hour))).
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday().Add(time.Hour))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -608,7 +608,7 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	s.schedules.At = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
-	counter := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday().Add(time.Hour)))
+	counter := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday().Add(time.Hour)))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -673,7 +673,7 @@ func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
 		"decks/Full.md":  deckOf("Empty", 3, 0),
 	})
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday())).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday())).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -700,7 +700,7 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 		"decks/Empty.md": deckOf("Empty", 0, 0),
 	})
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getSaturday())).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday())).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -762,7 +762,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 	answer(t, run, "card000010", 5*time.Second)
 	answer(t, run, "card000020", 5*time.Second)
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getLearnedHour().Add(time.Minute))).
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getLearnedHour().Add(time.Minute))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -793,7 +793,7 @@ func TestCountCardsDue_UnansweredDeckHasZeroLearned(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getLearnedVault())
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getLearnedHour())).
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getLearnedHour())).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -818,7 +818,7 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 		"decks/One.md":   deckOf("Recall", 1, 0),
 	})
 
-	counts, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getLearnedHour())).
+	counts, err := s.newCountCardsDueAt(getToday(), newFakeClock(getLearnedHour())).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -837,7 +837,7 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getLearnedVault())
 
-	before, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getLearnedHour())).
+	before, err := s.newCountCardsDueAt(getToday(), newFakeClock(getLearnedHour())).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -852,7 +852,7 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 	run := s.run(t, getLearnedHour())
 	answer(t, run, "card000000", 5*time.Second)
 
-	after, err := s.newCountCardsDueAt(getToday(), clock.NewFake(getLearnedHour().Add(time.Minute))).
+	after, err := s.newCountCardsDueAt(getToday(), newFakeClock(getLearnedHour().Add(time.Minute))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -1354,4 +1354,11 @@ func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	if len(assigned.Unwritten) != 0 {
 		t.Errorf("named %v, want none", assigned.Unwritten)
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

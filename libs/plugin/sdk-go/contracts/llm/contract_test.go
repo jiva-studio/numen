@@ -210,7 +210,7 @@ func TestAPayloadThatIsNoRequestOfTheContractIsAnInvalidRequest(t *testing.T) {
 
 	_, err := serve(t.Context(), connection.Call{}, []byte{0xff, 0xff}, func([]byte) error { return nil })
 
-	if reason, _ := connection.GetReason(err); !connection.IsStop(err) || reason != connection.ReasonInvalidRequest {
+	if !connection.IsStop(err) || err.Error() != connection.ReasonInvalidRequest.String() {
 		t.Errorf("err = %v, want a stop of an invalid request", err)
 	}
 }

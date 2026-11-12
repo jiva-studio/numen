@@ -62,11 +62,10 @@ func TestAWindowSeesTheItemAFrontendReportsAndItsClear(t *testing.T) {
 	if _, err := client.ClearHealth(t.Context(), connect.NewRequest(&v1.ClearHealthRequest{PluginId: "org.example.gazette", Key: "names"})); err != nil {
 		t.Fatal(err)
 	}
-	listed, err := client.ListHealth(t.Context(), connect.NewRequest(&v1.ListHealthRequest{}))
-	if err != nil {
-		t.Fatal(err)
+	if !stream.Receive() {
+		t.Fatal(stream.Err())
 	}
-	if got := listed.Msg.GetItems(); len(got) != 1 || got[0].GetKey() != plugin.HealthKeyStart {
+	if got := stream.Msg().GetItems(); len(got) != 1 || got[0].GetKey() != plugin.HealthKeyStart {
 		t.Errorf("list after the clear = %v, want the start item", got)
 	}
 }

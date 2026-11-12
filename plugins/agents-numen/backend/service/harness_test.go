@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/hosttools"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
@@ -97,7 +98,7 @@ func (h *fakeHost) getCalls() []tools.Call {
 func (h *fakeHost) serve(t *testing.T) string {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(h))
+	mux.Handle(toolstest.NewServiceHandler(h))
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+hostToken {
 			http.Error(w, "no token", http.StatusUnauthorized)

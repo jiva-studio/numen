@@ -66,7 +66,7 @@ func newAnswerer(t *testing.T, chat *scriptedChat, tools *fakeTools, rows string
 	t.Helper()
 	store := settings.NewStore()
 	store.Configure(map[string]string{settings.KeyConnections: rows})
-	now := clock.NewFake(time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC))
+	now := newFakeClock(time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC))
 	answerer, err := answer.New(store, chat, tools, now)
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +105,7 @@ func textReply(text string) conversation.Reply {
 
 func assertUnavailable(t *testing.T, err error) {
 	t.Helper()
-	if reason, isFailure := connection.GetReason(err); !connection.IsStop(err) || !isFailure || reason != connection.ReasonUnavailable {
+	if !connection.IsStop(err) || err.Error() != connection.ReasonUnavailable.String() {
 		t.Errorf("err = %v, want a stop of reason unavailable", err)
 	}
 }
@@ -347,4 +347,11 @@ func TestAClosedAnswererRejectsNewTasks(t *testing.T) {
 	_, _, err := run(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
 	assertUnavailable(t, err)
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

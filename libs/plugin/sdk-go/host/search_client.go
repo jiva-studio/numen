@@ -20,10 +20,9 @@ type SearchClient struct {
 }
 
 var (
-	_ SearchIndex   = (*SearchClient)(nil)
-	_ PassageSearch = (*SearchClient)(nil)
-	_ SearchPolicy  = (*SearchClient)(nil)
-	_ PlaceSearch   = (*SearchClient)(nil)
+	_ SearchIndex  = (*SearchClient)(nil)
+	_ SearchPolicy = (*SearchClient)(nil)
+	_ PlaceSearch  = (*SearchClient)(nil)
 )
 
 // NewSearchClientFromEnv connects to the host the process was started for. It returns hostcall.ErrNoHost

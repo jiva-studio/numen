@@ -13,8 +13,8 @@ func TestATryNextErrorCarriesItsReasonAndRetryAfter(t *testing.T) {
 	if !isTryNext || retryAfter != 30*time.Second {
 		t.Fatalf("IsTryNext = %v, %v, want 30s, true", retryAfter, isTryNext)
 	}
-	if reason, ok := GetReason(err); !ok || reason != ReasonRateLimited {
-		t.Errorf("GetReason = %v, %v, want rate limited", reason, ok)
+	if reason, ok := getReason(err); !ok || reason != ReasonRateLimited {
+		t.Errorf("getReason = %v, %v, want rate limited", reason, ok)
 	}
 	if IsStop(err) {
 		t.Error("a try-next error is a stop")
@@ -26,8 +26,8 @@ func TestAStopErrorCarriesItsReason(t *testing.T) {
 	if !IsStop(err) {
 		t.Fatal("IsStop = false")
 	}
-	if reason, ok := GetReason(err); !ok || reason != ReasonInvalidRequest {
-		t.Errorf("GetReason = %v, %v, want invalid request", reason, ok)
+	if reason, ok := getReason(err); !ok || reason != ReasonInvalidRequest {
+		t.Errorf("getReason = %v, %v, want invalid request", reason, ok)
 	}
 	if _, isTryNext := IsTryNext(err); isTryNext {
 		t.Error("a stop error is a try-next")
@@ -39,7 +39,7 @@ func TestAPlainErrorIsNeitherFailure(t *testing.T) {
 	if _, isTryNext := IsTryNext(err); isTryNext || IsStop(err) {
 		t.Error("a plain error is a failure kind")
 	}
-	if _, ok := GetReason(err); ok {
+	if _, ok := getReason(err); ok {
 		t.Error("a plain error has a reason")
 	}
 }

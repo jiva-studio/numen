@@ -4,7 +4,7 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import type { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import { ErrorCodeSchema } from '@numen/protocol'
 
-import { ReportedError, formatErrorCodeMessage, formatErrorMessage } from './error'
+import { formatErrorCodeMessage, formatErrorMessage } from './error'
 
 /** Past every error code the schema names today. */
 const UNNAMED_CODE = 999 as ProtoErrorCode
@@ -81,12 +81,6 @@ describe('a fault', () => {
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
   })
 
-  it('shows the text of a ReportedError', () => {
-    expect(
-      formatErrorMessage(new ReportedError('The deck sample.deck could not be read: no cards')),
-    ).toBe('The deck sample.deck could not be read: no cards')
-  })
-
   it('shows the text of an error named ReportedError from the core-client copy', () => {
     const reported = Object.assign(new Error('The deck sample.deck could not be read: no cards'), {
       name: 'ReportedError',
@@ -104,7 +98,8 @@ describe('a fault', () => {
   })
 
   it('shows the generic text for a ReportedError with blank text', () => {
-    expect(formatErrorMessage(new ReportedError('  '))).toBe('Numen is not responding; retrying')
+    const reported = Object.assign(new Error('  '), { name: 'ReportedError' })
+    expect(formatErrorMessage(reported)).toBe('Numen is not responding; retrying')
   })
 
   it('shows the generic text for null', () => {

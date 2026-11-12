@@ -72,14 +72,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		return err
 	}
 	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
-	connections := hostvault.Connections{
-		Reader:      query.NewGetConnection(db.NoteQueries()),
-		Saver:       useCases.Connect.SaveConnection,
-		SideRemover: useCases.Connect.RemoveSide,
-		Remover:     useCases.Connect.RemoveConnection,
-		Joiner:      useCases.Connect.Join,
-		Creator:     useCases.Connect.CreateInRelation,
-	}
 	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	return hostvault.NewAccess(
@@ -88,7 +80,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Vaults:     registry.Vaults.List,
 			Find:       vaultregistry.NewFindByID(registry.Lookup).Execute,
 			IndexState: hooks.IndexState,
-			Watcher:    vault.NewWatchChanges(vaultWatcher(c.vault)).Execute,
 			Moved:      hooks.Moved,
 			Written:    hooks.Written,
 		},
@@ -107,7 +98,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			TypedPaths: db.NoteQueries(),
 			Links:      db.NoteQueries(),
 		},
-		connections,
 		arranger,
 		hostvault.Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 )
 
 // standInHost serves PluginToolService as the host does: it lists the vault tools of the other
@@ -50,7 +51,7 @@ func (h *standInHost) record(header http.Header, call *tools.Call) {
 func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 	host := &standInHost{}
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(host))
+	mux.Handle(toolstest.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	endpoint := hostcall.Endpoint{BaseURL: served.URL, Token: "plugin-token"}
@@ -66,7 +67,7 @@ func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, session)
+	t.Cleanup(func() { closeAndCheck(t, session) })
 
 	listed, err := session.ListTools(t.Context(), nil)
 	if err != nil {
@@ -96,5 +97,13 @@ func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 		if header != "Bearer plugin-token" {
 			t.Errorf("the host was called with %q", header)
 		}
+	}
+}
+
+// closeAndCheck closes c and fails the test when closing returns an error.
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
 	}
 }

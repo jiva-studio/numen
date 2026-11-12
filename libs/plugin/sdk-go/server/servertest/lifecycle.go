@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 // LifecycleClient calls the lifecycle service of a plugin.
@@ -16,17 +16,19 @@ type LifecycleClient struct {
 	rpc numenv1connect.PluginLifecycleServiceClient
 }
 
-func NewLifecycleClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) *LifecycleClient {
-	return &LifecycleClient{rpc: numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, opts...)}
+// NewLifecycleClient returns a client that presents token on every call, as the host does.
+func NewLifecycleClient(httpClient connect.HTTPClient, baseURL, token string) *LifecycleClient {
+	rpc := numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, connect.WithInterceptors(hostcall.Bearer(token)))
+	return &LifecycleClient{rpc: rpc}
 }
 
 // Ping asks the plugin for its status and protocol version.
-func (c *LifecycleClient) Ping(ctx context.Context) (server.PingResult, error) {
+func (c *LifecycleClient) Ping(ctx context.Context) (status string, protocol int32, err error) {
 	res, err := c.rpc.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
-		return server.PingResult{}, err
+		return "", 0, err
 	}
-	return server.PingResult{Status: res.Msg.GetStatus(), Protocol: res.Msg.GetProtocol()}, nil
+	return res.Msg.GetStatus(), res.Msg.GetProtocol(), nil
 }
 
 // Configure sends the configuration values to the plugin and reports whether it accepted them.

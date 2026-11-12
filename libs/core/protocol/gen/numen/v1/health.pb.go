@@ -405,87 +405,6 @@ func (*ClearHealthResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_health_proto_rawDescGZIP(), []int{5}
 }
 
-type ListHealthRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListHealthRequest) Reset() {
-	*x = ListHealthRequest{}
-	mi := &file_numen_v1_health_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListHealthRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListHealthRequest) ProtoMessage() {}
-
-func (x *ListHealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_health_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListHealthRequest.ProtoReflect.Descriptor instead.
-func (*ListHealthRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_health_proto_rawDescGZIP(), []int{6}
-}
-
-type ListHealthResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The items of every plugin, in the order they were first reported.
-	Items         []*HealthItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListHealthResponse) Reset() {
-	*x = ListHealthResponse{}
-	mi := &file_numen_v1_health_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListHealthResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListHealthResponse) ProtoMessage() {}
-
-func (x *ListHealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_health_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListHealthResponse.ProtoReflect.Descriptor instead.
-func (*ListHealthResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_health_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ListHealthResponse) GetItems() []*HealthItem {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
 type WatchHealthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -494,7 +413,7 @@ type WatchHealthRequest struct {
 
 func (x *WatchHealthRequest) Reset() {
 	*x = WatchHealthRequest{}
-	mi := &file_numen_v1_health_proto_msgTypes[8]
+	mi := &file_numen_v1_health_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -506,7 +425,7 @@ func (x *WatchHealthRequest) String() string {
 func (*WatchHealthRequest) ProtoMessage() {}
 
 func (x *WatchHealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_health_proto_msgTypes[8]
+	mi := &file_numen_v1_health_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -519,7 +438,7 @@ func (x *WatchHealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchHealthRequest.ProtoReflect.Descriptor instead.
 func (*WatchHealthRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_health_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_health_proto_rawDescGZIP(), []int{6}
 }
 
 type WatchHealthResponse struct {
@@ -532,7 +451,7 @@ type WatchHealthResponse struct {
 
 func (x *WatchHealthResponse) Reset() {
 	*x = WatchHealthResponse{}
-	mi := &file_numen_v1_health_proto_msgTypes[9]
+	mi := &file_numen_v1_health_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -544,7 +463,7 @@ func (x *WatchHealthResponse) String() string {
 func (*WatchHealthResponse) ProtoMessage() {}
 
 func (x *WatchHealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_health_proto_msgTypes[9]
+	mi := &file_numen_v1_health_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -557,7 +476,7 @@ func (x *WatchHealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchHealthResponse.ProtoReflect.Descriptor instead.
 func (*WatchHealthResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_health_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_health_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *WatchHealthResponse) GetItems() []*HealthItem {
@@ -593,10 +512,7 @@ const file_numen_v1_health_proto_rawDesc = "" +
 	"\x12ClearHealthRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\"\x15\n" +
-	"\x13ClearHealthResponse\"\x13\n" +
-	"\x11ListHealthRequest\"@\n" +
-	"\x12ListHealthResponse\x12*\n" +
-	"\x05items\x18\x01 \x03(\v2\x14.numen.v1.HealthItemR\x05items\"\x14\n" +
+	"\x13ClearHealthResponse\"\x14\n" +
 	"\x12WatchHealthRequest\"A\n" +
 	"\x13WatchHealthResponse\x12*\n" +
 	"\x05items\x18\x01 \x03(\v2\x14.numen.v1.HealthItemR\x05items*\x81\x01\n" +
@@ -604,12 +520,10 @@ const file_numen_v1_health_proto_rawDesc = "" +
 	"\x1bHEALTH_SEVERITY_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12HEALTH_SEVERITY_OK\x10\x01\x12\x1b\n" +
 	"\x17HEALTH_SEVERITY_WARNING\x10\x02\x12\x19\n" +
-	"\x15HEALTH_SEVERITY_ERROR\x10\x032\xc7\x02\n" +
+	"\x15HEALTH_SEVERITY_ERROR\x10\x032\xfe\x01\n" +
 	"\x13PluginHealthService\x12M\n" +
 	"\fReportHealth\x12\x1d.numen.v1.ReportHealthRequest\x1a\x1e.numen.v1.ReportHealthResponse\x12J\n" +
-	"\vClearHealth\x12\x1c.numen.v1.ClearHealthRequest\x1a\x1d.numen.v1.ClearHealthResponse\x12G\n" +
-	"\n" +
-	"ListHealth\x12\x1b.numen.v1.ListHealthRequest\x1a\x1c.numen.v1.ListHealthResponse\x12L\n" +
+	"\vClearHealth\x12\x1c.numen.v1.ClearHealthRequest\x1a\x1d.numen.v1.ClearHealthResponse\x12L\n" +
 	"\vWatchHealth\x12\x1c.numen.v1.WatchHealthRequest\x1a\x1d.numen.v1.WatchHealthResponse0\x01BFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -625,7 +539,7 @@ func file_numen_v1_health_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_health_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_health_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_numen_v1_health_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_health_proto_goTypes = []any{
 	(HealthSeverity)(0),          // 0: numen.v1.HealthSeverity
 	(*HealthAction)(nil),         // 1: numen.v1.HealthAction
@@ -634,32 +548,27 @@ var file_numen_v1_health_proto_goTypes = []any{
 	(*ReportHealthResponse)(nil), // 4: numen.v1.ReportHealthResponse
 	(*ClearHealthRequest)(nil),   // 5: numen.v1.ClearHealthRequest
 	(*ClearHealthResponse)(nil),  // 6: numen.v1.ClearHealthResponse
-	(*ListHealthRequest)(nil),    // 7: numen.v1.ListHealthRequest
-	(*ListHealthResponse)(nil),   // 8: numen.v1.ListHealthResponse
-	(*WatchHealthRequest)(nil),   // 9: numen.v1.WatchHealthRequest
-	(*WatchHealthResponse)(nil),  // 10: numen.v1.WatchHealthResponse
-	nil,                          // 11: numen.v1.HealthAction.ValuesEntry
+	(*WatchHealthRequest)(nil),   // 7: numen.v1.WatchHealthRequest
+	(*WatchHealthResponse)(nil),  // 8: numen.v1.WatchHealthResponse
+	nil,                          // 9: numen.v1.HealthAction.ValuesEntry
 }
 var file_numen_v1_health_proto_depIdxs = []int32{
-	11, // 0: numen.v1.HealthAction.values:type_name -> numen.v1.HealthAction.ValuesEntry
-	0,  // 1: numen.v1.HealthItem.severity:type_name -> numen.v1.HealthSeverity
-	1,  // 2: numen.v1.HealthItem.action:type_name -> numen.v1.HealthAction
-	2,  // 3: numen.v1.ReportHealthRequest.item:type_name -> numen.v1.HealthItem
-	2,  // 4: numen.v1.ListHealthResponse.items:type_name -> numen.v1.HealthItem
-	2,  // 5: numen.v1.WatchHealthResponse.items:type_name -> numen.v1.HealthItem
-	3,  // 6: numen.v1.PluginHealthService.ReportHealth:input_type -> numen.v1.ReportHealthRequest
-	5,  // 7: numen.v1.PluginHealthService.ClearHealth:input_type -> numen.v1.ClearHealthRequest
-	7,  // 8: numen.v1.PluginHealthService.ListHealth:input_type -> numen.v1.ListHealthRequest
-	9,  // 9: numen.v1.PluginHealthService.WatchHealth:input_type -> numen.v1.WatchHealthRequest
-	4,  // 10: numen.v1.PluginHealthService.ReportHealth:output_type -> numen.v1.ReportHealthResponse
-	6,  // 11: numen.v1.PluginHealthService.ClearHealth:output_type -> numen.v1.ClearHealthResponse
-	8,  // 12: numen.v1.PluginHealthService.ListHealth:output_type -> numen.v1.ListHealthResponse
-	10, // 13: numen.v1.PluginHealthService.WatchHealth:output_type -> numen.v1.WatchHealthResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	9, // 0: numen.v1.HealthAction.values:type_name -> numen.v1.HealthAction.ValuesEntry
+	0, // 1: numen.v1.HealthItem.severity:type_name -> numen.v1.HealthSeverity
+	1, // 2: numen.v1.HealthItem.action:type_name -> numen.v1.HealthAction
+	2, // 3: numen.v1.ReportHealthRequest.item:type_name -> numen.v1.HealthItem
+	2, // 4: numen.v1.WatchHealthResponse.items:type_name -> numen.v1.HealthItem
+	3, // 5: numen.v1.PluginHealthService.ReportHealth:input_type -> numen.v1.ReportHealthRequest
+	5, // 6: numen.v1.PluginHealthService.ClearHealth:input_type -> numen.v1.ClearHealthRequest
+	7, // 7: numen.v1.PluginHealthService.WatchHealth:input_type -> numen.v1.WatchHealthRequest
+	4, // 8: numen.v1.PluginHealthService.ReportHealth:output_type -> numen.v1.ReportHealthResponse
+	6, // 9: numen.v1.PluginHealthService.ClearHealth:output_type -> numen.v1.ClearHealthResponse
+	8, // 10: numen.v1.PluginHealthService.WatchHealth:output_type -> numen.v1.WatchHealthResponse
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_health_proto_init() }
@@ -673,7 +582,7 @@ func file_numen_v1_health_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_health_proto_rawDesc), len(file_numen_v1_health_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

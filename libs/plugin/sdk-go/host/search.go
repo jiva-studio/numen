@@ -174,15 +174,6 @@ type SearchIndex interface {
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
 }
 
-// PassageSearch searches the text of a vault. It needs the index:read permission.
-type PassageSearch interface {
-	// SearchPassages returns the passages of the vault matching the query, best first, from the index of
-	// every source and every text version: by keywords, and by embedding when the installation has
-	// an embedding model. An installation with no model searches by keywords only, so the call
-	// does not return ErrNoModel. It returns at most MaxSearchedPassagesPerSource passages of one source.
-	SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error)
-}
-
 // PlaceSearch finds the chunks of the place of a search source nearest a vector. It needs the index:read
 // permission. A search source answers a query of the core with it, on the client With the vault of the
 // place; a recipe other than the one of the source in use returns ErrRecipeMismatch.
@@ -275,13 +266,6 @@ type SearchPolicy interface {
 	// the stored floor, and a floor above one or below zero returns ErrInvalidFloor. Setting the floor
 	// that is stored changes nothing.
 	SetSearchFloor(ctx context.Context, recipe string, floor float64) error
-}
-
-// GetSearchSourceReadyEvent is the event the host emits to plugins when the search source has indexed every
-// chunk of the vault of the identity, but the chunks of a source whose indexing a person canceled, which stay
-// out until the source changes.
-func GetSearchSourceReadyEvent(id domain.VaultID) string {
-	return protocol.GetSearchSourceReadyEvent(string(id))
 }
 
 // ReadSearchSourceReadyEvent returns the identity of the vault that an event of the host names as indexed by

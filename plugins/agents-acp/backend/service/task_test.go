@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 )
 
 // gardenHost is a stand-in for the host that lists two tools of a garden vault and records the calls it
@@ -63,7 +64,7 @@ func serveGardenHost(t *testing.T) (*gardenHost, tools.Client) {
 	t.Helper()
 	host := &gardenHost{}
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(host))
+	mux.Handle(toolstest.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	return host, tools.NewClient(hostcall.Endpoint{BaseURL: served.URL, Token: "orchard-token"})
@@ -272,7 +273,7 @@ func TestATaskWithNoConversationHasASessionOfItsOwnClosedAtTheEnd(t *testing.T) 
 
 func TestASessionIdleForThirtyMinutesIsClosed(t *testing.T) {
 	program, record := fakeProgram(t, "plain")
-	source := clock.NewFake(time.Date(2026, 4, 2, 9, 0, 0, 0, time.UTC))
+	source := newFakeClock(time.Date(2026, 4, 2, 9, 0, 0, 0, time.UTC))
 	svc := newTestServerWith(t, nil, source)
 	request := &acp.TaskRequest{Prompt: "Which beds face north?", Conversation: "talk-garden"}
 
@@ -300,7 +301,7 @@ func TestASessionIdleForThirtyMinutesIsClosed(t *testing.T) {
 
 func TestThePluginKeepsTheSessionsOfEightConversations(t *testing.T) {
 	program, record := fakeProgram(t, "plain")
-	source := clock.NewFake(time.Date(2026, 4, 2, 9, 0, 0, 0, time.UTC))
+	source := newFakeClock(time.Date(2026, 4, 2, 9, 0, 0, 0, time.UTC))
 	svc := newTestServerWith(t, nil, source)
 
 	for i := range 9 {
@@ -359,7 +360,7 @@ func TestAProgramThatIsMissingOrFailsIsTriedNext(t *testing.T) {
 func TestAnACPConnectionWithoutAProgramIsInvalid(t *testing.T) {
 	_, _, err := runTask(t.Context(), newTestServer(t), taskCall("acp", ""), &acp.TaskRequest{Prompt: "Which beds face north?"})
 
-	if reason, _ := connection.GetReason(err); !connection.IsStop(err) || reason != connection.ReasonInvalidRequest {
+	if !connection.IsStop(err) || err.Error() != connection.ReasonInvalidRequest.String() {
 		t.Errorf("RunTask = %v, want a stop for an invalid request", err)
 	}
 }
@@ -389,4 +390,11 @@ func cancelOnPrompt(record string, cancel context.CancelFunc) {
 		case <-time.After(10 * time.Millisecond):
 		}
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

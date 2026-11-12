@@ -176,6 +176,7 @@ func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.Tex
 	return version, nil
 }
 
+// RemoveVersion takes the version of the plugin out, as the user deleting it in the window does.
 func (t *Texts) RemoveVersion(_ context.Context, path, key string) error {
 	w := t.world
 	w.mu.Lock()

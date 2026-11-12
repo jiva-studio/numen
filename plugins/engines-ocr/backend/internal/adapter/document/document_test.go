@@ -6,10 +6,9 @@ import (
 	"errors"
 	"image"
 	"image/png"
+	"io"
 	"os"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
@@ -61,7 +60,7 @@ func open(t *testing.T, path string, raw []byte) recognition.Document {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, doc)
+	t.Cleanup(func() { closeAndCheck(t, doc) })
 	return doc
 }
 
@@ -129,5 +128,13 @@ func TestOpenRejectsInvalidBytes(t *testing.T) {
 		if path == "c.png" && !errors.Is(err, image.ErrFormat) {
 			t.Errorf("invalid image error = %v, want image.ErrFormat", err)
 		}
+	}
+}
+
+// closeAndCheck closes c and fails the test when closing returns an error.
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
 	}
 }

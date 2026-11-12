@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/protocol"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/core/protocol/schematest"
@@ -260,7 +261,7 @@ func TestAPermissionTheManifestLacksIsDeniedAndAnUnknownVaultIsUnknown(t *testin
 }
 
 func TestTheSearchSourceReadyEventNamesTheVaultAndOnlyThatEvent(t *testing.T) {
-	id, ok := host.ReadSearchSourceReadyEvent(host.GetSearchSourceReadyEvent("01VAULT"))
+	id, ok := host.ReadSearchSourceReadyEvent(protocol.GetSearchSourceReadyEvent("01VAULT"))
 	if !ok || id != "01VAULT" {
 		t.Errorf("read %q, %v", id, ok)
 	}

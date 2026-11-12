@@ -66,9 +66,8 @@ type searchVault struct {
 }
 
 var (
-	_ host.SearchIndex   = (*Search)(nil)
-	_ host.PassageSearch = (*Search)(nil)
-	_ host.SearchPolicy  = (*Search)(nil)
+	_ host.SearchIndex  = (*Search)(nil)
+	_ host.SearchPolicy = (*Search)(nil)
 )
 
 // NewSearch is the search of a host that shows the vault given, and also knows the others. The host has

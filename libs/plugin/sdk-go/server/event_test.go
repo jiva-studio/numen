@@ -20,7 +20,7 @@ const eventToken = "event-token"
 
 func serveEvents(t *testing.T, opts ...Option) string {
 	t.Helper()
-	s := New(append([]Option{WithPort(0), WithToken(eventToken), WithStdout(io.Discard), WithStdin(nil)}, opts...)...)
+	s := New(append([]Option{withPort(0), withToken(eventToken), withStdout(io.Discard), withStdin(nil)}, opts...)...)
 	port, err := s.Listen()
 	if err != nil {
 		t.Fatalf("Listen failed: %v", err)

@@ -26,11 +26,6 @@ func (p Texts) PutVersion(ctx context.Context, v domain.Vault, pluginID string, 
 	return p.versions.PutVersion(ctx, v, pluginID, params)
 }
 
-// RemoveVersion removes a version a plugin made of a file of the vault.
-func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path, key string) error {
-	return p.versions.RemoveVersion(ctx, v, pluginID, path, key)
-}
-
 // ListVersions lists the versions of a file of the vault and names the live one for the file's
 // current content.
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error) {

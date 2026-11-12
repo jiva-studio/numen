@@ -22,7 +22,7 @@ export interface BackgroundTaskAllowed {
 }
 
 // BackgroundTaskAction is the fix a failed task offers; the label is empty where it offers none.
-export interface BackgroundTaskAction {
+interface BackgroundTaskAction {
   readonly label: string
 }
 

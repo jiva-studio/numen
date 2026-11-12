@@ -54,7 +54,6 @@ func bindNotes(services *Services, db *testIndex) {
 	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
 	services.NoteCases.Headings = query.NewListHeadings(db.NoteQueries.Headings)
 	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
-	services.NoteCases.Names = db.NoteQueries.NamedPaths
 	services.NoteCases.Neighborhood = query.NewGetNeighborhoodView(links, refs, db.NoteQueries.NoteTypes, noTabKinds{})
 	services.UseNotes()
 }
