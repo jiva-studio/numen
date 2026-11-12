@@ -1,6 +1,10 @@
 Feature: Delete text
   A person deletes a text of a file, and the text before it comes back where there is one.
 
+  As a person who works with scans and recordings
+  I want to delete the text of a file
+  So that the file is not found by words I no longer want
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

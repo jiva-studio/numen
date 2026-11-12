@@ -1,6 +1,10 @@
 Feature: Search documents
   A person finds the passages of documents in a vault.
 
+  As a person who keeps documents in a vault
+  I want to find a passage of a PDF or a book and open it where it is
+  So that I can go to the words I look for
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

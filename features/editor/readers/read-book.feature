@@ -1,6 +1,10 @@
 Feature: Read a book
   A person reads an EPUB book in a tab and goes to a chapter from the contents.
 
+  As a person who reads books
+  I want to open an EPUB book and go to a chapter from its contents
+  So that I can read the part I want
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

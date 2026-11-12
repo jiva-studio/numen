@@ -1,6 +1,10 @@
 Feature: Recognition
   A person makes the text of a scan and finds it.
 
+  As a person who keeps scans
+  I want to make the text of a scan and search it
+  So that I can find a scan by the words in it
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

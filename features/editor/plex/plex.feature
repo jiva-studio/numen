@@ -1,6 +1,10 @@
 Feature: Plex
   A person sees the notes joined to the active note and joins more.
 
+  As a person who keeps notes
+  I want to see the notes joined to a note and to join more
+  So that I can follow how my notes relate
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

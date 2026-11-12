@@ -1,6 +1,10 @@
 Feature: Restore tabs
   Tabs are restored where the person left them.
 
+  As a person who uses the editor every day
+  I want my tabs to come back as I left them when the application starts again
+  So that I can continue my work without opening them again
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

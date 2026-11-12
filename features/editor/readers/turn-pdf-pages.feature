@@ -1,6 +1,10 @@
 Feature: Turn PDF pages
   A person goes to a page of a PDF by its number or with the buttons.
 
+  As a person who reads PDF files
+  I want to go to a page of a PDF by its number or with the buttons
+  So that I can reach the page I need
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

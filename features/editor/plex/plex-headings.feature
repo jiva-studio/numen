@@ -1,6 +1,10 @@
 Feature: Plex headings
   A person sees the headings of a note under its node in the plex.
 
+  As a person who keeps notes
+  I want to see the headings of a note in the plex
+  So that I can see what a note holds without opening it
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:
