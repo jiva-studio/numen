@@ -77,6 +77,9 @@ message PluginSetting {
   string value_json = 21;
   // The operations a setting of type connections is used for. max is the number of rows.
   repeated string operations = 23;
+  // Whether the manifest lets a setting of type connections that holds no row use every connection
+  // whose type serves the operation. The person's choice is in the plugin field "discover".
+  bool discover = 24;
   reserved 22;
 }
 

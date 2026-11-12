@@ -60,6 +60,7 @@ export interface PluginSettingInfo {
   readonly preview?: boolean | undefined
   readonly optionsFrom?: string | undefined
   readonly operations?: readonly string[] | undefined
+  readonly discover?: boolean | undefined
   readonly activeOptions?: readonly PluginSettingOption[] | undefined
   readonly isShown?: boolean | undefined
   readonly value?: SettingValue | undefined

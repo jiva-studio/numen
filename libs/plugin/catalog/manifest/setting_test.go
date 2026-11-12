@@ -301,6 +301,7 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"service duplicate":       {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, ErrInvalidService},
 		"setting empty key":       {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"}]}`, ErrEmptySettingKey},
 		"setting named enabled":   {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
+		"setting named discover":  {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"discover","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
 		"setting duplicate key":   {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T"},{"key":"k","type":"string","title":"T"}]}`, ErrDuplicateSettingKey},
 		"setting empty title":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":" "}]}`, ErrEmptySettingTitle},
 		"setting bad type":        {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"bad","title":"T"}]}`, ErrInvalidSettingType},

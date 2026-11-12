@@ -163,10 +163,14 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 
 func listConnectionsSettingIssues(s Setting, key string) []error {
 	if s.Type != SettingTypeConnections {
-		if len(s.Operations) == 0 {
-			return nil
+		var issues []error
+		if len(s.Operations) > 0 {
+			issues = append(issues, fmt.Errorf("%w: %s names operations and holds no rows of connections", ErrInvalidSetting, key))
 		}
-		return []error{fmt.Errorf("%w: %s names operations and holds no rows of connections", ErrInvalidSetting, key)}
+		if s.Discover {
+			issues = append(issues, fmt.Errorf("%w: %s discovers connections and holds no rows of connections", ErrInvalidSetting, key))
+		}
+		return issues
 	}
 	var issues []error
 	if len(s.Operations) == 0 {

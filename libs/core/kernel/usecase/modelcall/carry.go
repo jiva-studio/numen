@@ -45,7 +45,7 @@ type asking struct {
 
 func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error) {
 	var none []byte
-	rows, err := c.rows.ListRows(ask.callerPluginID, ask.operation)
+	rows, err := c.rows(ask.callerPluginID, ask.operation)
 	if err != nil {
 		return none, fmt.Errorf("read the rows of %s: %w", ask.callerPluginID, err)
 	}

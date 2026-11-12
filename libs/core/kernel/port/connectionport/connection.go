@@ -42,10 +42,14 @@ type Uses interface {
 	Refresh(ctx context.Context, connectionID string) error
 }
 
-// Rows reads the rows of a plugin in the order of use.
-type Rows interface {
-	// ListRows returns the rows of the plugin for an operation, in the order the person set.
-	ListRows(pluginID, operation string) ([]connection.Row, error)
+// ListRows returns the rows a plugin calls an operation through, in the order of use.
+type ListRows func(pluginID, operation string) ([]connection.Row, error)
+
+// RowSettings reads the settings of rows of the plugins.
+type RowSettings interface {
+	// ReadRowSetting returns the setting of rows of the plugin for an operation, with the rows that name an
+	// existing connection. A plugin with no such setting shown has no row and does not discover.
+	ReadRowSetting(pluginID, operation string) (connection.RowSetting, error)
 }
 
 // ReportSetAside tells the person that a connection was set aside for a reason and a row after it answered.

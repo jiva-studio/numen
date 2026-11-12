@@ -6,6 +6,9 @@
  * with the reason and listed after the others. A row is moved by dragging its grip, or by the
  * keyboard: Space picks it up, the arrows move it and Space drops it.
  *
+ * A setting that declares discover has the switch "Discover automatically". While it is on and no row is
+ * written, the page names the connections the plugin uses: every one whose type serves the operations.
+ *
  * With no connection at all, the rows give way to a note and "Open Connections", which asks the
  * settings tab to show the Connections page.
  *
@@ -39,10 +42,12 @@ const props = defineProps<{
   setting: PluginSettingInfo
   value: JsonValue | undefined
   connections: InstallationConnections
+  isDiscovering?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'change', rows: readonly StoredRow[]): void
+  (e: 'discover', isOn: boolean): void
   (e: 'open-connections'): void
 }>()
 
@@ -72,17 +77,25 @@ const { heldKey, announcement, drag, onGripPress, onGripKey } = useRowOrder({
 
 const operations = computed(() => props.setting.operations ?? [])
 const limit = computed(() => props.setting.max ?? 1)
-const { stored, choices, getReason, getRowFields } = useConnectionEntries(
+const { stored, choices, discovered, getReason, getRowFields } = useConnectionEntries(
   () => props.connections,
   () => operations.value,
 )
 const isSingle = computed(() => limit.value === 1)
+const isAutomatic = computed(
+  () => props.isDiscovering === true && stored.value.length > 0 && readRows(props.value).length === 0,
+)
+const automaticText = computed(() =>
+  discovered.value.length > 0
+    ? words.connectionRowsAutomatic(discovered.value.map((one) => one.name))
+    : words.connectionRowsNoneServes,
+)
 
-/* A setting of one row shows its row at once, so that its connection is chosen in place. */
+/* A setting of one row shows its row at once, so that its connection is chosen in place, unless it discovers. */
 watch(
-  [() => stored.value.length, () => drafts.value.length, limit],
+  [() => stored.value.length, () => drafts.value.length, limit, isAutomatic],
   () => {
-    if (isSingle.value && stored.value.length > 0 && drafts.value.length === 0) add()
+    if (isSingle.value && !isAutomatic.value && stored.value.length > 0 && drafts.value.length === 0) add()
   },
   { immediate: true },
 )
@@ -132,10 +145,17 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
       <ConnectionRowsHeader
         :at="setting.key"
         :name="setting.title"
-        :can-add="stored.length > 0 && !isSingle"
+        :can-add="stored.length > 0 && (!isSingle || isAutomatic)"
         :is-add-disabled="drafts.length >= limit"
+        :is-discover-shown="setting.discover === true"
+        :is-discovering="isDiscovering === true"
         @add="onAdd"
+        @discover="(isOn) => emit('discover', isOn)"
       />
+
+      <p v-if="isAutomatic" class="connection-rows__note">
+        {{ automaticText }}
+      </p>
 
       <div v-if="stored.length === 0" class="connection-rows__empty">
         <p class="connection-rows__note">{{ words.connectionRowsNone }}</p>

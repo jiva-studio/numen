@@ -37,6 +37,7 @@ const toWireCondition = (when: PluginSettingCondition) => ({
 const toWireOptions = (setting: PluginSettingInfo) => ({
   optionsFrom: setting.optionsFrom ?? '',
   operations: [...(setting.operations ?? [])],
+  discover: setting.discover ?? false,
   options: (setting.options ?? []).map(toWireOption),
   activeOptions: (setting.activeOptions ?? []).map(toWireOption),
   ...(setting.optionsBy

@@ -352,6 +352,9 @@ message ManifestSetting {
   // call of the plugin for one of them goes through the rows of the setting, and a plugin calls no
   // operation no setting names. max is the number of rows.
   repeated string operations = 22;
+  // discover makes a setting of type connections that holds no row use every connection whose type
+  // serves the operation, in the order of the connections, while the person leaves it on.
+  bool discover = 23;
   reserved 21;
 }
 

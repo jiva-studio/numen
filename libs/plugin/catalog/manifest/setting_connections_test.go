@@ -75,6 +75,7 @@ func TestASettingOfRowsThatBreaksARuleIsRejected(t *testing.T) {
 		"a generated value":        `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"generate":"token"}`,
 		"operations on a string":   `{"key":"a","type":"string","title":"A","operations":["llm.complete"]}`,
 		"operations on a number":   `{"key":"a","type":"number","title":"A","operations":["llm.complete"]}`,
+		"discovery on a boolean":   `{"key":"a","type":"boolean","title":"A","discover":true}`,
 		"two settings for one operation": `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1},` +
 			`{"key":"b","type":"connections","title":"B","operations":["llm.complete"],"max":2}`,
 	} {
@@ -82,5 +83,22 @@ func TestASettingOfRowsThatBreaksARuleIsRejected(t *testing.T) {
 		if !errors.Is(err, manifest.ErrInvalidSetting) {
 			t.Errorf("%s: err = %v, want ErrInvalidSetting", name, err)
 		}
+	}
+}
+
+func TestASettingOfRowsThatDiscoversIsReadFromAManifest(t *testing.T) {
+	m, err := readSettings(`{"key":"agents","type":"connections","title":"Agents","operations":["acp.task"],"max":5,"discover":true},
+		{"key":"completions","type":"connections","title":"Completions","operations":["llm.complete"],"max":1}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	agents, _ := m.GetSetting("agents")
+	completions, _ := m.GetSetting("completions")
+	if !agents.Discover {
+		t.Error("the setting that declares discover does not discover")
+	}
+	if completions.Discover {
+		t.Error("the setting that does not declare discover discovers")
 	}
 }

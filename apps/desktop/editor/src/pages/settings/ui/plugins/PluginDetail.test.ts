@@ -6,6 +6,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import SettingRow from '../setting-row/SettingRow.vue'
+import ConnectionRows from './connection-rows/ConnectionRows.vue'
 import { createInstallation, createPluginInfo } from '@/pages/settings/testing/installation'
 import type { Installation } from '../../types'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
@@ -948,5 +949,46 @@ describe('a setting changed from its default', () => {
     const row = wrapper.findAllComponents(SettingRow)[1]!
 
     expect(row.getComponent(NumberField).attributes('aria-describedby')).toBeUndefined()
+  })
+})
+
+describe('the choice to discover the connections of a plugin', () => {
+  const chat = createPluginInfo('org.example.chat', 'Harbor Chat', {
+    settings: [
+      {
+        key: 'agents',
+        type: 'connections',
+        title: 'Agents',
+        description: '',
+        default: undefined,
+        operations: ['acp.task'],
+        max: 5,
+        discover: true,
+        isShown: true,
+      },
+    ],
+  })
+
+  const findRows = (wrapper: ReturnType<typeof createDetail>['wrapper']) =>
+    wrapper.findComponent(ConnectionRows)
+
+  it('discovers while the person has made no choice', () => {
+    const { wrapper } = createDetail(chat)
+
+    expect(findRows(wrapper).props('isDiscovering')).toBe(true)
+  })
+
+  it('reads the choice the person stored and writes the new one', () => {
+    const { wrapper, recordedWrites } = createDetail(chat, {
+      'org.example.chat': { discover: { agents: false } },
+    })
+
+    expect(findRows(wrapper).props('isDiscovering')).toBe(false)
+
+    findRows(wrapper).vm.$emit('discover', true)
+
+    expect(recordedWrites.map((one) => [one.at, JSON.parse(one.value)])).toStrictEqual([
+      [['org.example.chat', 'discover'], { agents: true }],
+    ])
   })
 })

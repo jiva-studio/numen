@@ -16,7 +16,7 @@ func declaredWithRows(owner string) ([]manifest.Setting, bool) {
 	switch owner {
 	case rowsPluginID:
 		return []manifest.Setting{
-			{Key: "connections", Type: "connections", Title: "Connections", Operations: []string{"llm.complete"}, Max: new(float64(2))},
+			{Key: "connections", Type: "connections", Title: "Connections", Operations: []string{"llm.complete"}, Max: new(float64(2)), Discover: true},
 			{Key: "label", Type: "string", Title: "Label"},
 		}, true
 	case "md.numen.engines.embeddings":
@@ -197,5 +197,38 @@ func TestRowsOfConnectionsThatExistProduceNoNotice(t *testing.T) {
 
 	if len(cfg.Notices) != 0 {
 		t.Errorf("notices = %q", cfg.Notices)
+	}
+}
+
+func checkDiscover(t *testing.T, owner, choices string) error {
+	t.Helper()
+	var value any
+	if err := json.Unmarshal([]byte(choices), &value); err != nil {
+		t.Fatal(err)
+	}
+	return settings.CheckWrite(declaredWithRows, knownConnections, []string{owner, "discover"}, value)
+}
+
+func TestTheChoiceToDiscoverIsAcceptedForASettingThatDiscovers(t *testing.T) {
+	for what, choices := range map[string]string{"off": `{"connections":false}`, "on": `{"connections":true}`, "no choice": `{}`} {
+		if err := checkDiscover(t, rowsPluginID, choices); err != nil {
+			t.Errorf("%s was rejected: %v", what, err)
+		}
+	}
+}
+
+func TestAChoiceToDiscoverThatBreaksTheRulesIsRejected(t *testing.T) {
+	for what, c := range map[string]struct {
+		owner, choices string
+		want           error
+	}{
+		"a flag":                           {rowsPluginID, `false`, settings.ErrWrongType},
+		"a text for the setting":           {rowsPluginID, `{"connections":"off"}`, settings.ErrWrongType},
+		"a setting that is no rows":        {rowsPluginID, `{"label":false}`, settings.ErrUndeclared},
+		"a setting that does not discover": {"md.numen.engines.embeddings", `{"connections":false}`, settings.ErrUndeclared},
+	} {
+		if err := checkDiscover(t, c.owner, c.choices); !errors.Is(err, c.want) {
+			t.Errorf("%s: err = %v, want %v", what, err, c.want)
+		}
 	}
 }

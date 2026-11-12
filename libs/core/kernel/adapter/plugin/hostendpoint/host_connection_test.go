@@ -333,5 +333,5 @@ func TestEveryPriorityOfTheSchemaIsReadAsThePortOneIt(t *testing.T) {
 }
 
 func lookupsOf(world *modelcalltest.World) modelcalls.Connections {
-	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows}
+	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows}
 }

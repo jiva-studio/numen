@@ -205,6 +205,6 @@ func newQueueSetupFor(t *testing.T, operation string, parallelRequests int) *que
 	}
 	return &queueSetup{
 		world: w, entry: entry,
-		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }

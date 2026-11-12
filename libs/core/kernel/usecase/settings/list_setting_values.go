@@ -88,4 +88,7 @@ func listPluginValues(stored settingsdomain.Stored, one plugin.Info, add func([]
 		}
 	}
 	add([]string{one.ID, settingsdomain.HostFieldEnabled}, enabled)
+	if value, found := stored.GetValue(one.ID, settingsdomain.HostFieldDiscover); found {
+		add([]string{one.ID, settingsdomain.HostFieldDiscover}, value)
+	}
 }

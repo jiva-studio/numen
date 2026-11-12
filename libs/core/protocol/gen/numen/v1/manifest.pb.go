@@ -1828,7 +1828,10 @@ type ManifestSetting struct {
 	// operations are the operations a setting of type connections is used for, such as "llm.chat". A
 	// call of the plugin for one of them goes through the rows of the setting, and a plugin calls no
 	// operation no setting names. max is the number of rows.
-	Operations    []string `protobuf:"bytes,22,rep,name=operations,proto3" json:"operations,omitempty"`
+	Operations []string `protobuf:"bytes,22,rep,name=operations,proto3" json:"operations,omitempty"`
+	// discover makes a setting of type connections that holds no row use every connection whose type
+	// serves the operation, in the order of the connections, while the person leaves it on.
+	Discover      bool `protobuf:"varint,23,opt,name=discover,proto3" json:"discover,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1994,6 +1997,13 @@ func (x *ManifestSetting) GetOperations() []string {
 		return x.Operations
 	}
 	return nil
+}
+
+func (x *ManifestSetting) GetDiscover() bool {
+	if x != nil {
+		return x.Discover
+	}
+	return false
 }
 
 type ManifestNoteType struct {
@@ -2509,7 +2519,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\x85\x05\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xa1\x05\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -2533,7 +2543,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bgenerate\x18\x14 \x01(\tR\bgenerate\x12\x1e\n" +
 	"\n" +
 	"operations\x18\x16 \x03(\tR\n" +
-	"operationsB\x06\n" +
+	"operations\x12\x1a\n" +
+	"\bdiscover\x18\x17 \x01(\bR\bdiscoverB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_stepJ\x04\b\x15\x10\x16\"\xd1\x01\n" +

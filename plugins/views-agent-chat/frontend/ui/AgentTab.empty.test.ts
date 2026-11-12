@@ -1,20 +1,21 @@
 /**
- * The agent tab where the plugin has no agent row: the question fails, says so, and offers the
- * settings page of the plugin.
+ * The agent tab where the plugin has no agent row. With no agent connection at all the question fails,
+ * says so, and offers the settings page of the plugin; with an agent connection the core finds, it is
+ * answered.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import AgentTab from './AgentTab.vue'
 import { useConversation } from '../thread'
 import { useAgentConversation } from '../model/useAgentConversation'
-import { createAgentConnections, failWith } from '../fixtures'
+import { createAgentConnections, failWith, say, type TaskScript } from '../fixtures'
 import { WORDS } from '../words'
 
-const mountTab = () => {
+const NO_AGENT: TaskScript = { end: failWith('no_connection', 'no connection serves acp.task') }
+
+const mountTab = (script: TaskScript = NO_AGENT) => {
   let settingsOpened = 0
-  const { host } = createAgentConnections({
-    end: failWith('no_connection', 'no connection serves acp.task'),
-  })
+  const { host } = createAgentConnections(script)
   const state = useAgentConversation(
     useConversation({
       connections: host,
@@ -61,5 +62,16 @@ describe('the agent tab with no agent set up', () => {
     await button.trigger('click')
 
     expect(tab.getOpened()).toBe(1)
+  })
+})
+
+describe('the agent tab with an agent connection and no agent row', () => {
+  it('answers the question and does not say that no agent is set up', async () => {
+    const tab = mountTab({ frames: [say('Seven pear trees grow by the gate.')] })
+
+    await ask(tab)
+
+    expect(tab.wrapper.text()).toContain('Seven pear trees grow by the gate.')
+    expect(tab.wrapper.text()).not.toContain('No agent is set up.')
   })
 })

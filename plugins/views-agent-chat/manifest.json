@@ -45,7 +45,8 @@
       "type": "connections",
       "title": "Agents",
       "operations": ["acp.task"],
-      "max": 5
+      "max": 5,
+      "discover": true
     }
   ],
   "frontend": {}
