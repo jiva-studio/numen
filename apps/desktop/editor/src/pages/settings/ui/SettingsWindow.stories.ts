@@ -91,7 +91,11 @@ const plugin = (id: string, name: string, description: string): PluginInfo => ({
 
 /** Plugins of every category the list sorts by, as an installation ships them. */
 const PLUGINS: readonly PluginInfo[] = [
-  plugin('md.numen.agents.acp', 'ACP Agents', 'External AI assistants via the Agent Client Protocol'),
+  plugin(
+    'md.numen.agents.acp',
+    'ACP Agents',
+    'External AI assistants via the Agent Client Protocol',
+  ),
   plugin(
     'md.numen.agents.tools.vault',
     'Vault Knowledge Tools',
