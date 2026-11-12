@@ -3,8 +3,8 @@ module github.com/jiva-studio/numen/apps/mobile
 go 1.26.11
 
 require (
-	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
 	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
 	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
 )
@@ -34,7 +34,7 @@ require (
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
