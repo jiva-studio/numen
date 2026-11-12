@@ -8,48 +8,14 @@
  * theme of `@numen/ui` and appended to that file, less every declaration the `@numen/ui` build
  * already carries.
  */
-import { readFileSync, readdirSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { dirname, extname, resolve, sep } from 'node:path'
-import { compile } from '@tailwindcss/node'
-import { Scanner } from '@tailwindcss/oxide'
+import { readFileSync } from 'node:fs'
+import { resolve, sep } from 'node:path'
 import postcss from 'postcss'
 import { parse as parseSfc } from '@vue/compiler-sfc'
 import type { Node as BabelNode } from '@babel/types'
 import type { Plugin } from 'vite'
-import { UI_STYLES, getNormalCss, removePresentRules } from '@numen/ui/vite'
-
-/** The stylesheet of `@numen/ui` the utilities are built from. */
-const THEME = createRequire(import.meta.url).resolve('@numen/ui/theme.css')
-
-function getVueScanContent(source: string): string {
-  const { descriptor } = parseSfc(source)
-  return [descriptor.template?.content, descriptor.script?.content, descriptor.scriptSetup?.content]
-    .filter(Boolean)
-    .join('\n')
-}
-
-function getCandidates(files: readonly string[]): string[] {
-  const scanner = new Scanner({})
-  return scanner.scanFiles(
-    files.map((file) => {
-      const content = readFileSync(file, 'utf8')
-      const extension = extname(file).slice(1)
-      return {
-        content: extension === 'vue' ? getVueScanContent(content) : content,
-        extension,
-      }
-    }),
-  )
-}
-
-async function getUtilityCss(candidates: readonly string[]): Promise<string> {
-  const compiler = await compile(`@import ${JSON.stringify(THEME)};`, {
-    base: dirname(THEME),
-    onDependency: () => undefined,
-  })
-  return getNormalCss(compiler.build([...candidates]))
-}
+import { UI_STYLES, removePresentRules } from '@numen/ui/vite'
+import { getCandidates, getUtilityCss } from './utilityCss.ts'
 
 function getDefinedClasses(css: string): Set<string> {
   const classes = new Set<string>()
@@ -206,33 +172,6 @@ export function createUtilitiesPlugin(root: string): Plugin {
         const lines = [...missing].map(([file, classes]) => `  ${file}: ${classes.join(' ')}`)
         this.error(`utilities no stylesheet defines:\n${lines.join('\n')}`)
       }
-    },
-  }
-}
-
-/** The id the stories import the utilities of every plugin frontend by. */
-const STORY_UTILITIES = 'virtual:plugin-utilities.css'
-
-function getFrontendFiles(pluginsDir: string): string[] {
-  return readdirSync(pluginsDir, { recursive: true, encoding: 'utf8' })
-    .filter((path) => /^[^/]+\/frontend\/.+\.(vue|ts)$/.test(path.split(sep).join('/')))
-    .filter((path) => !/\.(stories|test)\.ts$/.test(path))
-    .map((path) => resolve(pluginsDir, path))
-}
-
-/**
- * Serves `virtual:plugin-utilities.css` to the stories: the utilities every plugin frontend uses
- * that the build of `@numen/ui` does not carry, as each plugin's `dist/styles.css` carries them.
- * `pluginsDir` holds one directory per plugin.
- */
-export function createStoryUtilitiesPlugin(pluginsDir: string): Plugin {
-  return {
-    name: 'numen-story-utilities',
-    resolveId: (id) => (id === STORY_UTILITIES ? `\0${STORY_UTILITIES}` : undefined),
-    async load(id) {
-      if (id !== `\0${STORY_UTILITIES}`) return undefined
-      const css = await getUtilityCss(getCandidates(getFrontendFiles(pluginsDir)))
-      return removePresentRules(css, readFileSync(UI_STYLES, 'utf8'))
     },
   }
 }

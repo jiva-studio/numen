@@ -8,9 +8,7 @@ import { resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 import { HOST_MODULES } from './hostModules.ts'
 import { LIGHTNING_CSS } from '@numen/ui/vite'
-import { createStoryUtilitiesPlugin, createUtilitiesPlugin } from './viteStyles.ts'
-
-export { createStoryUtilitiesPlugin }
+import { createUtilitiesPlugin } from './viteStyles.ts'
 
 function createStylesPlugin(root: string): Plugin {
   return {
