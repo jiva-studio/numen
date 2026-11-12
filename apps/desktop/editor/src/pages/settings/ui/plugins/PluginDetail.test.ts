@@ -990,8 +990,8 @@ describe('the choice to discover the connections of a plugin', () => {
 
     findRows(wrapper).vm.$emit('discover', true)
 
-    expect(recordedWrites).toStrictEqual([
-      { at: ['org.example.chat', 'discover'], value: '{"agents":true}' },
+    expect(recordedWrites.map((one) => [one.at, JSON.parse(one.value)])).toStrictEqual([
+      [['org.example.chat', 'discover'], { agents: true }],
     ])
   })
 })
