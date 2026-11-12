@@ -109,7 +109,9 @@ export function useConversation(options: ConversationOptions): Conversation {
 }
 
 function closeAgentConversation(agent: AgentPort, conversation: string): void {
-  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch(reportFailure)
+  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch((error: unknown) => {
+    reportFailure(error)
+  })
 }
 
 interface SettleTurnOptions {
