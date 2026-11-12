@@ -43,7 +43,9 @@ const isNotice = computed(() => props.task.state === 'notice')
 const isFailed = computed(() => props.task.state === 'failed')
 const isCancelling = computed(() => props.task.state === 'cancelling')
 const progress = computed(() => getProgress(props.task))
+const isErrorInLabel = computed(() => isFailed.value && props.task.error === props.task.label)
 const subtext = computed(() => {
+  if (isErrorInLabel.value) return props.task.about
   if (isFailed.value) return props.task.error || props.task.about
   return props.task.about || lastAbout.value
 })
@@ -101,7 +103,13 @@ function onRunAction() {
     <Info v-if="isNotice" class="task-item__notice-icon" :size="14" aria-hidden="true" />
 
     <div class="task-item__content">
-      <span class="task-item__label" :title="task.label">{{ task.label }}</span>
+      <span
+        class="task-item__label"
+        :class="{ 'text-alarm task-item__label--wrapped': isErrorInLabel }"
+        :title="task.label"
+      >
+        {{ task.label }}
+      </span>
       <span
         v-if="subtext"
         class="task-item__detail"
