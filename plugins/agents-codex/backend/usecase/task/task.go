@@ -86,7 +86,7 @@ func (r *Runner) FindProgram() string {
 // own and stops. A canceled task returns the error of ctx.
 func (r *Runner) RunTask(
 	ctx context.Context, call connection.Call, request *contract.TaskRequest, send func(*contract.TaskFrame) error,
-) (*contract.TaskDone, error) {
+) (done *contract.TaskDone, err error) {
 	program := r.FindProgram()
 	if program == "" {
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
@@ -110,9 +110,11 @@ func (r *Runner) RunTask(
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
 	defer func() {
-		if served != nil {
-			// The endpoint ends with the run; a call cut by its shutdown has already failed the run.
-			_ = served.Close(context.WithoutCancel(ctx))
+		if served == nil {
+			return
+		}
+		if closeErr := served.Close(context.WithoutCancel(ctx)); closeErr != nil && err == nil {
+			done, err = nil, connection.NewStopError(connection.ReasonUnavailable)
 		}
 	}()
 	frames := newTurn(indexTools(listed), send)
