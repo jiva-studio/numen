@@ -17,12 +17,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 // dimensions is the width the vector index is built at.
@@ -137,12 +135,17 @@ func precise(v []float32) []byte {
 	return out
 }
 
-func (c corpus) search(embedder searchsourceport.Embedder) search.Search {
-	queries, ok := embedder.(searchsourceport.QueryEmbedder)
-	if !ok {
-		return search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
+// participants are the search sources over the model of a test, none for no model.
+func (c corpus) participants(model sourcefake.Embedder) []search.Participant {
+	if model == nil {
+		return nil
 	}
-	return search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
+	source := sourcefake.Wrap(model).Over(search.NewFindNearest(c.db.ChunkSearch()).Execute)
+	return []search.Participant{search.NewSource(source, c.db.ChunkSearch())}
+}
+
+func (c corpus) search(model sourcefake.Embedder) search.Search {
+	return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(model), nil)
 }
 
 func getModel() searchsource.Description {
@@ -304,8 +307,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 
 	var errs []error
 	unreachable := outOfReach{why: errors.New("dial tcp: network is unreachable")}
-	finds := search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil,
-		unreachable, vectorscase.NewEmbedQueries(unreachable, nil),
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(unreachable),
 		func(err error) { errs = append(errs, err) })
 
 	found, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{})
@@ -327,8 +329,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	c := newCorpus(t)
 
 	canceled := outOfReach{why: context.Canceled}
-	finds := search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, nil,
-		canceled, vectorscase.NewEmbedQueries(canceled, nil), func(error) {})
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(canceled), func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
@@ -612,57 +613,6 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	}
 }
 
-type countingEmbedder struct {
-	inner searchsourceport.Embedder
-	count int
-}
-
-func (e *countingEmbedder) Describe() searchsource.Description {
-	return e.inner.Describe()
-}
-
-func (e *countingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
-	e.count += len(texts)
-	return e.inner.Embed(ctx, texts)
-}
-
-func (e *countingEmbedder) Close() error {
-	return e.inner.Close()
-}
-
-func TestASearchReusesCachedQueryEmbedding(t *testing.T) {
-	ctx := t.Context()
-	c := newCorpus(t)
-	c.vectorize(t, c.first, newVector(+1))
-
-	embedder := &countingEmbedder{inner: oneWay{direction: newVector(+1)}}
-	searching := c.search(embedder)
-
-	_, err := searching.Execute(ctx, c.first, "disorder", search.Parameters{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if embedder.count != 1 {
-		t.Fatalf("first search embedded %d times, want 1", embedder.count)
-	}
-
-	_, err = searching.Execute(ctx, c.first, "disorder", search.Parameters{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if embedder.count != 1 {
-		t.Fatalf("second search embedded %d times, want cached (count 1)", embedder.count)
-	}
-
-	_, err = searching.Execute(ctx, c.first, "heat", search.Parameters{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if embedder.count != 2 {
-		t.Fatalf("third search embedded %d times, want 2", embedder.count)
-	}
-}
-
 func TestASearchAbortsOnCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -673,36 +623,5 @@ func TestASearchAbortsOnCanceledContext(t *testing.T) {
 	_, err := searching.Execute(ctx, c.first, "disorder", search.Parameters{})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled, got %v", err)
-	}
-}
-
-// twoKindsEmbedder tells a query from a document and keeps what each was asked for.
-type twoKindsEmbedder struct {
-	oneWay
-	documents, queries []string
-}
-
-func (e *twoKindsEmbedder) Concurrency() int { return 1 }
-
-func (e *twoKindsEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
-	e.documents = append(e.documents, texts...)
-	return e.oneWay.Embed(ctx, texts)
-}
-
-func (e *twoKindsEmbedder) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
-	e.queries = append(e.queries, texts...)
-	return e.oneWay.Embed(ctx, texts)
-}
-
-func TestASearchEmbedsTheTypedQueryAsAQuery(t *testing.T) {
-	c := newCorpus(t)
-	c.vectorize(t, c.first, newVector(+1))
-	embedder := &twoKindsEmbedder{oneWay: oneWay{direction: newVector(+1)}}
-
-	if _, err := c.search(embedder).Execute(t.Context(), c.first, "disorder", search.Parameters{}); err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(embedder.queries, []string{"disorder"}) || len(embedder.documents) != 0 {
-		t.Errorf("queries %q, documents %q; the typed query must be embedded as a query and nothing as a document", embedder.queries, embedder.documents)
 	}
 }

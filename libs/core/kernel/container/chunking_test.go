@@ -141,7 +141,7 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 type wide struct{ dimensions int }
 
 func (w wide) Describe() searchsource.Description {
-	return searchsource.Description{Name: "wide", Width: w.dimensions, SourceRecipe: "mean@256"}
+	return searchsource.Description{Name: "wide", Width: w.dimensions, SourceRecipe: "mean"}
 }
 
 func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }

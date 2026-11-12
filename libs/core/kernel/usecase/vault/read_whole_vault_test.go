@@ -176,7 +176,7 @@ const width = 1024
 type pointing struct{}
 
 func (pointing) Describe() searchsource.Description {
-	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean@256"}
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean"}
 }
 
 func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -195,7 +195,7 @@ func (pointing) Close() error { return nil }
 type unwilling struct{}
 
 func (unwilling) Describe() searchsource.Description {
-	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean@256"}
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean"}
 }
 
 func (unwilling) Embed(context.Context, []string) ([][]float32, error) {

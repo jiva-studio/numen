@@ -460,7 +460,7 @@ type constantEmbedder struct{}
 const width = 1024
 
 func (constantEmbedder) Describe() searchsource.Description {
-	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean@256"}
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean"}
 }
 
 func (constantEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {

@@ -3,83 +3,14 @@ package search_test
 import (
 	"context"
 	"errors"
-	"math"
-	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func newFloorFixture() *nearestFake {
-	f := &nearestFake{}
-	f.holdsSimilarity("weak", 0.35)
-	f.holdsSimilarity("faint", 0.2)
-	f.holdsSimilarity("fair", 0.5)
-	f.holdsSimilarity("great", 0.8)
-	return f
-}
-
-func chunkIDs(names []string) []domain.ChunkID {
-	out := make([]domain.ChunkID, len(names))
-	for i, n := range names {
-		out[i] = domain.ChunkID(n)
-	}
-	return out
-}
-
-func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
-	vault := domain.Vault{ID: "01VAULT"}
-	source := func(_ context.Context, v domain.Vault, recipe string) float64 {
-		if v.ID != vault.ID || recipe != getModel().Recipe() {
-			t.Errorf("the source was queried for %s under %q", v.ID, recipe)
-		}
-		return 0.41
-	}
-
-	for _, tc := range []struct {
-		name      string
-		source    search.FloorSource
-		parameter float64
-		want      []string
-	}{
-		{"the query's own floor outranks the source", source, 0.7, []string{"great"}},
-		{"the source outranks the default", source, 0, []string{"great", "fair"}},
-		{"the default answers last", nil, 0, []string{"great", "fair", "weak"}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			spy := newFloorFixture()
-			searching := search.New(
-				search.Index{Passages: noWords{}, Nearest: spy},
-				vaultreader.Readers{},
-				nil,
-				oneWay{direction: newVector(+1)},
-				vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil),
-				nil,
-			)
-			if tc.source != nil {
-				searching.Floor = tc.source
-			}
-
-			p := search.GetTypingParameters(search.Dense, 5)
-			p.Floor = tc.parameter
-			if _, err := searching.Execute(t.Context(), vault, "disorder", p); err != nil {
-				t.Fatal(err)
-			}
-			if len(spy.enclosed) != 1 || !slices.Equal(spy.enclosed[0], chunkIDs(tc.want)) {
-				t.Errorf("the chunks that stayed above the floor are %v, want %v", spy.enclosed, tc.want)
-			}
-			if spy.stored[0].Recipe != getModel().Recipe() || spy.coarse[0].Recipe != getModel().Recipe() {
-				t.Errorf("the index was asked under %q and %q, want the model's recipe", spy.stored[0].Recipe, spy.coarse[0].Recipe)
-			}
-		})
-	}
-}
-
 func TestTypingParametersLeaveTheFloorToTheSearch(t *testing.T) {
-	for _, mode := range []search.Mode{search.Hybrid, search.Lexical, search.Dense, search.ByName} {
+	for _, mode := range []search.Mode{search.Hybrid, search.Lexical, search.Sources, search.ByName} {
 		if got := search.GetTypingParameters(mode, 10).Floor; got != 0 {
 			t.Errorf("mode %v names the floor %v, want none", mode, got)
 		}
@@ -89,27 +20,6 @@ func TestTypingParametersLeaveTheFloorToTheSearch(t *testing.T) {
 func TestTheDefaultFloorIsThirtyHundredths(t *testing.T) {
 	if search.DefaultFloor != 0.30 {
 		t.Errorf("DefaultFloor = %v, want 0.30", search.DefaultFloor)
-	}
-}
-
-func TestASearchAsksTheFloorSourceOncePerQuery(t *testing.T) {
-	vault := domain.Vault{ID: "01VAULT"}
-	calls := 0
-	searching := search.New(
-		search.Index{Passages: noWords{}, Nearest: newFloorFixture()},
-		vaultreader.Readers{},
-		nil,
-		oneWay{direction: newVector(+1)},
-		vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil),
-		nil,
-	)
-	searching.Floor = func(context.Context, domain.Vault, string) float64 { calls++; return 0.4 }
-
-	if _, err := searching.Execute(t.Context(), vault, "disorder", search.GetTypingParameters(search.Hybrid, 5)); err != nil {
-		t.Fatal(err)
-	}
-	if calls != 1 {
-		t.Errorf("the source was asked %d times, want once", calls)
 	}
 }
 

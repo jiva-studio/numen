@@ -37,7 +37,7 @@ func makeIndex(t *testing.T) *container.Index {
 type unit struct{ name string }
 
 func (u unit) Describe() searchsource.Description {
-	return searchsource.Description{Name: u.name, Width: 8, SourceRecipe: "mean@256"}
+	return searchsource.Description{Name: u.name, Width: 8, SourceRecipe: "mean"}
 }
 
 func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {

@@ -7,8 +7,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -35,14 +35,8 @@ func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, q sour
 func TestSearchPassesPathPrefixToEveryRanking(t *testing.T) {
 	spy := &prefixSpy{}
 	nearest := &nearestFake{}
-	searching := search.New(
-		search.Index{Passages: spy, Nearest: nearest},
-		vaultreader.Readers{},
-		nil,
-		oneWay{direction: newVector(+1)},
-		vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil),
-		nil,
-	)
+	source := sourcefake.Wrap(oneWay{direction: newVector(+1)}).Over(search.NewFindNearest(nearest).Execute)
+	searching := search.New(spy, vaultreader.Readers{}, nil, []search.Participant{search.NewSource(source, nearest)}, nil)
 
 	p := search.Parameters{Limit: 5, PathPrefix: "library/"}
 	if _, err := searching.Execute(t.Context(), domain.Vault{ID: "01VAULT"}, "heron", p); err != nil {

@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
@@ -86,7 +86,7 @@ type benchCorpus struct {
 	vault      domain.Vault
 	db         *container.Index
 	searchMock search.Search
-	mockModel  searchsourceport.Embedder
+	mockModel  sourcefake.Embedder
 	passages   sourceport.PassageQueries
 	candidates []domain.Passage
 	recipe     string
@@ -99,7 +99,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	v := vaultfixture.GenerateVault(b, notes)
 	const maxTokens = 256
-	model := searchsource.Description{Name: "bench", Width: 384, SourceRecipe: "mean@maxTokens"}
+	model := searchsource.Description{Name: "bench", Width: 384, SourceRecipe: "mean"}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
 	cfg := container.NewConfig(container.Config{
@@ -125,7 +125,8 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	}
 
 	mock := newBenchEmbedder(model)
-	embedderUseCase, err := container.Embed(cfg, db, mock, v)
+	source := sourcefake.Wrap(mock).Over(search.NewFindNearest(db.ChunkSearch()).Execute)
+	embedderUseCase, err := container.Embed(cfg, db, source, v)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -133,7 +134,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		b.Fatal(err)
 	}
 
-	searchMock := container.NewSearch(cfg, db, mock, nil)
+	searchMock := container.NewSearch(cfg, db, source, nil)
 
 	passages := db.ChunkSearch()
 	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
@@ -200,7 +201,7 @@ func BenchmarkSearch(b *testing.B) {
 			})
 
 			b.Run("Lexical", func(b *testing.B) {
-				p := search.Parameters{Limit: 20, Lexical: 100, Dense: 0, Named: 0}
+				p := search.Parameters{Limit: 20, Lexical: 100, Sources: 0, Named: 0}
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
@@ -215,7 +216,7 @@ func BenchmarkSearch(b *testing.B) {
 			})
 
 			b.Run("Dense/Mock", func(b *testing.B) {
-				p := search.Parameters{Limit: 20, Lexical: 0, Dense: 20, Named: 0, Floor: 0.1}
+				p := search.Parameters{Limit: 20, Lexical: 0, Sources: 20, Named: 0, Floor: 0.1}
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
@@ -316,19 +317,6 @@ func BenchmarkComponents(b *testing.B) {
 					_, err := c.mockModel.Embed(ctx, []string{queryLexical})
 					if err != nil {
 						b.Fatal(err)
-					}
-				}
-			})
-
-			b.Run("QueryEmbedding/Cached", func(b *testing.B) {
-				cache := search.NewQueryCache(256)
-				cache.Put(c.recipe, queryLexical, c.queryVec)
-				b.ReportAllocs()
-				b.ResetTimer()
-				for b.Loop() {
-					vec, ok := cache.Get(c.recipe, queryLexical)
-					if !ok || len(vec) == 0 {
-						b.Fatal("cached query vector not found")
 					}
 				}
 			})

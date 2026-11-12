@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
@@ -148,8 +149,8 @@ func newFixture() *fixture {
 		floors:   memoryFloors{},
 	}
 	f.search = Search{
-		Embedder: f.embedder,
-		Queries:  vectorscase.NewEmbedQueries(f.embedder, f.embedder),
+		Source:   f.embedder,
+		Queries:  vectorscase.NewEmbedQueries(f.embedder),
 		Samples:  f.samples,
 		Nearest:  f.nearest,
 		Progress: stubProgress{total: 10, embedded: 10},
@@ -276,7 +277,7 @@ func TestACallWithARecipeOfAnotherModelIsRefused(t *testing.T) {
 
 func TestACallThatNeedsAModelIsRefusedWhereThereIsNone(t *testing.T) {
 	f := newFixture()
-	f.search.Embedder = nil
+	f.search.Source = nil
 	ctx := t.Context()
 
 	if _, err := f.search.GetEmbeddingState(ctx, getVault()); !errors.Is(err, plugin.ErrNoModel) {
@@ -464,5 +465,63 @@ func TestEmbedTextsEmbedsTheTextsAsQueries(t *testing.T) {
 	}
 	if want := []string{"a", "abc"}; !slices.Equal(f.embedder.queried, want) {
 		t.Errorf("embedded as queries %q, want %q: the texts of this call are the questions of a plugin", f.embedder.queried, want)
+	}
+}
+
+// storedPlace is the vectors of a place: three chunks at a similarity of 1, about 0.7 and 0 with the
+// first axis.
+type storedPlace struct{}
+
+func (storedPlace) FindCoarseCandidates(context.Context, domain.VaultID, sourcedomain.CoarseQuery) ([]domain.ChunkID, error) {
+	return []domain.ChunkID{"along", "aslant", "across"}, nil
+}
+
+func (storedPlace) ListStoredVectors(context.Context, sourcedomain.StoredVectorQuery) ([]sourcedomain.StoredVector, error) {
+	return []sourcedomain.StoredVector{
+		{Chunk: "along", Vector: []byte{127, 0, 0, 0}},
+		{Chunk: "aslant", Vector: []byte{90, 90, 0, 0}},
+		{Chunk: "across", Vector: []byte{0, 127, 0, 0}},
+	}, nil
+}
+
+func (storedPlace) GetEnclosingPassages(context.Context, domain.VaultID, []domain.ChunkID) ([]domain.Passage, error) {
+	return nil, nil
+}
+
+func TestTheNearestPassagesOfAPlaceStopAtTheFloorOfTheQueryElseAtTheFloorOfTheVault(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		floor float64
+		want  []domain.ChunkID
+	}{
+		{"the floor of the query", 0.8, []domain.ChunkID{"along"}},
+		{"the hint of the source where the query names none", 0, []domain.ChunkID{"along", "aslant"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFixture()
+			f.search.Places = search.NewFindNearest(storedPlace{})
+			found, err := f.search.FindNearestPassages(t.Context(), getVault(), sourcedomain.NearestQuery{
+				Recipe: getModel().Recipe(), Vector: []float32{1, 0, 0, 0}, Limit: 5, Floor: tc.floor,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := make([]domain.ChunkID, len(found))
+			for i, one := range found {
+				got[i] = one.ChunkID
+			}
+			if !slices.Equal(got, tc.want) {
+				t.Errorf("found %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestTheNearestPassagesOfAPlaceOfAnotherRecipeAreRefused(t *testing.T) {
+	f := newFixture()
+	f.search.Places = search.NewFindNearest(storedPlace{})
+	_, err := f.search.FindNearestPassages(t.Context(), getVault(), sourcedomain.NearestQuery{Recipe: "other", Vector: []float32{1, 0, 0, 0}, Limit: 5})
+	if !errors.Is(err, plugin.ErrRecipeMismatch) {
+		t.Errorf("err = %v, want ErrRecipeMismatch", err)
 	}
 }
