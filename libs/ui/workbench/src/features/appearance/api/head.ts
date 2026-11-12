@@ -5,7 +5,7 @@
  * three it is: the mode, the theme's own file, and the two multipliers. The theme's
  * follows the mode's and the sizes follow both.
  */
-import type { Sizes } from '@/entities/settings'
+import type { Sizes } from '../lib/appearance'
 
 /** The elements the page carries: the mode's, the theme's, and the sizes'. */
 export interface StyleElements {

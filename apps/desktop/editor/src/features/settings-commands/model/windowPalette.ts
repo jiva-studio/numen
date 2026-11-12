@@ -4,10 +4,15 @@
  * and a write of the appearance reads it again.
  */
 import type { JsonValue } from '@/shared/api/json'
-import { MODES, type Mode, type createSettingsStore } from '@/entities/settings'
+import {
+  INTERFACE_SCALE,
+  MODES,
+  TEXT_SCALE,
+  type Mode,
+  type WindowAppearance,
+} from '@numen/workbench'
+import type { createSettingsStore } from '@/entities/settings'
 import { APP_OWNER } from '../lib/settingsConfig'
-import { INTERFACE_SCALE, TEXT_SCALE } from '../lib/appearanceValues'
-import type { createWindowAppearance } from './appearance'
 import { createSettingPalette, type SettingPreview, type SettingWords } from './settingCommands'
 import type { Unvalidated } from '@/shared/api/errors'
 
@@ -20,7 +25,7 @@ const isScale = (key: string | undefined): key is typeof INTERFACE_SCALE | typeo
   key === INTERFACE_SCALE || key === TEXT_SCALE
 
 function previewAppearance(
-  keyboard: ReturnType<typeof createWindowAppearance>['preview']['keyboard'],
+  keyboard: WindowAppearance['preview']['keyboard'],
   key: string | undefined,
   value: JsonValue,
 ): void {
@@ -29,9 +34,7 @@ function previewAppearance(
   else if (isScale(key) && typeof value === 'number') keyboard.previewSize(key, value)
 }
 
-function createWindowPreview(
-  appearance: ReturnType<typeof createWindowAppearance>,
-): SettingPreview {
+function createWindowPreview(appearance: WindowAppearance): SettingPreview {
   return {
     apply: (path, value) => {
       if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
@@ -43,7 +46,7 @@ function createWindowPreview(
 
 export function createWindowSettingPalette(deps: {
   rest: ReturnType<typeof createSettingsStore>
-  appearance: ReturnType<typeof createWindowAppearance>
+  appearance: WindowAppearance
   words: SettingWords
 }) {
   const { rest, appearance, words } = deps

@@ -6,17 +6,15 @@
  * A theme and a half are applied as soon as the keyboard is on their row. A size is applied once the
  * keyboard has rested on its row for HELD.
  */
-import { formatError, type Caught } from '@/shared/api/errors'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import type { Mode, Sizes } from '@/entities/settings'
-import type { MessageWriter } from '@/shared/model/notices/messages'
+import { getFailureText, type AppearanceWriter, type Mode, type Sizes } from '../lib/appearance'
 import { HELD, onto } from '../lib/appearanceValues'
 import type { ScaleKind } from '../lib/appearanceValues'
 
 /** What previewing reads, and what it applies. */
 export interface PreviewDeps {
-  readonly write: MessageWriter
+  readonly write: AppearanceWriter
   readonly applied: Ref<string>
   readonly mode: Ref<Mode>
   readonly settings: Ref<Sizes>
@@ -44,8 +42,8 @@ export function createAppearancePreview(on: PreviewDeps) {
   })
 
   const apply = () => {
-    applyTheme(current.value, shownHalf.value).catch((error: Caught) =>
-      write(formatError(error), 'error'),
+    applyTheme(current.value, shownHalf.value).catch((error: unknown) =>
+      write(getFailureText(error), 'error'),
     )
   }
 

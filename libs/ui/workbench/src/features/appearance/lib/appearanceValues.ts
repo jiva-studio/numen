@@ -1,5 +1,5 @@
 /** The two sizes the window is drawn at, and how long the keyboard rests on one before it is applied. */
-import type { Scales } from '@/entities/settings'
+import type { Scales } from './appearance'
 
 /** The names the two sizes are declared under. */
 export const INTERFACE_SCALE = 'interfaceScale'

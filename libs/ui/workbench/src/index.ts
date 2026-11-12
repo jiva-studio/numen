@@ -16,6 +16,29 @@ export { branch, pane } from './features/workspace'
 export { paneById, getPanes, getTabPaneRect } from './features/workspace'
 export type { Tab, TabMenu, WindowEdge, Workspace } from './features/workspace'
 
+/** The theme, the mode and the sizes a window is drawn at, and the palette they are chosen in. */
+export {
+  createWindowAppearance,
+  useAppearancePalette,
+  MODES,
+  INTERFACE_SCALE,
+  TEXT_SCALE,
+} from './features/appearance'
+export type {
+  Appearance,
+  AppearanceChoiceWords,
+  AppearancePaletteDeps,
+  AppearanceWords,
+  AppearanceWriter,
+  Mode,
+  ScaleKind,
+  Sizes,
+  Theme,
+  ThemeOrigin,
+  Themes,
+  WindowAppearance,
+} from './features/appearance'
+
 export { Palette } from './features/palette'
 export { commandKeyChord } from './features/palette'
 export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette'

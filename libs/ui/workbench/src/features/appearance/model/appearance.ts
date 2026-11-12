@@ -7,20 +7,27 @@
  * settings values are restored as soon as the keyboard leaves the list. What a
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
-import { formatError, type Caught } from '@/shared/api/errors'
-import { ref, watch, type Ref } from 'vue'
+import { ref, shallowRef, watch, type Ref } from 'vue'
 import { createFollower, createRequestGuard } from '@numen/ui'
-import type { MessageWriter } from '@/shared/model/notices/messages'
-import { DESIGNED, SCHEMES } from '@/entities/settings'
-import type { Appearance, Mode, Sizes, Themes } from '@/entities/settings'
-import type { AppearanceWords } from '../words'
+import {
+  DESIGNED,
+  SCHEMES,
+  getFailureText,
+  type Appearance,
+  type AppearanceWords,
+  type AppearanceWriter,
+  type Mode,
+  type Sizes,
+  type Theme,
+  type Themes,
+} from '../lib/appearance'
 import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../api/head'
 import { createAppearancePreview } from './preview'
 
 export interface WindowAppearanceDeps {
   core: Themes
   words: AppearanceWords
-  write: MessageWriter
+  write: AppearanceWriter
   sheet?: Document
   wait?: (ms: number) => Promise<void>
 }
@@ -28,7 +35,7 @@ export interface WindowAppearanceDeps {
 interface ThemeApplierDeps {
   core: Themes
   styleElements: ReturnType<typeof getStyleElements>
-  write: MessageWriter
+  write: AppearanceWriter
   words: AppearanceWords
   applied: Ref<string>
 }
@@ -76,8 +83,9 @@ function createSizesWriter(styleElements: ReturnType<typeof getStyleElements>, s
 
 interface LoaderDeps {
   core: Themes
-  write: MessageWriter
+  write: AppearanceWriter
   words: AppearanceWords
+  themes: Ref<readonly Theme[]>
   applied: Ref<string>
   mode: Ref<Mode>
   settings: Ref<Sizes>
@@ -99,6 +107,7 @@ function createAppearanceLoader(deps: LoaderDeps) {
     }
     // An answer to an earlier read is not applied over the answer to a later one.
     if (!mine.isCurrent) return
+    deps.themes.value = answer.themes
     deps.applied.value = answer.applied
     deps.mode.value = answer.mode
     deps.settings.value = answer.sizes
@@ -114,6 +123,8 @@ function createThemeWatcher(deps: {
   preview: ReturnType<typeof createAppearancePreview>
   applyAppearance: () => Promise<void>
   loadAppearance: () => Promise<void>
+  /** The theme and the mode the settings name, as one value that changes with either. */
+  getChoice: () => string
   lost: Ref<string>
   wait: (ms: number) => Promise<void>
 }) {
@@ -133,8 +144,13 @@ function createThemeWatcher(deps: {
       async (names) => {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
+        const before = deps.getChoice()
         await deps.loadAppearance()
-        if (names.includes(deps.preview.display.current.value)) await deps.applyAppearance()
+        // A theme that vanished takes the settings to another one without a write of them.
+        const isChanged = deps.getChoice() !== before
+        if (isChanged || names.includes(deps.preview.display.current.value)) {
+          await deps.applyAppearance()
+        }
       },
     )
 
@@ -147,11 +163,12 @@ function createThemeWatcher(deps: {
 }
 
 function initAppearanceState() {
+  const themes = shallowRef<readonly Theme[]>([])
   const applied = ref('')
   const mode = ref<Mode>('system')
   const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
   const missing = ref('')
-  return { applied, mode, settings, lost: missing }
+  return { themes, applied, mode, settings, lost: missing }
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
@@ -186,6 +203,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     words,
     files,
     served,
+    themes: state.themes,
     applied: state.applied,
     mode: state.mode,
     settings: state.settings,
@@ -197,6 +215,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     preview,
     applyAppearance,
     loadAppearance,
+    getChoice: () => `${state.applied.value} ${state.mode.value}`,
     lost: state.lost,
     wait,
   })
@@ -210,10 +229,17 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
       preview.clear()
       await applyAppearance()
     },
+    /** Applies a theme and a mode the settings now hold, written by the window itself. */
+    show: async (theme: string, half: Mode) => {
+      state.applied.value = theme
+      state.mode.value = half
+      preview.clear()
+      await applyAppearance()
+    },
     start: async () => {
       await loadAppearance(true)
       // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
-      watcher.follow().catch((error: Caught) => write(formatError(error), 'error'))
+      watcher.follow().catch((error: unknown) => write(getFailureText(error), 'error'))
     },
     close: () => {
       watcher.stop()
@@ -222,5 +248,8 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     },
   }
 }
+
+/** The appearance of one window: its state, its preview, and how it is read and applied. */
+export type WindowAppearance = ReturnType<typeof createWindowAppearance>
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

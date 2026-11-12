@@ -7,11 +7,11 @@
  * after the keyboard focus has stayed on its row.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DESIGNED } from '@/entities/settings'
-import type { Appearance, Themes } from '@/entities/settings'
+import { DESIGNED, type Appearance, type Themes } from '../lib/appearance'
 import { IS_SIZES } from '../api/head'
 import { createWindowAppearance } from './appearance'
-import { APPEARANCE_WORDS as words } from '../words'
+
+const words = { unlisted: 'Themes unavailable', themeUnreadable: 'Theme unreadable' }
 
 const MARKER = 'data-appearance'
 const IS_MODE = 'mode'
@@ -53,9 +53,9 @@ const sizes = (sheet: Document) => getHeadStyles(sheet)[2]
 
 const APPEARANCE: Appearance = {
   themes: [
-    { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
-    { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, pluginId: '', isPinned: true },
-    { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
+    { name: 'preset:numen', title: 'numen', origin: 'preset', pluginId: '', isPinned: false },
+    { name: 'preset:dracula', title: 'dracula', origin: 'preset', pluginId: '', isPinned: true },
+    { name: 'mine:sea', title: 'sea', origin: 'mine', pluginId: '', isPinned: false },
   ],
   applied: 'preset:numen',
   mode: 'system',
@@ -107,7 +107,7 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
     appearance: createWindowAppearance({
       core,
       words,
-      write: (text, kind = 'info') => {
+      write: (text, kind) => {
         notifiedCalls.push({ text, kind })
       },
       sheet,
@@ -606,7 +606,7 @@ describe('the application that cannot list the themes', () => {
         },
       },
       words,
-      write: (text, kind = 'info') => {
+      write: (text, kind) => {
         notifiedCalls.push({ text, kind })
       },
       sheet,

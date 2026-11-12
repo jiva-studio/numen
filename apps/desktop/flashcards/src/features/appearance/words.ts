@@ -11,5 +11,7 @@ export const WORDS = {
   pinned: 'The theme sets light or dark itself',
   modes: { system: 'System', light: 'Light', dark: 'Dark' },
   /** Shown when the themes cannot be listed. */
-  themesUnlisted: 'The themes could not be listed.',
+  unlisted: 'The themes could not be listed.',
+  /** Shown when the file of a theme cannot be read. */
+  themeUnreadable: 'The theme could not be read.',
 } as const
