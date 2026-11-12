@@ -16,17 +16,25 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
-// UseCases are the use cases ProviderConnectionService is answered through.
-type UseCases struct {
-	Create    *connections.Create
-	Update    *connections.Update
-	Delete    *connections.Delete
+// Edits are the use cases that change the list of connections.
+type Edits struct {
+	Create *connections.Create
+	Update *connections.Update
+	Delete *connections.Delete
+}
+
+// Reads are the use cases that read the connections, their kinds and the values of their row fields.
+type Reads struct {
 	List      *connections.List
 	ListTypes *connections.ListTypes
-	// ListOperationTitles lists the titles of the operations; nil answers no title.
-	ListOperationTitles *connections.ListOperationTitles
 	// RowOptions lists the values of row fields; nil answers every list with no options.
 	RowOptions *rowoptions.Options
+}
+
+// UseCases are the use cases ProviderConnectionService is answered through.
+type UseCases struct {
+	Edits
+	Reads
 }
 
 // Handler serves ProviderConnectionService over the use cases on connections.
@@ -45,17 +53,16 @@ func (h *Handler) ListProviderConnectionTypes(
 	_ context.Context, _ *connect.Request[v1.ListProviderConnectionTypesRequest],
 ) (*connect.Response[v1.ListProviderConnectionTypesResponse], error) {
 	response := &v1.ListProviderConnectionTypesResponse{}
-	for _, one := range h.connections.ListTypes.Execute() {
+	list := h.connections.ListTypes.Execute()
+	for _, one := range list.Types {
 		wire, err := writeType(one)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		response.Types = append(response.Types, wire)
 	}
-	if h.connections.ListOperationTitles != nil {
-		for _, one := range h.connections.ListOperationTitles.Execute() {
-			response.Operations = append(response.Operations, &v1.ManifestOperation{Name: one.Name, Title: one.Title})
-		}
+	for _, one := range list.Operations {
+		response.Operations = append(response.Operations, &v1.ManifestOperation{Name: one.Name, Title: one.Title})
 	}
 	return connect.NewResponse(response), nil
 }

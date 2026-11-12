@@ -75,8 +75,11 @@ func NewDelete(deps Deps) *Delete { return &Delete{operation: deps.base} }
 // NewList returns the use case that lists the connections.
 func NewList(deps Deps) *List { return &List{operation: deps.base} }
 
-// NewListTypes returns the use case that lists the kinds of connection.
-func NewListTypes(deps Deps) *ListTypes { return &ListTypes{operation: deps.base} }
+// NewListTypes returns the use case that lists the kinds of connection and the titles the plugins give
+// their operations. titles is nil where no plugin titles an operation.
+func NewListTypes(deps Deps, titles connectionport.OperationTitles) *ListTypes {
+	return &ListTypes{operation: deps.base, titles: titles}
+}
 
 // NewResolve returns the use case that finds a connection by its id.
 func NewResolve(deps Deps) *Resolve { return &Resolve{operation: deps.base} }

@@ -291,15 +291,19 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	}
 
 	// The plugin reads the models of a program in the background and lists none until they are read.
-	var answer []byte
-	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
-		answer = callModels(t, web.URL, program)
+	deadline := time.After(5 * time.Second)
+	for {
+		answer := callModels(t, web.URL, program)
 		// The done frame is the encoded list of options, which holds the titles as they are.
 		if bytes.Contains(readDone(t, answer), []byte("Model Two")) {
 			return
 		}
+		select {
+		case <-deadline:
+			t.Fatalf("the service answered %q", answer)
+		case <-time.After(20 * time.Millisecond):
+		}
 	}
-	t.Errorf("the service answered %q", answer)
 }
 
 // callModels calls llm.models of the program on the provider service at url, as a streaming Connect call

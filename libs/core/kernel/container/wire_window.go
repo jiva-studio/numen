@@ -152,6 +152,7 @@ func buildWindow(
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(a, db, state, embedding, opening.Out)
+	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
@@ -166,7 +167,6 @@ func buildWindow(
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.cases.start, Show: session.cases.show, OpenPlugin: session.cases.openPlugin,
 		Flush: session.cases.flush, Close: session.cases.close,
-		NoteWritten: indexer.WakeNotes,
 	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
 
 	kinds := newTabKinds(a, db)

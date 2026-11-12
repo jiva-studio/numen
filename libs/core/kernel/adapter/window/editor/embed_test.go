@@ -295,7 +295,3 @@ func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 		return target > 0 && target == embedded && model.saw(getAfterNames()[0])
 	})
 }
-
-func (*fakeEmbedder) Concurrency() int { return 1 }
-
-func (*failingEmbedder) Concurrency() int { return 1 }

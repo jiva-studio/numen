@@ -5,10 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
@@ -18,38 +17,38 @@ type askedCall struct {
 	priority  connection.Priority
 }
 
-// fakeCaller answers each operation with the done payload set for it, or fails every call with err.
+// fixedModel answers llm.embed with vectors and llm.profile with profile.
+type fixedModel struct {
+	vectors *llm.EmbedResult
+	profile *llm.Profile
+}
+
+func (m fixedModel) Embed(context.Context, connection.Call, *llm.EmbedRequest) (*llm.EmbedResult, error) {
+	return m.vectors, nil
+}
+
+func (m fixedModel) GetProfile(context.Context, connection.Call) (*llm.Profile, error) {
+	return m.profile, nil
+}
+
+// fakeCaller asks the connection of model for each operation, or fails every call with err.
 type fakeCaller struct {
-	done  map[string]proto.Message
+	model fixedModel
 	err   error
 	asked []askedCall
 }
 
-func (f *fakeCaller) Call(_ context.Context, operation string, _ []byte, priority connection.Priority) (connection.Frames, error) {
+func (f *fakeCaller) Call(ctx context.Context, operation string, payload []byte, priority connection.Priority) (connection.Frames, error) {
 	f.asked = append(f.asked, askedCall{operation: operation, priority: priority})
 	if f.err != nil {
 		return nil, f.err
 	}
-	done, err := proto.Marshal(f.done[operation])
-	if err != nil {
-		return nil, err
-	}
-	return &doneFrames{done: done}, nil
+	provider := llm.Provide(nil, llm.Roles{Embedder: f.model, Profiler: f.model})
+	return llmtest.NewCaller(provider, connection.Call{}).Call(ctx, operation, payload, priority)
 }
 
-// doneFrames is a call with no data frame that ends with done.
-type doneFrames struct{ done []byte }
-
-func (d *doneFrames) Next() bool   { return false }
-func (d *doneFrames) Data() []byte { return nil }
-func (d *doneFrames) Done() []byte { return d.done }
-func (d *doneFrames) Err() error   { return nil }
-func (d *doneFrames) Close() error { return nil }
-
 func newCaller() *fakeCaller {
-	return &fakeCaller{done: map[string]proto.Message{
-		llm.OperationEmbed: &llm.EmbedResult{Vectors: []*llm.Vector{{Values: []float32{1}}}},
-	}}
+	return &fakeCaller{model: fixedModel{vectors: &llm.EmbedResult{Vectors: []*llm.Vector{{Values: []float32{1}}}}}}
 }
 
 func TestQueriesAreInteractiveAndDocumentsAreBackground(t *testing.T) {
@@ -72,7 +71,7 @@ func TestQueriesAreInteractiveAndDocumentsAreBackground(t *testing.T) {
 }
 
 func TestTheProfileOfTheHostIsReadAsAConnectionProfile(t *testing.T) {
-	caller := &fakeCaller{done: map[string]proto.Message{llm.OperationProfile: &llm.Profile{
+	caller := &fakeCaller{model: fixedModel{profile: &llm.Profile{
 		Model: "m", Source: "type https://example.org", Pooling: "cls", QueryPrefix: "q: ", DocumentPrefix: "d: ", Width: 8, MaxTokens: 512,
 	}}}
 

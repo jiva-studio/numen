@@ -381,9 +381,15 @@ func TestAFrameThatCannotBeSentEndsTheTaskWithItsError(t *testing.T) {
 // cancelOnPrompt cancels once the program has read a prompt, or after five seconds.
 func cancelOnPrompt(record string, cancel context.CancelFunc) {
 	defer cancel()
-	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+	deadline := time.After(5 * time.Second)
+	for {
 		if raw, err := os.ReadFile(record); err == nil && bytes.Contains(raw, []byte(`"method":"session/prompt"`)) {
 			return
+		}
+		select {
+		case <-deadline:
+			return
+		case <-time.After(10 * time.Millisecond):
 		}
 	}
 }

@@ -50,18 +50,15 @@ func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {
 		return nil
 	}
 	return &windowconnection.UseCases{
-		Create: connection.NewCreate(deps, settingsadapter.CreateConnectionID), Update: connection.NewUpdate(deps),
-		Delete: connection.NewDelete(deps), List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps),
-		ListOperationTitles: openListOperationTitles(c),
-		RowOptions:          rowoptions.NewOptions(connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime)),
+		Edits: windowconnection.Edits{
+			Create: connection.NewCreate(deps, settingsadapter.CreateConnectionID), Update: connection.NewUpdate(deps),
+			Delete: connection.NewDelete(deps),
+		},
+		Reads: windowconnection.Reads{
+			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, c.PluginHost.Views.Operations),
+			RowOptions: rowoptions.NewOptions(connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime)),
+		},
 	}
-}
-
-func openListOperationTitles(c pluginsWiring) *connection.ListOperationTitles {
-	if c.PluginHost.Views.Operations == nil {
-		return nil
-	}
-	return connection.NewListOperationTitles(c.PluginHost.Views.Operations)
 }
 
 func openModelCalls(c pluginsWiring) connectionport.ModelCalls {

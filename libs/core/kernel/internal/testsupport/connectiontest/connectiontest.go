@@ -38,7 +38,7 @@ func New(
 	return &Connections{
 		Manage: Manage{
 			Create: connection.NewCreate(deps, newID), Update: connection.NewUpdate(deps), Delete: connection.NewDelete(deps),
-			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps),
+			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, nil),
 		},
 		Read: Read{Resolve: connection.NewResolve(deps), ReadSecrets: connection.NewReadSecrets(deps)},
 	}

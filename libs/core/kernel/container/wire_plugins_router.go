@@ -171,8 +171,9 @@ func newDependencyRegistry(defaultDir string) pluginport.DependencyRegistry {
 	}
 	runtimeConfig := onnxruntime.FromEnvironment(clock.System{})
 	runtimeConfig.Dir = onnxruntime.GetModelsDir(defaultDir)
+	runtimeConfig.Offline = provision.IsOffline()
 	return provision.NewRegistry(
 		onnxruntime.NewONNXProvisioner(runtimeConfig),
-		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: provision.IsOffline(), Clock: clock.System{}}),
+		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: runtimeConfig.Offline, Clock: clock.System{}}),
 	)
 }

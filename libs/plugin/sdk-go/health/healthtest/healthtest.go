@@ -20,9 +20,13 @@ import (
 
 // Host serves the health service of a host on a loopback port for as long as the test runs.
 type Host struct {
-	numenv1connect.UnimplementedPluginHealthServiceHandler
+	port    string
+	service *service
+}
 
-	port string
+// service serves the health service and keeps the items it is told.
+type service struct {
+	numenv1connect.UnimplementedPluginHealthServiceHandler
 
 	mu    sync.Mutex
 	items map[string]health.Item
@@ -32,8 +36,8 @@ type Host struct {
 // NewHost starts the host and stops it when the test ends.
 func NewHost(t *testing.T) *Host {
 	t.Helper()
-	host := &Host{items: map[string]health.Item{}}
-	_, handler := numenv1connect.NewPluginHealthServiceHandler(host)
+	host := &Host{service: &service{items: map[string]health.Item{}}}
+	_, handler := numenv1connect.NewPluginHealthServiceHandler(host.service)
 	served := httptest.NewServer(handler)
 	t.Cleanup(served.Close)
 	address, err := url.Parse(served.URL)
@@ -51,6 +55,10 @@ func (h *Host) Vars(token string) map[string]string {
 
 // List returns the items reported and not cleared, in the order their keys were first reported.
 func (h *Host) List() []health.Item {
+	return h.service.list()
+}
+
+func (h *service) list() []health.Item {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	out := make([]health.Item, 0, len(h.order))
@@ -61,7 +69,7 @@ func (h *Host) List() []health.Item {
 }
 
 // ReportHealth keeps the item under its key.
-func (h *Host) ReportHealth(
+func (h *service) ReportHealth(
 	_ context.Context, req *connect.Request[v1.ReportHealthRequest],
 ) (*connect.Response[v1.ReportHealthResponse], error) {
 	in := req.Msg.GetItem()
@@ -79,7 +87,7 @@ func (h *Host) ReportHealth(
 }
 
 // ClearHealth removes the item under the key.
-func (h *Host) ClearHealth(
+func (h *service) ClearHealth(
 	_ context.Context, req *connect.Request[v1.ClearHealthRequest],
 ) (*connect.Response[v1.ClearHealthResponse], error) {
 	h.mu.Lock()

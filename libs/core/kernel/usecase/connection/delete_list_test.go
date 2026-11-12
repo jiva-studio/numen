@@ -157,7 +157,7 @@ func TestListShowsOnlyTheFieldsTheTypeDeclares(t *testing.T) {
 func TestListTypesReturnsTheTypesOfThePlugins(t *testing.T) {
 	f := newFixture(t)
 
-	types := f.connection.ListTypes.Execute()
+	types := f.connection.ListTypes.Execute().Types
 
 	if len(types) != 2 || types[0].GetID() != openRouterID || types[1].GetID() != compatibleID {
 		t.Errorf("types = %+v", types)

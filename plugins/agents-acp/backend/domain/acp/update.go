@@ -76,22 +76,46 @@ type rawToolUpdate struct {
 	Status        *string         `json:"status"`
 	RawInput      json.RawMessage `json:"rawInput"`
 	RawOutput     json.RawMessage `json:"rawOutput"`
-	Meta          struct {
+	// ClaudeCodeToolName is the tool Claude Code names in _meta.claudeCode.toolName.
+	ClaudeCodeToolName string `json:"-"`
+}
+
+// UnmarshalJSON reads the fields and the tool name Claude Code adds under _meta, a key the protocol
+// fixes.
+func (r *rawToolUpdate) UnmarshalJSON(data []byte) error {
+	type fields rawToolUpdate
+	if err := json.Unmarshal(data, (*fields)(r)); err != nil {
+		return err
+	}
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(data, &keys); err != nil {
+		return err
+	}
+	meta, isSet := keys["_meta"]
+	if !isSet {
+		return nil
+	}
+	var named struct {
 		ClaudeCode struct {
 			ToolName string `json:"toolName"`
 		} `json:"claudeCode"`
-	} `json:"_meta"`
+	}
+	if err := json.Unmarshal(meta, &named); err != nil {
+		return err
+	}
+	r.ClaudeCodeToolName = named.ClaudeCode.ToolName
+	return nil
 }
 
 // readServedTool returns the tool of the session's MCP server the call names and the arguments of the
 // call. Claude Code names it in _meta, Codex wraps the arguments with the server and the tool, and other
 // agents name it in name.
-func (r rawToolUpdate) readServedTool() (string, json.RawMessage) {
+func (r *rawToolUpdate) readServedTool() (string, json.RawMessage) {
 	arguments := r.RawInput
 	if !isValue(arguments) {
 		arguments = nil
 	}
-	if name, isServed := cutServerPrefix(r.Meta.ClaudeCode.ToolName); isServed {
+	if name, isServed := cutServerPrefix(r.ClaudeCodeToolName); isServed {
 		return name, arguments
 	}
 	var wrapped struct {
