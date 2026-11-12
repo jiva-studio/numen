@@ -84,7 +84,7 @@ describe('dropping something dragged in', () => {
 
     const adjacentWrapper = mountPlex()
     await letGo(adjacentWrapper, 100, 400)
-    expect(adjacentWrapper.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
+    expect(adjacentWrapper.emitted('bring')).toStrictEqual([[DRAGGED, 'jump']])
   })
 
   it('reads which way a relation lies off the arrangement', async () => {

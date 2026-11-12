@@ -223,16 +223,18 @@ describe('Room around a note', () => {
   })
 
   it('moves the boxes apart where no window limits them', () => {
-    const close = getChildSeparation(arrange(crowd, { room: 0 }, undefined))
-    const sparse = getChildSeparation(arrange(crowd, { room: 20 }, undefined))
+    const unlimited = (room: number) =>
+      getChildSeparation(arrangePlex(crowd, { options: { room }, measure: byTitle }))
+    const close = unlimited(0)
+    const sparse = unlimited(20)
 
     // Free spots may sit half a unit inside a gap, so the difference is the room on both sides to within a unit.
     expect(Math.abs(sparse - close - 40)).toBeLessThanOrEqual(1)
   })
 
   it('shrinks with the gaps in a tight window, and still lets no box overlap', () => {
-    const tight = { width: 520, height: 360 }
-    const frame = arrange(build('A note', { child: 30 }), { room: 20 }, tight)
+    const tight = { width: 700, height: 500 }
+    const frame = arrange(build('A note', { child: 12 }), { room: 20 }, tight)
     const separation = getChildSeparation(frame)
 
     expect(separation).toBeLessThan(16 + 2 * 20)

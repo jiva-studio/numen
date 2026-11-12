@@ -117,8 +117,11 @@ describe('a title finds room on its line', () => {
   it('gives up the middle to stay clear of the boxes its own line joins', () => {
     // Words nearly as long as the line they are set on: the middle would put
     // them against a box at either end.
-    const bare = arrangePlex(createOneLine(''), measured).edges[0]!
-    const words = 'x'.repeat(Math.floor((0.86 * getLength(bare)) / 6))
+    // The longest words the line still holds whole.
+    let words = 'x'
+    while (arrangePlex(createOneLine(`${words}x`), measured).edges[0]!.titles[0]?.words === `${words}x`) {
+      words += 'x'
+    }
     const frame = arrangePlex(createOneLine(words), measured)
 
     expect(frame.edges[0]!.titles[0]?.words).toBe(words)

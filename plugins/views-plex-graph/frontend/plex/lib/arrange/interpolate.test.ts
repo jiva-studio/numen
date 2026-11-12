@@ -8,17 +8,19 @@ import { ARROW_LENGTH, getHeading, getLength, createPointOnCurve } from '../edge
 import type { PlexFrame } from '../frame'
 import type { PlexNeighborhood } from '../../../types'
 
-/** Focus on `focus`, with two children and one parent. The first child stands on the axis, so the chosen one stands beside it. */
+/** Focus on `focus`, with three children and one parent. The first child stands on the axis, and the chosen one is the third, to its left. */
 const before: PlexNeighborhood = {
   nodes: [
     { id: 'focus', title: 'Start', relation: 'focus' },
     { id: 'up', title: 'Above', relation: 'parent' },
     { id: 'b', title: 'B', relation: 'child' },
+    { id: 'c', title: 'C', relation: 'child' },
     { id: 'a', title: 'A', relation: 'child' },
   ],
   edges: [
     { from: 'up', to: 'focus' },
     { from: 'focus', to: 'b' },
+    { from: 'focus', to: 'c' },
     { from: 'focus', to: 'a' },
   ],
 }
