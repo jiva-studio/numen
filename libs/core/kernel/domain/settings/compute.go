@@ -17,7 +17,6 @@ type MachineSpecs struct {
 	PerformanceCPUs int
 	TotalRAMMB      int64
 	AvailableRAMMB  int64
-	Accelerators    []string
 }
 
 // ResolvedCompute holds the concrete, calibrated parameters to apply to worker pools.

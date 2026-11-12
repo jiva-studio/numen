@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
@@ -175,7 +176,7 @@ func (p *Provisioner) fetchArchive(ctx context.Context, release Release, dir, ar
 		}
 	}
 	if p.cfg.Offline {
-		return fmt.Errorf("%s is not on this machine, and %s forbids fetching it", release.Address, EnvOffline)
+		return fmt.Errorf("%s is not on this machine, and %s forbids fetching it", release.Address, provision.EnvOffline)
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err

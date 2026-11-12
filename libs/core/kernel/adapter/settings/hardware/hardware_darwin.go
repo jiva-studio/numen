@@ -4,7 +4,6 @@ package hardware
 
 import (
 	"fmt"
-	"runtime"
 
 	"golang.org/x/sys/unix"
 
@@ -22,9 +21,6 @@ func readPlatformHardware() settingsdomain.MachineSpecs {
 	hw.PerformanceCPUs = hw.PhysicalCPUs
 	if level, ok := pickPerformanceLevel(readPerfLevels()); ok {
 		hw.PerformanceCPUs = level.PhysicalCPUs
-	}
-	if runtime.GOARCH == "arm64" {
-		hw.Accelerators = []string{AcceleratorCoreML}
 	}
 	return hw
 }

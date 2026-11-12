@@ -579,7 +579,7 @@ The host serves a loopback endpoint and sets `NUMEN_HOST_PORT` in the environmen
 
 ## Models
 
-A plugin that runs a model keeps it in the models folder every plugin shares: `models` in the shared data directory the host grants, or the folder `NUMEN_MODELS_DIR` names when the user sets it. A plugin that downloads a model declares `link:open` as consent, fetches it at a pinned revision, and checks the sha256 of the bytes against the sum pinned in its code before the file is put in place. `NUMEN_OFFLINE=1` forbids every download and `NUMEN_MODELS_QUOTA` caps the bytes the folder holds (32 GiB by default).
+A plugin that runs a model keeps it in the models folder every plugin shares: `models` in the shared data directory the host grants, or the folder `NUMEN_MODELS_DIR` names when the user sets it. A plugin that downloads a model declares `link:open` as consent, fetches it at a pinned revision, and checks the sha256 of the bytes against the sum pinned in its code before the file is put in place. `NUMEN_OFFLINE=1` forbids every download.
 
 A plugin that embeds text keeps what a model needs besides its files, such as the prefixes it expects and the way its output becomes a vector, as data and not in code. The embeddings plugin ships a table of profiles and reads more from `*.json` files in the `profiles` folder of the data directory the host grants it, merged over the table by `id`; a file that cannot be read is reported on the log of the plugin and skipped. The shape of a profile is in the README of the plugin.
 

@@ -44,7 +44,6 @@ type Scales struct {
 // Machine is what the hardware allows the installation to use.
 type Machine struct {
 	ResolvedCompute settingsdomain.ResolvedCompute
-	Hardware        settingsdomain.MachineSpecs
 }
 
 // Config is what the user may point somewhere else. Empty fields mean the platform's own locations. What the

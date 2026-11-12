@@ -25,7 +25,6 @@ func getMachines() []machine {
 				PerformanceCPUs: 4,
 				TotalRAMMB:      16384,
 				AvailableRAMMB:  9000,
-				Accelerators:    []string{"coreml"},
 			},
 		},
 		{"a two-core laptop", settings.MachineSpecs{LogicalCPUs: 2, PhysicalCPUs: 2, PerformanceCPUs: 2, TotalRAMMB: 4096, AvailableRAMMB: 1500}},

@@ -11,9 +11,6 @@ type Performance struct {
 	Profile string `json:"profile"`
 }
 
-// AcceleratorCoreML names the Apple Core ML runtime, present on Apple Silicon.
-const AcceleratorCoreML = "coreml"
-
 // Reader reports the machine this process runs on.
 type Reader struct{}
 

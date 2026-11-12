@@ -35,8 +35,7 @@ func (c Config) ApplySettings() (Config, []string, error) {
 }
 
 func applySettingsFile(c Config, s settingsadapter.File) Config {
-	compute := settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)
-	c.machine = Machine{ResolvedCompute: compute.Resolved, Hardware: compute.Machine}
+	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)}
 	configurePluginHost(settingsOf(c), s)
 	return c
 }
@@ -302,7 +301,7 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 }
 
 func resolveProfile(profile string) string {
-	return settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(profile).Resolved.Profile
+	return settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(profile).Profile
 }
 
 func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.Service, error) {

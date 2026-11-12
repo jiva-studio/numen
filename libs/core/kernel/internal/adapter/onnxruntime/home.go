@@ -3,9 +3,8 @@ package onnxruntime
 import (
 	"errors"
 	"os"
-	"slices"
-	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
@@ -15,8 +14,6 @@ import (
 const (
 	// EnvDir names the folder the models are kept in.
 	EnvDir = "NUMEN_MODELS_DIR"
-	// EnvOffline, when true, forbids fetching the runtime.
-	EnvOffline = "NUMEN_OFFLINE"
 	// EnvProvider names the execution provider plugins open sessions on.
 	EnvProvider = "NUMEN_ONNX_PROVIDER"
 )
@@ -32,18 +29,11 @@ func GetHome() (string, error) {
 	return "", ErrNoHome
 }
 
-// IsOffline reports whether EnvOffline forbids fetching.
-func IsOffline() bool {
-	return slices.Contains(getOfflineValues(), strings.ToLower(strings.TrimSpace(os.Getenv(EnvOffline))))
-}
-
-func getOfflineValues() []string { return []string{"1", "true", "yes", "on"} }
-
 // FromEnvironment returns the configuration the environment names: the
 // provider, and whether fetching is forbidden. The models home is resolved when
 // the runtime is provisioned.
 func FromEnvironment(clock machineport.Clock) Config {
-	return Config{Provider: os.Getenv(EnvProvider), Offline: IsOffline(), Clock: clock}
+	return Config{Provider: os.Getenv(EnvProvider), Offline: provision.IsOffline(), Clock: clock}
 }
 
 // EnvMockML names the variable that runs the plugins on mock models.
