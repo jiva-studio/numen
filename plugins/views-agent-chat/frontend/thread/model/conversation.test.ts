@@ -136,7 +136,7 @@ describe('an answer', () => {
   })
 
   it('ends quietly when the agent cancelled the turn', async () => {
-    const { conversation } = open({ frames: [], end: stopFor(StopReason.CANCELLED) })
+    const { conversation } = open({ frames: [], end: stopFor(StopReason.CANCELED) })
 
     await conversation.ask('what is here?')
 

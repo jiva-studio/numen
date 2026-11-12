@@ -36,11 +36,11 @@ func connectionProvider(id, name string, types ...string) manifest.Discovered {
 func TestTheRegistryListsTheTypesOfEveryEnabledPluginWithComposedIDs(t *testing.T) {
 	registry := plugin.NewConnectionTypes(fakeConnectionHost{
 		plugins: []manifest.Discovered{
-			connectionProvider("md.numen.agents.claude", "Claude Code", "claude-code"),
+			connectionProvider("md.numen.agents.acp", "Claude Code", "claude-code"),
 			connectionProvider("md.numen.connections.llm", "LLM connections", "openrouter", "openai"),
 			connectionProvider("md.numen.tools.none", "No types"),
 		},
-		enabled: map[string]bool{"md.numen.agents.claude": true, "md.numen.connections.llm": true, "md.numen.tools.none": true},
+		enabled: map[string]bool{"md.numen.agents.acp": true, "md.numen.connections.llm": true, "md.numen.tools.none": true},
 	})
 
 	types := registry.ListTypes()
@@ -49,7 +49,7 @@ func TestTheRegistryListsTheTypesOfEveryEnabledPluginWithComposedIDs(t *testing.
 	for _, one := range types {
 		ids = append(ids, one.GetID())
 	}
-	want := []string{"md.numen.agents.claude/claude-code", "md.numen.connections.llm/openrouter", "md.numen.connections.llm/openai"}
+	want := []string{"md.numen.agents.acp/claude-code", "md.numen.connections.llm/openrouter", "md.numen.connections.llm/openai"}
 	if len(ids) != len(want) {
 		t.Fatalf("ids = %v, want %v", ids, want)
 	}

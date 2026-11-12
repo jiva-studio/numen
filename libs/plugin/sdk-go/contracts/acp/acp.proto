@@ -127,7 +127,7 @@ enum StopReason {
   STOP_REASON_MAX_TOKENS = 2;
   STOP_REASON_MAX_TURN_REQUESTS = 3;
   STOP_REASON_REFUSAL = 4;
-  STOP_REASON_CANCELLED = 5;
+  STOP_REASON_CANCELED = 5;
 }
 
 // TaskDone is the done frame of acp.task.

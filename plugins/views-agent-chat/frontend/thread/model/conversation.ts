@@ -168,7 +168,7 @@ function settleTurn(options: SettleTurnOptions, put: (turn: Turn) => void, nextI
     put({ id: nextId(), voice: 'response', text: sentence, state: 'failed' })
     return
   }
-  if (!hasContent && reason !== StopReason.CANCELLED) {
+  if (!hasContent && reason !== StopReason.CANCELED) {
     put({ id: nextId(), voice: 'response', text: words.nothing })
   }
 }

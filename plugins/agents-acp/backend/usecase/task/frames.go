@@ -276,12 +276,9 @@ func readPlanStatus(status string) contract.PlanEntryStatus {
 	return contract.PlanEntryStatus_PLAN_ENTRY_STATUS_UNSPECIFIED
 }
 
-// stopReasonCanceled is the stop of a canceled turn, number 5 of the contract.
-const stopReasonCanceled contract.StopReason = 5
-
 func writeStopReason(reason acp.StopReason) contract.StopReason {
 	if reason.IsCanceled() {
-		return stopReasonCanceled
+		return contract.StopReason_STOP_REASON_CANCELED
 	}
 	switch reason {
 	case acp.StopEndTurn:
