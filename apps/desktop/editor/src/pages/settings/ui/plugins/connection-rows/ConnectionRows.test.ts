@@ -99,10 +99,8 @@ const setting = (overrides: Partial<PluginSettingInfo> = {}): PluginSettingInfo 
   ...overrides,
 })
 
-/** A row as the value of the setting holds it. */
 const row = (connectionId: string, model: string) => ({ connection: connectionId, model })
 
-/** A row as the rows hand it on to be written. */
 const stored = (connectionId: string, model: string) => ({
   connection: connectionId,
   options: { model },

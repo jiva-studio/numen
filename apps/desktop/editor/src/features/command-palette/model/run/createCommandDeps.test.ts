@@ -74,7 +74,7 @@ describe('the commands reach the window', () => {
     expect(writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 
-  it('opens the settings at the plugin and setting asked for, or the settings tab without an opener', () => {
+  it('opens the settings at the requested plugin and setting, or the settings tab without an opener', () => {
     const openSettings = vi.fn()
     createOptions({ openSettings }).deps.navigator.openSettings({
       pluginId: 'org.example.atlas',

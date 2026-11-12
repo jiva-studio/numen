@@ -10,10 +10,12 @@ import {
   type StoredRow,
 } from '@/entities/connection'
 
-/** Where the rows come from and where a change of them goes. */
+/**
+ * Where the rows come from and where a change of them goes. A row is complete once each required row field
+ * of the type of its connection has a value.
+ */
 export interface RowDraftsSource {
   readonly getValue: () => JsonValue | undefined
-  /** The row fields of the type of a connection; a row is complete once each required one has a value. */
   readonly getRowFields: (connectionId: string) => readonly ConnectionFieldInfo[]
   readonly onChange: (rows: readonly StoredRow[]) => void
 }
