@@ -40,10 +40,13 @@ func (s Settings) GetMaxTokens() int {
 	return *s.MaxTokens
 }
 
-// GetMaxSteps returns the limit a task names, else the configured one; zero means no limit is set.
-func (s Settings) GetMaxSteps(requested int) int {
-	if requested > 0 {
-		return requested
+// defaultMaxSteps is how many requests to the model one task may make while no limit is configured.
+const defaultMaxSteps = 25
+
+// GetMaxSteps returns how many requests to the model one task may make.
+func (s Settings) GetMaxSteps() int {
+	if s.MaxSteps <= 0 {
+		return defaultMaxSteps
 	}
 	return s.MaxSteps
 }

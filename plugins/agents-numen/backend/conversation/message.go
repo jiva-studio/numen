@@ -2,16 +2,7 @@
 // offered to the model.
 package conversation
 
-import (
-	"encoding/json"
-	"errors"
-)
-
-// ErrNoConnection is a request that no connection could answer because the agent has none.
-var ErrNoConnection = errors.New("the agent has no connection")
-
-// ReasonNoConnection is why a run stops, and why the agent is unreachable, while no row names a connection.
-const ReasonNoConnection = "the Numen Agent has no connection: choose one in its settings"
+import "encoding/json"
 
 // Message is one message of a conversation. Role is system, user, assistant or tool. An assistant
 // message carries the calls it asked for, and a tool message carries the id of the call it answers.
@@ -29,11 +20,28 @@ type ToolCall struct {
 	Arguments string
 }
 
-// Tool is a tool offered to the model; Parameters is the JSON schema of its arguments.
+// Tool is a tool of the host offered to the model. Parameters is the JSON schema of its arguments, and
+// Instructions are the sentences the tool asks to be told to the model.
 type Tool struct {
-	Name        string
-	Description string
-	Parameters  json.RawMessage
+	Name         string
+	Title        string
+	Description  string
+	Parameters   json.RawMessage
+	IsReadOnly   bool
+	Instructions []string
+}
+
+// Scope is what every tool call of a task carries: the context of the task and the vault the tools work.
+// An empty VaultID is the vault the window shows.
+type Scope struct {
+	Context map[string]string
+	VaultID string
+}
+
+// ToolResult is the result of a tool call as text. IsError is set for a call that failed.
+type ToolResult struct {
+	Text    string
+	IsError bool
 }
 
 // Turn is what the model is asked in one request.
@@ -48,13 +56,4 @@ type Turn struct {
 type Reply struct {
 	Message Message
 	IsCut   bool
-}
-
-// ToolServer is where the tools of a task are served, and the part of the task's context sent
-// with each call. It holds no address when the task names no tool.
-type ToolServer struct {
-	URL   string
-	Token string
-	Names []string
-	Meta  map[string]string
 }

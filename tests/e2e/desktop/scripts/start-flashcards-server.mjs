@@ -45,6 +45,9 @@ const certificateEnv = sharedPort
 
 const standIns = await startStandIns()
 
+// The connection of numen's own agent, which the agent panel runs its tasks on.
+const NUMEN_AGENT_CONNECTION = 'c57a4d200'
+
 // The review's agent panel answers from numen's own agent through a connection to the stand-in chat API. The agents
 // that run a program the machine has installed stay off: those programs reach their own services.
 const settingsDir =
@@ -57,7 +60,6 @@ fs.writeFileSync(
   JSON.stringify(
     {
       v: 1,
-      app: { agent: { use: 'numen' } },
       connections: [
         {
           id: STAND_IN_CONNECTION,
@@ -66,10 +68,19 @@ fs.writeFileSync(
           revision: 1,
           fields: { baseUrl: standIns.chatUrl },
         },
+        {
+          id: NUMEN_AGENT_CONNECTION,
+          type: 'md.numen.agents.numen/numen',
+          name: 'Numen agent',
+          revision: 1,
+          fields: {},
+        },
       ],
       'md.numen.agents.numen': {
         connections: [{ connection: STAND_IN_CONNECTION, model: STAND_IN_MODEL }],
       },
+      'md.numen.views.agent.chat': { connections: [{ connection: NUMEN_AGENT_CONNECTION }] },
+      'md.numen.views.flashcards.studio': { agentConnections: [{ connection: NUMEN_AGENT_CONNECTION }] },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },

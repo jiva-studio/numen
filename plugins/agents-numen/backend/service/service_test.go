@@ -1,15 +1,21 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
@@ -55,24 +61,55 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	}
 }
 
-func TestConfigurePropagatesTheRowToTheAgent(t *testing.T) {
-	pos := startPlugin(t)
-
-	if _, err := servertest.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{"connections": rowsJSON(row{connection: "c1", model: "m1"})}); err != nil {
-		t.Fatal(err)
-	}
-	res, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil)
+// callTask asks the handler for acp.task over Connect and returns the body of the answer.
+func callTask(t *testing.T, client *http.Client, baseURL string) string {
+	t.Helper()
+	payload, err := proto.Marshal(&acp.TaskRequest{Prompt: "When does the ferry leave?"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res; len(programs) != 1 || !programs[0].IsInstalled || len(programs[0].Models) != 1 || programs[0].Models[0].Name != "m1" {
-		t.Errorf("the programs are %+v", programs)
+	message, err := json.Marshal(map[string]any{"operation": acp.OperationTask, "call": map[string]any{"type": "numen"}, "payload": payload})
+	if err != nil {
+		t.Fatal(err)
+	}
+	envelope := binary.BigEndian.AppendUint32([]byte{0}, uint32(len(message)))
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, baseURL+"/numen.v1.ProviderService/Call", bytes.NewReader(append(envelope, message...)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/connect+json")
+	request.Header.Set("Authorization", "Bearer "+testToken)
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("the plugin answered %d %q", response.StatusCode, body)
+	}
+	return string(body)
+}
+
+// A task while the settings hold no row of llm.chat stops as unavailable, before the host is reached.
+func TestThePluginServesAgentTasksAsAProvider(t *testing.T) {
+	pos := startPlugin(t)
+
+	body := callTask(t, http.DefaultClient, pos)
+
+	if !strings.Contains(body, "FAILURE_KIND_STOP") || !strings.Contains(body, "FAILURE_REASON_UNAVAILABLE") {
+		t.Errorf("the plugin answered %q", body)
 	}
 }
 
-// The handler a host that links the plugin in serves hands the rows Configure receives to the agent.
-func TestNewHandlerPropagatesTheRowToTheAgent(t *testing.T) {
+func TestTheLinkedHandlerServesAgentTasksAsAProvider(t *testing.T) {
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken, "NUMEN_HOST_PORT": "4000"})
 	if err != nil {
 		t.Fatal(err)
@@ -80,16 +117,10 @@ func TestNewHandlerPropagatesTheRowToTheAgent(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if _, err := servertest.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
-		Configure(t.Context(), map[string]string{"connections": rowsJSON(row{connection: "c1", model: "m1"})}); err != nil {
-		t.Fatal(err)
-	}
-	res, err := agentrun.NewClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).GetPrograms(t.Context(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if programs := res; len(programs) != 1 || !programs[0].IsInstalled {
-		t.Errorf("the programs are %+v", programs)
+	body := callTask(t, web.Client(), web.URL)
+
+	if !strings.Contains(body, "FAILURE_KIND_STOP") {
+		t.Errorf("the plugin answered %q", body)
 	}
 }
 

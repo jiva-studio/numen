@@ -73,7 +73,7 @@ func (c *Chat) Stream(ctx context.Context, turn conversation.Turn, emit func(str
 		Temperature: turn.Temperature, MaxTokens: int32(turn.MaxTokens),
 	}, connection.PriorityInteractive)
 	if err != nil {
-		return conversation.Reply{}, readError(err)
+		return conversation.Reply{}, err
 	}
 	defer func() { err = errors.Join(err, stream.Close()) }()
 
@@ -93,7 +93,7 @@ func (c *Chat) Stream(ctx context.Context, turn conversation.Turn, emit func(str
 	}
 	reply.Message.Text = text.String()
 	if streamErr := stream.Err(); streamErr != nil {
-		return reply, readError(streamErr)
+		return reply, streamErr
 	}
 	reply.IsCut = stream.Finish().GetReason() == llm.FinishReason_FINISH_REASON_LENGTH
 	return reply, nil
@@ -123,20 +123,3 @@ func readCall(call *llm.ToolCall) conversation.ToolCall {
 	return conversation.ToolCall{ID: call.GetId(), Name: call.GetName(), Arguments: call.GetArgumentsJson()}
 }
 
-func readError(err error) error {
-	var allFailed *connection.AllFailedError
-	var stopped *connection.StoppedError
-	switch {
-	case errors.Is(err, connection.ErrNoConnection):
-		return errors.Join(conversation.ErrNoConnection, err)
-	case errors.As(err, &allFailed):
-		parts := make([]string, len(allFailed.Failures))
-		for i, one := range allFailed.Failures {
-			parts[i] = one.ConnectionName + ": " + one.Reason
-		}
-		return errors.New(strings.Join(parts, "; "))
-	case errors.As(err, &stopped):
-		return errors.New(stopped.ConnectionName + ": " + stopped.Reason)
-	}
-	return err
-}
