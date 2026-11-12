@@ -27,7 +27,6 @@ export const WORDS = {
   connectionUnavailableDetail:
     '"Type unavailable" means no installed plugin provides this type. Plugins skip such a connection.',
   connectionIncomplete: 'Incomplete',
-  connectionKeyMissing: 'No key',
   connectionDelete: 'Delete connection',
   connectionDeleteAsking: (name: string, hasKey: boolean) =>
     hasKey ? `Delete "${name}"? Its key is removed from this machine.` : `Delete "${name}"?`,
@@ -49,14 +48,8 @@ export const WORDS = {
   connectionCancel: 'Cancel',
   connectionFieldSelect: 'Choose',
   connectionRequired: 'Required.',
-  connectionOptionalKey: 'May stay empty for a server on this computer.',
   /** The rows of connections on the page of a plugin. */
-  connectionRowsPrivacy: (limit: number) =>
-    limit === 1
-      ? 'The text of your notes is sent to the connection chosen here.'
-      : 'The text of your notes is sent to each connection listed, in this order.',
   connectionRowsNone: 'No connections yet. Add a connection first.',
-  connectionRowsUse: 'Use a connection',
   connectionRowsOpen: 'Open Connections',
   connectionRowsChoose: 'Choose a connection',
   connectionRowsConnection: 'Connection',

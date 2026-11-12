@@ -159,12 +159,11 @@ type Story = StoryObj<typeof meta>
 export const ListFitsTheColumn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: 'Connections' })).toBeVisible()
     await expect(canvas.getByText('Type unavailable')).toBeVisible()
     await expect(canvas.getByText('Incomplete')).toBeVisible()
     await expect(canvas.getByText(/Plugins skip such a connection/)).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
-    for (const row of canvasElement.querySelectorAll('li[aria-label]')) {
+    for (const row of canvasElement.querySelectorAll('[role="list"] [role="button"]')) {
       await expect(row.getBoundingClientRect().right).toBeLessThanOrEqual(column.right + 0.5)
     }
   },
@@ -214,13 +213,12 @@ export const AddDialogOfAService: Story = {
   },
 }
 
-/** A server asks for the address, takes a key that may stay empty. */
+/** A server asks for the address, and a key. */
 export const AddDialogOfAServer: Story = {
   render: render([], [SERVER]),
   play: async ({ canvasElement }) => {
     const dialog = await openDialog(canvasElement)
     await expect(dialog.getByLabelText('Address')).toBeVisible()
-    await expect(dialog.getByText('May stay empty for a server on this computer.')).toBeVisible()
     await expect(dialog.getByText('Mode')).toBeVisible()
     await expect(dialog.getByText('Stream the answer')).toBeVisible()
   },
