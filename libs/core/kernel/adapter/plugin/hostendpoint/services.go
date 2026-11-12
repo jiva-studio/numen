@@ -74,8 +74,6 @@ type HealthCalls struct {
 type TextVersions interface {
 	// PutVersion records a version of the plugin, or replaces the one it has under the key.
 	PutVersion(ctx context.Context, v domain.Vault, pluginID string, params plugin.TextPut) (domain.TextVersion, error)
-	// RemoveVersion removes the record of a version of the plugin.
-	RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error)
 	// ReadText is one page of any version's segments, read from its file.

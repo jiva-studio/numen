@@ -62,8 +62,6 @@ type TextVersions interface {
 	// PutVersion records a version of the plugin from the file it wrote, or replaces the one it has
 	// under the key, and reindexes the file.
 	PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error)
-	// RemoveVersion removes the record of a version of the plugin.
-	RemoveVersion(ctx context.Context, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, path string) (TextListing, error)
 }
