@@ -22,7 +22,9 @@ const createEmptyNoteGraph = (): NoteGraph => ({
   connections: [],
 })
 
-const fake = (listRelatedNotes: RelatedNoteQueries['listRelatedNotes']): RelatedNoteQueries => ({ listRelatedNotes })
+const fake = (listRelatedNotes: RelatedNoteQueries['listRelatedNotes']): RelatedNoteQueries => ({
+  listRelatedNotes,
+})
 
 describe('a plex still being read', () => {
   it('says so until the first answer lands, and no longer', async () => {
@@ -161,9 +163,7 @@ describe('a note that moved while a question was in flight', () => {
 describe('the note in focus goes away', () => {
   it('says so, keeps what it is showing, and can return to it', async () => {
     let holds = true
-    const plex = usePlexView(
-      fake(async (path) => (holds ? answer(path) : createEmptyNoteGraph())),
-    )
+    const plex = usePlexView(fake(async (path) => (holds ? answer(path) : createEmptyNoteGraph())))
 
     await plex.go('Note.md')
     expect(plex.here.value).toBe('Note.md')

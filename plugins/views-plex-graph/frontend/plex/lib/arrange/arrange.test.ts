@@ -370,8 +370,7 @@ describe('order along a line follows the order given', () => {
       nodes: [...before.nodes, { id: 'child-6', title: 'One more', relation: 'child' }],
       edges: [...before.edges, { from: 'focus', to: 'child-6' }],
     }
-    const ids = (n: PlexGraph) =>
-      getNodesByRelation(arrangePlex(n), 'child').map((node) => node.id)
+    const ids = (n: PlexGraph) => getNodesByRelation(arrangePlex(n), 'child').map((node) => node.id)
     expect(ids(after).slice(0, ids(before).length)).toStrictEqual(ids(before))
   })
 })
