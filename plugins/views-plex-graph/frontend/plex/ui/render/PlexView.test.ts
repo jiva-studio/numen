@@ -64,7 +64,7 @@ describe('node activation', () => {
 })
 
 describe('gesture roles and ghost', () => {
-  const mountDuring = (props: Record<string, unknown>) =>
+  const mountPlexViewDuring = (props: Record<string, unknown>) =>
     mount(PlexView, {
       props: {
         frame: arrangePlex(before),
@@ -75,14 +75,14 @@ describe('gesture roles and ghost', () => {
     })
 
   it('shows the handle only on the source node during a gesture', async () => {
-    const view = mountDuring({ gestureFrom: 'staying' })
+    const view = mountPlexViewDuring({ gestureFrom: 'staying' })
     await view.get('[aria-label^="Going"]').trigger('pointerenter')
     expect(view.findAll('.plex__handle')).toHaveLength(1)
     expect(view.get('[aria-label^="Staying"]').find('.plex__handle').exists()).toBe(true)
   })
 
   it('marks only the link target node', () => {
-    const view = mountDuring({
+    const view = mountPlexViewDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 0, y: 200 },
       gestureOutcome: { kind: 'link', from: 'focus', to: 'going', relation: 'child' },
@@ -92,7 +92,7 @@ describe('gesture roles and ghost', () => {
   })
 
   it('renders the ghost node at the pointer position with the relation name', () => {
-    const view = mountDuring({
+    const view = mountPlexViewDuring({
       gestureFrom: 'focus',
       gestureAt: { x: 40, y: -200 },
       gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
@@ -173,7 +173,7 @@ describe('hovered edge line', () => {
   const down = titledFrame.edges.findIndex((edge) => edge.to === 'below')
   const acrossIndex = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
 
-  const mountTitled = () =>
+  const mountTitledPlexView = () =>
     mount(PlexView, {
       props: {
         frame: titledFrame,
@@ -182,14 +182,14 @@ describe('hovered edge line', () => {
       },
     })
 
-  const reach = (view: ReturnType<typeof mountTitled>, pos: number) =>
+  const reach = (view: ReturnType<typeof mountTitledPlexView>, pos: number) =>
     view.findAll('.plex__edge-hit')[pos]!
 
-  const title = (view: ReturnType<typeof mountTitled>, pos: number) =>
+  const title = (view: ReturnType<typeof mountTitledPlexView>, pos: number) =>
     view.findAll('.plex__edge-label').slice(2 * pos, 2 * pos + 2)
 
   it('raises the hovered line on pointerenter and lowers it on pointerleave', async () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
     expect(view.find('.plex__raised').exists()).toBe(false)
 
     await reach(view, acrossIndex).trigger('pointerenter')
@@ -200,7 +200,7 @@ describe('hovered edge line', () => {
   })
 
   it('lowers the raised line when the frame changes', async () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
     await reach(view, acrossIndex).trigger('pointerenter')
     expect(view.find('.plex__raised').exists()).toBe(true)
 
@@ -210,7 +210,7 @@ describe('hovered edge line', () => {
   })
 
   it('renders the raised line after all node elements', async () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
     await reach(view, acrossIndex).trigger('pointerenter')
     const raised = view.get('.plex__raised').element
 
@@ -221,7 +221,7 @@ describe('hovered edge line', () => {
   })
 
   it('moves the hovered line and its title from the resting layer to the raised layer', async () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
     const lines = titledFrame.edges.length
 
     expect(view.findAll('.plex__edge')).toHaveLength(lines)
@@ -239,7 +239,7 @@ describe('hovered edge line', () => {
   })
 
   it('renders a resting title with halo and letter layers on the same path', () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
     const [halo, letters] = title(view, acrossIndex)
 
     expect(halo!.classes()).toContain('plex__edge-label--halo')
@@ -252,7 +252,7 @@ describe('hovered edge line', () => {
   })
 
   it('renders a raised title with halo and letter layers on the same path', async () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
     await reach(view, acrossIndex).trigger('pointerenter')
     const [halo, letters] = view.get('.plex__raised').findAll('.plex__edge-label')
 
@@ -269,7 +269,7 @@ describe('hovered edge line', () => {
   })
 
   it('renders every edge title inside a textPath element', () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
 
     for (const targetIndex of [down, acrossIndex]) {
       expect(title(view, targetIndex)[0]!.find('textPath').exists()).toBe(true)
@@ -290,7 +290,7 @@ describe('hovered edge line', () => {
   })
 
   it('reverses the reading path when the title heading is against', () => {
-    const view = mountTitled()
+    const view = mountTitledPlexView()
     const edge = titledFrame.edges[acrossIndex]!
     expect(edge.titles[0]!.heading).toBe('against')
 
@@ -357,7 +357,7 @@ describe('settled node draw order', () => {
   const getBox = (view: ReturnType<typeof mountView>, name: string) =>
     view.findAllComponents(PlexNodeView).find((node) => node.props('node').id === name)!
 
-  const mountResting = () =>
+  const mountRestingPlexView = () =>
     mount(PlexView, {
       props: {
         frame: arrangePlex(before),
@@ -367,7 +367,7 @@ describe('settled node draw order', () => {
     })
 
   it('renders the settled node last so it covers neighbors', async () => {
-    const view = mountResting()
+    const view = mountRestingPlexView()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
 
     getBox(view, 'staying').vm.$emit('settle', true)
@@ -376,7 +376,7 @@ describe('settled node draw order', () => {
   })
 
   it('preserves the DOM element when the node moves to the end', async () => {
-    const view = mountResting()
+    const view = mountRestingPlexView()
     const was = view.get('[aria-label^="Staying"]').element
 
     getBox(view, 'staying').vm.$emit('settle', true)
@@ -386,7 +386,7 @@ describe('settled node draw order', () => {
   })
 
   it('restores the original draw order when the node unsettles', async () => {
-    const view = mountResting()
+    const view = mountRestingPlexView()
     getBox(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
 
@@ -428,7 +428,7 @@ describe('edge arrowheads', () => {
 
   const frame = arrangePlex(named)
 
-  const mountNamed = () =>
+  const mountNamedPlexView = () =>
     mount(PlexView, {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
@@ -439,11 +439,11 @@ describe('edge arrowheads', () => {
   }
 
   it('renders an arrowhead for each edge with arrows', () => {
-    expect(mountNamed().findAll('.plex__edge-arrow')).toHaveLength(2)
+    expect(mountNamedPlexView().findAll('.plex__edge-arrow')).toHaveLength(2)
   })
 
   it('positions and rotates each arrowhead at its edge endpoint', () => {
-    const view = mountNamed()
+    const view = mountNamedPlexView()
     const renderedArrows = view.findAll('.plex__edge-arrow')
 
     for (const [at, edge] of [frame.edges[0]!, frame.edges[1]!].entries()) {
@@ -471,7 +471,7 @@ describe('edge arrowheads', () => {
   })
 
   it('renders arrowheads before edge titles', () => {
-    const view = mountNamed()
+    const view = mountNamedPlexView()
     const arrow = view.findAll('.plex__edge-arrow')[0]!.element
     for (const title of view.findAll('.plex__edge-label')) {
       const where = arrow.compareDocumentPosition(title.element)
@@ -480,7 +480,7 @@ describe('edge arrowheads', () => {
   })
 
   it('raises the arrowhead with its hovered edge line', async () => {
-    const view = mountNamed()
+    const view = mountNamedPlexView()
     await view.findAll('.plex__edge-hit')[0]!.trigger('pointerenter')
 
     expect(view.get('.plex__raised').findAll('.plex__edge-arrow')).toHaveLength(1)

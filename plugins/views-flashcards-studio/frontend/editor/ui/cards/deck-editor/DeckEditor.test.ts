@@ -486,23 +486,23 @@ describe('DeckEditor', () => {
       { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
     ]
 
-    const mountSectioned = (props: Record<string, unknown> = {}) =>
+    const mountSectionedDeck = (props: Record<string, unknown> = {}) =>
       mountDeck({ cards: UNDER, sections: SECTIONS, ...props })
 
     it('draws a heading per section, in the order they were handed in', () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       expect(
         target.findAll('[data-section-head]').map((head) => head.attributes('data-section-head')),
       ).toEqual(['roots', 'leaves'])
     })
 
     it('draws a heading for a section holding no card', () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       expect(target.get('[data-section-head="leaves"]').get('input').element.value).toBe('Leaves')
     })
 
     it('remains each card under the section it was handed in under', () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       expect(getTile(target, 'llama').attributes('data-section')).toBe('roots')
       expect(getTile(target, 'loose').attributes('data-section')).toBeUndefined()
     })
@@ -512,13 +512,13 @@ describe('DeckEditor', () => {
     })
 
     it('emits a section requested for, named by something nothing has taken', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       await target.get('[data-add-section]').trigger('click')
       expect(target.emitted('add-section')).toEqual([['Section 1']])
     })
 
     it('emits a section renamed', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       const box = target.get<HTMLInputElement>('[data-section-head="roots"] input')
       box.element.value = 'Roots and shoots'
       await box.trigger('input')
@@ -527,20 +527,20 @@ describe('DeckEditor', () => {
     })
 
     it('emits a section requested to go', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       await target.get('[data-section-head="roots"] .remove-button').trigger('click')
       expect(target.emitted('remove-section')).toEqual([['roots']])
     })
 
     it('asks for a card under the section whose plus was pressed', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       await target.get('[data-plus-of="roots"] button').trigger('click')
       await target.get('[data-plus-of="roots"] [data-cut="Animal"]').trigger('click')
       expect(target.emitted('add')?.map((call) => call[1])).toEqual(['roots'])
     })
 
     it('asks from one plus at a time, the others standing shut', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       await target.get('[data-plus-of="roots"] button').trigger('click')
       expect(target.findAll('[data-cut]').length).toBeGreaterThan(0)
       expect(target.find('[data-plus-of="leaves"] [data-cut]').exists()).toBe(false)
@@ -551,7 +551,7 @@ describe('DeckEditor', () => {
     })
 
     it('moves nothing where the card dropped past a section is the last under it', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       const plus = target.get('[data-plus-of="roots"]')
       await getTile(target, 'llama').get('[data-grip]').trigger('dragstart')
       await plus.trigger('dragover')
@@ -560,21 +560,21 @@ describe('DeckEditor', () => {
     })
 
     it('remains a plus in every section, and one where the loose cards stand', () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       expect(
         target.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
       ).toEqual(['', 'roots', 'leaves'])
     })
 
     it('remains none before the first section where no card remains there', () => {
-      const card = mountSectioned({ cards: [UNDER[1]] })
+      const card = mountSectionedDeck({ cards: [UNDER[1]] })
       expect(
         card.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
       ).toEqual(['roots', 'leaves'])
     })
 
     it('emits a card dropped past the last card of a section', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       const plus = target.get('[data-plus-of="roots"]')
       await getTile(target, 'loose').get('[data-grip]').trigger('dragstart')
       await plus.trigger('dragover')
@@ -583,7 +583,7 @@ describe('DeckEditor', () => {
     })
 
     it('emits a card dropped past the last of those standing under no section', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       const plus = target.get('[data-plus]')
       await getTile(target, 'llama').get('[data-grip]').trigger('dragstart')
       await plus.trigger('dragover')
@@ -592,13 +592,13 @@ describe('DeckEditor', () => {
     })
 
     it('emits a card dropped at the head of a section', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       await dragTo(target, 'loose', 'roots')
       expect(target.emitted('move')).toEqual([['loose', 'roots']])
     })
 
     it('emits a card dropped at the head of a section holding none', async () => {
-      const target = mountSectioned()
+      const target = mountSectionedDeck()
       await dragTo(target, 'llama', 'leaves')
       expect(target.emitted('move')).toEqual([['llama', 'leaves']])
     })
@@ -610,11 +610,11 @@ describe('DeckEditor', () => {
       ]
 
       it('take a drop target of their own where no card remains there', () => {
-        expect(mountSectioned({ cards: INSIDE }).find('[data-head]').exists()).toBe(true)
+        expect(mountSectionedDeck({ cards: INSIDE }).find('[data-head]').exists()).toBe(true)
       })
 
       it('take none where a card already remains there to land in front of', () => {
-        expect(mountSectioned().find('[data-head]').exists()).toBe(false)
+        expect(mountSectionedDeck().find('[data-head]').exists()).toBe(false)
       })
 
       it('take none in a deck holding no section, the end of it being that place', () => {
@@ -622,20 +622,20 @@ describe('DeckEditor', () => {
       })
 
       it('emit a card dropped before the first section', async () => {
-        const card = mountSectioned({ cards: INSIDE })
+        const card = mountSectionedDeck({ cards: INSIDE })
         await dragTo(card, 'yak', HEAD)
         expect(card.emitted('move')).toEqual([['yak', HEAD]])
       })
 
       it('emit the first card of the deck dragged out of its section', () => {
-        const card = mountSectioned({ cards: INSIDE })
+        const card = mountSectionedDeck({ cards: INSIDE })
         const press = pressKey(getTile(card, 'llama').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(true)
         expect(card.emitted('move')).toEqual([['llama', HEAD]])
       })
 
       it('move nothing where the card dragged up already remains there', () => {
-        const target = mountSectioned()
+        const target = mountSectionedDeck()
         const press = pressKey(
           getTile(target, 'loose').get('.card-header__grip').element,
           'ArrowUp',
@@ -649,7 +649,7 @@ describe('DeckEditor', () => {
           { id: 'lost', section: 'gone', cardModel: 'Animal', filled: [] },
           { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
         ]
-        const card = mountSectioned({ cards: missing })
+        const card = mountSectionedDeck({ cards: missing })
 
         expect(getDrawnCards(card)).toEqual(['lost', 'llama'])
         expect(getTile(card, 'lost').attributes('data-section')).toBeUndefined()

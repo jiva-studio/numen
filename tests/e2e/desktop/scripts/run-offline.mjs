@@ -99,7 +99,7 @@ const runPlaywright = (playwrightArgs, env) => {
 }
 
 /** Runs Playwright and prefixes each line it prints with the label of its process. */
-const runLabelled = (label, playwrightArgs, env) =>
+const runLabelledSuite = (label, playwrightArgs, env) =>
   new Promise((resolve) => {
     const [command, commandArgs] = getCommand(playwrightArgs)
     const child = spawn(command, commandArgs, { env, stdio: ['ignore', 'pipe', 'pipe'] })
@@ -205,7 +205,7 @@ if (jobs.length === 1) {
 const results = await Promise.all(
   jobs.map(({ engine, shard }, slot) => {
     const name = shards > 1 ? `${engine}-${shard + 1}` : engine
-    return runLabelled(
+    return runLabelledSuite(
       name,
       [
         `--project=${engine}`,

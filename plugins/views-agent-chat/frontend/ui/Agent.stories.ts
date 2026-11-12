@@ -23,8 +23,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-const createRequested = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
-const createResponded = (id: string, text: string): Turn => ({ id, voice: 'response', text })
+const createRequestedTurn = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
+const createRespondedTurn = (id: string, text: string): Turn => ({ id, voice: 'response', text })
 
 /**
  * The thread takes what height is left and scrolls inside it; the composer
@@ -69,7 +69,7 @@ const conversation =
       }
 
       const onSubmit = (message: string) => {
-        turns.value.push(createRequested(`${next++}`, message))
+        turns.value.push(createRequestedTurn(`${next++}`, message))
         text.value = ''
         isAnswerPending.value = true
 
@@ -103,10 +103,10 @@ const conversation =
 /** Type into it and press Enter. */
 export const Playground: Story = {
   render: conversation([
-    createRequested('1', 'What does a plex draw?'),
-    createResponded('2', 'One node in focus, and everything else placed by its relation.'),
-    createRequested('3', 'And where do the relations come from?'),
-    createResponded('4', MULTILINE),
+    createRequestedTurn('1', 'What does a plex draw?'),
+    createRespondedTurn('2', 'One node in focus, and everything else placed by its relation.'),
+    createRequestedTurn('3', 'And where do the relations come from?'),
+    createRespondedTurn('4', MULTILINE),
   ]),
 }
 
@@ -132,8 +132,8 @@ export const LongConversation: Story = {
   render: conversation(
     Array.from({ length: 60 }, (_, index) =>
       index % 2 === 0
-        ? createRequested(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
-        : createResponded(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
+        ? createRequestedTurn(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
+        : createRespondedTurn(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
     ),
   ),
   play: async ({ canvasElement }) => {

@@ -335,7 +335,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writing := newSitting(run, vaulttest.NewClock())
+	writing := newTimedRun(run, vaulttest.NewClock())
 
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -375,7 +375,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	yesterdaySession := newSitting(yesterdayRun, clock.NewFake(yesterday))
+	yesterdaySession := newTimedRun(yesterdayRun, clock.NewFake(yesterday))
 	if _, err := yesterdaySession.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -504,7 +504,7 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	record := newSitting(run, clock.NewFake(now))
+	record := newTimedRun(run, clock.NewFake(now))
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}

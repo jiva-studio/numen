@@ -5,10 +5,10 @@ import Thread from './Thread.vue'
 import { NO_UNRESOLVED } from '../lib/turn'
 import type { Turn } from '../../types'
 
-const createRequested = (id: string, text = 'text', state?: Turn['state']): Turn =>
+const createRequestedTurn = (id: string, text = 'text', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
-const createResponded = (id: string, text = 'back', state?: Turn['state']): Turn =>
+const createRespondedTurn = (id: string, text = 'back', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'response', text } : { id, voice: 'response', text, state }
 
 const thread = (turns: readonly Turn[]) => mount(Thread, { props: { turns } })
@@ -23,62 +23,62 @@ describe('what is drawn', () => {
   })
 
   it('drops the empty line the moment there is a turn', () => {
-    expect(thread([createRequested('1')]).text()).not.toContain('No messages yet')
+    expect(thread([createRequestedTurn('1')]).text()).not.toContain('No messages yet')
   })
 
   it('draws one element per turn', () => {
     expect(
-      thread([createRequested('1'), createResponded('2'), createRequested('3')]).findAll(
+      thread([createRequestedTurn('1'), createRespondedTurn('2'), createRequestedTurn('3')]).findAll(
         '.thread__turn',
       ),
     ).toHaveLength(3)
   })
 
   it('keeps the turns in the order they were passed', () => {
-    const wrapper = thread([createRequested('1', 'first'), createResponded('2', 'second')])
+    const wrapper = thread([createRequestedTurn('1', 'first'), createRespondedTurn('2', 'second')])
     const turns = wrapper.findAll('.thread__turn')
     expect(turns[0]?.text()).toContain('first')
     expect(turns[1]?.text()).toContain('second')
   })
 
   it('says which voice each turn is in', () => {
-    const turns = thread([createRequested('1'), createResponded('2')]).findAll('.thread__turn')
+    const turns = thread([createRequestedTurn('1'), createRespondedTurn('2')]).findAll('.thread__turn')
     expect(turns[0]?.attributes('data-voice')).toBe('prompt')
     expect(turns[1]?.attributes('data-voice')).toBe('response')
   })
 
   it('draws a turn with no text at all', () => {
-    expect(thread([createRequested('1', '')]).findAll('.thread__turn')).toHaveLength(1)
+    expect(thread([createRequestedTurn('1', '')]).findAll('.thread__turn')).toHaveLength(1)
   })
 })
 
 describe('a turn that failed', () => {
   it('says so', () => {
-    expect(thread([createRequested('1', 'gone', 'failed')]).text()).toContain('Not sent')
+    expect(thread([createRequestedTurn('1', 'gone', 'failed')]).text()).toContain('Not sent')
   })
 
   it('says nothing of the sort about a turn that settled', () => {
-    expect(thread([createRequested('1')]).text()).not.toContain('Not sent')
+    expect(thread([createRequestedTurn('1')]).text()).not.toContain('Not sent')
   })
 })
 
 describe('a line about work that opens something', () => {
-  const createDoing = (id: string, canOpen?: boolean): Turn =>
+  const createDoingTurn = (id: string, canOpen?: boolean): Turn =>
     canOpen === undefined
       ? { id, voice: 'doing', text: 'Read a document' }
       : { id, voice: 'doing', text: 'Read a document', canOpen }
 
   it('can be pressed, and says which turn was pressed', async () => {
-    const wrapper = thread([createDoing('1', true)])
+    const wrapper = thread([createDoingTurn('1', true)])
 
     await wrapper.find('.thread__opens').trigger('click')
 
-    expect(wrapper.emitted('open')).toEqual([[createDoing('1', true)]])
+    expect(wrapper.emitted('open')).toEqual([[createDoingTurn('1', true)]])
   })
 
   it('is a line and nothing to press where the turn opens nothing', () => {
     expect(
-      thread([createDoing('1')])
+      thread([createDoingTurn('1')])
         .find('.thread__opens')
         .exists(),
     ).toBe(false)
@@ -88,7 +88,7 @@ describe('a line about work that opens something', () => {
 describe('what the caller decides', () => {
   it('renders the body of a turn its own way when it says how', () => {
     const wrapper = mount(Thread, {
-      props: { turns: [createResponded('1', 'entropy.md')] },
+      props: { turns: [createRespondedTurn('1', 'entropy.md')] },
       slots: { turn: '<code class="own">given</code>' },
     })
     expect(wrapper.find('code.own').exists()).toBe(true)
@@ -139,18 +139,18 @@ const createScrollingThread = (turns: readonly Turn[]) => {
 
 describe('following the foot', () => {
   it('brings a turn that arrives into view', async () => {
-    const one = createScrollingThread([createRequested('1'), createResponded('2')])
+    const one = createScrollingThread([createRequestedTurn('1'), createRespondedTurn('2')])
 
-    await one.arrives(createRequested('3'))
+    await one.arrives(createRequestedTurn('3'))
 
     expect(one.at()).toBe(2 * SCREEN)
   })
 
   it('follows an answer as it is written', async () => {
-    const one = createScrollingThread([createRequested('1'), createResponded('2', '')])
+    const one = createScrollingThread([createRequestedTurn('1'), createRespondedTurn('2', '')])
 
     await one.wrapper.setProps({
-      turns: [createRequested('1'), createResponded('2', 'a first word')],
+      turns: [createRequestedTurn('1'), createRespondedTurn('2', 'a first word')],
     })
 
     expect(one.at()).toBe(SCREEN)
@@ -158,36 +158,36 @@ describe('following the foot', () => {
 
   it('leaves a reader who scrolled up where they are reading', async () => {
     const one = createScrollingThread([
-      createRequested('1'),
-      createResponded('2'),
-      createRequested('3'),
+      createRequestedTurn('1'),
+      createRespondedTurn('2'),
+      createRequestedTurn('3'),
     ])
     await one.reads(0)
 
-    await one.arrives(createResponded('4'))
+    await one.arrives(createRespondedTurn('4'))
 
     expect(one.at()).toBe(0)
   })
 
   it('takes the foot up again once it is read back down to', async () => {
     const one = createScrollingThread([
-      createRequested('1'),
-      createResponded('2'),
-      createRequested('3'),
+      createRequestedTurn('1'),
+      createRespondedTurn('2'),
+      createRequestedTurn('3'),
     ])
     await one.reads(0)
     await one.reads(2 * SCREEN)
 
-    await one.arrives(createResponded('4'))
+    await one.arrives(createRespondedTurn('4'))
 
     expect(one.at()).toBe(3 * SCREEN)
   })
 
   it('is requested back to the foot, wherever it was left', async () => {
     const one = createScrollingThread([
-      createRequested('1'),
-      createResponded('2'),
-      createRequested('3'),
+      createRequestedTurn('1'),
+      createRespondedTurn('2'),
+      createRequestedTurn('3'),
     ])
     await one.reads(0)
 
@@ -205,7 +205,7 @@ describe('following the foot', () => {
  * notice about a turn.
  */
 describe('the step each part is set at', () => {
-  const createDoing = (id: string): Turn => ({ id, voice: 'doing', text: 'Thinking' })
+  const createDoingTurn = (id: string): Turn => ({ id, voice: 'doing', text: 'Thinking' })
 
   it("sets the thread in the interface's own text", () => {
     expect(thread([]).classes()).toContain('text-base')
@@ -213,7 +213,7 @@ describe('the step each part is set at', () => {
 
   it('leaves the transcript at the step the thread is set in', () => {
     expect(
-      thread([createRequested('1')])
+      thread([createRequestedTurn('1')])
         .find('.thread__body')
         .classes(),
     ).not.toContain('text-small')
@@ -221,7 +221,7 @@ describe('the step each part is set at', () => {
 
   it('sets a line about work at that step as well', () => {
     expect(
-      thread([createDoing('1')])
+      thread([createDoingTurn('1')])
         .find('.tool-call')
         .classes(),
     ).toContain('text-base')
@@ -229,7 +229,7 @@ describe('the step each part is set at', () => {
 
   it('says a turn did not send in the quiet step', () => {
     expect(
-      thread([createRequested('1', 'gone', 'failed')])
+      thread([createRequestedTurn('1', 'gone', 'failed')])
         .find('.thread__failure')
         .classes(),
     ).toContain('text-small')
@@ -238,7 +238,7 @@ describe('the step each part is set at', () => {
 
 describe('the addresses handed to the prose of a turn', () => {
   it('are one shared empty list for a turn that names none', () => {
-    const wrapper = thread([createResponded('1'), createResponded('2')])
+    const wrapper = thread([createRespondedTurn('1'), createRespondedTurn('2')])
     for (const prose of wrapper.findAllComponents(Prose)) {
       expect(prose.props('unresolved')).toBe(NO_UNRESOLVED)
     }

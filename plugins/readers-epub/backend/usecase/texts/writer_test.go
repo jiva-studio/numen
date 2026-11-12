@@ -48,7 +48,7 @@ func createText(t *testing.T, server *Writer, req Request) {
 	server.Wait()
 }
 
-func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionText {
+func readLiveText(t *testing.T, texts *hosttest.Texts, path string) domain.VersionText {
 	t.Helper()
 	listing, err := texts.ListVersions(t.Context(), path)
 	if err != nil {
@@ -77,7 +77,7 @@ func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
 
 	createText(t, server, Request{Path: "book.epub"})
 
-	text := readLive(t, texts, "book.epub")
+	text := readLiveText(t, texts, "book.epub")
 	if text.Version().Kind != Kind || !text.Version().IsFromFile() {
 		t.Errorf("version %+v, want a book text made from the file", text.Version())
 	}
@@ -145,7 +145,7 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 
 	createText(t, server, Request{Vault: "Chemistry", Path: "book.epub"})
 
-	if text := readLive(t, other, "book.epub"); text.Version().Kind != Kind {
+	if text := readLiveText(t, other, "book.epub"); text.Version().Kind != Kind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
 	inShown, err := texts.ListVersions(t.Context(), "book.epub")
@@ -200,7 +200,7 @@ func TestTheTextOfABookCarriesTheCFIOfItsCharacters(t *testing.T) {
 
 	createText(t, server, Request{Path: "book.epub"})
 
-	text := readLive(t, texts, "book.epub")
+	text := readLiveText(t, texts, "book.epub")
 	selector, err := readCFISelector(text.GetSelector(strings.Index(text.Text, "Goodbye")))
 	if err != nil || selector.CFI != "epubcfi(/6/4!/4/4/1:0)" {
 		t.Errorf("the selector of Goodbye is %+v (%v), want epubcfi(/6/4!/4/4/1:0)", selector, err)
@@ -334,7 +334,7 @@ func TestWriterLifecycleAndFailures(t *testing.T) {
 	files.File("book.epub", string(guided))
 	texts.File("book.epub", guided)
 	createText(t, srv7, Request{Path: "book.epub"})
-	if live := readLive(t, texts, "book.epub"); !strings.Contains(live.Text, "Prologue") {
+	if live := readLiveText(t, texts, "book.epub"); !strings.Contains(live.Text, "Prologue") {
 		t.Errorf("second CreateText did not update live version, got %q", live.Text)
 	}
 }

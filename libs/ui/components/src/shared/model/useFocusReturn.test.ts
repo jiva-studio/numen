@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { useFocusReturn } from './useFocusReturn'
 
-const mountReturning = (origin: HTMLElement | null) =>
+const mountFocusReturn = (origin: HTMLElement | null) =>
   mount(
     defineComponent({
       setup() {
@@ -18,7 +18,7 @@ describe('returning focus to the origin of a view', () => {
     const origin = document.createElement('button')
     document.body.append(origin)
 
-    mountReturning(origin).unmount()
+    mountFocusReturn(origin).unmount()
 
     expect(document.activeElement).toBe(origin)
     origin.remove()
@@ -26,7 +26,7 @@ describe('returning focus to the origin of a view', () => {
 
   it('leaves the focus alone when the origin left the page', () => {
     const origin = document.createElement('button')
-    const view = mountReturning(origin)
+    const view = mountFocusReturn(origin)
 
     view.unmount()
 
@@ -34,6 +34,6 @@ describe('returning focus to the origin of a view', () => {
   })
 
   it('does nothing without an origin', () => {
-    expect(() => mountReturning(null).unmount()).not.toThrow()
+    expect(() => mountFocusReturn(null).unmount()).not.toThrow()
   })
 })

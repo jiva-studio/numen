@@ -46,14 +46,14 @@ describe('making an untitled note', () => {
   it('asks the core for a note with no title, in the folder', async () => {
     const { notes, write } = fake()
 
-    expect(await createNoteWriter(write).createUntitled('physics')).toBe('Untitled note.md')
+    expect(await createNoteWriter(write).createUntitledNote('physics')).toBe('Untitled note.md')
     expect(notes).toStrictEqual([{ title: '', folder: 'physics' }])
   })
 
   it('answers with no path and says why when the core made nothing', async () => {
     const { write, messages } = fake({ created: { error: NOTE_ERROR_CODE.ALREADY_EXISTS } })
 
-    expect(await createNoteWriter(write).createUntitled('')).toBe('')
+    expect(await createNoteWriter(write).createUntitledNote('')).toBe('')
     expect(messages.at(-1)).toStrictEqual({
       text: 'a file with this name exists',
       kind: 'error',
@@ -70,7 +70,7 @@ describe('making an untitled note', () => {
     })
     const { write, last, messages } = writer()
 
-    expect(await createNoteWriter(write).createUntitled('')).toBe('')
+    expect(await createNoteWriter(write).createUntitledNote('')).toBe('')
     expect(last()).toContain('Numen is not responding')
     expect(last()).not.toContain('out of reach')
     expect(messages.at(-1)?.kind).toBe('error')

@@ -21,7 +21,7 @@ func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte)
 
 	body := stem + " heading\n" + stem + " body"
 	n := domain.Note{
-		FileStat: domain.FileStat{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), ModTime: getWalked()},
+		FileStat: domain.FileStat{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), ModTime: getWalkedTime()},
 		Title:    stem + " title",
 		Body:     body,
 		Headings: []domain.Heading{{Level: 2, Text: stem + " heading", Line: 0, Offset: 0}},
@@ -155,10 +155,10 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	// references is gone, so nothing else reports it either.
 	ctx := t.Context()
 	db := openDB(t)
-	fillVault(t, db, getFirst(), "first", 0x0f)
+	fillVault(t, db, getFirstVault(), "first", 0x0f)
 	fillVault(t, db, getSecond(), "second", 0xf0)
 
-	removed := getVaultContents(t, db, getFirst())
+	removed := getVaultContents(t, db, getFirstVault())
 	remainingContent := getVaultContents(t, db, getSecond())
 	goneVirtual, goneOrdinary := virtual(t, db, removed), ordinary(t, db, removed)
 	keptVirtual, keptOrdinary := virtual(t, db, remainingContent), ordinary(t, db, remainingContent)
@@ -182,7 +182,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 		}
 	}
 
-	if err := db.Vaults().Unregister(ctx, getFirst().ID); err != nil {
+	if err := db.Vaults().Unregister(ctx, getFirstVault().ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -196,7 +196,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 			t.Errorf("%s holds %d rows of the vault that was forgotten", table, n)
 		}
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, getFirst().ID); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, getFirstVault().ID); got != 0 {
 		t.Errorf("the forgotten vault still has %d rows of its own", got)
 	}
 
@@ -232,10 +232,10 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 	// vault was filed under is what the other vault's rows are read back by.
 	ctx := t.Context()
 	db := openDB(t)
-	fillVault(t, db, getFirst(), "first", 0x0f)
+	fillVault(t, db, getFirstVault(), "first", 0x0f)
 	fillVault(t, db, getSecond(), "second", 0xf0)
 
-	if err := db.Vaults().Unregister(ctx, getFirst().ID); err != nil {
+	if err := db.Vaults().Unregister(ctx, getFirstVault().ID); err != nil {
 		t.Fatal(err)
 	}
 

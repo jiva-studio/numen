@@ -159,7 +159,7 @@ func (l *flushCoordinator) endRequest() {
 	l.current = nil
 }
 
-func (l *flushCoordinator) getRunning() *flushRequest {
+func (l *flushCoordinator) getRunningRequest() *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 

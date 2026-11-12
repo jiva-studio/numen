@@ -167,7 +167,7 @@ func resolveServicePath(root, path, serviceDir string) (target, resolved string,
 	if !isOurs(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s: %w", path, domainvault.ErrOutside)
 	}
-	target, resolved, landed, err := resolveContained(root, clean)
+	target, resolved, landed, err := resolveContainedPath(root, clean)
 	if err != nil {
 		return "", "", err
 	}

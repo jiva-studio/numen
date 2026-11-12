@@ -35,7 +35,7 @@ func (w *leakWalk) isProtocolPackage(path string) bool {
 	return load.IsWithin(path, w.protocolRoot)
 }
 
-func (w *leakWalk) walkNamed(named *types.Named) {
+func (w *leakWalk) walkNamedType(named *types.Named) {
 	origin := named.Origin().Obj()
 	if origin.Pkg() == nil {
 		return
@@ -66,7 +66,7 @@ func (w *leakWalk) walkNamed(named *types.Named) {
 func (w *leakWalk) walk(t types.Type) {
 	switch current := types.Unalias(t).(type) {
 	case *types.Named:
-		w.walkNamed(current)
+		w.walkNamedType(current)
 	case *types.Pointer:
 		w.walk(current.Elem())
 	case *types.Slice:

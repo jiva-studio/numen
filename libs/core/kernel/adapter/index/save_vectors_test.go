@@ -11,7 +11,7 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	vault := getFirst().ID
+	vault := getFirstVault().ID
 	path := "doc.md"
 
 	if err := db.Chunks().SaveSource(ctx, vault, chunk.Source{

@@ -11,7 +11,7 @@ const listenerTimeout = 3 * time.Second
 // A listener that registers another listener while it runs does not block the announcement, and the
 // listener it registered runs on the next change.
 func TestAListenerThatRegistersAnotherListenerDoesNotBlockTheAnnouncement(t *testing.T) {
-	host, bridge, mock, _ := openConfigurable(t)
+	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	registered := make(chan struct{})
 	second := make(chan struct{}, 4)
 	var once sync.Once
@@ -47,7 +47,7 @@ func TestAListenerThatRegistersAnotherListenerDoesNotBlockTheAnnouncement(t *tes
 // The listeners run after the embedder has released its lock, so a listener can read the model and
 // can take the lock itself.
 func TestListenersRunAfterTheEmbedderReleasesItsLock(t *testing.T) {
-	host, bridge, mock, _ := openConfigurable(t)
+	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	type outcome struct {
 		unlocked bool
 		model    string

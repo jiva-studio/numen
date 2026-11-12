@@ -117,7 +117,7 @@ function formatValue(val: string) { ... }
 
 ## 7. Naming and placement
 
-- **Functions and methods** are imperative verb phrases (`getTranscript`, `createTab`, `openVault`) or predicates. Never third-person singular (`carries`, `reads`), never a past participle (`listened`, `spoken`), never a literary metaphor where a standard term exists.
+- **Functions and methods** are imperative verb phrases (`getTranscript`, `createTab`, `openVault`) or predicates. Never third-person singular (`carries`, `reads`), never a past participle (`listened`, `spoken`), never a literary metaphor where a standard term exists. A verb with one bare participle or adjective and no object (`getActive`, `getEmitted`, `createResponded`) says nothing about what it returns: name the object (`getActiveTab`, `getEmittedEvents`) or use a predicate. The names check refuses it.
 - **Handlers** are `on<Action>`.
 - **Composables** are named `use<Feature>` — never a gerund, never a bare noun. The file they live in matches the composable name (`useAppHotkeys.ts`, `useWorkspaceTabs.ts`, `useVaultStatus.ts`).
 - **A composable has one coherent responsibility.** A composable that takes an entire component's script — every piece of state, every handler, a long list of exports — is that component undecomposed. Split the component instead.

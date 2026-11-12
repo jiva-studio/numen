@@ -42,7 +42,7 @@ const MISSING: UnavailableView = {
   pluginId: undefined,
 }
 
-const createIncompatible = (plugin: TabKindPlugin, detail: string): UnavailableView => ({
+const createIncompatibleView = (plugin: TabKindPlugin, detail: string): UnavailableView => ({
   heading: 'Plugin incompatible',
   message: `${plugin.name} cannot run in this application: ${detail}`,
   action: 'inspect',
@@ -50,7 +50,7 @@ const createIncompatible = (plugin: TabKindPlugin, detail: string): UnavailableV
   pluginId: plugin.id,
 })
 
-const createDisabled = (plugin: TabKindPlugin, isEnabling: boolean): UnavailableView => ({
+const createDisabledView = (plugin: TabKindPlugin, isEnabling: boolean): UnavailableView => ({
   heading: 'Plugin disabled',
   message: `The plugin for ${plugin.feature} is disabled.`,
   action: 'enable',
@@ -58,7 +58,7 @@ const createDisabled = (plugin: TabKindPlugin, isEnabling: boolean): Unavailable
   pluginId: plugin.id,
 })
 
-const createOffered = (plugin: TabKindPlugin): UnavailableView => ({
+const createOfferedView = (plugin: TabKindPlugin): UnavailableView => ({
   heading: 'Plugin not installed',
   message: `The plugin for ${plugin.feature} is not installed.`,
   action: 'install',
@@ -85,8 +85,8 @@ export function getUnavailableView(
   if (lookup.status === 'pending') return undefined
   if (lookup.status === 'missing') return MISSING
   const { plugin } = lookup
-  if (plugin.incompatibility !== null) return createIncompatible(plugin, plugin.incompatibility)
-  if (plugin.standing === 'disabled') return createDisabled(plugin, isEnabling)
-  if (plugin.standing === 'offered') return createOffered(plugin)
+  if (plugin.incompatibility !== null) return createIncompatibleView(plugin, plugin.incompatibility)
+  if (plugin.standing === 'disabled') return createDisabledView(plugin, isEnabling)
+  if (plugin.standing === 'offered') return createOfferedView(plugin)
   return createNotRunning(plugin)
 }

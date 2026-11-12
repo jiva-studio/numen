@@ -46,9 +46,9 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognizes(t *testing.T) {
 	if err != nil || res.Message != "recognizing "+scanPath {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 	close(s.recognizer.release)
-	s.waitFinished(t, recognition.GetTaskID("Physics", scanPath))
+	s.waitUntilFinished(t, recognition.GetTaskID("Physics", scanPath))
 	if !hasRecognition(t, s.texts, scanPath) {
 		t.Error("the scan has no recognition once its task ended")
 	}

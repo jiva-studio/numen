@@ -127,19 +127,19 @@ func (v setView) hasBackend(p manifest.Discovered) bool {
 	return isBuiltIn || p.Manifest.HasBackend()
 }
 
-func (s *PluginSet) getKnown(pluginID string) (manifest.Discovered, bool) {
+func (s *PluginSet) getKnownPlugin(pluginID string) (manifest.Discovered, bool) {
 	v, release := s.view()
 	defer release()
 	return v.get(pluginID)
 }
 
 func (s *PluginSet) getName(pluginID string) string {
-	p, _ := s.getKnown(pluginID)
+	p, _ := s.getKnownPlugin(pluginID)
 	return p.Manifest.Name
 }
 
 func (s *PluginSet) isRegistered(pluginID string) bool {
-	_, ok := s.getKnown(pluginID)
+	_, ok := s.getKnownPlugin(pluginID)
 	return ok
 }
 
@@ -163,7 +163,7 @@ func (s *PluginSet) getRequirementIDs(pluginID string) []string {
 	return ids
 }
 
-func (s *PluginSet) listEnabled() []manifest.Discovered {
+func (s *PluginSet) listEnabledPlugins() []manifest.Discovered {
 	v, release := s.view()
 	defer release()
 	return v.enabled()
@@ -324,6 +324,6 @@ func (v setView) listProblems() []manifestjson.DiscoveryProblem {
 
 // GetVersion returns the version of the manifest of the plugin, or none for a plugin the set does not know.
 func (s *PluginSet) GetVersion(pluginID string) string {
-	p, _ := s.getKnown(pluginID)
+	p, _ := s.getKnownPlugin(pluginID)
 	return p.Manifest.Version
 }

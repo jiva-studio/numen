@@ -9,7 +9,7 @@ import (
 	_ "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
-func getWalked() map[protoreflect.FullName]string {
+func getWalkedMessages() map[protoreflect.FullName]string {
 	return map[protoreflect.FullName]string{
 		"numen.v1.CatalogErrorCode":       "adapter/window/catalog: written by newWireErrorCode",
 		"numen.v1.CatalogIncompatibility": "adapter/window/catalog: written by newWireIncompatibility",
@@ -60,13 +60,13 @@ func TestEveryEnumOfTheSchemaIsWalked(t *testing.T) {
 		}
 		for _, name := range enumsOf(file) {
 			target[name] = true
-			if _, ok := getWalked()[name]; !ok {
+			if _, ok := getWalkedMessages()[name]; !ok {
 				t.Errorf("%s is in the schema and nothing walks its values", name)
 			}
 		}
 		return true
 	})
-	for name := range getWalked() {
+	for name := range getWalkedMessages() {
 		if !target[name] {
 			t.Errorf("%s is walked here and is not in the schema", name)
 		}

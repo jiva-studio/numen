@@ -28,7 +28,7 @@ func preloadCppRuntime() {
 	}
 	dirs := append(getMachineDirs(), filepath.Join("/nix/store", "*-gcc-*-lib", "lib"))
 	for _, dir := range dirs {
-		matches := findMatching(filepath.Join(dir, name+"*"))
+		matches := findMatchingPaths(filepath.Join(dir, name+"*"))
 		sortNewestFirst(matches)
 		for _, offset := range matches {
 			if _, err := purego.Dlopen(offset, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {

@@ -52,7 +52,7 @@ func (w countingWriter) Write(ctx context.Context, path string, content []byte, 
 
 func TestRemoveTargetLinksRemovesEveryRecordToTheTargetInOneWrite(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatWithEntropyLinks})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 	writes := 0
 	linking := c.newEditLinks().WithWriters(countingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, writes: &writes})
 
@@ -78,7 +78,7 @@ func TestRemoveTargetLinksRemovesEveryRecordToTheTargetInOneWrite(t *testing.T) 
 
 func TestRemoveTargetLinksWithARoleRemovesOnlyThatRole(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatWithEntropyLinks})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 
 	if _, err := c.newEditLinks().RemoveTargetLinks(t.Context(), c.vault, "Heat.md", getEntropyAddress(), domain.RoleParent, domain.FileStat{}); err != nil {
 		t.Fatalf("the removal failed: %v", err)
@@ -101,7 +101,7 @@ func TestRemoveTargetLinksOfUnlinkedTargetIsRejected(t *testing.T) {
 	for name, role := range map[string]domain.LinkRole{"any role": "", "a role no record has": domain.RoleChild} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, map[string]string{"Heat.md": heatWithEntropyLinks})
+			c := openChangeFixture(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 			to := domain.Address{Scheme: domain.SchemeName, Value: "Chaos"}
 			if role != "" {
 				to = getEntropyAddress()
@@ -122,7 +122,7 @@ func TestRemoveTargetLinksOfUnlinkedTargetIsRejected(t *testing.T) {
 
 func TestRemoveTargetLinksOfANoteThatChangedSinceItWasReadIsStale(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatWithEntropyLinks})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 	read := c.openNote(t, "Heat.md").FileStat
 	theirs := heatWithEntropyLinks + "\nSaved in the meantime.\n"
 	c.overwrite(t, "Heat.md", theirs)

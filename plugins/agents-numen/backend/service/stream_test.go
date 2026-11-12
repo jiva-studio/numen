@@ -25,7 +25,7 @@ func TestStream_EmitsReplyChunksInOrder(t *testing.T) {
 	steps := ask(t, s, task)
 	ask(t, s, task)
 
-	if got, want := getSpoken(steps), []string{"Water ", "the ", "garden ", "today."}; !slices.Equal(got, want) {
+	if got, want := getSpokenTexts(steps), []string{"Water ", "the ", "garden ", "today."}; !slices.Equal(got, want) {
 		t.Errorf("said %q, want %q", got, want)
 	}
 	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != answer.ReasonDone {
@@ -205,7 +205,7 @@ func TestStream_FallsBackToUnstreamedOnRejection(t *testing.T) {
 	if got := describeSteps(steps); got != "model call finished model said stopped" {
 		t.Fatalf("steps are %q", got)
 	}
-	if got := getSpoken(steps); !slices.Equal(got, []string{"Water the garden."}) {
+	if got := getSpokenTexts(steps); !slices.Equal(got, []string{"Water the garden."}) {
 		t.Errorf("said %q", got)
 	}
 	var streamed []bool
@@ -234,7 +234,7 @@ func TestStream_EmitsWholeReplyWhenAPIIgnoresStreaming(t *testing.T) {
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if got := getSpoken(steps); !slices.Equal(got, []string{"Water the garden."}) {
+	if got := getSpokenTexts(steps); !slices.Equal(got, []string{"Water the garden."}) {
 		t.Errorf("said %q", got)
 	}
 	if requests := model.getRequests(); len(requests) != 1 || !requests[0].Stream {

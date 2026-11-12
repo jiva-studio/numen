@@ -22,38 +22,38 @@ const (
 	entropyNote = "---\ntitle: Entropy\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRD\n---\n# Entropy\n"
 )
 
-func (c changing) addresses() edit.NameQueries {
+func (c changeFixture) addresses() edit.NameQueries {
 	return c.db.NoteQueries()
 }
 
-func (c changing) connectionDeps(writers note.NoteWriting) note.ConnectionDeps {
+func (c changeFixture) connectionDeps(writers note.NoteWriting) note.ConnectionDeps {
 	return note.ConnectionDeps{
 		Readers: vaultreader.Readers{}, Writers: writers, Index: c.index, Now: testsupport.NewClock(),
 		Links: c.db.NoteQueries(), Names: c.addresses(), Gate: note.OpenGate{},
 	}
 }
 
-func (c changing) saveConnection() note.SaveConnection {
+func (c changeFixture) saveConnection() note.SaveConnection {
 	return c.saveConnectionWith(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
 }
 
-func (c changing) saveConnectionWith(writers note.NoteWriting) note.SaveConnection {
+func (c changeFixture) saveConnectionWith(writers note.NoteWriting) note.SaveConnection {
 	return note.NewSaveConnection(c.connectionDeps(writers))
 }
 
-func (c changing) removeConnection() note.RemoveConnection {
+func (c changeFixture) removeConnection() note.RemoveConnection {
 	return note.NewRemoveConnection(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
-func (c changing) removeSide() note.RemoveSide {
+func (c changeFixture) removeSide() note.RemoveSide {
 	return note.NewRemoveSide(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
-func (c changing) join() note.Join {
+func (c changeFixture) join() note.Join {
 	return note.NewJoin(c.connectionDeps(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}))
 }
 
-func (c changing) connection(t *testing.T, a, b string) domain.Connection {
+func (c changeFixture) connection(t *testing.T, a, b string) domain.Connection {
 	t.Helper()
 	got, err := query.NewGetConnection(c.db.NoteQueries()).Execute(t.Context(), c.vault, a, b, "")
 	if err != nil {
@@ -64,7 +64,7 @@ func (c changing) connection(t *testing.T, a, b string) domain.Connection {
 
 func TestSavingAConnectionWritesBothSidesWithTheirOwnLabelAndMarker(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 
 	err := c.saveConnection().Execute(t.Context(), c.vault, domain.Connection{
 		A: "Heat.md", B: "Entropy.md",
@@ -86,7 +86,7 @@ func TestSavingAConnectionWritesBothSidesWithTheirOwnLabelAndMarker(t *testing.T
 
 func TestASideWithAnEmptyLabelAndAnArrowIsSaved(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 
 	err := c.saveConnection().Execute(t.Context(), c.vault, domain.Connection{
 		A: "Heat.md", B: "Entropy.md",
@@ -110,7 +110,7 @@ func TestASideWithAnEmptyLabelAndAnArrowIsSaved(t *testing.T) {
 
 func TestSavingAConnectionWithoutASideRemovesThatRecord(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 	both := domain.Connection{
 		A: "Heat.md", B: "Entropy.md",
 		AB: &domain.Side{Role: domain.RoleJump}, BA: &domain.Side{Role: domain.RoleJump},
@@ -132,7 +132,7 @@ func TestSavingAConnectionWithoutASideRemovesThatRecord(t *testing.T) {
 
 func TestSavingAConnectionKeepsTheTypeAndTheReasonItIsGiven(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 	side := &domain.Side{Role: domain.RoleParent, Type: "requires", Why: "only eigenvectors"}
 	if err := c.saveConnection().Execute(t.Context(), c.vault,
 		domain.Connection{A: "Heat.md", B: "Entropy.md", AB: side}); err != nil {
@@ -153,7 +153,7 @@ func TestSavingAConnectionKeepsTheTypeAndTheReasonItIsGiven(t *testing.T) {
 
 func TestSavingAConnectionReplacesTheRecordOfAnotherAddress(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Heat.md":    "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\nlinks:\n  - to: \"[[Entropy]]\"\n    role: parent\n    label: old\n---\n# Heat\n",
 		"Entropy.md": entropyNote,
 	})
@@ -172,7 +172,7 @@ func TestSavingAConnectionReplacesTheRecordOfAnotherAddress(t *testing.T) {
 func TestSavingAConnectionWritesNothingWhenOneNoteCannotBeEdited(t *testing.T) {
 	t.Parallel()
 	inline := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRD\nlinks: [Heat]\n---\n# Entropy\n"
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": inline})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": inline})
 
 	err := c.saveConnection().Execute(t.Context(), c.vault, domain.Connection{
 		A: "Heat.md", B: "Entropy.md",
@@ -218,7 +218,7 @@ func (w pathFailingWriter) Write(
 
 func TestAWriteThatFailsAfterTheFirstNoteLandedRestoresTheFirstNote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 	writers := pathFailingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, path: "Entropy.md"}
 
 	err := c.saveConnectionWith(writers).Execute(t.Context(), c.vault, domain.Connection{
@@ -239,7 +239,7 @@ func TestAWriteThatFailsAfterTheFirstNoteLandedRestoresTheFirstNote(t *testing.T
 
 func TestAConnectionThatClosesTheHierarchyIsRefusedAndWritesNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"A.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR1\n---\n# A\n",
 		"B.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR2\nlinks:\n  - to: A\n    role: parent\n---\n# B\n",
 		"C.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR3\nlinks:\n  - to: B\n    role: parent\n---\n# C\n",
@@ -262,7 +262,7 @@ func TestAConnectionThatClosesTheHierarchyIsRefusedAndWritesNothing(t *testing.T
 func TestReplacingTheEdgeBetweenThePairIsNotACycle(t *testing.T) {
 	t.Parallel()
 	// A writes `child: B`, so B is below A. Making A the child of B closes a loop.
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"A.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR1\nlinks:\n  - to: B\n    role: child\n---\n# A\n",
 		"B.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR2\n---\n# B\n",
 	})
@@ -279,7 +279,7 @@ func TestReplacingTheEdgeBetweenThePairIsNotACycle(t *testing.T) {
 
 func TestAParentOfItsOwnAncestorIsRefused(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"A.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR1\nlinks:\n  - to: B\n    role: child\n---\n# A\n",
 		"B.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR2\nlinks:\n  - to: C\n    role: child\n---\n# B\n",
 		"C.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJR3\n---\n# C\n",
@@ -298,7 +298,7 @@ func TestAParentOfItsOwnAncestorIsRefused(t *testing.T) {
 
 func TestJoinWritesOneSideAndKeepsTheOther(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 	if err := c.join().Execute(t.Context(), c.vault, "Entropy.md", "Heat.md",
 		domain.Side{Role: domain.RoleChild, Label: "measures"}); err != nil {
 		t.Fatal(err)
@@ -320,7 +320,7 @@ func TestJoinWritesOneSideAndKeepsTheOther(t *testing.T) {
 
 func TestJoinRefusesARoleThatIsNotTheInverseOfTheOtherRecord(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 	if err := c.join().Execute(t.Context(), c.vault, "Entropy.md", "Heat.md",
 		domain.Side{Role: domain.RoleChild}); err != nil {
 		t.Fatal(err)
@@ -335,7 +335,7 @@ func TestJoinRefusesARoleThatIsNotTheInverseOfTheOtherRecord(t *testing.T) {
 
 func TestRemovingASideDoesNotWriteTheOtherNote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
 	if err := c.saveConnection().Execute(t.Context(), c.vault, domain.Connection{
 		A: "Heat.md", B: "Entropy.md",
 		AB: &domain.Side{Role: domain.RoleJump}, BA: &domain.Side{Role: domain.RoleJump},
@@ -359,7 +359,7 @@ func TestRemovingASideDoesNotWriteTheOtherNote(t *testing.T) {
 
 func TestRemovingAConnectionRemovesBothSidesButNotOtherTypes(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Heat.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\nlinks:\n  - to: Entropy\n    role: jump\n" +
 			"  - to: Entropy\n    role: ref\n    type: preset\n---\n# Heat\n",
 		"Entropy.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRD\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
@@ -379,7 +379,7 @@ func TestRemovingAConnectionRemovesBothSidesButNotOtherTypes(t *testing.T) {
 
 func TestRemovingALinkAddressesATypeAndKeepsOtherTypes(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Heat.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\nlinks:\n  - to: Entropy\n    role: parent\n" +
 			"  - to: Entropy\n    role: ref\n    type: preset\n---\n# Heat\n",
 		"Entropy.md": entropyNote,
@@ -399,7 +399,7 @@ func TestRemovingALinkAddressesATypeAndKeepsOtherTypes(t *testing.T) {
 
 func TestCreatingInARelationWritesTheInverseRoleAndFilesInTheFolderOfTheSource(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"area/Heat.md": heatNote})
+	c := openChangeFixture(t, map[string]string{"area/Heat.md": heatNote})
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
 	made, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{
@@ -422,7 +422,7 @@ func TestCreatingInARelationWritesTheInverseRoleAndFilesInTheFolderOfTheSource(t
 
 func TestCreatingInARelationNumbersUntitledNotesAndRetriesOnConflict(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Heat.md":             heatNote,
 		"Untitled note.md":    "# one\n",
 		"Untitled note 2.md":  "# two\n",
@@ -449,7 +449,7 @@ func TestCreatingInARelationFailsAfterTheAttemptsAreSpent(t *testing.T) {
 	for i := 2; i <= note.MaxUntitledAttempts; i++ {
 		notes["Untitled note "+itoa(i)+".md"] = "# n\n"
 	}
-	c := openChanging(t, notes)
+	c := openChangeFixture(t, notes)
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
 	_, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{From: "Heat.md", Role: domain.RoleJump})
@@ -469,7 +469,7 @@ func itoa(n int) string {
 
 func TestCreatingInARelationWithATitleDoesNotRetry(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Work.md": "# Work\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote, "Work.md": "# Work\n"})
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
 	_, err := u.Execute(t.Context(), c.vault, domain.RelatedNote{
@@ -483,7 +483,7 @@ func TestCreatingInARelationWithATitleDoesNotRetry(t *testing.T) {
 
 func TestCreatingInARelationRefusesARoleANoteCannotBeCreatedIn(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": heatNote})
+	c := openChangeFixture(t, map[string]string{"Heat.md": heatNote})
 	u := note.NewCreateInRelation(c.create(), c.addresses())
 
 	for _, role := range []domain.LinkRole{domain.RoleRef, domain.RoleAttachment, "sibling"} {
@@ -496,7 +496,7 @@ func TestCreatingInARelationRefusesARoleANoteCannotBeCreatedIn(t *testing.T) {
 
 func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Area.md": "---\ntitle: Area\n---\n# Area\n",
 		"Idea.md": "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n    marker: arrow\n---\n# Idea\n",
 	})

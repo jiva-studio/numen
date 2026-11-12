@@ -28,12 +28,12 @@ func getNotesWithOtherRecipe(t *testing.T, db *DB, vault domain.Vault, recipe st
 
 func TestANoteIsRecordedWithTheChunkingRecipe(t *testing.T) {
 	db := openDB(t)
-	recipe := saveChunkedAt(t, db, getFirst(), 256, noteAt("notes/Hedge.md", "Hedge", wordsOf(80)))
+	recipe := saveChunkedAt(t, db, getFirstVault(), 256, noteAt("notes/Hedge.md", "Hedge", wordsOf(80)))
 
 	if recipe == "" {
 		t.Fatal("a cut has no recipe")
 	}
-	if got := getNotesWithOtherRecipe(t, db, getFirst(), recipe); len(got) != 0 {
+	if got := getNotesWithOtherRecipe(t, db, getFirstVault(), recipe); len(got) != 0 {
 		t.Errorf("%v were cut by another recipe than %q, want none", got, recipe)
 	}
 }
@@ -41,30 +41,30 @@ func TestANoteIsRecordedWithTheChunkingRecipe(t *testing.T) {
 func TestANoteSavedAgainAtAnotherSizeIsRecordedWithTheNewRecipe(t *testing.T) {
 	db := openDB(t)
 	note := noteAt("notes/Hedge.md", "Hedge", wordsOf(80))
-	first := saveChunkedAt(t, db, getFirst(), 256, note)
-	second := saveChunkedAt(t, db, getFirst(), 512, note)
+	first := saveChunkedAt(t, db, getFirstVault(), 256, note)
+	second := saveChunkedAt(t, db, getFirstVault(), 512, note)
 
 	if first == second {
 		t.Fatalf("cuts at 256 and 512 tokens share the recipe %q", first)
 	}
-	if got := getNotesWithOtherRecipe(t, db, getFirst(), second); len(got) != 0 {
+	if got := getNotesWithOtherRecipe(t, db, getFirstVault(), second); len(got) != 0 {
 		t.Errorf("%v were cut by another recipe than %q after the second save", got, second)
 	}
-	if got := getNotesWithOtherRecipe(t, db, getFirst(), first); !slices.Equal(got, []string{"notes/Hedge.md"}) {
+	if got := getNotesWithOtherRecipe(t, db, getFirstVault(), first); !slices.Equal(got, []string{"notes/Hedge.md"}) {
 		t.Errorf("notes cut by another recipe than %q = %v, want the note saved again", first, got)
 	}
 }
 
 func TestOnlyNotesWithAnotherChunkingRecipeAreReportedAndAFileTextKeepsItsOwn(t *testing.T) {
 	db := openDB(t)
-	saveChunkedAt(t, db, getFirst(), 256, noteAt("notes/Old.md", "Old", wordsOf(80)))
-	current := saveChunkedAt(t, db, getFirst(), 512, noteAt("notes/New.md", "New", wordsOf(80)))
-	book(t, db, getFirst(), "library/cut.epub", 0x01)
+	saveChunkedAt(t, db, getFirstVault(), 256, noteAt("notes/Old.md", "Old", wordsOf(80)))
+	current := saveChunkedAt(t, db, getFirstVault(), 512, noteAt("notes/New.md", "New", wordsOf(80)))
+	book(t, db, getFirstVault(), "library/cut.epub", 0x01)
 
-	if got := getNotesWithOtherRecipe(t, db, getFirst(), current); !slices.Equal(got, []string{"notes/Old.md"}) {
+	if got := getNotesWithOtherRecipe(t, db, getFirstVault(), current); !slices.Equal(got, []string{"notes/Old.md"}) {
 		t.Errorf("notes cut by another recipe = %v, want only notes/Old.md", got)
 	}
-	books, err := db.ChunkFiles().GetSourcesWithOtherRecipe(t.Context(), getFirst().ID, "book", []string{"epub"}, 100)
+	books, err := db.ChunkFiles().GetSourcesWithOtherRecipe(t.Context(), getFirstVault().ID, "book", []string{"epub"}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,10 +75,10 @@ func TestOnlyNotesWithAnotherChunkingRecipeAreReportedAndAFileTextKeepsItsOwn(t 
 
 func TestANoteOfAnotherVaultIsNotReportedForItsChunkingRecipe(t *testing.T) {
 	db := openDB(t)
-	recipe := saveChunkedAt(t, db, getFirst(), 512, noteAt("notes/Hedge.md", "Hedge", wordsOf(80)))
+	recipe := saveChunkedAt(t, db, getFirstVault(), 512, noteAt("notes/Hedge.md", "Hedge", wordsOf(80)))
 	saveChunkedAt(t, db, getSecond(), 256, noteAt("notes/Gate.md", "Gate", wordsOf(80)))
 
-	if got := getNotesWithOtherRecipe(t, db, getFirst(), recipe); len(got) != 0 {
+	if got := getNotesWithOtherRecipe(t, db, getFirstVault(), recipe); len(got) != 0 {
 		t.Errorf("the first vault reports %v", got)
 	}
 }
@@ -96,7 +96,7 @@ func TestAnotherChunkSizeKeepsTheRowAndVectorOfAChunkWhoseTextIsUnchanged(t *tes
 	note := noteAt(path, "Hedge", "gate and shed compost marrow hedge")
 	save := func(recipe string, small ...domain.Chunk) {
 		t.Helper()
-		if err := db.Notes().Save(t.Context(), getFirst().ID, []domain.NoteChunks{{
+		if err := db.Notes().Save(t.Context(), getFirstVault().ID, []domain.NoteChunks{{
 			Note: note, Chunks: []domain.Chunk{whole(small...)}, Recipe: recipe,
 		}}); err != nil {
 			t.Fatal(err)
@@ -114,7 +114,7 @@ func TestAnotherChunkSizeKeepsTheRowAndVectorOfAChunkWhoseTextIsUnchanged(t *tes
 	}
 
 	save("cut-a", unchanged, moved)
-	saveSeededVectors(t, db, getFirst(), 0x21)
+	saveSeededVectors(t, db, getFirstVault(), 0x21)
 	unchangedRow := rowOf(unchanged)
 	if !hasVector(t, db, unchangedRow) {
 		t.Fatal("the chunk has no vector before the re-cut")

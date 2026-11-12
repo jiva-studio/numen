@@ -395,14 +395,14 @@ func splitLongSpan(one span, scores []float32, longest int) []span {
 	}
 	var out []span
 	for one.To-one.From > longest {
-		pos := findQuietest(scores, one.From+longest/2, one.From+longest)
+		pos := findQuietestIndex(scores, one.From+longest/2, one.From+longest)
 		out = append(out, span{one.From, pos})
 		one.From = pos
 	}
 	return append(out, one)
 }
 
-func findQuietest(scores []float32, from, to int) int {
+func findQuietestIndex(scores []float32, from, to int) int {
 	from, to = max(from, 0), min(to, len(scores))
 	pos := from
 	for i := from; i < to; i++ {

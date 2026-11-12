@@ -18,7 +18,7 @@ func withoutClaudeAnywhere(t *testing.T) {
 	}
 }
 
-func writeRunnable(t *testing.T, pos string) {
+func writeRunnableFile(t *testing.T, pos string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		t.Fatal(err)
@@ -43,7 +43,7 @@ func TestFind_LookupPriority(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	inPlace := filepath.Join(home, ".local", "bin", "claude")
-	writeRunnable(t, inPlace)
+	writeRunnableFile(t, inPlace)
 	if got := findIn(places, ""); got != inPlace {
 		t.Fatalf("found %q, want %q", got, inPlace)
 	}
@@ -51,7 +51,7 @@ func TestFind_LookupPriority(t *testing.T) {
 	bin := t.TempDir()
 	t.Setenv("PATH", bin)
 	onPath := filepath.Join(bin, "claude")
-	writeRunnable(t, onPath)
+	writeRunnableFile(t, onPath)
 	if got := findIn(places, ""); got != onPath {
 		t.Fatalf("found %q, want %q", got, onPath)
 	}
@@ -73,7 +73,7 @@ func TestDiscoveryCustomPathAndGlobEscaping(t *testing.T) {
 
 	withoutClaudeAnywhere(t)
 	runnable := filepath.Join(t.TempDir(), "custom-claude")
-	writeRunnable(t, runnable)
+	writeRunnableFile(t, runnable)
 	t.Setenv("NUMEN_CLAUDE_COMMAND", "/opt/env-claude")
 
 	// A runnable custom path takes precedence over environment variables.

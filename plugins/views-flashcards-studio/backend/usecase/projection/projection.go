@@ -184,7 +184,7 @@ func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
 	r.count--
 }
 
-func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
+func (r *learnedCount) countBegunCards(c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
@@ -195,7 +195,7 @@ func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
 	}
 }
 
-func (r *learnedCount) countLearned(
+func (r *learnedCount) countLearnedCards(
 	cards []Schedule, pos time.Time, reviewCards int, wanted bool,
 ) (int, float64) {
 	if r.isCarried {

@@ -56,7 +56,7 @@ func nameAddress(name string) domain.Address {
 	return domain.Address{Scheme: domain.SchemeName, Value: name}
 }
 
-func makeStale(t *testing.T, v *hosttest.Vault, notePath string) {
+func makeNoteStale(t *testing.T, v *hosttest.Vault, notePath string) {
 	t.Helper()
 	content, stat, err := v.Read(t.Context(), notePath)
 	if err != nil {
@@ -134,7 +134,7 @@ func TestAddLinksRejectsStaleBaselineNoteAndWritesTheOthers(t *testing.T) {
 	v := newRockVault("")
 	basalt := statOf(t, v, basaltPath)
 	minerals := statOf(t, v, mineralsPath)
-	makeStale(t, v, basaltPath)
+	makeNoteStale(t, v, basaltPath)
 	before, _ := v.Content(basaltPath)
 
 	results, err := v.AddLinks(t.Context(), []host.LinkAddition{
@@ -275,7 +275,7 @@ func TestRemoveLinksOfARoleTheNoteDoesNotLinkWithIsAnError(t *testing.T) {
 func TestUpdateLinksAndRemoveLinksRejectAStaleBaseline(t *testing.T) {
 	v := newRockVault(granitePair)
 	outdated := statOf(t, v, basaltPath)
-	makeStale(t, v, basaltPath)
+	makeNoteStale(t, v, basaltPath)
 	before, _ := v.Content(basaltPath)
 
 	_, updateErr := v.UpdateLinks(t.Context(), basaltPath, nameAddress("Granite"), domain.Link{Label: "kin"}, outdated)

@@ -37,7 +37,7 @@ export function useBookPointer(options: BookPointerOptions) {
     return !!text && !!currentSelection.anchorNode && text.contains(currentSelection.anchorNode)
   }
 
-  const takeDown = (event: PointerEvent) => {
+  const handlePointerDown = (event: PointerEvent) => {
     hand = event.button === 0 ? event.clientX : undefined
   }
 
@@ -57,5 +57,5 @@ export function useBookPointer(options: BookPointerOptions) {
     if (way) options.turn(way)
   }
 
-  return { takeDown, letGo }
+  return { handlePointerDown, letGo }
 }

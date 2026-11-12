@@ -27,7 +27,7 @@ export interface KeyContext {
 export interface ShortcutParts {
   readonly deps: HostDeps
   readonly keybindings: KeybindingRegistry
-  readonly getAvailable: () => readonly AvailableCommand[]
+  readonly getAvailableCommands: () => readonly AvailableCommand[]
   readonly executeCommand: (id: string, note: CommandNote, run?: CommandRun) => Promise<boolean>
 }
 
@@ -58,7 +58,7 @@ export function createShortcutHandler(parts: ShortcutParts) {
   ): boolean => {
     const { target, runApp } = keyContext
     const context = getContext(deps, target)
-    const available = new Map(parts.getAvailable().map((one) => [one.id, one]))
+    const available = new Map(parts.getAvailableCommands().map((one) => [one.id, one]))
     const canRun = (binding: Keybinding): boolean => {
       if (getCommandOwner(binding.command) === APP_COMMAND_OWNER) return true
       if (isSharedCommand(binding.command)) {

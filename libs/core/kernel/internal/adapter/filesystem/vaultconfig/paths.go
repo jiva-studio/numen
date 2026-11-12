@@ -36,7 +36,7 @@ func resolveVaultPath(root, path, serviceDir string) (target, resolved string, e
 	if isOurs(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
 	}
-	target, resolved, landed, err := resolveContained(root, clean)
+	target, resolved, landed, err := resolveContainedPath(root, clean)
 	if err != nil {
 		return "", "", err
 	}
@@ -88,7 +88,7 @@ func hasReservedDeviceName(clean string) bool {
 	return false
 }
 
-func resolveContained(root, clean string) (target, resolved, landed string, err error) {
+func resolveContainedPath(root, clean string) (target, resolved, landed string, err error) {
 	target = filepath.Join(root, filepath.FromSlash(clean))
 
 	// A folder inside the vault may be a link to another location, such as a synced or

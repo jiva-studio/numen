@@ -132,7 +132,7 @@ func newPaddingPool() *sync.Pool {
 
 func padBatch(paddings *sync.Pool, batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
-	seq = roundUpToBucket(getLongest(batch), limit)
+	seq = roundUpToBucket(getLongestLength(batch), limit)
 
 	in, ok := paddings.Get().(*padding)
 	if !ok || in == nil {
@@ -164,7 +164,7 @@ func padBatch(paddings *sync.Pool, batch [][]int, pad, limit int) (rows, seq int
 	return rows, seq, in
 }
 
-func getLongest(batch [][]int) int {
+func getLongestLength(batch [][]int) int {
 	longest := 0
 	for _, one := range batch {
 		longest = max(longest, len(one))

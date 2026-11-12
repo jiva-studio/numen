@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 )
 
-func newMigrated() *vaultfixture.Template {
+func newMigratedTemplate() *vaultfixture.Template {
 	return vaultfixture.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := index.Open(ctx, path, index.Unsynchronized())
 		if err != nil {
@@ -25,5 +25,5 @@ func newMigrated() *vaultfixture.Template {
 // Path is a migrated index of the test's own, at a path nothing else uses.
 func Path(tb testing.TB) string {
 	tb.Helper()
-	return newMigrated().Path(tb)
+	return newMigratedTemplate().Path(tb)
 }

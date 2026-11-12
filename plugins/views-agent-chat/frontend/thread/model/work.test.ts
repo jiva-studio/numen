@@ -54,7 +54,7 @@ describe('the line that says what the agent has in hand', () => {
   it('does not put the line back by settling after it came down', () => {
     const { line, put: sendTurn, drop } = create()
     line.reach({ tool: 't', subject: 's', written: 0 })
-    line.takeDown()
+    line.dropWorkLine()
     sendTurn.mockClear()
     line.settle()
     expect(drop).toHaveBeenCalledWith('work')
@@ -87,7 +87,7 @@ describe('the line that says what the agent has in hand', () => {
   it('forgets the source when the line arrives down', () => {
     const { line, drop, locations } = create()
     line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
-    line.takeDown()
+    line.dropWorkLine()
     expect(drop).toHaveBeenCalledWith('work')
     expect(locations.size).toBe(0)
   })

@@ -73,7 +73,7 @@ func (d Decoder) choose(frame, upto []float32) (choice, error) {
 	if len(scores) <= d.Blank+1 {
 		return choice{}, fmt.Errorf("the joiner answered with %d scores and the blank is %d", len(scores), d.Blank)
 	}
-	return choice{token: findLargest(scores[:d.Blank+1]), step: findLargest(scores[d.Blank+1:])}, nil
+	return choice{token: findLargestScoreIndex(scores[:d.Blank+1]), step: findLargestScoreIndex(scores[d.Blank+1:])}, nil
 }
 
 func (d Decoder) getStep(c choice, tokensInFrame int) int {
@@ -89,7 +89,7 @@ func (d Decoder) getStep(c choice, tokensInFrame int) int {
 // frame.
 const mostPerFrame = 10
 
-func findLargest(scores []float32) int {
+func findLargestScoreIndex(scores []float32) int {
 	pos := 0
 	for i, v := range scores {
 		if v > scores[pos] {

@@ -112,7 +112,7 @@ func buildReadWholeVault(c searchWiring,
 	db *Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	refresh.Force = true
-	texts, err := indexTexts(c, db, v, file.NewReadNoteAgain(getUnreadable(refresh)).Execute)
+	texts, err := indexTexts(c, db, v, file.NewReadNoteAgain(createUnreadableFinder(refresh)).Execute)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -123,7 +123,7 @@ func buildReadWholeVault(c searchWiring,
 	return indexing.NewReadWholeVault(searchScan(c, db), texts, embed), nil
 }
 
-func getUnreadable(refresh vault.Refresh) func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
+func createUnreadableFinder(refresh vault.Refresh) func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
 	return func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
 		result, err := refresh.Execute(ctx, v, paths)
 		return result.Unreadable, err

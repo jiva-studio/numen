@@ -34,7 +34,7 @@ func SetPlugin(r *Registry, id string, p manifest.Discovered) {
 
 // GetRawPlugin returns the plugin of the set whether or not it is enabled.
 func GetRawPlugin(r *Registry, id string) manifest.Discovered {
-	p, _ := r.set.getKnown(id)
+	p, _ := r.set.getKnownPlugin(id)
 	return p
 }
 

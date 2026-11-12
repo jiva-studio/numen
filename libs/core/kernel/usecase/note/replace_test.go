@@ -12,14 +12,14 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (c changing) replace() note.Replace {
+func (c changeFixture) replace() note.Replace {
 	return note.NewReplace(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
 // The requested span is replaced and every other byte is unchanged.
 func TestReplace_ChangesOnlyRequestedSpan(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
 
@@ -48,7 +48,7 @@ func TestReplace_ChangesOnlyRequestedSpan(t *testing.T) {
 // further queries.
 func TestAReplacementReturnsWhereItLanded(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.FileStat{})
 	if err != nil {
@@ -64,7 +64,7 @@ func TestAReplacementReturnsWhereItLanded(t *testing.T) {
 func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 	t.Parallel()
 	front := "---\nkeep: 'this'   # and this\nid: 01J8XYZ\n---\n"
-	c := openChanging(t, map[string]string{"Aggressor.md": front + "\nA hedgehog.\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": front + "\nA hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.FileStat{}); err != nil {
@@ -80,7 +80,7 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 func TestASpanActiveTwiceIsRefused(t *testing.T) {
 	t.Parallel()
 	was := "A foe advances.\n\nAnother foe advances.\n"
-	c := openChanging(t, map[string]string{"Aggressor.md": was})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"foe advances", "foe retreats", domain.FileStat{})
@@ -100,7 +100,7 @@ func TestASpanActiveTwiceIsRefused(t *testing.T) {
 // matching, which shows the caller its copy differs by a character.
 func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"the wrath of the retreating foe", "nothing", domain.FileStat{})
@@ -120,7 +120,7 @@ func TestASpanThatIsNotThereReturnsWhereItDiverged(t *testing.T) {
 // that landed. Saying so is what stops it landing twice.
 func TestReplace_ReportsReplacementAlreadyPresent(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.FileStat{})
@@ -134,7 +134,7 @@ func TestReplace_ReportsReplacementAlreadyPresent(t *testing.T) {
 // reported as normalized.
 func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Aggressor.md": "Он сказал «да» — и ушёл.\n",
 	})
 
@@ -157,7 +157,7 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 // A file written with CRLF is a file the application is a guest in.
 func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Aggressor.md": "# The aggressor\r\n\r\nA hedgehog.\r\n",
 	})
 
@@ -178,7 +178,7 @@ func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 // takes an identifier if it has none.
 func TestAReplacedNoteConsumesAnIdentifier(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.FileStat{}); err != nil {
@@ -193,7 +193,7 @@ func TestAReplacedNoteConsumesAnIdentifier(t *testing.T) {
 // a caller changing a note twice does not read it back in between.
 func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
 	replacing := c.replace()
 
 	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.FileStat{})

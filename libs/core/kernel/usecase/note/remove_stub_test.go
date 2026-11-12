@@ -63,8 +63,8 @@ func (w trashWriters) OpenFileMover(domain.Vault) (vaultport.FileMover, error) {
 	return w.writer, w.openErr
 }
 
-// trashing is one removal with every vault call faked.
-type trashing struct {
+// trashScene is one removal with every vault call faked.
+type trashScene struct {
 	sources   trashSources
 	links     trashLinks
 	writers   trashWriters
@@ -74,9 +74,9 @@ type trashing struct {
 	levelErr  error
 }
 
-func newTrashing() *trashing {
+func newTrashScene() *trashScene {
 	moves, request, updated := &[]string{}, &[]string{}, &[][]string{}
-	tr := &trashing{moves: moves, requested: request, updated: updated}
+	tr := &trashScene{moves: moves, requested: request, updated: updated}
 	tr.sources = trashSources{}
 	tr.links = trashLinks{requested: request}
 	tr.writers = trashWriters{writer: trashWriter{
@@ -89,7 +89,7 @@ func newTrashing() *trashing {
 	return tr
 }
 
-func (tr *trashing) remove() note.Remove {
+func (tr *trashScene) remove() note.Remove {
 	return note.NewRemove(tr.writers, tr.links, tr.sources, func(_ context.Context, _ domain.Vault, paths []string) error {
 		*tr.updated = append(*tr.updated, slices.Clone(paths))
 		return tr.levelErr
@@ -104,7 +104,7 @@ func noteAt(path string) domain.FileStat {
 
 func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	broken := errors.New("the index is gone")
 	tr.sources.err = broken
 
@@ -122,7 +122,7 @@ func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
 
 func TestRemove_StopsWhenLinksQueryFails(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
 	broken := errors.New("the index is gone")
 	tr.links.err = broken
@@ -141,7 +141,7 @@ func TestRemove_StopsWhenLinksQueryFails(t *testing.T) {
 
 func TestRemovingStopsWhenTheVaultCannotBeOpenedForWriting(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	broken := errors.New("the vault is read-only")
 	tr.writers.openErr = broken
 
@@ -157,7 +157,7 @@ func TestRemovingStopsWhenTheVaultCannotBeOpenedForWriting(t *testing.T) {
 // Only a note has links, so nothing else under a folder is queried.
 func TestRemove_QueriesBacklinksForNotesOnly(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.sources.underCtx = []domain.FileStat{
 		{Path: "physics/figure.epub", Kind: domain.KindFile},
 		noteAt("physics/Entropy.md"),
@@ -182,7 +182,7 @@ func TestRemove_QueriesBacklinksForNotesOnly(t *testing.T) {
 // two.
 func TestTheTrashNumbersACopyFromTwoUpward(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.writers.writer.move = func(_, to string) error {
 		*tr.moves = append(*tr.moves, to)
 		switch {
@@ -211,7 +211,7 @@ func TestTheTrashNumbersACopyFromTwoUpward(t *testing.T) {
 // last name tried.
 func TestRemove_FullTrashFailsAfter100Names(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.writers.writer.move = func(_, to string) error {
 		*tr.moves = append(*tr.moves, to)
 		return vault.ErrAlreadyExists
@@ -252,7 +252,7 @@ func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			tr := newTrashing()
+			tr := newTrashScene()
 			tr.sources.underCtx = tc.underCtx
 
 			if _, err := tr.remove().Execute(t.Context(), domain.Vault{}, tc.path); err != nil {
@@ -269,7 +269,7 @@ func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 // notes after it are still named.
 func TestRemovingNamesTheNotesAfterOneThatWentWithTheFolder(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.sources.underCtx = []domain.FileStat{noteAt("physics/A.md"), noteAt("physics/B.md")}
 	tr.links.pointing = map[string][]domain.ResolvedLink{
 		"physics/A.md": {{From: "physics/B.md"}},
@@ -287,7 +287,7 @@ func TestRemovingNamesTheNotesAfterOneThatWentWithTheFolder(t *testing.T) {
 
 func TestAMoveThatFailsOtherwiseThanByAnOccupiedNameIsReported(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.writers.writer.move = func(string, string) error { return fs.ErrNotExist }
 
 	_, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
@@ -299,7 +299,7 @@ func TestAMoveThatFailsOtherwiseThanByAnOccupiedNameIsReported(t *testing.T) {
 // Without an index to level, a removal is the move alone.
 func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
 	removing := note.NewRemove(tr.writers, tr.links, tr.sources, nil, note.OpenGate{})
 
@@ -321,7 +321,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 // The file is gone and the index is not level: the response reports both.
 func TestRemove_ReportsIndexFailureWithRemoval(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
 	tr.links.pointing = map[string][]domain.ResolvedLink{"Entropy.md": {{From: "Heat.md"}}}
 	broken := errors.New("the index is gone")
@@ -346,7 +346,7 @@ func TestRemove_ReportsIndexFailureWithRemoval(t *testing.T) {
 
 func TestAFailureToOpenTheVaultForWritingKeepsThePathInTheAnswer(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.writers.openErr = errors.New("the vault is read-only")
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
@@ -361,7 +361,7 @@ func TestAFailureToOpenTheVaultForWritingKeepsThePathInTheAnswer(t *testing.T) {
 
 func TestAMoveThatFailsKeepsThePathInTheAnswer(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.writers.writer.move = func(string, string) error { return errors.New("the disk is gone") }
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
@@ -372,7 +372,7 @@ func TestAMoveThatFailsKeepsThePathInTheAnswer(t *testing.T) {
 
 func TestDestroy_StopsWhenLinksQueryFails(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	broken := errors.New("the index is gone")
 	tr.links.err = broken
 	removed := false
@@ -392,7 +392,7 @@ func TestDestroy_StopsWhenLinksQueryFails(t *testing.T) {
 
 func TestDestroyingReportsAFileThatCannotBeRemoved(t *testing.T) {
 	t.Parallel()
-	tr := newTrashing()
+	tr := newTrashScene()
 	tr.writers.writer.remove = func(string) error { return fs.ErrNotExist }
 
 	got, err := tr.remove().Destroy(t.Context(), domain.Vault{}, "Entropy.md")

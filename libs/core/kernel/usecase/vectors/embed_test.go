@@ -512,7 +512,7 @@ func (l *progressLog) add(r vaultreading.EmbedResult) {
 	l.reports = append(l.reports, r)
 }
 
-func (l *progressLog) getLast() vaultreading.EmbedResult {
+func (l *progressLog) getLastResult() vaultreading.EmbedResult {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if len(l.reports) == 0 {
@@ -566,16 +566,16 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 		t.Fatal("the run never reached the second source")
 	}
 	for range 2000 {
-		if log.getLast().Embedded >= aChunks {
+		if log.getLastResult().Embedded >= aChunks {
 			break
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	if got := log.getLast().Embedded; got != aChunks {
+	if got := log.getLastResult().Embedded; got != aChunks {
 		t.Fatalf("%d chunks of the first source are stored, want %d", got, aChunks)
 	}
 
-	last := log.getLast()
+	last := log.getLastResult()
 	if last.CurrentSource != pathB {
 		t.Errorf("the report names %q while %q is embedding", last.CurrentSource, pathB)
 	}
@@ -642,7 +642,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)
 	}
-	if last := log.getLast(); last.CurrentSource != inFlight || !slices.Equal(last.Active, []string{inFlight}) {
+	if last := log.getLastResult(); last.CurrentSource != inFlight || !slices.Equal(last.Active, []string{inFlight}) {
 		t.Errorf("the last report names %q with %v in flight, want %q alone", last.CurrentSource, last.Active, inFlight)
 	}
 	track.leave(activeID)
@@ -653,7 +653,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)
 	}
-	if last := log.getLast(); last.CurrentSource != "" || len(last.Active) != 0 {
+	if last := log.getLastResult(); last.CurrentSource != "" || len(last.Active) != 0 {
 		t.Errorf("the last report names %q with %v in flight, want no source after the earlier batch finished", last.CurrentSource, last.Active)
 	}
 	if !track.isIdle() {

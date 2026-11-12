@@ -384,7 +384,7 @@ func (c *savesCounted) Save(ctx context.Context, vaultID domain.VaultID, notes [
 
 const settledNote = "---\ntitle: Note\n---\n\n# Note\n\nentropy\n"
 
-func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *container.Index, domain.Vault) {
+func newCountingRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *container.Index, domain.Vault) {
 	t.Helper()
 	v := vaultfixture.NewVault(t, notes)
 	for name := range notes {
@@ -429,7 +429,7 @@ func refreshOne(t *testing.T, refresh vaults.Refresh, v domain.Vault, name strin
 
 func TestAnUnchangedNoteIsReportedAsIndexedAndNotSavedAgain(t *testing.T) {
 	t.Parallel()
-	refresh, saves, _, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh, saves, _, v := newCountingRefresh(t, map[string]string{"Note.md": settledNote})
 
 	res := refreshOne(t, refresh, v, "Note.md")
 
@@ -443,7 +443,7 @@ func TestAnUnchangedNoteIsReportedAsIndexedAndNotSavedAgain(t *testing.T) {
 
 func TestANoteEditedOutsideTheAppWithAnotherSizeIsIndexed(t *testing.T) {
 	t.Parallel()
-	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh, saves, db, v := newCountingRefresh(t, map[string]string{"Note.md": settledNote})
 
 	rewrite(t, v, "Note.md", settledNote+"more entropy\n")
 	backdate(t, v, "Note.md")
@@ -459,7 +459,7 @@ func TestANoteEditedOutsideTheAppWithAnotherSizeIsIndexed(t *testing.T) {
 
 func TestRefresh_IndexesNoteWithChangedModTime(t *testing.T) {
 	t.Parallel()
-	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh, saves, db, v := newCountingRefresh(t, map[string]string{"Note.md": settledNote})
 
 	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
 	pos := testsupport.GetMachine().Now().Add(-30 * time.Minute)
@@ -478,7 +478,7 @@ func TestRefresh_IndexesNoteWithChangedModTime(t *testing.T) {
 
 func TestForceSavesANoteTheIndexContainsAsItIs(t *testing.T) {
 	t.Parallel()
-	refresh, saves, _, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh, saves, _, v := newCountingRefresh(t, map[string]string{"Note.md": settledNote})
 	refresh.Force = true
 
 	res := refreshOne(t, refresh, v, "Note.md")
@@ -515,7 +515,7 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 
 func TestAWriteFollowedByTheWatchersRefreshIsIndexedOnce(t *testing.T) {
 	t.Parallel()
-	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh, saves, db, v := newCountingRefresh(t, map[string]string{"Note.md": settledNote})
 
 	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
 	refreshOne(t, refresh, v, "Note.md")
@@ -534,7 +534,7 @@ func TestAWriteFollowedByTheWatchersRefreshIsIndexedOnce(t *testing.T) {
 
 func TestRefresh_IndexesSameSizeEditWithinMtimeGranularity(t *testing.T) {
 	t.Parallel()
-	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh, saves, db, v := newCountingRefresh(t, map[string]string{"Note.md": settledNote})
 
 	path := filepath.Join(v.Path, "Note.md")
 	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
@@ -560,7 +560,7 @@ func TestRefresh_IndexesSameSizeEditWithinMtimeGranularity(t *testing.T) {
 
 func TestADeletedNoteIsRemovedWithoutBeingSaved(t *testing.T) {
 	t.Parallel()
-	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh, saves, db, v := newCountingRefresh(t, map[string]string{"Note.md": settledNote})
 
 	if err := os.Remove(filepath.Join(v.Path, "Note.md")); err != nil {
 		t.Fatal(err)

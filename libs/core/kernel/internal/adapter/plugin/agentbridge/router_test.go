@@ -70,7 +70,7 @@ type providerHost struct {
 	launched []string
 }
 
-func (h *providerHost) getLaunched() []string {
+func (h *providerHost) getLaunchedIDs() []string {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return append([]string(nil), h.launched...)
@@ -149,7 +149,7 @@ func TestListingReportsTheEnabledProviderThatFailsAndNotTheDisabledOne(t *testin
 	if !strings.Contains(err.Error(), "rpc get agent programs") {
 		t.Errorf("the failure of the enabled provider was not reported: %v", err)
 	}
-	for _, id := range host.getLaunched() {
+	for _, id := range host.getLaunchedIDs() {
 		if id == disabledProvider {
 			t.Errorf("the disabled provider was launched")
 		}

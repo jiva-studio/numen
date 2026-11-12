@@ -20,7 +20,7 @@ export function useBookLinks(props: SettledBookProps, listeners: BookLinkReporte
   /** Where a link targetLink, held until the document holding that place is drawn. */
   let targetLink: BookLink | undefined
 
-  const takeLed = (): BookLink | undefined => {
+  const takeLedLink = (): BookLink | undefined => {
     const place = targetLink
     targetLink = undefined
     return place
@@ -47,5 +47,5 @@ export function useBookLinks(props: SettledBookProps, listeners: BookLinkReporte
     listeners.reportMove(findFragmentOffset(place.fragment) ?? props.span.start)
   }
 
-  return { takeLed, follow }
+  return { takeLedLink, follow }
 }

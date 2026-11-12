@@ -225,7 +225,7 @@ const sampleControl = async (read: () => unknown, ms: number): Promise<unknown[]
   return samples
 }
 
-const getDistinct = (samples: readonly unknown[]): unknown[] =>
+const getDistinctValues = (samples: readonly unknown[]): unknown[] =>
   samples.filter((one, index) => index === 0 || one !== samples[index - 1])
 
 const start = async (timing: Timing) => {
@@ -310,7 +310,7 @@ describe('a list of the page System after the person chooses a value', () => {
     getRow(page, 'Light or dark').findComponent(Select).vm.$emit('update:modelValue', 'dark')
     const samples = await sampleControl(() => getControlValue(page, 'Light or dark', Select), 600)
 
-    expect(getDistinct(samples)).toStrictEqual(['dark'])
+    expect(getDistinctValues(samples)).toStrictEqual(['dark'])
     settings.close()
     page.unmount()
   })
@@ -324,7 +324,7 @@ describe('a list of the page System after the person chooses a value', () => {
       600,
     )
 
-    expect(getDistinct(samples)).toStrictEqual(['eco'])
+    expect(getDistinctValues(samples)).toStrictEqual(['eco'])
     settings.close()
     page.unmount()
   })
@@ -337,7 +337,7 @@ describe('a list of the page System after the person chooses a value', () => {
       .vm.$emit('update:modelValue', 'plugin:md.example.themes/dusk')
     const samples = await sampleControl(() => getControlValue(page, 'Theme', Select), 600)
 
-    expect(getDistinct(samples)).toStrictEqual(['plugin:md.example.themes/dusk'])
+    expect(getDistinctValues(samples)).toStrictEqual(['plugin:md.example.themes/dusk'])
     settings.close()
     page.unmount()
   })
@@ -349,7 +349,7 @@ describe('a list of the page System after the person chooses a value', () => {
     getRow(page, 'Light or dark').findComponent(Select).vm.$emit('update:modelValue', 'dark')
     const samples = await sampleControl(() => getControlValue(page, 'Light or dark', Select), 600)
 
-    expect(getDistinct(samples)).toStrictEqual(['dark', 'system'])
+    expect(getDistinctValues(samples)).toStrictEqual(['dark', 'system'])
     expect(say).toHaveBeenCalledWith(
       expect.stringContaining('Numen is not responding; retrying'),
       'error',
@@ -368,7 +368,7 @@ describe('a slider of the page System after the person moves it', () => {
     slider.vm.$emit('commit', 1.2)
     const samples = await sampleControl(() => getControlValue(page, 'Interface size', Slider), 600)
 
-    expect(getDistinct(samples)).toStrictEqual([1.2])
+    expect(getDistinctValues(samples)).toStrictEqual([1.2])
     settings.close()
     page.unmount()
   })
@@ -386,7 +386,7 @@ describe('a slider of the page System after the person moves it', () => {
       slider.vm.$emit('commit', 1.4)
       const second = await sampleControl(() => getControlValue(page, 'Interface size', Slider), 600)
 
-      expect(getDistinct([...first, ...second])).toStrictEqual([1.2, 1.4])
+      expect(getDistinctValues([...first, ...second])).toStrictEqual([1.2, 1.4])
       settings.close()
       page.unmount()
     },
@@ -405,7 +405,7 @@ describe('the window after the person chooses a theme or a size on the page Syst
       .vm.$emit('update:modelValue', 'plugin:md.example.themes/dusk')
     const applied = await sampleControl(() => getStyle('theme'), 600)
 
-    expect(getDistinct(applied).pop()).toContain('plugin:md.example.themes/dusk')
+    expect(getDistinctValues(applied).pop()).toContain('plugin:md.example.themes/dusk')
     expect(applied.slice(-20).every((one) => String(one).includes('dusk'))).toBe(true)
     settings.close()
     page.unmount()
@@ -417,7 +417,7 @@ describe('the window after the person chooses a theme or a size on the page Syst
     getRow(page, 'Light or dark').findComponent(Select).vm.$emit('update:modelValue', 'dark')
     const applied = await sampleControl(() => getStyle('mode'), 600)
 
-    expect(getDistinct(applied).pop()).toContain('color-scheme: dark')
+    expect(getDistinctValues(applied).pop()).toContain('color-scheme: dark')
     expect(applied.slice(-20).every((one) => String(one).includes('dark'))).toBe(true)
     settings.close()
     page.unmount()
@@ -431,7 +431,7 @@ describe('the window after the person chooses a theme or a size on the page Syst
     slider.vm.$emit('commit', 1.4)
     const applied = await sampleControl(() => getStyle('sizes'), 600)
 
-    expect(getDistinct(applied).pop()).toContain('1.4')
+    expect(getDistinctValues(applied).pop()).toContain('1.4')
     settings.close()
     page.unmount()
   })

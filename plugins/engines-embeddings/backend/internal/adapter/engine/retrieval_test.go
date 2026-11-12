@@ -53,7 +53,7 @@ func TestCuratedModelsFindThePassageOfAQuery(t *testing.T) {
 	if err := json.Unmarshal(raw, &fixture); err != nil {
 		t.Fatal(err)
 	}
-	for _, profile := range getShipped(t).GetCurated() {
+	for _, profile := range getShippedProfiles(t).GetCurated() {
 		t.Run(profile.ID, func(t *testing.T) {
 			dir := filepath.Join(root, strings.ReplaceAll(profile.ID, "/", "--"))
 			if _, err := os.Stat(dir); err != nil {

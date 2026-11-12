@@ -65,19 +65,19 @@ export function useExpansion(
   let expandTimer: ReturnType<typeof setTimeout> | undefined
   let frame: number | null = null
 
-  const stopWaiting = () => {
+  const stopExpandTimer = () => {
     clearTimeout(expandTimer)
     expandTimer = undefined
   }
 
-  const stopMoving = () => {
+  const cancelExpandFrame = () => {
     if (frame !== null) clock.cancel(frame)
     frame = null
   }
 
   /** The rest of the way, from wherever it has got to, at the speed it opens. */
   const move = (to: number) => {
-    stopMoving()
+    cancelExpandFrame()
     const from = open.value
     if (from === to) return
 
@@ -99,7 +99,7 @@ export function useExpansion(
   watch(
     [on, delay],
     ([what, ms]) => {
-      stopWaiting()
+      stopExpandTimer()
       move(0)
       if (what === null || ms <= 0) return
       expandTimer = setTimeout(() => move(1), ms)
@@ -108,8 +108,8 @@ export function useExpansion(
   )
 
   onScopeDispose(() => {
-    stopWaiting()
-    stopMoving()
+    stopExpandTimer()
+    cancelExpandFrame()
   })
 
   return open

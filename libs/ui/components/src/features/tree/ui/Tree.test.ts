@@ -100,7 +100,7 @@ const dragTo = async (wrapper: Tree, row: string, y: number): Promise<void> => {
   await wrapper.vm.$nextTick()
 }
 
-const findDragged = (wrapper: Tree) => wrapper.find('.tree__dragged')
+const findDraggedElement = (wrapper: Tree) => wrapper.find('.tree__dragged')
 
 describe('what is drawn', () => {
   it('is the rows an open row holds, in their place', () => {
@@ -501,7 +501,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await target.vm.$nextTick()
 
-    expect(findDragged(target).text()).toBe('Loose')
+    expect(findDraggedElement(target).text()).toBe('Loose')
   })
 
   it('says how many are being dragged, where there are several', async () => {
@@ -510,7 +510,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await target.vm.$nextTick()
 
-    expect(findDragged(target).text()).toBe('2 rows')
+    expect(findDraggedElement(target).text()).toBe('2 rows')
   })
 
   it('says it in the words the caller gave for how many', async () => {
@@ -522,7 +522,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await wrapper.vm.$nextTick()
 
-    expect(findDragged(wrapper).text()).toBe('2 files')
+    expect(findDraggedElement(wrapper).text()).toBe('2 files')
   })
 
   it('is drawn nowhere before the pointer has travelled far enough', async () => {
@@ -531,18 +531,18 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 110)
     await wrapper.vm.$nextTick()
 
-    expect(findDragged(wrapper).exists()).toBe(false)
+    expect(findDraggedElement(wrapper).exists()).toBe(false)
   })
 
   it('is drawn nowhere once the rows have been release', async () => {
     const wrapper = mountTree()
     await dragTo(wrapper, 'loose', 12)
 
-    expect(findDragged(wrapper).exists()).toBe(false)
+    expect(findDraggedElement(wrapper).exists()).toBe(false)
   })
 
   it('is drawn nowhere at all while nothing is being dragged', () => {
-    expect(findDragged(mountTree()).exists()).toBe(false)
+    expect(findDraggedElement(mountTree()).exists()).toBe(false)
   })
 })
 

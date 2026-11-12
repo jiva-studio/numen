@@ -9,7 +9,7 @@ import (
 
 func TestGetNamedPathsAnswersEveryNoteFiledBelowAName(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"a/Heat.md": "# Heat\n", "b/Heat.md": "# Heat\n", "Cold.md": "# Cold\n"})
+	c := openChangeFixture(t, map[string]string{"a/Heat.md": "# Heat\n", "b/Heat.md": "# Heat\n", "Cold.md": "# Cold\n"})
 	u := query.NewGetNamedPaths(c.db.NoteQueries())
 
 	got, err := u.Execute(t.Context(), c.vault, "Heat")
@@ -38,7 +38,7 @@ func TestGetNamedPathsAnswersEveryNoteFiledBelowAName(t *testing.T) {
 
 func TestGetNamedPathsAnswersNothingWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 
 	if got, err := query.NewGetNamedPaths(nil).Execute(t.Context(), c.vault, "Heat"); err != nil || len(got) != 0 {
 		t.Errorf("an unbound index answered %v, %v", got, err)

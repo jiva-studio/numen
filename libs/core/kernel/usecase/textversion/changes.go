@@ -53,7 +53,7 @@ func (u *Changes) SetListener(listener textdomain.VersionListener) {
 }
 
 func (u *Changes) report(ctx context.Context, v domain.Vault, path string) {
-	if _, err := u.updateLive(ctx, v, path); err != nil {
+	if _, err := u.updateLiveVersion(ctx, v, path); err != nil {
 		u.mu.Lock()
 		delete(u.lives, liveKey{vault: v.ID, path: path})
 		u.mu.Unlock()
@@ -75,7 +75,7 @@ func (u *Changes) notify(v domain.Vault, path string) {
 func (u *Changes) ReportFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
 	var failures []error
 	for _, path := range paths {
-		isChanged, err := u.updateLive(ctx, v, path)
+		isChanged, err := u.updateLiveVersion(ctx, v, path)
 		if err != nil {
 			failures = append(failures, err)
 			continue
@@ -87,7 +87,7 @@ func (u *Changes) ReportFilesChanged(ctx context.Context, v domain.Vault, paths 
 	return errors.Join(failures...)
 }
 
-func (u *Changes) updateLive(ctx context.Context, v domain.Vault, path string) (bool, error) {
+func (u *Changes) updateLiveVersion(ctx context.Context, v domain.Vault, path string) (bool, error) {
 	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
 	if err != nil && !errors.Is(err, textdomain.ErrFileUnreadable) {
 		return false, err

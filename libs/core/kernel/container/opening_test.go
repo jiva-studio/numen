@@ -270,7 +270,7 @@ func (g *gate) release() {
 	}
 }
 
-func (g *gate) getWaiting() chan struct{} {
+func (g *gate) getWaitingChannel() chan struct{} {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.until
@@ -296,7 +296,7 @@ func (r gating) Read(ctx context.Context, path string) ([]byte, error) {
 	default:
 	}
 	select {
-	case <-r.targetPath.getWaiting():
+	case <-r.targetPath.getWaitingChannel():
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}

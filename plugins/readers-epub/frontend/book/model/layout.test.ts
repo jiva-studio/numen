@@ -151,7 +151,7 @@ const room = (options: Options = {}) => {
   const holder = document.createElement('div')
   const leaving = shallowRef<HTMLElement | null>(holder)
   const onMove = vi.fn()
-  const takeLed = vi.fn(() => options.led)
+  const takeLedLink = vi.fn(() => options.led)
   let layout!: ReturnType<typeof useBookLayout>
   const wrapper = mount(
     defineComponent({
@@ -162,7 +162,7 @@ const room = (options: Options = {}) => {
           leaving,
           props,
           onMove,
-          takeLed,
+          takeLedLink,
           column: fake.columns as unknown as BookColumns,
           turns: fake.turns as unknown as BookTurns,
         })
@@ -170,7 +170,7 @@ const room = (options: Options = {}) => {
       },
     }),
   )
-  return { wrapper, props, box, text, holder, onMove, takeLed, layout: () => layout }
+  return { wrapper, props, box, text, holder, onMove, takeLedLink, layout: () => layout }
 }
 
 beforeEach(setUp)
@@ -399,7 +399,7 @@ describe('the room or the type changing size', () => {
 
 describe('another document being opened', () => {
   it('starts at the first spread and is set at the offset requested for', async () => {
-    const { props, takeLed } = room()
+    const { props, takeLedLink } = room()
     turns().standing.value = 3
     columns().measure.mockClear()
     fake.frames.length = 0
@@ -408,7 +408,7 @@ describe('another document being opened', () => {
     props.markup = '<p>two</p>'
     await nextTick()
 
-    expect(takeLed).toHaveBeenCalledTimes(1)
+    expect(takeLedLink).toHaveBeenCalledTimes(1)
     expect(turns().standing.value).toBe(0)
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()

@@ -37,7 +37,7 @@ func serveInBackground(s *Server) <-chan error {
 	return serveErrCh
 }
 
-func stopServing(t *testing.T, s *Server, serveErrCh <-chan error) {
+func stopServer(t *testing.T, s *Server, serveErrCh <-chan error) {
 	t.Helper()
 	s.Lifecycle().TriggerShutdown()
 	select {
@@ -87,7 +87,7 @@ func TestServeReportsTheListenerPortInTheReadyLine(t *testing.T) {
 		accepted <- err
 	}()
 	serveErrCh := serveInBackground(s)
-	t.Cleanup(func() { stopServing(t, s, serveErrCh) })
+	t.Cleanup(func() { stopServer(t, s, serveErrCh) })
 
 	port := waitForListenerPort(t, &stdout)
 
@@ -142,7 +142,7 @@ func TestServeClosesTheListenersItOpenedWhenItReturns(t *testing.T) {
 	serveErrCh := serveInBackground(s)
 	port := waitForListenerPort(t, &stdout)
 
-	stopServing(t, s, serveErrCh)
+	stopServer(t, s, serveErrCh)
 
 	conn, err := dialLoopback(t.Context(), port)
 	if err == nil {

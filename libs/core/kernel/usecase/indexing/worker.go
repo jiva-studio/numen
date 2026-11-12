@@ -112,7 +112,7 @@ func (w *Worker) openReading(
 
 func (w *Worker) hasEmbedder() bool { return w.embedder != nil }
 
-func (w *Worker) waitQuiet() <-chan time.Time { return w.after(w.debounce) }
+func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }
 
 func (w *Worker) wakeRead() { w.wakes.wakeRead() }
 
@@ -131,7 +131,7 @@ func (w *Worker) newPass(s *Session, v domain.Vault, rebuild bool) *pass {
 type wakeWaits interface {
 	sourcesWoken() <-chan struct{}
 	notesWoken() <-chan struct{}
-	readWoken() <-chan struct{}
+	readWakeChannel() <-chan struct{}
 	// stopOnWake returns a context that ends when any of the signals arrives, and leaves that signal held.
 	stopOnWake(ctx context.Context) (context.Context, func())
 }
@@ -158,7 +158,7 @@ func (c *channelWakes) sourcesWoken() <-chan struct{} { return c.sources }
 
 func (c *channelWakes) notesWoken() <-chan struct{} { return c.notes }
 
-func (c *channelWakes) readWoken() <-chan struct{} { return c.read }
+func (c *channelWakes) readWakeChannel() <-chan struct{} { return c.read }
 
 func (c *channelWakes) stopOnWake(ctx context.Context) (context.Context, func()) {
 	underCtx, end := context.WithCancel(ctx)

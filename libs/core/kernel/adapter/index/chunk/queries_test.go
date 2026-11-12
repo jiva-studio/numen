@@ -29,7 +29,7 @@ const (
 	century                = int64(1_000_000_000_000_000_000)
 )
 
-func newMigrated() *vaultfixture.Template {
+func newMigratedTemplate() *vaultfixture.Template {
 	return vaultfixture.NewTemplate(func(ctx context.Context, path string) error {
 		db, err := index.Open(ctx, path)
 		if err != nil {
@@ -80,7 +80,7 @@ func openIndexAt(t *testing.T) (*index.DB, string) {
 	t.Setenv("XDG_CACHE_HOME", home)
 	t.Setenv("XDG_CONFIG_HOME", home)
 	path := filepath.Join(t.TempDir(), "index.db")
-	newMigrated().CopyTo(t, path)
+	newMigratedTemplate().CopyTo(t, path)
 	db, err := index.Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
@@ -147,7 +147,7 @@ func (s source) save(t *testing.T, db *index.DB) {
 	}
 }
 
-func getUnembedded(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
+func getUnembeddedPassages(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
 	t.Helper()
 	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vault, recipe, chunk.Cursor{}, 1000)
 	if err != nil {
@@ -159,7 +159,7 @@ func getUnembedded(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Pas
 func embed(t *testing.T, db *index.DB, vault domain.VaultID, path string, seed byte) {
 	t.Helper()
 	var vectors []chunk.Vector
-	for _, p := range getUnembedded(t, db, vault) {
+	for _, p := range getUnembeddedPassages(t, db, vault) {
 		if p.Path != path {
 			continue
 		}
@@ -770,7 +770,7 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 	source{vault: vaultB, path: "lib/b.epub", large: "other", smalls: []string{"x"}}.save(t, db)
 	queries := queriesOf(db)
 
-	unembedded := getUnembedded(t, db, vaultA)
+	unembedded := getUnembeddedPassages(t, db, vaultA)
 	if len(unembedded) != 2 {
 		t.Fatalf("got %d small chunks, want 2", len(unembedded))
 	}
@@ -903,7 +903,7 @@ func TestUnembeddedChunksAreSmallOnesNewestSourceFirst(t *testing.T) {
 	source{vault: vaultB, path: "lib/b.epub", mtime: century + 9, large: "l", smalls: []string{"b1"}}.save(t, db)
 	embed(t, db, vaultA, "lib/done.epub", 0xF0)
 
-	got := getUnembedded(t, db, vaultA)
+	got := getUnembeddedPassages(t, db, vaultA)
 	var paths []string
 	for _, p := range got {
 		paths = append(paths, p.Path)
@@ -945,7 +945,7 @@ func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
 	source{path: "lib/b.epub", mtime: century + 2, large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
 	source{path: "lib/c.epub", mtime: century + 2, large: "l", smalls: []string{"c1", "c2"}}.save(t, db)
 	queries := queriesOf(db)
-	all := getUnembedded(t, db, vaultA)
+	all := getUnembeddedPassages(t, db, vaultA)
 
 	for _, limit := range []int{1, 2, 3} {
 		var visited []int64
@@ -1059,7 +1059,7 @@ func TestProgressFailsOnAClosedOrBrokenIndex(t *testing.T) {
 func TestCachedVectorsAreFoundByTheHashOfTheirTextBelowTheRecipe(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2"}}.save(t, db)
-	chunks := getUnembedded(t, db, vaultA)
+	chunks := getUnembeddedPassages(t, db, vaultA)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	var hashes [][]byte
 	for _, p := range chunks {

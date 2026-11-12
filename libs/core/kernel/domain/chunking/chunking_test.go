@@ -117,7 +117,7 @@ func TestSplit(t *testing.T) {
 			if len(out) != test.wantLarge {
 				t.Errorf("large chunks: got %d, want %d", len(out), test.wantLarge)
 			}
-			if small := countSmall(out); small != test.wantSmall {
+			if small := countSmallChunks(out); small != test.wantSmall {
 				t.Errorf("small chunks: got %d, want %d", small, test.wantSmall)
 			}
 			if got := locations(out); !equal(got, test.locations) {
@@ -331,7 +331,7 @@ func boundaries(text string, parts []domain.PartStart) []int {
 	return out
 }
 
-func countSmall(out []Chunk) int {
+func countSmallChunks(out []Chunk) int {
 	n := 0
 	for _, c := range out {
 		n += len(c.Small)
@@ -439,7 +439,7 @@ func TestSplitDefaultLimit(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			out := Cut(strings.Repeat("a", test.runes), nil, Sizes{}, Legibility{})
-			if got := countSmall(out) > 0; got != test.preserved {
+			if got := countSmallChunks(out) > 0; got != test.preserved {
 				t.Errorf("small chunk kept: got %v, want %v", got, test.preserved)
 			}
 		})

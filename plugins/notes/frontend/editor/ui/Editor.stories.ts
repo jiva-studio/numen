@@ -642,7 +642,7 @@ export const Changed: Story = {
   render: renderWithChange(NOTE, MIDDLE),
   play: async ({ canvasElement }) => {
     const view = getView(canvasElement)
-    const getArriving = () => canvasElement.querySelectorAll('.cm-arriving')
+    const getArrivingElements = () => canvasElement.querySelectorAll('.cm-arriving')
 
     await expect(canvasElement.querySelectorAll('.cm-changing').length).toBeGreaterThan(0)
 
@@ -656,16 +656,16 @@ export const Changed: Story = {
     // One word arrives at a time: the same element for as long as it fades,
     // and the next word a run of its own. An element drawn again, or one
     // growing to hold everything shown so far, would fade a word twice.
-    await waitFor(async () => await expect(getArriving().length).toBe(1))
-    const element = getArriving()[0]
+    await waitFor(async () => await expect(getArrivingElements().length).toBe(1))
+    const element = getArrivingElements()[0]
     const word = element?.textContent ?? ''
     await nextFrame()
     await nextFrame()
-    await expect(getArriving().length).toBe(1)
-    await expect(getArriving()[0]).toBe(element)
+    await expect(getArrivingElements().length).toBe(1)
+    await expect(getArrivingElements()[0]).toBe(element)
 
-    await waitFor(async () => await expect(getArriving()[0]?.textContent).not.toBe(word))
-    await expect(getArriving()[0]?.textContent?.startsWith(word)).toBe(false)
+    await waitFor(async () => await expect(getArrivingElements()[0]?.textContent).not.toBe(word))
+    await expect(getArrivingElements()[0]?.textContent?.startsWith(word)).toBe(false)
 
     await waitFor(async () => await expect(view.contentDOM.textContent).toContain(MIDDLE.text), {
       timeout: 5000,

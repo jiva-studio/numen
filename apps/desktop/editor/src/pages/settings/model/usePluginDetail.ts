@@ -43,10 +43,10 @@ function createDataDeletion(
 
 /** Whether the plugin is enabled, whether a change of that is waiting to be confirmed, and the calls that change it or start it again. */
 export function usePluginSwitch(deps: PluginDetailDeps) {
-  const readEnabled = (): JsonValue | undefined =>
+  const readEnabledValue = (): JsonValue | undefined =>
     deps.getSettings().getConfirmedSetting([deps.getPlugin().id, 'enabled'])
   const isEnabled = computed<boolean>(() => {
-    const value = readEnabled()
+    const value = readEnabledValue()
     return typeof value === 'boolean' ? value : true
   })
 

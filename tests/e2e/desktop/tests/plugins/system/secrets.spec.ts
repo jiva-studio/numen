@@ -99,7 +99,7 @@ interface Received {
   readonly value: string
 }
 
-const readReceived = (log: string): Received[] => {
+const readReceivedEntries = (log: string): Received[] => {
   if (!fs.existsSync(log)) return []
   const lines = fs
     .readFileSync(log, 'utf8')
@@ -205,7 +205,7 @@ test.describe('Secrets shared between plugins', () => {
 
     for (const id of [ONE, TWO]) {
       await expect
-        .poll(() => readReceived(logs[id] as string).map((one) => one.value))
+        .poll(() => readReceivedEntries(logs[id] as string).map((one) => one.value))
         .toEqual([value])
     }
     await expect(section.getByLabel(/^Value of /)).toHaveValue('')
@@ -221,7 +221,7 @@ test.describe('Secrets shared between plugins', () => {
     await allow(page, second, ONE)
     // The server also holds the secrets of the previous tests, so only these two are compared.
     const readOrder = (): string[] =>
-      readReceived(logs[ONE] as string)
+      readReceivedEntries(logs[ONE] as string)
         .map((one) => one.id)
         .filter((id) => id === first || id === second)
     await expect.poll(readOrder).toEqual([first, second])
@@ -244,7 +244,7 @@ test.describe('Secrets shared between plugins', () => {
     await settings.getByRole('button', { name: /Probe two/ }).click()
     await choose(page, settings.locator('.settings__secret'), [/Trip/])
 
-    await expect.poll(() => readReceived(logs[TWO] as string).map((one) => one.id)).toContain(trip)
+    await expect.poll(() => readReceivedEntries(logs[TWO] as string).map((one) => one.id)).toContain(trip)
     expect(await page.content()).not.toContain(value)
   })
 
@@ -254,7 +254,7 @@ test.describe('Secrets shared between plugins', () => {
     const doomed = await createSecret(page, 'openrouter', 'Doomed', 'invented-key-doomed')
     await allow(page, doomed, ONE)
     await expect
-      .poll(() => readReceived(logs[ONE] as string).map((one) => one.id))
+      .poll(() => readReceivedEntries(logs[ONE] as string).map((one) => one.id))
       .toContain(doomed)
 
     await reopen(page)
@@ -265,7 +265,7 @@ test.describe('Secrets shared between plugins', () => {
     await confirmation.getByRole('button', { name: /delete/i }).click()
 
     await expect
-      .poll(() => readReceived(logs[ONE] as string).map((one) => one.id))
+      .poll(() => readReceivedEntries(logs[ONE] as string).map((one) => one.id))
       .not.toContain(doomed)
   })
 })

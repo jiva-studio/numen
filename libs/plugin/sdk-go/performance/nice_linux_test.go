@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func readNice(t *testing.T, tid string) int {
+func readNiceValue(t *testing.T, tid string) int {
 	t.Helper()
 	raw, err := os.ReadFile("/proc/self/task/" + tid + "/stat")
 	if err != nil {
@@ -27,7 +27,7 @@ func readNice(t *testing.T, tid string) int {
 }
 
 func TestSetNiceLowersThePriorityOfEveryThread(t *testing.T) {
-	before := readNice(t, strconv.Itoa(os.Getpid()))
+	before := readNiceValue(t, strconv.Itoa(os.Getpid()))
 	want := min(before+1, 19)
 	if err := SetNice(want); err != nil {
 		t.Fatal(err)
@@ -37,14 +37,14 @@ func TestSetNiceLowersThePriorityOfEveryThread(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, task := range tasks {
-		if got := readNice(t, task.Name()); got != want {
+		if got := readNiceValue(t, task.Name()); got != want {
 			t.Errorf("thread %s has niceness %d, want %d", task.Name(), got, want)
 		}
 	}
 }
 
 func TestSetNiceFallbackAndErrorHandling(t *testing.T) {
-	currentNice := readNice(t, strconv.Itoa(os.Getpid()))
+	currentNice := readNiceValue(t, strconv.Itoa(os.Getpid()))
 
 	// 1. Non-numeric entry is skipped without calling setPriority(0, -20).
 	onlyNonNumeric := t.TempDir()

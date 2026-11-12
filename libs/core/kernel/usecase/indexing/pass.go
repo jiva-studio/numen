@@ -26,7 +26,7 @@ type passEnv interface {
 	openReading(ctx context.Context, v domain.Vault, rebuild bool) (ReadWholeVault, error)
 	planVectors(ctx context.Context, v domain.Vault) vectorPlan
 	hasEmbedder() bool
-	waitQuiet() <-chan time.Time
+	waitForQuiet() <-chan time.Time
 	notifyVectorsReady(ctx context.Context, v domain.Vault)
 }
 
@@ -47,11 +47,11 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 			return
 		case <-p.waits.sourcesWoken():
 			p.indexSources(ctx)
-		case <-p.waits.readWoken():
+		case <-p.waits.readWakeChannel():
 			p.embedRecognized(ctx)
 		case <-p.waits.notesWoken():
 			// Every write puts the pass off again.
-			debounceTimer = p.env.waitQuiet()
+			debounceTimer = p.env.waitForQuiet()
 		case <-debounceTimer:
 			debounceTimer = nil
 			p.embed(ctx)

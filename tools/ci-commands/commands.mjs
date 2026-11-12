@@ -24,7 +24,7 @@ const fail = (message) => {
  * The text from the bracket at `at` to the one that closes it, and how many
  * braces open directly inside it.
  */
-export const readBracketed = (source, at) => {
+export const readBracketedText = (source, at) => {
   let depth = 0
   let entries = 0
   let quote = null

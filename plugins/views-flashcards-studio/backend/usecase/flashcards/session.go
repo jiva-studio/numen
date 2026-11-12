@@ -94,7 +94,7 @@ func (u Session) Execute(
 	if err != nil {
 		return SessionResult{}, err
 	}
-	holds := day.getAsking(reviewCards, schedules, u.day, now, scope)
+	holds := day.getAskingBudget(reviewCards, schedules, u.day, now, scope)
 	if scope.IsNamed && len(holds.dueCards)+len(holds.newCards) == 0 {
 		return SessionResult{}, day.getStopError(scope.Preset)
 	}

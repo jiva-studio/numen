@@ -182,7 +182,7 @@ func newTestConfig(t *testing.T, id string) (model.ModelInfo, model.LocalModel) 
 	return model.NewConfig(profile)
 }
 
-func getShipped(t *testing.T) *model.Profiles {
+func getShippedProfiles(t *testing.T) *model.Profiles {
 	t.Helper()
 	table, err := model.GetShippedProfiles()
 	if err != nil {

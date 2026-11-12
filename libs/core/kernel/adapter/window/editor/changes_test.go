@@ -67,7 +67,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		t.Fatal(err)
 	}
 
-	installation, _, err := openRegistered(settings, t.Context(), "", os.Stderr)
+	installation, _, err := openRegisteredWindow(settings, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

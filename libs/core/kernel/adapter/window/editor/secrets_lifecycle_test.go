@@ -90,7 +90,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	if _, err := cfg.AddVault(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
-	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)
+	installation, _, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

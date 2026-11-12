@@ -41,7 +41,7 @@ export interface TestPluginSupportDeps {
   readonly slots?: HostParts
 }
 
-const pickDefined = (entries: Record<string, object | undefined>): Record<string, object> =>
+const pickDefinedEntries = (entries: Record<string, object | undefined>): Record<string, object> =>
   Object.fromEntries(Object.entries(entries).filter(([, value]) => value !== undefined)) as Record<
     string,
     object
@@ -55,7 +55,7 @@ const ignoreError = (): void => undefined
 export function createTestPluginSupport(deps: TestPluginSupportDeps) {
   const partialServices: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
   const services = partialServices as PluginServices
-  const named: HostParts = pickDefined({
+  const named: HostParts = pickDefinedEntries({
     getCommandDeclarations: deps.getCommandDeclarations,
     reportCommandIssue: deps.reportCommandIssue,
     reportViewIssue: deps.reportViewIssue,

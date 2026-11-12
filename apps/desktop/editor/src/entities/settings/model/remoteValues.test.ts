@@ -25,7 +25,7 @@ const createSwitch = (confirmed: boolean) => {
     return answer.promise
   })
   const history: boolean[] = []
-  const getShownValue = () => values.getRequested('on')?.value ?? remote.value
+  const getShownValue = () => values.getRequestedValue('on')?.value ?? remote.value
   watch(getShownValue, (value) => history.push(value), { flush: 'sync' })
   /** Answers a read begun now with the value the remote holds now, once `answer` is called. */
   const beginRead = () => {
@@ -56,7 +56,7 @@ describe('a switch bound to a remote value', () => {
     expect(one.getShownValue()).toBe(true)
     expect(one.beginRead()(true)).toBe(true)
     expect(one.history).toEqual([true])
-    expect(one.values.getRequested('on')).toBeUndefined()
+    expect(one.values.getRequestedValue('on')).toBeUndefined()
   })
 
   it('shows the confirmed value again where the write failed, and takes a read begun after', async () => {
@@ -95,7 +95,7 @@ describe('a switch bound to a remote value', () => {
     one.batches[0]?.answer.reject(new Error('refused'))
     await expect(first).rejects.toThrow('refused')
     expect(one.getShownValue()).toBe(false)
-    expect(one.values.getRequested('on')?.value).toBe(false)
+    expect(one.values.getRequestedValue('on')?.value).toBe(false)
     await settle()
     one.batches[1]?.answer.resolve()
     await second

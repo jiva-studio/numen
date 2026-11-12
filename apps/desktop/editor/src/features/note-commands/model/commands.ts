@@ -66,7 +66,7 @@ const createNoteCommand = async (
   relation: ConnectionRole | null,
 ): Promise<string | void> => {
   if (!invocation.name) {
-    if (invocation.target.isFolder) return deps.making.createUntitled(invocation.target.path)
+    if (invocation.target.isFolder) return deps.making.createUntitledNote(invocation.target.path)
     return
   }
   const made = await deps.making.createWithTitle(

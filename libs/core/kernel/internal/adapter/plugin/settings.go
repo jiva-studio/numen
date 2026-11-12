@@ -42,8 +42,8 @@ type profilePusher interface {
 type settingPlugins interface {
 	getPluginSettings(pluginID string) map[string]any
 	getRequirementIDs(pluginID string) []string
-	listEnabled() []manifest.Discovered
-	getKnown(pluginID string) (manifest.Discovered, bool)
+	listEnabledPlugins() []manifest.Discovered
+	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
 }
 
 // Settings keeps in memory the values the user stores for the settings of the plugins. Writing a
@@ -144,7 +144,7 @@ func (s *Settings) FillGeneratedSettings() {
 func (s *Settings) storeGeneratedSettings() ([]generatedSetting, []error) {
 	var filled []generatedSetting
 	var failed []error
-	for _, p := range s.set.listEnabled() {
+	for _, p := range s.set.listEnabledPlugins() {
 		for _, one := range p.Manifest.Settings {
 			if one.Generate != manifest.SettingGenerateToken {
 				continue
@@ -184,7 +184,7 @@ func (s *Settings) CheckPluginSetting(pluginID, key string, value any) error {
 	if err := s.listeners.checkPort(context.Background(), pluginID, key, value); err != nil {
 		return err
 	}
-	p, ok := s.set.getKnown(pluginID)
+	p, ok := s.set.getKnownPlugin(pluginID)
 	if !ok {
 		return nil
 	}

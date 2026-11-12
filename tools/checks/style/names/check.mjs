@@ -86,7 +86,7 @@ Options:
   --strict              Count advisory prose rules (rationale, actor, narrative-verb, poetic-noun,
                         filler, long-test-name) as findings, so --check fails on them
   --category <name>     Filter by category:
-                          fake-casts | third-person | tests | comments |
+                          fake-casts | third-person | bare-state-name | tests | comments |
                           test-assertions | async | ui-words |
                           prose (Markdown) | ui-strings (strings, manifest.json) | advisory |
                           phrases (test titles and comments)
@@ -283,6 +283,56 @@ const RE_GO_THIRD_PERSON_FUNC = new RegExp(
   `func\\s+(?:\\([^)]+\\)\\s*)?(${BANNED_THIRD_PERSON_FUNCTIONS.join('|')})\\s*\\(`,
 )
 
+// A function named with a verb and one bare participle or adjective (`getActive`, `createResponded`,
+// `getEmitted`) does not say what it returns or acts on. The name takes an object (`getActiveTab`,
+// `getEmittedEvents`) or becomes a predicate (`isActive`, `hasEmitted`). Names with `is`, `has`, `can`,
+// `assert`, `expect` and `set` are not matched: they are predicates, assertions or property setters.
+const STATE_NAME_VERBS = [
+  'get', 'find', 'list', 'read', 'check', 'create', 'load', 'make', 'build', 'resolve', 'fetch', 'write', 'count',
+  'collect', 'take', 'wait', 'run', 'open', 'start', 'stop', 'close', 'select', 'pick', 'locate', 'lookup', 'walk',
+  'parse', 'format', 'render', 'remove', 'save', 'update', 'apply', 'use', 'new', 'mount',
+]
+const RE_STATE_NAME = new RegExp(`^(?:${STATE_NAME_VERBS.join('|')})([A-Z][a-z0-9]+)$`)
+// Participles and adjectives that do not end in -ed or -ing.
+const STATE_WORDS = new Set([
+  'Known', 'Shown', 'Chosen', 'Drawn', 'Spoken', 'Forgotten', 'Hidden', 'Kept', 'Led', 'Lit', 'Done', 'Seen', 'Given',
+  'Active', 'Live', 'Idle', 'Empty', 'Pending', 'Other', 'Stale', 'Fake', 'Raw', 'Wide', 'Rough', 'Coarse', 'Sole', 'Due',
+  'Distinct', 'Nearest', 'Closest', 'Furthest', 'Longest', 'Tallest', 'Largest', 'Quietest', 'Upper', 'Ahead', 'Before',
+  'After', 'Manual', 'Ready', 'Positive',
+])
+// Words that end in -ed or -ing and are nouns or verbs: a verb with one of them still says what it acts on.
+// 'Keybinding', 'Bookkeeping' and 'Ping' name a thing (a declared keybinding, the bookkeeping tables, the ping reply);
+// 'Spelling' is the written form of a key; 'Deferred' is the established name of a promise with an outside resolver.
+const STATE_NOUNS = new Set([
+  'Heading', 'Listing', 'Setting', 'Mapping', 'Padding', 'Binding', 'Routing', 'Spacing', 'Warning', 'Building', 'Wiring',
+  'Ranking', 'Timing', 'Reading', 'Ending', 'Sizing', 'Drawing', 'Rendering', 'Offering', 'Training', 'String', 'Thing',
+  'Spring', 'Ring', 'Morning', 'Evening', 'Opening', 'Beginning', 'Meaning', 'Saving', 'Finding', 'Greeting', 'Casing',
+  'Coding', 'Encoding', 'Logging', 'Tracing', 'Indexing', 'Hashing', 'Sampling', 'Proofreading', 'Scheduling', 'Chunking',
+  'Embedding', 'Recording', 'Handling', 'Nesting', 'Filing', 'Engineering', 'Feed', 'Seed', 'Speed', 'Need', 'Embed',
+  'Bed', 'Shed', 'Sled', 'Red', 'Fed', 'Wed', 'Weed', 'Keybinding', 'Bookkeeping', 'Ping', 'Spelling', 'Deferred',
+])
+function isStateName(name) {
+  const m = RE_STATE_NAME.exec(name)
+  if (!m) return false
+  const word = m[1]
+  if (STATE_NOUNS.has(word)) return false
+  return STATE_WORDS.has(word) || /(?:ed|ing)$/.test(word) || /^Un(?!d|der|it|ion|iq|ix|til|icode)[a-z]{3,}/.test(word)
+}
+const RE_GO_FUNC_NAME = /^func\s+(?:\([^)]*\)\s*)?([A-Za-z0-9_]+)\s*[[(]/
+const RE_TS_FUNC_NAMES = [
+  /\bfunction\*?\s+([A-Za-z0-9_$]+)\s*[(<]/,
+  /\b(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:\(|[A-Za-z0-9_$]+\s*=>|function\b|vi\.fn\b)/,
+  /^\s+(?:(?:public|private|protected|static|async|override)\s+)*([A-Za-z0-9_$]+)\s*(?:<[^>]*>)?\([^)]*\)\s*(?::[^{=;]+)?\{\s*$/,
+]
+function findDeclaredFunctionName(line, isGo) {
+  if (isGo) return RE_GO_FUNC_NAME.exec(line)?.[1]
+  for (const re of RE_TS_FUNC_NAMES) {
+    const m = re.exec(line)
+    if (m) return m[1]
+  }
+  return undefined
+}
+
 const RE_TS_TEST_TITLE = /\b(?:describe|it|test)\s*\(\s*['"`]([^'"`]*)['"`]/
 const RE_GO_TEST_FUNC = /^func\s+(Test[A-Za-z0-9_]+)\s*\(/
 const RE_GO_TEST_ASSERTION_NARRATIVE = /\bt\.(?:Errorf|Fatalf|Fatal|Error)\s*\(\s*["`']([^"`']*(?:stands\s+(?:at|in|under|on|over|against|behind)|told\s+(?:to|of|apart)|never\s+told|was\s+told|held\s+by|held\s+open|held\s+apart|held\s+to|left\s+behind|nobody\s+asked|nobody\s+named|nobody\s+has\s+answered)[^"`']*)["`']/i
@@ -334,6 +384,7 @@ const MAX_TS_TEST_TITLE_LENGTH = 90
 const findings = {
   fakeTurnCasts: [],
   thirdPersonFunctions: [],
+  bareStateFunctions: [],
   narrativeTestTitles: [],
   anglishComments: [],
   narrativeTestAssertions: [],
@@ -600,6 +651,16 @@ function scanFile(filePath) {
           if (isGo) stats.backendTotal++
           else stats.frontendTotal++
         }
+      }
+    }
+
+    // 6. Function names of a verb and one bare participle or adjective
+    if ((isCode || ext === '.mjs') && !isCommentLine && shouldCheckCategory('bare-state-name')) {
+      const funcName = findDeclaredFunctionName(lineWithoutStrings, isGo)
+      if (funcName && isStateName(funcName) && (!filterWord || filterWord === funcName)) {
+        findings.bareStateFunctions.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', func: funcName, text: trimmed })
+        if (isGo) stats.backendTotal++
+        else stats.frontendTotal++
       }
     }
 
@@ -923,6 +984,7 @@ const totalIssues =
   narrativePhrases.length +
   findings.fakeTurnCasts.length +
   findings.thirdPersonFunctions.length +
+  findings.bareStateFunctions.length +
   findings.narrativeTestTitles.length +
   findings.anglishComments.length +
   findings.narrativeTestAssertions.length +
@@ -963,6 +1025,7 @@ if (filterWord) console.log(`Filter word : ${filterWord}`)
 console.log('----------------------------------------------------------------------')
 console.log(`1. Fake Turn casts (as unknown as Turn, voice: 'said')    : ${findings.fakeTurnCasts.length}`)
 console.log(`5. 3rd-person singular functions (carries, reads, names)  : ${findings.thirdPersonFunctions.length}`)
+console.log(`6. Verb and bare participle function names (getActive)  : ${findings.bareStateFunctions.length}`)
 console.log(`7. Narrative test titles (storytelling in tests)          : ${findings.narrativeTestTitles.length}`)
 console.log(`8. Anglish comments (hands back, comes to, stands on)     : ${findings.anglishComments.length}`)
 console.log(`11. Narrative test assertions (stands at, told to)        : ${findings.narrativeTestAssertions.length}`)

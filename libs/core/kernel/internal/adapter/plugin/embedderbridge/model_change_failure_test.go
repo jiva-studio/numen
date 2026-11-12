@@ -15,7 +15,7 @@ func failureReports(bridge *embedderbridge.Embedder) chan error {
 
 // A read of the model that fails after a setting of the plugin is reported, with the plugin it concerns.
 func TestAFailedReadOfTheModelAfterASettingIsReported(t *testing.T) {
-	host, bridge, mock, _ := openConfigurable(t)
+	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	reports := failureReports(bridge)
 	reads := mock.getModelCalls.Load()
 
@@ -40,7 +40,7 @@ func TestAFailedReadOfTheModelAfterASettingIsReported(t *testing.T) {
 
 // A model that could not be read is not announced: the listeners run only for a model that was read.
 func TestNoModelChangeIsAnnouncedWhenTheReadOfTheModelFails(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	failureReports(bridge)
 	reads := mock.getModelCalls.Load()
 
@@ -58,7 +58,7 @@ func TestNoModelChangeIsAnnouncedWhenTheReadOfTheModelFails(t *testing.T) {
 
 // The model the bridge reports is the one it read before, when the next read fails.
 func TestTheModelIsTheSameAfterAFailedRead(t *testing.T) {
-	host, bridge, mock, _ := openConfigurable(t)
+	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	failureReports(bridge)
 	reads := mock.getModelCalls.Load()
 
@@ -76,7 +76,7 @@ func TestTheModelIsTheSameAfterAFailedRead(t *testing.T) {
 
 // The change that follows a failed read is announced once, with the model that was read last.
 func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	failureReports(bridge)
 	reads := mock.getModelCalls.Load()
 
@@ -103,7 +103,7 @@ func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 }
 
 func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
-	host, bridge, mock, _ := openConfigurable(t)
+	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	reports := failureReports(bridge)
 	reads := mock.getModelCalls.Load()
 

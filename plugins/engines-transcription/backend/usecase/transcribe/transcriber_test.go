@@ -173,7 +173,7 @@ func (s *scene) transcribe(t *testing.T) {
 	}
 }
 
-func (s *scene) readLive(t *testing.T) (domain.TextVersion, string) {
+func (s *scene) readLiveVersionAndText(t *testing.T) (domain.TextVersion, string) {
 	t.Helper()
 	listing, err := s.texts.ListVersions(t.Context(), lecture)
 	if err != nil {
@@ -194,7 +194,7 @@ func TestTranscribeWritesATranscriptVersionInTheCommonFormat(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 
-	version, text := s.readLive(t)
+	version, text := s.readLiveVersionAndText(t)
 	fileHash := domain.HashContent([]byte(lectureSound))
 	if version.Kind != textKind || version.Key != fileHash || version.InputHash != fileHash || version.File != fileHash+".jsonl" || !version.IsFromFile() {
 		t.Errorf("the version is %+v, want a transcript from the file in %s.jsonl", version, fileHash)
@@ -224,7 +224,7 @@ func TestTranscribeOfASilentRecordingRecordsAnEmptyTranscript(t *testing.T) {
 	s.model.words = map[int]string{}
 	s.transcribe(t)
 
-	if _, text := s.readLive(t); text != "" {
+	if _, text := s.readLiveVersionAndText(t); text != "" {
 		t.Errorf("a silent recording reads %q", text)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
@@ -257,7 +257,7 @@ func TestTranscribeResumesFromPartialTranscript(t *testing.T) {
 	if starts := s.model.getSegmentStarts(); len(starts) == 0 || starts[0] != 1000 {
 		t.Errorf("the recording was asked for segments from %v, want from 1000 first", starts)
 	}
-	if _, text := s.readLive(t); text != "heard before\nsecond words\n" {
+	if _, text := s.readLiveVersionAndText(t); text != "heard before\nsecond words\n" {
 		t.Errorf("the version reads %q", text)
 	}
 }
@@ -315,7 +315,7 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
+	if _, text := s.readLiveVersionAndText(t); text != "first words\nsecond words\n" {
 		t.Errorf("the version reads %q", text)
 	}
 }
@@ -469,29 +469,29 @@ func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
 		t.Fatalf("expected (false, errDisk), got (%v, %v)", ok, err)
 	}
 
-	// readReached when reached does not exist returns (0, Delete error).
-	ms, err := (transcripts{store: s.store}).readReached(ctx, "none")
+	// readReachedPosition when reached does not exist returns (0, Delete error).
+	ms, err := (transcripts{store: s.store}).readReachedPosition(ctx, "none")
 	if ms != 0 || err != nil {
 		t.Fatalf("expected (0, nil), got (%d, %v)", ms, err)
 	}
 	fsDel := &faultyStore{Folder: s.store, deleteErr: errDisk}
-	if _, err := (transcripts{store: fsDel}).readReached(ctx, "none"); !errors.Is(err, errDisk) {
+	if _, err := (transcripts{store: fsDel}).readReachedPosition(ctx, "none"); !errors.Is(err, errDisk) {
 		t.Fatalf("expected errDisk from Delete, got %v", err)
 	}
 
-	// readReached when Read(reached) fails with non-ErrNotExist.
-	if _, err := (transcripts{store: fs}).readReached(ctx, "k"); !errors.Is(err, errDisk) {
+	// readReachedPosition when Read(reached) fails with non-ErrNotExist.
+	if _, err := (transcripts{store: fs}).readReachedPosition(ctx, "k"); !errors.Is(err, errDisk) {
 		t.Fatalf("expected errDisk on Read(reached), got %v", err)
 	}
 
-	// readReached when reached contains invalid JSON deletes both partial and reached.
+	// readReachedPosition when reached contains invalid JSON deletes both partial and reached.
 	if err := s.store.Write(ctx, getReachedName("corrupt"), []byte("{bad")); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.store.Write(ctx, getPartialName("corrupt"), []byte("partial")); err != nil {
 		t.Fatal(err)
 	}
-	ms, err = (transcripts{store: s.store}).readReached(ctx, "corrupt")
+	ms, err = (transcripts{store: s.store}).readReachedPosition(ctx, "corrupt")
 	if ms != 0 || err != nil {
 		t.Fatalf("expected (0, nil) on corrupt reached JSON, got (%d, %v)", ms, err)
 	}
@@ -502,11 +502,11 @@ func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
 		t.Fatalf("expected corrupt reached deleted, got %v", err)
 	}
 
-	// readReached when reached exists but partial is missing deletes reached.
+	// readReachedPosition when reached exists but partial is missing deletes reached.
 	if err := s.store.Write(ctx, getReachedName("nopart"), []byte(`{"ms":500,"size":10}`)); err != nil {
 		t.Fatal(err)
 	}
-	ms, err = (transcripts{store: s.store}).readReached(ctx, "nopart")
+	ms, err = (transcripts{store: s.store}).readReachedPosition(ctx, "nopart")
 	if ms != 0 || err != nil {
 		t.Fatalf("expected (0, nil) when partial missing, got (%d, %v)", ms, err)
 	}
@@ -514,7 +514,7 @@ func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
 		t.Fatalf("expected orphaned reached deleted, got %v", err)
 	}
 
-	// readReached when Read(partial) fails with non-ErrNotExist.
+	// readReachedPosition when Read(partial) fails with non-ErrNotExist.
 	if err := s.store.Write(ctx, getReachedName("parterr"), []byte(`{"ms":500,"size":2}`)); err != nil {
 		t.Fatal(err)
 	}
@@ -524,16 +524,16 @@ func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
 		}
 		return nil
 	}}
-	if _, err := (transcripts{store: fsPartRead}).readReached(ctx, "parterr"); !errors.Is(err, errDisk) {
+	if _, err := (transcripts{store: fsPartRead}).readReachedPosition(ctx, "parterr"); !errors.Is(err, errDisk) {
 		t.Fatalf("expected errDisk reading partial, got %v", err)
 	}
 
-	// readReached when truncating oversized partial fails on Write.
+	// readReachedPosition when truncating oversized partial fails on Write.
 	if err := s.store.Write(ctx, getPartialName("parterr"), []byte("12345")); err != nil {
 		t.Fatal(err)
 	}
 	fsPartWrite := &faultyStore{Folder: s.store, writeErr: func(string) error { return errDisk }}
-	if _, err := (transcripts{store: fsPartWrite}).readReached(ctx, "parterr"); !errors.Is(err, errDisk) {
+	if _, err := (transcripts{store: fsPartWrite}).readReachedPosition(ctx, "parterr"); !errors.Is(err, errDisk) {
 		t.Fatalf("expected errDisk truncating partial, got %v", err)
 	}
 
@@ -670,7 +670,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		t.Fatalf("expected finish renameErr, got %v", err)
 	}
 
-	// hearSegments errors: readReached error, GetSegments error, Transcribe error, appendBatch error, putVersion error, yieldTurn error.
+	// hearSegments errors: readReachedPosition error, GetSegments error, Transcribe error, appendBatch error, putVersion error, yieldTurn error.
 	s2 := newScene(t)
 	s2.model.segmentErr = errBoom
 	if err := s2.transcriber.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
@@ -698,7 +698,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		noReport,
 	)
 	if err := trReachedErr.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
-		t.Fatalf("expected readReached error, got %v", err)
+		t.Fatalf("expected readReachedPosition error, got %v", err)
 	}
 
 	fsAppendErr := &faultyStore{Folder: hosttest.New("Tmp").Store(), appendErr: errBoom}
@@ -776,7 +776,7 @@ func TestStartReportsTaskBeforeReturning(t *testing.T) {
 		t.Errorf("tasks right after Start = %+v, want the task reported", tasks)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, getTaskID("Lectures", lecture))
+	s.waitUntilFinished(t, getTaskID("Lectures", lecture))
 }
 
 func noReport(string, error) {}

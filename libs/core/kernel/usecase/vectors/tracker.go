@@ -61,7 +61,7 @@ func (t *tracker) isIdle() bool {
 	return len(t.flight) == 0
 }
 
-func (t *tracker) getActive() (active []string) {
+func (t *tracker) getActiveSources() (active []string) {
 	t.flightMu.Lock()
 	defer t.flightMu.Unlock()
 	for _, one := range t.flight[:min(t.workers, len(t.flight))] {
@@ -80,7 +80,7 @@ func (t *tracker) publish(change func(res *vaultreading.EmbedResult)) {
 
 	t.mu.Lock()
 	change(t.res)
-	t.res.Active = t.getActive()
+	t.res.Active = t.getActiveSources()
 	if len(t.res.Active) > 0 {
 		t.res.CurrentSource = t.res.Active[0]
 	}

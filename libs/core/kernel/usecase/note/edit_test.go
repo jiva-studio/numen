@@ -84,12 +84,12 @@ func (b brokenWriters) Lock(ctx context.Context, v domain.Vault) (func(), error)
 
 func titleHeat(d *markdown.Document) error { return d.SetTitle("Heat") }
 
-func (c changing) exists(path string) bool {
+func (c changeFixture) exists(path string) bool {
 	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))
 	return err == nil
 }
 
-func (c changing) overwrite(t *testing.T, path, content string) {
+func (c changeFixture) overwrite(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(c.vault.Path, filepath.FromSlash(path)), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
@@ -98,7 +98,7 @@ func (c changing) overwrite(t *testing.T, path, content string) {
 
 func TestAnEditNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	editing := note.NewEdit(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock())
 
 	content, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
@@ -128,7 +128,7 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+			c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 
 			content, err := note.NewEdit(tc.readers, tc.writers, c.index, testsupport.NewClock()).
 				Apply(t.Context(), c.vault, "Heat.md", titleHeat)
@@ -167,7 +167,7 @@ func TestEdit_ReadsFileOnlyWhenFingerprintRequired(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+			c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 			current := c.openNote(t, "Heat.md")
 			request := 0
 			editing := note.NewEdit(
@@ -195,7 +195,7 @@ func TestEdit_ReadsFileOnlyWhenFingerprintRequired(t *testing.T) {
 // was read, so a save that lands in between is not written over.
 func TestEdit_NoFingerprintChecksAgainstLatestRead(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	theirs := "# Heat\n\nSaved in the meantime, and longer.\n"
 	editing := note.NewEdit(
 		watchedReaders{inner: vaultreader.Readers{}, read: func(string) { c.overwrite(t, "Heat.md", theirs) }},
@@ -223,7 +223,7 @@ func TestAnEditOfANoteThatCannotBeLookedAtIsRefused(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+			c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 			editing := note.NewEdit(brokenReaders{stat: tc.stat}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 
 			_, err := editing.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
@@ -240,7 +240,7 @@ func TestAnEditOfANoteThatCannotBeLookedAtIsRefused(t *testing.T) {
 
 func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	elsewhere := c.openNote(t, "Entropy.md").FileStat
 
 	for _, target := range []domain.FileStat{{}, elsewhere} {
@@ -258,7 +258,7 @@ func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	}
 }
 
-func (c changing) editWith(readers vaultport.VaultReaders, writers note.NoteWriting) note.Edit {
+func (c changeFixture) editWith(readers vaultport.VaultReaders, writers note.NoteWriting) note.Edit {
 	return note.NewEdit(readers, writers, c.index, testsupport.NewClock())
 }
 
@@ -266,7 +266,7 @@ func (c changing) editWith(readers vaultport.VaultReaders, writers note.NoteWrit
 // every other failure of the read is still a failure.
 func TestAnOverwriteStopsAtAReadThatFailsForAnotherReason(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	editing := c.editWith(brokenReaders{read: errDiskGone}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
 	editing.ShouldOverwrite = true
 
@@ -283,7 +283,7 @@ func TestAnOverwriteStopsAtAReadThatFailsForAnotherReason(t *testing.T) {
 func TestAnEditOfFrontmatterThatCannotBeReadChangesNothing(t *testing.T) {
 	t.Parallel()
 	const broken = "---\ntitle: [unclosed\n---\n# Heat\n"
-	c := openChanging(t, map[string]string{"Heat.md": broken})
+	c := openChangeFixture(t, map[string]string{"Heat.md": broken})
 	called := false
 
 	_, err := c.editWith(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}).
@@ -306,7 +306,7 @@ func TestAnEditOfFrontmatterThatCannotBeReadChangesNothing(t *testing.T) {
 func TestAnEditThatCannotStampAnIdentifierWritesNothing(t *testing.T) {
 	t.Parallel()
 	const half = "---\ntitle: Heat\n"
-	c := openChanging(t, map[string]string{"Heat.md": half})
+	c := openChangeFixture(t, map[string]string{"Heat.md": half})
 
 	_, err := c.editWith(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}).
 		Apply(t.Context(), c.vault, "Heat.md", func(*markdown.Document) error { return nil })
@@ -338,7 +338,7 @@ func (staleBytesReader) Read(context.Context, string) ([]byte, error) {
 
 func TestAnOverwriteOfAMissingNoteContainsOnlyTheNewText(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 	editing := c.editWith(bytesWithNoNote{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
 	editing.ShouldOverwrite = true
 

@@ -66,7 +66,7 @@ type followed struct {
 	moved <-chan vaults.VaultChanges
 }
 
-func newFollowed(t *testing.T, notes map[string]string, watcher *manualWatcher) followed {
+func newFollowedVault(t *testing.T, notes map[string]string, watcher *manualWatcher) followed {
 	t.Helper()
 	v := vaultfixture.NewVault(t, notes)
 	db := openIndex(t)
@@ -104,7 +104,7 @@ func next[T any](t *testing.T, from <-chan T) T {
 func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
-	f := newFollowed(t, map[string]string{
+	f := newFollowedVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 
@@ -127,7 +127,7 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
-	f := newFollowed(t, map[string]string{
+	f := newFollowedVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 	vaultfixture.WriteBook(t, f.vault.Path, "library/A Book.epub")
@@ -152,7 +152,7 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
-	f := newFollowed(t, map[string]string{"Note.md": "# Note\n"}, watcher)
+	f := newFollowedVault(t, map[string]string{"Note.md": "# Note\n"}, watcher)
 
 	watcher.lostChan <- struct{}{}
 
@@ -167,7 +167,7 @@ func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	t.Parallel()
 	watcher := newManualWatcher()
-	f := newFollowed(t, map[string]string{
+	f := newFollowedVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	}, watcher)
 

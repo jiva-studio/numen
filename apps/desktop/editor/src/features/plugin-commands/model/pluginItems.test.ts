@@ -158,7 +158,7 @@ describe('the commands with items in the palette', () => {
 
 describe('a shared command in the palette', () => {
   const CREATE_TEXT = 'app:file.createText'
-  const createShared = (): Command => ({
+  const createSharedCommand = (): Command => ({
     ...createCommand(CREATE_TEXT),
     text: 'Create text',
     input: 'items',
@@ -169,9 +169,9 @@ describe('a shared command in the palette', () => {
       [CREATE_TEXT]: [{ id: 'md.numen.engines.transcription', title: 'Transcribe' }],
     })
 
-    removeEmptyCommands([createShared()])
+    removeEmptyCommands([createSharedCommand()])
     await settle()
-    const [listed] = removeEmptyCommands([createShared()])
+    const [listed] = removeEmptyCommands([createSharedCommand()])
 
     expect(listed?.text).toBe('Transcribe')
     expect(listed?.input).toBeUndefined()
@@ -185,9 +185,9 @@ describe('a shared command in the palette', () => {
       ],
     })
 
-    removeEmptyCommands([createShared()])
+    removeEmptyCommands([createSharedCommand()])
     await settle()
-    const [listed] = removeEmptyCommands([createShared()])
+    const [listed] = removeEmptyCommands([createSharedCommand()])
 
     expect(listed?.text).toBe('Create text')
     expect(listed?.input).toBe('items')

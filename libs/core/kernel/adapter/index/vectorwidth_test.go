@@ -10,10 +10,10 @@ import (
 func openBreakingDB(t *testing.T) (*DB, *faults) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "index.db")
-	newMigrated().CopyTo(t, path)
-	pool, faults := openBreaking(t, path)
+	newMigratedTemplate().CopyTo(t, path)
+	pool, faults := openBreakingDB(t, path)
 	db := &DB{write: pool, read: pool}
-	if err := db.Vaults().Register(t.Context(), getFirst().ID); err != nil {
+	if err := db.Vaults().Register(t.Context(), getFirstVault().ID); err != nil {
 		t.Fatal(err)
 	}
 	return db, faults
@@ -53,7 +53,7 @@ func TestAFitThatFailsPreservesTheVectorIndexAsItWas(t *testing.T) {
 			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
-			embedAtWidth(t, db, getFirst(), 384)
+			embedAtWidth(t, db, getFirstVault(), 384)
 			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}
@@ -207,7 +207,7 @@ func TestFitVectors_PreservesIndexOnReadFailure(t *testing.T) {
 			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
-			embedAtWidth(t, db, getFirst(), 384)
+			embedAtWidth(t, db, getFirstVault(), 384)
 			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}

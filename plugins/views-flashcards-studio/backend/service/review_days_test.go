@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
-func getCounting() review.Day {
+func getCountingDay() review.Day {
 	return review.Day{Starts: review.DayStartTime}
 }
 
@@ -46,8 +46,8 @@ func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
 	if len(response.Days) != 1 {
 		t.Fatalf("answered on %d days, want the one", len(response.Days))
 	}
-	if got := response.Days[0]; got.Day != getCounting().GetName(vaulttest.GetEpoch()) {
-		t.Errorf("the day is %q, want %q", got.Day, getCounting().GetName(vaulttest.GetEpoch()))
+	if got := response.Days[0]; got.Day != getCountingDay().GetName(vaulttest.GetEpoch()) {
+		t.Errorf("the day is %q, want %q", got.Day, getCountingDay().GetName(vaulttest.GetEpoch()))
 	}
 }
 
@@ -100,7 +100,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 		t.Errorf("%d cards fall on %s, want the one", coming.Reviewed, coming.Day)
 	}
 	// A day is formatted to sort as text in the same order as in time.
-	if today := getCounting().GetName(vaulttest.GetEpoch()); coming.Day <= today {
+	if today := getCountingDay().GetName(vaulttest.GetEpoch()); coming.Day <= today {
 		t.Errorf("what is coming falls on %s, which is not after %s", coming.Day, today)
 	}
 	// What was answered is still answered: the two are counted apart.

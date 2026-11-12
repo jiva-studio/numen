@@ -57,7 +57,7 @@ func (h *servingHost) Release(string) {
 	h.released++
 }
 
-func (h *servingHost) getReleased() int {
+func (h *servingHost) getReleasedCount() int {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.released
@@ -126,8 +126,8 @@ func TestProxyReachesPluginServingService(t *testing.T) {
 		t.Errorf("the window was answered %q as %q", answer, res.Header.Get("Content-Type"))
 	}
 	window.Close()
-	if host.getReleased() != 1 {
-		t.Errorf("the plugin was released %d times", host.getReleased())
+	if host.getReleasedCount() != 1 {
+		t.Errorf("the plugin was released %d times", host.getReleasedCount())
 	}
 }
 
@@ -207,8 +207,8 @@ func TestProxyUnavailableWhenPluginCannotStart(t *testing.T) {
 	if recorded.Code != http.StatusServiceUnavailable || response["code"] != "unavailable" {
 		t.Errorf("the answer was %d %v", recorded.Code, response)
 	}
-	if host.getReleased() != 0 {
-		t.Errorf("a plugin that never started was released %d times", host.getReleased())
+	if host.getReleasedCount() != 0 {
+		t.Errorf("a plugin that never started was released %d times", host.getReleasedCount())
 	}
 }
 

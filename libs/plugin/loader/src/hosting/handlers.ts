@@ -24,7 +24,7 @@ interface HandlerParts {
   readonly registry: HostRegistry
 }
 
-function listMatching({ deps, registry }: HandlerParts, command: string, note: CommandNote) {
+function listMatchingHandlers({ deps, registry }: HandlerParts, command: string, note: CommandNote) {
   return (deps.getHandlerDeclarations?.() ?? [])
     .filter((one) => one.command === command && !registry.disposed.has(one.pluginId))
     .filter((one) => (one.hasItems ? note.path !== '' : isCommandAvailable(one, note, deps)))
@@ -93,7 +93,7 @@ async function listHandlerItems(
   command: string,
   note: CommandNote,
 ): Promise<readonly CommandItem[]> {
-  const handlers = listMatching(parts, command, note)
+  const handlers = listMatchingHandlers(parts, command, note)
   const own = await Promise.all(handlers.map((one) => listOwnItems(parts, one, note)))
   if (own.every((one) => one === undefined)) {
     return handlers.map((one) => ({ id: one.pluginId, title: one.title }))
@@ -113,7 +113,7 @@ async function runSharedCommand(
   run: SharedRun,
 ): Promise<boolean> {
   const { note, itemId, values } = run
-  const handlers = listMatching(parts, command, note)
+  const handlers = listMatchingHandlers(parts, command, note)
   if (itemId === undefined) {
     const [only] = handlers
     if (handlers.length !== 1 || !only) return false

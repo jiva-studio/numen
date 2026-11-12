@@ -109,7 +109,7 @@ func (s *Supervisor) FinishActivating() {
 	defer s.mu.Unlock()
 	s.state = StateActive
 	s.activationErr = nil
-	closeActivating(&s.activatingCh)
+	closeActivationSignal(&s.activatingCh)
 }
 
 // SetDormant transitions the supervisor state to StateDormant and clears activation state.
@@ -122,10 +122,10 @@ func (s *Supervisor) SetDormant(err error) {
 	s.teardownBegun = false
 	s.activeRefCount = 0
 	s.activationErr = err
-	closeActivating(&s.activatingCh)
+	closeActivationSignal(&s.activatingCh)
 }
 
-func closeActivating(ch *chan struct{}) {
+func closeActivationSignal(ch *chan struct{}) {
 	if *ch != nil {
 		close(*ch)
 		*ch = nil
@@ -144,7 +144,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	s.state = StateActive
 	s.lastActiveTime = now
 	s.activationErr = nil
-	closeActivating(&s.activatingCh)
+	closeActivationSignal(&s.activatingCh)
 	exitCh := make(chan struct{})
 	s.exitCh = exitCh
 
@@ -187,7 +187,7 @@ func (s *Supervisor) ActivateInProcess(now time.Time) {
 	s.activeRefCount = 1
 	s.lastActiveTime = now
 	s.activationErr = nil
-	closeActivating(&s.activatingCh)
+	closeActivationSignal(&s.activatingCh)
 }
 
 func isRunning(s *Supervisor) bool {
@@ -275,11 +275,11 @@ func (s *Supervisor) Teardown(
 	if s.state == StateDeactivating && s.teardownBegun {
 		exitCh := s.exitCh
 		s.mu.Unlock()
-		return waitDeactivating(ctx, exitCh)
+		return waitUntilDeactivated(ctx, exitCh)
 	}
 	s.state = StateDeactivating
 	s.teardownBegun = true
-	closeActivating(&s.activatingCh)
+	closeActivationSignal(&s.activatingCh)
 	proc := s.process
 	exitCh := s.exitCh
 	if rpcShutdown == nil {
@@ -319,14 +319,14 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	s.inProcess = false
 	s.teardownBegun = false
 	s.activeRefCount = 0
-	closeActivating(&s.activatingCh)
+	closeActivationSignal(&s.activatingCh)
 	if rpcShutdown != nil {
 		shutdownErr = rpcShutdown(ctx)
 	}
 	return nil
 }
 
-func waitDeactivating(ctx context.Context, exitCh chan struct{}) error {
+func waitUntilDeactivated(ctx context.Context, exitCh chan struct{}) error {
 	if exitCh == nil {
 		return nil
 	}
@@ -360,7 +360,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.teardownBegun = false
 		s.activeRefCount = 0
 		s.activationErr = nil
-		closeActivating(&s.activatingCh)
+		closeActivationSignal(&s.activatingCh)
 	}
 }
 

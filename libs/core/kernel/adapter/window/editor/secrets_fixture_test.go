@@ -297,7 +297,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	if _, err := cfg.AddVault(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
-	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)
+	installation, _, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

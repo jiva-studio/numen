@@ -48,7 +48,7 @@ const groups = () =>
     one.textContent?.trim(),
   )
 
-const getEmitted = (control: ReturnType<typeof mountSelect>): readonly unknown[] =>
+const getEmittedEvents = (control: ReturnType<typeof mountSelect>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 const openSelect = async (control: ReturnType<typeof mountSelect>) => {
@@ -63,7 +63,7 @@ describe('the line at rest', () => {
 
   it('says the value itself where it is none of the choices', () => {
     expect(line(mountSelect({ modelValue: 'enormous' })).text()).toContain('enormous')
-    expect(getEmitted(mountSelect({ modelValue: 'enormous' }))).toStrictEqual([])
+    expect(getEmittedEvents(mountSelect({ modelValue: 'enormous' }))).toStrictEqual([])
   })
 
   it('says the stand-in where nothing is in force', () => {
@@ -141,7 +141,7 @@ describe('choosing', () => {
     await openSelect(control)
     rows()[2]!.click()
     await nextTick()
-    expect(getEmitted(control)).toStrictEqual(['large'])
+    expect(getEmittedEvents(control)).toStrictEqual(['large'])
   })
 
   it('passes nothing back where the choices were put away untouched', async () => {
@@ -150,7 +150,7 @@ describe('choosing', () => {
     document.dispatchEvent(new Event('scroll', { bubbles: true }))
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
-    expect(getEmitted(control)).toStrictEqual([])
+    expect(getEmittedEvents(control)).toStrictEqual([])
     expect(line(control).attributes('aria-expanded')).toBe('false')
   })
 })
@@ -283,6 +283,6 @@ describe('a choice that is disabled', () => {
     expect(disabled.disabled).toBe(true)
     disabled.click()
     await settle()
-    expect(getEmitted(control)).toStrictEqual([])
+    expect(getEmittedEvents(control)).toStrictEqual([])
   })
 })

@@ -17,7 +17,7 @@ func toName(value string, role domain.LinkRole) domain.Link {
 
 func TestABadLinkCostsOnlyItselfAndTheRestAreSavedPerNote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Entropy.md": "# Entropy\n", "Heat.md": "# Heat\n", "Work.md": "# Work\n",
 	})
 
@@ -48,7 +48,7 @@ func TestABadLinkCostsOnlyItselfAndTheRestAreSavedPerNote(t *testing.T) {
 
 func TestAddLinks_RejectsLinksWithConflictingFingerprints(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	first := domain.FileStat{Size: 1}
 
 	added, err := note.NewAddLinks(c.newEditLinks()).Execute(t.Context(), c.vault, []note.LinkAddition{
@@ -65,7 +65,7 @@ func TestAddLinks_RejectsLinksWithConflictingFingerprints(t *testing.T) {
 
 func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnError(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	unreadable := errors.New("not a fingerprint")
 
 	added, err := note.NewAddLinks(c.newEditLinks()).Execute(t.Context(), c.vault, []note.LinkAddition{
@@ -88,7 +88,7 @@ func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnError(t *testing.T) {
 
 func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 
 	added, err := note.NewAddLinks(c.newEditLinks()).Execute(t.Context(), c.vault, []note.LinkAddition{
 		{From: "Heat.md", FileStat: domain.FileStat{Size: 1}, Link: toName("Entropy", domain.RoleRef)},
@@ -104,7 +104,7 @@ func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 
 func TestACallCanceledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -124,7 +124,7 @@ func TestACallCanceledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t *
 
 func TestACallCanceledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRest(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Heat.md": "# Heat\n", "Work.md": "# Work\n", "Order.md": "# Order\n",
 	})
 	ctx, cancel := context.WithCancel(t.Context())

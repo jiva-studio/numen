@@ -466,7 +466,7 @@ type testServer struct {
 
 func fakeACPAgent(t *testing.T, program, behavior string) (agentSpec, string) {
 	t.Helper()
-	command, record := startFake(t, behavior)
+	command, record := startFakeAgent(t, behavior)
 	return agentSpec{program: program, command: command}, record
 }
 

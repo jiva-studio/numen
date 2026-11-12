@@ -12,7 +12,7 @@ func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 	t.Helper()
 
 	n := domain.Note{
-		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: getWalked()},
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: getWalkedTime()},
 		Title:    title,
 		Body:     strings.Join(headings, "\n"),
 	}
@@ -52,9 +52,9 @@ func describeMatch(m domain.NameMatch) string {
 
 func TestANoteIsFoundByItsOwnTitle(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/entropy.md", "Entropy")
+	saveNamedNote(t, db, getFirstVault(), "notes/entropy.md", "Entropy")
 
-	found := getNames(t, db, getFirst(), "ent")
+	found := getNames(t, db, getFirstVault(), "ent")
 
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1: %+v", len(found), found)
@@ -71,9 +71,9 @@ func TestANoteIsFoundByItsOwnTitle(t *testing.T) {
 
 func TestANoteIsFoundByAHeadingInsideIt(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
+	saveNamedNote(t, db, getFirstVault(), "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
 
-	found := getNames(t, db, getFirst(), "entropy")
+	found := getNames(t, db, getFirstVault(), "entropy")
 
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1: %+v", len(found), found)
@@ -91,10 +91,10 @@ func TestANoteIsFoundByAHeadingInsideIt(t *testing.T) {
 
 func TestATitleReachesBeforeAHeading(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
-	saveNamedNote(t, db, getFirst(), "notes/entropy.md", "Entropy")
+	saveNamedNote(t, db, getFirstVault(), "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
+	saveNamedNote(t, db, getFirstVault(), "notes/entropy.md", "Entropy")
 
-	found := getNames(t, db, getFirst(), "entropy")
+	found := getNames(t, db, getFirstVault(), "entropy")
 
 	if len(found) != 2 {
 		t.Fatalf("found %d names, want 2: %+v", len(found), found)
@@ -109,10 +109,10 @@ func TestATitleReachesBeforeAHeading(t *testing.T) {
 
 func TestOneNoteContributesOnlySoManyHeadings(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/thermo.md", "Thermodynamics",
+	saveNamedNote(t, db, getFirstVault(), "notes/thermo.md", "Thermodynamics",
 		"Entropy and heat", "Entropy and work", "Entropy and time", "Entropy and information")
 
-	found := getNames(t, db, getFirst(), "entropy")
+	found := getNames(t, db, getFirstVault(), "entropy")
 
 	if len(found) != mostHeadingsOfANote {
 		t.Fatalf("found %d headings of one note, want %d: %+v",
@@ -134,11 +134,11 @@ func TestOneNoteDoesNotCrowdOutTheOthers(t *testing.T) {
 	for i := range 40 {
 		crowded = append(crowded, "Entropy "+string(rune('a'+i%26))+string(rune('a'+i/26)))
 	}
-	saveNamedNote(t, db, getFirst(), "notes/thermo.md", "Thermodynamics", crowded...)
-	saveNamedNote(t, db, getFirst(), "notes/engine.md", "Engines", "Entropy of an engine")
-	saveNamedNote(t, db, getFirst(), "notes/time.md", "Time", "Entropy and the arrow")
+	saveNamedNote(t, db, getFirstVault(), "notes/thermo.md", "Thermodynamics", crowded...)
+	saveNamedNote(t, db, getFirstVault(), "notes/engine.md", "Engines", "Entropy of an engine")
+	saveNamedNote(t, db, getFirstVault(), "notes/time.md", "Time", "Entropy and the arrow")
 
-	found := getNames(t, db, getFirst(), "entropy")
+	found := getNames(t, db, getFirstVault(), "entropy")
 
 	notes := map[string]int{}
 	for _, m := range found {
@@ -156,57 +156,57 @@ func TestOneNoteDoesNotCrowdOutTheOthers(t *testing.T) {
 
 func TestANameGoesWhenTheNoteDoes(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/entropy.md", "Entropy", "Entropy and heat")
+	saveNamedNote(t, db, getFirstVault(), "notes/entropy.md", "Entropy", "Entropy and heat")
 
-	if err := db.Notes().Remove(t.Context(), getFirst().ID, []string{"notes/entropy.md"}); err != nil {
+	if err := db.Notes().Remove(t.Context(), getFirstVault().ID, []string{"notes/entropy.md"}); err != nil {
 		t.Fatal(err)
 	}
 
-	if found := getNames(t, db, getFirst(), "entropy"); len(found) != 0 {
+	if found := getNames(t, db, getFirstVault(), "entropy"); len(found) != 0 {
 		t.Errorf("found %+v after the note was removed, want nothing", found)
 	}
 }
 
 func TestAHeadingThatWasTakenOutOfANoteStopsAnswering(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
-	saveNamedNote(t, db, getFirst(), "notes/carnot.md", "The Carnot cycle", "Work over one cycle")
+	saveNamedNote(t, db, getFirstVault(), "notes/carnot.md", "The Carnot cycle", "Entropy over one cycle")
+	saveNamedNote(t, db, getFirstVault(), "notes/carnot.md", "The Carnot cycle", "Work over one cycle")
 
-	if found := getNames(t, db, getFirst(), "entropy"); len(found) != 0 {
+	if found := getNames(t, db, getFirstVault(), "entropy"); len(found) != 0 {
 		t.Errorf("found %+v, want nothing: the heading is no longer in the note", found)
 	}
-	if found := getNames(t, db, getFirst(), "work"); len(found) != 1 {
+	if found := getNames(t, db, getFirstVault(), "work"); len(found) != 1 {
 		t.Errorf("found %d names for the heading that is there now, want 1", len(found))
 	}
 }
 
 func TestATitleThatChangedStopsAnsweringBelowTheOldOne(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/entropy.md", "Entropy")
-	saveNamedNote(t, db, getFirst(), "notes/entropy.md", "Enthalpy")
+	saveNamedNote(t, db, getFirstVault(), "notes/entropy.md", "Entropy")
+	saveNamedNote(t, db, getFirstVault(), "notes/entropy.md", "Enthalpy")
 
-	if found := getNames(t, db, getFirst(), "entropy"); len(found) != 0 {
+	if found := getNames(t, db, getFirstVault(), "entropy"); len(found) != 0 {
 		t.Errorf("found %+v under the title the note no longer carries, want nothing", found)
 	}
-	if found := getNames(t, db, getFirst(), "enthalpy"); len(found) != 1 {
+	if found := getNames(t, db, getFirstVault(), "enthalpy"); len(found) != 1 {
 		t.Errorf("found %d names under the title it now carries, want 1", len(found))
 	}
 }
 
 func TestANameStaysInsideItsVault(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/entropy.md", "Entropy", "Entropy and heat")
+	saveNamedNote(t, db, getFirstVault(), "notes/entropy.md", "Entropy", "Entropy and heat")
 	saveNamedNote(t, db, getSecond(), "notes/engine.md", "Engine", "Engine and work")
 
 	if found := getNames(t, db, getSecond(), "entropy"); len(found) != 0 {
 		t.Errorf("the second vault answered %+v about the first, want nothing", found)
 	}
-	if found := getNames(t, db, getFirst(), "engine"); len(found) != 0 {
+	if found := getNames(t, db, getFirstVault(), "engine"); len(found) != 0 {
 		t.Errorf("the first vault answered %+v about the second, want nothing", found)
 	}
 
 	// Each answers about itself, so neither is silent for a reason of its own.
-	if found := getNames(t, db, getFirst(), "entropy"); len(found) == 0 {
+	if found := getNames(t, db, getFirstVault(), "entropy"); len(found) == 0 {
 		t.Error("the first vault answered nothing about its own name")
 	}
 	if found := getNames(t, db, getSecond(), "engine"); len(found) == 0 {
@@ -216,12 +216,12 @@ func TestANameStaysInsideItsVault(t *testing.T) {
 
 func TestOnlyTheLastWordIsMatchedOnItsPrefix(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, getFirst(), "notes/one.md", "Entropy of mixing")
+	saveNamedNote(t, db, getFirstVault(), "notes/one.md", "Entropy of mixing")
 
-	if found := getNames(t, db, getFirst(), "entropy mix"); len(found) != 1 {
+	if found := getNames(t, db, getFirstVault(), "entropy mix"); len(found) != 1 {
 		t.Errorf("found %d names for a word still being typed, want 1", len(found))
 	}
-	if found := getNames(t, db, getFirst(), "entro mixing"); len(found) != 0 {
+	if found := getNames(t, db, getFirstVault(), "entro mixing"); len(found) != 0 {
 		t.Errorf("found %+v, want nothing: only the last word is a prefix", found)
 	}
 }
@@ -230,9 +230,9 @@ func TestARunIsCountedTheWayAClientCountsText(t *testing.T) {
 	db := openDB(t)
 	// The emoji is one character to a reader and two code units to a client,
 	// so a run counted in characters would land a place early.
-	saveNamedNote(t, db, getFirst(), "notes/waving.md", "👋 Entropy")
+	saveNamedNote(t, db, getFirstVault(), "notes/waving.md", "👋 Entropy")
 
-	found := getNames(t, db, getFirst(), "entropy")
+	found := getNames(t, db, getFirstVault(), "entropy")
 
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1", len(found))

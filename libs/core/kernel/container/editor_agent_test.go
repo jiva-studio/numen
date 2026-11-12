@@ -24,8 +24,8 @@ func TestEditorAgent_EndsConversationStartedInEarlierCall(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !slices.Equal(one.getFinished(), []string{"c-1"}) {
-		t.Errorf("the plugin finished %v", one.getFinished())
+	if !slices.Equal(one.getFinishedIDs(), []string{"c-1"}) {
+		t.Errorf("the plugin finished %v", one.getFinishedIDs())
 	}
 }
 

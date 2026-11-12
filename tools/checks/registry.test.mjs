@@ -89,16 +89,16 @@ describe("the registry", () => {
 
 describe("the selection of changed checks", () => {
   const options = { tags: "", exclude: "", only: "", changed: true, list: false, selftest: false, withoutLint: false, withoutGoTests: false };
-  const getRunning = (changed) => selectChecks(registry, options, changed).filter((one) => one.run).map((one) => one.entry.name);
+  const getRunningChecks = (changed) => selectChecks(registry, options, changed).filter((one) => one.run).map((one) => one.entry.name);
 
   it("selects no Go check for a change outside every Go path", () => {
     const goNames = new Set(registry.checks.filter((entry) => entry.runner === "go").map((entry) => entry.name));
-    assert.deepEqual(getRunning(["unrelated/none.bin"]).filter((name) => goNames.has(name)), []);
+    assert.deepEqual(getRunningChecks(["unrelated/none.bin"]).filter((name) => goNames.has(name)), []);
   });
 
   it("selects the kernel checks for a kernel file and not for a plugin file", () => {
-    assert.ok(getRunning(["libs/core/kernel/usecase/note/note.go"]).includes("go/layers"));
-    assert.ok(!getRunning(["plugins/views-flashcards-studio/backend/main.go"]).includes("go/layers"));
+    assert.ok(getRunningChecks(["libs/core/kernel/usecase/note/note.go"]).includes("go/layers"));
+    assert.ok(!getRunningChecks(["plugins/views-flashcards-studio/backend/main.go"]).includes("go/layers"));
   });
 
   it("selects the check whose own code changed, with the reason", () => {
@@ -108,7 +108,7 @@ describe("the selection of changed checks", () => {
   });
 
   it("selects every check when the runner or the registry changed", () => {
-    assert.equal(getRunning(["tools/checks/rules.json"]).length, registry.checks.length);
+    assert.equal(getRunningChecks(["tools/checks/rules.json"]).length, registry.checks.length);
   });
 
   it("selects every check when no changed-file list is given", () => {

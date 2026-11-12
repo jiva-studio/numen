@@ -44,7 +44,7 @@ func (u *ApplyPluginSetting) Execute(ctx context.Context, pluginID, key string, 
 	}
 
 	if key == settingsdomain.HostFieldEnabled {
-		if err := u.applyEnabled(ctx, pluginID, value); err != nil {
+		if err := u.applyEnabledFlag(ctx, pluginID, value); err != nil {
 			return err
 		}
 		return u.push.NotifyPluginConfig(ctx, pluginID)
@@ -57,7 +57,7 @@ func (u *ApplyPluginSetting) Execute(ctx context.Context, pluginID, key string, 
 	return u.push.NotifyPluginConfig(ctx, pluginID)
 }
 
-func (u *ApplyPluginSetting) applyEnabled(ctx context.Context, pluginID string, value any) error {
+func (u *ApplyPluginSetting) applyEnabledFlag(ctx context.Context, pluginID string, value any) error {
 	enabled, ok := value.(bool)
 	if !ok {
 		return nil

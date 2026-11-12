@@ -27,7 +27,7 @@ const ALIASES: Readonly<Record<string, readonly string[]>> = {
   diff: [],
 }
 
-const loadFresh = async (): Promise<typeof Languages> => {
+const loadFreshLanguages = async (): Promise<typeof Languages> => {
   vi.resetModules()
   return import('./languages')
 }
@@ -52,12 +52,12 @@ afterEach(() => {
 
 describe('LANGUAGES', () => {
   it('lists exactly the supported languages', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     expect(languages.LANGUAGES.map((one) => one.name)).toEqual(Object.keys(ALIASES))
   })
 
   it('resolves every language by its name and each alias', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     for (const [name, aliases] of Object.entries(ALIASES)) {
       for (const word of [name, ...aliases]) {
         expect(find(languages, word)?.name).toBe(name)
@@ -66,19 +66,19 @@ describe('LANGUAGES', () => {
   })
 
   it('resolves names regardless of case', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     expect(find(languages, 'Python')?.name).toBe('python')
     expect(find(languages, 'BASH')?.name).toBe('shell')
   })
 
   it('finds nothing for an unknown name', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     expect(find(languages, 'brainfuck')).toBeNull()
     expect(find(languages, '')).toBeNull()
   })
 
   it('loads every language as a LanguageSupport of its own', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     const grammars = new Set<unknown>()
     for (const name of Object.keys(ALIASES)) {
       const support = await find(languages, name)!.load()
@@ -90,13 +90,13 @@ describe('LANGUAGES', () => {
   })
 
   it('loads javascript with JSX', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     const js = await languages.loadLanguage('javascript')
     expect(getNodeNames(js!, 'const a = <i>x</i>').has('JSXElement')).toBe(true)
   })
 
   it('loads typescript with JSX and with types', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     const ts = await languages.loadLanguage('typescript')
     const names = getNodeNames(ts!, 'const a: number = 1; const b = <i>x</i>')
     expect(names.has('TypeAnnotation')).toBe(true)
@@ -104,7 +104,7 @@ describe('LANGUAGES', () => {
   })
 
   it('answers a second load with the same instance', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     const description = find(languages, 'python')!
     const first = await description.load()
     const second = await description.load()
@@ -114,19 +114,19 @@ describe('LANGUAGES', () => {
 
 describe('loadLanguage', () => {
   it('loads a language by alias', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     const byAlias = await languages.loadLanguage('golang')
     expect(byAlias).toBe(await find(languages, 'go')!.load())
   })
 
   it('loads a language by a word that contains its name', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     const fuzzy = await languages.loadLanguage('python3')
     expect(fuzzy).toBe(await find(languages, 'python')!.load())
   })
 
   it('answers none for an unknown name', async () => {
-    const languages = await loadFresh()
+    const languages = await loadFreshLanguages()
     expect(await languages.loadLanguage('brainfuck')).toBeNull()
   })
 

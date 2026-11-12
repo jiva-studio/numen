@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
 import { getNodeHeadings as baseGetNodeHeadings, type HeadingsDeps } from './inside'
-import { getFurthest, getOpenHeadings, scrollBy } from './open'
+import { getFurthestOffset, getOpenHeadings, scrollBy } from './open'
 import type { PlacedNode } from './node'
 import type { PlexHeading } from '../../types'
 
@@ -85,13 +85,13 @@ describe('more headings than the window holds', () => {
     const resolved = suspended(headings(MOST + 4))!
     expect(resolved.visibleCount).toBe(MOST)
     expect(resolved.headings).toHaveLength(MOST + 4)
-    expect(getFurthest(resolved)).toBe(4)
+    expect(getFurthestOffset(resolved)).toBe(4)
   })
 
   it('has nowhere to scroll where every one of them remains at once', () => {
     const resolved = suspended(headings(MOST))!
     expect(resolved.visibleCount).toBe(MOST)
-    expect(getFurthest(resolved)).toBe(0)
+    expect(getFurthestOffset(resolved)).toBe(0)
   })
 
   it('remains as deep as the window, not as deep as it holds', () => {
@@ -102,7 +102,7 @@ describe('more headings than the window holds', () => {
   it('remains as many as the options ask for', () => {
     const resolved = getNodeHeadings(NODE, headings(MOST + 4), { ...SIZES, maxHeadings: 3 }, DEPS)!
     expect(resolved.visibleCount).toBe(3)
-    expect(getFurthest(resolved)).toBe(MOST + 1)
+    expect(getFurthestOffset(resolved)).toBe(MOST + 1)
   })
 })
 
@@ -329,7 +329,7 @@ describe('a node with little room under it', () => {
   it('remains in its window only what the depth left under it holds', () => {
     const resolved = hangWithClearance(3 * SIZES.headingHeight + 10)!
     expect(resolved.visibleCount).toBe(3)
-    expect(getFurthest(resolved)).toBe(MOST)
+    expect(getFurthestOffset(resolved)).toBe(MOST)
   })
 
   it('hangs one heading where the depth holds exactly one with its ground', () => {
@@ -354,7 +354,7 @@ describe('a node with little room under it', () => {
   it('remains them all at once where the depth holds every one of them', () => {
     const resolved = getNodeHeadings(low(400), headings(3), SIZES, DEPS)!
     expect(resolved.visibleCount).toBe(3)
-    expect(getFurthest(resolved)).toBe(0)
+    expect(getFurthestOffset(resolved)).toBe(0)
   })
 })
 
@@ -435,7 +435,7 @@ describe('however many headings stand at once', () => {
 
 describe('when the leads set off', () => {
   /** The opacity of the last heading shown, at a moment of the opening. */
-  const getLast = (ceiling: number, open: number) => {
+  const getLastResult = (ceiling: number, open: number) => {
     const resolved = getNodeHeadings(
       NODE,
       headings(ceiling),
@@ -446,14 +446,14 @@ describe('when the leads set off', () => {
   }
 
   it('has the last of a few headings still down while two leads of the opening are taken', () => {
-    expect(getLast(3, 0.23)).toBe(0)
-    expect(getLast(3, 0.26)).toBeGreaterThan(0)
+    expect(getLastResult(3, 0.23)).toBe(0)
+    expect(getLastResult(3, 0.26)).toBeGreaterThan(0)
   })
 
   it('has the leads of many headings take the same share between them', () => {
     for (const ceiling of [8, 20]) {
-      expect(getLast(ceiling, 0.59)).toBe(0)
-      expect(getLast(ceiling, 0.61)).toBeGreaterThan(0)
+      expect(getLastResult(ceiling, 0.59)).toBe(0)
+      expect(getLastResult(ceiling, 0.61)).toBeGreaterThan(0)
     }
   })
 })
@@ -491,7 +491,7 @@ describe('the arrows at the edges of the ground', () => {
 
   it('points up from the top of the ground where there is more above', () => {
     const resolved = many()
-    const { arrows } = getOpenHeadings(resolved, 1, getFurthest(resolved))!
+    const { arrows } = getOpenHeadings(resolved, 1, getFurthestOffset(resolved))!
     const y = resolved.top + resolved.pad / 2
     expect(arrows).toStrictEqual([
       {

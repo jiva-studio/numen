@@ -33,13 +33,13 @@ export function createNoteWriter(writeMessage: MessageWriter) {
     }
   }
 
-  async function createRelated(
+  async function createRelatedNote(
     title: string,
     from: string,
     role: ConnectionRole,
   ): Promise<NoteRef | null> {
     try {
-      const made = await relations.createRelated({ from, role, title })
+      const made = await relations.createRelatedNote({ from, role, title })
       if (!made.ok) {
         writeMessage(getRelationErrorWords(made.error), 'error')
         return null
@@ -53,7 +53,7 @@ export function createNoteWriter(writeMessage: MessageWriter) {
   }
 
   /** The path of an untitled note made in the folder; empty where none was made. */
-  async function createUntitled(folder: string): Promise<string> {
+  async function createUntitledNote(folder: string): Promise<string> {
     return (await createInFolder('', folder))?.path ?? ''
   }
 
@@ -64,10 +64,10 @@ export function createNoteWriter(writeMessage: MessageWriter) {
     relation: ConnectionRole | null,
   ): Promise<NoteRef | null> {
     if (relation === null) return createInFolder(title, '')
-    return createRelated(title, from, relation)
+    return createRelatedNote(title, from, relation)
   }
 
-  return { createUntitled, createWithTitle }
+  return { createUntitledNote, createWithTitle }
 }
 
 export type NoteCreator = ReturnType<typeof createNoteWriter>

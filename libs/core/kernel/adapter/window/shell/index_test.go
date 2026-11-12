@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func getUnread() domain.Vault {
+func getUnreadVault() domain.Vault {
 	return domain.Vault{ID: "unread", Name: "Sanskrit", Path: "/vaults/Sanskrit"}
 }
 
@@ -29,7 +29,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 		return nil
 	})
 
-	state, err := api.EnsureIndexed(t.Context(), getUnread())
+	state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
 	if err != nil || state.Status != plugin.Indexing || state.Reason != "" {
 		t.Fatalf("the vault came back %+v (%v)", state, err)
 	}
@@ -79,7 +79,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 		return errors.New("the folder is not there")
 	})
 	ask := func() plugin.IndexState {
-		state, err := api.EnsureIndexed(t.Context(), getUnread())
+		state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +95,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 	}
 
 	// The vault moved underneath the window, which is what lets it be tried again.
-	api.ClearIndexFailure(getUnread().ID)
+	api.ClearIndexFailure(getUnreadVault().ID)
 	ask()
 	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
@@ -104,7 +104,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
 	api := newAPI(t)
 
-	state, err := api.EnsureIndexed(t.Context(), getUnread())
+	state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
 
 	if err != nil || state.Status != plugin.IndexFailed || state.Reason == "" {
 		t.Errorf("a vault nothing reads stands as %+v (%v)", state, err)
@@ -139,7 +139,7 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 		return errors.New("the folder is not there")
 	})
 
-	if _, err := api.EnsureIndexed(t.Context(), getUnread()); err != nil {
+	if _, err := api.EnsureIndexed(t.Context(), getUnreadVault()); err != nil {
 		t.Fatal(err)
 	}
 	testsupport.WaitFor(t, func() bool {
@@ -161,7 +161,7 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := api.EnsureIndexed(t.Context(), getUnread()); err != nil {
+	if _, err := api.EnsureIndexed(t.Context(), getUnreadVault()); err != nil {
 		t.Fatal(err)
 	}
 

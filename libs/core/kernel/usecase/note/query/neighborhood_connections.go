@@ -98,7 +98,7 @@ func collectRecords(
 	return found.pairs, found.byPair, nil
 }
 
-func getUpper(key pairKey, r record) string {
+func getUpperName(key pairKey, r record) string {
 	if r.link.Role == domain.RoleChild {
 		return r.author
 	}
@@ -115,7 +115,7 @@ func getParent(key pairKey, records []record) (parent, child string, isHierarchi
 	earlier, later := key[0], key[1]
 	hasEarlierParent, hasLaterParent := false, false
 	for _, r := range records {
-		upper := getUpper(key, r)
+		upper := getUpperName(key, r)
 		hasEarlierParent = hasEarlierParent || upper == earlier
 		hasLaterParent = hasLaterParent || upper == later
 	}

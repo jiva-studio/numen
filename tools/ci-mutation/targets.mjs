@@ -96,7 +96,7 @@ export const findTestdata = (at, tests) => {
 
 /* -------------------------------- Discovery ------------------------------- */
 
-const listTracked = () =>
+const listTrackedFiles = () =>
   execTool('git', ['ls-files'], {
     cwd: root,
     encoding: 'utf8',
@@ -166,7 +166,7 @@ let found = null
 /** Every target, with `name`, `kind`, `at`, `shards` and the `testdata` folders its tests read. */
 export const getTargets = () => {
   if (found) return found
-  const tracked = listTracked()
+  const tracked = listTrackedFiles()
   found = nameTargets([...findGoTargets(tracked), ...findTsTargets(tracked)])
     .map(({ lines, ...one }) => ({ ...one, shards: getShardCount(one.kind, lines) }))
     .sort((a, b) => a.name.localeCompare(b.name))

@@ -60,7 +60,7 @@ func (f *fakeSystem) Stop(c chan<- notify.EventInfo) {
 	delete(f.watched, c)
 }
 
-func (f *fakeSystem) getWatched() []string {
+func (f *fakeSystem) getWatchedPaths() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	var out []string
@@ -144,7 +144,7 @@ func TestAFolderInsideAFollowedTreeSharesItsWatch(t *testing.T) {
 	expectEvent(t, vault, filepath.Join(dirs["themes"], "dark.css"))
 
 	stopThemes()
-	if got := system.getWatched(); !slices.Equal(got, []string{filepath.Join(dirs[""], "...")}) {
+	if got := system.getWatchedPaths(); !slices.Equal(got, []string{filepath.Join(dirs[""], "...")}) {
 		t.Fatalf("watched %v", got)
 	}
 	system.emit(filepath.Join(dirs[""], "Rivers.md"))
@@ -174,7 +174,7 @@ func TestAWatchOverAnInnerWatchServesItsFollower(t *testing.T) {
 	expectEvent(t, vault, filepath.Join(dirs[""], "Rivers.md"))
 
 	stopVault()
-	if got := system.getWatched(); len(got) != 0 {
+	if got := system.getWatchedPaths(); len(got) != 0 {
 		t.Errorf("still watched %v", got)
 	}
 }
@@ -189,7 +189,7 @@ func TestAFolderInsideAFolderFollowedAloneWidensItsWatch(t *testing.T) {
 	outer, _ := follow(t, h, dirs[""], false)
 	inner, _ := follow(t, h, dirs["settings"], false)
 
-	if got := system.getWatched(); !slices.Equal(got, []string{filepath.Join(dirs[""], "...")}) {
+	if got := system.getWatchedPaths(); !slices.Equal(got, []string{filepath.Join(dirs[""], "...")}) {
 		t.Fatalf("watched %v", got)
 	}
 	system.emit(filepath.Join(dirs["settings"], "numen.json"))
@@ -209,12 +209,12 @@ func TestFoldersApartAreWatchedApart(t *testing.T) {
 	_, stopTwo := follow(t, h, dirs["two"], false)
 
 	want := []string{filepath.Join(dirs["one"], "..."), dirs["two"]}
-	if got := system.getWatched(); !slices.Equal(got, want) {
+	if got := system.getWatchedPaths(); !slices.Equal(got, want) {
 		t.Fatalf("watched %v", got)
 	}
 	stopTwo()
 	stopTwo()
-	if got := system.getWatched(); !slices.Equal(got, want[:1]) {
+	if got := system.getWatchedPaths(); !slices.Equal(got, want[:1]) {
 		t.Errorf("watched %v", got)
 	}
 }

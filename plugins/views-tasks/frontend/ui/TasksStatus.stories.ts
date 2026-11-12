@@ -35,21 +35,21 @@ type Story = StoryObj<typeof meta>
 const getChip = (canvasElement: HTMLElement): HTMLElement =>
   canvasElement.querySelector('.tasks-status__trigger') as HTMLElement
 
-const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
+const assertIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = getChip(canvasElement)
   await expect(chip.textContent?.trim()).toBe('Idle')
   await expect(chip.getAttribute('aria-label')).toBe('No tasks running')
   await expect(chip.querySelector('.tasks-status__ring-fill')).toBeNull()
 }
 
-const checkActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
+const assertActive: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = getChip(canvasElement)
   await waitFor(() => expect(chip.textContent?.trim()).toBe('0 of 2'), { timeout: 2000 })
   await expect(chip.getAttribute('aria-label')).toBe('0 of 2 tasks done')
   await expect(chip.querySelector('.tasks-status__ring-fill')).not.toBeNull()
 }
 
-const checkFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
+const assertFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = getChip(canvasElement)
   await expect(chip.getAttribute('aria-label')).toBe('1 failed')
   await expect(chip.textContent?.trim()).toBe('Idle')
@@ -57,10 +57,10 @@ const checkFailed: NonNullable<Story['play']> = async ({ canvasElement }) => {
 }
 
 /** No task runs: an empty ring and Idle. */
-export const Idle: Story = { play: checkIdle }
+export const Idle: Story = { play: assertIdle }
 
 /** Tasks run: the ring is filled by the progress and the chip counts the tasks done. */
-export const Active: Story = { args: { tasks: RUNNING }, play: checkActive }
+export const Active: Story = { args: { tasks: RUNNING }, play: assertActive }
 
 /** A task failed: the chip keeps its text and says how many failed. */
-export const Failed: Story = { args: { tasks: FAILED }, play: checkFailed }
+export const Failed: Story = { args: { tasks: FAILED }, play: assertFailed }

@@ -69,7 +69,7 @@ func (d *declaredCommands) RunCommand(_ context.Context, call plugin.CommandCall
 	return plugin.CommandResult{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
 }
 
-func newDeclared() *declaredCommands {
+func newDeclaredCommands() *declaredCommands {
 	return &declaredCommands{entries: []plugin.CommandEntry{
 		{PluginID: "md.numen.a", Command: manifest.Command{
 			ID: "convert", Title: "Convert", When: "target.contentType == 'application/pdf'",
@@ -84,7 +84,7 @@ func newDeclared() *declaredCommands {
 }
 
 func TestRunCommandNormalizesBooleanArguments(t *testing.T) {
-	declared := newDeclared()
+	declared := newDeclaredCommands()
 
 	result, err := newScenarios(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "md.numen.a", Command: "convert", Path: "books/Some.PDF",
@@ -123,7 +123,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 	}
 	for name, call := range cases {
 		t.Run(name, func(t *testing.T) {
-			declared := newDeclared()
+			declared := newDeclaredCommands()
 
 			_, err := newScenarios(declared, declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), call)
 
@@ -138,7 +138,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 }
 
 func TestACommandIsRunInThePluginTheCallNames(t *testing.T) {
-	declared := newDeclared()
+	declared := newDeclaredCommands()
 	commands := newScenarios(declared, declared, getTypes(), nil, nil)
 
 	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.b", Command: "tidy"}); err != nil {
@@ -155,7 +155,7 @@ func TestACommandIsRunInThePluginTheCallNames(t *testing.T) {
 }
 
 func TestACommandIsFoundByThePluginOfTheLowestID(t *testing.T) {
-	found, isFound := newScenarios(newDeclared(), newDeclared(), getTypes(), nil, nil).List.Find("tidy")
+	found, isFound := newScenarios(newDeclaredCommands(), newDeclaredCommands(), getTypes(), nil, nil).List.Find("tidy")
 
 	if !isFound || found.PluginID != "md.numen.a" {
 		t.Errorf("found %+v, %v", found, isFound)
@@ -163,7 +163,7 @@ func TestACommandIsFoundByThePluginOfTheLowestID(t *testing.T) {
 }
 
 func TestTheContentTypesAreListedByExtension(t *testing.T) {
-	got := newScenarios(newDeclared(), newDeclared(), getTypes(), nil, nil).Listing.Execute().ContentTypeByExtension
+	got := newScenarios(newDeclaredCommands(), newDeclaredCommands(), getTypes(), nil, nil).Listing.Execute().ContentTypeByExtension
 
 	want := map[string]string{"pdf": "application/pdf", "epub": "application/epub+zip", "mp3": "audio/mpeg", "wav": "audio/vnd.wave"}
 	if !maps.Equal(got, want) {
@@ -172,7 +172,7 @@ func TestTheContentTypesAreListedByExtension(t *testing.T) {
 }
 
 func TestACommandWithoutAConditionRunsOverAnyPathOrNone(t *testing.T) {
-	declared := newDeclared()
+	declared := newDeclaredCommands()
 	commands := newScenarios(declared, declared, getTypes(), nil, nil)
 
 	for _, path := range []string{"", "talks", "a.md"} {

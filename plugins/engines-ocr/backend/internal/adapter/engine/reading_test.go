@@ -401,7 +401,7 @@ func TestRunBoundedLimitOneCapsWorkersAtOne(t *testing.T) {
 		secondEntered := make(chan struct{})
 		isDone := make(chan struct{})
 
-		runBounded(t.Context(), 10, 1, func(int) {
+		runBoundedJobs(t.Context(), 10, 1, func(int) {
 			cur := active.Add(1)
 			raiseMax(&maxActive, cur)
 			if cur > 1 {

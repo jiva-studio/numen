@@ -415,7 +415,7 @@ describe('two reads of the settings in flight', () => {
   })
 })
 
-const createManual = (waits = Infinity) => {
+const createManualThemes = (waits = Infinity) => {
   const sheet = page()
   const reads: { name: string; give: (css: string) => void; fail: () => void }[] = []
   const signals: AbortSignal[] = []
@@ -468,7 +468,7 @@ const createManual = (waits = Infinity) => {
 
 describe('the window before it has received anything', () => {
   it('has no themes, applies no theme, reads as a system pair, and draws at the designed size', () => {
-    const { appearance } = createManual()
+    const { appearance } = createManualThemes()
 
     expect(appearance.state.applied.value).toBe('')
     expect(appearance.state.mode.value).toBe('system')
@@ -479,7 +479,7 @@ describe('the window before it has received anything', () => {
   })
 
   it('writes nothing over the page it was served, whatever the keyboard relies on', async () => {
-    const { appearance, sheet, reads } = createManual()
+    const { appearance, sheet, reads } = createManualThemes()
 
     appearance.preview.keyboard.previewTheme('mine:sea')
     await settle()
@@ -491,7 +491,7 @@ describe('the window before it has received anything', () => {
 
 describe('files that are returned out of order', () => {
   it('leave the theme of the row the keyboard came to rest on', async () => {
-    const { appearance, sheet, reads } = createManual()
+    const { appearance, sheet, reads } = createManualThemes()
     await appearance.start()
     appearance.preview.keyboard.previewTheme('preset:dracula')
     appearance.preview.keyboard.previewTheme('mine:sea')
@@ -505,7 +505,7 @@ describe('files that are returned out of order', () => {
   })
 
   it('say nothing of a file the keyboard has already left', async () => {
-    const { appearance, messages, reads } = createManual()
+    const { appearance, messages, reads } = createManualThemes()
     await appearance.start()
     appearance.preview.keyboard.previewTheme('preset:dracula')
     appearance.preview.keyboard.previewTheme('mine:sea')
@@ -521,7 +521,7 @@ describe('files that are returned out of order', () => {
 
 describe('the folder when it names a theme that is not applied', () => {
   it('does not read the applied theme again', async () => {
-    const { appearance, reads, changeThemes } = createManual()
+    const { appearance, reads, changeThemes } = createManualThemes()
     await appearance.start()
     await settle()
     appearance.preview.keyboard.previewTheme('mine:sea')
@@ -544,7 +544,7 @@ describe('the folder when it names a theme that is not applied', () => {
 
 describe('the folder when it cannot be followed', () => {
   it('says the window lost touch, and keeps saying it until the stream is back', async () => {
-    const { appearance, fails } = createManual(0)
+    const { appearance, fails } = createManualThemes(0)
     fails()
 
     await appearance.start()
@@ -556,7 +556,7 @@ describe('the folder when it cannot be followed', () => {
 
 describe('a window that is closed', () => {
   it('releases the folder it listens to', async () => {
-    const { appearance, signals } = createManual()
+    const { appearance, signals } = createManualThemes()
     await appearance.start()
 
     appearance.close()
@@ -565,7 +565,7 @@ describe('a window that is closed', () => {
   })
 
   it('does not listen to the folder again once the stream has ended', async () => {
-    const { appearance, signals } = createManual(3)
+    const { appearance, signals } = createManualThemes(3)
     await appearance.start()
     await settle()
 

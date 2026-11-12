@@ -15,7 +15,7 @@ const counted: Record<TaskUnitCode, TallyUnit> = {
   [TASK_UNIT.SECONDS]: 'seconds',
 }
 
-const getCounting = (unit: number): TallyUnit =>
+const getCountingUnit = (unit: number): TallyUnit =>
   (counted as Partial<Record<number, TallyUnit>>)[unit] ?? 'items'
 
 /**
@@ -34,7 +34,7 @@ export async function* watchTasks(signal: AbortSignal): AsyncGenerator<readonly 
       progress: {
         completedCount: Number(task.done),
         total: Number(task.total),
-        counting: getCounting(task.unit),
+        counting: getCountingUnit(task.unit),
       },
       error: task.error,
       source: {

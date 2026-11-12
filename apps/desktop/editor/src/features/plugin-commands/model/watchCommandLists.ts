@@ -17,12 +17,12 @@ interface CommandListSources {
 
 export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boolean>): void {
   const { declaredCommands, writeMessage, plugins, getCommittedSetting } = sources
-  const loadDeclared = () => {
+  const loadDeclaredCommands = () => {
     declaredCommands.load().catch((error: Caught) => writeMessage(formatError(error), 'error'))
   }
-  loadDeclared()
+  loadDeclaredCommands()
   watch(isOpen, (open) => {
-    if (open) loadDeclared()
+    if (open) loadDeclaredCommands()
   })
   watch(
     () =>
@@ -32,6 +32,6 @@ export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boole
             `${one.id}:${one.isActive}:${getCommittedSetting([one.id, 'enabled']) !== false}`,
         )
         .join(),
-    loadDeclared,
+    loadDeclaredCommands,
   )
 }

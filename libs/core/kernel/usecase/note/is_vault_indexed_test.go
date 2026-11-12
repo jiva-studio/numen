@@ -9,7 +9,7 @@ import (
 
 func TestIsVaultIndexedReturnsWhetherTheIndexCarriesTheVault(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	indexed := query.NewIsVaultIndexed(c.db.NoteQueries())
 
 	if !indexed.Execute(t.Context(), c.vault) {

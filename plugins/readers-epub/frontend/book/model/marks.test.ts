@@ -24,7 +24,7 @@ class FakeHighlight {
 
 const registry = new Map<string, FakeHighlight>()
 
-const getMarked = (entry: string): string[] =>
+const getMarkedEntries = (entry: string): string[] =>
   (registry.get(entry)?.ranges ?? []).map((range) => range.toString())
 
 const MARKUP = '<p><span data-offset="0">abcdef</span><span data-offset="6">ghijkl</span></p>'
@@ -139,8 +139,8 @@ describe('the runs marked', () => {
 
     marks.markRuns()
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual([])
-    expect(getMarked(OTHER_HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual([])
   })
 
   it('put the highlights and the others each into their own entry', () => {
@@ -149,8 +149,8 @@ describe('the runs marked', () => {
 
     marks.markRuns()
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual(['bc'])
-    expect(getMarked(OTHER_HIGHLIGHT)).toStrictEqual(['hij'])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual(['hij'])
   })
 
   it('are marked again when the highlights change', async () => {
@@ -160,8 +160,8 @@ describe('the runs marked', () => {
     state.highlights = [{ start: 0, end: 2 }]
     await nextTick()
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual(['ab'])
-    expect(getMarked(OTHER_HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['ab'])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual([])
   })
 
   it('are marked again when the other highlights change', async () => {
@@ -171,19 +171,19 @@ describe('the runs marked', () => {
     state.otherHighlights = [{ start: 6, end: 8 }]
     await nextTick()
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual([])
-    expect(getMarked(OTHER_HIGHLIGHT)).toStrictEqual(['gh'])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual(['gh'])
   })
 
   it('are removed when the book is disposed', () => {
     const { marks, wrapper } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }])
     marks.gather()
     marks.markRuns()
-    expect(getMarked(HIGHLIGHT)).toStrictEqual(['bc'])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
 
     unmount(wrapper)
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
   })
 })
 
@@ -194,8 +194,8 @@ describe('the runs of a copy of the paper marked', () => {
 
     marks.markCopy(copy)
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual(['bc'])
-    expect(getMarked(OTHER_HIGHLIGHT)).toStrictEqual(['hij'])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual(['hij'])
     for (const entry of [HIGHLIGHT, OTHER_HIGHLIGHT]) {
       for (const range of registry.get(entry)?.ranges ?? []) {
         expect(copy.contains(range.commonAncestorContainer)).toBe(true)
@@ -209,22 +209,22 @@ describe('the runs of a copy of the paper marked', () => {
     marks.markRuns()
     const copy = createPaper(MARKUP)
     marks.markCopy(copy)
-    expect(getMarked(HIGHLIGHT)).toStrictEqual(['bc', 'bc'])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc', 'bc'])
 
     marks.unmarkCopy(copy)
     marks.unmarkCopy(copy)
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual(['bc'])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
   })
 
   it('are removed when the component is unmounted', () => {
     const { wrapper, marks } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }])
     const copy = createPaper(MARKUP)
     marks.markCopy(copy)
-    expect(getMarked(HIGHLIGHT)).toStrictEqual(['bc'])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
 
     unmount(wrapper)
 
-    expect(getMarked(HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
   })
 })

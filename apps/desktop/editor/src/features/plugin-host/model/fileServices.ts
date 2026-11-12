@@ -22,7 +22,7 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     list: (folder) => listFiles(folder),
     move: (from, to) => run(COMMAND.moveFile, { ...getTarget(), path: from }, to),
     createFolder: (path) => run(COMMAND.createFolder, getTarget(), path),
-    createNote: (folder) => making.createUntitled(folder),
+    createNote: (folder) => making.createUntitledNote(folder),
   }
 }
 

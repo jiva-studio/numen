@@ -120,7 +120,7 @@ const createCounts = (a: Knobs) => ({
   sibling: a.siblings,
 })
 
-const createNavigable = (start: (args: Knobs) => PlexNeighborhood) => (args: Knobs) => ({
+const createNavigableStory = (start: (args: Knobs) => PlexNeighborhood) => (args: Knobs) => ({
   components: { Plex },
   setup() {
     const type = useTypeSize()
@@ -156,7 +156,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighborhood) => (args: Kno
       focus.value = { id: selected.id, title: selected.title }
     }
 
-    const createRelated = (from: string, title: string, relation: PlexRelation) => {
+    const createRelatedNode = (from: string, title: string, relation: PlexRelation) => {
       const id = `made/${createdItem.value.length}`
       createdItem.value = [...createdItem.value, { id, title, relation }]
       links.value = [
@@ -168,13 +168,13 @@ const createNavigable = (start: (args: Knobs) => PlexNeighborhood) => (args: Kno
     }
 
     const create = (from: string, relation: PlexRelation) => {
-      createRelated(from, args.naming(), relation)
+      createRelatedNode(from, args.naming(), relation)
     }
 
     const dropOnto = (ids: readonly string[], relation: PlexRelation) => {
       const here = neighborhood.value.nodes.find((node) => node.relation === 'focus')
       if (!here) return
-      for (const one of ids) createRelated(here.id, one, relation)
+      for (const one of ids) createRelatedNode(here.id, one, relation)
     }
 
     const link = (from: string, to: string, relation: PlexRelation) => {
@@ -370,7 +370,7 @@ const meta = {
     title: 'A node',
   },
 
-  render: createNavigable((args) => args.neighborhood),
+  render: createNavigableStory((args) => args.neighborhood),
 } satisfies Meta<Knobs>
 
 export default meta
@@ -378,7 +378,7 @@ type Story = StoryObj<typeof meta>
 
 const invented = {
   args: { neighborhood: neighborhoods.typical, maxPerLine: 9 },
-  render: createNavigable((args: Knobs) => build(args.title, createCounts(args))),
+  render: createNavigableStory((args: Knobs) => build(args.title, createCounts(args))),
 }
 
 /** Interactive playground story. */

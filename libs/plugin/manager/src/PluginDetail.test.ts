@@ -6,10 +6,10 @@ import PluginDetail from './PluginDetail.vue'
 import PluginData from './PluginData.vue'
 import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
-import { createManaged, createAvailable } from './testing/managed'
+import { createManagedPlugin, createAvailablePlugin } from './testing/managed'
 
 const baseProps = (overrides: Partial<PluginDetailProps> = {}): PluginDetailProps => ({
-  plugin: createManaged('sample.notes', 'Notes', { version: '2.1.0', description: 'Takes notes.' }),
+  plugin: createManagedPlugin('sample.notes', 'Notes', { version: '2.1.0', description: 'Takes notes.' }),
   isEnabled: true,
   readme: '',
   dataFileCount: 0,
@@ -73,7 +73,7 @@ describe('PluginDetail', () => {
 
   it('draws the failure card of a suspended plugin and emits retry and disable', async () => {
     const failure = { reason: 'Failed to start', detail: 'exec error', failedAt: 0 }
-    const wrapper = mountDetail({ plugin: createManaged('sample.notes', 'Notes', { failure }) })
+    const wrapper = mountDetail({ plugin: createManagedPlugin('sample.notes', 'Notes', { failure }) })
     const failureCard = wrapper.findComponent(PluginStopped)
 
     expect(failureCard.text()).toContain('Failed to start')
@@ -91,7 +91,7 @@ describe('PluginDetail', () => {
     expect(mountDetail().findComponent(PluginStopped).exists()).toBe(false)
 
     const failure = { reason: 'Failed to start', detail: '', failedAt: 0 }
-    const wrapper = mountDetail({ plugin: createManaged('sample.notes', 'Notes', { failure }) })
+    const wrapper = mountDetail({ plugin: createManagedPlugin('sample.notes', 'Notes', { failure }) })
     expect(wrapper.find('details').exists()).toBe(false)
   })
 
@@ -111,7 +111,7 @@ describe('PluginDetail', () => {
 describe('PluginDetail for a plugin that is not installed', () => {
   it('offers install where the application can install', async () => {
     const wrapper = mountDetail({
-      plugin: createAvailable('sample.offer', 'Offered'),
+      plugin: createAvailablePlugin('sample.offer', 'Offered'),
       canInstall: true,
     })
 
@@ -125,7 +125,7 @@ describe('PluginDetail for a plugin that is not installed', () => {
   })
 
   it('says it is not installed where the application cannot install', () => {
-    const wrapper = mountDetail({ plugin: createAvailable('sample.offer', 'Offered') })
+    const wrapper = mountDetail({ plugin: createAvailablePlugin('sample.offer', 'Offered') })
 
     expect(wrapper.findAllComponents(Button)).toHaveLength(1)
     expect(wrapper.find('.plugin-detail__absent').text()).toBe('Not installed')

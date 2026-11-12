@@ -122,7 +122,7 @@ func (c *QueueClient) EnqueueWork(ctx context.Context, work Work) (Turn, error) 
 		case v1.WorkState_WORK_STATE_RUNNING, v1.WorkState_WORK_STATE_CONTENDED:
 			turn := &clientTurn{cancel: cancel, waiting: make(chan struct{}), ended: make(chan struct{})}
 			if stream.Msg().GetState() == v1.WorkState_WORK_STATE_CONTENDED {
-				turn.closeWaiting()
+				turn.closeWaitingChannel()
 			}
 			go turn.follow(ctx, stream)
 			return turn, nil
@@ -192,13 +192,13 @@ func (t *clientTurn) Release() error {
 
 func (t *clientTurn) WatchWaiting() <-chan struct{} { return t.waiting }
 
-func (t *clientTurn) closeWaiting() { t.waitingOnce.Do(func() { close(t.waiting) }) }
+func (t *clientTurn) closeWaitingChannel() { t.waitingOnce.Do(func() { close(t.waiting) }) }
 
 func (t *clientTurn) follow(ctx context.Context, stream *connect.ServerStreamForClient[v1.EnqueueWorkResponse]) {
 	defer close(t.ended)
 	for stream.Receive() {
 		if stream.Msg().GetState() == v1.WorkState_WORK_STATE_CONTENDED {
-			t.closeWaiting()
+			t.closeWaitingChannel()
 		}
 	}
 	err := errors.Join(stream.Err(), closeStream(stream))

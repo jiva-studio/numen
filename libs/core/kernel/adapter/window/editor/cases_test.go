@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
-func openRegistered(cfg container.Config, ctx context.Context, named string, out io.Writer) (*container.OpenedWindow, *container.WindowUseCases, error) {
+func openRegisteredWindow(cfg container.Config, ctx context.Context, named string, out io.Writer) (*container.OpenedWindow, *container.WindowUseCases, error) {
 	db, err := container.OpenIndex(cfg, ctx)
 	if err != nil {
 		return nil, nil, err

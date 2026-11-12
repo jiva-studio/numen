@@ -15,7 +15,7 @@ import (
 func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]host.Passage, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionIndexRead)
+	one, err := s.openVaultLocked(host.PermissionIndexRead)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func getWords(text string) []string {
 func (s *Search) SetIndexedPassages(passages []host.Passage) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	if one, ok := s.lookupLocked(); ok {
+	if one, ok := s.lookupVaultLocked(); ok {
 		one.indexed = slices.Clone(passages)
 	}
 }

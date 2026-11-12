@@ -14,7 +14,7 @@ interface FollowOptions {
   readonly onFound?: () => void
 }
 
-const useFollowed = (
+const useFollowedViewport = (
   area: Readonly<Ref<HTMLElement | null>>,
   watchWith: Viewport['watch'],
   options: FollowOptions,
@@ -59,7 +59,7 @@ export function useViewport(area: Readonly<Ref<HTMLElement | null>>): {
     viewport.value = { width, height }
   }
 
-  useFollowed(area, browserViewport.watch, {
+  useFollowedViewport(area, browserViewport.watch, {
     took: (size) => {
       viewport.value = size
     },
@@ -78,7 +78,7 @@ export function useWholeViewport(area: Readonly<Ref<HTMLElement | null>>): {
 } {
   const viewport = ref<Size>({ width: 0, height: 0 })
 
-  useFollowed(area, browserViewport.watchWhole, {
+  useFollowedViewport(area, browserViewport.watchWhole, {
     took: (size) => {
       viewport.value = size
     },

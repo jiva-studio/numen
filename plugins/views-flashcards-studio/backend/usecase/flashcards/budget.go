@@ -216,7 +216,7 @@ func (b *budgets) getStopError(preset string) error {
 	}
 }
 
-func (b *budgets) getAsking(
+func (b *budgets) getAskingBudget(
 	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 	day review.Day, now time.Time, scope Scope,
 ) asking {
@@ -260,7 +260,7 @@ type deckShare struct {
 	debt, begun        int
 }
 
-func (q *deckShare) countRemaining(out budgetAllocation) int {
+func (q *deckShare) countRemainingCards(out budgetAllocation) int {
 	target := 0
 	for _, item := range q.dueCards {
 		if !out.dueCards[item] {
@@ -288,7 +288,7 @@ func (b *budgets) spend(dueCards, newCards []ReviewCard) budgetAllocation {
 		if !target || one.admits.IsPaused() {
 			continue
 		}
-		b.spendPreset(one, shares.getSorted(path), dueCards, newCards, &out)
+		b.spendPreset(one, shares.getSortedShares(path), dueCards, newCards, &out)
 	}
 	return out
 }
@@ -314,7 +314,7 @@ func (k *shareRegistry) getShare(path, deck string) *deckShare {
 	return one
 }
 
-func (k *shareRegistry) getSorted(path string) []*deckShare {
+func (k *shareRegistry) getSortedShares(path string) []*deckShare {
 	decks := make([]*deckShare, 0, len(k.shares[path]))
 	for _, q := range k.shares[path] {
 		decks = append(decks, q)
@@ -354,7 +354,7 @@ func (b *budgets) spendPreset(
 	}
 	remaining := make(map[string]int, len(decks))
 	for _, q := range decks {
-		remaining[q.deck] = q.countRemaining(*out)
+		remaining[q.deck] = q.countRemainingCards(*out)
 	}
 	slices.SortStableFunc(decks, func(x, y *deckShare) int {
 		return cmp.Or(

@@ -22,22 +22,22 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
-func (c changing) rename() note.Rename {
+func (c changeFixture) rename() note.Rename {
 	return note.NewRename(c.moveDeps(), c.move(), note.OpenGate{})
 }
 
-func (c changing) moveApartDeps() note.MoveDeps {
+func (c changeFixture) moveApartDeps() note.MoveDeps {
 	deps := c.moveDeps()
 	deps.Sync = func() naming.SyncTitleAndFilename { return false }
 	return deps
 }
 
-func (c changing) renameApart() note.Rename {
+func (c changeFixture) renameApart() note.Rename {
 	deps := c.moveApartDeps()
 	return note.NewRename(deps, note.NewMove(deps), note.OpenGate{})
 }
 
-func (c changing) title(t *testing.T, path string) string {
+func (c changeFixture) title(t *testing.T, path string) string {
 	t.Helper()
 	displayed, err := c.db.NoteQueries().GetNotes(t.Context(), c.vault.ID, []string{path})
 	if err != nil {
@@ -91,7 +91,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := openChanging(t, map[string]string{"Old.md": c.raw})
+			v := openChangeFixture(t, map[string]string{"Old.md": c.raw})
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
@@ -163,7 +163,7 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := openChanging(t, map[string]string{"Old.md": c.raw})
+			v := openChangeFixture(t, map[string]string{"Old.md": c.raw})
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
@@ -189,7 +189,7 @@ func TestATitleOnlyTheKeyCanCarryIsSavedThere(t *testing.T) {
 		"a note named by its filename": "A measure.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := openChanging(t, map[string]string{"Old.md": raw})
+			v := openChangeFixture(t, map[string]string{"Old.md": raw})
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", "C#")
 			if err != nil {
@@ -215,7 +215,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 		"a title with nothing awkward": "Thermodynamics",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := openChanging(t, map[string]string{
+			c := openChangeFixture(t, map[string]string{
 				"Entropy.md": "# Entropy\n",
 				"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 			})
@@ -243,7 +243,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 // it comes out of a rename with the bytes it went in with.
 func TestRenamingByTheFilenameAlonePreservesTheBytesAlone(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "A measure.\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if err != nil {
@@ -258,7 +258,7 @@ func TestRenamingByTheFilenameAlonePreservesTheBytesAlone(t *testing.T) {
 // the file to do and nothing to report about it.
 func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Entropy.md", "Entropy")
 	if err != nil {
@@ -286,7 +286,7 @@ func TestWriteFilenameAsTitle_SkipsUneditableFrontmatter(t *testing.T) {
 		"a block carrying an anchor":  "---\ntitle: &t Old\nalias: *t\n---\nA measure.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := openChanging(t, map[string]string{"Entropy.md": raw})
+			c := openChangeFixture(t, map[string]string{"Entropy.md": raw})
 
 			if err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
 				t.Fatalf("the file had already landed: %v", err)
@@ -300,7 +300,7 @@ func TestWriteFilenameAsTitle_SkipsUneditableFrontmatter(t *testing.T) {
 
 func TestRename_RejectsExistingTarget(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Old.md":     "---\ntitle: Old\n---\nA measure.\n",
 		"Entropy.md": "# Entropy\n",
 	})
@@ -337,7 +337,7 @@ func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) er
 // reported regardless of whether the follow-up work fails.
 func TestRename_ReturnsMoveWhenFollowUpFails(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
 	sulk := errors.New("the index would not have it")
 	deps := note.MoveDeps{
@@ -373,7 +373,7 @@ func TestRename_RejectsInvalidTitle(t *testing.T) {
 		"a line break making a heading": "one\n# two",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+			c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
 			if !errors.Is(err, domain.ErrInvalidName) {
@@ -393,7 +393,7 @@ func TestRename_RejectsInvalidTitle(t *testing.T) {
 // same thing.
 func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "  Entropy  ")
 	if err != nil {
@@ -414,7 +414,7 @@ func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
 // whole of it goes into the note, where the order of resolution finds it.
 func TestRename_LongTitleTruncatesNameAndCachesFullTitle(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "A measure.\n"})
 	title := strings.TrimSpace(strings.Repeat("disorder ", 20))
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
@@ -439,7 +439,7 @@ func TestRename_LongTitleTruncatesNameAndCachesFullTitle(t *testing.T) {
 // repaired by the machinery a move already has.
 func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
 	})
@@ -466,7 +466,7 @@ func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
 // reached is not.
 func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
 	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote for a note that is not there, got %v", err)
@@ -487,7 +487,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 // exist reports it as missing, not as a vault failure.
 func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index, note.OpenGate{})
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, edit.ErrNoNote) {
@@ -505,7 +505,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 		"neither, so the filename":   "A measure.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := openChanging(t, map[string]string{"physics/Old.md": raw})
+			c := openChangeFixture(t, map[string]string{"physics/Old.md": raw})
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "physics/Old.md", "Entropy")
 			if err != nil {
@@ -553,7 +553,7 @@ func TestRename_RetitlesInFrontmatterWithoutMovingFile(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := openChanging(t, map[string]string{"Old.md": c.raw})
+			v := openChangeFixture(t, map[string]string{"Old.md": c.raw})
 
 			renamed, err := v.renameApart().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
@@ -585,12 +585,12 @@ func TestRename_RetitlesInFrontmatterWithoutMovingFile(t *testing.T) {
 // however a title and a filename are held.
 func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	t.Parallel()
-	for name, renaming := range map[string]func(changing) note.Rename{
-		"one name":   changing.rename,
-		"told apart": changing.renameApart,
+	for name, renaming := range map[string]func(changeFixture) note.Rename{
+		"one name":   changeFixture.rename,
+		"told apart": changeFixture.renameApart,
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
+			v := openChangeFixture(t, map[string]string{"Old.md": "A measure.\n"})
 
 			renamed, err := renaming(v).Execute(t.Context(), v.vault, "Old.md", "Entropy")
 			if err != nil {
@@ -612,7 +612,7 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 	}
 }
 
-func isGone(t *testing.T, c changing, path string) bool {
+func isGone(t *testing.T, c changeFixture, path string) bool {
 	t.Helper()
 	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))
 	return errors.Is(err, fs.ErrNotExist)
@@ -624,7 +624,7 @@ func TestRename_RejectsTargetThatDiffersOnlyInCase(t *testing.T) {
 	t.Parallel()
 	const old = "---\ntitle: rust\n---\nOxidized iron.\n"
 	const other = "# Rust\n\nA programming language.\n"
-	c := openChanging(t, map[string]string{"rust.md": old, "Rust.md": other})
+	c := openChangeFixture(t, map[string]string{"rust.md": old, "Rust.md": other})
 	// Where the filesystem ignores case, the two names are one file, containing whichever was written last.
 	if c.read(t, "rust.md") != old || c.read(t, "Rust.md") != other {
 		t.Skip("the filesystem ignores case, so rust.md and Rust.md are one file")
@@ -649,7 +649,7 @@ func TestRename_RejectsTargetThatDiffersOnlyInCase(t *testing.T) {
 func TestRename_AcceptsOtherNormalizationOfOwnFilename(t *testing.T) {
 	t.Parallel()
 	const decomposed, composed = "Café", "Café"
-	c := openChanging(t, map[string]string{decomposed + ".md": "---\ntitle: Bistro\n---\nA place.\n"})
+	c := openChangeFixture(t, map[string]string{decomposed + ".md": "---\ntitle: Bistro\n---\nA place.\n"})
 	if _, err := os.Stat(filepath.Join(c.vault.Path, composed+".md")); err != nil {
 		t.Skip("the filesystem is case-sensitive")
 	}

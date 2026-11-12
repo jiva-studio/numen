@@ -31,7 +31,7 @@ func (l *progressLog) getReports() []work.Task {
 	return append([]work.Task(nil), l.reports...)
 }
 
-func (l *progressLog) getCounted() []work.Task {
+func (l *progressLog) getCountedTasks() []work.Task {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	var counted []work.Task
@@ -79,7 +79,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	}
 	model.setBlocking(false)
 
-	writeNote(t, v.Path, "Other.md", noteWith(getBefore(), 200))
+	writeNote(t, v.Path, "Other.md", noteWith(getBeforeNames(), 200))
 	cut(t, made, db, v)
 	return p, model, heldChunks
 }
@@ -88,11 +88,11 @@ func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading op
 	t.Helper()
 	events := &progressLog{recorder: newRecorder()}
 	p, _, _ := canceledPass(t, openReading, events, &readyLog{})
-	earlier := len(events.getCounted())
+	earlier := len(events.getCountedTasks())
 
 	p.embed(t.Context())
 
-	counted := events.getCounted()[earlier:]
+	counted := events.getCountedTasks()[earlier:]
 	if len(counted) == 0 {
 		t.Fatal("the pass after the cancel reported no counted progress")
 	}

@@ -109,7 +109,7 @@ func testCanceledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc)
 
 	// The next wake embeds the other note and leaves the canceled one alone.
 	model.setBlocking(false)
-	writeNote(t, v.Path, "Other.md", noteWith(getBefore(), 200))
+	writeNote(t, v.Path, "Other.md", noteWith(getBeforeNames(), 200))
 	cut(t, made, db, v)
 	p.embed(t.Context())
 

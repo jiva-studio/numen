@@ -309,6 +309,28 @@ describe('diff mode', () => {
   })
 })
 
+describe('function names of a verb and a bare participle or adjective', () => {
+  it('flags a Go function or method with no object in its name', () => {
+    assertFlagged('s/a.go', 'package a\n\nfunc getActive() []string { return nil }\n', 'bareStateFunctions')
+    assertFlagged('s/b.go', 'package a\n\ntype t struct{}\n\nfunc (s *t) getEmitted() int { return 0 }\n', 'bareStateFunctions')
+    assertFlagged('s/c.go', 'package a\n\nfunc getUnsaved() int { return 0 }\n', 'bareStateFunctions')
+  })
+  it('flags a TypeScript function, arrow function, mock and method with no object in its name', () => {
+    assertFlagged('s/a.ts', 'export function createResponded() { return 1 }\n', 'bareStateFunctions')
+    assertFlagged('s/b.ts', 'const getSorted = (rows: number[]) => rows\n', 'bareStateFunctions')
+    assertFlagged('s/c.ts', 'const findDragged = vi.fn()\n', 'bareStateFunctions')
+    assertFlagged('s/d.ts', 'class A {\n  getRunning(): number[] {\n    return []\n  }\n}\n', 'bareStateFunctions')
+    assertFlagged('s/e.mjs', 'function checkReturned(a) { return a }\n', 'bareStateFunctions')
+  })
+  it('accepts a name with an object, a predicate and a noun', () => {
+    assertClean('s/f.go', 'package a\n\nfunc getActiveTab() int { return 0 }\n\nfunc isActive() bool { return true }\n\nfunc getHeading() string { return "" }\n')
+    assertClean('s/g.ts', 'export const getEmittedEvents = () => []\nexport const hasEmitted = () => true\nexport const getSetting = () => 1\nexport function createDeferred() { return 1 }\n')
+  })
+  it('leaves names inside strings alone', () => {
+    assertClean('s/h.ts', "const text = 'export const getActive = () => []'\n")
+  })
+})
+
 describe('function names', () => {
   it('flags a third-person function name in Go and TypeScript', () => {
     assertFlagged('f/a.go', 'package a\n\nfunc reads() {}\n', 'thirdPersonFunctions')

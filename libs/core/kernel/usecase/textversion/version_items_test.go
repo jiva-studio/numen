@@ -221,7 +221,7 @@ func TestACommandOverTheLiveVersionListsTheLiveVersionAlone(t *testing.T) {
 	items, _ := newMenu(t, s, overLive)
 	s.requestText(t)
 	s.runEntry(t, ocr)
-	live, _ := s.getLive(t)
+	live, _ := s.getLiveVersion(t)
 
 	got, err := items.ListVersionItems(t.Context(), s.vault, scanPath, overLive)
 	if err != nil {

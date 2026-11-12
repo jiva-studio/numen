@@ -8,7 +8,7 @@
 export const PICTURES_WAIT = 2_000
 
 /** The pictures in the text that have neither arrived nor failed. */
-export function findPending(text: HTMLElement): HTMLImageElement[] {
+export function findPendingImages(text: HTMLElement): HTMLImageElement[] {
   return Array.from(text.querySelectorAll('img')).filter((one) => !one.complete)
 }
 

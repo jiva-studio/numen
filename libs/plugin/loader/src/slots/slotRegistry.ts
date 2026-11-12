@@ -173,7 +173,7 @@ function reportUnknownPlaces(
   }
 }
 
-function readDeclared(entries: readonly DeclaredSlotEntry[], report: Report): Declared {
+function readDeclaredSlots(entries: readonly DeclaredSlotEntry[], report: Report): Declared {
   const { owners, second } = findSubmenuOwners(entries)
   for (const one of second) {
     const owner = owners.get(one.submenu as string)
@@ -267,7 +267,7 @@ function createReport(sink: SlotRegistryDeps['reportIssue']): Report {
 
 export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
   const report = createReport(deps.reportIssue)
-  const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
+  const declared = computed(() => readDeclaredSlots(deps.getEntries() ?? [], report))
 
   const whenReader = deps.whenReader ?? createWhenReader()
   const isDrawnOver = (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {

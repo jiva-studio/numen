@@ -75,7 +75,7 @@ func (p Places) GetCFI(offset int) (cfi.CFI, bool) {
 // GetCFI is the CFI of the character at an offset of the Text, as Places.GetCFI finds it, reading
 // only the documents it needs.
 func (b *Book) GetCFI(offset int) (cfi.CFI, bool) {
-	from := findPreceding(len(b.Documents), offset, func(i int) int { return b.Documents[i].Offset })
+	from := findPrecedingIndex(len(b.Documents), offset, func(i int) int { return b.Documents[i].Offset })
 	// gomutants:disable-next-line INTEGER_DECREMENT,LOOP_CONDITION,CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,STATEMENT_REMOVE,INCREMENT_DECREMENT reason="single-document fast path falls back to full ReadPlaces().GetCFI(offset)"
 	for i := max(from, 0); i < len(b.Documents); i++ {
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="single-document fast path falls back to full ReadPlaces().GetCFI(offset)"

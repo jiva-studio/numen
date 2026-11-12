@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func getShipped(t *testing.T) *Profiles {
+func getShippedProfiles(t *testing.T) *Profiles {
 	t.Helper()
 	table, err := GetShippedProfiles()
 	if err != nil {
@@ -17,7 +17,7 @@ func getShipped(t *testing.T) *Profiles {
 }
 
 func TestShippedProfilesAreValid(t *testing.T) {
-	table := getShipped(t)
+	table := getShippedProfiles(t)
 	for _, id := range table.order {
 		if err := table.byID[id].Validate(); err != nil {
 			t.Errorf("%s: %v", id, err)
@@ -26,7 +26,7 @@ func TestShippedProfilesAreValid(t *testing.T) {
 }
 
 func TestShippedProfilesPinTheFilesOfEveryLocalModel(t *testing.T) {
-	table := getShipped(t)
+	table := getShippedProfiles(t)
 	curated := table.GetCurated()
 	if len(curated) < 2 {
 		t.Fatalf("GetCurated() returned %d profiles, want at least 2", len(curated))
@@ -47,7 +47,7 @@ func TestShippedProfilesPinTheFilesOfEveryLocalModel(t *testing.T) {
 }
 
 func TestShippedDefaultKeepsItsPrefixes(t *testing.T) {
-	p, err := getShipped(t).GetLocal(DefaultModel)
+	p, err := getShippedProfiles(t).GetLocal(DefaultModel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestShippedDefaultKeepsItsPrefixes(t *testing.T) {
 }
 
 func TestGetLocalAcceptsAnAliasAndAnyCase(t *testing.T) {
-	table := getShipped(t)
+	table := getShippedProfiles(t)
 	for _, name := range []string{"Xenova/bge-m3", "bge-m3", "BGE-M3", "bge-m3-int8", " xenova/bge-m3 "} {
 		p, err := table.GetLocal(name)
 		if err != nil || p.ID != "Xenova/bge-m3" {
@@ -70,10 +70,10 @@ func TestGetLocalAcceptsAnAliasAndAnyCase(t *testing.T) {
 }
 
 func TestGetLocalOfAnUnknownModelNamesWhereToAddAProfile(t *testing.T) {
-	if _, err := getShipped(t).GetLocal("owner/unknown"); err == nil || !strings.Contains(err.Error(), "plugin data directory") {
+	if _, err := getShippedProfiles(t).GetLocal("owner/unknown"); err == nil || !strings.Contains(err.Error(), "plugin data directory") {
 		t.Errorf("default user folder error = %v", err)
 	}
-	table := getShipped(t).WithUserProfiles("/data/profiles", nil, func(string, error) {})
+	table := getShippedProfiles(t).WithUserProfiles("/data/profiles", nil, func(string, error) {})
 	for _, name := range []string{"owner/unknown", "openai/text-embedding-3-small", ""} {
 		_, err := table.GetLocal(name)
 		if !errors.Is(err, ErrNoProfile) {
@@ -89,7 +89,7 @@ func TestGetLocalOfAnUnknownModelNamesWhereToAddAProfile(t *testing.T) {
 }
 
 func TestGetRemoteOfAnUnlistedModelUsesTheFallbackWithItsOwnID(t *testing.T) {
-	table := getShipped(t)
+	table := getShippedProfiles(t)
 	shipped := table.GetRemote("text-embedding-3-large")
 	if shipped.Dimensions != 3072 {
 		t.Errorf("dims = %d, want 3072", shipped.Dimensions)
@@ -108,7 +108,7 @@ func TestGetRemoteOfAnUnlistedModelUsesTheFallbackWithItsOwnID(t *testing.T) {
 
 func TestUserProfileAddsAModel(t *testing.T) {
 	var reported []string
-	table := getShipped(
+	table := getShippedProfiles(
 		t,
 	).WithUserProfiles(
 		"/data/profiles",
@@ -132,7 +132,7 @@ func TestUserProfileAddsAModel(t *testing.T) {
 }
 
 func TestUserProfileOverridesTheFieldsItNamesAndKeepsTheRest(t *testing.T) {
-	table := getShipped(
+	table := getShippedProfiles(
 		t,
 	).WithUserProfiles(
 		"/data/profiles",
@@ -150,7 +150,7 @@ func TestUserProfileOverridesTheFieldsItNamesAndKeepsTheRest(t *testing.T) {
 	if p.Dimensions != 384 || p.Revision == "" || len(p.SHA256) == 0 {
 		t.Errorf("an unnamed field was lost: %+v", p)
 	}
-	shipped, err := getShipped(t).GetLocal(DefaultModel)
+	shipped, err := getShippedProfiles(t).GetLocal(DefaultModel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +160,7 @@ func TestUserProfileOverridesTheFieldsItNamesAndKeepsTheRest(t *testing.T) {
 }
 
 func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
-	table := getShipped(
+	table := getShippedProfiles(
 		t,
 	).WithUserProfiles(
 		"/data/profiles",
@@ -176,7 +176,7 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 		t.Errorf("pins of the old file kept: %+v", p)
 	}
 
-	tablePinned := getShipped(
+	tablePinned := getShippedProfiles(
 		t,
 	).WithUserProfiles(
 		"/data/profiles",
@@ -190,7 +190,7 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 }
 
 func TestUserProfileByAnAliasOverridesTheModelOfTheAlias(t *testing.T) {
-	table := getShipped(
+	table := getShippedProfiles(
 		t,
 	).WithUserProfiles("/data/profiles", []UserFile{{Path: "m3.json", Data: []byte(`{"id":"bge-m3","floorHint":0.5}`)}}, func(string, error) {})
 
@@ -198,7 +198,7 @@ func TestUserProfileByAnAliasOverridesTheModelOfTheAlias(t *testing.T) {
 	if err != nil || p.FloorHint != 0.5 {
 		t.Errorf("GetLocal = %+v, %v", p, err)
 	}
-	if n := len(table.GetCurated()); n != len(getShipped(t).GetCurated()) {
+	if n := len(table.GetCurated()); n != len(getShippedProfiles(t).GetCurated()) {
 		t.Errorf("an alias added a model: %d curated", n)
 	}
 }
@@ -223,7 +223,7 @@ func TestMalformedUserFilesAreReportedAndSkipped(t *testing.T) {
 	files = append(files, UserFile{Path: "e-good.json", Data: []byte(`{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)})
 	files = append(files, UserFile{Path: "f-array.json", Data: []byte(`[broken`)})
 	reported := map[string]error{}
-	table := getShipped(t).WithUserProfiles("/data/profiles", files, func(file string, err error) { reported[file] = err })
+	table := getShippedProfiles(t).WithUserProfiles("/data/profiles", files, func(file string, err error) { reported[file] = err })
 
 	for _, name := range []string{"a-broken.json", "b-nodims.json", "c-unknown-field.json", "d-half.json", "f-array.json"} {
 		if reported[name] == nil {
@@ -247,7 +247,7 @@ func TestMalformedUserFilesAreReportedAndSkipped(t *testing.T) {
 }
 
 func TestGetTokensCapsALocalModelAtTheChunkLimit(t *testing.T) {
-	table := getShipped(t)
+	table := getShippedProfiles(t)
 	m3, err := table.GetLocal("Xenova/bge-m3")
 	if err != nil {
 		t.Fatal(err)
@@ -284,7 +284,7 @@ func TestHandlingApplyAddsTheRolePrefixInFrontOfEveryText(t *testing.T) {
 }
 
 func TestEveryCuratedModelWithAQueryPrefixAppliesItToQueries(t *testing.T) {
-	for _, p := range getShipped(t).GetCurated() {
+	for _, p := range getShippedProfiles(t).GetCurated() {
 		h := p.GetHandling()
 		got := h.Apply(RoleQuery, []string{"x"})[0]
 		if got != p.QueryPrefix+"x" {
@@ -333,7 +333,7 @@ func TestHandlingIsZeroOnlyWhenItChangesNothing(t *testing.T) {
 }
 
 func TestOptionTextsNameTierSizeAndWidth(t *testing.T) {
-	p, err := getShipped(t).GetLocal(DefaultModel)
+	p, err := getShippedProfiles(t).GetLocal(DefaultModel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -396,7 +396,7 @@ func TestProfileNormalizeCloneAndErrorPaths(t *testing.T) {
 	}
 	embeddedProfiles = origEmbedded
 
-	table := getShipped(t)
+	table := getShippedProfiles(t)
 	withExtra := table.WithUserProfiles(
 		"/data/profiles",
 		[]UserFile{{Path: "extra.json", Data: []byte(`{"id":"Xenova/bge-m3","extraInputs":["position_ids"]}`)}},

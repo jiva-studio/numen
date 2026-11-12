@@ -129,10 +129,10 @@ func (v *Vault) trashNote(notePath string) (string, []string, error) {
 	if err := v.moveFile(notePath, target); err != nil {
 		return "", nil, err
 	}
-	return target, v.getDangling(backlinks), nil
+	return target, v.getDanglingLinks(backlinks), nil
 }
 
-func (v *Vault) getDangling(links []domain.ResolvedLink) []string {
+func (v *Vault) getDanglingLinks(links []domain.ResolvedLink) []string {
 	notes := v.parsed()
 	var out []string
 	for _, link := range links {

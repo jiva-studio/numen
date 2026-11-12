@@ -9,7 +9,7 @@ import (
 
 func TestGetTitles_PreservesRequestOrderAndReportsMissing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "Work.md": "# Work\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n", "Work.md": "# Work\n"})
 
 	got, err := query.NewGetTitles(c.db.NoteQueries()).Execute(t.Context(), c.vault,
 		[]string{"Work.md", "Gone.md", "Heat.md", "Lost.md"})

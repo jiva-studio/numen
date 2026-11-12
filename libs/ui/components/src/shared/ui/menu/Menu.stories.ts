@@ -699,7 +699,7 @@ export const OneActiveRow: Story = {
   },
   play: async () => {
     const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
-    const getActive = () => menuElement()!.querySelectorAll('[data-active]')
+    const getActiveRows = () => menuElement()!.querySelectorAll('[data-active]')
 
     await userEvent.keyboard('{ArrowDown}')
     await expect(getItem('Download captions')).toHaveAttribute('data-active')
@@ -709,9 +709,9 @@ export const OneActiveRow: Story = {
       coords: { clientX: 30, clientY: 30 },
     })
     await waitFor(() => expect(getItem('Download media')).toHaveAttribute('data-active'))
-    await expect(getActive()).toHaveLength(1)
+    await expect(getActiveRows()).toHaveLength(1)
     await userEvent.keyboard('{ArrowUp}')
     await expect(getItem('Download captions')).toHaveAttribute('data-active')
-    await expect(getActive()).toHaveLength(1)
+    await expect(getActiveRows()).toHaveLength(1)
   },
 }

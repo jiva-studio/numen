@@ -49,7 +49,7 @@ func getMachineDirs() []string {
 	)
 }
 
-func findMatching(pattern string) []string {
+func findMatchingPaths(pattern string) []string {
 	found, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil
@@ -98,7 +98,7 @@ func getCandidatesInStore(pluginDir, home, librarySum string, machine []string, 
 	}
 	out = append(out, findInDirs(machine, name)...)
 	if isDefault {
-		out = append(out, findMatching(filepath.Join(storePattern, name+"*"))...)
+		out = append(out, findMatchingPaths(filepath.Join(storePattern, name+"*"))...)
 		out = append(out, findInDirs(getLoaderDirs(runtime.GOOS), name)...)
 	}
 	return removeDuplicates(out)
@@ -108,7 +108,7 @@ func findInDirs(dirs []string, name string) []string {
 	var out []string
 	for _, dir := range dirs {
 		if filepath.IsAbs(dir) {
-			out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
+			out = append(out, findMatchingPaths(filepath.Join(dir, name+"*"))...)
 		}
 	}
 	return out

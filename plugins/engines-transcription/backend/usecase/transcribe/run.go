@@ -128,7 +128,7 @@ func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 }
 
 func (t *Transcriber) hearSegments(ctx context.Context, j *job, model Recognizer, recording Recording) error {
-	from, err := j.store.readReached(ctx, j.key)
+	from, err := j.store.readReachedPosition(ctx, j.key)
 	if err != nil {
 		return err
 	}

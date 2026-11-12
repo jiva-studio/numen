@@ -121,7 +121,7 @@ const POINTING = createChapter(
   400,
 )
 
-const mountPointing = async () => {
+const mountPointingBook = async () => {
   const wrapper = mount(Book, {
     props: {
       markup: POINTING.markup,
@@ -138,7 +138,7 @@ const mountPointing = async () => {
   return wrapper
 }
 
-const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, label: string) => {
+const press = async (wrapper: Awaited<ReturnType<typeof mountPointingBook>>, label: string) => {
   const link = wrapper.findAll('a').find((one) => one.text() === label)!
   const event = new MouseEvent('click', { bubbles: true, cancelable: true })
   link.element.dispatchEvent(event)
@@ -148,7 +148,7 @@ const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, label: 
 
 describe('a link inside a book', () => {
   it('is taken by the reader, and never reaches the browser', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     for (const says of ['the second parva', 'the note', 'elsewhere']) {
       expect((await press(target, says)).defaultPrevented).toBe(true)
@@ -156,7 +156,7 @@ describe('a link inside a book', () => {
   })
 
   it('asks for the document it names, where that is another of the book', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     await press(target, 'the second parva')
 
@@ -164,7 +164,7 @@ describe('a link inside a book', () => {
   })
 
   it('asks for the offset the place remains at, inside the document being read', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     await press(target, 'the note')
 
@@ -172,7 +172,7 @@ describe('a link inside a book', () => {
   })
 
   it('asks for nothing of the book, where the link leads out of it', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     await press(target, 'elsewhere')
 

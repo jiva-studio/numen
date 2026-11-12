@@ -62,7 +62,7 @@ const ENVIRONMENT = celEnv({
 
 const DECLARED = new Set<string>(WHEN_VARIABLES.map((one) => one.name))
 
-const getDefault = (type: string): JsonValue => {
+const getDefaultValue = (type: string): JsonValue => {
   if (type === 'bool') return false
   if (type === 'string') return ''
   if (type === 'list') return []
@@ -160,7 +160,7 @@ export function parseWhen(text: string): Result<WhenCondition, string> {
     names,
     evaluate: (values) => {
       const bindings = Object.fromEntries(
-        WHEN_VARIABLES.map((one) => [one.name, toCelMap(values[one.name] ?? getDefault(one.type))]),
+        WHEN_VARIABLES.map((one) => [one.name, toCelMap(values[one.name] ?? getDefaultValue(one.type))]),
       )
       const result = run(bindings)
       return !isCelError(result) && result === true

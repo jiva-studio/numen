@@ -141,7 +141,7 @@ func (r *Registry) FindPluginByCapability(capability string) (manifest.Discovere
 // GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and false
 // for a plugin the host does not know.
 func (r *Registry) GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool) {
-	p, ok := r.set.getKnown(pluginID)
+	p, ok := r.set.getKnownPlugin(pluginID)
 	if !ok {
 		return nil, false
 	}

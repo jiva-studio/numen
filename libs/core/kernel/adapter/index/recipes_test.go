@@ -15,16 +15,16 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	db := openDB(t)
 	ctx := t.Context()
 
-	before := atScale(t, getQuantizing(), 0.3)
-	now := getQuantizing().Recipe()
+	before := atScale(t, getQuantizingModel(), 0.3)
+	now := getQuantizingModel().Recipe()
 
-	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
+	if err := db.Chunks().SaveSource(ctx, getFirstVault().ID, chunk.Source{
 		Path: "library/tale.epub", Kind: "book", Size: 1000, MTime: 1,
 		ContentHash: "hash-tale", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, getFirst().ID, "book", "library/tale.epub", []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, getFirstVault().ID, "book", "library/tale.epub", []chunk.Chunk{{
 		Start: 0, Length: 100, Text: "the tale opens and the tale goes on",
 		Small: []chunk.Chunk{
 			{Start: 0, Length: 50, Text: "the tale opens"},
@@ -34,7 +34,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirstVault().ID, before, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}

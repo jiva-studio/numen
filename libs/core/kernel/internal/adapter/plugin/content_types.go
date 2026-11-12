@@ -8,7 +8,7 @@ import (
 )
 
 type enabledPlugins interface {
-	listEnabled() []manifest.Discovered
+	listEnabledPlugins() []manifest.Discovered
 }
 
 // ContentTypes gives a file the type of its name, as the table of types says, over the enabled
@@ -43,5 +43,5 @@ func (c *ContentTypes) GetContentType(name string) domain.ContentType {
 // ListExtensions lists, lowercase, sorted and without the dot, the extensions that give a file a
 // type the mask covers.
 func (c *ContentTypes) ListExtensions(mask domain.ContentType) []string {
-	return c.lookup.ListExtensions(c.set.listEnabled(), mask)
+	return c.lookup.ListExtensions(c.set.listEnabledPlugins(), mask)
 }

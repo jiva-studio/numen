@@ -289,7 +289,7 @@ export const EveryLine: Story = {
 
     // The two records of one line are set on opposite sides of the line, each read in the direction
     // of its record.
-    const getReading = (text: string) => {
+    const getTextPathReading = (text: string) => {
       const set = canvas.getAllByText(text)[0]!
       const href = set.closest('textPath')!.getAttribute('href')!
       const path = canvasElement.ownerDocument.getElementById(
@@ -297,8 +297,8 @@ export const EveryLine: Story = {
       ) as unknown as SVGPathElement
       return { dy: Number(set.closest('text')!.getAttribute('dy')), path }
     }
-    const one = getReading('includes')
-    const two = getReading('part of')
+    const one = getTextPathReading('includes')
+    const two = getTextPathReading('part of')
     await expect(one.dy).toBeLessThan(0)
     await expect(two.dy).toBeLessThan(0)
 

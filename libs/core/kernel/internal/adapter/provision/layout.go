@@ -38,7 +38,7 @@ func isReady(dir string) bool {
 	return err == nil
 }
 
-func writeReady(ctx context.Context, dir, primary, sum string) error {
+func writeReadyMarker(ctx context.Context, dir, primary, sum string) error {
 	tmp := filepath.Join(dir, readyName+".tmp")
 	if err := os.WriteFile(tmp, []byte(primary+"\n"+sum+"\n"), 0o644); err != nil {
 		return err
@@ -46,7 +46,7 @@ func writeReady(ctx context.Context, dir, primary, sum string) error {
 	return renameWithRetry(ctx, tmp, filepath.Join(dir, readyName), newDefaultBackoff())
 }
 
-func readReady(dir string) (name, sum string, err error) {
+func readReadyMarker(dir string) (name, sum string, err error) {
 	raw, err := os.ReadFile(filepath.Join(dir, readyName))
 	if err != nil {
 		return "", "", err

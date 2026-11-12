@@ -194,12 +194,12 @@ func newActivateFixtureWith(t *testing.T, limit time.Duration) activateFixture {
 		}
 	}()
 	f := activateFixture{state: state, api: api, window: window, focus: focus}
-	f.waitSubscribed(t)
+	f.waitUntilSubscribed(t)
 	f.reportTabs(t, "tab-1")
 	return f
 }
 
-func (f activateFixture) waitSubscribed(t *testing.T) {
+func (f activateFixture) waitUntilSubscribed(t *testing.T) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
 	for {

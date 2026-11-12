@@ -195,7 +195,7 @@ func (w riffWave) readSample(raw []byte) (float32, error) {
 		// middle of their range.
 		return (float32(raw[0]) - 128) / 128, nil
 	case w.format == wavInteger:
-		return float32(readSigned(raw)) / float32(int64(1)<<(w.bits-1)), nil
+		return float32(readSignedSample(raw)) / float32(int64(1)<<(w.bits-1)), nil
 	default:
 		return 0, fmt.Errorf("the wav recording writes its samples as %d of %d bits", w.format, w.bits)
 	}
@@ -217,7 +217,7 @@ func readInt16(out []float32, raw []byte) {
 	}
 }
 
-func readSigned(raw []byte) int64 {
+func readSignedSample(raw []byte) int64 {
 	var out int64
 	for _, r := range slices.Backward(raw) {
 		out = out<<8 | int64(r)

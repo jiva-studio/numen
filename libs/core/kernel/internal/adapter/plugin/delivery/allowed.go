@@ -19,7 +19,7 @@ type allowedList struct {
 	secrets     []plugindomain.Secret
 }
 
-func listAllowed(snapshot Snapshot) ([]allowedList, error) {
+func listAllowedLists(snapshot Snapshot) ([]allowedList, error) {
 	if len(snapshot.Declared) == 0 {
 		return nil, nil
 	}

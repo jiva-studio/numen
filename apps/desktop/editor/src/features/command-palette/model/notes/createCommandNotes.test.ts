@@ -4,7 +4,7 @@ import { createCommandNotes } from './createCommandNotes'
 describe('the open files a command can access', () => {
   it('include the files of the note editors and the files of the tab kinds', async () => {
     const flushTab = vi.fn(() => Promise.resolve())
-    const closeReached = vi.fn()
+    const onCloseCalled = vi.fn()
     const requestClose = vi.fn()
     const notes = createCommandNotes(
       {
@@ -12,7 +12,7 @@ describe('the open files a command can access', () => {
         getPath: (id: string) => (id === 'reached:1' ? 'Reached.md' : id),
         asking: (id: string) => id === 'asking:1',
         flushPending: vi.fn(() => Promise.resolve()),
-        close: closeReached,
+        close: onCloseCalled,
       } as never,
       {
         tabs: {
@@ -41,7 +41,7 @@ describe('the open files a command can access', () => {
     await notes.flushPending('tab:1')
     expect(flushTab).toHaveBeenCalledOnce()
     notes.close('tab:1')
-    expect(closeReached).toHaveBeenCalledWith('tab:1')
+    expect(onCloseCalled).toHaveBeenCalledWith('tab:1')
     expect(requestClose).toHaveBeenCalledWith('tab:1')
   })
 })

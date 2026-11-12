@@ -83,7 +83,7 @@ const layout = useBookLayout({
   leaving,
   props,
   onMove: (pos) => emit('move', pos),
-  takeLed: links.takeLed,
+  takeLedLink: links.takeLedLink,
   column,
   turns,
 })
@@ -131,7 +131,7 @@ const onKey = (event: KeyboardEvent): boolean => {
         class="book__area relative h-full overflow-hidden"
         role="region"
         :aria-label="words.pages"
-        @pointerdown="hand.takeDown"
+        @pointerdown="hand.handlePointerDown"
         @pointerup="hand.letGo"
       >
         <!-- The markup reaches this component already measured against what may

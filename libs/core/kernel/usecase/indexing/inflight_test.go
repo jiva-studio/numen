@@ -33,7 +33,7 @@ func (s *scriptedVectors) EmbedWithProgress(
 ) (vaultreading.EmbedResult, error) {
 	var res vaultreading.EmbedResult
 	for _, path := range s.order {
-		if slices.Contains(s.getEmbedded(), path) {
+		if slices.Contains(s.getEmbeddedPaths(), path) {
 			continue
 		}
 		if isSkipped != nil && isSkipped(path, "hash") {
@@ -55,7 +55,7 @@ func (s *scriptedVectors) EmbedWithProgress(
 	return res, nil
 }
 
-func (s *scriptedVectors) getEmbedded() []string {
+func (s *scriptedVectors) getEmbeddedPaths() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.embedded)
@@ -138,13 +138,13 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 
 			script.blockOn = ""
 			p.embed(t.Context())
-			if got := script.getEmbedded(); !slices.Equal(got, tt.wantNext) {
+			if got := script.getEmbeddedPaths(); !slices.Equal(got, tt.wantNext) {
 				t.Errorf("after the cancel the passes embedded %v, want %v", got, tt.wantNext)
 			}
 
 			worker.ClearSkips(tt.wantHeld)
 			p.embed(t.Context())
-			got := script.getEmbedded()
+			got := script.getEmbeddedPaths()
 			slices.Sort(got)
 			if want := []string{"A.pdf", "B.pdf", "C.pdf"}; !slices.Equal(got, want) {
 				t.Errorf("after the change was reported the passes embedded %v, want %v", got, want)

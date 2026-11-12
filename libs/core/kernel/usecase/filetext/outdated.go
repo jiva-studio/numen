@@ -20,7 +20,7 @@ type outdated struct {
 	records sourceport.SourceRecords
 }
 
-func newOutdated(u Index) outdated { return outdated{sources: u.sources, records: u.queries.records} }
+func newOutdatedIndex(u Index) outdated { return outdated{sources: u.sources, records: u.queries.records} }
 
 func (u outdated) dropOutdatedText(
 	ctx context.Context,

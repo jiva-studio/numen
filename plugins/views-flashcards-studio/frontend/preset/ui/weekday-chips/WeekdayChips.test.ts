@@ -25,7 +25,7 @@ const mountChips = (props: Partial<ChipsProps> = {}) =>
     attachTo: document.body,
   })
 
-const getChosen = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
+const getChosenWeekdays = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
   (row.emitted('choose') ?? []) as unknown[][]
 
 const getMenuLabels = (): readonly string[] =>
@@ -183,14 +183,14 @@ describe('giving a day a level', () => {
     const row = mountChips()
     await row.findAll('button')[0]?.trigger('click')
     document.body.querySelectorAll<HTMLElement>('.menu__item')[2]?.click()
-    expect(getChosen(row)).toEqual([['mon', 0.25]])
+    expect(getChosenWeekdays(row)).toEqual([['mon', 0.25]])
   })
 
   it('returns a day put at the whole of it like any other', async () => {
     const row = mountChips()
     await row.findAll('button')[5]?.trigger('click')
     document.body.querySelectorAll<HTMLElement>('.menu__item')[6]?.click()
-    expect(getChosen(row)).toEqual([['sat', 1]])
+    expect(getChosenWeekdays(row)).toEqual([['sat', 1]])
   })
 
   // A chip that cannot be toggled is pressed like any other and emits nothing.
@@ -203,7 +203,7 @@ describe('giving a day a level', () => {
 
     await chips[1]?.trigger('click')
     expect(getMenuLabels()).toEqual([])
-    expect(getChosen(row)).toEqual([])
+    expect(getChosenWeekdays(row)).toEqual([])
     expect(chips[1]?.attributes('aria-expanded')).toBe('false')
   })
 })

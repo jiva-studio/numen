@@ -15,7 +15,7 @@ type Target struct {
 	Endpoint transport.Endpoint
 }
 
-func takeLocked(s *Supervisors, id string, sup *lifecycle.Supervisor, pid int) Target {
+func takeTargetLocked(s *Supervisors, id string, sup *lifecycle.Supervisor, pid int) Target {
 	target := Target{ID: id, PID: pid, Sup: sup, Endpoint: s.endpoints[id]}
 	forgetEndpointLocked(s, id)
 	return target
@@ -28,29 +28,29 @@ func takeTarget(s *Supervisors, pluginID string) (Target, bool) {
 	if !ok {
 		return Target{}, false
 	}
-	return takeLocked(s, pluginID, sup, sup.GetProcessID()), true
+	return takeTargetLocked(s, pluginID, sup, sup.GetProcessID()), true
 }
 
-func takeIdle(s *Supervisors, threshold time.Duration, now time.Time) []Target {
+func takeIdleTargets(s *Supervisors, threshold time.Duration, now time.Time) []Target {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var targets []Target
 	for id, sup := range s.byPlugin {
 		pid := sup.GetProcessID()
 		if sup.BeginDeactivation(threshold, now) {
-			targets = append(targets, takeLocked(s, id, sup, pid))
+			targets = append(targets, takeTargetLocked(s, id, sup, pid))
 		}
 	}
 	return targets
 }
 
-func takeRunning(s *Supervisors) []Target {
+func takeRunningTargets(s *Supervisors) []Target {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var targets []Target
 	for id, sup := range s.byPlugin {
 		if sup.GetState() != lifecycle.StateDormant {
-			targets = append(targets, takeLocked(s, id, sup, sup.GetProcessID()))
+			targets = append(targets, takeTargetLocked(s, id, sup, sup.GetProcessID()))
 		}
 	}
 	return targets

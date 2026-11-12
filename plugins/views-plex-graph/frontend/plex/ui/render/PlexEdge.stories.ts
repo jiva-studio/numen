@@ -85,7 +85,7 @@ const createEdge = (args: Knobs): PlacedEdge => {
   }
 }
 
-const createBoth = (args: Knobs) => ({
+const createEdgeStory = (args: Knobs) => ({
   components: { PlexEdgeLine, PlexEdgeTitle },
   setup: () => ({ line: getLines([createEdge(args)], 'edge')[0]! }),
   template: `
@@ -129,7 +129,7 @@ const meta: Meta<Knobs> = {
     opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
   },
   args: { words: 'refers to', reverseWords: 'cited by', direction: 'forward', opacity: 1 },
-  render: createBoth,
+  render: createEdgeStory,
 }
 
 export default meta
@@ -138,7 +138,7 @@ type Story = StoryObj<Knobs>
 /** The pair at rest above, and lifted below. */
 export const Playground: Story = {}
 
-const getResting = (canvas: HTMLElement) => {
+const getRestingEdge = (canvas: HTMLElement) => {
   const group = canvas.querySelector('[data-edge="resting"]')!
   const heads = [...group.querySelectorAll('.plex__edge-arrow')].map((head) =>
     head.getAttribute('transform'),
@@ -161,7 +161,7 @@ const AT_FROM = `translate(${CURVE.fromPoint.x} ${CURVE.fromPoint.y})`
 export const NoDirection: Story = {
   args: { direction: 'none' },
   play: async ({ canvasElement }) => {
-    const { heads, titles } = getResting(canvasElement)
+    const { heads, titles } = getRestingEdge(canvasElement)
     await expect(heads).toStrictEqual([])
     await expect(titles).toStrictEqual([['refers to', '50%']])
   },
@@ -171,11 +171,11 @@ export const NoDirection: Story = {
 export const Forward: Story = {
   args: { direction: 'forward' },
   play: async ({ canvasElement }) => {
-    const { heads, titles } = getResting(canvasElement)
+    const { heads, titles } = getRestingEdge(canvasElement)
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_TO)
     await expect(titles).toStrictEqual([['refers to', '50%']])
-    await expect(getResting(canvasElement).offsets).toStrictEqual([LABEL_TYPE.xHeight / 2])
+    await expect(getRestingEdge(canvasElement).offsets).toStrictEqual([LABEL_TYPE.xHeight / 2])
   },
 }
 
@@ -183,7 +183,7 @@ export const Forward: Story = {
 export const Backward: Story = {
   args: { direction: 'backward' },
   play: async ({ canvasElement }) => {
-    const { heads, titles } = getResting(canvasElement)
+    const { heads, titles } = getRestingEdge(canvasElement)
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_FROM)
     await expect(titles).toStrictEqual([['refers to', '50%']])
@@ -197,7 +197,7 @@ export const Backward: Story = {
 export const BothDirections: Story = {
   args: { direction: 'both' },
   play: async ({ canvasElement }) => {
-    const { heads, titles, offsets } = getResting(canvasElement)
+    const { heads, titles, offsets } = getRestingEdge(canvasElement)
     await expect(heads).toHaveLength(2)
     await expect(heads[0]).toContain(AT_TO)
     await expect(heads[1]).toContain(AT_FROM)

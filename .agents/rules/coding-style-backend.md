@@ -76,7 +76,7 @@ apps/desktop/         # the window's host: cmd/ and internal/
 ## 3. Naming and API surface
 
 - No stutter: `filesystem.VaultReader`, not `filesystem.FilesystemVaultReader`.
-- Functions and methods are imperative verb phrases (`ReadVault`, `WriteNote`) or predicates (`IsExpired`, `HasTranscript`). Never third-person singular, never a past participle, never a literary metaphor where a standard engineering term exists.
+- Functions and methods are imperative verb phrases (`ReadVault`, `WriteNote`) or predicates (`IsExpired`, `HasTranscript`). Never third-person singular, never a past participle, never a literary metaphor where a standard engineering term exists. A verb with one bare participle or adjective and no object (`getActive`, `getEmitted`, `createResponded`) says nothing about what it returns: name the object (`getActiveTab`, `getEmittedEvents`) or use a predicate. The names check refuses it.
 - Variables and parameters must use standard engineering nouns. Never use irregular past participles (`held`, `said`, `asked`, `written`, `done`, `kept`) or bare prepositions (`beside`, `under`, `behind`) as variable names. See Rule 13 of `AGENTS.md`.
 - Exported identifiers documented, starting with the identifier's own name.
 - `internal/` by default; exported only what something outside actually uses.

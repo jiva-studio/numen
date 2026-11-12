@@ -65,7 +65,7 @@ const getNode = (plex: ReturnType<typeof mountPlex>, relation: string) => {
   return { x: 600 + coord[0]!, y: 400 + coord[1]! }
 }
 
-const findDragged = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
+const findDraggedElement = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
 
 describe('dropping something dragged in', () => {
   it('joins it to the focus in the relation the drag went towards', async () => {
@@ -150,7 +150,7 @@ describe('dropping something dragged in', () => {
     await letGo(plex, 600, 40)
 
     expect(plex.emitted('bring')).toBeUndefined()
-    expect(findDragged(plex).exists()).toBe(false)
+    expect(findDraggedElement(plex).exists()).toBe(false)
   })
 
   it('joins them before whoever is dragging them receives the same release', async () => {
@@ -214,8 +214,8 @@ describe('while something is being dragged over the plex', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(findDragged(plex).find('.plex__thread').exists()).toBe(true)
-    expect(findDragged(plex).get('.plex__title-text').text()).toBe('parent')
+    expect(findDraggedElement(plex).find('.plex__thread').exists()).toBe(true)
+    expect(findDraggedElement(plex).get('.plex__title-text').text()).toBe('parent')
   })
 
   it('says it in the words it was given, not in its own', async () => {
@@ -223,45 +223,45 @@ describe('while something is being dragged over the plex', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(findDragged(plex).get('.plex__title-text').text()).toBe('as parent')
+    expect(findDraggedElement(plex).get('.plex__title-text').text()).toBe('as parent')
   })
 
   it('draws nothing where dropping would come to nothing', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(true)
+    expect(findDraggedElement(plex).exists()).toBe(true)
 
     // Beyond the edge and toward a relation the caller excluded: the drag preview
     // shows only what a drop would do.
     window.dispatchEvent(pointer('pointermove', 600, 1400))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(false)
+    expect(findDraggedElement(plex).exists()).toBe(false)
 
     window.dispatchEvent(pointer('pointermove', 1100, 400))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(false)
+    expect(findDraggedElement(plex).exists()).toBe(false)
   })
 
   it('draws nothing the moment the window says it is dragging nothing', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(true)
+    expect(findDraggedElement(plex).exists()).toBe(true)
 
     await plex.setProps({ dragged: [] })
-    expect(findDragged(plex).exists()).toBe(false)
+    expect(findDraggedElement(plex).exists()).toBe(false)
   })
 
   it('draws nothing once it has been release', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(true)
+    expect(findDraggedElement(plex).exists()).toBe(true)
 
     window.dispatchEvent(pointer('pointerup', 600, 40))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(false)
+    expect(findDraggedElement(plex).exists()).toBe(false)
   })
 
   it('draws a shape no pointer can reach: it is not a node of the picture yet', async () => {
@@ -269,7 +269,7 @@ describe('while something is being dragged over the plex', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    const shape = findDragged(plex).get('.plex__node')
+    const shape = findDraggedElement(plex).get('.plex__node')
     expect(shape.attributes('role')).toBeUndefined()
     expect(shape.attributes('aria-label')).toBeUndefined()
     expect(shape.attributes('tabindex')).toBe('-1')
@@ -343,11 +343,11 @@ describe('what a drag leaves on the window', () => {
 
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(false)
+    expect(findDraggedElement(plex).exists()).toBe(false)
 
     window.dispatchEvent(pointer('pointerup', 600, 40))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(false)
+    expect(findDraggedElement(plex).exists()).toBe(false)
   })
 })
 
@@ -365,7 +365,7 @@ describe('a drag followed from the window', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
     await plex.vm.$nextTick()
-    expect(findDragged(plex).exists()).toBe(true)
+    expect(findDraggedElement(plex).exists()).toBe(true)
 
     window.dispatchEvent(pointer('pointerup', 600, 40))
     await plex.vm.$nextTick()

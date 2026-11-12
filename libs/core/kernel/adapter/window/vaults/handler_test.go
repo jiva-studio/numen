@@ -51,7 +51,7 @@ func (r *vaultRows) Unregister(_ context.Context, vaultID domain.VaultID) error 
 	return nil
 }
 
-func (r *vaultRows) getForgotten() []domain.VaultID {
+func (r *vaultRows) getForgottenIDs() []domain.VaultID {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return append([]domain.VaultID(nil), r.forgot...)
@@ -81,7 +81,7 @@ func (b *bin) refuse(why error) {
 	b.fails = why
 }
 
-func (b *bin) getTrashed() []string {
+func (b *bin) getTrashedPaths() []string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return append([]string(nil), b.moved...)
@@ -105,7 +105,7 @@ func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (str
 	return f.pick, f.isChosen, f.fails
 }
 
-func (f *folders) getRequested() (string, string) {
+func (f *folders) getRequestedPaths() (string, string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.title, f.from
@@ -196,7 +196,7 @@ func (f *onTheList) opening(why error) {
 	f.failure = why
 }
 
-func (f *onTheList) getShown() []domain.Vault {
+func (f *onTheList) getShownVaults() []domain.Vault {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]domain.Vault(nil), f.expected...)
@@ -396,10 +396,10 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	}
 
 	onList(t, f.getList(t), string(f.first.ID))
-	if got := f.rows.getForgotten(); len(got) != 0 {
+	if got := f.rows.getForgottenIDs(); len(got) != 0 {
 		t.Errorf("forgot %v", got)
 	}
-	if got := f.bin.getTrashed(); len(got) != 0 {
+	if got := f.bin.getTrashedPaths(); len(got) != 0 {
 		t.Errorf("trashed %v", got)
 	}
 	if _, err := os.Stat(f.first.Path); err != nil {
@@ -468,7 +468,7 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 			t.Errorf("%s of an identity on no list was answered %v", what, got)
 		}
 	}
-	if visibleVaults := f.getShown(); len(visibleVaults) != 0 {
+	if visibleVaults := f.getShownVaults(); len(visibleVaults) != 0 {
 		t.Errorf("the window was asked to show %v", visibleVaults)
 	}
 }
@@ -484,10 +484,10 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	if out.Msg.Error != nil {
 		t.Fatalf("the vault was not removed: %v", out.Msg.GetError())
 	}
-	if got := f.bin.getTrashed(); len(got) != 1 || got[0] != f.second.Path {
+	if got := f.bin.getTrashedPaths(); len(got) != 1 || got[0] != f.second.Path {
 		t.Errorf("trashed %v, want %s", got, f.second.Path)
 	}
-	if got := f.rows.getForgotten(); len(got) != 1 || got[0] != f.second.ID {
+	if got := f.rows.getForgottenIDs(); len(got) != 1 || got[0] != f.second.ID {
 		t.Errorf("forgot %v, want %s", got, f.second.ID)
 	}
 	if _, found, err := f.registry.FindVault(string(f.second.ID)); err != nil || found {
@@ -508,7 +508,7 @@ func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 		t.Errorf("a machine with no trash was answered %v", got)
 	}
 	onList(t, f.getList(t), string(f.second.ID))
-	if got := f.rows.getForgotten(); len(got) != 0 {
+	if got := f.rows.getForgottenIDs(); len(got) != 0 {
 		t.Errorf("forgot %v", got)
 	}
 	if _, err := os.Stat(f.second.Path); err != nil {
@@ -527,7 +527,7 @@ func TestAnotherVaultIsInsertInTheWindow(t *testing.T) {
 	if out.Msg.Error != nil {
 		t.Fatalf("the vault was not current: %v", out.Msg.GetError())
 	}
-	if visibleVaults := f.getShown(); len(visibleVaults) != 1 || visibleVaults[0].ID != f.second.ID {
+	if visibleVaults := f.getShownVaults(); len(visibleVaults) != 1 || visibleVaults[0].ID != f.second.ID {
 		t.Errorf("the window was asked to show %v", visibleVaults)
 	}
 }
@@ -583,7 +583,7 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	if out.Msg.GetIsChosen() || out.Msg.GetPath() != "" {
 		t.Errorf("the answer is %v", out.Msg)
 	}
-	if title, from := f.dialog.getRequested(); title != "Where are your notes?" || from != f.first.Path {
+	if title, from := f.dialog.getRequestedPaths(); title != "Where are your notes?" || from != f.first.Path {
 		t.Errorf("the dialog was titled %q and opened at %q", title, from)
 	}
 }

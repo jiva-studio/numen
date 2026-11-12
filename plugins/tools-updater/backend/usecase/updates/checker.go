@@ -92,11 +92,11 @@ func (c *Checker) GetStatus() Status {
 // Check requests the manifest of the configured endpoint and compares it with the running build. An
 // endpoint that does not answer with a manifest, or an empty one, leaves the state unreachable.
 func (c *Checker) Check(ctx context.Context, app App) (Status, error) {
-	endpoint, ok := c.getConfigured()
+	endpoint, ok := c.getConfiguredEndpoint()
 	if !ok {
 		return Status{}, ErrNotConfigured
 	}
-	current, err := newCurrent(app)
+	current, err := newCurrentRelease(app)
 	if err != nil {
 		return Status{}, err
 	}
@@ -111,7 +111,7 @@ func (c *Checker) Check(ctx context.Context, app App) (Status, error) {
 	return status, nil
 }
 
-func (c *Checker) getConfigured() (string, bool) {
+func (c *Checker) getConfiguredEndpoint() (string, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.endpoint, c.isConfigured
@@ -125,7 +125,7 @@ func (c *Checker) setStatus(endpoint string, status Status) {
 	}
 }
 
-func newCurrent(app App) (release.Current, error) {
+func newCurrentRelease(app App) (release.Current, error) {
 	switch app.Platform {
 	case release.PlatformDarwin, release.PlatformWindows, release.PlatformLinux:
 	default:

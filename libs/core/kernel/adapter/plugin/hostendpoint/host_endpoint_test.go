@@ -132,7 +132,7 @@ func (c *callers) Release(pluginID string) {
 	}
 }
 
-func (c *callers) getAcquired(pluginID string) int {
+func (c *callers) getAcquireCount(pluginID string) int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.acquired[pluginID]

@@ -91,7 +91,7 @@ func (u Index) run(
 	if err != nil {
 		return res, err
 	}
-	notePaths, err = newOutdated(u).dropOutdatedText(ctx, v, on, notePaths, &res)
+	notePaths, err = newOutdatedIndex(u).dropOutdatedText(ctx, v, on, notePaths, &res)
 	if err != nil {
 		return res, err
 	}

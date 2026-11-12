@@ -99,7 +99,7 @@ func (u *UseCase) Rename(ctx context.Context, in api.VaultRenameInput) (api.Vaul
 
 // Remove removes a vault other than the current one from the list; its folder stays.
 func (u *UseCase) Remove(ctx context.Context, in api.VaultRemoveInput) (api.VaultRemoveOutput, error) {
-	target, err := u.findOther(ctx, in.Vault)
+	target, err := u.findOtherVault(ctx, in.Vault)
 	if err != nil {
 		return api.VaultRemoveOutput{}, err
 	}
@@ -112,7 +112,7 @@ func (u *UseCase) Remove(ctx context.Context, in api.VaultRemoveInput) (api.Vaul
 
 // Open makes the window show a vault other than the current one.
 func (u *UseCase) Open(ctx context.Context, in api.VaultOpenInput) (api.VaultOpenOutput, error) {
-	target, err := u.findOther(ctx, in.Vault)
+	target, err := u.findOtherVault(ctx, in.Vault)
 	if err != nil {
 		return api.VaultOpenOutput{}, err
 	}
@@ -137,7 +137,7 @@ func (u *UseCase) getEntries(ctx context.Context) ([]host.VaultEntry, error) {
 	return entries, nil
 }
 
-func (u *UseCase) findOther(ctx context.Context, address string) (host.VaultEntry, error) {
+func (u *UseCase) findOtherVault(ctx context.Context, address string) (host.VaultEntry, error) {
 	target, err := u.find(ctx, address)
 	if err != nil {
 		return host.VaultEntry{}, err

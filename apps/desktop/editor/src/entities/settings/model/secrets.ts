@@ -56,7 +56,7 @@ export function createSecretStore({ words, notify, refresh }: SecretOptions) {
     return answer
   }
 
-  const runVoid = (operation: () => Promise<void>, changesValue = false): Promise<void> =>
+  const runVoidOperation = (operation: () => Promise<void>, changesValue = false): Promise<void> =>
     run(operation, undefined, changesValue)
 
   /** A secret created with its value. It resolves to its id, and to an empty text where nothing was created. An empty value creates nothing. */
@@ -66,37 +66,37 @@ export function createSecretStore({ words, notify, refresh }: SecretOptions) {
       : run(() => secretsApi.createSecret(group, name, value), '', true)
 
   const renameSecret = (id: string, name: string): Promise<void> =>
-    runVoid(() => secretsApi.renameSecret(id, name))
+    runVoidOperation(() => secretsApi.renameSecret(id, name))
 
   /** The value of a secret replaced. An empty value changes nothing. */
   const writeSecret = (id: string, value: string): Promise<void> =>
-    value === '' ? Promise.resolve() : runVoid(() => secretsApi.writeSecret(id, value), true)
+    value === '' ? Promise.resolve() : runVoidOperation(() => secretsApi.writeSecret(id, value), true)
 
   const deleteSecret = (id: string): Promise<void> =>
-    runVoid(() => secretsApi.deleteSecret(id), true)
+    runVoidOperation(() => secretsApi.deleteSecret(id), true)
 
   const deleteSecretGroup = (group: string): Promise<void> =>
-    runVoid(() => secretsApi.deleteSecretGroup(group), true)
+    runVoidOperation(() => secretsApi.deleteSecretGroup(group), true)
 
   const moveSecret = (id: string, beforeId: string): Promise<void> =>
-    runVoid(() => secretsApi.moveSecret(id, beforeId))
+    runVoidOperation(() => secretsApi.moveSecret(id, beforeId))
 
   const renameSecretGroup = (group: string, name: string): Promise<void> =>
-    runVoid(() => secretsApi.renameSecretGroup(group, name))
+    runVoidOperation(() => secretsApi.renameSecretGroup(group, name))
 
   const allowPluginSecret = (
     secretId: string,
     pluginId: string,
     name: string,
     group: string,
-  ): Promise<void> => runVoid(() => secretsApi.allowPluginSecret(secretId, pluginId, name, group))
+  ): Promise<void> => runVoidOperation(() => secretsApi.allowPluginSecret(secretId, pluginId, name, group))
 
   const denyPluginSecret = (
     secretId: string,
     pluginId: string,
     name: string,
     group: string,
-  ): Promise<void> => runVoid(() => secretsApi.denyPluginSecret(secretId, pluginId, name, group))
+  ): Promise<void> => runVoidOperation(() => secretsApi.denyPluginSecret(secretId, pluginId, name, group))
 
   return {
     states,

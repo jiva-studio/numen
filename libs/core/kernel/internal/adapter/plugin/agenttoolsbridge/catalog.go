@@ -25,7 +25,7 @@ func NewCatalog(host Host, server Server) *Catalog {
 // for which the caller has the effect permission and all required permissions. The
 // tools of one plugin are listed together, in the order of plugin ids.
 func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTool {
-	allowed := c.listAllowed(ctx, callerID)
+	allowed := c.listAllowedTools(ctx, callerID)
 	specs := make([]*v1.PluginTool, 0, len(allowed))
 	for _, one := range allowed {
 		specs = append(specs, one.spec)
@@ -38,7 +38,7 @@ func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTo
 func (c *Catalog) CallTool(
 	ctx context.Context, callerID, name string, arguments []byte, vault domain.VaultID,
 ) (*v1.CallToolResponse, error) {
-	allowed := c.listAllowed(ctx, callerID)
+	allowed := c.listAllowedTools(ctx, callerID)
 	index := slices.IndexFunc(allowed, func(one tool) bool { return one.spec.GetName() == name })
 	if index < 0 {
 		return &v1.CallToolResponse{Error: v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL}, nil
@@ -46,7 +46,7 @@ func (c *Catalog) CallTool(
 	return c.plugins.callTool(ctx, allowed[index], arguments, callScope{vault: vault})
 }
 
-func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
+func (c *Catalog) listAllowedTools(ctx context.Context, callerID string) []tool {
 	permissions := c.plugins.getPermissions(callerID)
 	all := c.plugins.listTools(ctx, c.server, callerID)
 	allowed := make([]tool, 0, len(all))

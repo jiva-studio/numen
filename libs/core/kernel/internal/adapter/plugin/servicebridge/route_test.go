@@ -49,8 +49,8 @@ func TestServeRouteForwardsBelowThePluginRoute(t *testing.T) {
 	if policy := recorded.Header().Get("Content-Security-Policy"); policy != "" {
 		t.Errorf("the plugin set the policy %q", policy)
 	}
-	if host.getReleased() != 1 {
-		t.Errorf("the plugin was released %d times", host.getReleased())
+	if host.getReleasedCount() != 1 {
+		t.Errorf("the plugin was released %d times", host.getReleasedCount())
 	}
 }
 

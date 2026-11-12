@@ -388,7 +388,7 @@ describe('an item that holds a component', () => {
 })
 
 describe('the active row', () => {
-  const getActive = () => choices().filter((row) => row.hasAttribute('data-active'))
+  const getActiveRows = () => choices().filter((row) => row.hasAttribute('data-active'))
   const moveOver = (row: HTMLElement | undefined, clientX: number) =>
     row?.dispatchEvent(new MouseEvent('mousemove', { clientX, clientY: 5 }))
 
@@ -401,7 +401,7 @@ describe('the active row', () => {
     getDrawnMenu()?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
     await nextTick()
 
-    expect(getActive()).toEqual([choices()[1]])
+    expect(getActiveRows()).toEqual([choices()[1]])
   })
 
   it('is one row when the pointer moves after the keyboard', async () => {
@@ -413,7 +413,7 @@ describe('the active row', () => {
     moveOver(choices()[2], 10)
     await nextTick()
 
-    expect(getActive()).toEqual([choices()[2]])
+    expect(getActiveRows()).toEqual([choices()[2]])
     expect(document.activeElement).toBe(choices()[2])
   })
 
@@ -427,7 +427,7 @@ describe('the active row', () => {
     moveOver(choices()[0], 10)
     await nextTick()
 
-    expect(getActive()).toEqual([choices()[1]])
+    expect(getActiveRows()).toEqual([choices()[1]])
   })
 
   it('is none once the pointer leaves a menu without an open submenu', async () => {
@@ -438,6 +438,6 @@ describe('the active row', () => {
     getDrawnMenu()?.dispatchEvent(new MouseEvent('mouseleave'))
     await nextTick()
 
-    expect(getActive()).toEqual([])
+    expect(getActiveRows()).toEqual([])
   })
 })

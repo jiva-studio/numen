@@ -39,7 +39,7 @@ func newCardModelDeck(cardModel, pos string, cards, from int) string {
 	return out
 }
 
-func getLived() map[string]string {
+func getLivedVault() map[string]string {
 	return map[string]string{
 		"Both.md": bothWays,
 		"One.md":  oneWay,
@@ -214,7 +214,7 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, getLived())
+			handler, target := newAPI(t, getLivedVault())
 			v := target[0]
 			runDays(t, handler, v, 14)
 			setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -250,7 +250,7 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 // distinguishes a preset with nothing scheduled from one whose day is fully
 // used.
 func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	setNow(handler, getFirstMorning())
 
@@ -262,14 +262,14 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	}
 }
 
-func getSole() map[string]bool {
+func getSoleDecks() map[string]bool {
 	return map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 }
 
 // The cards each deck offers add up to the cards the vault offers, and a
 // session on one deck requests only that deck's share.
 func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -295,7 +295,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		}
 		want := int(one.Due) + int(one.New)
 		got := len(sat.Cards)
-		if getSole()[one.Deck] && got != want {
+		if getSoleDecks()[one.Deck] && got != want {
 			t.Errorf("%s offers %d review cards and its session asks %d",
 				one.Deck, want, got)
 		}
@@ -318,7 +318,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 
 // TestVaultCount_ReturnsReviewedTodayPerDeck verifies answered count metrics per deck.
 func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 
@@ -364,7 +364,7 @@ func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
 }
 
 func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
-	handler, target := newAPI(t, getLived(), getDeck())
+	handler, target := newAPI(t, getLivedVault(), getDeck())
 	setNow(handler, getFirstMorning())
 
 	rows := front(t, handler).Vaults
@@ -406,7 +406,7 @@ func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 // A higher retention target gives shorter intervals, so the same history leaves
 // more cards due today.
 func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))

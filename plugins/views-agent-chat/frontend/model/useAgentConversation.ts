@@ -26,7 +26,7 @@ const AGENT_USE_AT = ['app', 'agent', 'use'] as const
 
 const getModelAt = (agent: string): readonly string[] => ['app', 'agent', agent, 'model']
 
-const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>
+const getKeptValue = (deps: AgentTabDeps, path: readonly string[]): string =>
   String(deps.settings?.getSetting?.(path) ?? '')
 
 function pickOption(
@@ -34,8 +34,8 @@ function pickOption(
   selectedAgentId: string,
   ...[selectedModelId, deps]: [selectedModelId: string, deps: AgentTabDeps]
 ): AgentModelOption {
-  const agent = selectedAgentId || getKept(deps, AGENT_USE_AT)
-  const model = selectedModelId || getKept(deps, getModelAt(agent))
+  const agent = selectedAgentId || getKeptValue(deps, AGENT_USE_AT)
+  const model = selectedModelId || getKeptValue(deps, getModelAt(agent))
   const ofAgent = options.filter((o) => o.agentId === agent)
   return (
     ofAgent.find((o) => o.modelId === model) ??
@@ -140,12 +140,12 @@ function useReasoningSelection(
     return hasLevel(byDefault) ? byDefault : ''
   })
 
-  const selectReasoning = (id: string) => {
+  const selectReasoningLevel = (id: string) => {
     const agentId = selection.selectedAgentId.value
     selected.value = { agentId, id }
   }
 
-  return { reasoningLevels, selectedReasoningId, selectReasoning }
+  return { reasoningLevels, selectedReasoningId, selectReasoningLevel }
 }
 
 const isSameList = (a: readonly string[], b: readonly string[]) =>

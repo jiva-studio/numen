@@ -101,7 +101,7 @@ func newWire(t *testing.T) *wire {
 	return w
 }
 
-func (w *wire) waitStarted(t *testing.T) {
+func (w *wire) waitUntilStarted(t *testing.T) {
 	t.Helper()
 	select {
 	case <-w.recognizer.startCh:

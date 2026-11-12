@@ -70,7 +70,7 @@ func (w chunkWriter) upsert(ctx context.Context, c Chunk, parent any, isLeaf boo
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
 	if row, hasRow := target.takeUnusedRow(key); hasRow {
 		if _, err := tx.ExecContext(ctx, getStatement("move_chunk"),
-			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
+			c.Start, c.Length, parent, newNullableValue(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
 		}
 		if err := writeSectionNames(ctx, tx, row, c); err != nil {
@@ -81,7 +81,7 @@ func (w chunkWriter) upsert(ctx context.Context, c Chunk, parent any, isLeaf boo
 
 	var row int64
 	err := tx.QueryRowContext(ctx, getStatement("insert_chunk"),
-		source, vault, c.Start, c.Length, parent, newNullable(c.Location), key.hash).Scan(&row)
+		source, vault, c.Start, c.Length, parent, newNullableValue(c.Location), key.hash).Scan(&row)
 	if err != nil {
 		return 0, fmt.Errorf("store a chunk of this source: %w", err)
 	}

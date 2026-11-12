@@ -283,14 +283,14 @@ func TestChooseSeparatesTokenAndStepScores(t *testing.T) {
 
 // The largest score is chosen, and ties are broken by first position.
 func TestFindLargest(t *testing.T) {
-	if got := findLargest([]float32{1, 1, 0}); got != 0 {
-		t.Errorf("findLargest tie got %d, want 0", got)
+	if got := findLargestScoreIndex([]float32{1, 1, 0}); got != 0 {
+		t.Errorf("findLargestScoreIndex tie got %d, want 0", got)
 	}
-	if got := findLargest([]float32{10, 5, 2}); got != 0 {
-		t.Errorf("findLargest index 0 got %d, want 0", got)
+	if got := findLargestScoreIndex([]float32{10, 5, 2}); got != 0 {
+		t.Errorf("findLargestScoreIndex index 0 got %d, want 0", got)
 	}
-	if got := findLargest([]float32{3}); got != 0 {
-		t.Errorf("findLargest single got %d, want 0", got)
+	if got := findLargestScoreIndex([]float32{3}); got != 0 {
+		t.Errorf("findLargestScoreIndex single got %d, want 0", got)
 	}
 }
 

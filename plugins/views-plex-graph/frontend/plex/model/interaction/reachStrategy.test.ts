@@ -6,7 +6,7 @@ import { LONG_PRESS_DELAY } from './longPress'
 
 const touch = () => ({ pointerType: 'touch', clientX: 10, clientY: 10 }) as PointerEvent
 
-function createRest(after?: number) {
+function createPressedStrategy(after?: number) {
   const reach = vi.fn<ReachSite['reach']>()
   const scope = effectScope()
   const listeners = scope.run(() => byLongPress(after).listeners({ ready: () => true, reach }))!
@@ -21,7 +21,7 @@ afterEach(() => {
 describe('a finger left still on a node', () => {
   it('reaches out after the wait it was given', () => {
     vi.useFakeTimers()
-    const { reach, scope } = createRest(100)
+    const { reach, scope } = createPressedStrategy(100)
     vi.advanceTimersByTime(99)
     expect(reach).not.toHaveBeenCalled()
     vi.advanceTimersByTime(1)
@@ -31,7 +31,7 @@ describe('a finger left still on a node', () => {
 
   it('reaches out after the usual wait where none was given', () => {
     vi.useFakeTimers()
-    const { reach, scope } = createRest()
+    const { reach, scope } = createPressedStrategy()
     vi.advanceTimersByTime(LONG_PRESS_DELAY - 1)
     expect(reach).not.toHaveBeenCalled()
     vi.advanceTimersByTime(1)

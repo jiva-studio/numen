@@ -11,7 +11,7 @@ import (
 func TestAFreshNoteIsSearchableByItsWordsBeforeItsVector(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	vault := getFirst()
+	vault := getFirstVault()
 	text := "reading a book about water"
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{Path: "n/fresh.md", Kind: "note", Size: int64(len(text)), MTime: 1}); err != nil {
 		t.Fatal(err)

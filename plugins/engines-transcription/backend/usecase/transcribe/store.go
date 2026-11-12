@@ -36,7 +36,7 @@ func (t transcripts) hasWhole(ctx context.Context, key string) (bool, error) {
 	return err == nil, err
 }
 
-func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
+func (t transcripts) readReachedPosition(ctx context.Context, key string) (int, error) {
 	raw, err := t.store.Read(ctx, getReachedName(key))
 	if errors.Is(err, host.ErrNotExist) {
 		return 0, t.store.Delete(ctx, getPartialName(key))

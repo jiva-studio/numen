@@ -54,14 +54,14 @@ const createToolStep = (
   written: count,
   ...(place ? { place } : {}),
 })
-const createResponded = (): AgentStep => ({ kind: 'answered' })
-const createThinking = (): AgentStep => ({ kind: 'thinking' })
-const createStopped = (error = ''): AgentStep => ({ kind: 'stopped', error })
+const createRespondedStep = (): AgentStep => ({ kind: 'answered' })
+const createThinkingStep = (): AgentStep => ({ kind: 'thinking' })
+const createStoppedStep = (error = ''): AgentStep => ({ kind: 'stopped', error })
 
 describe('an answer', () => {
   it('grows as its pieces arrive and settles when they stop', async () => {
     const conversation = useConversation(
-      createPort([createTranscriptStep('Two '), createTranscriptStep('notes.'), createStopped()]),
+      createPort([createTranscriptStep('Two '), createTranscriptStep('notes.'), createStoppedStep()]),
       words,
       called,
       now,
@@ -77,7 +77,7 @@ describe('an answer', () => {
 
   it('is not left waiting when the agent finishes having returned nothing', async () => {
     const conversation = useConversation(
-      createPort([createToolStep('Search notes'), createStopped()]),
+      createPort([createToolStep('Search notes'), createStoppedStep()]),
       words,
       called,
       now,
@@ -92,7 +92,7 @@ describe('an answer', () => {
 
   it('carries the reason when the agent stopped for one', async () => {
     const conversation = useConversation(
-      createPort([createStopped('went round too many times')]),
+      createPort([createStoppedStep('went round too many times')]),
       words,
       called,
       now,
@@ -108,7 +108,7 @@ describe('an answer', () => {
     const conversation = useConversation(
       createPort([
         createTranscriptStep('Your credit balance is too low to use Claude Code.'),
-        createStopped('Your credit balance is too low to use Claude Code.'),
+        createStoppedStep('Your credit balance is too low to use Claude Code.'),
       ]),
       words,
       called,
@@ -132,7 +132,7 @@ describe('the line about work', () => {
           yield createToolStep('Search notes', 'entropy')
           observed = conversation.turns.value.map((turn) => `${turn.voice}:${turn.text}`)
           yield createTranscriptStep('Two notes.')
-          yield createStopped()
+          yield createStoppedStep()
         },
         finish: async () => undefined,
       },
@@ -150,7 +150,7 @@ describe('the line about work', () => {
       createPort([
         createToolStep('Search notes'),
         createTranscriptStep('Two notes.'),
-        createStopped(),
+        createStoppedStep(),
       ]),
       words,
       called,
@@ -167,7 +167,7 @@ describe('the line about work', () => {
         createToolStep('Search notes'),
         createToolStep('Read notes'),
         createToolStep('Search notes'),
-        createStopped(),
+        createStoppedStep(),
       ]),
       words,
       called,
@@ -211,7 +211,7 @@ describe('a tool without a title', () => {
         async *ask() {
           yield createToolStep('note_search')
           observed = conversation.turns.value.at(-1)?.text ?? ''
-          yield createStopped()
+          yield createStoppedStep()
         },
         finish: async () => undefined,
       },
@@ -259,7 +259,7 @@ describe('a wait that explains itself', () => {
     })
     const conversation = useConversation(
       createPort(
-        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createResponded()],
+        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createRespondedStep()],
         target,
       ),
       words,
@@ -288,8 +288,8 @@ describe('a wait that explains itself', () => {
       createPort(
         [
           createToolStep('Create a note', "Bram Doyle's warning", 4000),
-          createResponded(),
-          createThinking(),
+          createRespondedStep(),
+          createThinkingStep(),
         ],
         target,
       ),
@@ -321,7 +321,7 @@ describe('a wait that explains itself', () => {
     })
     const conversation = useConversation(
       createPort(
-        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createResponded()],
+        [createToolStep('Create a note', "Bram Doyle's warning", 4000), createRespondedStep()],
         target,
       ),
       words,
@@ -449,7 +449,7 @@ describe('where the line about work remains', () => {
         [
           createToolStep('Read a note'),
           createTranscriptStep('Bram Doyle '),
-          createResponded(),
+          createRespondedStep(),
           createTranscriptStep('was the chair.'),
         ],
         target,
@@ -479,7 +479,7 @@ describe('where the line about work remains', () => {
     })
     const conversation = useConversation(
       createPort(
-        [createTranscriptStep('One moment. '), createThinking(), createToolStep('Read a note')],
+        [createTranscriptStep('One moment. '), createThinkingStep(), createToolStep('Read a note')],
         target,
       ),
       words,
@@ -505,7 +505,7 @@ describe('where the line about work remains', () => {
       release = go
     })
     const conversation = useConversation(
-      createPort([createTranscriptStep(''), createThinking()], target),
+      createPort([createTranscriptStep(''), createThinkingStep()], target),
       words,
       called,
       now,
@@ -531,7 +531,7 @@ describe('a conversation', () => {
     const agent: AgentPort = {
       async *ask(query) {
         carried.push(query.conversation)
-        yield createStopped()
+        yield createStoppedStep()
       },
       finish: async () => undefined,
     }
@@ -551,7 +551,7 @@ describe('a conversation that is over', () => {
     const overKeys: string[] = []
     const conversation = useConversation(
       {
-        ...createPort([createStopped()]),
+        ...createPort([createStoppedStep()]),
         finish: async (named) => {
           overKeys.push(named)
         },
@@ -594,7 +594,7 @@ describe('a conversation that is over', () => {
     })
 
     /** Collects what the window would throw as uncaught errors. */
-    const collectUncaught = (): Error[] => {
+    const collectUncaughtErrors = (): Error[] => {
       const uncaught: Error[] = []
       vi.stubGlobal('queueMicrotask', (task: () => void) => {
         try {
@@ -607,10 +607,10 @@ describe('a conversation that is over', () => {
     }
 
     it('keeps the transcript and reports the refusal', async () => {
-      const uncaught = collectUncaught()
+      const uncaught = collectUncaughtErrors()
       const conversation = useConversation(
         {
-          ...createPort([createStopped()]),
+          ...createPort([createStoppedStep()]),
           finish: async () => Promise.reject(new Error('unreachable')),
         },
         words,
@@ -626,10 +626,10 @@ describe('a conversation that is over', () => {
     })
 
     it('keeps the transcript and reports an agent that cannot be reached at all', async () => {
-      const uncaught = collectUncaught()
+      const uncaught = collectUncaughtErrors()
       const conversation = useConversation(
         {
-          ...createPort([createStopped()]),
+          ...createPort([createStoppedStep()]),
           finish: () => {
             throw new Error('no agent')
           },
@@ -713,7 +713,7 @@ describe('two tools in hand at once', () => {
         [
           createToolStep('Search notes', 'entropy'),
           createToolStep('Read a note', 'Bram Doyle'),
-          createResponded(),
+          createRespondedStep(),
         ],
         target,
       ),
@@ -737,7 +737,7 @@ describe('two tools in hand at once', () => {
 describe('an exchange that is over', () => {
   it('leaves nothing saying the agent is still working', async () => {
     const conversation = useConversation(
-      createPort([createToolStep('Search notes'), createStopped('went round too many times')]),
+      createPort([createToolStep('Search notes'), createStoppedStep('went round too many times')]),
       words,
       called,
       now,
@@ -750,7 +750,7 @@ describe('an exchange that is over', () => {
   it('settles the answer and stops working once a stopped step arrives', async () => {
     const conversation = useConversation(
       createPort(
-        [createTranscriptStep('Hey! How can I help you today?'), createStopped()],
+        [createTranscriptStep('Hey! How can I help you today?'), createStoppedStep()],
         new Promise(() => undefined),
       ),
       words,
@@ -768,7 +768,7 @@ describe('an exchange that is over', () => {
 
   it('appends new prompts and responses after restored turns without colliding on turn IDs', async () => {
     const conversation = useConversation(
-      createPort([createTranscriptStep('Fresh reply'), createStopped()]),
+      createPort([createTranscriptStep('Fresh reply'), createStoppedStep()]),
       words,
       called,
       now,
@@ -841,10 +841,10 @@ const createHold = () => {
   return { target: target, release }
 }
 
-const getDrawn = (conversation: ReturnType<typeof useConversation>) =>
+const getDrawnTurns = (conversation: ReturnType<typeof useConversation>) =>
   conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])
 
-const getDoing = (conversation: ReturnType<typeof useConversation>) =>
+const getDoingTurns = (conversation: ReturnType<typeof useConversation>) =>
   conversation.turns.value
     .filter((turn) => turn.voice === 'doing')
     .map((turn) => [turn.text, turn.state])
@@ -863,14 +863,14 @@ describe('an error the answer already carries', () => {
     'marks that answer failed and adds none beside it, %s',
     async (_how, response, error, displayed) => {
       const conversation = useConversation(
-        createPort([createTranscriptStep(response), createStopped(error)]),
+        createPort([createTranscriptStep(response), createStoppedStep(error)]),
         words,
         called,
         now,
       )
       await conversation.ask('what is here?', '')
 
-      expect(getDrawn(conversation)).toEqual([
+      expect(getDrawnTurns(conversation)).toEqual([
         ['prompt', 'what is here?', undefined],
         ['response', displayed, 'failed'],
       ])
@@ -879,14 +879,14 @@ describe('an error the answer already carries', () => {
 
   it('is distinguished from an answer that says something else', async () => {
     const conversation = useConversation(
-      createPort([createTranscriptStep('Two notes.'), createStopped('went wrong')]),
+      createPort([createTranscriptStep('Two notes.'), createStoppedStep('went wrong')]),
       words,
       called,
       now,
     )
     await conversation.ask('what is here?', '')
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'what is here?', undefined],
       ['response', 'Two notes.', undefined],
       ['response', 'went wrong', 'failed'],
@@ -894,10 +894,10 @@ describe('an error the answer already carries', () => {
   })
 
   it('is returned on a turn of its own when it is nothing but blank and no answer came', async () => {
-    const conversation = useConversation(createPort([createStopped('  ')]), words, called, now)
+    const conversation = useConversation(createPort([createStoppedStep('  ')]), words, called, now)
     await conversation.ask('what is here?', '')
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'what is here?', undefined],
       ['response', '  ', 'failed'],
     ])
@@ -914,7 +914,7 @@ describe('an exchange that ends without saying why', () => {
     )
     await conversation.ask('what is here?', '')
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'what is here?', undefined],
       ['response', 'Two notes.', undefined],
     ])
@@ -924,7 +924,7 @@ describe('an exchange that ends without saying why', () => {
     const conversation = useConversation(createPort([]), words, called, now)
     await conversation.ask('what is here?', '')
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'what is here?', undefined],
       ['response', words.nothing, undefined],
     ])
@@ -935,7 +935,7 @@ describe('an exchange that ends without saying why', () => {
     await conversation.ask('first?', '')
     await conversation.ask('second?', '')
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'first?', undefined],
       ['response', words.nothing, undefined],
       ['prompt', 'second?', undefined],
@@ -951,7 +951,7 @@ describe('a question that cannot be requested', () => {
       {
         async *ask() {
           request++
-          yield createStopped()
+          yield createStoppedStep()
         },
         finish: async () => undefined,
       },
@@ -1001,9 +1001,9 @@ describe('the names of the turns', () => {
       createPort([
         createTranscriptStep('One. '),
         createToolStep('Read a note'),
-        createResponded(),
+        createRespondedStep(),
         createTranscriptStep('Two.'),
-        createStopped(),
+        createStoppedStep(),
       ]),
       words,
       called,
@@ -1021,7 +1021,7 @@ describe('the names of the turns', () => {
       {
         async *ask() {
           if (calls++ === 0) throw new Error('no agent')
-          yield createStopped()
+          yield createStoppedStep()
         },
         finish: async () => undefined,
       },
@@ -1043,7 +1043,7 @@ describe('the names of the turns', () => {
           observed.push(conversation.turns.value.map((turn) => turn.id))
           yield createToolStep('Read a note')
           observed.push(conversation.turns.value.map((turn) => turn.id))
-          yield createStopped()
+          yield createStoppedStep()
         },
         finish: async () => undefined,
       },
@@ -1068,7 +1068,7 @@ describe('the names of the turns', () => {
           conversation.turns.value = conversation.turns.value.slice(1)
           yield createToolStep('Read a note')
           observed = conversation.turns.value.map((turn) => turn.text)
-          yield createStopped()
+          yield createStoppedStep()
         },
         finish: async () => undefined,
       },
@@ -1089,7 +1089,7 @@ describe('while an answer is on its way', () => {
       {
         async *ask() {
           working = conversation.isAnswerPending.value
-          yield createStopped()
+          yield createStoppedStep()
         },
         finish: async () => undefined,
       },
@@ -1136,7 +1136,7 @@ describe('the line about work and the answer beginning', () => {
     const askPromise = conversation.ask('q', '')
     await flushPromises()
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'q', undefined],
       ['response', 'One. ', undefined],
       ['doing', 'Read a note', 'arriving'],
@@ -1149,7 +1149,7 @@ describe('the line about work and the answer beginning', () => {
   it('leaves the answer so far settled when the model is requested again', async () => {
     const { target, release } = createHold()
     const conversation = useConversation(
-      createPort([createTranscriptStep('One moment. '), createThinking()], target),
+      createPort([createTranscriptStep('One moment. '), createThinkingStep()], target),
       words,
       called,
       now,
@@ -1171,19 +1171,19 @@ describe('which tool answered', () => {
     createToolStep('Read a note'),
     ...between,
     createToolStep('Write a note'),
-    createResponded(),
+    createRespondedStep(),
   ]
 
   it.each([
     ['the model has completed', createTranscriptStep('So. ')],
-    ['the model is asked again', createThinking()],
+    ['the model is asked again', createThinkingStep()],
   ])('is known again once %s, and the one in hand stops running', async (_when, between) => {
     const { target, release } = createHold()
     const conversation = useConversation(createPort(steps(between), target), words, called, now)
     const askPromise = conversation.ask('q', '')
     await flushPromises()
 
-    expect(getDoing(conversation)).toEqual([
+    expect(getDoingTurns(conversation)).toEqual([
       ['Write a note', 'settled'],
       [words.thinking, 'arriving'],
     ])
@@ -1215,7 +1215,7 @@ describe('giving up on an answer in the middle', () => {
     release()
     await askPromise
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'q', undefined],
       ['response', 'Two ', undefined],
     ])
@@ -1230,7 +1230,7 @@ describe('giving up on an answer in the middle', () => {
     release()
     await askPromise
 
-    expect(getDrawn(conversation)).toEqual([['prompt', 'q', undefined]])
+    expect(getDrawnTurns(conversation)).toEqual([['prompt', 'q', undefined]])
   })
 
   it('does not say the agent could not be reached when it fails afterwards', async () => {
@@ -1253,7 +1253,7 @@ describe('giving up on an answer in the middle', () => {
     release()
     await askPromise
 
-    expect(getDrawn(conversation)).toEqual([['prompt', 'q', undefined]])
+    expect(getDrawnTurns(conversation)).toEqual([['prompt', 'q', undefined]])
   })
 
   it('leaves a newer question working when the one given up on ends', async () => {
@@ -1301,7 +1301,7 @@ describe('an agent that cannot be reached', () => {
     )
     await conversation.ask('q', '')
 
-    expect(getDrawn(conversation)).toEqual([
+    expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'q', undefined],
       ['response', 'Two ', undefined],
       ['response', words.unreachable, 'failed'],
@@ -1333,7 +1333,7 @@ describe('a conversation that is over, while an answer is on its way', () => {
 
     expect(signal?.aborted).toBe(true)
     expect(conversation.isAnswerPending.value).toBe(false)
-    expect(getDoing(conversation)).toEqual([])
+    expect(getDoingTurns(conversation)).toEqual([])
 
     release()
     await askPromise

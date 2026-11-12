@@ -116,7 +116,7 @@ func downloadModel(ctx context.Context, cfg model.LocalModel, file string, progr
 	if cfg.Revision != "" {
 		repo = repo.WithRevision(cfg.Revision)
 	}
-	if p, ok, err := locateCached(repo, cfg, file); err != nil || ok {
+	if p, ok, err := locateCachedModel(repo, cfg, file); err != nil || ok {
 		return p, err
 	}
 	if IsOffline() {
@@ -180,7 +180,7 @@ func fetchTokenizer(ctx context.Context, repo *hub.Repo, name string, sums map[s
 	if err != nil {
 		return "", fmt.Errorf("fetching %s: %w", model.TokenizerFile, err)
 	}
-	if err := checkPinned(sums, model.TokenizerFile, tokenizer); err != nil {
+	if err := checkPinnedChecksum(sums, model.TokenizerFile, tokenizer); err != nil {
 		return "", err
 	}
 	return tokenizer, nil
@@ -193,7 +193,7 @@ func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file s
 		if err != nil {
 			return Paths{}, fmt.Errorf("fetching %s/%s: %w", model.ModelFolder, name, err)
 		}
-		if err := checkPinned(sums, model.ModelFolder+"/"+name, pos); err != nil {
+		if err := checkPinnedChecksum(sums, model.ModelFolder+"/"+name, pos); err != nil {
 			return Paths{}, err
 		}
 		if name == file {
@@ -306,7 +306,7 @@ func isFileOfAnyModel(name string, siblings []string) bool {
 	return false
 }
 
-func checkPinned(sums map[string]string, name, path string) error {
+func checkPinnedChecksum(sums map[string]string, name, path string) error {
 	sum, ok := sums[name]
 	if !ok {
 		return nil
@@ -336,7 +336,7 @@ func discardDownload(path string) error {
 	return errors.Join(removed...)
 }
 
-func locateCached(repo *hub.Repo, cfg model.LocalModel, file string) (Paths, bool, error) {
+func locateCachedModel(repo *hub.Repo, cfg model.LocalModel, file string) (Paths, bool, error) {
 	cache, err := repo.CacheDir()
 	if err != nil {
 		return Paths{}, false, fmt.Errorf("cache folder of %s: %w", cfg.Name, err)
@@ -350,10 +350,10 @@ func locateCached(repo *hub.Repo, cfg model.LocalModel, file string) (Paths, boo
 		// gomutants:disable-next-line RETURN_ZERO reason="an empty Paths literal equals the zero value"
 		return Paths{Model: "", Tokenizer: ""}, false, nil
 	}
-	if err := checkPinned(cfg.Sums, model.ModelFolder+"/"+file, p.Model); err != nil {
+	if err := checkPinnedChecksum(cfg.Sums, model.ModelFolder+"/"+file, p.Model); err != nil {
 		return Paths{}, false, err
 	}
-	if err := checkPinned(cfg.Sums, model.TokenizerFile, p.Tokenizer); err != nil {
+	if err := checkPinnedChecksum(cfg.Sums, model.TokenizerFile, p.Tokenizer); err != nil {
 		return Paths{}, false, err
 	}
 	return p, true, nil

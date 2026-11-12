@@ -30,7 +30,7 @@ const FILE = {
   [SECOND.id]: { executablePath: '/opt/second/bin/second-cli' },
 }
 
-const createHeld = <T>() => {
+const createHeldAnswers = <T>() => {
   const answers = new Map<string, (value: T) => void>()
   const call = (pluginId: string) =>
     new Promise<T>((resolve) => {
@@ -57,8 +57,8 @@ afterEach(() => {
 
 describe('the page of a plugin opened after another', () => {
   it('never shows a value of the plugin shown before', async () => {
-    const fileCounts = createHeld<number>()
-    const readmes = createHeld<string>()
+    const fileCounts = createHeldAnswers<number>()
+    const readmes = createHeldAnswers<string>()
     vi.stubGlobal('fetch', async (url: string) => {
       const pluginId = url.split('/')[2] ?? ''
       const text = await readmes.call(pluginId)

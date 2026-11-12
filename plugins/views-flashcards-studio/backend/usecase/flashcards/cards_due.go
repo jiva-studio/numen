@@ -73,7 +73,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err != nil {
 		return CardsDue{}, err
 	}
-	holds := in.day.getAsking(in.reviewCards, in.schedules, u.day, in.now, Scope{Deck: "", Preset: "", IsNamed: false})
+	holds := in.day.getAskingBudget(in.reviewCards, in.schedules, u.day, in.now, Scope{Deck: "", Preset: "", IsNamed: false})
 
 	out := CardsDue{ReviewCards: len(in.reviewCards), Due: 0, New: 0, Decks: nil, Presets: nil}
 	rows := make(deckRows)
@@ -82,7 +82,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 		rows.get(deck).Answered = one.Answered
 	}
 	due, newCount := rows.countDueAndNew(in.day, holds, &out)
-	out.Decks = rows.getSorted()
+	out.Decks = rows.getSortedRows()
 	out.Presets, err = u.getPresets(ctx, v, in.reads, in.day, due, newCount)
 	if err != nil {
 		return CardsDue{}, err
@@ -182,7 +182,7 @@ func (r deckRows) countDueAndNew(
 	return due, newCards
 }
 
-func (r deckRows) getSorted() []DeckCardsDue {
+func (r deckRows) getSortedRows() []DeckCardsDue {
 	var out []DeckCardsDue
 	for _, deck := range r {
 		out = append(out, *deck)

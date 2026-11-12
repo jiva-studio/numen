@@ -232,7 +232,7 @@ const maxComposableReturnProperties = {
       }
     }
 
-    function checkReturned(argument, fnName, fn) {
+    function checkReturnedObject(argument, fnName, fn) {
       if (!fnName || !isPartName(fnName) || !argument) return
       const node = getReturnedObject(argument)
       let count = 0
@@ -267,11 +267,11 @@ const maxComposableReturnProperties = {
 
     function checkBody(body, fnName) {
       if (body.type !== 'BlockStatement') {
-        checkReturned(body, fnName, body.parent)
+        checkReturnedObject(body, fnName, body.parent)
         return
       }
       for (const stmt of body.body) {
-        if (stmt.type === 'ReturnStatement') checkReturned(stmt.argument, fnName, body.parent)
+        if (stmt.type === 'ReturnStatement') checkReturnedObject(stmt.argument, fnName, body.parent)
       }
     }
 

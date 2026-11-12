@@ -48,10 +48,10 @@ func findIn(places []string, customPath string) string {
 	if cmd := os.Getenv("CLAUDE_COMMAND"); cmd != "" {
 		return cmd
 	}
-	return locateExecutable([]string{"claude"}, places)
+	return locateExecutablePath([]string{"claude"}, places)
 }
 
-func locateExecutable(names, places []string) string {
+func locateExecutablePath(names, places []string) string {
 	for _, name := range names {
 		if found, err := exec.LookPath(name); err == nil {
 			return found

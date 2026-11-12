@@ -17,7 +17,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 import {
   ReadError,
   getPluginCommands,
-  readBracketed,
+  readBracketedText,
   readWords,
 } from '../../../tools/ci-commands/commands.mjs'
 import { hasPreset } from '../../../tools/ci-stories/presets.mjs'
@@ -103,7 +103,7 @@ const readPlugins = () => getPluginCommands(TARGET).catch(refuse)
 const listed = (source, from) => {
   const opens = source.slice(from).match(/=>?\s*\[/)
   if (!opens) return null
-  return readBracketed(source, from + opens.index + opens[0].length - 1)
+  return readBracketedText(source, from + opens.index + opens[0].length - 1)
 }
 
 /* ------------------------------------------------------------------ keys */

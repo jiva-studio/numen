@@ -226,19 +226,19 @@ func (w *Window) RequestFlush(ctx context.Context) bool {
 	case <-request.superseded:
 	case <-ctx.Done():
 	}
-	return !request.isPending() && w.clients.getRunning() == request
+	return !request.isPending() && w.clients.getRunningRequest() == request
 }
 
 // IsQuestionOpen reports whether the running request has a client awaiting a user decision with
 // its work unwritten.
 func (w *Window) IsQuestionOpen() bool {
-	request := w.clients.getRunning()
+	request := w.clients.getRunningRequest()
 	return request != nil && request.isPending() && !request.isWritten()
 }
 
 // WaitForFlush waits for the running request to end with every client written.
 func (w *Window) WaitForFlush(ctx context.Context) bool {
-	request := w.clients.getRunning()
+	request := w.clients.getRunningRequest()
 	if request == nil {
 		return false
 	}

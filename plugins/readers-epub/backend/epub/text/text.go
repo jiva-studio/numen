@@ -142,14 +142,14 @@ func (x *Extractor) write(text string) {
 	if x.preformattedDepth > 0 {
 		x.out = append(x.out, text...)
 	} else {
-		x.writeNormalized(text)
+		x.writeNormalizedText(text)
 	}
 	if len(x.out) > start {
 		x.markup.run(start)
 	}
 }
 
-func (x *Extractor) writeNormalized(text string) {
+func (x *Extractor) writeNormalizedText(text string) {
 	for _, r := range text {
 		if unicode.IsSpace(r) {
 			if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {

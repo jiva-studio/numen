@@ -80,7 +80,7 @@ func (s *scene) holdScan(t *testing.T) domain.TextVersion {
 	return version
 }
 
-func (s *scene) readLive(t *testing.T) ([]domain.TextSegment, domain.TextVersion) {
+func (s *scene) readLiveSegments(t *testing.T) ([]domain.TextSegment, domain.TextVersion) {
 	t.Helper()
 	listing, err := s.texts.ListVersions(t.Context(), scanPath)
 	if err != nil {
@@ -122,7 +122,7 @@ func TestProofreadWithoutAVersionUsesTheLiveOne(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, live := s.readLive(t); live.PluginID != PluginID {
+	if _, live := s.readLiveSegments(t); live.PluginID != PluginID {
 		t.Errorf("the live version is %+v", live)
 	}
 }
@@ -151,7 +151,7 @@ func TestTheMockMarksTheLinesTheGatesLetThrough(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	parts, _ := s.readLive(t)
+	parts, _ := s.readLiveSegments(t)
 	if parts[0].Text != "A flywheel keeps energy " {
 		t.Errorf("the gate let a mark on a short line through: %q", parts[0].Text)
 	}

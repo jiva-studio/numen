@@ -199,7 +199,7 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 // A stream that sent a count does not send the list again immediately:
 // the wait before the list restarts after every count.
 func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 	front(t, handler)
 
 	first, second := make(chan struct{}), make(chan struct{})

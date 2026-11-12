@@ -12,7 +12,7 @@ import {
   extensionsCompartment,
   code,
   previewCompartment,
-  createEditable,
+  createEditableExtension,
   editableCompartment,
   getLineNumbersExtension,
   getTabSizeExtension,
@@ -149,7 +149,7 @@ export function useEditor(options: EditorStateOptions) {
 
   watch(
     () => options.props.isReadonly,
-    (off) => view?.dispatch({ effects: editableCompartment.reconfigure(createEditable(!off)) }),
+    (off) => view?.dispatch({ effects: editableCompartment.reconfigure(createEditableExtension(!off)) }),
   )
 
   watch(

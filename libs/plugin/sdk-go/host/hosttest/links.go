@@ -20,7 +20,7 @@ func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]
 	var order []string
 	groups := map[string][]int{}
 	for i, one := range additions {
-		if err := checkWritable(one, additions, groups[one.From]); err != nil {
+		if err := checkLinkWritable(one, additions, groups[one.From]); err != nil {
 			out[i].Err = err
 			continue
 		}
@@ -46,7 +46,7 @@ func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]
 	return out, nil
 }
 
-func checkWritable(one host.LinkAddition, additions []host.LinkAddition, grouped []int) error {
+func checkLinkWritable(one host.LinkAddition, additions []host.LinkAddition, grouped []int) error {
 	switch {
 	case !domain.IsKnownRole(one.Link.Role):
 		return fmt.Errorf("%q is not a role a link can have", one.Link.Role)

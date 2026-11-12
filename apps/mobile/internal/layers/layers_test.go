@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func getNamed() []string { return []string{"bind/mobile.go"} }
+func getNamedFiles() []string { return []string{"bind/mobile.go"} }
 
 // standing is a file of this application, parsed.
 type standing struct {
@@ -51,7 +51,7 @@ func readSources(t *testing.T) []standing {
 		t.Fatal(err)
 	}
 
-	for _, one := range getNamed() {
+	for _, one := range getNamedFiles() {
 		if !slices.ContainsFunc(found, func(target standing) bool { return target.path == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
@@ -59,14 +59,14 @@ func readSources(t *testing.T) []standing {
 	return found
 }
 
-func getLogging() map[string]bool {
+func getLoggingPackages() map[string]bool {
 	return map[string]bool{
 		"log": true, "slog": true, "logrus": true, "zap": true,
 		"zerolog": true, "logr": true, "glog": true, "klog": true,
 	}
 }
 
-func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
+func logs(to string) bool { return getLoggingPackages()[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. The binding is where the process's own streams are named,
 // and what it writes to standard error is for whatever the platform collects;

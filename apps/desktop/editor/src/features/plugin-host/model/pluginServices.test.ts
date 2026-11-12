@@ -260,7 +260,7 @@ describe('the agent a plugin is handed', () => {
 describe('the notes of the vault a plugin is handed', () => {
   const createNotes = () => {
     const making = {
-      createUntitled: vi.fn(() => Promise.resolve('Untitled.md')),
+      createUntitledNote: vi.fn(() => Promise.resolve('Untitled.md')),
       createWithTitle: vi.fn(() => Promise.resolve(null)),
     } as unknown as NoteCreator
     const listHeadings = vi.fn((_request: object) => ({ headings: [] }))
@@ -342,7 +342,7 @@ describe('the notes of the vault a plugin is handed', () => {
     const { notes, making } = createNotes()
 
     expect(await notes.createUntitledNote()).toBe('Untitled.md')
-    expect(making.createUntitled).toHaveBeenCalledWith('')
+    expect(making.createUntitledNote).toHaveBeenCalledWith('')
   })
 
   it('reads the frontmatter of a note, and nothing for a path holding no note', async () => {
@@ -357,7 +357,7 @@ describe('the notes of the vault a plugin is handed', () => {
 
   it('makes no path where the note maker made no untitled note', async () => {
     const { notes, making } = createNotes()
-    vi.mocked(making.createUntitled).mockResolvedValueOnce('')
+    vi.mocked(making.createUntitledNote).mockResolvedValueOnce('')
 
     expect(await notes.createUntitledNote()).toBe('')
   })

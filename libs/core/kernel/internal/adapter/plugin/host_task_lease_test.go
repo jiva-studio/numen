@@ -69,7 +69,7 @@ func (w taskHost) finishTask(t *testing.T, id string) {
 	}
 }
 
-func (w taskHost) listEvicted(t *testing.T) []string {
+func (w taskHost) listEvictedIDs(t *testing.T) []string {
 	t.Helper()
 	return w.host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond)
 }
@@ -78,16 +78,16 @@ func TestAnOpenTaskBlocksIdleEviction(t *testing.T) {
 	w := newTaskHost(t)
 	w.reportTask(t, "scan.sample", 1, 5)
 
-	if evicted := w.listEvicted(t); len(evicted) != 0 {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 0 {
 		t.Fatalf("evicted %v while a task is open", evicted)
 	}
 	w.reportTask(t, "scan.sample", 3, 5)
-	if evicted := w.listEvicted(t); len(evicted) != 0 {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 0 {
 		t.Fatalf("evicted %v while a task is open after a second report", evicted)
 	}
 
 	w.finishTask(t, "scan.sample")
-	if evicted := w.listEvicted(t); len(evicted) != 1 || evicted[0] != workingPlugin {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 1 || evicted[0] != workingPlugin {
 		t.Fatalf("evicted %v after the task finished, want the plugin", evicted)
 	}
 }
@@ -100,13 +100,13 @@ func TestATaskEndedByItsReportAllowsIdleEviction(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			w := newTaskHost(t)
 			w.reportTask(t, "scan.sample", 0, 0)
-			if evicted := w.listEvicted(t); len(evicted) != 0 {
+			if evicted := w.listEvictedIDs(t); len(evicted) != 0 {
 				t.Fatalf("evicted %v while a task with nothing to count is open", evicted)
 			}
 			if _, err := w.client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: report})); err != nil {
 				t.Fatal(err)
 			}
-			if evicted := w.listEvicted(t); len(evicted) != 1 {
+			if evicted := w.listEvictedIDs(t); len(evicted) != 1 {
 				t.Fatalf("evicted %v after the task ended, want the plugin", evicted)
 			}
 		})
@@ -119,16 +119,16 @@ func TestTwoOpenTasksNeedTwoFinishes(t *testing.T) {
 	w.reportTask(t, "second", 0, 4)
 
 	w.finishTask(t, "first")
-	if evicted := w.listEvicted(t); len(evicted) != 0 {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 0 {
 		t.Fatalf("evicted %v with one task still open", evicted)
 	}
 	w.finishTask(t, "first")
-	if evicted := w.listEvicted(t); len(evicted) != 0 {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 0 {
 		t.Fatalf("evicted %v after the same task finished twice", evicted)
 	}
 
 	w.finishTask(t, "second")
-	if evicted := w.listEvicted(t); len(evicted) != 1 {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 1 {
 		t.Fatalf("evicted %v after both tasks finished, want the plugin", evicted)
 	}
 }
@@ -144,13 +144,13 @@ func TestARunningQueueTurnBlocksIdleEviction(t *testing.T) {
 	if !stream.Receive() || stream.Msg().GetState() != v1.WorkState_WORK_STATE_RUNNING {
 		t.Fatalf("the turn did not start: %v", stream.Err())
 	}
-	if evicted := w.listEvicted(t); len(evicted) != 0 {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 0 {
 		t.Fatalf("evicted %v during a running turn", evicted)
 	}
 
 	closeStream()
 	wiretest.WaitUntil(t, "the plugin is evictable after its turn", func() bool {
-		return len(w.listEvicted(t)) == 1
+		return len(w.listEvictedIDs(t)) == 1
 	})
 }
 
@@ -165,7 +165,7 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 		t.Fatalf("restart after the crash: %v", err)
 	}
 	w.host.Activation.Release(workingPlugin)
-	if evicted := w.listEvicted(t); len(evicted) != 1 || evicted[0] != workingPlugin {
+	if evicted := w.listEvictedIDs(t); len(evicted) != 1 || evicted[0] != workingPlugin {
 		t.Fatalf("evicted %v, want the restarted plugin without the crashed process's task", evicted)
 	}
 }

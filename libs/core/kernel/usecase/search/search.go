@@ -237,7 +237,7 @@ func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	found, err := u.findNearest(ctx, v, query, p)
+	found, err := u.findNearestPassages(ctx, v, query, p)
 	switch {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
@@ -257,7 +257,7 @@ func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p
 // has nothing to search with.
 var errNoVector = errors.New("the query was not turned into a vector")
 
-func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
+func (u Search) findNearestPassages(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

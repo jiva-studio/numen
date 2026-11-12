@@ -3,15 +3,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { createPluginNotes } from './pluginNotes'
 import type { NoteResult, WriteResult } from '@/entities/note'
 
-const readOk = (body: string): NoteResult => ({ ok: true, value: { body } }) as NoteResult
-const writeOk = (): WriteResult => ({ ok: true, value: { body: '' } }) as WriteResult
+const readOkResult = (body: string): NoteResult => ({ ok: true, value: { body } }) as NoteResult
+const writeOkResult = (): WriteResult => ({ ok: true, value: { body: '' } }) as WriteResult
 
 interface Pending {
   readonly body: string
   readonly finish: () => void
 }
 
-const getPending = (pending: readonly Pending[], pos: number): Pending => {
+const getPendingItem = (pending: readonly Pending[], pos: number): Pending => {
   const one = pending[pos]
   if (!one) throw new Error(`write ${pos} was not made`)
   return one
@@ -27,12 +27,12 @@ const createDeps = () => {
           body,
           finish: () => {
             stored.set(path, body)
-            resolve(writeOk())
+            resolve(writeOkResult())
           },
         })
       }),
   )
-  const readItem = vi.fn((path: string) => Promise.resolve(readOk(stored.get(path) ?? '')))
+  const readItem = vi.fn((path: string) => Promise.resolve(readOkResult(stored.get(path) ?? '')))
   return { stored, pending, write, read: readItem }
 }
 
@@ -48,12 +48,12 @@ describe('createPluginNotes', () => {
     const last = notes.writeNote('a.md', 'three')
     expect(deps.write).toHaveBeenCalledTimes(1)
 
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     await tick()
     expect(deps.write).toHaveBeenCalledTimes(2)
     expect(deps.write).toHaveBeenLastCalledWith('a.md', 'three', null)
 
-    getPending(deps.pending, 1).finish()
+    getPendingItem(deps.pending, 1).finish()
     await Promise.all([first, middle, last])
     expect(deps.stored.get('a.md')).toBe('three')
   })
@@ -67,7 +67,7 @@ describe('createPluginNotes', () => {
     await tick()
     expect(deps.read).not.toHaveBeenCalled()
 
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     expect(await readItem).toEqual({ body: 'edited' })
     await write
   })
@@ -78,7 +78,7 @@ describe('createPluginNotes', () => {
     const write = notes.writeNote('b.md', 'other')
 
     expect(await notes.readNote('a.md')).toEqual({ body: 'original' })
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     await write
   })
 
@@ -91,7 +91,7 @@ describe('createPluginNotes', () => {
     expect(deps.read).toHaveBeenCalledTimes(1)
 
     expect(await readItem).toEqual({ body: 'original' })
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     await write
   })
 
@@ -111,11 +111,11 @@ describe('createPluginNotes', () => {
     const readItem = notes.readNote('a.md')
     const second = notes.writeNote('a.md', 'B')
 
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     expect(await readItem).toEqual({ body: 'A' })
     expect(deps.write).toHaveBeenCalledTimes(2)
 
-    getPending(deps.pending, 1).finish()
+    getPendingItem(deps.pending, 1).finish()
     await Promise.all([first, second])
     expect(deps.stored.get('a.md')).toBe('B')
   })
@@ -129,19 +129,19 @@ describe('createPluginNotes', () => {
     const readItem = notes.readNote('a.md')
     const after1 = notes.writeNote('a.md', 'C1')
 
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     await tick()
     // While B is in flight, a second write after the read merges into C1 (jobC was not deleted by jobB)
     const after2 = notes.writeNote('a.md', 'C2')
     // And a read queued while B is in flight waits for B and C2 (tail was not deleted early by A)
     const secondRead = notes.readNote('a.md')
 
-    getPending(deps.pending, 1).finish()
+    getPendingItem(deps.pending, 1).finish()
     expect(await readItem).toEqual({ body: 'B' })
     await tick()
     expect(deps.read).toHaveBeenCalledTimes(1)
 
-    getPending(deps.pending, 2).finish()
+    getPendingItem(deps.pending, 2).finish()
     await Promise.all([running, before, after1, after2])
     expect(await secondRead).toEqual({ body: 'C2' })
     expect(deps.write.mock.calls.map((call) => call[1])).toEqual(['A', 'B', 'C2'])
@@ -155,7 +155,7 @@ describe('createPluginNotes', () => {
     await expect(notes.writeNote('a.md', 'failed')).rejects.toThrow('could not be written')
 
     const next = notes.writeNote('a.md', 'kept')
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     await next
     expect(deps.stored.get('a.md')).toBe('kept')
   })
@@ -169,7 +169,7 @@ describe('createPluginNotes', () => {
     const queued = notes.writeNote('a.md', 'kept')
     await expect(failed).rejects.toThrow('unreachable')
 
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     await queued
     expect(deps.stored.get('a.md')).toBe('kept')
   })
@@ -179,13 +179,13 @@ describe('createPluginNotes', () => {
     const notes = createPluginNotes(deps)
 
     const first = notes.writeNote('a.md', 'one')
-    getPending(deps.pending, 0).finish()
+    getPendingItem(deps.pending, 0).finish()
     await first
 
     const second = notes.writeNote('a.md', 'two')
     await tick()
     expect(deps.write).toHaveBeenCalledTimes(2)
-    getPending(deps.pending, 1).finish()
+    getPendingItem(deps.pending, 1).finish()
     await second
     expect(deps.stored.get('a.md')).toBe('two')
   })

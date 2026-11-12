@@ -86,7 +86,7 @@ vi.mock('../../api/client', async (original) => ({
 const { default: ReviewTab } = await import('./ReviewTab.vue')
 const { useReview } = await import('../model/review')
 const { createVaultCounts } = await import('../model/counts')
-const { mountNothing } = await import('../model/views')
+const { mountEmptyView } = await import('../model/views')
 const { default: Decks } = await import('./decks/Decks.vue')
 
 type Review = ReturnType<typeof useReview>
@@ -102,7 +102,7 @@ const mountReview = async (vault: string) => {
       counts,
       notices: createMockNoticeHost(),
       agent: createMockAgentHost(),
-      mountView: mountNothing,
+      mountView: mountEmptyView,
       goToVaults: () => undefined,
       getViewport: () => ({ screen: 0, page: 0 }),
     }),

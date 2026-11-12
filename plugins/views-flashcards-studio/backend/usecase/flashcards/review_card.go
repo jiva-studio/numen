@@ -109,7 +109,7 @@ func (u ListReviewCards) GetReviewCards(ctx context.Context, v domain.Vault, pat
 	var misses []int
 	for item, path := range paths {
 		if err == nil {
-			if reviewCards, target := u.getCached(ctx, reader, v, path); target {
+			if reviewCards, target := u.getCachedCards(ctx, reader, v, path); target {
 				found[item] = reviewCards
 				continue
 			}
@@ -151,7 +151,7 @@ func (u ListReviewCards) Invalidate(vault domain.VaultID, paths ...string) {
 // InvalidateAll forgets every deck parsed.
 func (u ListReviewCards) InvalidateAll() { u.cache.invalidateAll() }
 
-func (u ListReviewCards) getCached(
+func (u ListReviewCards) getCachedCards(
 	ctx context.Context, reader ports.VaultReader, v domain.Vault, path string,
 ) ([]ReviewCard, bool) {
 	key := deckKey{vault: v.ID, path: path}

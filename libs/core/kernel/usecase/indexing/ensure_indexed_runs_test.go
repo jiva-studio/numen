@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func getUnread() domain.Vault {
+func getUnreadVault() domain.Vault {
 	return domain.Vault{ID: "unread", Name: "Sanskrit", Path: "/vaults/Sanskrit"}
 }
 
@@ -18,14 +18,14 @@ func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 	r := &indexing.Runs{}
 	r.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
-	r.Record(getUnread(), nil)
-	if read, _, _, _ := r.Claim(getUnread()); read != nil {
+	r.Record(getUnreadVault(), nil)
+	if read, _, _, _ := r.Claim(getUnreadVault()); read != nil {
 		t.Fatalf("a vault indexed clean was claimed before it was forgotten")
 	}
 
-	r.Clear(getUnread().ID)
+	r.Clear(getUnreadVault().ID)
 
-	read, _, _, _ := r.Claim(getUnread())
+	read, _, _, _ := r.Claim(getUnreadVault())
 	if read == nil {
 		t.Fatalf("a vault forgotten after a clean indexing was not claimable again")
 	}

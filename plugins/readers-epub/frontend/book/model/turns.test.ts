@@ -310,7 +310,7 @@ describe('the curve of a turn', () => {
 })
 
 describe('a spread entered from the adjacent document', () => {
-  const createLeaving = (translate: string, target = Number.parseFloat(translate)) => {
+  const createLeavingSpread = (translate: string, target = Number.parseFloat(translate)) => {
     const holder = document.createElement('div')
     const copy = document.createElement('div')
     const copyWrites = recordStyle(copy, translate)
@@ -321,7 +321,7 @@ describe('a spread entered from the adjacent document', () => {
 
   it('starts one spread past the far edge and moves the copy out after a forward turn', () => {
     const { turns, writes } = setUp()
-    const { holder, leaving, copyWrites } = createLeaving('-5000px 0')
+    const { holder, leaving, copyWrites } = createLeavingSpread('-5000px 0')
 
     turns.moves.enterSpread(0, 'next', leaving)
 
@@ -334,7 +334,7 @@ describe('a spread entered from the adjacent document', () => {
 
   it('starts one spread on the near side after a backward turn', () => {
     const { turns, writes } = setUp()
-    const { leaving, copyWrites } = createLeaving('0px 0')
+    const { leaving, copyWrites } = createLeavingSpread('0px 0')
 
     turns.moves.enterSpread(3, 'back', leaving)
 
@@ -345,7 +345,7 @@ describe('a spread entered from the adjacent document', () => {
 
   it('carries a copy taken during a forward turn one spread past where that turn went', () => {
     const { turns, writes } = setUp()
-    const { leaving, copyWrites } = createLeaving('-2600px 0', -3000)
+    const { leaving, copyWrites } = createLeavingSpread('-2600px 0', -3000)
 
     turns.moves.enterSpread(0, 'next', leaving)
 
@@ -355,7 +355,7 @@ describe('a spread entered from the adjacent document', () => {
 
   it('carries a copy taken during a backward turn one spread past where that turn went', () => {
     const { turns, writes } = setUp()
-    const { leaving, copyWrites } = createLeaving('-1400px 0', -1000)
+    const { leaving, copyWrites } = createLeavingSpread('-1400px 0', -1000)
 
     turns.moves.enterSpread(3, 'back', leaving)
 
@@ -365,7 +365,7 @@ describe('a spread entered from the adjacent document', () => {
 
   it('removes the copy without a drawn document', () => {
     const { turns } = setUp(MARKS, 0, false)
-    const { holder, leaving } = createLeaving('0px 0')
+    const { holder, leaving } = createLeavingSpread('0px 0')
 
     turns.moves.enterSpread(1, 'next', leaving)
 

@@ -53,14 +53,14 @@ func (f *Files) Save(path string, into Document, settings ...Setting) error {
 			raw = patched
 		}
 
-		if err := readBack(raw, settings, into); err != nil {
+		if err := compareWrittenSettings(raw, settings, into); err != nil {
 			return fmt.Errorf("%s: %w: %w", path, settingsdomain.ErrNotASetting, err)
 		}
 		return writeFileAtomically(path, raw)
 	})
 }
 
-func readBack(raw []byte, wrote []Setting, into Document) error {
+func compareWrittenSettings(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}

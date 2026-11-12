@@ -64,9 +64,9 @@ func RunSourceContract(t *testing.T, factory Factory, entries []catalog.Entry) {
 		{"lists every entry with its identity and the name of the source", checkList},
 		{"gets an entry by id", checkGet},
 		{"reports an id it does not list as not found", checkNotFound},
-		{"lists nothing without failing when it holds nothing", checkEmpty},
+		{"lists nothing without failing when it holds nothing", assertEmpty},
 		{"hands out entries the caller may change", checkIsolation},
-		{"stops at a context that has ended", checkCanceled},
+		{"stops at a context that has ended", assertCanceled},
 	}
 	for _, one := range checks {
 		t.Run(one.name, func(t *testing.T) { one.check(t, factory, entries) })
@@ -108,7 +108,7 @@ func checkNotFound(t *testing.T, factory Factory, entries []catalog.Entry) {
 	}
 }
 
-func checkEmpty(t *testing.T, factory Factory, _ []catalog.Entry) {
+func assertEmpty(t *testing.T, factory Factory, _ []catalog.Entry) {
 	t.Helper()
 	source := factory(t, nil)
 
@@ -136,7 +136,7 @@ func checkIsolation(t *testing.T, factory Factory, entries []catalog.Entry) {
 	assertSameEntries(t, source, second, entries)
 }
 
-func checkCanceled(t *testing.T, factory Factory, entries []catalog.Entry) {
+func assertCanceled(t *testing.T, factory Factory, entries []catalog.Entry) {
 	t.Helper()
 	source := factory(t, entries)
 	ctx, cancel := context.WithCancel(t.Context())

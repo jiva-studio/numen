@@ -482,7 +482,7 @@ describe('writes pending at an earlier request', () => {
 
 describe('a page that is closed', () => {
   /** A core whose quit stream is the mock one, and which keeps what it was given to listen with. */
-  const createListening = () => {
+  const createListeningCore = () => {
     const mockStream = createMockStream()
     const signals: AbortSignal[] = []
     const core: FlushDeps = {
@@ -496,7 +496,7 @@ describe('a page that is closed', () => {
   }
 
   it('releases the stream it listens on', async () => {
-    const { signals, core } = createListening()
+    const { signals, core } = createListeningCore()
     const going = createFileFlush(
       core,
       vi.fn(() => Promise.resolve()),
@@ -510,7 +510,7 @@ describe('a page that is closed', () => {
   })
 
   it('does not listen again once the stream has ended', async () => {
-    const { mockStream, signals, core } = createListening()
+    const { mockStream, signals, core } = createListeningCore()
     const going = createFileFlush(
       core,
       vi.fn(() => Promise.resolve()),

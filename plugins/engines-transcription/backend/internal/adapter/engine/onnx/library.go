@@ -46,9 +46,9 @@ func getLibraryName(goos string) string {
 func FindInstalled(name, pkg string) []string {
 	var out []string
 	for _, dir := range getLibraryDirectories() {
-		out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
+		out = append(out, findMatchingPaths(filepath.Join(dir, name+"*"))...)
 	}
-	stored := findMatching(filepath.Join("/nix/store", pkg, "lib", name+"*"))
+	stored := findMatchingPaths(filepath.Join("/nix/store", pkg, "lib", name+"*"))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="FindInstalled queries the root /nix/store path directly; sortNewestFirst is covered by unit tests."
 	sortNewestFirst(stored)
 	return append(out, stored...)
@@ -100,7 +100,7 @@ func getLibraryDirectories() []string {
 	)
 }
 
-func findMatching(pattern string) []string {
+func findMatchingPaths(pattern string) []string {
 	found, err := filepath.Glob(pattern)
 	// gomutants:disable-next-line BRANCH_IF reason="When filepath.Glob fails, found is nil and the loop below returns nil."
 	if err != nil {

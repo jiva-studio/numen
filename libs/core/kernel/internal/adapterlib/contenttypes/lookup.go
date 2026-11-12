@@ -82,10 +82,10 @@ func (l *Lookup) openCache(plugins []manifest.Discovered) *cache {
 func (l *Lookup) ListExtensions(plugins []manifest.Discovered, mask domain.ContentType) []string {
 	cache := l.openCache(plugins)
 	defer cache.mu.Unlock()
-	return slices.Clone(l.listCached(cache, mask))
+	return slices.Clone(l.listCachedTypes(cache, mask))
 }
 
-func (l *Lookup) listCached(cache *cache, mask domain.ContentType) []string {
+func (l *Lookup) listCachedTypes(cache *cache, mask domain.ContentType) []string {
 	if found, ok := cache.extensions[mask]; ok {
 		return found
 	}
@@ -101,7 +101,7 @@ func (l *Lookup) listCached(cache *cache, mask domain.ContentType) []string {
 	return candidates
 }
 
-func (l *Lookup) listOpened(plugins []manifest.Discovered, pluginID string) map[string][]string {
+func (l *Lookup) listOpenedTypes(plugins []manifest.Discovered, pluginID string) map[string][]string {
 	cache := l.openCache(plugins)
 	defer cache.mu.Unlock()
 	if found, ok := cache.opened[pluginID]; ok {
@@ -114,7 +114,7 @@ func (l *Lookup) listOpened(plugins []manifest.Discovered, pluginID string) map[
 	var extensions []string
 	for _, one := range handlers {
 		if one.PluginID == pluginID {
-			extensions = append(extensions, l.listCached(cache, one.Type)...)
+			extensions = append(extensions, l.listCachedTypes(cache, one.Type)...)
 		}
 	}
 	slices.Sort(extensions)
@@ -135,7 +135,7 @@ func (l *Lookup) ListReaderInfos(plugins []manifest.Discovered, declared manifes
 	if len(declared.Contributes.Readers) == 0 {
 		return nil
 	}
-	byReader := l.listOpened(plugins, declared.ID)
+	byReader := l.listOpenedTypes(plugins, declared.ID)
 	out := make([]plugindomain.ReaderInfo, 0, len(declared.Contributes.Readers))
 	for _, reader := range declared.Contributes.Readers {
 		out = append(out, plugindomain.ReaderInfo{ID: reader.ID, Extensions: slices.Clone(byReader[reader.ID])})

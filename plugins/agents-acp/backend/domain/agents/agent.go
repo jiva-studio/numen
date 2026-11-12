@@ -35,7 +35,7 @@ type known struct {
 	args    []string
 }
 
-func getKnown() []known {
+func getKnownAgents() []known {
 	return []known{
 		{program: "claude-code", title: "Claude Code (ACP)", binary: "claude-code-acp", args: nil},
 		{program: "codex", title: "Codex (ACP)", binary: "codex-acp", args: nil},
@@ -54,7 +54,7 @@ func FindInstalled(lookPath func(string) (string, error)) []Agent {
 		return nil
 	}
 	var agents []Agent
-	for _, candidate := range getKnown() {
+	for _, candidate := range getKnownAgents() {
 		binaryPath, err := lookPath(candidate.binary)
 		if err != nil || binaryPath == "" {
 			continue
@@ -102,9 +102,9 @@ func ParsePaths(value string) []string {
 	return paths
 }
 
-func createCustom(execPath string, isMulti bool) Agent {
+func createCustomAgent(execPath string, isMulti bool) Agent {
 	baseName := GetProgramName(execPath)
-	for _, candidate := range getKnown() {
+	for _, candidate := range getKnownAgents() {
 		if candidate.binary == baseName {
 			program := defaultProgram
 			if isMulti {

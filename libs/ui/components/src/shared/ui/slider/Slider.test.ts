@@ -34,7 +34,7 @@ const mountSlider = (props: Partial<SliderProps> = {}) =>
 
 const handle = (control: ReturnType<typeof mountSlider>) => control.get('[role="slider"]')
 
-const getEmitted = (control: ReturnType<typeof mountSlider>): readonly unknown[] =>
+const getEmittedEvents = (control: ReturnType<typeof mountSlider>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 describe('what a screen reader receives', () => {
@@ -75,7 +75,7 @@ describe('moving the handle', () => {
   it('returns a number and not a list', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
-    expect(getEmitted(control)).toEqual([41])
+    expect(getEmittedEvents(control)).toEqual([41])
   })
 
   // A caller puts back what it was handed, which is what a walk of the track
@@ -85,18 +85,18 @@ describe('moving the handle', () => {
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     await control.setProps({ modelValue: 45 })
     await handle(control).trigger('keydown', { key: 'ArrowLeft' })
-    expect(getEmitted(control)).toEqual([45, 40])
+    expect(getEmittedEvents(control)).toEqual([45, 40])
   })
 
   it('goes to either end, and no further', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'Home' })
     await handle(control).trigger('keydown', { key: 'End' })
-    expect(getEmitted(control)).toEqual([0, 100])
+    expect(getEmittedEvents(control)).toEqual([0, 100])
 
     const least = mountSlider({ modelValue: 0 })
     await handle(least).trigger('keydown', { key: 'ArrowLeft' })
-    expect(getEmitted(least)).toEqual([])
+    expect(getEmittedEvents(least)).toEqual([])
   })
 
   // A step out and a step back come to where they began, and the ceiling is a
@@ -107,7 +107,7 @@ describe('moving the handle', () => {
     await control.setProps({ modelValue: 10 })
     await handle(control).trigger('keydown', { key: 'ArrowLeft' })
 
-    expect(getEmitted(control)).toEqual([10, 9])
+    expect(getEmittedEvents(control)).toEqual([10, 9])
   })
 
   it('moves ten steps under a page key, and under a key retained with shift', async () => {
@@ -118,13 +118,13 @@ describe('moving the handle', () => {
     await control.setProps({ modelValue: 40 })
     await handle(control).trigger('keydown', { key: 'ArrowRight', shiftKey: true })
 
-    expect(getEmitted(control)).toEqual([50, 40, 50])
+    expect(getEmittedEvents(control)).toEqual([50, 40, 50])
   })
 
   it('passes nothing on while it cannot be moved', async () => {
     const control = mountSlider({ isDisabled: true })
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
   })
 })
 
@@ -133,14 +133,14 @@ describe('a value the ends do not hold', () => {
     const control = mountSlider({ modelValue: 90, max: 50 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('50')
-    expect(getEmitted(control)).toEqual([50])
+    expect(getEmittedEvents(control)).toEqual([50])
   })
 
   it('remains at the floor where it is handed a value under it', async () => {
     const control = mountSlider({ modelValue: -20 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('0')
-    expect(getEmitted(control)).toEqual([0])
+    expect(getEmittedEvents(control)).toEqual([0])
   })
 
   // A caller narrowing what a control allows narrows it under a value already
@@ -150,7 +150,7 @@ describe('a value the ends do not hold', () => {
     await control.setProps({ max: 50 })
     await nextTick()
     expect(handle(control).attributes('aria-valuenow')).toBe('50')
-    expect(getEmitted(control)).toEqual([50])
+    expect(getEmittedEvents(control)).toEqual([50])
   })
 })
 
@@ -170,7 +170,7 @@ describe('coming to rest', () => {
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
-    expect(getEmitted(control)).toEqual([41])
+    expect(getEmittedEvents(control)).toEqual([41])
     expect(control.emitted('commit')).toEqual([[41]])
     const order = Object.keys(control.emitted())
     expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('commit'))
@@ -180,7 +180,7 @@ describe('coming to rest', () => {
     const control = mountSlider()
     await walkTrack(control, [41, 42, 43])
 
-    expect(getEmitted(control)).toEqual([41, 42, 43])
+    expect(getEmittedEvents(control)).toEqual([41, 42, 43])
     expect(control.emitted('commit')).toBeUndefined()
   })
 
@@ -218,7 +218,7 @@ describe('the pointer', () => {
     const control = mountSlider()
     getRoot(control).vm.$emit('update:modelValue', [55])
     await nextTick()
-    expect(getEmitted(control)).toEqual([55])
+    expect(getEmittedEvents(control)).toEqual([55])
   })
 
   it('passes nothing on for a drag that carries no value', async () => {
@@ -226,14 +226,14 @@ describe('the pointer', () => {
     getRoot(control).vm.$emit('update:modelValue', undefined)
     getRoot(control).vm.$emit('update:modelValue', [])
     await nextTick()
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
   })
 
   it('passes the value on before the commit, and the commit once', async () => {
     const control = mountSlider()
     getRoot(control).vm.$emit('valueCommit', [70])
     await nextTick()
-    expect(getEmitted(control)).toEqual([70])
+    expect(getEmittedEvents(control)).toEqual([70])
     expect(control.emitted('commit')).toEqual([[70]])
   })
 
@@ -242,7 +242,7 @@ describe('the pointer', () => {
     getRoot(control).vm.$emit('update:modelValue', [70])
     getRoot(control).vm.$emit('valueCommit', [70])
     await nextTick()
-    expect(getEmitted(control)).toEqual([70])
+    expect(getEmittedEvents(control)).toEqual([70])
     expect(control.emitted('commit')).toEqual([[70]])
   })
 
@@ -259,7 +259,7 @@ describe('a key that is not a walking key', () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'a' })
     await handle(control).trigger('keyup', { key: 'a' })
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
     expect(control.emitted('commit')).toBeUndefined()
   })
 

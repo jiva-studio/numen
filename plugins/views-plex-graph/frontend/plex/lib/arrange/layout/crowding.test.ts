@@ -13,7 +13,7 @@ const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS
 /** The neighborhood on which a narrow window dropped relations. */
 const COUNTS = { parent: 1, child: 6, jump: 1, sibling: 2 }
 
-const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number }) =>
+const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: number }) =>
   frame.nodes.filter(
     (node) =>
       Math.abs(node.x) + node.width / 2 > viewport.width / 2 - margin ||
@@ -39,7 +39,7 @@ describe('a box narrows and a gap closes before a relation is given up', () => {
 
   it.each(NARROW)('$width×$height keeps every node inside the window', (viewport) => {
     const frame = arrangePlex(build('A node', COUNTS), { options: { viewport } })
-    expect(findEscaped(frame, viewport).map((node) => node.title)).toStrictEqual([])
+    expect(findEscapedNodes(frame, viewport).map((node) => node.title)).toStrictEqual([])
   })
 
   it('draws a narrower box the less room the window has', () => {
@@ -162,6 +162,6 @@ describe('what no packing can fit', () => {
     const frame = arrangePlex(crowd, { options: { viewport } })
 
     expect(Object.keys(frame.overflow).length).toBeGreaterThan(0)
-    expect(findEscaped(frame, viewport).map((node) => node.title)).toStrictEqual([])
+    expect(findEscapedNodes(frame, viewport).map((node) => node.title)).toStrictEqual([])
   })
 })

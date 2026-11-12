@@ -34,7 +34,7 @@ func getDeck() map[string]string {
 	}
 }
 
-func getOther() map[string]string {
+func getOtherVault() map[string]string {
 	return map[string]string{
 		"Bird.md": "---\ntype: card-model\nfields:\n  - Call\n  - Who\n---\n" +
 			"\n## Whose call\n\n### Front\n\n{{Call}}\n\n### Back\n\n{{Who}}\n",
@@ -138,7 +138,7 @@ func startSession(t *testing.T, handler *API, v domain.Vault) *api.StartSessionR
 // A run belongs to the vault it was opened on, and an answer naming another
 // vault's run fails.
 func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
-	handler, target, installation := newAPIOn(t, getDeck(), getOther())
+	handler, target, installation := newAPIOn(t, getDeck(), getOtherVault())
 	one, two := target[0], target[1]
 
 	session := startSession(t, handler, one)
@@ -212,7 +212,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 // another: the two vaults share no card id, no review card and no word, so nothing
 // can pass between them by similarity.
 func TestAnAnswerInOneVaultPreservesTheOtherVaultDueCards(t *testing.T) {
-	handler, target, installation := newAPIOn(t, getDeck(), getOther())
+	handler, target, installation := newAPIOn(t, getDeck(), getOtherVault())
 	one, two := target[0], target[1]
 
 	was := findVaultCount(t, front(t, handler), string(two.ID))
@@ -417,7 +417,7 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 
 // TestWatchCardsDue_CountsEveryVault verifies all vaults are reported.
 func TestWatchCardsDue_CountsEveryVault(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 
 	out := front(t, handler)
 	if len(out.Vaults) != len(target) {
@@ -453,7 +453,7 @@ func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	}
 }
 
-func getPointed() map[string]string {
+func getPointedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -466,7 +466,7 @@ func getPointed() map[string]string {
 }
 
 func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
-	handler, target := newAPI(t, getPointed())
+	handler, target := newAPI(t, getPointedVault())
 	v := target[0]
 
 	session := startSession(t, handler, v)
@@ -585,7 +585,7 @@ func newDeck(pos string, cards, from int) string {
 	return out
 }
 
-func getBacklogged() map[string]string {
+func getBackloggedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
@@ -631,7 +631,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, getBacklogged())
+			handler, target := newAPI(t, getBackloggedVault())
 			v := target[0]
 
 			p := readPresetConfig(t, handler, v, "Steady.md")
@@ -677,7 +677,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 // Under a goal of minutes a day long enough for the whole of the material is
 // closed by nothing: the material itself ran out, and no card limit is named.
 func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
-	handler, target := newAPI(t, getBacklogged())
+	handler, target := newAPI(t, getBackloggedVault())
 	v := target[0]
 
 	curveResp := getCurve(t, handler, v, "Steady.md", readPresetConfig(t, handler, v, "Steady.md"))
@@ -691,7 +691,7 @@ func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
 // day on the range is never the suggestion for a vault behind on its reviews. A card returning
 // within the day is the same card, and its repeated showings exhaust the clock.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -731,7 +731,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 //
 // The overdue count applies across the whole curve and does not change with the goal.
 func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -779,7 +779,7 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 
 // A vault with no review history has nothing overdue.
 func TestGetCurve_UnansweredVaultHasNothingOverdue(t *testing.T) {
-	handler, target := newAPI(t, getBacklogged())
+	handler, target := newAPI(t, getBackloggedVault())
 	v := target[0]
 
 	curveResp := getCurve(t, handler, v, "Steady.md", readPresetConfig(t, handler, v, "Steady.md"))
@@ -890,7 +890,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 	for _, one := range []struct {
 		what  string
 		notes map[string]string
-	}{{"lived", getLived()}, {"spread", getSpread()}} {
+	}{{"lived", getLivedVault()}, {"spread", getSpread()}} {
 		t.Run(one.what, func(t *testing.T) {
 			handler, target := newAPI(t, one.notes)
 			v := target[0]
@@ -937,7 +937,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 // Overdue, unbegun and the cards whose day is still to come are three separate
 // counts of the one material, and the band begins where the overdue pile does.
 func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -1011,7 +1011,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 		{"counts that never bind", 50, 200, review.BudgetUnitCards, true},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, getLived())
+			handler, target := newAPI(t, getLivedVault())
 			v := target[0]
 			runDays(t, handler, v, 14)
 			setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -1081,7 +1081,7 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	bands := make(map[int][]int32, 2)
 
 	for _, share := range []int{100, 0} {
-		handler, made := newAPI(t, getLived())
+		handler, made := newAPI(t, getLivedVault())
 		v := made[0]
 		runDays(t, handler, v, 20)
 		setNow(handler, getFirstMorning().AddDate(0, 0, 20))

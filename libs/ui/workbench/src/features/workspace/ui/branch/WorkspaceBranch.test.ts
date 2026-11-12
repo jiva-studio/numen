@@ -13,7 +13,7 @@ const TITLES: Readonly<Record<string, string>> = { one: 'One', two: 'Two', three
 const twoPanes = (): Branch =>
   split('root', [stack('left', 'one'), stack('right', 'two')], [0.7, 0.3]) as Branch
 
-const createNested = (): Branch =>
+const createNestedBranch = (): Branch =>
   split('root', [
     stack('left', 'one'),
     split('down', [stack('upper', 'two'), stack('lower', 'three')]),
@@ -92,7 +92,7 @@ describe('WorkspaceBranch layout', () => {
   })
 
   it('renders nested branches and all descendant panes', () => {
-    const one = mountBranch(createNested())
+    const one = mountBranch(createNestedBranch())
 
     expect(one.wrapper.findAllComponents(WorkspaceBranch)).toHaveLength(1)
     expect(panes(one)).toHaveLength(3)
@@ -104,7 +104,7 @@ describe('WorkspaceBranch layout', () => {
   })
 
   it('alternates splitter direction at each nesting depth', () => {
-    const one = mountBranch(createNested())
+    const one = mountBranch(createNestedBranch())
 
     expect(groups(one)[0]?.props('direction')).toBe('horizontal')
     expect(groups(one)[1]?.props('direction')).toBe('vertical')
@@ -139,7 +139,7 @@ describe('WorkspaceBranch layout', () => {
   })
 
   it('forwards slots to nested panes', () => {
-    const one = mountBranch(createNested())
+    const one = mountBranch(createNestedBranch())
 
     expect(one.wrapper.findAll('.tab-slot')).toHaveLength(3)
   })
@@ -211,7 +211,7 @@ describe('resize handle dragging', () => {
   })
 
   it('passes the resized branch id for nested branches', async () => {
-    const one = mountBranch(createNested())
+    const one = mountBranch(createNestedBranch())
 
     layout(one, 1, [30, 70])
     await one.wrapper.vm.$nextTick()

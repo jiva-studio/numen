@@ -20,14 +20,14 @@ const target = {
 }
 
 const setup = () => {
-  const createUntitled = vi.fn()
+  const createUntitledNote = vi.fn()
   const runCommand = vi.fn(() => Promise.resolve())
   const files = createVaultFiles({
-    making: { createUntitled } as never,
+    making: { createUntitledNote } as never,
     getTarget: () => target as never,
     runCommand,
   })
-  return { files, createUntitled, runCommand }
+  return { files, createUntitledNote, runCommand }
 }
 
 let restore: () => void
@@ -79,12 +79,12 @@ describe('the files of the vault a plugin is handed', () => {
   })
 
   it('make a note in a folder and answer at its current position, or no path where none was made', async () => {
-    const { files, createUntitled } = setup()
-    createUntitled.mockResolvedValueOnce('dir/Untitled.md').mockResolvedValueOnce('')
+    const { files, createUntitledNote } = setup()
+    createUntitledNote.mockResolvedValueOnce('dir/Untitled.md').mockResolvedValueOnce('')
 
     expect(await files.createNote('dir')).toBe('dir/Untitled.md')
     expect(await files.createNote('dir')).toBe('')
-    expect(createUntitled).toHaveBeenCalledWith('dir')
+    expect(createUntitledNote).toHaveBeenCalledWith('dir')
   })
 })
 

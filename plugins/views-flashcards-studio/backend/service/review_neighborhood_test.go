@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
-func getJoined() map[string]string {
+func getJoinedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"Mold.md": "---\ntype: note\n---\n" +
@@ -34,7 +34,7 @@ func getJoined() map[string]string {
 // Reading around a deck covers only the vaults this installation holds, and a
 // query about another vault fails.
 func TestGetDeckNeighborhood_UnknownVaultReturnsNotFound(t *testing.T) {
-	handler, _ := newAPI(t, getJoined())
+	handler, _ := newAPI(t, getJoinedVault())
 
 	_, err := handler.GetDeckNeighborhood(t.Context(), &api.GetDeckNeighborhoodRequest{
 		Vault: "no-vault-of-this-identity",
@@ -54,7 +54,7 @@ func TestGetDeckNeighborhood_UnknownVaultReturnsNotFound(t *testing.T) {
 // A note the deck points at that cannot be read is reported with the same error
 // the editor reports, so a rejected note has one vocabulary across the windows.
 func TestGetDeckNeighborhood_UnreadableNoteMatchesEditorError(t *testing.T) {
-	handler, target := newAPI(t, getJoined())
+	handler, target := newAPI(t, getJoinedVault())
 	v := target[0]
 
 	// The index still resolves the link; the file behind it is gone. This is the
@@ -97,21 +97,21 @@ func (brokenLinks) GetLinks(context.Context, domain.VaultID, string) ([]domain.R
 	return nil, errors.New("the index is out of reach")
 }
 
-func getBacklinked() map[string]string {
+func getBacklinkedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"Mold.md": "---\ntype: note\n---\n" +
 			"\n# Leaf mold\n\nLeaves left in a heap for two winters, and nothing else.\n",
 		"Mention.md": "---\ntype: note\n---\n" +
 			"\n# Mention\n\nSee [[Words]] for the cards.\n",
-		"decks/Words.md": getJoined()["decks/Words.md"],
+		"decks/Words.md": getJoinedVault()["decks/Words.md"],
 	}
 }
 
 // The index being out of reach is an internal failure and not an empty
 // neighborhood.
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
-	handler, target := newAPI(t, getJoined())
+	handler, target := newAPI(t, getJoinedVault())
 	handler.neighborhood = neighborhood.NewShow(
 		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(hostports.Readers{Vaults: handler.vaults}))
 
@@ -126,7 +126,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 // A note the deck points at is marked as linked from the deck, and a note
 // pointing at the deck is not. Every entry is a note of the vault.
 func TestGetDeckNeighborhood_MarksOnlyDeckLinkedNotes(t *testing.T) {
-	handler, target := newAPI(t, getBacklinked())
+	handler, target := newAPI(t, getBacklinkedVault())
 
 	out, err := handler.GetDeckNeighborhood(t.Context(), &api.GetDeckNeighborhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",

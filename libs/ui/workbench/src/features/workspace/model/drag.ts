@@ -121,7 +121,7 @@ const isInside = (point: Position, box: Rect): boolean =>
 const isInsideViewport = (point: Position, viewport: Size): boolean =>
   point.x >= 0 && point.y >= 0 && point.x < viewport.width && point.y < viewport.height
 
-const getClosest = (targetElement: Element | null, selector: string): Element | null =>
+const getClosestElement = (targetElement: Element | null, selector: string): Element | null =>
   targetElement?.closest(selector) ?? null
 
 function getStripDropTarget(target: StripTarget, local: ToLocal): TabDropTarget {
@@ -182,8 +182,8 @@ function resolveDropTarget(
   const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
   const underElement = document.elementFromPoint(point.x, point.y)
 
-  const strip = getClosest(underElement, '[data-workspace-strip]')
-  const pane = getClosest(underElement, '[data-workspace-pane]')
+  const strip = getClosestElement(underElement, '[data-workspace-strip]')
+  const pane = getClosestElement(underElement, '[data-workspace-pane]')
   const id = pane?.getAttribute('data-workspace-pane')
 
   if (strip && id) return getStripDropTarget({ x: point.x, strip, pane: id }, local)

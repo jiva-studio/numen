@@ -14,7 +14,7 @@ import (
 // byteOrderMark is what another editor may put in front of a note's first line.
 const byteOrderMark = "\uFEFF"
 
-func listTheirs() []string {
+func listTheirBlocks() []string {
 	return []string{
 		"mine: keep me verbatim\n",
 		"# a note to myself\n",
@@ -35,7 +35,7 @@ func listIdentifiers() []string {
 	}
 }
 
-func listOurs() []string {
+func listOurBlocks() []string {
 	return []string{
 		"id: " + listIdentifiers()[0] + "\n",
 		"title: Old\n",
@@ -45,14 +45,14 @@ func listOurs() []string {
 }
 
 func drawNote(t *rapid.T) (raw string, foreign []string) {
-	blocks := append(append([]string{}, listTheirs()...), listOurs()...)
+	blocks := append(append([]string{}, listTheirBlocks()...), listOurBlocks()...)
 	order := rapid.Permutation(blocks).Draw(t, "keys")
 	keys := order[:rapid.IntRange(0, len(order)).Draw(t, "member")]
 
 	var front strings.Builder
 	for _, one := range keys {
 		front.WriteString(one)
-		if !strings.HasPrefix(one, "#") && !contains(listOurs(), one) {
+		if !strings.HasPrefix(one, "#") && !contains(listOurBlocks(), one) {
 			foreign = append(foreign, one)
 		}
 	}

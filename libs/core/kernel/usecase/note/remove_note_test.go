@@ -10,7 +10,7 @@ import (
 
 func TestRemoveNote_FolderFailsAndRestProceeds(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"dir/Heat.md": "# Heat\n", "Work.md": "# Work\n"})
+	c := openChangeFixture(t, map[string]string{"dir/Heat.md": "# Heat\n", "Work.md": "# Work\n"})
 	remove := note.NewRemoveNote(c.remove(), vaultreader.Readers{})
 
 	if _, err := remove.Execute(t.Context(), c.vault, "dir", false); !errors.Is(err, note.ErrFolder) {
@@ -39,7 +39,7 @@ func TestRemoveNote_FolderFailsAndRestProceeds(t *testing.T) {
 
 func TestRemovingWithNoFilesOpenIsRefused(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Work.md": "# Work\n"})
+	c := openChangeFixture(t, map[string]string{"Work.md": "# Work\n"})
 
 	if _, err := note.NewRemoveNote(c.remove(), nil).Execute(t.Context(), c.vault, "Work.md", false); err == nil {
 		t.Error("a removal with no files open went ahead")

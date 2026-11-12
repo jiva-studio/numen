@@ -92,7 +92,7 @@ func (s *scene) holdTalk(t *testing.T, lines ...string) domain.TextVersion {
 	return s.hold(t, speechID, talkPath, "heard", kindTranscript, "the recording", parts)
 }
 
-func (s *scene) readLive(t *testing.T, path string) ([]domain.TextSegment, domain.TextVersion) {
+func (s *scene) readLiveSegments(t *testing.T, path string) ([]domain.TextSegment, domain.TextVersion) {
 	t.Helper()
 	listing, err := s.texts.ListVersions(t.Context(), path)
 	if err != nil {
@@ -137,7 +137,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	parts, live := s.readLive(t, scanPath)
+	parts, live := s.readLiveSegments(t, scanPath)
 	if live.PluginID != pluginID || live.Source != scan.GetID() || live.InputHash != scan.TextHash || live.Kind != ProofreadingKind {
 		t.Fatalf("the live version is %+v", live)
 	}
@@ -172,7 +172,7 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	parts, _ := s.readLive(t, talkPath)
+	parts, _ := s.readLiveSegments(t, talkPath)
 	if len(parts) != 2 {
 		t.Fatalf("parts %+v", parts)
 	}
@@ -198,7 +198,7 @@ func TestProofread_PromptsLongTranscriptByWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	parts, _ := s.readLive(t, talkPath)
+	parts, _ := s.readLiveSegments(t, talkPath)
 	var got []string
 	for _, part := range parts {
 		got = append(got, strings.TrimSpace(part.Text))
@@ -215,7 +215,7 @@ func TestProofread_OCRVersionStaysLiveWithoutOCRPlugin(t *testing.T) {
 	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
 	}
-	if _, live := s.readLive(t, scanPath); live.PluginID != pluginID {
+	if _, live := s.readLiveSegments(t, scanPath); live.PluginID != pluginID {
 		t.Fatalf("the live version is %+v", live)
 	}
 }
@@ -253,7 +253,7 @@ func TestAFailureOfTheModelIsShownAsATask(t *testing.T) {
 	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "the model is away") || tasks[0].Detail != scanPath {
 		t.Errorf("tasks %+v", tasks)
 	}
-	if _, live := s.readLive(t, scanPath); live.PluginID != ocrID {
+	if _, live := s.readLiveSegments(t, scanPath); live.PluginID != ocrID {
 		t.Errorf("a failed proofreading left the live version %+v", live)
 	}
 }
@@ -266,7 +266,7 @@ func TestProofreadMakesAVersionOfTheSourceThePluginIsGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, live := s.readLive(t, scanPath); live.PluginID != pluginID {
+	if _, live := s.readLiveSegments(t, scanPath); live.PluginID != pluginID {
 		t.Errorf("the live version is %+v", live)
 	}
 }

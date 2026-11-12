@@ -6,7 +6,7 @@ import { useObjection, useObjectionMessage } from './useObjection'
 
 type Why = HeadingObjection
 
-const createNaming = (objections: Readonly<Record<string, Why>>): NameEntryState<Why> => ({
+const createNamingState = (objections: Readonly<Record<string, Why>>): NameEntryState<Why> => ({
   getText: () => '',
   getObjection: (targetId) => objections[targetId] ?? null,
   setDraft: () => undefined,
@@ -16,7 +16,7 @@ const createNaming = (objections: Readonly<Record<string, Why>>): NameEntryState
 
 describe('why a name cannot be used', () => {
   it('is the objection the name entry holds for the target', () => {
-    const naming = createNaming({ front: 'taken' })
+    const naming = createNamingState({ front: 'taken' })
 
     expect(
       useObjection(
@@ -27,7 +27,7 @@ describe('why a name cannot be used', () => {
   })
 
   it('is null for a target without one', () => {
-    const naming = createNaming({ front: 'taken' })
+    const naming = createNamingState({ front: 'taken' })
 
     expect(
       useObjection(
@@ -38,7 +38,7 @@ describe('why a name cannot be used', () => {
   })
 
   it('follows a change of the target id', () => {
-    const naming = createNaming({ front: 'taken' })
+    const naming = createNamingState({ front: 'taken' })
     const target = ref('back')
     const objection = useObjection(
       () => naming,

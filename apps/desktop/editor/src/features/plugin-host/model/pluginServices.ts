@@ -146,7 +146,7 @@ export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps
     getHeadings: (paths) => listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
-    createUntitledNote: () => making.createUntitled(''),
+    createUntitledNote: () => making.createUntitledNote(''),
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
     readProperties: async (path) => (await getFileKinds([path])).get(path)?.properties ?? {},

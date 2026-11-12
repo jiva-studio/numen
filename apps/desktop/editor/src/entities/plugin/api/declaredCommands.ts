@@ -105,7 +105,7 @@ const readCommand = (wire: PluginCommand): DeclaredCommand => ({
 
 const PLACED_KINDS = ['command', 'view', 'submenu'] as const
 
-const readPlaced = (entry: PluginSlotEntry['entry']) => {
+const readPlacedEntry = (entry: PluginSlotEntry['entry']) => {
   const kind = PLACED_KINDS.find((one) => one === entry?.placed.case)
   return kind && entry?.placed.value ? { [kind]: entry.placed.value } : {}
 }
@@ -121,7 +121,7 @@ const readSlotEntry = ({ pluginId, entry }: PluginSlotEntry): DeclaredSlot => {
   return {
     pluginId,
     slot: entry?.slot ?? '',
-    ...readPlaced(entry),
+    ...readPlacedEntry(entry),
     ...(entry?.title ? { title: entry.title } : {}),
     ...(entry?.icon ? { iconName: entry.icon } : {}),
     ...readArrangement(entry),

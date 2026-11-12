@@ -126,9 +126,9 @@ func writeProjection(out *strings.Builder, p projection.Projection) {
 		p.Answered, p.ReviewsADay, p.MinutesADay, p.CountAdmitted())
 	fmt.Fprintf(out, "load %s\n", numbers(p.Load))
 	fmt.Fprintf(out, "backlog %s\n", numbers(p.Backlog))
-	fmt.Fprintf(out, "spent %s\n", formatSpent(p.Spent))
-	fmt.Fprintf(out, "admitted %s\n", formatAdmitted(p.Admitted))
-	fmt.Fprintf(out, "closed %s\n", formatClosed(p.Closed))
+	fmt.Fprintf(out, "spent %s\n", formatSpentDurations(p.Spent))
+	fmt.Fprintf(out, "admitted %s\n", formatAdmittedFlags(p.Admitted))
+	fmt.Fprintf(out, "closed %s\n", formatClosedBudgets(p.Closed))
 	fmt.Fprintf(out, "through %s\n", formatShares(p.Through))
 	fmt.Fprintf(out, "retained %s\n", formatShares(getRetainedShares(p.Retained)))
 }
@@ -151,7 +151,7 @@ func numbers(one []int) string {
 	return strings.Join(out, ",")
 }
 
-func formatSpent(one []time.Duration) string {
+func formatSpentDurations(one []time.Duration) string {
 	out := make([]string, len(one))
 	for i, each := range one {
 		out[i] = each.String()
@@ -159,7 +159,7 @@ func formatSpent(one []time.Duration) string {
 	return strings.Join(out, ",")
 }
 
-func formatAdmitted(one []bool) string {
+func formatAdmittedFlags(one []bool) string {
 	var out strings.Builder
 	for _, each := range one {
 		if each {
@@ -171,7 +171,7 @@ func formatAdmitted(one []bool) string {
 	return out.String()
 }
 
-func formatClosed(one []review.BudgetNames) string {
+func formatClosedBudgets(one []review.BudgetNames) string {
 	out := make([]string, len(one))
 	for i, each := range one {
 		named := make([]string, len(each))

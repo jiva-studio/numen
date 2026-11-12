@@ -82,7 +82,7 @@ func (u storer) storeBatches(
 			if !ok {
 				return nil
 			}
-			if err := u.saveCompleted(ctx, comp); err != nil {
+			if err := u.saveCompletedBatch(ctx, comp); err != nil {
 				return err
 			}
 			updateProgress(comp)
@@ -90,7 +90,7 @@ func (u storer) storeBatches(
 	}
 }
 
-func (u storer) saveCompleted(ctx context.Context, comp completedBatch) error {
+func (u storer) saveCompletedBatch(ctx context.Context, comp completedBatch) error {
 	if len(comp.vectors) == 0 {
 		return nil
 	}

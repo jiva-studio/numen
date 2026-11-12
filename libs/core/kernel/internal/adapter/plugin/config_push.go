@@ -20,7 +20,7 @@ import (
 type configPlugins interface {
 	listIDs() []string
 	getPluginSettings(pluginID string) map[string]any
-	getKnown(pluginID string) (manifest.Discovered, bool)
+	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
 	view() (setView, func())
 	hasProblems() bool
 }
@@ -184,7 +184,7 @@ func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 }
 
 func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]any) []manifest.SecretDeclaration {
-	p, ok := c.set.getKnown(pluginID)
+	p, ok := c.set.getKnownPlugin(pluginID)
 	if !ok {
 		return nil
 	}

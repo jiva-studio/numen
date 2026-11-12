@@ -216,7 +216,7 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
   return { entries, drag }
 }
 
-async function selectDropped(list: FileTree, paths: readonly string[]) {
+async function selectDroppedFiles(list: FileTree, paths: readonly string[]) {
   const first = paths[0]
   if (first === undefined) return
   await list.sync.refresh()
@@ -253,7 +253,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
       dropData: async (data) => {
         const folder = create.getFolderFor(list, list.state.selectedPaths.value[0] ?? null)
         const paths = await deps.transfer.dropData(folder, data)
-        await selectDropped(list, paths)
+        await selectDroppedFiles(list, paths)
         return paths
       },
     },

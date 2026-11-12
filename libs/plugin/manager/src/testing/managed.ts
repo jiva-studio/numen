@@ -3,7 +3,7 @@ import { createMockListing, createMockPluginInfo, type MockListingOptions } from
 import { createManagedPlugins, type ManagedPlugin } from '../plugins'
 
 /** An installed plugin as the manager lists it, with the listing made from `listing`. */
-export function createManaged(
+export function createManagedPlugin(
   id: string,
   name: string,
   overrides: Partial<PluginInfo> = {},
@@ -16,7 +16,7 @@ export function createManaged(
 }
 
 /** A plugin the catalog offers and the host does not have. */
-export function createAvailable(id: string, name: string): ManagedPlugin {
+export function createAvailablePlugin(id: string, name: string): ManagedPlugin {
   const [plugin] = createManagedPlugins([], [createMockListing(id, { name, isAvailable: true })])
   if (!plugin) throw new Error('the plugin did not merge')
   return plugin

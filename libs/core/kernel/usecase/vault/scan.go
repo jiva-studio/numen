@@ -96,7 +96,7 @@ func (u Scan) run(
 		return res, err
 	}
 
-	if err := u.removeGone(ctx, v, walk.recognized, observed, &res); err != nil {
+	if err := u.removeGoneFiles(ctx, v, walk.recognized, observed, &res); err != nil {
 		return res, err
 	}
 
@@ -239,7 +239,7 @@ func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path strin
 	return nil, false
 }
 
-func (u Scan) removeGone(
+func (u Scan) removeGoneFiles(
 	ctx context.Context, v domain.Vault, indexed map[string]domain.FileStat, visited map[string]bool, res *vaultreading.ScanResult,
 ) error {
 	var removed []string

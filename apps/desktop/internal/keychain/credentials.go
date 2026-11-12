@@ -103,7 +103,7 @@ func (s *Store) writeEntries(entries map[string]string) (err error) {
 			err = errors.Join(err, removeErr)
 		}
 	}()
-	if err := writeTemporary(tmp, content); err != nil {
+	if err := writeTemporaryFile(tmp, content); err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
 	}
 	if err := os.Rename(tmp.Name(), target); err != nil {
@@ -112,7 +112,7 @@ func (s *Store) writeEntries(entries map[string]string) (err error) {
 	return nil
 }
 
-func writeTemporary(tmp *os.File, content []byte) error {
+func writeTemporaryFile(tmp *os.File, content []byte) error {
 	if _, err := tmp.Write(content); err != nil {
 		return errors.Join(err, tmp.Close())
 	}

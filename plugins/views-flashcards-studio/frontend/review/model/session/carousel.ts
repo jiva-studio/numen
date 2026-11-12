@@ -36,7 +36,7 @@ function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLE
     return { before: 0, here: card.offsetLeft, after: place.scrollWidth - place.clientWidth }
   }
 
-  const findNearest = (left: number): PanelPlace => {
+  const findNearestPanel = (left: number): PanelPlace => {
     const all = getStops()
     let best: PanelPlace = 'before'
     for (const where of PANEL_PLACES) {
@@ -45,7 +45,7 @@ function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLE
     return best
   }
 
-  return { getStops, findNearest }
+  return { getStops, findNearestPanel }
 }
 
 /** The elements a press is meant for. A strip that captured the pointer would take their clicks. */
@@ -57,7 +57,7 @@ const isOnControl = (target: EventTarget | null): boolean =>
 function useCarouselDrag(deps: {
   readonly window_: Ref<HTMLElement | null>
   readonly currentPlace: Ref<PanelPlace>
-  readonly findNearest: (left: number) => PanelPlace
+  readonly findNearestPanel: (left: number) => PanelPlace
   readonly slideTo: (where: PanelPlace) => void
 }) {
   const taking = ref(false)
@@ -82,7 +82,7 @@ function useCarouselDrag(deps: {
   const letGo = async () => {
     if (!taking.value) return
     const place = deps.window_.value
-    const where = place ? deps.findNearest(place.scrollLeft) : deps.currentPlace.value
+    const where = place ? deps.findNearestPanel(place.scrollLeft) : deps.currentPlace.value
     taking.value = false
     await nextTick()
     if (where !== deps.currentPlace.value) deps.currentPlace.value = where
@@ -131,7 +131,7 @@ function createCarouselMover(
     snapTimer = win.setTimeout(() => slideTo(aim ?? where), SNAP_DELAY_MS)
   }
 
-  const checkArrived = (scrollLeft: number) => {
+  const clearAimOnArrival = (scrollLeft: number) => {
     if (aim && Math.abs(scrollLeft - getStops()[aim]) <= 1) {
       aim = null
       win.clearTimeout(sending)
@@ -144,28 +144,28 @@ function createCarouselMover(
     win.clearTimeout(snapTimer)
   }
 
-  return { slideTo, placeAt, snapTo, checkArrived, clear, isAiming: () => aim !== null }
+  return { slideTo, placeAt, snapTo, clearAimOnArrival, clear, isAiming: () => aim !== null }
 }
 
 export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const window_ = deps.window
   const middle = deps.middle
   const { currentPlace } = deps
-  const { getStops, findNearest } = createCarouselStops(window_, middle)
+  const { getStops, findNearestPanel } = createCarouselStops(window_, middle)
   const mover = createCarouselMover(window_, getStops)
 
   const { taking, onPointerDown, onPointerMove, letGo } = useCarouselDrag({
     window_,
     currentPlace,
-    findNearest,
+    findNearestPanel,
     slideTo: mover.slideTo,
   })
 
   const onScroll = () => {
     const place = window_.value
     if (!place) return
-    mover.checkArrived(place.scrollLeft)
-    const where = findNearest(place.scrollLeft)
+    mover.clearAimOnArrival(place.scrollLeft)
+    const where = findNearestPanel(place.scrollLeft)
     if (!mover.isAiming() && where !== currentPlace.value) currentPlace.value = where
     if (!taking.value) mover.snapTo(currentPlace.value)
   }

@@ -64,7 +64,7 @@ type libraryVaultTexts struct {
 	vault domain.Vault
 }
 
-func (t libraryVaultTexts) findLive(ctx context.Context, path, contentHash string) (placedVersion, error) {
+func (t libraryVaultTexts) findLiveVersion(ctx context.Context, path, contentHash string) (placedVersion, error) {
 	s := t.texts
 	s.mu.Lock()
 	failure := s.failure
@@ -101,7 +101,7 @@ func (t libraryVaultTexts) findLive(ctx context.Context, path, contentHash strin
 }
 
 func (t libraryVaultTexts) FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error) {
-	live, err := t.findLive(ctx, path, contentHash)
+	live, err := t.findLiveVersion(ctx, path, contentHash)
 	if err != nil {
 		return "", err
 	}
@@ -109,7 +109,7 @@ func (t libraryVaultTexts) FindLiveVersion(ctx context.Context, path, contentHas
 }
 
 func (t libraryVaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
-	live, err := t.findLive(ctx, path, contentHash)
+	live, err := t.findLiveVersion(ctx, path, contentHash)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
@@ -129,7 +129,7 @@ func (t libraryVaultTexts) GetVersionText(ctx context.Context, path string, id d
 	if !ok {
 		return domain.VersionText{}, text.ErrNoText
 	}
-	live, err := t.findLive(ctx, path, domain.HashContent(file.Raw))
+	live, err := t.findLiveVersion(ctx, path, domain.HashContent(file.Raw))
 	if err != nil || live.version.GetID() != id {
 		return domain.VersionText{}, text.ErrNoText
 	}

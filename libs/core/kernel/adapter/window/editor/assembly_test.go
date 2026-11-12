@@ -164,9 +164,9 @@ func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) 
 
 // OpenVaultWith is how a vault is opened over the readers and the watcher given.
 func (w readingParts) OpenVaultWith(
-	db *testIndex, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
+	db *testIndex, walkCountingReaders vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *vault.VaultOpener {
-	scan := vault.NewScan(walking, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
+	scan := vault.NewScan(walkCountingReaders, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan)
 	scan.Walks = db.Walks()
 	buffered := &indexnote.Buffered{NoteRepository: db.Stores.Notes}

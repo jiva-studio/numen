@@ -75,7 +75,7 @@ func read(t *testing.T, v domain.Vault, path string) string {
 	return string(raw)
 }
 
-type editing struct {
+type editorFixture struct {
 	vs            vaulted
 	read          cards.Read
 	addCard       deckedit.AddCard
@@ -88,13 +88,13 @@ type editing struct {
 	page          deckedit.GetCardPage
 }
 
-func newEditing(t *testing.T) editing {
+func newEditorFixture(t *testing.T) editorFixture {
 	t.Helper()
 	vs := newVaults(t)
 	read := cards.NewRead(vs.ports.Readers, vs.queries)
 	write := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
-	return editing{
+	return editorFixture{
 		vs: vs, read: read,
 		addCard:       deckedit.NewAddCard(read, write),
 		editCard:      deckedit.NewEditCard(read, write),
@@ -107,7 +107,7 @@ func newEditing(t *testing.T) editing {
 	}
 }
 
-func (e editing) version(t *testing.T) deckedit.DeckVersion {
+func (e editorFixture) version(t *testing.T) deckedit.DeckVersion {
 	t.Helper()
 	got, err := e.read.Deck(t.Context(), e.vs.first, mammals)
 	if err != nil {
@@ -117,7 +117,7 @@ func (e editing) version(t *testing.T) deckedit.DeckVersion {
 }
 
 func TestPageCards_ReturnsRunOrSingleCardWithRequestedFields(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 
 	whole, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{Path: mammals, Limit: 50})
 	if err != nil {
@@ -156,7 +156,7 @@ func TestPageCards_ReturnsRunOrSingleCardWithRequestedFields(t *testing.T) {
 }
 
 func TestReadingAFileThatIsNoDeckIsRefusedByPath(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 
 	for path, why := range map[string]string{
 		"Weather.md": "this note is not a deck",
@@ -171,7 +171,7 @@ func TestReadingAFileThatIsNoDeckIsRefusedByPath(t *testing.T) {
 }
 
 func TestAddingACardWritesItAtTheEndAndNamesItsMark(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 
 	added, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal",
 		[]format.Value{{Field: "Name", Text: "Okapi"}, {Field: "Height", Text: "about 60\""}}, nil)
@@ -191,7 +191,7 @@ func TestAddingACardWritesItAtTheEndAndNamesItsMark(t *testing.T) {
 }
 
 func TestAddingACardAtASectionThatIsNotThereIsRefused(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 	before := read(t, e.vs.first, mammals)
 	nine := 9
 
@@ -206,7 +206,7 @@ func TestAddingACardAtASectionThatIsNotThereIsRefused(t *testing.T) {
 }
 
 func TestADeckEditOverAnEditThatWasNeverReadIsRefused(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 	before := read(t, e.vs.first, mammals)
 
 	_, err := e.addSection.Execute(t.Context(), e.vs.first,
@@ -220,7 +220,7 @@ func TestADeckEditOverAnEditThatWasNeverReadIsRefused(t *testing.T) {
 }
 
 func TestEditingACardReplacesAndAddsValues(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 
 	edited, err := e.editCard.Execute(t.Context(), e.vs.first, e.version(t), "k7m2xq9fzp", "", []format.Value{{Field: "Height", Text: "about 120 cm"}})
 	if err != nil {
@@ -239,7 +239,7 @@ func TestEditingACardReplacesAndAddsValues(t *testing.T) {
 }
 
 func TestRemovingAValueAndACardConsumesThemOutOfTheDeck(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 
 	if _, err := e.removeValue.Execute(t.Context(), e.vs.first, e.version(t), "k7m2xq9fzp", "Life span"); err != nil {
 		t.Fatal(err)
@@ -261,7 +261,7 @@ func TestRemovingAValueAndACardConsumesThemOutOfTheDeck(t *testing.T) {
 }
 
 func TestSectionsAreAddedRenamedAndRemovedWithoutTouchingCards(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 
 	if _, err := e.addSection.Execute(t.Context(), e.vs.first, e.version(t), "The feathered"); err != nil {
 		t.Fatal(err)
@@ -288,7 +288,7 @@ func TestSectionsAreAddedRenamedAndRemovedWithoutTouchingCards(t *testing.T) {
 }
 
 func TestDeckEditScenariosCoverEdgesAndErrors(t *testing.T) {
-	e := newEditing(t)
+	e := newEditorFixture(t)
 
 	// Query second card by CardID (pos == 1) and with empty Fields (len(fields) == 0).
 	second, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{

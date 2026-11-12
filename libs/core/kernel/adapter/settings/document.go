@@ -170,7 +170,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 		storePath(valid, path, value)
 		hasInterfaceScale = hasInterfaceScale || declared.Key == keyInterfaceScale
 	}
-	for _, path := range listUndeclared(app) {
+	for _, path := range listUndeclaredKeys(app) {
 		f.AddNotice(fmt.Sprintf("numen.json: %q: no such setting; the value is ignored", settings.AppOwner+"."+path))
 	}
 	for section := range app {
@@ -210,7 +210,7 @@ func (f *File) readPlugin(id string, raw json.RawMessage) {
 	f.Plugins[id] = values
 }
 
-func listUndeclared(app map[string]any) []string {
+func listUndeclaredKeys(app map[string]any) []string {
 	declared := map[string]bool{}
 	parents := map[string]bool{}
 	for _, one := range readAppDeclaration() {

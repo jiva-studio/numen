@@ -71,7 +71,7 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 			name: "the same book in a second vault",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				t.Helper()
-				book(t, db, getFirst(), "library/tale.epub", 0x0f)
+				book(t, db, getFirstVault(), "library/tale.epub", 0x0f)
 				cutBook(t, db, getSecond(), "library/tale.epub")
 				return getSecond(), "library/tale.epub"
 			},
@@ -80,33 +80,33 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 			name: "the same book at a second path",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				t.Helper()
-				book(t, db, getFirst(), "library/tale.epub", 0x0f)
-				cutBook(t, db, getFirst(), "copies/tale.epub")
-				return getFirst(), "copies/tale.epub"
+				book(t, db, getFirstVault(), "library/tale.epub", 0x0f)
+				cutBook(t, db, getFirstVault(), "copies/tale.epub")
+				return getFirstVault(), "copies/tale.epub"
 			},
 		},
 		{
 			name: "a second copy whose first is gone",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				t.Helper()
-				book(t, db, getFirst(), "library/tale.epub", 0x0f)
-				cutBook(t, db, getFirst(), "copies/tale.epub")
-				if err := db.Chunks().RemoveSources(t.Context(), getFirst().ID, "book", []string{"library/tale.epub"}); err != nil {
+				book(t, db, getFirstVault(), "library/tale.epub", 0x0f)
+				cutBook(t, db, getFirstVault(), "copies/tale.epub")
+				if err := db.Chunks().RemoveSources(t.Context(), getFirstVault().ID, "book", []string{"library/tale.epub"}); err != nil {
 					t.Fatal(err)
 				}
-				return getFirst(), "copies/tale.epub"
+				return getFirstVault(), "copies/tale.epub"
 			},
 		},
 		{
 			name: "a book removed and put back",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
 				t.Helper()
-				book(t, db, getFirst(), "library/tale.epub", 0x0f)
-				if err := db.Chunks().RemoveSources(t.Context(), getFirst().ID, "book", []string{"library/tale.epub"}); err != nil {
+				book(t, db, getFirstVault(), "library/tale.epub", 0x0f)
+				if err := db.Chunks().RemoveSources(t.Context(), getFirstVault().ID, "book", []string{"library/tale.epub"}); err != nil {
 					t.Fatal(err)
 				}
-				cutBook(t, db, getFirst(), "library/tale.epub")
-				return getFirst(), "library/tale.epub"
+				cutBook(t, db, getFirstVault(), "library/tale.epub")
+				return getFirstVault(), "library/tale.epub"
 			},
 		},
 	} {
@@ -141,7 +141,7 @@ func TestAVectorSavedBackAsItIsCachedPreservesItsRowUntouched(t *testing.T) {
 	// that never fires cannot pass.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, getFirst(), "library/tale.epub", 0x0f)
+	book(t, db, getFirstVault(), "library/tale.epub", 0x0f)
 
 	for _, statement := range []string{
 		`CREATE TABLE rewritten (hash BLOB)`,

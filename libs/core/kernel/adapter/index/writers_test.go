@@ -40,7 +40,7 @@ func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain
 func saveNote(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
 	return saveCut(t.Context(), db, v.ID, []domain.Note{{
-		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: getWalked()},
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: getWalkedTime()},
 		Title:    title,
 		Type:     domain.TypeNote,
 	}})
@@ -58,11 +58,11 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, two)
 
-	if err := saveNote(t, one, getFirst(), "notes/entropy.md", "Entropy"); err != nil {
+	if err := saveNote(t, one, getFirstVault(), "notes/entropy.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := two.NoteQueries().GetNotes(t.Context(), getFirst().ID, []string{"notes/entropy.md"})
+	found, err := two.NoteQueries().GetNotes(t.Context(), getFirstVault().ID, []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 		for i := range each {
 			wg.Go(func() {
 				name := fmt.Sprintf("%s-%d", who, i)
-				err := saveNote(t, db, getFirst(), "notes/"+name+".md", name)
+				err := saveNote(t, db, getFirstVault(), "notes/"+name+".md", name)
 				if err != nil {
 					mu.Lock()
 					failed = append(failed, err)
@@ -115,7 +115,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 			want = append(want, fmt.Sprintf("notes/%s-%d.md", who, i))
 		}
 	}
-	found, err := one.NoteQueries().GetNotes(t.Context(), getFirst().ID, want)
+	found, err := one.NoteQueries().GetNotes(t.Context(), getFirstVault().ID, want)
 	if err != nil {
 		t.Fatal(err)
 	}

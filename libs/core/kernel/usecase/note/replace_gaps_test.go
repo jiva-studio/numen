@@ -38,7 +38,7 @@ func TestAnAmbiguousSpanReturnsHowManyPlaces(t *testing.T) {
 func TestAReplacementMustNameTheTextItReplaces(t *testing.T) {
 	t.Parallel()
 	was := "one two three\n"
-	c := openChanging(t, map[string]string{"Aggressor.md": was})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": was})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.FileStat{}); err == nil {
 		t.Fatal("a replacement naming nothing was accepted")
@@ -52,7 +52,7 @@ func TestAReplacementMustNameTheTextItReplaces(t *testing.T) {
 // present by it.
 func TestAMissingSpanReplacedByNothingIsMissing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "four", "", domain.FileStat{})
 	if !errors.As(err, new(note.MissingSpanError)) {
@@ -62,7 +62,7 @@ func TestAMissingSpanReplacedByNothingIsMissing(t *testing.T) {
 
 func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
 	replacing := c.replace()
 
 	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONES", domain.FileStat{})
@@ -86,7 +86,7 @@ func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
 
 func TestAReplacementAnswersWithTheFileItWrote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.FileStat{})
 	if err != nil {
@@ -101,7 +101,7 @@ func TestAReplacementAnswersWithTheFileItWrote(t *testing.T) {
 func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
 	t.Parallel()
 	was := "# Big\n\n" + strings.Repeat("a", edit.MaxBytes-100) + "\nneedle\n"
-	c := openChanging(t, map[string]string{"Big.md": was})
+	c := openChangeFixture(t, map[string]string{"Big.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Big.md", "needle", strings.Repeat("n", 200), domain.FileStat{})
 	if !errors.Is(err, edit.ErrTooLarge) {
@@ -116,7 +116,7 @@ func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
 func TestReplace_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	t.Parallel()
 	was := "---\ntitle: Aggressor\nA hedgehog.\n"
-	c := openChanging(t, map[string]string{"Aggressor.md": was})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
@@ -131,7 +131,7 @@ func TestReplace_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 // and receives a notification when the change ends.
 func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
 	var notified []domain.Edit
 	replacing := c.replace()
 	replacing.Drawing = func(_ context.Context, response domain.Edit) error {
@@ -192,7 +192,7 @@ func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, map[string]string{"Aggressor.md": tc.note})
+			c := openChangeFixture(t, map[string]string{"Aggressor.md": tc.note})
 
 			_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", tc.status, "q", domain.FileStat{})
 			var nowhere note.MissingSpanError
@@ -209,7 +209,7 @@ func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 
 func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.FileStat{})
 	var nowhere note.MissingSpanError
@@ -221,7 +221,7 @@ func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
 // A rejected replacement draws nothing and names the note it failed in.
 func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
 	var notified []domain.Edit
 	replacing := c.replace()
 	replacing.Drawing = func(_ context.Context, response domain.Edit) error {
@@ -241,7 +241,7 @@ func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 // A rune of three bytes puts the middle of the search inside it.
 func TestAMissingSpanAfterAThreeByteRuneNamesWhereItStopped(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Aggressor.md": "x\n"})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "x\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "x€y", "q", domain.FileStat{})
 	var nowhere note.MissingSpanError
@@ -258,7 +258,7 @@ func TestAMissingSpanAfterAThreeByteRuneNamesWhereItStopped(t *testing.T) {
 func TestAReplacementWhoseObserverCannotBeNotifiedIsRefused(t *testing.T) {
 	t.Parallel()
 	const was = "ééé 😀 target tail\n"
-	c := openChanging(t, map[string]string{"Aggressor.md": was})
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": was})
 	observerError := errors.New("the observer cannot be reached")
 	replacing := c.replace()
 	replacing.Drawing = func(context.Context, domain.Edit) error { return observerError }

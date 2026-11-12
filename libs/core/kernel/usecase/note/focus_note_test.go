@@ -28,7 +28,7 @@ func (l *looking) ActivateTab(context.Context, string) error   { return nil }
 
 func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}
 	focus := query.NewFocusNote(c.db.NoteQueries(), view)
 
@@ -43,7 +43,7 @@ func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 
 func TestFocusingNothingOrANoteThatIsNotThereMovesNoFocus(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}
 	focus := query.NewFocusNote(c.db.NoteQueries(), view)
 

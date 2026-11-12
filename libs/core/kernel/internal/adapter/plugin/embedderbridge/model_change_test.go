@@ -40,7 +40,7 @@ func (configurable) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-func openConfigurable(t *testing.T) (*container.PluginRoles, *embedderbridge.Embedder, *mockEmbeddingServer, *atomic.Int32) {
+func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *embedderbridge.Embedder, *mockEmbeddingServer, *atomic.Int32) {
 	t.Helper()
 	mock := &mockEmbeddingServer{}
 	mock.chunkTokens.Store(256)
@@ -93,7 +93,7 @@ func settle(t *testing.T, bridge *embedderbridge.Embedder, mock *mockEmbeddingSe
 
 // A model the plugin reports differently after a setting of its own is announced.
 func TestAModelChangeAfterASettingOfThePluginIsAnnounced(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	reads := mock.getModelCalls.Load()
 
 	mock.modelName.Store("another-model")
@@ -109,7 +109,7 @@ func TestAModelChangeAfterASettingOfThePluginIsAnnounced(t *testing.T) {
 
 // A shorter minimum chunk length changes which chunks get a vector, so it is announced.
 func TestAChangeOfTheMinimumChunkLengthIsAnnounced(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	reads := mock.getModelCalls.Load()
 
 	mock.minChunk.Store(7)
@@ -125,7 +125,7 @@ func TestAChangeOfTheMinimumChunkLengthIsAnnounced(t *testing.T) {
 
 // A setting of the plugin that leaves its model as it was announces nothing.
 func TestNoModelChangeIsAnnouncedWhenASettingKeepsTheModel(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	reads := mock.getModelCalls.Load()
 
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
@@ -140,7 +140,7 @@ func TestNoModelChangeIsAnnouncedWhenASettingKeepsTheModel(t *testing.T) {
 
 // A setting of another plugin is not read by the bridge and announces nothing.
 func TestASettingOfAnotherPluginAnnouncesNothing(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	reads := mock.getModelCalls.Load()
 
 	if err := updateSetting(t.Context(), host, otherPluginID, "any", "value"); err != nil {
@@ -164,7 +164,7 @@ func TestASettingOfAnotherPluginAnnouncesNothing(t *testing.T) {
 // A change read by GetModel before the plugin is configured again is still announced: the listeners
 // are notified against the model they hold, not against the one the last read returned.
 func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 
 	mock.modelName.Store("another-model")
 	if got := bridge.GetModel().Name; got != "another-model" {
@@ -183,7 +183,7 @@ func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
 
 // The chunk size the plugin reports is read with the model.
 func TestTheModelCarriesTheChunkTokensThePluginReports(t *testing.T) {
-	_, bridge, _, _ := openConfigurable(t)
+	_, bridge, _, _ := openConfigurableEmbedder(t)
 
 	if got := bridge.GetModel().ChunkTokens; got != 256 {
 		t.Errorf("ChunkTokens = %d, want 256", got)
@@ -192,7 +192,7 @@ func TestTheModelCarriesTheChunkTokensThePluginReports(t *testing.T) {
 
 // A chunk size below zero is a plugin that names none.
 func TestANegativeChunkTokensIsReadAsNone(t *testing.T) {
-	_, bridge, mock, _ := openConfigurable(t)
+	_, bridge, mock, _ := openConfigurableEmbedder(t)
 
 	if got := bridge.GetModel().ChunkTokens; got != 256 {
 		t.Fatalf("ChunkTokens = %d, want 256", got)
@@ -206,7 +206,7 @@ func TestANegativeChunkTokensIsReadAsNone(t *testing.T) {
 // A new chunk size cuts the notes again, so a change of it alone is announced, once, and the model
 // the listeners read holds the new size.
 func TestAChangeOfTheChunkTokensAloneIsAnnounced(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	reads := mock.getModelCalls.Load()
 
 	mock.chunkTokens.Store(128)
@@ -225,7 +225,7 @@ func TestAChangeOfTheChunkTokensAloneIsAnnounced(t *testing.T) {
 
 // A chunk size that stays as it was announces nothing.
 func TestAnUnchangedChunkTokensAnnouncesNothing(t *testing.T) {
-	host, bridge, mock, announced := openConfigurable(t)
+	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	reads := mock.getModelCalls.Load()
 
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 256); err != nil {

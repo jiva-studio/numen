@@ -356,7 +356,7 @@ func TestBudgetInternals(t *testing.T) {
 			},
 		},
 	}
-	candidates := bAsk.getAsking(
+	candidates := bAsk.getAskingBudget(
 		[]ReviewCard{c1, c2},
 		map[review.CardID]review.Schedule{
 			c1.ID: {Due: now.Add(-time.Hour), Reps: 1},
@@ -369,7 +369,7 @@ func TestBudgetInternals(t *testing.T) {
 	}
 
 	ds := &deckShare{deck: "decks/A.md", dueCards: []int{0, 1}, newCards: []int{0, 1}, debt: 2, begun: 3}
-	rem := ds.countRemaining(budgetAllocation{dueCards: []bool{true, false}, newCards: []bool{false, true}})
+	rem := ds.countRemainingCards(budgetAllocation{dueCards: []bool{true, false}, newCards: []bool{false, true}})
 	if rem != 2 {
 		t.Fatalf("expected 2 remaining cards, got %d", rem)
 	}
@@ -478,7 +478,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 	if rows.get("decks/B.md").Due != 1 || rows.get("decks/A.md").Due != 1 {
 		t.Fatalf("expected per-deck Due incremented, got %+v, %+v", rows["decks/A.md"], rows["decks/B.md"])
 	}
-	sortedDecks := rows.getSorted()
+	sortedDecks := rows.getSortedRows()
 	if len(sortedDecks) != 2 || sortedDecks[0].Deck != "decks/A.md" || sortedDecks[1].Deck != "decks/B.md" {
 		t.Fatalf("expected sorted decks, got %+v", sortedDecks)
 	}
@@ -714,12 +714,12 @@ func TestCountReviewsInternalsAndErrors(t *testing.T) {
 		At:         now.Add(-24 * time.Hour),
 		Rating:     review.Easy,
 	}
-	uncounted := getUncounted([]review.Answer{a1, a2}, map[string]bool{a1.ID: true})
+	uncounted := getUncountedAnswers([]review.Answer{a1, a2}, map[string]bool{a1.ID: true})
 	if len(uncounted) != 1 || uncounted[0].ID != a2.ID {
-		t.Fatalf("unexpected getUncounted: %+v", uncounted)
+		t.Fatalf("unexpected getUncountedAnswers: %+v", uncounted)
 	}
-	if gotEmpty := getUncounted(nil, map[string]bool{}); gotEmpty == nil || len(gotEmpty) != 0 {
-		t.Fatalf("expected non-nil empty slice from getUncounted, got %#v", gotEmpty)
+	if gotEmpty := getUncountedAnswers(nil, map[string]bool{}); gotEmpty == nil || len(gotEmpty) != 0 {
+		t.Fatalf("expected non-nil empty slice from getUncountedAnswers, got %#v", gotEmpty)
 	}
 
 	raw1, err := review.Write(a1)
@@ -1277,7 +1277,7 @@ func TestReviewCardInternalsAndCache(t *testing.T) {
 		t.Fatal("expected isCurrent false when cardModels map has extra entries")
 	}
 
-	// Test getCached branches: deck StatFile error drops cache entry, cardModel StatFile error drops cache entry,
+	// Test getCachedCards branches: deck StatFile error drops cache entry, cardModel StatFile error drops cache entry,
 	// and !isCurrent drops cache entry.
 	statDeckErr := false
 	statModelErr := false
@@ -1305,7 +1305,7 @@ func TestReviewCardInternalsAndCache(t *testing.T) {
 
 	rcDyn.cache.put(0, key1, seedEntry, 10)
 	statDeckErr = true
-	if got, ok := rcDyn.getCached(ctx, readerDynamic, v, "decks/A.md"); ok || got != nil {
+	if got, ok := rcDyn.getCachedCards(ctx, readerDynamic, v, "decks/A.md"); ok || got != nil {
 		t.Fatalf("expected false when deck StatFile errors, got %v, %v", got, ok)
 	}
 	if _, ok := rcDyn.cache.get(key1); ok {
@@ -1315,7 +1315,7 @@ func TestReviewCardInternalsAndCache(t *testing.T) {
 	statDeckErr = false
 	rcDyn.cache.put(0, key1, seedEntry, 10)
 	statModelErr = true
-	if got, ok := rcDyn.getCached(ctx, readerDynamic, v, "decks/A.md"); ok || got != nil {
+	if got, ok := rcDyn.getCachedCards(ctx, readerDynamic, v, "decks/A.md"); ok || got != nil {
 		t.Fatalf("expected false when cardModel StatFile errors, got %v, %v", got, ok)
 	}
 	if _, ok := rcDyn.cache.get(key1); ok {
@@ -1325,7 +1325,7 @@ func TestReviewCardInternalsAndCache(t *testing.T) {
 	statModelErr = false
 	rcDyn.cache.put(0, key1, seedEntry, 10)
 	modShift = time.Second
-	if got, ok := rcDyn.getCached(ctx, readerDynamic, v, "decks/A.md"); ok || got != nil {
+	if got, ok := rcDyn.getCachedCards(ctx, readerDynamic, v, "decks/A.md"); ok || got != nil {
 		t.Fatalf("expected false when deck is modified, got %v, %v", got, ok)
 	}
 	if _, ok := rcDyn.cache.get(key1); ok {
@@ -1449,7 +1449,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 
 	// Test Schedules: getDayStartMark with non-nil In, getAssignment branches (nil links/notes, ErrNotCarried, error),
 	// getAssignmentFrom branches (nil reads/links, GetForDeck error, multiple cards in same deck, mark digest),
-	// getMark newline separator, Execute / GetFromLog errors, readRemembered branches, remember sorting.
+	// getMark newline separator, Execute / GetFromLog errors, readRememberedRuns branches, remember sorting.
 	loc := time.FixedZone("IST", 19800)
 	dayLoc := review.Day{Starts: 2 * time.Hour, In: loc}
 	sPlain := NewSchedules(stubLogStores{openErr: errBoom}, review.NewFSRS(), dayLoc, ListReviewCards{}, presets.Presets{})
@@ -1536,22 +1536,22 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 		t.Fatalf("expected deck preset resolved once across two cards in same deck, got %d", readsCount)
 	}
 
-	// Test readRemembered invalid JSON, invalid Due timestamp, invalid Last timestamp, mismatched file name,
+	// Test readRememberedRuns invalid JSON, invalid Due timestamp, invalid Last timestamp, mismatched file name,
 	// and remember sorting by Card then Template.
 	sCache := sPlain
 	storeMem := &stubScheduleStore{data: make(map[domain.VaultID][]byte)}
 	sCache.Cache = storeMem
 
 	storeMem.data[v.ID] = []byte("{invalid-json")
-	if _, ok := sCache.readRemembered(ctx, v, nil, "m"); ok {
+	if _, ok := sCache.readRememberedRuns(ctx, v, nil, "m"); ok {
 		t.Fatal("expected false on invalid JSON in schedule cache")
 	}
 	storeMem.data[v.ID] = []byte(`{"v":2,"by":"m","files":[],"templates":[{"card":"c","template":"t","due":"bad","last":"2026-06-10T00:00:00Z"}]}`)
-	if _, ok := sCache.readRemembered(ctx, v, nil, "m"); ok {
+	if _, ok := sCache.readRememberedRuns(ctx, v, nil, "m"); ok {
 		t.Fatal("expected false on invalid Due timestamp in schedule cache")
 	}
 	storeMem.data[v.ID] = []byte(`{"v":2,"by":"m","files":[],"templates":[{"card":"c","template":"t","due":"2026-06-10T00:00:00Z","last":"bad"}]}`)
-	if _, ok := sCache.readRemembered(ctx, v, nil, "m"); ok {
+	if _, ok := sCache.readRememberedRuns(ctx, v, nil, "m"); ok {
 		t.Fatal("expected false on invalid Last timestamp in schedule cache")
 	}
 	if read([]review.FileCache{{Name: "a", Size: 10}}, []ports.Entry{{Run: "b", Size: 10}}) {

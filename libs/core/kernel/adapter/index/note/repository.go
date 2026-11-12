@@ -122,12 +122,12 @@ func saveSourceAndNote(
 	var updated bool
 	if err := tx.QueryRowContext(ctx, getStatement("save_source"),
 		vault, n.FileStat.Path, kind, n.FileStat.Size, chunk.ConvertTimeToNanos(n.FileStat.ModTime),
-		nil, newNullable(indexed.Recipe), nil,
+		nil, newNullableValue(indexed.Recipe), nil,
 	).Scan(&row, &updated); err != nil {
 		return 0, fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.FileStat.Path)),
-		n.Title, string(noteType(n)), newNullable(n.ID), frontmatter, newNullable(problem)); err != nil {
+		n.Title, string(noteType(n)), newNullableValue(n.ID), frontmatter, newNullableValue(problem)); err != nil {
 		return 0, err
 	}
 	if !updated {
@@ -147,8 +147,8 @@ func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links
 	for i, l := range links {
 		if _, err := tx.ExecContext(ctx, getStatement("insert_link"), row, i,
 			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
-			string(l.Role), newNullable(l.Type), newNullable(l.Why), newNullable(l.Label),
-			newNullable(string(l.Marker)),
+			string(l.Role), newNullableValue(l.Type), newNullableValue(l.Why), newNullableValue(l.Label),
+			newNullableValue(string(l.Marker)),
 		); err != nil {
 			return fmt.Errorf("store what this note points at: %w", err)
 		}
@@ -212,7 +212,7 @@ func noteType(n domain.Note) domain.NoteType {
 	return n.Type
 }
 
-func newNullable(s string) any {
+func newNullableValue(s string) any {
 	if s == "" {
 		return nil
 	}

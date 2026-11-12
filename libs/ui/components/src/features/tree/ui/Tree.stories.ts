@@ -296,7 +296,7 @@ const getRow = (canvas: HTMLElement, row: string) => {
 const getDrawnRows = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[data-tree-row]')].map((row) => row.getAttribute('data-tree-row'))
 
-const getSelected = (canvas: HTMLElement) =>
+const getSelectedRows = (canvas: HTMLElement) =>
   [...canvas.querySelectorAll('[aria-selected="true"]')].map((row) =>
     row.getAttribute('data-tree-row'),
   )
@@ -408,10 +408,10 @@ export const JoinsARow: Story = {
 
     await hand.keyboard('{Control>}')
     await hand.click(getRow(canvasElement, 'loose'))
-    await expect(getSelected(canvasElement)).toStrictEqual(['work', 'loose'])
+    await expect(getSelectedRows(canvasElement)).toStrictEqual(['work', 'loose'])
 
     await hand.click(getRow(canvasElement, 'loose'))
-    await expect(getSelected(canvasElement)).toStrictEqual(['work'])
+    await expect(getSelectedRows(canvasElement)).toStrictEqual(['work'])
     await hand.keyboard('{/Control}')
   },
 }
@@ -425,10 +425,10 @@ export const ReachesToARow: Story = {
 
     await hand.keyboard('{Shift>}')
     await hand.click(getRow(canvasElement, 'empty'))
-    await expect(getSelected(canvasElement)).toStrictEqual(['plans', 'pages', 'empty'])
+    await expect(getSelectedRows(canvasElement)).toStrictEqual(['plans', 'pages', 'empty'])
 
     await hand.click(getRow(canvasElement, 'work'))
-    await expect(getSelected(canvasElement)).toStrictEqual(['work', 'plans'])
+    await expect(getSelectedRows(canvasElement)).toStrictEqual(['work', 'plans'])
     await hand.keyboard('{/Shift}')
   },
 }

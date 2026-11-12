@@ -49,7 +49,7 @@ const roots = "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    typ
 
 const terms = "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n"
 
-func getPointed() map[string]string {
+func getPointedVault() map[string]string {
 	return map[string]string{
 		"Sanskrit.md":    sanskrit,
 		"decks/Roots.md": roots,
@@ -75,7 +75,7 @@ func settings() *api.Settings {
 // TestASettingOutsideItsBoundsIsNotWritten. A retention target outside what
 // memory does is a number to correct, and the file is not opened to find out.
 func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	targetSettings := settings()
 	targetSettings.Retention = 1.5
@@ -91,7 +91,7 @@ func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
 }
 
 func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	read, err := f.reads.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Sanskrit.md",
@@ -121,7 +121,7 @@ func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) 
 }
 
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	answer, err := f.reads.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
@@ -260,7 +260,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 // setting to the suggested setting, so a curve missing either place cannot be
 // drawn.
 func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	answer, err := f.reads.ComputeCurve(t.Context(), &api.ComputeCurveRequest{
 		Path: "Sanskrit.md", Settings: settings(),
@@ -322,7 +322,7 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 // and has the preset type from the moment it exists. It writes none of its
 // settings, so every setting takes its default.
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	made, err := f.writes.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
@@ -385,7 +385,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 // TestAPresetMadeIsOneTheVaultLists. The list a deck's preset is chosen from
 // holds a preset the moment it is made.
 func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	if _, err := f.writes.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
@@ -409,7 +409,7 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 // TestADeckIsPutOnAPresetAndTakenOffAgain. Choosing a preset writes the deck's
 // one entry, and choosing the defaults takes it out.
 func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	placed, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
@@ -487,7 +487,7 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 
 // TestSchedulingAPresetThatIsNotThere. A path the vault holds no note at is
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	answer, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Pali.md",
@@ -506,7 +506,7 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 // TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead: a concurrent
 // edit of the deck takes precedence over a client holding an outdated read.
 func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	read, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Preset: "Sanskrit.md",

@@ -57,7 +57,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	}
 
 	run := reviewCounter{
-		was: u.readRemembered(ctx, v),
+		was: u.readRememberedRuns(ctx, v),
 		now: review.CountsCache{V: countedVersion, Runs: nil},
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Streak is always overwritten from the day tallies before return."
 		out:        ReviewCounts{Days: make(map[string]review.Tally), Due: nil, Retained: nil, Streak: 0, Answered: 0},
@@ -137,7 +137,7 @@ func (u CountReviews) countFile(
 			return err
 		}
 	}
-	run.addDays(one.IDs, review.GetDayTallies(u.day, getUncounted(ran.Answers, run.countedIDs)))
+	run.addDays(one.IDs, review.GetDayTallies(u.day, getUncountedAnswers(ran.Answers, run.countedIDs)))
 	return nil
 }
 
@@ -178,7 +178,7 @@ func isRepeated(ids []string, countedIDs map[string]bool) bool {
 	return false
 }
 
-func getUncounted(answers []review.Answer, countedIDs map[string]bool) []review.Answer {
+func getUncountedAnswers(answers []review.Answer, countedIDs map[string]bool) []review.Answer {
 	out := make([]review.Answer, 0, len(answers))
 	for _, a := range answers {
 		if !countedIDs[a.ID] {
@@ -212,7 +212,7 @@ func (u CountReviews) getDueAndRetained(
 	return falls, target.GetHistory().GetRetained(u.schedules.scheduler, u.day), nil
 }
 
-func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[string]review.RunCache {
+func (u CountReviews) readRememberedRuns(ctx context.Context, v domain.Vault) map[string]review.RunCache {
 	if u.Cache == nil {
 		return nil
 	}

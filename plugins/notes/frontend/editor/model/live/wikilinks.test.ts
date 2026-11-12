@@ -9,7 +9,7 @@ interface Drawn {
   readonly name: string
 }
 
-const getDrawn = (doc: string, caret: number): Drawn[] => {
+const getDrawnWikilinks = (doc: string, caret: number): Drawn[] => {
   const state = createState(doc, caret)
   const found: Drawn[] = []
   getMarks(state, 0, doc.length).between(0, doc.length, (from, to, deco) => {
@@ -23,7 +23,7 @@ const ELSEWHERE = '\n\nelsewhere'
 describe('a wikilink with the caret away from it', () => {
   it('hides both brackets and links only the target', () => {
     const doc = `See [[Entropy]].${ELSEWHERE}`
-    expect(getDrawn(doc, doc.length)).toStrictEqual([
+    expect(getDrawnWikilinks(doc, doc.length)).toStrictEqual([
       { from: 4, to: 6, name: 'hidden' },
       { from: 6, to: 13, name: 'cm-wikilink' },
       { from: 13, to: 15, name: 'hidden' },
@@ -32,7 +32,7 @@ describe('a wikilink with the caret away from it', () => {
 
   it('shows only the alias, and hides the brackets and the target before it', () => {
     const doc = `[[Entropy|disorder]]${ELSEWHERE}`
-    expect(getDrawn(doc, doc.length)).toStrictEqual([
+    expect(getDrawnWikilinks(doc, doc.length)).toStrictEqual([
       { from: 0, to: 10, name: 'hidden' },
       { from: 10, to: 18, name: 'cm-wikilink' },
       { from: 18, to: 20, name: 'hidden' },
@@ -41,7 +41,7 @@ describe('a wikilink with the caret away from it', () => {
 
   it('shows the heading with the target', () => {
     const doc = `[[Entropy#Heat]]${ELSEWHERE}`
-    expect(getDrawn(doc, doc.length)).toStrictEqual([
+    expect(getDrawnWikilinks(doc, doc.length)).toStrictEqual([
       { from: 0, to: 2, name: 'hidden' },
       { from: 2, to: 14, name: 'cm-wikilink' },
       { from: 14, to: 16, name: 'hidden' },
@@ -50,7 +50,7 @@ describe('a wikilink with the caret away from it', () => {
 
   it('draws two links of one line apart, one at the start and one at the end', () => {
     const doc = `[[A]] and [[B]]${ELSEWHERE}`
-    const links = getDrawn(doc, doc.length).filter((one) => one.name === 'cm-wikilink')
+    const links = getDrawnWikilinks(doc, doc.length).filter((one) => one.name === 'cm-wikilink')
     expect(links).toStrictEqual([
       { from: 2, to: 3, name: 'cm-wikilink' },
       { from: 12, to: 13, name: 'cm-wikilink' },
@@ -59,19 +59,19 @@ describe('a wikilink with the caret away from it', () => {
 
   it('leaves an unfinished link as plain text', () => {
     const doc = `[[b${ELSEWHERE}`
-    expect(getDrawn(doc, doc.length)).toStrictEqual([])
+    expect(getDrawnWikilinks(doc, doc.length)).toStrictEqual([])
   })
 
   it('leaves a link inside code as plain text', () => {
     const doc = `\`[[A]]\`${ELSEWHERE}`
-    expect(getDrawn(doc, doc.length).filter((one) => one.name.includes('wikilink'))).toStrictEqual(
+    expect(getDrawnWikilinks(doc, doc.length).filter((one) => one.name.includes('wikilink'))).toStrictEqual(
       [],
     )
   })
 
   it('draws nothing of the single brackets the markdown parser reads inside the link', () => {
     const doc = `[[Entropy]]${ELSEWHERE}`
-    expect(getDrawn(doc, doc.length).some((one) => one.name === 'cm-link')).toBe(false)
+    expect(getDrawnWikilinks(doc, doc.length).some((one) => one.name === 'cm-link')).toBe(false)
   })
 })
 
@@ -80,7 +80,7 @@ describe('a wikilink with the caret in it or touching it', () => {
     'shows both brackets muted and the whole link as one link, caret at %i',
     (caret) => {
       const doc = `[[Entropy]]${ELSEWHERE}`
-      expect(getDrawn(doc, caret)).toStrictEqual([
+      expect(getDrawnWikilinks(doc, caret)).toStrictEqual([
         { from: 0, to: 11, name: 'cm-wikilink' },
         { from: 0, to: 2, name: 'cm-wikilink-mark' },
         { from: 9, to: 11, name: 'cm-wikilink-mark' },
@@ -90,7 +90,7 @@ describe('a wikilink with the caret in it or touching it', () => {
 
   it('mutes the target of an alias with the brackets', () => {
     const doc = `[[Entropy|disorder]]${ELSEWHERE}`
-    expect(getDrawn(doc, 3).map((one) => [one.from, one.to, one.name])).toStrictEqual([
+    expect(getDrawnWikilinks(doc, 3).map((one) => [one.from, one.to, one.name])).toStrictEqual([
       [0, 20, 'cm-wikilink'],
       [0, 2, 'cm-wikilink-mark'],
       [2, 10, 'cm-wikilink-mark'],

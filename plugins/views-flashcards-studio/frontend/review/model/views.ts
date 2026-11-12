@@ -11,4 +11,4 @@ export type MountView = PluginUi['mountView']
 export const MOUNT_VIEW: InjectionKey<MountView> = Symbol('mountView')
 
 /** A mount that draws nothing. */
-export const mountNothing: MountView = () => ({ focus: () => undefined, dispose: () => undefined })
+export const mountEmptyView: MountView = () => ({ focus: () => undefined, dispose: () => undefined })

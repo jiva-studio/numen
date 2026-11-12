@@ -8,7 +8,7 @@ export interface Viewport {
   readonly watchWhole: (of: HTMLElement, took: (size: Size) => void) => () => void
 }
 
-const stopNothing = (): void => undefined
+const noStop = (): void => undefined
 
 const getFirstBorderBox = (
   sizes: readonly ResizeObserverSize[] | undefined,
@@ -16,7 +16,7 @@ const getFirstBorderBox = (
 
 export const browserViewport: Viewport = {
   watch: (of, took) => {
-    if (typeof ResizeObserver === 'undefined') return stopNothing
+    if (typeof ResizeObserver === 'undefined') return noStop
 
     const observer = new ResizeObserver(([entry]) => {
       const box = entry?.contentRect
@@ -29,7 +29,7 @@ export const browserViewport: Viewport = {
   },
 
   watchWhole: (of, took) => {
-    if (typeof ResizeObserver === 'undefined') return stopNothing
+    if (typeof ResizeObserver === 'undefined') return noStop
 
     const observer = new ResizeObserver(([entry]) => {
       const box = getFirstBorderBox(entry?.borderBoxSize)
@@ -43,7 +43,7 @@ export const browserViewport: Viewport = {
   },
 
   watchFreeSpace: (took) => {
-    if (typeof window === 'undefined') return stopNothing
+    if (typeof window === 'undefined') return noStop
 
     const onResize = () => took({ width: window.innerWidth, height: window.innerHeight })
     onResize()

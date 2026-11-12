@@ -63,8 +63,8 @@ describe('a press on a link', () => {
 
     expect(reportFollow).toHaveBeenCalledExactlyOnceWith('text/two.xhtml')
     expect(reportMove).not.toHaveBeenCalled()
-    expect(links.takeLed()).toStrictEqual({ path: 'text/two.xhtml', fragment: 'n3' })
-    expect(links.takeLed()).toBeUndefined()
+    expect(links.takeLedLink()).toStrictEqual({ path: 'text/two.xhtml', fragment: 'n3' })
+    expect(links.takeLedLink()).toBeUndefined()
   })
 
   it('is left alone where the link leads out of the book', () => {

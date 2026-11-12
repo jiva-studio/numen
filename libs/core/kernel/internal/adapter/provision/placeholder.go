@@ -36,7 +36,7 @@ func (p *PlaceholderProvisioner) Provision(
 ) (plugin.ResolvedDependency, error) {
 	if req.Kind == manifest.DependencyKindBinary {
 		if found := p.discovery.find(req); found != "" {
-			return newResolved(req, filepath.Dir(found), found), nil
+			return newResolvedDependency(req, filepath.Dir(found), found), nil
 		}
 	}
 	root := getDependencyDir(p.dir, string(req.Kind), req.ID, req.Version)
@@ -51,7 +51,7 @@ func (p *PlaceholderProvisioner) Provision(
 	if err := os.WriteFile(primary, nil, 0o600); err != nil {
 		return plugin.ResolvedDependency{}, fmt.Errorf("placeholder for %s: %w", req.ID, err)
 	}
-	resolved := newResolved(req, root, primary)
+	resolved := newResolvedDependency(req, root, primary)
 	if vars, ok := p.runtimeVars[req.ID]; ok && req.Kind == manifest.DependencyKindRuntime {
 		resolved.EnvVars = vars(primary)
 	}

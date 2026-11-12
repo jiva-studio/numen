@@ -101,7 +101,7 @@ func (e Edit) splice(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	against, err := e.getExpected(path, on, looked)
+	against, err := e.getExpectedStat(path, on, looked)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
@@ -150,7 +150,7 @@ func (e Edit) readNote(ctx context.Context, files Reader, path string) ([]byte, 
 	}
 }
 
-func (e Edit) getExpected(path string, on domain.FileStat, looked error) (domain.FileStat, error) {
+func (e Edit) getExpectedStat(path string, on domain.FileStat, looked error) (domain.FileStat, error) {
 	if !e.FileStat.IsZero() || e.ShouldOverwrite {
 		return e.FileStat, nil
 	}

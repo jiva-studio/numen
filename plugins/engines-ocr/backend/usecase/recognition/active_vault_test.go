@@ -28,22 +28,22 @@ func (v *switchableVault) setActive(id domain.VaultID) {
 	v.active = id
 }
 
-func (v *switchableVault) getActive() *hosttest.Vault {
+func (v *switchableVault) getActiveVault() *hosttest.Vault {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	return v.Vault.With(v.active)
 }
 
 func (v *switchableVault) GetVault(ctx context.Context) (domain.Vault, error) {
-	return v.getActive().GetVault(ctx)
+	return v.getActiveVault().GetVault(ctx)
 }
 
 func (v *switchableVault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
-	return v.getActive().Read(ctx, path)
+	return v.getActiveVault().Read(ctx, path)
 }
 
 func (v *switchableVault) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
-	return v.getActive().StatFile(ctx, path)
+	return v.getActiveVault().StatFile(ctx, path)
 }
 
 func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
@@ -86,7 +86,7 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 	}
 	<-runEnd
 
-	if text := s.readLive(t, "books/scan.pdf"); text.Version().PluginID != pluginID {
+	if text := s.readLiveText(t, "books/scan.pdf"); text.Version().PluginID != pluginID {
 		t.Errorf("Physics has the live version %+v, want the recognition", text.Version())
 	}
 	inChemistry, err := s.texts.With("Chemistry").ListVersions(t.Context(), "books/scan.pdf")

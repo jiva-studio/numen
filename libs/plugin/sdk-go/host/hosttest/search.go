@@ -134,7 +134,7 @@ func (s *Search) Deny(permissions ...string) {
 func (s *Search) SetPassages(recipe string, passages []SearchPassage) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	if one, ok := s.lookupLocked(); ok {
+	if one, ok := s.lookupVaultLocked(); ok {
 		one.passages[recipe] = slices.Clone(passages)
 	}
 }
@@ -151,7 +151,7 @@ func (s *Search) SetCosine(cosine func(query, passage []float32) float64) {
 func (s *Search) SetProgress(chunkCount, embeddedCount int64) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	if one, ok := s.lookupLocked(); ok {
+	if one, ok := s.lookupVaultLocked(); ok {
 		one.chunkCount, one.embeddedCount = chunkCount, embeddedCount
 	}
 }
@@ -161,7 +161,7 @@ func (s *Search) SetProgress(chunkCount, embeddedCount int64) {
 func (s *Search) SetIndexStats(stats host.IndexStats) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	if one, ok := s.lookupLocked(); ok {
+	if one, ok := s.lookupVaultLocked(); ok {
 		one.stats = stats
 	}
 }
@@ -170,7 +170,7 @@ func (s *Search) SetIndexStats(stats host.IndexStats) {
 func (s *Search) StoredFloor(recipe string) (float64, bool) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, ok := s.lookupLocked()
+	one, ok := s.lookupVaultLocked()
 	if !ok {
 		return 0, false
 	}
@@ -182,7 +182,7 @@ func (s *Search) StoredFloor(recipe string) (float64, bool) {
 func (s *Search) FloorWrites() int {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	if one, ok := s.lookupLocked(); ok {
+	if one, ok := s.lookupVaultLocked(); ok {
 		return one.setCount
 	}
 	return 0
@@ -195,7 +195,7 @@ func (s *Search) EmbeddedBatches() [][]string {
 	return slices.Clone(s.all.embeds)
 }
 
-func (s *Search) lookupLocked() (*searchVault, bool) {
+func (s *Search) lookupVaultLocked() (*searchVault, bool) {
 	id := s.vault
 	if id == "" {
 		if !s.all.hasShow {
@@ -207,14 +207,14 @@ func (s *Search) lookupLocked() (*searchVault, bool) {
 	return one, ok
 }
 
-func (s *Search) openLocked(permission string) (*searchVault, error) {
+func (s *Search) openVaultLocked(permission string) (*searchVault, error) {
 	if s.all.denied[permission] {
 		return nil, fmt.Errorf("%w: %s", host.ErrPermissionDenied, permission)
 	}
 	if s.vault == "" && !s.all.hasShow {
 		return nil, host.ErrNoVault
 	}
-	one, ok := s.lookupLocked()
+	one, ok := s.lookupVaultLocked()
 	if !ok {
 		return nil, host.ErrUnknownVault
 	}
@@ -234,7 +234,7 @@ func (s *Search) checkRecipeLocked(recipe string) error {
 func (s *Search) GetEmbeddingState(_ context.Context) (host.EmbeddingState, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionIndexRead)
+	one, err := s.openVaultLocked(host.PermissionIndexRead)
 	if err != nil {
 		return host.EmbeddingState{}, err
 	}
@@ -254,7 +254,7 @@ func (s *Search) GetEmbeddingState(_ context.Context) (host.EmbeddingState, erro
 func (s *Search) GetIndexStats(_ context.Context) (host.IndexStats, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionIndexRead)
+	one, err := s.openVaultLocked(host.PermissionIndexRead)
 	if err != nil {
 		return host.IndexStats{}, err
 	}
@@ -302,7 +302,7 @@ func (s *Search) EmbedTexts(_ context.Context, texts []string) (host.EmbeddedTex
 func (s *Search) SampleSimilarities(_ context.Context, recipe string, queries []host.SimilarityQuery) (host.SimilaritySample, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionIndexRead)
+	one, err := s.openVaultLocked(host.PermissionIndexRead)
 	if err != nil {
 		return host.SimilaritySample{}, err
 	}
@@ -332,7 +332,7 @@ func (s *Search) SampleSimilarities(_ context.Context, recipe string, queries []
 func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []float32) (float64, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionIndexRead)
+	one, err := s.openVaultLocked(host.PermissionIndexRead)
 	if err != nil {
 		return 0, err
 	}
@@ -376,7 +376,7 @@ func (s *Search) compareLocked(query, passage []float32) float64 {
 func (s *Search) GetSearchFloor(_ context.Context, recipe string) (host.SearchFloor, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionSearchPolicy)
+	one, err := s.openVaultLocked(host.PermissionSearchPolicy)
 	if err != nil {
 		return host.SearchFloor{}, err
 	}
@@ -401,7 +401,7 @@ func (s *Search) GetSearchFloor(_ context.Context, recipe string) (host.SearchFl
 func (s *Search) SetSearchFloor(_ context.Context, recipe string, floor float64) error {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionSearchPolicy)
+	one, err := s.openVaultLocked(host.PermissionSearchPolicy)
 	if err != nil {
 		return err
 	}

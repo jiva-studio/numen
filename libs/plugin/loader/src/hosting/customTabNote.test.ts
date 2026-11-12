@@ -81,12 +81,12 @@ describe('createNoteWriter', () => {
 
   it('ignores a stale resolved write when a newer write has failed', async () => {
     const errorMessage = ref('')
-    let resolveStale: () => void = () => undefined
+    let finishStaleLoad: () => void = () => undefined
     const answers: Array<() => Promise<void>> = [
       () => Promise.reject(new Error('first error')),
       () =>
         new Promise<void>((resolve) => {
-          resolveStale = resolve
+          finishStaleLoad = resolve
         }),
       () => Promise.reject(new Error('latest error')),
     ]
@@ -105,7 +105,7 @@ describe('createNoteWriter', () => {
     await settle()
     expect(errorMessage.value).toBe('latest error')
 
-    resolveStale()
+    finishStaleLoad()
     await settle()
     expect(errorMessage.value).toBe('latest error')
   })

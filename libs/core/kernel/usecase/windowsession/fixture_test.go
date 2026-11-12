@@ -59,7 +59,7 @@ func (p *pageSet) holdNextFlush() {
 	p.releasing = p.hold
 }
 
-func (p *pageSet) waitHeld(t *testing.T) {
+func (p *pageSet) waitUntilHeld(t *testing.T) {
 	t.Helper()
 	p.mu.Lock()
 	hold := p.releasing

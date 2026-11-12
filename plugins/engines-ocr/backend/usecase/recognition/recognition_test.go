@@ -170,7 +170,7 @@ func newScene(t *testing.T) *scene {
 	return s
 }
 
-func (s *scene) readLive(t *testing.T, path string) domain.VersionText {
+func (s *scene) readLiveText(t *testing.T, path string) domain.VersionText {
 	t.Helper()
 	listing, err := s.texts.ListVersions(t.Context(), path)
 	if err != nil || listing.Live == "" {
@@ -196,7 +196,7 @@ func TestRecognizePDFWritesPositionedText(t *testing.T) {
 	if err != nil || res.Pages != 2 || res.IsEmpty {
 		t.Fatalf("recognized %+v (%v), want two pages", res, err)
 	}
-	text := s.readLive(t, "books/scan.pdf")
+	text := s.readLiveText(t, "books/scan.pdf")
 	if text.Version().Kind != "recognition" || text.Version().Key != recognition.VersionKey {
 		t.Fatalf("the version is %+v", text.Version())
 	}
@@ -261,7 +261,7 @@ func TestRecognizeKeepsOnlyTheVersionFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	text := s.readLive(t, "books/scan.pdf")
+	text := s.readLiveText(t, "books/scan.pdf")
 	if names := s.getStoreNames(t); len(names) != 1 || names[0] != text.Version().File || !strings.HasSuffix(names[0], ".jsonl") {
 		t.Errorf("the folder holds %v, want only the version file %s", names, text.Version().File)
 	}
@@ -298,7 +298,7 @@ func TestRecognizeResumesFromTheProgressRecord(t *testing.T) {
 	if err != nil || res.Pages != 2 || s.recognizer.getPageCount() != 1 {
 		t.Fatalf("recognized %+v (%v) after %d pages, want only the second page read", res, err, s.recognizer.getPageCount())
 	}
-	if text := s.readLive(t, "books/scan.pdf"); !strings.HasPrefix(text.Text, "kept from before\n\nHeading") {
+	if text := s.readLiveText(t, "books/scan.pdf"); !strings.HasPrefix(text.Text, "kept from before\n\nHeading") {
 		t.Errorf("the text reads %q, want the kept page first", text.Text)
 	}
 	if names := s.getStoreNames(t); len(names) != 1 {

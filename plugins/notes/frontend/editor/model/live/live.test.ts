@@ -18,7 +18,7 @@ interface Drawn {
 /** Somewhere for the caret to stand that is in nothing. */
 const ELSEWHERE = '\n\nelsewhere'
 
-const collectDrawn = (state: EditorState): Drawn[] => {
+const collectDrawnMarks = (state: EditorState): Drawn[] => {
   const found: Drawn[] = []
   const collect = (activeSet: ReturnType<typeof getMarks>) =>
     activeSet.between(0, state.doc.length, (from, to, deco) => {
@@ -30,9 +30,9 @@ const collectDrawn = (state: EditorState): Drawn[] => {
   return found
 }
 
-const getDrawn = (doc: string, caret?: number): Drawn[] => {
+const getDrawnDecorations = (doc: string, caret?: number): Drawn[] => {
   const text = caret === undefined ? doc + ELSEWHERE : doc
-  return collectDrawn(createState(text, caret ?? text.length))
+  return collectDrawnMarks(createState(text, caret ?? text.length))
 }
 
 const isHidden = (rendered: readonly Drawn[], from: number, to: number) =>
@@ -49,18 +49,18 @@ const createCaretState = (doc: string, carets: number[], isReadOnly = false): Ed
 
 const applyReplace = (doc: string, text: string, caret?: number) => {
   const pos = doc.indexOf(text)
-  return getDrawn(doc, caret).some(
+  return getDrawnDecorations(doc, caret).some(
     (deco) => deco.from === pos && deco.to === pos + text.length && !deco.spec.class,
   )
 }
 
 const classes = (doc: string, caret?: number) =>
-  getDrawn(doc, caret)
+  getDrawnDecorations(doc, caret)
     .map((deco) => deco.spec.class)
     .filter((name): name is string => Boolean(name))
 
 const widgets = (doc: string, caret?: number) =>
-  getDrawn(doc, caret)
+  getDrawnDecorations(doc, caret)
     .map((deco) => deco.spec.widget)
     .filter(Boolean)
 
@@ -169,7 +169,7 @@ describe('a table', () => {
   })
 
   it('takes whole lines', () => {
-    const [deco] = getDrawn(TABLE).filter((it) => it.spec.widget)
+    const [deco] = getDrawnDecorations(TABLE).filter((it) => it.spec.widget)
     expect(deco?.from).toBe(0)
     expect(deco?.to).toBe(TABLE.trimEnd().length)
   })
@@ -189,7 +189,7 @@ describe('the text itself', () => {
 describe('what is shown as written', () => {
   it('is a construct any one of the carets remains in', () => {
     const doc = '**a** and **b**' + ELSEWHERE
-    const drawnMarks = collectDrawn(createCaretState(doc, [3, 20]))
+    const drawnMarks = collectDrawnMarks(createCaretState(doc, [3, 20]))
     expect(isHidden(drawnMarks, 0, 2)).toBe(false)
     expect(isHidden(drawnMarks, 3, 5)).toBe(false)
     expect(isHidden(drawnMarks, 10, 12)).toBe(true)
@@ -207,11 +207,11 @@ describe('what is shown as written', () => {
 
 describe('the space after a mark', () => {
   it('is hidden with the mark when there is one', () => {
-    expect(isHidden(getDrawn('> said'), 0, 2)).toBe(true)
+    expect(isHidden(getDrawnDecorations('> said'), 0, 2)).toBe(true)
   })
 
   it('is not made up when there is none', () => {
-    const drawnMarks = getDrawn('>said')
+    const drawnMarks = getDrawnDecorations('>said')
     expect(isHidden(drawnMarks, 0, 1)).toBe(true)
     expect(isHidden(drawnMarks, 0, 2)).toBe(false)
   })
@@ -229,7 +229,7 @@ describe('what stays as written', () => {
   })
 
   it('is text that no construct remains over', () => {
-    expect(getDrawn('plain words')).toEqual([])
+    expect(getDrawnDecorations('plain words')).toEqual([])
   })
 
   it('is the words of a picture, and what is inside them, under the caret', () => {
@@ -237,20 +237,20 @@ describe('what stays as written', () => {
   })
 
   it('is the address of a picture, which has its own drawing', () => {
-    expect(getDrawn('![a](p.png)')).toHaveLength(1)
+    expect(getDrawnDecorations('![a](p.png)')).toHaveLength(1)
   })
 })
 
 describe('a box for something to do', () => {
   it('can be ticked where the text can be written', () => {
-    const [box] = collectDrawn(createCaretState('- [ ] a' + ELSEWHERE, [0]))
+    const [box] = collectDrawnMarks(createCaretState('- [ ] a' + ELSEWHERE, [0]))
       .map((deco) => deco.spec.widget)
       .filter((it): it is Box => it instanceof Box)
     expect(box?.isWritable).toBe(true)
   })
 
   it('cannot where the text is read-only', () => {
-    const [box] = collectDrawn(createCaretState('- [ ] a' + ELSEWHERE, [0], true))
+    const [box] = collectDrawnMarks(createCaretState('- [ ] a' + ELSEWHERE, [0], true))
       .map((deco) => deco.spec.widget)
       .filter((it): it is Box => it instanceof Box)
     expect(box?.isWritable).toBe(false)
@@ -261,7 +261,7 @@ describe('whole lines', () => {
   const TABLE = '| a | **b** |\n|---|---|\n| c | d |\n'
 
   it('are drawn as blocks', () => {
-    const blocks = getDrawn('a\n\n---\n\nb\n').filter((deco) => deco.spec.widget)
+    const blocks = getDrawnDecorations('a\n\n---\n\nb\n').filter((deco) => deco.spec.widget)
     expect(blocks).toHaveLength(1)
     expect((blocks[0]?.spec as { block?: boolean }).block).toBe(true)
   })
@@ -296,7 +296,7 @@ interface Standing {
   readonly deco: { spec: { widget?: unknown; block?: boolean } }
 }
 
-const getStanding = (state: EditorState): Standing[] => {
+const getStandingMarks = (state: EditorState): Standing[] => {
   const found: Standing[] = []
   state.field(wholeLines).marks.between(0, state.doc.length, (from, to, deco) => {
     found.push({ from, to, deco })
@@ -310,23 +310,23 @@ describe('the marks of whole lines retained in the state', () => {
 
   it('carry on unchanged when text is typed before a rule', () => {
     const { state } = createLinesState(RULE)
-    const [was] = getStanding(state)
-    const [now] = getStanding(state.update({ changes: { from: 0, insert: 'xy' } }).state)
+    const [was] = getStandingMarks(state)
+    const [now] = getStandingMarks(state.update({ changes: { from: 0, insert: 'xy' } }).state)
     expect(now?.deco).toBe(was?.deco)
     expect([now?.from, now?.to]).toEqual([was ? was.from + 2 : -1, was ? was.to + 2 : -1])
   })
 
   it('carry on unchanged when text is typed after a rule', () => {
     const { state } = createLinesState(RULE)
-    const [was] = getStanding(state)
-    const [now] = getStanding(state.update({ changes: { from: RULE.length, insert: 'xy' } }).state)
+    const [was] = getStandingMarks(state)
+    const [now] = getStandingMarks(state.update({ changes: { from: RULE.length, insert: 'xy' } }).state)
     expect(now?.deco).toBe(was?.deco)
   })
 
   it('are drawn again when text is typed at the first character of a rule', () => {
     const { state } = createLinesState(RULE)
-    const [was] = getStanding(state)
-    const [now] = getStanding(
+    const [was] = getStandingMarks(state)
+    const [now] = getStandingMarks(
       state.update({ changes: { from: was?.from ?? 0, insert: '\n' } }).state,
     )
     expect(now?.deco.spec.widget).toBeInstanceOf(Rule)
@@ -335,8 +335,8 @@ describe('the marks of whole lines retained in the state', () => {
 
   it('move a table with the text before it', () => {
     const { state } = createLinesState(INTRO)
-    const [was] = getStanding(state)
-    const [now] = getStanding(state.update({ changes: { from: 0, insert: 'x' } }).state)
+    const [was] = getStandingMarks(state)
+    const [now] = getStandingMarks(state.update({ changes: { from: 0, insert: 'x' } }).state)
     const table = (now?.deco.spec.widget as { table: { from: number } }).table
     expect(table.from).toBe((was?.from ?? 0) + 1)
     expect(now?.from).toBe((was?.from ?? 0) + 1)
@@ -345,7 +345,7 @@ describe('the marks of whole lines retained in the state', () => {
 
   it('show a rule as written when a second caret remains in it', () => {
     const { state } = createLinesState(RULE)
-    expect(getStanding(state)).toHaveLength(1)
+    expect(getStandingMarks(state)).toHaveLength(1)
 
     const moved = state.update({
       selection: EditorSelection.create([
@@ -353,7 +353,7 @@ describe('the marks of whole lines retained in the state', () => {
         EditorSelection.cursor(4),
       ]),
     }).state
-    expect(getStanding(moved)).toHaveLength(0)
+    expect(getStandingMarks(moved)).toHaveLength(0)
   })
 
   it('keep their marks and take the nodes of the new parse when the same blocks are found', () => {
@@ -369,10 +369,10 @@ describe('the marks of whole lines retained in the state', () => {
 
   it('follow the parser when it is swapped without the text changing', () => {
     const { state, language } = createLinesState(INTRO)
-    expect(getStanding(state)).toHaveLength(1)
+    expect(getStandingMarks(state)).toHaveLength(1)
 
     const swapped = state.update({ effects: language.reconfigure(markdown()) }).state
-    expect(getStanding(swapped)).toHaveLength(0)
+    expect(getStandingMarks(swapped)).toHaveLength(0)
   })
 })
 
@@ -399,8 +399,8 @@ describe('the marks of whole lines when the parser finds other blocks in the sam
       effects: language.reconfigure(markdown({ extensions: [GFM, config] })),
     }).state
     return {
-      was: getStanding(state),
-      now: getStanding(swapped),
+      was: getStandingMarks(state),
+      now: getStandingMarks(swapped),
       nodes: swapped.field(wholeLines).nodes,
     }
   }
@@ -427,9 +427,9 @@ describe('the marks of whole lines when the parser finds other blocks in the sam
   it('are drawn again when a change far away makes a rule of what was code', () => {
     const doc = '---\n\n```\np\n\n---\n\n```\n\nz\n'
     const { state } = createLinesState(doc)
-    const [was] = getStanding(state)
+    const [was] = getStandingMarks(state)
 
-    const [now, ...others] = getStanding(state.update({ changes: { from: 0, to: 9 } }).state)
+    const [now, ...others] = getStandingMarks(state.update({ changes: { from: 0, to: 9 } }).state)
     expect(others).toHaveLength(0)
     expect([now?.from, now?.to]).toEqual([3, 6])
     expect(now?.deco.spec.widget).toBeInstanceOf(Rule)

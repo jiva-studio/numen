@@ -185,7 +185,7 @@ describe('a window of real notes', () => {
   }
 
   /** A stale note A beside a clean note B, with the conflicts watched. */
-  const createStale = async () => {
+  const createStaleConflict = async () => {
     const files = new Map([
       ['A.md', 'a'],
       ['B.md', 'b'],
@@ -209,7 +209,7 @@ describe('a window of real notes', () => {
   }
 
   it('raises the conflict of the stale note and keeps it while another is typed into', async () => {
-    const { notes, going, raised } = await createStale()
+    const { notes, going, raised } = await createStaleConflict()
     expect(going.paths()).toEqual(['A.md'])
 
     notes.setBody('B.md', 'b and more')
@@ -220,7 +220,7 @@ describe('a window of real notes', () => {
   })
 
   it('keeps the conflict while the stale note itself is typed into, and drops it once answered', async () => {
-    const { notes, going, raised } = await createStale()
+    const { notes, going, raised } = await createStaleConflict()
 
     notes.setBody('A.md', 'mine and more')
     await flushMicrotasks()

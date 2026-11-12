@@ -152,7 +152,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	out.Now = CurvePoint{Index: findNearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay), Day: ""}
+	out.Now = CurvePoint{Index: findNearestGridIndex(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay), Day: ""}
 	// The suggested value is the shortest day that covers everything the day holds:
 	// the minutes stop closing it, and the material runs out. A load that no grid
 	// value carries is suggested at the longest day on the grid.
@@ -200,7 +200,7 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	out.Now = CurvePoint{Index: findNearest(out.Grid, p.Retention), Value: p.Retention, Day: ""}
+	out.Now = CurvePoint{Index: findNearestGridIndex(out.Grid, p.Retention), Value: p.Retention, Day: ""}
 	return out, nil
 }
 
@@ -307,7 +307,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	// place is worked out for that day.
 	if named >= 0 {
 		out.Now = CurvePoint{
-			Index: findNearest(out.Grid, float64(named)),
+			Index: findNearestGridIndex(out.Grid, float64(named)),
 			Value: float64(named),
 			Day:   run.Day.GetName(open.AddDate(0, 0, named)),
 		}

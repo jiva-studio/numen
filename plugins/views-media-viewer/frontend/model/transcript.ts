@@ -51,7 +51,7 @@ export function useTranscript(
   const plays = how.plays ?? createMediaTypeProbe()
 
   let isOpen = true
-  const checkOpen = () => isOpen
+  const getOpenState = () => isOpen
 
   const cues = shallowRef<readonly Cue[]>([])
   /** Whether the live text has no times, such as an article: it is shown as it is and not edited. */
@@ -65,13 +65,13 @@ export function useTranscript(
   const isEditable = computed(() => !isWorking.value && !isArticle.value)
   const requests = createRequestGuard()
 
-  const playback = usePlayback(audioPlayer, plays, checkOpen)
+  const playback = usePlayback(audioPlayer, plays, getOpenState)
   const draft = useTranscriptDraft({
     cues,
     isEditable,
     error,
     idleMs,
-    isOpen: checkOpen,
+    isOpen: getOpenState,
     write: (next) => recordings.writeTranscript(path, next),
   })
   const lines = useTranscriptLines(cues, draft.prose)
@@ -118,7 +118,7 @@ export function useTranscript(
   const stopChanges = recordings.watchChanges(path, () => {
     if (isOpen) readRecording().catch(reportFailure)
   })
-  const stopWatching = () => {
+  const stopWatchingTranscript = () => {
     stopWorking()
     stopChanges()
   }
@@ -176,7 +176,7 @@ export function useTranscript(
     draft.keep().catch(reportFailure)
     playback.controls.pause()
     isOpen = false
-    stopWatching()
+    stopWatchingTranscript()
     requests.close()
     cues.value = []
     draft.stop()

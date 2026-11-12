@@ -161,7 +161,7 @@ func (d *Delivery) refreshPlugin(ctx context.Context, pluginID string) error {
 	if !isRunning {
 		return nil
 	}
-	lists, listErr := listAllowed(snapshot)
+	lists, listErr := listAllowedLists(snapshot)
 	if listErr == nil && !d.ledger.isDue(pluginID, getSignature(lists)) {
 		return nil
 	}
@@ -174,7 +174,7 @@ func (d *Delivery) Configure(ctx context.Context, pluginID string) error {
 	if !isRunning || err != nil {
 		return err
 	}
-	lists, listErr := listAllowed(snapshot)
+	lists, listErr := listAllowedLists(snapshot)
 	return d.deliver(ctx, snapshot, lists, listErr)
 }
 

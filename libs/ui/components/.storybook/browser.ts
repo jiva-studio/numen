@@ -39,7 +39,7 @@ const isExecutable = (path: string): boolean => {
   }
 }
 
-const findExecutable = (names: readonly string[]): string | undefined =>
+const findExecutablePath = (names: readonly string[]): string | undefined =>
   (process.env['PATH'] ?? '')
     .split(delimiter)
     .filter(Boolean)
@@ -50,7 +50,7 @@ const getSystemChrome = (): string | undefined => {
   const explicit = process.env['CHROME_PATH']
   if (explicit) return explicit
   if (process.env['CI']) return undefined
-  return findExecutable(CANDIDATES)
+  return findExecutablePath(CANDIDATES)
 }
 
 /**

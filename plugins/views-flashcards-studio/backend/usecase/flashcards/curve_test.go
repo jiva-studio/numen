@@ -634,7 +634,7 @@ func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 	}
 }
 
-func getLearned(t *testing.T, s vaulted, p review.Preset) []int {
+func getLearnedDays(t *testing.T, s vaulted, p review.Preset) []int {
 	t.Helper()
 	got, err := s.curves(getNoon()).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
@@ -669,7 +669,7 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	base.NewADay, base.ReviewsADay = 8, 45
 	base.Rule, base.Interval = review.RuleInterval, 21
 
-	learned := getLearned(t, s, base)
+	learned := getLearnedDays(t, s, base)
 	if len(learned) != 1 || learned[0] == 0 {
 		t.Fatalf("got learned = %v, want non-empty and non-zero", learned)
 	}
@@ -693,7 +693,7 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	} {
 		p := base
 		one.alter(&p)
-		if got := getLearned(t, s, p); !reflect.DeepEqual(got, learned) {
+		if got := getLearnedDays(t, s, p); !reflect.DeepEqual(got, learned) {
 			t.Errorf("%s moved what stands learned from %v to %v", one.what, learned, got)
 		}
 	}
@@ -701,12 +701,12 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	// And what does move it: the rule, and the threshold that rule reads.
 	other := base
 	other.Rule = review.RuleRetention
-	if got := getLearned(t, s, other); reflect.DeepEqual(got, learned) {
+	if got := getLearnedDays(t, s, other); reflect.DeepEqual(got, learned) {
 		t.Errorf("a material months past its answers stands %v learned under both rules", got)
 	}
 	tighter := base
 	tighter.Interval = int(review.GetIntervalBounds().Max)
-	if got := getLearned(t, s, tighter); got[0] >= learned[0] {
+	if got := getLearnedDays(t, s, tighter); got[0] >= learned[0] {
 		t.Errorf("an interval of a year learns %v of what an interval of three weeks learns %v",
 			got, learned)
 	}
@@ -1407,7 +1407,7 @@ func recordHistoryAnswers(t *testing.T, s vaulted) {
 	}
 }
 
-func countScheduled(t *testing.T, s vaulted, path string) (decks []string, reviewCards int) {
+func countScheduledCards(t *testing.T, s vaulted, path string) (decks []string, reviewCards int) {
 	t.Helper()
 	target, err := s.standings.GetDeckPaths(t.Context(), s.vault)
 	if err != nil {
@@ -1461,7 +1461,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 		t.Run(shape.name, func(t *testing.T) {
 			whole := openVault(t, newPointedNotes())
 			recordHistoryAnswers(t, whole)
-			decks, reviewCards := countScheduled(t, whole, shape.path)
+			decks, reviewCards := countScheduledCards(t, whole, shape.path)
 
 			// The same vault with every deck the preset does not schedule taken
 			// out of it, where there is nothing to narrow.

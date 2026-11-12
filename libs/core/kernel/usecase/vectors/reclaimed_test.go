@@ -62,7 +62,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 			read++
 			if !bytes.Equal(v.Coarse, was.Coarse) {
 				t.Fatalf("a reclaimed vector carries %d coarse bytes that differ from the %d it was bought with",
-					countDiffering(v.Coarse, was.Coarse), len(was.Coarse))
+					countDifferingBytes(v.Coarse, was.Coarse), len(was.Coarse))
 			}
 		}
 	}
@@ -97,7 +97,7 @@ func (f *faint) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
-func countDiffering(a, b []byte) int {
+func countDifferingBytes(a, b []byte) int {
 	var n int
 	for i := range a {
 		if i < len(b) && a[i] != b[i] {

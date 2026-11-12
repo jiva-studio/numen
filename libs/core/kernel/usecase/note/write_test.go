@@ -44,7 +44,7 @@ func TestWrite_EnforcesSizeLimit(t *testing.T) {
 
 func TestAWriteOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Execute(t.Context(), c.vault, "Entropy.md", "---\nid: x\n---\nMine.\n", domain.FileStat{})
 	if !errors.Is(err, edit.ErrBodyUnwritable) {
@@ -57,7 +57,7 @@ func TestAWriteOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 
 func TestASaveOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "---\nid: x\n---\nMine.\n", nil)
 	if !errors.Is(err, edit.ErrBodyUnwritable) {
@@ -70,7 +70,7 @@ func TestASaveOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 
 func TestWrite_EnforcesWriterLimit(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
+	c := openChangeFixture(t, map[string]string{"Mammals.md": "# Mammals\n"})
 	body := strings.Repeat("x", edit.MaxBytes+1)
 
 	_, err := c.newWrite().Execute(t.Context(), c.vault, "Mammals.md", body, domain.FileStat{})
@@ -91,7 +91,7 @@ func TestWrite_EnforcesWriterLimit(t *testing.T) {
 	}
 }
 
-func (c changing) newDrawingWrite(callback *[]domain.Edit) note.Write {
+func (c changeFixture) newDrawingWrite(callback *[]domain.Edit) note.Write {
 	w := c.newWrite()
 	w.Drawing = func(_ context.Context, response domain.Edit) error {
 		*callback = append(*callback, response)
@@ -125,7 +125,7 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, map[string]string{"Entropy.md": tc.was})
+			c := openChangeFixture(t, map[string]string{"Entropy.md": tc.was})
 			var notified []domain.Edit
 
 			if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", tc.now, domain.FileStat{}); err != nil {
@@ -150,7 +150,7 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 
 func TestAWriteOfTheSameProseTellsNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "alpha beta\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "alpha beta\n"})
 	var notified []domain.Edit
 
 	if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", "alpha beta\n", domain.FileStat{}); err != nil {
@@ -164,7 +164,7 @@ func TestAWriteOfTheSameProseTellsNothing(t *testing.T) {
 func TestARefusedWriteTellsNothing(t *testing.T) {
 	t.Parallel()
 	half := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\ntitle: Heat death\n"
-	c := openChanging(t, map[string]string{"Heat.md": half})
+	c := openChangeFixture(t, map[string]string{"Heat.md": half})
 	var notified []domain.Edit
 
 	_, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.FileStat{})
@@ -178,7 +178,7 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 
 func TestWrite_SmallerWriterLimitRejectsDefaultAllowed(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
+	c := openChangeFixture(t, map[string]string{"Mammals.md": "# Mammals\n"})
 	small := c.newWrite()
 	small.Bound = 100
 
@@ -190,7 +190,7 @@ func TestWrite_SmallerWriterLimitRejectsDefaultAllowed(t *testing.T) {
 
 func TestAWriteUsesThePortsItIsGiven(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	updated := 0
 	w := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
@@ -216,7 +216,7 @@ func TestAWriteUsesThePortsItIsGiven(t *testing.T) {
 func TestAWriteWhoseObserverCannotBeNotifiedIsRefused(t *testing.T) {
 	t.Parallel()
 	const was = "alpha beta\n"
-	c := openChanging(t, map[string]string{"Entropy.md": was})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": was})
 	observerError := errors.New("the observer cannot be reached")
 	writing := c.newWrite()
 	writing.Drawing = func(context.Context, domain.Edit) error { return observerError }

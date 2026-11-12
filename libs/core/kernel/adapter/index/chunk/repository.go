@@ -105,7 +105,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 		}
 		var row int64
 		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
-			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.ContentHash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&row); err != nil {
+			vault, s.Path, s.Kind, s.Size, s.MTime, newNullableValue(s.ContentHash), newNullableValue(s.Recipe), newNullableValue(s.Producer)).Scan(&row); err != nil {
 			return fmt.Errorf("record the source %s: %w", s.Path, err)
 		}
 		return nil
@@ -125,7 +125,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 		}
 		var source int64
 		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
-			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.ContentHash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&source); err != nil {
+			vault, s.Path, s.Kind, s.Size, s.MTime, newNullableValue(s.ContentHash), newNullableValue(s.Recipe), newNullableValue(s.Producer)).Scan(&source); err != nil {
 			return fmt.Errorf("record the source %s: %w", s.Path, err)
 		}
 		if err := Replace(ctx, tx, source, vault, chunks); err != nil {
@@ -345,7 +345,7 @@ func getSourceRow(ctx context.Context, db querier, vault int64, kind, path strin
 	return row, err
 }
 
-func newNullable(s string) any {
+func newNullableValue(s string) any {
 	if s == "" {
 		return nil
 	}

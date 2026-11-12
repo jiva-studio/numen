@@ -10,7 +10,7 @@ import {
   clamp,
   clearBacklog,
   getPointCost,
-  findNearest,
+  findNearestGridValue,
   getGoalValue,
   getIdleReason,
   produceSchedule,
@@ -39,13 +39,13 @@ const point = (overrides: Partial<Point> = {}): Point => ({
 
 describe('where a value relies on a grid', () => {
   it('snaps to nearest point', () => {
-    expect(findNearest([0, 10, 20, 30], 21)).toBe(2)
-    expect(findNearest([0, 10, 20, 30], 30)).toBe(3)
-    expect(findNearest([0, 10, 20, 30], -5)).toBe(0)
+    expect(findNearestGridValue([0, 10, 20, 30], 21)).toBe(2)
+    expect(findNearestGridValue([0, 10, 20, 30], 30)).toBe(3)
+    expect(findNearestGridValue([0, 10, 20, 30], -5)).toBe(0)
   })
 
   it('is nowhere at all on a grid with no places', () => {
-    expect(findNearest([], 3)).toBe(-1)
+    expect(findNearestGridValue([], 3)).toBe(-1)
   })
 })
 
@@ -260,11 +260,11 @@ describe('the day the overdue pile is gone', () => {
 
 describe('where a value relies on a grid, at the edges', () => {
   it('is the first place of a tie between two', () => {
-    expect(findNearest([0, 10], 5)).toBe(0)
+    expect(findNearestGridValue([0, 10], 5)).toBe(0)
   })
 
   it('is the first place for a value nearer the start than any place after it', () => {
-    expect(findNearest([10, 20], 0)).toBe(0)
+    expect(findNearestGridValue([10, 20], 0)).toBe(0)
   })
 })
 

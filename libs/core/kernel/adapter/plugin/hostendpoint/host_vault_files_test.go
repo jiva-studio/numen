@@ -63,7 +63,7 @@ func (d *diskVaults) setState(state plugin.IndexState) {
 	d.state = state
 }
 
-func (d *diskVaults) getScanned() [][]string {
+func (d *diskVaults) getScannedBatches() [][]string {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return slices.Clone(d.scanned)
@@ -213,7 +213,7 @@ func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
 	if err != nil || string(got.Msg.GetContent()) != "new" {
 		t.Errorf("the file holds %q (%v)", got.Msg.GetContent(), err)
 	}
-	if scanned := disk.getScanned(); len(scanned) != 1 || !slices.Equal(scanned[0], []string{"samples/A.md"}) {
+	if scanned := disk.getScannedBatches(); len(scanned) != 1 || !slices.Equal(scanned[0], []string{"samples/A.md"}) {
 		t.Errorf("the index was scanned for %v, want the one write that was kept", scanned)
 	}
 }
@@ -264,7 +264,7 @@ func TestTheIndexIsBroughtLevelWithTheFilesNamed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if scanned := disk.getScanned(); len(scanned) != 1 || !slices.Equal(scanned[0], []string{"samples/A.md"}) {
+	if scanned := disk.getScannedBatches(); len(scanned) != 1 || !slices.Equal(scanned[0], []string{"samples/A.md"}) {
 		t.Errorf("the index was scanned for %v", scanned)
 	}
 }

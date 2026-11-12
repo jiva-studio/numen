@@ -57,38 +57,38 @@ func TestProjectionAndCurveInternals(t *testing.T) {
 		t.Fatal("expected compareByDue to compare Difficulty when Due, Last, and Stability match")
 	}
 
-	// Test learnedCount: countBegun when !isCarried and when isCarried && isLearned;
-	// countLearned when isCarried && !wanted, when !isCarried with new card vs learned card, and when reviewCards == 0.
+	// Test learnedCount: countBegunCards when !isCarried and when isCarried && isLearned;
+	// countLearnedCards when isCarried && !wanted, when !isCarried with new card vs learned card, and when reviewCards == 0.
 	pRet := review.Defaults()
 	pRet.Rule = review.RuleRetention
 	pRet.Retention = 0.9
 	lcNotCarried := newLearnedCount(pRet, nil, now)
-	lcNotCarried.countBegun(Schedule{Last: now, Due: now.Add(30 * 24 * time.Hour), Stability: 100}, now)
+	lcNotCarried.countBegunCards(Schedule{Last: now, Due: now.Add(30 * 24 * time.Hour), Stability: 100}, now)
 	if lcNotCarried.learned != nil || lcNotCarried.count != 0 {
-		t.Fatalf("expected countBegun no-op when !isCarried, got %+v", lcNotCarried)
+		t.Fatalf("expected countBegunCards no-op when !isCarried, got %+v", lcNotCarried)
 	}
 
 	pInt := review.Defaults()
 	pInt.Rule = RuleInterval
 	pInt.Interval = 1
 	lcCarried := newLearnedCount(pInt, nil, now)
-	lcCarried.countBegun(Schedule{Last: now, Due: now.Add(48 * time.Hour), Stability: 10}, now)
+	lcCarried.countBegunCards(Schedule{Last: now, Due: now.Add(48 * time.Hour), Stability: 10}, now)
 	if lcCarried.count != 1 || !slices.Equal(lcCarried.learned, []bool{true}) {
-		t.Fatalf("expected countBegun to increment count when learned under RuleInterval, got %+v", lcCarried)
+		t.Fatalf("expected countBegunCards to increment count when learned under RuleInterval, got %+v", lcCarried)
 	}
-	if stands, back := lcCarried.countLearned(
+	if stands, back := lcCarried.countLearnedCards(
 		[]Schedule{{Last: now, Stability: 10}}, now, 1, false,
 	); stands != 1 || back != 0 {
 		t.Fatalf("expected back=0 when !wanted on carried learnedCount, got stands=%d back=%g", stands, back)
 	}
 
 	lcZeroTarget := &learnedCount{preset: pRet, isCarried: false, target: 0}
-	if stands, _ := lcZeroTarget.countLearned([]Schedule{{}}, now, 1, true); stands != 0 {
+	if stands, _ := lcZeroTarget.countLearnedCards([]Schedule{{}}, now, 1, true); stands != 0 {
 		t.Fatalf("expected unanswered card (IsNew) to not count in stands even when target==0, got %d", stands)
 	}
 	lcExact := &learnedCount{preset: pRet, isCarried: false, target: review.Recall(24*time.Hour, 1.0)}
 	sExact := Schedule{Last: now.Add(-24 * time.Hour), Due: now, Stability: 1.0}
-	if stands, back := lcExact.countLearned([]Schedule{sExact}, now, 0, true); stands != 1 || back != 0 {
+	if stands, back := lcExact.countLearnedCards([]Schedule{sExact}, now, 0, true); stands != 1 || back != 0 {
 		t.Fatalf("expected stands=1 and back=0 when reviewCards==0 and one == target, got stands=%d back=%g",
 			stands, back)
 	}

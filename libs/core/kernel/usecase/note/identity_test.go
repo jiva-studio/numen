@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
 
-func getStarted() []string {
+func getStartedNotes() []string {
 	return []string{
 		"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\ntitle: Old\n---\n\nA measure.\n",
 		"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\n---\n\nA measure.\n",
@@ -28,7 +28,7 @@ func getTitles() []string { return []string{"Entropy", "Order", "TCP/IP", "Эн�
 
 func getFolders() []string { return []string{"", "physics", "physics/thermo"} }
 
-func writeNote(rt *rapid.T, c changing, folder, raw string) string {
+func writeNote(rt *rapid.T, c changeFixture, folder, raw string) string {
 	rt.Helper()
 	path := folder + "/Old.md"
 	on := filepath.Join(c.vault.Path, filepath.FromSlash(path))
@@ -63,12 +63,12 @@ func getIdentifier(t *rapid.T, root, path string) (string, bool) {
 // what is in a note, and a move is not such a change.
 func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"other.md": "# Other\n"})
+	c := openChangeFixture(t, map[string]string{"other.md": "# Other\n"})
 	runs := 0
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++
 		folder := fmt.Sprintf("run%04d", runs)
-		path := writeNote(rt, c, folder, rapid.SampledFrom(getStarted()).Draw(rt, "note"))
+		path := writeNote(rt, c, folder, rapid.SampledFrom(getStartedNotes()).Draw(rt, "note"))
 		was, stamped := getIdentifier(rt, c.vault.Path, path)
 
 		for step := range rapid.IntRange(1, 6).Draw(rt, "steps") {
@@ -132,11 +132,11 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 // stamps it.
 func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"other.md": "# Other\n"})
+	c := openChangeFixture(t, map[string]string{"other.md": "# Other\n"})
 	runs := 0
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++
-		raw := rapid.SampledFrom(getStarted()).Draw(rt, "note")
+		raw := rapid.SampledFrom(getStartedNotes()).Draw(rt, "note")
 		path := writeNote(rt, c, fmt.Sprintf("run%04d", runs), raw)
 		title := rapid.SampledFrom(getTitles()).Draw(rt, "title")
 

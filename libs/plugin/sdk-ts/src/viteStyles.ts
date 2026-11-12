@@ -17,7 +17,7 @@ import postcss from 'postcss'
 import { parse as parseSfc } from '@vue/compiler-sfc'
 import type { Node as BabelNode } from '@babel/types'
 import type { Plugin } from 'vite'
-import { UI_STYLES, getNormalCss, removePresent } from '@numen/ui/vite'
+import { UI_STYLES, getNormalCss, removePresentRules } from '@numen/ui/vite'
 
 /** The stylesheet of `@numen/ui` the utilities are built from. */
 const THEME = createRequire(import.meta.url).resolve('@numen/ui/theme.css')
@@ -193,7 +193,7 @@ export function createUtilitiesPlugin(root: string): Plugin {
     async generateBundle(_, bundle) {
       const files = getPluginFiles(root, this.getModuleIds())
       const ui = readFileSync(UI_STYLES, 'utf8')
-      const utilities = removePresent(await getUtilityCss(getCandidates(files)), ui)
+      const utilities = removePresentRules(await getUtilityCss(getCandidates(files)), ui)
       const asset = bundle['styles.css']
       const styles = asset?.type === 'asset' ? asset : undefined
       const componentCss = styles ? String(styles.source) : ''
@@ -232,7 +232,7 @@ export function createStoryUtilitiesPlugin(pluginsDir: string): Plugin {
     async load(id) {
       if (id !== `\0${STORY_UTILITIES}`) return undefined
       const css = await getUtilityCss(getCandidates(getFrontendFiles(pluginsDir)))
-      return removePresent(css, readFileSync(UI_STYLES, 'utf8'))
+      return removePresentRules(css, readFileSync(UI_STYLES, 'utf8'))
     },
   }
 }

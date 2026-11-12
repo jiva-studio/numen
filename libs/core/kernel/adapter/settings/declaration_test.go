@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func findDeclared(t *testing.T, key string) manifest.Setting {
+func findDeclaredSetting(t *testing.T, key string) manifest.Setting {
 	t.Helper()
 	for _, one := range settings.GetAppDeclaration() {
 		if one.Key == key {
@@ -30,7 +30,7 @@ func TestTheShellDeclaresItsSixSettingsInTheFormatOfAManifest(t *testing.T) {
 		"naming.syncTitleAndFilename",
 		"performance.profile",
 	} {
-		declared := findDeclared(t, key)
+		declared := findDeclaredSetting(t, key)
 		if declared.Title == "" {
 			t.Errorf("%s has no title", key)
 		}
@@ -59,7 +59,7 @@ func TestTheScalesAreRangesWithTheirBoundsAndDefaults(t *testing.T) {
 		"appearance.interfaceScale": {0.8, 2},
 		"appearance.textScale":      {0.8, 1.75},
 	} {
-		declared := findDeclared(t, key)
+		declared := findDeclaredSetting(t, key)
 		if declared.Type != "range" {
 			t.Errorf("%s is %s", key, declared.Type)
 		}
@@ -77,7 +77,7 @@ func TestTheModeAndTheProfileAreEnumsOfTheWordsTheFileUses(t *testing.T) {
 		"appearance.mode":     {"system", "light", "dark"},
 		"performance.profile": {"eco", "balanced", "maximum"},
 	} {
-		declared := findDeclared(t, key)
+		declared := findDeclaredSetting(t, key)
 		var got []string
 		for _, option := range declared.Options {
 			got = append(got, option.Value)
@@ -88,23 +88,23 @@ func TestTheModeAndTheProfileAreEnumsOfTheWordsTheFileUses(t *testing.T) {
 			t.Errorf("%s is %s of %v, want an enum of %v", key, declared.Type, got, want)
 		}
 	}
-	if got := findDeclared(t, "appearance.mode").Default; got != "system" {
+	if got := findDeclaredSetting(t, "appearance.mode").Default; got != "system" {
 		t.Errorf("the mode defaults to %v", got)
 	}
-	if got := findDeclared(t, "performance.profile").Default; got != "balanced" {
+	if got := findDeclaredSetting(t, "performance.profile").Default; got != "balanced" {
 		t.Errorf("the profile defaults to %v", got)
 	}
 }
 
 func TestTheNamingIsABooleanOnByDefault(t *testing.T) {
-	declared := findDeclared(t, "naming.syncTitleAndFilename")
+	declared := findDeclaredSetting(t, "naming.syncTitleAndFilename")
 	if declared.Type != "boolean" || declared.Default != true {
 		t.Errorf("the naming is %s defaulting to %v", declared.Type, declared.Default)
 	}
 }
 
 func TestTheThemeListsItsOptionsFromTheRegistryOfInstalledThemes(t *testing.T) {
-	declared := findDeclared(t, "appearance.theme")
+	declared := findDeclaredSetting(t, "appearance.theme")
 	if declared.OptionsFrom != "themes" {
 		t.Errorf("the theme lists its options from %q", declared.OptionsFrom)
 	}
@@ -117,10 +117,10 @@ func TestTheThemeListsItsOptionsFromTheRegistryOfInstalledThemes(t *testing.T) {
 }
 
 func TestTheSettingsThatApplyWhileFocusedCarryThePreviewFlag(t *testing.T) {
-	if !findDeclared(t, "appearance.theme").Preview {
+	if !findDeclaredSetting(t, "appearance.theme").Preview {
 		t.Error("the theme is not previewed while focused")
 	}
-	if findDeclared(t, "naming.syncTitleAndFilename").Preview {
+	if findDeclaredSetting(t, "naming.syncTitleAndFilename").Preview {
 		t.Error("the naming is previewed while focused")
 	}
 }
@@ -148,7 +148,7 @@ func TestTheSixSettingsOfTheShellAreDeclaredForThePaletteWithTheirIcon(t *testin
 		"naming.syncTitleAndFilename",
 		"performance.profile",
 	} {
-		declared := findDeclared(t, key)
+		declared := findDeclaredSetting(t, key)
 		if !declared.Palette {
 			t.Errorf("%s is not flagged for the palette", key)
 		}

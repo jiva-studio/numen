@@ -11,7 +11,7 @@ func TestTranscriptCreateDuringPaletteTranscriptionReportsRunning(t *testing.T) 
 		_, err := s.transcriber.Start(t.Context(), "", lecture)
 		result <- err
 	}()
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 

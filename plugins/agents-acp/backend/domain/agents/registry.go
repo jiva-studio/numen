@@ -91,7 +91,7 @@ func merge(named, found []Agent, paths []string) []Agent {
 			return len(a.Command) > 0 && a.Command[0] == execPath
 		})
 		if !hasCustom {
-			agents = append(agents, createCustom(execPath, len(paths) > 1))
+			agents = append(agents, createCustomAgent(execPath, len(paths) > 1))
 		}
 	}
 	sortByProgram(agents)

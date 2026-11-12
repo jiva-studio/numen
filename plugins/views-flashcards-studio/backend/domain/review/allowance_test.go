@@ -103,10 +103,10 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 	if pos.Weekday() != time.Sunday {
 		t.Fatalf("%v is a %v", pos, pos.Weekday())
 	}
-	if !p.GetAllowance(getAhead(), pos, review.Spent{}, 0, 0).IsPaused() {
+	if !p.GetAllowance(getAheadDay(), pos, review.Spent{}, 0, 0).IsPaused() {
 		t.Error("a day at none of the load is not a pause")
 	}
-	if p.GetAllowance(getAhead(), pos.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
+	if p.GetAllowance(getAheadDay(), pos.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
 		t.Error("the day after it is a pause")
 	}
 }

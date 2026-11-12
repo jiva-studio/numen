@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import Agent from './Agent.vue'
 import type { Turn } from '../types'
 
-const createRequested = (id: string, text = 'text'): Turn => ({ id, voice: 'prompt', text })
-const createResponded = (id: string, text = 'back'): Turn => ({ id, voice: 'response', text })
+const createRequestedTurn = (id: string, text = 'text'): Turn => ({ id, voice: 'prompt', text })
+const createRespondedTurn = (id: string, text = 'back'): Turn => ({ id, voice: 'response', text })
 
 /** How tall the area the conversation scrolls in is, and one turn in it. */
 const SCREEN = 100
@@ -49,7 +49,7 @@ const createAgent = (turns: readonly Turn[]) => {
 
 describe('a question sent', () => {
   it('is carried to whoever answers it', async () => {
-    const one = createAgent([createRequested('1'), createResponded('2')])
+    const one = createAgent([createRequestedTurn('1'), createRespondedTurn('2')])
 
     await one.sends('what is a relation')
 
@@ -58,16 +58,16 @@ describe('a question sent', () => {
   })
 
   it('brings the foot of the conversation into view', async () => {
-    const one = createAgent([createRequested('1'), createResponded('2'), createRequested('3')])
+    const one = createAgent([createRequestedTurn('1'), createRespondedTurn('2'), createRequestedTurn('3')])
     await one.reads(0)
 
     await one.sends('and one more')
     await one.wrapper.setProps({
       turns: [
-        createRequested('1'),
-        createResponded('2'),
-        createRequested('3'),
-        createRequested('4'),
+        createRequestedTurn('1'),
+        createRespondedTurn('2'),
+        createRequestedTurn('3'),
+        createRequestedTurn('4'),
       ],
     })
 
@@ -77,15 +77,15 @@ describe('a question sent', () => {
 
 describe('a conversation read further up', () => {
   it('keeps its read position while an answer arrives', async () => {
-    const one = createAgent([createRequested('1'), createResponded('2'), createRequested('3')])
+    const one = createAgent([createRequestedTurn('1'), createRespondedTurn('2'), createRequestedTurn('3')])
     await one.reads(0)
 
     await one.wrapper.setProps({
       turns: [
-        createRequested('1'),
-        createResponded('2'),
-        createRequested('3'),
-        createResponded('4'),
+        createRequestedTurn('1'),
+        createRespondedTurn('2'),
+        createRequestedTurn('3'),
+        createRespondedTurn('4'),
       ],
     })
 

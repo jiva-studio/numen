@@ -214,7 +214,7 @@ func getScannedMaps() text.ContentHash {
 	return text.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
 }
 
-func checkLive(t *testing.T, listing plugin.TextListing, err error) {
+func assertLive(t *testing.T, listing plugin.TextListing, err error) {
 	t.Helper()
 	if err != nil || len(listing.Versions) != 1 || listing.Live != listing.Versions[0].GetID() {
 		t.Fatalf("the listing is %+v (%v), want the one version live", listing, err)
@@ -227,7 +227,7 @@ func TestListVersionsListsLiveVersionWhenHashCannotBeRecorded(t *testing.T) {
 	texts := newTexts(t, &mapsVault{}, repo)
 
 	listing, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, mapsPath)
-	checkLive(t, listing, err)
+	assertLive(t, listing, err)
 }
 
 func TestListVersionsReturnsAFailureOfTheIndexAsItIs(t *testing.T) {
@@ -264,5 +264,5 @@ func TestListVersionsOfAPDFInAnIgnoredFolderListsItsLiveVersion(t *testing.T) {
 	texts := newTexts(t, dirReaders{root: root, opts: vaultconfig.Options{Ignore: []string{"library/"}}}, &mapsVersions{})
 
 	listing, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, mapsPath)
-	checkLive(t, listing, err)
+	assertLive(t, listing, err)
 }

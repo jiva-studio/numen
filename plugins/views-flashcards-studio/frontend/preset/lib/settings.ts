@@ -11,7 +11,7 @@ import type {
   Settings,
   SettingsBounds,
 } from '../../lib/presets'
-import { clamp, findNearest } from './curve'
+import { clamp, findNearestGridValue } from './curve'
 import type { Field } from './fields'
 
 /** What a setting of a preset holds. */
@@ -133,10 +133,10 @@ export const findGridIndex = (
   value: SettingValue,
   today: string,
 ): number => {
-  if (typeof value === 'number') return findNearest(grid, value)
+  if (typeof value === 'number') return findNearestGridValue(grid, value)
   // Stryker disable next-line ConditionalExpression: Non-string values evaluate to false in isDay.
   if (typeof value === 'string' && isDay(value)) {
-    return findNearest(grid, daysBetween(today, value))
+    return findNearestGridValue(grid, daysBetween(today, value))
   }
   return -1
 }

@@ -492,7 +492,7 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 		t.Errorf("expected readErr, got %v", err)
 	}
 
-	// StatFile fails while Read succeeds (e.g. FileStat zero, ShouldOverwrite false): getExpected returns "look at ...".
+	// StatFile fails while Read succeeds (e.g. FileStat zero, ShouldOverwrite false): getExpectedStat returns "look at ...".
 	fStatFail := newFiles(map[string]string{"A.md": "# A\n"})
 	fStatFail.statErr = fs.ErrNotExist
 	_, err = editing(fStatFail).Apply(t.Context(), getVault(), "A.md", func(*markdown.Document) error { return nil })
@@ -500,7 +500,7 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 		t.Errorf("expected look at A.md ErrNoNote, got %v", err)
 	}
 
-	// KindFile fails in getExpected with ErrNotANote.
+	// KindFile fails in getExpectedStat with ErrNotANote.
 	fKindFile := newFiles(map[string]string{"Book.epub": "content"})
 	fKindFile.kinds["Book.epub"] = domain.KindFile
 	_, err = editing(fKindFile).Apply(t.Context(), getVault(), "Book.epub", func(*markdown.Document) error { return nil })
@@ -508,7 +508,7 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 		t.Errorf("expected ErrNotANote, got %v", err)
 	}
 
-	// Empty Kind in FileStat succeeds in getExpected, and `on` is passed to Write for staleness check.
+	// Empty Kind in FileStat succeeds in getExpectedStat, and `on` is passed to Write for staleness check.
 	fEmptyKind := newFiles(map[string]string{"A.md": "# A\n"})
 	fEmptyKind.kinds["A.md"] = ""
 	_, err = editing(fEmptyKind).Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error {

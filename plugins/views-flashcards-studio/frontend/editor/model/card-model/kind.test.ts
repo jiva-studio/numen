@@ -447,7 +447,7 @@ describe('a card model read again under the window', () => {
 
 describe('a card model edited before its file is read', () => {
   /** A window whose card model read answers only when the test lets it. */
-  const openUnread = async () => {
+  const openUnreadCard = async () => {
     const one = vault()
     const read = one.core.readCardModel
     let answerRead = (): void => undefined
@@ -468,7 +468,7 @@ describe('a card model edited before its file is read', () => {
   }
 
   it('takes no template while the file is read', async () => {
-    const { tab } = await openUnread()
+    const { tab } = await openUnreadCard()
 
     tab.templates.addTemplate('Name it')
 
@@ -486,7 +486,7 @@ describe('a card model edited before its file is read', () => {
   })
 
   it('shows the file once it is read, and writes nothing', async () => {
-    const { cardModels, tab, answerRead, writtenFiles } = await openUnread()
+    const { cardModels, tab, answerRead, writtenFiles } = await openUnreadCard()
 
     tab.templates.addTemplate('Name it')
     answerRead()
@@ -534,7 +534,7 @@ describe('a card model whose tab has gone', () => {
   })
 })
 
-const openStale = async () => {
+const openStaleCard = async () => {
   const one = await open({ isChanged: true })
   one.tab.fields.addField('Weight')
   await one.cardModels.store.flush()
@@ -564,7 +564,7 @@ describe('a card model tab as the window lists it', () => {
     const clean = await open()
     expect(clean.cardModels.kind.getMark?.(clean.tab)).toBeUndefined()
 
-    const staleSession = await openStale()
+    const staleSession = await openStaleCard()
     expect(staleSession.cardModels.kind.getMark?.(staleSession.tab)).toBe('stale')
   })
 
@@ -580,7 +580,7 @@ describe('what the window asks of a card model tab', () => {
     const clean = await open()
     expect(clean.cardModels.kind.isAsking?.(clean.tab)).toBe(false)
 
-    const staleSession = await openStale()
+    const staleSession = await openStaleCard()
     expect(staleSession.cardModels.kind.isAsking?.(staleSession.tab)).toBe(true)
   })
 
@@ -618,7 +618,7 @@ describe('what the window asks of a card model tab', () => {
 
 describe('a card model tab closed', () => {
   it('stays open, still called what it was, where the file moved past its contents', async () => {
-    const one = await openStale()
+    const one = await openStaleCard()
 
     one.tab.file.close(one.id)
     await settle()
@@ -668,7 +668,7 @@ describe('a card model tab closed', () => {
 
 describe('a card model taken from its file', () => {
   it('shows the file as it now reads, and is no longer stale', async () => {
-    const one = await openStale()
+    const one = await openStaleCard()
 
     one.tab.file.takeFile()
     await settle()

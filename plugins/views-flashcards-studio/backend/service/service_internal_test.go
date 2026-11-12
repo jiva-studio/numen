@@ -290,7 +290,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 	})
 
 	t.Run("index outdated on writes", func(t *testing.T) {
-		env := vaulttest.New(t, getPointed())
+		env := vaulttest.New(t, getPointedVault())
 		b := New(Config{
 			Vaults: (&faultyVault{Vault: env.Host, scanErr: errors.New("scan boom")}).vaults(),
 			Store:  vaulttest.Folders(env.Host),
@@ -343,7 +343,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 	})
 
 	t.Run("validation, bounds, and error codes", func(t *testing.T) {
-		notes := getPointed()
+		notes := getPointedVault()
 		notes["Huge.md"] = "---\ntype: deck\n---\n\n" + strings.Repeat("x", int(cards.MaxBytes)+10)
 		env := vaulttest.New(t, notes)
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
@@ -554,7 +554,7 @@ func TestReviewInternalPaths(t *testing.T) {
 }
 
 func TestMountAndAllEndpoints(t *testing.T) {
-	env := vaulttest.New(t, getPointed())
+	env := vaulttest.New(t, getPointedVault())
 	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 
 	const tok = "test-mount-token"

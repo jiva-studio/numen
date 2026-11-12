@@ -218,7 +218,7 @@ func (s *toolFixture) recognize(t *testing.T, vault, path string) RecognitionCre
 	return out
 }
 
-func (s *toolFixture) waitStarted(t *testing.T) {
+func (s *toolFixture) waitUntilStarted(t *testing.T) {
 	t.Helper()
 	select {
 	case <-s.recognizer.startCh:
@@ -227,7 +227,7 @@ func (s *toolFixture) waitStarted(t *testing.T) {
 	}
 }
 
-func (s *toolFixture) waitFinished(t *testing.T, id string) {
+func (s *toolFixture) waitUntilFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
 	for !s.ended[id] {
@@ -281,7 +281,7 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 	if out != want {
 		t.Fatalf("recognition_create returned %+v, want %+v", out, want)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 	if tasks := s.queue.ListTasks(); !isListed(tasks, want.TaskID) {
 		t.Errorf("the tasks %+v do not list %s while the recognition runs", tasks, want.TaskID)
 	}
@@ -290,7 +290,7 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 	}
 
 	close(s.recognizer.release)
-	s.waitFinished(t, want.TaskID)
+	s.waitUntilFinished(t, want.TaskID)
 	s.launcher.Close()
 
 	if !hasRecognition(t, s.texts, scanPath) {
@@ -301,7 +301,7 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 func TestRecognitionCreateOfAScanBeingRecognizedReportsItRunning(t *testing.T) {
 	s := newToolFixture(t)
 	first := s.recognize(t, "Physics", scanPath)
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	second := s.recognize(t, "Physics", scanPath)
 
@@ -310,7 +310,7 @@ func TestRecognitionCreateOfAScanBeingRecognizedReportsItRunning(t *testing.T) {
 		t.Errorf("the second call returned %+v, want %+v", second, want)
 	}
 	close(s.recognizer.release)
-	s.waitFinished(t, first.TaskID)
+	s.waitUntilFinished(t, first.TaskID)
 }
 
 func TestRecognitionCreateRejectsAFileNotInTheVault(t *testing.T) {
@@ -511,7 +511,7 @@ func TestRecognitionCreateRecognizesInTheNamedVault(t *testing.T) {
 		t.Fatalf("recognition_create in Chemistry returned %+v", out)
 	}
 	close(s.recognizer.release)
-	s.waitFinished(t, out.TaskID)
+	s.waitUntilFinished(t, out.TaskID)
 	s.launcher.Close()
 
 	if !hasRecognition(t, s.chemTexts, chemistryScan) {
@@ -535,7 +535,7 @@ func TestRecognitionCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	if want := (RecognitionCreateOutput{TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "started"}); first != want {
 		t.Fatalf("first call returned %+v, want %+v", first, want)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	again := s.recognize(t, "Physics", scanPath)
 	if want := (RecognitionCreateOutput{TaskID: first.TaskID, Path: scanPath, State: "running"}); again != want {
@@ -559,8 +559,8 @@ func TestRecognitionCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	}
 
 	close(s.recognizer.release)
-	s.waitFinished(t, first.TaskID)
-	s.waitFinished(t, second.TaskID)
+	s.waitUntilFinished(t, first.TaskID)
+	s.waitUntilFinished(t, second.TaskID)
 	s.launcher.Close()
 
 	if !hasRecognition(t, s.texts, scanPath) || !hasRecognition(t, s.chemTexts, scanPath) {

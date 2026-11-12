@@ -79,7 +79,7 @@ func newScene(t *testing.T) *scene {
 
 func (s *scene) getContentHash() string { return domain.HashContent(s.files[scanPath]) }
 
-func (s *scene) getLive(t *testing.T) (domain.TextVersionID, string) {
+func (s *scene) getLiveVersion(t *testing.T) (domain.TextVersionID, string) {
 	t.Helper()
 	listing, err := s.versions.Texts.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *scene) getLive(t *testing.T) (domain.TextVersionID, string) {
 
 func (s *scene) requireLive(t *testing.T, step string, wantID domain.TextVersionID, wantText string) {
 	t.Helper()
-	id, text := s.getLive(t)
+	id, text := s.getLiveVersion(t)
 	if id != wantID || text != wantText {
 		t.Fatalf("%s: the live version is %q with %q, want %q with %q", step, id, text, wantID, wantText)
 	}
@@ -107,7 +107,7 @@ func (s *scene) runEntry(t *testing.T, pluginID string) {
 	t.Helper()
 	var source domain.TextVersionID
 	if pluginID == proofreader {
-		source, _ = s.getLive(t)
+		source, _ = s.getLiveVersion(t)
 	}
 	if err := s.byID[pluginID].create(t.Context(), scanPath, source); err != nil {
 		t.Fatalf("the plugin %s: %v", pluginID, err)
@@ -228,7 +228,7 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	first := s.getContentHash()
 
 	s.files[scanPath] = []byte("%PDF scan, second printing")
-	if id, _ := s.getLive(t); id != "" {
+	if id, _ := s.getLiveVersion(t); id != "" {
 		t.Fatalf("%s is live after the file was replaced", id)
 	}
 	if _, err := s.versions.Texts.GetLiveText(t.Context(), s.vault, scanPath, s.getContentHash()); !errors.Is(err, textdomain.ErrNoText) {
@@ -236,7 +236,7 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	}
 
 	s.requestText(t)
-	if got := s.reader.getCreated(); got != 2 {
+	if got := s.reader.getCreatedCount(); got != 2 {
 		t.Fatalf("the reader made %d texts, want 2", got)
 	}
 	s.requireLive(t, "after the replacement", s.getReaderVersion(), "layer thw ")

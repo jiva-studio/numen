@@ -111,7 +111,7 @@ func TestASwitchOfAnEndedPluginOpenFailsDuringTheClose(t *testing.T) {
 	w.pages.holdNextFlush()
 	closed := make(chan bool, 1)
 	go func() { closed <- w.scenarios.Closing.Flush.Execute(t.Context()) }()
-	w.pages.waitHeld(t)
+	w.pages.waitUntilHeld(t)
 	err := w.scenarios.Switching.Show.Execute(recordedCtx, garden(), recordedOpen)
 	w.pages.release()
 

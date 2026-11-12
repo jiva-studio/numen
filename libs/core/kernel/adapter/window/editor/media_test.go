@@ -31,7 +31,7 @@ func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, loopbackCloser{back})
-	api.openPlaying(back)
+	api.storePlayingLoopback(back)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewMediaServiceClient(server.Client(), server.URL)
@@ -110,7 +110,7 @@ func newStoreClient(t *testing.T, files storedFiles) numenv1connect.MediaService
 	}
 	testsupport.CloseAfter(t, loopbackCloser{back})
 	back.setPluginServices(&routedPlugins{frames: map[string][]string{importer: {"https://player.example"}}})
-	api.openPlaying(back)
+	api.storePlayingLoopback(back)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewMediaServiceClient(server.Client(), server.URL)

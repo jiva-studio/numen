@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginsList from './PluginsList.vue'
 import PluginRow from './PluginRow.vue'
-import { createManaged, createAvailable } from './testing/managed'
+import { createManagedPlugin, createAvailablePlugin } from './testing/managed'
 
 const plugins = [
-  createManaged(
+  createManagedPlugin(
     'sample.notes',
     'Notes',
     { readers: [{ id: 'markdown', extensions: ['md'] }] },
@@ -15,9 +15,9 @@ const plugins = [
       tabKinds: ['note'],
     },
   ),
-  createManaged('sample.tree', 'File Tree', {}, { category: 'views', feature: 'file tree' }),
-  createManaged('sample.agent', 'Agent Chat', {}, { category: 'views', feature: 'agent chat' }),
-  createAvailable('sample.offer', 'Offered Reader'),
+  createManagedPlugin('sample.tree', 'File Tree', {}, { category: 'views', feature: 'file tree' }),
+  createManagedPlugin('sample.agent', 'Agent Chat', {}, { category: 'views', feature: 'agent chat' }),
+  createAvailablePlugin('sample.offer', 'Offered Reader'),
 ]
 
 const mountList = (props: Record<string, unknown> = {}) =>

@@ -8,7 +8,7 @@ import { getGoShardOf, keepFiles, mergeGoCaches, mergeStrykerReports } from './c
 import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { listShards } from './shards.mjs'
-import { getOriginal, readMutants, summarize } from './report.mjs'
+import { getOriginalText, readMutants, summarize } from './report.mjs'
 import {
   findTestdata,
   getShardCount,
@@ -140,9 +140,9 @@ test('the sandbox keeps the package and its test data and drops their siblings',
 
 test('the replaced text is read from the source, across lines too', () => {
   const source = 'const a = 1\nif (width > limit) {\n  grow(\n    width)\n}\n'
-  assert.equal(getOriginal(source, at(2, 5, 18)), 'width > limit')
+  assert.equal(getOriginalText(source, at(2, 5, 18)), 'width > limit')
   assert.equal(
-    getOriginal(source, { start: { line: 3, column: 3 }, end: { line: 4, column: 11 } }),
+    getOriginalText(source, { start: { line: 3, column: 3 }, end: { line: 4, column: 11 } }),
     'grow( width)',
   )
 })

@@ -36,7 +36,7 @@ type statedReaders struct{ reader statedReader }
 
 func (r statedReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return r.reader, nil }
 
-func readStated(t *testing.T, reader statedReader) (edit.Contents, error) {
+func readStatedContents(t *testing.T, reader statedReader) (edit.Contents, error) {
 	t.Helper()
 	return note.NewRead(statedReaders{reader: reader}).Execute(t.Context(), domain.Vault{}, "Entropy.md")
 }
@@ -47,7 +47,7 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 	t.Parallel()
 	body := []byte("# Entropy\n")
 
-	atCeiling, err := readStated(t, statedReader{
+	atCeiling, err := readStatedContents(t, statedReader{
 		ref: domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling},
 		raw: body,
 	})
@@ -58,7 +58,7 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 		t.Errorf("a note of exactly the ceiling is %q", atCeiling.Outcome)
 	}
 
-	finished, err := readStated(t, statedReader{
+	finished, err := readStatedContents(t, statedReader{
 		ref: domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling + 1},
 		raw: body,
 	})
@@ -77,7 +77,7 @@ func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
 	t.Parallel()
 	broken := errors.New("the disk is gone")
 
-	got, err := readStated(t, statedReader{statErr: broken, raw: []byte("# Entropy\n")})
+	got, err := readStatedContents(t, statedReader{statErr: broken, raw: []byte("# Entropy\n")})
 	if !errors.Is(err, broken) {
 		t.Fatalf("want the vault's own error, got %v", err)
 	}
@@ -90,7 +90,7 @@ func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
 func TestRead_FileAppearingAfterLookupIsNotNote(t *testing.T) {
 	t.Parallel()
 
-	got, err := readStated(t, statedReader{statErr: fs.ErrNotExist, raw: []byte("# Entropy\n")})
+	got, err := readStatedContents(t, statedReader{statErr: fs.ErrNotExist, raw: []byte("# Entropy\n")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func TestAReadThatFailsAfterAMissingStatIsAnError(t *testing.T) {
 	t.Parallel()
 	broken := errors.New("the disk is gone")
 
-	_, err := readStated(t, statedReader{statErr: fs.ErrNotExist, readErr: broken})
+	_, err := readStatedContents(t, statedReader{statErr: fs.ErrNotExist, readErr: broken})
 	if !errors.Is(err, broken) {
 		t.Fatalf("want the vault's own error, got %v", err)
 	}
@@ -135,7 +135,7 @@ func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
 func TestRead_PathRejectedByVaultIsNotNote(t *testing.T) {
 	t.Parallel()
 
-	got, err := readStated(t, statedReader{statErr: edit.ErrNotANote, raw: []byte("# Entropy\n")})
+	got, err := readStatedContents(t, statedReader{statErr: edit.ErrNotANote, raw: []byte("# Entropy\n")})
 	if err != nil {
 		t.Fatal(err)
 	}

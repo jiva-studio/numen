@@ -129,7 +129,7 @@ type moveParts struct {
 	hasIndex bool
 }
 
-func (c changing) moveOf(p moveParts) note.Move {
+func (c changeFixture) moveOf(p moveParts) note.Move {
 	if p.links == nil {
 		p.links = c.db.NoteQueries()
 	}
@@ -153,10 +153,10 @@ func (c changing) moveOf(p moveParts) note.Move {
 
 const heatLinkedToEntropy = "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n"
 
-func openLinked(t *testing.T) changing {
+func openLinkedVault(t *testing.T) changeFixture {
 	t.Helper()
 	isolate(t)
-	return openChanging(t, map[string]string{
+	return openChangeFixture(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md":    heatLinkedToEntropy,
 	})
@@ -164,7 +164,7 @@ func openLinked(t *testing.T) changing {
 
 // A move to the note's current path is a no-op. The result reports that path.
 func TestMovingANoteToItsOwnPathAnswersWithThatPath(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 
 	res, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", "physics/Entropy.md")
 	if err != nil {
@@ -184,19 +184,19 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 	boom := errors.New("the vault would not do it")
 	for name, c := range map[string]struct {
 		from  string
-		parts func(c changing) moveParts
+		parts func(c changeFixture) moveParts
 		want  error
 	}{
 		"the links pointing at it cannot be read": {
 			from: "physics/Entropy.md",
-			parts: func(c changing) moveParts {
+			parts: func(c changeFixture) moveParts {
 				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries(), backlinksErr: boom}}
 			},
 			want: boom,
 		},
 		"the vault cannot be opened for writing": {
 			from: "physics/Entropy.md",
-			parts: func(changing) moveParts {
+			parts: func(changeFixture) moveParts {
 				return moveParts{writers: failingWriters{
 					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, openErr: boom, failOpen: 1, opened: new(int),
 				}}
@@ -205,12 +205,12 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 		},
 		"the note is not there": {
 			from:  "physics/Missing.md",
-			parts: func(changing) moveParts { return moveParts{} },
+			parts: func(changeFixture) moveParts { return moveParts{} },
 			want:  edit.ErrNoNote,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			c2 := openLinked(t)
+			c2 := openLinkedVault(t)
 			res, err := c2.moveOf(c.parts(c2)).Execute(t.Context(), c2.vault, c.from, "archive/Thermodynamics.md")
 			if !errors.Is(err, c.want) {
 				t.Fatalf("want %v, got %v", c.want, err)
@@ -230,7 +230,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 
 // A move notifies the move subscriber of the old and new paths.
 func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 	var notified []domain.Move
 	deps := c.moveDeps()
 	deps.Drawing = func(_ context.Context, _ domain.Vault, went domain.Move) error {
@@ -251,7 +251,7 @@ func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 // A note with no incoming links has no link address to compute, so a vault that
 // cannot list shared names is not queried and the index is not reindexed.
 func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 	var request [][]string
 	parts := moveParts{
 		names:    failingNames{err: errors.New("no names")},
@@ -280,23 +280,23 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 	boom := errors.New("the vault would not do it")
 	unterminated := "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n# Heat\n"
 	for name, c := range map[string]struct {
-		before     func(t *testing.T, c changing)
-		parts      func(c changing) moveParts
+		before     func(t *testing.T, c changeFixture)
+		parts      func(c changeFixture) moveParts
 		want       error
 		isRepaired bool
 	}{
 		"the names cannot be asked": {
-			parts: func(changing) moveParts { return moveParts{names: failingNames{err: boom}} },
+			parts: func(changeFixture) moveParts { return moveParts{names: failingNames{err: boom}} },
 			want:  boom,
 		},
 		"the links of the note holding the link cannot be read": {
-			parts: func(c changing) moveParts {
+			parts: func(c changeFixture) moveParts {
 				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries(), linksErr: boom}}
 			},
 			want: boom,
 		},
 		"the vault cannot be held": {
-			parts: func(changing) moveParts {
+			parts: func(changeFixture) moveParts {
 				return moveParts{writers: failingWriters{
 					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, holdErr: boom, opened: new(int),
 				}}
@@ -304,11 +304,11 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			want: boom,
 		},
 		"the vault cannot be read": {
-			parts: func(changing) moveParts { return moveParts{readers: brokenReaders{open: boom}} },
+			parts: func(changeFixture) moveParts { return moveParts{readers: brokenReaders{open: boom}} },
 			want:  boom,
 		},
 		"the vault cannot be opened again for the repair": {
-			parts: func(changing) moveParts {
+			parts: func(changeFixture) moveParts {
 				return moveParts{writers: failingWriters{
 					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, openErr: boom, failOpen: 2, opened: new(int),
 				}}
@@ -316,7 +316,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			want: boom,
 		},
 		"the repaired note cannot be written": {
-			parts: func(changing) moveParts {
+			parts: func(changeFixture) moveParts {
 				return moveParts{writers: failingWriters{
 					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, writeErr: boom, opened: new(int),
 				}}
@@ -324,15 +324,15 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			want: boom,
 		},
 		"the note holding the link opens a frontmatter block it never closes": {
-			before: func(t *testing.T, c changing) {
+			before: func(t *testing.T, c changeFixture) {
 				t.Helper()
 				c.overwrite(t, "physics/Heat.md", unterminated)
 			},
-			parts: func(changing) moveParts { return moveParts{} },
+			parts: func(changeFixture) moveParts { return moveParts{} },
 			want:  markdown.ErrUnterminated,
 		},
 		"the index cannot be updated": {
-			parts: func(changing) moveParts {
+			parts: func(changeFixture) moveParts {
 				return moveParts{hasIndex: true, index: func(context.Context, domain.Vault, []string) error { return boom }}
 			},
 			want:       edit.ErrIndexOutdated,
@@ -340,7 +340,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			c2 := openLinked(t)
+			c2 := openLinkedVault(t)
 			if c.before != nil {
 				c.before(t, c2)
 			}
@@ -368,7 +368,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 
 // A link the note does not contain is neither repaired nor reported.
 func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 	parts := moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries(), isLinksEmpty: true}}
 
 	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
@@ -384,7 +384,7 @@ func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
 }
 
 func TestANoteThatWentSinceTheLinksWereReadIsLeftOut(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 	if err := os.Remove(filepath.Join(c.vault.Path, "physics", "Heat.md")); err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +401,7 @@ func TestANoteThatWentSinceTheLinksWereReadIsLeftOut(t *testing.T) {
 // A note that does not contain the address the index recorded has nothing to
 // repair and is not written.
 func TestANoteThatNoLongerReturnsTheLinkIsNotSaved(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 	c.overwrite(t, "physics/Heat.md", "# Heat\n")
 
 	res, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
@@ -418,7 +418,7 @@ func TestANoteThatNoLongerReturnsTheLinkIsNotSaved(t *testing.T) {
 
 func TestALinkInTheBlockAndOneInTheProseAreBothRepaired(t *testing.T) {
 	isolate(t)
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md": "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n" +
 			"# Heat\nSee [[physics/Entropy.md]].\n",
@@ -438,7 +438,7 @@ func TestALinkInTheBlockAndOneInTheProseAreBothRepaired(t *testing.T) {
 
 // An installation with no index to update repairs all the same.
 func TestARepairNeedsNoIndexToBringLevel(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 
 	res, err := c.moveOf(moveParts{hasIndex: true}).Execute(
 		t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
@@ -452,7 +452,7 @@ func TestARepairNeedsNoIndexToBringLevel(t *testing.T) {
 
 // A note whose name carries a character a link is read up to is reached by no
 func TestANoteNoLinkReachesCanStillBeMoved(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 
 	res, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Hot#Air.md")
 	if err != nil {
@@ -473,7 +473,7 @@ func TestANoteNoLinkReachesCanStillBeMoved(t *testing.T) {
 // being repaired.
 func TestALinkTheNoteNoLongerContainsDoesNotStopTheNextRepair(t *testing.T) {
 	isolate(t)
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Cold.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Cold\n",
 		"physics/Heat.md":    heatLinkedToEntropy,
@@ -491,7 +491,7 @@ func TestALinkTheNoteNoLongerContainsDoesNotStopTheNextRepair(t *testing.T) {
 
 // A note that cannot be read is named in the error, and the reason stays in it.
 func TestAMoveNamesTheNoteItCouldNotRead(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 	boom := errors.New("the disk would not answer")
 
 	_, err := c.moveOf(moveParts{readers: brokenReaders{read: boom}}).Execute(
@@ -507,7 +507,7 @@ func TestAMoveNamesTheNoteItCouldNotRead(t *testing.T) {
 // A note whose frontmatter is written on one line cannot be repaired a key at a
 // time, and is not written.
 func TestANoteWithInlineFrontmatterIsReportedAndNotSaved(t *testing.T) {
-	c := openLinked(t)
+	c := openLinkedVault(t)
 	inline := "---\n{title: Heat, links: []}\n---\n# Heat\n"
 	c.overwrite(t, "physics/Heat.md", inline)
 
@@ -529,7 +529,7 @@ func TestAFolderKeepsTheNameOfTheNoteFiledBelowIt(t *testing.T) {
 // A move to a name no file can have leaves the note where it is.
 func TestMoveRejectsInvalidFileName(t *testing.T) {
 	for _, to := range []string{"physics/note:Entropy.md", "physics/Entropy?.md", "physics/Entropy.md "} {
-		c := openLinked(t)
+		c := openLinkedVault(t)
 
 		res, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", to)
 

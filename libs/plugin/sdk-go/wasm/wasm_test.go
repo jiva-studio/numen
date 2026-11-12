@@ -38,7 +38,7 @@ func compile(t *testing.T, compilation wazero.CompilationCache) {
 	}
 }
 
-func listCached(t *testing.T, dir string) map[string]os.FileInfo {
+func listCachedFiles(t *testing.T, dir string) map[string]os.FileInfo {
 	t.Helper()
 	files := make(map[string]os.FileInfo)
 	err := filepath.WalkDir(filepath.Join(dir, "wazero"), func(path string, entry os.DirEntry, err error) error {
@@ -60,7 +60,7 @@ func TestACompiledModuleIsStoredInTheGrantedDirectory(t *testing.T) {
 
 	compile(t, wasm.NewCompilationCache(dir))
 
-	if len(listCached(t, dir)) == 0 {
+	if len(listCachedFiles(t, dir)) == 0 {
 		t.Error("the compilation left no file in the granted directory")
 	}
 }
@@ -68,10 +68,10 @@ func TestACompiledModuleIsStoredInTheGrantedDirectory(t *testing.T) {
 func TestASecondRuntimeLoadsTheModuleFromTheCache(t *testing.T) {
 	dir := t.TempDir()
 	compile(t, wasm.NewCompilationCache(dir))
-	first := listCached(t, dir)
+	first := listCachedFiles(t, dir)
 
 	compile(t, wasm.NewCompilationCache(dir))
-	second := listCached(t, dir)
+	second := listCachedFiles(t, dir)
 
 	if len(second) != len(first) {
 		t.Fatalf("the cache holds %d files after the second compile, %d after the first", len(second), len(first))

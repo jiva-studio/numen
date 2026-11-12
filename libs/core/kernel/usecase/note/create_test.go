@@ -15,7 +15,7 @@ import (
 
 func TestATitleNoFileCanBeNamedAfterMakesNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 
 	for _, title := range []string{"", "  ", "two\nlines"} {
 		if _, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: title}); !errors.Is(err, domain.ErrInvalidName) {
@@ -36,7 +36,7 @@ func TestALinkTheNoteCannotCarryPreservesNoFile(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, nil)
+			c := openChangeFixture(t, nil)
 
 			if _, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Heat", Links: links}); err == nil {
 				t.Error("a link with no role the application acts on was written")
@@ -61,7 +61,7 @@ func TestANoteIsCreatedWithTheLinksItWasGiven(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			c := openChanging(t, nil)
+			c := openChangeFixture(t, nil)
 
 			created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Heat", Links: links})
 			if err != nil {
@@ -85,7 +85,7 @@ func TestANoteIsCreatedWithTheLinksItWasGiven(t *testing.T) {
 // holds no `title` key.
 func TestATitleTheFilenameCarriesWritesNoTitleKey(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
 	if err != nil {
@@ -99,7 +99,7 @@ func TestATitleTheFilenameCarriesWritesNoTitleKey(t *testing.T) {
 
 func TestCreatingNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), nil, testsupport.NewClock(), note.OpenGate{})
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
@@ -114,7 +114,7 @@ func TestCreatingNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 
 func TestCreatingInAVaultThatWillNotOpenForWritingMakesNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 	writers := brokenWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, open: errDiskGone}
 	create := note.NewCreate(writers, c.db.NoteQueries(), c.index, testsupport.NewClock(), note.OpenGate{})
 
@@ -131,7 +131,7 @@ func TestCreatingInAVaultThatWillNotOpenForWritingMakesNothing(t *testing.T) {
 // Once the note is on disk everything after it answers with where it is.
 func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 	create := note.NewCreate(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(),
 		func(context.Context, domain.Vault, []string) error { return errDiskGone }, testsupport.NewClock(),
@@ -153,7 +153,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 
 func TestCreate_ReportsNoteBeforeVaultNamesAvailable(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, unreachable{}, c.index, testsupport.NewClock(), note.OpenGate{})
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})

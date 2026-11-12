@@ -76,7 +76,7 @@ func (c addVaultCommand) Run(_ context.Context, term terminal, args []string) er
 	fs := flag.NewFlagSet("vault add", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	name := fs.String("name", "", "name for this vault (default: the folder name)")
-	rest, err := parseInterspersed(fs, args)
+	rest, err := parseInterspersedFlags(fs, args)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (c eraseVaultCommand) Run(ctx context.Context, term terminal, args []string
 	fs := flag.NewFlagSet("vault erase", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	yes := fs.Bool("yes", false, "erase without asking")
-	rest, err := parseInterspersed(fs, args)
+	rest, err := parseInterspersedFlags(fs, args)
 	if err != nil {
 		return err
 	}

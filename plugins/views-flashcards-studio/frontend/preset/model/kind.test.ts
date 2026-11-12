@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 
 import { usePresetTab } from './kind'
 import { StopReason } from '../../lib/stop'
-import { getGoalValue, findNearest } from '../lib/curve'
+import { getGoalValue, findNearestGridValue } from '../lib/curve'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { getGoalFields, getGoalField, type Field } from '../lib/fields'
 import {
@@ -797,7 +797,7 @@ const createRangedCurve = (settings: Settings): Curve => {
     goal: settings.goal,
     grid,
     at: grid.map((minutes) => point({ minutes, reviews: minutes * 4 })),
-    now: { index: findNearest(grid, value), value, day: '' },
+    now: { index: findNearestGridValue(grid, value), value, day: '' },
     suggested: { index: grid.length - 1, value: grid[grid.length - 1] ?? 0, day: '' },
   }
 }

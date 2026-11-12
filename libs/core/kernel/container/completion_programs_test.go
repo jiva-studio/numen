@@ -52,7 +52,7 @@ func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 		t.Fatalf("answered %q, %v", got, err)
 	}
 
-	request := one.getRequested()
+	request := one.getRequestedAsks()
 	if len(request) != 1 {
 		t.Fatalf("%d tasks, want 1", len(request))
 	}
@@ -79,7 +79,7 @@ func TestCompleter_EmptyRouteModelUsesProgramDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	request := one.getRequested()
+	request := one.getRequestedAsks()
 	if len(request) != 1 || request[0].GetAgent() != "alpha" || request[0].GetModel() != "big" {
 		t.Errorf("the tasks are %v", request)
 	}
@@ -92,7 +92,7 @@ func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 	if _, err := named.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	if request := one.getRequested(); len(request) != 1 || request[0].GetAgent() != "alpha" {
+	if request := one.getRequestedAsks(); len(request) != 1 || request[0].GetAgent() != "alpha" {
 		t.Errorf("the tasks are %v", request)
 	}
 
@@ -115,8 +115,8 @@ func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 			t.Errorf("%s: error = %v, want port.ErrNoRoute", content, err)
 		}
 	}
-	if len(one.getRequested()) != 0 || len(two.getRequested()) != 0 {
-		t.Errorf("a task was started: %v, %v", one.getRequested(), two.getRequested())
+	if len(one.getRequestedAsks()) != 0 || len(two.getRequestedAsks()) != 0 {
+		t.Errorf("a task was started: %v, %v", one.getRequestedAsks(), two.getRequestedAsks())
 	}
 
 	empty := hostWith(t, map[string][]string{"md.test.chatty": {"embedding"}}, nil)
@@ -152,7 +152,7 @@ func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
-	if request := one.getRequested(); len(request) != 1 || request[0].GetModel() != "big" {
+	if request := one.getRequestedAsks(); len(request) != 1 || request[0].GetModel() != "big" {
 		t.Errorf("the tasks are %v", request)
 	}
 }
@@ -166,7 +166,7 @@ func TestAModelTheProgramNoLongerListsIsReplacedByItsDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if request := one.getRequested(); len(request) != 1 || request[0].GetModel() != "big" {
+	if request := one.getRequestedAsks(); len(request) != 1 || request[0].GetModel() != "big" {
 		t.Errorf("the tasks are %v", request)
 	}
 }

@@ -249,7 +249,7 @@ func TestOneFileOfAFolderThatCannotBeReadIsNamedAndTheRestArrive(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(v.Path, "scans", "Cover.png")); err == nil {
 		t.Error("the file that could not be read arrived")
 	}
-	if body := readArrived(t, v.Path, "scans/Kelvin.md"); body != "# Kelvin\n" {
+	if body := readArrivedFile(t, v.Path, "scans/Kelvin.md"); body != "# Kelvin\n" {
 		t.Errorf("the note beside it arrived as %q", body)
 	}
 }

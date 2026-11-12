@@ -18,7 +18,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 		_, err := newRecognizeCommand(s.launcher)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})
 		result <- err
 	}()
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	out := s.recognize(t, "Physics", scanPath)
 
@@ -29,7 +29,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 	if err := <-result; err != nil {
 		t.Errorf("the command: %v", err)
 	}
-	s.waitFinished(t, out.TaskID)
+	s.waitUntilFinished(t, out.TaskID)
 }
 
 // The palette command run while the tool's recognition has the scan is rejected as already being
@@ -37,7 +37,7 @@ func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
 func TestRecognizeCommandDuringToolRecognitionFails(t *testing.T) {
 	s := newToolFixture(t)
 	out := s.recognize(t, "Physics", scanPath)
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	_, err := newRecognizeCommand(s.launcher)(t.Context(), command.Request{Command: "app:file.createText", Path: scanPath})
 
@@ -45,5 +45,5 @@ func TestRecognizeCommandDuringToolRecognitionFails(t *testing.T) {
 		t.Errorf("the command while the tool recognizes the scan returned %v, want it already being recognized", err)
 	}
 	close(s.recognizer.release)
-	s.waitFinished(t, out.TaskID)
+	s.waitUntilFinished(t, out.TaskID)
 }

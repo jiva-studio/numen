@@ -17,7 +17,7 @@ interface Named {
 
 const MANIFESTS = readAllManifests()
 
-const listNamed = (): readonly Named[] => {
+const listNamedCommands = (): readonly Named[] => {
   const found = new Map<string, Named>()
   for (const manifest of MANIFESTS) {
     const { slots = [], keybindings = [] } = manifest.contributes
@@ -31,7 +31,7 @@ const listNamed = (): readonly Named[] => {
   return [...found.values()]
 }
 
-const NAMED = listNamed()
+const NAMED = listNamedCommands()
 const TABLE = createAppCommands()
 
 const setup = () => {

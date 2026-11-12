@@ -4,7 +4,7 @@ import { defineComponent, h } from 'vue'
 import type { ReaderHandle } from '@numen/plugin-sdk'
 import { useReaderAttachment } from './useReaderAttachment'
 
-const mountAttached = (hasAttach = true) => {
+const mountAttachment = (hasAttach = true) => {
   const log: string[] = []
   const attached: (ReaderHandle | null)[] = []
   const reader: ReaderHandle = {
@@ -31,14 +31,14 @@ const mountAttached = (hasAttach = true) => {
 
 describe('attaching a reader to the window', () => {
   it('focuses the reader and attaches its handle to the tab state at mount', () => {
-    const { log, attached, reader } = mountAttached()
+    const { log, attached, reader } = mountAttachment()
 
     expect(log).toEqual(['focus'])
     expect(attached).toEqual([reader])
   })
 
   it('takes the handle back and detaches at unmount', () => {
-    const { view, log, attached, reader } = mountAttached()
+    const { view, log, attached, reader } = mountAttachment()
 
     view.unmount()
 
@@ -47,7 +47,7 @@ describe('attaching a reader to the window', () => {
   })
 
   it('still focuses and detaches where the window takes no handle', () => {
-    const { view, log } = mountAttached(false)
+    const { view, log } = mountAttachment(false)
 
     view.unmount()
 

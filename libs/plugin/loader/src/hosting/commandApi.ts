@@ -25,8 +25,8 @@ export function createCommandApi(
   registry: HostRegistry,
   keybindings: KeybindingRegistry,
 ) {
-  const getAvailable = () => readAvailableCommands(deps, registry)
-  const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
+  const getAvailableCommands = () => readAvailableCommands(deps, registry)
+  const findAvailableCommand = (id: string) => getAvailableCommands().find((one) => one.id === id)
   const handlers = createHandlerApi(deps, registry)
   const executeCommand = async (
     id: string,
@@ -35,7 +35,7 @@ export function createCommandApi(
   ): Promise<boolean> => {
     const { itemId } = run
     if (isSharedCommand(id)) return handlers.runSharedCommand(id, { note, ...run })
-    const command = findAvailable(id)
+    const command = findAvailableCommand(id)
     if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
     let entry = command.entry
     if (!entry) {
@@ -48,8 +48,8 @@ export function createCommandApi(
   }
   return {
     handlers,
-    getPaletteCommands: () => getAvailable().map((one) => createPaletteCommand(one)),
-    hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
+    getPaletteCommands: () => getAvailableCommands().map((one) => createPaletteCommand(one)),
+    hasCommand: (id: string): boolean => findAvailableCommand(id)?.entry !== undefined,
     hasCommandItems: (id: string): boolean =>
       isSharedCommand(id) || registry.commands.value.get(id)?.reg.listItems !== undefined,
     listCommandItems: async (
@@ -72,6 +72,6 @@ export function createCommandApi(
      * The caller prevents the default of the event on true; `target` is what is in front, for the
      * condition of the command. A key of an application command is given to `runApp`.
      */
-    handleShortcut: createShortcutHandler({ deps, keybindings, getAvailable, executeCommand }),
+    handleShortcut: createShortcutHandler({ deps, keybindings, getAvailableCommands, executeCommand }),
   }
 }

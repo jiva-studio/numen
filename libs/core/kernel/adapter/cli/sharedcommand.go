@@ -52,7 +52,7 @@ func (c sharedCommand) Run(ctx context.Context, term terminal, args []string) er
 	fs, arguments := newArgumentFlags(handlers[0].Command)
 	picked := ""
 	fs.StringVar(&picked, pluginFlag, "", "the plugin whose handler runs")
-	positional, err := parseInterspersed(fs, args)
+	positional, err := parseInterspersedFlags(fs, args)
 	if err != nil {
 		return fmt.Errorf("%w: %w", usage, err)
 	}

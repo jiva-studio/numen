@@ -18,7 +18,7 @@ func getStatements(folder string) map[string]string {
 	return sqlfile.Load(os.DirFS(folder), "sql").All()
 }
 
-func getCoarse() []byte { return make([]byte, 128) }
+func getCoarseBytes() []byte { return make([]byte, 128) }
 
 func getExpectedPlans() []struct {
 	statements map[string]string
@@ -91,10 +91,10 @@ func getExpectedPlans() []struct {
 		{
 			chunks,
 			"coarse_prefix",
-			[]any{getCoarse(), 1, "notes/", 10, "notes0", "notes/", "notes0"},
+			[]any{getCoarseBytes(), 1, "notes/", 10, "notes0", "notes/", "notes0"},
 			[]string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"},
 		},
-		{chunks, "coarse", []any{getCoarse(), 1, 10}, []string{"chunks_vec"}},
+		{chunks, "coarse", []any{getCoarseBytes(), 1, 10}, []string{"chunks_vec"}},
 		// The cached hash of a file is its source row, found by vault and path. The
 		// vault is given by its identifier, then the path; a save gives the record's
 		// hash, size, modification time, file id and hash time, the vault and path, and
@@ -104,7 +104,7 @@ func getExpectedPlans() []struct {
 	}
 }
 
-func getGrowing() []string { return []string{"sources", "notes", "links", "chunks", "vectors"} }
+func getGrowingTables() []string { return []string{"sources", "notes", "links", "chunks", "vectors"} }
 
 func readsEverything(step string) bool {
 	return strings.HasPrefix(step, "SCAN ") &&
@@ -144,7 +144,7 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 		for _, step := range plan {
 			if readsEverything(step) {
 				t.Errorf("%s reads a table whole, and every table it reads is one of %v: %s",
-					q.name, getGrowing(), step)
+					q.name, getGrowingTables(), step)
 			}
 		}
 	}
@@ -153,7 +153,7 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 func openPopulatedDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := t.Context()
-	db, err := Open(ctx, newMigrated().Path(t))
+	db, err := Open(ctx, newMigratedTemplate().Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,12 +246,12 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 		index(t, tx, small, "entropy and the observer")
 		if _, err := tx.ExecContext(ctx,
 			`INSERT OR IGNORE INTO vectors (hash, recipe, embedding) VALUES (unhex((SELECT hash FROM chunks WHERE id = ?)), 'model', ?)`,
-			small, getCoarse()); err != nil {
+			small, getCoarseBytes()); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO chunks_vec (chunk_id, vault_id, coarse) VALUES (?, ?, vec_bit(?))`,
-			small, vault, getCoarse()); err != nil {
+			small, vault, getCoarseBytes()); err != nil {
 			t.Fatal(err)
 		}
 	}

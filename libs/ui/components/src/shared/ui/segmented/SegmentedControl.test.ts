@@ -19,7 +19,7 @@ type SegmentedControlProps = InstanceType<typeof SegmentedControl>['$props']
 const mountSegmentedControl = (props: Partial<SegmentedControlProps> = {}) =>
   mount(SegmentedControl, { props: { choices: CHOICES, modelValue: 'small', ...props } })
 
-const getEmitted = (control: ReturnType<typeof mountSegmentedControl>): readonly unknown[] =>
+const getEmittedEvents = (control: ReturnType<typeof mountSegmentedControl>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 describe('what a screen reader receives', () => {
@@ -50,14 +50,14 @@ describe('choosing', () => {
   it('returns the identifier it was given', async () => {
     const control = mountSegmentedControl()
     await control.findAll('[role="radio"]')[1]?.trigger('click')
-    expect(getEmitted(control)).toEqual(['medium'])
+    expect(getEmittedEvents(control)).toEqual(['medium'])
   })
 
   it('leaves the segment in force in force', async () => {
     const control = mountSegmentedControl()
     await control.findAll('[role="radio"]')[0]?.trigger('click')
 
-    expect(getEmitted(control).at(-1) ?? 'small').toBe('small')
+    expect(getEmittedEvents(control).at(-1) ?? 'small').toBe('small')
     expect(control.findAll('[role="radio"]')[0]?.attributes('aria-checked')).toBe('true')
   })
 
@@ -66,22 +66,22 @@ describe('choosing', () => {
     const segments = control.findAll('[role="radio"]')
 
     await segments[1]?.trigger('keydown', { key: 'End' })
-    expect(getEmitted(control).at(-1)).toBe('large')
+    expect(getEmittedEvents(control).at(-1)).toBe('large')
 
     await segments[1]?.trigger('keydown', { key: 'Home' })
-    expect(getEmitted(control).at(-1)).toBe('small')
+    expect(getEmittedEvents(control).at(-1)).toBe('small')
   })
 
   it('is left where it is on Home and End while it cannot be turned', async () => {
     const control = mountSegmentedControl({ modelValue: 'medium', isDisabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('keydown', { key: 'End' })
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
   })
 
   it('passes nothing on while it cannot be turned', async () => {
     const control = mountSegmentedControl({ isDisabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('click')
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
   })
 })
 
@@ -92,13 +92,13 @@ it('passes a choice on once for one press of Home or End', async () => {
   const segments = control.findAll('[role="radio"]')
 
   await segments[1]?.trigger('keydown', { key: 'End' })
-  expect(getEmitted(control)).toEqual(['large'])
+  expect(getEmittedEvents(control)).toEqual(['large'])
 })
 
 describe('the other keys', () => {
   it('leave the choice where it is for a key that is not an end', async () => {
     const control = mountSegmentedControl({ modelValue: 'medium' })
     await control.findAll('[role="radio"]')[1]?.trigger('keydown', { key: 'a' })
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
   })
 })

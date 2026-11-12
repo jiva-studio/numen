@@ -111,13 +111,13 @@ func (s *session) depsOver(where cli.Locations, parts vaultParts) stubSession {
 	return stubSession{
 		Vaults: func() (cli.Vaults, error) { return parts.build(), nil },
 		Indexed: func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
-			return s.openIndexed(ctx, where, parts, closes, options)
+			return s.openIndexedSession(ctx, where, parts, closes, options)
 		},
 		closes: closes,
 	}
 }
 
-func (s *session) openIndexed(
+func (s *session) openIndexedSession(
 	ctx context.Context, where cli.Locations, parts vaultParts, closes *closeList, options cli.IndexOptions,
 ) (cli.Indexed, error) {
 	rows, closeRows, err := parts.rows(ctx)

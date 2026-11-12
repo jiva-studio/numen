@@ -162,7 +162,7 @@ export const destroyIndexedNote = async (
 }
 
 /** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
-export const findTrashed = (request: APIRequestContext, name: string): Promise<string[]> =>
+export const findTrashedNotes = (request: APIRequestContext, name: string): Promise<string[]> =>
   new Promise((resolve) => {
     const trash = path.join(getVaultPath(), '.trash')
     if (!fs.existsSync(trash)) {
@@ -180,7 +180,7 @@ export const findTrashed = (request: APIRequestContext, name: string): Promise<s
 /** Takes the files of the vault's trash named `name` off the disk. */
 export const destroyTrashed = async (request: APIRequestContext, name: string): Promise<void> => {
   const vault = getVaultPath()
-  for (const one of await findTrashed(request, name)) fs.rmSync(path.join(vault, one))
+  for (const one of await findTrashedNotes(request, name)) fs.rmSync(path.join(vault, one))
 }
 
 /** One record a connection holds: the role it was written with, its type, label and marker. */

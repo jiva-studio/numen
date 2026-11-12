@@ -38,7 +38,7 @@ const getInput = (list: ReturnType<typeof mountList>) => list.get('input')
 const getOptions = (list: ReturnType<typeof mountList>) => list.findAll('[role="option"]')
 const getTexts = (list: ReturnType<typeof mountList>) =>
   getOptions(list).map((one) => one.text().replace(/\s+/g, ' '))
-const getActive = (list: ReturnType<typeof mountList>) =>
+const getActiveOptionIndex = (list: ReturnType<typeof mountList>) =>
   getOptions(list).findIndex((one) => one.attributes('aria-selected') === 'true')
 const press = (list: ReturnType<typeof mountList>, key: string) =>
   getInput(list).trigger('keydown', { key })
@@ -83,7 +83,7 @@ describe('the rows', () => {
     expect(list.get('[role="status"]').text()).toBe('No models')
     await press(list, 'Home')
     await press(list, 'End')
-    expect(getActive(list)).toBe(-1)
+    expect(getActiveOptionIndex(list)).toBe(-1)
   })
 
   it('say that an answer is awaited where none is there yet', () => {
@@ -134,31 +134,31 @@ describe('the rows', () => {
 
 describe('the keyboard', () => {
   it('starts on the first row, or on the item in force', () => {
-    expect(getActive(mountList())).toBe(0)
+    expect(getActiveOptionIndex(mountList())).toBe(0)
     mounted?.unmount()
-    expect(getActive(mountList({ modelValue: 'pear' }))).toBe(1)
+    expect(getActiveOptionIndex(mountList({ modelValue: 'pear' }))).toBe(1)
   })
 
   it('moves down and up, and round at both ends', async () => {
     const list = mountList()
     await press(list, 'ArrowDown')
-    expect(getActive(list)).toBe(1)
+    expect(getActiveOptionIndex(list)).toBe(1)
     await press(list, 'ArrowUp')
     await press(list, 'ArrowUp')
-    expect(getActive(list)).toBe(2)
+    expect(getActiveOptionIndex(list)).toBe(2)
     await press(list, 'ArrowDown')
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
   })
 
   it('goes to the ends on Home and End while nothing is typed, and leaves the caret otherwise', async () => {
     const list = mountList()
     await press(list, 'End')
-    expect(getActive(list)).toBe(2)
+    expect(getActiveOptionIndex(list)).toBe(2)
     await press(list, 'Home')
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
     await getInput(list).setValue('q')
     await press(list, 'End')
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
   })
 
   it('chooses the active row on Enter, and reports it as the item in force', async () => {
@@ -172,7 +172,7 @@ describe('the keyboard', () => {
   it('chooses a row by a click, and moves to it with the pointer', async () => {
     const list = mountList()
     await getOptions(list)[2]!.trigger('pointerenter')
-    expect(getActive(list)).toBe(2)
+    expect(getActiveOptionIndex(list)).toBe(2)
     await getOptions(list)[2]!.trigger('click')
     expect(list.emitted('select')).toStrictEqual([['quince']])
   })
@@ -182,18 +182,18 @@ describe('the keyboard', () => {
     await press(list, 'ArrowDown')
     await press(list, 'ArrowDown')
     await list.setProps({ items: [...MODELS, { id: 'extra', text: 'Extra' }] })
-    expect(getActive(list)).toBe(2)
+    expect(getActiveOptionIndex(list)).toBe(2)
     expect(getOptions(list)).toHaveLength(4)
   })
 
   it('returns to the item in force when it changes from outside, over a row under the pointer', async () => {
     const list = mountList({ modelValue: 'plum' })
     await getOptions(list)[2]!.trigger('pointerenter')
-    expect(getActive(list)).toBe(2)
+    expect(getActiveOptionIndex(list)).toBe(2)
 
     await list.setProps({ modelValue: 'pear' })
 
-    expect(getActive(list)).toBe(1)
+    expect(getActiveOptionIndex(list)).toBe(1)
   })
 
   it('keeps the keyboard on a row chosen with Enter while a query is typed', async () => {
@@ -204,18 +204,18 @@ describe('the keyboard', () => {
     await press(list, 'Enter')
     await nextTick()
 
-    expect(getActive(list)).toBe(2)
+    expect(getActiveOptionIndex(list)).toBe(2)
   })
 
   it('returns to the first row as the query changes', async () => {
     const list = mountList({ modelValue: 'pear' })
-    expect(getActive(list)).toBe(1)
+    expect(getActiveOptionIndex(list)).toBe(1)
     await press(list, 'ArrowUp')
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
     await press(list, 'ArrowDown')
-    expect(getActive(list)).toBe(1)
+    expect(getActiveOptionIndex(list)).toBe(1)
     await getInput(list).setValue('5.5')
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
   })
 
   it('does nothing on Enter where there is no row', async () => {
@@ -248,7 +248,7 @@ describe('the action row', () => {
     const list = mountAction({ items: FOUND })
     await getInput(list).setValue('Boo')
     expect(getTexts(list)).toStrictEqual(['Create "Boo"', 'Books about', 'Books'])
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
   })
 
   it('stays row 1, the same element and active, as the items arrive', async () => {
@@ -258,7 +258,7 @@ describe('the action row', () => {
     await list.setProps({ items: FOUND })
     expect(getOptions(list)[0]!.element).toBe(row)
     expect(getTexts(list)[0]).toBe('Create "Boo"')
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
   })
 
   it('takes Enter and a click as an act with the typed query', async () => {
@@ -277,7 +277,7 @@ describe('the action row', () => {
     await list.setProps({ items: FOUND })
     expect(getTexts(list)).toStrictEqual(['Books', 'Books about'])
     expect(getOptions(list)[0]!.element).toBe(row)
-    expect(getActive(list)).toBe(0)
+    expect(getActiveOptionIndex(list)).toBe(0)
     await press(list, 'Enter')
     expect(list.emitted('select')).toStrictEqual([['pages/books.md']])
     expect(list.emitted('act')).toBeUndefined()

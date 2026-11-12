@@ -20,7 +20,7 @@ func (g windowGate) FinishWrite()     {}
 
 func TestWriteLinkNamesTheTargetByItsName(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "physics/Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n", "physics/Entropy.md": "# Entropy\n"})
 	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{})
 
 	err := write.Execute(t.Context(), c.vault, "Heat.md", note.NamedLink{To: "physics/Entropy.md", Role: domain.RoleParent})
@@ -35,7 +35,7 @@ func TestWriteLinkNamesTheTargetByItsName(t *testing.T) {
 
 func TestWriteLinkRefusesALinkWithNowhereToGo(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{})
 
 	err := write.Execute(t.Context(), c.vault, "Heat.md", note.NamedLink{Role: domain.RoleParent})
@@ -50,7 +50,7 @@ func TestWriteLinkRefusesALinkWithNowhereToGo(t *testing.T) {
 
 func TestWriteLinkWritesNothingWhileTheWindowCloses(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n", "Entropy.md": "# Entropy\n"})
 	write := note.NewWriteLink(c.newEditLinks(), c.db.NoteQueries(), windowGate{isClosing: true})
 
 	err := write.Execute(t.Context(), c.vault, "Heat.md", note.NamedLink{To: "Entropy.md", Role: domain.RoleParent})
@@ -65,7 +65,7 @@ func TestWriteLinkWritesNothingWhileTheWindowCloses(t *testing.T) {
 
 func TestCreateWritesTheNamedLinksIntoTheNewNote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"physics/Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"physics/Heat.md": "# Heat\n"})
 	creating := c.create()
 
 	made, err := creating.Execute(t.Context(), c.vault, note.NewNote{
@@ -82,7 +82,7 @@ func TestCreateWritesTheNamedLinksIntoTheNewNote(t *testing.T) {
 
 func TestCreateMakesNoFileForALinkWithNowhereToGo(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	creating := c.create()
 
 	_, err := creating.Execute(t.Context(), c.vault, note.NewNote{

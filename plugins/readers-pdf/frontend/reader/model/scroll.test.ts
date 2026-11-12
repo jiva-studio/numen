@@ -173,7 +173,7 @@ const createWheel = (deltaX: number, deltaY: number) => {
   return { event, preventDefault }
 }
 
-const createPressed = (scrollLeft = 500, scrollTop = 300) => {
+const createPressedScroll = (scrollLeft = 500, scrollTop = 300) => {
   const subject = createScroll(scrollLeft)
   subject.element.scrollTop = scrollTop
   const capture = createCapture(subject.element)
@@ -182,7 +182,7 @@ const createPressed = (scrollLeft = 500, scrollTop = 300) => {
 
 describe('a hand dragging the row', () => {
   it('moves the row against the hand and takes the pointer', () => {
-    const { scroll, element, capture } = createPressed()
+    const { scroll, element, capture } = createPressedScroll()
     scroll.moves.send(900, 'smooth')
 
     scroll.drag.onPointerDown(createPointer(200, 100))
@@ -196,7 +196,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('does not drag before the hand has travelled', () => {
-    const { scroll, element, capture } = createPressed()
+    const { scroll, element, capture } = createPressedScroll()
 
     scroll.drag.onPointerDown(createPointer(200, 100))
     scroll.drag.onPointerMove(createPointer(201, 100))
@@ -207,7 +207,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('ignores a move when nothing has been pressed', () => {
-    const { scroll, element } = createPressed()
+    const { scroll, element } = createPressedScroll()
 
     scroll.drag.onPointerMove(createPointer(100, 100))
 
@@ -216,7 +216,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('ignores a press with another button', () => {
-    const { scroll, element } = createPressed()
+    const { scroll, element } = createPressedScroll()
 
     scroll.drag.onPointerDown(createPointer(200, 100, 2))
     scroll.drag.onPointerMove(createPointer(100, 100))
@@ -225,7 +225,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('ignores a press and a move without an element', () => {
-    const { scroll, area } = createPressed()
+    const { scroll, area } = createPressedScroll()
     area.value = null
 
     expect(() => {
@@ -236,7 +236,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('ignores a move after the element is removed', () => {
-    const { scroll, area } = createPressed()
+    const { scroll, area } = createPressedScroll()
     scroll.drag.onPointerDown(createPointer(200, 100))
     area.value = null
 
@@ -245,7 +245,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('does not capture a pointer the element already holds', () => {
-    const { scroll, element } = createPressed()
+    const { scroll, element } = createPressedScroll()
     const capture = createCapture(element, true)
 
     scroll.drag.onPointerDown(createPointer(200, 100))
@@ -256,7 +256,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('keeps dragging when the pointer cannot be taken', () => {
-    const { scroll, element, capture } = createPressed()
+    const { scroll, element, capture } = createPressedScroll()
     capture.set.mockImplementation(() => {
       throw new Error('no such pointer')
     })
@@ -269,7 +269,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('releases the row and the pointer', () => {
-    const { scroll, element, capture } = createPressed()
+    const { scroll, element, capture } = createPressedScroll()
     capture.has.mockReturnValue(true)
     scroll.drag.onPointerDown(createPointer(200, 100))
     scroll.drag.onPointerMove(createPointer(100, 100))
@@ -283,7 +283,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('does not release a pointer it does not hold', () => {
-    const { scroll, capture } = createPressed()
+    const { scroll, capture } = createPressedScroll()
 
     scroll.drag.letGo(createPointer(100, 100))
 
@@ -291,7 +291,7 @@ describe('a hand dragging the row', () => {
   })
 
   it('releases without an element', () => {
-    const { scroll, area } = createPressed()
+    const { scroll, area } = createPressedScroll()
     area.value = null
 
     expect(() => scroll.drag.letGo(createPointer(100, 100))).not.toThrow()

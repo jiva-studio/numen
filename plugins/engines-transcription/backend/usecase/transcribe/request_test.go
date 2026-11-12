@@ -223,7 +223,7 @@ func (s *requestFixture) startWithin(t *testing.T, path string) (bool, error) {
 	}
 }
 
-func (s *requestFixture) waitStarted(t *testing.T) {
+func (s *requestFixture) waitUntilStarted(t *testing.T) {
 	t.Helper()
 	select {
 	case <-s.blocking.startCh:
@@ -232,7 +232,7 @@ func (s *requestFixture) waitStarted(t *testing.T) {
 	}
 }
 
-func (s *requestFixture) waitFinished(t *testing.T, id string) {
+func (s *requestFixture) waitUntilFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
 	for !s.ended[id] {
@@ -258,16 +258,16 @@ func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 	if tasks := s.queue.ListTasks(); !isListed(tasks, want.TaskID) {
 		t.Errorf("the tasks %+v do not list %s while the transcription runs", tasks, want.TaskID)
 	}
 
 	close(s.blocking.release)
-	s.waitFinished(t, want.TaskID)
+	s.waitUntilFinished(t, want.TaskID)
 	s.transcriber.Close()
 
-	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
+	if _, text := s.readLiveVersionAndText(t); text != "first words\nsecond words\n" {
 		t.Errorf("the transcript reads %q", text)
 	}
 }
@@ -275,7 +275,7 @@ func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 func TestTranscriptCreateDuringTranscriptionReportsItRunning(t *testing.T) {
 	s := newRequestFixture(t)
 	first := s.createTranscript(t, "Lectures", lecture)
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	second := s.createTranscript(t, "Lectures", lecture)
 
@@ -284,7 +284,7 @@ func TestTranscriptCreateDuringTranscriptionReportsItRunning(t *testing.T) {
 		t.Errorf("the second call returned %+v, want %+v", second, want)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, first.TaskID)
+	s.waitUntilFinished(t, first.TaskID)
 }
 
 func TestTranscriptCreateRejectsARecordingNotInTheVault(t *testing.T) {
@@ -391,9 +391,9 @@ func TestTranscriptCreateOfPartlyTranscribedRecordingStartsRun(t *testing.T) {
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
-	s.waitFinished(t, want.TaskID)
+	s.waitUntilFinished(t, want.TaskID)
 	s.transcriber.Close()
-	if _, text := s.readLive(t); text != "heard before\nsecond words\n" {
+	if _, text := s.readLiveVersionAndText(t); text != "heard before\nsecond words\n" {
 		t.Errorf("the transcript reads %q, want the partial transcript had on", text)
 	}
 }
@@ -404,7 +404,7 @@ func TestTranscriptCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	if err := s.transcriber.Transcribe(t.Context(), "Lectures", lecture); err != nil {
 		t.Fatal(err)
 	}
-	version, _ := s.readLive(t)
+	version, _ := s.readLiveVersionAndText(t)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
@@ -510,7 +510,7 @@ func TestTranscriptCreateTranscribesInTheNamedVault(t *testing.T) {
 		t.Fatalf("transcript_create in Chemistry returned %+v", out)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, out.TaskID)
+	s.waitUntilFinished(t, out.TaskID)
 	s.transcriber.Close()
 
 	inChemistry, err := s.chemTexts.ListVersions(t.Context(), chemistryLecture)
@@ -585,8 +585,8 @@ func TestTranscriptCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	}
 
 	close(releaseBatch)
-	s.waitFinished(t, first.TaskID)
-	s.waitFinished(t, second.TaskID)
+	s.waitUntilFinished(t, first.TaskID)
+	s.waitUntilFinished(t, second.TaskID)
 	s.transcriber.Close()
 
 	inLectures, err := s.texts.ListVersions(t.Context(), lecture)
@@ -619,10 +619,10 @@ func TestTranscriptCreateReturnsBeforeTheRecordingIsRead(t *testing.T) {
 		t.Fatalf("the recording was not read within %v; tasks %+v", workDeadline, s.queue.ListTasks())
 	}
 	close(reader.release)
-	s.waitFinished(t, want.TaskID)
+	s.waitUntilFinished(t, want.TaskID)
 	s.transcriber.Close()
 
-	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
+	if _, text := s.readLiveVersionAndText(t); text != "first words\nsecond words\n" {
 		t.Errorf("the transcript reads %q", text)
 	}
 }
@@ -773,10 +773,10 @@ func TestStartAnswersWhileTheTaskTranscribes(t *testing.T) {
 	if err != nil || !isStarted {
 		t.Fatalf("answered %v (%v)", isStarted, err)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 	close(s.blocking.release)
-	s.waitFinished(t, getTaskID("Lectures", lecture))
-	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
+	s.waitUntilFinished(t, getTaskID("Lectures", lecture))
+	if _, text := s.readLiveVersionAndText(t); text != "first words\nsecond words\n" {
 		t.Errorf("the version reads %q once the task ended", text)
 	}
 }
@@ -806,7 +806,7 @@ func TestStartOfARecordingBeingTranscribedStartsNothing(t *testing.T) {
 	if _, err := s.startWithin(t, lecture); err != nil {
 		t.Fatal(err)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	isStarted, err := s.startWithin(t, lecture)
 
@@ -814,5 +814,5 @@ func TestStartOfARecordingBeingTranscribedStartsNothing(t *testing.T) {
 		t.Errorf("a second start while the first transcribes answered %v (%v), want nothing started", isStarted, err)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, getTaskID("Lectures", lecture))
+	s.waitUntilFinished(t, getTaskID("Lectures", lecture))
 }

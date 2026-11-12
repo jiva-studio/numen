@@ -58,7 +58,7 @@ func Standard(queries problemport.ProblemQueries) Checks {
 // opt-in. An opt-in check has findings that are ordinary in a vault under
 // active editing and would bury the rest if reported unrequested.
 func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.VaultProblem, error) {
-	wanted, err := c.getWanted(named)
+	wanted, err := c.getWantedCheckers(named)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (c Checks) Names() []domain.Check {
 	return out
 }
 
-func (c Checks) getWanted(named []domain.Check) ([]Checker, error) {
+func (c Checks) getWantedCheckers(named []domain.Check) ([]Checker, error) {
 	if len(named) == 0 {
 		return c.getDefaultCheckers(), nil
 	}

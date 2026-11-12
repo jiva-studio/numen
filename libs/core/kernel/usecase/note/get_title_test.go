@@ -8,7 +8,7 @@ import (
 
 func TestGetTitleAnswersTheTitleOfTheNoteAtAPath(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 	title := query.NewGetTitle(c.db.NoteQueries())
 
 	if got := title.Execute(t.Context(), c.vault, "Heat.md"); got == "" {
@@ -24,7 +24,7 @@ func TestGetTitleAnswersTheTitleOfTheNoteAtAPath(t *testing.T) {
 
 func TestGetTitleAnswersNothingWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
+	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 
 	if got := query.NewGetTitle(nil).Execute(t.Context(), c.vault, "Heat.md"); got != "" {
 		t.Errorf("the note is titled %q", got)

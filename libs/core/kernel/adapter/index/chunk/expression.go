@@ -19,7 +19,7 @@ func Expression(typed string, growing bool) string {
 	for i, r := range typed {
 		if unicode.IsSpace(r) {
 			if start >= 0 {
-				writeQuoted(&out, typed[start:i])
+				writeQuotedWord(&out, typed[start:i])
 				// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is -2: start is only tested against 0, so any negative marks no word"
 				start = -1
 			}
@@ -28,7 +28,7 @@ func Expression(typed string, growing bool) string {
 		}
 	}
 	if start >= 0 {
-		writeQuoted(&out, typed[start:])
+		writeQuotedWord(&out, typed[start:])
 	}
 	if out.Len() == 0 {
 		return ""
@@ -39,7 +39,7 @@ func Expression(typed string, growing bool) string {
 	return out.String()
 }
 
-func writeQuoted(out *strings.Builder, word string) {
+func writeQuotedWord(out *strings.Builder, word string) {
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 1: a builder holding a word is at least 3 bytes long, so its length is never 1"
 	if out.Len() > 0 {
 		out.WriteByte(' ')

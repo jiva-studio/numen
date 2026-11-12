@@ -68,13 +68,13 @@ func (s *providerServer) FinishConversation(
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
 }
 
-func (s *providerServer) getRequested() []*v1.AskAgentRequest {
+func (s *providerServer) getRequestedAsks() []*v1.AskAgentRequest {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.requested)
 }
 
-func (s *providerServer) getFinished() []string {
+func (s *providerServer) getFinishedIDs() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.finished)
@@ -285,10 +285,10 @@ func TestATaskGoesToThePluginThatRunsItsProgram(t *testing.T) {
 		steps = append(steps, step)
 	}
 
-	if len(one.getRequested()) != 0 || len(two.getRequested()) != 1 {
-		t.Fatalf("the first plugin was asked %d times and the second %d", len(one.getRequested()), len(two.getRequested()))
+	if len(one.getRequestedAsks()) != 0 || len(two.getRequestedAsks()) != 1 {
+		t.Fatalf("the first plugin was asked %d times and the second %d", len(one.getRequestedAsks()), len(two.getRequestedAsks()))
 	}
-	if got := two.getRequested()[0]; got.GetPrompt() != "hello" || got.GetAgent() != "beta" || got.GetModel() != "m" ||
+	if got := two.getRequestedAsks()[0]; got.GetPrompt() != "hello" || got.GetAgent() != "beta" || got.GetModel() != "m" ||
 		got.GetMaxSteps() != 3 || got.GetRoot() != "/vault" || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" ||
 		got.GetToolsToken() != "t" {
 		t.Errorf("the plugin was asked %v", got)
@@ -308,7 +308,7 @@ func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 			t.Errorf("a task naming %q was taken", name)
 		}
 	}
-	if len(one.getRequested())+len(two.getRequested()) != 0 {
+	if len(one.getRequestedAsks())+len(two.getRequestedAsks()) != 0 {
 		t.Error("a plugin was asked for a task nobody runs")
 	}
 }
@@ -335,8 +335,8 @@ func TestEndConversation_RoutesToStartingPlugin(t *testing.T) {
 	if err := provider.EndConversation(t.Context(), "never"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(one.getFinished(), []string{"c-1"}) || len(two.getFinished()) != 0 {
-		t.Errorf("the first plugin finished %v and the second %v", one.getFinished(), two.getFinished())
+	if !slices.Equal(one.getFinishedIDs(), []string{"c-1"}) || len(two.getFinishedIDs()) != 0 {
+		t.Errorf("the first plugin finished %v and the second %v", one.getFinishedIDs(), two.getFinishedIDs())
 	}
 }
 
@@ -388,8 +388,8 @@ func TestEndConversation_EndsOnEveryPluginUsed(t *testing.T) {
 	if err := provider.EndConversation(t.Context(), "c-1"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(one.getFinished(), []string{"c-1"}) || !slices.Equal(two.getFinished(), []string{"c-1"}) {
-		t.Errorf("the first plugin finished %v and the second %v", one.getFinished(), two.getFinished())
+	if !slices.Equal(one.getFinishedIDs(), []string{"c-1"}) || !slices.Equal(two.getFinishedIDs(), []string{"c-1"}) {
+		t.Errorf("the first plugin finished %v and the second %v", one.getFinishedIDs(), two.getFinishedIDs())
 	}
 }
 
@@ -442,7 +442,7 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 		!strings.Contains(err.Error(), "no agent plugin runs") {
 		t.Fatalf("a program nothing lists was run: %v", err)
 	}
-	if len(served.getRequested()) != 0 {
+	if len(served.getRequestedAsks()) != 0 {
 		t.Fatal("the plugin was asked for a program it did not list")
 	}
 	run, err := provider.StartRun(t.Context(), agent.Task{Question: "q", Agent: "gamma", Command: []string{"/opt/gamma"}})
@@ -451,7 +451,7 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 	}
 	for range run.GetSteps() {
 	}
-	if request := served.getRequested(); len(request) != 1 || !slices.Equal(request[0].GetCommand(), []string{"/opt/gamma"}) {
+	if request := served.getRequestedAsks(); len(request) != 1 || !slices.Equal(request[0].GetCommand(), []string{"/opt/gamma"}) {
 		t.Errorf("the plugin was asked %v", request)
 	}
 }

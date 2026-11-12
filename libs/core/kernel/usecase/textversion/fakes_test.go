@@ -231,7 +231,7 @@ func (f *fakeProvider) create(ctx context.Context, path string, source domain.Te
 	return err
 }
 
-func (f *fakeProvider) getCreated() int {
+func (f *fakeProvider) getCreatedCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.created

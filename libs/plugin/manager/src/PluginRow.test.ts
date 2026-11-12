@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginRow from './PluginRow.vue'
-import { createManaged as createPluginInfo, createAvailable } from './testing/managed'
+import { createManagedPlugin as createPluginInfo, createAvailablePlugin } from './testing/managed'
 
 describe('PluginRow', () => {
   it('renders plugin name, version, and description', () => {
@@ -111,7 +111,7 @@ describe('PluginRow', () => {
 
   it('badges a plugin that is not installed and offers no switch', async () => {
     const wrapper = mount(PluginRow, {
-      props: { plugin: createAvailable('test.offer', 'Offered Reader'), isEnabled: false },
+      props: { plugin: createAvailablePlugin('test.offer', 'Offered Reader'), isEnabled: false },
     })
 
     expect(wrapper.find('.plugin-row__badge--available').text()).toBe('Not installed')

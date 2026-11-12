@@ -35,7 +35,7 @@ export const clamp = (value: number, within: Bounds | undefined): number =>
   within === undefined ? value : Math.min(Math.max(value, within.min), within.max)
 
 /** The place of the grid nearest a value, and the last one for an empty grid. */
-export const findNearest = (grid: readonly number[], value: number): number => {
+export const findNearestGridValue = (grid: readonly number[], value: number): number => {
   if (grid.length === 0) return -1
   let nearestIndex = 0
   for (let i = 1; i < grid.length; i += 1) {

@@ -175,7 +175,7 @@ class MarkBuilder {
     return false
   }
 
-  takeShy(node: SyntaxNodeRef): boolean | null {
+  getShyState(node: SyntaxNodeRef): boolean | null {
     if (CARET_ONLY.has(node.name)) {
       if (!this.isParentSelected(node)) this.found.push(HIDDEN.range(node.from, node.to))
       return false
@@ -218,7 +218,7 @@ class MarkBuilder {
       this.takeLine(node) ??
       this.takeWidget(node) ??
       this.takeImage(node) ??
-      this.takeShy(node) ??
+      this.getShyState(node) ??
       this.isSpacedMark(node) ??
       this.takeInline(node) ??
       true

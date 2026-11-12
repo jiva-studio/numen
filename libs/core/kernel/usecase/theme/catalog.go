@@ -113,7 +113,7 @@ func (c catalog) readPluginTheme(name string) (string, error) {
 	return text, nil
 }
 
-func (c catalog) getApplied(name string) (applied, missing string) {
+func (c catalog) getAppliedTheme(name string) (applied, missing string) {
 	if name == "" {
 		return themedomain.Default, ""
 	}

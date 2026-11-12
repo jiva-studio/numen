@@ -46,9 +46,9 @@ func TestSettingsAgent_UnnamedProgramUsesSettingsProgram(t *testing.T) {
 
 	runTask(t, agent, agentdomain.Task{Question: "q", Conversation: "c-1"})
 
-	requests := one.getRequested()
-	if len(requests) != 1 || len(two.getRequested()) != 0 {
-		t.Fatalf("the first plugin was asked %d times and the second %d", len(requests), len(two.getRequested()))
+	requests := one.getRequestedAsks()
+	if len(requests) != 1 || len(two.getRequestedAsks()) != 0 {
+		t.Fatalf("the first plugin was asked %d times and the second %d", len(requests), len(two.getRequestedAsks()))
 	}
 	if got := requests[0]; got.GetAgent() != "alpha" || got.GetModel() != "section-model" ||
 		!slices.Equal(got.GetCommand(), []string{"/bin/alpha"}) || got.GetPrompt() != "q" {
@@ -58,8 +58,8 @@ func TestSettingsAgent_UnnamedProgramUsesSettingsProgram(t *testing.T) {
 	if err := agent.EndConversation(t.Context(), "c-1"); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(one.getFinished(), []string{"c-1"}) {
-		t.Errorf("the plugin finished %v", one.getFinished())
+	if !slices.Equal(one.getFinishedIDs(), []string{"c-1"}) {
+		t.Errorf("the plugin finished %v", one.getFinishedIDs())
 	}
 }
 
@@ -70,7 +70,7 @@ func TestSettingsAgent_UnsetProgramUsesDefault(t *testing.T) {
 
 	runTask(t, agent, agentdomain.Task{Question: "q"})
 
-	if requests := one.getRequested(); len(requests) != 1 || requests[0].GetAgent() != "alpha" {
+	if requests := one.getRequestedAsks(); len(requests) != 1 || requests[0].GetAgent() != "alpha" {
 		t.Errorf("the default plugin was asked %v", requests)
 	}
 }
@@ -82,9 +82,9 @@ func TestASettingsAgentTaskNamingAProgramGoesToIt(t *testing.T) {
 
 	runTask(t, agent, agentdomain.Task{Question: "q", Agent: "beta", Model: "asked-model"})
 
-	if requests := two.getRequested(); len(requests) != 1 || len(one.getRequested()) != 0 ||
+	if requests := two.getRequestedAsks(); len(requests) != 1 || len(one.getRequestedAsks()) != 0 ||
 		requests[0].GetAgent() != "beta" || requests[0].GetModel() != "asked-model" {
-		t.Errorf("the second plugin was asked %v, the first %v", requests, one.getRequested())
+		t.Errorf("the second plugin was asked %v, the first %v", requests, one.getRequestedAsks())
 	}
 }
 
@@ -96,7 +96,7 @@ func TestSettingsAgent_RejectsTaskWhenAgentDisabled(t *testing.T) {
 	if _, err := agent.StartRun(t.Context(), agentdomain.Task{Question: "q"}); err == nil {
 		t.Error("a task was taken with the agent turned off")
 	}
-	if len(one.getRequested())+len(two.getRequested()) != 0 {
+	if len(one.getRequestedAsks())+len(two.getRequestedAsks()) != 0 {
 		t.Error("a plugin was asked")
 	}
 }

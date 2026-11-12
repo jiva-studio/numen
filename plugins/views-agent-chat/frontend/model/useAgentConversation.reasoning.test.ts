@@ -107,14 +107,14 @@ describe('the level selected', () => {
 
   it('is the one chosen without mutating settings', () => {
     const { state, writtenSettings } = open()
-    state.reasoning.selectReasoning('high')
+    state.reasoning.selectReasoningLevel('high')
     expect(state.reasoning.selectedReasoningId.value).toBe('high')
     expect(writtenSettings).toEqual([])
   })
 
   it('does not follow an agent other than the one it was chosen for', () => {
     const { state } = open()
-    state.reasoning.selectReasoning('high')
+    state.reasoning.selectReasoningLevel('high')
     state.models.selectModel({
       agentId: 'beta',
       agentTitle: 'beta',

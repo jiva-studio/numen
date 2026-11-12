@@ -8,17 +8,17 @@ import type { DropRegistration } from '@numen/plugin-sdk'
 
 const URI_LIST = 'text/uri-list'
 
-function createRegistering() {
+function createRegisteringHost() {
   const registered = vi.fn((_id: string, _reg: DropRegistration) => ({ dispose: vi.fn() }))
   const host = createTestContextHost({ views: { registerDropHandler: registered } })
   return { host, registered }
 }
 
-const takeNothing = async (): Promise<readonly string[]> => []
+const takeNoPaths = async (): Promise<readonly string[]> => []
 
 describe('a drop handler registration', () => {
   it('fails for a type the manifest does not declare, naming the plugin and the type', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: ['vault:read'],
       dropTypes: ['text/plain'],
@@ -26,18 +26,18 @@ describe('a drop handler registration', () => {
     const context = createPluginContext('md.numen.sample', host, manifest)
 
     expect(() =>
-      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNothing }),
+      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
     ).toThrowError(
       'Plugin "md.numen.sample" registers the drop type "text/uri-list", which its manifest does not declare in contributes.dropHandlers',
     )
     expect(() =>
-      context.register.dropHandler?.({ types: ['text/plain', URI_LIST], drop: takeNothing }),
+      context.register.dropHandler?.({ types: ['text/plain', URI_LIST], drop: takeNoPaths }),
     ).toThrowError('registers the drop type "text/uri-list"')
     expect(registered).not.toHaveBeenCalled()
   })
 
   it('fails for a plugin whose manifest declares no drop types', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const context = createPluginContext(
       'md.numen.sample',
       host,
@@ -45,13 +45,13 @@ describe('a drop handler registration', () => {
     )
 
     expect(() =>
-      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNothing }),
+      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
     ).toThrowError('does not declare')
     expect(registered).not.toHaveBeenCalled()
   })
 
   it('fails without vault:read even for a declared type', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: ['vault:write'],
       dropTypes: [URI_LIST],
@@ -59,13 +59,13 @@ describe('a drop handler registration', () => {
     const context = createPluginContext('md.numen.sample', host, manifest)
 
     expect(() =>
-      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNothing }),
+      context.register.dropHandler?.({ types: [URI_LIST], drop: takeNoPaths }),
     ).toThrowError('lacks required permission "vault:read" for dropHandler')
     expect(registered).not.toHaveBeenCalled()
   })
 
   it('registers the types the registration had when it was checked, not the types it has later', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: ['vault:read'],
       dropTypes: [URI_LIST],
@@ -73,14 +73,14 @@ describe('a drop handler registration', () => {
     const context = createPluginContext('md.numen.sample', host, manifest)
     const types = [URI_LIST]
 
-    context.register.dropHandler?.({ types, drop: takeNothing })
+    context.register.dropHandler?.({ types, drop: takeNoPaths })
     types.push('text/html')
 
     expect(registered.mock.calls[0]?.[1].types).toEqual([URI_LIST])
   })
 
   it('does not let a getter answer the check and the registry differently', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: ['vault:read'],
       dropTypes: [URI_LIST],
@@ -92,7 +92,7 @@ describe('a drop handler registration', () => {
         reads += 1
         return reads === 1 ? [URI_LIST] : ['text/html']
       },
-      drop: takeNothing,
+      drop: takeNoPaths,
     }
 
     context.register.dropHandler?.(registration)

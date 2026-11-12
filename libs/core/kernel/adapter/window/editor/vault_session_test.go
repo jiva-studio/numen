@@ -59,7 +59,7 @@ func openTwoVaults(t *testing.T) *showing {
 	first := newListedVault(t, cfg, "one", map[string]string{entropy: noteNamed("Entropy")})
 	second := newListedVault(t, cfg, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
-	installation, cases, err := openRegistered(cfg, t.Context(), "one", os.Stderr)
+	installation, cases, err := openRegisteredWindow(cfg, t.Context(), "one", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +260,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	again, _, err := openRegistered(f.cfg, t.Context(), "", os.Stderr)
+	again, _, err := openRegisteredWindow(f.cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -781,7 +781,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	cfg := container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	installation, _, err := openRegistered(cfg, t.Context(), "", os.Stderr)
+	installation, _, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}

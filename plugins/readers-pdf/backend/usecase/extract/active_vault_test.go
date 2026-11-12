@@ -26,18 +26,18 @@ func (v *switchableVault) setActive(id domain.VaultID) {
 	v.active = id
 }
 
-func (v *switchableVault) getActive() *hosttest.Vault {
+func (v *switchableVault) getActiveVault() *hosttest.Vault {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	return v.Vault.With(v.active)
 }
 
 func (v *switchableVault) GetVault(ctx context.Context) (domain.Vault, error) {
-	return v.getActive().GetVault(ctx)
+	return v.getActiveVault().GetVault(ctx)
 }
 
 func (v *switchableVault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
-	return v.getActive().Read(ctx, path)
+	return v.getActiveVault().Read(ctx, path)
 }
 
 func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {

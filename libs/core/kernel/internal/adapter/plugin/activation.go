@@ -16,7 +16,7 @@ import (
 // activationPlugins is what an activation reads of the set of plugins: which one a start is for, how to launch it and the hold
 // against a scan of the folders.
 type activationPlugins interface {
-	getKnown(pluginID string) (manifest.Discovered, bool)
+	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
 	view() (setView, func())
 	getLaunch(p manifest.Discovered) supervision.Launch
 }
@@ -138,7 +138,7 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled, Err: ErrSafeModeActive}
 	}
 
-	p, ok := a.set.getKnown(pluginID)
+	p, ok := a.set.getKnownPlugin(pluginID)
 	if !ok {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{
 			PluginID: pluginID, Reason: plugindomain.NotInstalled, Err: errPluginNotFound,

@@ -133,14 +133,14 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
   }
 
   const getSetting = (path: readonly string[]): JsonValue | undefined => {
-    const edit = requested.getRequested(getPathKey(path))?.value
+    const edit = requested.getRequestedValue(getPathKey(path))?.value
     const value = (edit && parseEditValue(edit)) ?? getSettingAt(target.value, path)
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
   /** Whether a value requested at a path has not been read back yet, its write in flight or done. */
   const isRequested = (path: readonly string[]): boolean =>
-    requested.getRequested(getPathKey(path)) !== undefined
+    requested.getRequestedValue(getPathKey(path)) !== undefined
 
   /** Whether the write of a setting is in flight. */
   const isPending = (path: readonly string[]): boolean => requested.isPending(getPathKey(path))

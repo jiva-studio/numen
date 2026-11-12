@@ -78,7 +78,7 @@ func runValidate(args []string, stdoutWriter, stderrWriter io.Writer) int {
 	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
 	fs.SetOutput(stderrWriter)
 
-	positional, err := parseInterspersed(fs, args)
+	positional, err := parseInterspersedFlags(fs, args)
 	if err != nil {
 		return 1
 	}
@@ -116,7 +116,7 @@ func runPackage(args []string, stdoutWriter, stderrWriter io.Writer) int {
 	var outArchive string
 	fs.StringVar(&outArchive, "out", "", "destination path for archive")
 
-	positional, err := parseInterspersed(fs, args)
+	positional, err := parseInterspersedFlags(fs, args)
 	if err != nil {
 		return 1
 	}
@@ -138,7 +138,7 @@ func runPackage(args []string, stdoutWriter, stderrWriter io.Writer) int {
 	return finish(0, stdout)
 }
 
-func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
+func parseInterspersedFlags(fs *flag.FlagSet, args []string) ([]string, error) {
 	var positional []string
 	for {
 		if err := fs.Parse(args); err != nil {

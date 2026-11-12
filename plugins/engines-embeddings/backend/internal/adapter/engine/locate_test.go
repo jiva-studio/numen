@@ -48,22 +48,22 @@ func TestCheckPinned(t *testing.T) {
 	digest := sha256.Sum256([]byte("weights"))
 	sum := hex.EncodeToString(digest[:])
 
-	if err := checkPinned(map[string]string{"onnx/model.onnx": sum}, "onnx/model.onnx", file); err != nil {
+	if err := checkPinnedChecksum(map[string]string{"onnx/model.onnx": sum}, "onnx/model.onnx", file); err != nil {
 		t.Fatalf("matching sum: %v", err)
 	}
-	err := checkPinned(map[string]string{"onnx/model.onnx": strings.Repeat("0", 64)}, "onnx/model.onnx", file)
+	err := checkPinnedChecksum(map[string]string{"onnx/model.onnx": strings.Repeat("0", 64)}, "onnx/model.onnx", file)
 	if err == nil || !strings.Contains(err.Error(), "onnx/model.onnx") {
 		t.Fatalf("another sum: %v", err)
 	}
-	if err := checkPinned(map[string]string{"other": sum}, "onnx/model.onnx", file); err != nil {
+	if err := checkPinnedChecksum(map[string]string{"other": sum}, "onnx/model.onnx", file); err != nil {
 		t.Fatalf("an unpinned name must not be checked: %v", err)
 	}
-	if err := checkPinned(nil, "onnx/model.onnx", file); err != nil {
+	if err := checkPinnedChecksum(nil, "onnx/model.onnx", file); err != nil {
 		t.Fatalf("no pins: %v", err)
 	}
 	missing := filepath.Join(t.TempDir(), "nonexistent")
-	if err := checkPinned(map[string]string{"onnx/model.onnx": sum}, "onnx/model.onnx", missing); !errors.Is(err, fs.ErrNotExist) {
-		t.Fatalf("checkPinned error = %v, want fs.ErrNotExist", err)
+	if err := checkPinnedChecksum(map[string]string{"onnx/model.onnx": sum}, "onnx/model.onnx", missing); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("checkPinnedChecksum error = %v, want fs.ErrNotExist", err)
 	}
 	if err := verifyFile(t.TempDir(), sumOf("")); err == nil {
 		t.Fatal("verifyFile on a directory returned nil error")
@@ -141,8 +141,8 @@ func TestLocate_ErrorsOnTokenizerChecksumMismatch(t *testing.T) {
 func TestLocateCachedIgnoresAnIncompleteSnapshot(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights"})
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
-	if _, ok, err := locateCached(repo, pinnedModel("abc"), "model.onnx"); ok || err != nil {
-		t.Fatalf("locateCached() = %v, %v", ok, err)
+	if _, ok, err := locateCachedModel(repo, pinnedModel("abc"), "model.onnx"); ok || err != nil {
+		t.Fatalf("locateCachedModel() = %v, %v", ok, err)
 	}
 }
 
@@ -150,9 +150,9 @@ func TestLocateCachedReturnsTheSnapshotOfAModelWithNoRevision(t *testing.T) {
 	cache := cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 
-	got, ok, err := locateCached(repo, pinnedModel(""), "model.onnx")
+	got, ok, err := locateCachedModel(repo, pinnedModel(""), "model.onnx")
 	if err != nil || !ok {
-		t.Fatalf("locateCached() = %v, %v, want true, nil", ok, err)
+		t.Fatalf("locateCachedModel() = %v, %v, want true, nil", ok, err)
 	}
 	if want := filepath.Join(cache, "snapshots", "abc", "onnx", "model.onnx"); got.Model != want {
 		t.Errorf("model = %q, want %q", got.Model, want)
@@ -176,9 +176,9 @@ func TestLocateCachedReturnsNewestSnapshotWithoutRevision(t *testing.T) {
 	}
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 
-	got, ok, err := locateCached(repo, pinnedModel(""), "model.onnx")
+	got, ok, err := locateCachedModel(repo, pinnedModel(""), "model.onnx")
 	if err != nil || !ok {
-		t.Fatalf("locateCached() = %v, %v, want true, nil", ok, err)
+		t.Fatalf("locateCachedModel() = %v, %v, want true, nil", ok, err)
 	}
 	if want := filepath.Join(cache, "snapshots", "new", "onnx", "model.onnx"); got.Model != want {
 		t.Errorf("model = %q, want %q", got.Model, want)
@@ -188,16 +188,16 @@ func TestLocateCachedReturnsNewestSnapshotWithoutRevision(t *testing.T) {
 func TestLocateCachedSkipsIncompleteSnapshotWithoutRevision(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights"})
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
-	if _, ok, err := locateCached(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
-		t.Fatalf("locateCached() = %v, %v, want false, nil", ok, err)
+	if _, ok, err := locateCachedModel(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
+		t.Fatalf("locateCachedModel() = %v, %v, want false, nil", ok, err)
 	}
 }
 
 func TestLocateCachedFindsNothingWhereTheCacheHasNoSnapshots(t *testing.T) {
 	t.Setenv(EnvDir, t.TempDir())
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
-	if _, ok, err := locateCached(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
-		t.Fatalf("locateCached() = %v, %v, want false, nil", ok, err)
+	if _, ok, err := locateCachedModel(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
+		t.Fatalf("locateCachedModel() = %v, %v, want false, nil", ok, err)
 	}
 }
 
@@ -256,9 +256,9 @@ func TestLocateCachedFailsWhenCacheDirErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(blocker, "sub"))
-	_, ok, err := locateCached(repo, model.LocalModel{Name: "owner/repo", Revision: "rev"}, "model.onnx")
+	_, ok, err := locateCachedModel(repo, model.LocalModel{Name: "owner/repo", Revision: "rev"}, "model.onnx")
 	if ok || err == nil || !strings.Contains(err.Error(), "cache folder of owner/repo") || errors.Unwrap(err) == nil {
-		t.Fatalf("locateCached() = %v, %v, want false and wrapped cache folder error", ok, err)
+		t.Fatalf("locateCachedModel() = %v, %v, want false and wrapped cache folder error", ok, err)
 	}
 }
 
@@ -270,22 +270,22 @@ func TestLocateCachedIgnoresMissingModel(t *testing.T) {
 		Revision: "abc",
 		Sums:     map[string]string{model.TokenizerFile: sumOf("tokens")},
 	}
-	if _, ok, err := locateCached(repo, cfg, "model.onnx"); ok || err != nil {
-		t.Fatalf("locateCached() = %v, %v, want false, nil", ok, err)
+	if _, ok, err := locateCachedModel(repo, cfg, "model.onnx"); ok || err != nil {
+		t.Fatalf("locateCachedModel() = %v, %v, want false, nil", ok, err)
 	}
 }
 
 func TestLocateCachedReportsFalseOnCorruptSums(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "corrupt", "tokenizer.json": "tokens"})
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
-	if _, ok, err := locateCached(repo, pinnedModel("abc"), "model.onnx"); ok || err == nil {
-		t.Fatalf("corrupt model: locateCached() = %v, %v, want ok=false and non-nil error", ok, err)
+	if _, ok, err := locateCachedModel(repo, pinnedModel("abc"), "model.onnx"); ok || err == nil {
+		t.Fatalf("corrupt model: locateCachedModel() = %v, %v, want ok=false and non-nil error", ok, err)
 	}
 
 	cacheSnapshot(t, "def", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "corrupt"})
 	repo2 := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
-	if _, ok, err := locateCached(repo2, pinnedModel("def"), "model.onnx"); ok || err == nil {
-		t.Fatalf("corrupt tokenizer: locateCached() = %v, %v, want ok=false and non-nil error", ok, err)
+	if _, ok, err := locateCachedModel(repo2, pinnedModel("def"), "model.onnx"); ok || err == nil {
+		t.Fatalf("corrupt tokenizer: locateCachedModel() = %v, %v, want ok=false and non-nil error", ok, err)
 	}
 }
 
@@ -358,10 +358,10 @@ func TestAFileThatMissesItsPinnedSumIsRemovedWithItsBlobAndFetchedAgain(t *testi
 		t.Skipf("symlinks are not available: %v", err)
 	}
 
-	err := checkPinned(map[string]string{model.TokenizerFile: strings.Repeat("0", 64)}, model.TokenizerFile, link)
+	err := checkPinnedChecksum(map[string]string{model.TokenizerFile: strings.Repeat("0", 64)}, model.TokenizerFile, link)
 
 	if err == nil {
-		t.Fatal("checkPinned() accepted a file that holds another sum")
+		t.Fatal("checkPinnedChecksum() accepted a file that holds another sum")
 	}
 	for _, path := range []string{blob, link} {
 		if _, statErr := os.Lstat(path); !errors.Is(statErr, fs.ErrNotExist) {

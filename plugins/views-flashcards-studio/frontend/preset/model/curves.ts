@@ -11,7 +11,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from '../../lib/presets'
-import { getGoalValue, findNearest } from '../lib/curve'
+import { getGoalValue, findNearestGridValue } from '../lib/curve'
 import { getShapeKey } from '../lib/fields'
 import { estimateCurve } from '../lib/sketch'
 import { WORDS as words } from '../lib/words'
@@ -61,7 +61,7 @@ export const isSameGrid = (one: readonly number[], two: readonly number[]): bool
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
   curve.now.index >= 0
     ? curve.now.index
-    : Math.max(findNearest(curve.grid, getGoalValue(settings, today)), 0)
+    : Math.max(findNearestGridValue(curve.grid, getGoalValue(settings, today)), 0)
 
 /** Applies a landed curve and updates the material counts. */
 export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {

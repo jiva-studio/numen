@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 )
 
-func getQuantizing() embedding.Model {
+func getQuantizingModel() embedding.Model {
 	return embedding.Model{
 		Name: "test", Dimensions: 1024, MaxTokens: 256, Pooling: "mean",
 		From: "local:library/model.onnx",
@@ -34,18 +34,18 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 	db := openDB(t)
 	ctx := t.Context()
 
-	before := atScale(t, getQuantizing(), 0.3)
-	if before == getQuantizing().Recipe() {
+	before := atScale(t, getQuantizingModel(), 0.3)
+	if before == getQuantizingModel().Recipe() {
 		t.Fatalf("two scales, one recipe: %s", before)
 	}
 
-	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
+	if err := db.Chunks().SaveSource(ctx, getFirstVault().ID, chunk.Source{
 		Path: "library/tale.epub", Kind: "book", Size: 1000, MTime: 1,
 		ContentHash: "hash-tale", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, getFirst().ID, "book", "library/tale.epub", []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, getFirstVault().ID, "book", "library/tale.epub", []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "chapter 1",
 		Text: "the tale opens and the tale goes on",
 		Small: []chunk.Chunk{
@@ -56,7 +56,7 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirstVault().ID, before, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,13 +78,13 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if atBefore, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100); err != nil {
+	if atBefore, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirstVault().ID, before, chunk.Cursor{}, 100); err != nil {
 		t.Fatal(err)
 	} else if len(atBefore) != 0 {
 		t.Fatalf("%d chunks need a vector under the scale they were made at, want none", len(atBefore))
 	}
 
-	afterSwitch, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, getQuantizing().Recipe(), chunk.Cursor{}, 100)
+	afterSwitch, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirstVault().ID, getQuantizingModel().Recipe(), chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Errorf("%d chunks are asked for again after the scale moved, want 2", len(afterSwitch))
 	}
 
-	retained, err := db.ChunkVectors().GetKeptVectors(ctx, getQuantizing().Recipe(), hashes)
+	retained, err := db.ChunkVectors().GetKeptVectors(ctx, getQuantizingModel().Recipe(), hashes)
 	if err != nil {
 		t.Fatal(err)
 	}

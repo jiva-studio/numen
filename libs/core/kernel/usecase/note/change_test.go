@@ -22,20 +22,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-// changing is a vault that can be both queried and written to, with the index
+// changeFixture is a vault that can be both queried and written to, with the index
 // kept current as a real caller would keep it.
-type changing struct {
+type changeFixture struct {
 	db    *container.Index
 	vault domain.Vault
 	index func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
-func openChanging(t *testing.T, notes map[string]string) changing {
+func openChangeFixture(t *testing.T, notes map[string]string) changeFixture {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
 	refresh := vaults.NewRefresh(
 		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
-	return changing{
+	return changeFixture{
 		db:    db,
 		vault: v,
 		index: func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -45,36 +45,36 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 	}
 }
 
-func (c changing) search() search.Search {
+func (c changeFixture) search() search.Search {
 	return search.New(search.Index{Passages: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, nil, nil, nil)
 }
 
-func (c changing) create() note.Create {
+func (c changeFixture) create() note.Create {
 	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock(), note.OpenGate{})
 }
 
-func (c changing) moveDeps() note.MoveDeps {
+func (c changeFixture) moveDeps() note.MoveDeps {
 	return note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		Links: c.db.NoteQueries(), Names: c.db.NoteQueries(), Sources: c.db.Sources(), Index: c.index, Now: testsupport.NewClock(),
 	}
 }
 
-func (c changing) move() note.Move { return note.NewMove(c.moveDeps()) }
+func (c changeFixture) move() note.Move { return note.NewMove(c.moveDeps()) }
 
-func (c changing) remove() note.Remove {
+func (c changeFixture) remove() note.Remove {
 	return note.NewRemove(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.index,
 		note.OpenGate{},
 	)
 }
 
-func (c changing) newEditLinks() note.EditLinks {
+func (c changeFixture) newEditLinks() note.EditLinks {
 	return note.NewEditLinks(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
-func (c changing) read(t *testing.T, path string) string {
+func (c changeFixture) read(t *testing.T, path string) string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(c.vault.Path, filepath.FromSlash(path)))
 	if err != nil {
@@ -85,7 +85,7 @@ func (c changing) read(t *testing.T, path string) string {
 
 func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"other.md": "# Other\n"})
+	c := openChangeFixture(t, map[string]string{"other.md": "# Other\n"})
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{
 		Title: "Entropy", Body: "A measure of disorder.\n", Path: "physics",
@@ -116,7 +116,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 // A title that cannot be a filename still names the note, from the `title` key.
 func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, nil)
+	c := openChangeFixture(t, nil)
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "TCP/IP"})
 	if err != nil {
@@ -140,7 +140,7 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 
 func TestCreatingReturnsWhenTheNameIsAlreadyTaken(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"archive/Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"archive/Entropy.md": "# Entropy\n"})
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
 	if err != nil {
@@ -153,7 +153,7 @@ func TestCreatingReturnsWhenTheNameIsAlreadyTaken(t *testing.T) {
 
 func TestCreate_RejectsExistingNote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
 	if !errors.Is(err, vaultdomain.ErrAlreadyExists) {
@@ -165,7 +165,7 @@ func TestCreate_RejectsExistingNote(t *testing.T) {
 // written by its name follow it, unchanged.
 func TestMovingPreservesLinksSavedByNameAlone(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
@@ -181,7 +181,7 @@ func TestMovingPreservesLinksSavedByNameAlone(t *testing.T) {
 // link is written by still finds it after the file is renamed.
 func TestMove_RetitledNoteKeepsNameLinksResolving(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Old.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
 		"Heat.md":        "---\nlinks:\n  - to: Old\n    role: parent\n---\n# Heat\n",
 	})
@@ -197,7 +197,7 @@ func TestMove_RetitledNoteKeepsNameLinksResolving(t *testing.T) {
 // under it leaves the note named by its `title`.
 func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
 	})
 
@@ -222,7 +222,7 @@ func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 // written again by the new one.
 func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Old.md": "A measure of disorder.\n",
 		"Heat.md":        "---\nlinks:\n  - to: Old\n    role: parent\n---\n# Heat\n",
 	})
@@ -260,7 +260,7 @@ func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 // later move.
 func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
 	})
@@ -291,7 +291,7 @@ func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 // is left unchanged: which of two notes with one name it means is the user's choice.
 func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
 		"chemistry/Entropy.md": "# Entropy\n",
 		"chemistry/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
@@ -307,7 +307,7 @@ func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 // which resolves to the moved note.
 func TestRepairingALinkWritesThePathWhereTheNameIsShared(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Entropy.md":      "# Entropy\n",
 		"physics/Heat.md": "# Heat\n",
 		"Ref.md":          "---\nlinks:\n  - to: physics/Heat.md\n    role: parent\n---\n# Ref\n",
@@ -327,7 +327,7 @@ func TestRepairingALinkWritesThePathWhereTheNameIsShared(t *testing.T) {
 
 func TestRemovingInsertsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Entropy.md": "# Entropy\n\nA measure of disorder.\n",
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
@@ -342,7 +342,7 @@ func TestRemovingInsertsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 
 func TestRemovingRemadeNoteInsertsItInTrashWithSuffix(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Entropy.md": "# Entropy\n\nA measure of disorder.\n",
 	})
 
@@ -378,7 +378,7 @@ func TestRemovingRemadeNoteInsertsItInTrashWithSuffix(t *testing.T) {
 // the trash, so it is not among them.
 func TestRemovingAFolderConsumesWhatIsBelowItAndNamesTheLinksLeft(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n\nA measure of disorder.\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 		"Outside.md":         "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Outside\n",
@@ -396,7 +396,7 @@ func TestRemovingAFolderConsumesWhatIsBelowItAndNamesTheLinksLeft(t *testing.T) 
 
 func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})
@@ -428,7 +428,7 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 
 func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Sanskrit.md": "# Sanskrit\n",
 		"Slow.md":     "# Slow going\n",
 		"Roots.md": "---\ntype: sample\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n" +
@@ -472,7 +472,7 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 
 func TestRemovingALinkPreservesTheOtherNoteAlone(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n" +
 			"  - to: Work\n    role: jump\n---\n# Heat\n",
@@ -500,7 +500,7 @@ func TestRemovingALinkPreservesTheOtherNoteAlone(t *testing.T) {
 
 func TestWrite_RejectsStaleEdit(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
 		note.OpenGate{},
@@ -534,7 +534,7 @@ func TestWrite_RejectsStaleEdit(t *testing.T) {
 // with one write in it.
 func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
 		note.OpenGate{},
@@ -567,7 +567,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	}
 }
 
-func moveWithoutRepair(t *testing.T, c changing, from, to, linking string) {
+func moveWithoutRepair(t *testing.T, c changeFixture, from, to, linking string) {
 	t.Helper()
 	before := c.read(t, linking)
 	moved, err := c.move().Execute(t.Context(), c.vault, from, to)
@@ -582,7 +582,7 @@ func moveWithoutRepair(t *testing.T, c changing, from, to, linking string) {
 	}
 }
 
-func removeToTrash(t *testing.T, c changing, path, dangling string) {
+func removeToTrash(t *testing.T, c changeFixture, path, dangling string) {
 	t.Helper()
 	removed, err := c.remove().Execute(t.Context(), c.vault, path)
 	if err != nil {
@@ -596,7 +596,7 @@ func removeToTrash(t *testing.T, c changing, path, dangling string) {
 	}
 }
 
-func checkNoNoteMentions(t *testing.T, c changing, word string) {
+func checkNoNoteMentions(t *testing.T, c changeFixture, word string) {
 	t.Helper()
 	found, err := c.search().Execute(t.Context(), c.vault, word, search.Parameters{})
 	if err != nil {

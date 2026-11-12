@@ -17,7 +17,7 @@ const create = (rows: readonly Row[] = ROWS, selection: readonly RowId[] = []) =
     () => selection,
   )
 
-const createDrawn = () => {
+const createDrawnRow = () => {
   const focus = vi.fn<() => void>()
   return { focus, rendered: Object.assign(document.createElement('div'), { $el: { focus } }) }
 }
@@ -56,7 +56,7 @@ describe('the row the tab key reaches', () => {
 describe('a row as it is drawn', () => {
   it('is found under the row it remains for', () => {
     const rows = create()
-    const { rendered } = createDrawn()
+    const { rendered } = createDrawnRow()
     rows.setRowElement('pages', rendered)
 
     expect(rows.getRowElement('pages')).toBe(rendered.$el)
@@ -65,7 +65,7 @@ describe('a row as it is drawn', () => {
 
   it('is forgotten once it is taken away', () => {
     const rows = create()
-    rows.setRowElement('pages', createDrawn().rendered)
+    rows.setRowElement('pages', createDrawnRow().rendered)
     rows.setRowElement('pages', null)
 
     expect(rows.getRowElement('pages')).toBeNull()
@@ -73,7 +73,7 @@ describe('a row as it is drawn', () => {
 
   it('is forgotten once it is replaced by something that draws nothing', () => {
     const rows = create()
-    rows.setRowElement('pages', createDrawn().rendered)
+    rows.setRowElement('pages', createDrawnRow().rendered)
     rows.setRowElement('pages', document.createElement('div'))
 
     expect(rows.getRowElement('pages')).toBeNull()
@@ -83,7 +83,7 @@ describe('a row as it is drawn', () => {
 describe('the keyboard put onto a row', () => {
   it('lands on the row once the rows are drawn', async () => {
     const rows = create()
-    const { focus, rendered } = createDrawn()
+    const { focus, rendered } = createDrawnRow()
     rows.setRowElement('pages', rendered)
 
     const isDone = rows.focusRow('pages')
@@ -96,7 +96,7 @@ describe('the keyboard put onto a row', () => {
 
   it('lands on no row for no row', async () => {
     const rows = create()
-    const { focus, rendered } = createDrawn()
+    const { focus, rendered } = createDrawnRow()
     rows.setRowElement('pages', rendered)
     rows.here.value = 'pages'
 
@@ -126,7 +126,7 @@ describe('the keyboard put onto a row', () => {
       () => [],
       scrollToRow,
     )
-    const { focus, rendered } = createDrawn()
+    const { focus, rendered } = createDrawnRow()
     rows.setRowElement('pages', rendered)
 
     await rows.focusRow('pages')
@@ -143,7 +143,7 @@ describe('the keyboard put onto a row', () => {
       () => [],
       defaultScroll,
     )
-    const { rendered } = createDrawn()
+    const { rendered } = createDrawnRow()
     rows.setRowElement('pages', rendered)
 
     await rows.focusRow('pages', explicitScroll)

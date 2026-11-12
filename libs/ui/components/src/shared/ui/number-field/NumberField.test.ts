@@ -16,7 +16,7 @@ const mountField = (props: Partial<FieldProps> = {}) =>
     props: { modelValue: 20, min: 0, max: 240, step: 5, ...props },
   })
 
-const getEmitted = (field: ReturnType<typeof mountField>): readonly unknown[] =>
+const getEmittedEvents = (field: ReturnType<typeof mountField>): readonly unknown[] =>
   (field.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 describe('what is typed', () => {
@@ -25,7 +25,7 @@ describe('what is typed', () => {
     await field.get('input').setValue('12x')
 
     expect(field.get('input').element.value).toBe('12x')
-    expect(getEmitted(field)).toEqual([])
+    expect(getEmittedEvents(field)).toEqual([])
   })
 
   it('is marked where nothing further would make a number of it', async () => {
@@ -43,13 +43,13 @@ describe('what is typed', () => {
   it('is handed on as soon as it is a number the bounds allow', async () => {
     const field = mountField()
     await field.get('input').setValue('45')
-    expect(getEmitted(field)).toEqual([45])
+    expect(getEmittedEvents(field)).toEqual([45])
   })
 
   it('holds no number at all once the field is emptied', async () => {
     const field = mountField()
     await field.get('input').setValue('')
-    expect(getEmitted(field)).toEqual([null])
+    expect(getEmittedEvents(field)).toEqual([null])
   })
 
   it('marks a thousands group and passes nothing on', async () => {
@@ -57,7 +57,7 @@ describe('what is typed', () => {
     await field.get('input').setValue('1,200')
 
     expect(field.get('input').attributes('aria-invalid')).toBe('true')
-    expect(getEmitted(field)).toEqual([])
+    expect(getEmittedEvents(field)).toEqual([])
   })
 })
 
@@ -67,7 +67,7 @@ describe('a number between two places the step lays', () => {
     await field.get('input').setValue('13')
 
     expect(field.get('input').element.value).toBe('13')
-    expect(getEmitted(field)).toEqual([])
+    expect(getEmittedEvents(field)).toEqual([])
   })
 
   it('is brought onto a place of the step once the field is left', async () => {
@@ -75,7 +75,7 @@ describe('a number between two places the step lays', () => {
     await field.get('input').setValue('13')
     await field.get('input').trigger('blur')
 
-    expect(getEmitted(field)).toEqual([15])
+    expect(getEmittedEvents(field)).toEqual([15])
     expect(field.get('input').element.value).toBe('15')
   })
 
@@ -84,7 +84,7 @@ describe('a number between two places the step lays', () => {
     await field.get('input').setValue('13')
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
 
-    expect(getEmitted(field)).toEqual([20])
+    expect(getEmittedEvents(field)).toEqual([20])
     expect(field.get('input').element.value).toBe('20')
   })
 })
@@ -96,7 +96,7 @@ describe('the bounds', () => {
 
     expect(field.get('input').element.value).toBe('900')
     expect(field.get('input').attributes('aria-invalid')).toBe('true')
-    expect(getEmitted(field)).toEqual([])
+    expect(getEmittedEvents(field)).toEqual([])
   })
 
   it('brings what remains there inside them once the field is left', async () => {
@@ -104,7 +104,7 @@ describe('the bounds', () => {
     await field.get('input').setValue('900')
     await field.get('input').trigger('blur')
 
-    expect(getEmitted(field)).toEqual([240])
+    expect(getEmittedEvents(field)).toEqual([240])
     expect(field.get('input').element.value).toBe('240')
     expect(field.get('input').attributes('aria-invalid')).toBeUndefined()
   })
@@ -115,7 +115,7 @@ describe('the bounds', () => {
     await field.get('input').trigger('blur')
 
     expect(field.get('input').element.value).toBe('')
-    expect(getEmitted(field)).toEqual([null])
+    expect(getEmittedEvents(field)).toEqual([null])
   })
 })
 
@@ -126,7 +126,7 @@ describe('the bounds moving under the number', () => {
     const field = mountField({ modelValue: 200 })
     await field.setProps({ max: 10 })
 
-    expect(getEmitted(field)).toEqual([10])
+    expect(getEmittedEvents(field)).toEqual([10])
     expect(field.get('input').element.value).toBe('10')
     expect(field.get('input').attributes('aria-valuenow')).toBe('10')
     expect(field.get('input').attributes('aria-invalid')).toBeUndefined()
@@ -136,14 +136,14 @@ describe('the bounds moving under the number', () => {
     const field = mountField({ modelValue: 20 })
     await field.setProps({ min: 100 })
 
-    expect(getEmitted(field)).toEqual([100])
+    expect(getEmittedEvents(field)).toEqual([100])
     expect(field.get('input').element.value).toBe('100')
   })
 
   it('brings in a number the bounds it opened on never retained', () => {
     const field = mountField({ modelValue: 900 })
     expect(field.get('input').element.value).toBe('240')
-    expect(getEmitted(field)).toEqual([240])
+    expect(getEmittedEvents(field)).toEqual([240])
   })
 })
 
@@ -151,7 +151,7 @@ describe('the arrow keys', () => {
   it('move the number one step', async () => {
     const field = mountField()
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
-    expect(getEmitted(field)).toEqual([25])
+    expect(getEmittedEvents(field)).toEqual([25])
     expect(field.get('input').element.value).toBe('25')
   })
 
@@ -160,7 +160,7 @@ describe('the arrow keys', () => {
     await field.get('input').trigger('keydown', { key: 'ArrowDown' })
     await field.get('input').trigger('keydown', { key: 'ArrowDown' })
 
-    expect(getEmitted(field)).toEqual([0])
+    expect(getEmittedEvents(field)).toEqual([0])
     expect(field.get('input').element.value).toBe('0')
   })
 
@@ -168,14 +168,14 @@ describe('the arrow keys', () => {
     const field = mountField({ modelValue: 0.81, min: 0.7, max: 0.99, step: 0.01 })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
 
-    expect(getEmitted(field)).toEqual([0.82])
+    expect(getEmittedEvents(field)).toEqual([0.82])
     expect(field.get('input').element.value).toBe('0.82')
   })
 
   it('leave a field that cannot be typed into at its current position', async () => {
     const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
-    expect(getEmitted(field)).toEqual([])
+    expect(getEmittedEvents(field)).toEqual([])
   })
 })
 
@@ -189,7 +189,7 @@ describe('the other keys a spin button answers', () => {
 
     await field.get('input').trigger('keydown', { key: 'Home' })
     expect(field.get('input').element.value).toBe('0')
-    expect(getEmitted(field)).toEqual([240, 0])
+    expect(getEmittedEvents(field)).toEqual([240, 0])
   })
 
   it('moves ten steps under the page keys, and stops at the bounds', async () => {
@@ -210,13 +210,13 @@ describe('the other keys a spin button answers', () => {
     const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'End' })
     await field.get('input').trigger('keydown', { key: 'PageUp' })
-    expect(getEmitted(field)).toEqual([])
+    expect(getEmittedEvents(field)).toEqual([])
   })
 
   it('leaves a key it does not answer to the field it is typed into', async () => {
     const field = mountField()
     await field.get('input').trigger('keydown', { key: 'a' })
-    expect(getEmitted(field)).toEqual([])
+    expect(getEmittedEvents(field)).toEqual([])
     expect(field.get('input').element.value).toBe('20')
   })
 })
@@ -402,7 +402,7 @@ describe('the Enter key', () => {
     await field.get('input').trigger('keydown', { key: 'Enter' })
     await flushPromises()
 
-    expect(getEmitted(field).at(-1)).toBe(45)
+    expect(getEmittedEvents(field).at(-1)).toBe(45)
     expect(field.emitted('commit')).toEqual([[45]])
   })
 

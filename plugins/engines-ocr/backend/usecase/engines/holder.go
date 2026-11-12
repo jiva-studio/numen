@@ -69,17 +69,17 @@ func (h *Holder) GetEngine(ctx context.Context) (recognition.Recognizer, error) 
 func (h *Holder) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return h.closeLocked()
+	return h.closeEngineLocked()
 }
 
 func (h *Holder) dropLocked() {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of close failure does not affect engine state."
-	if err := h.closeLocked(); err != nil {
+	if err := h.closeEngineLocked(); err != nil {
 		h.reporter.ReportCloseError(err)
 	}
 }
 
-func (h *Holder) closeLocked() error {
+func (h *Holder) closeEngineLocked() error {
 	if h.engine == nil {
 		return nil
 	}

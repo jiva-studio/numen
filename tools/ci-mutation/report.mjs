@@ -23,7 +23,7 @@ export const getPath = (target, key, mutant) => {
 }
 
 /** The source a mutant replaced, on one line. */
-export const getOriginal = (source, { start, end }) => {
+export const getOriginalText = (source, { start, end }) => {
   if (!source) return ''
   const lines = source.split('\n')
   const text = lines
@@ -54,7 +54,7 @@ export const readMutants = (target, reports) => {
       const seen = new Map()
       for (const mutant of ordered) {
         const path = getPath(target, key, mutant)
-        const original = getOriginal(file.source, mutant.location)
+        const original = getOriginalText(file.source, mutant.location)
         const replacement = (mutant.replacement ?? '').replace(/\s+/g, ' ').trim()
         const tuple = [path, mutant.mutatorName, original, replacement].join('\0')
         const occurrence = seen.get(tuple) ?? 0

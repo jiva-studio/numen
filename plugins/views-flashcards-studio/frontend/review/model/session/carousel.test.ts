@@ -93,14 +93,14 @@ const createStrip = (
   }
 
   /** The strip taken off the screen, as the window closing takes it. */
-  const takeOff = () => {
+  const removeStrip = () => {
     mounted.splice(mounted.indexOf(one), 1)
     one.unmount()
   }
 
   return {
     ...strip,
-    takeOff,
+    removeStrip,
     window_,
     windowRef,
     currentPlace: displayedItems,
@@ -366,10 +366,10 @@ describe('a strip with no window', () => {
 
 describe('a strip taken off the screen', () => {
   it('is moved by neither a resize nor a settling left pending', () => {
-    const { takeOff, window_, scrollTo } = createStrip('here')
+    const { removeStrip, window_, scrollTo } = createStrip('here')
 
     scrollTo(300)
-    takeOff()
+    removeStrip()
     window.dispatchEvent(new Event('resize'))
     vi.advanceTimersByTime(200)
 
@@ -425,12 +425,12 @@ describe('what the owner is notified of', () => {
 describe('a move in flight when the strip is taken off the screen', () => {
   it('has its time cancelled', async () => {
     const activeSet = vi.spyOn(window, 'setTimeout')
-    const { takeOff, moveTo } = createStrip('here')
+    const { removeStrip, moveTo } = createStrip('here')
 
     await moveTo('after')
     const timer = activeSet.mock.results.at(-1)?.value as number
     const cleared = vi.spyOn(window, 'clearTimeout')
-    takeOff()
+    removeStrip()
 
     expect(cleared).toHaveBeenCalledWith(timer)
     activeSet.mockRestore()

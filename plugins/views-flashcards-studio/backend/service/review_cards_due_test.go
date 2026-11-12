@@ -18,7 +18,7 @@ import (
 // counting a vault reads every deck in it. The vaults therefore arrive with
 // their name and location, with no count and no deck information.
 func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(
 		t.Context(), &api.WatchCardsDueRequest{})
@@ -54,7 +54,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 // Each vault's count is a message of its own, so a vault of fifty thousand
 // cards holds up nothing but itself.
 func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 
 	// The vaults are read when the window opens them, and what a count evaluates to
 	// is what is under test here.

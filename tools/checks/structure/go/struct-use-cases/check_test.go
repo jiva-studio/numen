@@ -87,7 +87,7 @@ func New(registry *find.Find) *Wired {
 	return wired
 }
 
-func newPositional(registry *find.Find) Wired {
+func newPositionalWired(registry *find.Find) Wired {
 	return Wired{nil, nil, nil, nil, registry.Execute, registry.Look, nil}
 }
 `,

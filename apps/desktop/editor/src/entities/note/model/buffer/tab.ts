@@ -36,11 +36,11 @@ export const transitionTab = (
     case 'changed':
       return applyChange(tab, event.paths, event.renamed)
     default:
-      return applyRequested(tab, event.kind)
+      return applyRequestedKind(tab, event.kind)
   }
 }
 
-const applyRequested = (tab: Tab, kind: RequestedKind): Transition => {
+const applyRequestedKind = (tab: Tab, kind: RequestedKind): Transition => {
   switch (kind) {
     // Stryker disable next-line ConditionalExpression,BlockStatement: Falling through to save performs the same transition.
     case 'timerFired':

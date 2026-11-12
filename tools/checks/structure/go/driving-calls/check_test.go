@@ -135,17 +135,17 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 			t.Errorf("driving-adapter depguard rule contains file exemption %s: all driving adapters must go through use cases", p)
 		}
 	}
-	for _, one := range getUncovered(patterns) {
+	for _, one := range getUncoveredPatterns(patterns) {
 		t.Errorf("%s is a driving adapter and the depguard driving-adapter rule does not list it", one)
 	}
 }
 
 func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
-	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "!**/adapter/cli/deps.go"})
+	got := getUncoveredPatterns([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
-	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "**/adapter/cli/**"}); len(got) != 0 {
+	if got := getUncoveredPatterns([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "**/adapter/cli/**"}); len(got) != 0 {
 		t.Errorf("the rule refuses %v, want none", got)
 	}
 }

@@ -15,7 +15,7 @@ import type { PageNavigationAction } from '@numen/ui'
 import type { useBookColumns } from './columns'
 import { getTurnTarget, type useBookTurns } from './turns'
 import { copyPaper, type LeavingSpread } from './leaving'
-import { findPending, whenArrived } from './pictures'
+import { findPendingImages, whenArrived } from './pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
@@ -30,7 +30,7 @@ interface StoodFor {
 /**
  * The container in which one document of a book is read, and the measurements
  * derived from it. `onMove` is called when the front offset changes, and
- * `takeLed` returns the position a followed link led to, once.
+ * `takeLedLink` returns the position a followed link led to, once.
  */
 export interface BookLayoutOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
@@ -38,7 +38,7 @@ export interface BookLayoutOptions {
   readonly leaving: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
-  readonly takeLed: () => BookLink | undefined
+  readonly takeLedLink: () => BookLink | undefined
   readonly column: ReturnType<typeof useBookColumns>
   readonly turns: ReturnType<typeof useBookTurns>
 }
@@ -55,7 +55,7 @@ interface BookWatchContext {
   readonly settleResized: () => void
   readonly getKeptOffset: () => number
   readonly keepOffset: (pos: number) => void
-  readonly takeLed: () => BookLink | undefined
+  readonly takeLedLink: () => BookLink | undefined
   readonly standing: { value: number }
   readonly getSpreadOf: (pos: number) => number
   readonly stand: (spread: number, how: 'smooth' | 'auto') => void
@@ -81,7 +81,7 @@ function watchBookLayout(
   watch(
     () => props.markup,
     () => {
-      const place = context.takeLed()
+      const place = context.takeLedLink()
       context.prepareEntry(place)
       context.isStood.value = false
       context.standing.value = 0
@@ -125,7 +125,7 @@ export interface BookSettlingOptions {
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
   readonly stoodFor: { value: StoodFor | null }
-  readonly takeLed: () => BookLink | undefined
+  readonly takeLedLink: () => BookLink | undefined
   readonly takeBorderTurn: () => BorderTurn['way'] | undefined
   readonly column: {
     readonly measure: () => void
@@ -175,7 +175,7 @@ function createBookSettling(options: BookSettlingOptions) {
     options.column.unmarkCopy(copy)
   }
 
-  const createLeaving = (text: HTMLElement, holder: HTMLElement): LeavingSpread => {
+  const createLeavingSpread = (text: HTMLElement, holder: HTMLElement): LeavingSpread => {
     const copy = copyPaper(text, holder, options.column.markCopy)
     return { copy, target: getTurnTarget(text), remove: () => removeCopy(copy) }
   }
@@ -188,7 +188,7 @@ function createBookSettling(options: BookSettlingOptions) {
     if (!way || led) return
     const text = paper.value
     const isShown = holder && text && options.column.isStood.value
-    entry = { way, leaving: isShown ? createLeaving(text, holder) : undefined }
+    entry = { way, leaving: isShown ? createLeavingSpread(text, holder) : undefined }
   }
 
   const lay = (getKeep: () => number, led?: BookLink) => {
@@ -219,7 +219,7 @@ function createBookSettling(options: BookSettlingOptions) {
     if (!options.column.isMeasured.value) return
     onNextFrame(() => {
       const text = paper.value
-      const pending = text ? findPending(text) : []
+      const pending = text ? findPendingImages(text) : []
       if (pending.length === 0) lay(getKeep, led)
       else whenArrived(pending, () => lay(getKeep, led))
     })
@@ -264,7 +264,7 @@ function createBookSettling(options: BookSettlingOptions) {
     settleResized,
     getKeptOffset: options.turns.getKeptOffset,
     keepOffset: options.turns.keepOffset,
-    takeLed: options.takeLed,
+    takeLedLink: options.takeLedLink,
     standing: options.turns.standing,
     getSpreadOf: options.turns.getSpreadOf,
     stand: options.turns.stand,
@@ -277,7 +277,7 @@ function createBookSettling(options: BookSettlingOptions) {
 /**
  * The container in which one document of a book is read, and the measurements
  * derived from it. `onMove` is called when the front offset changes, and
- * `takeLed` returns the position a followed link led to, once.
+ * `takeLedLink` returns the position a followed link led to, once.
  */
 export function useBookLayout(options: BookLayoutOptions) {
   const { column } = options
@@ -325,7 +325,7 @@ export function useBookLayout(options: BookLayoutOptions) {
     stoodFor,
     props: options.props,
     onMove: options.onMove,
-    takeLed: options.takeLed,
+    takeLedLink: options.takeLedLink,
     takeBorderTurn,
     column: {
       measure: sizing.measure,

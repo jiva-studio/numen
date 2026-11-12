@@ -166,7 +166,7 @@ vi.mock('../../api/client', async (original) => ({
 
 const { useReview } = await import('./review')
 const { createVaultCounts } = await import('./counts')
-const { mountNothing } = await import('./views')
+const { mountEmptyView } = await import('./views')
 
 type Review = ReturnType<typeof useReview>
 
@@ -195,7 +195,7 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
       counts,
       notices,
       agent,
-      mountView: mountNothing,
+      mountView: mountEmptyView,
       goToVaults,
       getViewport: () => ({
         screen: window.screen.width,

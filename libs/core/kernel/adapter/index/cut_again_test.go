@@ -104,12 +104,12 @@ func countByText(rows map[textOf][]int64) map[textOf]int {
 
 func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 	t.Helper()
-	if err := db.Chunks().SaveSource(t.Context(), getFirst().ID, chunk.Source{
+	if err := db.Chunks().SaveSource(t.Context(), getFirstVault().ID, chunk.Source{
 		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(t.Context(), getFirst().ID, "book", path, chunks); err != nil {
+	if err := db.Chunks().ReplaceChunks(t.Context(), getFirstVault().ID, "book", path, chunks); err != nil {
 		t.Fatal(err)
 	}
 	var source int64
@@ -138,7 +138,7 @@ func TestReplaceChunks_RetainsRowsOfRepeatedText(t *testing.T) {
 		source := cutSource(outer, db, "library/a.epub", was)
 		before := getSourceRows(outer, db, source)
 
-		if err := db.Chunks().ReplaceChunks(outer.Context(), getFirst().ID, "book", "library/a.epub", now); err != nil {
+		if err := db.Chunks().ReplaceChunks(outer.Context(), getFirstVault().ID, "book", "library/a.epub", now); err != nil {
 			t.Fatal(err)
 		}
 		after := getSourceRows(outer, db, source)

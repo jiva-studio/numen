@@ -50,7 +50,7 @@ func newWorkingHost(t *testing.T) workingHost {
 	return workingHost{host: host, process: procs[0], tasks: tasks, lease: turn}
 }
 
-func (w workingHost) checkCleared(t *testing.T) {
+func (w workingHost) assertCleared(t *testing.T) {
 	t.Helper()
 	select {
 	case <-w.lease.WatchEnd():
@@ -66,7 +66,7 @@ func TestDisabledPluginTasksAreCleared(t *testing.T) {
 	if err := setEnabled(t.Context(), w.host, workingPlugin, false); err != nil {
 		t.Fatal(err)
 	}
-	w.checkCleared(t)
+	w.assertCleared(t)
 }
 
 func TestCrashedPluginTasksAreCleared(t *testing.T) {
@@ -74,5 +74,5 @@ func TestCrashedPluginTasksAreCleared(t *testing.T) {
 
 	wiretest.KillProcess(t, w.process)
 	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
-	w.checkCleared(t)
+	w.assertCleared(t)
 }

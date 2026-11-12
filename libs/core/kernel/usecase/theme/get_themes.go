@@ -53,7 +53,7 @@ func NewGetThemes(
 // default and is warned about; the warning is withdrawn once the stored theme is found.
 func (u *GetThemes) Execute() Themes {
 	current := u.getAppearance()
-	applied, missing := u.catalog.getApplied(current.ThemeName)
+	applied, missing := u.catalog.getAppliedTheme(current.ThemeName)
 	if missing != "" {
 		u.warnings.WarnTheme(fmt.Sprintf("Theme not found: %s. Applied: %s", missing, applied))
 	} else {

@@ -41,11 +41,11 @@ func TestThePlaceOfTheGridAValueFallsAt(t *testing.T) {
 		{value: 24, expectedIndex: 1},
 		{value: 40, expectedIndex: 3},
 	} {
-		if got := findNearest(grid, one.value); got != one.expectedIndex {
+		if got := findNearestGridIndex(grid, one.value); got != one.expectedIndex {
 			t.Errorf("%v falls at place %d of %v, want %d", one.value, got, grid, one.expectedIndex)
 		}
 	}
-	if got := findNearest(nil, 10); got != GetOutsideGrid().Index {
+	if got := findNearestGridIndex(nil, 10); got != GetOutsideGrid().Index {
 		t.Errorf("a value falls at place %d of a grid of no places", got)
 	}
 }

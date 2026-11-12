@@ -22,7 +22,7 @@ func TestTranscriptCreateOfAChangedRecordingStartsARun(t *testing.T) {
 		t.Errorf("transcript_create of a changed recording returned %+v, want started", out)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, out.TaskID)
+	s.waitUntilFinished(t, out.TaskID)
 }
 
 func TestTranscriptCreateOverAnotherPluginsWholeVersionStartsARun(t *testing.T) {
@@ -44,7 +44,7 @@ func TestTranscriptCreateOverAnotherPluginsWholeVersionStartsARun(t *testing.T) 
 		t.Errorf("transcript_create over another plugin's live version returned %+v, want started", out)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, out.TaskID)
+	s.waitUntilFinished(t, out.TaskID)
 }
 
 // The host has the version recorded on the partial file while the plugin's folder has the whole
@@ -59,7 +59,7 @@ func TestTranscriptCreateOverAStalePartialRecordReturnsTheVersion(t *testing.T) 
 	}
 
 	first := s.createTranscript(t, "Lectures", lecture)
-	s.waitFinished(t, first.TaskID)
+	s.waitUntilFinished(t, first.TaskID)
 	second := s.createTranscript(t, "Lectures", lecture)
 
 	if second.State != "done" {

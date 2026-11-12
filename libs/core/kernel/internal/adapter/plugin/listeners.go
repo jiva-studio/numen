@@ -29,7 +29,7 @@ var (
 // listenedPlugins is what the listeners read of the set of plugins.
 type listenedPlugins interface {
 	view() (setView, func())
-	getKnown(pluginID string) (manifest.Discovered, bool)
+	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
 	getName(pluginID string) string
 	listIDs() []string
 }
@@ -74,7 +74,7 @@ type listenerBinding struct {
 	proxy *portproxy.Proxy
 }
 
-func (l *Listeners) getBindable(pluginID string) (manifest.Discovered, map[string]any, bool) {
+func (l *Listeners) getBindablePlugin(pluginID string) (manifest.Discovered, map[string]any, bool) {
 	v, release := l.set.view()
 	defer release()
 	p, ok := v.get(pluginID)
@@ -85,7 +85,7 @@ func (l *Listeners) getBindable(pluginID string) (manifest.Discovered, map[strin
 }
 
 func (l *Listeners) getWantedPorts(pluginID string) (map[string]int, error) {
-	p, settings, ok := l.getBindable(pluginID)
+	p, settings, ok := l.getBindablePlugin(pluginID)
 	if !ok {
 		return nil, nil
 	}
@@ -126,8 +126,8 @@ func readPort(value any) (int, bool) {
 func (l *Listeners) checkPort(ctx context.Context, pluginID, key string, value any) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	p, ok := l.set.getKnown(pluginID)
-	_, _, isBindable := l.getBindable(pluginID)
+	p, ok := l.set.getKnownPlugin(pluginID)
+	_, _, isBindable := l.getBindablePlugin(pluginID)
 	isBinding := ok && isBindable
 	if !ok {
 		return nil

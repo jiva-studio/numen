@@ -19,11 +19,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-func getBefore() []string {
+func getBeforeNames() []string {
 	return []string{"river", "mountain", "forest", "meadow", "harbor", "valley", "island", "desert"}
 }
 
-func getAfter() []string {
+func getAfterNames() []string {
 	return []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
 }
 
@@ -86,10 +86,10 @@ func (a *fakeEmbedder) saw(word string) bool {
 	return false
 }
 
-// sulking is a model that rejects the first few requests, simulating a service
+// failingEmbedder is a model that rejects the first few requests, simulating a service
 // that is unavailable when the window opens. Rejected requests still need a
 // vector.
-type sulking struct {
+type failingEmbedder struct {
 	*fakeEmbedder
 
 	mu            sync.Mutex
@@ -97,11 +97,11 @@ type sulking struct {
 	turned        int
 }
 
-func newSulking(dims, errs int) *sulking {
-	return &sulking{fakeEmbedder: &fakeEmbedder{dims: dims}, remainingErrs: errs}
+func newFailingEmbedder(dims, errs int) *failingEmbedder {
+	return &failingEmbedder{fakeEmbedder: &fakeEmbedder{dims: dims}, remainingErrs: errs}
 }
 
-func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+func (s *failingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	s.mu.Lock()
 	refusing := s.remainingErrs > 0
 	if refusing {
@@ -116,7 +116,7 @@ func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error
 	return s.fakeEmbedder.Embed(ctx, texts)
 }
 
-func (s *sulking) getTurnedDown() int {
+func (s *failingEmbedder) getTurnedDown() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.turned
@@ -134,17 +134,17 @@ func direction(text string, dims int) []float32 {
 	return out
 }
 
-// walking counts the traversals of a vault. Reading the sources traverses the whole
+// walkCountingReaders counts the traversals of a vault. Reading the sources traverses the whole
 // vault before embedding; embedding alone opens the files in which the index already
 // has a chunk, and does not traverse.
-type walking struct {
+type walkCountingReaders struct {
 	vaultport.VaultReaders
 	walks atomic.Int64
 }
 
-func newWalking() *walking { return &walking{VaultReaders: vaultreader.Readers{}} }
+func newWalkCountingReaders() *walkCountingReaders { return &walkCountingReaders{VaultReaders: vaultreader.Readers{}} }
 
-func (w *walking) Open(v domain.Vault) (vaultport.VaultReader, error) {
+func (w *walkCountingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := w.VaultReaders.Open(v)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (w *walking) Open(v domain.Vault) (vaultport.VaultReader, error) {
 
 type counts struct {
 	vaultport.VaultReader
-	posVal *walking
+	posVal *walkCountingReaders
 }
 
 func (r counts) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
@@ -175,11 +175,11 @@ func getVectorProgress(t *testing.T, f *behind, model embeddingport.Embedder) (t
 // need their vectors from the moment they are written.
 func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	watcher := newManualWatcher()
-	readers := newWalking()
+	readers := newWalkCountingReaders()
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(getBefore(), 200),
+		"Note.md": noteWith(getBeforeNames(), 200),
 	}, watcher, readers, model, 20*time.Millisecond)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
@@ -188,12 +188,12 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	})
 	walks := readers.walks.Load()
 
-	write(t, f.vault, "Note.md", noteWith(getAfter(), 200))
+	write(t, f.vault, "Note.md", noteWith(getAfterNames(), 200))
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "the note stayed out of search by meaning", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfterNames()[0])
 	})
 	if got := readers.walks.Load(); got != walks {
 		t.Errorf("the vault was walked %d times over to embed one note", got-walks)
@@ -207,11 +207,11 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	const saves = 8
 
 	watcher := newManualWatcher()
-	readers := newWalking()
+	readers := newWalkCountingReaders()
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(getBefore(), 200),
+		"Note.md": noteWith(getBeforeNames(), 200),
 	}, watcher, readers, model, time.Second)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
@@ -223,13 +223,13 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	// Every save lengthens the note by a word, so each one needs a vector the
 	// previous save did not.
 	for i := range saves {
-		write(t, f.vault, "Note.md", noteWith(getAfter(), 200+i))
+		write(t, f.vault, "Note.md", noteWith(getAfterNames(), 200+i))
 		sendChange(t, watcher, "Note.md")
 	}
 
 	waitFor(t, "the saves were never embedded", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfterNames()[0])
 	})
 
 	switch passes := model.times() - first; {
@@ -246,11 +246,11 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	// The first asking is turned down, so the note's chunks come out of the
 	// first reading still unembedded their vectors.
-	model := newSulking(64, 1)
+	model := newFailingEmbedder(64, 1)
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(getBefore(), 200),
-	}, unwatchable{}, newWalking(), model, 20*time.Millisecond)
+		"Note.md": noteWith(getBeforeNames(), 200),
+	}, unwatchable{}, newWalkCountingReaders(), model, 20*time.Millisecond)
 
 	waitFor(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
 	if why := f.api.state.Runtime.GetWatchError(); why == "" {
@@ -263,11 +263,11 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 
 	// Longer than the file on disk, so every chunk position is within the saved
 	// note.
-	save(t, f, "Note.md", prose(getAfter(), 240))
+	save(t, f, "Note.md", prose(getAfterNames(), 240))
 
 	waitFor(t, "what was saved stayed out of search by meaning", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfterNames()[0])
 	})
 }
 
@@ -278,22 +278,22 @@ func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(getBefore(), 200),
+		"Note.md": noteWith(getBeforeNames(), 200),
 	}, watcher, unwalkable{VaultReaders: vaultreader.Readers{}}, model, 20*time.Millisecond)
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
 		return f.api.state.Runtime.GetError() != ""
 	})
 
-	write(t, f.vault, "Note.md", noteWith(getAfter(), 200))
+	write(t, f.vault, "Note.md", noteWith(getAfterNames(), 200))
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "what was written stayed out of search by meaning", func() bool {
 		target, embedded := getVectorProgress(t, f, model)
-		return target > 0 && target == embedded && model.saw(getAfter()[0])
+		return target > 0 && target == embedded && model.saw(getAfterNames()[0])
 	})
 }
 
 func (*fakeEmbedder) Concurrency() int { return 1 }
 
-func (*sulking) Concurrency() int { return 1 }
+func (*failingEmbedder) Concurrency() int { return 1 }

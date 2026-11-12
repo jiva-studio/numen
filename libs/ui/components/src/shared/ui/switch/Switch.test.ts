@@ -10,7 +10,7 @@ type SwitchProps = InstanceType<typeof Switch>['$props']
 const mountSwitch = (props: Partial<SwitchProps> = {}) =>
   mount(Switch, { props: { modelValue: false, ...props } })
 
-const getEmitted = (control: ReturnType<typeof mountSwitch>): readonly unknown[] =>
+const getEmittedEvents = (control: ReturnType<typeof mountSwitch>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((response) => (response as unknown[])[0])
 
 describe('Switch', () => {
@@ -27,19 +27,19 @@ describe('Switch', () => {
   it('turns the other way when it is pressed', async () => {
     const control = mountSwitch()
     await control.get('button').trigger('click')
-    expect(getEmitted(control)).toEqual([true])
+    expect(getEmittedEvents(control)).toEqual([true])
   })
 
   it('passes nothing on while it cannot be turned', async () => {
     const control = mountSwitch({ isDisabled: true })
     await control.get('button').trigger('click')
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
   })
 
   it('keeps its look when pressed, until the parent passes the new value', async () => {
     const control = mountSwitch({ modelValue: false })
     await control.get('button').trigger('click')
-    expect(getEmitted(control)).toEqual([true])
+    expect(getEmittedEvents(control)).toEqual([true])
     expect(control.get('button').attributes('aria-checked')).toBe('false')
     expect(control.get('button').attributes('data-state')).toBe('unchecked')
     await control.setProps({ modelValue: true })
@@ -50,7 +50,7 @@ describe('Switch', () => {
     const control = mountSwitch({ modelValue: true, isBusy: true })
     await control.get('button').trigger('click')
     await control.get('button').trigger('keydown', { key: 'Enter' })
-    expect(getEmitted(control)).toEqual([])
+    expect(getEmittedEvents(control)).toEqual([])
     const button = control.get('button')
     expect(button.attributes('disabled')).toBeUndefined()
     expect(button.attributes('data-disabled')).toBeUndefined()

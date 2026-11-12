@@ -209,7 +209,7 @@ function applyAgentStep(step: AgentStep, context: StepContext): void {
       if (step.text === '') break
       calls.clear()
       work.setWaiting(false)
-      if (!answer.isOpen()) work.takeDown()
+      if (!answer.isOpen()) work.dropWorkLine()
       answer.say(step.text)
       break
     case 'toolCall':
@@ -231,7 +231,7 @@ function applyAgentStep(step: AgentStep, context: StepContext): void {
     case 'thinking':
       calls.clear()
       answer.settle()
-      work.takeDown()
+      work.dropWorkLine()
       work.setWaiting(true)
       break
     case 'stopped':

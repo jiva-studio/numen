@@ -100,12 +100,12 @@ func (s *Store) Configure(values map[string]string) {
 			s.current.MaxTokens = &val
 		}
 	}
-	if val, ok := readPositive(values[KeyMaxSteps]); ok {
+	if val, ok := readPositiveInt(values[KeyMaxSteps]); ok {
 		s.current.MaxSteps = val
 	}
 }
 
-func readPositive(text string) (int, bool) {
+func readPositiveInt(text string) (int, bool) {
 	val, err := strconv.Atoi(text)
 	return val, err == nil && val > 0
 }

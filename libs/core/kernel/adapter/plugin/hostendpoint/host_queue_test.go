@@ -137,7 +137,7 @@ func TestEnqueueWorkAcquiresPluginForStream(t *testing.T) {
 	ctx, closeStream := context.WithCancel(t.Context())
 	openWork(t, ctx, newQueueClientOver(t, fakeCallers, work, "token-a"), true, v1.WorkState_WORK_STATE_RUNNING)
 
-	if got := fakeCallers.getAcquired("md.numen.a"); got != 1 {
+	if got := fakeCallers.getAcquireCount("md.numen.a"); got != 1 {
 		t.Fatalf("the plugin is held %d times during its turn, want 1", got)
 	}
 	closeStream()
@@ -146,7 +146,7 @@ func TestEnqueueWorkAcquiresPluginForStream(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the plugin was not released after its turn ended")
 	}
-	if got := fakeCallers.getAcquired("md.numen.a"); got != 0 {
+	if got := fakeCallers.getAcquireCount("md.numen.a"); got != 0 {
 		t.Fatalf("the plugin is still held %d times after its turn ended", got)
 	}
 }

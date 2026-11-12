@@ -75,7 +75,7 @@ func (p *FileProvisioner) Status(_ context.Context, req manifest.DependencyRequi
 	if err != nil {
 		return plugin.DependencyStatus{}, err
 	}
-	if resolved, ok := readCached(req, dir); ok {
+	if resolved, ok := readCachedDependency(req, dir); ok {
 		return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
 	}
 	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateMissing}, nil
@@ -91,7 +91,7 @@ func (p *FileProvisioner) Provision(
 		onProgress = func(plugin.DependencyStatus) {}
 	}
 	if found := p.cfg.Discovery.find(req); found != "" {
-		return newResolved(req, filepath.Dir(found), found), nil
+		return newResolvedDependency(req, filepath.Dir(found), found), nil
 	}
 	dir, err := p.getDir(req)
 	if err != nil {
@@ -109,7 +109,7 @@ func (p *FileProvisioner) Provision(
 	}
 	defer func() { err = errors.Join(err, release()) }()
 
-	if resolved, ok := readCached(req, dir); ok {
+	if resolved, ok := readCachedDependency(req, dir); ok {
 		return resolved, nil
 	}
 	if p.cfg.Offline {
@@ -133,10 +133,10 @@ func (p *FileProvisioner) Provision(
 	if err != nil {
 		return plugin.ResolvedDependency{}, err
 	}
-	if err := writeReady(ctx, dir, name, req.ChecksumSHA256); err != nil {
+	if err := writeReadyMarker(ctx, dir, name, req.ChecksumSHA256); err != nil {
 		return plugin.ResolvedDependency{}, err
 	}
-	return newResolved(req, dir, primary), nil
+	return newResolvedDependency(req, dir, primary), nil
 }
 
 func getPercent(done, total int64) float64 {
@@ -171,11 +171,11 @@ func pickFileName(req manifest.DependencyRequirement) (string, error) {
 	return cleanName(req.ID), nil
 }
 
-func readCached(req manifest.DependencyRequirement, dir string) (plugin.ResolvedDependency, bool) {
+func readCachedDependency(req manifest.DependencyRequirement, dir string) (plugin.ResolvedDependency, bool) {
 	if !isReady(dir) {
 		return plugin.ResolvedDependency{}, false
 	}
-	name, sum, err := readReady(dir)
+	name, sum, err := readReadyMarker(dir)
 	if err != nil || !isPlainName(name) || sum != req.ChecksumSHA256 {
 		return plugin.ResolvedDependency{}, false
 	}
@@ -183,15 +183,15 @@ func readCached(req manifest.DependencyRequirement, dir string) (plugin.Resolved
 	if _, err := os.Stat(primary); err != nil {
 		return plugin.ResolvedDependency{}, false
 	}
-	return newResolved(req, dir, primary), true
+	return newResolvedDependency(req, dir, primary), true
 }
 
 func readyStatus(req manifest.DependencyRequirement, root, primary string) plugin.DependencyStatus {
-	resolved := newResolved(req, root, primary)
+	resolved := newResolvedDependency(req, root, primary)
 	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
 }
 
-func newResolved(req manifest.DependencyRequirement, root, primary string) plugin.ResolvedDependency {
+func newResolvedDependency(req manifest.DependencyRequirement, root, primary string) plugin.ResolvedDependency {
 	return plugin.ResolvedDependency{
 		ID: req.ID, RootPath: root, PrimaryPath: primary,
 		EnvVars:  map[string]string{GetEnvName(req): primary},

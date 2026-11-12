@@ -57,7 +57,7 @@ describe('a swipe across the reading area', () => {
     const { hand, turn } = setUp()
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(600))
+    hand.handlePointerDown(pointer(600))
     hand.letGo(pointer(400))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')
@@ -67,7 +67,7 @@ describe('a swipe across the reading area', () => {
     const { hand, turn } = setUp(100)
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(500))
+    hand.handlePointerDown(pointer(500))
     hand.letGo(pointer(480))
 
     expect(turn).not.toHaveBeenCalled()
@@ -79,7 +79,7 @@ describe('a press near an edge', () => {
     const { hand, turn } = setUp(100)
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(150))
+    hand.handlePointerDown(pointer(150))
     hand.letGo(pointer(150))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('back')
@@ -89,7 +89,7 @@ describe('a press near an edge', () => {
     const { hand, turn } = setUp()
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(10, null, 2))
+    hand.handlePointerDown(pointer(10, null, 2))
     hand.letGo(pointer(10))
 
     expect(turn).not.toHaveBeenCalled()
@@ -108,7 +108,7 @@ describe('a press near an edge', () => {
     const { hand, areaRef, turn } = setUp()
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(10))
+    hand.handlePointerDown(pointer(10))
     areaRef.value = null
     hand.letGo(pointer(10))
 
@@ -120,7 +120,7 @@ describe('a press near an edge', () => {
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
     paper.innerHTML = '<a href="x.xhtml"><em>link</em></a>'
 
-    hand.takeDown(pointer(10))
+    hand.handlePointerDown(pointer(10))
     hand.letGo(pointer(10, paper.querySelector('em')))
 
     expect(turn).not.toHaveBeenCalled()
@@ -130,7 +130,7 @@ describe('a press near an edge', () => {
     const { hand, turn } = setUp()
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(10))
+    hand.handlePointerDown(pointer(10))
     hand.letGo(pointer(10, {}))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('back')
@@ -140,7 +140,7 @@ describe('a press near an edge', () => {
     const { hand, turn } = setUp()
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(990))
+    hand.handlePointerDown(pointer(990))
     hand.letGo(pointer(990, null))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')
@@ -150,7 +150,7 @@ describe('a press near an edge', () => {
     const { hand, paper, turn } = setUp()
     vi.spyOn(window, 'getSelection').mockReturnValue(null)
 
-    hand.takeDown(pointer(10))
+    hand.handlePointerDown(pointer(10))
     hand.letGo(pointer(10, paper))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('back')
@@ -162,7 +162,7 @@ describe('words taken up in the text', () => {
     const { hand, paper, turn } = setUp()
     select({ isCollapsed: false, text: 'words', anchorNode: paper.firstChild })
 
-    hand.takeDown(pointer(600))
+    hand.handlePointerDown(pointer(600))
     hand.letGo(pointer(300))
 
     expect(turn).not.toHaveBeenCalled()
@@ -172,7 +172,7 @@ describe('words taken up in the text', () => {
     const { hand, paper, turn } = setUp()
     select({ isCollapsed: true, text: 'words', anchorNode: paper.firstChild })
 
-    hand.takeDown(pointer(600))
+    hand.handlePointerDown(pointer(600))
     hand.letGo(pointer(300))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')
@@ -182,7 +182,7 @@ describe('words taken up in the text', () => {
     const { hand, paper, turn } = setUp()
     select({ isCollapsed: false, text: ' \n ', anchorNode: paper.firstChild })
 
-    hand.takeDown(pointer(600))
+    hand.handlePointerDown(pointer(600))
     hand.letGo(pointer(300))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')
@@ -195,7 +195,7 @@ describe('words taken up in the text', () => {
     area.parentElement?.append(outside)
     select({ isCollapsed: false, text: 'elsewhere', anchorNode: outside.firstChild })
 
-    hand.takeDown(pointer(600))
+    hand.handlePointerDown(pointer(600))
     hand.letGo(pointer(300))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')
@@ -206,7 +206,7 @@ describe('words taken up in the text', () => {
     select({ isCollapsed: false, text: 'words', anchorNode: paper.firstChild })
     paperRef.value = null
 
-    hand.takeDown(pointer(600))
+    hand.handlePointerDown(pointer(600))
     hand.letGo(pointer(300))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')
@@ -216,7 +216,7 @@ describe('words taken up in the text', () => {
     const { hand, turn } = setUp()
     select({ isCollapsed: false, text: 'words', anchorNode: null })
 
-    hand.takeDown(pointer(600))
+    hand.handlePointerDown(pointer(600))
     hand.letGo(pointer(300))
 
     expect(turn).toHaveBeenCalledExactlyOnceWith('next')

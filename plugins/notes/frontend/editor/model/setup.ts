@@ -74,7 +74,7 @@ export const preview = (isOn: boolean): Extension =>
 
 export const showChange = (change: EditorChange | null): Extension => pendingChange.of(change)
 
-export const createEditable = (isOn: boolean): Extension => [
+export const createEditableExtension = (isOn: boolean): Extension => [
   EditorView.editable.of(isOn),
   EditorState.readOnly.of(!isOn),
 ]
@@ -245,7 +245,7 @@ export const setup = (settings: Settings = {}): Extension => [
   changeMarks,
   createPacePlugin(browserClock),
   previewCompartment.of(preview(settings.isLivePreview ?? true)),
-  editableCompartment.of(createEditable(!settings.readonly)),
+  editableCompartment.of(createEditableExtension(!settings.readonly)),
   changeCompartment.of(showChange(settings.change ?? null)),
   extensionsCompartment.of(settings.extensions ?? []),
 ]

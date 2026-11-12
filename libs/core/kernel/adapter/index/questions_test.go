@@ -85,13 +85,13 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries, *atomic.Int64) {
 	t.Helper()
 
 	path := filepath.Join(t.TempDir(), "index.db")
-	newMigrated().CopyTo(t, path)
+	newMigratedTemplate().CopyTo(t, path)
 	db, err := Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	for _, v := range []domain.Vault{getFirst(), getSecond()} {
+	for _, v := range []domain.Vault{getFirstVault(), getSecond()} {
 		if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
 			t.Fatal(err)
 		}
@@ -129,21 +129,21 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 	paths := make([]string, 0, 6)
 	for i := range 6 {
 		path := fmt.Sprintf("samples/sample-%d.md", i)
-		saveTypedNote(t, db, getFirst(), path, fmt.Sprintf("Sample %d", i), sampleType)
+		saveTypedNote(t, db, getFirstVault(), path, fmt.Sprintf("Sample %d", i), sampleType)
 		paths = append(paths, path)
 	}
 
 	// The pool is opened and the vault looked up before anything is counted.
-	if _, err := queries.GetTypes(ctx, getFirst().ID, paths[:1]); err != nil {
+	if _, err := queries.GetTypes(ctx, getFirstVault().ID, paths[:1]); err != nil {
 		t.Fatal(err)
 	}
 
 	few := questions(t, ran, func() error {
-		_, err := queries.GetTypes(ctx, getFirst().ID, paths[:2])
+		_, err := queries.GetTypes(ctx, getFirstVault().ID, paths[:2])
 		return err
 	})
 	many := questions(t, ran, func() error {
-		_, err := queries.GetTypes(ctx, getFirst().ID, paths)
+		_, err := queries.GetTypes(ctx, getFirstVault().ID, paths)
 		return err
 	})
 	if many != few {
@@ -157,23 +157,23 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	db, queries, ran := openCountedDB(t)
 	ctx := t.Context()
 
-	saveTypedNote(t, db, getFirst(), "samples/mammals.md", "Mammals", sampleType)
-	saveTypedNote(t, db, getFirst(), "samples/birds.md", "Birds", sampleType)
-	saveTypedNote(t, db, getFirst(), "forms/animal.md", "Animal", formType)
-	saveTypedNote(t, db, getFirst(), "notes/entropy.md", "Entropy", domain.TypeNote)
+	saveTypedNote(t, db, getFirstVault(), "samples/mammals.md", "Mammals", sampleType)
+	saveTypedNote(t, db, getFirstVault(), "samples/birds.md", "Birds", sampleType)
+	saveTypedNote(t, db, getFirstVault(), "forms/animal.md", "Animal", formType)
+	saveTypedNote(t, db, getFirstVault(), "notes/entropy.md", "Entropy", domain.TypeNote)
 	saveTypedNote(t, db, getSecond(), "samples/quasars.md", "Quasars", sampleType)
 
-	if _, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType); err != nil {
+	if _, err := queries.GetPathsOfType(ctx, getFirstVault().ID, sampleType); err != nil {
 		t.Fatal(err)
 	}
 	if questionCount := questions(t, ran, func() error {
-		_, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType)
+		_, err := queries.GetPathsOfType(ctx, getFirstVault().ID, sampleType)
 		return err
 	}); questionCount > 2 {
 		t.Errorf("the samples of a vault cost %d questions", questionCount)
 	}
 
-	found, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType)
+	found, err := queries.GetPathsOfType(ctx, getFirstVault().ID, sampleType)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -85,7 +85,7 @@ export interface NumberEntry {
   readonly applyKey: (key: string, isDisabled: boolean) => boolean
 }
 
-const checkInvalid = (raw: string, getBounds: () => Bounds): boolean => {
+const isInvalidNumber = (raw: string, getBounds: () => Bounds): boolean => {
   if (!isPartialNumber(raw)) return true
   const value = parseNumber(raw)
   // Stryker disable next-line ConditionalExpression: value !== null narrows number | null for clamp
@@ -131,7 +131,7 @@ export const useNumberEntry = (
   /** The number the field last settled on. Committing updates it. */
   let rested = model.value
 
-  const isInvalid = computed(() => checkInvalid(formattedValue.value, getBounds))
+  const isInvalid = computed(() => isInvalidNumber(formattedValue.value, getBounds))
   const speechText = computed(() => (isInvalid.value ? formattedValue.value.trim() : undefined))
   const inForce = computed(() => (model.value === null ? null : clamp(model.value, getBounds())))
 

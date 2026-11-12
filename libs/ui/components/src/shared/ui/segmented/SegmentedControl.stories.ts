@@ -75,7 +75,7 @@ type Story = StoryObj<Knobs>
 const segments = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[role="radio"]'))
 
-const getChosen = (canvas: HTMLElement): string | undefined =>
+const getChosenLabel = (canvas: HTMLElement): string | undefined =>
   segments(canvas)
     .find((one) => one.getAttribute('aria-checked') === 'true')
     ?.textContent?.trim()
@@ -130,10 +130,10 @@ export const OneChoice: Story = {
   args: { words: 'Only this', chosen: 'only-this' },
   play: async ({ canvasElement }) => {
     await expect(segments(canvasElement)).toHaveLength(1)
-    await expect(getChosen(canvasElement)).toBe('Only this')
+    await expect(getChosenLabel(canvasElement)).toBe('Only this')
 
     await userEvent.tab()
-    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Only this'))
+    await press('ArrowRight', () => expect(getChosenLabel(canvasElement)).toBe('Only this'))
   },
 }
 
@@ -146,7 +146,7 @@ export const FarTooMany: Story = {
   },
   play: async ({ canvasElement }) => {
     await expect(segments(canvasElement)).toHaveLength(12)
-    await expect(getChosen(canvasElement)).toBe('Choice 1')
+    await expect(getChosenLabel(canvasElement)).toBe('Choice 1')
 
     // One of them is in force, and only one.
     const checked = segments(canvasElement).filter(
@@ -163,7 +163,7 @@ export const FarTooMany: Story = {
 export const AValueNotAmongThem: Story = {
   args: { chosen: 'something-else' },
   play: async ({ canvasElement }) => {
-    await expect(getChosen(canvasElement)).toBeUndefined()
+    await expect(getChosenLabel(canvasElement)).toBeUndefined()
     await expect(segments(canvasElement).map((one) => one.getAttribute('aria-checked'))).toEqual([
       'false',
       'false',
@@ -172,7 +172,7 @@ export const AValueNotAmongThem: Story = {
 
     await userEvent.tab()
     await expect(document.activeElement).toBe(segments(canvasElement)[0])
-    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Medium'))
+    await press('ArrowRight', () => expect(getChosenLabel(canvasElement)).toBe('Medium'))
   },
 }
 
@@ -194,7 +194,7 @@ export const Dark: Story = {
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     await expect(segments(canvasElement)).toHaveLength(3)
-    await expect(getChosen(canvasElement)).toBe('Medium')
+    await expect(getChosenLabel(canvasElement)).toBe('Medium')
   },
 }
 
@@ -204,7 +204,7 @@ export const AnnouncedAsChoices: Story = {
     const group = canvasElement.querySelector('[role="radiogroup"]')
     await expect(group).not.toBeNull()
     await expect(segments(canvasElement)).toHaveLength(3)
-    await expect(getChosen(canvasElement)).toBe('Small')
+    await expect(getChosenLabel(canvasElement)).toBe('Small')
   },
 }
 
@@ -217,7 +217,7 @@ export const HandsOnThePickedChoice: Story = {
     await userEvent.click(large)
     await expect(args.onChange).toHaveBeenCalledTimes(1)
     await expect(args.onChange).toHaveBeenCalledWith('large')
-    await expect(getChosen(canvasElement)).toBe('Large')
+    await expect(getChosenLabel(canvasElement)).toBe('Large')
   },
 }
 
@@ -227,11 +227,11 @@ export const ArrowKeysMoveBetweenThem: Story = {
     await userEvent.tab()
     await expect(document.activeElement).toBe(segments(canvasElement)[0])
 
-    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Medium'))
-    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Large'))
+    await press('ArrowRight', () => expect(getChosenLabel(canvasElement)).toBe('Medium'))
+    await press('ArrowRight', () => expect(getChosenLabel(canvasElement)).toBe('Large'))
     // The last segment leads back round to the first.
-    await press('ArrowRight', () => expect(getChosen(canvasElement)).toBe('Small'))
-    await press('ArrowLeft', () => expect(getChosen(canvasElement)).toBe('Large'))
+    await press('ArrowRight', () => expect(getChosenLabel(canvasElement)).toBe('Small'))
+    await press('ArrowLeft', () => expect(getChosenLabel(canvasElement)).toBe('Large'))
   },
 }
 

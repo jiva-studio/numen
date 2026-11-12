@@ -54,7 +54,7 @@ describe('MarkdownNoteEditor', () => {
 })
 
 describe('MarkdownNoteEditor while the note is read', () => {
-  const getEditable = (wrapper: ReturnType<typeof mount>): string | undefined =>
+  const getEditableValue = (wrapper: ReturnType<typeof mount>): string | undefined =>
     wrapper.find('.cm-content').attributes('contenteditable')
 
   it('refuses typing until the tab has read the note', async () => {
@@ -63,11 +63,11 @@ describe('MarkdownNoteEditor while the note is read', () => {
       props: { filePath: 'test.md', state: createState({ isLoading }) },
     })
     await nextTick()
-    expect(getEditable(wrapper)).toBe('false')
+    expect(getEditableValue(wrapper)).toBe('false')
 
     isLoading.value = false
     await nextTick()
-    expect(getEditable(wrapper)).toBe('true')
+    expect(getEditableValue(wrapper)).toBe('true')
   })
 
   it('accepts typing when the tab reports no read in progress', async () => {
@@ -75,7 +75,7 @@ describe('MarkdownNoteEditor while the note is read', () => {
       props: { filePath: 'test.md', state: createState() },
     })
     await nextTick()
-    expect(getEditable(wrapper)).toBe('true')
+    expect(getEditableValue(wrapper)).toBe('true')
   })
 })
 
@@ -220,7 +220,7 @@ describe('MarkdownNoteEditor over a tab that offers links', () => {
 describe('MarkdownNoteEditor with the body from its tab', () => {
   const FILE = '---\nid: 01M4JWCXZ3X193ZQBKPWWRVAJT\n---\n'
 
-  const mountHosted = (body: Ref<string>) =>
+  const mountHostedEditor = (body: Ref<string>) =>
     mount(MarkdownNoteEditor, {
       props: { filePath: 'notes/Test.md', state: createState({ body }) },
     })
@@ -229,7 +229,7 @@ describe('MarkdownNoteEditor with the body from its tab', () => {
     const fetched = vi.fn(() => Promise.resolve(new Response(FILE)))
     vi.stubGlobal('fetch', fetched)
     try {
-      const wrapper = mountHosted(ref(''))
+      const wrapper = mountHostedEditor(ref(''))
       await flushPromises()
 
       expect(fetched).not.toHaveBeenCalled()
@@ -242,7 +242,7 @@ describe('MarkdownNoteEditor with the body from its tab', () => {
 
   it('shows a body that becomes empty, as when the file is rewritten without prose', async () => {
     const body = ref('First lines.')
-    const wrapper = mountHosted(body)
+    const wrapper = mountHostedEditor(body)
     expect(wrapper.vm.getContent()).toBe('First lines.')
 
     body.value = ''

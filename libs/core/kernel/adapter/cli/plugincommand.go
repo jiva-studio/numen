@@ -58,7 +58,7 @@ func (c declaredCommand) Run(ctx context.Context, term terminal, args []string) 
 	list := commands.List
 	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(list, declared))
 	fs, arguments := newArgumentFlags(declared)
-	positional, err := parseInterspersed(fs, args)
+	positional, err := parseInterspersedFlags(fs, args)
 	if err != nil {
 		return fmt.Errorf("%w: %w", usage, err)
 	}

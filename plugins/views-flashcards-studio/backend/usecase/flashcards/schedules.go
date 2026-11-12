@@ -180,7 +180,7 @@ func (u Schedules) Execute(
 	if err != nil {
 		return nil, err
 	}
-	if out, ok := u.readRemembered(ctx, v, files, asks.mark); ok {
+	if out, ok := u.readRememberedRuns(ctx, v, files, asks.mark); ok {
 		return out, nil
 	}
 
@@ -210,7 +210,7 @@ func (u Schedules) getSchedules(target ReviewLog, asks assignment) map[review.Ca
 func (u Schedules) getSchedulesCached(
 	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
 ) map[review.CardID]review.Schedule {
-	if out, ok := u.readRemembered(ctx, v, target.Files, asks.mark); ok {
+	if out, ok := u.readRememberedRuns(ctx, v, target.Files, asks.mark); ok {
 		return out
 	}
 	return u.replayAndRemember(ctx, v, target, asks)
@@ -230,7 +230,7 @@ func replaySchedules(
 	return target.GetHistory().Replay(d, asks.policy)
 }
 
-func (u Schedules) readRemembered(
+func (u Schedules) readRememberedRuns(
 	ctx context.Context, v domain.Vault, files []ports.Entry, mark string,
 ) (map[review.CardID]review.Schedule, bool) {
 	if u.Cache == nil {

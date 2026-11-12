@@ -60,14 +60,14 @@ type CreateResult struct {
 // A link in Named that names no note, or one with no address, is ErrInvalidLink and nothing is created. It
 // fails with window.ErrClosing once the window is closing.
 func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
-	in, err := u.resolveNamed(ctx, v, in)
+	in, err := u.resolveNamedNote(ctx, v, in)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	return writeUnder(u.gate, func() (CreateResult, error) { return u.createTitled(ctx, v, in) })
+	return writeUnder(u.gate, func() (CreateResult, error) { return u.createTitledNote(ctx, v, in) })
 }
 
-func (u Create) resolveNamed(ctx context.Context, v domain.Vault, in NewNote) (NewNote, error) {
+func (u Create) resolveNamedNote(ctx context.Context, v domain.Vault, in NewNote) (NewNote, error) {
 	links, err := resolveNamedLinks(ctx, u.names, v, in.Named)
 	if err != nil {
 		return in, err
@@ -77,7 +77,7 @@ func (u Create) resolveNamed(ctx context.Context, v domain.Vault, in NewNote) (N
 	return in, nil
 }
 
-func (u Create) createTitled(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
+func (u Create) createTitledNote(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	title := strings.TrimSpace(in.Title)
 	name, exact, err := domain.Filename(title)
 	if err != nil {

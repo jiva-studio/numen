@@ -64,7 +64,7 @@ func (b brokenRegistry) RecordOpened(id domain.VaultID) error {
 	return b.list.Recorder.RecordOpened(id)
 }
 
-func (s *session) runBroken(adjust func(*vaultParts), args ...string) (string, error) {
+func (s *session) runBrokenVault(adjust func(*vaultParts), args ...string) (string, error) {
 	s.t.Helper()
 	var out bytes.Buffer
 	err := cli.Run(s.t.Context(), &out, &s.reply, append(s.base, args...), func(where cli.Locations) cli.Session {
@@ -184,7 +184,7 @@ func TestVaultCommand_ReturnsVaultListError(t *testing.T) {
 		s.addVault("second")
 		b := s.trash(nil)
 
-		out, err := s.runBroken(func(v *vaultParts) {
+		out, err := s.runBrokenVault(func(v *vaultParts) {
 			v.ports = brokenRegistry{list: v.ports, breaks: c.breaks}.ports()
 		}, c.args...)
 		if !errors.Is(err, errRefused) {
@@ -211,7 +211,7 @@ func TestVaultCommand_ReturnsIndexError(t *testing.T) {
 		s.addVault("second")
 		b := s.trash(nil)
 
-		out, err := s.runBroken(func(v *vaultParts) {
+		out, err := s.runBrokenVault(func(v *vaultParts) {
 			v.rows = func(context.Context) (vaultport.VaultRepository, func() error, error) { return nil, nil, errRefused }
 		}, args...)
 		if !errors.Is(err, errRefused) {
@@ -237,7 +237,7 @@ func TestVaultRemove_IndexErrorKeepsListAndFolder(t *testing.T) {
 	s.trash(nil)
 
 	for _, args := range [][]string{{"vault", "remove", "first"}, {"vault", "erase", "first", "--yes"}} {
-		out, err := s.runBroken(func(v *vaultParts) {
+		out, err := s.runBrokenVault(func(v *vaultParts) {
 			open := v.rows
 			v.rows = func(ctx context.Context) (vaultport.VaultRepository, func() error, error) {
 				rows, closeRows, err := open(ctx)

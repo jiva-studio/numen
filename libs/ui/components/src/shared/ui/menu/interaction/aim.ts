@@ -125,7 +125,7 @@ interface AimContext {
   timerHandle: ReturnType<typeof setTimeout> | undefined
   readonly syncWindow: (shouldBind: boolean) => void
   readonly clearPending: () => void
-  readonly runPending: (action: PendingAimAction) => void
+  readonly runPendingAction: (action: PendingAimAction) => void
   readonly schedule: (kind: PendingAimAction['kind'], delayMs: number, item?: MenuItem) => void
   readonly stepTriangle: (event?: MouseEvent) => boolean
 }
@@ -154,7 +154,7 @@ function handleClosedHover(ctx: AimContext, item: MenuItem): void {
     ctx.clearPending()
     return
   }
-  // Stryker disable next-line OptionalChaining,StringLiteral: pending actions while closed always carry an item and runPending branches on close vs item
+  // Stryker disable next-line OptionalChaining,StringLiteral: pending actions while closed always carry an item and runPendingAction branches on close vs item
   if (ctx.pending?.item?.id !== item.id) ctx.schedule('open', SUBMENU_OPEN_DELAY_MS, item)
 }
 
@@ -167,7 +167,7 @@ function handleRowHover(ctx: AimContext, item: MenuItem, event?: MouseEvent): vo
   }
   if (ctx.pending?.item?.id === item.id && options.clock() >= ctx.pending.dueAt) {
     ctx.stepTriangle(event)
-    ctx.runPending(ctx.pending)
+    ctx.runPendingAction(ctx.pending)
     return
   }
   const isInTriangle = ctx.stepTriangle(event)
@@ -181,7 +181,7 @@ function handleRowHover(ctx: AimContext, item: MenuItem, event?: MouseEvent): vo
     return
   }
   if (isInTriangle) {
-    // Stryker disable next-line StringLiteral: runPending branches on close vs item
+    // Stryker disable next-line StringLiteral: runPendingAction branches on close vs item
     ctx.schedule('switch', SUBMENU_OPEN_DELAY_MS, item)
     return
   }
@@ -194,7 +194,7 @@ function handleMenuLeave(ctx: AimContext, event?: MouseEvent): void {
   if (options.getActiveId() === null || isReachingSubmenu(event, readEventPoint(event), options)) {
     ctx.clearPending()
   } else if (ctx.pending?.kind === 'close' && options.clock() >= ctx.pending.dueAt) {
-    ctx.runPending(ctx.pending)
+    ctx.runPendingAction(ctx.pending)
   } else if (ctx.stepTriangle(event) || ctx.pending?.kind !== 'close') {
     ctx.schedule('close', SUBMENU_CLOSE_GRACE_MS)
   }
@@ -203,7 +203,7 @@ function handleMenuLeave(ctx: AimContext, event?: MouseEvent): void {
 function handlePointerMove(ctx: AimContext, event: MouseEvent): void {
   const { options } = ctx
   if (isReachingSubmenu(event, readEventPoint(event), options)) ctx.clearPending()
-  else if (ctx.pending && options.clock() >= ctx.pending.dueAt) ctx.runPending(ctx.pending)
+  else if (ctx.pending && options.clock() >= ctx.pending.dueAt) ctx.runPendingAction(ctx.pending)
   else if (!options.isInsideMenu(event) && options.getActiveId() !== null) {
     if (ctx.stepTriangle(event) || ctx.pending?.kind !== 'close') {
       ctx.schedule('close', SUBMENU_CLOSE_GRACE_MS)
@@ -224,7 +224,7 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
     if (options.getActiveId() === null) syncWindow(false)
   }
 
-  const runPending = (action: PendingAimAction): void => {
+  const runPendingAction = (action: PendingAimAction): void => {
     clearPending()
     if (action.kind === 'close') {
       options.onClose()
@@ -242,7 +242,7 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
     ctx.timerHandle = setTimeout(() => {
       ctx.timerHandle = undefined
       // Stryker disable next-line ConditionalExpression,EqualityOperator: clearPending cancels the timeout whenever pending changes
-      if (ctx.pending === action) runPending(action)
+      if (ctx.pending === action) runPendingAction(action)
     }, delayMs)
   }
 
@@ -261,7 +261,7 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
     timerHandle: undefined,
     syncWindow,
     clearPending,
-    runPending,
+    runPendingAction,
     schedule,
     stepTriangle,
   }

@@ -49,7 +49,7 @@ func (m Manifests) ListCommands() []plugindomain.CommandEntry {
 // No plugin is started.
 func (m Manifests) ListTabKinds() []plugindomain.TabKindEntry {
 	var found []plugindomain.TabKindEntry
-	for _, plugin := range m.listUncontested() {
+	for _, plugin := range m.listUncontestedPlugins() {
 		for _, kind := range plugin.Manifest.Contributes.TabKinds {
 			found = append(found, plugindomain.TabKindEntry{PluginID: plugin.Manifest.ID, TabKind: kind})
 		}
@@ -57,7 +57,7 @@ func (m Manifests) ListTabKinds() []plugindomain.TabKindEntry {
 	return found
 }
 
-func (m Manifests) listUncontested() []manifest.Discovered {
+func (m Manifests) listUncontestedPlugins() []manifest.Discovered {
 	var enabled []manifest.Discovered
 	for _, info := range m.host.GetPluginInfos() {
 		if plugin, isEnabled := m.host.GetPlugin(info.ID); isEnabled {

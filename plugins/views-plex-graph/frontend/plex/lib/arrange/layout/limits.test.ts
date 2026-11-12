@@ -7,7 +7,7 @@ import { neighborhoods } from '../../../fixtures/neighborhoods'
 import { build } from '../../../fixtures/build'
 import type { PlexFrame } from '../../frame'
 
-const findEscaped = (
+const findEscapedNodes = (
   frame: PlexFrame,
   viewport: { width: number; height: number },
   margin = DEFAULT_OPTIONS.margin,
@@ -34,18 +34,18 @@ describe('nothing reaches past the edge', () => {
   it.each(WINDOWS)('$width×$height, heavily populated', (viewport) => {
     const heavy = build('A node', { parent: 6, child: 21, jump: 7, sibling: 7 })
     const frame = arrangePlex(heavy, { options: { viewport } })
-    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscapedNodes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it.each(WINDOWS)('$width×$height, past every limit', (viewport) => {
     const frame = arrangePlex(neighborhoods.overcrowded, { options: { viewport } })
-    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscapedNodes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it.each(Object.entries(neighborhoods))('%s', (_name, neighborhood) => {
     const viewport = { width: 1200, height: 800 }
     const frame = arrangePlex(neighborhood, { options: { viewport } })
-    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscapedNodes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 })
 
@@ -82,9 +82,9 @@ describe('the two sides are read as a pair', () => {
       options: { viewport: { width: 1600, height: 1000 } },
     })
 
-    const getNearest = (relation: string) =>
+    const getNearestPosition = (relation: string) =>
       Math.min(...frame.nodes.filter((n) => n.relation === relation).map((n) => Math.abs(n.x)))
-    expect(getNearest('jump')).toBe(getNearest('sibling'))
+    expect(getNearestPosition('jump')).toBe(getNearestPosition('sibling'))
   })
 })
 
@@ -98,7 +98,7 @@ describe('the row is measured against the window either way', () => {
     const frame = arrangePlex(onlyChildren, {
       options: { viewport, maxPerLine: 9 },
     })
-    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscapedNodes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 })
 
@@ -125,7 +125,7 @@ describe('the rows keep the room when it runs out', () => {
 
     const frame = arrangePlex(build('A node', counts), { options: { viewport } })
     expect(frame.overflow.child).toBeUndefined()
-    expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
+    expect(findEscapedNodes(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
   it('gives a row the whole window when nothing sits alongside it', () => {

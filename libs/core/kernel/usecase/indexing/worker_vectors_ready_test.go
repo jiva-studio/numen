@@ -25,7 +25,7 @@ func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder,
 	made, db := openReading(t)
 	fit(t, db, model)
 
-	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
@@ -89,7 +89,7 @@ func testAWorkerWithoutAListenerEmbedsAsBefore(t *testing.T, openReading openFun
 	made, db := openReading(t)
 	model := &fakeEmbedder{dims: 64}
 	fit(t, db, model)
-	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	v := made.newVault(t, map[string]string{"Note.md": noteWith(getBeforeNames(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 

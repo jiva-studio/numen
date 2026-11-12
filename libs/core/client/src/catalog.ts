@@ -71,7 +71,7 @@ const readMatch = (answer: EntryAnswer): Result<CatalogMatch, CatalogFailure> =>
   return asValue({ entry: answer.entry, sourceErrors: answer.sourceErrors })
 }
 
-const readUnavailable = (error: Caught): Result<never, CatalogFailure> =>
+const readUnavailableFailure = (error: Caught): Result<never, CatalogFailure> =>
   asFailure({ kind: 'unavailable', message: formatErrorMessage(error) })
 
 /** The catalog read through a CatalogService client. */
@@ -81,21 +81,21 @@ export const createPluginCatalog = (client: CatalogClient): PluginCatalog => ({
       const answer = await client.listCatalog({})
       return asValue({ entries: answer.entries, sourceErrors: answer.sourceErrors })
     } catch (error) {
-      return readUnavailable(error)
+      return readUnavailableFailure(error)
     }
   },
   get: async (id) => {
     try {
       return readMatch(await client.getCatalogEntry({ id }))
     } catch (error) {
-      return readUnavailable(error)
+      return readUnavailableFailure(error)
     }
   },
   findByTabKind: async (kind) => {
     try {
       return readMatch(await client.findCatalogEntryByTabKind({ kind }))
     } catch (error) {
-      return readUnavailable(error)
+      return readUnavailableFailure(error)
     }
   },
 })

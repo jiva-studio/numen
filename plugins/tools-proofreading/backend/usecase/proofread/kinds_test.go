@@ -47,7 +47,7 @@ func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 		t.Errorf("a recognition outside the kinds: got %v, want %v", err, errFormat)
 	}
 
-	parts, live := s.readLive(t, talkPath)
+	parts, live := s.readLiveSegments(t, talkPath)
 	if live.Kind != ProofreadingKind || len(parts) != 1 || parts[0].Text != "a flywheel spinning\n" {
 		t.Errorf("the live version %+v reads %+v", live, parts)
 	}

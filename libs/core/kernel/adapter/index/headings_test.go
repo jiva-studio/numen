@@ -15,7 +15,7 @@ func saveNoteWithHeadings(t *testing.T, db *DB, vault domain.Vault, path string,
 		text = append(text, h.Text)
 	}
 	n := domain.Note{
-		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: getWalked()},
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: getWalkedTime()},
 		Title:    path,
 		Body:     strings.Join(text, "\n"),
 		Headings: headings,
@@ -42,12 +42,12 @@ func divisions(
 
 func TestAHeadingReachesBackWithItsLevelAndItsLine(t *testing.T) {
 	db := openDB(t)
-	saveNoteWithHeadings(t, db, getFirst(), "notes/entropy.md",
+	saveNoteWithHeadings(t, db, getFirstVault(), "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "What it is", Line: 0},
 		domain.Heading{Level: 2, Text: "Where it came from", Line: 4},
 	)
 
-	found := divisions(t, db, getFirst(), "notes/entropy.md")["notes/entropy.md"]
+	found := divisions(t, db, getFirstVault(), "notes/entropy.md")["notes/entropy.md"]
 	if len(found) != 2 {
 		t.Fatalf("headings = %d, want 2", len(found))
 	}
@@ -61,14 +61,14 @@ func TestAHeadingReachesBackWithItsLevelAndItsLine(t *testing.T) {
 
 func TestHeadingsAreReturnedInTheOrderTheyStand(t *testing.T) {
 	db := openDB(t)
-	saveNoteWithHeadings(t, db, getFirst(), "notes/entropy.md",
+	saveNoteWithHeadings(t, db, getFirstVault(), "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "Last", Line: 12},
 		domain.Heading{Level: 1, Text: "First", Line: 2},
 		domain.Heading{Level: 1, Text: "Middle", Line: 7},
 	)
 
 	var read []string
-	for _, h := range divisions(t, db, getFirst(), "notes/entropy.md")["notes/entropy.md"] {
+	for _, h := range divisions(t, db, getFirstVault(), "notes/entropy.md")["notes/entropy.md"] {
 		read = append(read, h.Text)
 	}
 	want := []string{"First", "Middle", "Last"}
@@ -79,20 +79,20 @@ func TestHeadingsAreReturnedInTheOrderTheyStand(t *testing.T) {
 
 func TestANoteWithNoHeadingsIsAbsent(t *testing.T) {
 	db := openDB(t)
-	saveNoteWithHeadings(t, db, getFirst(), "notes/plain.md")
+	saveNoteWithHeadings(t, db, getFirstVault(), "notes/plain.md")
 
-	if found := divisions(t, db, getFirst(), "notes/plain.md"); len(found) != 0 {
+	if found := divisions(t, db, getFirstVault(), "notes/plain.md"); len(found) != 0 {
 		t.Errorf("found = %v, want nothing", found)
 	}
 }
 
 func TestAPathThatNamesNothingIsAbsent(t *testing.T) {
 	db := openDB(t)
-	saveNoteWithHeadings(t, db, getFirst(), "notes/entropy.md",
+	saveNoteWithHeadings(t, db, getFirstVault(), "notes/entropy.md",
 		domain.Heading{Level: 1, Text: "What it is", Line: 0},
 	)
 
-	found := divisions(t, db, getFirst(), "notes/entropy.md", "notes/gone.md")
+	found := divisions(t, db, getFirstVault(), "notes/entropy.md", "notes/gone.md")
 	if len(found) != 1 {
 		t.Errorf("found = %v, want the one note that is there", found)
 	}
@@ -100,10 +100,10 @@ func TestAPathThatNamesNothingIsAbsent(t *testing.T) {
 
 func TestGetHeadings_ReturnsHeadingsPerNote(t *testing.T) {
 	db := openDB(t)
-	saveNoteWithHeadings(t, db, getFirst(), "notes/one.md", domain.Heading{Level: 1, Text: "Of one", Line: 0})
-	saveNoteWithHeadings(t, db, getFirst(), "notes/two.md", domain.Heading{Level: 1, Text: "Of two", Line: 0})
+	saveNoteWithHeadings(t, db, getFirstVault(), "notes/one.md", domain.Heading{Level: 1, Text: "Of one", Line: 0})
+	saveNoteWithHeadings(t, db, getFirstVault(), "notes/two.md", domain.Heading{Level: 1, Text: "Of two", Line: 0})
 
-	found := divisions(t, db, getFirst(), "notes/one.md", "notes/two.md")
+	found := divisions(t, db, getFirstVault(), "notes/one.md", "notes/two.md")
 	if found["notes/one.md"][0].Text != "Of one" || found["notes/two.md"][0].Text != "Of two" {
 		t.Errorf("found = %v", found)
 	}
@@ -112,7 +112,7 @@ func TestGetHeadings_ReturnsHeadingsPerNote(t *testing.T) {
 func TestAskingAboutNoNotesAsksTheDatabaseNothing(t *testing.T) {
 	db := openDB(t)
 
-	if found := divisions(t, db, getFirst()); len(found) != 0 {
+	if found := divisions(t, db, getFirstVault()); len(found) != 0 {
 		t.Errorf("found = %v, want nothing", found)
 	}
 }

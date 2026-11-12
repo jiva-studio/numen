@@ -61,18 +61,18 @@ describe('putAdjacent', () => {
 describe('detach', () => {
   const createStack = (active: string) =>
     split('root', [pane('main', ['a', 'b', 'c'], active), stack('other', 'x')])
-  const getActive = (root: WorkspaceNode) => paneById(root, 'main')?.active
+  const getActiveTab = (root: WorkspaceNode) => paneById(root, 'main')?.active
 
   it('leaves the shown tab alone when another one goes', () => {
-    expect(getActive(detach(createStack('a'), 'c'))).toBe('a')
+    expect(getActiveTab(detach(createStack('a'), 'c'))).toBe('a')
   })
 
   it('shows the next tab along when the shown one is removed', () => {
-    expect(getActive(detach(createStack('b'), 'b'))).toBe('c')
+    expect(getActiveTab(detach(createStack('b'), 'b'))).toBe('c')
   })
 
   it('shows the previous tab when the shown one was last', () => {
-    expect(getActive(detach(createStack('c'), 'c'))).toBe('b')
+    expect(getActiveTab(detach(createStack('c'), 'c'))).toBe('b')
   })
 
   it('shows nothing when the last tab is removed', () => {

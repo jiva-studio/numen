@@ -5,7 +5,7 @@
  */
 import { inject, useTemplateRef } from 'vue'
 
-import { MOUNT_VIEW, mountNothing } from '../../model/views'
+import { MOUNT_VIEW, mountEmptyView } from '../../model/views'
 import { useMountedConversation } from '../../model/session/mountedConversation'
 import type { AgentPanelState } from '../../model/session/panel'
 
@@ -19,7 +19,7 @@ useMountedConversation({
   element,
   context: () => props.panel.context.value,
   open: () => props.panel.open.value,
-  mountView: inject(MOUNT_VIEW, mountNothing),
+  mountView: inject(MOUNT_VIEW, mountEmptyView),
 })
 </script>
 

@@ -124,42 +124,42 @@ func read(t *testing.T, v domain.Vault, path string) string {
 	return string(raw)
 }
 
-// sitting is a run and the time its answers are given at.
-type sitting struct {
+// timedRun is a run and the time its answers are given at.
+type timedRun struct {
 	run    *flashcards.LogWriter
 	record flashcards.Record
 }
 
-func newSitting(run *flashcards.LogWriter, now ports.Clock) sitting {
-	return sitting{run: run, record: flashcards.NewRecord(now)}
+func newTimedRun(run *flashcards.LogWriter, now ports.Clock) timedRun {
+	return timedRun{run: run, record: flashcards.NewRecord(now)}
 }
 
-func (s sitting) Answer(
+func (s timedRun) Answer(
 	ctx context.Context, on review.CardID, r review.Rating, took time.Duration,
 ) (review.Answer, error) {
 	return s.record.Answer(ctx, s.run, on, r, took)
 }
 
-func (s sitting) TakeBack(ctx context.Context, id string) (review.Answer, error) {
+func (s timedRun) TakeBack(ctx context.Context, id string) (review.Answer, error) {
 	return s.record.TakeBack(ctx, s.run, id)
 }
 
-func (s vaulted) run(t *testing.T, pos time.Time) sitting {
+func (s vaulted) run(t *testing.T, pos time.Time) timedRun {
 	t.Helper()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newSitting(run, clock.NewFake(pos))
+	return newTimedRun(run, clock.NewFake(pos))
 }
 
-func (s vaulted) runNamed(t *testing.T, named, reviewedAt time.Time) sitting {
+func (s vaulted) runNamedReview(t *testing.T, named, reviewedAt time.Time) timedRun {
 	t.Helper()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newSitting(run, clock.NewFake(reviewedAt))
+	return newTimedRun(run, clock.NewFake(reviewedAt))
 }
 
 func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
@@ -238,7 +238,7 @@ func TestACardIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Error("card not found in vault")
 }
 
-func getHandwritten() map[string]string {
+func getHandwrittenVault() map[string]string {
 	return map[string]string{
 		"Term.md": getVault()["Term.md"],
 		"decks/Own.md": "---\ntype: deck\n---\n" +
@@ -250,7 +250,7 @@ func getHandwritten() map[string]string {
 // no review card. Reading a vault writes nothing.
 func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, getHandwritten())
+	s := openVault(t, getHandwrittenVault())
 	before := read(t, s.vault, "decks/Own.md")
 
 	status, err := s.standings.Execute(t.Context(), s.vault)
@@ -265,7 +265,7 @@ func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 	}
 }
 
-func getMixed() map[string]string {
+func getMixedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getVault()["Term.md"],
 		"decks/Mine.md": "---\ntype: deck\n---\n" +
@@ -282,7 +282,7 @@ func getMixed() map[string]string {
 // over an existing one would orphan every answer recorded for that card.
 func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, getMixed())
+	s := openVault(t, getMixedVault())
 	before := read(t, s.vault, "decks/Mine.md")
 
 	if _, err := s.assigning.Execute(t.Context(), s.vault); err != nil {
@@ -349,7 +349,7 @@ func getModTime(t *testing.T, v domain.Vault, path string) time.Time {
 // presents those cards.
 func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, getHandwritten())
+	s := openVault(t, getHandwrittenVault())
 
 	if _, err := s.assigning.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -370,7 +370,7 @@ func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 // every vault without writing to any of them.
 func TestCountingAVaultWritesNothingToIt(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, getHandwritten())
+	s := openVault(t, getHandwrittenVault())
 	before := read(t, s.vault, "decks/Own.md")
 
 	if _, err := s.newCountCardsDue(getToday()).Execute(t.Context(), s.vault); err != nil {
@@ -928,7 +928,7 @@ type named struct {
 
 func (n named) GetName() string { return n.name }
 
-func (s vaulted) newAssigning(index func(ctx context.Context, v domain.Vault, paths []string) error) flashcards.AssignCardIDs {
+func (s vaulted) newAssignCardIDs(index func(ctx context.Context, v domain.Vault, paths []string) error) flashcards.AssignCardIDs {
 	return flashcards.NewAssignCardIDs(
 		s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, s.env.Queries, index, vaulttest.NewClock())
 }

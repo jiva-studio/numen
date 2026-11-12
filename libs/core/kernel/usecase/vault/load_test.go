@@ -43,7 +43,7 @@ func TestLoad(t *testing.T) {
 
 	generating := testsupport.GetMachine().Now()
 	v := vaultfixture.GenerateVault(t, notes)
-	t.Logf("generated %d notes in %s", notes, getElapsed(generating))
+	t.Logf("generated %d notes in %s", notes, getElapsedTime(generating))
 
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
@@ -76,7 +76,7 @@ func TestLoad(t *testing.T) {
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("warm scan: %s — this is what a startup pays", getElapsed(warmStart))
+	t.Logf("warm scan: %s — this is what a startup pays", getElapsedTime(warmStart))
 
 	size, err := os.Stat(db.File)
 	if err == nil {
@@ -166,6 +166,6 @@ func touchEverything(root string) (err error) {
 	})
 }
 
-func getElapsed(since time.Time) time.Duration {
+func getElapsedTime(since time.Time) time.Duration {
 	return testsupport.GetMachine().Now().Sub(since).Round(time.Millisecond)
 }

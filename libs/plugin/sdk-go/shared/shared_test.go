@@ -50,7 +50,7 @@ func appendLine(path, line string) error {
 	return closeErr
 }
 
-func checkSerial(t *testing.T, log string, holders int) {
+func assertSerial(t *testing.T, log string, holders int) {
 	t.Helper()
 	raw, err := os.ReadFile(log)
 	if err != nil {
@@ -85,7 +85,7 @@ func TestTheHolderOfALockIsAloneInTheDirectory(t *testing.T) {
 		}
 	}
 
-	checkSerial(t, log, 4)
+	assertSerial(t, log, 4)
 }
 
 func TestTwoProcessesCompilingOneDigestTakeTurns(t *testing.T) {
@@ -108,7 +108,7 @@ func TestTwoProcessesCompilingOneDigestTakeTurns(t *testing.T) {
 		}
 	}
 
-	checkSerial(t, log, 3)
+	assertSerial(t, log, 3)
 }
 
 // TestHolderProcess is the body of the processes TestTwoProcessesCompilingOneDigestTakeTurns starts.

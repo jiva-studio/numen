@@ -61,7 +61,7 @@ func getMinutesUpperBound(load, keeping float64) float64 {
 	return math.Min(math.Max(top, LeastCeiling), GetMinutesADayBounds().Max)
 }
 
-func findNearest(grid []float64, value float64) int {
+func findNearestGridIndex(grid []float64, value float64) int {
 	if len(grid) == 0 || value < grid[0] || value > grid[len(grid)-1] {
 		return -1
 	}

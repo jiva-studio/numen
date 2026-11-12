@@ -39,7 +39,7 @@ func (u discoverer) discover(
 	on openVault,
 	res *vaultreading.IndexResult,
 ) (map[string]domain.FileStat, []string, error) {
-	recognized, err := u.readKnown(ctx, v)
+	recognized, err := u.readKnownStats(ctx, v)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,10 +51,10 @@ func (u discoverer) discover(
 	if err != nil {
 		return nil, nil, err
 	}
-	return noteStats, notePaths, u.removeGone(ctx, v, on, recognized, found, res)
+	return noteStats, notePaths, u.removeGoneFiles(ctx, v, on, recognized, found, res)
 }
 
-func (u discoverer) readKnown(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
+func (u discoverer) readKnownStats(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
 	stats, err := u.records.GetFileStats(ctx, v.ID, domain.KindFile)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
@@ -170,7 +170,7 @@ func (u discoverer) checkNote(
 	return true, nil
 }
 
-func (u discoverer) removeGone(
+func (u discoverer) removeGoneFiles(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
@@ -187,7 +187,7 @@ func (u discoverer) removeGone(
 	if len(removed) == 0 {
 		return nil
 	}
-	moved, err := u.moveRenamed(ctx, v, on, removed, getAdded(stats, found))
+	moved, err := u.moveRenamed(ctx, v, on, removed, getAddedPaths(stats, found))
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ func getContentHash(ctx context.Context, reader vaultport.VaultReader, path stri
 	return domain.HashContent(raw), nil
 }
 
-func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string {
+func getAddedPaths(stats map[string]domain.FileStat, found map[string]bool) []string {
 	var added []string
 	for path := range found {
 		if _, isKnown := stats[path]; !isKnown {

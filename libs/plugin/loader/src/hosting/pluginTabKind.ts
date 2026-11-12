@@ -21,7 +21,7 @@ export const isDeclaredTabKind = (
 /** The fields of an object that are set. */
 type DefinedParts<T> = { [K in keyof T]?: Exclude<T[K], undefined> }
 
-function pickDefined<T extends object>(parts: T): DefinedParts<T> {
+function pickDefinedParts<T extends object>(parts: T): DefinedParts<T> {
   const defined: Partial<T> = {}
   for (const key of Object.keys(parts) as (keyof T)[]) {
     if (parts[key] !== undefined) defined[key] = parts[key]
@@ -38,14 +38,14 @@ export function pickDeclaredParts<State extends object>(
   readonly address: TabKindAddress<State>
 } {
   return {
-    display: pickDefined({
+    display: pickDefinedParts({
       onShow: registration.onShow,
       getMark: registration.getMark,
       icon: registration.icon,
       placement: registration.placement,
       isTool: registration.isTool,
     }),
-    events: pickDefined({
+    events: pickDefinedParts({
       onClose: registration.onClose,
       onDestroy: registration.onDestroy,
       flushPending: registration.flushPending,
@@ -53,7 +53,7 @@ export function pickDeclaredParts<State extends object>(
       onKeyPress: registration.onKeyPress,
       isAsking: registration.isAsking,
     }),
-    address: pickDefined({
+    address: pickDefinedParts({
       getState: registration.getState,
       identity: registration.identity,
       navigate: registration.navigate,

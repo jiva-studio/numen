@@ -18,7 +18,7 @@ interface WorkCall {
 export interface WorkLine {
   readonly reach: (call: WorkCall) => void
   readonly settle: () => void
-  readonly takeDown: () => void
+  readonly dropWorkLine: () => void
   readonly setWaiting: (isOn: boolean) => void
   readonly clear: () => void
 }
@@ -60,7 +60,7 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
     up = true
   }
 
-  const takeDown = () => {
+  const dropWorkLine = () => {
     drop(workId)
     locations.delete(workId)
     up = false
@@ -87,10 +87,10 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
     settle: () => {
       if (up) show('settled')
     },
-    takeDown,
+    dropWorkLine,
     setWaiting,
     clear: () => {
-      takeDown()
+      dropWorkLine()
       setWaiting(false)
     },
   }

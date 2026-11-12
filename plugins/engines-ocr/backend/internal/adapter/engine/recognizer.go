@@ -124,7 +124,7 @@ func (r *Recognizer) Recognize(ctx context.Context, page image.Image) ([]Block, 
 
 	results := make([]outcome, len(targets))
 
-	runBounded(ctx, len(targets), r.jobs, func(pos int) {
+	runBoundedJobs(ctx, len(targets), r.jobs, func(pos int) {
 		found, err := r.read(targets[pos].crop)
 		results[pos] = outcome{found: found, err: err}
 	})

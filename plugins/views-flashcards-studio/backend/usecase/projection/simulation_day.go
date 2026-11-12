@@ -237,7 +237,7 @@ func (d *simulationDay) stepNew() {
 	one := d.sim.getScheduleAfterShowing(newNoSchedule(), d.open, d.ends, d.preset, d.on)
 	d.cards = append(d.cards, one)
 	d.showings = append(d.showings, 1)
-	d.reckoned.countBegun(one, d.ends)
+	d.reckoned.countBegunCards(one, d.ends)
 	offset := len(d.cards) - 1
 	d.queueNextShowing(one, offset)
 }
@@ -255,7 +255,7 @@ func (d *simulationDay) finishDay(out *Projection, answerRetained bool, elapsed 
 	out.Admitted = append(out.Admitted, !d.admits.IsPaused())
 	out.Closed = append(out.Closed, d.closed)
 
-	stands, back := d.reckoned.countLearned(d.cards, d.ends, out.ReviewCards, answerRetained)
+	stands, back := d.reckoned.countLearnedCards(d.cards, d.ends, out.ReviewCards, answerRetained)
 	out.Through = append(out.Through, getLearnedShare(stands, out.ReviewCards))
 	if out.Learns == NeverLearns && stands == out.ReviewCards {
 		out.Learns = len(out.Load)

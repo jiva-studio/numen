@@ -31,7 +31,7 @@ func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error
 	return err
 }
 
-func getForgetting() []string {
+func getForgettingStatements() []string {
 	return []string{
 		"clear_vec", "clear_fts", "clear_sections", "clear_title_names", "clear_heading_names", "delete",
 	}
@@ -52,7 +52,7 @@ func (r *Repository) Unregister(ctx context.Context, vaultID domain.VaultID) err
 		if err != nil {
 			return fmt.Errorf("which row this vault is filed under: %w", err)
 		}
-		for _, name := range getForgetting() {
+		for _, name := range getForgettingStatements() {
 			if _, err := tx.ExecContext(ctx, getStatement(name), row); err != nil {
 				return fmt.Errorf("%s: %w", name, err)
 			}

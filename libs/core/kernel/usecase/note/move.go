@@ -136,7 +136,7 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 func (u Move) rewriteLink(
 	ctx context.Context, v domain.Vault, address string, was domain.ResolvedLink, res *domain.MoveResult,
 ) error {
-	lands, still, err := u.getLanding(ctx, v, was)
+	lands, still, err := u.getLandingPath(ctx, v, was)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (stri
 	return to.Value, nil
 }
 
-func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, exists bool, err error) {
+func (u Move) getLandingPath(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, exists bool, err error) {
 	links, err := u.links.GetLinks(ctx, v.ID, was.From)
 	if err != nil {
 		return "", false, err

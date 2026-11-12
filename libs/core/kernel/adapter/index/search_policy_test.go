@@ -12,28 +12,28 @@ func TestSearchFloorsKeepOneFloorPerVaultAndRecipeAndReplaceIt(t *testing.T) {
 	ctx := t.Context()
 	repo := openDB(t).SearchFloors()
 
-	if _, found, err := repo.ReadFloor(ctx, getFirst(), testRecipe); err != nil || found {
+	if _, found, err := repo.ReadFloor(ctx, getFirstVault(), testRecipe); err != nil || found {
 		t.Fatalf("a floor was found before any was written: %v, %v", found, err)
 	}
-	if err := repo.WriteFloor(ctx, getFirst(), testRecipe, 0.55); err != nil {
+	if err := repo.WriteFloor(ctx, getFirstVault(), testRecipe, 0.55); err != nil {
 		t.Fatal(err)
 	}
-	if got, found, err := repo.ReadFloor(ctx, getFirst(), testRecipe); err != nil || !found || got != 0.55 {
+	if got, found, err := repo.ReadFloor(ctx, getFirstVault(), testRecipe); err != nil || !found || got != 0.55 {
 		t.Fatalf("read after a write: %v, %v, %v", got, found, err)
 	}
-	if err := repo.WriteFloor(ctx, getFirst(), testRecipe, 0.61); err != nil {
+	if err := repo.WriteFloor(ctx, getFirstVault(), testRecipe, 0.61); err != nil {
 		t.Fatal(err)
 	}
-	if got, _, err := repo.ReadFloor(ctx, getFirst(), testRecipe); err != nil || got != 0.61 {
+	if got, _, err := repo.ReadFloor(ctx, getFirstVault(), testRecipe); err != nil || got != 0.61 {
 		t.Errorf("a second write left %v, %v, want 0.61", got, err)
 	}
-	if err := repo.DeleteFloor(ctx, getFirst(), testRecipe); err != nil {
+	if err := repo.DeleteFloor(ctx, getFirstVault(), testRecipe); err != nil {
 		t.Fatal(err)
 	}
-	if _, found, err := repo.ReadFloor(ctx, getFirst(), testRecipe); err != nil || found {
+	if _, found, err := repo.ReadFloor(ctx, getFirstVault(), testRecipe); err != nil || found {
 		t.Errorf("the floor is still kept after a delete: %v, %v", found, err)
 	}
-	if err := repo.DeleteFloor(ctx, getFirst(), testRecipe); err != nil {
+	if err := repo.DeleteFloor(ctx, getFirstVault(), testRecipe); err != nil {
 		t.Errorf("deleting a floor that is not kept failed: %v", err)
 	}
 }
@@ -41,19 +41,19 @@ func TestSearchFloorsKeepOneFloorPerVaultAndRecipeAndReplaceIt(t *testing.T) {
 func TestSearchFloorsAreStoredPerVaultAndPerRecipe(t *testing.T) {
 	ctx := t.Context()
 	repo := openDB(t).SearchFloors()
-	if err := repo.WriteFloor(ctx, getFirst(), testRecipe, 0.5); err != nil {
+	if err := repo.WriteFloor(ctx, getFirstVault(), testRecipe, 0.5); err != nil {
 		t.Fatal(err)
 	}
 	if _, found, err := repo.ReadFloor(ctx, getSecond(), testRecipe); err != nil || found {
 		t.Errorf("another vault found a floor: %v, %v", found, err)
 	}
-	if _, found, err := repo.ReadFloor(ctx, getFirst(), otherRecipe); err != nil || found {
+	if _, found, err := repo.ReadFloor(ctx, getFirstVault(), otherRecipe); err != nil || found {
 		t.Errorf("another recipe found a floor: %v, %v", found, err)
 	}
 	if err := repo.DeleteFloor(ctx, getSecond(), testRecipe); err != nil {
 		t.Fatal(err)
 	}
-	if _, found, err := repo.ReadFloor(ctx, getFirst(), testRecipe); err != nil || !found {
+	if _, found, err := repo.ReadFloor(ctx, getFirstVault(), testRecipe); err != nil || !found {
 		t.Errorf("deleting the floor of another vault removed this one: %v, %v", found, err)
 	}
 }
@@ -62,7 +62,7 @@ func TestSearchFloorsSurviveReopeningTheIndex(t *testing.T) {
 	ctx := t.Context()
 	path := t.TempDir() + "/index.db"
 	one := openDBAt(t, path)
-	if err := one.SearchFloors().WriteFloor(ctx, getFirst(), testRecipe, 0.5); err != nil {
+	if err := one.SearchFloors().WriteFloor(ctx, getFirstVault(), testRecipe, 0.5); err != nil {
 		t.Fatal(err)
 	}
 	if err := one.Close(); err != nil {
@@ -73,7 +73,7 @@ func TestSearchFloorsSurviveReopeningTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, two)
-	got, found, err := two.SearchFloors().ReadFloor(ctx, getFirst(), testRecipe)
+	got, found, err := two.SearchFloors().ReadFloor(ctx, getFirstVault(), testRecipe)
 	if err != nil || !found || got != 0.5 {
 		t.Errorf("after reopening: %v, %v, %v", got, found, err)
 	}
@@ -82,13 +82,13 @@ func TestSearchFloorsSurviveReopeningTheIndex(t *testing.T) {
 func TestSearchSamplePassagesAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, getFirst(), "library/one.epub", 0x0f)
-	book(t, db, getFirst(), "library/two.epub", 0xf0)
+	book(t, db, getFirstVault(), "library/one.epub", 0x0f)
+	book(t, db, getFirstVault(), "library/two.epub", 0xf0)
 	book(t, db, getSecond(), "library/three.epub", 0xaa)
-	cutBook(t, db, getFirst(), "library/bare.epub")
+	cutBook(t, db, getFirstVault(), "library/bare.epub")
 
 	samples := db.SearchSamples()
-	got, err := samples.ListSmallChunkVectors(ctx, getFirst(), testRecipe, 100)
+	got, err := samples.ListSmallChunkVectors(ctx, getFirstVault(), testRecipe, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,16 +109,16 @@ func TestSearchSamplePassagesAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) 
 		t.Errorf("the passages come from %d sources, want 2", len(sources))
 	}
 
-	other, err := samples.ListSmallChunkVectors(ctx, getFirst(), otherRecipe, 100)
+	other, err := samples.ListSmallChunkVectors(ctx, getFirstVault(), otherRecipe, 100)
 	if err != nil || len(other) != 0 {
 		t.Errorf("another recipe sampled %d passages: %v", len(other), err)
 	}
 
-	limited, err := samples.ListSmallChunkVectors(ctx, getFirst(), testRecipe, 3)
+	limited, err := samples.ListSmallChunkVectors(ctx, getFirstVault(), testRecipe, 3)
 	if err != nil || len(limited) != 3 {
 		t.Errorf("a limit of 3 sampled %d passages: %v", len(limited), err)
 	}
-	again, err := samples.ListSmallChunkVectors(ctx, getFirst(), testRecipe, 100)
+	again, err := samples.ListSmallChunkVectors(ctx, getFirstVault(), testRecipe, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,11 +132,11 @@ func TestSearchSamplePassagesAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) 
 func TestGetBestSimilarityIsTheNearestPassageOfTheVault(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, getFirst(), "library/one.epub", 0x00)
+	book(t, db, getFirstVault(), "library/one.epub", 0x00)
 	book(t, db, getSecond(), "library/two.epub", 0xff)
 	queries := queriesOf(db)
 
-	near, err := queries.GetBestSimilarity(ctx, getFirst().ID, testRecipe, getVectorForSeed(0x00))
+	near, err := queries.GetBestSimilarity(ctx, getFirstVault().ID, testRecipe, getVectorForSeed(0x00))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestGetBestSimilarityIsTheNearestPassageOfTheVault(t *testing.T) {
 		t.Errorf("a vector the vault holds has similarity %v, want 1", near)
 	}
 
-	opposite, err := queries.GetBestSimilarity(ctx, getFirst().ID, testRecipe, getVectorForSeed(0xff))
+	opposite, err := queries.GetBestSimilarity(ctx, getFirstVault().ID, testRecipe, getVectorForSeed(0xff))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +159,7 @@ func TestGetBestSimilarityIsTheNearestPassageOfTheVault(t *testing.T) {
 		"another recipe": {otherRecipe, getVectorForSeed(0x00)},
 		"no vector":      {testRecipe, nil},
 	} {
-		got, err := queries.GetBestSimilarity(ctx, getFirst().ID, probe.recipe, probe.query)
+		got, err := queries.GetBestSimilarity(ctx, getFirstVault().ID, probe.recipe, probe.query)
 		if err != nil || got != 0 {
 			t.Errorf("%s: got %v, %v, want 0", name, got, err)
 		}

@@ -176,7 +176,7 @@ func TestRecognitionCreateReturnsTheTaskIDKey(t *testing.T) {
 		t.Errorf("taskId = %v, want %s", answer["taskId"], want)
 	}
 	close(s.recognizer.release)
-	s.waitFinished(t, "recognize:Physics:"+scanPath)
+	s.waitUntilFinished(t, "recognize:Physics:"+scanPath)
 
 	schema := getToolSchema(t, s.registry, "recognition_create", true)
 	requireKeys(t, "the output schema of recognition_create", getSchemaProperties(t, schema), []string{"taskId"}, []string{"task_id"})

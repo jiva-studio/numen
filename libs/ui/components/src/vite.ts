@@ -76,25 +76,25 @@ function getKeys(root: Root): Set<string> {
   const keys = new Set<string>()
   root.walk((node) => {
     const key = getKey(node)
-    // Stryker disable next-line ConditionalExpression: removePresent only queries truthy keys
+    // Stryker disable next-line ConditionalExpression: removePresentRules only queries truthy keys
     if (key) keys.add(key)
   })
   return keys
 }
 
-function removeEmpty(container: Container): void {
+function removeEmptyRules(container: Container): void {
   // Stryker disable next-line ArrayDeclaration: Rule and AtRule containers with nodes always define container.nodes
   for (const node of [...(container.nodes ?? [])]) {
     // Stryker disable next-line ConditionalExpression: declarations and comments have no nodes property
     if (node.type !== 'rule' && node.type !== 'atrule') continue
     if (!node.nodes) continue
-    removeEmpty(node)
+    removeEmptyRules(node)
     if (node.nodes.length === 0) node.remove()
   }
 }
 
 /** The stylesheet less every declaration `present` carries in the same place. */
-export function removePresent(css: string, present: string): string {
+export function removePresentRules(css: string, present: string): string {
   const keys = getKeys(postcss.parse(getNormalCss(present)))
   const root = postcss.parse(getNormalCss(css))
   root.walk((node) => {
@@ -105,7 +105,7 @@ export function removePresent(css: string, present: string): string {
   root.walkAtRules('layer', (rule) => {
     if (!rule.nodes) rule.remove()
   })
-  removeEmpty(root)
+  removeEmptyRules(root)
   // Stryker disable next-line MethodExpression,ConditionalExpression,StringLiteral: getNormalCss strips comments and returns empty string for an empty root
   return root.nodes.some((node) => node.type !== 'comment') ? getNormalCss(root.toString()) : ''
 }
@@ -120,7 +120,7 @@ export function createLayeredStylesPlugin(file: string): Plugin {
     transform(code, id) {
       if (id.split('?')[0] !== file) return undefined
       // Stryker disable next-line StringLiteral: Buffer.from in getNormalCss accepts both UTF-8 strings and Buffers
-      return { code: removePresent(code, readFileSync(UI_STYLES, 'utf8')), map: null }
+      return { code: removePresentRules(code, readFileSync(UI_STYLES, 'utf8')), map: null }
     },
   }
 }

@@ -257,7 +257,7 @@ describe('PlexQuickLinkPopover component', () => {
     }
     const getTexts = (wrapper: ReturnType<typeof mountPopover>) =>
       wrapper.findAll('[role="option"]').map((option) => option.text())
-    const getActive = (wrapper: ReturnType<typeof mountPopover>) =>
+    const getActiveOptionIndex = (wrapper: ReturnType<typeof mountPopover>) =>
       wrapper
         .findAll('[role="option"]')
         .findIndex((option) => option.attributes('aria-selected') === 'true')
@@ -270,7 +270,7 @@ describe('PlexQuickLinkPopover component', () => {
       await advanceHold()
 
       expect(getTexts(wrapper)).toEqual(['Create "B"'])
-      expect(getActive(wrapper)).toBe(0)
+      expect(getActiveOptionIndex(wrapper)).toBe(0)
       wrapper.unmount()
     })
 
@@ -286,7 +286,7 @@ describe('PlexQuickLinkPopover component', () => {
 
       expect(getTexts(wrapper)).toEqual(['Create "B"', 'Books', 'Bhagavad-gita'])
       expect(wrapper.get('[role="option"]').element).toBe(before)
-      expect(getActive(wrapper)).toBe(0)
+      expect(getActiveOptionIndex(wrapper)).toBe(0)
       await wrapper.get('input').trigger('keydown', { key: 'Enter' })
       expect(wrapper.emitted('create-note')).toStrictEqual([['B']])
       expect(wrapper.emitted('select-note')).toBeUndefined()
@@ -307,16 +307,16 @@ describe('PlexQuickLinkPopover component', () => {
       first.resolve(found)
       await vi.advanceTimersByTimeAsync(0)
       await input.trigger('keydown', { key: 'ArrowDown' })
-      expect(getActive(wrapper)).toBe(1)
+      expect(getActiveOptionIndex(wrapper)).toBe(1)
 
       await input.setValue('Bo')
       await advanceHold()
-      expect(getActive(wrapper)).toBe(0)
+      expect(getActiveOptionIndex(wrapper)).toBe(0)
       second.resolve([found[0]!])
       await vi.advanceTimersByTimeAsync(0)
 
       expect(getTexts(wrapper)).toEqual(['Create "Bo"', 'Books'])
-      expect(getActive(wrapper)).toBe(0)
+      expect(getActiveOptionIndex(wrapper)).toBe(0)
       wrapper.unmount()
     })
 
@@ -336,7 +336,7 @@ describe('PlexQuickLinkPopover component', () => {
 
       expect(getTexts(wrapper)).toEqual(['Books', 'Books about'])
       expect(wrapper.get('[role="option"]').element).toBe(row)
-      expect(getActive(wrapper)).toBe(0)
+      expect(getActiveOptionIndex(wrapper)).toBe(0)
       await wrapper.get('input').trigger('keydown', { key: 'Enter' })
       expect(wrapper.emitted('select-note')).toStrictEqual([['notes/books.md']])
       expect(wrapper.emitted('create-note')).toBeUndefined()
@@ -369,7 +369,7 @@ describe('PlexQuickLinkPopover component', () => {
       await vi.advanceTimersByTimeAsync(0)
 
       expect(getTexts(wrapper)).toEqual(['Create "B"'])
-      expect(getActive(wrapper)).toBe(0)
+      expect(getActiveOptionIndex(wrapper)).toBe(0)
       wrapper.unmount()
     })
 
@@ -380,7 +380,7 @@ describe('PlexQuickLinkPopover component', () => {
       await advanceHold()
       await wrapper.get('input').trigger('keydown', { key: 'ArrowDown' })
       await wrapper.get('input').trigger('keydown', { key: 'ArrowDown' })
-      expect(getActive(wrapper)).toBe(2)
+      expect(getActiveOptionIndex(wrapper)).toBe(2)
 
       await wrapper.get('input').trigger('keydown', { key: 'Enter' })
       expect(wrapper.emitted('select-note')).toStrictEqual([['notes/gita.md']])

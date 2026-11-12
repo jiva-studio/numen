@@ -76,7 +76,7 @@ function createTabs(host: PluginContextHost): PluginTabs {
   }
 }
 
-function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
+function pickDefinedParts<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
   const picked: Partial<T> = {}
   for (const key of Object.keys(parts) as (keyof T)[]) {
     const value = parts[key]
@@ -88,7 +88,7 @@ function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined
 function createVault(pluginId: string, host: PluginContextHost, add: Track): PluginVault {
   const { vault } = host
   const buffers = vault.getBuffers()
-  return pickDefined<PluginVault>({
+  return pickDefinedParts<PluginVault>({
     notes: vault.getNotes(),
     relations: vault.getRelations(),
     files: vault.getFiles(),
@@ -106,7 +106,7 @@ function createUi(
   const { window: ui, views } = host
   const commands = ui.getCommands()
   return {
-    ...pickDefined<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
+    ...pickDefinedParts<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
       workspace: ui.getWorkspace(),
       window: ui.getWindow(),
       commands:
@@ -140,7 +140,7 @@ function createUiService(
 function createWork(pluginId: string, host: PluginContextHost): PluginWork {
   const { window: work } = host
   const agent = work.getAgent()
-  return pickDefined<PluginWork>({
+  return pickDefinedParts<PluginWork>({
     agent: agent && limitAgentSettings(agent),
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),

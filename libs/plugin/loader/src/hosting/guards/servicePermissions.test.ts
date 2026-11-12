@@ -45,10 +45,10 @@ type Tree = { [key: string]: Rule | Tree }
 
 const isRule = (value: Rule | Tree): value is Rule => Array.isArray((value as Rule).permissions)
 
-function createFake(rules: Tree): Record<string, unknown> {
+function createFakeServices(rules: Tree): Record<string, unknown> {
   const fake: Record<string, unknown> = {}
   for (const [key, rule] of Object.entries(rules)) {
-    fake[key] = isRule(rule) ? vi.fn(() => Promise.resolve([])) : createFake(rule)
+    fake[key] = isRule(rule) ? vi.fn(() => Promise.resolve([])) : createFakeServices(rule)
   }
   return fake
 }
@@ -111,7 +111,7 @@ const SERVICE_PARTS = ['vault', 'ui', 'work'] as const
 
 function createFakes() {
   const rules = SERVICE_RULES as unknown as Record<string, Tree>
-  return Object.fromEntries(SERVICE_PARTS.map((part) => [part, createFake(asTree(rules[part]))]))
+  return Object.fromEntries(SERVICE_PARTS.map((part) => [part, createFakeServices(asTree(rules[part]))]))
 }
 
 function pick(context: PluginContext, path: readonly string[]): { target: unknown; key: string } {
@@ -331,13 +331,13 @@ describe('the services of a plugin context', () => {
 })
 
 describe('the subscriptions of a plugin', () => {
-  const createSubscribed = () => {
+  const createSubscriptions = () => {
     const context = createPluginContext('md.numen.sample', createHost(createFakes()), MANIFEST([]))
     return context.plugin.subscriptions
   }
 
   it('cannot be spliced, popped, shifted or reassigned', () => {
-    const subscriptions = createSubscribed() as unknown as Record<string, unknown>
+    const subscriptions = createSubscriptions() as unknown as Record<string, unknown>
     const dispose = vi.fn()
     ;(subscriptions.push as (...a: unknown[]) => void)({ dispose })
 
@@ -354,7 +354,7 @@ describe('the subscriptions of a plugin', () => {
   })
 
   it('still releases what the plugin added when the host disposes them', () => {
-    const subscriptions = createSubscribed()
+    const subscriptions = createSubscriptions()
     const first = vi.fn()
     const second = vi.fn()
     subscriptions.push({ dispose: first }, { dispose: second })

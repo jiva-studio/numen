@@ -206,7 +206,7 @@ func (s *VaultReader) Read(ctx context.Context, path string) (_ []byte, err erro
 	if err != nil {
 		return nil, err
 	}
-	f, err := openReadable(target)
+	f, err := openReadableFile(target)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (s *VaultReader) Read(ctx context.Context, path string) (_ []byte, err erro
 	if err != nil {
 		return nil, err
 	}
-	if err := checkReadable(path, info); err != nil {
+	if err := checkFileReadable(path, info); err != nil {
 		return nil, err
 	}
 	if err := s.checkSize(path, info); err != nil {
@@ -261,7 +261,7 @@ func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 // Open is one file, to read a part of. The path is checked by the same rule
 // Read checks it by, and what is returned is the file itself.
 func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return s.openWith(ctx, path, openReadable)
+	return s.openWith(ctx, path, openReadableFile)
 }
 
 func (s *VaultReader) openWith(
@@ -284,13 +284,13 @@ func (s *VaultReader) openWith(
 	if err != nil {
 		return nil, errors.Join(err, f.Close())
 	}
-	if err := checkReadable(path, info); err != nil {
+	if err := checkFileReadable(path, info); err != nil {
 		return nil, errors.Join(err, f.Close())
 	}
 	return f, nil
 }
 
-func checkReadable(path string, info fs.FileInfo) error {
+func checkFileReadable(path string, info fs.FileInfo) error {
 	if info.Mode().IsRegular() || info.IsDir() {
 		return nil
 	}

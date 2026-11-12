@@ -107,7 +107,7 @@ const emptyInstallation = (): Installation => {
   }
 }
 
-const renderEmpty = () => ({
+const renderEmptyPage = () => ({
   components: { SecretsPage },
   setup: () => ({ installation: emptyInstallation() }),
   template: `
@@ -119,7 +119,7 @@ const renderEmpty = () => ({
 
 /** With no secret and no plugin the page offers to add a group. */
 export const EmptyPageHasAddControl: Story = {
-  render: renderEmpty,
+  render: renderEmptyPage,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Add group' })).toBeVisible()
@@ -128,7 +128,7 @@ export const EmptyPageHasAddControl: Story = {
 
 /** A new group takes its name at once and shows an empty row for the value. */
 export const AddsInATypedGroup: Story = {
-  render: renderEmpty,
+  render: renderEmptyPage,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Add group' }))

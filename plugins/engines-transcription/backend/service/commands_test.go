@@ -16,7 +16,7 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskTranscribes(t *testing.T) {
 	if err != nil || res.Message != "transcribing "+lecture {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
-	w.waitStarted(t)
+	w.waitUntilStarted(t)
 	close(w.recognizer.release)
 	w.waitUntilNoTask(t)
 	listing, err := w.texts.ListVersions(t.Context(), lecture)
@@ -30,7 +30,7 @@ func TestTheHandlerOfCreateTextFailsForARecordingBeingTranscribed(t *testing.T) 
 	if _, err := w.commands.RunCommand(t.Context(), command.Request{Command: "app:file.createText", Path: lecture}); err != nil {
 		t.Fatal(err)
 	}
-	w.waitStarted(t)
+	w.waitUntilStarted(t)
 
 	_, err := w.commands.RunCommand(t.Context(), command.Request{Command: "app:file.createText", Path: lecture})
 

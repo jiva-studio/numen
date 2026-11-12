@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 )
 
-func runBounded(ctx context.Context, count, limit int, do func(index int)) {
+func runBoundedJobs(ctx context.Context, count, limit int, do func(index int)) {
 	workers := min(max(limit, 1), count)
 	var next atomic.Int64
 	var group sync.WaitGroup

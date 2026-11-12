@@ -148,7 +148,7 @@ func (w *jsonKeyWalk) checkStructFields(st *types.Struct, requireTags bool) {
 	}
 }
 
-func (w *jsonKeyWalk) walkNamed(named *types.Named, requireTags bool) {
+func (w *jsonKeyWalk) walkNamedType(named *types.Named, requireTags bool) {
 	if !isCheckedNamedType(named) || w.visitedTypes[named] {
 		return
 	}
@@ -167,7 +167,7 @@ func (w *jsonKeyWalk) walkNamed(named *types.Named, requireTags bool) {
 func (w *jsonKeyWalk) walkType(t types.Type, requireTags bool) {
 	switch current := types.Unalias(t).(type) {
 	case *types.Named:
-		w.walkNamed(current, requireTags)
+		w.walkNamedType(current, requireTags)
 	case *types.Pointer:
 		w.walkType(current.Elem(), requireTags)
 	case *types.Slice:

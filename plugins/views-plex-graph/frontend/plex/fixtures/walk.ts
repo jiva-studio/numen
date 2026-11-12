@@ -66,7 +66,7 @@ export function createNeighborhood(id: string): PlexNeighborhood {
   const focus = GRAPH[id]
   if (!focus) throw new Error(`no such node: ${id}`)
 
-  const createRelated = (ids: readonly string[], relation: PlexNode['relation']): PlexNode[] =>
+  const createRelatedNodes = (ids: readonly string[], relation: PlexNode['relation']): PlexNode[] =>
     ids
       .filter((other) => other !== id && GRAPH[other] !== undefined)
       .map((other) => ({ id: other, title: GRAPH[other]!.title, relation }))
@@ -76,10 +76,10 @@ export function createNeighborhood(id: string): PlexNeighborhood {
   const related: PlexNode[] = []
   const visited = new Set<string>([id])
   for (const group of [
-    createRelated(getParents(id), 'parent'),
-    createRelated(getChildren(id), 'child'),
-    createRelated(getJumps(id), 'jump'),
-    createRelated(getSiblings(id), 'sibling'),
+    createRelatedNodes(getParents(id), 'parent'),
+    createRelatedNodes(getChildren(id), 'child'),
+    createRelatedNodes(getJumps(id), 'jump'),
+    createRelatedNodes(getSiblings(id), 'sibling'),
   ]) {
     for (const node of group) {
       if (visited.has(node.id)) continue

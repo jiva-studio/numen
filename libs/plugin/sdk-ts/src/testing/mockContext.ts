@@ -162,7 +162,7 @@ function isWebAddress(url: string): boolean {
   }
 }
 
-function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
+function pickDefinedParts<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
   const picked: Partial<T> = {}
   for (const key of Object.keys(parts) as (keyof T)[]) {
     const value = parts[key]
@@ -278,7 +278,7 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     events,
     tabs,
     vault: {
-      ...pickDefined<Omit<PluginVault, 'vaults'>>({
+      ...pickDefinedParts<Omit<PluginVault, 'vaults'>>({
         notes: init.notes,
         relations: init.relations,
         files: init.files,
@@ -288,7 +288,7 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       vaults: createMockVaultsHost(),
     },
     ui: {
-      ...pickDefined<Pick<PluginUi, 'workspace'>>({ workspace: init.workspace }),
+      ...pickDefinedParts<Pick<PluginUi, 'workspace'>>({ workspace: init.workspace }),
       notices: init.notices ?? createMockNoticeHost(),
       commands: createMockCommandsHost(),
       slots: createMockSlotHost(),
@@ -296,7 +296,7 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       mountView,
     },
     work: {
-      ...pickDefined<Pick<PluginWork, 'agent'>>({ agent: init.agent }),
+      ...pickDefinedParts<Pick<PluginWork, 'agent'>>({ agent: init.agent }),
       backgroundTasks: createMockBackgroundTaskHost(),
     },
 

@@ -86,7 +86,7 @@ func depguardFiles(t *testing.T) []string {
 	return config.Linters.Settings.Depguard.Rules["driving-adapter"].Files
 }
 
-func getUncovered(patterns []string) []string {
+func getUncoveredPatterns(patterns []string) []string {
 	var found []string
 	for one := range load.GetDriving() {
 		if !slices.ContainsFunc(patterns, func(pattern string) bool {

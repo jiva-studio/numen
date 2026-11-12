@@ -722,7 +722,7 @@ func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
 	}
 }
 
-func getRough() string {
+func getRoughDeck() string {
 	return strings.ReplaceAll(
 		"Cards I am learning.\n\n\n"+
 			"# The ones with fur\n\n"+
@@ -778,13 +778,13 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			file := format.OpenDeckBody(getRough())
+			file := format.OpenDeckBody(getRoughDeck())
 			if err := change(file); err != nil {
 				t.Fatalf("change: %v", err)
 			}
 			content := file.Body()
 			for _, cardID := range []format.ID{alpaca, vicuna} {
-				was := cardRun(t, getRough(), cardID)
+				was := cardRun(t, getRoughDeck(), cardID)
 				if !strings.Contains(content, was) {
 					t.Errorf("the card of %s was rewritten\n was %q\n now %q",
 						cardID, was, cardRun(t, content, cardID))
@@ -849,7 +849,7 @@ func TestRemovingTheLastCardPreservesNoBlankLine(t *testing.T) {
 // A card addressed into a section the deck does not hold fails, as a written
 // card does.
 func TestAddCardBelowASectionTheDeckDoesNotHold(t *testing.T) {
-	file := format.OpenDeckBody(getRough())
+	file := format.OpenDeckBody(getRoughDeck())
 	if err := file.AddCardUnder(9, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("add = %v, want ErrNoSuchSection", err)
 	}

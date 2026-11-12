@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func getFirst() domain.Vault { return domain.Vault{ID: "01VAULT0000000000000000000"} }
+func getFirstVault() domain.Vault { return domain.Vault{ID: "01VAULT0000000000000000000"} }
 
 func getSecond() domain.Vault { return domain.Vault{ID: "01VAULT0000000000000000001"} }
 
@@ -27,7 +27,7 @@ func openRepository(t *testing.T) *opentabs.Repository {
 }
 
 func TestReadOpenTabsReturnsNoneForANewVault(t *testing.T) {
-	open, err := openRepository(t).ReadOpenTabs(t.Context(), getFirst())
+	open, err := openRepository(t).ReadOpenTabs(t.Context(), getFirstVault())
 	if err != nil || len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("got %+v, %v", open, err)
 	}
@@ -42,10 +42,10 @@ func TestReadOpenTabsReturnsTabsInOrderWithStateAndFront(t *testing.T) {
 		},
 		ActiveID: "reader:viewer:a.bin",
 	}
-	if err := repo.WriteOpenTabs(t.Context(), getFirst(), want); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirstVault(), want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := repo.ReadOpenTabs(t.Context(), getFirst())
+	got, err := repo.ReadOpenTabs(t.Context(), getFirstVault())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,13 +60,13 @@ func TestWriteOpenTabsReplacesTheTabsOfOneVaultOnly(t *testing.T) {
 	if err := repo.WriteOpenTabs(t.Context(), getSecond(), otherTabs); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.WriteOpenTabs(t.Context(), getFirst(), windowdomain.OpenTabs{Tabs: []windowdomain.Tab{{ID: "x", Kind: "x"}}}); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirstVault(), windowdomain.OpenTabs{Tabs: []windowdomain.Tab{{ID: "x", Kind: "x"}}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.WriteOpenTabs(t.Context(), getFirst(), windowdomain.OpenTabs{}); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirstVault(), windowdomain.OpenTabs{}); err != nil {
 		t.Fatal(err)
 	}
-	gotFirst, err := repo.ReadOpenTabs(t.Context(), getFirst())
+	gotFirst, err := repo.ReadOpenTabs(t.Context(), getFirstVault())
 	if err != nil {
 		t.Fatal(err)
 	}

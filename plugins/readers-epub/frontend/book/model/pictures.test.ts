@@ -3,7 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PICTURES_WAIT, findPending, whenArrived } from './pictures'
+import { PICTURES_WAIT, findPendingImages, whenArrived } from './pictures'
 
 const picture = (isComplete: boolean): HTMLImageElement => {
   const one = document.createElement('img')
@@ -29,11 +29,11 @@ describe('the pictures that have not arrived', () => {
   it('are the ones not complete', () => {
     const notArrived = picture(false)
 
-    expect(findPending(textWith(picture(true), notArrived))).toStrictEqual([notArrived])
+    expect(findPendingImages(textWith(picture(true), notArrived))).toStrictEqual([notArrived])
   })
 
   it('are none in a text without pictures', () => {
-    expect(findPending(textWith())).toStrictEqual([])
+    expect(findPendingImages(textWith())).toStrictEqual([])
   })
 })
 

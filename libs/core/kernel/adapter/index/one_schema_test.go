@@ -57,7 +57,7 @@ func getUserVersion(ctx context.Context, t *testing.T, db *sql.DB) int {
 	return v
 }
 
-func openRaw(t *testing.T, path string) *sql.DB {
+func openRawDB(t *testing.T, path string) *sql.DB {
 	t.Helper()
 	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
@@ -203,7 +203,7 @@ func TestADatabaseWithNoVersionStopsTheStartAndStaysByteForByteTheSame(t *testin
 	for _, version := range []int{0} {
 		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "index.db")
-			raw := openRaw(t, path)
+			raw := openRawDB(t, path)
 			for _, statement := range []string{
 				`CREATE TABLE vaults (id INTEGER PRIMARY KEY, marker TEXT)`,
 				`INSERT INTO vaults (marker) VALUES ('01OLDMARKER')`,

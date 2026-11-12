@@ -142,11 +142,11 @@ func TestPadBatchSetsPositionsOfTheRealTokensAndZeroForPadding(t *testing.T) {
 		t.Errorf("padBatch with typed-nil sync.Pool = %+v", p2)
 	}
 
-	if got := getLongest(nil); got != 0 {
-		t.Errorf("getLongest(nil) = %d, want 0", got)
+	if got := getLongestLength(nil); got != 0 {
+		t.Errorf("getLongestLength(nil) = %d, want 0", got)
 	}
-	if got := getLongest([][]int{{1}, {1, 2, 3, 4}}); got != 4 {
-		t.Errorf("getLongest = %d, want 4", got)
+	if got := getLongestLength([][]int{{1}, {1, 2, 3, 4}}); got != 4 {
+		t.Errorf("getLongestLength = %d, want 4", got)
 	}
 
 	exact := make([]int64, 0, 4)

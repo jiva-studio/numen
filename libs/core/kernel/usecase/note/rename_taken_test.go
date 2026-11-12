@@ -8,7 +8,7 @@ import (
 
 func TestRenameOntoTakenFilenameReturnsTheNoteUnchanged(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{
+	c := openChangeFixture(t, map[string]string{
 		"Old.md":     "A measure of disorder.\n",
 		"Entropy.md": "# Entropy\n",
 	})

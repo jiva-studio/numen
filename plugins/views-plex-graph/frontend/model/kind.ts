@@ -35,7 +35,7 @@ const getPlexTitle = (note: string): string => note || words.plex
 
 function createPlexTabs() {
   const tabs = new Map<string, PlexTabState>()
-  const getLast = (): PlexTabState | null => [...tabs.values()].at(-1) ?? null
+  const getLastTab = (): PlexTabState | null => [...tabs.values()].at(-1) ?? null
   return {
     add: (id: string, state: PlexTabState) => {
       tabs.set(id, state)
@@ -51,7 +51,7 @@ function createPlexTabs() {
     },
     find: (id: string): PlexTabState | undefined => tabs.get(id),
     getAll: (): readonly PlexTabState[] => [...tabs.values()],
-    getCurrentPath: (): string => getLast()?.canvas.view.here.value ?? '',
+    getCurrentPath: (): string => getLastTab()?.canvas.view.here.value ?? '',
   }
 }
 

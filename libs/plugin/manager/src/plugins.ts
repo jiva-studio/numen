@@ -33,7 +33,7 @@ export interface ManagedPlugin {
 /** Whether the host has the plugin on disk. */
 export const isInstalled = (plugin: ManagedPlugin): boolean => plugin.info !== undefined
 
-const createInstalled = (info: PluginInfo, listing: PluginListing | undefined): ManagedPlugin => ({
+const createInstalledPlugin = (info: PluginInfo, listing: PluginListing | undefined): ManagedPlugin => ({
   id: info.id,
   name: info.name,
   version: info.version,
@@ -44,7 +44,7 @@ const createInstalled = (info: PluginInfo, listing: PluginListing | undefined): 
   info,
 })
 
-const createAvailable = (listing: PluginListing): ManagedPlugin => ({
+const createAvailablePlugin = (listing: PluginListing): ManagedPlugin => ({
   id: listing.id,
   name: listing.name,
   version: listing.version,
@@ -67,7 +67,7 @@ export function createManagedPlugins(
   const installedIds = new Set(plugins.map((one) => one.id))
   const uninstalled = listings.filter((one) => one.isAvailable && !installedIds.has(one.id))
   return [
-    ...plugins.map((one) => createInstalled(one, byId.get(one.id))),
-    ...uninstalled.map(createAvailable),
+    ...plugins.map((one) => createInstalledPlugin(one, byId.get(one.id))),
+    ...uninstalled.map(createAvailablePlugin),
   ]
 }

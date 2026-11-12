@@ -104,14 +104,14 @@ func getSourcePaths(passages []domain.Passage) []string {
 func TestAWalkInPagesVisitsEveryUnembeddedChunkOfItsVaultOnce(t *testing.T) {
 	db := openDB(t)
 	numberRowsPast2To62(t, db)
-	saveThroughPort(t, db, getFirst(), "library/last.epub", getLastInstant(), "anchors weigh", "chains rattle")
-	saveThroughPort(t, db, getFirst(), "library/far.epub", getFarFuture(), "comets return", "orbits decay")
-	saveThroughPort(t, db, getFirst(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments", "crust browns")
-	saveThroughPort(t, db, getFirst(), "library/b.epub", getThisYear(), "rivers bend", "deltas spread", "silt settles")
-	saveThroughPort(t, db, getFirst(), "library/old.epub", getLongAgo(), "glaciers carve", "moraines remain")
+	saveThroughPort(t, db, getFirstVault(), "library/last.epub", getLastInstant(), "anchors weigh", "chains rattle")
+	saveThroughPort(t, db, getFirstVault(), "library/far.epub", getFarFuture(), "comets return", "orbits decay")
+	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments", "crust browns")
+	saveThroughPort(t, db, getFirstVault(), "library/b.epub", getThisYear(), "rivers bend", "deltas spread", "silt settles")
+	saveThroughPort(t, db, getFirstVault(), "library/old.epub", getLongAgo(), "glaciers carve", "moraines remain")
 	saveThroughPort(t, db, getSecond(), "library/second.epub", getThisYear(), "violins tune", "cellos answer")
 
-	unembedded := getUnembeddedPassages(t, db, getFirst())
+	unembedded := getUnembeddedPassages(t, db, getFirstVault())
 	want := []string{
 		"library/last.epub", "library/last.epub",
 		"library/far.epub", "library/far.epub",
@@ -124,7 +124,7 @@ func TestAWalkInPagesVisitsEveryUnembeddedChunkOfItsVaultOnce(t *testing.T) {
 	}
 
 	for _, limit := range []int{1, 2, 5} {
-		visited := getUnembeddedPassagesPaged(t, db, getFirst(), limit)
+		visited := getUnembeddedPassagesPaged(t, db, getFirstVault(), limit)
 		if got := getChunkIDs(visited); !slices.Equal(got, getChunkIDs(unembedded)) {
 			t.Errorf("a walk in pages of %d visited %v, want %v", limit, got, getChunkIDs(unembedded))
 		}
@@ -139,9 +139,9 @@ func TestAWalkInPagesVisitsEveryUnembeddedChunkOfItsVaultOnce(t *testing.T) {
 // number is a chunk at the start, and two are an instant and a chunk at it.
 func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 	db := openDB(t)
-	saveThroughPort(t, db, getFirst(), "library/last.epub", getLastInstant(), "anchors weigh", "chains rattle")
-	saveThroughPort(t, db, getFirst(), "library/later.epub", getFarFuture().AddDate(1, 0, 0), "tides turn", "moons wane")
-	saveThroughPort(t, db, getFirst(), "library/far.epub", getFarFuture(), "comets return", "orbits decay")
+	saveThroughPort(t, db, getFirstVault(), "library/last.epub", getLastInstant(), "anchors weigh", "chains rattle")
+	saveThroughPort(t, db, getFirstVault(), "library/later.epub", getFarFuture().AddDate(1, 0, 0), "tides turn", "moons wane")
+	saveThroughPort(t, db, getFirstVault(), "library/far.epub", getFarFuture(), "comets return", "orbits decay")
 
 	// Every number is past 2^62.
 	const row = "9000000000000000000"
@@ -156,7 +156,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 		}},
 		{embedding.ChunkCursor(strconv.FormatInt(getFarFuture().UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
 	} {
-		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirst().ID, getBenchModel(), item.cursor, 10)
+		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), item.cursor, 10)
 		if err != nil {
 			t.Errorf("cursor %q: %v", item.cursor, err)
 			continue
@@ -170,10 +170,10 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 // A cursor this index did not issue is rejected, and nothing is visited.
 func TestGetUnembeddedChunks_RejectsForeignCursor(t *testing.T) {
 	db := openDB(t)
-	saveThroughPort(t, db, getFirst(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
+	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
 
 	for _, cursor := range []embedding.ChunkCursor{"x", "x:1", "1:x", "x:1:2", "1:x:2", "1:2:x", "1:2:3:4"} {
-		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirst().ID, getBenchModel(), cursor, 10)
+		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), cursor, 10)
 		if err == nil {
 			t.Errorf("cursor %q was visited from, and gave %d chunks", cursor, len(page))
 		}
@@ -183,12 +183,12 @@ func TestGetUnembeddedChunks_RejectsForeignCursor(t *testing.T) {
 // A walk over an index that cannot be read is reported.
 func TestAWalkOverAClosedIndexFails(t *testing.T) {
 	db := openDB(t)
-	saveThroughPort(t, db, getFirst(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
+	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirst().ID, getBenchModel(), "", 10); err == nil {
+	if _, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), "", 10); err == nil {
 		t.Error("a walk over a closed index reported nothing unembedded")
 	}
 }
@@ -198,7 +198,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	db := openDB(t)
 	sources := db.Sources()
 
-	if err := sources.SaveSource(ctx, getFirst().ID, domain.Source{
+	if err := sources.SaveSource(ctx, getFirstVault().ID, domain.Source{
 		FileStat:    domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: getThisYear()},
 		ContentHash: "hash-scan",
 		Producer:    "ocr",
@@ -206,7 +206,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	read, target, err := sources.GetSourceText(ctx, getFirst().ID, "library/scan.pdf")
+	read, target, err := sources.GetSourceText(ctx, getFirstVault().ID, "library/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	if read.Size != 4321 || !read.ModTime.Equal(getThisYear()) || read.ContentHash != "hash-scan" || read.Producer != "ocr" {
 		t.Errorf("the source reads back as %+v", read)
 	}
-	books, err := sources.GetFileStats(ctx, getFirst().ID, domain.KindFile)
+	books, err := sources.GetFileStats(ctx, getFirstVault().ID, domain.KindFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestGetSourceText_UnknownPathReturnsNotFound(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, getSecond(), "library/a.epub", getThisYear(), "violins tune")
 
-	read, target, err := db.Sources().GetSourceText(t.Context(), getFirst().ID, "library/a.epub")
+	read, target, err := db.Sources().GetSourceText(t.Context(), getFirstVault().ID, "library/a.epub")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,9 +244,9 @@ func TestGetSourceText_UnknownPathReturnsNotFound(t *testing.T) {
 func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	saveThroughPort(t, db, getFirst(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
+	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
 
-	unembedded := getUnembeddedPassages(t, db, getFirst())
+	unembedded := getUnembeddedPassages(t, db, getFirstVault())
 	if len(unembedded) != 2 {
 		t.Fatalf("%d chunks need a vector, want 2", len(unembedded))
 	}
@@ -264,7 +264,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 	if err := db.Sources().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
-	if remaining := getUnembeddedPassages(t, db, getFirst()); len(remaining) != 0 {
+	if remaining := getUnembeddedPassages(t, db, getFirstVault()); len(remaining) != 0 {
 		t.Errorf("%d chunks still need a vector", len(remaining))
 	}
 
@@ -279,7 +279,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 func TestRecognizedSourcesAreListedWithTheirProducer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	if err := db.Sources().SaveSource(ctx, getFirst().ID, domain.Source{
+	if err := db.Sources().SaveSource(ctx, getFirstVault().ID, domain.Source{
 		FileStat:    domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: getThisYear()},
 		ContentHash: "hash-scan",
 		Producer:    "ocr",
@@ -287,7 +287,7 @@ func TestRecognizedSourcesAreListedWithTheirProducer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := db.Sources().GetRecognizedSources(ctx, getFirst().ID, domain.KindFile)
+	found, err := db.Sources().GetRecognizedSources(ctx, getFirstVault().ID, domain.KindFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +298,7 @@ func TestRecognizedSourcesAreListedWithTheirProducer(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Sources().GetRecognizedSources(ctx, getFirst().ID, domain.KindFile); err == nil {
+	if _, err := db.Sources().GetRecognizedSources(ctx, getFirstVault().ID, domain.KindFile); err == nil {
 		t.Error("listing over a closed index reported nothing recognized")
 	}
 }
@@ -306,12 +306,12 @@ func TestRecognizedSourcesAreListedWithTheirProducer(t *testing.T) {
 // Reading a source out of an index that cannot be read is reported.
 func TestReadingASourceOfAClosedIndexFails(t *testing.T) {
 	db := openDB(t)
-	saveThroughPort(t, db, getFirst(), "library/a.epub", getThisYear(), "bread rises")
+	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises")
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, _, err := db.Sources().GetSourceText(t.Context(), getFirst().ID, "library/a.epub"); err == nil {
+	if _, _, err := db.Sources().GetSourceText(t.Context(), getFirstVault().ID, "library/a.epub"); err == nil {
 		t.Error("reading a closed index reported the source as not held")
 	}
 }
@@ -319,12 +319,12 @@ func TestReadingASourceOfAClosedIndexFails(t *testing.T) {
 // Removing sources from an index that cannot be written is reported.
 func TestRemovingSourcesFromAClosedIndexFails(t *testing.T) {
 	db := openDB(t)
-	saveThroughPort(t, db, getFirst(), "library/a.epub", getThisYear(), "bread rises")
+	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises")
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := db.Sources().RemoveSources(t.Context(), getFirst().ID, domain.KindFile, []string{"library/a.epub"}); err == nil {
+	if err := db.Sources().RemoveSources(t.Context(), getFirstVault().ID, domain.KindFile, []string{"library/a.epub"}); err == nil {
 		t.Error("removing from a closed index reported success")
 	}
 }

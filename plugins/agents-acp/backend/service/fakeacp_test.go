@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func startFake(t *testing.T, behavior string) (command []string, record string) {
+func startFakeAgent(t *testing.T, behavior string) (command []string, record string) {
 	t.Helper()
 	record = filepath.Join(t.TempDir(), "record")
 	return []string{os.Args[0], "fake-acp", behavior, record}, record

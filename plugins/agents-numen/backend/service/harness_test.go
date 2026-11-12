@@ -286,7 +286,7 @@ func describeSteps(steps []*agentrun.Response) string {
 	return strings.Join(words, " ")
 }
 
-func getSpoken(steps []*agentrun.Response) []string {
+func getSpokenTexts(steps []*agentrun.Response) []string {
 	var response []string
 	for _, one := range steps {
 		if text := one.GetText(); text != "" {
@@ -326,7 +326,7 @@ func assertToolSteps(t *testing.T, steps []*agentrun.Response) {
 	if call.Tool != "Read a note" || call.Kind != "read" || call.Call != "call-1" || call.Path != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
-	if response, last := strings.Join(getSpoken(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != answer.ReasonDone {
+	if response, last := strings.Join(getSpokenTexts(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != answer.ReasonDone {
 		t.Errorf("the answer is %q, stopped %q", response, last.GetStopped())
 	}
 }
@@ -673,7 +673,7 @@ func TestRunTask_NoToolsWhenTaskNamesNone(t *testing.T) {
 
 	steps := ask(t, s, task)
 
-	if got := strings.Join(getSpoken(steps), ""); got != "the answer" {
+	if got := strings.Join(getSpokenTexts(steps), ""); got != "the answer" {
 		t.Errorf("the answer is %q", got)
 	}
 	if connected.Load() {
@@ -833,7 +833,7 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	if calledWith != `{"query":"test"}` {
 		t.Errorf("custom tool was called with %q, want %q", calledWith, `{"query":"test"}`)
 	}
-	if response := strings.Join(getSpoken(steps), ""); response != "Result received." {
+	if response := strings.Join(getSpokenTexts(steps), ""); response != "Result received." {
 		t.Errorf("the answer is %q, want %q", response, "Result received.")
 	}
 }

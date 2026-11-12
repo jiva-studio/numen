@@ -33,7 +33,7 @@ func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 	ctx := tb.Context()
 
 	path := filepath.Join(tb.TempDir(), "index.db")
-	newMigrated().CopyTo(tb, path)
+	newMigratedTemplate().CopyTo(tb, path)
 	db, err := Open(ctx, path)
 	if err != nil {
 		tb.Fatal(err)

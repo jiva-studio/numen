@@ -64,17 +64,17 @@ func (u CreateInRelation) Execute(ctx context.Context, v domain.Vault, in domain
 // title of the input is ignored. It fails with domain.ErrNoFreeName when every
 // numbered name is taken.
 func (u Create) ExecuteUntitled(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
-	in, err := u.resolveNamed(ctx, v, in)
+	in, err := u.resolveNamedNote(ctx, v, in)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	return writeUnder(u.gate, func() (CreateResult, error) { return u.makeUntitled(ctx, v, in) })
+	return writeUnder(u.gate, func() (CreateResult, error) { return u.makeUntitledNote(ctx, v, in) })
 }
 
-func (u Create) makeUntitled(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
+func (u Create) makeUntitledNote(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	for attempt := 1; attempt <= MaxUntitledAttempts; attempt++ {
 		in.Title = getUntitledName(attempt)
-		made, err := u.createTitled(ctx, v, in)
+		made, err := u.createTitledNote(ctx, v, in)
 		if errors.Is(err, vault.ErrAlreadyExists) {
 			continue
 		}

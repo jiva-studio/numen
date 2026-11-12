@@ -671,7 +671,7 @@ func onDisk(t *testing.T, root, path string) string {
 
 const identified = "01M02ACGM0FYMSXNDP29C90JNR"
 
-func getResolved(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.ResolvedAddress {
+func getResolvedAddresses(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.ResolvedAddress {
 	t.Helper()
 	delta := map[string]*v1.ResolvedAddress{}
 	for _, one := range answer.GetResolved() {
@@ -694,7 +694,7 @@ func TestResolveAddresses_ReturnsTargetNote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	landed := getResolved(t, answer.Msg)
+	landed := getResolvedAddresses(t, answer.Msg)
 	for _, content := range []string{"name://Entropy", "note://" + identified} {
 		one := landed[content]
 		if one.GetPath() != "physics/Entropy.md" {
@@ -737,7 +737,7 @@ func TestResolveAddressesFindsTheWikilinksOfAText(t *testing.T) {
 	if !slices.Equal(got, want) {
 		t.Errorf("found %q, want %q", got, want)
 	}
-	landed := getResolved(t, answer.Msg)
+	landed := getResolvedAddresses(t, answer.Msg)
 	if got := landed["name://Entropy"].GetPath(); got != "physics/Entropy.md" {
 		t.Errorf("the link reaches %q", got)
 	}
@@ -765,7 +765,7 @@ func TestANameReachesTheNoteAdjacentTheOneItIsSavedIn(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got := getResolved(t, answer.Msg)["name://Entropy"].GetPath(); got != want {
+		if got := getResolvedAddresses(t, answer.Msg)["name://Entropy"].GetPath(); got != want {
 			t.Errorf("written in %s it reaches %q, want %q", from, got, want)
 		}
 	}
@@ -785,7 +785,7 @@ func TestANameSeveralNotesAnswerToIsReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	one := getResolved(t, answer.Msg)["name://Entropy"]
+	one := getResolvedAddresses(t, answer.Msg)["name://Entropy"]
 	if one.GetPath() != "heat/Entropy.md" {
 		t.Errorf("it reaches %q, want the nearest in the tree", one.GetPath())
 	}
@@ -807,7 +807,7 @@ func TestANameSavedInNoNoteReachesTheNoteItNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	one := getResolved(t, answer.Msg)["name://"+lecture]
+	one := getResolvedAddresses(t, answer.Msg)["name://"+lecture]
 	if one.GetPath() != "notes/"+lecture+".md" {
 		t.Errorf("it reaches %q", one.GetPath())
 	}

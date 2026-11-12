@@ -6,7 +6,7 @@ import (
 
 func TestProfileNamingTheOldPoolingIsRejected(t *testing.T) {
 	var reported error
-	table := getShipped(
+	table := getShippedProfiles(
 		t,
 	).WithUserProfiles(
 		"/data/profiles",

@@ -46,7 +46,7 @@ type SlotEntry struct {
 	Values  map[string]string
 }
 
-func (e SlotEntry) getPlaced() (kind, id string) {
+func (e SlotEntry) getPlacement() (kind, id string) {
 	switch {
 	case e.Command != "":
 		return "command", e.Command
@@ -78,7 +78,7 @@ func (m Manifest) listSlotIssues() []error {
 	windowViews := map[string]bool{}
 	for _, entry := range m.Contributes.Slots {
 		issues = append(issues, listSlotEntryIssues(entry, declared)...)
-		kind, id := entry.getPlaced()
+		kind, id := entry.getPlacement()
 		key := placement{entry.Slot, kind, id, entry.getValuesKey()}
 		if kind != "" && observed[key] {
 			issues = append(issues, fmt.Errorf("%w: %s %q is placed twice in %q", ErrInvalidSlotEntry, kind, id, entry.Slot))

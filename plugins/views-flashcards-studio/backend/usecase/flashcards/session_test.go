@@ -1236,8 +1236,8 @@ func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 	// Today's answer to the card, in a run named for yesterday, and yesterday's
 	// in a run named for today: the files sort the other way about from the
 	// answers in them.
-	answer(t, s.runNamed(t, yesterday, getSaturday().Add(-2*time.Hour)), cardID(0), 6*time.Second)
-	answer(t, s.runNamed(t, getSaturday(), yesterday), cardID(0), 6*time.Second)
+	answer(t, s.runNamedReview(t, yesterday, getSaturday().Add(-2*time.Hour)), cardID(0), 6*time.Second)
+	answer(t, s.runNamedReview(t, getSaturday(), yesterday), cardID(0), 6*time.Second)
 
 	// The card was first answered yesterday, so today's answer to it is a
 	// review and the day's one new card is still to be taken.

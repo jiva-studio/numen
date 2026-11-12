@@ -6,7 +6,7 @@ import { STUB_COMPONENT } from '../../testing/stubComponent'
 
 const PERMISSIONS = ['vault:read', 'vault:write']
 
-function createRegistering() {
+function createRegisteringHost() {
   const registered = vi.fn(() => ({ dispose: vi.fn() }))
   const host = createTestContextHost({
     registration: {
@@ -21,7 +21,7 @@ function createRegistering() {
 
 describe('a registration the manifest does not declare', () => {
   it('fails for a reader, naming the plugin, the kind and the id', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', { permissions: PERMISSIONS })
     const context = createPluginContext('md.numen.sample', host, manifest)
 
@@ -32,7 +32,7 @@ describe('a registration the manifest does not declare', () => {
   })
 
   it('fails for a tab kind of another id than the declared one', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: PERMISSIONS,
       tabKinds: ['deck'],
@@ -46,7 +46,7 @@ describe('a registration the manifest does not declare', () => {
   })
 
   it('fails for a command, and for a shared command no handler declares', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: PERMISSIONS,
       commands: ['deck.open'],
@@ -63,7 +63,7 @@ describe('a registration the manifest does not declare', () => {
   })
 
   it('fails for a settings view', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', { permissions: PERMISSIONS })
     const context = createPluginContext('md.numen.sample', host, manifest)
 
@@ -74,7 +74,7 @@ describe('a registration the manifest does not declare', () => {
   })
 
   it('fails for every registration of a plugin that has no manifest', () => {
-    const { host } = createRegistering()
+    const { host } = createRegisteringHost()
     const context = createPluginContext('md.numen.sample', host, { permissions: PERMISSIONS })
 
     expect(() => context.register.reader({ id: 'pdf', component: STUB_COMPONENT })).toThrowError(
@@ -85,7 +85,7 @@ describe('a registration the manifest does not declare', () => {
 
 describe('a registration the manifest declares', () => {
   it('reaches the host', () => {
-    const { host, registered } = createRegistering()
+    const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: PERMISSIONS,
       readers: ['pdf'],

@@ -63,7 +63,7 @@ const theme = EditorView.theme({
   },
 })
 
-const createEditable = (isEditable: boolean): Extension => [
+const createEditableExtension = (isEditable: boolean): Extension => [
   EditorView.editable.of(isEditable),
   EditorState.readOnly.of(!isEditable),
 ]
@@ -103,7 +103,7 @@ export function createTranscriptView(options: TranscriptViewOptions): Transcript
         ]),
         theme,
         EditorView.contentAttributes.of({ 'aria-label': options.label }),
-        editable.of(createEditable(options.isEditable)),
+        editable.of(createEditableExtension(options.isEditable)),
         added.of(options.extensions),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !isSetting) options.onChange(update.state.doc.toString())
@@ -129,7 +129,7 @@ export function createTranscriptView(options: TranscriptViewOptions): Transcript
   return {
     setText,
     setEditable: (isEditable) =>
-      view.dispatch({ effects: editable.reconfigure(createEditable(isEditable)) }),
+      view.dispatch({ effects: editable.reconfigure(createEditableExtension(isEditable)) }),
     setExtensions: (extensions) => view.dispatch({ effects: added.reconfigure(extensions) }),
     destroy: () => view.destroy(),
   }

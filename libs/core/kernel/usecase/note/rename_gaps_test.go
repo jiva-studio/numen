@@ -13,7 +13,7 @@ import (
 // took.
 func TestARenameOfANoteThatIsNotThereAnswersWithNothing(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
 	got, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy")
 	if !errors.Is(err, edit.ErrNoNote) {
@@ -28,7 +28,7 @@ func TestARenameOfANoteThatIsNotThereAnswersWithNothing(t *testing.T) {
 // are kept as one.
 func TestAFilenameIsSavedIntoTheTitleWhereTheTwoAreCachedAsOne(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
 
 	if err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
 		t.Fatal(err)
@@ -42,7 +42,7 @@ func TestAFilenameIsSavedIntoTheTitleWhereTheTwoAreCachedAsOne(t *testing.T) {
 func TestAFilenameIsLeftOutOfTheNoteWhereTheTwoAreReportedApart(t *testing.T) {
 	t.Parallel()
 	raw := "---\ntitle: Old\n---\nA measure.\n"
-	c := openChanging(t, map[string]string{"Entropy.md": raw})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": raw})
 	apart := note.NewMove(c.moveApartDeps())
 
 	if err := apart.WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
@@ -63,7 +63,7 @@ func TestAFilenameIsLeftOutOfTheNoteWhereTheTwoAreReportedApart(t *testing.T) {
 func TestANoteWithNoTitleIsLeftAloneByItsFilename(t *testing.T) {
 	t.Parallel()
 	raw := "# Entropy\n\nA measure.\n"
-	c := openChanging(t, map[string]string{"Entropy.md": raw})
+	c := openChangeFixture(t, map[string]string{"Entropy.md": raw})
 
 	if err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
 		t.Fatal(err)
@@ -75,7 +75,7 @@ func TestANoteWithNoTitleIsLeftAloneByItsFilename(t *testing.T) {
 
 func TestAFilenameCannotBeSavedIntoANoteThatIsNotThere(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
 	err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Missing.md")
 	if !errors.Is(err, edit.ErrNoNote) {
@@ -85,7 +85,7 @@ func TestAFilenameCannotBeSavedIntoANoteThatIsNotThere(t *testing.T) {
 
 func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 	t.Parallel()
-	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
 	renaming := note.NewRename(c.moveDeps(), c.move(), note.OpenGate{})
 	if _, err := renaming.Execute(t.Context(), c.vault, "Old.md", "Entropy"); err != nil {

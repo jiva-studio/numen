@@ -21,7 +21,7 @@ func NewCreate(op Operation, newID func() (string, error)) *Create {
 // Execute stores the value, then lists the secret, and returns its id. The value is stored first,
 // and removed again where the list cannot be written.
 func (u *Create) Execute(ctx context.Context, group, name, value string) (string, error) {
-	if err := checkNew(group, name, value); err != nil {
+	if err := checkNewSecret(group, name, value); err != nil {
 		return "", err
 	}
 	var id string
@@ -65,7 +65,7 @@ func (u *Create) makeID(list []plugin.Secret) (string, error) {
 	}
 }
 
-func checkNew(group, name, value string) error {
+func checkNewSecret(group, name, value string) error {
 	if err := checkName("group", group); err != nil {
 		return err
 	}

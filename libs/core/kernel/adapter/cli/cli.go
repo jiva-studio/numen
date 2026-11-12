@@ -92,7 +92,7 @@ func runCommand(ctx context.Context, term terminal, rest []string, session Sessi
 	return formatVaultError(one.Run(ctx, term, rest[1:]))
 }
 
-func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
+func parseInterspersedFlags(fs *flag.FlagSet, args []string) ([]string, error) {
 	var positional []string
 	for {
 		if err := fs.Parse(args); err != nil {

@@ -72,7 +72,7 @@ func (s *Stopper) stopTarget(ctx context.Context, target Target, gracePeriod tim
 
 // EvictIdle stops the plugins that hold no lease and have been idle for longer than threshold.
 func (s *Stopper) EvictIdle(ctx context.Context, threshold, gracePeriod time.Duration) []string {
-	return s.EvictTargets(ctx, takeIdle(s.sups, threshold, s.clock.Now()), gracePeriod)
+	return s.EvictTargets(ctx, takeIdleTargets(s.sups, threshold, s.clock.Now()), gracePeriod)
 }
 
 // EvictTargets stops the targets and returns the ids of the ones it stopped. It reports a failure to stop one.
@@ -91,7 +91,7 @@ func (s *Stopper) EvictTargets(ctx context.Context, targets []Target, gracePerio
 // TakeRunning returns, as targets to stop, the plugins whose supervisor is not dormant, and forgets
 // their endpoints.
 func (s *Stopper) TakeRunning() []Target {
-	return takeRunning(s.sups)
+	return takeRunningTargets(s.sups)
 }
 
 // StopTargets stops the targets, closes the pipes held and the endpoint of the host, and returns the

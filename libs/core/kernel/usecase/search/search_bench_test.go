@@ -304,7 +304,7 @@ func BenchmarkComponents(b *testing.B) {
 						b.Fatal(err)
 					}
 					if len(res) == 0 {
-						b.Fatal("findNearest returned no passages")
+						b.Fatal("findNearestPassages returned no passages")
 					}
 				}
 			})

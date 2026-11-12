@@ -354,7 +354,7 @@ func TestUndoReview_ReturnsEmptyResponse(t *testing.T) {
 // A range covers every day of a long history, answered and upcoming: the days
 // outside it do not end the walk through the days inside it.
 func TestListReviewDays_RangeCoversLongHistory(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 

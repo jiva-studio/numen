@@ -314,7 +314,7 @@ describe('a box with more of its title to show', () => {
     vi.useRealTimers()
   })
 
-  const mountWide = (
+  const mountWideNode = (
     wide: WideBox | null = WIDE,
     overrides: Partial<PlacedNode> = {},
     gestureRole: GestureRole = 'open',
@@ -342,7 +342,7 @@ describe('a box with more of its title to show', () => {
   }
 
   /** The pointer enters, rests, and the opening is drawn to its end. */
-  const rest = async (view: ReturnType<typeof mountWide>) => {
+  const rest = async (view: ReturnType<typeof mountWideNode>) => {
     await view.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
     view.world.run()
@@ -351,14 +351,14 @@ describe('a box with more of its title to show', () => {
   }
 
   it('is drawn as it was placed until the hand has been on it a while', async () => {
-    const mounted = mountWide()
+    const mounted = mountWideNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
     expect(getBox(mounted.node)).toStrictEqual({ width: 144, x: -72 })
   })
 
   it('opens across several frames and not in one', async () => {
-    const mounted = mountWide()
+    const mounted = mountWideNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
 
@@ -371,12 +371,12 @@ describe('a box with more of its title to show', () => {
   })
 
   it('widens at its current position once the hand has rested there', async () => {
-    const node = await rest(mountWide())
+    const node = await rest(mountWideNode())
     expect(getBox(node)).toStrictEqual({ width: 400, x: -200 })
   })
 
   it('carries its title and its handle out to the widened edge', async () => {
-    const node = await rest(mountWide())
+    const node = await rest(mountWideNode())
     const title = node.get('foreignObject')
     expect(Number(title.attributes('width'))).toBe(400)
     expect(Number(title.attributes('x'))).toBe(-200)
@@ -384,13 +384,13 @@ describe('a box with more of its title to show', () => {
   })
 
   it('is drawn where the widening places it', async () => {
-    const node = await rest(mountWide({ width: 400, offset: -60 }))
+    const node = await rest(mountWideNode({ width: 400, offset: -60 }))
     expect(getBox(node)).toStrictEqual({ width: 400, x: -260 })
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(140 0)')
   })
 
   it('says so as it begins to open, since only the whole picture can lift it', async () => {
-    const mounted = mountWide()
+    const mounted = mountWideNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
 
@@ -401,7 +401,7 @@ describe('a box with more of its title to show', () => {
   })
 
   it('is put back once the hand has left it', async () => {
-    const mounted = mountWide()
+    const mounted = mountWideNode()
     await rest(mounted)
 
     await mounted.node.trigger('pointerleave')
@@ -413,7 +413,7 @@ describe('a box with more of its title to show', () => {
   })
 
   it('begins the wait again where the picture moved it under the hand', async () => {
-    const mounted = mountWide()
+    const mounted = mountWideNode()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
 

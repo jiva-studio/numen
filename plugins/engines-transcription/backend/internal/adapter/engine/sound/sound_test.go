@@ -273,7 +273,7 @@ func TestSignedSamplesOfAnyWidth(t *testing.T) {
 		{[]byte{0xFF, 0xFF, 0x7F}, 8388607},
 		{[]byte{0x00, 0x00, 0x80}, -8388608},
 	} {
-		if got := readSigned(one.raw); got != one.want {
+		if got := readSignedSample(one.raw); got != one.want {
 			t.Errorf("%v is %d and should be %d", one.raw, got, one.want)
 		}
 	}
@@ -309,7 +309,7 @@ func TestInt16DecoderMatchesPerSampleDecoder(t *testing.T) {
 		got := make([]float32, count)
 		readInt16(got, raw)
 		for i := range got {
-			want := float32(readSigned(raw[i*2:(i+1)*2])) / float32(int64(1)<<15)
+			want := float32(readSignedSample(raw[i*2:(i+1)*2])) / float32(int64(1)<<15)
 			if math.Float32bits(got[i]) != math.Float32bits(want) {
 				t.Fatalf("count %d sample %d is %v and should be %v", count, i, got[i], want)
 			}

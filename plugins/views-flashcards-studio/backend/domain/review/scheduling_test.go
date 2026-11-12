@@ -143,7 +143,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	}
 }
 
-func getScheduling() []string {
+func getSchedulingFunctions() []string {
 	return []string{"History.Replay", "Simulation.step"}
 }
 
@@ -186,11 +186,11 @@ func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 	slices.Sort(calls)
 	calls = slices.Compact(calls)
 	for _, one := range calls {
-		if !slices.Contains(getScheduling(), one) {
+		if !slices.Contains(getSchedulingFunctions(), one) {
 			t.Errorf("%s places a card's day: one function places it and everything else comes to that one", one)
 		}
 	}
-	for _, one := range getScheduling() {
+	for _, one := range getSchedulingFunctions() {
 		if !slices.Contains(calls, one) {
 			t.Errorf("%s is named here as an arithmetic scheduling a day and places none", one)
 		}
