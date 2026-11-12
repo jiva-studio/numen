@@ -75,12 +75,16 @@ func isPathWithin(base, child string) bool {
 		return false
 	}
 
-	realBase, errB := filepath.EvalSymlinks(cleanBase)
-	realChild, errC := filepath.EvalSymlinks(cleanChild)
-	if errB == nil && errC == nil {
-		return isRelativeInside(realBase, realChild)
+	// A path that cannot be resolved cannot be shown to stay inside.
+	realBase, err := filepath.EvalSymlinks(cleanBase)
+	if err != nil {
+		return false
 	}
-	return true
+	realChild, err := filepath.EvalSymlinks(cleanChild)
+	if err != nil {
+		return false
+	}
+	return isRelativeInside(realBase, realChild)
 }
 
 func isRelativeInside(base, child string) bool {

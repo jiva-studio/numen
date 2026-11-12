@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 

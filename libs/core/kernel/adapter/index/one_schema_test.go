@@ -158,10 +158,49 @@ func TestAnIndexOfTheCurrentBuildIsOpenedAndUsedAsItIs(t *testing.T) {
 	}
 }
 
-func TestAnIndexOfAnotherVersionStopsTheStartAndStaysByteForByteTheSame(t *testing.T) {
+func TestAnIndexOfAnotherVersionIsBuiltAgain(t *testing.T) {
 	ctx := t.Context()
 
-	for _, version := range []int{0, 2, 10, 110} {
+	for _, version := range []int{2, 10, 110} {
+		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "index.db")
+			raw := openRaw(t, path)
+			for _, statement := range []string{
+				`CREATE TABLE old_marker_rows (marker TEXT)`,
+				`INSERT INTO old_marker_rows VALUES ('01OLDMARKER')`,
+				fmt.Sprintf("PRAGMA user_version = %d", version),
+			} {
+				if _, err := raw.ExecContext(ctx, statement); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := raw.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			db, err := Open(ctx, path)
+			if err != nil {
+				t.Fatalf("an index of version %d was not rebuilt: %v", version, err)
+			}
+			defer testsupport.Close(t, db)
+			if v := getUserVersion(ctx, t, db.write); v != expectedVersion {
+				t.Errorf("the index is at version %d, want %d", v, expectedVersion)
+			}
+			var old int
+			if err := db.write.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master WHERE name = 'old_marker_rows'`).Scan(&old); err != nil {
+				t.Fatal(err)
+			}
+			if old != 0 {
+				t.Error("a table of the old index is still there")
+			}
+		})
+	}
+}
+
+func TestADatabaseWithNoVersionStopsTheStartAndStaysByteForByteTheSame(t *testing.T) {
+	ctx := t.Context()
+
+	for _, version := range []int{0} {
 		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "index.db")
 			raw := openRaw(t, path)

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
 func TestBitsKeepTheSign(t *testing.T) {

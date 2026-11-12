@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
 // declaredWidth reads the width out of the statement the table was created by,

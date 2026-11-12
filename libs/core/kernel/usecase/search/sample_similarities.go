@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
 // Samples reads the small chunks of a vault that carry a vector. The order is a function of the content

@@ -37,7 +37,7 @@ func (c Config) ApplySettings() (Config, []string, error) {
 
 func applySettingsFile(c Config, s settingsadapter.File) Config {
 	compute := settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)
-	c.Resources.machine = Machine{ResolvedCompute: compute.Resolved, Hardware: compute.Machine}
+	c.machine = Machine{ResolvedCompute: compute.Resolved, Hardware: compute.Machine}
 	configurePluginHost(settingsOf(c), s, func() { setUpPluginHost(c) })
 	return c
 }

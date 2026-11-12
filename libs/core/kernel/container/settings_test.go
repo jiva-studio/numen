@@ -247,3 +247,19 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 		t.Errorf("profiles sent to the host = %v, want none", host.profiles)
 	}
 }
+
+// A configuration copied before the settings were applied keeps the plan it had.
+func TestApplyingSettingsLeavesTheConfigurationItWasCalledOnAlone(t *testing.T) {
+	response := DefaultSettings()
+	response.Performance = hardware.Performance{Profile: settingsdomain.ProfileEco}
+	before := NewConfig(Config{})
+
+	after := before.SetSettings(response)
+
+	if after.GetMachine().ResolvedCompute.Workers != 1 {
+		t.Fatalf("the applied configuration plans %+v", after.GetMachine().ResolvedCompute)
+	}
+	if got := before.GetMachine().ResolvedCompute; got.Workers != 0 || got.Profile != "" {
+		t.Errorf("the configuration the call was made on changed to %+v", got)
+	}
+}

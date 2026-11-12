@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )

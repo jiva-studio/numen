@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"path"
 	"slices"
 	"strconv"
@@ -24,15 +25,18 @@ var files embed.FS
 
 // A migration is one numbered file, applied once, in order.
 //
-// The index holds hours of indexing, so the application never empties, drops or
-// rebuilds it. A change of the schema is a new numbered file after the last
-// one, and an index at any version no file carries is left as it is and
-// reported.
+// A change of the schema is a new numbered file after the last one. The index is a
+// cache of the vault, so a file at a version no file carries (one a newer build
+// wrote) is deleted and built again, and an unrelated database that has no
+// version is left as it is and reported.
 type migration struct {
 	version int
 	name    string
 	body    string
 }
+
+// errUnknownVersion is an index at a version this build does not know.
+var errUnknownVersion = errors.New("the index is at an unknown version")
 
 func migrate(ctx context.Context, db *sql.DB, file string) error {
 	available, err := loadMigrations()
@@ -70,7 +74,10 @@ func checkVersion(ctx context.Context, db *sql.DB, file string, available []migr
 			return 0, err
 		}
 	}
-	return 0, fmt.Errorf("the index %s is at version %d and this build expects version %d: it is left as it is", file, current, newest)
+	if current > 0 {
+		return 0, fmt.Errorf("the index %s is at version %d and this build expects version %d: %w", file, current, newest, errUnknownVersion)
+	}
+	return 0, fmt.Errorf("the database %s is at version %d and holds tables, and this build expects version %d: it is left as it is", file, current, newest)
 }
 
 func isEmpty(ctx context.Context, db *sql.DB) (bool, error) {
@@ -181,4 +188,14 @@ func stripComments(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// removeIndexFiles deletes the index and the files SQLite keeps beside it.
+func removeIndexFiles(file string) error {
+	for _, name := range []string{file, file + "-wal", file + "-shm"} {
+		if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("delete the index %s: %w", name, err)
+		}
+	}
+	return nil
 }

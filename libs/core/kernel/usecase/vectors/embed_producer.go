@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"

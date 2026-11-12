@@ -87,7 +87,11 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	}
 
 	// A file this build cannot use is read before the pool below sets WAL on it.
-	if err := checkFile(ctx, path); err != nil {
+	if err := checkFile(ctx, path); errors.Is(err, errUnknownVersion) {
+		if err := removeIndexFiles(path); err != nil {
+			return nil, err
+		}
+	} else if err != nil {
 		return nil, err
 	}
 

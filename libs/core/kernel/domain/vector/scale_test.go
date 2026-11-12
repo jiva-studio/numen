@@ -8,7 +8,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
 // step is what one stored byte is worth: the whole scale over the 127 levels a

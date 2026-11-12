@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -125,7 +124,7 @@ func (u *Texts) GetTextRange(ctx context.Context, v domain.Vault, path string, i
 	if length > 0 && length < size-rangeStart {
 		rangeEnd = rangeStart + length
 	}
-	rangeStart, raw := text.WholeCharacters(rangeStart, []byte(version.Text[rangeStart:rangeEnd]), size)
+	rangeStart, raw := textdomain.WholeCharacters(rangeStart, []byte(version.Text[rangeStart:rangeEnd]), size)
 	return plugin.TextRange{Segments: version.GetSegmentsIn(rangeStart, rangeStart+len(raw)), Start: rangeStart, Size: size}, nil
 }
 

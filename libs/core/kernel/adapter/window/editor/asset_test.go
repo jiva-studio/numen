@@ -3,8 +3,10 @@ package editor
 import (
 	"errors"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -65,5 +67,41 @@ func writeAssetFile(t *testing.T, path, content string) {
 	}
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestAssetsAreServedUnderTheTypeOfTheirExtension(t *testing.T) {
+	cases := []struct {
+		name, wantType string
+		wantDownload   bool
+	}{
+		{"kiln.png", "image/png", false},
+		{"KILN.PNG", "image/png", false},
+		{"talk.mp3", "audio/mpeg", false},
+		{"page.html", "application/octet-stream", true},
+		{"script.js", "application/octet-stream", true},
+		{"notes.md", "application/octet-stream", true},
+		{"no-extension", "application/octet-stream", true},
+	}
+	for _, c := range cases {
+		head := http.Header{}
+		setAssetHeaders(head, c.name)
+		if got := head.Get("Content-Type"); got != c.wantType {
+			t.Errorf("%s: type %q, want %q", c.name, got, c.wantType)
+		}
+		if got := head.Get("X-Content-Type-Options"); got != "nosniff" {
+			t.Errorf("%s: X-Content-Type-Options %q, want nosniff", c.name, got)
+		}
+		if got := head.Get("Content-Disposition") == "attachment"; got != c.wantDownload {
+			t.Errorf("%s: attachment %v, want %v", c.name, got, c.wantDownload)
+		}
+	}
+}
+
+func TestAnSVGIsSandboxedWhenOpenedAsAPage(t *testing.T) {
+	head := http.Header{}
+	setAssetHeaders(head, "diagram.svg")
+	if got := head.Get("Content-Security-Policy"); !strings.Contains(got, "sandbox") || !strings.Contains(got, "default-src 'none'") {
+		t.Fatalf("policy %q does not sandbox the picture", got)
 	}
 }

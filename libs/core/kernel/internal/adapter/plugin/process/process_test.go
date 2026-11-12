@@ -137,8 +137,20 @@ func stringsCut(s, sep string) (before, after string, found bool) {
 }
 
 func TestValidateWorkingDirectory(t *testing.T) {
-	pluginDir := filepath.Join(string(filepath.Separator), "opt", "numen", "plugins", "ocr")
-	vaultRoot := filepath.Join(string(filepath.Separator), "home", "user", "documents", "vault")
+	pluginDir := createFolderOutsideTemp(t, "plugin")
+	vaultRoot := createFolderOutsideTemp(t, "vault")
+	for _, one := range []string{filepath.Join(pluginDir, "sub", "dir"), filepath.Join(vaultRoot, "notes")} {
+		if err := os.MkdirAll(one, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("a folder that does not exist is refused", func(t *testing.T) {
+		missing := filepath.Join(pluginDir, "missing")
+		if _, err := ValidateWorkingDirectory(missing, pluginDir, vaultRoot); !errors.Is(err, ErrWorkingDirectoryEscape) {
+			t.Fatalf("expected ErrWorkingDirectoryEscape, got %v", err)
+		}
+	})
 
 	t.Run("confinement within plugin directory", func(t *testing.T) {
 		got, err := ValidateWorkingDirectory(pluginDir, pluginDir, vaultRoot)
@@ -357,4 +369,24 @@ func TestNoSecretPassesAsARuntimeVariable(t *testing.T) {
 			t.Errorf("isRuntimeEnv(%q) = true", name)
 		}
 	}
+}
+
+// createFolderOutsideTemp makes a folder under the package folder, because the system temporary
+// folders are refused as a working directory.
+func createFolderOutsideTemp(t *testing.T, name string) string {
+	t.Helper()
+	dir, err := os.MkdirTemp(".", name+"-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(dir); err != nil {
+			t.Error(err)
+		}
+	})
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return abs
 }

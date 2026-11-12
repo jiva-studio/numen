@@ -72,6 +72,10 @@ type Config struct {
 	Now machineport.Clock
 
 	Resources *Resources
+
+	// machine is what the settings last resolved for the hardware. It belongs to this value, and
+	// ApplySettings returns a Config that holds a new one.
+	machine Machine
 }
 
 // Resources is what every part a container assembles shares: the write lock of each vault, the
@@ -83,7 +87,6 @@ type Resources struct {
 	Chunks      *note.ChunkTokens
 	TextReaders textdomain.Readers
 
-	machine         Machine
 	vaultLocks      *vaultwriter.Locks
 	watches         *vaultwatch.Hub
 	settingsFiles   *settingsadapter.Files
@@ -120,7 +123,7 @@ func NewConfig(c Config) Config {
 }
 
 // GetMachine is what the hardware allows the installation to use, as the settings last resolved it.
-func (c Config) GetMachine() Machine { return c.Resources.machine }
+func (c Config) GetMachine() Machine { return c.machine }
 
 func (c Config) host() *PluginHost {
 	if c.PluginHost == nil {
@@ -157,7 +160,7 @@ func settingsOf(c Config) settingsWiring {
 			SettingsPath:    c.SettingsPath,
 			ThemesPath:      c.ThemesPath,
 			RegistryPath:    c.RegistryPath,
-			ResolvedCompute: res.machine.ResolvedCompute,
+			ResolvedCompute: c.machine.ResolvedCompute,
 		},
 		settingsStores: settingsStores{
 			Watches:         res.watches,
@@ -178,7 +181,7 @@ func searchWith(c Config, v vaultWiring) searchWiring {
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
 		Chunks:             c.Resources.Chunks,
-		ResolvedCompute:    c.Resources.machine.ResolvedCompute,
+		ResolvedCompute:    c.machine.ResolvedCompute,
 		PluginHost:         c.host(),
 		RunningHost:        c.runningHost(),
 		Clock:              c.Clock(),

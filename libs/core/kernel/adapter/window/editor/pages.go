@@ -225,6 +225,7 @@ func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescap
 		return false
 	}
 	defer closeAndReport(s.window.AddTask, file)
+	setAssetHeaders(w.Header(), info.Name())
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 	return true
 }

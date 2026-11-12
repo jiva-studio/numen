@@ -1,4 +1,3 @@
-// Package text works on the bytes of a file as text.
 package text
 
 import "unicode/utf8"
