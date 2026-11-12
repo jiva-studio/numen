@@ -262,7 +262,7 @@ const (
 	StopReason_STOP_REASON_MAX_TOKENS        StopReason = 2
 	StopReason_STOP_REASON_MAX_TURN_REQUESTS StopReason = 3
 	StopReason_STOP_REASON_REFUSAL           StopReason = 4
-	StopReason_STOP_REASON_CANCELLED         StopReason = 5
+	StopReason_STOP_REASON_CANCELED          StopReason = 5
 )
 
 // Enum value maps for StopReason.
@@ -273,7 +273,7 @@ var (
 		2: "STOP_REASON_MAX_TOKENS",
 		3: "STOP_REASON_MAX_TURN_REQUESTS",
 		4: "STOP_REASON_REFUSAL",
-		5: "STOP_REASON_CANCELLED",
+		5: "STOP_REASON_CANCELED",
 	}
 	StopReason_value = map[string]int32{
 		"STOP_REASON_UNSPECIFIED":       0,
@@ -281,7 +281,7 @@ var (
 		"STOP_REASON_MAX_TOKENS":        2,
 		"STOP_REASON_MAX_TURN_REQUESTS": 3,
 		"STOP_REASON_REFUSAL":           4,
-		"STOP_REASON_CANCELLED":         5,
+		"STOP_REASON_CANCELED":          5,
 	}
 )
 
@@ -1102,15 +1102,15 @@ const file_acp_acp_proto_rawDesc = "" +
 	"\x18TOOL_CALL_STATUS_PENDING\x10\x01\x12 \n" +
 	"\x1cTOOL_CALL_STATUS_IN_PROGRESS\x10\x02\x12\x1e\n" +
 	"\x1aTOOL_CALL_STATUS_COMPLETED\x10\x03\x12\x1b\n" +
-	"\x17TOOL_CALL_STATUS_FAILED\x10\x04*\xb6\x01\n" +
+	"\x17TOOL_CALL_STATUS_FAILED\x10\x04*\xb5\x01\n" +
 	"\n" +
 	"StopReason\x12\x1b\n" +
 	"\x17STOP_REASON_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14STOP_REASON_END_TURN\x10\x01\x12\x1a\n" +
 	"\x16STOP_REASON_MAX_TOKENS\x10\x02\x12!\n" +
 	"\x1dSTOP_REASON_MAX_TURN_REQUESTS\x10\x03\x12\x17\n" +
-	"\x13STOP_REASON_REFUSAL\x10\x04\x12\x19\n" +
-	"\x15STOP_REASON_CANCELLED\x10\x05BCZAgithub.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp;acpb\x06proto3"
+	"\x13STOP_REASON_REFUSAL\x10\x04\x12\x18\n" +
+	"\x14STOP_REASON_CANCELED\x10\x05BCZAgithub.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp;acpb\x06proto3"
 
 var (
 	file_acp_acp_proto_rawDescOnce sync.Once
