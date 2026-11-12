@@ -9,8 +9,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
 )
 
 const (
@@ -74,29 +75,50 @@ func download(ctx context.Context, client *http.Client, r Release, pos string, o
 		return fmt.Errorf("fetching %s: %s", r.Address, answer.Status)
 	}
 
-	file, err := os.CreateTemp(filepath.Dir(pos), filepath.Base(pos)+".part-*")
-	if err != nil {
-		return err
+	check := &archiveReader{
+		source:   io.LimitReader(answer.Body, maxArchiveBytes+1),
+		digest:   sha256.New(),
+		progress: progressWriter{total: answer.ContentLength, onProgress: onProgress},
+		wanted:   r.Sum,
 	}
-	part := file.Name()
-	hash := sha256.New()
-	copied, err := io.Copy(io.MultiWriter(file, hash, &progressWriter{total: answer.ContentLength, onProgress: onProgress}), io.LimitReader(answer.Body, maxArchiveBytes+1))
-	if closeErr := file.Close(); err == nil {
-		err = closeErr
-	}
-	if err == nil && copied > maxArchiveBytes {
-		err = fmt.Errorf("the archive passes %d bytes", int64(maxArchiveBytes))
-	}
-	if found := hex.EncodeToString(hash.Sum(nil)); err == nil && found != r.Sum {
-		err = fmt.Errorf("the download holds %s, and %s is pinned", found, r.Sum)
-	}
-	if err != nil {
-		return errors.Join(fmt.Errorf("fetching %s: %w", r.Address, err), os.Remove(part))
-	}
-	if err := os.Rename(part, pos); err != nil {
-		return errors.Join(err, os.Remove(part))
+	if err := atomicfile.WriteFile(ctx, pos, check, 0o644); err != nil {
+		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
 	return nil
+}
+
+// archiveReader hands on the bytes of an archive and, at their end, refuses an archive that is too
+// large or does not hash to the pinned sum, so the write that reads it never replaces the file with
+// it.
+type archiveReader struct {
+	source io.Reader
+	digest interface {
+		io.Writer
+		Sum(prefix []byte) []byte
+	}
+	progress progressWriter
+	wanted   string
+	count    int64
+}
+
+func (a *archiveReader) Read(chunk []byte) (int, error) {
+	n, err := a.source.Read(chunk)
+	a.count += int64(n)
+	if _, writeErr := a.digest.Write(chunk[:n]); writeErr != nil {
+		return n, writeErr
+	}
+	if _, progressErr := a.progress.Write(chunk[:n]); progressErr != nil {
+		return n, progressErr
+	}
+	if a.count > maxArchiveBytes {
+		return n, fmt.Errorf("the archive passes %d bytes", int64(maxArchiveBytes))
+	}
+	if errors.Is(err, io.EOF) {
+		if found := hex.EncodeToString(a.digest.Sum(nil)); found != a.wanted {
+			return n, fmt.Errorf("the download holds %s, and %s is pinned", found, a.wanted)
+		}
+	}
+	return n, err
 }
 
 // progressWriter reports to onProgress how many bytes have been written, of a total

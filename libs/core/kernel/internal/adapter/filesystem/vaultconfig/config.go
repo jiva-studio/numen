@@ -1,6 +1,8 @@
 package vaultconfig
 
 import (
+	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
@@ -10,6 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
 	"github.com/jiva-studio/numen/libs/note/ulid"
 )
 
@@ -88,7 +91,7 @@ func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 		return Config{}, err
 	}
 	raw = append(raw, '\n')
-	if err := os.WriteFile(filepath.Join(dir, configName), raw, 0o644); err != nil {
+	if err := atomicfile.WriteFile(context.Background(), filepath.Join(dir, configName), bytes.NewReader(raw), 0o644); err != nil {
 		return Config{}, err
 	}
 	return c, nil

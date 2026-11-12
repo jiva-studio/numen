@@ -2,6 +2,7 @@ package settings
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"syscall"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
 )
 
 // Setting is one field of the file and its position in it, the first element being the owner:
@@ -335,53 +337,8 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 	return slices.Concat(raw[:from], with, raw[to:])
 }
 
-func writeFileAtomically(path string, content []byte) (err error) {
-	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
-	if err != nil {
-		return err
-	}
-	// After a successful rename the temporary name no longer exists.
-	defer func() {
-		if removeErr := os.Remove(tmp.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
-			err = errors.Join(err, removeErr)
-		}
-	}()
-
-	if _, err := tmp.Write(content); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Sync(); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmp.Name(), 0o600); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp.Name(), path); err != nil {
-		return err
-	}
-	return syncDirectory(filepath.Dir(path))
-}
-
-func syncDirectory(dir string) error {
-	folder, err := os.Open(dir)
-	if err != nil {
-		if isSyncUnsupported(err) {
-			return nil
-		}
-		return err
-	}
-	if err := folder.Sync(); err != nil && !isSyncUnsupported(err) {
-		return errors.Join(err, folder.Close())
-	}
-	return folder.Close()
-}
-
-func isSyncUnsupported(err error) bool {
-	return errors.Is(err, errors.ErrUnsupported) || errors.Is(err, fs.ErrPermission) ||
-		errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP)
+func writeFileAtomically(path string, content []byte) error {
+	return atomicfile.WriteFile(context.Background(), path, bytes.NewReader(content), 0o600)
 }
 
 func isUnwritable(err error) bool {

@@ -1,17 +1,18 @@
 package appstate
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"sync"
-	"syscall"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -65,52 +66,7 @@ func (r *VaultRegistry) save(f registryFile) error {
 		return err
 	}
 	raw = append(raw, '\n')
-	return replace(r.path, raw)
-}
-
-func replace(path string, content []byte) (err error) {
-	dir := filepath.Dir(path)
-	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".*")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if removeErr := os.Remove(tmp.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
-			err = errors.Join(err, removeErr)
-		}
-	}()
-
-	if _, err := tmp.Write(content); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Sync(); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmp.Name(), privateFileMode); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp.Name(), path); err != nil {
-		return err
-	}
-	return syncDirectory(dir)
-}
-
-func syncDirectory(dir string) (err error) {
-	if runtime.GOOS == "windows" {
-		return nil
-	}
-	folder, err := os.Open(dir)
-	if err != nil {
-		return nil
-	}
-	defer func() { err = errors.Join(err, folder.Close()) }()
-	if err := folder.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) && !errors.Is(err, errors.ErrUnsupported) {
-		return err
-	}
-	return nil
+	return atomicfile.WriteFile(context.Background(), r.path, bytes.NewReader(raw), privateFileMode)
 }
 
 func (r *VaultRegistry) List() ([]domain.Vault, error) {

@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -190,34 +190,9 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 	return streamReplace(ctx, root, name, content)
 }
 
-func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) (err error) {
-	dir := filepath.Dir(target)
-	tmp, pos, err := atomicfile.CreateTempFile(root, dir, atomicfile.GetTempPattern(filepath.Base(target)))
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if removeErr := root.Remove(pos); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
-			err = errors.Join(err, removeErr)
-		}
-	}()
-
-	if _, err := io.Copy(tmp, content); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Sync(); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Chmod(newFileMode); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := atomicfile.Rename(ctx, root, pos, target); err != nil {
-		return err
-	}
-	return atomicfile.SyncDirectory(root, dir)
+func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
+	_, err := atomicfile.Replace(ctx, root, target, content, newFileMode)
+	return err
 }
 
 func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {

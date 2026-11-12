@@ -4,12 +4,15 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
 )
 
 func unpack(archive, name, pos string) error {
@@ -67,18 +70,7 @@ func unpackZip(archive, name, pos string) (err error) {
 }
 
 func write(pos string, from io.Reader) error {
-	part := pos + ".part"
-	file, err := os.OpenFile(part, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(file, from); err != nil {
-		return errors.Join(err, file.Close(), os.Remove(part))
-	}
-	if err := file.Close(); err != nil {
-		return errors.Join(err, os.Remove(part))
-	}
-	return os.Rename(part, pos)
+	return atomicfile.WriteFile(context.Background(), pos, from, 0o755)
 }
 
 func isLibrary(found, name string) bool {
