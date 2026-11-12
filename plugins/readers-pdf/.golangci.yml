@@ -198,7 +198,7 @@ linters:
             - "**/internal/adapter/plugin/bridge/**"
             - "**/internal/adapter/plugin/commandbridge/**"
             - "**/internal/adapter/plugin/delivery/**"
-            - "**/internal/adapter/plugin/embedderbridge/**"
+            - "**/internal/adapter/plugin/sourcebridge/**"
             - "**/internal/adapter/plugin/lifecycle/**"
             - "**/internal/adapter/plugin/portproxy/**"
             - "**/internal/adapter/plugin/providerbridge/**"
@@ -292,7 +292,7 @@ linters:
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
               desc: "a bridge to a plugin does not use another bridge"
@@ -316,7 +316,7 @@ linters:
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
               desc: "a bridge to a plugin does not use another bridge"
@@ -332,10 +332,10 @@ linters:
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-        plugin-embedderbridge:
+        plugin-sourcebridge:
           list-mode: lax
           files:
-            - "**/internal/adapter/plugin/embedderbridge/**"
+            - "**/internal/adapter/plugin/sourcebridge/**"
             - "!$test"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
@@ -362,7 +362,7 @@ linters:
             - "**/internal/adapter/plugin/providerbridge/**"
             - "!$test"
           deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
               desc: "a bridge to a plugin does not use another bridge"
@@ -390,7 +390,7 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
               desc: "a bridge to a plugin does not use another bridge"
@@ -415,7 +415,7 @@ linters:
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
               desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
               desc: "a bridge to a plugin does not use another bridge"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
               desc: "a bridge to a plugin does not use another bridge"
@@ -446,7 +446,7 @@ linters:
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
               desc: "the host side that serves plugin calls does not use the bridges to a plugin"

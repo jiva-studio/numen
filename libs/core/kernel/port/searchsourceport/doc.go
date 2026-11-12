@@ -1,2 +1,2 @@
-// Package embeddingport declares what the core needs to embed text and to store and search vectors.
+// Package searchsourceport declares what the core needs of a search source and of the store of the vectors it keeps.
 package searchsourceport
