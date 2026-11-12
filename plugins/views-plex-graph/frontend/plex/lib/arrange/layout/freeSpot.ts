@@ -146,8 +146,7 @@ function getRequiredGap(gap: number): number {
 function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
   return (
     Math.abs(spot.x - other.x) >= (spot.width + other.width) / 2 + getRequiredGap(gaps.gap) ||
-    Math.abs(spot.y - other.y) >=
-      (spot.height + other.height) / 2 + getRequiredGap(gaps.lineGap)
+    Math.abs(spot.y - other.y) >= (spot.height + other.height) / 2 + getRequiredGap(gaps.lineGap)
   )
 }
 
@@ -162,7 +161,7 @@ export function isFree(spot: Spot, taken: readonly Spot[], gaps: Gaps): boolean 
  * axis before it goes deeper; of those the earlier candidate wins.
  */
 export function findFreeSpot(taken: readonly Spot[] | SpotIndex, request: SpotRequest): Spot {
-  const { middle, size, gaps } = request
+  const { size, gaps } = request
   const index = taken instanceof SpotIndex ? taken : new SpotIndex(taken)
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
@@ -184,9 +183,7 @@ function findSpotBeyond(taken: SpotIndex, request: SpotRequest): Spot {
   const { minX, maxX, minY, maxY } = taken.getExtent()
   if (Math.abs(direction.x) >= Math.abs(direction.y)) {
     const x =
-      direction.x >= 0
-        ? maxX + gaps.gap + size.width / 2 + 1
-        : minX - gaps.gap - size.width / 2 - 1
+      direction.x >= 0 ? maxX + gaps.gap + size.width / 2 + 1 : minX - gaps.gap - size.width / 2 - 1
     return { x, y: middle.y, ...size }
   }
   const y =
@@ -198,7 +195,10 @@ function findSpotBeyond(taken: SpotIndex, request: SpotRequest): Spot {
 
 function listCandidates(request: SpotRequest): Vector[] {
   const { start, middle, size, group } = request
-  const gaps = { gap: Math.max(request.gaps.gap, LEAST_GAP), lineGap: Math.max(request.gaps.lineGap, LEAST_GAP) }
+  const gaps = {
+    gap: Math.max(request.gaps.gap, LEAST_GAP),
+    lineGap: Math.max(request.gaps.lineGap, LEAST_GAP),
+  }
   const candidates: Vector[] = [middle, start]
 
   for (const box of group) {
