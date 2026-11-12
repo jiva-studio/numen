@@ -21,10 +21,10 @@ func containsLevel(levels []Level, name string) bool {
 
 // Listing is what an agent reports for a session: its models and the one it answers with.
 type Listing struct {
-	Models  []Model           `json:"models"`
-	Current string            `json:"current"`
+	Models  []Model `json:"models"`
+	Current string  `json:"current"`
 	Levels  []Level `json:"levels,omitempty"`
-	Level   string            `json:"level,omitempty"`
+	Level   string  `json:"level,omitempty"`
 }
 
 // configOption is one session config option. A select option's values are listed alone or in

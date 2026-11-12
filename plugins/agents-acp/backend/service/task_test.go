@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -324,7 +326,7 @@ func TestThePluginKeepsTheSessionsOfEightConversations(t *testing.T) {
 func TestACanceledTaskCancelsTheTurnInTheProgram(t *testing.T) {
 	program, record := fakeProgram(t, "hang")
 	ctx, cancel := context.WithCancel(t.Context())
-	time.AfterFunc(300*time.Millisecond, cancel)
+	go cancelOnPrompt(record, cancel)
 
 	_, _, err := runTask(ctx, newTestServer(t), taskCall("acp", program), &acp.TaskRequest{Prompt: "Which beds face north?", Conversation: "talk-garden"})
 
@@ -373,5 +375,15 @@ func TestAFrameThatCannotBeSentEndsTheTaskWithItsError(t *testing.T) {
 
 	if !errors.Is(err, errSend) {
 		t.Errorf("RunTask = %v, want the error of the send", err)
+	}
+}
+
+// cancelOnPrompt cancels once the program has read a prompt, or after five seconds.
+func cancelOnPrompt(record string, cancel context.CancelFunc) {
+	defer cancel()
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		if raw, err := os.ReadFile(record); err == nil && bytes.Contains(raw, []byte(`"method":"session/prompt"`)) {
+			return
+		}
 	}
 }

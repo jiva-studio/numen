@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"io"
@@ -14,6 +16,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
@@ -289,12 +293,23 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	body := `{"call":{"type":"acp","fields":{"program":` + quoteJSON(program) + `}},"messages":[{"role":"user","text":"why?"}]}`
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.ProviderService/Complete", strings.NewReader(body))
+	payload, err := proto.Marshal(userMessage("why?"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	request.Header.Set("Content-Type", "application/json")
+	body, err := json.Marshal(map[string]any{
+		"operation": llm.OperationComplete,
+		"call":      map[string]any{"type": "acp", "fields": map[string]string{"program": program}},
+		"payload":   payload,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.ProviderService/Call", bytes.NewReader(writeEnvelope(0, body)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/connect+json")
 	request.Header.Set("Authorization", "Bearer tok")
 	response, err := web.Client().Do(request)
 	if err != nil {
@@ -310,17 +325,38 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if response.StatusCode != http.StatusOK || string(answer) != `{"text":"the answer"}` {
+	result := &llm.CompleteResult{}
+	if done := readDone(t, answer); response.StatusCode != http.StatusOK || proto.Unmarshal(done, result) != nil || result.GetText() != "the answer" {
 		t.Errorf("the service answered %d %q", response.StatusCode, answer)
 	}
 }
 
-func quoteJSON(s string) string {
-	raw, err := json.Marshal(s)
-	if err != nil {
-		return `""`
+// writeEnvelope frames a message of a streaming Connect call.
+func writeEnvelope(flags byte, message []byte) []byte {
+	framed := make([]byte, 5, 5+len(message))
+	framed[0] = flags
+	binary.BigEndian.PutUint32(framed[1:], uint32(len(message)))
+	return append(framed, message...)
+}
+
+// readDone returns the done frame of the streaming Connect answer, or nil where it holds none.
+func readDone(t *testing.T, answer []byte) []byte {
+	t.Helper()
+	for len(answer) >= 5 {
+		size := binary.BigEndian.Uint32(answer[1:5])
+		if uint32(len(answer)-5) < size {
+			return nil
+		}
+		message := answer[5 : 5+size]
+		answer = answer[5+size:]
+		var frame struct {
+			Done []byte `json:"done"`
+		}
+		if json.Unmarshal(message, &frame) == nil && frame.Done != nil {
+			return frame.Done
+		}
 	}
-	return string(raw)
+	return nil
 }
 
 func newTestServer(t *testing.T) *agentServer {
