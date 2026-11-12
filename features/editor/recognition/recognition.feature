@@ -40,3 +40,20 @@ Feature: Recognition
       When the person disables the plugin "Document OCR"
       And the person searches the vault for "proofread"
       Then the search has the result "assets/flywheel.pdf" in the group "Text"
+
+  Rule: A scan is offered Create text
+
+    Background:
+      Given the vault has the following:
+        | path                            | sample                   |
+        | assets/regenerative-braking.pdf | regenerative-braking.pdf |
+      And the person opens the file at "assets/regenerative-braking.pdf"
+      And the person presses "Ctrl+p"
+
+    Scenario: The command is typed in full
+      When the person types "Create text" in the palette
+      Then the palette lists the command "Create text" 1 time
+
+    Scenario: The command is typed in part
+      When the person types "Create" in the palette
+      Then the palette lists the command "Create text" 1 time

@@ -11,7 +11,7 @@ const pluginsRoot = path.resolve(e2eRoot, '../../../plugins')
 await test('a plugin change selects its folder, the specs that name it and its scenarios', () => {
   assert.equal(
     getScope(['plugins/readers-pdf/frontend/reader.ts']),
-    'plugins/system/settings-effects.spec.ts readers.pdf scenarios/recognition.spec.ts',
+    'acceptance plugins/system/settings-effects.spec.ts readers.pdf',
   )
 })
 

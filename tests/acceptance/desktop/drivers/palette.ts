@@ -46,6 +46,19 @@ export class PaletteDriver {
     }
   }
 
+  /** Types the words into the field of the open palette. */
+  async writeInField(text: string): Promise<void> {
+    this.scenario.noteAction()
+    const field = this.palette.field()
+    await expect(field).toBeVisible()
+    await field.fill(text)
+  }
+
+  /** The open palette lists the command under its name as many times as the count says. */
+  async expectCommandCount(label: string, count: number): Promise<void> {
+    await expect(this.palette.rowNamed(new RegExp('^' + getEscaped(label) + '$'))).toHaveCount(count)
+  }
+
   private async readAsk(): Promise<Ask | undefined> {
     if (await this.palette.treeField().isVisible()) return { placeholder: 'Name', groups: [], isInTree: true }
     const field = this.palette.field()

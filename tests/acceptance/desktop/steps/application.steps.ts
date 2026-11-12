@@ -25,6 +25,14 @@ Then('the palette has the following rows:', async ({ person }, rows: DataTable) 
   await person.palette.expectRows(rows.raw())
 })
 
+When('the person types {string} in the palette', async ({ person }, text: string) => {
+  await person.palette.writeInField(text)
+})
+
+Then('the palette lists the command {string} {int} time(s)', async ({ person }, label: string, count: number) => {
+  await person.palette.expectCommandCount(label, count)
+})
+
 When('the person presses {string}', async ({ person }, keys: string) => {
   await person.window.pressKeys(keys)
 })
