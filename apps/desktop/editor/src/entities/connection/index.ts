@@ -25,8 +25,6 @@ export {
 export {
   getAddressText,
   getConnectionState,
-  getOperationsText,
-  getOperationTitles,
   getUsedByNames,
   hasAvailableType,
   hasUnavailableConnection,

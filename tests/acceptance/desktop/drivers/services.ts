@@ -1,10 +1,10 @@
 /**
  * The services a scenario names: programs of the test that stand in for a language model server on
  * this computer, each with a name, an address and the way it answers. The program is the fake
- * OpenAI server of the plugin "Language model services": the CI jobs unpack it, and a local run
- * builds it on the first use.
+ * OpenAI server of the plugin "Language model services": the CI jobs unpack it, and
+ * `make app_desktop_acceptance` builds it.
  */
-import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
+import { spawn, type ChildProcess } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -27,11 +27,9 @@ interface RunningService {
 }
 
 const requireBinary = (): string => {
-  if (fs.existsSync(BINARY)) return BINARY
-  const partial = `${BINARY}.${process.pid}`
-  fs.mkdirSync(path.dirname(BINARY), { recursive: true })
-  execFileSync('go', ['build', '-o', partial, './backend/cmd/fakeopenai'], { cwd: PLUGIN, stdio: 'inherit' })
-  fs.renameSync(partial, BINARY)
+  if (!fs.existsSync(BINARY)) {
+    throw new Error(`${BINARY} is missing; build it with make app_desktop_acceptance`)
+  }
   return BINARY
 }
 

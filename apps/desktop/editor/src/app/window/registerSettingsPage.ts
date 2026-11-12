@@ -27,7 +27,7 @@ export interface SettingsPageDeps {
 }
 
 /** What the settings page reads of the plugins: their settings views, their health items and the commands they run. */
-export interface SettingsPagePlugins {
+interface SettingsPagePlugins {
   readonly host: Pick<PluginHost, 'registered'>
   readonly health: Readonly<Ref<readonly PluginHealthItem[]>>
   readonly commands: Pick<CommandsHost, 'getIds' | 'run'>

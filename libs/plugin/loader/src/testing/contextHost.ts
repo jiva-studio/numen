@@ -1,5 +1,6 @@
+import type { Disposable } from '@numen/plugin-sdk'
 import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
-import { createIdleContextHost, type PluginContextHost } from '../hosting'
+import type { PluginContextHost } from '../hosting'
 
 /** The parts a test replaces; every other member of a part does nothing. */
 export interface ContextHostParts {
@@ -13,30 +14,67 @@ export interface ContextHostParts {
   readonly window?: Partial<PluginContextHost['window']>
 }
 
+const NOTHING: Disposable = { dispose: () => undefined }
+
+const IDLE: PluginContextHost = {
+  info: {
+    app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
+    target: 'desktop.editor',
+    openExternal: () => Promise.resolve(),
+  },
+  registration: {
+    registerReader: () => NOTHING,
+    registerSettingsView: () => NOTHING,
+    registerCommand: () => NOTHING,
+    registerTabKind: () => NOTHING,
+  },
+  views: {
+    registerDropHandler: () => NOTHING,
+    drops: { canDrop: () => false, drop: () => Promise.resolve([]) },
+    registerView: () => NOTHING,
+    registerSlotView: () => NOTHING,
+    mountView: () => ({ focus: () => undefined, dispose: () => undefined }),
+  },
+  settings: { getSetting: () => undefined, onSettingChange: () => NOTHING },
+  events: {
+    onVaultChange: () => NOTHING,
+    onFileSelect: () => NOTHING,
+    emitVaultChange: () => undefined,
+    emitFileSelect: () => undefined,
+  },
+  tabs: { openTab: () => undefined, navigateTab: () => undefined, closeTab: () => undefined },
+  vault: {
+    getNotes: () => undefined,
+    getRelations: () => undefined,
+    getFiles: () => undefined,
+    getBuffers: () => undefined,
+    getVaults: () => undefined,
+    getTexts: () => undefined,
+  },
+  window: {
+    getWorkspace: () => undefined,
+    getCommands: () => undefined,
+    isCommandListed: () => false,
+    getWindow: () => undefined,
+    getTasks: () => undefined,
+    getBackgroundTasks: () => undefined,
+    getHealth: () => undefined,
+    getConnections: () => undefined,
+    getSlots: () => createMockSlotHost(),
+    getNotices: () => createMockNoticeHost(),
+  },
+}
+
 /** A context host whose parts do nothing, with the members a test gives in place of them. */
 export function createTestContextHost(parts: ContextHostParts = {}): PluginContextHost {
-  const idle = createIdleContextHost({
-    info: {
-      app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
-      target: 'desktop.editor',
-      openExternal: () => Promise.resolve(),
-    },
-    registration: { registerTabKind: () => ({ dispose: () => undefined }) },
-    views: {
-      registerView: () => ({ dispose: () => undefined }),
-      registerSlotView: () => ({ dispose: () => undefined }),
-      mountView: () => ({ focus: () => undefined, dispose: () => undefined }),
-    },
-    window: { getSlots: () => createMockSlotHost(), getNotices: () => createMockNoticeHost() },
-  })
   return {
-    info: { ...idle.info, ...parts.info },
-    registration: { ...idle.registration, ...parts.registration },
-    views: { ...idle.views, ...parts.views },
-    settings: { ...idle.settings, ...parts.settings },
-    events: { ...idle.events, ...parts.events },
-    tabs: { ...idle.tabs, ...parts.tabs },
-    vault: { ...idle.vault, ...parts.vault },
-    window: { ...idle.window, ...parts.window },
+    info: { ...IDLE.info, ...parts.info },
+    registration: { ...IDLE.registration, ...parts.registration },
+    views: { ...IDLE.views, ...parts.views },
+    settings: { ...IDLE.settings, ...parts.settings },
+    events: { ...IDLE.events, ...parts.events },
+    tabs: { ...IDLE.tabs, ...parts.tabs },
+    vault: { ...IDLE.vault, ...parts.vault },
+    window: { ...IDLE.window, ...parts.window },
   }
 }

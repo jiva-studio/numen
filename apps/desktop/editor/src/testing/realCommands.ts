@@ -30,7 +30,7 @@ import type { WindowTabs } from '@/entities/tab'
 import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
-import { createSearchMenu, createWindowSlots, TARGET } from '@/features/plugin-host'
+import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
 import { createPluginPalette } from '@/app/window/createPluginPalette'
 import { getVaultList } from '@/features/window-display'
 import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
@@ -120,7 +120,7 @@ const createHost = (
   })
   const host = createPluginHost({
     ...slots.hostDeps,
-    target: TARGET,
+    target: 'desktop.editor',
     registerKind: () => () => undefined,
     registerExtensionReader: () => () => undefined,
     openTab: () => Promise.resolve('tab-1'),

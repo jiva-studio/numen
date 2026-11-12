@@ -3,7 +3,6 @@ import type { ConnectionInfo, ConnectionTypeInfo } from './types'
 import {
   getAddressText,
   getConnectionState,
-  getOperationsText,
   getUsedByNames,
   hasAvailableType,
   hasUnavailableConnection,
@@ -60,33 +59,6 @@ describe('getConnectionState', () => {
 
   it('is ready otherwise', () => {
     expect(getConnectionState(connection())).toBe('ready')
-  })
-})
-
-describe('getOperationsText', () => {
-  it('joins the titles of the operations of the type, and is empty without a type', () => {
-    expect(getOperationsText(type())).toBe('Completion · Embeddings')
-    expect(getOperationsText(undefined)).toBe('')
-  })
-
-  it('leaves out the operations that only list the options of a row field', () => {
-    const listed = type({
-      operations: ['llm.chat', 'llm.models'],
-      rowFields: [
-        {
-          key: 'model',
-          type: 'string',
-          title: 'Model',
-          description: '',
-          isRequired: true,
-          isAddress: false,
-          options: [],
-          optionsFrom: 'llm.models',
-        },
-      ],
-    })
-
-    expect(getOperationsText(listed)).toBe('Chat')
   })
 })
 

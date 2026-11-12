@@ -10,30 +10,6 @@ export function getConnectionState(connection: ConnectionInfo): ConnectionState 
   return connection.isComplete ? 'ready' : 'incomplete'
 }
 
-const OPERATION_TITLES: Readonly<Record<string, string>> = {
-  'llm.complete': 'Completion',
-  'llm.embed': 'Embeddings',
-}
-
-function getOperationTitle(operation: string): string {
-  const name = operation.slice(operation.lastIndexOf('.') + 1)
-  return OPERATION_TITLES[operation] ?? name.charAt(0).toUpperCase() + name.slice(1)
-}
-
-/**
- * The titles of what a type can do, one for each operation; none where the type is not known. An
- * operation that only lists the options of a row field is no title.
- */
-export function getOperationTitles(type: ConnectionTypeInfo | undefined): readonly string[] {
-  const lists = new Set((type?.rowFields ?? []).map((one) => one.optionsFrom))
-  return (type?.operations ?? []).filter((one) => !lists.has(one)).map(getOperationTitle)
-}
-
-/** The titles of what a type can do, joined; empty where the type is not known. */
-export function getOperationsText(type: ConnectionTypeInfo | undefined): string {
-  return getOperationTitles(type).join(' · ')
-}
-
 /** The address the person entered for a connection; empty for a fixed address or an unknown type. */
 export function getAddressText(
   type: ConnectionTypeInfo | undefined,
