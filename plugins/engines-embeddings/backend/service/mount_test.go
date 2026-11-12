@@ -108,7 +108,7 @@ func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *t
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	lifecycle := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(linkedToken))
+	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(linkedToken))
 
 	if _, err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Example/no-such-model"}); err != nil {
 		t.Fatalf("Configure: %v", err)

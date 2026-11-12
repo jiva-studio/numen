@@ -4,6 +4,7 @@ import AgentTab from './ui/AgentTab.vue'
 import ConversationView from './ui/ConversationView.vue'
 import { AGENT, createAgentKind } from './model/kind'
 import { useAgentConversation } from './model/useAgentConversation'
+import { createSettingsOpener } from './model/settings'
 import { WORDS } from './words'
 
 export { AgentTab }
@@ -26,7 +27,7 @@ export function activate(context: PluginContext): void {
     {
       workspace,
       relations,
-      openSettings: () => context.work.backgroundTasks?.openSettings(context.plugin.id),
+      openSettings: createSettingsOpener(context),
     },
     (deps) =>
       useAgentConversation(
