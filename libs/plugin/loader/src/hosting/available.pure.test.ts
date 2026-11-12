@@ -78,6 +78,7 @@ describe('the host reading the listed commands', () => {
   it('reports one issue once however it is read: palette, shortcut and execute', async () => {
     const reportCommandIssue = vi.fn()
     const host = createPluginHost({
+      target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader: vi.fn(() => vi.fn()),
       openTab: vi.fn(async () => 'tab-1'),

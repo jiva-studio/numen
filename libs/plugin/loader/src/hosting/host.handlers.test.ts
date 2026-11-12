@@ -72,6 +72,7 @@ function createHost(handlers: readonly HandlerDeclaration[] = HANDLERS) {
     hasPluginFrontend: () => false,
     listBackendHandlerItems,
     runBackendHandler,
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

@@ -11,6 +11,7 @@ import type { PluginHostDeps } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 
 const createDeps = (more: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+  target: 'desktop.editor',
   registerKind: vi.fn(() => vi.fn()),
   registerExtensionReader: vi.fn(() => vi.fn()),
   openTab: vi.fn(async () => 'tab-1'),
@@ -431,6 +432,7 @@ describe('a registration that fails after its tab kind was registered', () => {
     const unregisterKind = vi.fn()
     const host = createPluginHost(
       createDeps({
+        target: 'desktop.editor',
         registerKind: vi.fn(() => unregisterKind),
         registerEditor: () => {
           throw new Error('editor refused')
@@ -450,6 +452,7 @@ describe('a registration that fails after its tab kind was registered', () => {
     const unregisterKind = vi.fn()
     const host = createPluginHost(
       createDeps({
+        target: 'desktop.editor',
         registerKind: vi.fn(() => unregisterKind),
         getReaderExtensions: () => ['bin'],
         registerExtensionReader: () => {

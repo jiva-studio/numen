@@ -10,6 +10,7 @@ import type { PluginHostDeps } from './types'
 
 function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
   return {
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

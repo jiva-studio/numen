@@ -14,6 +14,7 @@ const LEDGER: CommandDeclaration = {
 const create = (finder: SlotCommandFinder = () => undefined) => {
   const createSlotCommandFinder = vi.fn(() => finder)
   const host = createPluginHost({
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
