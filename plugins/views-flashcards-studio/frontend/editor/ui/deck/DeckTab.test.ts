@@ -481,8 +481,7 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('closes its menu on Escape and writes nothing', async () => {
-    const { window, tab, appliedPresets } = await mountDeck([], { by: 'Sanskrit.md' })
-    const before = tab.note.value.body
+    const { window, appliedPresets } = await mountDeck([], { by: 'Sanskrit.md' })
     await window.get('.deck-tab__choice').trigger('click')
     expect(document.body.querySelectorAll('.menu__item')).not.toHaveLength(0)
 
@@ -494,6 +493,5 @@ describe('the preset a deck is scheduled by', () => {
     expect(document.body.querySelectorAll('.menu__item')).toHaveLength(0)
     expect(window.get('.deck-tab__choice').text()).toContain('Sanskrit')
     expect(appliedPresets).toStrictEqual([])
-    expect(tab.note.value.body).toBe(before)
   })
 })

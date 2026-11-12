@@ -507,7 +507,7 @@ describe('an item chosen in the menu on a row', () => {
   it('runs the copy of the path over the row the menu was opened on', async () => {
     const { recorded, one } = await openRowMenu('physics/Kelvin.md')
 
-    one.chooseMenuItem(COPY_PATH.key)
+    one.menu.choose(COPY_PATH.key)
 
     expect(recorded).toStrictEqual(['runs app:file.copyPath physics/Kelvin.md Kelvin.md'])
   })
