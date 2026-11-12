@@ -176,8 +176,8 @@ let notices = createMockNoticeHost()
 
 /** The connections of the plugin, which only the conversation view the review mounts calls. */
 const connections: ConnectionHost = {
-  // eslint-disable-next-line require-yield
   call: async function* () {
+    yield* []
     return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
   },
 }
