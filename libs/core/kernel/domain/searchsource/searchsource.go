@@ -13,13 +13,15 @@ import (
 // Description is what a search source tells the core about the data it keeps. SourceRecipe is opaque to the
 // core: two vectors made under different recipes cannot be compared. ChunkTokens and MinTextLength are not
 // part of the identity: a vector made for a text is the same whatever the chunk size, and the shortest text
-// handed decides only which chunks are handed.
+// handed decides only which chunks are handed. Concurrency is how many calls of indexing the source answers at
+// once, and zero or one for a source that answers them one at a time.
 type Description struct {
 	Name          string
 	SourceRecipe  string
 	Width         int
 	ChunkTokens   int
 	MinTextLength int
+	Concurrency   int
 }
 
 // String is the name and the width as one value, for a column that holds it.

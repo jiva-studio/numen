@@ -213,7 +213,7 @@ func TestTheBridgeReadsTheDescriptionOfTheSource(t *testing.T) {
 	defer testsupport.Close(t, bridge)
 
 	described := bridge.Describe()
-	want := searchsource.Description{Name: "test-model", SourceRecipe: "test-provider|test-model|384|1a2b3c4d", Width: 384, MinTextLength: 40}
+	want := searchsource.Description{Name: "test-model", SourceRecipe: "test-provider|test-model|384|1a2b3c4d", Width: 384, MinTextLength: 40, Concurrency: 4}
 	if described != want {
 		t.Errorf("description %+v, want %+v", described, want)
 	}
@@ -233,16 +233,6 @@ func TestTheBridgeReadsTheDescriptionOfTheSource(t *testing.T) {
 	bridge.Describe()
 	if hint := bridge.GetFloorHint(ctx); hint != 0 {
 		t.Errorf("a negative floor hint reads as %v, want 0", hint)
-	}
-
-	callsBefore := mockServer.describeCalls.Load()
-	for range 5 {
-		if bridge.Concurrency() != 4 {
-			t.Errorf("concurrency = %d, want 4", bridge.Concurrency())
-		}
-	}
-	if callsAfter := mockServer.describeCalls.Load(); callsBefore != callsAfter {
-		t.Errorf("Concurrency() made RPC calls: before=%d, after=%d", callsBefore, callsAfter)
 	}
 
 	mockServer.recipe.Store("test-provider|test-model|384|ffffffff")

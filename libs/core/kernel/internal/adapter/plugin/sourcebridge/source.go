@@ -26,12 +26,11 @@ type Host interface {
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
-// description is what one read of the source answers: what is part of the identity of its vectors, and
-// how the core runs it.
+// description is what one read of the source answers: its description, and the floor hint, which is no part
+// of it.
 type description struct {
-	source      searchsource.Description
-	concurrency int
-	floorHint   float64
+	source    searchsource.Description
+	floorHint float64
 }
 
 // Source is the search source plugin seen as a searchsourceport.Source.
@@ -99,9 +98,9 @@ func readDescription(ctx context.Context, client numenv1connect.SearchSourceServ
 			Width:         int(resp.Msg.GetWidth()),
 			ChunkTokens:   int(max(resp.Msg.GetChunkTokens(), 0)),
 			MinTextLength: int(max(resp.Msg.GetMinTextLength(), 0)),
+			Concurrency:   concurrency,
 		},
-		concurrency: concurrency,
-		floorHint:   max(resp.Msg.GetFloorHint(), 0),
+		floorHint: max(resp.Msg.GetFloorHint(), 0),
 	}, nil
 }
 
@@ -237,17 +236,6 @@ func readVectors(protoVectors []*v1.FloatVector) [][]float32 {
 	return vectors
 }
 
-// Concurrency returns how many calls of IndexTexts the source answers at once.
-func (b *Source) Concurrency() int {
-	b.mu.Lock()
-	concurrency := b.current.concurrency
-	b.mu.Unlock()
-	if concurrency <= 0 {
-		return 1
-	}
-	return concurrency
-}
-
 // Close releases the active reference count for the search source plugin in the host supervisor.
 func (b *Source) Close() error {
 	b.stopWatch()
@@ -255,7 +243,7 @@ func (b *Source) Close() error {
 }
 
 // OnDescriptionChange registers fn to run when the plugin reports a description unlike the last one
-// announced: another recipe, width, shortest text or chunk size. The plugin is read after it has been
+// announced: another recipe, width, shortest text, chunk size or concurrency. The plugin is read after it has been
 // given its configuration, so a setting of another plugin never runs fn.
 func (b *Source) OnDescriptionChange(fn func()) {
 	b.changeMu.Lock()

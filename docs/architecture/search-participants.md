@@ -17,23 +17,23 @@ The core knows no model: no pooling, no handling, no provider, no token limit.
 
 ## Indexing
 
-The core decides what is indexed and when (vault changes, text versions, cut recipes). For each chunk with no vector under the recipe it reads the text and calls `IndexTexts(place, texts)`. A text carries the chunk id, the path of its source and the id of the text version it was cut from (empty for a note). The place names the vault and the recipe. The source answers one vector per text, in order, and the core writes them into the place. A text whose content hash already has a vector under the recipe is not handed again.
+The core decides what is indexed and when (vault changes, text versions, cut recipes). For each chunk with no vector under the recipe it reads the text and calls `IndexTexts(place, texts)`, in batches, `concurrency` at a time. A text carries the chunk id, the path of its source and the id of the text version it was cut from (empty for a note). The place names the vault and the recipe. The source answers one vector per text, in order, and the core quantizes them and writes them into the place. A text whose content hash already has a vector under the recipe is not handed again, and equal texts of one batch are handed once.
 
 ## Query
 
-`SearchPassages(place, query)` gets the query text, the kinds, the path prefix, the limit and the floor the query names (zero: the floor of the vault). The source answers ranked passages: a chunk id the core handed it and a score, best first. Vector Embeddings embeds the query and asks the host for the nearest chunks of its place with `HostSearchService.FindNearestPassages(place, vector, ...)`; the host applies the floor of the vault under the recipe (stored, then the hint, then the default). The core turns the chunk ids into passages (note, range, line) with the chunks that enclose them.
+`SearchPassages(place, query)` gets the query text, the kinds, the path prefix, the limit and the floor the query names (zero: the floor of the vault). The source answers ranked passages: a chunk id the core handed it and a score, best first. Vector Embeddings embeds the query (it keeps the vectors of recent queries by recipe) and asks the host for the nearest chunks of its place with `HostSearchService.FindNearestPassages(place, vector, ...)`; the host applies the floor of the vault under the recipe (stored, then the hint, then the default). The core turns the chunk ids into the passages that enclose them (note, range, line), in the order of the source.
 
 ## Merge
 
-Every participant answers a `Ranking`: passages best first. The core fuses all rankings with reciprocal rank fusion (k = 60) and keeps at most `Each` passages of one source. A ranking marked leading (the section names) puts its first passage of a source ahead of the other passages of that source. The merge does not know which participant is built in. A source that fails is reported and left out; the other rankings answer. The window's modes select the words participant, the names participant, or the sources.
+Every participant implements `Rank(vault, query) Ranking`: passages best first. The core fuses all rankings with reciprocal rank fusion (k = 60) and keeps at most `Each` passages of one source. A ranking marked leading (the section names) puts its first passage of a source ahead of the other passages of that source. The merge does not know which participant is built in. A source that fails is reported and left out; the other rankings answer. The parameters of a search name how many candidates the words, the names and the sources keep, and the window's modes set one of the three.
 
 ## Coverage
 
-`DescribeCoverage(place, counts)` gets how many chunks of the vault can be handed to the source and how many have a vector under the recipe, and answers a text for a person ("Semantic index not built yet") and whether the source is ready. The vault state carries that text; the window shows it as given and computes nothing. A window without a source shows no coverage text.
+`DescribeCoverage(place, counts)` gets how many chunks of the vault can be handed to the source and how many have a vector under the recipe, and answers a text for a person ("Semantic index not built yet"), empty where there is nothing to say. The vault state carries that text; the window shows it as given when the meaning group finds nothing, and computes nothing. A window without a source shows no coverage text.
 
 ## Ready event
 
-After an indexing pass leaves no chunk of a vault pending, the core emits `onSearchSourceReady:<vault id>`. A plugin subscribes with the activation event `onSearchSourceReady`; it replaces `onVectorsReady`.
+After an indexing pass leaves no chunk of a vault pending for the source, the core emits `onSearchSourceReady:<vault id>`. A plugin subscribes with the activation event `onSearchSourceReady`; it replaces `onVectorsReady`.
 
 ## Calibration
 
@@ -41,4 +41,4 @@ After an indexing pass leaves no chunk of a vault pending, the core emits `onSea
 
 ## Limits
 
-One source at a time: the vector table has one width, so the core opens the first plugin that declares `search.source`. The search and the merge take any number of participants.
+One source at a time: the vector table has one width, so the core opens the first plugin that declares `search.source`. The search and the merge take any number of participants. A read of the description the settings do not allow (a connection source with no connection) fails with the sentence the plugin gives, which the window lists as the failure of the search source.

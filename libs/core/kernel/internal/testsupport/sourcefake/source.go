@@ -43,8 +43,14 @@ func (s *Source) Over(nearest Nearest) *Source {
 	return s
 }
 
-// Describe returns the description of the model.
-func (s *Source) Describe() searchsource.Description { return s.Model.Describe() }
+// Describe returns the description of the model, with the concurrency of the model where it names one.
+func (s *Source) Describe() searchsource.Description {
+	described := s.Model.Describe()
+	if workers, ok := s.Model.(interface{ Concurrency() int }); ok && described.Concurrency == 0 {
+		described.Concurrency = workers.Concurrency()
+	}
+	return described
+}
 
 // IndexTexts embeds the texts with the model.
 func (s *Source) IndexTexts(ctx context.Context, _ searchsource.Place, texts []searchsource.Text) ([][]float32, error) {
@@ -92,14 +98,6 @@ func (s *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 // DescribeCoverage returns the coverage text of the source.
 func (s *Source) DescribeCoverage(context.Context, searchsource.Place, searchsource.Counts) (string, error) {
 	return s.Coverage, nil
-}
-
-// Concurrency is the concurrency of the model where it names one, and one otherwise.
-func (s *Source) Concurrency() int {
-	if workers, ok := s.Model.(interface{ Concurrency() int }); ok && workers.Concurrency() > 0 {
-		return workers.Concurrency()
-	}
-	return 1
 }
 
 // OnDescriptionChange registers fn with the model where it announces changes.

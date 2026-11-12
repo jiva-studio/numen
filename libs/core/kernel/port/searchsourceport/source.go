@@ -20,9 +20,6 @@ type Source interface {
 	// DescribeCoverage returns what a person reads about how far the source has indexed the vault of the
 	// place, and empty where there is nothing to say.
 	DescribeCoverage(ctx context.Context, place searchsource.Place, counts searchsource.Counts) (string, error)
-	// Concurrency is how many calls of IndexTexts the source answers at once, and one for a source that
-	// answers them one at a time.
-	Concurrency() int
 }
 
 // QueryEmbedder makes the vectors of queries the way a source compares a query with its place. A plugin

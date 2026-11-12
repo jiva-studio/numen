@@ -43,8 +43,8 @@ func (u Embed) inferWorkers() int {
 	if u.Concurrency > 0 {
 		return u.Concurrency
 	}
-	if u.Source != nil && u.Source.Concurrency() > 0 {
-		return u.Source.Concurrency()
+	if u.Source != nil && u.Source.Describe().Concurrency > 0 {
+		return u.Source.Describe().Concurrency
 	}
 	return 1
 }
