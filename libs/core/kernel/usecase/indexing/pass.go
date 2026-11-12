@@ -27,7 +27,7 @@ type passEnv interface {
 	planVectors(ctx context.Context, v domain.Vault) vectorPlan
 	hasEmbedder() bool
 	waitForQuiet() <-chan time.Time
-	notifyVectorsReady(ctx context.Context, v domain.Vault)
+	notifySearchSourceReady(ctx context.Context, v domain.Vault)
 }
 
 func (p *pass) run(ctx context.Context, read ReadNotes) {
@@ -176,7 +176,7 @@ func (p *pass) embed(ctx context.Context) {
 	plan := p.env.planVectors(ctx, p.v)
 	if !plan.hasPending {
 		p.events.FinishTask(work.MakingVectors)
-		p.env.notifyVectorsReady(ctx, p.v)
+		p.env.notifySearchSourceReady(ctx, p.v)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (p *pass) embed(ctx context.Context) {
 	defer stop()
 
 	if p.makeVectors(ctx, limit, plan) {
-		p.env.notifyVectorsReady(ctx, p.v)
+		p.env.notifySearchSourceReady(ctx, p.v)
 	}
 }
 

@@ -115,8 +115,8 @@ func (c *Calibration) HandleEvent(ctx context.Context, event string) error {
 	if floors == nil {
 		return nil
 	}
-	vault, isVectorsReady := host.ReadVectorsReadyEvent(event)
-	if !isVectorsReady && c.wasChecked() {
+	vault, isSourceReady := host.ReadSearchSourceReadyEvent(event)
+	if !isSourceReady && c.wasChecked() {
 		return nil
 	}
 	if err := floors.Ensure(ctx, vault); err != nil {

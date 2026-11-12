@@ -56,8 +56,8 @@ const (
 	// ActivationEventStartup is the event the host emits when it starts.
 	ActivationEventStartup = "onStartup"
 
-	// ActivationEventVectorsReady is the event the host emits when the vectors of a vault are ready.
-	ActivationEventVectorsReady = "onVectorsReady"
+	// ActivationEventSearchSourceReady is the event the host emits when the search source has indexed a vault.
+	ActivationEventSearchSourceReady = "onSearchSourceReady"
 
 	// ActivationEventFilePrefix starts the event the host emits when a file is opened or listed.
 	ActivationEventFilePrefix = "onFile:"
@@ -67,7 +67,7 @@ const (
 func PluginActivationEvents() []string {
 	return []string{
 		ActivationEventStartup,
-		ActivationEventVectorsReady,
+		ActivationEventSearchSourceReady,
 		ActivationEventFilePrefix + "<ext>",
 	}
 }
@@ -361,7 +361,7 @@ func (m Manifest) listActivationEventIssues() []error {
 }
 
 func isValidActivationEvent(event string) bool {
-	if event == ActivationEventStartup || event == ActivationEventVectorsReady {
+	if event == ActivationEventStartup || event == ActivationEventSearchSourceReady {
 		return true
 	}
 	ext, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
@@ -414,9 +414,9 @@ func isMatchingActivationEvent(declared, event string) bool {
 	switch declared {
 	case ActivationEventStartup:
 		return event == ActivationEventStartup
-	case ActivationEventVectorsReady:
-		return event == ActivationEventVectorsReady ||
-			(strings.HasPrefix(event, ActivationEventVectorsReady+":") && len(event) > len(ActivationEventVectorsReady)+1)
+	case ActivationEventSearchSourceReady:
+		return event == ActivationEventSearchSourceReady ||
+			(strings.HasPrefix(event, ActivationEventSearchSourceReady+":") && len(event) > len(ActivationEventSearchSourceReady)+1)
 	default:
 		return isMatchingFileEvent(declared, event)
 	}

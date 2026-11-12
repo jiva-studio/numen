@@ -268,7 +268,7 @@ func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *
 		Reading:      getReadVault(a, db),
 		Embedder:     embedding.GetEmbedder(),
 		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
-		VectorsReady: state.Events.EmitVectorsReady,
+		SearchSourceReady: state.Events.EmitSearchSourceReady,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
 		After:        clock.System{}.After,

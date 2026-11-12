@@ -18,7 +18,7 @@ func TestReadManifest(t *testing.T) {
 		"description": "Optical character recognition",
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onStartup", "onVectorsReady", "onFile:pdf"],
+		"activationEvents": ["onStartup", "onSearchSourceReady", "onFile:pdf"],
 		"permissions": ["vault:read"],
 		"backend": {
 			"entrypoint": "bin/engines.ocr"
@@ -58,7 +58,7 @@ func TestReadManifest(t *testing.T) {
 	if !m.HasCapability("tools") {
 		t.Errorf("expected capability tools")
 	}
-	if !m.IsActivatedBy("onStartup") || !m.IsActivatedBy("onVectorsReady:vault-1") || !m.IsActivatedBy("onFile:doc.pdf") || m.IsActivatedBy("onFile:doc.md") {
+	if !m.IsActivatedBy("onStartup") || !m.IsActivatedBy("onSearchSourceReady:vault-1") || !m.IsActivatedBy("onFile:doc.pdf") || m.IsActivatedBy("onFile:doc.md") {
 		t.Errorf("unexpected activation matching for %v", m.ActivationEvents)
 	}
 	if !m.HasService("md.numen.engines.ocr") || !m.HasFrontend() {

@@ -58,7 +58,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	}
 
 	p := newPass(made, db, events, model, recipe, v)
-	p.worker.vectorsReady = log.report
+	p.worker.searchSourceReady = log.report
 	ended := make(chan struct{})
 	go func() {
 		defer close(ended)
@@ -113,7 +113,7 @@ func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading op
 	}
 }
 
-func testVectorsReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc) {
+func testSearchSourceReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc) {
 	t.Helper()
 	events := &progressLog{recorder: newRecorder()}
 	log := &readyLog{}

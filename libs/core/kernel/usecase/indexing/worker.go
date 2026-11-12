@@ -46,20 +46,20 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 // many carry one.
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// VectorsReady is notified that all the vectors of a vault exist, but those of the sources whose indexing
-// a person canceled: those stay without vectors until they change. It is notified after every pass that
-// leaves no other vector pending, so it is notified more than once for a vault.
-type VectorsReady func(ctx context.Context, v domain.Vault)
+// SearchSourceReady is notified that the search source has indexed every chunk of a vault, but those of the
+// sources whose indexing a person canceled: those stay out until they change. It is notified after every pass
+// that leaves no other chunk pending, so it is notified more than once for a vault.
+type SearchSourceReady func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
 type Config struct {
-	Reading      OpenReading
-	Embedder     embeddingport.Embedder
-	VectorCounts GetVectorCounts
-	VectorsReady VectorsReady
-	Events       Events
-	Quiet        time.Duration
-	After        func(time.Duration) <-chan time.Time
+	Reading           OpenReading
+	Embedder          embeddingport.Embedder
+	VectorCounts      GetVectorCounts
+	SearchSourceReady SearchSourceReady
+	Events            Events
+	Quiet             time.Duration
+	After             func(time.Duration) <-chan time.Time
 }
 
 // Worker keeps the index of a vault in sync with its content, one pass at a
@@ -68,28 +68,28 @@ type Config struct {
 // anything is embedded; a note, which arrives already cut and needs only its
 // vectors; and a file a plugin extended with more text.
 type Worker struct {
-	reading      OpenReading
-	embedder     embeddingport.Embedder
-	vectorCounts GetVectorCounts
-	vectorsReady VectorsReady
-	events       Events
-	debounce     time.Duration
-	after        func(time.Duration) <-chan time.Time
-	wakes        *channelWakes
-	skips        *vaultreading.Skips
+	reading           OpenReading
+	embedder          embeddingport.Embedder
+	vectorCounts      GetVectorCounts
+	searchSourceReady SearchSourceReady
+	events            Events
+	debounce          time.Duration
+	after             func(time.Duration) <-chan time.Time
+	wakes             *channelWakes
+	skips             *vaultreading.Skips
 }
 
 func NewWorker(cfg Config) *Worker {
 	return &Worker{
-		reading:      cfg.Reading,
-		embedder:     cfg.Embedder,
-		vectorCounts: cfg.VectorCounts,
-		vectorsReady: cfg.VectorsReady,
-		events:       cfg.Events,
-		debounce:     cfg.Quiet,
-		after:        cfg.After,
-		wakes:        newChannelWakes(),
-		skips:        vaultreading.NewSkips(),
+		reading:           cfg.Reading,
+		embedder:          cfg.Embedder,
+		vectorCounts:      cfg.VectorCounts,
+		searchSourceReady: cfg.SearchSourceReady,
+		events:            cfg.Events,
+		debounce:          cfg.Quiet,
+		after:             cfg.After,
+		wakes:             newChannelWakes(),
+		skips:             vaultreading.NewSkips(),
 	}
 }
 
@@ -116,11 +116,11 @@ func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }
 
 func (w *Worker) wakeRead() { w.wakes.wakeRead() }
 
-func (w *Worker) notifyVectorsReady(ctx context.Context, v domain.Vault) {
-	if w.vectorsReady == nil || ctx.Err() != nil {
+func (w *Worker) notifySearchSourceReady(ctx context.Context, v domain.Vault) {
+	if w.searchSourceReady == nil || ctx.Err() != nil {
 		return
 	}
-	w.vectorsReady(ctx, v)
+	w.searchSourceReady(ctx, v)
 }
 
 func (w *Worker) newPass(s *Session, v domain.Vault, rebuild bool) *pass {

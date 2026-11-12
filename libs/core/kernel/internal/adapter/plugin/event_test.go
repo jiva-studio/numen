@@ -156,7 +156,7 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
 			"md.test.startup":  {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}},
-			"md.test.vectors":  {ActivationEvents: []string{catalogmanifest.ActivationEventVectorsReady}},
+			"md.test.vectors":  {ActivationEvents: []string{catalogmanifest.ActivationEventSearchSourceReady}},
 			"md.test.pdf":      {ActivationEvents: []string{"onFile:pdf"}},
 			"md.test.ondemand": {},
 		},
@@ -184,12 +184,12 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 		t.Fatalf("activated %v on startup, want [md.test.startup]", activated)
 	}
 
-	activated, err = host.Events.TriggerEvent(t.Context(), protocol.GetVectorsReadyEvent("vault-1"))
+	activated, err = host.Events.TriggerEvent(t.Context(), protocol.GetSearchSourceReadyEvent("vault-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
 	if !slices.Equal(activated, []string{"md.test.vectors"}) {
-		t.Fatalf("activated %v on vectors ready, want [md.test.vectors]", activated)
+		t.Fatalf("activated %v on search source ready, want [md.test.vectors]", activated)
 	}
 
 	if got := onDemand.getEvents(); len(got) != 0 {
@@ -197,7 +197,7 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 	}
 }
 
-func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
+func TestToolsSearchRelevanceRunsOnSearchSourceReadyAndEvictsWhenIdle(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "plugins", "tools-search-relevance", "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -226,7 +226,7 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 		t.Fatalf("status after startup and file listing = %+v (ok=%v), want inactive", status, ok)
 	}
 
-	readyEvent := protocol.GetVectorsReadyEvent("vault-1")
+	readyEvent := protocol.GetSearchSourceReadyEvent("vault-1")
 	activated, err := host.Events.TriggerEvent(t.Context(), readyEvent)
 	if err != nil {
 		t.Fatalf("TriggerEvent(%q) failed: %v", readyEvent, err)
@@ -235,7 +235,7 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 		t.Fatalf("activated %v, want [%s]", activated, parsed.ID)
 	}
 	if status, ok := host.Registry.GetPluginStatus(parsed.ID); !ok || !status.IsActive {
-		t.Fatalf("status after vectors ready = %+v (ok=%v), want active", status, ok)
+		t.Fatalf("status after search source ready = %+v (ok=%v), want active", status, ok)
 	}
 	if got := recorder.getEvents(); !slices.Equal(got, []string{readyEvent}) {
 		t.Fatalf("received events %v, want [%s]", got, readyEvent)

@@ -73,7 +73,7 @@ func (w wiring) startSession(
 			state.Runtime.RecordModel(name, recipe)
 			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
-		VectorsReady: state.Events.EmitVectorsReady,
+		SearchSourceReady: state.Events.EmitSearchSourceReady,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
 		Quiet:        opts.idle,
 		After:        time.After,

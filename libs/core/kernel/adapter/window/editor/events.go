@@ -19,7 +19,7 @@ func (e *Events) EmitFileEvent(event string) {
 	}
 }
 
-// EmitVectorsReady tells the plugins of the window that every vector of the vault exists.
-func (e *Events) EmitVectorsReady(_ context.Context, v domain.Vault) {
-	e.EmitFileEvent(protocol.GetVectorsReadyEvent(string(v.ID)))
+// EmitSearchSourceReady tells the plugins of the window that the search source has indexed the vault.
+func (e *Events) EmitSearchSourceReady(_ context.Context, v domain.Vault) {
+	e.EmitFileEvent(protocol.GetSearchSourceReadyEvent(string(v.ID)))
 }

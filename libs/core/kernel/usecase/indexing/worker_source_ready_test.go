@@ -29,7 +29,7 @@ func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder,
 	cut(t, made, db, v)
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
-	p.worker.vectorsReady = log.report
+	p.worker.searchSourceReady = log.report
 	return p
 }
 

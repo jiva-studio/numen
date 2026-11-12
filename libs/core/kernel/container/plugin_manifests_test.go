@@ -252,8 +252,8 @@ func TestShippedPluginsDeclareNoWildcardActivationEvent(t *testing.T) {
 	if !ok {
 		t.Fatal("missing plugin md.numen.tools.search.relevance")
 	}
-	if !slices.Equal(relevance.ActivationEvents, []string{manifest.ActivationEventVectorsReady}) {
-		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onVectorsReady]", relevance.ActivationEvents)
+	if !slices.Equal(relevance.ActivationEvents, []string{manifest.ActivationEventSearchSourceReady}) {
+		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onSearchSourceReady]", relevance.ActivationEvents)
 	}
 }
 

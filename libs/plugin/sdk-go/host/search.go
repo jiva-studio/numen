@@ -243,18 +243,18 @@ type SearchPolicy interface {
 	SetSearchFloor(ctx context.Context, recipe string, floor float64) error
 }
 
-// GetVectorsReadyEvent is the event the host emits to plugins when every chunk of the vault of the
-// identity carries a vector under the model in use, but the chunks of a source whose indexing a person
-// canceled, which stay without one until the source changes.
-func GetVectorsReadyEvent(id domain.VaultID) string {
-	return protocol.GetVectorsReadyEvent(string(id))
+// GetSearchSourceReadyEvent is the event the host emits to plugins when the search source has indexed every
+// chunk of the vault of the identity, but the chunks of a source whose indexing a person canceled, which stay
+// out until the source changes.
+func GetSearchSourceReadyEvent(id domain.VaultID) string {
+	return protocol.GetSearchSourceReadyEvent(string(id))
 }
 
-// ReadVectorsReadyEvent returns the identity of the vault that an event of the host names as having
-// every chunk embedded, and false for any other event. The host emits the event after each indexing
-// pass that leaves no vector pending, so it repeats: a handler reads the state again and acts only on
+// ReadSearchSourceReadyEvent returns the identity of the vault that an event of the host names as indexed by
+// the search source, and false for any other event. The host emits the event after each indexing
+// pass that leaves no chunk pending, so it repeats: a handler reads the state again and acts only on
 // what is not done.
-func ReadVectorsReadyEvent(event string) (domain.VaultID, bool) {
-	vaultID, found := protocol.ReadVectorsReadyEvent(event)
+func ReadSearchSourceReadyEvent(event string) (domain.VaultID, bool) {
+	vaultID, found := protocol.ReadSearchSourceReadyEvent(event)
 	return domain.VaultID(vaultID), found
 }

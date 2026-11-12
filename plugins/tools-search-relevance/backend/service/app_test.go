@@ -207,10 +207,10 @@ func TestACallWithoutTheTokenOfTheHostIsRefused(t *testing.T) {
 	}
 }
 
-func TestAVectorsReadyEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *testing.T) {
+func TestASearchSourceReadyEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *testing.T) {
 	ctx := t.Context()
 	f := newFixture(t, 0.4)
-	event := host.GetVectorsReadyEvent("physics")
+	event := host.GetSearchSourceReadyEvent("physics")
 
 	for range 3 {
 		if err := f.app.HandleEvent(ctx, event); err != nil {
@@ -253,7 +253,7 @@ func TestTheFirstEventOfAnyKindChecksAVaultWhoseVectorsAlreadyExist(t *testing.T
 func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 	ctx := t.Context()
 	f := newFixture(t, 0.4)
-	if err := f.app.HandleEvent(ctx, host.GetVectorsReadyEvent("chemistry")); err != nil {
+	if err := f.app.HandleEvent(ctx, host.GetSearchSourceReadyEvent("chemistry")); err != nil {
 		t.Fatal(err)
 	}
 	if _, found := f.search.StoredFloor(modelRecipe); found {
@@ -262,7 +262,7 @@ func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 	if batches := f.search.EmbeddedBatches(); len(batches) != 0 {
 		t.Errorf("an empty vault was measured: %d", len(batches))
 	}
-	err := f.app.HandleEvent(ctx, host.GetVectorsReadyEvent("biology"))
+	err := f.app.HandleEvent(ctx, host.GetSearchSourceReadyEvent("biology"))
 	if !errors.Is(err, host.ErrUnknownVault) {
 		t.Errorf("an unknown vault gave %v", err)
 	}
@@ -271,7 +271,7 @@ func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T) {
 	ctx := t.Context()
 	f := newFixture(t, 0.4)
-	event := host.GetVectorsReadyEvent("physics")
+	event := host.GetSearchSourceReadyEvent("physics")
 
 	f.search.FailEmbedding(errors.New("the plugin is not running"))
 	if err := f.app.HandleEvent(ctx, event); !errors.Is(err, host.ErrEmbeddingFailed) {
@@ -363,7 +363,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		t.Fatal(err)
 	}
 	search.FailEmbedding(errors.New("embed fail"))
-	err := appReportFail.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics"))
+	err := appReportFail.HandleEvent(t.Context(), host.GetSearchSourceReadyEvent("physics"))
 	if !errors.Is(err, host.ErrEmbeddingFailed) || !errors.Is(err, errReport) {
 		t.Errorf("HandleEvent with failing ReportTask gave %v, want both errors", err)
 	}
@@ -376,14 +376,14 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
 		t.Fatal(err)
 	}
-	if err := appFinishFail.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics")); !errors.Is(err, errFinish) {
+	if err := appFinishFail.HandleEvent(t.Context(), host.GetSearchSourceReadyEvent("physics")); !errors.Is(err, errFinish) {
 		t.Errorf("HandleEvent with failing FinishTask gave %v, want errFinish", err)
 	}
 }
 
 func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
 	app := service.NewApp()
-	if err := app.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics")); err != nil {
+	if err := app.HandleEvent(t.Context(), host.GetSearchSourceReadyEvent("physics")); err != nil {
 		t.Errorf("got %v, want the event ignored", err)
 	}
 }
