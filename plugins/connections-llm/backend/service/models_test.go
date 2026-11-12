@@ -12,7 +12,7 @@ import (
 func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{
 		APIKey:     testKey,
-		IsLabelled: true,
+		IsLabeled: true,
 		Models:     []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}, {ID: "anthropic/claude-3.5-haiku", Name: "Claude 3.5 Haiku"}},
 		EmbeddingModels: []fakeopenai.Model{
 			{ID: "openai/text-embedding-3-small", Name: "Text Embedding 3 Small"},
@@ -104,7 +104,7 @@ func equalModel(a, b connection.Model) bool {
 
 func TestOpenRouterListsTheTextModelsForChatAsForComplete(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{
-		APIKey: testKey, IsLabelled: true,
+		APIKey: testKey, IsLabeled: true,
 		Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}},
 	})
 

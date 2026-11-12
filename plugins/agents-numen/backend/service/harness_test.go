@@ -664,7 +664,7 @@ func (m *blockingModel) Stream(ctx context.Context, _ conversation.Turn, emit fu
 	return conversation.Reply{}, ctx.Err()
 }
 
-func TestACancelledTaskEndsTheTurnOfTheModel(t *testing.T) {
+func TestACanceledTaskEndsTheTurnOfTheModel(t *testing.T) {
 	model := &blockingModel{ended: make(chan struct{})}
 	s, err := newAgent(model)
 	if err != nil {

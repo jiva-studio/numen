@@ -153,7 +153,7 @@ func TestAChatErrorOfNoKindIsAStopWhoseTextDoesNotLeave(t *testing.T) {
 	}
 }
 
-func TestACancelledChatEndsTheContextOfTheProvider(t *testing.T) {
+func TestACanceledChatEndsTheContextOfTheProvider(t *testing.T) {
 	chatter := &scriptedChatter{entered: make(chan struct{}), ended: make(chan error, 1)}
 	client := newProviderClient(t, Provider{Chatter: chatter})
 	ctx, cancel := context.WithCancel(t.Context())

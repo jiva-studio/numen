@@ -32,14 +32,14 @@ type Model struct {
 }
 
 // Config sets what the server answers. A zero Config serves no key check, no models and vectors of
-// DefaultDimensions. When APIKey is set, every request must carry it as a bearer token. With IsLabelled,
+// DefaultDimensions. When APIKey is set, every request must carry it as a bearer token. With IsLabeled,
 // Models carry the architecture and the supported parameters OpenRouter gives, and EmbeddingModels are
 // listed at /embeddings/models, which OpenRouter serves.
 type Config struct {
 	APIKey          string
 	Dimensions      int
 	Models          []Model
-	IsLabelled      bool
+	IsLabeled      bool
 	EmbeddingModels []Model
 }
 
@@ -170,8 +170,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body
 	case r.Method == http.MethodPost && path == "/embeddings":
 		s.serveEmbeddings(w, body)
 	case r.Method == http.MethodGet && path == "/models":
-		s.serveModels(w, s.config.Models, s.config.IsLabelled, false)
-	case r.Method == http.MethodGet && path == "/embeddings/models" && s.config.IsLabelled:
+		s.serveModels(w, s.config.Models, s.config.IsLabeled, false)
+	case r.Method == http.MethodGet && path == "/embeddings/models" && s.config.IsLabeled:
 		s.serveModels(w, s.config.EmbeddingModels, true, true)
 	default:
 		http.NotFound(w, r)
@@ -331,11 +331,11 @@ func (s *Server) Vector(text string) []float32 {
 	return vector
 }
 
-func (s *Server) serveModels(w http.ResponseWriter, models []Model, isLabelled, isEmbedding bool) {
+func (s *Server) serveModels(w http.ResponseWriter, models []Model, isLabeled, isEmbedding bool) {
 	data := make([]any, len(models))
 	for i, model := range models {
 		entry := map[string]any{"id": model.ID, objectKey: "model"}
-		if isLabelled {
+		if isLabeled {
 			entry["name"] = model.Name
 			output := "text"
 			if isEmbedding {

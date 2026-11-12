@@ -155,7 +155,7 @@ func TestEveryHostModelErrorCodeIsReadAsAnError(t *testing.T) {
 	}
 }
 
-func TestACancelledCallReturnsTheContextError(t *testing.T) {
+func TestACanceledCallReturnsTheContextError(t *testing.T) {
 	host := &fakeHost{complete: func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse { return nil }}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

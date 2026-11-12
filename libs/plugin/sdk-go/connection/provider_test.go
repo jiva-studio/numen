@@ -104,7 +104,7 @@ func TestAnErrorOfNoKindIsAStopWhoseTextDoesNotLeave(t *testing.T) {
 	}
 }
 
-func TestACancelledCallReturnsTheStatusCodeNotAFailure(t *testing.T) {
+func TestACanceledCallReturnsTheStatusCodeNotAFailure(t *testing.T) {
 	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{err: context.Canceled}})
 	_, err := client.Complete(t.Context(), newCompleteRequest())
 	if connect.CodeOf(err) != connect.CodeCanceled {

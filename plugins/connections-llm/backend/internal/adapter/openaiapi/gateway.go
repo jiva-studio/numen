@@ -154,10 +154,10 @@ type modelsAnswer struct {
 // operations. A model with no declared output modalities counts as a model of text, because OpenRouter
 // leaves the list out for some.
 func (g *Gateway) ListModels(ctx context.Context, call connection.Call, limit time.Duration, op string) ([]connection.Model, error) {
-	path, isLabelled := "/models", call.Type == servicetype.OpenRouter
-	if isLabelled && op == operation.Embed {
+	path, isLabeled := "/models", call.Type == servicetype.OpenRouter
+	if isLabeled && op == operation.Embed {
 		path = "/embeddings/models"
-	} else if isLabelled && !operation.IsText(op) {
+	} else if isLabeled && !operation.IsText(op) {
 		return []connection.Model{}, nil
 	}
 	var answer modelsAnswer
@@ -167,7 +167,7 @@ func (g *Gateway) ListModels(ctx context.Context, call connection.Call, limit ti
 	models := make([]connection.Model, 0, len(answer.Data))
 	for _, one := range answer.Data {
 		model := connection.Model{ID: one.ID, Title: one.Name}
-		if isLabelled {
+		if isLabeled {
 			if operation.IsText(op) && !makesText(one.Architecture.OutputModalities) {
 				continue
 			}

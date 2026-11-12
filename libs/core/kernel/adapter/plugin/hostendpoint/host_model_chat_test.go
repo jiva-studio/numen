@@ -165,7 +165,7 @@ func TestAnyOtherChatFailureIsAStatusCode(t *testing.T) {
 	}
 }
 
-func TestACancelledChatReachesTheCalls(t *testing.T) {
+func TestACanceledChatReachesTheCalls(t *testing.T) {
 	calls := &scriptedCalls{events: []modelcall.ChatEvent{{TextDelta: "partial"}}, started: make(chan struct{})}
 	client, _ := newModelClient(t, calls, "token-a")
 	ctx, cancel := context.WithCancel(t.Context())

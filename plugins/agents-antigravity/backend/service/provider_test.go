@@ -214,7 +214,7 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	}
 }
 
-func TestCompleteReturnsTheErrorOfACancelledContext(t *testing.T) {
+func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 	svc := newAntigravity(t, "sleep 30\n")
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)

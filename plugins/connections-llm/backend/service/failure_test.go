@@ -88,7 +88,7 @@ func TestAServiceThatAnswersTooSlowlyIsATimeout(t *testing.T) {
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonTimeout})
 }
 
-func TestACancelledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
+func TestACanceledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 10*time.Second)
 	ctx, cancel := context.WithCancel(newContext(t))
@@ -110,7 +110,7 @@ func TestACancelledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
 	}
 }
 
-func TestACallThatIsAlreadyCancelledNeverReachesTheService(t *testing.T) {
+func TestACallThatIsAlreadyCanceledNeverReachesTheService(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

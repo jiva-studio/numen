@@ -209,7 +209,7 @@ func TestChatReportsNoConnectionAndRejection(t *testing.T) {
 	}
 }
 
-func TestACancelledChatInTheMiddleOfATurnKeepsTheTextAndReturnsTheContextError(t *testing.T) {
+func TestACanceledChatInTheMiddleOfATurnKeepsTheTextAndReturnsTheContextError(t *testing.T) {
 	host := &fakeChatHost{events: []*v1.HostModelServiceChatResponse{textDelta("partial")}, entered: make(chan struct{}), ended: make(chan error, 1)}
 	ctx, cancel := context.WithCancel(t.Context())
 	stream, err := newChatClient(t, host).Chat(ctx, ChatRequest{})
@@ -231,7 +231,7 @@ func TestACancelledChatInTheMiddleOfATurnKeepsTheTextAndReturnsTheContextError(t
 	}
 }
 
-func TestACancelledChatBeforeTheFirstEventReturnsTheContextError(t *testing.T) {
+func TestACanceledChatBeforeTheFirstEventReturnsTheContextError(t *testing.T) {
 	host := &fakeChatHost{entered: make(chan struct{}), ended: make(chan error, 1)}
 	ctx, cancel := context.WithCancel(t.Context())
 	openResult := make(chan error, 1)

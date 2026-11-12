@@ -211,13 +211,13 @@ func newBlockedChat() *chatService {
 	}
 }
 
-func TestACancelledChatReachesTheProviderOverTheInProcessPipe(t *testing.T) {
+func TestACanceledChatReachesTheProviderOverTheInProcessPipe(t *testing.T) {
 	service := newBlockedChat()
 	provider, _, _ := newBridge(t, service)
 	cancelRunningChat(t, provider, service)
 }
 
-func TestACancelledChatReachesTheProviderOverTheLoopback(t *testing.T) {
+func TestACanceledChatReachesTheProviderOverTheLoopback(t *testing.T) {
 	service := newBlockedChat()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewProviderServiceHandler(service))

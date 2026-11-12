@@ -23,7 +23,7 @@ func main() {
 	retryAfter := flag.String("retry-after", "", "Retry-After header sent with the status")
 	flag.Parse()
 
-	fake := fakeopenai.New(fakeopenai.Config{APIKey: *key, Dimensions: *dimensions, Models: nil, IsLabelled: false, EmbeddingModels: nil})
+	fake := fakeopenai.New(fakeopenai.Config{APIKey: *key, Dimensions: *dimensions, Models: nil, IsLabeled: false, EmbeddingModels: nil})
 	if *status != 0 {
 		fake.Fail("/chat/completions", *status, *retryAfter)
 		fake.Fail("/embeddings", *status, *retryAfter)

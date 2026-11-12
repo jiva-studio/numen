@@ -212,7 +212,7 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	}
 }
 
-func TestCompleteReturnsTheErrorOfACancelledContext(t *testing.T) {
+func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 	program, _ := fakeProgram(t, "hang")
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(300*time.Millisecond, cancel)

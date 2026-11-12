@@ -274,7 +274,7 @@ func TestFailuresOfTheConnectionAreFailedPreconditionsThatNameTheReason(t *testi
 	}
 }
 
-func TestACancelledCallKeepsItsContextError(t *testing.T) {
+func TestACanceledCallKeepsItsContextError(t *testing.T) {
 	host := &hostModels{profile: openAIProfile(), embedErr: context.Canceled}
 	srv := newConnectionServer(host)
 	srv.updateConfig(connectionValues())

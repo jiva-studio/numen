@@ -92,7 +92,7 @@ func TestAConnectionWhoseTypeIsNotProvidedIsAServedProviderUnavailable(t *testin
 	}
 }
 
-func TestACancelledAskIsAStatusCode(t *testing.T) {
+func TestACanceledAskIsAStatusCode(t *testing.T) {
 	handler, _, entry := newHandler(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

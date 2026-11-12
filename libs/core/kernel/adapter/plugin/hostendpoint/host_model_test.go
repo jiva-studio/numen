@@ -228,7 +228,7 @@ func TestAnyOtherFailureIsAStatusCode(t *testing.T) {
 	}
 }
 
-func TestACancelledCallReachesTheCallsAndReturnsCanceled(t *testing.T) {
+func TestACanceledCallReachesTheCallsAndReturnsCanceled(t *testing.T) {
 	calls := &scriptedCalls{started: make(chan struct{})}
 	client, _ := newModelClient(t, calls, "token-a")
 	ctx, cancel := context.WithCancel(t.Context())

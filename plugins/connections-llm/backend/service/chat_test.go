@@ -315,7 +315,7 @@ func TestTheTimeOfAChatRestartsWithEachEvent(t *testing.T) {
 	}
 }
 
-func TestAChatCancelledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
+func TestAChatCanceledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 30*time.Second)
 	ctx, cancel := context.WithCancel(t.Context())

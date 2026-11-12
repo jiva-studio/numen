@@ -71,7 +71,7 @@ func TestFailuresOfTheConnectionsAreConnectionErrors(t *testing.T) {
 	}
 }
 
-func TestACancelledCallKeepsItsContextError(t *testing.T) {
+func TestACanceledCallKeepsItsContextError(t *testing.T) {
 	_, err := New(&fakeClient{err: context.Canceled}).Embed(t.Context(), model.RoleDocument, []string{"a"})
 
 	if !errors.Is(err, context.Canceled) {

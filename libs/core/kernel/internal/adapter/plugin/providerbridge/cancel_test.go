@@ -70,7 +70,7 @@ func cancelRunningCall(t *testing.T, client numenv1connect.ProviderServiceClient
 	}
 }
 
-func TestACancelledCallReachesTheProviderOverTheInProcessPipe(t *testing.T) {
+func TestACanceledCallReachesTheProviderOverTheInProcessPipe(t *testing.T) {
 	provider := newBlockingProvider()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewProviderServiceHandler(provider))
@@ -79,7 +79,7 @@ func TestACancelledCallReachesTheProviderOverTheInProcessPipe(t *testing.T) {
 	cancelRunningCall(t, client, provider)
 }
 
-func TestACancelledCallReachesTheProviderOverTheLoopback(t *testing.T) {
+func TestACanceledCallReachesTheProviderOverTheLoopback(t *testing.T) {
 	provider := newBlockingProvider()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewProviderServiceHandler(provider))

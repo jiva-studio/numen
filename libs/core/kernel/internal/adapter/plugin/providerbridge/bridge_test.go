@@ -243,7 +243,7 @@ func TestAServiceThatFailsWithAStatusCodeIsAnErrorOfNoFailureKind(t *testing.T) 
 	}
 }
 
-func TestACancelledCallReturnsTheErrorOfTheContext(t *testing.T) {
+func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 	started := make(chan struct{})
 	provider, _, _ := newBridge(t, &scriptedService{complete: func(*v1.ProviderServiceCompleteRequest) (*v1.ProviderServiceCompleteResponse, error) {
 		close(started)
