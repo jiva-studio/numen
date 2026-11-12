@@ -12,6 +12,14 @@ describe('getReadmeText', () => {
     )
   })
 
+  it('removes an unclosed comment up to the end', () => {
+    expect(getReadmeText('Summary.\n\n<!-- draft\nDetails.')).toBe('Summary.')
+  })
+
+  it('removes a comment that the removal of another one joins together', () => {
+    expect(getReadmeText('Summary.<!<!-- inner -->-- outer -->Details.')).toBe('Summary.Details.')
+  })
+
   it('removes a title that follows a comment', () => {
     expect(getReadmeText('<!-- generated -->\n# Notes\nBody')).toBe('Body')
   })
