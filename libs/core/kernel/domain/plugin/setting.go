@@ -114,7 +114,10 @@ func isDiscovering(declared manifest.Setting, values map[string]any) bool {
 	if !declared.Discover {
 		return false
 	}
-	choices, _ := values[manifest.SettingDiscover].(map[string]any)
+	choices, isObject := values[manifest.SettingDiscover].(map[string]any)
+	if !isObject {
+		return true
+	}
 	if choice, isSet := choices[declared.Key].(bool); isSet {
 		return choice
 	}

@@ -120,7 +120,7 @@ func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []
 	if s.OptionsBy == nil {
 		return nil
 	}
-	if (s.Type != SettingTypeEnum && s.Type != "string") || len(s.Options) > 0 {
+	if (s.Type != SettingTypeEnum && s.Type != SettingTypeString) || len(s.Options) > 0 {
 		return []error{fmt.Errorf("%w: %s takes its options from %s and is no enum or string without options of its own", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
 	}
 	parent, ok := declared[s.OptionsBy.Setting]

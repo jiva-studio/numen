@@ -50,11 +50,11 @@ func getRealDir(t *testing.T, dir string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	real, err := filepath.EvalSymlinks(abs)
+	resolved, err := filepath.EvalSymlinks(abs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return real
+	return resolved
 }
 
 // item is an RPC of the protocol or an export of an SDK, by its node key.
@@ -163,8 +163,8 @@ func (l layout) getGoTargetKey(obj types.Object) string {
 }
 
 func (l layout) getRelative(file string) string {
-	if real, err := filepath.EvalSymlinks(file); err == nil {
-		file = real
+	if resolved, err := filepath.EvalSymlinks(file); err == nil {
+		file = resolved
 	}
 	rel, err := filepath.Rel(l.root, file)
 	if err != nil {

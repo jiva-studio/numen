@@ -251,18 +251,23 @@ func listParallelRequestsIssues(typeID string, field ConnectionField) []error {
 // rowFieldConnection is the key a row stores its connection under.
 const rowFieldConnection = "connection"
 
+func listRowFieldKeyIssues(typeID, key string, observed map[string]bool) []error {
+	switch {
+	case !connectionFieldKeyPattern.MatchString(key):
+		return []error{newConnectionIssue("type %q: row field key %q is not letters and digits starting with a letter", typeID, key)}
+	case key == rowFieldConnection:
+		return []error{newConnectionIssue("type %q: row field key %q is reserved", typeID, key)}
+	case observed[key]:
+		return []error{newConnectionIssue("type %q: row field %q is declared twice", typeID, key)}
+	}
+	return nil
+}
+
 func listRowFieldIssues(t ConnectionType) []error {
 	var issues []error
 	observed := map[string]bool{}
 	for _, field := range t.RowFields {
-		switch {
-		case !connectionFieldKeyPattern.MatchString(field.Key):
-			issues = append(issues, newConnectionIssue("type %q: row field key %q is not letters and digits starting with a letter", t.ID, field.Key))
-		case field.Key == rowFieldConnection:
-			issues = append(issues, newConnectionIssue("type %q: row field key %q is reserved", t.ID, field.Key))
-		case observed[field.Key]:
-			issues = append(issues, newConnectionIssue("type %q: row field %q is declared twice", t.ID, field.Key))
-		}
+		issues = append(issues, listRowFieldKeyIssues(t.ID, field.Key, observed)...)
 		observed[field.Key] = true
 		if field.Type != SettingTypeString && field.Type != SettingTypeEnum {
 			issues = append(issues, newFieldIssue(t.ID, field, "is a row field and is not a string or an enum"))
