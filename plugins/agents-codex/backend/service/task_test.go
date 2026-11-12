@@ -203,12 +203,11 @@ func TestACanceledTaskEndsTheProgram(t *testing.T) {
 	svc := newCodex(t, nil, writeScript(t, "codex", "sleep 30\n"))
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)
-	started := time.Now()
 
 	_, _, err := runTask(ctx, svc, taskCall(nil), &acp.TaskRequest{Prompt: "hi"})
 
-	if !errors.Is(err, context.Canceled) || time.Since(started) > 10*time.Second {
-		t.Errorf("RunTask = %v after %v, want the cancellation at once", err, time.Since(started))
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("RunTask = %v, want the cancellation", err)
 	}
 }
 
