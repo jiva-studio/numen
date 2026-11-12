@@ -215,10 +215,101 @@ function getTargets(checker, node) {
   return [...targets];
 }
 
+/** The library declarations of the property `name` of `type`, as node keys. */
+function getPropertyTargets(checker, type, name) {
+  const targets = new Set();
+  for (const one of type.isUnion() ? type.types : [type]) {
+    const property = checker.getPropertyOfType(checker.getApparentType(one), name);
+    for (const declaration of property?.declarations ?? []) {
+      const target = getDeclarationTarget(declaration);
+      if (target) targets.add(target);
+    }
+  }
+  return targets;
+}
+
+/**
+ * The members of a library that answer a member of an interface of a library: a property of an object
+ * literal typed by the interface, or a member of a class that implements or extends it. A consumer that
+ * calls the interface member calls whichever member stands behind it, so each pair is a use of the
+ * answering member by the interface member, as [answer, interface member].
+ */
+function listAnswers(checker, node, rel) {
+  const pairs = [];
+  const add = (element, type) => {
+    const name = getText(element.name);
+    const answer = getDeclarationKey(element, rel);
+    if (!name || !answer || !type) return;
+    for (const target of getPropertyTargets(checker, type, name)) if (target !== answer) pairs.push([answer, target]);
+  };
+  if (ts.isObjectLiteralExpression(node)) {
+    const type = checker.getContextualType(node);
+    for (const element of node.properties) if (isMemberDeclaration(element)) add(element, type);
+  } else if (ts.isClassLike(node)) {
+    for (const clause of node.heritageClauses ?? []) {
+      for (const parent of clause.types) {
+        const type = checker.getTypeAtLocation(parent);
+        for (const element of node.members) if (isMemberDeclaration(element)) add(element, type);
+      }
+    }
+  }
+  return pairs;
+}
+
+/** Whether `node` is a value handed to a typed place: an argument, an initializer, a property, a return. */
+function isHandedValue(node) {
+  const parent = node.parent;
+  if (!parent) return false;
+  if ((ts.isCallExpression(parent) || ts.isNewExpression(parent)) && parent.arguments?.includes(node)) return true;
+  if (ts.isPropertyAssignment(parent)) return parent.initializer === node;
+  if (ts.isVariableDeclaration(parent)) return parent.initializer === node && parent.type !== undefined;
+  if (ts.isReturnStatement(parent)) return true;
+  if (ts.isArrowFunction(parent)) return parent.body === node;
+  if (ts.isBinaryExpression(parent)) return parent.right === node && parent.operatorToken.kind === ts.SyntaxKind.EqualsToken;
+  return false;
+}
+
+/** The type the place `node` is handed to expects, or null. */
+function getExpectedType(checker, node) {
+  if (ts.isShorthandPropertyAssignment(node)) {
+    const literal = checker.getContextualType(node.parent);
+    const property = literal && checker.getPropertyOfType(literal, node.name.text);
+    return property ? checker.getTypeOfSymbolAtLocation(property, node) : null;
+  }
+  return isHandedValue(node) ? (checker.getContextualType(node) ?? null) : null;
+}
+
+/**
+ * The members of a library or RPCs that a value hands over to a type of another declaration, such as a
+ * client of the core client passed where a package declares the calls it makes: the place that hands the
+ * value over uses each member the expected type names.
+ */
+function listHandedTargets(checker, node) {
+  const expected = getExpectedType(checker, node);
+  if (!expected || expected.flags & ts.TypeFlags.Any) return [];
+  const value = checker.getTypeAtLocation(ts.isShorthandPropertyAssignment(node) ? node.name : node);
+  if (!value || value === expected || !(value.flags & ts.TypeFlags.Object)) return [];
+  const targets = new Set();
+  for (const property of checker.getPropertiesOfType(expected)) {
+    const own = getPropertyTargets(checker, expected, property.name);
+    for (const target of getPropertyTargets(checker, value, property.name)) if (!own.has(target)) targets.add(target);
+  }
+  return [...targets];
+}
+
 function readUses(program, file, rel, uses) {
   const checker = program.getTypeChecker();
+  const isLibrary = isLibraryFile(rel);
   const visit = (node) => {
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node) || ts.isImportEqualsDeclaration(node)) return;
+    if (isLibrary) for (const [answer, target] of listAnswers(checker, node, rel)) uses.add(JSON.stringify([answer, rel, target]));
+    if (ts.isExpression(node) || ts.isShorthandPropertyAssignment(node)) {
+      const handed = listHandedTargets(checker, node);
+      if (handed.length > 0) {
+        const user = getDeclarationKey(node, rel) ?? "";
+        for (const target of handed) uses.add(JSON.stringify([target, rel, user]));
+      }
+    }
     if (ts.isIdentifier(node)) {
       const targets = getTargets(checker, node);
       if (targets.length > 0) {
