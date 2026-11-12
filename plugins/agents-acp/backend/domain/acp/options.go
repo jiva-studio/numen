@@ -8,9 +8,8 @@ type Model struct {
 	Name string `json:"name"`
 }
 
-// Level is one depth of reasoning an agent reports for its current model.
+// Level is one depth of reasoning an agent reports for its current model. SetReasoning takes its Name.
 type Level struct {
-	// Name is what a session is set to the level with.
 	Name  string `json:"name"`
 	Title string `json:"title"`
 }

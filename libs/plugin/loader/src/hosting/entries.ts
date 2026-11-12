@@ -47,10 +47,6 @@ function undoSteps(steps: readonly (() => void)[]): void {
   for (const undo of [...steps].reverse()) undo()
 }
 
-/**
- * Registers the reader of each extension the reader opens, pushing the undoing of each onto cleanups.
- * A window that opens no tab for a plugin or reads no extension registers none.
- */
 function registerReaderExtensions(
   deps: PluginHostDeps,
   item: PluginItemRegistration<ReaderRegistration>,
@@ -127,14 +123,14 @@ function extractWhere(
 export function registerTabKindEntry(
   deps: PluginHostDeps,
   owners: TabKindOwners,
-  item: PluginItemRegistration<TabKindRegistration>,
+  item: PluginItemRegistration<TabKindRegistration> & { readonly isNoteEditor: boolean },
 ): Disposable {
-  const { pluginId, registration, getContext } = item
+  const { pluginId, registration, getContext, isNoteEditor } = item
   const { tabKinds } = owners
   requireFreeKind(owners, { pluginId, what: 'tab kind', id: registration.kind })
   const kind = isDeclaredTabKind(registration)
     ? createDeclaredTabKind(pluginId, registration)
-    : createCustomTabKind(pluginId, registration, { ...deps, getContext })
+    : createCustomTabKind(pluginId, registration, { ...deps, getContext, isNoteEditor })
   const cleanups: (() => void)[] = []
   const { registerEditor, openTab } = deps
   try {

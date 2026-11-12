@@ -29,25 +29,26 @@ func (u *List) Execute(ctx context.Context) ([]Entry, error) {
 	return entries, nil
 }
 
-// ListOperationTitles reads the titles the enabled plugins give the operations of connection types.
-type ListOperationTitles struct {
+// TypeList is the kinds of connection and the titles the plugins give the operations of the kinds. Types
+// holds every declared type, the unavailable ones included; Operations holds one title for each titled
+// operation, in the order of the plugin ids.
+type TypeList struct {
+	Types      []connection.Type
+	Operations []manifest.Operation
+}
+
+// ListTypes reads the kinds of connection the installed plugins provide and the titles of their operations.
+type ListTypes struct {
+	operation
 	titles connectionport.OperationTitles
 }
 
-// NewListOperationTitles returns the use case over the titles of the plugins.
-func NewListOperationTitles(titles connectionport.OperationTitles) *ListOperationTitles {
-	return &ListOperationTitles{titles: titles}
-}
-
-// Execute returns one title for each titled operation, in the order of the plugin ids.
-func (u *ListOperationTitles) Execute() []manifest.Operation {
-	return u.titles.ListOperationTitles()
-}
-
-// ListTypes reads the kinds of connection the installed plugins provide.
-type ListTypes struct{ operation }
-
-// Execute returns every declared type, the unavailable ones included.
-func (u *ListTypes) Execute() []connection.Type {
-	return u.types.ListTypes()
+// Execute returns the kinds of connection and the titles of the operations; no titles where the use case
+// has no source of titles.
+func (u *ListTypes) Execute() TypeList {
+	list := TypeList{Types: u.types.ListTypes()}
+	if u.titles != nil {
+		list.Operations = u.titles.ListOperationTitles()
+	}
+	return list
 }

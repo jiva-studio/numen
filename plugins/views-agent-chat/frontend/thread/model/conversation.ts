@@ -10,15 +10,7 @@
 import { computed, ref, shallowRef, type Ref } from 'vue'
 import { onNextFrame, type Paint } from '@numen/ui'
 import type { ConnectionError, ConnectionHost, Result } from '@numen/plugin-sdk'
-import {
-  PlanEntryStatus,
-  runTask,
-  StopReason,
-  ToolCallStatus,
-  type PlanEntry,
-  type TaskDone,
-  type TaskFrame,
-} from '@numen/plugin-sdk/contracts/acp'
+import { acp } from '@numen/plugin-sdk/contracts'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
 import type { PlanItem, PlanStatus, Turn } from '../../types'
@@ -34,26 +26,32 @@ export interface ConversationStrings {
   readonly refusal: string
 }
 
+/** getSourcePath returns the file the line of a turn works on, null where it works on none. */
 export interface Conversation {
   readonly turns: Ref<Turn[]>
   readonly isAnswerPending: Readonly<Ref<boolean>>
   readonly ask: (question: string) => Promise<void>
-  /** The file the line of a turn works on, null where it works on none. */
   readonly getSourcePath: (turn: string) => string | null
   readonly stop: () => void
 }
 
+/**
+ * toolContext is handed to every tool the agent calls; vault is the vault the tools work on, empty for the
+ * vault the window shows.
+ */
 export interface ConversationOptions {
   readonly connections: ConnectionHost
   readonly words: ConversationStrings
   readonly conversation: string
-  /** Handed to every tool the agent calls. */
   readonly toolContext?: Readonly<Record<string, string>> | undefined
-  /** The vault the tools work on; empty is the vault the window shows. */
   readonly vault?: string | undefined
   readonly paint?: Paint | undefined
 }
 
+/**
+ * A failure the answer already ends with marks the answer failed; any other failure goes on a turn of its
+ * own. The work line settles once no tool call is running, and the wait shows again.
+ */
 export function useConversation(options: ConversationOptions): Conversation {
   const { connections, words, conversation, paint = onNextFrame } = options
   const { turns, paths, put, drop, nextId } = useConversationTurns()
@@ -70,7 +68,7 @@ export function useConversation(options: ConversationOptions): Conversation {
     const plan = createPlanTurn(put, nextId)
 
     try {
-      const frames = runTask(
+      const frames = acp.runTask(
         connections,
         {
           prompt: question,
@@ -109,24 +107,23 @@ export function useConversation(options: ConversationOptions): Conversation {
 
 interface SettleTurnOptions {
   readonly answer: Answer
-  readonly end: Result<TaskDone, ConnectionError>
+  readonly end: Result<acp.TaskDone, ConnectionError>
   readonly words: ConversationStrings
 }
 
-const getStopSentence = (reason: StopReason, words: ConversationStrings): string => {
+const getStopSentence = (reason: acp.StopReason, words: ConversationStrings): string => {
   switch (reason) {
-    case StopReason.MAX_TOKENS:
+    case acp.StopReason.MAX_TOKENS:
       return words.maxTokens
-    case StopReason.MAX_TURN_REQUESTS:
+    case acp.StopReason.MAX_TURN_REQUESTS:
       return words.maxTurnRequests
-    case StopReason.REFUSAL:
+    case acp.StopReason.REFUSAL:
       return words.refusal
     default:
       return ''
   }
 }
 
-/** A failure the answer already ends with marks the answer failed; any other goes on a turn of its own. */
 function putFailure(answer: Answer, message: string, put: (turn: Turn) => void, nextId: () => string) {
   const cleanMessage = message.trim()
   const text = answer.getText().trim()
@@ -168,7 +165,7 @@ function settleTurn(options: SettleTurnOptions, put: (turn: Turn) => void, nextI
     put({ id: nextId(), voice: 'response', text: sentence, state: 'failed' })
     return
   }
-  if (!hasContent && reason !== StopReason.CANCELED) {
+  if (!hasContent && reason !== acp.StopReason.CANCELED) {
     put({ id: nextId(), voice: 'response', text: words.nothing })
   }
 }
@@ -229,16 +226,16 @@ function useFlightState() {
   return { isAnswerPending, startFlight, stop, endFlight }
 }
 
-const PLAN_STATUSES: Readonly<Record<PlanEntryStatus, PlanStatus>> = {
-  [PlanEntryStatus.UNSPECIFIED]: 'pending',
-  [PlanEntryStatus.PENDING]: 'pending',
-  [PlanEntryStatus.IN_PROGRESS]: 'active',
-  [PlanEntryStatus.COMPLETED]: 'done',
+const PLAN_STATUSES: Readonly<Record<acp.PlanEntryStatus, PlanStatus>> = {
+  [acp.PlanEntryStatus.UNSPECIFIED]: 'pending',
+  [acp.PlanEntryStatus.PENDING]: 'pending',
+  [acp.PlanEntryStatus.IN_PROGRESS]: 'active',
+  [acp.PlanEntryStatus.COMPLETED]: 'done',
 }
 
 /** The plan of one exchange: one turn, put up with the first plan and replaced by each next one. */
 interface PlanTurn {
-  readonly show: (entries: readonly PlanEntry[]) => void
+  readonly show: (entries: readonly acp.PlanEntry[]) => void
   readonly settle: () => void
 }
 
@@ -266,14 +263,12 @@ interface FrameContext {
   readonly answer: Answer
   readonly work: WorkLine
   readonly plan: PlanTurn
-  /** The tool calls that have not ended, by their ids. */
   readonly calls: Set<string>
 }
 
-const isEnded = (status: ToolCallStatus | undefined): boolean =>
-  status === ToolCallStatus.COMPLETED || status === ToolCallStatus.FAILED
+const isEnded = (status: acp.ToolCallStatus | undefined): boolean =>
+  status === acp.ToolCallStatus.COMPLETED || status === acp.ToolCallStatus.FAILED
 
-/** A call that ended leaves the line settled once no other call is running, and the wait back up. */
 function endCall(id: string, context: FrameContext): void {
   context.calls.delete(id)
   if (context.calls.size > 0) return
@@ -281,39 +276,44 @@ function endCall(id: string, context: FrameContext): void {
   context.work.setWaiting(true)
 }
 
-function applyFrame(frame: TaskFrame, context: FrameContext): void {
+function applyMessageChunk(text: string, context: FrameContext): void {
+  if (text === '') return
   const { answer, work, calls } = context
+  calls.clear()
+  work.setWaiting(false)
+  if (!answer.isOpen()) work.dropWorkLine()
+  answer.say(text)
+}
+
+function applyToolCall(call: acp.ToolCall, context: FrameContext): void {
+  const { answer, work, calls } = context
+  answer.settle()
+  work.setWaiting(false)
+  calls.add(call.toolCallId)
+  work.reach({
+    title: call.title,
+    subject: call.content[0] ?? '',
+    path: call.locations[0]?.path ?? '',
+  })
+  if (isEnded(call.status)) endCall(call.toolCallId, context)
+}
+
+function applyFrame(frame: acp.TaskFrame, context: FrameContext): void {
   const { update } = frame
   switch (update.case) {
     case 'agentMessageChunk':
-      if (update.value.text === '') break
-      calls.clear()
-      work.setWaiting(false)
-      if (!answer.isOpen()) work.dropWorkLine()
-      answer.say(update.value.text)
+      applyMessageChunk(update.value.text, context)
       break
     case 'plan':
-      work.setWaiting(false)
+      context.work.setWaiting(false)
       context.plan.show(update.value.entries)
       break
-    case 'toolCall': {
-      const call = update.value
-      answer.settle()
-      work.setWaiting(false)
-      calls.add(call.toolCallId)
-      work.reach({
-        title: call.title,
-        subject: call.content[0] ?? '',
-        path: call.locations[0]?.path ?? '',
-      })
-      if (isEnded(call.status)) endCall(call.toolCallId, context)
+    case 'toolCall':
+      applyToolCall(update.value, context)
       break
-    }
-    case 'toolCallUpdate': {
-      const change = update.value
-      if (isEnded(change.status)) endCall(change.toolCallId, context)
+    case 'toolCallUpdate':
+      if (isEnded(update.value.status)) endCall(update.value.toolCallId, context)
       break
-    }
     default:
       break
   }
@@ -325,12 +325,11 @@ interface FrameRunner {
   readonly plan: PlanTurn
 }
 
-/** Draws the frames of a task as they arrive; the end of the task, or null where it was given up. */
 async function readFrames(
-  frames: AsyncGenerator<TaskFrame, Result<TaskDone, ConnectionError>>,
+  frames: AsyncGenerator<acp.TaskFrame, Result<acp.TaskDone, ConnectionError>>,
   signal: AbortSignal,
   runner: FrameRunner,
-): Promise<Result<TaskDone, ConnectionError> | null> {
+): Promise<Result<acp.TaskDone, ConnectionError> | null> {
   const context: FrameContext = { ...runner, calls: new Set() }
   for (;;) {
     const next = await frames.next()

@@ -99,8 +99,12 @@ export type SlotCommandFinder = (
   target: CommandTarget | undefined,
 ) => SlotCommandLook | undefined
 
+/**
+ * target is the target of the window, which the plugins it activates read as theirs. A window that opens
+ * no tab for a plugin leaves out openTab. getSlotEntries reads the slot entries from the manifests of the
+ * plugins whose context the host made, keyed by plugin id.
+ */
 export interface PluginHostDeps {
-  /** The target of the window, which the plugins it activates read as theirs. */
   readonly target: string
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
@@ -134,7 +138,6 @@ export interface PluginHostDeps {
       options?: FilePlacement | { readonly where?: FilePlacement | undefined },
     ) => void,
   ) => (() => void) | void
-  /** Opens a tab of a kind; a window that opens no tab for a plugin leaves it out. */
   readonly openTab?: (kind: string, at?: string) => Promise<string>
   readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>
   readonly navigateTab?: (kind: string, path: string) => Promise<string>
@@ -166,7 +169,6 @@ export interface PluginHostDeps {
   readonly getNotices?: (pluginId: string) => NoticeHost
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
   readonly getConnections?: (pluginId: string) => ConnectionHost
-  /** The entries of the slots, read from the manifests of the plugins whose context the host made, by plugin id. */
   readonly getSlotEntries?: (
     manifests: ReadonlyMap<string, Manifest>,
   ) => readonly DeclaredSlotEntry[] | undefined

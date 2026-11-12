@@ -709,6 +709,7 @@ describe('createBufferedNoteState', () => {
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
         getNoteBuffer: () => buffer,
+        isNoteEditor: true,
         getNotes: () => ({ findNotes, getHeadings }) as never,
         getWorkspace: () => ({ files: { open: openFile } }) as never,
         resolveLink,
@@ -810,11 +811,11 @@ describe('createBufferedNoteState', () => {
     scope.stop()
     expect(buffer.close).toHaveBeenCalledWith('tab-buf')
 
-    // Non-note custom tab kind does not open note buffer even when getNoteBuffer is provided
+    // A kind the manifest does not declare as the note editor opens no note buffer, whatever its name
     vi.mocked(buffer.open).mockClear()
     const nonNoteWithBuffer = createCustomTabKind(
       'p',
-      { kind: 'custom-other', component: STUB_COMPONENT },
+      { kind: 'note', component: STUB_COMPONENT },
       {
         target: 'desktop.editor',
         registerKind: () => vi.fn(),

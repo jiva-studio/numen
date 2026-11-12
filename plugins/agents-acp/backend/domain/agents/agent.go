@@ -42,8 +42,6 @@ type Agent struct {
 	Command []string
 }
 
-// getKnownBinaries lists the executables a type finds on the PATH where the connection names none, in
-// the order they are looked for.
 func getKnownBinaries(connectionType string) []string {
 	switch connectionType {
 	case TypeClaudeCode:
@@ -56,7 +54,6 @@ func getKnownBinaries(connectionType string) []string {
 	return nil
 }
 
-// getArguments returns the arguments that start the ACP server of the executable of a type.
 func getArguments(connectionType, executable string) []string {
 	if connectionType == TypeAntigravity {
 		return []string{acpSubcommand}

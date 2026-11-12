@@ -60,10 +60,17 @@ const BUILD_CONFIGURATION = /\.config\.[cm]?[jt]s$/
 const TEST_ENTRY = './testing'
 
 /**
+ * The entry of the contracts between plugins. The main entry of the SDK may not re-export them (the
+ * contracts-imports check keeps every library without them), so a plugin names this entry.
+ */
+const CONTRACTS_ENTRY = './contracts'
+
+/**
  * Lists the specifiers of `files` that reach into a plugin package beyond its main entry. `files`
  * holds `{ file, literals }` with each literal as `{ line, value }`, and `exportsByPackage` maps a
  * package name to the keys and targets of its `exports`. A deep path passes when the package
- * declares it and it is the test entry, a stylesheet, or named from a build configuration file.
+ * declares it and it is the test entry, the contracts entry, a stylesheet, or named from a build
+ * configuration file.
  */
 export function findPluginEntryViolations(files, exportsByPackage) {
   const found = []
@@ -84,6 +91,7 @@ export function findPluginEntryViolations(files, exportsByPackage) {
       const targetPath = typeof target === 'string' ? target : JSON.stringify(target)
       const isAllowed =
         entry === TEST_ENTRY ||
+        entry === CONTRACTS_ENTRY ||
         /\.css\b/.test(targetPath) ||
         BUILD_CONFIGURATION.test(path.basename(file))
       if (!isAllowed)
@@ -109,7 +117,7 @@ export function readPluginPackageExports() {
   return result
 }
 
-/** A plugin imports `@numen/plugin-sdk` and `@numen/ui` through their main entry, and from the test entry, stylesheets and build entries a package declares. */
+/** A plugin imports `@numen/plugin-sdk` and `@numen/ui` through their main entry, and from the test entry, the contracts entry, stylesheets and build entries a package declares. */
 export function verifyPluginsUseMainEntry() {
   const exportsByPackage = readPluginPackageExports()
   for (const name of PLUGIN_PACKAGES)
@@ -736,7 +744,7 @@ export const PLUGIN_VERIFIERS = [
     id: 'plugins-use-main-entry',
     scope: 'plugins',
     module: 'plugins',
-    name: 'Plugins Import the SDK and UI Through Their Main Entry (only the test entry, stylesheets and build entries a package declares in exports)',
+    name: 'Plugins Import the SDK and UI Through Their Main Entry (only the test entry, the contracts entry, stylesheets and build entries a package declares in exports)',
     run: verifyPluginsUseMainEntry,
   },
   {

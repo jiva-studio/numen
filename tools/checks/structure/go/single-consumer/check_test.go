@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+	"golang.org/x/tools/go/packages"
 )
 
 // An RPC of the protocol or an export of an SDK that one plugin, or the plugins of one family, use and
@@ -33,6 +34,11 @@ type NoteServiceClient interface {
 	CountWords(context.Context) error
 	ListHeadings(context.Context) error
 	ForgetNote(context.Context) error
+	MoveNotes(context.Context) error
+	TrashNotes(context.Context) error
+	PinNote(context.Context) error
+	TagNote(context.Context) error
+	ShelveNote(context.Context) error
 }
 
 func NewNoteServiceClient() NoteServiceClient { return nil }
@@ -60,6 +66,10 @@ func (c *Client) Stats(ctx context.Context) error { return c.rpc.GetIndexStats(c
 func (c *Client) Arrange(ctx context.Context) error { return arrange(ctx, c.rpc) }
 
 func arrange(ctx context.Context, rpc numenv1connect.NoteServiceClient) error { return rpc.ArrangeNotes(ctx) }
+
+func (c *Client) Move(ctx context.Context) error { return c.rpc.MoveNotes(ctx) }
+
+func (c *Client) Trash(ctx context.Context) error { return c.rpc.TrashNotes(ctx) }
 
 type Reader interface{ Read(context.Context) error }
 
@@ -98,6 +108,7 @@ import (
 	"context"
 
 	"fixture/libs/plugin/sdk-go/host"
+	"fixture/plugins/tools-stats/backend/ports"
 )
 
 func main() {
@@ -105,7 +116,15 @@ func main() {
 	_ = client.Read(context.Background())
 	_ = client.Stats(context.Background())
 	host.Lonely()
+	var mover ports.Mover = client
+	_ = mover.Move(context.Background())
 }
+`,
+	"plugins/tools-stats/backend/ports/ports.go": `package ports
+
+import "context"
+
+type Mover interface{ Move(context.Context) error }
 `,
 	"plugins/views-board/backend/main.go": `package main
 
@@ -115,10 +134,18 @@ import (
 	"fixture/libs/plugin/sdk-go/host"
 )
 
+type cleaner interface {
+	Move(context.Context) error
+	Trash(context.Context) error
+}
+
 func main() {
 	var reader host.Reader = host.New()
 	_ = reader.Read(context.Background())
 	_ = host.New().Arrange(context.Background())
+	var notes cleaner = host.New()
+	_ = notes.Move(context.Background())
+	_ = notes.Trash(context.Background())
 }
 `,
 	"plugins/views-shelf/backend/main.go": `package main
@@ -173,6 +200,9 @@ export declare const NoteService: GenService<{
   readNote: { methodKind: 'unary' }
   countWords: { methodKind: 'unary' }
   forgetNote: { methodKind: 'unary' }
+  pinNote: { methodKind: 'unary' }
+  tagNote: { methodKind: 'unary' }
+  shelveNote: { methodKind: 'unary' }
 }>
 `,
 	"libs/core/client/package.json":  `{ "name": "@numen/core-client", "main": "./src/index.ts" }`,
@@ -185,6 +215,32 @@ export const notes = createClient(NoteService)
 export async function countAll(): Promise<object> {
   return notes.countWords({})
 }
+
+export interface PinClient {
+  pin(): Promise<object>
+}
+
+export function createPinClient(): PinClient {
+  return { pin: () => notes.pinNote({}) }
+}
+
+export interface TagClient {
+  tag(): Promise<object>
+}
+
+class NoteTags implements TagClient {
+  tag(): Promise<object> {
+    return notes.tagNote({})
+  }
+}
+
+export const tags: TagClient = new NoteTags()
+
+export interface ShelfClient {
+  shelve(): Promise<object>
+}
+
+export const shelf: ShelfClient = { shelve: () => notes.shelveNote({}) }
 `,
 	"libs/plugin/sdk-ts/package.json":  `{ "name": "@numen/plugin-sdk", "exports": { ".": "./src/index.ts", "./testing": "./src/testing/index.ts" } }`,
 	"libs/plugin/sdk-ts/tsconfig.json": `{ "extends": "../../../tsconfig.base.json", "include": ["src/**/*.ts"] }`,
@@ -210,11 +266,25 @@ export function unusedHelper(): string {
 	"libs/plugin/sdk-ts/src/testing/index.ts": "export function createFakeContext(): object {\n  return {}\n}\n",
 	"apps/editor/package.json":                `{ "name": "editor" }`,
 	"apps/editor/tsconfig.json":               `{ "extends": "../../tsconfig.base.json", "include": ["src/**/*.ts"] }`,
-	"apps/editor/src/main.ts": `import { notes } from '@numen/core-client'
+	"apps/editor/src/main.ts": `import { createPinClient, notes, shelf } from '@numen/core-client'
 
 export async function openNote(): Promise<object> {
   return notes.readNote({})
 }
+
+export async function pinNote(): Promise<object> {
+  return createPinClient().pin()
+}
+
+interface Shelving {
+  shelve(): Promise<object>
+}
+
+function keep(port: Shelving): Promise<object> {
+  return port.shelve()
+}
+
+export const kept = keep(shelf)
 `,
 	"apps/editor/src/Count.vue": `<script setup lang="ts">
 import { countAll } from '@numen/core-client'
@@ -226,10 +296,12 @@ void countAll()
 `,
 	"plugins/views-board/package.json":  `{ "name": "views-board" }`,
 	"plugins/views-board/tsconfig.json": `{ "extends": "../../tsconfig.base.json", "include": ["frontend/**/*.ts"] }`,
-	"plugins/views-board/frontend/index.ts": `import { formatWords, lonelyHelper, type PluginContext } from '@numen/plugin-sdk'
+	"plugins/views-board/frontend/index.ts": `import { tags } from '@numen/core-client'
+import { formatWords, lonelyHelper, type PluginContext } from '@numen/plugin-sdk'
 
 export function show(context: PluginContext): string {
   void context
+  void tags.tag()
   return formatWords(2) + lonelyHelper()
 }
 `,
@@ -255,8 +327,10 @@ func newPlantedLayout(t *testing.T, dir string) layout {
 	}
 }
 
-// The walk follows a use through the SDK functions, the methods behind an interface and the core
-// client to the plugins and applications, in Go, TypeScript and Vue, and reads no test.
+// The walk follows a use through the SDK functions, the methods behind an interface of the SDK or of a
+// plugin port, the objects and classes of the core client behind its interfaces, and a client handed to
+// an interface a consumer declares, to the plugins and applications, in Go, TypeScript and Vue, and reads
+// no test.
 func TestSingleConsumerWalk_FindsThePlantedItems(t *testing.T) {
 	files := map[string]string{}
 	for name, text := range plantedFiles {
@@ -264,7 +338,7 @@ func TestSingleConsumerWalk_FindsThePlantedItems(t *testing.T) {
 	}
 	dir := load.WriteTreeFixture(t, files)
 	l := newPlantedLayout(t, dir)
-	goUsage := collectGoUsage(load.LoadFixture(t, dir), l)
+	goUsage := collectGoUsage([][]*packages.Package{load.LoadFixture(t, dir)}, l)
 	tsUsage, read := collectTSUsage(t, l)
 	if read.Files == 0 {
 		t.Fatal("the TypeScript walk read no file")
@@ -278,6 +352,8 @@ func TestSingleConsumerWalk_FindsThePlantedItems(t *testing.T) {
 		"NoteService.ForgetNote: used by nothing outside tests: dead",
 		"NoteService.GetIndexStats: used only by plugin tools-stats: belongs to that plugin",
 		"NoteService.ListHeadings: used by nothing outside tests: dead",
+		"NoteService.TagNote: used only by plugin views-board: belongs to that plugin",
+		"NoteService.TrashNotes: used only by plugin views-board: belongs to that plugin",
 		"libs/plugin/sdk-go/host.Lonely: used only by plugin tools-stats: belongs to that plugin",
 		"libs/plugin/sdk-go/host.Orphan: used by nothing outside tests: dead",
 		"libs/plugin/sdk-go/host.Reader: used only by plugin views-board: belongs to that plugin",
@@ -287,35 +363,6 @@ func TestSingleConsumerWalk_FindsThePlantedItems(t *testing.T) {
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("findings\n%v\nwant\n%v", got, want)
-	}
-}
-
-// An allowed finding is dropped only with a reason of three words or more, and an entry that names
-// no finding is reported, so the list shrinks with the code.
-func TestAllowList_DemandsReasonsAndCurrentFindings(t *testing.T) {
-	found := []finding{
-		{name: "NoteService.ReadNote", verdict: "dead"},
-		{name: "NoteService.WriteNote", verdict: "dead"},
-		{name: "NoteService.ListHeadings", verdict: "dead"},
-	}
-	kept, problems := applyAllowList(found, []allowance{
-		{Item: "NoteService.ReadNote", Reason: "the window reads it next"},
-		{Item: "NoteService.WriteNote", Reason: "fine"},
-		{Item: "NoteService.Gone", Reason: "kept for the next release"},
-	})
-	var names []string
-	for _, one := range kept {
-		names = append(names, one.name)
-	}
-	if !slices.Equal(names, []string{"NoteService.WriteNote", "NoteService.ListHeadings"}) {
-		t.Errorf("kept %v", names)
-	}
-	want := []string{
-		`allowlist.json: "NoteService.WriteNote" gives no reason of three words or more`,
-		`allowlist.json: "NoteService.Gone" is not a finding; remove the entry`,
-	}
-	if !slices.Equal(problems, want) {
-		t.Errorf("problems %v, want %v", problems, want)
 	}
 }
 

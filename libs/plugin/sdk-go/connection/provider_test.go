@@ -92,7 +92,7 @@ func TestAnOperationReceivesTheConnectionAndThePayloadAndItsFramesReachTheCore(t
 	}
 }
 
-func TestAnEmptyDoneIsADoneFrame(t *testing.T) {
+func TestAnOperationWithoutAPayloadEndsWithAnEmptyFinalFrame(t *testing.T) {
 	client := newProviderClient(t, Provider{"llm.complete": func(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {
 		return nil, nil
 	}})
@@ -137,7 +137,7 @@ func TestAFailureOfAnOperationIsAFailureFrameOfItsKindAndReason(t *testing.T) {
 	}
 }
 
-func TestTheTextOfAnErrorOfNoKindNeverLeavesTheProvider(t *testing.T) {
+func TestTheTextOfAnErrorOfNoKindIsNotSentByTheProvider(t *testing.T) {
 	client := newProviderClient(t, Provider{"llm.complete": func(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {
 		return nil, errPlain
 	}})
@@ -171,7 +171,7 @@ func TestACanceledOperationAnswersCanceled(t *testing.T) {
 	}
 }
 
-func TestEveryReasonOfTheSchemaIsWrittenFromOne(t *testing.T) {
+func TestEveryReasonOfTheSchemaIsNumberedFromOne(t *testing.T) {
 	schematest.CheckProduced(t, map[v1.FailureReason]Reason{
 		v1.FailureReason_FAILURE_REASON_REJECTED_KEY:     ReasonRejectedKey,
 		v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED: ReasonPaymentRequired,

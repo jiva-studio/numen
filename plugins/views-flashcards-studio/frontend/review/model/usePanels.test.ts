@@ -30,8 +30,8 @@ const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
 
 /** The connections of the plugin, which the panels only pass to the conversation view. */
 const connections: ConnectionHost = {
-  // eslint-disable-next-line require-yield
   call: async function* () {
+    yield* []
     return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
   },
 }

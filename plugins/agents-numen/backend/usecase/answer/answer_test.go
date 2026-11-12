@@ -86,7 +86,7 @@ func run(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp
 	return frames, done, err
 }
 
-func runDone(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason) {
+func runTaskToEnd(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason) {
 	t.Helper()
 	frames, done, err := run(t, answerer, task)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestAnAnswerWithoutToolCallsEndsTheTurnAndIsSentAsAMessageChunk(t *testing.
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("hello")}}
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
 
-	frames, reason := runDone(t, answerer, &acp.TaskRequest{Prompt: "hi"})
+	frames, reason := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
 	if reason != acp.StopReason_STOP_REASON_END_TURN {
 		t.Errorf("stop = %v, want end turn", reason)
@@ -140,7 +140,7 @@ func TestTheDistinctInstructionsOfTheToolsAreTheSystemText(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("hello")}}
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
 
-	runDone(t, answerer, &acp.TaskRequest{Prompt: "hi"})
+	runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
 	messages := chat.turns[0].Messages
 	if len(messages) != 2 || messages[0].Role != "system" || messages[0].Text != "Cite the note. Answer briefly. Ask before writing." {
@@ -155,7 +155,7 @@ func TestTheNotesAttachedToThePromptGoWithIt(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("hello")}}
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
 
-	runDone(t, answerer, &acp.TaskRequest{
+	runTaskToEnd(t, answerer, &acp.TaskRequest{
 		Prompt:       "When does the ferry leave?",
 		ContextNotes: []*acp.ContextNote{{Path: "Trips/Ferry.md", Title: "Ferry", Text: "Leaves at 7:40."}},
 	})
@@ -171,7 +171,7 @@ func TestAToolCallIsSentWithItsTitleKindAndNoteAndEndsCompleted(t *testing.T) {
 	tools := &fakeTools{}
 	answerer, _ := newAnswerer(t, chat, tools, oneRow)
 
-	frames, reason := runDone(t, answerer, &acp.TaskRequest{
+	frames, reason := runTaskToEnd(t, answerer, &acp.TaskRequest{
 		Prompt: "read it", ToolContext: map[string]string{"md.example.cards/card": "k7"}, VaultId: "v-trips",
 	})
 
@@ -199,7 +199,7 @@ func TestAToolThatChangesTheVaultIsAnEditAndAFailedCallEndsFailed(t *testing.T) 
 	chat := &scriptedChat{replies: []conversation.Reply{callReply("1", "note_write", `{"path":"Trips/Ferry.md"}`), textReply("could not")}}
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
 
-	frames, _ := runDone(t, answerer, &acp.TaskRequest{Prompt: "write it"})
+	frames, _ := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "write it"})
 
 	if kind := frames[0].GetToolCall().GetKind(); kind != acp.ToolKind_TOOL_KIND_EDIT {
 		t.Errorf("the kind is %v", kind)
@@ -217,7 +217,7 @@ func TestACallOfAToolTheHostDoesNotListFailsWithoutACall(t *testing.T) {
 	tools := &fakeTools{}
 	answerer, _ := newAnswerer(t, chat, tools, oneRow)
 
-	frames, _ := runDone(t, answerer, &acp.TaskRequest{Prompt: "delete it"})
+	frames, _ := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "delete it"})
 
 	if call := frames[0].GetToolCall(); call.GetTitle() != "note_delete" || call.GetKind() != acp.ToolKind_TOOL_KIND_OTHER || call.GetRawInputJson() != "{}" {
 		t.Errorf("the call is %v", call)
@@ -236,7 +236,7 @@ func TestARunThatKeepsCallingToolsStopsAtTheLimitOfSteps(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, reason := runDone(t, limited, &acp.TaskRequest{Prompt: "loop"})
+	_, reason := runTaskToEnd(t, limited, &acp.TaskRequest{Prompt: "loop"})
 
 	if reason != acp.StopReason_STOP_REASON_MAX_TURN_REQUESTS || len(chat.turns) != 2 {
 		t.Errorf("stop = %v after %d turns", reason, len(chat.turns))
@@ -247,7 +247,7 @@ func TestAnAnswerEndedByTheLengthLimitStopsAtMaxTokens(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{{Message: conversation.Message{Role: "assistant", Text: "long"}, IsCut: true}}}
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
 
-	if _, reason := runDone(t, answerer, &acp.TaskRequest{Prompt: "hi"}); reason != acp.StopReason_STOP_REASON_MAX_TOKENS {
+	if _, reason := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "hi"}); reason != acp.StopReason_STOP_REASON_MAX_TOKENS {
 		t.Errorf("stop = %v, want max tokens", reason)
 	}
 }
@@ -274,9 +274,9 @@ func TestAConversationContinuesFromItsHistory(t *testing.T) {
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
 	task := &acp.TaskRequest{Prompt: "q", Conversation: "thread"}
 
-	runDone(t, answerer, task)
-	runDone(t, answerer, task)
-	runDone(t, answerer, &acp.TaskRequest{Prompt: "q"})
+	runTaskToEnd(t, answerer, task)
+	runTaskToEnd(t, answerer, task)
+	runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "q"})
 
 	if got := len(chat.turns[1].Messages); got != 4 {
 		t.Errorf("the second turn holds %d messages, want 4 (system, question, answer, question)", got)
@@ -291,11 +291,11 @@ func TestAConversationIdleForThirtyMinutesIsForgotten(t *testing.T) {
 	answerer, now := newAnswerer(t, chat, &fakeTools{}, oneRow)
 	task := &acp.TaskRequest{Prompt: "q", Conversation: "thread"}
 
-	runDone(t, answerer, task)
+	runTaskToEnd(t, answerer, task)
 	now.Advance(29 * time.Minute)
-	runDone(t, answerer, task)
+	runTaskToEnd(t, answerer, task)
 	now.Advance(30 * time.Minute)
-	runDone(t, answerer, task)
+	runTaskToEnd(t, answerer, task)
 
 	if kept, forgotten := len(chat.turns[1].Messages), len(chat.turns[2].Messages); kept != 4 || forgotten != 2 {
 		t.Errorf("the turns hold %d and %d messages, want 4 and 2", kept, forgotten)
@@ -306,12 +306,12 @@ func TestANinthConversationForgetsTheOneUsedLongestAgo(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("one")}}
 	answerer, now := newAnswerer(t, chat, &fakeTools{}, oneRow)
 	for _, id := range []string{"t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"} {
-		runDone(t, answerer, &acp.TaskRequest{Prompt: "q", Conversation: id})
+		runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "q", Conversation: id})
 		now.Advance(time.Minute)
 	}
 
-	runDone(t, answerer, &acp.TaskRequest{Prompt: "q", Conversation: "t2"})
-	runDone(t, answerer, &acp.TaskRequest{Prompt: "q", Conversation: "t1"})
+	runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "q", Conversation: "t2"})
+	runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "q", Conversation: "t1"})
 
 	turns := chat.turns
 	if kept, forgotten := len(turns[len(turns)-2].Messages), len(turns[len(turns)-1].Messages); kept != 4 || forgotten != 2 {

@@ -10,7 +10,10 @@ export type ConnectionValue = string | number | boolean
 /** The type of a field of a kind of connection. */
 type ConnectionFieldType = 'string' | 'number' | 'boolean' | 'enum' | 'file' | 'secret'
 
-/** One field of a kind of connection, as its form is built from it. */
+/**
+ * One field of a kind of connection, as its form is built from it. optionsFrom is the operation of the type
+ * that lists the values of a row field, empty for none.
+ */
 export interface ConnectionFieldInfo {
   readonly key: string
   readonly type: ConnectionFieldType
@@ -24,11 +27,13 @@ export interface ConnectionFieldInfo {
   readonly min?: number
   readonly max?: number
   readonly step?: number
-  /** The operation of the type that lists the values of a row field; empty for none. */
   readonly optionsFrom?: string
 }
 
-/** A kind of connection one plugin provides. */
+/**
+ * A kind of connection one plugin provides. rowFields are the values a row that names a connection of the
+ * type holds besides the connection.
+ */
 export interface ConnectionTypeInfo {
   readonly id: string
   readonly pluginId: string
@@ -37,7 +42,6 @@ export interface ConnectionTypeInfo {
   readonly description: string
   readonly operations: readonly string[]
   readonly fields: readonly ConnectionFieldInfo[]
-  /** The values a row that names a connection of the type holds besides the connection. */
   readonly rowFields: readonly ConnectionFieldInfo[]
   readonly isAvailable: boolean
 }

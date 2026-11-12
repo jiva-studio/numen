@@ -1363,7 +1363,10 @@ type ManifestTabKind struct {
 	When string `protobuf:"bytes,4,opt,name=when,proto3" json:"when,omitempty"`
 	// rank is default or alternate, as a reader's: among the kinds whose condition holds over a note,
 	// a default kind is chosen before an alternate one. Empty is default.
-	Rank          string `protobuf:"bytes,5,opt,name=rank,proto3" json:"rank,omitempty"`
+	Rank string `protobuf:"bytes,5,opt,name=rank,proto3" json:"rank,omitempty"`
+	// is_note_editor says the kind edits the text of the note its tab opens on: the window gives its
+	// tabs the store of open notes, which saves what is typed.
+	IsNoteEditor  bool `protobuf:"varint,6,opt,name=is_note_editor,json=isNoteEditor,proto3" json:"is_note_editor,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1431,6 +1434,13 @@ func (x *ManifestTabKind) GetRank() string {
 		return x.Rank
 	}
 	return ""
+}
+
+func (x *ManifestTabKind) GetIsNoteEditor() bool {
+	if x != nil {
+		return x.IsNoteEditor
+	}
+	return false
 }
 
 type ManifestDependency struct {
@@ -2461,13 +2471,14 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"appearance\x18\x03 \x01(\tR\n" +
 	"appearance\x12\x12\n" +
-	"\x04file\x18\x04 \x01(\tR\x04file\"w\n" +
+	"\x04file\x18\x04 \x01(\tR\x04file\"\x9d\x01\n" +
 	"\x0fManifestTabKind\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
 	"\x04when\x18\x04 \x01(\tR\x04when\x12\x12\n" +
-	"\x04rank\x18\x05 \x01(\tR\x04rank\"\x9f\x02\n" +
+	"\x04rank\x18\x05 \x01(\tR\x04rank\x12$\n" +
+	"\x0eis_note_editor\x18\x06 \x01(\bR\fisNoteEditor\"\x9f\x02\n" +
 	"\x12ManifestDependency\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +

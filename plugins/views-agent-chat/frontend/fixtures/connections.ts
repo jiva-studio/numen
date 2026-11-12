@@ -1,20 +1,11 @@
 /**
  * The connections of a plugin as a test serves them: every acp.task is answered with the frames of a
- * script, encoded as the core passes them, and the requests are kept decoded.
+ * script, and the requests are kept.
  */
-import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import type { ConnectionCallOptions, ConnectionError, ConnectionHost, Result } from '@numen/plugin-sdk'
-import {
-  StopReason,
-  TaskDoneSchema,
-  TaskFrameSchema,
-  TaskRequestSchema,
-  ToolCallStatus,
-  type PlanEntryStatus,
-  type TaskRequest,
-} from '@numen/plugin-sdk/contracts/acp'
+import type { ConnectionCallOptions, ConnectionError, Result } from '@numen/plugin-sdk'
+import { acp, acptest } from '@numen/plugin-sdk/contracts'
 
-export type FrameInit = MessageInitShape<typeof TaskFrameSchema>
+export type FrameInit = acptest.TaskFrameInit
 
 /**
  * What one task answers: its frames, then its end. `pace` is awaited before the frame of each index,
@@ -23,11 +14,11 @@ export type FrameInit = MessageInitShape<typeof TaskFrameSchema>
 export interface TaskScript {
   readonly frames?: readonly FrameInit[]
   readonly pace?: (index: number) => Promise<void>
-  readonly end?: Result<StopReason, ConnectionError>
+  readonly end?: Result<acp.StopReason, ConnectionError>
   readonly hold?: Promise<void>
 }
 
-const CANCELED: Result<Uint8Array, ConnectionError> = {
+const CANCELED: Result<acp.StopReason, ConnectionError> = {
   ok: false,
   error: { error: 'canceled', message: 'the call was canceled', failures: [] },
 }
@@ -38,29 +29,29 @@ const waitForAbort = (signal: AbortSignal | undefined): Promise<void> =>
     signal?.addEventListener('abort', () => resolve(), { once: true })
   })
 
-/** Connections that answer each task with the script `answer` gives for it. */
-export function createAgentConnections(answer: TaskScript | ((request: TaskRequest) => TaskScript)) {
-  const calls: { operation: string; request: TaskRequest; options?: ConnectionCallOptions }[] = []
-  const host: ConnectionHost = {
-    call: async function* (operation, payload, options) {
-      const request = fromBinary(TaskRequestSchema, payload)
-      calls.push({ operation, request, ...(options ? { options } : {}) })
-      const script = typeof answer === 'function' ? answer(request) : answer
-      for (const [index, frame] of (script.frames ?? []).entries()) {
-        await script.pace?.(index)
-        if (options?.signal?.aborted) return CANCELED
-        yield toBinary(TaskFrameSchema, create(TaskFrameSchema, frame))
-      }
-      if (script.hold) await Promise.race([script.hold, waitForAbort(options?.signal)])
-      if (options?.signal?.aborted) return CANCELED
-      const end = script.end ?? { ok: true, value: StopReason.END_TURN }
-      if (!end.ok) return end
-      return {
-        ok: true,
-        value: toBinary(TaskDoneSchema, create(TaskDoneSchema, { stopReason: end.value })),
-      }
-    },
+async function* playScript(
+  script: TaskScript,
+  signal: AbortSignal | undefined,
+): AsyncGenerator<FrameInit, Result<acp.StopReason, ConnectionError>> {
+  for (const [index, frame] of (script.frames ?? []).entries()) {
+    await script.pace?.(index)
+    if (signal?.aborted) return CANCELED
+    yield frame
   }
+  if (script.hold) await Promise.race([script.hold, waitForAbort(signal)])
+  if (signal?.aborted) return CANCELED
+  return script.end ?? { ok: true, value: acp.StopReason.END_TURN }
+}
+
+export function createAgentConnections(
+  answer: TaskScript | ((request: acp.TaskRequest) => TaskScript),
+) {
+  const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] =
+    []
+  const host = acptest.createTaskHost((request, options) => {
+    calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
+    return playScript(typeof answer === 'function' ? answer(request) : answer, options?.signal)
+  })
   return { host, calls }
 }
 
@@ -80,7 +71,7 @@ export const callTool = (
     value: {
       toolCallId,
       title,
-      status: ToolCallStatus.IN_PROGRESS,
+      status: acp.ToolCallStatus.IN_PROGRESS,
       content: subject ? [subject] : [],
       locations: path ? [{ path, line: 0 }] : [],
     },
@@ -88,17 +79,17 @@ export const callTool = (
 })
 
 /** A tool call that ended. */
-export const endTool = (toolCallId: string, status = ToolCallStatus.COMPLETED): FrameInit => ({
+export const endTool = (toolCallId: string, status = acp.ToolCallStatus.COMPLETED): FrameInit => ({
   update: { case: 'toolCallUpdate', value: { toolCallId, status } },
 })
 
 /** The plan of the agent, whole. */
 export const showPlan = (
-  ...entries: readonly { readonly content: string; readonly status: PlanEntryStatus }[]
+  ...entries: readonly { readonly content: string; readonly status: acp.PlanEntryStatus }[]
 ): FrameInit => ({ update: { case: 'plan', value: { entries: [...entries] } } })
 
 /** A task that ends for a reason. */
-export const stopFor = (reason: StopReason): Result<StopReason, ConnectionError> => ({
+export const stopFor = (reason: acp.StopReason): Result<acp.StopReason, ConnectionError> => ({
   ok: true,
   value: reason,
 })
@@ -107,4 +98,7 @@ export const stopFor = (reason: StopReason): Result<StopReason, ConnectionError>
 export const failWith = (
   error: ConnectionError['error'],
   message: string,
-): Result<StopReason, ConnectionError> => ({ ok: false, error: { error, message, failures: [] } })
+): Result<acp.StopReason, ConnectionError> => ({
+  ok: false,
+  error: { error, message, failures: [] },
+})

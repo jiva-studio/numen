@@ -91,7 +91,7 @@ func (s *Items) RemoveAll() {
 func (s *Items) List() []plugin.HealthItem {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.listLocked()
+	return s.listItemsLocked()
 }
 
 // Watch returns the list now and every time it changes, until the context ends. A listener that is not
@@ -100,7 +100,7 @@ func (s *Items) Watch(ctx context.Context) <-chan []plugin.HealthItem {
 	watcher := make(chan []plugin.HealthItem, 1)
 	s.mu.Lock()
 	s.waiting = append(s.waiting, watcher)
-	watcher <- s.listLocked()
+	watcher <- s.listItemsLocked()
 	s.mu.Unlock()
 
 	go func() {
@@ -125,7 +125,7 @@ func (s *Items) removeWhere(isRemoved func(itemID) bool) {
 	s.notifyLocked()
 }
 
-func (s *Items) listLocked() []plugin.HealthItem {
+func (s *Items) listItemsLocked() []plugin.HealthItem {
 	out := make([]plugin.HealthItem, 0, len(s.order))
 	for _, id := range s.order {
 		out = append(out, cloneItem(s.items[id]))
@@ -134,7 +134,7 @@ func (s *Items) listLocked() []plugin.HealthItem {
 }
 
 func (s *Items) notifyLocked() {
-	list := s.listLocked()
+	list := s.listItemsLocked()
 	for _, watcher := range s.waiting {
 		select {
 		case <-watcher:

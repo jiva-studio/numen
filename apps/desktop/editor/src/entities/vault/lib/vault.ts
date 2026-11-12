@@ -59,7 +59,10 @@ export interface Vaults {
   open(this: void, id: string): Promise<VaultErrorCode | null>
 }
 
-/** What the open vault reports about itself. */
+/**
+ * What the open vault reports about itself. coverage is what the search source says about its index, empty
+ * where it says nothing.
+ */
 export interface VaultState {
   readonly id: string
   readonly name: string
@@ -69,7 +72,6 @@ export interface VaultState {
     readonly error: string
     readonly unwatchedPath: string
   }
-  /** What the search source says about its index, empty where it says nothing. */
   readonly coverage: string
 }
 

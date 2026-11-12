@@ -27,7 +27,14 @@ export function createHost({ focus = { path: '', title: '' }, notes = {} }: Host
     settingsOpened: 0,
   }
 
-  const request = {
+  const workspace: WorkspaceHost = {
+    window: {
+      isReady: ref(true),
+      openingPath: ref(''),
+      readOpeningPath: async () => '',
+      getToday: () => '2026-01-01',
+    },
+    dragged: { paths: ref([]), setPaths: () => undefined },
     files: {
       open: (path: string, options?: OpenFileOptions) => {
         recorded.opened.push([path, options])
@@ -35,11 +42,12 @@ export function createHost({ focus = { path: '', title: '' }, notes = {} }: Host
       openAt: (path: string, spans: readonly TextRange[]) => {
         recorded.openedAt.push([path, spans])
       },
+      syncPath: () => false,
     },
+    messages: { showError: () => undefined, getWriter: () => () => undefined },
+    icons: { getCommand: () => null, getEntry: () => ({}) },
     getNoteInFocus: () => focus,
-    window: { isReady: ref(true) },
   }
-  const workspace = request as unknown as WorkspaceHost
 
   const resolve = createLinkResolver(notes)
   const relations = {

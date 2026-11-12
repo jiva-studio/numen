@@ -23,11 +23,20 @@ type Embedder interface {
 // Nearest finds the chunks of a vault nearest a vector, as the index of the core does.
 type Nearest func(ctx context.Context, vaultID domain.VaultID, q sourcedomain.NearestQuery) ([]searchsource.Match, error)
 
-// Source is a search source over the model of a test. A nil Nearest answers every query with nothing.
-// Coverage is the text it says of every vault.
+// Queries embeds queries apart from documents.
+type Queries func(ctx context.Context, queries []string) ([][]float32, error)
+
+// Watch registers fn to run each time the description of the model changes.
+type Watch func(fn func())
+
+// Source is a search source over the model of a test. A nil Nearest answers every query with nothing, a
+// nil Queries embeds the queries with the model and a nil Watch announces no change. Coverage is the text
+// it says of every vault.
 type Source struct {
 	Model    Embedder
 	Nearest  Nearest
+	Queries  Queries
+	Watch    Watch
 	Floor    float64
 	Coverage string
 }
@@ -43,13 +52,9 @@ func (s *Source) Over(nearest Nearest) *Source {
 	return s
 }
 
-// Describe returns the description of the model, with the concurrency of the model where it names one.
+// Describe returns the description of the model.
 func (s *Source) Describe() searchsource.Description {
-	described := s.Model.Describe()
-	if workers, ok := s.Model.(interface{ Concurrency() int }); ok && described.Concurrency == 0 {
-		described.Concurrency = workers.Concurrency()
-	}
-	return described
+	return s.Model.Describe()
 }
 
 // IndexTexts embeds the texts with the model.
@@ -61,12 +66,10 @@ func (s *Source) IndexTexts(ctx context.Context, _ searchsource.Place, texts []s
 	return s.Model.Embed(ctx, plain)
 }
 
-// EmbedQueries embeds the queries with the model, with its queries where it tells them from documents.
+// EmbedQueries embeds the queries with Queries, or with the model where Queries is nil.
 func (s *Source) EmbedQueries(ctx context.Context, queries []string) ([][]float32, error) {
-	if asking, ok := s.Model.(interface {
-		EmbedQueries(ctx context.Context, queries []string) ([][]float32, error)
-	}); ok {
-		return asking.EmbedQueries(ctx, queries)
+	if s.Queries != nil {
+		return s.Queries(ctx, queries)
 	}
 	return s.Model.Embed(ctx, queries)
 }
@@ -100,9 +103,9 @@ func (s *Source) DescribeCoverage(context.Context, searchsource.Place, searchsou
 	return s.Coverage, nil
 }
 
-// OnDescriptionChange registers fn with the model where it announces changes.
+// OnDescriptionChange registers fn with Watch.
 func (s *Source) OnDescriptionChange(fn func()) {
-	if watcher, ok := s.Model.(interface{ OnModelChange(fn func()) }); ok {
-		watcher.OnModelChange(fn)
+	if s.Watch != nil {
+		s.Watch(fn)
 	}
 }

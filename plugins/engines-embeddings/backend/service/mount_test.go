@@ -55,7 +55,6 @@ type servedModel struct {
 	Width int32  `json:"width"`
 }
 
-// getModel asks the search source service of the plugin for its description over Connect JSON, as the host does.
 func getModel(t *testing.T, web *httptest.Server) servedModel {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.SearchSourceService/DescribeSearchSource", strings.NewReader("{}"))
@@ -79,7 +78,6 @@ func getModel(t *testing.T, web *httptest.Server) servedModel {
 	return info
 }
 
-// describeStatus asks the search source service of the plugin for its description and returns the HTTP status.
 func describeStatus(t *testing.T, web *httptest.Server) int {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.SearchSourceService/DescribeSearchSource", strings.NewReader("{}"))
@@ -108,7 +106,7 @@ func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *t
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	lifecycle := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(linkedToken))
+	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(linkedToken))
 
 	if _, err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Example/no-such-model"}); err != nil {
 		t.Fatalf("Configure: %v", err)

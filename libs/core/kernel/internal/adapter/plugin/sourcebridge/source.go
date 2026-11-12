@@ -67,8 +67,9 @@ func Open(ctx context.Context, host Host) (*Source, error) {
 // OpenWatching activates the plugin that declares the search source capability and keeps it active while
 // the source cannot describe itself yet. onReadError receives the outcome of the first read and of every read
 // that follows a configuration of the plugin. A source whose first read fails has the zero description until
-// a later read succeeds, and that read announces the change. It fails only when the plugin cannot be resolved
-// or activated.
+// a later read succeeds, and that read announces the change. A plugin whose settings do not allow a source
+// answers failed_precondition with a sentence a person reads, and onReadError receives that sentence. It
+// fails only when the plugin cannot be resolved or activated.
 func OpenWatching(ctx context.Context, host Host, onReadError func(error)) (*Source, error) {
 	b, readErr, err := activate(ctx, host)
 	if err != nil {
@@ -80,8 +81,6 @@ func OpenWatching(ctx context.Context, host Host, onReadError func(error)) (*Sou
 	return b, nil
 }
 
-// activate holds the plugin active and reads its description. readErr is why the read failed, and the source
-// it returns then has the zero description.
 func activate(ctx context.Context, host Host) (b *Source, readErr, err error) {
 	plugin, err := host.ResolveCapability(bridge.CapabilitySearchSource)
 	if err != nil {
@@ -131,8 +130,6 @@ func readDescription(ctx context.Context, client numenv1connect.SearchSourceServ
 	}, nil
 }
 
-// readFailure is the failure of a read of the description. A plugin whose settings do not allow a source
-// answers failed_precondition with a sentence a person reads, and that sentence is the failure.
 func readFailure(pluginID string, err error) error {
 	var failure *connect.Error
 	if errors.As(err, &failure) && failure.Code() == connect.CodeFailedPrecondition {

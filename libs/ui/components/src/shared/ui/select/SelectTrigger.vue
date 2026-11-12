@@ -14,7 +14,6 @@ const props = defineProps<{
   isDisabled: boolean
   isExpanded: boolean
   hasPopup: 'menu' | 'listbox'
-  /** Why the choices are not what they should be; empty where nothing is wrong. */
   problem?: string
   class?: HTMLAttributes['class']
 }>()

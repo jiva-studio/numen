@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { ConnectionHost } from '@numen/plugin-sdk'
-import { PlanEntryStatus, StopReason, ToolCallStatus } from '@numen/plugin-sdk/contracts/acp'
+import { acp } from '@numen/plugin-sdk/contracts'
 import type { Paint } from '@numen/ui'
 import { useConversation as baseUseConversation, type ConversationStrings } from './conversation'
 import {
@@ -58,7 +58,7 @@ const getDrawnTurns = (conversation: Drawn) =>
   conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])
 
 describe('the request', () => {
-  it('runs one agent task with the question under the name of the conversation, as the person asked it', async () => {
+  it('runs one agent task with the question as typed, under the conversation id', async () => {
     const { conversation, calls } = open({ frames: [say('Two notes.')] })
 
     await conversation.ask('what is here?')
@@ -136,7 +136,7 @@ describe('an answer', () => {
   })
 
   it('ends quietly when the agent cancelled the turn', async () => {
-    const { conversation } = open({ frames: [], end: stopFor(StopReason.CANCELED) })
+    const { conversation } = open({ frames: [], end: stopFor(acp.StopReason.CANCELED) })
 
     await conversation.ask('what is here?')
 
@@ -144,9 +144,9 @@ describe('an answer', () => {
   })
 
   it.each([
-    [StopReason.MAX_TOKENS, 'Too long'],
-    [StopReason.MAX_TURN_REQUESTS, 'Too many requests'],
-    [StopReason.REFUSAL, 'Refused'],
+    [acp.StopReason.MAX_TOKENS, 'Too long'],
+    [acp.StopReason.MAX_TURN_REQUESTS, 'Too many requests'],
+    [acp.StopReason.REFUSAL, 'Refused'],
   ])('keeps what arrived and says why the turn stopped short (%s)', async (reason, sentence) => {
     const { conversation } = open({ frames: [say('Half of it')], end: stopFor(reason) })
 
@@ -161,7 +161,7 @@ describe('an answer', () => {
 })
 
 describe('a task that fails', () => {
-  it('says what the connections said, in a failed turn', async () => {
+  it('shows the connection error in a failed turn', async () => {
     const { conversation } = open({
       frames: [],
       end: failWith('all_failed', 'Orchard agent: the program exited'),
@@ -205,7 +205,6 @@ describe('a task that fails', () => {
 
   it('says the agent could not be reached when the task breaks off, and leaves no wait', async () => {
     const broken: ConnectionHost = {
-      // eslint-disable-next-line require-yield
       call: async function* () {
         throw new Error('the window lost the core')
       },
@@ -238,7 +237,7 @@ describe('the wait', () => {
     await asked
   })
 
-  it('comes down with the first frame', async () => {
+  it('hides on the first frame', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({ frames: [say('Two')], hold })
     const asked = conversation.ask('what is here?')
@@ -299,15 +298,19 @@ describe('the line about work', () => {
   })
 
   it('reads the name of a tool without a title as words', async () => {
-    const { conversation } = open({ frames: [callTool('c1', 'note_search'), endTool('c1')] })
-
-    await conversation.ask('what is here?')
+    const { hold, release } = createHold()
+    const { conversation } = open({ frames: [callTool('c1', 'note_search'), endTool('c1')], hold })
+    const asked = conversation.ask('what is here?')
+    await flushPromises()
 
     expect(conversation.turns.value.map((turn) => turn.text)).toContain('note search')
+
+    release()
+    await asked
   })
 
   it('settles when its call has ended, completed or failed', async () => {
-    for (const status of [ToolCallStatus.COMPLETED, ToolCallStatus.FAILED]) {
+    for (const status of [acp.ToolCallStatus.COMPLETED, acp.ToolCallStatus.FAILED]) {
       const { hold, release } = createHold()
       const { conversation } = open({ frames: [callTool('c1', 'Read note'), endTool('c1', status)], hold })
       const asked = conversation.ask('what is here?')
@@ -337,7 +340,7 @@ describe('the line about work', () => {
     await asked
   })
 
-  it('comes down when the answer begins', async () => {
+  it('hides when the answer begins', async () => {
     const { conversation } = open({
       frames: [callTool('c1', 'Read note'), endTool('c1'), say('Two notes.')],
     })
@@ -350,7 +353,7 @@ describe('the line about work', () => {
     ])
   })
 
-  it('stands under the answer that began before it, and comes down when the task ends', async () => {
+  it('shows below an answer already started, and hides when the task ends', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({
       frames: [say('First I look.'), callTool('c1', 'Read note'), endTool('c1')],
@@ -409,12 +412,12 @@ describe('a plan', () => {
     const { conversation } = open({
       frames: [
         showPlan(
-          { content: 'Read the orchard notes', status: PlanEntryStatus.PENDING },
-          { content: 'Write the list', status: PlanEntryStatus.PENDING },
+          { content: 'Read the orchard notes', status: acp.PlanEntryStatus.PENDING },
+          { content: 'Write the list', status: acp.PlanEntryStatus.PENDING },
         ),
         showPlan(
-          { content: 'Read the orchard notes', status: PlanEntryStatus.COMPLETED },
-          { content: 'Write the list', status: PlanEntryStatus.IN_PROGRESS },
+          { content: 'Read the orchard notes', status: acp.PlanEntryStatus.COMPLETED },
+          { content: 'Write the list', status: acp.PlanEntryStatus.IN_PROGRESS },
         ),
       ],
       hold,

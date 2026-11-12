@@ -65,6 +65,9 @@ func collectCall(t *testing.T, client *Client, priority Priority) ([]string, str
 		return nil, "", err
 	}
 	data, done, err := Collect(frames)
+	if err != nil {
+		return nil, "", err
+	}
 	texts := make([]string, len(data))
 	for i, one := range data {
 		texts[i] = string(one)
@@ -126,7 +129,7 @@ func TestAFailureFrameIsReadAsTheErrorOfTheCall(t *testing.T) {
 	}
 }
 
-func TestAStreamThatEndsWithNeitherADoneNorAFailureIsAnError(t *testing.T) {
+func TestAStreamThatEndsWithoutAFinalFrameIsAnError(t *testing.T) {
 	host := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostData("partial")}}
 
 	_, _, err := collectCall(t, newTestClient(t, host), PriorityBackground)
@@ -171,7 +174,7 @@ func TestEveryErrorCodeOfTheSchemaIsReadAsAnError(t *testing.T) {
 	})
 }
 
-func TestEveryPriorityOfTheSchemaIsWrittenFromOne(t *testing.T) {
+func TestEveryPriorityOfTheSchemaIsNumberedFromOne(t *testing.T) {
 	schematest.CheckProduced(t, map[v1.Priority]Priority{
 		v1.Priority_PRIORITY_INTERACTIVE: PriorityInteractive,
 		v1.Priority_PRIORITY_BACKGROUND:  PriorityBackground,

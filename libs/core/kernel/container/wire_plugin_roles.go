@@ -13,22 +13,28 @@ import (
 // none reaches back to one made after it. NewPluginRoles is the one place that makes them, for the container and for
 // the tests that hold a host.
 type PluginRoles struct {
+	PluginSupervision
 	Registry     *plugin.Registry
 	Discovery    *plugin.Discovery
 	Activation   *plugin.Activation
 	Retry        *plugin.Retry
-	Processes    *supervision.Processes
 	Teardown     *plugin.Teardown
-	Failures     *supervision.Failures
 	Settings     *plugin.Settings
 	Config       *plugin.ConfigPush
 	Listeners    *plugin.Listeners
-	Services     *supervision.Services
 	ContentTypes *plugin.ContentTypes
 	Storage      *storage.Storage
 	Events       *plugin.Events
 	Mode         *plugin.Mode
 	Health       *pluginhealth.Items
+}
+
+// PluginSupervision are the roles that run the processes of the plugins: their start and stop, their
+// failures and the services they serve.
+type PluginSupervision struct {
+	Processes *supervision.Processes
+	Failures  *supervision.Failures
+	Services  *supervision.Services
 }
 
 // NewPluginRoles creates the roles of a plugin host for the target application and the folders its plugins are in. The
@@ -59,24 +65,22 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
 	})
 	return &PluginRoles{
-		Registry: registry,
+		PluginSupervision: PluginSupervision{Processes: processes, Failures: failures, Services: services},
+		Registry:          registry,
 		Discovery: plugin.NewDiscovery(plugin.DiscoveryDeps{
 			Set: set, Registrar: set, Scan: scan, Mode: mode, Supervisors: sups, Stopper: stopper, Listeners: listeners, Storage: files,
 			Health: health, Report: errs.Report, Dirs: dirs, Target: target,
 		}),
 		Activation: activation,
 		Retry:      plugin.NewRetry(plugin.RetryDeps{Set: set, Failures: failures, Activation: activation, Listeners: listeners}),
-		Processes:  processes,
 		Teardown: plugin.NewTeardown(plugin.TeardownDeps{
 			Mode: mode, Supervisors: sups, Stopper: stopper, Evictor: evictor, Events: events, Listeners: listeners, Health: health, Report: errs.Report,
 		}),
-		Failures: failures,
 		Settings: plugin.NewSettings(plugin.SettingsDeps{
 			Values: values, Set: set, Listeners: listeners, Profile: config, Report: errs.Report,
 		}),
 		Config:       config,
 		Listeners:    listeners,
-		Services:     services,
 		ContentTypes: plugin.NewContentTypes(plugin.ContentTypesDeps{Set: set, Lookup: readers}),
 		Storage:      files,
 		Events:       events,

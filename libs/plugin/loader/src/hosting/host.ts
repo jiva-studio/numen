@@ -18,6 +18,7 @@ import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
+import { isNoteEditorKind } from './customTabBuffer'
 import { addListener, notifyListeners } from './events'
 import { createCommandApi } from './commandApi'
 import { createWhenReader, type WhenReader } from '../when'
@@ -76,6 +77,10 @@ function createRegistrationBridge(
         pluginId,
         registration,
         getContext: () => registry.contexts.get(pluginId),
+        isNoteEditor: isNoteEditorKind(
+          registry.contextManifests?.value.get(pluginId),
+          registration.kind,
+        ),
       }),
     registerCommand: (pluginId, registration) => {
       const holder = isSharedCommand(registration.id) ? registry.handlers : registry.commands

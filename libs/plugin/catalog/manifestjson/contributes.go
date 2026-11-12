@@ -16,6 +16,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 	for _, one := range wire.GetTabKinds() {
 		kinds = append(kinds, manifest.TabKind{
 			Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon(), When: one.GetWhen(), Rank: newTabKindRank(one.GetRank()),
+			IsNoteEditor: one.GetIsNoteEditor(),
 		})
 	}
 	var themes []manifest.Theme

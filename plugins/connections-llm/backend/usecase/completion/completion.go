@@ -5,6 +5,7 @@ package completion
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
@@ -31,16 +32,15 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Completion, erro
 
 // Complete asks the service for an answer. A level of reasoning outside those the model supports is a stop.
 func (c *Completion) Complete(ctx context.Context, call connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
-	model := call.Options[llm.OptionModel]
-	if !reasoning.IsSupported(call.Type, model, call.Options[llm.OptionReasoning]) {
-		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
-	}
-	address := call.Fields[servicetype.FieldBaseURL]
-	result, err := c.gateway.Complete(ctx, call, c.limits.Get(call.Type, address, model, operation.Complete), request)
+	asked, err := c.getTarget(call, operation.Complete)
 	if err != nil {
 		return nil, err
 	}
-	c.limits.MarkServed(address, model)
+	result, err := c.gateway.Complete(ctx, call, asked.limit, request)
+	if err != nil {
+		return nil, err
+	}
+	c.limits.MarkServed(asked.address, asked.model)
 	return result, nil
 }
 
@@ -49,15 +49,30 @@ func (c *Completion) Complete(ctx context.Context, call connection.Call, request
 func (c *Completion) Chat(
 	ctx context.Context, call connection.Call, request *llm.ChatRequest, send func(*llm.ChatFrame) error,
 ) (*llm.ChatFinish, error) {
-	model := call.Options[llm.OptionModel]
-	if !reasoning.IsSupported(call.Type, model, call.Options[llm.OptionReasoning]) {
-		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
-	}
-	address := call.Fields[servicetype.FieldBaseURL]
-	finish, err := c.gateway.Chat(ctx, call, c.limits.Get(call.Type, address, model, operation.Chat), request, send)
+	asked, err := c.getTarget(call, operation.Chat)
 	if err != nil {
 		return nil, err
 	}
-	c.limits.MarkServed(address, model)
+	finish, err := c.gateway.Chat(ctx, call, asked.limit, request, send)
+	if err != nil {
+		return nil, err
+	}
+	c.limits.MarkServed(asked.address, asked.model)
 	return finish, nil
+}
+
+// target is where a request goes: the model, the address of the service and the time the request may take.
+type target struct {
+	model   string
+	address string
+	limit   time.Duration
+}
+
+func (c *Completion) getTarget(call connection.Call, op string) (target, error) {
+	model := call.Options[llm.OptionModel]
+	if !reasoning.IsSupported(call.Type, model, call.Options[llm.OptionReasoning]) {
+		return target{model: "", address: "", limit: 0}, connection.NewStopError(connection.ReasonInvalidRequest)
+	}
+	address := call.Fields[servicetype.FieldBaseURL]
+	return target{model: model, address: address, limit: c.limits.Get(call.Type, address, model, op)}, nil
 }

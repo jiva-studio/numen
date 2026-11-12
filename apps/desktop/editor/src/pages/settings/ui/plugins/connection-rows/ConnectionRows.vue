@@ -11,7 +11,8 @@
  *
  * The one row of a setting of one row that names no connection says "Choose a connection".
  * Only a row that names a connection and a value for each required row field of its type is written.
- * A row added and not yet complete stays on the page.
+ * A row added and not yet complete stays on the page, and a row whose connection changed writes
+ * nothing until its required row fields are chosen again.
  *
  * A change of the rows of a setting that indexes the vault indexes it again, which a service may
  * charge for. It is written after a question that names the notes and the connection, and a
@@ -115,7 +116,6 @@ function onRowsChange(rows: readonly StoredRow[]): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/* The one row of a setting that names no connection yet asks for one, so the setting is not left empty unnoticed. */
 function getRowReason(connection: string): string {
   if (connection === '' && isSingle.value) return words.connectionRowsChoose
   return getReason(connection)

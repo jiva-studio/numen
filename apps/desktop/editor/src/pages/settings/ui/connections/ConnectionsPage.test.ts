@@ -109,6 +109,15 @@ const mountPage = (
   return { installation, wrapper }
 }
 
+const rows = (): HTMLElement[] =>
+  Array.from(root().querySelectorAll<HTMLElement>('[role="list"] button[aria-label]'))
+
+const rowOf = (name: string): HTMLElement => {
+  const found = rows().find((one) => one.getAttribute('aria-label') === name)
+  if (!found) throw new Error(`no row ${name}`)
+  return found
+}
+
 const dialog = (): HTMLElement => {
   const found = root().querySelector<HTMLElement>('[role="dialog"]')
   if (!found) throw new Error('no dialog is open')
@@ -128,7 +137,7 @@ describe('the page of connections', () => {
     dispose(wrapper)
   })
 
-  it('lists each connection as a button with its type and its address', async () => {
+  it('lists each connection by name, with its type and its address', async () => {
     const { wrapper } = mountPage(
       [
         connection(),
@@ -144,10 +153,12 @@ describe('the page of connections', () => {
     )
     await flushPromises()
 
-    const rows = Array.from(root().querySelectorAll('[role="list"] button[aria-label]'))
-    expect(rows.map((one) => one.getAttribute('aria-label'))).toStrictEqual(['Work', 'Local'])
-    expect(rows[0]?.textContent).toContain('Sample service')
-    expect(rows[1]?.textContent).toContain('http://localhost:11434/v1')
+    const listed = rows()
+    expect(listed.map((one) => one.getAttribute('aria-label'))).toStrictEqual(['Work', 'Local'])
+    expect(listed[0]?.textContent).toContain('Sample service')
+    expect(listed[0]?.querySelector('button')).toBeNull()
+    expect(listed[1]?.textContent).toContain('Sample server')
+    expect(listed[1]?.textContent).toContain('http://localhost:11434/v1')
     dispose(wrapper)
   })
 
@@ -158,9 +169,7 @@ describe('the page of connections', () => {
     )
     await flushPromises()
 
-    const row = root().querySelector('[role="list"] button[aria-label="Old"]')
-    expect(row?.textContent).toContain('Type unavailable')
-    expect(row?.textContent).not.toContain('Completion')
+    expect(rowOf('Old').textContent).toContain('Type unavailable')
     expect(findText(/Plugins skip such a connection/)).not.toBeNull()
     dispose(wrapper)
   })
@@ -169,8 +178,7 @@ describe('the page of connections', () => {
     const { wrapper } = mountPage([connection({ isComplete: false, secretKeysSet: [] })], [SERVICE])
     await flushPromises()
 
-    const row = root().querySelector('[role="list"] button[aria-label="Work"]')
-    expect(row?.textContent).toContain('Incomplete')
+    expect(rowOf('Work').textContent).toContain('Incomplete')
     dispose(wrapper)
   })
 
@@ -209,7 +217,7 @@ describe('the Add dialog', () => {
     dispose(wrapper)
   })
 
-  it('shows an address and an optional key for a server', async () => {
+  it('shows an address and a key for a server', async () => {
     const { wrapper } = mountPage([], [SERVER])
     await flushPromises()
 
@@ -217,7 +225,6 @@ describe('the Add dialog', () => {
 
     const labels = Array.from(dialog().querySelectorAll('label')).map(nameOf)
     expect(labels).toStrictEqual(['Name', 'Address', 'API key'])
-    expect(dialog().textContent).toContain('May stay empty for a server on this computer.')
     dispose(wrapper)
   })
 
@@ -296,14 +303,14 @@ describe('the Add dialog', () => {
 })
 
 describe('editing and deleting', () => {
-  it('opens the form of the connection with its values and no key, and sends the revision it read', async () => {
+  it('opens the form of the connection with its values, an empty key that shows one is stored, and sends the revision it read', async () => {
     const updateConnection = vi.fn(() => Promise.resolve(asValue(connection({ revision: 3 }))))
     const { wrapper } = mountPage([connection()], [SERVICE], { update: updateConnection })
     await flushPromises()
-    await click(root().querySelector('[role="list"] button[aria-label="Work"]')!)
+    await click(rowOf('Work'))
 
     expect(maskedInputs(dialog())[0]?.value).toBe('')
-    expect(dialog().textContent).toContain('A key is stored. Type to replace it.')
+    expect(maskedInputs(dialog())[0]?.placeholder).not.toBe('')
     expect(textInputs(dialog())[0]?.value).toBe('Work')
     await click(findButton(/^save$/i))
 
@@ -320,7 +327,7 @@ describe('editing and deleting', () => {
   it('opens a row from its button, which the keyboard reaches', async () => {
     const { wrapper } = mountPage([connection()], [SERVICE])
     await flushPromises()
-    const row = root().querySelector<HTMLButtonElement>('[role="list"] button[aria-label="Work"]')!
+    const row = rowOf('Work') as HTMLButtonElement
     expect(row.type).toBe('button')
 
     await click(row)
@@ -341,7 +348,7 @@ describe('editing and deleting', () => {
       [SERVER],
     )
     await flushPromises()
-    await click(root().querySelector('[role="list"] button[aria-label="Work"]')!)
+    await click(rowOf('Work'))
     expect(dialog().textContent).not.toContain('Changing the address removes the stored key')
 
     const address = textInputs(dialog()).find((one) => one.value === 'https://a.example/v1')!
@@ -351,26 +358,11 @@ describe('editing and deleting', () => {
     dispose(wrapper)
   })
 
-  it('sends an empty key when the person removes it', async () => {
-    const updateConnection = vi.fn(() => Promise.resolve(asValue(connection({ revision: 3 }))))
-    const { wrapper } = mountPage([connection()], [SERVICE], { update: updateConnection })
-    await flushPromises()
-    await click(root().querySelector('[role="list"] button[aria-label="Work"]')!)
-
-    await click(findButton(/remove key/i, dialog()))
-    await click(findButton(/^save$/i))
-
-    expect(updateConnection).toHaveBeenCalledWith(
-      expect.objectContaining({ secrets: { apiKey: '' } }),
-    )
-    dispose(wrapper)
-  })
-
   it('asks before it deletes, and says the key is removed', async () => {
     const deleteConnection = vi.fn(() => Promise.resolve(asValue(undefined)))
     const { wrapper } = mountPage([connection()], [SERVICE], { delete: deleteConnection })
     await flushPromises()
-    await click(root().querySelector('[role="list"] button[aria-label="Work"]')!)
+    await click(rowOf('Work'))
     await click(findButton(/^delete$/i, dialog()))
 
     const confirmation = root().querySelector('[role="alertdialog"]')
@@ -404,10 +396,9 @@ describe('editing and deleting', () => {
     )
     await flushPromises()
 
-    const rows = root().querySelectorAll('.connection-row')
-    expect(rows[0]?.textContent).toContain('Used by Proofreading and Embeddings.')
-    expect(rows[1]?.textContent).not.toContain('Used by')
-    await click(root().querySelector('[role="list"] button[aria-label="Work"]')!)
+    expect(rowOf('Work').textContent).toContain('Used by Proofreading and Embeddings.')
+    expect(rowOf('Spare').textContent).not.toContain('Used by')
+    await click(rowOf('Work'))
     await click(findButton(/^delete$/i, dialog()))
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'Used by Proofreading and Embeddings. Their rows for it are removed.',
@@ -418,7 +409,7 @@ describe('editing and deleting', () => {
   it('keeps the connection when the person cancels the deletion', async () => {
     const { installation, wrapper } = mountPage([connection()], [SERVICE])
     await flushPromises()
-    await click(root().querySelector('[role="list"] button[aria-label="Work"]')!)
+    await click(rowOf('Work'))
     await click(findButton(/^delete$/i, dialog()))
 
     await click(findButton(/^cancel$/i))

@@ -162,7 +162,6 @@ func TestOpenSourceBridgeNoPlugin(t *testing.T) {
 	}
 }
 
-// startSource runs the mock as the plugin that declares the search source capability.
 func startSource(t *testing.T, mockServer *mockSourceServer) *container.PluginRoles {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -241,7 +240,7 @@ func TestTheBridgeReadsTheDescriptionOfTheSource(t *testing.T) {
 	}
 }
 
-func TestTheBridgeHandsTheTextsAndTheQueriesToTheSource(t *testing.T) {
+func TestTheBridgeSendsTheTextsAndTheQueriesToTheSource(t *testing.T) {
 	mockServer := &mockSourceServer{}
 	ctx := t.Context()
 	bridge, err := sourcebridge.Open(ctx, pluginhost.Join(startSource(t, mockServer)))

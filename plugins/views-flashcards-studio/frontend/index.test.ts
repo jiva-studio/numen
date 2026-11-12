@@ -40,15 +40,14 @@ const createContext = () => {
 
 /** Connections that no review in these tests calls. */
 const connections: ConnectionHost = {
-  // eslint-disable-next-line require-yield
   call: async function* () {
+    yield* []
     return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
   },
 }
 
 const relations = { resolveLinks: async () => [] } as unknown as VaultRelations
 
-/** A mock context of the flashcards window, with the connections of the plugin and the links of the vault. */
 const createReviewContext = (closeTab = vi.fn()) => {
   const ctx = createMockPluginContext({
     target: 'desktop.flashcards',

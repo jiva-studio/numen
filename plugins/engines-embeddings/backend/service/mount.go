@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/profilefiles"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
@@ -60,7 +61,6 @@ func Mount(s *server.Server) error {
 	return mount(s, hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv), health.NewClientFromEnv)
 }
 
-// getPlaces returns the search of the index of the host the connect function reaches, in a vault.
 func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 	return func(vaultID string) (host.PlaceSearch, error) {
 		client, err := connect()
@@ -71,10 +71,10 @@ func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 	}
 }
 
-func mount(s *server.Server, open ports.OpenModels, places openPlace, reports openHealth) error {
+func mount(s *server.Server, open ports.OpenModels, places openPlace, reports sourcehealth.OpenHealth) error {
 	embedSrv := newServer(open)
 	s.SetUpdateConfig(embedSrv.Update)
-	searchsource.Mount(s, newHandler(embedSrv, places, newSourceHealth(reports)))
+	searchsource.Mount(s, newHandler(embedSrv, places, sourcehealth.New(reports, console.Report)))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
 	s.OnClose(embedSrv.Close)
 	return nil

@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/internal/adapter/openaiapi"
 )
@@ -97,48 +96,19 @@ func (s *testService) Configure(values map[string]string) {
 	s.built.limits.Configure(values)
 }
 
-func (s *testService) serve(
-	ctx context.Context, operation string, call connection.Call, request proto.Message, send func([]byte) error, result proto.Message,
-) error {
-	payload, err := proto.Marshal(request)
-	if err != nil {
-		return err
-	}
-	done, err := s.built.provider.roles()[operation](ctx, call, payload, send)
-	if err != nil {
-		return err
-	}
-	return proto.Unmarshal(done, result)
-}
-
 func (s *testService) Complete(ctx context.Context, call connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
-	result := &llm.CompleteResult{}
-	if err := s.serve(ctx, llm.OperationComplete, call, request, nil, result); err != nil {
-		return nil, err
-	}
-	return result, nil
+	return llmtest.Complete(ctx, s.built.provider.roles(), call, request)
 }
 
 func (s *testService) Chat(
 	ctx context.Context, call connection.Call, request *llm.ChatRequest, send func(*llm.ChatFrame) error,
 ) (*llm.ChatFinish, error) {
-	finish := &llm.ChatFinish{}
-	err := s.serve(ctx, llm.OperationChat, call, request, func(data []byte) error {
-		frame := &llm.ChatFrame{}
-		if err := proto.Unmarshal(data, frame); err != nil {
-			return err
-		}
-		return send(frame)
-	}, finish)
-	if err != nil {
-		return nil, err
-	}
-	return finish, nil
+	return llmtest.Chat(ctx, s.built.provider.roles(), call, request, send)
 }
 
 func (s *testService) Embed(ctx context.Context, call connection.Call, texts []string) ([][]float32, error) {
-	result := &llm.EmbedResult{}
-	if err := s.serve(ctx, llm.OperationEmbed, call, &llm.EmbedRequest{Texts: texts}, nil, result); err != nil {
+	result, err := llmtest.Embed(ctx, s.built.provider.roles(), call, &llm.EmbedRequest{Texts: texts})
+	if err != nil {
 		return nil, err
 	}
 	vectors := make([][]float32, len(result.GetVectors()))
@@ -149,11 +119,7 @@ func (s *testService) Embed(ctx context.Context, call connection.Call, texts []s
 }
 
 func (s *testService) GetProfile(ctx context.Context, call connection.Call) (*llm.Profile, error) {
-	profile := &llm.Profile{}
-	if err := s.serve(ctx, llm.OperationProfile, call, &llm.ProfileRequest{}, nil, profile); err != nil {
-		return nil, err
-	}
-	return profile, nil
+	return llmtest.GetProfile(ctx, s.built.provider.roles(), call)
 }
 
 // ListModels and ListReasoningLevels answer numen.v1.Options, a message of the core protocol a plugin does

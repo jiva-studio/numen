@@ -21,8 +21,6 @@ func (*announcing) Embed(context.Context, []string) ([][]float32, error) { retur
 
 func (*announcing) Close() error { return nil }
 
-func (*announcing) Concurrency() int { return 1 }
-
 func (a *announcing) OnModelChange(fn func()) { a.listeners = append(a.listeners, fn) }
 
 func (a *announcing) change(model searchsource.Description) {
@@ -41,7 +39,11 @@ func (silent) Embed(context.Context, []string) ([][]float32, error) { return nil
 
 func (silent) Close() error { return nil }
 
-func (silent) Concurrency() int { return 1 }
+func watched(embedder *announcing) *sourcefake.Source {
+	source := sourcefake.Wrap(embedder)
+	source.Watch = embedder.OnModelChange
+	return source
+}
 
 func newChunking(tokens int) *announcing {
 	return &announcing{model: searchsource.Description{Name: "first", Width: 8, SourceRecipe: "mean", ChunkTokens: tokens}}
@@ -49,7 +51,7 @@ func newChunking(tokens int) *announcing {
 
 func watchChunkSizes(embedder *announcing, sizes ...int) []bool {
 	var changed []bool
-	indexing.NewEmbedding(sourcefake.Wrap(embedder), sourcefake.Wrap(embedder), nil).OnModelChange(func(isChunkSizeChanged bool) {
+	indexing.NewEmbedding(watched(embedder), watched(embedder), nil).OnModelChange(func(isChunkSizeChanged bool) {
 		changed = append(changed, isChunkSizeChanged)
 	})
 	for _, tokens := range sizes {
@@ -71,7 +73,7 @@ func TestANewChunkSizeIsAnnouncedAsAChange(t *testing.T) {
 func TestAChunkSizeThatStaysIsNotAChange(t *testing.T) {
 	embedder := newChunking(256)
 	var changed []bool
-	indexing.NewEmbedding(sourcefake.Wrap(embedder), sourcefake.Wrap(embedder), nil).OnModelChange(func(isChunkSizeChanged bool) {
+	indexing.NewEmbedding(watched(embedder), watched(embedder), nil).OnModelChange(func(isChunkSizeChanged bool) {
 		changed = append(changed, isChunkSizeChanged)
 	})
 

@@ -130,11 +130,13 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{384}), v); err != nil {
 		t.Fatal(err)
 	}
-	// A width the index cannot be built for prevents anything from becoming
-	// searchable, and it is detected before any vector is requested.
-	_, err = container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{0}), v)
-	if err == nil || !strings.Contains(err.Error(), "not a vector") {
-		t.Fatalf("got %v", err)
+	// A source of no width has not described itself: the vault is read, the index is not fitted to it,
+	// and the index refuses that width.
+	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{0}), v); err != nil {
+		t.Fatalf("a source that has not described itself gave %v", err)
+	}
+	if err := db.FitVectors(t.Context(), 0, wide{0}.Describe().Recipe()); err == nil || !strings.Contains(err.Error(), "not a vector") {
+		t.Fatalf("the index fitted to no width gave %v", err)
 	}
 }
 

@@ -48,8 +48,6 @@ func (m *holdingModel) Embed(ctx context.Context, texts []string) ([][]float32, 
 	return m.fakeEmbedder.Embed(ctx, texts)
 }
 
-func (*holdingModel) Concurrency() int { return 1 }
-
 func (m *holdingModel) setBlocking(isBlocking bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

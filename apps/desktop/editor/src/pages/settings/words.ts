@@ -50,6 +50,7 @@ export const WORDS = {
   connectionRowsOpen: 'Open Connections',
   connectionRowsChoose: 'Choose a connection',
   connectionRowsConnection: 'Connection',
+  connectionRowsChooseValue: (title: string) => `Choose a ${title.toLowerCase()}`,
   connectionRowsValuePlaceholder: (title: string) => `Choose or type a ${title.toLowerCase()}`,
   connectionRowsDefault: 'Default',
   connectionRowsIndexQuestion: (count: number | undefined, name: string) =>

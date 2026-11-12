@@ -11,8 +11,8 @@ import { createShellHost as createHost } from './host'
 
 /** Connections that end every call at once, for a conversation view that needs them. */
 const CONNECTIONS: ConnectionHost = {
-  // eslint-disable-next-line require-yield
   call: async function* () {
+    yield* []
     return { ok: true, value: new Uint8Array() }
   },
 }

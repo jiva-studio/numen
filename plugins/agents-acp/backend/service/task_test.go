@@ -59,7 +59,6 @@ func (h *gardenHost) listCalls() []tools.Call {
 	return slices.Clone(h.calls)
 }
 
-// serveGardenHost serves the stand-in host for the length of the test and returns a client of its tools.
 func serveGardenHost(t *testing.T) (*gardenHost, tools.Client) {
 	t.Helper()
 	host := &gardenHost{}
@@ -74,7 +73,6 @@ func taskCall(connectionType, program string) connection.Call {
 	return connection.Call{ConnectionID: "conn-orchard", Type: connectionType, Fields: map[string]string{"program": program}}
 }
 
-// runTask runs the task and returns the frames it sent, shown one on a line, and its end.
 func runTask(ctx context.Context, svc *agentServer, call connection.Call, request *acp.TaskRequest) ([]string, *acp.TaskDone, error) {
 	var frames []string
 	done, err := svc.tasks.RunTask(ctx, call, request, func(frame *acp.TaskFrame) error {
@@ -378,12 +376,17 @@ func TestAFrameThatCannotBeSentEndsTheTaskWithItsError(t *testing.T) {
 	}
 }
 
-// cancelOnPrompt cancels once the program has read a prompt, or after five seconds.
 func cancelOnPrompt(record string, cancel context.CancelFunc) {
 	defer cancel()
-	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+	deadline := time.After(5 * time.Second)
+	for {
 		if raw, err := os.ReadFile(record); err == nil && bytes.Contains(raw, []byte(`"method":"session/prompt"`)) {
 			return
+		}
+		select {
+		case <-deadline:
+			return
+		case <-time.After(10 * time.Millisecond):
 		}
 	}
 }

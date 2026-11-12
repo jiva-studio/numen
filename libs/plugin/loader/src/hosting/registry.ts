@@ -50,7 +50,6 @@ export interface HostRegistry {
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
   readonly contexts: Map<string, PluginContext>
   readonly manifests: Map<string, Manifest>
-  /** The manifest of each plugin whose context the host made. */
   readonly contextManifests?: { value: ReadonlyMap<string, Manifest> }
   readonly activated: { value: ReadonlySet<string> }
   readonly starting?: { value: ReadonlySet<string> }

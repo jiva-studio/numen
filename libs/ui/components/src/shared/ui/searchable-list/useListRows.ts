@@ -61,7 +61,7 @@ export function useListRows(options: ListRowsOptions): ListRowsState {
   })
 
   const moveBy = (step: number): void => {
-    const next = rows.value[stepRow(rows.value.length, activeIndex.value, step)]
+    const next = rows.value[stepRow(rows.value, activeIndex.value, step)]
     if (next) activeKey.value = next.key
   }
 

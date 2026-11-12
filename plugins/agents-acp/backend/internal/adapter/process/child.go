@@ -129,8 +129,6 @@ func (c *Child) Close() error {
 	return errors.Join(err, c.cleanDir())
 }
 
-// createTempDir creates a temporary folder matching pattern, and returns its path and the function that
-// removes it.
 func createTempDir(pattern string) (string, func() error, error) {
 	dir, err := os.MkdirTemp("", pattern)
 	if err != nil {

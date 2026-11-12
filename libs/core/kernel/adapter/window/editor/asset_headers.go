@@ -5,8 +5,6 @@ import (
 	"slices"
 )
 
-// listShownTypes lists the content types a vault file is shown as in the window. Every other file is
-// served as a download.
 func listShownTypes() []string {
 	return []string{
 		"image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/svg+xml",

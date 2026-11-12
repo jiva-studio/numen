@@ -146,12 +146,15 @@ func buildWindow(
 	setModelCalls(a, run.NewConnectionNoticeTasks(tasks).Execute)
 
 	// Opened once, for as long as the window is. A local model is fetched and
-	// compiled behind this, so the window is drawn while it arrives.
+	// compiled behind this, so the window is drawn while it arrives. A source that cannot describe itself
+	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
+	// indexing once a configuration of its plugin lets it describe itself.
 	embedder, asking, closeEmbedder, why := searchSources(a.search, ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(a, db, state, embedding, opening.Out)
+	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
@@ -166,7 +169,6 @@ func buildWindow(
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.cases.start, Show: session.cases.show, OpenPlugin: session.cases.openPlugin,
 		Flush: session.cases.flush, Close: session.cases.close,
-		NoteWritten: indexer.WakeNotes,
 	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
 
 	kinds := newTabKinds(a, db)

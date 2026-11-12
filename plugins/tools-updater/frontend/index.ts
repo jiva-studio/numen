@@ -29,7 +29,7 @@ const browserTimer: Timer = {
 const browserParts: UpdateParts = { api: updater, timer: browserTimer }
 
 /** The component of the title bar view: the indicator over the announcement of the model. */
-export function createStatusView(context: PluginContext, updates: Updates) {
+export function createStatusView(context: Pick<PluginContext, 'plugin' | 'ui'>, updates: Updates) {
   return defineComponent({
     name: 'UpdateStatusView',
     setup: () => () =>
@@ -45,7 +45,7 @@ export function createStatusView(context: PluginContext, updates: Updates) {
 }
 
 function showFailure(
-  context: PluginContext,
+  context: Pick<PluginContext, 'ui'>,
   opening: ReturnType<Updates['announcement']['openDownload']>,
 ): void {
   opening.then(

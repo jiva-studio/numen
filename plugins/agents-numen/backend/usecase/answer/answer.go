@@ -40,8 +40,13 @@ func New(store *settings.Store, chat ports.Chat, tools ports.Tools, clock ports.
 	}, nil
 }
 
-// RunTask carries out one turn of the task and sends its updates. A task whose model cannot be asked,
-// because no row of llm.chat is set or every row failed, stops for a reason of unavailable.
+// RunTask carries out one turn of the task and sends its updates. The model is asked the distinct
+// instruction sentences of the tools, in the order of the listing, then the transcript kept for the
+// conversation, then the prompt with its attached notes; it is asked again after each tool call until it
+// answers without one, its answer is cut off or the steps of the settings are used up. A tool call frame
+// shows the title of the tool, its kind by the effect, and the query, about or title of the arguments, else
+// their path, with the path of the note. A task whose model cannot be asked, because no row of llm.chat is
+// set or every row failed, stops for a reason of unavailable.
 func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -93,8 +98,6 @@ func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.Tas
 	return &acp.TaskDone{StopReason: reason}, nil
 }
 
-// getMessages is the conversation the model is asked: the instructions of the tools, the transcript kept
-// for the conversation and the prompt with the notes attached to it.
 func (a *Answerer) getMessages(id string, task *acp.TaskRequest, offered []conversation.Tool) []conversation.Message {
 	kept := a.history.get(id)
 	messages := make([]conversation.Message, 0, len(kept)+2)
@@ -105,7 +108,6 @@ func (a *Answerer) getMessages(id string, task *acp.TaskRequest, offered []conve
 	return append(messages, conversation.Message{Role: "user", Text: writePrompt(task), ToolCalls: nil, ToolCallID: ""})
 }
 
-// joinInstructions joins the distinct instruction sentences of the tools, in the order of the listing.
 func joinInstructions(offered []conversation.Tool) string {
 	var sentences []string
 	for _, one := range offered {

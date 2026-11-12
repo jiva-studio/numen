@@ -50,17 +50,16 @@ type PlanEntry struct {
 }
 
 // ToolUpdate is a tool_call (IsStart) or a tool_call_update. A field left nil or empty keeps what the
-// call had.
+// call had. Name is the tool without the prefix the agent adds to a tool of the MCP server of the session:
+// Claude Code names it in _meta, Codex wraps the arguments with the server and the tool, and other agents
+// name it in name. Arguments are the arguments of the tool as one JSON value.
 type ToolUpdate struct {
-	ID      string
-	IsStart bool
-	// Name is the name of the tool the update gives, without the prefix the agent adds to a tool of the
-	// MCP server of the session; empty where the update gives none.
-	Name   string
-	Title  *string
-	Kind   *string
-	Status *string
-	// Arguments are the arguments of the tool as one JSON value.
+	ID        string
+	IsStart   bool
+	Name      string
+	Title     *string
+	Kind      *string
+	Status    *string
 	Arguments json.RawMessage
 	Output    json.RawMessage
 }
@@ -68,30 +67,50 @@ type ToolUpdate struct {
 // rawToolUpdate is the part of a tool_call, a tool_call_update or the tool call of a permission request
 // that the client reads.
 type rawToolUpdate struct {
-	SessionUpdate string          `json:"sessionUpdate"`
-	ToolCallID    string          `json:"toolCallId"`
-	Name          *string         `json:"name"`
-	Title         *string         `json:"title"`
-	Kind          *string         `json:"kind"`
-	Status        *string         `json:"status"`
-	RawInput      json.RawMessage `json:"rawInput"`
-	RawOutput     json.RawMessage `json:"rawOutput"`
-	Meta          struct {
+	SessionUpdate      string          `json:"sessionUpdate"`
+	ToolCallID         string          `json:"toolCallId"`
+	Name               *string         `json:"name"`
+	Title              *string         `json:"title"`
+	Kind               *string         `json:"kind"`
+	Status             *string         `json:"status"`
+	RawInput           json.RawMessage `json:"rawInput"`
+	RawOutput          json.RawMessage `json:"rawOutput"`
+	ClaudeCodeToolName string          `json:"-"`
+}
+
+// UnmarshalJSON reads the fields and the tool name Claude Code adds under _meta, a key the protocol
+// fixes.
+func (r *rawToolUpdate) UnmarshalJSON(data []byte) error {
+	type fields rawToolUpdate
+	if err := json.Unmarshal(data, (*fields)(r)); err != nil {
+		return err
+	}
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(data, &keys); err != nil {
+		return err
+	}
+	meta, isSet := keys["_meta"]
+	if !isSet {
+		return nil
+	}
+	var named struct {
 		ClaudeCode struct {
 			ToolName string `json:"toolName"`
 		} `json:"claudeCode"`
-	} `json:"_meta"`
+	}
+	if err := json.Unmarshal(meta, &named); err != nil {
+		return err
+	}
+	r.ClaudeCodeToolName = named.ClaudeCode.ToolName
+	return nil
 }
 
-// readServedTool returns the tool of the session's MCP server the call names and the arguments of the
-// call. Claude Code names it in _meta, Codex wraps the arguments with the server and the tool, and other
-// agents name it in name.
-func (r rawToolUpdate) readServedTool() (string, json.RawMessage) {
+func (r *rawToolUpdate) readServedTool() (string, json.RawMessage) {
 	arguments := r.RawInput
 	if !isValue(arguments) {
 		arguments = nil
 	}
-	if name, isServed := cutServerPrefix(r.Meta.ClaudeCode.ToolName); isServed {
+	if name, isServed := cutServerPrefix(r.ClaudeCodeToolName); isServed {
 		return name, arguments
 	}
 	var wrapped struct {
@@ -149,8 +168,6 @@ func (s *Session) readUpdate(params json.RawMessage, handler Handler) error {
 	return handler.HandleUpdate(*update)
 }
 
-// isDecoded decodes raw into value and reports whether it could; an update the client cannot read is
-// left out.
 func isDecoded(raw json.RawMessage, value any) bool {
 	return json.Unmarshal(raw, value) == nil
 }
@@ -207,10 +224,6 @@ func (s *Session) readToolUpdate(raw json.RawMessage) *Update {
 	}}
 }
 
-// answerPermission grants a permission once where the handler allows the tool the request names, or,
-// where it names none, the tool the agent reported for the call. It refuses every other request with the
-// option that rejects once, which lets the turn go on, and returns nil for a request that offers no
-// option to reject.
 func (s *Session) answerPermission(params json.RawMessage, handler Handler) map[string]any {
 	var request struct {
 		SessionID string        `json:"sessionId"`
@@ -246,7 +259,6 @@ func (s *Session) answerPermission(params json.RawMessage, handler Handler) map[
 	return nil
 }
 
-// selectOption answers a permission request with the option.
 func selectOption(option string) map[string]any {
 	return map[string]any{keyOutcome: map[string]any{keyOutcome: "selected", "optionId": option}}
 }

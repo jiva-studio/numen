@@ -36,9 +36,6 @@ type rpcError struct {
 	Message string `json:"message"`
 }
 
-// call sends a request and reads the messages of the program until its response. The updates and the
-// permission requests that arrive meanwhile go to handler, which may be nil. When ctx ends before the
-// response, a prompt is canceled and given a grace period, and any other request stops the program.
 func (s *Session) call(ctx context.Context, method string, params any, handler Handler) (json.RawMessage, error) {
 	s.nextID++
 	id := strconv.Itoa(s.nextID)
@@ -66,8 +63,6 @@ func (s *Session) call(ctx context.Context, method string, params any, handler H
 	}
 }
 
-// watch acts on the end of ctx while a request of method waits for its response, and returns the
-// function that ends the watch.
 func (s *Session) watch(ctx context.Context, method string) func() {
 	finished := make(chan struct{})
 	ended := make(chan struct{})
@@ -89,8 +84,6 @@ func (s *Session) watch(ctx context.Context, method string) func() {
 	}
 }
 
-// cancelTurn tells the program to cancel the turn and reports whether the turn finished within the grace
-// period. A program that cannot be told is stopped.
 func (s *Session) cancelTurn(finished <-chan struct{}) bool {
 	cancel := rpcRequest{JSONRPC: "", ID: nil, Method: methodCancel, Params: map[string]any{keySessionID: s.id}, Result: nil, Error: nil}
 	if s.send(cancel) != nil {
@@ -150,8 +143,6 @@ func (s *Session) send(message rpcRequest) error {
 	return s.proc.Send(raw)
 }
 
-// getReadError returns why the output of the program could not be read: the end of ctx, which stopped
-// the program, or the end or failure of the output.
 func (s *Session) getReadError(ctx context.Context, method string, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
@@ -167,8 +158,6 @@ func (s *Session) getExitError(method string) error {
 	return errors.New(writeFailureMessage(cause, s.proc.Stderr()))
 }
 
-// writeFailureMessage returns the line of the error output of a program that says why it failed: the
-// first line that starts with "error:", else the last line, else the error.
 func writeFailureMessage(err error, output string) string {
 	clean := strings.TrimSpace(output)
 	if clean == "" {

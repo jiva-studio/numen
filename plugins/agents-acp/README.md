@@ -9,7 +9,7 @@ Use the AI assistants installed on your computer, such as Claude Code, Codex and
 - **Chat with your favorite AI tools**: Add a connection of the type Claude Code, OpenAI Codex, Antigravity or ACP agent, and choose it as an agent of the chat. The assistant answers in the chat as it writes.
 - **Work directly with your vault**: The assistant can call the tools of your vault, such as searching your notes and reading passages from books and documents. It may call these tools and no others: it reads no file of your computer, runs no command, and of its own tools Claude Code keeps web search alone.
 - **Continue a conversation**: The turns of one chat continue one session of the assistant. A session unused for 30 minutes is closed, and at most 8 are kept.
-- **Any ACP assistant**: The type ACP agent runs any program that speaks the Agent Client Protocol, such as `gemini --acp`, `opencode acp`, `cursor-agent acp`, `goose acp`, `kimi acp` and `qwen --acp`. Choose the program of the connection.
+- **Any ACP assistant**: The type ACP agent runs any program that implements the Agent Client Protocol, such as `gemini --acp`, `opencode acp`, `cursor-agent acp`, `goose acp`, `kimi acp` and `qwen --acp`. Choose the program of the connection.
 - **Answer requests of other plugins**: A request of another plugin runs in an empty temporary folder, with no tools and without writing to disk.
 
 ## Programs

@@ -3,7 +3,6 @@
  * works.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect } from 'storybook/test'
 import { STORY_BOXES } from '../../../fixtures/frame'
 import ToolCall from './ToolCall.vue'
 

@@ -7,11 +7,13 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'
-import type {
-  ConnectionFieldInfo,
-  ConnectionInfo,
-  ConnectionTypeInfo,
-  RowOption,
+import {
+  writeRows,
+  type ConnectionFieldInfo,
+  type ConnectionInfo,
+  type ConnectionTypeInfo,
+  type RowOption,
+  type StoredRow,
 } from '@/entities/connection'
 import type { JsonValue } from '@/shared/api/json'
 import type { PluginSettingInfo } from '@/entities/settings'
@@ -114,7 +116,7 @@ const setting = (overrides: Partial<PluginSettingInfo> = {}): PluginSettingInfo 
 const row = (connectionId: string, model: string, reasoning = '') => ({
   connection: connectionId,
   model,
-  reasoning,
+  ...(reasoning === '' ? {} : { reasoning }),
 })
 
 const SEVERAL = [
@@ -173,8 +175,8 @@ const render =
           },
         ),
       })
-      const onChange = (next: JsonValue) => {
-        value.value = next
+      const onChange = (next: readonly StoredRow[]) => {
+        value.value = writeRows(next)
       }
       return { value, connections: installation.connections, onChange, plugin: setting({ max }) }
     },
@@ -212,15 +214,12 @@ const readModels = (canvasElement: HTMLElement): string[] =>
     .getAllByRole('button', { name: 'Model' })
     .map((one) => one.textContent.trim())
 
-/** Several rows fit the column in order, with Add connection under them and the line about the text of the notes. */
+/** Several rows fit the column in order, with Add connection above them. */
 export const SeveralRows: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('button', { name: 'Connection' })).toHaveLength(3)
     await expect(canvas.getByRole('button', { name: 'Add connection' })).toBeEnabled()
-    await expect(
-      canvas.getByText('The text of your notes is sent to each connection listed, in this order.'),
-    ).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
     for (const one of canvasElement.querySelectorAll('li')) {
       await expect(one.getBoundingClientRect().right).toBeLessThanOrEqual(column.right + 0.5)
@@ -236,9 +235,6 @@ export const OneRowHasNoAddButton: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('button', { name: 'Connection' })).toHaveLength(1)
     await expect(canvas.queryByRole('button', { name: 'Add connection' })).toBeNull()
-    await expect(
-      canvas.getByText('The text of your notes is sent to the connection chosen here.'),
-    ).toBeVisible()
   },
 }
 
@@ -253,19 +249,19 @@ export const EmptyPage: Story = {
   },
 }
 
-/** With no connection to choose from, Add connection is off and the page says where to make one. */
+/** With no connection to choose from, there is no Add button and the page says to add a connection first. */
 export const NoConnectionToChoose: Story = {
   render: render({ rows: [], connections: [] }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: 'Add connection' })).toBeDisabled()
-    await expect(canvas.getByText(/Add one on the Connections page/)).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: 'Add connection' })).toBeNull()
+    await expect(canvas.getByText('No connections yet. Add a connection first.')).toBeVisible()
   },
 }
 
-/** With no row the page offers a way to the Connections page, and asks to open it. */
+/** With no connection the page offers a way to the Connections page. */
 export const EmptyPageLinksToConnections: Story = {
-  render: render({ rows: [] }),
+  render: render({ rows: [], connections: [] }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Open Connections' })).toBeEnabled()
@@ -279,33 +275,36 @@ export const DimmedConnection: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
     const menu = within(document.body)
-    const items = menu.getAllByRole('menuitemradio')
+    const items = await menu.findAllByRole('option')
     await expect(items.map((one) => one.textContent)).toStrictEqual([
       expect.stringContaining('Work'),
       expect.stringContaining('Local server'),
       expect.stringContaining('Embeddings only'),
       expect.stringContaining('Retired'),
+      expect.stringContaining('New connection'),
     ])
-    const embeddings = menu.getByRole('menuitemradio', { name: /Embeddings only/ })
-    await expect(embeddings).toBeDisabled()
+    const embeddings = menu.getByRole('option', { name: /Embeddings only/ })
+    await expect(embeddings).toHaveAttribute('aria-disabled', 'true')
     await expect(embeddings).toHaveTextContent('This type cannot complete text')
-    await expect(menu.getByRole('menuitemradio', { name: /Retired/ })).toHaveTextContent(
+    await expect(menu.getByRole('option', { name: /Retired/ })).toHaveTextContent(
       'Type unavailable',
     )
     await userEvent.keyboard('{Escape}')
   },
 }
 
-/** A row that names a connection that cannot serve says why under the row. */
+/** A row that names a connection that cannot serve says why in its connection control. */
 export const RowOfAnUnusableConnection: Story = {
   render: render({ rows: [row(EMBED_ONLY.id, 'any')] }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('This type cannot complete text')).toBeVisible()
+    await expect(
+      within(canvasElement).getByRole('button', { name: 'Connection' }),
+    ).toHaveAccessibleDescription('This type cannot complete text')
   },
 }
 
-/** Adding a row and choosing a connection fills the model with the first model of its list and writes the row. */
-export const ChoosingAConnectionFillsTheModel: Story = {
+/** Adding a row and choosing a connection writes nothing until the model is chosen, and the model control asks for it. */
+export const ChoosingAConnectionAsksForTheModel: Story = {
   render: render({ rows: [] }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -313,27 +312,32 @@ export const ChoosingAConnectionFillsTheModel: Story = {
     await expect(readWritten(canvasElement)).toStrictEqual([])
 
     await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
-    await userEvent.click(within(document.body).getByRole('menuitemradio', { name: /^Work/ }))
+    await userEvent.click(await within(document.body).findByRole('option', { name: /^Work/ }))
+
+    await expect(canvas.getByRole('button', { name: 'Model' })).toHaveAccessibleDescription(
+      'Choose a model',
+    )
+    await expect(readWritten(canvasElement)).toStrictEqual([])
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Model' }))
+    await userEvent.click(await within(document.body).findByRole('option', { name: /GPT-5 mini/ }))
 
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
-        { connection: WORK.id, model: 'google/gemini-2.5-flash' },
+        { connection: WORK.id, model: 'openai/gpt-5-mini' },
       ]),
-    )
-    await expect(canvas.getByRole('button', { name: 'Model' })).toHaveTextContent(
-      'Gemini 2.5 Flash',
     )
   },
 }
 
-/** The last entry of the connection list adds a connection; the saved one is chosen and the models open. */
+/** The last entry of the connection list adds a connection; the saved one is chosen, the models open, and the row is written once a model is chosen. */
 export const NewConnectionEntryChoosesTheModelNext: Story = {
   render: render({ rows: [row(WORK.id, 'google/gemini-2.5-flash')] }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
     await userEvent.click(
-      within(document.body).getByRole('menuitemradio', { name: /New connection/ }),
+      await within(document.body).findByRole('option', { name: /New connection/ }),
     )
 
     const dialog = await within(document.body).findByRole('dialog', { name: 'Add connection' })
@@ -343,8 +347,16 @@ export const NewConnectionEntryChoosesTheModelNext: Story = {
     await expect(canvas.getByRole('button', { name: 'Connection' })).toHaveTextContent('Fresh')
     await expect(await within(document.body).findByRole('combobox')).toBeVisible()
     await expect(readWritten(canvasElement)).toStrictEqual([
-      { connection: WORK.id, model: 'google/gemini-2.5-flash' },
+      row(WORK.id, 'google/gemini-2.5-flash'),
     ])
+
+    await userEvent.click(await within(document.body).findByRole('option', { name: /GPT-5 mini/ }))
+
+    await waitFor(() =>
+      expect(readWritten(canvasElement)).toStrictEqual([
+        { connection: 'c00000099', model: 'openai/gpt-5-mini' },
+      ]),
+    )
   },
 }
 

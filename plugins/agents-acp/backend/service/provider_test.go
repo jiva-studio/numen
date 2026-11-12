@@ -291,19 +291,21 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	}
 
 	// The plugin reads the models of a program in the background and lists none until they are read.
-	var answer []byte
-	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
-		answer = callModels(t, web.URL, program)
+	deadline := time.After(5 * time.Second)
+	for {
+		answer := callModels(t, web.URL, program)
 		// The done frame is the encoded list of options, which holds the titles as they are.
-		if bytes.Contains(readDone(t, answer), []byte("Model Two")) {
+		if bytes.Contains(readDoneFrame(t, answer), []byte("Model Two")) {
 			return
 		}
+		select {
+		case <-deadline:
+			t.Fatalf("the service answered %q", answer)
+		case <-time.After(20 * time.Millisecond):
+		}
 	}
-	t.Errorf("the service answered %q", answer)
 }
 
-// callModels calls llm.models of the program on the provider service at url, as a streaming Connect call
-// with the token of the plugin, and returns the body of the answer.
 func callModels(t *testing.T, url, program string) []byte {
 	t.Helper()
 	body, err := json.Marshal(map[string]any{
@@ -338,7 +340,6 @@ func callModels(t *testing.T, url, program string) []byte {
 	return answer
 }
 
-// writeEnvelope frames a message of a streaming Connect call.
 func writeEnvelope(flags byte, message []byte) []byte {
 	framed := make([]byte, 5, 5+len(message))
 	framed[0] = flags
@@ -346,8 +347,7 @@ func writeEnvelope(flags byte, message []byte) []byte {
 	return append(framed, message...)
 }
 
-// readDone returns the done frame of the streaming Connect answer, or nil where it holds none.
-func readDone(t *testing.T, answer []byte) []byte {
+func readDoneFrame(t *testing.T, answer []byte) []byte {
 	t.Helper()
 	for len(answer) >= 5 {
 		size := binary.BigEndian.Uint32(answer[1:5])
@@ -371,8 +371,6 @@ func newTestServer(t *testing.T) *agentServer {
 	return newTestServerWith(t, nil, clock.System{})
 }
 
-// newTestServerWith builds the plugin over the programs of the machine, with the tools of host and the
-// clock.
 func newTestServerWith(t *testing.T, host task.Tools, source cache.Clock) *agentServer {
 	t.Helper()
 	svc, err := newAgentServer(machine{

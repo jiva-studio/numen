@@ -20,13 +20,15 @@ var (
 	categoryNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 )
 
-// TabKind is a kind of tab the plugin's frontend registers.
+// TabKind is a kind of tab the plugin's frontend registers. IsNoteEditor marks the kind that edits the
+// text of the note its tab opens on.
 type TabKind struct {
-	Kind  string
-	Title string
-	Icon  string
-	When  string
-	Rank  domain.HandlerRank
+	Kind         string
+	Title        string
+	Icon         string
+	When         string
+	Rank         domain.HandlerRank
+	IsNoteEditor bool
 }
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.

@@ -21,7 +21,7 @@ type ToolCall struct {
 }
 
 // Tool is a tool of the host offered to the model. Parameters is the JSON schema of its arguments, and
-// Instructions are the sentences the tool asks to be told to the model.
+// Instructions are the sentences the tool adds to the instructions of the model.
 type Tool struct {
 	Name         string
 	Title        string

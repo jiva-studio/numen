@@ -15,7 +15,10 @@ import (
 )
 
 // conversation is a session of a program and the endpoint that serves it the tools, for the turns of one
-// conversation. A turn holds the token of turn while it runs.
+// conversation. A turn holds the token of turn while it runs. lastUsed and isGone belong to the pool and
+// are guarded by its lock. The first turn of a session is prompted with the distinct instruction sentences
+// of the served tools, in the order of the listing, before the attached notes and the prompt. A forced
+// close stops the program without ending the session, which also ends a turn that still runs.
 type conversation struct {
 	key  string
 	turn chan struct{}
@@ -33,12 +36,10 @@ type conversation struct {
 	toolContext map[string]string
 	vaultID     string
 
-	// lastUsed and isGone belong to the pool and are guarded by its lock.
 	lastUsed time.Time
 	isGone   bool
 }
 
-// newConversation returns a conversation with no session whose token is held.
 func newConversation(key string, now time.Time) *conversation {
 	c := &conversation{
 		key: key, turn: make(chan struct{}, 1),
@@ -51,8 +52,6 @@ func newConversation(key string, now time.Time) *conversation {
 	return c
 }
 
-// setTools keeps the listed tools of the session and the distinct sentences of their instructions, in the
-// order of the listing.
 func (c *conversation) setTools(listed []*tools.ToolInfo) {
 	c.listed = make(map[string]*tools.ToolInfo, len(listed))
 	var sentences []string
@@ -67,13 +66,10 @@ func (c *conversation) setTools(listed []*tools.ToolInfo) {
 	c.instructions = strings.Join(sentences, " ")
 }
 
-// listNames returns the names of the served tools in the order of their names.
 func (c *conversation) listNames() []string {
 	return slices.Sorted(maps.Keys(c.listed))
 }
 
-// setSession keeps the session and the endpoint that serves it, or closes them when the conversation was
-// closed meanwhile.
 func (c *conversation) setSession(ctx context.Context, session *acp.Session, served ServedTools) error {
 	c.mu.Lock()
 	isClosed := c.isClosed
@@ -82,19 +78,17 @@ func (c *conversation) setSession(ctx context.Context, session *acp.Session, ser
 	}
 	c.mu.Unlock()
 	if isClosed {
-		return errors.Join(errClosed, session.Close(ctx), closeServed(ctx, served))
+		return errors.Join(errClosed, session.Close(ctx), closeServedTools(ctx, served))
 	}
 	return nil
 }
 
-// setScope makes the calls of the tools of the next turn run with the context and in the vault.
 func (c *conversation) setScope(toolContext map[string]string, vaultID string) {
 	c.scopeMu.Lock()
 	defer c.scopeMu.Unlock()
 	c.toolContext, c.vaultID = maps.Clone(toolContext), vaultID
 }
 
-// invokeWith returns the Invoke that runs a call of a served tool on the host with the scope of the turn.
 func (c *conversation) invokeWith(host Tools) Invoke {
 	return func(ctx context.Context, name string, arguments []byte) (*tools.CallResponse, error) {
 		c.scopeMu.Lock()
@@ -104,8 +98,6 @@ func (c *conversation) invokeWith(host Tools) Invoke {
 	}
 }
 
-// writePrompt returns the texts of a turn: the instructions of the tools on the first turn of the
-// session, the notes the person attached, and the prompt.
 func (c *conversation) writePrompt(request *contract.TaskRequest) []string {
 	var texts []string
 	if !c.isPrompted {
@@ -125,8 +117,6 @@ func writeNote(note *contract.ContextNote) string {
 	return heading + ":\n\n" + note.GetText()
 }
 
-// close ends the session and the serving of its tools, once. A forced close stops the program without
-// ending the session, which also ends a turn that still runs.
 func (c *conversation) close(ctx context.Context, isForced bool) error {
 	c.mu.Lock()
 	if c.isClosed {
@@ -144,10 +134,10 @@ func (c *conversation) close(ctx context.Context, isForced bool) error {
 	default:
 		err = session.Close(ctx)
 	}
-	return errors.Join(err, closeServed(ctx, served))
+	return errors.Join(err, closeServedTools(ctx, served))
 }
 
-func closeServed(ctx context.Context, served ServedTools) error {
+func closeServedTools(ctx context.Context, served ServedTools) error {
 	if served == nil {
 		return nil
 	}

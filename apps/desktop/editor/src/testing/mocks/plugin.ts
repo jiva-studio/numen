@@ -1,8 +1,9 @@
 /**
- * The plugin entity's part of the answers: no plugin declares a command, answered to the real
- * clients over the router transport.
+ * The plugin entity's part of the answers: no plugin declares a command and no plugin reports
+ * health, answered to the real clients over the router transport.
  */
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
+import { pendingStream } from '../answers'
 
 export const pluginAnswers = {
   pluginCommands: {
@@ -19,4 +20,5 @@ export const pluginAnswers = {
       openedPath: '',
     }),
   },
+  pluginHealth: { watchHealth: pendingStream },
 }

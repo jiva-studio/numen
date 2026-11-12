@@ -59,7 +59,6 @@ const revealFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void
   if (kind) deps.navigator.showTab(kind, invocation.target.path)
 }
 
-/** The tab kind the core opens the note in, and nothing where the core does not answer. */
 const findNoteKind = async (path: string): Promise<string | undefined> => {
   try {
     return (await getFileKinds([path])).get(path)?.tabKind

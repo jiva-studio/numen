@@ -12,10 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
@@ -61,10 +60,9 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	}
 }
 
-// callTask asks the handler for acp.task over Connect and returns the body of the answer.
 func callTask(t *testing.T, client *http.Client, baseURL string) string {
 	t.Helper()
-	payload, err := proto.Marshal(&acp.TaskRequest{Prompt: "When does the ferry leave?"})
+	payload, err := acptest.EncodeTaskRequest(&acp.TaskRequest{Prompt: "When does the ferry leave?"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -63,7 +63,8 @@ func New(deps Dependencies) (*Completion, error) {
 // Complete answers the request in one session of the program the call names. The session runs in an
 // empty temporary folder and is offered no file system, no terminal and no tool, and every permission
 // request is refused. A program that cannot be found, and a session that outlasts the request timeout,
-// are failures to try the next connection after. The text of a failed session does not leave the plugin.
+// are failures to try the next connection after, and so is a turn the program does not end. The text of a
+// failed session does not leave the plugin.
 func (c *Completion) Complete(
 	ctx context.Context, call connection.Call, request *llm.CompleteRequest,
 ) (*llm.CompleteResult, error) {
@@ -91,8 +92,6 @@ func (c *Completion) Complete(
 	return &llm.CompleteResult{Text: text}, nil
 }
 
-// answer runs one session of the program with the model and the reasoning of the call and returns the
-// text of the turn. The session is offered no tool, and a turn the program does not end is a failure.
 func (c *Completion) answer(ctx context.Context, agent agents.Agent, call connection.Call, texts []string) (text string, err error) {
 	session, err := acp.Open(ctx, c.deps.Launcher, acp.Start{Command: agent.Command, Servers: nil, Meta: agent.GetAnswerMeta()})
 	if err != nil {

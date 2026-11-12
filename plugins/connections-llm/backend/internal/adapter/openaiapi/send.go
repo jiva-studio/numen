@@ -22,19 +22,26 @@ const maxResponseBytes = 64 << 20
 // endpoint is the method and the path of a request.
 type endpoint struct{ method, path string }
 
-func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Duration, target endpoint, in, out any) error {
+func readTarget(ctx context.Context, call connection.Call) (*url.URL, string, bool, error) {
 	if err := ctx.Err(); err != nil {
-		return err
+		return nil, "", false, err
 	}
 	if !servicetype.IsKnown(call.Type) {
-		return connection.NewStopError(connection.ReasonInvalidRequest)
+		return nil, "", false, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	key := call.Secrets[servicetype.SecretAPIKey].Value
 	base, err := address.Parse(call.Fields[servicetype.FieldBaseURL], key != "")
 	if err != nil {
-		return connection.NewStopError(connection.ReasonInvalidRequest)
+		return nil, "", false, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	isLoopbackRequired := base.Scheme == address.SchemeHTTP && key != ""
+	return base, key, base.Scheme == address.SchemeHTTP && key != "", nil
+}
+
+func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Duration, target endpoint, in, out any) error {
+	base, key, isLoopbackRequired, err := readTarget(ctx, call)
+	if err != nil {
+		return err
+	}
 
 	limited, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()
@@ -96,8 +103,6 @@ func closeBody(body io.Closer) {
 	}
 }
 
-// classifyTransportError reads a request that got no answer: the end of the call as it is, an address the
-// domain refuses as a stop, and a service that is unreachable or slow as unavailable.
 func classifyTransportError(parent context.Context, err error) error {
 	switch {
 	case parent.Err() != nil:

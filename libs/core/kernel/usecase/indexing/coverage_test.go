@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// counting is a search source that says how many chunks it was told about, or fails with its error.
+// counting is a search source that reports how many chunks it received, or fails with its error.
 type counting struct {
 	err    error
 	places []searchsource.Place
@@ -52,14 +52,14 @@ func TestTheCoverageIsTheTextOfTheSourceForTheCountsOfTheIndex(t *testing.T) {
 	}
 }
 
-func TestASourceThatDoesNotAnswerSaysNothingOfItsIndex(t *testing.T) {
+func TestASourceThatDoesNotAnswerReportsNoCoverage(t *testing.T) {
 	text, err := indexing.NewEmbedding(&counting{err: errors.New("the plugin is starting")}, nil, held{}).DescribeCoverage(t.Context(), "01PHYSICS")
 	if err != nil || text != "" {
 		t.Errorf("coverage %q, %v; want nothing", text, err)
 	}
 }
 
-func TestAWindowWithoutASourceSaysNothingOfItsIndex(t *testing.T) {
+func TestAWindowWithoutASourceReportsNoCoverage(t *testing.T) {
 	var none *indexing.Embedding
 	if text, err := none.DescribeCoverage(t.Context(), "01PHYSICS"); err != nil || text != "" {
 		t.Errorf("coverage %q, %v; want nothing", text, err)

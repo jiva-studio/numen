@@ -21,10 +21,10 @@ export interface WorkLine {
   readonly clear: () => void
 }
 
+/** paths holds the file a line opens when pressed, by the id of the line. */
 export interface WorkLineOptions {
   readonly put: (turn: Turn) => void
   readonly drop: (id: string) => void
-  /** The file a line opens when pressed, by the id of the line. */
   readonly paths: Map<string, string>
   readonly waitWords: string
 }

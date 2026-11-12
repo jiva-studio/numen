@@ -177,6 +177,17 @@ describe('the keyboard', () => {
     expect(list.emitted('select')).toStrictEqual([['quince']])
   })
 
+  it('shows a disabled item as disabled, passes over it with the arrows, and does not choose it', async () => {
+    const list = mountList({
+      items: [MODELS[0]!, { ...MODELS[1]!, isDisabled: true }, MODELS[2]!],
+    })
+    expect(getOptions(list)[1]!.attributes('aria-disabled')).toBe('true')
+    await press(list, 'ArrowDown')
+    expect(getActiveOptionIndex(list)).toBe(2)
+    await getOptions(list)[1]!.trigger('click')
+    expect(list.emitted('select')).toBeUndefined()
+  })
+
   it('keeps the row where the user put it as the items are replaced', async () => {
     const list = mountList({ isFiltered: false })
     await press(list, 'ArrowDown')

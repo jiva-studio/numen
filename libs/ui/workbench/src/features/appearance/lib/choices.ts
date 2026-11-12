@@ -4,7 +4,6 @@
  */
 import { MODES, type Mode, type Theme } from './appearance'
 
-/** The words of the choices. */
 export interface AppearanceChoiceWords {
   readonly apply: string
   readonly shipping: string
@@ -77,7 +76,6 @@ function getThemeGroups(state: AppearanceChoiceState, words: AppearanceChoiceWor
   ]
 }
 
-/** The three modes. None can be chosen while the applied theme pins light or dark. */
 function getModeGroup(
   state: AppearanceChoiceState,
   words: AppearanceChoiceWords,
@@ -99,6 +97,7 @@ function getModeGroup(
 /**
  * The theme groups, the ones the application ships, then each plugin's under its name, then the
  * person's own, and the mode group, each with the choices whose title contains the text, ignoring case.
+ * No mode can be chosen while the applied theme pins light or dark.
  */
 export function getAppearanceGroups(
   state: AppearanceChoiceState,

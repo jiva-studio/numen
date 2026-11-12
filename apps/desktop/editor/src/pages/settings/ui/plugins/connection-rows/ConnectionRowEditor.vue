@@ -38,7 +38,6 @@ const { fields } = useRowChoices({
   getRowFields: () => props.rowFields,
   getOperations: () => props.operations,
   getListRowOptions: () => props.listRowOptions,
-  update: (options) => emit('update', { options }),
 })
 
 const isAdding = ref(false)

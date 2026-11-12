@@ -22,8 +22,8 @@ type Resolved struct {
 	Fingerprint      string
 }
 
-// NewCall makes the call to the provider of the connection with the secrets read for it and the options
-// of the row.
+// NewCall copies the fields, the secrets and the options into the call, so a change to the call leaves the
+// connection as it is.
 func (r Resolved) NewCall(secrets, options map[string]string) modelcall.ProviderCall {
 	return modelcall.ProviderCall{
 		ConnectionID: r.ID,
