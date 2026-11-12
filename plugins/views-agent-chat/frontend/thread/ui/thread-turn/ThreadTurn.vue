@@ -28,11 +28,13 @@ const isDoing = computed(() => props.entry.turn.voice === 'doing')
  */
 const opens = computed(() => isDoing.value && props.entry.turn.canOpen === true)
 
+/** The entries of a plan turn. */
+const plan = computed(() => props.entry.turn.plan ?? [])
+
 /** The data a tool-call line is rendered from. */
 const call = computed(() => ({
   tool: props.entry.turn.text,
   subject: props.entry.turn.subject ?? '',
-  aside: props.entry.turn.aside ?? '',
   isWorking: props.entry.state === 'arriving',
 }))
 </script>
@@ -62,6 +64,17 @@ const call = computed(() => ({
         <ToolCall v-bind="call" />
       </button>
       <ToolCall v-else-if="isDoing" v-bind="call" />
+      <ol v-else-if="entry.turn.voice === 'plan'" class="thread__plan text-hushed flex flex-col gap-1">
+        <li
+          v-for="(item, index) in plan"
+          :key="index"
+          class="thread__plan-item flex items-baseline gap-2"
+          :data-status="item.status"
+        >
+          <span class="thread__plan-mark" aria-hidden="true" />
+          <span class="min-w-0">{{ item.text }}</span>
+        </li>
+      </ol>
       <span v-else-if="entry.voice.isBubble" class="thread__text">{{ entry.turn.text }}</span>
       <Prose
         v-else
@@ -80,6 +93,33 @@ const call = computed(() => ({
 </template>
 
 <style scoped>
+.thread__plan {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread__plan-mark {
+  --mark-size: 0.45em;
+  flex: none;
+  inline-size: var(--mark-size);
+  block-size: var(--mark-size);
+  border: 1px solid currentColor;
+  border-radius: var(--numen-radius-pill);
+}
+
+.thread__plan-item[data-status='active'] {
+  color: var(--numen-ink);
+}
+
+.thread__plan-item[data-status='done'] .thread__plan-mark {
+  background: currentColor;
+}
+
+.thread__plan-item[data-status='done'] {
+  text-decoration: line-through;
+}
+
 /* A line break that was typed is a line break that is read, and a word with
    nothing to break at is broken where it reaches the edge. The window's body
    takes no selection; a question is selected with the answers around it. */

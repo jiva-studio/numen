@@ -16,22 +16,22 @@ export { WORDS } from './words'
 export function activate(context: PluginContext): void {
   context.register.view({ capability: CONVERSATION, component: ConversationView })
   const { workspace } = context.ui
-  const { agent } = context.work
   if (!workspace) return
-  if (!agent) {
-    throw new Error('an agent chat requires a window and an agent')
+  const { connections } = context.work
+  const { relations } = context.vault
+  if (!connections || !relations) {
+    throw new Error('an agent chat requires a window, its connections and the links of the vault')
   }
   const chats = createAgentKind(
     {
       workspace,
-      agent,
-      ...(context.ui.commands ? { commands: context.ui.commands } : {}),
-      getReasoning: () => context.settings.get<string>('reasoning') ?? '',
+      relations,
+      openSettings: () => context.work.backgroundTasks?.openSettings(context.plugin.id),
     },
     (deps) =>
       useAgentConversation(
         useConversation({
-          agent,
+          connections,
           words: WORDS,
           conversation: `conversation:${crypto.randomUUID()}`,
         }),
@@ -41,18 +41,19 @@ export function activate(context: PluginContext): void {
   )
   context.register.tabKind(chats.kind)
 
-  /** A question about a note, posted to the conversation the user was last in. */
-  const askAbout = (path: string): void => workspace.ask(`${path} — `)
-
   context.register.command({
     id: 'chat.open',
     handler: async (note) => {
       await context.tabs.navigate?.(AGENT, note.path)
     },
   })
+  /** A question about a note, written into the conversation the user was last in. */
   context.register.command({
     id: 'note.ask',
-    handler: (note) => askAbout(note.path),
+    handler: async (note) => {
+      const id = await context.tabs.navigate?.(AGENT, note.path)
+      if (id) chats.setDraft(id, `${note.path} — `)
+    },
   })
 }
 

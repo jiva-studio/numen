@@ -5,55 +5,43 @@
  * opens the source it is in.
  */
 import { describe, expect, it } from 'vitest'
-import { nextTick, ref, shallowRef } from 'vue'
+import { nextTick, ref } from 'vue'
 import type { Conversation } from '../thread'
 import type { Turn } from '../types'
-import type { AgentModel, TextRange } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 import { createLinkResolver } from '../fixtures/links'
 
-type Model = AgentModel & { readonly nameAt: readonly string[] }
-
-const createConversation = (locations: Record<string, { path: string; range: TextRange }> = {}) => {
-  const request: [string, string][] = []
+const createConversation = (paths: Record<string, string> = {}) => {
+  const request: string[] = []
   const stopCalls: string[] = []
   const turn = ref<Turn[]>([])
   const conversation: Conversation = {
     turns: turn,
     isAnswerPending: ref(false),
-    ask: async (text, focus) => {
-      request.push([text, focus])
+    ask: async (text) => {
+      request.push(text)
     },
-    getSourceLocation: (turn) => locations[turn] ?? null,
+    getSourcePath: (turn) => paths[turn] ?? null,
     stop: () => stopCalls.push('stop'),
-    finish: () => stopCalls.push('finish'),
   }
   return { conversation, turns: turn, requests: request, stopped: stopCalls }
 }
 
-const tab = (
-  locations: Record<string, { path: string; range: TextRange }> = {},
-  notes: Record<string, string> = {},
-) => {
-  const fake = createConversation(locations)
+const tab = (paths: Record<string, string> = {}, notes: Record<string, string> = {}) => {
+  const fake = createConversation(paths)
   const openedCalls: [string, readonly TextRange[]][] = []
+  const files: string[] = []
   const adjacentItems: string[] = []
   const state = useAgentConversation(fake.conversation, {
+    openFile: (path) => files.push(path),
     openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
     openFileAdjacent: (path) => adjacentItems.push(path),
     resolveLinks: createLinkResolver(notes),
-    unreachable: () => '',
+    openSettings: () => undefined,
   })
-  return { state, opened: openedCalls, adjacentItems, ...fake }
+  return { state, opened: openedCalls, files, adjacentItems, ...fake }
 }
-
-const items = (nameAt: readonly string[], name: string, presence: Model['presence']): Model => ({
-  nameAt,
-  name,
-  title: name,
-  isDefault: false,
-  presence,
-})
 const turn = (id: string, text: string): Turn => ({ id, text, voice: 'response', state: 'settled' })
 
 describe('a question sent', () => {
@@ -62,7 +50,7 @@ describe('a question sent', () => {
 
     one.state.draft.send('what is this about')
 
-    expect(one.requests).toEqual([['what is this about', '']])
+    expect(one.requests).toEqual(['what is this about'])
   })
 
   it('empties the composer, so the question is not sent twice', () => {
@@ -76,20 +64,20 @@ describe('a question sent', () => {
 })
 
 describe('a line about work pressed', () => {
-  it('opens the place that call was on', () => {
-    const one = tab({ call: { path: 'Source.pdf', range: { start: 10, end: 14 } } })
+  it('opens the file that call worked on', () => {
+    const one = tab({ call: 'Source.pdf' })
 
     one.state.draft.openTurnSource(turn('call', 'read Source.pdf'))
 
-    expect(one.opened).toEqual([['Source.pdf', [{ start: 10, end: 14 }]]])
+    expect(one.files).toEqual(['Source.pdf'])
   })
 
-  it('opens nothing for a line that names no place', () => {
+  it('opens nothing for a line that names no file', () => {
     const one = tab()
 
     one.state.draft.openTurnSource(turn('turn-1', 'a sentence'))
 
-    expect(one.opened).toEqual([])
+    expect(one.files).toEqual([])
   })
 })
 
@@ -170,104 +158,6 @@ describe('a turn of an answer', () => {
     await nextTick()
 
     expect(one.state.addresses.turns.value[0]?.unresolved).toEqual(['name://Nowhere'])
-  })
-})
-
-describe('agent model selection and settings', () => {
-  it('offers nothing where the settings list nothing', () => {
-    const one = tab()
-    expect(one.state.models.modelOptions.value).toEqual([])
-    expect(one.state.models.selectedAgentId.value).toBe('')
-    expect(one.state.models.selectedModelId.value).toBe('')
-  })
-
-  it('selects the agent and model without mutating settings', () => {
-    const fake = createConversation()
-    const content: [readonly string[], unknown][] = []
-    const state = useAgentConversation(fake.conversation, {
-      openFileAt: () => undefined,
-      openFileAdjacent: () => undefined,
-      resolveLinks: async () => [],
-      unreachable: () => '',
-      settings: {
-        writeSetting: async (path, value) => {
-          content.push([path, value])
-        },
-      },
-    })
-
-    state.models.selectModel({
-      agentId: 'zeta',
-      agentTitle: 'Zeta Agent',
-      modelId: 'zeta-small',
-      modelTitle: 'Zeta Small',
-      isAvailable: true,
-    })
-
-    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
-      'zeta',
-      'zeta-small',
-    ])
-    expect(content).toEqual([])
-  })
-
-  it('selects a model without a writeSetting dependency', () => {
-    const one = tab()
-    one.state.models.selectModel({
-      agentId: 'zeta',
-      agentTitle: 'Zeta Agent',
-      modelId: 'zeta-small',
-      modelTitle: 'Zeta Small',
-      isAvailable: true,
-    })
-
-    expect(one.state.models.selectedModelId.value).toBe('zeta-small')
-  })
-
-  it('offers the models the settings list, with the core title and default', async () => {
-    const fake = createConversation()
-    const models = shallowRef<readonly Model[]>([])
-    const state = useAgentConversation(fake.conversation, {
-      openFileAt: () => undefined,
-      openFileAdjacent: () => undefined,
-      resolveLinks: async () => [],
-      unreachable: () => '',
-      settings: {
-        getSetting: (path) => (path[2] === 'use' ? 'zeta' : undefined),
-        getModelsAt: (categoryPath) =>
-          models.value.filter((one) => one.nameAt.join('.') === categoryPath.join('.')),
-      },
-    })
-    expect(state.models.selectedAgentId.value).toBe('')
-
-    models.value = [
-      { ...items(['app', 'agent', 'use'], 'zeta', 'present'), title: 'Zeta Agent' },
-      items(['app', 'agent', 'use'], 'omega', 'not fetched'),
-      {
-        ...items(['app', 'agent', 'zeta', 'model'], 'zeta-small', 'nothing to fetch'),
-        title: 'Zeta Small',
-      },
-      {
-        ...items(['app', 'agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch'),
-        title: 'Zeta Large',
-        isDefault: true,
-      },
-    ]
-    await nextTick()
-
-    const optionsList = state.models.modelOptions.value.map((o) => [
-      o.agentTitle,
-      o.modelId,
-      o.modelTitle,
-    ])
-    expect(optionsList).toEqual([
-      ['Zeta Agent', 'zeta-small', 'Zeta Small'],
-      ['Zeta Agent', 'zeta-large', 'Zeta Large'],
-    ])
-    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
-      'zeta',
-      'zeta-large',
-    ])
   })
 })
 

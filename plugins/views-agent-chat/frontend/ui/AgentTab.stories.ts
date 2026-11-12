@@ -1,6 +1,6 @@
 /**
  * An agent tab as the plugin's own kind opens it: the talk so far, the composer
- * under it, and the window and agent behind it made up for the story.
+ * under it, and the window behind it made up for the story.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -11,11 +11,6 @@ import AgentTab from './AgentTab.vue'
 import { createAgentKind } from '../model/kind'
 import { createHost } from '../fixtures'
 import { useAgentConversation } from '../model/useAgentConversation'
-
-const getStoryModels = (path: readonly string[]) =>
-  path.join('/') === 'app/agent/use'
-    ? [{ name: 'orchard', title: 'Orchard', isDefault: true, presence: 'present' as const }]
-    : [{ name: 'main', title: 'Main', isDefault: true, presence: 'present' as const }]
 
 const createTab = (turn: readonly Turn[]) =>
   defineComponent({
@@ -31,14 +26,10 @@ const createTab = (turn: readonly Turn[]) =>
             ask: async (text) => {
               request.push(text)
             },
-            getSourceLocation: () => null,
+            getSourcePath: () => null,
             stop: () => undefined,
-            finish: () => undefined,
           }
-          return useAgentConversation(conversation, {
-            ...deps,
-            settings: { ...deps.settings, getModelsAt: getStoryModels },
-          })
+          return useAgentConversation(conversation, deps)
         },
         AgentTab,
       )
@@ -93,5 +84,29 @@ export const Typing: Story = {
     const field = await within(canvasElement).findByPlaceholderText('Ask about the vault')
     await userEvent.type(field, 'hello')
     await waitFor(() => expect((field as HTMLTextAreaElement).value).toBe('hello'))
+  },
+}
+
+/** A question asked while the plugin has no agent row: the failed turn offers the settings. */
+export const NoAgent: Story = {
+  render: () => ({
+    components: {
+      Tab: createTab([
+        { id: 'a', voice: 'prompt', text: 'Which pear trees flowered first?' },
+        {
+          id: 'b',
+          voice: 'response',
+          text: 'No agent is set up.',
+          state: 'failed',
+          offersSettings: true,
+        },
+      ]),
+    },
+    template: '<Tab />',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('No agent is set up.')).toBeTruthy())
+    await expect(canvas.getByRole('button', { name: 'Open settings' })).toBeVisible()
   },
 }

@@ -18,22 +18,22 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
     turns,
     isAnswerPending: ref(false),
     ask: async () => undefined,
-    getSourceLocation: () => null,
+    getSourcePath: () => null,
     stop: () => undefined,
-    finish: () => undefined,
   }
   const requests: string[] = []
   const openedCalls: [string, readonly TextRange[]][] = []
   const adjacentItems: string[] = []
   const resolveLinks = createLinkResolver(notes)
   const state = useAgentConversation(conversation, {
+    openFile: () => undefined,
     openFileAt: (path, ...spans) => openedCalls.push([path, spans]),
     openFileAdjacent: (path) => adjacentItems.push(path),
     resolveLinks: (text) => {
       requests.push(text)
       return resolveLinks(text)
     },
-    unreachable: () => '',
+    openSettings: () => undefined,
   })
   return { state, turns, requests, opened: openedCalls, adjacentItems }
 }

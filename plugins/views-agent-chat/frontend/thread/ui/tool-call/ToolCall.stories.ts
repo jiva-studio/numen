@@ -64,20 +64,3 @@ export const AwkwardText: Story = {
   },
 }
 
-/**
- * A call carrying the text of a note is written for minutes, and how much has
- * arrived is the only thing that moves while it is.
- */
-export const BeingWritten: Story = {
-  args: {
-    tool: 'Create a note',
-    subject: "Bram Doyle's warning",
-    aside: '12 015 characters',
-    isWorking: true,
-  },
-  play: async ({ canvasElement }) => {
-    const line = canvasElement.querySelector('.tool-call')
-    await expect(line).toHaveTextContent("Bram Doyle's warning")
-    await expect(line).toHaveTextContent('12 015 characters')
-  },
-}

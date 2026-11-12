@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
 import Agent from './Agent.vue'
-import type { AgentModelOption } from '../message-composer'
 import type { Turn } from '../types'
 import { WORDS as words } from '../words'
 import type { AgentTabState } from '../model/useAgentConversation'
@@ -28,14 +27,6 @@ function onOpenTurn(turn: Turn) {
 function onFollowLink(turn: Turn, href: string, press: MouseEvent) {
   props.state.addresses.followLink(turn, href, press)
 }
-
-function onSelectModel(option: AgentModelOption) {
-  props.state.models.selectModel(option)
-}
-
-function onSelectReasoning(id: string) {
-  props.state.reasoning.selectReasoningLevel(id)
-}
 </script>
 
 <template>
@@ -46,28 +37,36 @@ function onSelectReasoning(id: string) {
     :placeholder="words.ask"
     :send-label="words.send"
     :stop-label="words.stop"
-    :options="props.state.models.modelOptions.value"
-    :selected-agent-id="props.state.models.selectedAgentId.value"
-    :selected-model-id="props.state.models.selectedModelId.value"
-    :reasoning-levels="props.state.reasoning.reasoningLevels.value"
-    :selected-reasoning-id="props.state.reasoning.selectedReasoningId.value"
-    :reasoning-name="words.reasoning"
-    :is-agent-missing="props.state.agent.isAgentMissing.value"
-    :no-agent-label="words.noAgent"
-    :no-agent-message="words.noAgentMessage"
-    :open-settings-label="words.openSettings"
     @update:model-value="onUpdateQuestion"
     @submit="onSubmit"
     @stop="onStop"
     @open="onOpenTurn"
     @follow="onFollowLink"
-    @select-model="onSelectModel"
-    @select-reasoning="onSelectReasoning"
-    @open-settings="props.state.agent.openSettings()"
   >
-    <template #silence>{{ props.state.agent.unreachable() || words.noTranscript }}</template>
+    <template #silence>{{ words.noTranscript }}</template>
     <template #failure="{ turn }">
-      {{ turn.voice === 'prompt' ? words.unsent : words.stopped }}
+      <button
+        v-if="turn.offersSettings"
+        type="button"
+        class="agent-tab__settings cursor-pointer"
+        @click="props.state.openSettings()"
+      >
+        {{ words.openSettings }}
+      </button>
+      <template v-else>{{ turn.voice === 'prompt' ? words.unsent : words.stopped }}</template>
     </template>
   </Agent>
 </template>
+
+<style scoped>
+.agent-tab__settings {
+  --underline-offset: 0.2em;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: var(--underline-offset);
+}
+</style>
