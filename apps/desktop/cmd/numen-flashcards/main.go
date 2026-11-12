@@ -74,7 +74,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	api := makeWindowAPI(cfg)
-	started, err := container.OpenShell(cfg, ctx, platform.TargetFlashcards, api, os.Stderr, appName, notifyUser)
+	started, err := container.OpenShell(cfg, ctx, platform.TargetFlashcards, api, container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser})
 	if err != nil {
 		return err
 	}

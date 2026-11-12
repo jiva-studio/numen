@@ -40,7 +40,11 @@ func TestAWindowSeesTheItemAFrontendReportsAndItsClear(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	t.Cleanup(func() {
+		if err := stream.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	if !stream.Receive() || len(stream.Msg().GetItems()) != 1 {
 		t.Fatalf("first list = %v, %v, want the start item", stream.Msg(), stream.Err())
 	}

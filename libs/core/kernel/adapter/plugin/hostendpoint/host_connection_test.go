@@ -99,13 +99,12 @@ type received struct {
 	failure *v1.CallFailure
 }
 
-func call(ctx context.Context, client numenv1connect.HostConnectionServiceClient, request *v1.HostConnectionServiceCallRequest) (received, error) {
+func call(ctx context.Context, client numenv1connect.HostConnectionServiceClient, request *v1.HostConnectionServiceCallRequest) (got received, err error) {
 	stream, err := client.Call(ctx, connect.NewRequest(request))
 	if err != nil {
 		return received{}, err
 	}
-	defer func() { _ = stream.Close() }()
-	var got received
+	defer func() { err = errors.Join(err, stream.Close()) }()
 	for stream.Receive() {
 		switch frame := stream.Msg().GetFrame().(type) {
 		case *v1.HostConnectionServiceCallResponse_Data:
@@ -233,7 +232,7 @@ func TestEveryErrorCodeOfTheSchemaIsProducedFromAFailure(t *testing.T) {
 		v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED:    &connection.AllFailedError{},
 		v1.CallErrorCode_CALL_ERROR_CODE_STOPPED:       &connection.StoppedError{},
 	}, func(failure error) v1.CallErrorCode {
-		served, _ := writeCallFailure(context.Background(), failure)
+		served, _ := writeCallFailure(t.Context(), failure)
 		return served.GetError()
 	})
 }

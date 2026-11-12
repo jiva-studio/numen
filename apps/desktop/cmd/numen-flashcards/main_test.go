@@ -105,7 +105,7 @@ func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
 	addVaultOf(t, cfg, "One")
 	api := makeWindowAPI(cfg)
 
-	started, err := container.OpenShell(cfg, t.Context(), platform.TargetFlashcards, api, io.Discard, "flashcards", func(string) {})
+	started, err := container.OpenShell(cfg, t.Context(), platform.TargetFlashcards, api, container.ShellLog{Out: io.Discard, Label: "flashcards", Notify: func(string) {}})
 	if err != nil {
 		t.Fatal(err)
 	}

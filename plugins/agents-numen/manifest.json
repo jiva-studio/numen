@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.numen",
   "name": "Numen Agent",
-  "version": "2026.11.13",
+  "version": "2026.11.11",
   "protocol": 1,
   "description": "Built-in AI assistant that chats through a connection to OpenRouter, OpenAI or an OpenAI-compatible server",
   "targets": ["desktop.editor", "desktop.flashcards"],

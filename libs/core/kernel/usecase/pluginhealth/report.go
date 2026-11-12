@@ -64,26 +64,32 @@ func (u *Report) checkAction(pluginID string, action *plugin.HealthAction) (*plu
 	}
 	checked := *action
 	checked.Values = maps.Clone(action.Values)
-	var issues []error
-	if strings.HasPrefix(checked.Command, "app:") {
-		if checked.Command == plugin.AppCommandOpenSettings {
-			if checked.Values == nil {
-				checked.Values = map[string]string{}
-			}
-			checked.Values[plugin.OpenSettingsPlugin] = pluginID
-		}
-		issues = manifest.ListAppValueIssues(checked.Command, checked.Values)
-	} else {
-		command, isOwn := u.findOwnCommand(pluginID, checked.Command)
-		if !isOwn {
-			return nil, fmt.Errorf("%w: the action names %q, which is neither an app: command nor a command of the plugin", plugin.ErrInvalidHealth, checked.Command)
-		}
-		issues = manifest.ListDeclaredValueIssues(command, checked.Command, checked.Values)
+	issues, err := u.listActionIssues(pluginID, &checked)
+	if err != nil {
+		return nil, err
 	}
 	if len(issues) > 0 {
 		return nil, fmt.Errorf("%w: %w", plugin.ErrInvalidHealth, errors.Join(issues...))
 	}
 	return &checked, nil
+}
+
+// listActionIssues gives an app:open-settings action the plugin it opens the settings of.
+func (u *Report) listActionIssues(pluginID string, checked *plugin.HealthAction) ([]error, error) {
+	if !strings.HasPrefix(checked.Command, "app:") {
+		command, isOwn := u.findOwnCommand(pluginID, checked.Command)
+		if !isOwn {
+			return nil, fmt.Errorf("%w: the action names %q, which is neither an app: command nor a command of the plugin", plugin.ErrInvalidHealth, checked.Command)
+		}
+		return manifest.ListDeclaredValueIssues(command, checked.Command, checked.Values), nil
+	}
+	if checked.Command == plugin.AppCommandOpenSettings {
+		if checked.Values == nil {
+			checked.Values = map[string]string{}
+		}
+		checked.Values[plugin.OpenSettingsPlugin] = pluginID
+	}
+	return manifest.ListAppValueIssues(checked.Command, checked.Values), nil
 }
 
 func (u *Report) findOwnCommand(pluginID, fullID string) (manifest.Command, bool) {
