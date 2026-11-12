@@ -110,7 +110,9 @@ func (w *Worker) openReading(
 	return w.reading(ctx, w.source, v, rebuild)
 }
 
-func (w *Worker) hasSource() bool { return w.source != nil }
+// hasSource reports whether a source is there to index for. A source that has not described itself is not
+// there yet: the change of its description wakes the pass that indexes for it.
+func (w *Worker) hasSource() bool { return w.source != nil && w.source.Describe().IsDescribed() }
 
 func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }
 

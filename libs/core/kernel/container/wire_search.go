@@ -203,8 +203,14 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 	c.PluginHost.Endpoint.SetPluginSearch(access.Access())
 }
 
+// searchSources opens the search source of a window. A source that cannot describe itself yet is opened all
+// the same: the tasks show why, and the source joins search and indexing once a configuration of its plugin
+// lets it describe itself.
 func searchSources(c searchWiring, ctx context.Context, tasks *run.Tasks) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	source, closeSource, err := searchOpenSource(c, ctx, run.NewModelReadReporter(tasks))
+	onReadError := run.NewModelReadReporter(tasks)
+	source, closeSource, err := searchOpenSource(c, ctx, func(ctx context.Context, host sourcebridge.Host) (*sourcebridge.Source, error) {
+		return sourcebridge.OpenWatching(ctx, host, onReadError)
+	})
 	if err != nil {
 		return nil, nil, func() error { return nil }, err
 	}
@@ -212,25 +218,25 @@ func searchSources(c searchWiring, ctx context.Context, tasks *run.Tasks) (index
 }
 
 func searchSource(c searchWiring, ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
-	return searchOpenSource(c, ctx, nil)
+	return searchOpenSource(c, ctx, sourcebridge.Open)
 }
 
-func searchOpenSource(c searchWiring, ctx context.Context, onReadError func(error)) (searchsourceport.WatchedSource, func() error, error) {
+// sourceOpener opens the search source over the plugin host.
+type sourceOpener func(ctx context.Context, host sourcebridge.Host) (*sourcebridge.Source, error)
+
+func searchOpenSource(c searchWiring, ctx context.Context, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
 	if _, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource); errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
 	} else if err != nil {
 		return nil, nil, err
 	}
-	return openSource(c, ctx, c.RunningHost, onReadError)
+	return openSource(c, ctx, c.RunningHost, open)
 }
 
-func openSource(c searchWiring, ctx context.Context, host *PluginHost, onReadError func(error)) (searchsourceport.WatchedSource, func() error, error) {
-	opened, err := sourcebridge.Open(ctx, host.Runtime)
+func openSource(c searchWiring, ctx context.Context, host *PluginHost, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
+	opened, err := open(ctx, host.Runtime)
 	if err != nil {
 		return nil, nil, err
-	}
-	if onReadError != nil {
-		opened.OnDescriptionReadError(onReadError)
 	}
 	c.Chunks.Follow(opened, opened.OnDescriptionChange)
 	return opened, opened.Close, nil

@@ -21,13 +21,16 @@ func NewFitIndex(index searchsourceport.VectorIndex, errorHandler func(error)) F
 	return FitIndex{index: index, errorHandler: errorHandler}
 }
 
-// Execute fits the index to the description of the source. Without a source the
-// index is left as it is and search answers by words.
+// Execute fits the index to the description of the source. Without a source, or with one that has not
+// described itself, the index is left as it is and search answers by words.
 func (u FitIndex) Execute(ctx context.Context, source searchsourceport.Source) error {
 	if source == nil {
 		return nil
 	}
 	described := source.Describe()
+	if !described.IsDescribed() {
+		return nil
+	}
 	if err := u.index.FitVectors(ctx, described.Width, described.Recipe()); err != nil {
 		return err
 	}

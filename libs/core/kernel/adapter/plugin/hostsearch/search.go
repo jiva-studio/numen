@@ -69,11 +69,25 @@ func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q plugin.Pas
 	})
 }
 
-func (s Search) getRecipe() (string, error) {
+// describe returns the description of the search source in use, and ErrNoModel without a source or for a
+// source that has not described itself.
+func (s Search) describe() (searchsource.Description, error) {
 	if s.Source == nil {
-		return "", plugin.ErrNoModel
+		return searchsource.Description{}, plugin.ErrNoModel
 	}
-	return s.Source.Describe().Recipe(), nil
+	described := s.Source.Describe()
+	if !described.IsDescribed() {
+		return searchsource.Description{}, plugin.ErrNoModel
+	}
+	return described, nil
+}
+
+func (s Search) getRecipe() (string, error) {
+	described, err := s.describe()
+	if err != nil {
+		return "", err
+	}
+	return described.Recipe(), nil
 }
 
 func (s Search) checkRecipe(recipe string) error {
@@ -89,24 +103,26 @@ func (s Search) checkRecipe(recipe string) error {
 
 // GetEmbeddingState reads the search source in use and the progress of the vault under it from the index.
 func (s Search) GetEmbeddingState(ctx context.Context, v domain.Vault) (plugin.EmbeddingState, error) {
-	if s.Source == nil {
-		return plugin.EmbeddingState{}, plugin.ErrNoModel
+	described, err := s.describe()
+	if err != nil {
+		return plugin.EmbeddingState{}, err
 	}
-	return s.Policy.GetEmbeddingState(ctx, v, s.Progress, s.Source.Describe())
+	return s.Policy.GetEmbeddingState(ctx, v, s.Progress, described)
 }
 
 // GetIndexStats reads what the index holds for the vault and the space it takes, with the search source in use.
 func (s Search) GetIndexStats(ctx context.Context, v domain.Vault) (plugin.IndexStats, error) {
-	if s.Source == nil {
-		return plugin.IndexStats{}, plugin.ErrNoModel
+	described, err := s.describe()
+	if err != nil {
+		return plugin.IndexStats{}, err
 	}
-	return s.Stats.Execute(ctx, v, s.Source.Describe())
+	return s.Stats.Execute(ctx, v, described)
 }
 
 // EmbedTexts embeds the texts as queries of the search source in use. More than MaxEmbeddedTexts texts, or
 // a text longer than MaxEmbeddedBytes, returns ErrLimitExceeded.
 func (s Search) EmbedTexts(ctx context.Context, texts []string) (plugin.EmbeddedTexts, error) {
-	if s.Source == nil || s.Queries == nil {
+	if _, err := s.describe(); err != nil || s.Queries == nil {
 		return plugin.EmbeddedTexts{}, plugin.ErrNoModel
 	}
 	return s.Queries.EmbedTexts(ctx, s.Source.Describe, texts)

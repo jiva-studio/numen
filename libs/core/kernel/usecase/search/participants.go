@@ -67,9 +67,14 @@ func NewSource(source searchsourceport.Source, enclosing EnclosingPassages) Sour
 	return Source{source: source, enclosing: enclosing}
 }
 
-// Rank returns the passages enclosing the chunks the source answers, in the order of the source.
+// Rank returns the passages enclosing the chunks the source answers, in the order of the source. A source
+// that has not described itself keeps no vectors and answers nothing.
 func (s Source) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error) {
-	place := searchsource.Place{VaultID: v.ID, Recipe: s.source.Describe().Recipe()}
+	described := s.source.Describe()
+	if !described.IsDescribed() {
+		return Ranking{}, nil
+	}
+	place := searchsource.Place{VaultID: v.ID, Recipe: described.Recipe()}
 	matches, err := s.source.SearchPassages(ctx, place, searchsource.Query{
 		Text: q.Text, Kinds: q.Kinds, PathPrefix: q.PathPrefix, Limit: q.Limit, Floor: q.Floor,
 	})
