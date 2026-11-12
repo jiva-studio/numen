@@ -55,7 +55,6 @@ type pluginInstall struct {
 	RunningHost     *PluginHost
 	PluginCatalog   catalog.Config
 	KeyStore        pluginport.KeyStore
-	CredentialsPath func(ctx context.Context) string
 }
 
 // pluginsWiring wires the plugin catalog, plugin host, agent provider and dependencies over the settings and

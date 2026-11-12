@@ -61,8 +61,6 @@ type Config struct {
 
 	KeyStore pluginport.KeyStore
 
-	Credentials pluginport.CredentialsLocator
-
 	ShouldRebuildIndex bool
 
 	SafeMode bool
@@ -223,7 +221,6 @@ func assemble(c Config, texts *TextVersions) pluginsWiring {
 			RunningHost:     c.runningHost(),
 			PluginCatalog:   c.PluginCatalog,
 			KeyStore:        c.KeyStore,
-			CredentialsPath: c.getCredentialsPath(),
 		},
 		settings: settings,
 		search:   search,
@@ -239,11 +236,4 @@ func searchOf(c Config) searchWiring { return plugins(c).search }
 
 func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	return getAgentPrograms(plugins(c), provider, target)
-}
-
-func (c Config) getCredentialsPath() func(ctx context.Context) string {
-	if c.Credentials == nil {
-		return nil
-	}
-	return c.Credentials.GetCredentialsPath
 }

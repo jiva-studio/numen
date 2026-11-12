@@ -195,9 +195,6 @@ func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
 	if _, statErr := os.Stat(credentialsPath(dir)); !errors.Is(statErr, os.ErrNotExist) {
 		t.Errorf("a key was written to the file: %v", statErr)
 	}
-	if got := store.GetCredentialsPath(t.Context()); got != "" {
-		t.Errorf("path = %q for a keychain that refuses, want none", got)
-	}
 }
 
 func TestWithAReachableKeychainTheCredentialsFileIsNotCreated(t *testing.T) {

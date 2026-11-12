@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/zalando/go-keyring"
 
@@ -29,11 +28,6 @@ var (
 // keychains (2560 on Windows). The file keeps the same limit, so a file moved between machines
 // stays valid.
 const maxValueBytes = 2560
-
-// credentialsProbeTimeout bounds the probe of the keychain in GetCredentialsPath, which the core
-// calls with a context that has no deadline. A keychain that does not answer in this time counts as
-// not in use for the file, and the path is empty.
-const credentialsProbeTimeout = 2 * time.Second
 
 // Store keeps keys in the system keychain and, where the machine has none, in a file next to the settings file.
 // A store made by NewStore probes the keychain until it is reached. While it is reachable the file is not read, and a key stored in the keychain is removed from the file.
@@ -170,20 +164,6 @@ func (s *Store) DeleteKey(ctx context.Context, name string) error {
 		return fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 	}
 	return nil
-}
-
-// GetCredentialsPath returns the file the keys are kept in while the keychain cannot be reached,
-// and the empty text while the keychain is in use or does not answer within credentialsProbeTimeout.
-func (s *Store) GetCredentialsPath(ctx context.Context) string {
-	if s.dir == "" {
-		return ""
-	}
-	ctx, cancel := context.WithTimeout(ctx, credentialsProbeTimeout)
-	defer cancel()
-	if isUp, err := s.isKeychainReachable(ctx); err != nil || isUp {
-		return ""
-	}
-	return s.getCredentialsFile()
 }
 
 func (s *Store) isKeychainReachable(ctx context.Context) (bool, error) {
