@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
@@ -373,8 +374,8 @@ func TestNoSecretPassesAsARuntimeVariable(t *testing.T) {
 
 func createFolderOutsideTemp(t *testing.T, name string) string {
 	t.Helper()
-	dir, err := os.MkdirTemp(".", name+"-")
-	if err != nil {
+	dir := name + "-" + strconv.Itoa(os.Getpid())
+	if err := os.Mkdir(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {

@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// getShownType returns the content type a vault file is served under for display in the window. The
-// type comes from the extension and never from the bytes, so a file named for one kind and holding
-// another is not shown as a page or a script.
 func getShownType(ext string) (string, bool) {
 	shownTypes := map[string]string{
 		".png":  "image/png",
