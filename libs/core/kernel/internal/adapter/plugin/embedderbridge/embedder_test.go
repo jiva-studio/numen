@@ -34,14 +34,15 @@ import (
 var _ embeddingport.QueryEmbedder = (*embedderbridge.Embedder)(nil)
 
 type mockEmbeddingServer struct {
-	getModelCalls atomic.Int32
-	modelName     atomic.Value
-	dimensions    atomic.Int32
-	floorHint     atomic.Value
-	minChunk      atomic.Int32
-	chunkTokens   atomic.Int32
-	handling      atomic.Value
-	failRead      atomic.Bool
+	getModelCalls    atomic.Int32
+	modelName        atomic.Value
+	dimensions       atomic.Int32
+	floorHint        atomic.Value
+	minChunk         atomic.Int32
+	chunkTokens      atomic.Int32
+	handling         atomic.Value
+	failRead         atomic.Bool
+	failPrecondition atomic.Bool
 
 	mu    sync.Mutex
 	roles []v1.EmbedRole
@@ -52,6 +53,9 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	_ *connect.Request[v1.GetEmbeddingModelRequest],
 ) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
 	s.getModelCalls.Add(1)
+	if s.failPrecondition.Load() {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("no connection serves the operation"))
+	}
 	if s.failRead.Load() {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("the model is not available"))
 	}

@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
-// A failed read of the embedding model is listed as a task that carries the failure as its reason.
-func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithItsReason(t *testing.T) {
+// A failed read of the embedding model is listed as a task with a fixed reason, not the text of the failure.
+func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithAFixedReason(t *testing.T) {
 	tasks := run.NewTasks()
 
 	run.NewModelReadReporter(tasks)(errors.New("read model of embedding plugin md.numen.embeddings: unavailable"))
@@ -17,7 +17,7 @@ func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithItsReason(t *testing.T
 	if len(entries) != 1 {
 		t.Fatalf("%d tasks, want 1", len(entries))
 	}
-	if entries[0].Error != "read model of embedding plugin md.numen.embeddings: unavailable" {
+	if entries[0].Error != "The embedding model could not be read. Check the embedding settings." {
 		t.Errorf("the task reason is %q", entries[0].Error)
 	}
 }

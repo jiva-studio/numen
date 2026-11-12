@@ -149,3 +149,26 @@ func TestASuccessfulReadAfterAFailedReadIsReportedWithNoError(t *testing.T) {
 		t.Fatal("the successful read was not reported")
 	}
 }
+
+// A plugin whose settings do not allow the read yet, such as a connection source with no row chosen, is not failing:
+// the read is reported with no error, so no failure is shown.
+func TestAReadThatTheSettingsDoNotAllowYetIsNotReportedAsAFailure(t *testing.T) {
+	host, bridge, mock, _ := openConfigurableEmbedder(t)
+	reports := failureReports(bridge)
+	reads := mock.getModelCalls.Load()
+
+	mock.failPrecondition.Store(true)
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 128); err != nil {
+		t.Fatal(err)
+	}
+	settle(t, bridge, mock, reads)
+
+	select {
+	case err := <-reports:
+		if err != nil {
+			t.Errorf("a read the settings do not allow was reported as %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("the read was not reported")
+	}
+}
