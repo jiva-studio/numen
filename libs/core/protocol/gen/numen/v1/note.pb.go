@@ -3161,13 +3161,7 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"NameSource\x12\x1b\n" +
 	"\x17NAME_SOURCE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17NAME_SOURCE_FRONTMATTER\x10\x01\x12\x18\n" +
-<<<<<<< HEAD
-	"\x14NAME_SOURCE_FILENAME\x10\x022\x8b\n" +
-||||||| e3e949e4d
-	"\x14NAME_SOURCE_FILENAME\x10\x022\xd1\n" +
-=======
-	"\x14NAME_SOURCE_FILENAME\x10\x022\xd4\n" +
->>>>>>> origin/main
+	"\x14NAME_SOURCE_FILENAME\x10\x022\x8e\n" +
 	"\n" +
 	"\vNoteService\x12S\n" +
 	"\x0eGetOpeningNote\x12\x1f.numen.v1.GetOpeningNoteRequest\x1a .numen.v1.GetOpeningNoteResponse\x12Y\n" +
@@ -3260,25 +3254,11 @@ var file_numen_v1_note_proto_goTypes = []any{
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
-<<<<<<< HEAD
-	4,  // 1: numen.v1.GetNeighborhoodResponse.focus:type_name -> numen.v1.Note
-	9,  // 2: numen.v1.GetNeighborhoodResponse.related:type_name -> numen.v1.Neighbor
-	27, // 3: numen.v1.GetNeighborhoodResponse.connections:type_name -> numen.v1.Connection
-	4,  // 4: numen.v1.Neighbor.note:type_name -> numen.v1.Note
-	0,  // 5: numen.v1.Neighbor.relation:type_name -> numen.v1.Relation
-||||||| e3e949e4d
-	4,  // 1: numen.v1.GetNeighborhoodResponse.focus:type_name -> numen.v1.Note
-	9,  // 2: numen.v1.GetNeighborhoodResponse.related:type_name -> numen.v1.Neighbor
-	29, // 3: numen.v1.GetNeighborhoodResponse.connections:type_name -> numen.v1.Connection
-	4,  // 4: numen.v1.Neighbor.note:type_name -> numen.v1.Note
-	0,  // 5: numen.v1.Neighbor.relation:type_name -> numen.v1.Relation
-=======
 	4,  // 1: numen.v1.ListRelatedNotesResponse.focus:type_name -> numen.v1.Note
 	9,  // 2: numen.v1.ListRelatedNotesResponse.related:type_name -> numen.v1.RelatedNote
-	29, // 3: numen.v1.ListRelatedNotesResponse.connections:type_name -> numen.v1.Connection
+	27, // 3: numen.v1.ListRelatedNotesResponse.connections:type_name -> numen.v1.Connection
 	4,  // 4: numen.v1.RelatedNote.note:type_name -> numen.v1.Note
 	0,  // 5: numen.v1.RelatedNote.relation:type_name -> numen.v1.Relation
->>>>>>> origin/main
 	13, // 6: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
 	12, // 7: numen.v1.ResolveAddressesResponse.found:type_name -> numen.v1.TextLink
 	16, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
@@ -3292,7 +3272,6 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	1,  // 16: numen.v1.Link.role:type_name -> numen.v1.Role
 	2,  // 17: numen.v1.Link.marker:type_name -> numen.v1.Marker
 	23, // 18: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.Link
-<<<<<<< HEAD
 	47, // 19: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
 	1,  // 20: numen.v1.ConnectionSide.role:type_name -> numen.v1.Role
 	2,  // 21: numen.v1.ConnectionSide.marker:type_name -> numen.v1.Marker
@@ -3320,7 +3299,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	47, // 43: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
 	50, // 44: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
 	5,  // 45: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
-	7,  // 46: numen.v1.NoteService.GetNeighborhood:input_type -> numen.v1.GetNeighborhoodRequest
+	7,  // 46: numen.v1.NoteService.ListRelatedNotes:input_type -> numen.v1.ListRelatedNotesRequest
 	10, // 47: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
 	14, // 48: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
 	18, // 49: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
@@ -3336,7 +3315,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	43, // 59: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
 	45, // 60: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
 	6,  // 61: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
-	8,  // 62: numen.v1.NoteService.GetNeighborhood:output_type -> numen.v1.GetNeighborhoodResponse
+	8,  // 62: numen.v1.NoteService.ListRelatedNotes:output_type -> numen.v1.ListRelatedNotesResponse
 	11, // 63: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
 	15, // 64: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
 	19, // 65: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
@@ -3356,143 +3335,6 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	45, // [45:45] is the sub-list for extension type_name
 	45, // [45:45] is the sub-list for extension extendee
 	0,  // [0:45] is the sub-list for field type_name
-||||||| e3e949e4d
-	49, // 19: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
-	23, // 20: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.Link
-	49, // 21: numen.v1.WriteLinkResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 22: numen.v1.ConnectionSide.role:type_name -> numen.v1.Role
-	2,  // 23: numen.v1.ConnectionSide.marker:type_name -> numen.v1.Marker
-	1,  // 24: numen.v1.Connection.role:type_name -> numen.v1.Role
-	28, // 25: numen.v1.Connection.first_side:type_name -> numen.v1.ConnectionSide
-	28, // 26: numen.v1.Connection.second_side:type_name -> numen.v1.ConnectionSide
-	29, // 27: numen.v1.GetConnectionResponse.connection:type_name -> numen.v1.Connection
-	49, // 28: numen.v1.GetConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	29, // 29: numen.v1.SaveConnectionRequest.connection:type_name -> numen.v1.Connection
-	49, // 30: numen.v1.SaveConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	49, // 31: numen.v1.RemoveSideResponse.error:type_name -> numen.v1.ErrorCode
-	49, // 32: numen.v1.RemoveConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	28, // 33: numen.v1.JoinNotesRequest.side:type_name -> numen.v1.ConnectionSide
-	49, // 34: numen.v1.JoinNotesResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 35: numen.v1.CreateRelatedNoteRequest.role:type_name -> numen.v1.Role
-	2,  // 36: numen.v1.CreateRelatedNoteRequest.marker:type_name -> numen.v1.Marker
-	49, // 37: numen.v1.CreateRelatedNoteResponse.error:type_name -> numen.v1.ErrorCode
-	4,  // 38: numen.v1.Backlink.from:type_name -> numen.v1.Note
-	1,  // 39: numen.v1.Backlink.role:type_name -> numen.v1.Role
-	1,  // 40: numen.v1.Backlink.source_role:type_name -> numen.v1.Role
-	2,  // 41: numen.v1.Backlink.marker:type_name -> numen.v1.Marker
-	43, // 42: numen.v1.ListBacklinksResponse.backlinks:type_name -> numen.v1.Backlink
-	3,  // 43: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
-	51, // 44: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
-	49, // 45: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
-	52, // 46: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
-	5,  // 47: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
-	7,  // 48: numen.v1.NoteService.GetNeighborhood:input_type -> numen.v1.GetNeighborhoodRequest
-	10, // 49: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
-	14, // 50: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
-	18, // 51: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
-	21, // 52: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
-	24, // 53: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
-	26, // 54: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
-	30, // 55: numen.v1.NoteService.GetConnection:input_type -> numen.v1.GetConnectionRequest
-	32, // 56: numen.v1.NoteService.SaveConnection:input_type -> numen.v1.SaveConnectionRequest
-	34, // 57: numen.v1.NoteService.RemoveSide:input_type -> numen.v1.RemoveSideRequest
-	36, // 58: numen.v1.NoteService.RemoveConnection:input_type -> numen.v1.RemoveConnectionRequest
-	38, // 59: numen.v1.NoteService.JoinNotes:input_type -> numen.v1.JoinNotesRequest
-	40, // 60: numen.v1.NoteService.CreateRelatedNote:input_type -> numen.v1.CreateRelatedNoteRequest
-	42, // 61: numen.v1.NoteService.ListBacklinks:input_type -> numen.v1.ListBacklinksRequest
-	45, // 62: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
-	47, // 63: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
-	6,  // 64: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
-	8,  // 65: numen.v1.NoteService.GetNeighborhood:output_type -> numen.v1.GetNeighborhoodResponse
-	11, // 66: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
-	15, // 67: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
-	19, // 68: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
-	22, // 69: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
-	25, // 70: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
-	27, // 71: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
-	31, // 72: numen.v1.NoteService.GetConnection:output_type -> numen.v1.GetConnectionResponse
-	33, // 73: numen.v1.NoteService.SaveConnection:output_type -> numen.v1.SaveConnectionResponse
-	35, // 74: numen.v1.NoteService.RemoveSide:output_type -> numen.v1.RemoveSideResponse
-	37, // 75: numen.v1.NoteService.RemoveConnection:output_type -> numen.v1.RemoveConnectionResponse
-	39, // 76: numen.v1.NoteService.JoinNotes:output_type -> numen.v1.JoinNotesResponse
-	41, // 77: numen.v1.NoteService.CreateRelatedNote:output_type -> numen.v1.CreateRelatedNoteResponse
-	44, // 78: numen.v1.NoteService.ListBacklinks:output_type -> numen.v1.ListBacklinksResponse
-	46, // 79: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
-	48, // 80: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
-	64, // [64:81] is the sub-list for method output_type
-	47, // [47:64] is the sub-list for method input_type
-	47, // [47:47] is the sub-list for extension type_name
-	47, // [47:47] is the sub-list for extension extendee
-	0,  // [0:47] is the sub-list for field type_name
-=======
-	49, // 19: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
-	23, // 20: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.Link
-	49, // 21: numen.v1.WriteLinkResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 22: numen.v1.ConnectionSide.role:type_name -> numen.v1.Role
-	2,  // 23: numen.v1.ConnectionSide.marker:type_name -> numen.v1.Marker
-	1,  // 24: numen.v1.Connection.role:type_name -> numen.v1.Role
-	28, // 25: numen.v1.Connection.first_side:type_name -> numen.v1.ConnectionSide
-	28, // 26: numen.v1.Connection.second_side:type_name -> numen.v1.ConnectionSide
-	29, // 27: numen.v1.GetConnectionResponse.connection:type_name -> numen.v1.Connection
-	49, // 28: numen.v1.GetConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	29, // 29: numen.v1.SaveConnectionRequest.connection:type_name -> numen.v1.Connection
-	49, // 30: numen.v1.SaveConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	49, // 31: numen.v1.RemoveSideResponse.error:type_name -> numen.v1.ErrorCode
-	49, // 32: numen.v1.RemoveConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	28, // 33: numen.v1.JoinNotesRequest.side:type_name -> numen.v1.ConnectionSide
-	49, // 34: numen.v1.JoinNotesResponse.error:type_name -> numen.v1.ErrorCode
-	1,  // 35: numen.v1.CreateRelatedNoteRequest.role:type_name -> numen.v1.Role
-	2,  // 36: numen.v1.CreateRelatedNoteRequest.marker:type_name -> numen.v1.Marker
-	49, // 37: numen.v1.CreateRelatedNoteResponse.error:type_name -> numen.v1.ErrorCode
-	4,  // 38: numen.v1.Backlink.from:type_name -> numen.v1.Note
-	1,  // 39: numen.v1.Backlink.role:type_name -> numen.v1.Role
-	1,  // 40: numen.v1.Backlink.source_role:type_name -> numen.v1.Role
-	2,  // 41: numen.v1.Backlink.marker:type_name -> numen.v1.Marker
-	43, // 42: numen.v1.ListBacklinksResponse.backlinks:type_name -> numen.v1.Backlink
-	3,  // 43: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
-	51, // 44: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
-	49, // 45: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
-	52, // 46: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
-	5,  // 47: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
-	7,  // 48: numen.v1.NoteService.ListRelatedNotes:input_type -> numen.v1.ListRelatedNotesRequest
-	10, // 49: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
-	14, // 50: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
-	18, // 51: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
-	21, // 52: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
-	24, // 53: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
-	26, // 54: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
-	30, // 55: numen.v1.NoteService.GetConnection:input_type -> numen.v1.GetConnectionRequest
-	32, // 56: numen.v1.NoteService.SaveConnection:input_type -> numen.v1.SaveConnectionRequest
-	34, // 57: numen.v1.NoteService.RemoveSide:input_type -> numen.v1.RemoveSideRequest
-	36, // 58: numen.v1.NoteService.RemoveConnection:input_type -> numen.v1.RemoveConnectionRequest
-	38, // 59: numen.v1.NoteService.JoinNotes:input_type -> numen.v1.JoinNotesRequest
-	40, // 60: numen.v1.NoteService.CreateRelatedNote:input_type -> numen.v1.CreateRelatedNoteRequest
-	42, // 61: numen.v1.NoteService.ListBacklinks:input_type -> numen.v1.ListBacklinksRequest
-	45, // 62: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
-	47, // 63: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
-	6,  // 64: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
-	8,  // 65: numen.v1.NoteService.ListRelatedNotes:output_type -> numen.v1.ListRelatedNotesResponse
-	11, // 66: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
-	15, // 67: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
-	19, // 68: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
-	22, // 69: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
-	25, // 70: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
-	27, // 71: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
-	31, // 72: numen.v1.NoteService.GetConnection:output_type -> numen.v1.GetConnectionResponse
-	33, // 73: numen.v1.NoteService.SaveConnection:output_type -> numen.v1.SaveConnectionResponse
-	35, // 74: numen.v1.NoteService.RemoveSide:output_type -> numen.v1.RemoveSideResponse
-	37, // 75: numen.v1.NoteService.RemoveConnection:output_type -> numen.v1.RemoveConnectionResponse
-	39, // 76: numen.v1.NoteService.JoinNotes:output_type -> numen.v1.JoinNotesResponse
-	41, // 77: numen.v1.NoteService.CreateRelatedNote:output_type -> numen.v1.CreateRelatedNoteResponse
-	44, // 78: numen.v1.NoteService.ListBacklinks:output_type -> numen.v1.ListBacklinksResponse
-	46, // 79: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
-	48, // 80: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
-	64, // [64:81] is the sub-list for method output_type
-	47, // [47:64] is the sub-list for method input_type
-	47, // [47:47] is the sub-list for extension type_name
-	47, // [47:47] is the sub-list for extension extendee
-	0,  // [0:47] is the sub-list for field type_name
->>>>>>> origin/main
 }
 
 func init() { file_numen_v1_note_proto_init() }
