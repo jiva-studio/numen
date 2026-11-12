@@ -152,7 +152,7 @@ func TestTheKeyDoesNotLeaveInTheErrorText(t *testing.T) {
 	}
 }
 
-func TestAReadThatTakesLongerThanTheReadTimeoutFailsOnceAsUnavailable(t *testing.T) {
+func TestAReadLongerThanTheReadTimeoutFailsOnceAsUnavailable(t *testing.T) {
 	s := newSetup(t)
 	s.world.Provider.Block(address)
 

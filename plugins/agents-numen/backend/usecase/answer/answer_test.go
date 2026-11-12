@@ -98,7 +98,7 @@ func TestATaskStopsAtOnceWhileTheSettingsNameNoConnection(t *testing.T) {
 	}
 }
 
-func TestAnAnswerWithoutToolCallsIsDone(t *testing.T) {
+func TestAnAnswerWithoutToolCallsEndsTheTask(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{{Message: conversation.Message{Role: "assistant", Text: "hello"}}}}
 	answerer := newAnswerer(t, chat, &fakeOpener{toolbox: &fakeToolbox{}}, oneRow)
 
@@ -155,7 +155,7 @@ func TestARunThatKeepsCallingToolsStopsAtTheLimitOfSteps(t *testing.T) {
 	}
 }
 
-func TestAnAnswerCutAtTheLengthLimitIsReported(t *testing.T) {
+func TestAnAnswerEndedByTheLengthLimitIsReported(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{{Message: conversation.Message{Role: "assistant", Text: "long"}, IsCut: true}}}
 	answerer := newAnswerer(t, chat, &fakeOpener{toolbox: &fakeToolbox{}}, oneRow)
 

@@ -93,7 +93,7 @@ func normalizeValue(field manifest.ConnectionField, value any) (cleaned any, isS
 		number, err := normalizeNumber(field, value)
 		return number, err == nil, err
 	}
-	return nil, false, newInvalidError("%q has the type %q, which a connection does not take", field.Key, field.Type)
+	return nil, false, newInvalidError("%q has the type %q, which a connection does not support", field.Key, field.Type)
 }
 
 func toFloat(value any) (float64, bool) {

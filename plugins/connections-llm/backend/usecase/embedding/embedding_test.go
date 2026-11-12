@@ -104,7 +104,7 @@ func TestTheWidthOfTheVectorsIsMeasuredWithOneShortText(t *testing.T) {
 	}
 }
 
-func TestTheProfileOfAKnownModelComesFromTheTableWithNoRequest(t *testing.T) {
+func TestTheProfileOfAKnownModelIsReadFromTheTableWithNoRequest(t *testing.T) {
 	g := &gateway{}
 
 	profile, err := newEmbedding(t, g).GetProfile(t.Context(), call("openai", "text-embedding-3-small", "https://api.openai.com/v1/"))
