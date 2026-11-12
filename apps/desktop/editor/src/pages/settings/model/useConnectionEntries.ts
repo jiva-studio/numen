@@ -33,7 +33,13 @@ export function useConnectionEntries(
         return {
           connection,
           type,
-          ...getConnectionUsability(connection, type, getOperations(), USABILITY_WORDS),
+          ...getConnectionUsability(
+            connection,
+            type,
+            getOperations(),
+            USABILITY_WORDS,
+            getConnections().operationTitles.value,
+          ),
         }
       }),
     ),

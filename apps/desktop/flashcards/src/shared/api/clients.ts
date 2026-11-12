@@ -1,6 +1,5 @@
 /** The clients the window talks to the application through, bound once. */
 export {
-  agentService,
   notes,
   connectionCalls,
   pluginService,

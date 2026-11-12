@@ -9,6 +9,7 @@ export type {
   ConnectionInfo,
   ConnectionTypeInfo,
   ConnectionValue,
+  OperationTitles,
   RowOption,
 } from './lib/types'
 export {

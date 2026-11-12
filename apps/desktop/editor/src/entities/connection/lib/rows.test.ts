@@ -17,6 +17,8 @@ const reasons = {
   cannot: (operation: string) => `This type cannot ${operation}`,
 }
 
+const TITLES = { 'llm.embed': 'embed text', 'llm.profile': 'describe a model' }
+
 const type = (overrides: Partial<ConnectionTypeInfo> = {}): ConnectionTypeInfo => ({
   id: 'a.b/x',
   pluginId: 'a.b',
@@ -148,10 +150,9 @@ describe('moveRow', () => {
 
 describe('getConnectionUsability', () => {
   it('finds a complete connection of a type that serves the operations usable', () => {
-    expect(getConnectionUsability(connection(), type(), ['llm.complete'], reasons)).toStrictEqual({
-      isUsable: true,
-      reason: '',
-    })
+    expect(
+      getConnectionUsability(connection(), type(), ['llm.complete'], reasons, TITLES),
+    ).toStrictEqual({ isUsable: true, reason: '' })
   })
 
   it('gives the reason a connection cannot be used', () => {
@@ -161,27 +162,38 @@ describe('getConnectionUsability', () => {
         type({ operations: ['llm.embed'] }),
         ['llm.embed', 'llm.profile'],
         reasons,
+        TITLES,
       ),
     ).toStrictEqual({
       isUsable: false,
-      reason: 'This type cannot llm.profile',
+      reason: 'This type cannot describe a model',
     })
+    expect(
+      getConnectionUsability(connection(), type(), ['llm.complete', 'llm.chat'], reasons, TITLES),
+    ).toStrictEqual({ isUsable: false, reason: 'This type cannot llm.chat' })
     expect(
       getConnectionUsability(
         connection({ isTypeAvailable: false }),
         type(),
         ['llm.complete'],
         reasons,
+        TITLES,
       ),
     ).toStrictEqual({ isUsable: false, reason: 'Type unavailable' })
     expect(
-      getConnectionUsability(connection(), undefined, ['llm.complete'], reasons),
+      getConnectionUsability(connection(), undefined, ['llm.complete'], reasons, TITLES),
     ).toStrictEqual({
       isUsable: false,
       reason: 'Type unavailable',
     })
     expect(
-      getConnectionUsability(connection({ isComplete: false }), type(), ['llm.complete'], reasons),
+      getConnectionUsability(
+        connection({ isComplete: false }),
+        type(),
+        ['llm.complete'],
+        reasons,
+        TITLES,
+      ),
     ).toStrictEqual({ isUsable: false, reason: 'Incomplete' })
   })
 })

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { getAgentUnreachable, getVaultState } from '@/entities/vault'
+import { getVaultState } from '@/entities/vault'
 
 /** What the vault last answered about itself: its identity, its read errors and what the search source says of its index. */
 export function useDisplayVault() {
@@ -8,8 +8,6 @@ export function useDisplayVault() {
     at: ref(''),
     error: ref(''),
     unwatched: ref(''),
-    /** Why an agent cannot be reached, as the vault last answered. */
-    unreachable: ref(''),
     /** What the search source says of its index, as the vault last answered. */
     coverage: ref(''),
   }
@@ -17,10 +15,9 @@ export function useDisplayVault() {
 
 export type DisplayVault = ReturnType<typeof useDisplayVault>
 
-/** Reads the vault and the agent again into the refs, and returns the vault's state. */
+/** Reads the vault again into the refs, and returns the vault's state. */
 export async function askVaultState(vault: DisplayVault) {
-  const [state, agent] = await Promise.all([getVaultState(), getAgentUnreachable()])
-  vault.unreachable.value = agent
+  const state = await getVaultState()
   vault.name.value = state.name
   if (vault.at.value === '') vault.at.value = state.path
   vault.error.value = state.scan.error

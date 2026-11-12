@@ -148,6 +148,7 @@ const render =
           return Promise.resolve(asValue(made))
         }),
         types: ref([SERVICE, SERVER, EMBEDDER]),
+        operationTitles: ref({ 'llm.complete': 'complete text' }),
         listRowOptions: fn(
           (
             connectionId: string,
@@ -287,7 +288,7 @@ export const DimmedConnection: Story = {
     ])
     const embeddings = menu.getByRole('menuitemradio', { name: /Embeddings only/ })
     await expect(embeddings).toBeDisabled()
-    await expect(embeddings).toHaveTextContent('This type cannot llm.complete')
+    await expect(embeddings).toHaveTextContent('This type cannot complete text')
     await expect(menu.getByRole('menuitemradio', { name: /Retired/ })).toHaveTextContent(
       'Type unavailable',
     )
@@ -299,7 +300,7 @@ export const DimmedConnection: Story = {
 export const RowOfAnUnusableConnection: Story = {
   render: render({ rows: [row(EMBED_ONLY.id, 'any')] }),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('This type cannot llm.complete')).toBeVisible()
+    await expect(within(canvasElement).getByText('This type cannot complete text')).toBeVisible()
   },
 }
 

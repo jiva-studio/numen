@@ -1,6 +1,5 @@
 import { createRouterTransport, type ServiceImpl } from '@connectrpc/connect'
 import {
-  AgentService,
   CatalogService,
   CommandService,
   ConnectionCallService,
@@ -25,7 +24,6 @@ import { replaceTransport } from '../transport'
  */
 const SERVICES = {
   vault: VaultService,
-  agentService: AgentService,
   workspace: WorkspaceService,
   files: FileService,
   notes: NoteService,

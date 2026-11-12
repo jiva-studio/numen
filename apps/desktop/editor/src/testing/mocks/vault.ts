@@ -19,7 +19,6 @@ export const vaultAnswers = {
     }),
     watchVaultChanges: changed.stream,
   },
-  agentService: { getAgentState: () => ({ unreachable: '' }) },
   vaultsService: {
     listVaults: () => {
       if (!mockVaultState.listable) throw new Error('the vaults are not there')

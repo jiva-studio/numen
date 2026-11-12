@@ -6,7 +6,6 @@
  * the stored settings.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { MODEL_PRESENCE } from '@numen/core-client'
 import { createLostConnection, installCoreAnswers } from '@numen/core-client/testing'
 import { getSettingAt } from '../lib/settingAt'
 import { createSettingsStore } from './store'
@@ -19,23 +18,10 @@ const words = {
 const answerWith = (text: string, rest: Record<string, unknown> = {}) => ({
   written: text,
   path: '/numen.json',
-  models: [],
   plugins: [],
   app: [],
   ...rest,
 })
-
-const MODELS = [
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: 'opus',
-    title: 'opus',
-    group: '',
-    isDefault: false,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
-    presence: MODEL_PRESENCE.NOTHING_TO_FETCH,
-  },
-]
 
 let restore: (() => void) | undefined
 
@@ -48,7 +34,7 @@ const createStore = (text: string, failure: string | null = null) => {
   const requests: unknown[] = []
   restore = installCoreAnswers({
     settingsService: {
-      getSettings: () => answerWith(text, { models: MODELS }),
+      getSettings: () => answerWith(text),
       writeSettings: (request) => {
         requests.push(request.settings.map((one) => ({ at: one.at, value: one.value })))
         if (failure) throw createLostConnection(failure)
@@ -84,13 +70,11 @@ describe('what remains at a setting', () => {
     })
     const retainedState = createSettingsStore(words, vi.fn())
 
-    expect(retainedState.state.models.value).toStrictEqual([])
     expect(retainedState.state.plugins.value).toStrictEqual([])
     await retainedState.start()
 
     expect(retainedState.read.getSetting(['agent'])).toBeUndefined()
     expect(retainedState.state.path.value).toBe('')
-    expect(retainedState.state.models.value).toStrictEqual([])
     expect(retainedState.state.plugins.value).toStrictEqual([])
   })
 
@@ -156,17 +140,6 @@ describe('what remains at a setting', () => {
 
     expect(store.read.getSetting(['my.plugin', 'autoRun'])).toBe(false)
     expect(store.read.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(false)
-  })
-})
-
-describe('the models a setting offers', () => {
-  it('are the ones read from that setting, and no others', async () => {
-    const { kept } = createStore('{}')
-    await kept.start()
-    expect(
-      kept.read.getModelsAt(['agent', 'claude', 'model']).map((one) => one.name),
-    ).toStrictEqual(['opus'])
-    expect(kept.read.getModelsAt(['agent', 'use'])).toStrictEqual([])
   })
 })
 

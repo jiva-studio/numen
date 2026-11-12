@@ -12,7 +12,7 @@ import { ref, type Component } from 'vue'
 
 import type { Installation } from '../types'
 import SettingsTab from './SettingsTab.vue'
-import type { Model, PluginInfo } from '@/entities/settings'
+import type { PluginInfo } from '@/entities/settings'
 import { SETTINGS } from '@/entities/tab'
 import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 
@@ -65,17 +65,6 @@ export default meta
 type Story = StoryObj
 
 /* The settings. ------------------------------------------------------------ */
-
-/** The program an unconfigured installation uses. */
-const AGENT_USE: Model = {
-  namedAt: ['app', 'agent', 'use'],
-  name: 'claude',
-  title: 'Claude Code',
-  group: '',
-  isDefault: true,
-  writes: [{ at: ['app', 'agent', 'use'], value: '"claude"' }],
-  presence: 'present',
-}
 
 const plugin = (id: string, name: string, description: string): PluginInfo => ({
   id,
@@ -162,7 +151,6 @@ const APP_SETTINGS: Installation['plugin']['app'] = ref([
 const INSTALLED: Installation['plugin']['plugins'] = ref(PLUGINS)
 
 const INSTALLATION = createInstallation({
-  getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
   write: (edits) => {
     DONE.push(`write ${edits.length}`)
   },

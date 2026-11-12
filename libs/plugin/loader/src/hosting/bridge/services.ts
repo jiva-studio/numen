@@ -46,7 +46,6 @@ export function createWindowServiceBridge(
 ): ContextWindowHost {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
-    getAgent: () => deps.getAgent?.(),
     getCommands: () => deps.getCommands?.(),
     isCommandListed: (command) =>
       (readSlotEntries() ?? []).some(

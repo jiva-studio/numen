@@ -20,7 +20,6 @@ const SETTINGS_KEYS = [
   'getConfirmedSetting',
   'isPending',
   'isRequested',
-  'getModels',
   'getPlatform',
   'write',
   'file',
@@ -30,6 +29,7 @@ const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const CONNECTIONS_KEYS = [
   'list',
   'types',
+  'operationTitles',
   'load',
   'create',
   'update',
@@ -55,7 +55,6 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     isPending: () => false,
     isRequested: () => false,
     getPlatform: () => '',
-    getModels: () => [],
     write: fn(),
     file: ref('/numen.json'),
     ...pickOf(overrides, SETTINGS_KEYS),
@@ -78,6 +77,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
   connections: {
     list: ref([]),
     types: ref([]),
+    operationTitles: ref({}),
     load: fn(() => Promise.resolve()),
     create: fn(() => Promise.resolve(asFailure('Not saved.'))),
     update: fn(() => Promise.resolve(asFailure('Not saved.'))),

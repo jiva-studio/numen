@@ -1,12 +1,9 @@
 /**
- * The calls of the core that the plugin host makes for plugins: the agent they ask and the texts
- * they read, and the operations their rows of connections carry out.
+ * The calls of the core that the plugin host makes for plugins: the texts they read, and the
+ * operations their rows of connections carry out.
  */
-import { createAgentPort, createPluginConnections, createPluginTexts } from '@numen/plugin-loader'
-import { agentService, connectionCalls, texts } from '@/shared/api/clients'
-
-/** The port through which the agent is asked and a conversation with it ends. */
-export const agentPort = createAgentPort(agentService)
+import { createPluginConnections, createPluginTexts } from '@numen/plugin-loader'
+import { connectionCalls, texts } from '@/shared/api/clients'
 
 /** The texts of the vault, as the plugin of that id reads them. */
 export const getPluginTexts = (pluginId: string): ReturnType<typeof createPluginTexts> =>

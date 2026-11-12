@@ -12,7 +12,7 @@ import {
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHostDeps } from './types'
-import { STUB_AGENT, STUB_COMPONENT } from '../testing/stubComponent'
+import { STUB_COMPONENT, STUB_CONNECTIONS } from '../testing/stubComponent'
 
 describe('createPluginHost', () => {
   function createMockDeps(): {
@@ -420,7 +420,7 @@ describe('createPluginHost', () => {
     const host = createPluginHost(deps)
     const conversation = defineComponent({
       props: { context: { type: Object, required: true } },
-      setup: (props) => () => h('p', (props.context as { focus: string }).focus),
+      setup: (props) => () => h('p', (props.context as { vault: string }).vault),
     })
     host.lifecycle
       .createContext(
@@ -435,8 +435,8 @@ describe('createPluginHost', () => {
 
     const mounted = host.lifecycle
       .createContext('org.example.sample')
-      .ui.mountView(CONVERSATION, panel, { agent: STUB_AGENT, focus: 'Samples/Physics.md' })
-    expect(panel.textContent).toBe('Samples/Physics.md')
+      .ui.mountView(CONVERSATION, panel, { connections: STUB_CONNECTIONS, vault: 'samples' })
+    expect(panel.textContent).toBe('samples')
 
     mounted.dispose()
     expect(panel.textContent).toBe('')
@@ -458,7 +458,7 @@ describe('createPluginHost', () => {
     const panel = document.createElement('section')
     host.lifecycle
       .createContext('org.example.sample')
-      .ui.mountView(CONVERSATION, panel, { agent: STUB_AGENT, focus: '' })
+      .ui.mountView(CONVERSATION, panel, { connections: STUB_CONNECTIONS })
 
     host.lifecycle.disposePlugin('md.numen.chat')
 
@@ -648,7 +648,7 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createCaller([]).ui.mountView(CONVERSATION, element, { agent: STUB_AGENT, focus: '' }),
+      createCaller([]).ui.mountView(CONVERSATION, element, { connections: STUB_CONNECTIONS }),
     ).not.toThrow()
     await settle()
 

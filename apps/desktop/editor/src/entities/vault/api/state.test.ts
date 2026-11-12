@@ -4,11 +4,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import { getAgentUnreachable, getVaultState, watchVaultChanges } from './state'
+import { getVaultState, watchVaultChanges } from './state'
 
 const request = {
   getVaultState: vi.fn(),
-  getAgentState: vi.fn(),
   watchVaultChanges: vi.fn(),
 }
 
@@ -53,14 +52,6 @@ describe('the state of the vault', () => {
       unwatchedPath: '/zoo/deep',
     })
     expect(state.coverage).toBe('Semantic index not built yet')
-  })
-})
-
-describe('the agent', () => {
-  it('is unreachable for the reason the core gives', async () => {
-    request.getAgentState.mockResolvedValue({ unreachable: 'offline' })
-
-    expect(await getAgentUnreachable()).toBe('offline')
   })
 })
 

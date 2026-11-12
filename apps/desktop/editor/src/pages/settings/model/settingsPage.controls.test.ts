@@ -147,7 +147,7 @@ const create = (timing: Timing) => {
       const body = JSON.stringify(answer)
       const app = declare()
       await new Promise((resolve) => setTimeout(resolve, timing.readTakes))
-      return { written: body, path: '/config/numen.json', models: [], plugins: [], app }
+      return { written: body, path: '/config/numen.json', plugins: [], app }
     }),
     getSyncEnabled: vi.fn(async () => true),
     setSyncEnabled: vi.fn(async () => null),

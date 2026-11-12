@@ -12,9 +12,10 @@ import type {
   ConnectionDraft,
   ConnectionInfo,
   ConnectionTypeInfo,
+  OperationTitles,
   RowOption,
 } from '@/entities/connection'
-import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { Result } from '@/shared/lib/result'
 import type { Component } from 'vue'
@@ -36,9 +37,6 @@ export interface ViewComponent {
 }
 
 export interface InstallationSettings {
-  /**
-   * names one can be set to, and settings written in place.
-   */
   getSetting(at: readonly string[]): JsonValue | undefined
   /** A setting as the vault last answered it, never a value asked for and not yet answered. */
   getConfirmedSetting(at: readonly string[]): JsonValue | undefined
@@ -49,7 +47,6 @@ export interface InstallationSettings {
    * request until the read that carries it is taken.
    */
   isRequested(at: readonly string[]): boolean
-  getModels(at: readonly string[]): readonly Model[]
   getPlatform(): string
   write(content: readonly SettingEdit[]): void
   readonly file: Readonly<Ref<string>>
@@ -96,6 +93,7 @@ interface InstallationPluginFiles {
 export interface InstallationConnections {
   readonly list: Readonly<Ref<readonly ConnectionInfo[]>>
   readonly types: Readonly<Ref<readonly ConnectionTypeInfo[]>>
+  readonly operationTitles: Readonly<Ref<OperationTitles>>
   /** Reads the types and the connections. */
   load(): Promise<void>
   create(draft: ConnectionDraft): Promise<Result<ConnectionInfo, string>>

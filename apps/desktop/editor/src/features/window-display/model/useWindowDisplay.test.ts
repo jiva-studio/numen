@@ -24,13 +24,11 @@ const resolved = {
   path: '/vaults/Physics',
   scan: { isReady: true, error: '', unwatchedPath: '' },
   coverage: '',
-  agentUnreachable: '',
 }
 
 /** What the core says about the open vault and the window, in the values the window reads them as. */
 interface Streams {
   state(): Promise<typeof resolved>
-  agentUnreachable(): Promise<string>
   watchVaultChanges(signal: AbortSignal): AsyncIterable<{
     paths: string[]
     shouldReload: boolean
@@ -105,7 +103,6 @@ const answerFrom = (core: Fake) => {
         }
       },
     },
-    agentService: { getAgentState: async () => ({ unreachable: await core.agentUnreachable() }) },
     workspace: { watchFocus: (_request, context) => core.watchFocus(context.signal) },
     windowService: {
       watchTasks: async function* (_request, context) {
@@ -135,7 +132,6 @@ function fake(overrides: Partial<Fake> = {}): Fake {
   return {
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => resolved,
-    agentUnreachable: async () => '',
     watchVaultChanges: emptyStream,
     watchFocus: emptyStream,
     watchEdits: emptyStream,
@@ -722,7 +718,6 @@ describe('a window before it has requested the vault anything', () => {
     expect(window.health.lost.value).toBe('')
     expect(window.vault.error.value).toBe('')
     expect(window.vault.unwatched.value).toBe('')
-    expect(window.vault.unreachable.value).toBe('')
     expect(window.opening.hasNote.value).toBe(false)
     expect(window.opening.path.value).toBe('')
     expect(window.vault.coverage.value).toBe('')

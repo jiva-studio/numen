@@ -1,15 +1,14 @@
 /**
  * The settings file read and written by key path: a value as the type a field
- * needs, and a value or a model written back.
+ * needs, and a value written back.
  */
 import type { JsonValue } from '@/shared/api/json'
-import type { Model, SettingEdit } from './configuration'
+import type { SettingEdit } from './configuration'
 import { write } from './write'
 
 /** Where the settings stand, and where a change to them goes. */
 interface SettingSource {
   getSetting(path: readonly string[]): JsonValue | undefined
-  getModels(path: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
 }
 
@@ -21,12 +20,8 @@ interface SettingFields {
   /** The number at a setting, and the fallback for any other value. */
   getNumber(path: readonly string[]): number | null
   getNumber(path: readonly string[], fallback: number): number
-  /** The models a setting that names one can be set to. */
-  getModels(path: readonly string[]): readonly Model[]
   /** A value written at a setting. */
   setValue(path: readonly string[], value: JsonValue): void
-  /** A model chosen by name: its own writes where it is a preset, else the name itself. */
-  chooseModel(path: readonly string[], name: string): void
 }
 
 /** The source is read on every call, so changes to the source are reflected. */
@@ -45,17 +40,9 @@ export function createSettingFields(getSource: () => SettingSource): SettingFiel
     return typeof value === 'number' ? value : fallback
   }
 
-  const getModels = (path: readonly string[]): readonly Model[] => getSource().getModels(path)
-
   const setValue = (path: readonly string[], value: JsonValue): void => {
     getSource().write([{ at: path, value: write(value) }])
   }
 
-  const chooseModel = (path: readonly string[], name: string): void => {
-    const model = getModels(path).find((one) => one.name === name)
-    if (model) getSource().write(model.writes)
-    else setValue(path, name)
-  }
-
-  return { getString, isEnabled, getNumber, getModels, setValue, chooseModel }
+  return { getString, isEnabled, getNumber, setValue }
 }

@@ -28,7 +28,6 @@ const NO_VAULT: ContextVaultHost = {
 
 const NO_WINDOW: Omit<ContextWindowHost, 'getSlots' | 'getNotices'> = {
   getWorkspace: () => undefined,
-  getAgent: () => undefined,
   getCommands: () => undefined,
   isCommandListed: () => false,
   getWindow: () => undefined,

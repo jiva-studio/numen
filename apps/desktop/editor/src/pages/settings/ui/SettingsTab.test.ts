@@ -13,70 +13,12 @@ import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Select, Switch } from '@numen/ui'
 
-import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
 import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
 import { WORDS as words } from '../words'
-
-/**
- * A model entered in the file by the user, identified by address and not by
- * name.
- */
-const OWN = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
-
-/** The models the vault offers, which is what the settings are grounded in. */
-const MODELS: readonly Model[] = [
-  {
-    namedAt: ['agent', 'use'],
-    name: 'claude',
-    title: 'Claude Code',
-    group: '',
-    isDefault: true,
-    writes: [{ at: ['agent', 'use'], value: '"claude"' }],
-    presence: 'present',
-  },
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: '',
-    title: 'Default model',
-    group: '',
-    isDefault: true,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '""' }],
-    presence: 'nothing to fetch',
-  },
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: 'opus',
-    title: 'opus',
-    group: 'By how large it is',
-    isDefault: false,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
-    presence: 'nothing to fetch',
-  },
-  {
-    namedAt: ['indexing', 'recognition', 'recognise', 'name'],
-    name: 'https://models.example/held/Tiny_rec.onnx',
-    title: 'Tiny, small',
-    group: '',
-    isDefault: true,
-    writes: [
-      { at: ['indexing', 'recognition', 'recognise', 'name'], value: '"held/Tiny_rec.onnx"' },
-    ],
-    presence: 'present',
-  },
-  // address in the place a name would be, which is all it has for one.
-  {
-    namedAt: ['indexing', 'recognition', 'recognise', 'name'],
-    name: OWN,
-    title: OWN,
-    group: 'Named in the settings',
-    isDefault: false,
-    writes: [{ at: ['indexing', 'recognition', 'recognise', 'name'], value: `"${OWN}"` }],
-    presence: 'not fetched',
-  },
-]
 
 /** The settings of the shell as the core declares them and resolves them. */
 const SHELL: readonly PluginSettingInfo[] = [
@@ -115,7 +57,6 @@ const createTab = (
   const content: SettingEdit[] = []
   const installation: Installation = createInstallation({
     getSetting: (path) => at(file, path),
-    getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
     write: (response) => {
       content.push(...response)
     },

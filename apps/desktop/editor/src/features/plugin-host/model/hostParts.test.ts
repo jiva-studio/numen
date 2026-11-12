@@ -5,7 +5,6 @@ import type { Command } from '@/entities/command'
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { createTestTabs } from '@/testing/tabs'
-import { createAgentAsker } from './createAgentAsker'
 import { createNoteKindReader } from './window/createNoteKindReader'
 import { createPluginCatalog } from './createPluginCatalog'
 import { createPluginReports } from './createPluginReports'
@@ -137,39 +136,5 @@ describe('the kind of the note at a path', () => {
 
     expect(await read('talk.md')).toStrictEqual({ noteType: 'link', properties: { media: 'a' } })
     expect(await read('none.md')).toStrictEqual({ noteType: '' })
-  })
-})
-
-describe('a question put to the agent', () => {
-  it('goes to the tab of the kind that takes text', async () => {
-    const receiveText = vi.fn()
-    const windowTabs = createTestTabs()
-    windowTabs.groups.registerKinds([
-      {
-        kind: 'chat',
-        open: () => ({ title: 'Chat' }),
-        pane: {},
-        getTitle: (state: { title: string }) => state.title,
-        events: { receiveText },
-      },
-    ])
-    const ask = createAgentAsker(windowTabs, vi.fn())
-
-    ask('What is a tide?')
-
-    await vi.waitFor(() =>
-      expect(receiveText).toHaveBeenCalledWith(expect.anything(), 'What is a tide?'),
-    )
-  })
-
-  it('is written as an error where no tab takes text', () => {
-    const writeMessage = vi.fn()
-
-    createAgentAsker(createTestTabs(), writeMessage)('What is a tide?')
-
-    expect(writeMessage).toHaveBeenCalledExactlyOnceWith(
-      'The agent chat is not available: its plugin is off or did not start.',
-      'error',
-    )
   })
 })

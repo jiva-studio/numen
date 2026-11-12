@@ -1,7 +1,6 @@
 export * from './types'
 export * from './plugin'
 export * from './workspace'
-export * from './agent'
 export * from './views'
 export * from './testing/index'
 export * from './buffers'

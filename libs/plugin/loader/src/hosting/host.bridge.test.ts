@@ -255,7 +255,6 @@ describe('a tab kind component', () => {
     const openExternal = vi.fn(async () => undefined)
     const relations = { roles: ['child'] }
     const files = { list: vi.fn() }
-    const agent = { getUnreachable: () => '' }
     const buffers = { track: vi.fn() }
     const texts = { readLiveText: vi.fn(), createEdit: vi.fn() }
     const onError = vi.fn()
@@ -277,7 +276,6 @@ describe('a tab kind component', () => {
       ],
       getRelations: () => relations as never,
       getFiles: () => files as never,
-      getAgent: () => agent as never,
       getBuffers: () => buffers as never,
       getTexts: () => texts as never,
       target: 'desktop.editor',
@@ -300,7 +298,6 @@ describe('a tab kind component', () => {
     })
     expect(ctx.vault.relations).toBeDefined()
     expect(ctx.vault.files).toBeDefined()
-    expect(ctx.work.agent).toBeDefined()
     expect(ctx.vault.buffers).toBeDefined()
     expect(ctx.vault.texts).toBeDefined()
 

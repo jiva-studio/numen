@@ -54,7 +54,6 @@ function createInstallationSettings(deps: SettingsTabConfigDeps) {
       rest.read.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.read.isPending(targetPath),
     isRequested: (targetPath: readonly string[]) => rest.read.isRequested(targetPath),
-    getModels: (targetPath: readonly string[]) => rest.read.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.write.writeSettings(content)
       runInBackground(
@@ -110,6 +109,7 @@ function createInstallationConnections({ connections }: SettingsTabConfigDeps) {
   return {
     list: connections.connections,
     types: connections.types,
+    operationTitles: connections.operationTitles,
     load: () => connections.load(),
     create: connections.create,
     update: connections.update,

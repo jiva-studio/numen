@@ -9,7 +9,6 @@ import { WORDS } from '@/shared/ui/words'
 import {
   createSettingsStore,
   SETTINGS_WORDS,
-  type Model,
   type PluginInfo,
   type PluginSettingInfo,
 } from '@/entities/settings'
@@ -35,7 +34,6 @@ const createSettings = (
     getSettings: vi.fn(async () => ({
       written: '{}',
       path: '/vault/.numen/settings.json',
-      models: [],
     })),
     updateSettings: vi.fn(async () => undefined),
     watchSettings: vi.fn(async function* () {
@@ -71,19 +69,6 @@ const createSettings = (
   })
   return { settings, writers, writerFns, handle, core, onSizeChanged }
 }
-
-const model = (overrides: Partial<Model> = {}): Model => ({
-  namedAt: ['indexing', 'embedding', 'model', 'name'],
-  name: 'e5-small-int8',
-  title: 'E5 small',
-  group: 'On this machine',
-  isDefault: false,
-  presence: 'present',
-  writes: [],
-  reasoningLevels: [],
-  defaultReasoning: '',
-  ...overrides,
-})
 
 const SHELL_DECLARATION: readonly PluginSettingInfo[] = [
   {
@@ -261,7 +246,6 @@ describe('the lists the palette offers for a setting', () => {
     settings.rest.state.target.value = {
       indexing: { embedding: { model: { name: 'people/own-model' } } },
     }
-    settings.rest.state.models.value = [model()]
 
     expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
@@ -340,7 +324,6 @@ describe('the settings tab', () => {
       vi.mocked(core.getSettings).mockResolvedValue({
         written: JSON.stringify({ app: { performance: { profile: 'eco' } } }),
         path: '/vault/.numen/settings.json',
-        models: [model()],
       })
       const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
@@ -348,9 +331,6 @@ describe('the settings tab', () => {
       vi.advanceTimersByTime(1500)
 
       expect(installation.settings.getSetting(['app', 'performance', 'profile'])).toBe('eco')
-      expect(
-        installation.settings.getModels(['indexing', 'embedding', 'model', 'name']),
-      ).toStrictEqual([model()])
       expect(core.updateSettings).toHaveBeenCalledWith(edits)
       expect(core.getSettings).toHaveBeenCalledTimes(1)
       settings.close()
@@ -398,7 +378,6 @@ describe('the settings tab', () => {
     vi.mocked(core.getSettings).mockImplementation(async () => ({
       written: '{}',
       path: '/vault/.numen/settings.json',
-      models: [],
       plugins: ocrPlugins,
     }))
     settings.rest.state.plugins.value = ocrPlugins

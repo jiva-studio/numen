@@ -4,6 +4,7 @@
 import type { VaultRelations } from '@numen/plugin-loader'
 import { findErrorCode, asFailure, asValue, type Result } from '@numen/core-client'
 import { notes } from '@/shared/api/clients'
+import { resolveLinks } from './notes'
 import {
   CONNECTION_ROLES,
   findRelationError,
@@ -66,4 +67,5 @@ export const relations: VaultRelations = {
     return error === null ? asValue(answer.path) : asFailure(error)
   },
   listBacklinks: async (path) => mapBacklinks((await notes.listBacklinks({ path })).backlinks),
+  resolveLinks: (text, vault) => resolveLinks('', text, vault),
 }

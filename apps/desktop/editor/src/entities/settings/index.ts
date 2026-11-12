@@ -1,6 +1,5 @@
 /** What the settings file holds, and how the window is drawn from it. */
 export type {
-  Model,
   SettingEdit,
   PluginInfo,
   PluginSettingInfo,

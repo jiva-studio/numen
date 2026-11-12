@@ -11,7 +11,6 @@ import {
   createPluginNotices,
   readManifestSlotEntries,
   requireMountAccess,
-  type AgentHost,
   type BackgroundTaskHost,
   type CommandsHost,
   type Manifest,
@@ -22,6 +21,7 @@ import { createNamedIcon } from '@numen/ui'
 import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/workbench'
 import { getPluginConnections } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
+import { windowRelations } from '@/entities/vault'
 import { TARGET } from '@/shared/lib/window'
 
 /** The commands, the vaults, the window and its background tasks the plugins read. */
@@ -34,14 +34,13 @@ interface ShellServices {
 
 /**
  * What the host is made from: the tabs and notices it registers into, the services it offers (a plugin
- * gets none that is missing), the agent where the window has one, and the platform the plugins read,
- * Windows where none is given, as the frame reports without the Wails runtime.
+ * gets none that is missing), and the platform the plugins read, Windows where none is given, as the
+ * frame reports without the Wails runtime.
  */
 interface ShellHostDeps {
   readonly tabs: Pick<WindowTabs, 'registerKind' | 'closeTab' | 'closePluginTab'>
   readonly notices: NoticeQueue
   readonly services?: Partial<ShellServices>
-  readonly agent?: AgentHost
   readonly getPlatform?: () => WindowPlatform
 }
 
@@ -51,7 +50,7 @@ const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
   )
 
 export function createShellHost(deps: ShellHostDeps) {
-  const { tabs, notices, services = {}, agent, getPlatform = () => 'windows' } = deps
+  const { tabs, notices, services = {}, getPlatform = () => 'windows' } = deps
   const pluginHost = createPluginHost({
     target: TARGET,
     app: createAppInfo({
@@ -72,7 +71,7 @@ export function createShellHost(deps: ShellHostDeps) {
     getVaults: () => services.vaults,
     getWindow: () => services.window,
     getBackgroundTasks: () => services.backgroundTasks,
-    getAgent: () => agent,
+    getRelations: () => windowRelations,
     getConnections: (pluginId) => getPluginConnections(pluginId),
   })
   const { views } = pluginHost.contextHost
