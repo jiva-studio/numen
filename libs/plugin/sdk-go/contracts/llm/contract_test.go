@@ -107,9 +107,9 @@ func TestCompleteReachesTheCompleterAndReturnsItsText(t *testing.T) {
 	a := &assistant{}
 	caller := newCaller(llm.Roles{Completer: a})
 
-	result, err := llm.Complete(t.Context(), caller, &llm.CompleteRequest{Messages: []*llm.Message{{Role: "user", Text: "teh cat"}}}, connection.PriorityInteractive)
+	result, err := llm.Complete(t.Context(), caller, &llm.CompleteRequest{Messages: []*llm.Message{{Role: "user", Text: "a sleepy cat"}}}, connection.PriorityInteractive)
 
-	if err != nil || result.GetText() != "fixed: teh cat" {
+	if err != nil || result.GetText() != "fixed: a sleepy cat" {
 		t.Fatalf("Complete = %v, %v", result, err)
 	}
 	if !slices.Equal(caller.operations, []string{llm.OperationComplete}) || caller.priorities[0] != connection.PriorityInteractive {
