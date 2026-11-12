@@ -167,6 +167,7 @@ watch(
       :frame="frame"
       :viewport="room"
       :node-size="options.nodeSize"
+      :curvature="options.routing.curvature"
       :show-edge-labels="showEdgeLabels"
       :show-pills="showPills"
       :can-reach="canReach"

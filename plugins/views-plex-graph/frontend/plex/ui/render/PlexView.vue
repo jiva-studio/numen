@@ -62,13 +62,14 @@ const renderedNodes = computed(() => {
   return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
 })
 
-const thread = computed(() => getReachThread(props.frame, props.gestureFrom, props.gestureAt))
+const thread = computed(() => getReachThread(props.frame, props.gestureFrom, props.gestureAt, props.curvature))
 
 const pendingThread = computed(() =>
   getPendingThread(props.frame, {
     from: props.pending?.from ?? null,
     position: props.pending?.at ?? null,
     viewport: props.viewport,
+    curvature: props.curvature,
   }),
 )
 
@@ -83,7 +84,7 @@ const dragging = computed(() =>
   getDraggedShape(
     props.frame,
     { relation: props.dropRelation, to: props.draggedAt },
-    { dropName: props.dropName, nodeSize: props.nodeSize },
+    { dropName: props.dropName, nodeSize: props.nodeSize, curvature: props.curvature },
   ),
 )
 

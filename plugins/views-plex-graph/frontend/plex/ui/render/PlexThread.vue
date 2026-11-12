@@ -20,7 +20,7 @@ defineProps<{
 .plex__thread {
   fill: none;
   stroke: var(--numen-edge);
-  stroke-width: var(--numen-edge-width);
+  stroke-width: var(--plex-line);
   stroke-dasharray: var(--numen-thread-dash);
 }
 </style>
