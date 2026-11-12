@@ -1,8 +1,8 @@
 package completion_test
 
 import (
-	"errors"
 	"context"
+	"errors"
 	"testing"
 	"time"
 
