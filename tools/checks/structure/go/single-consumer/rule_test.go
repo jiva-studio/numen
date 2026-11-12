@@ -57,7 +57,9 @@ func getRealDir(t *testing.T, dir string) string {
 	return real
 }
 
-// item is an RPC of the protocol or an export of an SDK, by its node key.
+// item is an RPC of the protocol or an export of an SDK, by its node key. The node keys are
+// "rpc:<Service>.<Method>", "go:<import path>|<Name>" with "<Type>.<Method>" for a method, and
+// "ts:<file>|<Name>" with "<Name>.<member>" for a member.
 type item struct {
 	Key      string `json:"key"`
 	Name     string `json:"name"`
@@ -73,20 +75,19 @@ type use struct {
 }
 
 // usage is what one language reads: the items, the uses and the edges along which the consumers of
-// the second node of a pair become consumers of the first.
+// the second node of a pair become consumers of the first. An edge links a method of an interface of the
+// SDK to each method of an SDK type that implements it: a consumer of the interface method consumes every
+// implementation.
 type usage struct {
 	items []item
 	uses  []use
 	edges [][2]string
 }
 
-// The node keys: "rpc:<Service>.<Method>", "go:<import path>|<Name>" with "<Type>.<Method>" for a
-// method, "ts:<file>|<Name>" with "<Name>.<member>" for a member.
 func getGoKey(pkgPath, name string) string {
 	return "go:" + pkgPath + "|" + name
 }
 
-// getContainerKey is the type of a method or the declaration of a member, or "" for a top-level node.
 func getContainerKey(key string) string {
 	if !strings.HasPrefix(key, "go:") && !strings.HasPrefix(key, "ts:") {
 		return ""
@@ -126,8 +127,6 @@ func isExportedName(name string) bool {
 	return name != "" && unicode.IsUpper([]rune(name)[0])
 }
 
-// getGoTargetKey is the node an object of a use stands for: an RPC of a generated client, or a
-// declaration of the Go SDK at package level or a method; "" for anything else.
 func (l layout) getGoTargetKey(obj types.Object) string {
 	if obj == nil || obj.Pkg() == nil {
 		return ""
@@ -182,8 +181,6 @@ func (l layout) getShortName(pkgPath string) string {
 	return strings.TrimPrefix(pkgPath, l.modulePath)
 }
 
-// collectGoUsage reads the RPCs of the generated clients, the exports of the Go SDK, the uses of both
-// in every package, and the edges from an interface method of the SDK to the methods that answer it.
 func collectGoUsage(pkgs []*packages.Package, l layout) usage {
 	var found usage
 	seenItems := map[string]bool{}
@@ -263,7 +260,6 @@ func (l layout) getPosition(fset *token.FileSet, pos token.Pos) string {
 	return fmt.Sprintf("%s:%d", l.getRelative(position.Filename), position.Line)
 }
 
-// getGoDeclKey is the node of a declaration of a package, or "" for one that names no node.
 func getGoDeclKey(pkg *packages.Package, name *ast.Ident) string {
 	if name == nil || name.Name == "_" {
 		return ""
@@ -320,8 +316,6 @@ func (l layout) listGoUses(pkg *packages.Package, file *ast.File, rel string) []
 	return found
 }
 
-// listDispatchEdges links each method of an interface of the SDK to the methods of the SDK types that
-// answer it: a consumer that calls the interface method calls whichever type stands behind it.
 func (l layout) listDispatchEdges(pkg *packages.Package, seenPairs map[string]bool) [][2]string {
 	var named []*types.Named
 	addScope := func(scope *types.Scope) {
@@ -384,7 +378,6 @@ type tsOutput struct {
 	Files    int         `json:"files"`
 }
 
-// collectTSUsage runs uses.mjs, beside this file, over the TypeScript and Vue sources of the tree.
 func collectTSUsage(t *testing.T, l layout) (usage, tsOutput) {
 	t.Helper()
 	script := filepath.Join(getRealDir(t, load.RepoRootDir), "tools", "checks", "structure", "go", "single-consumer", "uses.mjs")
@@ -406,6 +399,9 @@ func collectTSUsage(t *testing.T, l layout) (usage, tsOutput) {
 	return found, read
 }
 
+// place is what a use in a file counts as. A consumer is a plugin by its folder, an application by its
+// folder, and any other package by its directory; a test, a story, a test kit, a fixture or a template is
+// no consumer.
 type place int
 
 const (
@@ -414,7 +410,6 @@ const (
 	placeConsumer
 )
 
-// isTestPath reports a test, a story, a test kit, a fixture or a template, which is no consumer.
 func isTestPath(rel string) bool {
 	for _, suffix := range []string{"_test.go", ".test.ts", ".spec.ts", ".stories.ts", ".test.mjs", ".d.ts"} {
 		if strings.HasSuffix(rel, suffix) {
@@ -434,8 +429,6 @@ func isWithinDir(rel, dir string) bool {
 	return rel == dir || strings.HasPrefix(rel, dir+"/")
 }
 
-// classify tells whether a use in the file rel counts, passes on, or names a consumer, and which one:
-// a plugin by its folder, an application by its folder, any other package by its directory.
 func (l layout) classify(rel string) (place, string) {
 	if rel == "" || isTestPath(rel) || isWithinDir(rel, l.protocolDir) {
 		return placeNone, ""
@@ -465,7 +458,8 @@ func getItemFile(one item) string {
 	return file
 }
 
-// finding is an item with one consumer, one family of plugins, or none.
+// finding is an item used by nothing outside tests, or only by one plugin or the plugins of one family. A
+// family is the part of a plugin folder before its first dash: agents, engines, views, readers, tools.
 type finding struct {
 	name     string
 	position string
@@ -476,13 +470,11 @@ func (f finding) String() string {
 	return f.position + ": " + f.name + ": " + f.verdict
 }
 
-// getFamily is the part of a plugin folder before its first dash: agents, engines, views, readers, tools.
 func getFamily(plugin string) string {
 	family, _, _ := strings.Cut(plugin, "-")
 	return family
 }
 
-// getConsumers propagates the consumers along the edges until nothing changes.
 func getConsumers(parts []usage, l layout) map[string]map[string]bool {
 	consumers := map[string]map[string]bool{}
 	users := map[string]map[string]bool{}
@@ -541,8 +533,6 @@ func getConsumers(parts []usage, l layout) map[string]map[string]bool {
 	return consumers
 }
 
-// findSingleConsumers lists every item used by nothing outside tests, or only by one plugin or the
-// plugins of one family.
 func findSingleConsumers(parts []usage, l layout) []finding {
 	consumers := getConsumers(parts, l)
 	var found []finding
@@ -586,7 +576,8 @@ func getVerdict(consumers map[string]bool) string {
 	return ""
 }
 
-// allowance is an entry of allowlist.json: an item by its name and why it stays where it is.
+// allowance is an entry of allowlist.json: an item by its name and the reason it is kept in its package. An
+// entry needs a reason of three words or more and must name a current finding.
 type allowance struct {
 	Item   string `json:"item"`
 	Reason string `json:"reason"`
@@ -606,8 +597,6 @@ func readAllowList(t *testing.T) []allowance {
 	return entries
 }
 
-// applyAllowList drops the allowed findings and lists the entries without a reason of three words or
-// more, and those that name no finding.
 func applyAllowList(found []finding, entries []allowance) ([]finding, []string) {
 	allowed := map[string]bool{}
 	var problems []string

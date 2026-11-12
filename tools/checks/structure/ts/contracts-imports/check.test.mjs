@@ -22,11 +22,11 @@ const PLANTED = {
   "apps/desktop/editor/src/headings.ts": "import type { Heading } from '@numen/plugin-sdk/contracts/notes'\n\nexport type Row = Heading\n",
 };
 
-const readPlanted = (files) => findContractImports(Object.keys(files), (file) => files[file]);
+const findPlantedImports = (files) => findContractImports(Object.keys(files), (file) => files[file]);
 
 describe("only plugins and applications import the contracts", () => {
   it("reports every import of a contracts package by a library, in Go, TypeScript and Vue", () => {
-    const { findings, read } = readPlanted(PLANTED);
+    const { findings, read } = findPlantedImports(PLANTED);
     assert.deepEqual(
       findings.map(({ file, line }) => `${file}:${line}`),
       [
@@ -44,7 +44,7 @@ describe("only plugins and applications import the contracts", () => {
   });
 
   it("passes a tree without contracts", () => {
-    const { findings, read } = readPlanted({ "libs/core/kernel/usecase/heading/heading.go": 'package heading\n\nimport "context"\n', "plugins/notes/frontend/index.ts": "export const a = 1\n" });
+    const { findings, read } = findPlantedImports({ "libs/core/kernel/usecase/heading/heading.go": 'package heading\n\nimport "context"\n', "plugins/notes/frontend/index.ts": "export const a = 1\n" });
     assert.deepEqual(findings, []);
     assert.equal(read, 1);
   });
