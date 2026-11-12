@@ -13,21 +13,20 @@ message TaskRequest {
   string prompt = 1;
   // context_notes are the notes the person attached to the prompt.
   repeated ContextNote context_notes = 2;
-  // tool_endpoint is where the agent reaches the tools of the application; absent gives it none.
-  ToolEndpoint tool_endpoint = 3;
+  // conversation names the conversation the turn belongs to: a provider answers the turns of one name in
+  // one session for as long as it keeps the session. Empty is a turn of its own.
+  string conversation = 3;
+  // tool_context is handed to every tool the agent calls as the context of the call, under keys that
+  // start with the id of the plugin that wrote them and a slash.
+  map<string, string> tool_context = 4;
+  // vault_id is the vault the tools the agent calls work, by identity. Empty is the vault the window shows.
+  string vault_id = 5;
 }
 
 message ContextNote {
   string path = 1;
   string title = 2;
   string text = 3;
-}
-
-// ToolEndpoint is an MCP server over HTTP.
-message ToolEndpoint {
-  string url = 1;
-  // token is sent as a bearer token.
-  string token = 2 [debug_redact = true];
 }
 
 // TaskFrame is one data frame of acp.task: one session update.

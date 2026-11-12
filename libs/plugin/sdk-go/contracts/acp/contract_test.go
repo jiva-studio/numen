@@ -69,7 +69,8 @@ func TestATaskStreamsTheSessionUpdatesOfTheTurnAndEndsWithTheStopReason(t *testi
 	stream, err := acp.RunTask(t.Context(), caller, &acp.TaskRequest{
 		Prompt:       "When is the Lisbon trip?",
 		ContextNotes: []*acp.ContextNote{{Path: "Trips/Lisbon.md", Title: "Lisbon"}},
-		ToolEndpoint: &acp.ToolEndpoint{Url: "http://127.0.0.1:4100/mcp", Token: "tools-token"},
+		Conversation: "conversation-7",
+		ToolContext:  map[string]string{"org.example.trips/trip": "lisbon"},
 	}, connection.PriorityInteractive)
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +101,7 @@ func TestATaskStreamsTheSessionUpdatesOfTheTurnAndEndsWithTheStopReason(t *testi
 		t.Errorf("done = %v", stream.Done())
 	}
 	if runner.request.GetPrompt() != "When is the Lisbon trip?" || runner.request.GetContextNotes()[0].GetPath() != "Trips/Lisbon.md" ||
-		runner.request.GetToolEndpoint().GetUrl() != "http://127.0.0.1:4100/mcp" {
+		runner.request.GetConversation() != "conversation-7" || runner.request.GetToolContext()["org.example.trips/trip"] != "lisbon" {
 		t.Errorf("request = %v", runner.request)
 	}
 }
