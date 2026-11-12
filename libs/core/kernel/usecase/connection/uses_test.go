@@ -126,7 +126,7 @@ func TestUpdateReportsAConfigurationThatCannotBeSent(t *testing.T) {
 	if !errors.Is(err, errDisk) {
 		t.Errorf("err = %v, want the failure to send the configuration", err)
 	}
-	if stored := f.listStored(t); stored[0].Name != "Work 2" {
+	if stored := f.listStoredConnections(t); stored[0].Name != "Work 2" {
 		t.Errorf("the change was not kept: %+v", stored)
 	}
 }

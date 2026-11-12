@@ -39,7 +39,7 @@ func (u *Create) Execute(ctx context.Context, request CreateRequest) (Entry, err
 	if err := checkSecretKeys(declared.Declaration, request.Secrets); err != nil {
 		return Entry{}, err
 	}
-	if err := checkRequired(declared.Declaration, fields, request.Secrets); err != nil {
+	if err := checkRequiredFields(declared.Declaration, fields, request.Secrets); err != nil {
 		return Entry{}, err
 	}
 	name, err := normalizeName(request.Name)

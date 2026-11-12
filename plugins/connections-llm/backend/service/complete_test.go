@@ -13,7 +13,7 @@ import (
 )
 
 func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{APIKey: testKey})
+	fake, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
 	temperature := 0.25
 	request := oneUserMessage("fix this line")
 	request.Messages = append([]connection.Message{{Role: "system", Text: "You proofread."}}, request.Messages...)
@@ -55,7 +55,7 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 }
 
 func TestCompleteSendsNoKeyHeaderWhenTheConnectionHasNoKey(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	if _, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", address, "", "qwen2.5:14b"), oneUserMessage("hi")); err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestCompleteSendsNoKeyHeaderWhenTheConnectionHasNoKey(t *testing.T) {
 }
 
 func TestCompleteOmitsTheOptionsTheRequestDoesNotSet(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	if _, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi")); err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestCompleteOmitsTheOptionsTheRequestDoesNotSet(t *testing.T) {
 
 func TestCompleteNamesTheTokenLimitAsTheServiceExpectsIt(t *testing.T) {
 	for typeID, want := range map[string]string{"openai": "max_completion_tokens", "openrouter": "max_tokens", "openai-compatible": "max_tokens"} {
-		fake, address := startFake(t, fakeopenai.Config{})
+		fake, address := startFakeServer(t, fakeopenai.Config{})
 		request := oneUserMessage("hi")
 		request.MaxTokens = 50
 		if _, err := newTestService(t).Complete(newContext(t), newCall(typeID, address, "", "m"), request); err != nil {
@@ -107,7 +107,7 @@ func TestCompleteNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 		"openai": {"gpt-5-mini", func(body map[string]any) bool { return body["reasoning_effort"] == "low" }},
 	}
 	for typeID, one := range cases {
-		fake, address := startFake(t, fakeopenai.Config{})
+		fake, address := startFakeServer(t, fakeopenai.Config{})
 		call := newCall(typeID, address, "", one.model)
 		call.Reasoning = "low"
 		if _, err := newTestService(t).Complete(newContext(t), call, oneUserMessage("hi")); err != nil {
@@ -124,7 +124,7 @@ func TestCompleteNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 }
 
 func TestCompleteStopsOnAReasoningLevelThatTheModelRejects(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	for typeID, model := range map[string]string{"openai-compatible": "qwen2.5:14b", "openai": "gpt-4o-mini"} {
 		call := newCall(typeID, address, "", model)
 		call.Reasoning = "low"
@@ -148,7 +148,7 @@ func TestCompleteStopsOnAnAnswerWithoutChoices(t *testing.T) {
 }
 
 func TestCompleteStopsOnAnUnknownType(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{})
+	_, address := startFakeServer(t, fakeopenai.Config{})
 	_, err := newTestService(t).Complete(newContext(t), newCall("nope", address, "", "m"), oneUserMessage("hi"))
 	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
 }

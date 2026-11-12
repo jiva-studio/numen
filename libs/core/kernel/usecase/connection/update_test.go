@@ -64,7 +64,7 @@ func TestUpdateIsRefusedWhenTheRevisionIsOlderThanTheStoredOne(t *testing.T) {
 	if !errors.Is(err, connectiondomain.ErrStaleRevision) {
 		t.Fatalf("err = %v, want connectiondomain.ErrStaleRevision", err)
 	}
-	stored := f.listStored(t)
+	stored := f.listStoredConnections(t)
 	if stored[0].Name != "First window" || stored[0].Revision != 2 {
 		t.Errorf("stored = %+v", stored[0])
 	}

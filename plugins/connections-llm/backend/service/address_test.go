@@ -8,7 +8,7 @@ import (
 )
 
 func TestAnAddressThatCannotCarryAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
-	fake, _ := startFake(t, fakeopenai.Config{})
+	fake, _ := startFakeServer(t, fakeopenai.Config{})
 	addresses := map[string]string{
 		"not a URL":                       "::not a url",
 		"a scheme other than http":        "ftp://example.com/v1",
@@ -39,7 +39,7 @@ func TestAnAddressWithNoAddressAtAllIsRefused(t *testing.T) {
 }
 
 func TestAKeyIsSentOverPlainHTTPToTheLoopbackOnly(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{APIKey: testKey})
+	_, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
 	if _, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", address, testKey, "m"), oneUserMessage("hi")); err != nil {
 		t.Errorf("a key to a loopback server over http: %v", err)
 	}

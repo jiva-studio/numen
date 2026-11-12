@@ -80,7 +80,7 @@ func (h *hostModels) countProfileCalls() int {
 	return h.profileCalls
 }
 
-func (h *hostModels) listEmbedded() []embedCall {
+func (h *hostModels) listEmbeddedCalls() []embedCall {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return append([]embedCall(nil), h.embedded...)
@@ -117,7 +117,7 @@ func TestAConnectionSourceReportsTheModelOfTheProfileBeforeAnyTextIsEmbedded(t *
 		info.MaxTokens != 8191 || info.Pooling != "cls" {
 		t.Errorf("model = %+v, want the profile of the connection", info)
 	}
-	if got := host.listEmbedded(); len(got) != 0 {
+	if got := host.listEmbeddedCalls(); len(got) != 0 {
 		t.Errorf("%d texts were embedded to know the model, want none", len(got))
 	}
 }
@@ -215,7 +215,7 @@ func TestTextsAreEmbeddedWithThePrefixAndTheRoleOfTheirKind(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := host.listEmbedded()
+	got := host.listEmbeddedCalls()
 	if len(got) != 2 {
 		t.Fatalf("%d requests, want 2", len(got))
 	}

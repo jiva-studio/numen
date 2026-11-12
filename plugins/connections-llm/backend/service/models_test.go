@@ -10,7 +10,7 @@ import (
 )
 
 func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{
+	fake, address := startFakeServer(t, fakeopenai.Config{
 		APIKey:     testKey,
 		IsLabeled: true,
 		Models:     []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}, {ID: "anthropic/claude-3.5-haiku", Name: "Claude 3.5 Haiku"}},
@@ -48,7 +48,7 @@ func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T
 }
 
 func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperation(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{Models: []fakeopenai.Model{{ID: "qwen2.5:14b"}, {ID: "nomic-embed-text"}}})
+	_, address := startFakeServer(t, fakeopenai.Config{Models: []fakeopenai.Model{{ID: "qwen2.5:14b"}, {ID: "nomic-embed-text"}}})
 	for _, operation := range []string{"complete", "embed"} {
 		models, err := newTestService(t).ListModels(newContext(t), newCall("openai-compatible", address, "", ""), operation)
 		if err != nil {
@@ -62,13 +62,13 @@ func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperation(t *testing.T) {
 }
 
 func TestListModelsReportsAKeyTheServiceRejects(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{APIKey: testKey})
+	_, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
 	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, "wrong-key", ""), "complete")
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonKeyRejected})
 }
 
 func TestListModelsReportsAServiceThatIsDown(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Fail("/models", http.StatusServiceUnavailable, "")
 	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, testKey, ""), "complete")
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
@@ -103,7 +103,7 @@ func equalModel(a, b connection.Model) bool {
 }
 
 func TestOpenRouterListsTheTextModelsForChatAsForComplete(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{
+	_, address := startFakeServer(t, fakeopenai.Config{
 		APIKey: testKey, IsLabeled: true,
 		Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}},
 	})

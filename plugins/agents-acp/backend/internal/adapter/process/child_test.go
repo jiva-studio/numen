@@ -10,7 +10,6 @@ import (
 	"testing"
 )
 
-// findProgram returns the path of a program found on PATH, which is not /bin on every system.
 func findProgram(t *testing.T, name string) string {
 	t.Helper()
 	path, err := exec.LookPath(name)

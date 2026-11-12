@@ -28,7 +28,7 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Completion, erro
 	return &Completion{gateway: gateway, limits: requestLimits}, nil
 }
 
-// Complete asks the service for an answer. A level of reasoning the model does not take is a stop.
+// Complete asks the service for an answer. A level of reasoning outside those the model supports is a stop.
 func (c *Completion) Complete(ctx context.Context, call connection.Call, request connection.ProviderCompleteRequest) (connection.CompleteResult, error) {
 	if !reasoning.IsSupported(call.Type, call.Model, call.Reasoning) {
 		return connection.CompleteResult{}, connection.NewStopError(connection.ReasonBadRequest)
@@ -42,8 +42,8 @@ func (c *Completion) Complete(ctx context.Context, call connection.Call, request
 	return result, nil
 }
 
-// Chat asks the service for the next turn and sends its events as they arrive. A level of reasoning the
-// model does not take is a stop.
+// Chat asks the service for the next turn and sends its events as they arrive. A level of reasoning outside the
+// levels the model supports is a stop.
 func (c *Completion) Chat(ctx context.Context, call connection.Call, request connection.ProviderChatRequest, send func(connection.ChatEvent) error) error {
 	if !reasoning.IsSupported(call.Type, call.Model, call.Reasoning) {
 		return connection.NewStopError(connection.ReasonBadRequest)

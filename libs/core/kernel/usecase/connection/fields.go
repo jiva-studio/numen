@@ -157,7 +157,7 @@ func normalizeName(name string) (string, error) {
 	return name, nil
 }
 
-func checkRequired(declared manifest.ConnectionType, fields map[string]any, secrets map[string]string) error {
+func checkRequiredFields(declared manifest.ConnectionType, fields map[string]any, secrets map[string]string) error {
 	for _, field := range declared.Fields {
 		if !field.IsRequired || field.FixedValue != nil {
 			continue

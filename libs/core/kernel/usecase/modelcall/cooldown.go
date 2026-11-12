@@ -79,7 +79,6 @@ type notice struct {
 	reason  connection.FailureReason
 }
 
-// claim reports whether the notice was not given yet and marks it as given.
 func (c *cooldown) claim(one notice) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()

@@ -25,7 +25,7 @@ func TestDeleteRemovesTheConnectionAndItsSecrets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stored := f.listStored(t)
+	stored := f.listStoredConnections(t)
 	if len(stored) != 1 || stored[0].ID != keep.ID {
 		t.Errorf("stored = %+v", stored)
 	}
@@ -52,7 +52,7 @@ func TestDeleteRestoresTheEntryWhenASecretCannotBeRemoved(t *testing.T) {
 	if !errors.Is(err, connectiondomain.ErrKeyStore) {
 		t.Fatalf("err = %v, want connectiondomain.ErrKeyStore", err)
 	}
-	if stored := f.listStored(t); len(stored) != 1 {
+	if stored := f.listStoredConnections(t); len(stored) != 1 {
 		t.Errorf("the connection is gone and its key stays: %+v", stored)
 	}
 }

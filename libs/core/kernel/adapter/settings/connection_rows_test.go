@@ -186,7 +186,7 @@ func TestListUsesReturnsNoUseForAHiddenSetting(t *testing.T) {
 	}
 }
 
-func readStored(t *testing.T, body string) settings.File {
+func readStoredFile(t *testing.T, body string) settings.File {
 	t.Helper()
 	cfg, err := openAt(write(t, body))
 	if err != nil {
@@ -197,7 +197,7 @@ func readStored(t *testing.T, body string) settings.File {
 
 func TestRemoveRowsWritesEverySettingOfRowsWithoutTheRowsOfTheConnection(t *testing.T) {
 	world := newRowsWorld()
-	world.stored = readStored(t, `{
+	world.stored = readStoredFile(t, `{
 		"md.numen.engines.embeddings": {"connections": [{"connection":"c1f0a9e20","model":"text-embedding-3-small"}]},
 		"md.numen.tools.proofreading": {"label":"x","connections": [
 			{"connection":"c1f0a9e20","model":"google/gemini-2.5-flash","reasoning":"low"},
@@ -226,7 +226,7 @@ func TestRemoveRowsWritesEverySettingOfRowsWithoutTheRowsOfTheConnection(t *test
 
 func TestRemoveRowsWritesNothingWhenNoRowNamesTheConnection(t *testing.T) {
 	world := newRowsWorld()
-	world.stored = readStored(t, `{"md.numen.tools.proofreading": {"connections": [{"connection":"c77b01d40","model":"m"}]}}`)
+	world.stored = readStoredFile(t, `{"md.numen.tools.proofreading": {"connections": [{"connection":"c77b01d40","model":"m"}]}}`)
 
 	if err := world.rows().RemoveRows(workID); err != nil {
 		t.Fatal(err)
@@ -239,7 +239,7 @@ func TestRemoveRowsWritesNothingWhenNoRowNamesTheConnection(t *testing.T) {
 
 func TestRemoveRowsReachesRowsOfASettingThatIsNotShown(t *testing.T) {
 	world := newRowsWorld()
-	world.stored = readStored(t, `{"md.numen.engines.embeddings": {"source":"local","connections": [{"connection":"c1f0a9e20","model":"m"}]}}`)
+	world.stored = readStoredFile(t, `{"md.numen.engines.embeddings": {"source":"local","connections": [{"connection":"c1f0a9e20","model":"m"}]}}`)
 	world.plugins[0] = rowsPlugin(embeddingsID, "Embeddings", rowsSetting("connections", "embed", false, ""))
 
 	if err := world.rows().RemoveRows(workID); err != nil {
@@ -253,7 +253,7 @@ func TestRemoveRowsReachesRowsOfASettingThatIsNotShown(t *testing.T) {
 
 func TestRemoveRowsReportsAWriteThatFails(t *testing.T) {
 	world := newRowsWorld()
-	world.stored = readStored(t, `{"md.numen.tools.proofreading": {"connections": [{"connection":"c1f0a9e20","model":"m"}]}}`)
+	world.stored = readStoredFile(t, `{"md.numen.tools.proofreading": {"connections": [{"connection":"c1f0a9e20","model":"m"}]}}`)
 	world.failWrite = errors.New("the disk is full")
 
 	err := world.rows().RemoveRows(workID)

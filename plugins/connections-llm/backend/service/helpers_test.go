@@ -14,7 +14,7 @@ import (
 
 const testKey = "sk-test-key-1234"
 
-func startFake(t *testing.T, config fakeopenai.Config) (*fakeopenai.Server, string) {
+func startFakeServer(t *testing.T, config fakeopenai.Config) (*fakeopenai.Server, string) {
 	t.Helper()
 	fake := fakeopenai.New(config)
 	ts := httptest.NewServer(fake)

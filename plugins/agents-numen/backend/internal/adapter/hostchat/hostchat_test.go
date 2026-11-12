@@ -101,7 +101,7 @@ func TestTheTextAndTheCallsOfTheStreamMakeTheReply(t *testing.T) {
 	}
 }
 
-func TestAnAnswerFinishedAtTheLengthLimitIsCut(t *testing.T) {
+func TestAnAnswerEndedByTheLengthLimitIsTruncated(t *testing.T) {
 	stream := &fakeStream{events: []connection.ChatEvent{{TextDelta: "The plan"}, {Finish: &connection.Finish{Reason: connection.FinishLength}}}}
 
 	reply, _, _, err := ask(t, stream, nil)

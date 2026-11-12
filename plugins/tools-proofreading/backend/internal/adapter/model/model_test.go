@@ -44,7 +44,7 @@ func TestAskWithNoConnectionIsOffAndPointsToTheConnectionsPage(t *testing.T) {
 	}
 }
 
-func TestEveryConnectionThatFailedIsKeptInTheError(t *testing.T) {
+func TestEveryConnectionThatFailedIsListedInTheError(t *testing.T) {
 	failed := &connection.AllFailedError{Failures: []connection.Failure{
 		{ConnectionName: "OpenRouter", Reason: "rate limited"},
 		{ConnectionName: "Local", Reason: "unreachable"},

@@ -27,7 +27,7 @@ func TestCreateKeepsASecretInTheKeyStoreAndNotInTheList(t *testing.T) {
 	if !strings.HasSuffix(f.keys.values[names[0]], ":sk-or-1") {
 		t.Errorf("the key store entry = %q, want a fingerprint and the key", f.keys.values[names[0]])
 	}
-	stored := f.listStored(t)
+	stored := f.listStoredConnections(t)
 	if len(stored) != 1 || len(stored[0].Fields) != 0 {
 		t.Errorf("stored = %+v, want no field: the key is in the key store, the address is fixed", stored)
 	}
@@ -148,7 +148,7 @@ func TestCreateKeepsNeitherAFixedValueNorADefaultInTheList(t *testing.T) {
 
 	f.createOpenRouter(t, "")
 
-	stored := f.listStored(t)
+	stored := f.listStoredConnections(t)
 	if _, found := stored[0].Fields["baseUrl"]; found {
 		t.Errorf("the fixed value was stored: %+v", stored[0].Fields)
 	}
@@ -184,7 +184,7 @@ func TestCreateWritesNoListEntryWhenTheKeyStoreFails(t *testing.T) {
 	if !errors.Is(err, connectiondomain.ErrKeyStore) {
 		t.Errorf("err = %v, want connectiondomain.ErrKeyStore", err)
 	}
-	if stored := f.listStored(t); len(stored) != 0 {
+	if stored := f.listStoredConnections(t); len(stored) != 0 {
 		t.Errorf("stored = %+v", stored)
 	}
 }

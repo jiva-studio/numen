@@ -187,7 +187,7 @@ func hasValueContaining(values map[string]string, part string) bool {
 	return false
 }
 
-func (f *fixture) listStored(t *testing.T) []connectiondomain.Connection {
+func (f *fixture) listStoredConnections(t *testing.T) []connectiondomain.Connection {
 	t.Helper()
 	stored, err := f.repository.ListConnections()
 	if err != nil {

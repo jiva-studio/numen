@@ -9,7 +9,7 @@ import (
 )
 
 func TestTheFirstRequestOfAnOpenAICompatibleModelOutlastsTheSettingAndTheNextOneDoesNot(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 300*time.Millisecond)
 	svc := newTestService(t)
 	svc.Configure(map[string]string{"requestTimeout": "0.1"})
@@ -24,7 +24,7 @@ func TestTheFirstRequestOfAnOpenAICompatibleModelOutlastsTheSettingAndTheNextOne
 }
 
 func TestAFailedFirstRequestKeepsTheLongLimit(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 300*time.Millisecond)
 	svc := newTestService(t)
 	svc.Configure(map[string]string{"requestTimeout": "0.1"})

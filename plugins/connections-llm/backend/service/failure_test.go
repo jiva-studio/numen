@@ -35,7 +35,7 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 		{http.StatusTeapot, "", failureWant{reason: connection.ReasonBadRequest}},
 	}
 	for _, one := range cases {
-		fake, address := startFake(t, fakeopenai.Config{})
+		fake, address := startFakeServer(t, fakeopenai.Config{})
 		fake.Fail("/chat/completions", one.status, one.retryAfter)
 		fake.Fail("/embeddings", one.status, one.retryAfter)
 
@@ -47,7 +47,7 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 }
 
 func TestARetryAfterGivenAsADateIsReadAsTheWaitFromNow(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	now := time.Date(2026, time.March, 4, 10, 0, 0, 0, time.UTC)
 	fake.Fail("/chat/completions", http.StatusTooManyRequests, now.Add(90*time.Second).Format(http.TimeFormat))
 	svc := newTestServiceWith(t, clock.NewFake(now))
@@ -60,7 +60,7 @@ func TestARetryAfterGivenAsADateIsReadAsTheWaitFromNow(t *testing.T) {
 
 func TestARetryAfterThatIsNotAWaitIsLeftOut(t *testing.T) {
 	for _, value := range []string{"soon", "-5", ""} {
-		fake, address := startFake(t, fakeopenai.Config{})
+		fake, address := startFakeServer(t, fakeopenai.Config{})
 		fake.Fail("/chat/completions", http.StatusTooManyRequests, value)
 		_, err := newTestService(t).Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 		checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonRateLimited})
@@ -76,7 +76,7 @@ func TestAServiceThatCannotBeReachedIsTryNext(t *testing.T) {
 }
 
 func TestAServiceThatAnswersTooSlowlyIsATimeout(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 2*time.Second)
 	fake.Delay("/embeddings", 2*time.Second)
 	svc := newTestService(t)
@@ -89,7 +89,7 @@ func TestAServiceThatAnswersTooSlowlyIsATimeout(t *testing.T) {
 }
 
 func TestACanceledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 10*time.Second)
 	ctx, cancel := context.WithCancel(newContext(t))
 	result := make(chan error, 1)
@@ -111,7 +111,7 @@ func TestACanceledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
 }
 
 func TestACallThatIsAlreadyCanceledNeverReachesTheService(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	_, err := newTestService(t).Embed(ctx, newCall("openrouter", address, testKey, "m"), []string{"a"})

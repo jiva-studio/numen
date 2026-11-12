@@ -46,7 +46,7 @@ func lastChatBody(t *testing.T, fake *fakeopenai.Server) map[string]any {
 }
 
 func TestChatStreamsTheTextAsDeltasAndEndsWithAFinish(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{APIKey: testKey})
+	fake, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
 
 	events, err := runChat(t, newTestService(t), newCall("openrouter", address, testKey, "openai/gpt-4o-mini"), chatUser("hello there"))
 
@@ -72,7 +72,7 @@ func TestChatStreamsTheTextAsDeltasAndEndsWithAFinish(t *testing.T) {
 }
 
 func TestChatSendsTheHistoryTheToolsAndTheOptions(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	temperature := 0.3
 	request := connection.ProviderChatRequest{
 		Messages: []connection.ChatMessage{
@@ -120,7 +120,7 @@ func TestChatSendsTheHistoryTheToolsAndTheOptions(t *testing.T) {
 }
 
 func TestChatJoinsTheStreamedPiecesOfAToolCallIntoOneEvent(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{
 		`{"choices":[{"delta":{"content":"Let me look."}}]}`,
 		`{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call-1","type":"function","function":{"name":"list_notes","arguments":""}}]}}]}`,
@@ -144,7 +144,7 @@ func TestChatJoinsTheStreamedPiecesOfAToolCallIntoOneEvent(t *testing.T) {
 }
 
 func TestAToolCallWithEmptyArgumentsIsSentAsAnEmptyObject(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{
 		`{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"c","function":{"name":"ping"}}]},"finish_reason":"tool_calls"}]}`,
 	}})
@@ -157,7 +157,7 @@ func TestAToolCallWithEmptyArgumentsIsSentAsAnEmptyObject(t *testing.T) {
 }
 
 func TestAnAnswerTruncatedAtTheLengthLimitFinishesWithLength(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{
 		`{"choices":[{"delta":{"content":"cut"}}]}`,
 		`{"choices":[{"delta":{},"finish_reason":"length"}]}`,
@@ -171,7 +171,7 @@ func TestAnAnswerTruncatedAtTheLengthLimitFinishesWithLength(t *testing.T) {
 }
 
 func TestAServerThatAnswersAWholeMessageToAStreamRequestIsRead(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{
 		`{"choices":[{"message":{"role":"assistant","content":"whole","tool_calls":[{"id":"c","type":"function","function":{"name":"ping","arguments":"{}"}}]},"finish_reason":"tool_calls"}]}`,
 	}})
@@ -184,7 +184,7 @@ func TestAServerThatAnswersAWholeMessageToAStreamRequestIsRead(t *testing.T) {
 }
 
 func TestChatNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	call := newCall("openrouter", address, "", "openai/gpt-5")
 	call.Reasoning = "low"
 
@@ -199,7 +199,7 @@ func TestChatNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 }
 
 func TestChatStopsOnAReasoningLevelThatTheModelRejects(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	call := newCall("openai-compatible", address, "", "qwen2.5:14b")
 	call.Reasoning = "low"
 
@@ -227,7 +227,7 @@ func TestTheStatusOfAChatAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 		{http.StatusInternalServerError, "", failureWant{reason: connection.ReasonUnknown}},
 	}
 	for _, one := range cases {
-		fake, address := startFake(t, fakeopenai.Config{})
+		fake, address := startFakeServer(t, fakeopenai.Config{})
 		fake.Fail("/chat/completions", one.status, one.retryAfter)
 
 		events, err := runChat(t, newTestService(t), newCall("openrouter", address, testKey, "m"), chatUser("hi"))
@@ -240,7 +240,7 @@ func TestTheStatusOfAChatAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 }
 
 func TestAStreamThatBreaksAfterTheFirstTextKeepsTheTextAndFailsAsUnreachable(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{IsBroken: true, Chunks: []string{`{"choices":[{"delta":{"content":"partial"}}]}`}})
 
 	events, err := runChat(t, newTestService(t), newCall("openai-compatible", address, "", "m"), chatUser("hi"))
@@ -252,7 +252,7 @@ func TestAStreamThatBreaksAfterTheFirstTextKeepsTheTextAndFailsAsUnreachable(t *
 }
 
 func TestAStreamThatEndsWithoutAFinishFailsAsUnreachable(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{`{"choices":[{"delta":{"content":"cut"}}]}`, "[DONE]"}})
 
 	_, err := runChat(t, newTestService(t), newCall("openai-compatible", address, "", "m"), chatUser("hi"))
@@ -268,7 +268,7 @@ func TestAnErrorEventOfTheStreamIsAFailureOfItsKind(t *testing.T) {
 		"503": {isTryNext: true, reason: connection.ReasonUnreachable},
 		"400": {reason: connection.ReasonBadRequest},
 	} {
-		fake, address := startFake(t, fakeopenai.Config{})
+		fake, address := startFakeServer(t, fakeopenai.Config{})
 		fake.QueueStream(fakeopenai.Stream{Chunks: []string{
 			`{"choices":[{"delta":{"content":"partial"}}]}`,
 			`{"error":{"code":` + code + `,"message":"upstream said Bearer ` + testKey + `"}}`,
@@ -284,7 +284,7 @@ func TestAnErrorEventOfTheStreamIsAFailureOfItsKind(t *testing.T) {
 }
 
 func TestAChatThatStallsAfterAnEventIsATimeoutWhenNothingMoreArrives(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{`{"choices":[{"delta":{"content":"partial"}}]}`}})
 	svc := newTestService(t)
 	svc.Configure(map[string]string{"requestTimeout": "0.2"})
@@ -298,7 +298,7 @@ func TestAChatThatStallsAfterAnEventIsATimeoutWhenNothingMoreArrives(t *testing.
 }
 
 func TestTheTimeOfAChatRestartsWithEachEvent(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	var chunks []string
 	for range 6 {
 		chunks = append(chunks, `{"choices":[{"delta":{"content":"x"}}]}`)
@@ -316,7 +316,7 @@ func TestTheTimeOfAChatRestartsWithEachEvent(t *testing.T) {
 }
 
 func TestAChatCanceledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
-	fake, address := startFake(t, fakeopenai.Config{})
+	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 30*time.Second)
 	ctx, cancel := context.WithCancel(t.Context())
 	finish := make(chan error, 1)
@@ -338,7 +338,7 @@ func TestAChatCanceledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
 }
 
 func TestAChatStopsWhenTheReceiverOfTheEventsFails(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{})
+	_, address := startFakeServer(t, fakeopenai.Config{})
 	consumerFailure := errors.New("the stream is closed")
 
 	err := newTestService(t).Chat(newContext(t), newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(connection.ChatEvent) error { return consumerFailure })
@@ -349,7 +349,7 @@ func TestAChatStopsWhenTheReceiverOfTheEventsFails(t *testing.T) {
 }
 
 func TestNoEventAndNoFailureOfAChatContainsTheKey(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{APIKey: "another-key"})
+	_, address := startFakeServer(t, fakeopenai.Config{APIKey: "another-key"})
 
 	events, err := runChat(t, newTestService(t), newCall("openrouter", address, testKey, "m"), chatUser("hi"))
 
@@ -359,7 +359,7 @@ func TestNoEventAndNoFailureOfAChatContainsTheKey(t *testing.T) {
 }
 
 func TestChatStopsOnAnUnknownTypeAndALoneKeyOverPlainHTTPToARemoteHost(t *testing.T) {
-	_, address := startFake(t, fakeopenai.Config{})
+	_, address := startFakeServer(t, fakeopenai.Config{})
 	_, err := runChat(t, newTestService(t), newCall("nope", address, "", "m"), chatUser("hi"))
 	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
 	_, err = runChat(t, newTestService(t), newCall("openai-compatible", "http://203.0.113.9/v1", testKey, "m"), chatUser("hi"))
