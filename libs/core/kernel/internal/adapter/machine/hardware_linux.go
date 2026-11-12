@@ -1,6 +1,6 @@
 //go:build linux
 
-package hardware
+package machine
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
 const (
@@ -21,8 +21,8 @@ const (
 	linuxCPUMaxPath     = "/sys/fs/cgroup/cpu.max"
 )
 
-func readPlatformHardware() settingsdomain.MachineSpecs {
-	var hw settingsdomain.MachineSpecs
+func readPlatformHardware() machinedomain.Specs {
+	var hw machinedomain.Specs
 	if content, err := os.ReadFile(linuxMeminfoPath); err == nil {
 		hw.TotalRAMMB, hw.AvailableRAMMB = parseMeminfo(string(content))
 	}

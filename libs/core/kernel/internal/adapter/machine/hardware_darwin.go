@@ -1,17 +1,17 @@
 //go:build darwin
 
-package hardware
+package machine
 
 import (
 	"fmt"
 
 	"golang.org/x/sys/unix"
 
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
-func readPlatformHardware() settingsdomain.MachineSpecs {
-	var hw settingsdomain.MachineSpecs
+func readPlatformHardware() machinedomain.Specs {
+	var hw machinedomain.Specs
 	if bytes, err := unix.SysctlUint64("hw.memsize"); err == nil {
 		hw.TotalRAMMB = int64(bytes / bytesPerMB)
 	}

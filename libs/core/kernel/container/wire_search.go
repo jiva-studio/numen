@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
@@ -64,7 +64,7 @@ type searchWiring struct {
 	ServiceDir         string
 	ShouldRebuildIndex bool
 	Chunks             *note.ChunkTokens
-	ResolvedCompute    settingsdomain.ResolvedCompute
+	ResolvedCompute    machinedomain.ResolvedCompute
 	PluginHost         *PluginHost
 	RunningHost        *PluginHost
 	Clock              machineport.Clock

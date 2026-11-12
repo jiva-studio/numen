@@ -1,4 +1,4 @@
-package settings
+package machine
 
 // The workload presets a person chooses between.
 const (
@@ -10,8 +10,8 @@ const (
 	ProfileMaximum = "maximum"
 )
 
-// MachineSpecs represents the detected host machine hardware capabilities. A zero count or size is unknown.
-type MachineSpecs struct {
+// Specs represents the detected host machine hardware capabilities. A zero count or size is unknown.
+type Specs struct {
 	LogicalCPUs     int
 	PhysicalCPUs    int
 	PerformanceCPUs int
@@ -46,7 +46,7 @@ const (
 
 // Normalize returns the specs with every count made consistent: at least one CPU, no more physical
 // than logical CPUs, no more performance than physical CPUs, and no more available than total memory.
-func (hw MachineSpecs) Normalize() MachineSpecs {
+func (hw Specs) Normalize() Specs {
 	if hw.LogicalCPUs < 1 {
 		hw.LogicalCPUs = 1
 	}
@@ -62,22 +62,22 @@ func (hw MachineSpecs) Normalize() MachineSpecs {
 	return hw
 }
 
-func (hw MachineSpecs) getPerformanceThreads() int {
+func (hw Specs) getPerformanceThreads() int {
 	threadsPerCore := (hw.LogicalCPUs + hw.PhysicalCPUs - 1) / hw.PhysicalCPUs
 	return min(hw.PerformanceCPUs*threadsPerCore, hw.LogicalCPUs)
 }
 
-func (hw MachineSpecs) getMemoryLimitMB(sharePercent int64) int64 {
+func (hw Specs) getMemoryLimitMB(sharePercent int64) int64 {
 	return hw.TotalRAMMB * sharePercent / 100
 }
 
-func (hw MachineSpecs) getBudget(sharePercent int) int {
+func (hw Specs) getBudget(sharePercent int) int {
 	return max(1, hw.getPerformanceThreads()*sharePercent/100)
 }
 
 // ResolveCompute computes the active workload parameters for a given profile and hardware specs. Every pool it sizes occupies at most CoreBudget hardware threads.
 // A profile that is none of the three is Balanced.
-func ResolveCompute(profile string, hw MachineSpecs) ResolvedCompute {
+func ResolveCompute(profile string, hw Specs) ResolvedCompute {
 	hw = hw.Normalize()
 
 	switch profile {

@@ -1,13 +1,13 @@
-package hardware_test
+package machine_test
 
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 )
 
-func TestDetectHardware_ReportsConsistentCounts(t *testing.T) {
-	hw := hardware.Reader{}.ReadMachine()
+func TestReadSpecs_ReportsConsistentCounts(t *testing.T) {
+	hw := machine.SpecsReader{}.ReadSpecs()
 
 	if hw.LogicalCPUs < 1 || hw.PhysicalCPUs < 1 || hw.PerformanceCPUs < 1 {
 		t.Fatalf("detected %+v, want every count at least 1", hw)

@@ -1,6 +1,6 @@
 //go:build darwin
 
-package hardware
+package machine
 
 import "strings"
 

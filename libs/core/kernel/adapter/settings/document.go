@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -20,10 +19,10 @@ import (
 // id of a plugin with the settings of that plugin below it.
 type File struct {
 	Version     int
-	Appearance  Appearance           `json:"appearance"`
-	Agent       Agent                `json:"agent"`
-	Titles      Titles               `json:"naming"`
-	Performance hardware.Performance `json:"performance"`
+	Appearance  Appearance  `json:"appearance"`
+	Agent       Agent       `json:"agent"`
+	Titles      Titles      `json:"naming"`
+	Performance Performance `json:"performance"`
 	Plugins     map[string]map[string]any
 	Connections []connection.Connection
 	Notices     []string
@@ -31,19 +30,19 @@ type File struct {
 
 // appObject is the object of the owner app as the file lays it out.
 type appObject struct {
-	Appearance  Appearance           `json:"appearance"`
-	Agent       Agent                `json:"agent"`
-	Titles      Titles               `json:"naming"`
-	Performance hardware.Performance `json:"performance"`
+	Appearance  Appearance  `json:"appearance"`
+	Agent       Agent       `json:"agent"`
+	Titles      Titles      `json:"naming"`
+	Performance Performance `json:"performance"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
 // file leaves out keeps the value it had.
 type appSections struct {
-	Appearance  *Appearance           `json:"appearance"`
-	Agent       *Agent                `json:"agent"`
-	Titles      *Titles               `json:"naming"`
-	Performance *hardware.Performance `json:"performance"`
+	Appearance  *Appearance  `json:"appearance"`
+	Agent       *Agent       `json:"agent"`
+	Titles      *Titles      `json:"naming"`
+	Performance *Performance `json:"performance"`
 }
 
 func isOutsideDeclaration(section string) bool { return section == "agent" }

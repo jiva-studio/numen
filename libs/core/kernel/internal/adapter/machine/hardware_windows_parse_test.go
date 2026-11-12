@@ -1,6 +1,6 @@
 //go:build windows
 
-package hardware
+package machine
 
 import (
 	"encoding/binary"

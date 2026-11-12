@@ -515,7 +515,6 @@ const meaning = (doc, name, keys) => {
  */
 const PACKAGES = {
   settings: 'adapter/settings',
-  hardware: 'adapter/settings/hardware',
 }
 
 const held = new Map()

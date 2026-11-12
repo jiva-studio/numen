@@ -1,13 +1,13 @@
 //go:build windows
 
-package hardware
+package machine
 
 import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
 var (
@@ -28,8 +28,8 @@ type memoryStatusEx struct {
 	AvailExtendedVirtual uint64
 }
 
-func readPlatformHardware() settingsdomain.MachineSpecs {
-	var hw settingsdomain.MachineSpecs
+func readPlatformHardware() machinedomain.Specs {
+	var hw machinedomain.Specs
 	if total, available, err := readWindowsMemory(); err == nil {
 		hw.TotalRAMMB = total
 		hw.AvailableRAMMB = available
