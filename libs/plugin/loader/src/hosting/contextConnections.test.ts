@@ -9,8 +9,8 @@ import { createTestContextHost } from '../testing/contextHost'
 
 const createContext = (permissions: readonly string[]) => {
   const connections: ConnectionHost = {
-    // eslint-disable-next-line require-yield
     call: vi.fn(async function* () {
+      yield* []
       return { ok: true as const, value: new Uint8Array() }
     }),
   }

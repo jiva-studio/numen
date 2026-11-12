@@ -19,7 +19,7 @@ import {
 } from '@numen/plugin-loader'
 import { createNamedIcon } from '@numen/ui'
 import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/workbench'
-import { getPluginConnections } from '@/entities/plugin'
+import { createViewIssueReporter, getPluginConnections } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
 import { windowRelations } from '@/entities/vault'
 import { TARGET } from '@/shared/lib/window'
@@ -63,8 +63,7 @@ export function createShellHost(deps: ShellHostDeps) {
     closeTab: (id) => tabs.closeTab(id),
     closeTabsForPlugin: tabs.closePluginTab,
     getSlotEntries: readSlotEntries,
-    reportViewIssue: (pluginId, message) =>
-      notices.show(pluginId, `${pluginId}: ${message}`, 'error'),
+    reportViewIssue: createViewIssueReporter(notices),
     getNotices: (pluginId) => createPluginNotices(notices, pluginId),
     clearNotices: (pluginId) => notices.clear(pluginId),
     getCommands: () => services.commands,

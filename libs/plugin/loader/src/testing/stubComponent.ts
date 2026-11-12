@@ -6,8 +6,8 @@ export const STUB_COMPONENT = defineComponent({ name: 'StubComponent', render: (
 
 /** Connections that end every call at once with nothing, for a view that needs them to be mounted. */
 export const STUB_CONNECTIONS: ConnectionHost = {
-  // eslint-disable-next-line require-yield
   call: async function* () {
+    yield* []
     return { ok: true, value: new Uint8Array() }
   },
 }

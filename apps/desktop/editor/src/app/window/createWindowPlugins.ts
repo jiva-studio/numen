@@ -4,6 +4,7 @@
  * port, which the palettes connect once they are made.
  */
 import { createNoticeQueue } from '@numen/workbench'
+import { createCommandTitleReader } from '@/entities/command'
 import { readNote, writeNote } from '@/entities/note'
 import { useDeclaredCommands } from '@/features/plugin-commands'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
@@ -75,9 +76,8 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
         window,
         appearance: windowSettings.appearance,
         commands: hostPort.commands,
-        getCommandTitle: (command) => appCommands.find((one) => one.id === command)?.text ?? '',
-        getPluginName: (pluginId) =>
-          rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
+        getCommandTitle: createCommandTitleReader(appCommands),
+        getPluginName: declarations.catalog.getName,
       }),
     }),
   }
