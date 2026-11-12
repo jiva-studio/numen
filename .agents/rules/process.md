@@ -2,7 +2,7 @@
 
 This rule defines the roles, the TDD lifecycle, and what an agent must prove before handing work over.
 
-The pipeline: `/nm-feature` (owner and agent write the feature file) then `/nm-specify` (local spec) then `tester` (red tests) then `coder` (green) then `/nm-review`. The scenarios in `features/` are the lasting acceptance criteria and follow [`gherkin.md`](./gherkin.md). `spec.md` and `scope.md` in `.agents/tasks/<slug>/` are local files and are not committed.
+The pipeline: `/nm-feature` (owner and agent write the feature file) then `/nm-specify` (local spec) then `tester` (red tests) then `coder` (green) then `/nm-review`. The scenarios in `features/` are the lasting acceptance criteria and follow [`gherkin.md`](./gherkin.md). `spec.md` and `scope.md` in .agents/tasks/<slug>/ are local files and are not committed.
 
 ---
 

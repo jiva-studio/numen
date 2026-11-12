@@ -541,16 +541,16 @@ func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 // TestWritePresetStoresTheRetentionInTheFile. A retention between the bounds is
 // written into the preset file, and the other settings stay as they were.
 func TestWritePresetStoresTheRetentionInTheFile(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{Path: "Sanskrit.md"})
+	read, err := f.reads.ReadPreset(t.Context(), &api.ReadPresetRequest{Path: "Sanskrit.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	presetSettings := read.Preset.Settings
 	presetSettings.Retention = 0.8
 
-	answer, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+	answer, err := f.writes.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Sanskrit.md", Settings: presetSettings, Baseline: read.At,
 	})
 	if err != nil {

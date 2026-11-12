@@ -86,7 +86,7 @@ _Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)_
 
 _Guide: [`stages/2-bughunter.md`](./stages/2-bughunter.md)_
 
-1. **Spec conformance** — if `.agents/tasks/<slug>/scope.md` exists, verify that nothing it excludes was built. If `spec.md` exists, verify that its scenario map is covered and the diff does not exceed the blast radius.
+1. **Spec conformance** — if .agents/tasks/<slug>/scope.md exists, verify that nothing it excludes was built. If `spec.md` exists, verify that its scenario map is covered and the diff does not exceed the blast radius.
 2. **Blast radius** — callers of every changed function, upstream sources of the state it reads, downstream watchers, renderers and subscribers.
 3. **Defect matrix** — Go concurrency, context and cancellation, error paths, SQL and resources; Vue reactivity, lifecycle leaks, out-of-order responses; boundary and index errors; wire contracts across _A client is generated from the protocol_.
 4. **Proof** — every defect has a concrete scenario: _Given → When → Then_. No vague warnings.

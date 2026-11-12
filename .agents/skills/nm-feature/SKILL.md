@@ -36,7 +36,7 @@ The feature file and the interview talk about what the person sees and does, in 
 
 ## Step 1: Restate the Idea
 
-Write the idea back in a few sentences: who, what, why. Ask the owner to correct it. Resolve a slug (`feat-deck-export`) for the local task folder `.agents/tasks/<slug>/` (not committed), and the area and file name for the feature file. Look in `features/` first: extend an existing file when the behaviour belongs to it.
+Write the idea back in a few sentences: who, what, why. Ask the owner to correct it. Resolve a slug (`feat-deck-export`) for the local task folder .agents/tasks/<slug>/ (not committed), and the area and file name for the feature file. Look in `features/` first: extend an existing file when the behaviour belongs to it.
 
 ## Step 2: Read the Glossary
 
@@ -64,7 +64,7 @@ Ask in batches of a few focused questions. The five lenses help:
 
 Write the scenarios in plain English of level A1 to A2 and with neutral, short data, as `.agents/rules/gherkin.md` section 4 says: no stories, no scenery, no adverbs of time or manner in titles.
 
-Write `features/<area>/<part-of-the-feature>.feature` following [`gherkin.md`](../../rules/gherkin.md). A limit, a failure and a rule that must hold each become a scenario. Out-of-scope items and limits that no scenario can show go to `.agents/tasks/<slug>/scope.md`, a short local list that `/nm-specify` and the reviewer read.
+Write `features/<area>/<part-of-the-feature>.feature` following [`gherkin.md`](../../rules/gherkin.md). A limit, a failure and a rule that must hold each become a scenario. Out-of-scope items and limits that no scenario can show go to .agents/tasks/<slug>/scope.md, a short local list that `/nm-specify` and the reviewer read.
 
 ## Step 6: Human Gate
 

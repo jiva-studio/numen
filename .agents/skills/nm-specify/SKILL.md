@@ -5,7 +5,7 @@ description: Translates a feature file into a technical specification in spec.md
 
 # Technical Specification Skill (`/nm-specify`)
 
-The `/nm-specify` skill turns the approved feature file (`features/<area>/<name>.feature`) into a technical specification (`spec.md`). The scenarios are the acceptance criteria; the spec has no acceptance criteria section. It maps existing code, defines contracts, outlines the blast radius, and maps each scenario to the layers that implement it and the lower-level tests it needs. `spec.md` and `scope.md` are local files in `.agents/tasks/<slug>/` and are not committed.
+The `/nm-specify` skill turns the approved feature file (`features/<area>/<name>.feature`) into a technical specification (`spec.md`). The scenarios are the acceptance criteria; the spec has no acceptance criteria section. It maps existing code, defines contracts, outlines the blast radius, and maps each scenario to the layers that implement it and the lower-level tests it needs. `spec.md` and `scope.md` are local files in .agents/tasks/<slug>/ and are not committed.
 
 ```mermaid
 flowchart TD
@@ -22,8 +22,8 @@ flowchart TD
 
 ## Step 1: Locate Active Task and Read the Feature
 
-1. Identify the task directory from arguments or git branch: `.agents/tasks/<slug>`.
-2. Read the feature file the task names, and `.agents/tasks/<slug>/scope.md` if it exists (what the interview found out of scope or limiting that is not a scenario).
+1. Identify the task directory from arguments or git branch: .agents/tasks/<slug>.
+2. Read the feature file the task names, and .agents/tasks/<slug>/scope.md if it exists (what the interview found out of scope or limiting that is not a scenario).
    - If no feature file exists, ask the user to run `/nm-feature` first.
 
 ---
@@ -46,7 +46,7 @@ Before proposing new files, types, or methods, search the codebase:
 **Task Slug:** `<slug>`
 **Date:** `<YYYY-MM-DD>`
 **Feature:** `features/<area>/<name>.feature`
-**Scope:** `.agents/tasks/<slug>/scope.md` (if present)
+**Scope:** .agents/tasks/<slug>/scope.md (if present)
 
 ## 1. Target Architecture & Interfaces
 
@@ -77,7 +77,7 @@ Before proposing new files, types, or methods, search the codebase:
 
 ## Step 4: Human Checkpoint & Next Step Handover
 
-> **Specification created in `.agents/tasks/<slug>/spec.md`.**
+> **Specification created in .agents/tasks/<slug>/spec.md.**
 >
 > - **Blast Radius:** `<N> files touched across <modules>`
 > - **Scenarios mapped:** `<Count>`
