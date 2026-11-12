@@ -110,9 +110,6 @@ func FormatSettingValues(values map[string]any) map[string]string {
 	return formatted
 }
 
-// isDiscovering reports whether a setting of rows that holds no row uses every connection that serves
-// its operations: the choice stored in the plugin field manifest.SettingDiscover, else the declaration.
-// A setting that does not declare discover never discovers.
 func isDiscovering(declared manifest.Setting, values map[string]any) bool {
 	if !declared.Discover {
 		return false

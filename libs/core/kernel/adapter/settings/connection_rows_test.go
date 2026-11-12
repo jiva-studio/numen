@@ -319,7 +319,7 @@ func readRows(world *rowsWorld, pluginID, operation string) ([]connection.Row, e
 	return setting.Rows, err
 }
 
-func TestReadRowSettingSaysWhetherTheSettingDiscovers(t *testing.T) {
+func TestReadRowSettingReturnsWhetherTheSettingDiscovers(t *testing.T) {
 	world := newRowsWorld()
 	discovering := rowsSetting("connections", "acp.task", true, "")
 	discovering.IsDiscovering = true

@@ -156,8 +156,6 @@ func dropInvalidRowsOf(f *File, owner string, settings []manifest.Setting) {
 	}
 }
 
-// checkDiscover returns why a value is not one the plugin field fieldDiscover takes: an object that holds
-// true or false under the key of a setting of rows that declares discover.
 func checkDiscover(settings []manifest.Setting, value any) error {
 	if value == nil {
 		return nil

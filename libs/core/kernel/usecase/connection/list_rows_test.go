@@ -29,8 +29,6 @@ func agentType(pluginID, id string, isAvailable bool, operations ...string) conn
 	return connectiondomain.Type{PluginID: pluginID, IsAvailable: isAvailable, Declaration: manifest.ConnectionType{ID: id, Title: id, Operations: operations}}
 }
 
-// listRows lists the rows of the chat over a list of connections of agents, models and a type no plugin
-// provides any longer.
 func listRows(t *testing.T, setting connectiondomain.RowSetting) []connectiondomain.Row {
 	t.Helper()
 	repository := &memoryRepository{connections: []connectiondomain.Connection{
@@ -54,7 +52,7 @@ func listRows(t *testing.T, setting connectiondomain.RowSetting) []connectiondom
 	return rows
 }
 
-func TestTheRowsThePersonChoseAreUsedWhileTheSettingDiscovers(t *testing.T) {
+func TestListRowsReturnsTheChosenRowsWhileTheSettingDiscovers(t *testing.T) {
 	chosen := []connectiondomain.Row{{ConnectionID: "c00000004", Options: map[string]string{"model": "finch-large"}}}
 
 	rows := listRows(t, connectiondomain.RowSetting{Rows: chosen, IsDiscovering: true})
@@ -64,7 +62,7 @@ func TestTheRowsThePersonChoseAreUsedWhileTheSettingDiscovers(t *testing.T) {
 	}
 }
 
-func TestASettingThatDiscoversUsesEveryAvailableConnectionThatServesTheOperationInTheirOrder(t *testing.T) {
+func TestListRowsReturnsEveryAvailableConnectionServingTheOperationInListOrder(t *testing.T) {
 	rows := listRows(t, connectiondomain.RowSetting{IsDiscovering: true})
 
 	want := []connectiondomain.Row{
@@ -76,7 +74,7 @@ func TestASettingThatDiscoversUsesEveryAvailableConnectionThatServesTheOperation
 	}
 }
 
-func TestASettingThatDoesNotDiscoverAndHoldsNoRowUsesNoConnection(t *testing.T) {
+func TestListRowsReturnsNoRowWithoutDiscoveryOrChosenRows(t *testing.T) {
 	rows := listRows(t, connectiondomain.RowSetting{})
 
 	if len(rows) != 0 {

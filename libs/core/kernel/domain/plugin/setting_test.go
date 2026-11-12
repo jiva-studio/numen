@@ -137,7 +137,7 @@ func newChat() manifest.Manifest {
 	}
 }
 
-func listDiscovering(values map[string]any) map[string]bool {
+func getDiscoveryByKey(values map[string]any) map[string]bool {
 	discovering := map[string]bool{}
 	for _, one := range plugin.ListSettings(newChat(), values) {
 		discovering[one.Key] = one.IsDiscovering
@@ -146,13 +146,13 @@ func listDiscovering(values map[string]any) map[string]bool {
 }
 
 func TestASettingThatDeclaresDiscoverDiscoversUntilThePersonTurnsItOff(t *testing.T) {
-	if got := listDiscovering(map[string]any{}); !got["agents"] || got["models"] {
+	if got := getDiscoveryByKey(map[string]any{}); !got["agents"] || got["models"] {
 		t.Errorf("with no choice: %v, want agents only", got)
 	}
-	if got := listDiscovering(map[string]any{"discover": map[string]any{"agents": false}}); got["agents"] {
+	if got := getDiscoveryByKey(map[string]any{"discover": map[string]any{"agents": false}}); got["agents"] {
 		t.Errorf("turned off: %v, want no discovery", got)
 	}
-	if got := listDiscovering(map[string]any{"discover": map[string]any{"models": true}}); got["models"] {
+	if got := getDiscoveryByKey(map[string]any{"discover": map[string]any{"models": true}}); got["models"] {
 		t.Errorf("a setting that does not declare discover discovers: %v", got)
 	}
 }
