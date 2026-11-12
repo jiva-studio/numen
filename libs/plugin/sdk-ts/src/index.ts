@@ -24,7 +24,6 @@ export {
   getAssetUrl,
   getBytesQuery,
   getRelationErrorWords,
-  ReportedError,
   type Caught,
   type ErrorCode,
   type Unvalidated,

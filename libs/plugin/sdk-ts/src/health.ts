@@ -5,12 +5,12 @@
 
 // HealthSeverity is how bad an item is. A warning shows on the page of the plugin; an error shows in
 // the list of tasks too.
-export type HealthSeverity = 'warning' | 'error'
+type HealthSeverity = 'warning' | 'error'
 
 // HealthAction is the command a person runs to fix what an item reports: an `app:` command, or a
 // command of the plugin itself by its full id. `values` are the values of the arguments the command
 // declares; an empty title reads the title of the command.
-export interface HealthAction {
+interface HealthAction {
   readonly command: string
   readonly values?: Readonly<Record<string, string>>
   readonly title?: string
@@ -37,11 +37,3 @@ export interface HealthHost {
 }
 
 export const SETTINGS_OPEN_COMMAND = 'app:settings.open'
-
-// openSettings is the action that opens the settings of the plugin, with the setting of the key
-// marked; no key opens the page of the plugin.
-export function openSettings(setting?: string): HealthAction {
-  return setting === undefined
-    ? { command: SETTINGS_OPEN_COMMAND }
-    : { command: SETTINGS_OPEN_COMMAND, values: { setting } }
-}

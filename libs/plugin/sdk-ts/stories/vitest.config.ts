@@ -10,7 +10,7 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { getStoryBrowser } from '../../../ui/components/.storybook/browser'
-import { createStoryUtilitiesPlugin } from '../src/vite'
+import { createStoryUtilitiesPlugin } from '../src/viteStyles'
 
 export default defineConfig({
   plugins: [
