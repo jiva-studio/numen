@@ -51,16 +51,16 @@ func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 		defer u.signal()
 	}
 	for _, one := range batch {
-		switch {
-		case slices.Equal(one.Path, getPerformancePath()):
-			value, err := u.codec.Decode(one.JSON)
-			profile, isText := value.(string)
-			if err != nil || !isText {
-				u.report(fmt.Errorf("the performance profile is not a name: %s", one.JSON))
-				continue
-			}
-			u.config.SetPerformanceProfile(context.Background(), u.resolveProfile(profile))
+		if !slices.Equal(one.Path, getPerformancePath()) {
+			continue
 		}
+		value, err := u.codec.Decode(one.JSON)
+		profile, isText := value.(string)
+		if err != nil || !isText {
+			u.report(fmt.Errorf("the performance profile is not a name: %s", one.JSON))
+			continue
+		}
+		u.config.SetPerformanceProfile(context.Background(), u.resolveProfile(profile))
 	}
 }
 

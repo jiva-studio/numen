@@ -13,7 +13,11 @@ func TestLogNoticesWritesTheConnectionAndTheReason(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	t.Cleanup(func() {
+		if err := file.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	LogNotices{out: file}.ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
 
