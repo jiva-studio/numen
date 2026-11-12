@@ -1,9 +1,9 @@
 /**
  * The files open in a plugin's tabs, as a plugin is given the means to see them written out.
  */
-import type { BufferHost, FileBuffers } from '@numen/plugin-loader'
+import { isUnsavedBuffersError, type BufferHost, type FileBuffers } from '@numen/plugin-loader'
 import { raiseConflicts, type Notes } from './conflicts'
-import type { createFileFlush } from './flush'
+import type { Conflict, createFileFlush, FlushHandler } from './flush'
 
 function hasNoteConflicts(buffers: FileBuffers): buffers is FileBuffers & Notes {
   return 'getOpenIds' in buffers
@@ -14,10 +14,25 @@ export interface BufferHostDeps {
   readonly fileFlush: Pick<ReturnType<typeof createFileFlush>, 'addHandler' | 'raise'>
 }
 
+function settleUnsaved(flush: () => Promise<void>): FlushHandler {
+  return async () => {
+    try {
+      await flush()
+    } catch (error) {
+      if (!isUnsavedBuffersError(error)) throw error
+      return error.unsaved.map((one): Conflict => ({
+        note: error.pluginId === '' ? one.name : `${error.pluginId}: ${one.name}`,
+        keep: one.keep,
+        take: one.take,
+      }))
+    }
+  }
+}
+
 export function createBufferHost({ fileFlush }: BufferHostDeps): BufferHost {
   return {
     track: (buffers) => {
-      const removeHandler = fileFlush.addHandler(buffers.flush)
+      const removeHandler = fileFlush.addHandler(settleUnsaved(buffers.flush))
       const stopRaising = hasNoteConflicts(buffers)
         ? raiseConflicts(buffers, fileFlush)
         : () => undefined // Buffers without note conflicts have nothing to stop raising.
@@ -29,7 +44,7 @@ export function createBufferHost({ fileFlush }: BufferHostDeps): BufferHost {
       }
     },
     addFlushHandler: (handler) => {
-      const remove = fileFlush.addHandler(handler)
+      const remove = fileFlush.addHandler(settleUnsaved(handler))
       return {
         dispose: () => {
           remove()

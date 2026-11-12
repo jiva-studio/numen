@@ -200,6 +200,67 @@ describe('a page requested to write its unsaved changes', () => {
   })
 })
 
+describe('a page holding text of a note whose file was deleted', () => {
+  async function createGoneNote() {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const notes = openNotes()
+    const going = createFileFlush(fakeCore.core)
+    going.addHandler(createNoteFlushHandler(notes))
+    going.start().catch(rethrow)
+
+    fakeCore.files.set('Gone.md', 'what was saved')
+    notes.open('Gone.md')
+    await settle()
+    fakeCore.files.delete('Gone.md')
+    notes.applyPathChanges(['Gone.md'])
+    await settle()
+    notes.setBody('Gone.md', 'typed after the file went')
+    return { mockStream, fakeCore, notes, going }
+  }
+
+  it('stops the quit and names the note, writing nothing by itself', async () => {
+    const { mockStream, fakeCore, notes, going } = await createGoneNote()
+
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    expect(fakeCore.writtenFiles.filter((one) => one.path === 'Gone.md')).toEqual([])
+    expect(fakeCore.reportedResults).toEqual([{ token: '1', result: 'unsaved' }])
+    expect(going.conflicts.value.map((one) => one.note)).toEqual(['Gone.md'])
+    expect(await notes.close('Gone.md')).toBe(false)
+    expect(notes.getOpenNote('Gone.md').body).toBe('typed after the file went')
+  })
+
+  it('writes the text as the file again when the person keeps it, and then lets the quit go', async () => {
+    const { mockStream, fakeCore, going } = await createGoneNote()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    await going.conflicts.value[0]?.keep()
+    await settle()
+
+    expect(fakeCore.writtenFiles.filter((one) => one.path === 'Gone.md')).toEqual([
+      { path: 'Gone.md', body: 'typed after the file went' },
+    ])
+    expect(going.conflicts.value).toEqual([])
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '1', result: 'written' })
+  })
+
+  it('drops the text when the person discards it, and then lets the quit go', async () => {
+    const { mockStream, fakeCore, notes, going } = await createGoneNote()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    await going.conflicts.value[0]?.take()
+    await settle()
+
+    expect(fakeCore.writtenFiles.filter((one) => one.path === 'Gone.md')).toEqual([])
+    expect(notes.getOpenNote('Gone.md').body).toBe('what was saved')
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '1', result: 'written' })
+  })
+})
+
 describe('a page holding text the file changed under', () => {
   it('says there are conflicts outstanding, and does not say it has written', async () => {
     const mockStream = createMockStream()

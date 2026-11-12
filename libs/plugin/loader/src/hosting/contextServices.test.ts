@@ -5,6 +5,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   asValue,
+  isUnsavedBuffersError,
+  UnsavedBuffersError,
   type AgentHost,
   type BufferHost,
   type PluginContext,
@@ -299,6 +301,37 @@ describe('the open files a plugin passes the window', () => {
         permissions: ['vault:write'],
       }),
     ).not.toHaveProperty('buffers')
+  })
+})
+
+describe('the text a plugin could not write at quit', () => {
+  const unsaved = [{ name: 'Decks.md', keep: vi.fn(), take: vi.fn() }]
+
+  it('is reported to the window under the id of the plugin, whichever way it flushes', async () => {
+    const { context, buffers } = createContext(['vault:write'])
+    const flush = () => Promise.reject(new UnsavedBuffersError(unsaved))
+    context.vault.buffers!.track({ flush })
+    context.vault.buffers!.addFlushHandler(flush)
+
+    const handed = [
+      vi.mocked(buffers.track).mock.calls[0]![0].flush,
+      vi.mocked(buffers.addFlushHandler).mock.calls[0]![0],
+    ]
+    for (const hand of handed) {
+      const error: unknown = await hand().catch((caught: unknown) => caught)
+      expect(isUnsavedBuffersError(error) && error.pluginId).toBe('md.numen.sample')
+      expect(isUnsavedBuffersError(error) && error.unsaved).toEqual(unsaved)
+    }
+  })
+
+  it('leaves any other failure of a flush as it was', async () => {
+    const { context, buffers } = createContext(['vault:write'])
+    const failure = new Error('disk gone')
+    context.vault.buffers!.track({ flush: () => Promise.reject(failure) })
+
+    const handed = vi.mocked(buffers.track).mock.calls[0]![0]
+
+    await expect(handed.flush()).rejects.toBe(failure)
   })
 })
 

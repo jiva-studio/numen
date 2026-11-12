@@ -3,7 +3,7 @@
  */
 import { getNow } from '@numen/ui'
 import { shallowReactive } from 'vue'
-import type { PathRename } from '@numen/plugin-sdk'
+import { UnsavedBuffersError, type PathRename } from '@numen/plugin-sdk'
 import type {
   ConflictWords,
   NoteBaseline,
@@ -205,24 +205,30 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     )
     const unsavedTabs = Array.from(tabs.values()).filter(isUnsavedTab)
     if (unsavedTabs.length > 0) {
-      throw new Error(
-        `The text of ${unsavedTabs.map((tab) => tab.path).join(', ')} was not written`,
+      throw new UnsavedBuffersError(
+        unsavedTabs.map((tab) => ({
+          name: tab.path,
+          keep: () => keep(tab.id),
+          take: () => take(tab.id),
+        })),
       )
     }
   }
 
-  function keep(id: string): void {
+  /** Writes the text over the file, and answers once the write has ended. */
+  async function keep(id: string): Promise<void> {
     const tab = tabs.get(id)
     if (!tab) return
     tab.keepOverride = true
     tab.state = 'unsaved'
-    writeTab(id).catch(() => markUnreachable(id))
+    await writeTab(id).catch(() => markUnreachable(id))
   }
 
-  function take(id: string): void {
+  /** Replaces the text with the file's version, and answers once it is read. */
+  function take(id: string): Promise<void> {
     const tab = tabs.get(id)
-    if (!tab) return
-    notes
+    if (!tab) return Promise.resolve()
+    return notes
       .read(tab.path)
       .then((res) => {
         if (!tabs.has(id)) return

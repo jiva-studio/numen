@@ -186,13 +186,17 @@ const applySave = (tab: Tab): Transition => {
   return keepTab(tab)
 }
 
-/** A tab whose dirty text an error stopped from being written, for a reason another attempt may clear. */
+/**
+ * A tab whose dirty text is not in the vault: an error stopped it for a reason another attempt may
+ * clear, or its file was deleted and writing it would make the file again, which only the person decides.
+ */
 export const isUnsavedTab = (tab: Tab): boolean =>
-  getState(tab) === 'stuck' && isRetryable(tab) && isDirty(tab)
+  isDirty(tab) && ((getState(tab) === 'stuck' && isRetryable(tab)) || getState(tab) === 'gone')
 
 const applyFlush = (tab: Tab): Transition => {
   const state = getState(tab)
-  if (isUnsavedTab(tab)) {
+  // A deleted file is not written back by a flush: only the person decides to make it again.
+  if (state === 'stuck' && isUnsavedTab(tab)) {
     const going = beginWrite({ ...tab, error: null }, getBaseline(tab))
     return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
   }
@@ -228,6 +232,9 @@ const applyTake = (tab: Tab): Transition => {
   }
 }
 
+const isHoldingText = (tab: Tab): boolean =>
+  getState(tab) === 'stale' || (getState(tab) === 'gone' && isDirty(tab))
+
 const applyClose = (tab: Tab): Transition => {
   const state = getState(tab)
   // Stryker disable next-line LogicalOperator,ConditionalExpression: Stuck state implies truthy tab.error and vice versa.
@@ -239,7 +246,7 @@ const applyClose = (tab: Tab): Transition => {
   }
   // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: Loading state returns close effect either way.
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
-  if (state === 'stale') return { tab, effects: [{ kind: 'keepOpen' }] }
+  if (isHoldingText(tab)) return { tab, effects: [{ kind: 'keepOpen' }] }
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'keepOpen' }] }

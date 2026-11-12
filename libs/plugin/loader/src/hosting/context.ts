@@ -4,6 +4,7 @@
 import type {
   BufferHost,
   Disposable,
+  FileBuffers,
   FileSelectEvent,
   JsonValue,
   PluginContext,
@@ -15,6 +16,7 @@ import type {
   PluginWork,
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
+import { isUnsavedBuffersError, UnsavedBuffersError } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { limitCommands } from './guards/commandRun'
@@ -41,10 +43,26 @@ function trackSubscription(subscriptions: SubscriptionList, disposable: Disposab
   }
 }
 
-function createBuffers(buffers: BufferHost, add: Track): BufferHost {
+function nameUnsaved(pluginId: string, flush: () => Promise<void>): () => Promise<void> {
+  return async () => {
+    try {
+      await flush()
+    } catch (error) {
+      if (!isUnsavedBuffersError(error)) throw error
+      throw new UnsavedBuffersError(error.unsaved, pluginId)
+    }
+  }
+}
+
+function createBuffers(pluginId: string, buffers: BufferHost, add: Track): BufferHost {
   return {
-    track: (open) => add(buffers.track(open)),
-    addFlushHandler: (handler) => add(buffers.addFlushHandler(handler)),
+    track: (open) =>
+      add(
+        buffers.track(
+          Object.assign(Object.create(open) as FileBuffers, { flush: nameUnsaved(pluginId, open.flush) }),
+        ),
+      ),
+    addFlushHandler: (handler) => add(buffers.addFlushHandler(nameUnsaved(pluginId, handler))),
   }
 }
 
@@ -93,7 +111,7 @@ function createVault(pluginId: string, host: PluginContextHost, add: Track): Plu
     relations: vault.getRelations(),
     files: vault.getFiles(),
     texts: vault.getTexts(pluginId),
-    buffers: buffers && createBuffers(buffers, add),
+    buffers: buffers && createBuffers(pluginId, buffers, add),
     vaults: vault.getVaults(),
   })
 }

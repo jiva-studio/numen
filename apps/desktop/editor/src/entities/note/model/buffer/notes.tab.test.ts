@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   isDirty,
+  isUnsavedTab,
   openTab,
   getState,
   transitionTab,
@@ -990,6 +991,30 @@ describe('a note that is no longer there', () => {
     const editedTab = transitionTab(applyMissingRead(), { kind: 'edited', body: 'more', at: 20 })
     expect(getState(editedTab.tab)).toBe('gone')
     expect(kinds(transitionTab(editedTab.tab, { kind: 'timerFired' }).effects)).toEqual([])
+  })
+
+  it('counts as unsaved once the person has edited it, and not before', () => {
+    expect(isUnsavedTab(applyMissingRead())).toBe(false)
+    expect(isUnsavedTab(applyMissingRead({ editorText: 'mine' }))).toBe(true)
+  })
+
+  it('is not closed while it holds edits, since the file is no longer there to hold them', () => {
+    const next = transitionTab(applyMissingRead({ editorText: 'mine' }), { kind: 'close' })
+    expect(kinds(next.effects)).toEqual(['keepOpen'])
+  })
+
+  it('is closed when it holds no edits', () => {
+    const next = transitionTab(applyMissingRead(), { kind: 'close' })
+    expect(kinds(next.effects)).toEqual(['close'])
+  })
+
+  it('gives the edits up when the person takes the version the file last had', () => {
+    const next = transitionTab(applyMissingRead({ editorText: 'mine', since: 10 }), {
+      kind: 'takeFile',
+    })
+    expect(next.tab.editorText).toBe('one')
+    expect(isUnsavedTab(next.tab)).toBe(false)
+    expect(next.effects).toEqual([{ kind: 'cancelTimer' }, { kind: 'replace', body: 'one' }])
   })
 
   it('is made again at the name it had when the person says to keep it', () => {

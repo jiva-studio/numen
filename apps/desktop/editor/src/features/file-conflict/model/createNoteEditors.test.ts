@@ -20,7 +20,7 @@ describe('the editors of a window', () => {
 
     expect(editors.store.has('note:1')).toBe(false)
     expect(editors.store.getTabAt('Tides.md')).toBeNull()
-    expect(editors.getTitle('note:1')).toBe('')
+    expect(editors.getTitle('note:1')).toBe('note:1')
   })
 
   it('hold an open note by its tab, and name it by its path', () => {

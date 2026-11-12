@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/plugin-sdk'
+import { asFailure, asValue, isUnsavedBuffersError } from '@numen/plugin-sdk'
 import { openNotes } from './notes'
 import type { NoteResult, Notes } from '../../lib/buffer/types'
 
@@ -187,6 +187,35 @@ describe('openNotes for flashcards studio', () => {
     expect(store.getOpenNote('tab-1').state).toBe('clean')
   })
 
+  it('rejects the flush with the notes it could not write, and the ways to settle them', async () => {
+    let isDown = true
+    const written: string[] = []
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+      write: vi.fn(async (_path: string, body: string) => {
+        if (isDown) return asFailure('unreachable')
+        written.push(body)
+        return asValue({ body: '', at: 'v2' })
+      }),
+    }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+    store.setBody('tab-1', 'updated body')
+
+    const error: unknown = await store.flush().catch((caught: unknown) => caught)
+
+    expect(isUnsavedBuffersError(error)).toBe(true)
+    const unsaved = isUnsavedBuffersError(error) ? error.unsaved : []
+    expect(unsaved.map((one) => one.name)).toEqual(['Decks.md'])
+
+    isDown = false
+    await unsaved[0]?.keep()
+
+    expect(written).toEqual(['updated body'])
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+  })
+
   it('marks stale on write conflict and handles keepMine and takeFile', async () => {
     let writeCount = 0
     let readCount = 0
@@ -224,14 +253,14 @@ describe('openNotes for flashcards studio', () => {
     expect(store.getOpenIds()).toHaveLength(1)
 
     // keepMine forces write
-    store.keep('tab-1')
+    await store.keep('tab-1')
     await vi.waitFor(() => {
       expect(store.getOpenNote('tab-1').state).toBe('clean')
     })
     expect(writeCount).toBe(2)
 
     // takeFile re-reads
-    store.take('tab-1')
+    await store.take('tab-1')
     await vi.waitFor(() => {
       expect(store.getOpenNote('tab-1').body).toBe('file from disk')
     })

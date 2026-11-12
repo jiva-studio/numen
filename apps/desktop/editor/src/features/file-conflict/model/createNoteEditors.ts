@@ -55,7 +55,7 @@ export function createNoteEditors({ log, windowTabs }: NoteEditorsDeps) {
     making,
     fileFlush,
     store,
-    getTitle: (id: string): string => (store.has(id) ? store.getTitle(id) : ''),
+    getTitle: (id: string): string => (store.has(id) ? store.getTitle(id) : id),
     close: (): void => fileFlush.close(),
   }
 }
