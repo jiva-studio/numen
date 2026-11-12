@@ -215,8 +215,6 @@ type ProviderConnection struct {
 	Revision int32 `protobuf:"varint,8,opt,name=revision,proto3" json:"revision,omitempty"`
 	// is_complete is false while a required field of the type has no value.
 	IsComplete bool `protobuf:"varint,9,opt,name=is_complete,json=isComplete,proto3" json:"is_complete,omitempty"`
-	// is_private_network_allowed is whether the address may name a private network.
-	IsPrivateNetworkAllowed bool `protobuf:"varint,10,opt,name=is_private_network_allowed,json=isPrivateNetworkAllowed,proto3" json:"is_private_network_allowed,omitempty"`
 	// uses are the settings of plugins whose rows name the connection.
 	Uses          []*ProviderConnectionUse `protobuf:"bytes,7,rep,name=uses,proto3" json:"uses,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -305,13 +303,6 @@ func (x *ProviderConnection) GetRevision() int32 {
 func (x *ProviderConnection) GetIsComplete() bool {
 	if x != nil {
 		return x.IsComplete
-	}
-	return false
-}
-
-func (x *ProviderConnection) GetIsPrivateNetworkAllowed() bool {
-	if x != nil {
-		return x.IsPrivateNetworkAllowed
 	}
 	return false
 }
@@ -552,10 +543,9 @@ type CreateProviderConnectionRequest struct {
 	Name   string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Fields map[string]*structpb.Value `protobuf:"bytes,3,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// secrets are the values of the secret fields by key. They are write-only.
-	Secrets                 map[string]string `protobuf:"bytes,4,rep,name=secrets,proto3" json:"secrets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	IsPrivateNetworkAllowed bool              `protobuf:"varint,5,opt,name=is_private_network_allowed,json=isPrivateNetworkAllowed,proto3" json:"is_private_network_allowed,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	Secrets       map[string]string `protobuf:"bytes,4,rep,name=secrets,proto3" json:"secrets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateProviderConnectionRequest) Reset() {
@@ -614,13 +604,6 @@ func (x *CreateProviderConnectionRequest) GetSecrets() map[string]string {
 		return x.Secrets
 	}
 	return nil
-}
-
-func (x *CreateProviderConnectionRequest) GetIsPrivateNetworkAllowed() bool {
-	if x != nil {
-		return x.IsPrivateNetworkAllowed
-	}
-	return false
 }
 
 type CreateProviderConnectionResponse struct {
@@ -692,10 +675,9 @@ type UpdateProviderConnectionRequest struct {
 	Fields   map[string]*structpb.Value `protobuf:"bytes,4,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// secrets are the new values of secret fields by key. A key that is absent keeps its value and an
 	// empty value clears it. A change of the address clears every secret field before these are stored.
-	Secrets                 map[string]string `protobuf:"bytes,5,rep,name=secrets,proto3" json:"secrets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	IsPrivateNetworkAllowed bool              `protobuf:"varint,6,opt,name=is_private_network_allowed,json=isPrivateNetworkAllowed,proto3" json:"is_private_network_allowed,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	Secrets       map[string]string `protobuf:"bytes,5,rep,name=secrets,proto3" json:"secrets,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateProviderConnectionRequest) Reset() {
@@ -761,13 +743,6 @@ func (x *UpdateProviderConnectionRequest) GetSecrets() map[string]string {
 		return x.Secrets
 	}
 	return nil
-}
-
-func (x *UpdateProviderConnectionRequest) GetIsPrivateNetworkAllowed() bool {
-	if x != nil {
-		return x.IsPrivateNetworkAllowed
-	}
-	return false
 }
 
 type UpdateProviderConnectionResponse struct {
@@ -951,7 +926,7 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"operations\x18\x06 \x03(\tR\n" +
 	"operations\x129\n" +
 	"\x06fields\x18\a \x03(\v2!.numen.v1.ManifestConnectionFieldR\x06fields\x12!\n" +
-	"\fis_available\x18\b \x01(\bR\visAvailable\"\xe9\x03\n" +
+	"\fis_available\x18\b \x01(\bR\visAvailable\"\xac\x03\n" +
 	"\x12ProviderConnection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\atype_id\x18\x02 \x01(\tR\x06typeId\x12\x12\n" +
@@ -961,9 +936,7 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x11is_type_available\x18\x06 \x01(\bR\x0fisTypeAvailable\x12\x1a\n" +
 	"\brevision\x18\b \x01(\x05R\brevision\x12\x1f\n" +
 	"\vis_complete\x18\t \x01(\bR\n" +
-	"isComplete\x12;\n" +
-	"\x1ais_private_network_allowed\x18\n" +
-	" \x01(\bR\x17isPrivateNetworkAllowed\x123\n" +
+	"isComplete\x123\n" +
 	"\x04uses\x18\a \x03(\v2\x1f.numen.v1.ProviderConnectionUseR\x04uses\x1aQ\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
@@ -978,13 +951,12 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x05types\x18\x01 \x03(\v2 .numen.v1.ProviderConnectionTypeR\x05types\" \n" +
 	"\x1eListProviderConnectionsRequest\"a\n" +
 	"\x1fListProviderConnectionsResponse\x12>\n" +
-	"\vconnections\x18\x01 \x03(\v2\x1c.numen.v1.ProviderConnectionR\vconnections\"\xc0\x03\n" +
+	"\vconnections\x18\x01 \x03(\v2\x1c.numen.v1.ProviderConnectionR\vconnections\"\x83\x03\n" +
 	"\x1fCreateProviderConnectionRequest\x12\x17\n" +
 	"\atype_id\x18\x01 \x01(\tR\x06typeId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12M\n" +
 	"\x06fields\x18\x03 \x03(\v25.numen.v1.CreateProviderConnectionRequest.FieldsEntryR\x06fields\x12U\n" +
-	"\asecrets\x18\x04 \x03(\v26.numen.v1.CreateProviderConnectionRequest.SecretsEntryB\x03\x80\x01\x01R\asecrets\x12;\n" +
-	"\x1ais_private_network_allowed\x18\x05 \x01(\bR\x17isPrivateNetworkAllowed\x1aQ\n" +
+	"\asecrets\x18\x04 \x03(\v26.numen.v1.CreateProviderConnectionRequest.SecretsEntryB\x03\x80\x01\x01R\asecrets\x1aQ\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
 	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\x1a:\n" +
@@ -996,14 +968,13 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"connection\x18\x01 \x01(\v2\x1c.numen.v1.ProviderConnectionR\n" +
 	"connection\x12;\n" +
 	"\x05error\x18\x02 \x01(\x0e2%.numen.v1.ProviderConnectionErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"\xd3\x03\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x96\x03\n" +
 	"\x1fUpdateProviderConnectionRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\brevision\x18\x02 \x01(\x05R\brevision\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12M\n" +
 	"\x06fields\x18\x04 \x03(\v25.numen.v1.UpdateProviderConnectionRequest.FieldsEntryR\x06fields\x12U\n" +
-	"\asecrets\x18\x05 \x03(\v26.numen.v1.UpdateProviderConnectionRequest.SecretsEntryB\x03\x80\x01\x01R\asecrets\x12;\n" +
-	"\x1ais_private_network_allowed\x18\x06 \x01(\bR\x17isPrivateNetworkAllowed\x1aQ\n" +
+	"\asecrets\x18\x05 \x03(\v26.numen.v1.UpdateProviderConnectionRequest.SecretsEntryB\x03\x80\x01\x01R\asecrets\x1aQ\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
 	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\x1a:\n" +
