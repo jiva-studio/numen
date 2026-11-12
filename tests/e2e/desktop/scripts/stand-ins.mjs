@@ -3,11 +3,6 @@ import http from 'node:http'
 /** The words every chat completion of the stand-in chat API answers with. */
 export const STAND_IN_REPLY = 'The agent answered.'
 
-/** A prompt holding these words is answered after `DELAYED_REPLY_MS`, long enough to press Stop. */
-export const DELAYED_PROMPT = 'Answer after a pause'
-
-const DELAYED_REPLY_MS = 10_000
-
 /**
  * A prompt holding these words is answered once `DELETE /stand-in/hold` opens the gate that
  * `PUT /stand-in/hold` closed, so a test sees the stop state for as long as it needs to.
@@ -29,18 +24,6 @@ const NOTE_WRITE_TOOL = 'note_write'
 
 /** The release the stand-in update manifest names first: older than any build, so no update is offered. */
 const OLD_RELEASE = { version: '0.0.0', build: '0', released: '2026-01-01T00:00:00Z', files: [] }
-
-/**
- * A release newer than any build. `PUT /stand-in/release` with it makes the manifest offer an
- * update, and `DELETE /stand-in/release` names the old release again.
- */
-export const NEW_RELEASE = {
-  version: '9999.1.0',
-  build: '999999999',
-  channel: 'stable',
-  released: '2026-10-30T00:00:00Z',
-  files: [],
-}
 
 /** The release the update manifest names now. */
 let release = OLD_RELEASE
@@ -65,9 +48,6 @@ const openHold = (_req, res) => {
   heldReplies.clear()
   sendJson(res, 200, { held: 0 })
 }
-
-/** How many times each path was asked for, which `GET /stand-in/requests` answers. */
-const requests = new Map()
 
 const sendJson = (res, status, body) => {
   res.writeHead(status, { 'Content-Type': 'application/json' })
@@ -145,12 +125,7 @@ const answerChat = (req, res) =>
       res.on('close', () => heldReplies.delete(reply))
       return
     }
-    if (!raw.includes(DELAYED_PROMPT)) {
-      reply()
-      return
-    }
-    const timer = setTimeout(reply, DELAYED_REPLY_MS)
-    res.on('close', () => clearTimeout(timer))
+    reply()
   })
 
 const switchRelease = (req, res) =>
@@ -172,7 +147,6 @@ const routes = new Map([
   ],
   ['PUT /stand-in/hold', closeHold],
   ['DELETE /stand-in/hold', openHold],
-  ['GET /stand-in/requests', (_req, res) => sendJson(res, 200, Object.fromEntries(requests))],
   [
     'GET /v1/models',
     (_req, res) => sendJson(res, 200, { data: [{ id: STAND_IN_MODEL, name: 'Test model' }] }),
@@ -182,7 +156,6 @@ const routes = new Map([
 
 const handle = (req, res) => {
   const { pathname } = new URL(req.url ?? '/', 'http://127.0.0.1')
-  requests.set(pathname, (requests.get(pathname) ?? 0) + 1)
   const answer = routes.get(`${req.method} ${pathname}`)
   if (!answer) {
     sendJson(res, 404, { error: `the stand-in answers no ${req.method} ${pathname}` })
@@ -196,8 +169,7 @@ const handle = (req, res) => {
 /**
  * Starts the local server that is in for what the application reaches outside the
  * machine: the release manifest of dl.numen.md and an OpenAI-compatible chat API. A test switches
- * the release through `/stand-in/release` and reads how often each path was asked for through
- * `/stand-in/requests`.
+ * the release through `/stand-in/release`.
  *
  * @returns {Promise<{ updateUrl: string, chatUrl: string, close: () => void }>}
  */
@@ -207,7 +179,6 @@ export const startStandIns = () => {
   isHoldClosed = false
   isHoldAll = false
   heldReplies.clear()
-  requests.clear()
   return startServer()
 }
 

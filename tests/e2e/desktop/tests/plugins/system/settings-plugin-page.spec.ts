@@ -2,8 +2,8 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { test, expect, type Page } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
-import { openWorkspace, runCommand } from '../../support/workspace.js'
 import type { JsonValue } from '../../support/json.js'
+import { openWorkspace, runCommand } from '../../support/workspace.js'
 
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
 const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }

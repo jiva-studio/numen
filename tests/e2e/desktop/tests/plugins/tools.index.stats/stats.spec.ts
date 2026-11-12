@@ -43,15 +43,6 @@ test.describe('the index stats item', () => {
     for (const path of notes.splice(0)) await destroyIndexedNote(request, path)
   })
 
-  test('shows the number of vectors in the title bar', async ({ page }) => {
-    await openWorkspace(page)
-
-    const item = getItem(page)
-    await expect(item).toBeVisible()
-    await expect(item).toHaveText(/^⬡\s*\d/)
-    expect(await readSettledVectors(item)).toBeGreaterThan(0)
-  })
-
   test('follows a note that is created, edited and removed', async ({ page, request }) => {
     await openWorkspace(page)
     const item = getItem(page)

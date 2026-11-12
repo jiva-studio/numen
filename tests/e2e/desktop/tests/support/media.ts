@@ -6,40 +6,12 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { expect, type APIRequestContext } from 'playwright/test'
-import { getVaultPath, listFilePaths, readOwner, writeSetting } from './vault.js'
-import type { JsonValue } from './json.js'
+import type { APIRequestContext } from 'playwright/test'
+import { getVaultPath, readOwner } from './vault.js'
 
 /** Whether a file of the vault is on disk. */
 export const hasVaultFile = (file: string): boolean =>
   fs.existsSync(path.join(getVaultPath(), file))
-
-/** Copies a file of the vault to another path of it. */
-export const copyVaultFile = (from: string, to: string): void => {
-  const root = getVaultPath()
-  fs.copyFileSync(path.join(root, from), path.join(root, to))
-}
-
-/** Deletes files of the vault from the disk; a missing one is skipped. */
-export const deleteVaultFiles = (...files: string[]): void => {
-  const root = getVaultPath()
-  for (const file of files) fs.rmSync(path.join(root, file), { force: true })
-}
-
-/** The names of the files a plugin keeps in its folder of the vault, `.numen/<plugin id>/`. */
-export const listPluginFiles = (plugin: string): string[] => {
-  const folder = path.join(getVaultPath(), '.numen', plugin)
-  return fs.existsSync(folder) ? fs.readdirSync(folder) : []
-}
-
-/** Waits until the core lists the file in its folder. */
-export const waitForListedFile = async (
-  request: APIRequestContext,
-  file: string,
-): Promise<void> => {
-  const folder = path.posix.dirname(file) === '.' ? '' : path.posix.dirname(file)
-  await expect.poll(() => listFilePaths(request, folder)).toContain(file)
-}
 
 /** The letters a card id of a deck is written in (the idPattern of the flashcards manifest). */
 const CARD_ID_LETTERS = '0123456789abcdefghjkmnpqrstvwxyz'
@@ -70,23 +42,6 @@ export const createDeckText = (title: string, cards: readonly DeckCard[]): strin
       ].join('\n\n'),
     ),
   ].join('\n\n') + '\n'
-
-/** Writes one setting of a plugin into the run's settings file. */
-export const writePluginSetting = (
-  request: APIRequestContext,
-  plugin: string,
-  key: string,
-  value: JsonValue | undefined,
-): Promise<void> => writeSetting(request, [plugin, key], value)
-
-/**
- * Stops a plugin and starts it again, which takes the tasks it reported out of the list: the core
- * lists a failed task until the plugin ends it or stops.
- */
-export const restartPlugin = async (request: APIRequestContext, plugin: string): Promise<void> => {
-  await writePluginSetting(request, plugin, 'enabled', false)
-  await writePluginSetting(request, plugin, 'enabled', true)
-}
 
 /**
  * The origin of the stand-ins `scripts/stand-ins.mjs` starts, read from the release feed address

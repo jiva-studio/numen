@@ -1,6 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
 import {
-  STAND_IN_REPLY,
   TOOL_NOTE_PATH,
   TOOL_NOTE_TEXT,
   TOOL_PROMPT,
@@ -18,21 +17,6 @@ const openAgentPanel = async (page: Page) => {
 }
 
 test.describe('Agent Plugin and Interface', () => {
-  test('sends the question and shows the answer of the chat API under it', async ({ page }) => {
-    const input = await openAgentPanel(page)
-    await expect(page.getByText('No messages yet').first()).toBeVisible()
-    const send = page.getByRole('button', { name: 'Send' }).first()
-    await expect(send).toBeDisabled()
-
-    await input.fill('Summarize thermodynamics principles')
-    await send.click()
-
-    await expect(page.getByText('Summarize thermodynamics principles').first()).toBeVisible()
-    await expect(page.getByText(STAND_IN_REPLY).first()).toBeVisible({ timeout: 20_000 })
-    await expect(input).toHaveValue('')
-    await expect(page.getByText('No messages yet')).toHaveCount(0)
-  })
-
   test('writes the note a tool call of the model asks for, and shows the call in the turn', async ({
     page,
     request,

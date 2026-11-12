@@ -3,7 +3,7 @@
  * the gestures they make in the window.
  */
 import { expect, type APIRequestContext, type Locator, type Page } from 'playwright/test'
-import { callRPC, destroyNote, getConnection, createNote, writeNote } from './vault.js'
+import { callRPC, getConnection, createNote, writeNote, destroyNote } from './vault.js'
 
 /** Creates a note of that title in the folder holding the body given, and returns its path. */
 export const createNoteWithBody = async (
@@ -16,46 +16,6 @@ export const createNoteWithBody = async (
   await writeNote(request, path, body)
   return path
 }
-
-/**
- * Takes the notes and their trashed copies off the disk, ignoring what is not there. A test
- * cleans up with it. It tries every note and throws once at the end for the ones that failed.
- */
-export const destroyNotes = async (
-  request: APIRequestContext,
-  paths: readonly string[],
-): Promise<void> => {
-  const failures: string[] = []
-  for (const path of paths) {
-    try {
-      await destroyNote(request, path)
-    } catch (failure) {
-      failures.push(String(failure))
-    }
-  }
-  if (failures.length > 0) throw new Error(failures.join('\n'))
-}
-
-/** Makes an empty folder at the path. */
-export const createFolder = async (request: APIRequestContext, path: string): Promise<void> => {
-  await callRPC(request, 'FileService/CreateFolder', { path })
-}
-
-/** Moves a file or a folder into the trash of the vault. */
-export const trashFiles = async (
-  request: APIRequestContext,
-  paths: readonly string[],
-): Promise<void> => {
-  for (const path of paths) await callRPC(request, 'FileService/RemoveFile', { path })
-}
-
-/** The paths of what the folder holds, folders included. */
-export const listPaths = async (request: APIRequestContext, folder: string): Promise<string[]> =>
-  (
-    ((await callRPC(request, 'FileService/ListFiles', { path: folder }))['entries'] ?? []) as {
-      path?: string
-    }[]
-  ).map((one) => one.path ?? '')
 
 /** Whether each of two notes writes a record about the other. */
 export const getConnectionSides = async (
@@ -129,7 +89,7 @@ export const dragRowOnto = async (page: Page, row: Locator, onto: Locator): Prom
 }
 
 /** The width of an element as laid out, in CSS pixels. */
-export const readWidth = async (element: Locator): Promise<number> =>
+const readWidth = async (element: Locator): Promise<number> =>
   element.evaluate((one) => one.getBoundingClientRect().width)
 
 /** How many samples in turn, a tenth of a second apart, must agree for a width to be settled. */
@@ -162,3 +122,22 @@ export const readHeight = async (element: Locator): Promise<number> =>
 
 /** The first line of text of an editor: a box whose height follows the size of the text. */
 export const getFirstLine = (editor: Locator): Locator => editor.locator('.cm-line').first()
+
+/**
+ * Takes the notes and their trashed copies off the disk, ignoring what is not there. A test
+ * cleans up with it. It tries every note and throws once at the end for the ones that failed.
+ */
+export const destroyNotes = async (
+  request: APIRequestContext,
+  paths: readonly string[],
+): Promise<void> => {
+  const failures: string[] = []
+  for (const path of paths) {
+    try {
+      await destroyNote(request, path)
+    } catch (failure) {
+      failures.push(String(failure))
+    }
+  }
+  if (failures.length > 0) throw new Error(failures.join('\n'))
+}

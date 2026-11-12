@@ -5,7 +5,6 @@ import path from 'node:path'
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { startOwnServer, type InstalledPlugin, type OwnServer } from '../../support/server.js'
 import { runCommand } from '../../support/workspace.js'
-import type { JsonObject } from '../../support/json.js'
 
 const ONE = 'md.numen.test.probe-one'
 const TWO = 'md.numen.test.probe-two'

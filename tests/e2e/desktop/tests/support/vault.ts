@@ -19,22 +19,6 @@ export const getVaultPath = (): string =>
     )
     .trim()
 
-/** The vault of the installation list that is the run's vault. */
-export const getRunVault = async (request: APIRequestContext): Promise<Vault> => {
-  const folder = getVaultPath()
-  const vault = (await listVaults(request)).find((one) => safeRealpath(one.path) === folder)
-  if (!vault) throw new Error('the installation lists no vault of the run')
-  return vault
-}
-
-const safeRealpath = (one: string): string => {
-  try {
-    return fs.realpathSync(one)
-  } catch {
-    return one
-  }
-}
-
 /** Calls a unary RPC of the debug server with a JSON body, and gives back its JSON answer. */
 export const callRPC = async (
   request: APIRequestContext,
@@ -51,7 +35,7 @@ export const callRPC = async (
 }
 
 /** One link a note is made with, as CreateNote takes it. */
-export interface NewLink {
+interface NewLink {
   readonly to: string
   readonly role: 'ROLE_PARENT' | 'ROLE_CHILD' | 'ROLE_JUMP' | 'ROLE_REF'
 }
@@ -102,7 +86,7 @@ export const waitForSavedBody = async (
 }
 
 /** One entry of a folder listing. */
-export interface Entry {
+interface Entry {
   readonly path: string
   readonly name: string
   readonly isFolder: boolean
@@ -185,7 +169,7 @@ interface ConnectionRecord {
 }
 
 /** The relationship between two notes, as the core reads it from both. */
-export interface Connection {
+interface Connection {
   readonly role?: string
   readonly firstSide?: ConnectionRecord
   readonly secondSide?: ConnectionRecord
@@ -213,7 +197,7 @@ export const listBacklinks = async (
 }
 
 /** One vault of the installation's list. */
-export interface Vault {
+interface Vault {
   readonly id: string
   readonly name: string
   readonly path: string
@@ -253,11 +237,6 @@ export const openVault = async (request: APIRequestContext, id: string): Promise
   if (answer['error']) throw new Error(`OpenVault refused: ${JSON.stringify(answer)}`)
 }
 
-/** Takes a vault off the installation's list, leaving its folder where it is. */
-export const removeVault = async (request: APIRequestContext, id: string): Promise<void> => {
-  await callRPC(request, 'VaultsService/RemoveVault', { id, trash: false })
-}
-
 /** Writes one setting of numen.json, the value given as JSON. */
 export const writeSetting = async (
   request: APIRequestContext,
@@ -270,7 +249,7 @@ export const writeSetting = async (
 }
 
 /** Every setting in force, as the core answers them. */
-export const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
+const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
   JSON.parse(
     String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),
   ) as JsonObject
@@ -334,14 +313,3 @@ export const typeAtEnd = async (page: Page, text: Locator, typed: string): Promi
   await page.keyboard.press('ControlOrMeta+End')
   await page.keyboard.type(typed)
 }
-
-/** Puts text into a file of the vault as another program would, frontmatter included. */
-export const writeVaultFile = (
-  request: APIRequestContext,
-  filePath: string,
-  content: string,
-): Promise<void> =>
-  new Promise((resolve) => {
-    fs.writeFileSync(path.join(getVaultPath(), filePath), content)
-    resolve()
-  })
