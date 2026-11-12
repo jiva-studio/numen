@@ -126,13 +126,13 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if got := bCountEmpty.getTitle(t.Context(), env.Vault, ""); got != "" {
+	if got := bCountEmpty.notes.GetTitle(t.Context(), env.Vault.ID, ""); got != "" {
 		t.Fatalf("expected empty title for empty path, got %q", got)
 	}
 	if countingVault.emptyGetNotesCalls != 0 {
 		t.Fatalf("expected no GetNotes call for an empty path, got %d", countingVault.emptyGetNotesCalls)
 	}
-	if got := bCountEmpty.getTitle(t.Context(), env.Vault, "Term.md"); got != "Term" {
+	if got := bCountEmpty.notes.GetTitle(t.Context(), env.Vault.ID, "Term.md"); got != "Term" {
 		t.Fatalf("expected Term title, got %q", got)
 	}
 
@@ -141,7 +141,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if got := bNotesErr.getTitle(t.Context(), env.Vault, "Term.md"); got != "" {
+	if got := bNotesErr.notes.GetTitle(t.Context(), env.Vault.ID, "Term.md"); got != "" {
 		t.Fatalf("expected empty title on GetNotes error, got %q", got)
 	}
 

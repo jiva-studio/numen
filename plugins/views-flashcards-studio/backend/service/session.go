@@ -34,19 +34,8 @@ func (s *vaultSession) getVault(ctx context.Context, id string) (domain.Vault, e
 	return v, nil
 }
 
-func (s *vaultSession) getTitle(ctx context.Context, v domain.Vault, path string) string {
-	if path == "" {
-		return ""
-	}
-	found, err := s.notes.GetNotes(ctx, v.ID, []string{path})
-	if err != nil {
-		return ""
-	}
-	return found[path].Title
-}
-
 func (s *vaultSession) newTitler(ctx context.Context, v domain.Vault) func(path string) string {
-	return func(path string) string { return s.getTitle(ctx, v, path) }
+	return func(path string) string { return s.notes.GetTitle(ctx, v.ID, path) }
 }
 
 func (s *vaultSession) createCardNote(

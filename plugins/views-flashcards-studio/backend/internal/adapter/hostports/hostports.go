@@ -116,6 +116,18 @@ func (n Notes) GetPathsOfType(ctx context.Context, id domain.VaultID, noteType d
 	return n.Vaults(id).Notes.GetPathsOfType(ctx, noteType)
 }
 
+// GetTitle returns the title of the note at path, or "" for an empty path or a note the index does not know.
+func (n Notes) GetTitle(ctx context.Context, id domain.VaultID, path string) string {
+	if path == "" {
+		return ""
+	}
+	found, err := n.GetNotes(ctx, id, []string{path})
+	if err != nil {
+		return ""
+	}
+	return found[path].Title
+}
+
 // GetCardModels lists the notes of the card model type with their titles, by path.
 func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.CardModel, error) {
 	vault := n.Vaults(id).Notes
