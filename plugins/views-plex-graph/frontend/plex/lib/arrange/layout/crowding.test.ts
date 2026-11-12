@@ -20,7 +20,6 @@ const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: n
       Math.abs(node.y) + node.height / 2 > viewport.height / 2 - margin,
   )
 
-/** Whether the window holds every node of the graph at the given packing. */
 const canHoldAll = (packed: PlexOptions): boolean => {
   const { viewport } = packed
   const frame = arrangePlex(build('A node', COUNTS), {

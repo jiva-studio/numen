@@ -10,7 +10,6 @@ const { nodeSize, focusSize, gap, lineGap, focusGap, margin, spread } = DEFAULT_
 
 const children = (frame: PlexFrame) => frame.nodes.filter((node) => node.relation === 'child')
 
-/** The smallest empty space between two children, along the axis on which they are nearest. */
 const getSeparation = (frame: PlexFrame): number => {
   const nodes = children(frame)
   let smallest = Infinity

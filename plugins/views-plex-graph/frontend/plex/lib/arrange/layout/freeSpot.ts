@@ -13,13 +13,10 @@ export interface Gaps {
 }
 
 export interface SpotRequest {
-  /** The nearest point the box may take: no member sits nearer the focus. */
   readonly start: Vector
-  /** Where the group is centered; the box goes to the free spot nearest it. */
   readonly middle: Vector
   readonly direction: Vector
   readonly size: Size
-  /** The boxes of the same group that are already placed. */
   readonly group: readonly Spot[]
   readonly gaps: Gaps
 }
@@ -115,7 +112,6 @@ export class SpotIndex {
     return free
   }
 
-  /** Calls `visit` for each cell the rectangle touches, until it returns true. */
   private visitCells(rect: Rect, visit: (cell: number) => boolean): void {
     const toX = Math.floor(rect.maxX / CELL)
     const fromY = Math.floor(rect.minY / CELL)
@@ -128,17 +124,14 @@ export class SpotIndex {
   }
 }
 
-/** Whether a candidate beats the best so far: a lower cost, or an equal cost nearer the start. */
 function isBetter(cost: number, along: number, best: { cost: number; along: number }): boolean {
   return cost < best.cost || (cost === best.cost && roundAlong(along) < roundAlong(best.along))
 }
 
-/** Rounded like the cost, so float noise does not decide which of two candidates is nearer the start. */
 function roundAlong(along: number): number {
   return Math.round(along * COST_PRECISION)
 }
 
-/** The gap that must be kept: the gap less the tolerance, never below nothing. */
 function getRequiredGap(gap: number): number {
   return Math.max(0, gap - TOLERANCE)
 }
@@ -177,7 +170,6 @@ export function findFreeSpot(taken: readonly Spot[] | SpotIndex, request: SpotRe
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
 }
 
-/** Nothing was free in reach: a spot past every placed box, far out, where a window drops it. */
 function findSpotBeyond(taken: SpotIndex, request: SpotRequest): Spot {
   const { middle, direction, size, gaps } = request
   const { minX, maxX, minY, maxY } = taken.getExtent()
@@ -220,13 +212,11 @@ function listCandidates(request: SpotRequest): Vector[] {
   return candidates
 }
 
-/** How far a point is from the start, along the direction. Below nothing it is nearer the focus than the start. */
 function measureAlong(point: Vector, request: SpotRequest): number {
   const { start, direction } = request
   return (point.x - start.x) * direction.x + (point.y - start.y) * direction.y
 }
 
-/** The distance to the middle counted in boxes. */
 function measureCost(point: Vector, request: SpotRequest): number {
   const { middle, size, gaps } = request
   return Math.hypot(
@@ -235,7 +225,6 @@ function measureCost(point: Vector, request: SpotRequest): number {
   )
 }
 
-/** Nothing beside the group is free: walk outward from the middle until something is. */
 function findFreeSpotOutward(taken: SpotIndex, request: SpotRequest): Spot | undefined {
   const { middle, direction, size, gaps } = request
   const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }

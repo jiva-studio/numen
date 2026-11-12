@@ -84,7 +84,6 @@ describe('the free spot of a group', () => {
   })
 })
 
-/** A small seeded generator, so the boxes are the same on every run. */
 function createRandom(seed: number): () => number {
   let state = seed
   return () => {

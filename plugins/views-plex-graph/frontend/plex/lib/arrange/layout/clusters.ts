@@ -52,7 +52,6 @@ export function getAnchor(
 }
 
 interface MiddleRequest {
-  /** How many notes of the relation are placed. */
   readonly size: number
   readonly cell: { readonly width: number; readonly height: number }
 }

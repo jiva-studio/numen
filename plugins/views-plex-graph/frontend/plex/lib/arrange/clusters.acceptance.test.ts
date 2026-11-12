@@ -52,7 +52,6 @@ const getOutside = (nodes: readonly PlacedNode[], viewport: Window): string[] =>
     )
     .map((node) => node.id)
 
-/** How many groups of values there are when values closer than `tolerance` count as one. */
 function countDistinctValues(values: readonly number[], tolerance: number): number {
   const sorted = [...values].sort((a, b) => a - b)
   return sorted.reduce(
@@ -69,7 +68,6 @@ const getBounds = (nodes: readonly PlacedNode[]): Box => ({
   maxY: Math.max(...nodes.map((n) => n.y + n.height / 2)),
 })
 
-/** The smallest empty space between two of the boxes, along the axis on which they are nearest. */
 function getSmallestSeparation(nodes: readonly PlacedNode[]): number {
   let smallest = Infinity
   nodes.forEach((a, index) => {

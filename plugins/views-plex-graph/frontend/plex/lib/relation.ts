@@ -9,7 +9,6 @@ export type Lean = 'up' | 'down'
 
 export interface RelationDescriptor {
   readonly grows: 'up' | 'down' | 'left' | 'right'
-  /** The cross-axis tilt of the group, or null for a group that grows straight out. */
   readonly lean: Lean | null
   readonly plural: readonly [one: string, many: string]
 }

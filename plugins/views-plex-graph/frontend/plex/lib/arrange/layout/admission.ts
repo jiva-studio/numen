@@ -43,7 +43,6 @@ export function admitNodes(
   }
 }
 
-/** Stops a pass when each relation has met a box outside or has all its boxes placed. */
 function createStopWhenSettled(
   nodesByRelation: NodesByRelation,
   isInside: (node: PlacedNode) => boolean,

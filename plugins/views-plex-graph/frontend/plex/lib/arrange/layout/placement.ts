@@ -11,10 +11,6 @@ export type Widths = (node: PlexNode) => number
 export interface PlacementContext {
   readonly options: PlexOptions
   readonly width: Widths
-  /**
-   * Called with each node as it is placed; when it returns true the caller needs no more nodes, and a strategy may return the nodes placed so far.
-   * Strategies that do not support stopping place everything.
-   */
   readonly shouldStop?: ((node: PlacedNode) => boolean) | undefined
 }
 

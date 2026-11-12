@@ -35,7 +35,6 @@ export interface PlexViewProps {
   draggedAt?: Position | null
   dropRelation?: PlexRelation | null
   dropName?: (relation: PlexRelation) => string
-  /** How far a line bows, as the routing setting; the lines being dragged bow by the same amount. */
   curvature?: number | undefined
 }
 
