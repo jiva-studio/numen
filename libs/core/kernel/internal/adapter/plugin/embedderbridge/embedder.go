@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -12,6 +13,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	domain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -205,12 +207,16 @@ func (b *Embedder) OnModelReadError(fn func(error)) {
 }
 
 func readFailure(pluginID string, err error) error {
-	// A plugin whose settings do not allow the read yet, such as a source that is a connection with no row
-	// chosen, is not failing: it reports nothing.
-	if connect.CodeOf(err) == connect.CodeFailedPrecondition {
-		return nil
+	var failure *connect.Error
+	if errors.As(err, &failure) && failure.Code() == connect.CodeFailedPrecondition {
+		// The plugin names the connections and the reasons it got from the enum of reasons, never a text of a
+		// service. A plugin whose settings name no connection yet is not failing: it reports nothing.
+		if strings.Contains(failure.Message(), domain.ErrNoConnection.Error()) {
+			return nil
+		}
+		return fmt.Errorf("read model of embedding plugin %s: %s", pluginID, failure.Message())
 	}
-	return fmt.Errorf("read model of embedding plugin %s: %w", pluginID, err)
+	return fmt.Errorf("read model of embedding plugin %s: it did not answer", pluginID)
 }
 
 func (b *Embedder) reportReadError(err error) {
