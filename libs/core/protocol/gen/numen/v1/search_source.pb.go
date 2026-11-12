@@ -218,7 +218,7 @@ func (x *DescribeSearchSourceResponse) GetFloorHint() float64 {
 // it was cut from relative to the vault, and the text version it was cut from, empty for a note.
 type IndexedText struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkId       int64                  `protobuf:"varint,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
+	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
 	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	VersionId     string                 `protobuf:"bytes,3,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
 	Text          string                 `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
@@ -256,11 +256,11 @@ func (*IndexedText) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *IndexedText) GetChunkId() int64 {
+func (x *IndexedText) GetChunkId() string {
 	if x != nil {
 		return x.ChunkId
 	}
-	return 0
+	return ""
 }
 
 func (x *IndexedText) GetPath() string {
@@ -471,7 +471,7 @@ func (x *SearchSourceServiceSearchPassagesRequest) GetFloor() float64 {
 // ChunkMatch is a chunk the core handed the source with its text, and how well it answers.
 type ChunkMatch struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkId       int64                  `protobuf:"varint,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
+	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
 	Score         float64                `protobuf:"fixed64,2,opt,name=score,proto3" json:"score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -507,11 +507,11 @@ func (*ChunkMatch) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ChunkMatch) GetChunkId() int64 {
+func (x *ChunkMatch) GetChunkId() string {
 	if x != nil {
 		return x.ChunkId
 	}
-	return 0
+	return ""
 }
 
 func (x *ChunkMatch) GetScore() float64 {
@@ -779,7 +779,7 @@ const file_numen_v1_search_source_proto_rawDesc = "" +
 	"\n" +
 	"floor_hint\x18\a \x01(\x01R\tfloorHint\"o\n" +
 	"\vIndexedText\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\x03R\achunkId\x12\x12\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x03 \x01(\tR\tversionId\x12\x12\n" +
@@ -799,7 +799,7 @@ const file_numen_v1_search_source_proto_rawDesc = "" +
 	"\x05floor\x18\x06 \x01(\x01R\x05floor\"=\n" +
 	"\n" +
 	"ChunkMatch\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\x03R\achunkId\x12\x14\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x14\n" +
 	"\x05score\x18\x02 \x01(\x01R\x05score\"[\n" +
 	")SearchSourceServiceSearchPassagesResponse\x12.\n" +
 	"\amatches\x18\x01 \x03(\v2\x14.numen.v1.ChunkMatchR\amatches\"\x8c\x01\n" +
