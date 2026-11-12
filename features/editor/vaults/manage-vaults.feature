@@ -39,7 +39,10 @@ Feature: Manage vaults
 
     Scenario: The open vault cannot be chosen
       Given the empty vault "Coastline"
-      And the window has the vault "Test"
+      And the vault list has the following:
+        | vault     |
+        | Test      |
+        | Coastline |
       When the person runs the command "Remove vault from list"
       Then the palette has the following rows:
         | list          | row       | disabled |

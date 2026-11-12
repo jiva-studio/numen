@@ -82,4 +82,4 @@ Feature: Move to trash
     And the person opens the note titled "Tide table"
     When the person runs the command "Move to trash" on the file at "notes/Tide table.md"
     Then the note titled "Harbour log" on disk has "See [[Tide table]] for tides."
-    And the note titled "Harbour log" has "[[Tide table]]"
+    And the note titled "Harbour log" has "See Tide table for tides."

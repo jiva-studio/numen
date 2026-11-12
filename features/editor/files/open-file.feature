@@ -56,5 +56,5 @@ Feature: Open file
     Scenario: A file without a tab type is not opened
       Given the person opens the file at "notes/Entropy.md"
       When the person opens the file at "assets/data.xyz"
-      Then the tab at "notes/Entropy.md" is active
+      Then the tab at "notes/Entropy.md" is open
       And the tab at "assets/data.xyz" is not open

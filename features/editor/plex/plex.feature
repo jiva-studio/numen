@@ -65,7 +65,9 @@ Feature: Plex
       And the person runs the command "Link with tab" on the Plex tab titled "Thermodynamics" with:
         | Search | Weir notes |
       When the person clicks the note titled "Entropy" in the plex
-      Then the tab at "notes/Entropy.md" is active
+      Then the window has the following tabs:
+        | kind | path             |
+        | note | notes/Entropy.md |
       And the tab titled "Weir notes" is not open
 
   Rule: A found note has actions
