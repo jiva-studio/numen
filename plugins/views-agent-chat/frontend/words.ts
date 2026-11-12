@@ -7,13 +7,13 @@ export const WORDS = {
   thinking: 'Thinking',
   unreachable: 'Agent unreachable.',
   nothing: 'The agent returned no answer.',
+  maxTokens: 'The answer reached the length limit of the model.',
+  maxTurnRequests: 'The agent reached its limit of requests for one question.',
+  refusal: 'The agent refused to answer.',
   unsent: 'Not sent',
   stopped: 'Stopped',
   noTranscript: 'No messages yet',
   agent: 'Agent',
-  reasoning: 'Reasoning',
-  /** The model control where no agent can answer. */
-  noAgent: 'No agent',
   noAgentMessage: 'No agent is set up.',
   openSettings: 'Open settings',
 }

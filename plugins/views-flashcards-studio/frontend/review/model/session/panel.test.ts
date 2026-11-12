@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { AgentPort } from '@numen/plugin-sdk'
+import type { ConnectionHost } from '@numen/plugin-sdk'
 
 import { useAgentPanel } from './panel'
 import { WORDS as words } from '../../lib/session/agentWords'
@@ -25,43 +25,45 @@ const card = (
   ...more,
 })
 
-const createAgent = (): AgentPort => ({
-  async *ask() {
-    yield* []
+/** Connections that are never called here: the panel only passes them to the view. */
+const connections: ConnectionHost = {
+  // eslint-disable-next-line require-yield
+  call: async function* () {
+    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
   },
-  finish: async () => undefined,
-})
+}
 
 const panel = (
   more: {
     card?: ReviewCard | null
-    unreachable?: string
     showing?: 'reading' | 'here' | 'asking'
   } = {},
 ) => {
   const on = ref<ReviewCard | null>(more.card === undefined ? card() : more.card)
   const showing = ref<'reading' | 'here' | 'asking'>(more.showing ?? 'here')
-  const notices: string[] = []
-  /** The cards a port was made for, one to a conversation. */
-  const about: ReviewCard[] = []
-  const ports: AgentPort[] = []
   const target = useAgentPanel({
-    agent: (one) => {
-      about.push(one)
-      const port = createAgent()
-      ports.push(port)
-      return port
-    },
+    connections,
     card: () => on.value,
-    unreachable: () => more.unreachable ?? '',
+    vault: () => 'vault-garden',
     open: () => showing.value === 'asking',
     showPanel: (open) => {
       if (open) showing.value = 'asking'
       else if (showing.value === 'asking') showing.value = 'here'
     },
-    showNotice: (one) => notices.push(one),
   })
-  return { wrapper: target, notices, on, showing, about, ports }
+  /** The cards a conversation was made for, one to a conversation. */
+  const about: ReviewCard[] = []
+  let last: unknown = null
+  const track = () => {
+    const context = target.context.value
+    if (context && context !== last && target.about.value) about.push(target.about.value)
+    last = context
+  }
+  const openPanel = () => {
+    target.openPanel()
+    track()
+  }
+  return { wrapper: { ...target, openPanel }, on, showing, about }
 }
 
 describe('the panel coming in', () => {
@@ -77,15 +79,6 @@ describe('the panel coming in', () => {
     wrapper.openPanel()
     expect(wrapper.open.value).toBe(true)
     expect(wrapper.about.value?.address.cardId).toBe('3f4g5h6j7k')
-  })
-
-  // A control that does nothing is pressed repeatedly.
-  it('says why it cannot come in, and does not', () => {
-    const { wrapper, notices } = panel({ unreachable: 'Agent unreachable.' })
-    wrapper.openPanel()
-    expect(wrapper.open.value).toBe(false)
-    expect(wrapper.context.value).toBeNull()
-    expect(notices).toEqual(['Agent unreachable.'])
   })
 
   it('is put away and keeps the conversation', () => {
@@ -107,31 +100,21 @@ describe('the panel coming in', () => {
 })
 
 describe('the context of the conversation about a card', () => {
-  it('asks with the port made for the card, about the deck the card is in', () => {
-    const { wrapper, about, ports } = panel()
+  it('asks on the connections of the plugin, with the card for the tools and the vault of the review', () => {
+    const { wrapper, about } = panel()
     wrapper.openPanel()
 
     expect(about).toEqual([card()])
-    expect(wrapper.context.value?.agent).toBe(ports[0])
-    expect(wrapper.context.value?.focus).toBe('decks/Words.md')
-    expect(wrapper.context.value?.placeholder).toBe(words.ask)
-  })
-
-  it('says why the agent cannot be reached, as the window says it now', () => {
-    let unreachable = ''
-    const target = useAgentPanel({
-      agent: createAgent,
-      card: () => card(),
-      unreachable: () => unreachable,
-      open: () => false,
-      showPanel: () => undefined,
-      showNotice: () => undefined,
+    expect(wrapper.context.value).toStrictEqual({
+      connections,
+      toolContext: {
+        'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
+        'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
+        'md.numen.views.flashcards.studio/template': 'Say it',
+      },
+      vault: 'vault-garden',
+      placeholder: words.ask,
     })
-    target.openPanel()
-
-    unreachable = words.unreachable
-
-    expect(target.context.value?.getUnreachable?.()).toBe(words.unreachable)
   })
 
   // The current card is never answered from the previous one's conversation.

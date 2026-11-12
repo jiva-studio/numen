@@ -2,17 +2,15 @@
  * The status line showing the tool the agent is running, and the wait line
  * under it, shown whenever no more specific status is known.
  */
-import { writeCharCount } from '../lib/turn'
 import type { Turn } from '../../types'
-import type { SourceLocation } from '@numen/plugin-sdk'
 
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
-interface WorkCall {
-  readonly tool: string
+/** What the line says about one tool call: its title, what it is about, and the file it works on. */
+export interface WorkCall {
+  readonly title: string
   readonly subject: string
-  readonly location?: SourceLocation | null | undefined
-  readonly written: number
+  readonly path: string
 }
 
 export interface WorkLine {
@@ -26,43 +24,40 @@ export interface WorkLine {
 export interface WorkLineOptions {
   readonly put: (turn: Turn) => void
   readonly drop: (id: string) => void
-  readonly locations: Map<string, SourceLocation>
+  /** The file a line opens when pressed, by the id of the line. */
+  readonly paths: Map<string, string>
   readonly waitWords: string
 }
 
 /**
  * The two lines of one exchange. `workId` and `wait` are their identifiers, and
- * `locations` holds the source location a line opens when pressed.
+ * `paths` holds the file a line opens when pressed.
  */
 export function createWorkLine(options: WorkLineOptions, workId: string, wait: string): WorkLine {
-  const { put, drop, locations, waitWords } = options
-  // The status text for the current call. A call carrying the text of a source
-  // is reported again each time more of it is written, so the written count is
-  // what changes while it is being written.
+  const { put, drop, paths, waitWords } = options
   let says = waitWords
-  let subject: string
+  let subject = ''
 
   // Whether the line is up. It comes down when the answer begins, and a tool
   // answering does not put it back: what a tool did belongs above the answer it
   // led to, and a line raised here is placed under that answer for good.
   let up = false
 
-  const show = (state: 'arriving' | 'settled', count = 0) => {
+  const show = (state: 'arriving' | 'settled') => {
     put({
       id: workId,
       voice: 'doing',
       text: says,
       subject,
-      aside: writeCharCount(count),
       state,
-      ...(locations.has(workId) ? { canOpen: true } : {}),
+      ...(paths.has(workId) ? { canOpen: true } : {}),
     })
     up = true
   }
 
   const dropWorkLine = () => {
     drop(workId)
-    locations.delete(workId)
+    paths.delete(workId)
     up = false
   }
 
@@ -73,16 +68,11 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
 
   return {
     reach: (call) => {
-      says = getSpokenTool(call.tool)
+      says = getSpokenTool(call.title)
       subject = call.subject
-      // A call naming a run of a source's text names somewhere the line can be
-      // pressed to open.
-      if (call.location && call.location.range.end > call.location.range.start) {
-        locations.set(workId, call.location)
-      } else {
-        locations.delete(workId)
-      }
-      show('arriving', call.written)
+      if (call.path) paths.set(workId, call.path)
+      else paths.delete(workId)
+      show('arriving')
     },
     settle: () => {
       if (up) show('settled')

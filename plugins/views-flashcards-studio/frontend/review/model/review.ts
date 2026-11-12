@@ -15,7 +15,14 @@ import type { VaultCardsDue } from '../lib/vault/types'
 import { useReviewDays } from './decks/reviewDays'
 import { useVaultPresets } from './decks/presets'
 import { useReviewSession } from './session/session'
-import type { AgentHost, NoticeHost, Severity, Caught, Unvalidated } from '@numen/plugin-sdk'
+import type {
+  ConnectionHost,
+  NoticeHost,
+  Severity,
+  Caught,
+  Unvalidated,
+  VaultRelations,
+} from '@numen/plugin-sdk'
 import { createNotices } from './notices'
 import type { VaultCounts } from './counts'
 import { usePanels } from './usePanels'
@@ -31,7 +38,8 @@ export interface ReviewDeps {
   readonly vault: string
   readonly counts: VaultCounts
   readonly notices: NoticeHost
-  readonly agent: AgentHost
+  readonly connections: ConnectionHost
+  readonly relations: Pick<VaultRelations, 'resolveLinks'>
   readonly mountView: MountView
   readonly goToVaults: () => void
   readonly getViewport: () => { readonly screen: number; readonly page: number }
@@ -161,9 +169,8 @@ export const useReview = (deps: ReviewDeps) => {
 
   const panels = usePanels({
     card: () => state.cards.queue.card.value,
-    agent: deps.agent,
-    unreachable: () => deps.agent.getUnreachable(),
-    resolveLinks: (text) => deps.agent.resolveLinks(text, deps.vault),
+    connections: deps.connections,
+    resolveLinks: (text) => deps.relations.resolveLinks(text, deps.vault),
     vault: () => deps.vault,
     showNotice: (text) => notices.showNotice(text, 'warning'),
   })

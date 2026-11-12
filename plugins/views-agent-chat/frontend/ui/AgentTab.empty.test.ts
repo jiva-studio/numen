@@ -1,63 +1,65 @@
 /**
- * The agent tab where no agent can answer, and when one is turned on.
+ * The agent tab where the plugin has no agent row: the question fails, says so, and offers the
+ * settings page of the plugin.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
-import type { AgentModel } from '@numen/plugin-sdk'
+import { describe, expect, it } from 'vitest'
 import AgentTab from './AgentTab.vue'
 import { useConversation } from '../thread'
 import { useAgentConversation } from '../model/useAgentConversation'
-import { createHost } from '../fixtures'
+import { createAgentConnections, failWith } from '../fixtures'
 import { WORDS } from '../words'
 
-const AGENT: AgentModel = { name: 'zeta', title: 'Zeta', isDefault: true, presence: 'present' }
-const MODEL: AgentModel = { name: 'one', title: 'One', isDefault: true, presence: 'present' }
-
 const mountTab = () => {
-  const hasAgent = ref(false)
-  const openSettings = vi.fn()
-  const { agent } = createHost()
+  let settingsOpened = 0
+  const { host } = createAgentConnections({
+    end: failWith('no_connection', 'no connection serves acp.task'),
+  })
   const state = useAgentConversation(
-    useConversation({ agent, words: WORDS, conversation: 'conversation:empty' }),
+    useConversation({
+      connections: host,
+      words: WORDS,
+      conversation: 'conversation:empty',
+      paint: (draw) => draw(),
+    }),
     {
+      openFile: () => undefined,
       openFileAt: () => undefined,
       openFileAdjacent: () => undefined,
       resolveLinks: async () => [],
-      unreachable: () => '',
-      settings: {
-        openSettings,
-        getModelsAt: (path) => {
-          if (!hasAgent.value) return []
-          return path.join('/') === 'app/agent/use' ? [AGENT] : [MODEL]
-        },
+      openSettings: () => {
+        settingsOpened += 1
       },
     },
   )
-  return { wrapper: mount(AgentTab, { props: { state } }), hasAgent, openSettings }
+  return { wrapper: mount(AgentTab, { props: { state } }), state, getOpened: () => settingsOpened }
+}
+
+const ask = async (tab: ReturnType<typeof mountTab>) => {
+  tab.state.draft.send('How many pear trees grow by the gate?')
+  while (tab.state.conversation.isAnswerPending.value) await new Promise((go) => setTimeout(go, 0))
+  await tab.wrapper.vm.$nextTick()
 }
 
 describe('the agent tab with no agent set up', () => {
-  it('shows the control "No agent" and the message, without an input', () => {
-    const { wrapper } = mountTab()
-    expect(wrapper.get('.model-selector__pill').text()).toBe('No agent')
-    expect(wrapper.get('.composer__empty').text()).toContain('No agent is set up.')
-    expect(wrapper.find('textarea').exists()).toBe(false)
+  it('says no agent is set up under the question', async () => {
+    const tab = mountTab()
+
+    await ask(tab)
+
+    expect(tab.wrapper.text()).toContain('No agent is set up.')
+    expect(tab.wrapper.find('textarea').exists()).toBe(true)
   })
 
-  it('opens the settings from the link', async () => {
-    const { wrapper, openSettings } = mountTab()
-    await wrapper.get('.composer__empty button').trigger('click')
-    expect(openSettings).toHaveBeenCalledTimes(1)
-  })
+  it('opens the settings of the plugin from the failed turn', async () => {
+    const tab = mountTab()
+    await ask(tab)
 
-  it('returns to the input and the dropdown when an agent is turned on', async () => {
-    const { wrapper, hasAgent } = mountTab()
-    hasAgent.value = true
-    await nextTick()
-    await nextTick()
-    expect(wrapper.find('textarea').exists()).toBe(true)
-    expect(wrapper.find('.composer__empty').exists()).toBe(false)
-    expect(wrapper.get('.model-selector__pill').text()).toBe('Zeta · One')
+    const button = tab.wrapper
+      .findAll('button')
+      .find((one) => one.text() === WORDS.openSettings)!
+    await button.trigger('click')
+
+    expect(tab.getOpened()).toBe(1)
   })
 })

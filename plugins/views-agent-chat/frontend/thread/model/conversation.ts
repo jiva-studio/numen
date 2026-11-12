@@ -4,86 +4,91 @@
  *
  * An answer grows as its pieces arrive. Work is one line, put up the moment a
  * task is taken and taken down when the answer begins, with the wait under it.
- * Every question carries the name of the conversation, and the agent answers
- * them all as one.
+ * Every question carries the name of the conversation, and the provider answers
+ * them all in one session while it keeps it.
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
-import { onNextFrame, reportFailure, type Caught, type Paint } from '@numen/ui'
+import { onNextFrame, type Paint } from '@numen/ui'
+import type { ConnectionError, ConnectionHost, Result } from '@numen/plugin-sdk'
+import {
+  PlanEntryStatus,
+  runTask,
+  StopReason,
+  ToolCallStatus,
+  type PlanEntry,
+  type TaskDone,
+  type TaskFrame,
+} from '@numen/plugin-sdk/contracts/acp'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
-import type { Turn } from '../../types'
-import type { AgentPort, AgentQuery, AgentStep, SourceLocation } from '@numen/plugin-sdk'
+import type { PlanItem, PlanStatus, Turn } from '../../types'
 
 /** The words the panel sets up itself. */
 export interface ConversationStrings {
   readonly thinking: string
   readonly unreachable: string
   readonly nothing: string
-}
-
-interface AskOptions {
-  readonly agentId?: string
-  readonly modelId?: string
-  readonly reasoning?: string
+  readonly noAgentMessage: string
+  readonly maxTokens: string
+  readonly maxTurnRequests: string
+  readonly refusal: string
 }
 
 export interface Conversation {
   readonly turns: Ref<Turn[]>
   readonly isAnswerPending: Readonly<Ref<boolean>>
-  readonly ask: (question: string, focus: string, options?: AskOptions) => Promise<void>
-  readonly getSourceLocation: (turn: string) => SourceLocation | null
+  readonly ask: (question: string) => Promise<void>
+  /** The file the line of a turn works on, null where it works on none. */
+  readonly getSourcePath: (turn: string) => string | null
   readonly stop: () => void
-  readonly finish: () => void
 }
 
 export interface ConversationOptions {
-  readonly agent: AgentPort
+  readonly connections: ConnectionHost
   readonly words: ConversationStrings
   readonly conversation: string
+  /** Handed to every tool the agent calls. */
+  readonly toolContext?: Readonly<Record<string, string>> | undefined
+  /** The vault the tools work on; empty is the vault the window shows. */
+  readonly vault?: string | undefined
   readonly paint?: Paint | undefined
 }
 
 export function useConversation(options: ConversationOptions): Conversation {
-  const { agent, words, conversation, paint = onNextFrame } = options
-  const { turns, locations, put, drop, nextId } = useConversationTurns()
+  const { connections, words, conversation, paint = onNextFrame } = options
+  const { turns, paths, put, drop, nextId } = useConversationTurns()
   const { isAnswerPending, startFlight, stop, endFlight } = useFlightState()
 
-  const ask = async (question: string, focus: string, askOptions?: AskOptions) => {
+  const ask = async (question: string) => {
     if (!question || isAnswerPending.value) return
     put({ id: nextId(), voice: 'prompt', text: question })
 
-    const work = createWorkLine(
-      { put, drop, locations, waitWords: words.thinking },
-      nextId(),
-      nextId(),
-    )
+    const work = createWorkLine({ put, drop, paths, waitWords: words.thinking }, nextId(), nextId())
     work.setWaiting(true)
     const flight = startFlight(work.clear)
     const answer = createAnswer({ put, drop, nextId }, paint)
+    const plan = createPlanTurn(put, nextId)
 
     try {
-      const error = await readAgentSteps(
-        agent,
+      const frames = runTask(
+        connections,
         {
-          question,
-          focus,
+          prompt: question,
           conversation,
-          signal: flight.signal,
-          agentId: askOptions?.agentId,
-          modelId: askOptions?.modelId,
-          reasoning: askOptions?.reasoning,
+          toolContext: { ...options.toolContext },
+          vaultId: options.vault ?? '',
         },
-        { answer, work },
+        { signal: flight.signal, priority: 'interactive' },
       )
+      const end = await readFrames(frames, flight.signal, { answer, work, plan })
 
       work.clear()
-      if (!flight.signal.aborted) {
-        settleTurn({ answer, error, words }, put, nextId)
-      } else {
-        answer.settle()
-      }
+      plan.settle()
+      if (end && !flight.signal.aborted) settleTurn({ answer, end, words }, put, nextId)
+      else answer.settle()
     } catch {
       work.clear()
+      plan.settle()
       answer.settle()
       if (!flight.signal.aborted) {
         put({ id: nextId(), voice: 'response', text: words.unreachable, state: 'failed' })
@@ -93,57 +98,84 @@ export function useConversation(options: ConversationOptions): Conversation {
     }
   }
 
-  const finish = () => {
-    stop()
-    closeAgentConversation(agent, conversation)
-  }
-
   return {
     turns,
     isAnswerPending,
     ask,
-    getSourceLocation: (turn: string) => locations.get(turn) ?? null,
+    getSourcePath: (turn: string) => paths.get(turn) ?? null,
     stop,
-    finish,
   }
-}
-
-function closeAgentConversation(agent: AgentPort, conversation: string): void {
-  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch((error: Caught) => {
-    reportFailure(error)
-  })
 }
 
 interface SettleTurnOptions {
   readonly answer: Answer
-  readonly error: string
+  readonly end: Result<TaskDone, ConnectionError>
   readonly words: ConversationStrings
 }
 
+const getStopSentence = (reason: StopReason, words: ConversationStrings): string => {
+  switch (reason) {
+    case StopReason.MAX_TOKENS:
+      return words.maxTokens
+    case StopReason.MAX_TURN_REQUESTS:
+      return words.maxTurnRequests
+    case StopReason.REFUSAL:
+      return words.refusal
+    default:
+      return ''
+  }
+}
+
+/** A failure the answer already ends with marks the answer failed; any other goes on a turn of its own. */
+function putFailure(answer: Answer, message: string, put: (turn: Turn) => void, nextId: () => string) {
+  const cleanMessage = message.trim()
+  const text = answer.getText().trim()
+  if (answer.hasContent() && cleanMessage && text.endsWith(cleanMessage)) {
+    answer.fail()
+    return
+  }
+  answer.settle()
+  put({ id: nextId(), voice: 'response', text: message, state: 'failed' })
+}
+
 function settleTurn(options: SettleTurnOptions, put: (turn: Turn) => void, nextId: () => string) {
-  const { answer, error, words } = options
-  if (error) {
-    const cleanError = error.trim()
-    const text = answer.getText().trim()
-    if (answer.hasContent() && (text === cleanError || text.endsWith(cleanError))) {
-      answer.fail()
+  const { answer, end, words } = options
+  if (!end.ok) {
+    if (end.error.error === 'canceled') {
+      answer.settle()
       return
     }
-    answer.settle()
-    put({ id: nextId(), voice: 'response', text: error, state: 'failed' })
+    if (end.error.error === 'no_connection') {
+      answer.settle()
+      put({
+        id: nextId(),
+        voice: 'response',
+        text: words.noAgentMessage,
+        state: 'failed',
+        offersSettings: true,
+      })
+      return
+    }
+    putFailure(answer, end.error.message, put, nextId)
     return
   }
 
+  const reason = end.value.stopReason
+  const sentence = getStopSentence(reason, words)
   const hasContent = answer.hasContent()
   answer.settle()
-  if (!hasContent) {
+  if (sentence) {
+    put({ id: nextId(), voice: 'response', text: sentence, state: 'failed' })
+    return
+  }
+  if (!hasContent && reason !== StopReason.CANCELLED) {
     put({ id: nextId(), voice: 'response', text: words.nothing })
   }
 }
 
 function useConversationTurns() {
   const turns = ref<Turn[]>([])
-  const locations = new Map<string, SourceLocation>()
+  const paths = new Map<string, string>()
   let next = 0
 
   const saveTurn = (turn: Turn) => {
@@ -163,7 +195,7 @@ function useConversationTurns() {
     return `${next++}`
   }
 
-  return { turns, locations, put: saveTurn, drop, nextId }
+  return { turns, paths, put: saveTurn, drop, nextId }
 }
 
 /** The answer in progress: what aborts it and what clears its work line. */
@@ -197,77 +229,113 @@ function useFlightState() {
   return { isAnswerPending, startFlight, stop, endFlight }
 }
 
-interface StepContext {
-  readonly answer: Answer
-  readonly work: WorkLine
-  readonly calls: Set<string>
-  onError: (err: string) => void
+const PLAN_STATUSES: Readonly<Record<PlanEntryStatus, PlanStatus>> = {
+  [PlanEntryStatus.UNSPECIFIED]: 'pending',
+  [PlanEntryStatus.PENDING]: 'pending',
+  [PlanEntryStatus.IN_PROGRESS]: 'active',
+  [PlanEntryStatus.COMPLETED]: 'done',
 }
 
-function applyAgentStep(step: AgentStep, context: StepContext): void {
+/** The plan of one exchange: one turn, put up with the first plan and replaced by each next one. */
+interface PlanTurn {
+  readonly show: (entries: readonly PlanEntry[]) => void
+  readonly settle: () => void
+}
+
+function createPlanTurn(put: (turn: Turn) => void, nextId: () => string): PlanTurn {
+  let id = ''
+  let items: readonly PlanItem[] = []
+  const draw = (state: 'arriving' | 'settled') =>
+    put({ id, voice: 'plan', text: '', plan: items, state })
+  return {
+    show: (entries) => {
+      if (!id) id = nextId()
+      items = entries.map((entry) => ({
+        text: entry.content,
+        status: PLAN_STATUSES[entry.status],
+      }))
+      draw('arriving')
+    },
+    settle: () => {
+      if (id) draw('settled')
+    },
+  }
+}
+
+interface FrameContext {
+  readonly answer: Answer
+  readonly work: WorkLine
+  readonly plan: PlanTurn
+  /** The tool calls that have not ended, by their ids. */
+  readonly calls: Set<string>
+}
+
+const isEnded = (status: ToolCallStatus | undefined): boolean =>
+  status === ToolCallStatus.COMPLETED || status === ToolCallStatus.FAILED
+
+/** A call that ended leaves the line settled once no other call is running, and the wait back up. */
+function endCall(id: string, context: FrameContext): void {
+  context.calls.delete(id)
+  if (context.calls.size > 0) return
+  context.work.settle()
+  context.work.setWaiting(true)
+}
+
+function applyFrame(frame: TaskFrame, context: FrameContext): void {
   const { answer, work, calls } = context
-  switch (step.kind) {
-    case 'text':
-      if (step.text === '') break
+  const { update } = frame
+  switch (update.case) {
+    case 'agentMessageChunk':
+      if (update.value.text === '') break
       calls.clear()
       work.setWaiting(false)
       if (!answer.isOpen()) work.dropWorkLine()
-      answer.say(step.text)
+      answer.say(update.value.text)
       break
-    case 'toolCall':
+    case 'plan':
+      work.setWaiting(false)
+      context.plan.show(update.value.entries)
+      break
+    case 'toolCall': {
+      const call = update.value
       answer.settle()
       work.setWaiting(false)
-      calls.add(`${step.tool}\u0000${step.subject}`)
+      calls.add(call.toolCallId)
       work.reach({
-        tool: step.tool,
-        subject: step.subject,
-        location: step.place,
-        written: step.written,
+        title: call.title,
+        subject: call.content[0] ?? '',
+        path: call.locations[0]?.path ?? '',
       })
+      if (isEnded(call.status)) endCall(call.toolCallId, context)
       break
-    case 'answered':
-      if (calls.size > 1) break
-      work.settle()
-      work.setWaiting(true)
+    }
+    case 'toolCallUpdate': {
+      const change = update.value
+      if (isEnded(change.status)) endCall(change.toolCallId, context)
       break
-    case 'thinking':
-      calls.clear()
-      answer.settle()
-      work.dropWorkLine()
-      work.setWaiting(true)
-      break
-    case 'stopped':
-      context.onError(step.error)
+    }
+    default:
       break
   }
 }
 
-interface StepRunner {
+interface FrameRunner {
   readonly answer: Answer
   readonly work: WorkLine
+  readonly plan: PlanTurn
 }
 
-async function readAgentSteps(
-  agent: AgentPort,
-  query: AgentQuery,
-  runner: StepRunner,
-): Promise<string> {
-  let error = ''
-  const calls = new Set<string>()
-  const stepContext: StepContext = {
-    answer: runner.answer,
-    work: runner.work,
-    calls,
-    onError: (err) => {
-      error = err
-    },
+/** Draws the frames of a task as they arrive; the end of the task, or null where it was given up. */
+async function readFrames(
+  frames: AsyncGenerator<TaskFrame, Result<TaskDone, ConnectionError>>,
+  signal: AbortSignal,
+  runner: FrameRunner,
+): Promise<Result<TaskDone, ConnectionError> | null> {
+  const context: FrameContext = { ...runner, calls: new Set() }
+  for (;;) {
+    const next = await frames.next()
+    if (signal.aborted) return null
+    if (next.done === true) return next.value
+    applyFrame(next.value, context)
   }
-
-  for await (const step of agent.ask(query)) {
-    if (query.signal.aborted) break
-    applyAgentStep(step, stepContext)
-    if (step.kind === 'stopped') break
-  }
-
-  return error
 }

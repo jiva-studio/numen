@@ -1,11 +1,9 @@
 /**
- * A conversation about one card names the card in the context of every
- * question it sends, and is ended under the name it was held by.
+ * A conversation about one card hands the card to the tools the agent calls.
  */
 import { describe, expect, it } from 'vitest'
-import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 
-import { createCardAgentPort } from './agent'
+import { getCardToolContext } from './agent'
 import type { ReviewCard } from '../../lib/card/cards'
 
 const card: ReviewCard = {
@@ -17,40 +15,12 @@ const card: ReviewCard = {
   ahead: null,
 }
 
-describe('createCardAgentPort', () => {
-  it('sends the vault, and the deck, the card and the review card in the query context', async () => {
-    const agent = createMockAgentHost([{ kind: 'text', text: 'Because of the leaves.' }])
-    const signal = new AbortController().signal
-    const steps = []
-    for await (const step of createCardAgentPort(agent, card, 'v-garden').ask({
-      question: 'why is it called that',
-      focus: 'decks/Words.md',
-      conversation: 'card-0',
-      signal,
-    })) {
-      steps.push(step)
-    }
-
-    expect(agent.getQueries()).toEqual([
-      {
-        question: 'why is it called that',
-        focus: 'decks/Words.md',
-        conversation: 'card-0',
-        signal,
-        vault: 'v-garden',
-        context: {
-          'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
-          'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
-          'md.numen.views.flashcards.studio/template': 'Say it',
-        },
-      },
-    ])
-    expect(steps).toEqual([{ kind: 'text', text: 'Because of the leaves.' }])
-  })
-
-  it('finishes the conversation by its id', async () => {
-    const agent = createMockAgentHost()
-    await createCardAgentPort(agent, card, 'v-garden').finish('card-0')
-    expect(agent.getFinished()).toEqual(['card-0'])
+describe('getCardToolContext', () => {
+  it('names the deck, the card and the template under the keys of the plugin', () => {
+    expect(getCardToolContext(card)).toStrictEqual({
+      'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
+      'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
+      'md.numen.views.flashcards.studio/template': 'Say it',
+    })
   })
 })

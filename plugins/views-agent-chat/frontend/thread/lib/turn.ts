@@ -2,7 +2,7 @@
  * What a thread is made of, as plain values.
  */
 
-import { groupDigits, type LinkPiece } from '@numen/ui'
+import type { LinkPiece } from '@numen/ui'
 import type { Turn, TurnState, Voice } from '../../types'
 
 export interface VoiceDescriptor {
@@ -18,6 +18,7 @@ export const VOICES = {
   prompt: { isBubble: true, against: 'end' },
   response: { isBubble: false, against: 'start' },
   doing: { isBubble: false, against: 'start' },
+  plan: { isBubble: false, against: 'start' },
 } as const satisfies Record<Voice, VoiceDescriptor>
 
 /** A turn with everything about how to draw it worked out. */
@@ -50,12 +51,3 @@ const placeTurn = (turn: Turn): PlacedTurn => {
 /** The turns, with what is true of each where it is located. A turn keeps the entry it was first given. */
 export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] => turns.map(placeTurn)
 
-/**
- * How much of a call has been written, in words.
- *
- * A call carrying the text of a note is written for minutes, and this is the
- * only thing about it that moves. Grouped in thousands, because the numbers
- * reach five figures on one note.
- */
-export const writeCharCount = (count: number): string =>
-  count <= 0 ? '' : `${groupDigits(count)} characters`

@@ -1,6 +1,6 @@
 /**
  * The agent tabs of a window: their names, what a command targeting one applies
- * to, what closing one signals to the agent, and how a request to the window
+ * to, what closing one does to the answer on its way, and how a request to the window
  * affects one.
  */
 import { describe, expect, it } from 'vitest'
@@ -24,12 +24,9 @@ const window = (options: HostOptions = {}) => {
         turns: turn,
         isAnswerPending: ref(false),
         ask: async () => undefined,
-        getSourceLocation: () => null,
+        getSourcePath: () => null,
         stop: () => {
           stopCalls.push('stop')
-        },
-        finish: () => {
-          stopCalls.push('finish')
         },
       }
       conversations.push({ said: turn, stopped: stopCalls })
@@ -37,7 +34,7 @@ const window = (options: HostOptions = {}) => {
     },
     AgentTab,
   )
-  const open = (): AgentTabState => chats.kind.open!('', `${AGENT}:1`)
+  const open = (id = `${AGENT}:1`): AgentTabState => chats.kind.open!('', id)
   return { ...fixture, ...chats, open, conversations }
 }
 
@@ -97,13 +94,36 @@ describe('what a command requested over an agent tab is over', () => {
 })
 
 describe('an agent tab that closes', () => {
-  it('notifies the conversation it is over, so the agent releases what it kept', () => {
+  it('stops the answer on its way', () => {
     const one = window()
     const state = one.open()
 
     expect(one.kind.onClose!(state, `${AGENT}:1`)).toBe(true)
 
-    expect(one.conversations[0]?.stopped).toStrictEqual(['finish'])
+    expect(one.conversations[0]?.stopped).toStrictEqual(['stop'])
+  })
+
+  it('takes no more draft by its id', () => {
+    const one = window()
+    const state = one.open()
+    one.kind.onClose!(state, `${AGENT}:1`)
+
+    one.setDraft(`${AGENT}:1`, 'notes/Orchard.md — ')
+
+    expect(state.draft.userQuestion.value).toBe('')
+  })
+})
+
+describe('a draft written to an agent tab by its id', () => {
+  it('is left in the composer of that tab alone', () => {
+    const one = window()
+    const first = one.open(`${AGENT}:1`)
+    const second = one.open(`${AGENT}:2`)
+
+    one.setDraft(`${AGENT}:2`, 'notes/Orchard.md — ')
+
+    expect(first.draft.userQuestion.value).toBe('')
+    expect(second.draft.userQuestion.value).toBe('notes/Orchard.md — ')
   })
 })
 
