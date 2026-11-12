@@ -51,18 +51,18 @@ func TestAConnectionIsSavedWithAnArrowAndNoLabelAndReadBack(t *testing.T) {
 		t.Errorf("the connection read back as %v", got)
 	}
 
-	neighborhood, err := f.client.GetNeighborhood(t.Context(), connect.NewRequest(&v1.GetNeighborhoodRequest{
+	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
 		Path: "Heat.md",
 	}))
-	if err != nil || len(neighborhood.Msg.GetRelated()) != 1 || len(neighborhood.Msg.GetConnections()) != 1 {
-		t.Fatalf("neighborhood %v (%v)", neighborhood.Msg, err)
+	if err != nil || len(related.Msg.GetRelated()) != 1 || len(related.Msg.GetConnections()) != 1 {
+		t.Fatalf("related %v (%v)", related.Msg, err)
 	}
 	// A line of jumps runs from the note drawn later (Entropy) to the focus.
-	line := neighborhood.Msg.GetConnections()[0]
+	line := related.Msg.GetConnections()[0]
 	if line.GetFirst() != "Entropy.md" || line.GetSecond() != "Heat.md" ||
 		line.GetFirstSide().GetLabel() != "back" || line.GetFirstSide().GetMarker() != v1.Marker_MARKER_UNSPECIFIED ||
 		line.GetSecondSide().GetMarker() != v1.Marker_MARKER_ARROW || line.GetSecondSide().GetLabel() != "" {
-		t.Errorf("the neighborhood draws the line as %v", line)
+		t.Errorf("the related draws the line as %v", line)
 	}
 }
 

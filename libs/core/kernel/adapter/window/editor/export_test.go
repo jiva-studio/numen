@@ -72,7 +72,7 @@ type NoteUseCases struct {
 	Names        edit.NameQueries
 	OpeningNote  *query.GetOpeningNote
 	Headings     *query.ListHeadings
-	Neighborhood *query.GetNeighborhoodView
+	RelatedNotes *query.GetRelatedNotesView
 	ResolveLinks *query.ResolveLinks
 }
 
@@ -83,7 +83,7 @@ func (s *Services) UseNotes() {
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
 		notewindow.NewProse(s.state, use.Read, use.Write, use.Create, use.Rename, writes),
-		notewindow.NewOutline(s.state, use.OpeningNote, use.Neighborhood, use.Headings),
+		notewindow.NewOutline(s.state, use.OpeningNote, use.RelatedNotes, use.Headings),
 		notewindow.NewLinks(s.state, use.ResolveLinks, writeLink(use.EditLinks, use.Names, writes), nil, nil, writes),
 		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)

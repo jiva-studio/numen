@@ -4,9 +4,9 @@ import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
 import type { PlacedNode } from '../../lib/node'
-import type { PlexNeighborhood } from '../../../types'
+import type { PlexGraph } from '../../../types'
 
-const before: PlexNeighborhood = {
+const before: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Start', relation: 'focus' },
     { id: 'staying', title: 'Staying', relation: 'child' },
@@ -18,7 +18,7 @@ const before: PlexNeighborhood = {
   ],
 }
 
-const after: PlexNeighborhood = {
+const after: PlexGraph = {
   nodes: [
     { id: 'staying', title: 'Staying', relation: 'focus' },
     { id: 'focus', title: 'Start', relation: 'parent' },
@@ -30,7 +30,7 @@ const after: PlexNeighborhood = {
   ],
 }
 
-const titled: PlexNeighborhood = {
+const titled: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Start', relation: 'focus' },
     { id: 'below', title: 'Below', relation: 'child' },
@@ -412,7 +412,7 @@ describe('settled node draw order', () => {
 })
 
 describe('edge arrowheads', () => {
-  const named: PlexNeighborhood = {
+  const named: PlexGraph = {
     nodes: [
       { id: 'focus', title: 'Start', relation: 'focus' },
       { id: 'below', title: 'Below', relation: 'child' },

@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func relationsOf(n domain.Neighborhood) []string {
+func relationsOf(n domain.NoteGraph) []string {
 	out := make([]string, 0, len(n.Related))
 	for _, r := range n.Related {
 		out = append(out, string(r.Relation)+" "+r.Path)
@@ -19,10 +19,10 @@ func relationsOf(n domain.Neighborhood) []string {
 	return out
 }
 
-func neighborhoodOf(t *testing.T, files map[string]string, path string) domain.Neighborhood {
+func relatedNotesOf(t *testing.T, files map[string]string, path string) domain.NoteGraph {
 	t.Helper()
 	db, v := newIndexedVault(t, files)
-	n, err := query.NewShowNeighborhood(db.NoteQueries(), db.NoteQueries()).
+	n, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).
 		Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
@@ -34,7 +34,7 @@ func neighborhoodOf(t *testing.T, files map[string]string, path string) domain.N
 // say the same thing, so A must be B's child either way it was written.
 func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 	t.Parallel()
-	content := neighborhoodOf(t, map[string]string{
+	content := relatedNotesOf(t, map[string]string{
 		"Area.md":  "---\ntitle: Area\n---\n\n# Area\n",
 		"Idea.md":  "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Idea\n",
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
@@ -43,7 +43,7 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 		t.Errorf("a note that names Area its parent is not Area's child: %v", got)
 	}
 
-	reversed := neighborhoodOf(t, map[string]string{
+	reversed := relatedNotesOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"[[Idea]]\"\n    role: child\n---\n\n# Area\n",
 		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
 	}, "Area.md")
@@ -67,7 +67,7 @@ func describeLine(c domain.Connection) string {
 	return c.A + ">" + c.B + " ab=" + describeSide(c.AB) + " ba=" + describeSide(c.BA)
 }
 
-func linesOf(n domain.Neighborhood) []string {
+func linesOf(n domain.NoteGraph) []string {
 	out := make([]string, 0, len(n.Connections))
 	for _, c := range n.Connections {
 		out = append(out, describeLine(c))
@@ -139,10 +139,10 @@ func TestEachEndOfALineKeepsItsOwnRecord(t *testing.T) {
 				"Area.md": content("Area", c.area),
 				"Idea.md": content("Idea", c.idea),
 			}
-			if got := linesOf(neighborhoodOf(t, files, "Area.md")); !slices.Equal(got, []string{c.fromArea}) {
+			if got := linesOf(relatedNotesOf(t, files, "Area.md")); !slices.Equal(got, []string{c.fromArea}) {
 				t.Errorf("from Area: got %q, want %q", got, c.fromArea)
 			}
-			if got := linesOf(neighborhoodOf(t, files, "Idea.md")); !slices.Equal(got, []string{c.fromIdea}) {
+			if got := linesOf(relatedNotesOf(t, files, "Idea.md")); !slices.Equal(got, []string{c.fromIdea}) {
 				t.Errorf("from Idea: got %q, want %q", got, c.fromIdea)
 			}
 		})
@@ -158,11 +158,11 @@ func TestEndsThatDisagreeKeepOnlyTheRecordsOfTheWinningDirection(t *testing.T) {
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: lays them\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
 	}
-	if got := linesOf(neighborhoodOf(t, mutualParents, "Chicken.md")); !slices.Equal(got, []string{`Egg.md>Chicken.md ab=none ba="lays them"`}) {
-		t.Errorf("got %q, want the neighbor as the parent and the word written here", got)
+	if got := linesOf(relatedNotesOf(t, mutualParents, "Chicken.md")); !slices.Equal(got, []string{`Egg.md>Chicken.md ab=none ba="lays them"`}) {
+		t.Errorf("got %q, want the related note as the parent and the word written here", got)
 	}
-	if got := linesOf(neighborhoodOf(t, mutualParents, "Egg.md")); !slices.Equal(got, []string{`Chicken.md>Egg.md ab=none ba="came out of one"`}) {
-		t.Errorf("got %q, want the neighbor as the parent and the word written here", got)
+	if got := linesOf(relatedNotesOf(t, mutualParents, "Egg.md")); !slices.Equal(got, []string{`Chicken.md>Egg.md ab=none ba="came out of one"`}) {
+		t.Errorf("got %q, want the related note as the parent and the word written here", got)
 	}
 
 	// Each calls the other its child, so the parent relation is earned from the far
@@ -171,10 +171,10 @@ func TestEndsThatDisagreeKeepOnlyTheRecordsOfTheWinningDirection(t *testing.T) {
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: was laid\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: hatched\n---\n\n# Egg\n",
 	}
-	if got := linesOf(neighborhoodOf(t, mutualChildren, "Chicken.md")); !slices.Equal(got, []string{`Egg.md>Chicken.md ab="hatched" ba=none`}) {
+	if got := linesOf(relatedNotesOf(t, mutualChildren, "Chicken.md")); !slices.Equal(got, []string{`Egg.md>Chicken.md ab="hatched" ba=none`}) {
 		t.Errorf("got %q, want the word written at the end it came from", got)
 	}
-	if got := linesOf(neighborhoodOf(t, mutualChildren, "Egg.md")); !slices.Equal(got, []string{`Chicken.md>Egg.md ab="was laid" ba=none`}) {
+	if got := linesOf(relatedNotesOf(t, mutualChildren, "Egg.md")); !slices.Equal(got, []string{`Chicken.md>Egg.md ab="was laid" ba=none`}) {
 		t.Errorf("got %q, want the word written at the end it came from", got)
 	}
 }
@@ -203,7 +203,7 @@ func TestLinesJoinNotesThatAreNotTheFocus(t *testing.T) {
 		{"neither writes", "", "", ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			n := neighborhoodOf(t, map[string]string{
+			n := relatedNotesOf(t, map[string]string{
 				"Area.md": area, "Idea.md": note("Idea", c.idea), "Plan.md": note("Plan", c.plan),
 			}, "Area.md")
 			want := []string{"Area.md>Idea.md ab=\"\" ba=none", "Area.md>Plan.md ab=\"\" ba=none"}
@@ -221,7 +221,7 @@ func TestLinesJoinNotesThatAreNotTheFocus(t *testing.T) {
 // the focus, yet the records it writes are lines like any other.
 func TestLinesJoinSiblingsToEachOtherAndToTheirParent(t *testing.T) {
 	t.Parallel()
-	n := neighborhoodOf(t, map[string]string{
+	n := relatedNotesOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\n---\n\n# Area\n",
 		"One.md":  "---\ntitle: One\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# One\n",
 		"Two.md": "---\ntitle: Two\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n    label: part of\n    marker: arrow\n" +
@@ -244,7 +244,7 @@ func TestLinesJoinSiblingsToEachOtherAndToTheirParent(t *testing.T) {
 // derived from the shared parent.
 func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
 	t.Parallel()
-	n := neighborhoodOf(t, map[string]string{
+	n := relatedNotesOf(t, map[string]string{
 		"Area.md":  "---\ntitle: Area\n---\n\n# Area\n",
 		"One.md":   "---\ntitle: One\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# One\n",
 		"Two.md":   "---\ntitle: Two\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Two\n",
@@ -262,7 +262,7 @@ func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
 // not a picture.
 func TestANoteConsumesOneRelation(t *testing.T) {
 	t.Parallel()
-	n := neighborhoodOf(t, map[string]string{
+	n := relatedNotesOf(t, map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n---\n\n# Egg\n",
 	}, "Chicken.md")
@@ -279,7 +279,7 @@ func TestANoteConsumesOneRelation(t *testing.T) {
 // is that a parent outranks one.
 func TestTheHigherRelationWins(t *testing.T) {
 	t.Parallel()
-	n := neighborhoodOf(t, map[string]string{
+	n := relatedNotesOf(t, map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n---\n\n# Egg\n",
 	}, "Chicken.md")
@@ -289,11 +289,11 @@ func TestTheHigherRelationWins(t *testing.T) {
 	}
 }
 
-// TestANeighborhoodStaysInsideItsVault. A link by identifier resolves in
-// whichever connected vault holds the note, so a neighborhood that does not
+// TestRelatedNotesStayInsideTheirVault. A link by identifier resolves in
+// whichever connected vault holds the note, so related notes that does not
 // check where one landed draws a note from somewhere else — or, when the two
 // vaults file a note at the same path, the wrong note under the right name.
-func TestANeighborhoodStaysInsideItsVault(t *testing.T) {
+func TestRelatedNotesStayInsideTheirVault(t *testing.T) {
 	t.Parallel()
 	const shared = "notes/Entropy.md"
 	db, here := newIndexedVault(t, map[string]string{
@@ -304,7 +304,7 @@ func TestANeighborhoodStaysInsideItsVault(t *testing.T) {
 		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
 	}))
 
-	n, err := query.NewShowNeighborhood(db.NoteQueries(), db.NoteQueries()).
+	n, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).
 		Execute(t.Context(), here, "Area.md")
 	if err != nil {
 		t.Fatal(err)
@@ -318,7 +318,7 @@ func TestANeighborhoodStaysInsideItsVault(t *testing.T) {
 // links, and neither is a place in the hierarchy.
 func TestOnlyNavigableLinksTakeARelation(t *testing.T) {
 	t.Parallel()
-	n := neighborhoodOf(t, map[string]string{
+	n := relatedNotesOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"https://example.org/paper\"\n    role: attachment\n" +
 			"  - to: \"[[Idea]]\"\n    role: jump\n---\n\n# Area\n\nMentioned in prose: [[Other]].\n",
 		"Idea.md":  "---\ntitle: Idea\n---\n\n# Idea\n",
@@ -333,7 +333,7 @@ func TestOnlyNavigableLinksTakeARelation(t *testing.T) {
 // TestADanglingLinkHasNoRelation: there is nothing to draw and nowhere to go.
 func TestADanglingLinkHasNoRelation(t *testing.T) {
 	t.Parallel()
-	n := neighborhoodOf(t, map[string]string{
+	n := relatedNotesOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"[[Nothing by that name]]\"\n    role: child\n---\n\n# Area\n",
 	}, "Area.md")
 
@@ -358,9 +358,9 @@ func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
 			"---\ntitle: Notes\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Notes %02d\n", i)
 	}
 
-	first := relationsOf(neighborhoodOf(t, files, "Area.md"))
+	first := relationsOf(relatedNotesOf(t, files, "Area.md"))
 	for range 8 {
-		if again := relationsOf(neighborhoodOf(t, files, "Area.md")); !slices.Equal(first, again) {
+		if again := relationsOf(relatedNotesOf(t, files, "Area.md")); !slices.Equal(first, again) {
 			t.Fatalf("two runs disagree:\n  %v\n  %v", first, again)
 		}
 	}

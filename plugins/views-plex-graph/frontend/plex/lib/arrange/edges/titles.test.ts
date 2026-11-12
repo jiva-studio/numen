@@ -19,7 +19,7 @@ import { build } from '../../../fixtures/build'
 import { neighborhoods } from '../../../fixtures/neighborhoods'
 import { getHeading, getLength, createPointOnCurve, type PlacedEdge } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
-import type { EdgeArrow, EdgeLabel, PlexNeighborhood } from '../../../../types'
+import type { EdgeArrow, EdgeLabel, PlexGraph } from '../../../../types'
 
 const perLetter = (width: number) => (label: string) => width * [...label].length
 
@@ -99,7 +99,7 @@ const boxAround = (node: PlacedNode): Box => ({
   maxY: node.y + node.height / 2,
 })
 
-const createOneLine = (label: string): PlexNeighborhood => ({
+const createOneLine = (label: string): PlexGraph => ({
   nodes: [
     { id: 'focus', title: 'Here', relation: 'focus' },
     { id: 'aside', title: 'Aside', relation: 'jump' },

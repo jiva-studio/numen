@@ -114,7 +114,7 @@ describe('a change to the vault', () => {
       fixture.host,
       () =>
         usePlexView({
-          neighborhood: async (path) => {
+          listRelatedNotes: async (path) => {
             await new Promise<void>((resolve) => answers.push(resolve))
             return { focus: { path, title: path }, focusType: 'note', related: [], connections: [] }
           },
@@ -274,10 +274,10 @@ describe('plex tab notifications', () => {
     expect(one.kind.getTitle!(nowhere.state)).toBe('Plex')
   })
 
-  it('calls it a plex while its view holds no neighborhood', async () => {
+  it('calls it a plex while its view holds no related notes', async () => {
     const one = window({ opening: '' })
     const { state } = await one.openTab()
-    ;(state.canvas.view.neighborhood as { value: unknown }).value = null
+    ;(state.canvas.view.noteGraph as { value: unknown }).value = null
 
     expect(one.kind.getTitle!(state)).toBe('Plex')
   })

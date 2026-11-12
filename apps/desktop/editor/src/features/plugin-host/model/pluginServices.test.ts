@@ -276,7 +276,7 @@ describe('the notes of the vault a plugin is handed', () => {
     }))
     answerCore({
       notes: {
-        getNeighborhood: (request) => ({
+        listRelatedNotes: (request) => ({
           focus: { path: request.path, title: 'Root' },
           focusType: 'note',
           related: [],
@@ -320,7 +320,7 @@ describe('the notes of the vault a plugin is handed', () => {
   it('reads what is around a note and the headings of notes', async () => {
     const { notes, listHeadings } = createNotes()
 
-    expect((await notes.getNeighborhood('Root.md')).focus).toStrictEqual({
+    expect((await notes.listRelatedNotes('Root.md')).focus).toStrictEqual({
       path: 'Root.md',
       title: 'Root',
     })

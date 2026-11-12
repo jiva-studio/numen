@@ -7,13 +7,13 @@ import type { PlexFrame } from '../frame'
 import type { PlacedNode } from '../node'
 import { rowsAndColumns, type Placement } from './layout/placement'
 import { build } from '../../fixtures/build'
-import type { PlexNeighborhood, PlexNode, PlexRelation, PlexNodeRelation } from '../../../types'
+import type { PlexGraph, PlexNode, PlexRelation, PlexNodeRelation } from '../../../types'
 
 const every = Object.entries(neighborhoods)
 
 const byTitle = (node: PlexNode): number => 40 + node.title.length * 7
 
-const createNeighborhood = (relation: PlexRelation, ...titles: string[]): PlexNeighborhood => ({
+const createNeighborhood = (relation: PlexRelation, ...titles: string[]): PlexGraph => ({
   nodes: [
     { id: 'focus', title: 'Focus', relation: 'focus' },
     ...titles.map((title, index) => ({ id: `${relation}-${index}`, title, relation })),
@@ -220,7 +220,7 @@ describe('a box is as wide as its title needs', () => {
 
 describe('a label is as long as its words', () => {
   /** One line, running sideways, with words written along it. */
-  const labelled: PlexNeighborhood = {
+  const labelled: PlexGraph = {
     nodes: [
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
@@ -274,21 +274,21 @@ describe('no two nodes are drawn on top of each other', () => {
     }
   }
 
-  it.each(every)('%s', (_name, neighborhood: PlexNeighborhood) => {
+  it.each(every)('%s', (_name, neighborhood: PlexGraph) => {
     noneOverlap(arrangePlex(neighborhood).nodes)
   })
 
-  it.each(every)('%s, sized to its titles', (_name, neighborhood: PlexNeighborhood) => {
+  it.each(every)('%s, sized to its titles', (_name, neighborhood: PlexGraph) => {
     noneOverlap(arrangePlex(neighborhood, { measure: byTitle }).nodes)
   })
 })
 
 describe('the same input gives the same numbers', () => {
-  it.each(every)('%s', (_name, neighborhood: PlexNeighborhood) => {
+  it.each(every)('%s', (_name, neighborhood: PlexGraph) => {
     expect(arrangePlex(neighborhood)).toStrictEqual(arrangePlex(neighborhood))
   })
 
-  it.each(every)('%s, sized to its titles', (_name, neighborhood: PlexNeighborhood) => {
+  it.each(every)('%s, sized to its titles', (_name, neighborhood: PlexGraph) => {
     expect(arrangePlex(neighborhood, { measure: byTitle })).toStrictEqual(
       arrangePlex(neighborhood, { measure: byTitle }),
     )
@@ -299,7 +299,7 @@ describe('the same input gives the same numbers', () => {
       ...neighborhoods.typical,
       nodes: [...neighborhoods.typical.nodes].reverse(),
     }
-    const byRelation = (n: PlexNeighborhood) =>
+    const byRelation = (n: PlexGraph) =>
       arrangePlex(n)
         .nodes.filter((node) => node.relation === 'child')
         .map((node) => node.id)
@@ -366,11 +366,11 @@ describe('order along a line follows the order given', () => {
 
   it('keeps the relative order when one more node arrives', () => {
     const before = neighborhoods.typical
-    const after: PlexNeighborhood = {
+    const after: PlexGraph = {
       nodes: [...before.nodes, { id: 'child-6', title: 'One more', relation: 'child' }],
       edges: [...before.edges, { from: 'focus', to: 'child-6' }],
     }
-    const ids = (n: PlexNeighborhood) =>
+    const ids = (n: PlexGraph) =>
       getNodesByRelation(arrangePlex(n), 'child').map((node) => node.id)
     expect(ids(after).slice(0, ids(before).length)).toStrictEqual(ids(before))
   })
@@ -413,13 +413,13 @@ describe('the extent', () => {
     }
   }
 
-  it.each(every)('contains every node of %s', (_name, neighborhood: PlexNeighborhood) => {
+  it.each(every)('contains every node of %s', (_name, neighborhood: PlexGraph) => {
     hasEveryNode(arrangePlex(neighborhood))
   })
 
   it.each(every)(
     'contains every node of %s, sized to its titles',
-    (_name, neighborhood: PlexNeighborhood) => {
+    (_name, neighborhood: PlexGraph) => {
       hasEveryNode(arrangePlex(neighborhood, { measure: byTitle }))
     },
   )

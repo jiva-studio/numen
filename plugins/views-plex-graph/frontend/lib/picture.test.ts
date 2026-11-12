@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Connection, ConnectionSide, LinkMarker } from '@numen/plugin-sdk'
-import type { Neighborhood, NoteRelation } from '../types'
-import { areNeighborhoodsEqual, convertNeighborhood, getNoteTypes } from './picture'
+import type { NoteGraph, NoteRelation } from '../types'
+import { areNoteGraphsEqual, convertNoteGraph, getNoteTypes } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
 /** A related note: where it is, and how it sits relative to the focus. */
-type NeighborRow = [path: string, relation: NoteRelation]
+type RelatedNoteRow = [path: string, relation: NoteRelation]
 
 /** A record one note writes about the other: its label and what it draws at the other note. */
 type Stated = readonly [label: string, marker: LinkMarker | null]
@@ -27,24 +27,24 @@ const createLine = (
   secondSide: toSide(secondRecord),
 })
 
-const createNeighborhood = (
+const createNoteGraph = (
   focus: string,
-  rows: NeighborRow[],
+  rows: RelatedNoteRow[],
   lines: Connection[] = [],
-): Neighborhood => ({
+): NoteGraph => ({
   focus: { path: focus, title: focus },
   focusType: 'note',
   related: rows.map(([path, relation]) => ({ path, title: path, type: 'note', relation })),
   connections: lines,
 })
 
-const renderImage = (neighborhood: Neighborhood) => {
+const renderImage = (noteGraph: NoteGraph) => {
   const map = createNodeIdMap()
-  return { plex: convertNeighborhood(neighborhood, map.getNodeId), note: map.getNodePath }
+  return { plex: convertNoteGraph(noteGraph, map.getNodeId), note: map.getNodePath }
 }
 
-const getEdges = (neighborhood: Neighborhood) => {
-  const { plex, note } = renderImage(neighborhood)
+const getEdges = (noteGraph: NoteGraph) => {
+  const { plex, note } = renderImage(noteGraph)
   return plex.edges.map(
     (edge) =>
       `${note(edge.from)} -> ${note(edge.to)}${edge.labels ? ` (${edge.labels.map((label) => label.text).join(', ')})` : ''}`,
@@ -55,7 +55,7 @@ describe('what the plex is handed', () => {
   it('runs an edge the way the connection runs', () => {
     expect(
       getEdges(
-        createNeighborhood(
+        createNoteGraph(
           'Here',
           [
             ['Above', 'parent'],
@@ -75,7 +75,7 @@ describe('what the plex is handed', () => {
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the label the user put on it.
     const [line] = renderImage(
-      createNeighborhood('Here', [['Below', 'child']], [createLine('Here', 'Below', ['', null])]),
+      createNoteGraph('Here', [['Below', 'child']], [createLine('Here', 'Below', ['', null])]),
     ).plex.edges
     expect(line?.labels).toBeUndefined()
   })
@@ -83,7 +83,7 @@ describe('what the plex is handed', () => {
   it('draws a line from the connection that joins its notes, whichever notes they are', () => {
     expect(
       getEdges(
-        createNeighborhood(
+        createNoteGraph(
           'Here',
           [
             ['Above', 'parent'],
@@ -98,8 +98,8 @@ describe('what the plex is handed', () => {
   it('draws no line for a connection to a note the picture does not show', () => {
     // The note a connection names that this picture never drew is not a node.
     const request: string[] = []
-    const plex = convertNeighborhood(
-      createNeighborhood('Here', [['Beside', 'sibling']], [createLine('Missing', 'Beside')]),
+    const plex = convertNoteGraph(
+      createNoteGraph('Here', [['Beside', 'sibling']], [createLine('Missing', 'Beside')]),
       (path) => {
         request.push(path)
         return `#${path}`
@@ -112,7 +112,7 @@ describe('what the plex is handed', () => {
 
   it('places every note it was given', () => {
     const { plex, note } = renderImage(
-      createNeighborhood('Here', [
+      createNoteGraph('Here', [
         ['Above', 'parent'],
         ['Below', 'child'],
         ['Beside', 'sibling'],
@@ -128,7 +128,7 @@ describe('what the plex is handed', () => {
 })
 
 describe('what a note is drawn under', () => {
-  const target = createNeighborhood(
+  const target = createNoteGraph(
     'Here',
     [
       ['Above', 'parent'],
@@ -140,7 +140,7 @@ describe('what a note is drawn under', () => {
 
   it('is the token the note holds, and never the file it is filed under', () => {
     const map = createNodeIdMap()
-    const plex = convertNeighborhood(target, (path) => `#${path}`)
+    const plex = convertNoteGraph(target, (path) => `#${path}`)
 
     expect(plex.nodes.map((node) => node.id)).toEqual(['#Here', '#Above', '#Below', '#Beside'])
     expect(map.getNodePath('Here')).toBe('')
@@ -153,7 +153,7 @@ describe('what a note is drawn under', () => {
   })
 
   it('runs an edge between the tickets of the two notes it joins', () => {
-    const plex = convertNeighborhood(target, (path) => `#${path}`)
+    const plex = convertNoteGraph(target, (path) => `#${path}`)
 
     expect(plex.edges.map((edge) => `${edge.from} -> ${edge.to}`)).toEqual([
       '#Above -> #Here',
@@ -169,7 +169,7 @@ describe('what a note is drawn under', () => {
  */
 const LINE_KINDS: readonly {
   readonly name: string
-  readonly rows: NeighborRow[]
+  readonly rows: RelatedNoteRow[]
   readonly first: string
   readonly second: string
 }[] = [
@@ -278,7 +278,7 @@ const RECORD_CASES: readonly {
 describe.each(LINE_KINDS)('the line from $name', ({ rows, first, second }) => {
   it.each(RECORD_CASES)('draws it when $name', ({ first: one, second: other, arrows, labels }) => {
     const { plex, note } = renderImage(
-      createNeighborhood('Here', rows, [createLine(first, second, one, other)]),
+      createNoteGraph('Here', rows, [createLine(first, second, one, other)]),
     )
 
     expect(plex.edges).toHaveLength(1)
@@ -288,9 +288,9 @@ describe.each(LINE_KINDS)('the line from $name', ({ rows, first, second }) => {
     expect(edge.labels ?? []).toEqual(labels)
   })
 
-  it('draws one line for each connection of the neighborhood and no other', () => {
+  it('draws one line for each connection of the noteGraph and no other', () => {
     const lines = [createLine(first, second, ['onward', 'arrow']), createLine('Here', 'Isolated')]
-    const { plex } = renderImage(createNeighborhood('Here', rows, lines))
+    const { plex } = renderImage(createNoteGraph('Here', rows, lines))
 
     expect(plex.edges).toHaveLength(1)
   })
@@ -299,7 +299,7 @@ describe.each(LINE_KINDS)('the line from $name', ({ rows, first, second }) => {
 describe('the words and arrowheads of one line', () => {
   it('draws two records with the same words once', () => {
     const [edge] = renderImage(
-      createNeighborhood(
+      createNoteGraph(
         'Here',
         [['Across', 'jump']],
         [createLine('Across', 'Here', ['near', null], ['near', null])],
@@ -311,7 +311,7 @@ describe('the words and arrowheads of one line', () => {
 
   it('draws the same words once where each end has its own arrow', () => {
     const [edge] = renderImage(
-      createNeighborhood(
+      createNoteGraph(
         'Here',
         [['Across', 'jump']],
         [createLine('Across', 'Here', ['near', 'arrow'], ['near', 'arrow'])],
@@ -322,38 +322,38 @@ describe('the words and arrowheads of one line', () => {
   })
 })
 
-describe('what each note of a neighborhood is', () => {
+describe('what each note of a noteGraph is', () => {
   it('is what the vault says of the focus and of every note around it', () => {
-    const neighborhood: Neighborhood = {
+    const noteGraph: NoteGraph = {
       focus: { path: 'Words.md', title: 'Words' },
       focusType: 'sample',
       related: [{ path: 'Forms.md', title: 'Forms', type: 'form', relation: 'child' }],
       connections: [],
     }
 
-    expect([...getNoteTypes(neighborhood)]).toStrictEqual([
+    expect([...getNoteTypes(noteGraph)]).toStrictEqual([
       ['Words.md', 'sample'],
       ['Forms.md', 'form'],
     ])
   })
 
   it('is empty for a focus with no path', () => {
-    const neighborhood: Neighborhood = {
+    const noteGraph: NoteGraph = {
       focus: { path: '', title: '' },
       focusType: 'sample',
       related: [],
       connections: [],
     }
 
-    expect(getNoteTypes(neighborhood).size).toBe(0)
+    expect(getNoteTypes(noteGraph).size).toBe(0)
   })
 })
 
 /** One note around the focus, as the vault answers one. */
-type Neighbor = Neighborhood['related'][number]
+type RelatedNote = NoteGraph['related'][number]
 
-describe('two neighborhoods drawing one picture', () => {
-  const target = (): Neighborhood => ({
+describe('two note graphs drawing one picture', () => {
+  const target = (): NoteGraph => ({
     focus: { path: 'Here.md', title: 'Here' },
     focusType: 'note',
     related: [
@@ -366,14 +366,14 @@ describe('two neighborhoods drawing one picture', () => {
     ],
   })
 
-  /** The neighborhood held, its second note changed as given. */
-  const changed = (more: Partial<Neighbor>): Neighborhood => {
+  /** The noteGraph held, its second note changed as given. */
+  const changed = (more: Partial<RelatedNote>): NoteGraph => {
     const one = target()
     return { ...one, related: [one.related[0]!, { ...one.related[1]!, ...more }] }
   }
 
-  /** The neighborhood held, its connection at `index` replaced. */
-  const withLine = (index: number, line: Connection): Neighborhood => {
+  /** The noteGraph held, its connection at `index` replaced. */
+  const withLine = (index: number, line: Connection): NoteGraph => {
     const one = target()
     return {
       ...one,
@@ -384,53 +384,53 @@ describe('two neighborhoods drawing one picture', () => {
   }
 
   it('are two answers with every heading the same', () => {
-    expect(areNeighborhoodsEqual(target(), target())).toBe(true)
+    expect(areNoteGraphsEqual(target(), target())).toBe(true)
   })
 
   it('are two answers of nothing', () => {
-    expect(areNeighborhoodsEqual(null, null)).toBe(true)
+    expect(areNoteGraphsEqual(null, null)).toBe(true)
   })
 
   it('are not an answer and nothing, either way round', () => {
-    expect(areNeighborhoodsEqual(target(), null)).toBe(false)
-    expect(areNeighborhoodsEqual(null, target())).toBe(false)
+    expect(areNoteGraphsEqual(target(), null)).toBe(false)
+    expect(areNoteGraphsEqual(null, target())).toBe(false)
   })
 
   it('are not two answers standing on different notes', () => {
     const other = { ...target(), focus: { path: 'There.md', title: 'Here' } }
 
-    expect(areNeighborhoodsEqual(target(), other)).toBe(false)
+    expect(areNoteGraphsEqual(target(), other)).toBe(false)
   })
 
   it('are not two answers calling the focus differently', () => {
     const other = { ...target(), focus: { path: 'Here.md', title: 'There' } }
 
-    expect(areNeighborhoodsEqual(target(), other)).toBe(false)
+    expect(areNoteGraphsEqual(target(), other)).toBe(false)
   })
 
   it('are not two answers saying the focus is something different', () => {
-    expect(areNeighborhoodsEqual(target(), { ...target(), focusType: 'sample' })).toBe(false)
+    expect(areNoteGraphsEqual(target(), { ...target(), focusType: 'sample' })).toBe(false)
   })
 
   it('are not two answers with a different number of notes around', () => {
     const other = { ...target(), related: target().related.slice(0, 1) }
 
-    expect(areNeighborhoodsEqual(target(), other)).toBe(false)
+    expect(areNoteGraphsEqual(target(), other)).toBe(false)
   })
 
   it('are not two answers with a different number of lines', () => {
     const other = { ...target(), connections: target().connections.slice(0, 1) }
 
-    expect(areNeighborhoodsEqual(target(), other)).toBe(false)
+    expect(areNoteGraphsEqual(target(), other)).toBe(false)
   })
 
-  it.each<[string, Partial<Neighbor>]>([
+  it.each<[string, Partial<RelatedNote>]>([
     ['path', { path: 'Across.md' }],
     ['title', { title: 'Across' }],
     ['type', { type: 'sample' }],
     ['relation', { relation: 'child' }],
   ])('are not two answers whose second note differs in its %s', (_, more) => {
-    expect(areNeighborhoodsEqual(target(), changed(more))).toBe(false)
+    expect(areNoteGraphsEqual(target(), changed(more))).toBe(false)
   })
 
   it.each<[string, Connection]>([
@@ -445,6 +445,6 @@ describe('two neighborhoods drawing one picture', () => {
       createLine('Above.md', 'Beside.md', ['next to', null], ['', 'arrow']),
     ],
   ])('are not two answers whose line differs in its %s', (_, line) => {
-    expect(areNeighborhoodsEqual(target(), withLine(1, line))).toBe(false)
+    expect(areNoteGraphsEqual(target(), withLine(1, line))).toBe(false)
   })
 })

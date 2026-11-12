@@ -152,7 +152,7 @@ func TestSidesAreRemovedAndJoinedAndNotesCreatedInARelation(t *testing.T) {
 	if err := client.Join(t.Context(), "a.md", "b.md", domain.Side{Role: domain.RoleChild, Label: "l"}); err != nil {
 		t.Fatal(err)
 	}
-	path, err := client.CreateInRelation(t.Context(), domain.RelatedNote{
+	path, err := client.CreateInRelation(t.Context(), domain.NewRelatedNote{
 		From: "a.md", Role: domain.RoleParent, Type: "series",
 	})
 

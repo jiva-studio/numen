@@ -1028,7 +1028,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsSavedIn(t *testing.T) {
 }
 
 // TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake. A name resolves as
-// an exact path from the root before it resolves as a neighbor, so a note
+// an exact path from the root before it resolves as a related note, so a note
 // created from one of two notes sharing a name carries the path of its origin.
 // Resolving by name alone attaches the note to the other one, and the graph
 // omits it.
@@ -1057,8 +1057,8 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 		t.Errorf("the link was written by a name two notes answer to:\n%s", made)
 	}
 
-	center, err := f.client.GetNeighborhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "physics/Ontology.md"}))
+	center, err := f.client.ListRelatedNotes(t.Context(),
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "physics/Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1281,7 +1281,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Errorf("the note under the folder holds:\n%s", now)
 	}
 
-	center, err := f.client.GetNeighborhood(t.Context(), connect.NewRequest(&v1.GetNeighborhoodRequest{
+	center, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
 		Path: "Heat.md",
 	}))
 	if err != nil {

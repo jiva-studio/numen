@@ -17,7 +17,7 @@ import {
 import { neighborhoods } from '../../../fixtures/neighborhoods'
 import { ARROW_LENGTH, getArrow, getHeading, getLength, createPointOnCurve } from '../../edge'
 import type { PlacedNode } from '../../node'
-import type { EdgeArrow, PlexEdge, PlexNeighborhood, PlexNodeRelation } from '../../../../types'
+import type { EdgeArrow, PlexEdge, PlexGraph, PlexNodeRelation } from '../../../../types'
 
 /** The ink of the label font, as the window measures it. */
 const TYPE = { ascent: 9, descent: 3, xHeight: 6 }
@@ -177,7 +177,7 @@ describe('edges', () => {
  * to it. The stored text is unchanged; the rendered text is the truncation.
  */
 describe('a title cut to the line it is set on', () => {
-  const sideways: PlexNeighborhood = {
+  const sideways: PlexGraph = {
     nodes: [
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
