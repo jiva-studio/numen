@@ -102,7 +102,7 @@ const boxAround = (node: PlacedNode): Box => ({
 const createOneLine = (label: string): PlexNeighborhood => ({
   nodes: [
     { id: 'focus', title: 'Here', relation: 'focus' },
-    { id: 'aside', title: 'Aside', relation: 'jump' },
+    { id: 'aside', title: 'Aside', relation: 'sibling' },
   ],
   edges: [{ from: 'aside', to: 'focus', labels: [{ text: label }] }],
 })
@@ -117,14 +117,9 @@ describe('a title finds room on its line', () => {
   it('gives up the middle to stay clear of the boxes its own line joins', () => {
     // Words nearly as long as the line they are set on: the middle would put
     // them against a box at either end.
-    // The longest words the line still holds whole.
-    let words = 'x'
-    while (arrangePlex(createOneLine(`${words}x`), measured).edges[0]!.titles[0]?.words === `${words}x`) {
-      words += 'x'
-    }
-    const frame = arrangePlex(createOneLine(words), measured)
+    const frame = arrangePlex(createOneLine('see also'), measured)
 
-    expect(frame.edges[0]!.titles[0]?.words).toBe(words)
+    expect(frame.edges[0]!.titles[0]?.words).toBe('see also')
     expect(frame.edges[0]!.titles[0]!.wordsAt).not.toBe(MIDDLE)
     expect(Math.abs(frame.edges[0]!.titles[0]!.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
   })

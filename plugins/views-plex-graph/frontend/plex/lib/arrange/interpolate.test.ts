@@ -158,7 +158,7 @@ describe('a node that is only in one picture', () => {
 
   it('shows every node of either picture once', () => {
     const ids = interpolatePlex(from, to, 0.5).nodes.map((n) => n.id)
-    expect([...ids].sort()).toStrictEqual(['a', 'a1', 'a2', 'a3', 'b', 'focus', 'up'])
+    expect([...ids].sort()).toStrictEqual(['a', 'a1', 'a2', 'a3', 'b', 'c', 'focus', 'up'])
   })
 
   it('holds a new node invisible until the picture has begun to settle', () => {
