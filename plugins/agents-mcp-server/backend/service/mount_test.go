@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -33,7 +34,7 @@ func TestMountAndConfigure(t *testing.T) {
 
 	host := &standInHost{}
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(host))
+	mux.Handle(toolstest.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	hostPort := getServerPort(t, served.URL)
@@ -67,7 +68,7 @@ func TestMountAndConfigure(t *testing.T) {
 func TestMountFromEnv(t *testing.T) {
 	host := &standInHost{}
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(host))
+	mux.Handle(toolstest.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	hostPort := getServerPort(t, served.URL)

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 )
 
 // standInHost serves PluginToolService as the host does: it lists the vault tools of the other
@@ -50,7 +51,7 @@ func (h *standInHost) record(header http.Header, call *tools.Call) {
 func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 	host := &standInHost{}
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(host))
+	mux.Handle(toolstest.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	endpoint := hostcall.Endpoint{BaseURL: served.URL, Token: "plugin-token"}

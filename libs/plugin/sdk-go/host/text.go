@@ -118,4 +118,3 @@ func AppendText(ctx context.Context, store StoreWriter, name string, segments []
 	}
 	return store.Append(ctx, name, raw)
 }
-
