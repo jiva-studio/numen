@@ -86,8 +86,11 @@ func TestAFailedRequestDoesNotEndTheLongFirstLimit(t *testing.T) {
 	subject := newEmbedding(t, g)
 	local := call("openai-compatible", "m", "http://127.0.0.1:8080/v1")
 
-	_, _ = subject.Embed(t.Context(), local, []string{"a"})
-	_, _ = subject.Embed(t.Context(), local, []string{"a"})
+	for range 2 {
+		if _, err := subject.Embed(t.Context(), local, []string{"a"}); err == nil {
+			t.Fatal("a failed request returned no error")
+		}
+	}
 
 	if g.limit != limits.FirstRequestLimit {
 		t.Errorf("limit = %v after failures, want the first limit", g.limit)

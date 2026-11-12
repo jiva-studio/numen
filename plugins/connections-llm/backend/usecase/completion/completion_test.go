@@ -1,6 +1,7 @@
 package completion_test
 
 import (
+	"errors"
 	"context"
 	"testing"
 	"time"
@@ -101,7 +102,7 @@ func TestAFailureOfTheServiceIsReturnedAsItIs(t *testing.T) {
 	_, completeErr := subject.Complete(t.Context(), call("openai", "m", ""), connection.ProviderCompleteRequest{})
 	chatErr := subject.Chat(t.Context(), call("openai", "m", ""), connection.ProviderChatRequest{}, func(connection.ChatEvent) error { return nil })
 
-	if completeErr != failure || chatErr != failure {
+	if !errors.Is(completeErr, failure) || !errors.Is(chatErr, failure) {
 		t.Errorf("errors = %v, %v, want the failure of the service", completeErr, chatErr)
 	}
 }
