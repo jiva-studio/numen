@@ -69,10 +69,16 @@ describe('the manifest', () => {
   })
 
   it('declares the command the title bar shows with the title and the icon of a graph', () => {
-    expect(manifest.contributes.keybindings).toContainEqual({
-      key: 'mod+shift+x',
-      command: 'graph.open',
+    expect(manifest.contributes.commands.find((one) => one.id === 'graph.open')).toMatchObject({
+      title: 'Open plex graph',
+      icon: 'waypoints',
     })
+  })
+
+  it('keeps the command that shows a note out of the title bar, which has no note', () => {
+    const entries = (manifest.contributes.slots ?? []).filter(
+      (one) => one.slot === 'titleBar.commands',
+    )
 
     expect(entries.map((one) => one.command)).not.toContain('app:file.reveal')
   })
@@ -84,9 +90,10 @@ describe('the manifest', () => {
 
 describe('the shortcut', () => {
   it('opens the plex on the window key with Shift and X', () => {
-    expect(manifest.contributes.commands.find((one) => one.id === 'graph.open')?.shortcut).toBe(
-      'mod+shift+x',
-    )
+    expect(manifest.contributes.keybindings).toContainEqual({
+      key: 'mod+shift+x',
+      command: 'graph.open',
+    })
   })
 })
 
