@@ -121,9 +121,9 @@ function onRunAction() {
       >
         {{ subtext }}
       </span>
-      <div v-if="isFailed && task.action.label" class="task-item__failure-row">
+      <div v-if="isFailed && task.actionLabel" class="task-item__failure-row">
         <button type="button" class="task-item__action-link" @click.stop="onRunAction">
-          {{ task.action.label }} &rarr;
+          {{ task.actionLabel }} &rarr;
         </button>
       </div>
     </div>

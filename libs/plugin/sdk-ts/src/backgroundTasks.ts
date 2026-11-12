@@ -21,11 +21,6 @@ export interface BackgroundTaskAllowed {
   readonly retry: boolean
 }
 
-// BackgroundTaskAction is the fix a failed task offers; the label is empty where it offers none.
-interface BackgroundTaskAction {
-  readonly label: string
-}
-
 // BackgroundTask is one piece of work the window lists.
 export interface BackgroundTask {
   readonly id: string
@@ -35,7 +30,8 @@ export interface BackgroundTask {
   readonly progress: BackgroundTaskProgress
   readonly error: string
   readonly allowed: BackgroundTaskAllowed
-  readonly action: BackgroundTaskAction
+  // The label of the fix a failed task offers; empty where it offers none.
+  readonly actionLabel: string
 }
 
 // BackgroundTaskHost is the background work of the window.

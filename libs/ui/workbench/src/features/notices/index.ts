@@ -4,7 +4,7 @@ export { createNoticeQueue, type NoticeQueue } from './model/queue'
 export type { Notice, Stay, Task } from './lib/notice'
 export type { TallyUnit, Severity } from './lib/tally'
 export { createFailedTask, getFailedTasks } from './lib/backgroundTask'
-export type { BackgroundTask, BackgroundTaskAction, WorkTask } from './lib/backgroundTask'
+export type { BackgroundTask, WorkTask } from './lib/backgroundTask'
 export {
   createBackgroundTaskHost,
   type BackgroundTaskHost,

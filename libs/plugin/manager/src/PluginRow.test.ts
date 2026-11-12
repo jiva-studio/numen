@@ -71,6 +71,7 @@ describe('PluginRow', () => {
     const menu = wrapper.findComponent(Menu)
     expect(menu.props('name')).toBe('Plugin actions')
     menu.vm.$emit('choose', 'toggle')
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.emitted('toggle-enabled')).toStrictEqual([[false]])
     expect(wrapper.findComponent(Menu).exists()).toBe(false)

@@ -310,9 +310,12 @@ describe('createConnectionClient', () => {
       }),
     )
 
-    const answer = await client.listRowOptions('c00000001', 'reasoning', { model: 'm' }, [
-      'llm.complete',
-    ])
+    const answer = await client.listRowOptions({
+      connectionId: 'c00000001',
+      field: 'reasoning',
+      options: { model: 'm' },
+      operations: ['llm.complete'],
+    })
 
     expect(requests).toStrictEqual([
       expect.objectContaining({
@@ -344,7 +347,7 @@ describe('createConnectionClient', () => {
       }),
     )
 
-    expect(await client.listRowOptions('c00000001', 'model', {}, [])).toStrictEqual({
+    expect(await client.listRowOptions({ connectionId: 'c00000001', field: 'model', options: {}, operations: [] })).toStrictEqual({
       ok: false,
       error: { errorCode: 'provider_unavailable', detail: 'key rejected' },
     })

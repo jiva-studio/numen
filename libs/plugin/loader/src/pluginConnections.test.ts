@@ -17,8 +17,8 @@ describe('the connections of a plugin', () => {
   it('carries out an operation for the plugin and yields its frames', async () => {
     const requests: unknown[] = []
     const client: ConnectionCallClient = {
-      call: async function* (pluginId, operation, payload, options) {
-        requests.push({ pluginId, operation, payload, options })
+      call: async function* (request, options) {
+        requests.push({ ...request, options })
         yield bytes('one')
         return { ok: true, value: bytes('end') }
       },

@@ -375,7 +375,7 @@ describe('the actions of a task', () => {
         id: 'a',
         state: 'failed',
         error: 'Choose a connection',
-        action: { label: 'Open settings' },
+        actionLabel: 'Open settings',
       }),
     ])
     const wrapper = mountTasks(view)

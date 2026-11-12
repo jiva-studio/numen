@@ -101,7 +101,7 @@ describe('the background tasks of the window', () => {
       label: 'Atlas',
       state: 'failed',
       error: 'Choose a connection',
-      action: { label: 'Open settings' },
+      actionLabel: 'Open settings',
     })
   })
 

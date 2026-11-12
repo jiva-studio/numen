@@ -89,7 +89,7 @@ describe('PluginDetail', () => {
     const toggle = wrapper.getComponent(Switch)
 
     expect(toggle.props('modelValue')).toBe(false)
-    expect(toggle.attributes('aria-label')).toBe('Enabled Notes')
+    expect(wrapper.get('[role="switch"]').attributes('aria-label')).toBe('Enabled Notes')
     toggle.vm.$emit('update:modelValue', true)
 
     expect(wrapper.emitted('toggle-enabled')).toStrictEqual([[true]])

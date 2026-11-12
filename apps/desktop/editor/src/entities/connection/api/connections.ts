@@ -51,4 +51,4 @@ export const listRowOptions = async (
   options: Readonly<Record<string, string>>,
   operations: readonly string[],
 ): Promise<Result<readonly RowOption[], ConnectionFailure>> =>
-  connections.listRowOptions(connectionId, field, options, operations)
+  connections.listRowOptions({ connectionId, field, options, operations })

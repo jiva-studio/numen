@@ -17,7 +17,7 @@ import PluginSettingsCard from './PluginSettingsCard.vue'
 import PluginNotice from './PluginNotice.vue'
 import PluginTabs from './PluginTabs.vue'
 import { getReadmeText } from './readme'
-import { getPluginState, getStartItem, getWorstItem } from './state'
+import { getPluginState, getStartItem, getWorstItem, hasConnectionSettings } from './state'
 import { FIRST_PLUGIN_TAB, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
 import { PLUGIN_WORDS as words } from './words'
 
@@ -44,9 +44,7 @@ defineSlots<{
 const startItem = computed(() => getStartItem(props.health ?? []))
 const worstItem = computed(() => getWorstItem(props.health ?? []))
 const categoryLabel = computed(() => formatCategoryLabel(getPluginCategory(props.plugin)))
-const hasConnectionSettings = computed(
-  () => props.plugin.info?.settings.some((one) => one.type === 'connections') ?? false,
-)
+const hasConnections = computed(() => hasConnectionSettings(props.plugin.info))
 const contributions = computed(() => props.plugin.info?.contributions ?? [])
 const readmeText = computed(() => getReadmeText(props.readme))
 const state = computed(() =>
@@ -128,34 +126,38 @@ function onRunAction(key: string): void {
       role="tabpanel"
       :aria-labelledby="getTabElementId(idBase, activeTab)"
     >
-      <template v-if="activeTab === 'settings'">
-        <PluginSettingsCard v-if="props.hasSettings">
-          <slot name="settings" />
-        </PluginSettingsCard>
-        <slot name="sections" />
-        <p v-if="!props.hasSettings && !hasConnectionSettings" class="plugin-detail__nothing">
-          {{ words.noSettings }}
-        </p>
-      </template>
+      <PluginSettingsCard v-if="activeTab === 'settings' && props.hasSettings">
+        <slot name="settings" />
+      </PluginSettingsCard>
+      <slot v-if="activeTab === 'settings'" name="sections" />
+      <p
+        v-if="activeTab === 'settings' && !props.hasSettings && !hasConnections"
+        class="plugin-detail__nothing"
+      >
+        {{ words.noSettings }}
+      </p>
 
-      <template v-else-if="activeTab === 'about'">
-        <div v-if="readmeText" class="settings-card plugin-detail__readme">
-          <Prose :text="readmeText" />
-        </div>
-        <p v-else class="plugin-detail__nothing">{{ props.plugin.description }}</p>
-      </template>
+      <div
+        v-if="activeTab === 'about' && readmeText"
+        class="settings-card plugin-detail__readme"
+      >
+        <Prose :text="readmeText" />
+      </div>
+      <p v-else-if="activeTab === 'about'" class="plugin-detail__nothing">
+        {{ props.plugin.description }}
+      </p>
 
-      <template v-else-if="activeTab === 'contributions'">
-        <PluginContributions
-          v-if="contributions.length > 0"
-          :contributions="contributions"
-          :is-apple="props.isApple ?? false"
-        />
-        <p v-else class="plugin-detail__nothing">{{ words.noContributions }}</p>
-      </template>
+      <PluginContributions
+        v-if="activeTab === 'contributions' && contributions.length > 0"
+        :contributions="contributions"
+        :is-apple="props.isApple ?? false"
+      />
+      <p v-else-if="activeTab === 'contributions'" class="plugin-detail__nothing">
+        {{ words.noContributions }}
+      </p>
 
       <PluginData
-        v-else
+        v-if="activeTab === 'data'"
         :plugin-id="props.plugin.id"
         :plugin-name="props.plugin.name"
         :file-count="props.dataFileCount"

@@ -60,7 +60,7 @@ describe('the connections in the settings tab', () => {
     })
     const { connections: installed } = createSettings().configured.state.installation
 
-    const answer = await installed.create({
+    const answer = await installed.edits.create({
       typeId: 'a.b/x',
       name: 'Work',
       fields: {},

@@ -26,6 +26,8 @@ const read = async (generator: AsyncGenerator<Uint8Array, unknown>) => {
 
 const bytes = (text: string) => new TextEncoder().encode(text)
 
+const CHAT_REQUEST = { pluginId: 'md.numen.agents.numen', operation: 'llm.chat', payload: bytes('') }
+
 describe('createConnectionCallClient', () => {
   it('sends the call of the plugin with its priority and signal, and yields the frames in order', async () => {
     const requests: unknown[] = []
@@ -45,9 +47,7 @@ describe('createConnectionCallClient', () => {
 
     const { data, end } = await read(
       createConnectionCallClient(rpc).call(
-        'md.numen.tools.proofreading',
-        'llm.chat',
-        bytes('ask'),
+        { pluginId: 'md.numen.tools.proofreading', operation: 'llm.chat', payload: bytes('ask') },
         {
           priority: 'interactive',
           signal: controller.signal,
@@ -78,7 +78,11 @@ describe('createConnectionCallClient', () => {
     }
 
     await read(
-      createConnectionCallClient(rpc).call('md.numen.engines.embeddings', 'llm.embed', bytes('')),
+      createConnectionCallClient(rpc).call({
+        pluginId: 'md.numen.engines.embeddings',
+        operation: 'llm.embed',
+        payload: bytes(''),
+      }),
     )
 
     expect(priorities).toStrictEqual([Priority.BACKGROUND])
@@ -114,7 +118,7 @@ describe('createConnectionCallClient', () => {
       }
 
       const { data, end } = await read(
-        createConnectionCallClient(rpc).call('md.numen.agents.numen', 'llm.chat', bytes('')),
+        createConnectionCallClient(rpc).call(CHAT_REQUEST),
       )
 
       expect(data).toStrictEqual([bytes('partial')])
@@ -133,7 +137,7 @@ describe('createConnectionCallClient', () => {
     const rpc: ConnectionCallRpc = { call: () => streamOf({ case: 'data', value: bytes('cut') }) }
 
     await expect(
-      read(createConnectionCallClient(rpc).call('md.numen.agents.numen', 'llm.chat', bytes(''))),
+      read(createConnectionCallClient(rpc).call(CHAT_REQUEST)),
     ).rejects.toThrow('before the call did')
   })
 })

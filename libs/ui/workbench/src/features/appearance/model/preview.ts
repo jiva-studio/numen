@@ -6,6 +6,7 @@
  * A theme and a half are applied as soon as the keyboard is on their row. A size is applied once the
  * keyboard has rested on its row for HELD.
  */
+import type { Caught } from '@numen/ui'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { getFailureText, type AppearanceWriter, type Mode, type Sizes } from '../lib/appearance'
@@ -42,7 +43,7 @@ export function createAppearancePreview(on: PreviewDeps) {
   })
 
   const apply = () => {
-    applyTheme(current.value, shownHalf.value).catch((error: unknown) =>
+    applyTheme(current.value, shownHalf.value).catch((error: Caught) =>
       write(getFailureText(error), 'error'),
     )
   }

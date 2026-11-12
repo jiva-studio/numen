@@ -20,6 +20,13 @@ export interface ConnectionCallOptions {
   readonly priority?: ConnectionCallPriority | undefined
 }
 
+/** An operation a plugin asks for, with the payload in the bytes of its contract. */
+export interface ConnectionCallRequest {
+  readonly pluginId: string
+  readonly operation: string
+  readonly payload: Uint8Array
+}
+
 /** One row of a plugin that did not answer. */
 export interface ConnectionCallRowFailure {
   readonly connectionName: string
@@ -44,9 +51,7 @@ export interface ConnectionCallClient {
    * call did.
    */
   call(
-    pluginId: string,
-    operation: string,
-    payload: Uint8Array,
+    request: ConnectionCallRequest,
     options?: ConnectionCallOptions,
   ): AsyncGenerator<Uint8Array, Result<Uint8Array, ConnectionCallFailure>>
 }
@@ -78,9 +83,9 @@ const writePriority = (priority: ConnectionCallPriority | undefined): Priority =
 
 /** The calls carried out through a ConnectionCallService client. */
 export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCallClient => ({
-  call: async function* (pluginId, operation, payload, options) {
+  call: async function* (request, options) {
     const stream = rpc.call(
-      { pluginId, operation, payload, priority: writePriority(options?.priority) },
+      { ...request, priority: writePriority(options?.priority) },
       options?.signal === undefined ? {} : { signal: options.signal },
     )
     for await (const answer of stream) {

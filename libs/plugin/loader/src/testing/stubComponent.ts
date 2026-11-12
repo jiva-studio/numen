@@ -8,6 +8,6 @@ export const STUB_COMPONENT = defineComponent({ name: 'StubComponent', render: (
 export const STUB_CONNECTIONS: ConnectionHost = {
   call: async function* () {
     yield* []
-    return { ok: true, value: new Uint8Array() }
+    return await Promise.resolve({ ok: true as const, value: new Uint8Array() })
   },
 }

@@ -1,7 +1,7 @@
 /**
  * The state of a plugin for the plugin list and page, from its enabled setting and its health items.
  */
-import type { PluginHealth } from './pluginInfo'
+import type { PluginHealth, PluginInfo } from './pluginInfo'
 
 /** What a plugin's state badge shows. */
 export type PluginState = 'enabled' | 'disabled' | 'stopped' | 'error' | 'warning' | 'available'
@@ -32,3 +32,7 @@ const LABELED_STATES: readonly PluginState[] = ['available', 'error', 'warning']
 
 /** Whether the row of a plugin in the state names the state. */
 export const hasStateLabel = (state: PluginState): boolean => LABELED_STATES.includes(state)
+
+/** Whether a plugin declares a setting of rows of connections; such a setting is drawn in its own section. */
+export const hasConnectionSettings = (info: PluginInfo | undefined): boolean =>
+  info?.settings.some((one) => one.type === 'connections') ?? false

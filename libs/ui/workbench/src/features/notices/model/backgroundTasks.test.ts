@@ -56,7 +56,7 @@ describe('the tasks of the window as background tasks', () => {
       progress: { completedCount: 1, total: 4, counting: '' },
       error: '',
       allowed: { cancel: true, retry: false },
-      action: { label: '' },
+      actionLabel: '',
     })
   })
 
@@ -107,8 +107,8 @@ describe('the tasks of the window as background tasks', () => {
 
     const [running, failed] = readTasks(host)
 
-    expect(running).toMatchObject({ action: { label: '' } })
-    expect(failed).toMatchObject({ action: { label: 'Open settings' } })
+    expect(running).toMatchObject({ actionLabel: '' })
+    expect(failed).toMatchObject({ actionLabel: 'Open settings' })
   })
 
   it('calls a watcher again when the tasks of the window change, and not after dispose', async () => {

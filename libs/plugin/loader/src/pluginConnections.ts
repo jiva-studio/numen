@@ -31,9 +31,7 @@ export const createPluginConnections = (
   call: async function* (operation, payload, options) {
     try {
       const end: Result<Uint8Array, ConnectionCallFailure> = yield* client.call(
-        pluginId,
-        operation,
-        payload,
+        { pluginId, operation, payload },
         options,
       )
       return end.ok ? end : { ok: false, error: readError(end.error) }

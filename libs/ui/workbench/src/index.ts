@@ -54,7 +54,6 @@ export type { Notice, Stay, Task } from './features/notices'
 export { createBackgroundTaskHost, createFailedTask, getFailedTasks } from './features/notices'
 export type {
   BackgroundTask,
-  BackgroundTaskAction,
   BackgroundTaskHost,
   BackgroundTaskHostDeps,
   WorkTask,

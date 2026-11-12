@@ -2,6 +2,8 @@
  * The values that make up the window appearance: the themes, the modes in which a theme's tokens are
  * read, and the sizes, with the service the window reads them from.
  */
+import type { Caught } from '@numen/ui'
+
 /** Which half of a `light-dark()` pair every token is read as. */
 export type Mode = 'system' | 'light' | 'dark'
 
@@ -71,5 +73,5 @@ export const SCHEMES: Record<Mode, string> = {
 }
 
 /** The sentence a failure is written as. */
-export const getFailureText = (error: unknown): string =>
+export const getFailureText = (error: Caught): string =>
   error instanceof Error ? error.message : String(error)

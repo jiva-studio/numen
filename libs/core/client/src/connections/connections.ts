@@ -144,12 +144,15 @@ export interface ConnectionClient {
    * The values a row field of the type of a connection can take, as its provider lists them for the
    * values the row holds so far. `operations` are the operations the setting of rows is used for.
    */
-  listRowOptions(
-    connectionId: string,
-    field: string,
-    options: Readonly<Record<string, string>>,
-    operations: readonly string[],
-  ): Promise<Result<readonly RowOption[], ConnectionFailure>>
+  listRowOptions(request: RowOptionsRequest): Promise<Result<readonly RowOption[], ConnectionFailure>>
+}
+
+/** A row field of a connection, the values the row holds so far, and the operations of its setting. */
+export interface RowOptionsRequest {
+  readonly connectionId: string
+  readonly field: string
+  readonly options: Readonly<Record<string, string>>
+  readonly operations: readonly string[]
 }
 
 /** One value a row field can take. `title` is the value where the provider gives none. */
@@ -327,12 +330,12 @@ export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => 
     const failure = readFailure(answer.error, answer.detail)
     return failure ? asFailure(failure) : asValue(undefined)
   },
-  listRowOptions: async (connectionId, field, options, operations) => {
+  listRowOptions: async (request) => {
     const answer = await rpc.listRowOptions({
-      connectionId,
-      field,
-      options: { ...options },
-      operations: [...operations],
+      connectionId: request.connectionId,
+      field: request.field,
+      options: { ...request.options },
+      operations: [...request.operations],
     })
     const failure = readFailure(answer.error, answer.detail)
     if (failure) return asFailure(failure)

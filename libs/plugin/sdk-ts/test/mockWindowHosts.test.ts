@@ -20,7 +20,7 @@ const SYNC: BackgroundTask = {
   progress: { completedCount: 1, total: 4, counting: '' },
   error: '',
   allowed: { cancel: true, retry: false },
-  action: { label: '' },
+  actionLabel: '',
 }
 
 describe('the slots of a mock context', () => {

@@ -49,7 +49,8 @@ export interface BackgroundTask {
   }
   readonly error: string
   readonly allowed: { readonly cancel: boolean; readonly retry: boolean }
-  readonly action: BackgroundTaskAction
+  /** The label of the fix a failed task offers; empty where it offers none. */
+  readonly actionLabel: string
 }
 
 /** A message reported in a window, as a failure it can be. */
@@ -100,6 +101,6 @@ export function createBackgroundTask(task: WorkTask, isCancelling: boolean): Bac
     },
     error: task.error,
     allowed: { cancel: !isFailed && task.isCancellable, retry: false },
-    action: { label: isFailed ? (task.action?.label ?? '') : '' },
+    actionLabel: isFailed ? (task.action?.label ?? '') : '',
   }
 }
