@@ -25,9 +25,9 @@ func TestAskSendsTheInstructionAndThePromptAtTheInteractivePriority(t *testing.T
 	}
 
 	request := asked[0]
-	if answer != "the answer" || len(request.Messages) != 2 ||
-		request.Messages[0].Role != "system" || request.Messages[0].Text != "be careful" ||
-		request.Messages[1].Role != "user" || request.Messages[1].Text != "the prompt" ||
+	if answer != "the answer" || len(request.GetMessages()) != 2 ||
+		request.GetMessages()[0].GetRole() != "system" || request.GetMessages()[0].GetText() != "be careful" ||
+		request.GetMessages()[1].GetRole() != "user" || request.GetMessages()[1].GetText() != "the prompt" ||
 		priorities[0] != connection.PriorityInteractive {
 		t.Errorf("answer %q to request %+v", answer, request)
 	}

@@ -35,8 +35,11 @@ func New(capacity int) *Cache {
 		capacity = DefaultCapacity
 	}
 	return &Cache{
+		mu:       sync.Mutex{},
 		capacity: capacity,
 		entries:  make(map[cacheKey]*cacheEntry, capacity),
+		head:     nil,
+		tail:     nil,
 	}
 }
 
@@ -76,7 +79,7 @@ func (c *Cache) Put(recipe, query string, vector []float32) {
 		delete(c.entries, old.key)
 	}
 
-	entry := &cacheEntry{key: k, vector: vector}
+	entry := &cacheEntry{prev: nil, next: nil, key: k, vector: vector}
 	c.pushFront(entry)
 	c.entries[k] = entry
 }
