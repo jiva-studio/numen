@@ -183,12 +183,27 @@ func (l layout) getShortName(pkgPath string) string {
 }
 
 // collectGoUsage reads the RPCs of the generated clients, the exports of the Go SDK, the uses of both
-// in every package, and the edges from an interface method of the SDK to the methods that answer it.
-func collectGoUsage(pkgs []*packages.Package, l layout) usage {
+// in every package, and the edges from an interface method of the SDK, or of a package outside it, to
+// the SDK methods that answer it. Each module is one load, whose types are not those of another.
+func collectGoUsage(modules [][]*packages.Package, l layout) usage {
 	var found usage
 	seenItems := map[string]bool{}
 	seenUses := map[use]bool{}
 	seenPairs := map[string]bool{}
+	for _, pkgs := range modules {
+		l.collectModuleUsage(pkgs, &found, seenItems, seenUses, seenPairs)
+	}
+	return found
+}
+
+func (l layout) collectModuleUsage(pkgs []*packages.Package, found *usage, seenItems map[string]bool, seenUses map[use]bool, seenPairs map[string]bool) {
+	var roots []*types.Package
+	for _, pkg := range pkgs {
+		if pkg.Types != nil {
+			roots = append(roots, pkg.Types)
+		}
+	}
+	sdkTypes := l.listSDKTypes(roots)
 	for _, pkg := range pkgs {
 		if pkg.Types == nil || pkg.TypesInfo == nil || pkg.Fset == nil {
 			continue
@@ -210,9 +225,10 @@ func collectGoUsage(pkgs []*packages.Package, l layout) usage {
 		}
 		if load.IsWithin(pkg.PkgPath, l.sdkGoPath) {
 			found.edges = append(found.edges, l.listDispatchEdges(pkg, seenPairs)...)
+		} else if pkg.PkgPath != l.connectPath {
+			found.edges = append(found.edges, l.listOwnInterfaceEdges(pkg, sdkTypes)...)
 		}
 	}
-	return found
 }
 
 func (l layout) listGoItems(pkg *packages.Package) []item {
@@ -287,7 +303,12 @@ func (l layout) listGoUses(pkg *packages.Package, file *ast.File, rel string) []
 			if !ok {
 				return true
 			}
-			if target := l.getGoTargetKey(pkg.TypesInfo.Uses[ident]); target != "" {
+			object := pkg.TypesInfo.Uses[ident]
+			target := l.getGoTargetKey(object)
+			if target == "" {
+				target = l.getOwnInterfaceMethodKey(object)
+			}
+			if target != "" {
 				found = append(found, use{target: target, file: rel, user: user})
 			}
 			return true
@@ -368,6 +389,106 @@ func (l layout) listDispatchEdges(pkg *packages.Package, seenPairs map[string]bo
 					continue
 				}
 				if target := l.getGoTargetKey(fn); target != "" && target != user {
+					edges = append(edges, [2]string{target, user})
+				}
+			}
+		}
+	}
+	return edges
+}
+
+// getOwnInterfaceMethodKey is the node of a method of an interface that a package of the repository
+// outside the SDK and the protocol declares, such as a port of a plugin; "" for anything else.
+func (l layout) getOwnInterfaceMethodKey(obj types.Object) string {
+	fn, ok := obj.(*types.Func)
+	if !ok || fn.Pkg() == nil || !isMethod(fn) {
+		return ""
+	}
+	pkgPath := fn.Pkg().Path()
+	if !strings.HasPrefix(pkgPath, l.modulePath) || pkgPath == l.connectPath || load.IsWithin(pkgPath, l.sdkGoPath) {
+		return ""
+	}
+	sig, ok := fn.Type().(*types.Signature)
+	if !ok || !types.IsInterface(sig.Recv().Type()) {
+		return ""
+	}
+	name := getReceiverName(fn)
+	if name == "" {
+		return ""
+	}
+	return getGoKey(pkgPath, name+"."+fn.Name())
+}
+
+// listSDKTypes lists the named types of the SDK packages among roots and the packages they import
+// directly or through other packages, interfaces and generic types left out.
+func (l layout) listSDKTypes(roots []*types.Package) []*types.Named {
+	var named []*types.Named
+	seen := map[string]bool{}
+	var walk func(one *types.Package)
+	walk = func(one *types.Package) {
+		if seen[one.Path()] {
+			return
+		}
+		seen[one.Path()] = true
+		if load.IsWithin(one.Path(), l.sdkGoPath) {
+			scope := one.Scope()
+			for _, name := range scope.Names() {
+				object, ok := scope.Lookup(name).(*types.TypeName)
+				if !ok || object.IsAlias() {
+					continue
+				}
+				if typ, ok := object.Type().(*types.Named); ok && typ.TypeParams().Len() == 0 && !types.IsInterface(typ) {
+					named = append(named, typ)
+				}
+			}
+		}
+		for _, imported := range one.Imports() {
+			walk(imported)
+		}
+	}
+	for _, root := range roots {
+		walk(root)
+	}
+	return named
+}
+
+// listOwnInterfaceEdges links each method of an interface the package declares, such as a port of a
+// plugin, to the methods of the SDK types that answer it: a plugin that holds an SDK client behind a
+// port of its own calls the client when it calls the port.
+func (l layout) listOwnInterfaceEdges(pkg *packages.Package, sdkTypes []*types.Named) [][2]string {
+	var interfaces []*types.Interface
+	scope := pkg.Types.Scope()
+	for _, name := range scope.Names() {
+		object, ok := scope.Lookup(name).(*types.TypeName)
+		if !ok || object.IsAlias() {
+			continue
+		}
+		typ, ok := object.Type().(*types.Named)
+		if !ok || typ.TypeParams().Len() > 0 {
+			continue
+		}
+		if iface, ok := typ.Underlying().(*types.Interface); ok && iface.NumMethods() > 0 {
+			interfaces = append(interfaces, iface)
+		}
+	}
+	if len(interfaces) == 0 {
+		return nil
+	}
+	var edges [][2]string
+	for _, iface := range interfaces {
+		for _, concrete := range sdkTypes {
+			pointer := types.NewPointer(concrete)
+			if !types.Implements(concrete, iface) && !types.Implements(pointer, iface) {
+				continue
+			}
+			for method := range iface.Methods() {
+				user := l.getOwnInterfaceMethodKey(method)
+				answer, _, _ := types.LookupFieldOrMethod(pointer, true, method.Pkg(), method.Name())
+				fn, ok := answer.(*types.Func)
+				if !ok || user == "" {
+					continue
+				}
+				if target := l.getGoTargetKey(fn); target != "" {
 					edges = append(edges, [2]string{target, user})
 				}
 			}
@@ -586,63 +707,14 @@ func getVerdict(consumers map[string]bool) string {
 	return ""
 }
 
-// allowance is an entry of allowlist.json: an item by its name and why it stays where it is.
-type allowance struct {
-	Item   string `json:"item"`
-	Reason string `json:"reason"`
-}
-
-func readAllowList(t *testing.T) []allowance {
-	t.Helper()
-	file := filepath.Join(load.RepoRootDir, "tools", "checks", "structure", "go", "single-consumer", "allowlist.json")
-	text, err := os.ReadFile(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var entries []allowance
-	if err := json.Unmarshal(text, &entries); err != nil {
-		t.Fatalf("%s: %v", file, err)
-	}
-	return entries
-}
-
-// applyAllowList drops the allowed findings and lists the entries without a reason of three words or
-// more, and those that name no finding.
-func applyAllowList(found []finding, entries []allowance) ([]finding, []string) {
-	allowed := map[string]bool{}
-	var problems []string
-	for _, one := range entries {
-		if len(strings.Fields(one.Reason)) < 3 {
-			problems = append(problems, fmt.Sprintf("allowlist.json: %q gives no reason of three words or more", one.Item))
-			continue
-		}
-		allowed[one.Item] = true
-	}
-	var kept []finding
-	named := map[string]bool{}
-	for _, one := range found {
-		if allowed[one.name] {
-			named[one.name] = true
-			continue
-		}
-		kept = append(kept, one)
-	}
-	for _, one := range entries {
-		if allowed[one.Item] && !named[one.Item] {
-			problems = append(problems, fmt.Sprintf("allowlist.json: %q is not a finding; remove the entry", one.Item))
-		}
-	}
-	return kept, problems
-}
-
 func checkSingleConsumers(t *testing.T, workspace load.WorkspacePackages) {
 	t.Helper()
 	l := newRepositoryLayout(t)
-	var pkgs []*packages.Package
+	var modules [][]*packages.Package
 	for _, dir := range load.ListWorkspaceModules(t) {
-		pkgs = append(pkgs, load.ListProductionPackages(workspace.ListModule(t, dir))...)
+		modules = append(modules, load.ListProductionPackages(workspace.ListModule(t, dir)))
 	}
-	goUsage := collectGoUsage(pkgs, l)
+	goUsage := collectGoUsage(modules, l)
 	tsUsage, read := collectTSUsage(t, l)
 	counts := map[string]int{}
 	for _, one := range append(slices.Clone(goUsage.items), tsUsage.items...) {
@@ -658,11 +730,7 @@ func checkSingleConsumers(t *testing.T, workspace load.WorkspacePackages) {
 	if counts["rpc"] == 0 || counts["go"] == 0 || counts["ts"] == 0 || rpcUses == 0 || read.Packages == 0 || read.Files == 0 {
 		t.Fatalf("%v items, %d uses of an RPC, %d TypeScript packages and %d files: the rule is checked against nothing", counts, rpcUses, read.Packages, read.Files)
 	}
-	found, problems := applyAllowList(findSingleConsumers([]usage{goUsage, tsUsage}, l), readAllowList(t))
-	for _, one := range problems {
-		t.Error(one)
-	}
-	for _, one := range found {
+	for _, one := range findSingleConsumers([]usage{goUsage, tsUsage}, l) {
 		t.Error(one)
 	}
 }
