@@ -176,8 +176,8 @@ func TestTheSessionOfTheProgramIsRecorded(t *testing.T) {
 func TestACanceledRunIsCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if reason, _ := Parse(ctx, strings.NewReader(textDelta("one")+"\n"), &recorder{}, Options{}); reason != reasonCanceled {
-		t.Errorf("reason = %q, want canceled", reason)
+	if reason, err := Parse(ctx, strings.NewReader(textDelta("one")+"\n"), &recorder{}, Options{}); err != nil || reason != reasonCanceled {
+		t.Errorf("Parse = %q, %v, want canceled", reason, err)
 	}
 }
 

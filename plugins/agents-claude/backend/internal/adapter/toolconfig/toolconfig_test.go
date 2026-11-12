@@ -29,7 +29,11 @@ func TestTheFileNamesTheServerWithTheTokenForItsOwnerAlone(t *testing.T) {
 	if err != nil || path == "" {
 		t.Fatalf("Write = %q, %v", path, err)
 	}
-	t.Cleanup(func() { _ = (Files{}).Remove(path) })
+	t.Cleanup(func() {
+		if err := (Files{}).Remove(path); err != nil {
+			t.Error(err)
+		}
+	})
 	info, err := os.Stat(path)
 	if err != nil {
 		t.Fatal(err)
