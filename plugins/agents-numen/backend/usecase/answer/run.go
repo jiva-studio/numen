@@ -2,6 +2,8 @@ package answer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -10,12 +12,8 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 )
 
-// chatError is a turn the model could not be asked for. It stops the run.
-type chatError struct{ err error }
-
-func (f *chatError) Error() string { return f.err.Error() }
-
-func (f *chatError) Unwrap() error { return f.err }
+// errChat is a turn the model could not be asked for. It stops the run.
+var errChat = errors.New("the model could not be asked")
 
 // run is one task worked by the model: the way to ask it, the tools, and where its frames go.
 type run struct {
@@ -69,7 +67,7 @@ func (r *run) turn(ctx context.Context, messages []conversation.Message, message
 		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, unsent
 	}
 	if err != nil {
-		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, &chatError{err: err}
+		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, fmt.Errorf("%w: %w", errChat, err)
 	}
 	message := reply.Message
 	if reply.IsCut {

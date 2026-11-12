@@ -89,11 +89,11 @@ func TestATurnIsAskedForInteractivelyWithTheMessagesToolsAndOptions(t *testing.T
 		t.Errorf("priority = %v, want interactive: a person waits for the answer", got.priority)
 	}
 	request := got.request
-	if len(request.Messages) != 3 || request.Messages[1].ToolCalls[0].Id != "c1" || request.Messages[2].ToolCallId != "c1" {
-		t.Errorf("messages = %+v", request.Messages)
+	if len(request.GetMessages()) != 3 || request.GetMessages()[1].GetToolCalls()[0].GetId() != "c1" || request.GetMessages()[2].GetToolCallId() != "c1" {
+		t.Errorf("messages = %+v", request.GetMessages())
 	}
-	if len(request.Tools) != 1 || request.Tools[0].Name != "note_read" || request.Temperature == nil || *request.Temperature != 0.5 || request.MaxTokens != 64 {
-		t.Errorf("tools = %+v, temperature = %v, max tokens = %d", request.Tools, request.Temperature, request.MaxTokens)
+	if len(request.GetTools()) != 1 || request.GetTools()[0].GetName() != "note_read" || request.Temperature == nil || request.GetTemperature() != 0.5 || request.GetMaxTokens() != 64 {
+		t.Errorf("tools = %+v, temperature = %v, max tokens = %d", request.GetTools(), request.Temperature, request.GetMaxTokens())
 	}
 }
 
@@ -111,7 +111,8 @@ func TestTheTextAndTheCallsOfTheStreamMakeTheReply(t *testing.T) {
 	if strings.Join(spoken, "|") != "Let me |look. " || reply.Message.Text != "Let me look. " || reply.Message.Role != "assistant" {
 		t.Errorf("spoken %v, reply %+v", spoken, reply)
 	}
-	if len(reply.Message.ToolCalls) != 1 || reply.Message.ToolCalls[0].Arguments != `{"path":"A.md"}` || reply.IsCut {
+	if len(reply.Message.ToolCalls) != 1 || reply.Message.ToolCalls[0].Arguments != `{"path":"A.md"}` || reply.IsCut ||
+		reply.Message.ToolCalls[0].About != "A.md" || reply.Message.ToolCalls[0].Path != "A.md" {
 		t.Errorf("reply = %+v", reply)
 	}
 }
@@ -156,5 +157,33 @@ func TestAFailureInTheMiddleOfTheStreamKeepsTheText(t *testing.T) {
 
 	if !errors.Is(err, connection.ErrNoConnection) || strings.Join(spoken, "") != "The plan is " || reply.Message.Text != "The plan is " {
 		t.Errorf("err = %v, spoken %v, reply %+v", err, spoken, reply)
+	}
+}
+
+func TestTheSubjectOfACallIsItsQueryAboutOrTitleElseItsPath(t *testing.T) {
+	cases := []struct {
+		name, arguments, about, path string
+	}{
+		{"a query before a path", `{"query":"ferry times","path":"Trips"}`, "ferry times", "Trips"},
+		{"a title", `{"title":"Ferry","file":"Trips/Ferry.md"}`, "Ferry", "Trips/Ferry.md"},
+		{"only a path", `{"path":"Trips/Ferry.md"}`, "Trips/Ferry.md", "Trips/Ferry.md"},
+		{"no subject", `{"limit":5}`, "", ""},
+		{"arguments that are not JSON", `{"path":`, "", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			stream := &fakeStream{frames: []*llm.ChatFrame{
+				{Event: &llm.ChatFrame_ToolCall{ToolCall: &llm.ToolCall{Id: "c1", Name: "note_search", ArgumentsJson: c.arguments}}},
+			}, finish: &llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_TOOL_CALLS}}
+
+			reply, _, _, err := ask(t, stream, nil)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			if call := reply.Message.ToolCalls[0]; call.About != c.about || call.Path != c.path {
+				t.Errorf("about %q, path %q, want %q, %q", call.About, call.Path, c.about, c.path)
+			}
+		})
 	}
 }

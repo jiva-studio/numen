@@ -33,8 +33,9 @@ func newTextTurn(text string) turn {
 	return turn{text: text}
 }
 
-func newCallTurn(id, tool, args string) turn {
-	return turn{text: "Let me look. ", calls: []conversation.ToolCall{{ID: id, Name: tool, Arguments: args}}}
+func newCallTurn(id, tool, path string) turn {
+	call := conversation.ToolCall{ID: id, Name: tool, Arguments: `{"path":"` + path + `"}`, About: path, Path: path}
+	return turn{text: "Let me look. ", calls: []conversation.ToolCall{call}}
 }
 
 // fakeModel answers each request with the next turn it holds, and the last turn again after that. It
@@ -159,7 +160,7 @@ func describeFrames(frames []*acp.TaskFrame) string {
 }
 
 func TestATurnWithAToolCallSendsTheTextTheCallAndItsEnd(t *testing.T) {
-	model := &fakeModel{turns: []turn{newCallTurn("call-1", "note_read", `{"path":"Plan.md"}`), newTextTurn("Water the garden.")}}
+	model := &fakeModel{turns: []turn{newCallTurn("call-1", "note_read", "Plan.md"), newTextTurn("Water the garden.")}}
 	host := &fakeHost{}
 	s := newTestAgent(t, model, host.serve(t))
 
@@ -220,7 +221,7 @@ func TestTheTurnsOfAConversationContinueItsHistory(t *testing.T) {
 }
 
 func TestAModelThatKeepsCallingToolsStopsAtTheStepLimit(t *testing.T) {
-	model := &fakeModel{turns: []turn{newCallTurn("c", "note_read", `{"path":"A.md"}`)}}
+	model := &fakeModel{turns: []turn{newCallTurn("c", "note_read", "A.md")}}
 	host := &fakeHost{}
 	s := newTestAgent(t, model, host.serve(t))
 	s.settings.Configure(map[string]string{"maxSteps": "3"})

@@ -120,5 +120,7 @@ func writeTools(tools []conversation.Tool) []*llm.ToolDefinition {
 }
 
 func readCall(call *llm.ToolCall) conversation.ToolCall {
-	return conversation.ToolCall{ID: call.GetId(), Name: call.GetName(), Arguments: call.GetArgumentsJson()}
+	arguments := call.GetArgumentsJson()
+	about, path := readSubject(arguments)
+	return conversation.ToolCall{ID: call.GetId(), Name: call.GetName(), Arguments: arguments, About: about, Path: path}
 }

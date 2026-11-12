@@ -88,7 +88,7 @@ func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.Tas
 	if ctxErr := taskCtx.Err(); ctxErr != nil {
 		return nil, ctxErr
 	}
-	if _, isChat := errors.AsType[*chatError](err); isChat {
+	if errors.Is(err, errChat) {
 		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
 	if err != nil {

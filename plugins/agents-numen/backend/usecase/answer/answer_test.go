@@ -99,6 +99,11 @@ func callReply(id, name, arguments string) conversation.Reply {
 	return conversation.Reply{Message: conversation.Message{Role: "assistant", ToolCalls: []conversation.ToolCall{{ID: id, Name: name, Arguments: arguments}}}}
 }
 
+func noteCallReply(id, name, path string) conversation.Reply {
+	call := conversation.ToolCall{ID: id, Name: name, Arguments: `{"path":"` + path + `"}`, About: path, Path: path}
+	return conversation.Reply{Message: conversation.Message{Role: "assistant", ToolCalls: []conversation.ToolCall{call}}}
+}
+
 func textReply(text string) conversation.Reply {
 	return conversation.Reply{Message: conversation.Message{Role: "assistant", Text: text}}
 }
@@ -167,7 +172,7 @@ func TestTheNotesAttachedToThePromptGoWithIt(t *testing.T) {
 }
 
 func TestAToolCallIsSentWithItsTitleKindAndNoteAndEndsCompleted(t *testing.T) {
-	chat := &scriptedChat{replies: []conversation.Reply{callReply("1", "note_read", `{"path":"Trips/Ferry.md"}`), textReply("done reading")}}
+	chat := &scriptedChat{replies: []conversation.Reply{noteCallReply("1", "note_read", "Trips/Ferry.md"), textReply("done reading")}}
 	tools := &fakeTools{}
 	answerer, _ := newAnswerer(t, chat, tools, oneRow)
 
@@ -196,7 +201,7 @@ func TestAToolCallIsSentWithItsTitleKindAndNoteAndEndsCompleted(t *testing.T) {
 }
 
 func TestAToolThatChangesTheVaultIsAnEditAndAFailedCallEndsFailed(t *testing.T) {
-	chat := &scriptedChat{replies: []conversation.Reply{callReply("1", "note_write", `{"path":"Trips/Ferry.md"}`), textReply("could not")}}
+	chat := &scriptedChat{replies: []conversation.Reply{noteCallReply("1", "note_write", "Trips/Ferry.md"), textReply("could not")}}
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
 
 	frames, _ := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "write it"})

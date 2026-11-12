@@ -1,8 +1,6 @@
 package answer
 
 import (
-	"encoding/json"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 )
@@ -24,32 +22,9 @@ func describeCall(listed map[string]conversation.Tool, call conversation.ToolCal
 			frame.Kind = acp.ToolKind_TOOL_KIND_READ
 		}
 	}
-	about, path := readSubject(call.Arguments)
-	frame.Content = []string{about}
-	if path != "" {
-		frame.Locations = []*acp.ToolCallLocation{{Path: path, Line: 0}}
+	frame.Content = []string{call.About}
+	if call.Path != "" {
+		frame.Locations = []*acp.ToolCallLocation{{Path: call.Path, Line: 0}}
 	}
 	return frame
-}
-
-func readSubject(arguments string) (about, path string) {
-	var parsed map[string]any
-	if err := json.Unmarshal([]byte(arguments), &parsed); err != nil {
-		return "", ""
-	}
-	path = readFirstString(parsed, "path", "file")
-	about = readFirstString(parsed, "query", "about", "title")
-	if about == "" {
-		about = path
-	}
-	return about, path
-}
-
-func readFirstString(parsed map[string]any, keys ...string) string {
-	for _, key := range keys {
-		if value, isText := parsed[key].(string); isText && value != "" {
-			return value
-		}
-	}
-	return ""
 }

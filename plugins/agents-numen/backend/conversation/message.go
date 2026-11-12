@@ -13,11 +13,15 @@ type Message struct {
 	ToolCallID string
 }
 
-// ToolCall is a call of a tool the model asked for. Arguments is one JSON object.
+// ToolCall is a call of a tool the model asked for. Arguments is one JSON object. About is the query,
+// about or title the arguments name, else their path; Path is the path or file they name. Both are
+// empty when the arguments name none.
 type ToolCall struct {
 	ID        string
 	Name      string
 	Arguments string
+	About     string
+	Path      string
 }
 
 // Tool is a tool of the host offered to the model. Parameters is the JSON schema of its arguments, and
