@@ -19,7 +19,9 @@ export function requestNodes(nodes: readonly PlexNode[], options: PlexOptions): 
 /**
  * The nodes the window holds. The set is laid out, each relation is cut before
  * the first box that is not inside, and the rest is laid out again, since a
- * smaller group is placed differently. Every pass removes at least one node.
+ * smaller group is placed differently. A group whose first box is outside is
+ * halved instead, since its middle lies nearer the focus when it is smaller.
+ * Every pass removes at least one node.
  *
  * A pass needs the first box outside of each relation and nothing after it, so
  * it stops once every relation has one or is fully placed.
@@ -71,7 +73,9 @@ function cutBeforeOutside(nodesByRelation: NodesByRelation, outside: ReadonlySet
     const nodes = nodesByRelation[relation]
     if (!nodes) continue
     const cut = nodes.findIndex((node) => outside.has(node.id))
-    kept[relation] = cut === -1 ? nodes : nodes.slice(0, cut)
+    // The middle of a group lies further out the more it holds, so when even the
+    // first box is outside a smaller group may still fit: halve it and lay again.
+    kept[relation] = cut === -1 ? nodes : nodes.slice(0, cut === 0 ? nodes.length >> 1 : cut)
   }
   return kept
 }

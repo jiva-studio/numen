@@ -31,6 +31,9 @@ export interface SpotRequest {
  */
 export const TOLERANCE = 0.5
 
+/** Float error forgiven when boxes touch and no gap is left to spend. */
+const FLOAT_ERROR = 1e-6
+
 /** How many quarter-box steps the walk outward takes before it gives up. */
 const WALK_STEPS = 400
 
@@ -55,12 +58,24 @@ interface Rect {
 /** Placed boxes, bucketed on a grid, so a spot is checked against the boxes near it and not against all of them. */
 export class SpotIndex {
   private readonly cells = new Map<number, Spot[]>()
+  private extent: Rect = { minX: 0, maxX: 0, minY: 0, maxY: 0 }
 
   constructor(spots: readonly Spot[] = []) {
     for (const spot of spots) this.add(spot)
   }
 
+  /** The bounds of every box in the index. */
+  getExtent(): Rect {
+    return this.extent
+  }
+
   add(spot: Spot): void {
+    this.extent = {
+      minX: Math.min(this.extent.minX, spot.x - spot.width / 2),
+      maxX: Math.max(this.extent.maxX, spot.x + spot.width / 2),
+      minY: Math.min(this.extent.minY, spot.y - spot.height / 2),
+      maxY: Math.max(this.extent.maxY, spot.y + spot.height / 2),
+    }
     this.visitCells(
       {
         minX: spot.x - spot.width / 2,
@@ -115,13 +130,27 @@ export class SpotIndex {
 
 /** Whether a candidate beats the best so far: a lower cost, or an equal cost nearer the start. */
 function isBetter(cost: number, along: number, best: { cost: number; along: number }): boolean {
-  return cost < best.cost || (cost === best.cost && along < best.along)
+  return cost < best.cost || (cost === best.cost && roundAlong(along) < roundAlong(best.along))
+}
+
+/** Rounded like the cost, so float noise does not decide which of two candidates is nearer the start. */
+function roundAlong(along: number): number {
+  return Math.round(along * COST_PRECISION)
+}
+
+/**
+ * The gap that must be kept: the gap less the tolerance, never below nothing.
+ * With no gap boxes may touch but not cross; only float error is forgiven.
+ */
+function getRequiredGap(gap: number): number {
+  return gap > TOLERANCE ? gap - TOLERANCE : -FLOAT_ERROR
 }
 
 function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
   return (
-    Math.abs(spot.x - other.x) >= (spot.width + other.width) / 2 + gaps.gap - TOLERANCE ||
-    Math.abs(spot.y - other.y) >= (spot.height + other.height) / 2 + gaps.lineGap - TOLERANCE
+    Math.abs(spot.x - other.x) >= (spot.width + other.width) / 2 + getRequiredGap(gaps.gap) ||
+    Math.abs(spot.y - other.y) >=
+      (spot.height + other.height) / 2 + getRequiredGap(gaps.lineGap)
   )
 }
 
@@ -149,7 +178,25 @@ export function findFreeSpot(taken: readonly Spot[] | SpotIndex, request: SpotRe
     if (index.isFree(toSpot(point), gaps)) best = { point, cost, along }
   }
   if (best) return toSpot(best.point)
-  return findFreeSpotOutward(index, request) ?? toSpot(middle)
+  return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
+}
+
+/** Nothing was free in reach: a spot past every placed box, far out, where a window drops it. */
+function findSpotBeyond(taken: SpotIndex, request: SpotRequest): Spot {
+  const { middle, direction, size, gaps } = request
+  const { minX, maxX, minY, maxY } = taken.getExtent()
+  if (Math.abs(direction.x) >= Math.abs(direction.y)) {
+    const x =
+      direction.x >= 0
+        ? maxX + gaps.gap + size.width / 2 + 1
+        : minX - gaps.gap - size.width / 2 - 1
+    return { x, y: middle.y, ...size }
+  }
+  const y =
+    direction.y >= 0
+      ? maxY + gaps.lineGap + size.height / 2 + 1
+      : minY - gaps.lineGap - size.height / 2 - 1
+  return { x: middle.x, y, ...size }
 }
 
 function listCandidates(request: SpotRequest): Vector[] {

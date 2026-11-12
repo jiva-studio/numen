@@ -108,9 +108,9 @@ export const awkwardLabels: PlexGraph = graph(
 )
 
 /**
- * Every line named, and more children than one row holds. The lines to the far
- * row cross the near one, so their titles compete for space in a band the
- * near row's titles already occupy.
+ * Every line named, and more children than a cluster shows near the focus. The lines to the far
+ * ones cross the near ones, so their titles compete for space in a band the
+ * near titles already occupy.
  */
 const labelledRows: PlexGraph = {
   nodes: [

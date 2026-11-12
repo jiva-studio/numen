@@ -15,8 +15,8 @@ export const spacingAsSet = (options: PlexOptions): Spacing => ({
 })
 
 /**
- * The order the gaps open in. The gap between the focus and the first line
- * goes first: it is the one an edge crosses, and an edge carries its label in
+ * The order the gaps open in. The gap between the focus and the nearest
+ * cluster goes first: it is the one an edge crosses, and an edge carries its label in
  * the middle of that crossing.
  */
 const OPENS: readonly (keyof Spacing)[] = ['focusGap', 'lineGap', 'gap']

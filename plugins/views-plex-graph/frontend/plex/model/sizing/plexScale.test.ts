@@ -105,7 +105,7 @@ describe('a label half again as large', () => {
     )
   })
 
-  it('wraps a row sooner, so nothing reaches past the edge', () => {
+  it('keeps every box in the window, so nothing reaches past the edge', () => {
     const viewport = { width: 900, height: 700 }
     const crowd = build('A node', { parent: 3, child: 12, jump: 4, sibling: 4 })
     const frame = arrangePlex(crowd, { options: { ...larger, viewport } })

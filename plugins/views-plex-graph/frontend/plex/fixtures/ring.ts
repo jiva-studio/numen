@@ -2,7 +2,7 @@ import type { Placement } from '../lib/arrange/layout/placement'
 
 /**
  * A stand-in for a real mind map. It sets coordinates and inherits everything
- * else: routing, limits, movement.
+ * else: routing and movement.
  */
 export const ring: Placement = {
   name: 'ring',
