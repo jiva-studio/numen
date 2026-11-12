@@ -533,7 +533,11 @@ describe('the rows of a setting that discovers', () => {
   })
 
   it('says that no connection serves while none can', async () => {
-    const { wrapper } = mountRows({ discover: true, isDiscovering: true, connections: [EMBED_ONLY, RETIRED] })
+    const { wrapper } = mountRows({
+      discover: true,
+      isDiscovering: true,
+      connections: [EMBED_ONLY, RETIRED],
+    })
     await flushPromises()
 
     expect(root().textContent).toContain('No connection serves this yet')
@@ -541,7 +545,11 @@ describe('the rows of a setting that discovers', () => {
   })
 
   it('uses the chosen rows instead, and names no automatic connection', async () => {
-    const { wrapper } = mountRows({ discover: true, isDiscovering: true, value: [row(HOME.id, 'beta')] })
+    const { wrapper } = mountRows({
+      discover: true,
+      isDiscovering: true,
+      value: [row(HOME.id, 'beta')],
+    })
     await flushPromises()
 
     expect(root().querySelectorAll('li')).toHaveLength(1)
@@ -550,7 +558,11 @@ describe('the rows of a setting that discovers', () => {
   })
 
   it('names the automatic connections again once the last row is removed', async () => {
-    const { wrapper } = mountRows({ discover: true, isDiscovering: true, value: [row(HOME.id, 'beta')] })
+    const { wrapper } = mountRows({
+      discover: true,
+      isDiscovering: true,
+      value: [row(HOME.id, 'beta')],
+    })
     await flushPromises()
 
     await wrapper.setProps({ value: [] })

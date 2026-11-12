@@ -83,7 +83,8 @@ const { stored, choices, discovered, getReason, getRowFields } = useConnectionEn
 )
 const isSingle = computed(() => limit.value === 1)
 const isAutomatic = computed(
-  () => props.isDiscovering === true && stored.value.length > 0 && readRows(props.value).length === 0,
+  () =>
+    props.isDiscovering === true && stored.value.length > 0 && readRows(props.value).length === 0,
 )
 const automaticText = computed(() =>
   discovered.value.length > 0
@@ -95,7 +96,13 @@ const automaticText = computed(() =>
 watch(
   [() => stored.value.length, () => drafts.value.length, limit, isAutomatic],
   () => {
-    if (isSingle.value && !isAutomatic.value && stored.value.length > 0 && drafts.value.length === 0) add()
+    if (
+      isSingle.value &&
+      !isAutomatic.value &&
+      stored.value.length > 0 &&
+      drafts.value.length === 0
+    )
+      add()
   },
   { immediate: true },
 )

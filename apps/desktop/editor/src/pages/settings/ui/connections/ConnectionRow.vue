@@ -8,11 +8,7 @@
 import { computed, useTemplateRef } from 'vue'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
-import {
-  getAddressText,
-  getConnectionState,
-  getUsedByNames,
-} from '@/entities/connection'
+import { getAddressText, getConnectionState, getUsedByNames } from '@/entities/connection'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -32,11 +28,7 @@ const address = computed(() => getAddressText(props.type, props.connection))
 const usedBy = computed(() => getUsedByNames(props.connection.uses))
 const row = useTemplateRef<InstanceType<typeof NavigationRow>>('row')
 const detail = computed(() =>
-  [
-    typeTitle.value,
-    address.value,
-    usedBy.value === '' ? '' : words.connectionUsedBy(usedBy.value),
-  ]
+  [typeTitle.value, address.value, usedBy.value === '' ? '' : words.connectionUsedBy(usedBy.value)]
     .filter((one) => one !== '')
     .join(' · '),
 )
