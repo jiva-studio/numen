@@ -5,7 +5,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -1091,50 +1090,39 @@ func TestCardToolsLimitsAndEdgeCases(t *testing.T) {
 	}
 }
 
-// A tool is offered on the servers it belongs to and shown as what it does: the tools that read are
-// offered to every agent, and the ones that change the cards to the agent of the vault alone.
-func TestTools_ServerAvailabilityAndDisplayLabel(t *testing.T) {
-	const (
-		full    = tools.Full
-		reading = tools.Reading
-	)
-	type placed struct {
-		effect  tools.Effect
-		step    tools.Step
-		servers []tools.Server
-	}
+// The tools that read the cards are read-only and the ones that change them read-write.
+func TestTools_Effect(t *testing.T) {
 	reads, writes := tools.ReadOnly, tools.ReadWrite
-	byEffect, remove, move := tools.ByEffect, tools.Remove, tools.Move
-	want := map[string]placed{
-		"card_current_get":    {reads, byEffect, []tools.Server{full, reading}},
-		"card_model_list":     {reads, byEffect, []tools.Server{full, reading}},
-		"card_model_read":     {reads, byEffect, []tools.Server{full, reading}},
-		"card_read":           {reads, byEffect, []tools.Server{full, reading}},
-		"card_add":            {writes, byEffect, []tools.Server{full}},
-		"card_edit":           {writes, byEffect, []tools.Server{full}},
-		"card_value_remove":   {writes, remove, []tools.Server{full}},
-		"card_remove":         {writes, remove, []tools.Server{full}},
-		"card_section_add":    {writes, byEffect, []tools.Server{full}},
-		"card_section_rename": {writes, move, []tools.Server{full}},
-		"card_section_remove": {writes, remove, []tools.Server{full}},
-		"card_deck_create":    {writes, byEffect, []tools.Server{full}},
-		"card_model_create":   {writes, byEffect, []tools.Server{full}},
-		"card_model_edit":     {writes, byEffect, []tools.Server{full}},
-		"card_field_rename":   {writes, move, []tools.Server{full}},
+	want := map[string]tools.Effect{
+		"card_current_get":    reads,
+		"card_model_list":     reads,
+		"card_model_read":     reads,
+		"card_read":           reads,
+		"card_add":            writes,
+		"card_edit":           writes,
+		"card_value_remove":   writes,
+		"card_remove":         writes,
+		"card_section_add":    writes,
+		"card_section_rename": writes,
+		"card_section_remove": writes,
+		"card_deck_create":    writes,
+		"card_model_create":   writes,
+		"card_model_edit":     writes,
+		"card_field_rename":   writes,
 	}
 	session, _ := newSession(t, vault())
 
-	got := map[string]placed{}
+	got := map[string]tools.Effect{}
 	for _, one := range session.list(t) {
-		got[one.GetName()] = placed{one.GetEffect(), one.GetStep(), one.GetServers()}
+		got[one.GetName()] = one.GetEffect()
 	}
 
 	if len(got) != len(want) {
 		t.Errorf("the plugin offers %d tools, and %d are expected", len(got), len(want))
 	}
 	for name, expected := range want {
-		if !reflect.DeepEqual(got[name], expected) {
-			t.Errorf("%s is %+v, want %+v", name, got[name], expected)
+		if got[name] != expected {
+			t.Errorf("%s has the effect %v, want %v", name, got[name], expected)
 		}
 	}
 }

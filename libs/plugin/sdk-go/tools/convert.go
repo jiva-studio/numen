@@ -38,33 +38,6 @@ func writeEffect(effect Effect) v1.ToolEffect {
 	return v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED
 }
 
-func writeStep(step Step) v1.ToolStep {
-	switch step {
-	case Search:
-		return v1.ToolStep_TOOL_STEP_SEARCH
-	case Remove:
-		return v1.ToolStep_TOOL_STEP_REMOVE
-	case Move:
-		return v1.ToolStep_TOOL_STEP_MOVE
-	case ByEffect:
-	}
-	// gomutants:disable-next-line reason="the returned value is the zero value of its type, so returning zero is the same value"
-	return v1.ToolStep_TOOL_STEP_UNSPECIFIED
-}
-
-func writeServers(servers []Server) []v1.ToolServer {
-	wire := make([]v1.ToolServer, 0, len(servers))
-	for _, one := range servers {
-		switch one {
-		case Full:
-			wire = append(wire, v1.ToolServer_TOOL_SERVER_FULL)
-		case Reading:
-			wire = append(wire, v1.ToolServer_TOOL_SERVER_READING)
-		}
-	}
-	return wire
-}
-
 func readEffect(effect v1.ToolEffect) Effect {
 	switch effect {
 	case v1.ToolEffect_TOOL_EFFECT_READ_ONLY:
@@ -74,35 +47,6 @@ func readEffect(effect v1.ToolEffect) Effect {
 	default:
 		return 0
 	}
-}
-
-func readStep(step v1.ToolStep) Step {
-	switch step {
-	case v1.ToolStep_TOOL_STEP_SEARCH:
-		return Search
-	case v1.ToolStep_TOOL_STEP_REMOVE:
-		return Remove
-	case v1.ToolStep_TOOL_STEP_MOVE:
-		return Move
-	default:
-		// gomutants:disable-next-line reason="the returned value is the zero value of its type, so returning zero is the same value"
-		return ByEffect
-	}
-}
-
-func readServers(servers []v1.ToolServer) []Server {
-	var out []Server
-	for _, s := range servers {
-		switch s {
-		case v1.ToolServer_TOOL_SERVER_UNSPECIFIED:
-			continue
-		case v1.ToolServer_TOOL_SERVER_FULL:
-			out = append(out, Full)
-		case v1.ToolServer_TOOL_SERVER_READING:
-			out = append(out, Reading)
-		}
-	}
-	return out
 }
 
 func readToolInfo(t *v1.PluginTool) *ToolInfo {
@@ -116,11 +60,8 @@ func readToolInfo(t *v1.PluginTool) *ToolInfo {
 		InputSchema:  t.GetInputSchema(),
 		OutputSchema: t.GetOutputSchema(),
 		Effect:       readEffect(t.GetEffect()),
-		Step:         readStep(t.GetStep()),
-		Servers:      readServers(t.GetServers()),
 		Instructions: t.GetInstructions(),
 		Requires:     t.GetRequires(),
-		Hints:        readHints(t.GetHints()),
 	}
 }
 
@@ -135,11 +76,8 @@ func writeToolInfo(t *ToolInfo) *v1.PluginTool {
 		InputSchema:  t.InputSchema,
 		OutputSchema: t.OutputSchema,
 		Effect:       writeEffect(t.Effect),
-		Step:         writeStep(t.Step),
-		Servers:      writeServers(t.Servers),
 		Instructions: t.Instructions,
 		Requires:     t.Requires,
-		Hints:        writeHints(t.Hints),
 	}
 }
 
@@ -171,22 +109,4 @@ func writeCallResponse(res *CallResponse) *v1.CallToolResponse {
 		}
 	}
 	return out
-}
-
-func readHints(hints *v1.ToolHints) Hints {
-	return Hints{
-		ReadOnly:    hints.GetReadOnly(),
-		Destructive: hints.GetDestructive(),
-		Idempotent:  hints.GetIdempotent(),
-		OpenWorld:   hints.GetOpenWorld(),
-	}
-}
-
-func writeHints(hints Hints) *v1.ToolHints {
-	return &v1.ToolHints{
-		ReadOnly:    hints.ReadOnly,
-		Destructive: hints.Destructive,
-		Idempotent:  hints.Idempotent,
-		OpenWorld:   hints.OpenWorld,
-	}
 }

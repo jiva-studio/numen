@@ -3,13 +3,11 @@ package tools
 import (
 	"context"
 	"net/http"
-	"slices"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
@@ -106,34 +104,8 @@ type ToolInfo struct {
 	InputSchema  []byte
 	OutputSchema []byte
 	Effect       Effect
-	Step         Step
-	Servers      []Server
 	Instructions []string
 	Requires     []string
-	Hints        Hints
-}
-
-// Hints are the MCP annotations of a tool.
-//
-//numen:api
-type Hints struct {
-	// ReadOnly is a tool that changes nothing.
-	ReadOnly bool
-	// Destructive is a tool that removes something.
-	Destructive bool
-	// Idempotent is a tool whose repeated call with the same arguments has no further effect.
-	Idempotent bool
-	// OpenWorld is a tool that reaches outside the machine.
-	OpenWorld bool
-}
-
-func createHints(spec Spec) Hints {
-	return Hints{
-		ReadOnly:    spec.Effect == ReadOnly,
-		Destructive: spec.Effect == ReadWrite && spec.Step == Remove,
-		Idempotent:  spec.Effect == ReadOnly,
-		OpenWorld:   slices.Contains(spec.Requires, host.PermissionLinkOpen),
-	}
 }
 
 func (t *ToolInfo) GetName() string {
@@ -178,20 +150,6 @@ func (t *ToolInfo) GetEffect() Effect {
 	return t.Effect
 }
 
-func (t *ToolInfo) GetStep() Step {
-	if t == nil {
-		return ByEffect
-	}
-	return t.Step
-}
-
-func (t *ToolInfo) GetServers() []Server {
-	if t == nil {
-		return nil
-	}
-	return t.Servers
-}
-
 func (t *ToolInfo) GetInstructions() []string {
 	if t == nil {
 		return nil
@@ -204,13 +162,6 @@ func (t *ToolInfo) GetRequires() []string {
 		return nil
 	}
 	return t.Requires
-}
-
-func (t *ToolInfo) GetHints() Hints {
-	if t == nil {
-		return Hints{}
-	}
-	return t.Hints
 }
 
 // Listing is the list of tools a PluginToolService returns.

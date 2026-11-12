@@ -29,7 +29,6 @@ func newTools(requests *transcribe.Requests) *toolset {
 func (t *toolset) registry() (*tools.Registry, error) {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "transcript_create",
 		Title: "Transcribe a recording",
 		Description: "Start the transcription of one audio or video recording of the vault, with the model the " +
@@ -41,7 +40,6 @@ func (t *toolset) registry() (*tools.Registry, error) {
 			"version made from it. A recording that cannot be read is reported as a failed task in the list " +
 			"of tasks.",
 		Effect:       tools.ReadWrite,
-		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{transcriptUseSentence, transcriptSlowSentence, transcriptBackgroundSentence, transcriptOnceSentence},
 	}, t.createTranscript)
 	if err != nil {

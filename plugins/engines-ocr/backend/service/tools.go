@@ -30,7 +30,6 @@ type RecognitionCreateOutput struct {
 func newToolRegistry(launcher *launch.Launcher) (*tools.Registry, error) {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "recognition_create",
 		Title: "Recognize a scanned document",
 		Description: "Start the text recognition of one scanned PDF or image of the vault, with the model the " +
@@ -40,7 +39,6 @@ func newToolRegistry(launcher *launch.Launcher) (*tools.Registry, error) {
 			"file that is already recognized is not recognized again: the call returns the state done and the " +
 			"version that is read, the recognized text or a version made from it.",
 		Effect:       tools.ReadWrite,
-		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{recognitionUseSentence, recognitionSlowSentence, recognitionBackgroundSentence, recognitionOnceSentence},
 	}, newCreateRecognition(launcher))
 	if err != nil {

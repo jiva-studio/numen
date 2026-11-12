@@ -94,13 +94,6 @@ func (w windowTools) getToolInfo(t *testing.T, name string) *tools.ToolInfo {
 	return nil
 }
 
-func isOnServer(info *tools.ToolInfo, server tools.Server) bool {
-	if len(info.GetServers()) == 0 {
-		return server == tools.Full
-	}
-	return slices.Contains(info.GetServers(), server)
-}
-
 // tabOutput is one tab as returned by a tool. Place is the raw JSON of the place key, nil where
 // the key is absent.
 type tabOutput struct {
@@ -135,20 +128,6 @@ func requirePlace(t *testing.T, what string, place json.RawMessage, want string)
 	}
 	if !reflect.DeepEqual(got, wanted) {
 		t.Errorf("%s has the place %s, want %s", what, place, want)
-	}
-}
-
-func TestTheToolsThatMoveTheWindowAreOnTheFullServerOnly(t *testing.T) {
-	w := newWindowTools(t)
-	for _, name := range []string{"note_focus", "source_focus", "window_tab_activate"} {
-		info := w.getToolInfo(t, name)
-		if !isOnServer(info, tools.Full) || isOnServer(info, tools.Reading) {
-			t.Errorf("%s is on %v, want the full server only", name, info.GetServers())
-		}
-	}
-	tabs := w.getToolInfo(t, "window_tab_list")
-	if !isOnServer(tabs, tools.Full) || !isOnServer(tabs, tools.Reading) {
-		t.Errorf("window_tab_list is on %v, want the full and the reading server", tabs.GetServers())
 	}
 }
 

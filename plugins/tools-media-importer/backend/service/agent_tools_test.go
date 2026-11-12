@@ -247,7 +247,7 @@ func hasVersion(t *testing.T, texts *hosttest.Texts, path string) bool {
 	return len(listing.Versions) > 0
 }
 
-func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
+func TestRegistryListsURLImportAsAWritingTool(t *testing.T) {
 	s := newUnblockedFixture(t)
 
 	listing, err := s.registry.ListTools(t.Context())
@@ -260,9 +260,6 @@ func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 	}
 	if infos[0].GetEffect() != tools.ReadWrite {
 		t.Errorf("url_import has effect %v, want ReadWrite", infos[0].GetEffect())
-	}
-	if !slices.Equal(infos[0].GetServers(), []tools.Server{tools.Full}) {
-		t.Errorf("url_import is listed on %v, want the full server alone", infos[0].GetServers())
 	}
 }
 
