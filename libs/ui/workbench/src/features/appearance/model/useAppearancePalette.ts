@@ -5,11 +5,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { getFailureText, type AppearanceWriter, type Mode } from '../lib/appearance'
-import {
-  getAppearanceGroups,
-  readAppearancePick,
-  type AppearanceChoiceWords,
-} from '../lib/choices'
+import { getAppearanceGroups, readAppearancePick, type AppearanceChoiceWords } from '../lib/choices'
 import type { WindowAppearance } from './appearance'
 
 export interface AppearancePaletteDeps {

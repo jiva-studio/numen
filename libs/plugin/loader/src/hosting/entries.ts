@@ -147,7 +147,9 @@ export function registerTabKindEntry(
             .openTabAdjacent(registration.kind, path)
             .catch((error: Caught) => reportError(deps, pluginId, error))
         } else {
-          openTab(registration.kind, path).catch((error: Caught) => reportError(deps, pluginId, error))
+          openTab(registration.kind, path).catch((error: Caught) =>
+            reportError(deps, pluginId, error),
+          )
         }
       })
       if (typeof unreg === 'function') cleanups.push(unreg)

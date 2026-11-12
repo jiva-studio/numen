@@ -144,8 +144,7 @@ describe('the rest of what is requested', () => {
     })
 
     const received: (readonly string[])[] = []
-    for await (const names of themes.watchThemes(new AbortController().signal))
-      received.push(names)
+    for await (const names of themes.watchThemes(new AbortController().signal)) received.push(names)
 
     expect(received).toStrictEqual([['mine:sea'], ['mine:sea', 'mine:dawn']])
   })

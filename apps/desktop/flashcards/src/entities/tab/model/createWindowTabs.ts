@@ -19,7 +19,9 @@ export function createWindowTabs() {
   const kinds = shallowRef<readonly AnyTabKind[]>([])
   const front = computed(() => findFrontKind(kinds.value))
   /** The plugin of the front kind, whose stylesheet the window keeps while the kind can be opened. */
-  const frontPlugins = computed(() => (front.value ? [{ pluginId: front.value.pluginId ?? '' }] : []))
+  const frontPlugins = computed(() =>
+    front.value ? [{ pluginId: front.value.pluginId ?? '' }] : [],
+  )
   const tab = shallowRef<WindowTab | null>(null)
   const tabVault = computed(() => tab.value?.vault ?? null)
   let tabCount = 0

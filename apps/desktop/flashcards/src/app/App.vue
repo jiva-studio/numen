@@ -34,12 +34,7 @@ const { front, tab, openTab } = tabs
     class="window"
     :class="{ 'window--below-bar': titleBarView }"
   >
-    <component
-      :is="tab.kind.pane"
-      v-if="tab"
-      :key="tab.id"
-      :state="tab.state"
-    />
+    <component :is="tab.kind.pane" v-if="tab" :key="tab.id" :state="tab.state" />
 
     <VaultChooser
       v-else-if="front"
