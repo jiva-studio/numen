@@ -359,9 +359,9 @@ describe('the settings and notices a plugin is given', () => {
     })
     const target = { path: 'scan.pdf', title: 'scan', isFolder: false, others: [], tab: '' }
 
-    expect(
-      await pluginHost.commands.listCommandItems('app:file.createText', target),
-    ).toStrictEqual([{ id: 'md.numen.ocr:v1', title: 'Recognition', group: 'md.numen.ocr' }])
+    expect(await pluginHost.commands.listCommandItems('app:file.createText', target)).toStrictEqual(
+      [{ id: 'md.numen.ocr:v1', title: 'Recognition', group: 'md.numen.ocr' }],
+    )
     expect(listBackendHandlerItems).toHaveBeenCalledWith(
       'md.numen.ocr',
       'app:file.createText',

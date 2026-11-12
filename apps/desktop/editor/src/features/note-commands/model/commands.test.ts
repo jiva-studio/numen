@@ -77,6 +77,9 @@ const createWindow = (answers: Answers = {}) => {
           }
         )
       },
+      listFileKinds: (request: { paths: string[] }) => ({
+        kinds: request.paths.map((path) => ({ path, isNote: true, type: '', tabKind: 'page' })),
+      }),
       removeFile: (request: { path: string }) => {
         actions.push(`remove ${request.path}`)
         return answers.remove ?? { trashed: '.trash/Ontology.md', dangling: [] }
@@ -288,10 +291,10 @@ describe('a note made', () => {
     expect(one.actions.at(-1)).toBe('travel Entropy.md')
   })
 
-  it('opens in a tab alongside the note the person is in', async () => {
+  it('opens beside the tab the person is in where that kind of tab opens the note', async () => {
     const one = createWindow()
 
-    await one.carry(invoke('app:note.createChild', front({ kind: 'note' }), 'Entropy'))
+    await one.carry(invoke('app:note.createChild', front({ kind: 'page' }), 'Entropy'))
 
     expect(one.actions.at(-1)).toBe('openFile Entropy.md Entropy split')
   })
