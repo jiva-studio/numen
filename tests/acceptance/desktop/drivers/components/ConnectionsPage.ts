@@ -22,10 +22,10 @@ export class ConnectionsPage {
     return panel.getByRole('listitem', { name: new RegExp(`^${escapeRegExp(name)}$`) })
   }
 
-  /** Chooses a type in the open dialog; the list of the types is a menu. */
+  /** Chooses a type in the open dialog; the list of the types is a searchable list. */
   async chooseType(type: string): Promise<void> {
     await this.getDialog().locator('.connection-dialog__field button').first().click()
-    await this.page.getByRole('menuitemradio', { name: new RegExp(`^${escapeRegExp(type)}`) }).click()
+    await this.page.getByRole('option', { name: new RegExp(`^${escapeRegExp(type)}`) }).click()
   }
 
   async fill(label: string, value: string): Promise<void> {

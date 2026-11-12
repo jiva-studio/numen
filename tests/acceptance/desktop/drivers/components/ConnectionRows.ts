@@ -21,7 +21,7 @@ export class ConnectionRows {
   async chooseConnection(row: Locator, name: string): Promise<void> {
     await row.getByRole('button', { name: 'Connection', exact: true }).click()
     await this.page
-      .getByRole('menuitemradio', { name: new RegExp(`^${escapeRegExp(name)}`) })
+      .getByRole('option', { name: new RegExp(`^${escapeRegExp(name)}`) })
       .click()
   }
 

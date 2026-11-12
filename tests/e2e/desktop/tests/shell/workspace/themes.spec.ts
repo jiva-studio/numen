@@ -3,10 +3,10 @@ import { openWorkspace, runCommand } from '../../support/workspace.js'
 import { getFirstLine, getRow, readHeight, showInFiles } from '../../support/layout.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
-const openSystemSettings = async (page: Page) => {
+const openAppearanceSettings = async (page: Page) => {
   await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
-  await settings.getByRole('button', { name: /^System/ }).click()
+  await settings.getByRole('button', { name: /^Appearance/ }).click()
   return settings
 }
 
@@ -28,7 +28,7 @@ test.describe('Theming and Display Scaling', () => {
     await expect(editor).toBeVisible()
     const editorBefore = await readHeight(getFirstLine(editor))
 
-    const settings = await openSystemSettings(page)
+    const settings = await openAppearanceSettings(page)
     const interfaceSize = settings.getByRole('slider', { name: 'Interface size' })
     await interfaceSize.focus()
     await interfaceSize.press('ArrowRight')
