@@ -304,6 +304,23 @@ describe('the rows of a setting of connections', () => {
     dispose(wrapper)
   })
 
+  it('asks for a connection in the one row of a setting that names none yet', async () => {
+    const { wrapper } = mountRows({ max: 1, operation: 'embed' })
+    await flushPromises()
+
+    expect(wrapper.findAllComponents(Select)[0]?.props('problem')).toBe('Choose a connection')
+    expect(changes(wrapper)).toStrictEqual([])
+    dispose(wrapper)
+  })
+
+  it('asks for nothing once the one row names a connection', async () => {
+    const { wrapper } = mountRows({ max: 1, operation: 'embed', value: [row(WORK.id, 'alpha')] })
+    await flushPromises()
+
+    expect(wrapper.findAllComponents(Select)[0]?.props('problem')).toBe('')
+    dispose(wrapper)
+  })
+
   it('says under a row why the connection it names cannot serve', async () => {
     const { wrapper } = mountRows({ value: [row(EMBED_ONLY.id, 'any')] })
     await flushPromises()
