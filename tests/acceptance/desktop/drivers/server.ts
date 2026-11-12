@@ -25,6 +25,8 @@ const BINARIES = {
 } as const
 const ARTICLE = path.join(REPO_ROOT, 'tests/e2e/desktop/fixtures/article.html')
 const HOST = '127.0.0.1'
+/** The connection of the Numen agent the chat answers through; the agent reaches the stand-in model by its own row. */
+const STAND_IN_AGENT_CONNECTION = 'c57a4d101'
 const STATE_FOLDERS = ['config', 'cache', 'data', 'state', 'home'] as const
 
 const getFreePort = (): Promise<number> =>
@@ -168,7 +170,6 @@ export class Server {
     fs.mkdirSync(folder, { recursive: true })
     const settings = {
       v: 1,
-      app: { agent: { use: 'numen' } },
       connections: [
         {
           id: STAND_IN_CONNECTION,
@@ -177,12 +178,17 @@ export class Server {
           revision: 1,
           fields: { baseUrl: standIns.chatUrl },
         },
+        {
+          id: STAND_IN_AGENT_CONNECTION,
+          type: 'md.numen.agents.numen/numen',
+          name: 'Numen agent',
+          revision: 1,
+          fields: {},
+        },
       ],
       'md.numen.agents.numen': { connections: [{ connection: STAND_IN_CONNECTION, model: STAND_IN_MODEL }] },
-      'md.numen.agents.claude': { enabled: false },
-      'md.numen.agents.codex': { enabled: false },
-      'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
+      'md.numen.views.agent.chat': { connections: [{ connection: STAND_IN_AGENT_CONNECTION }] },
       ...(this.options.application === 'editor'
         ? {
             'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
