@@ -5,7 +5,6 @@ import {
   createInitialValues,
   getAddressField,
   getEditableFields,
-  getFieldHint,
   getMissingFields,
   getSentFields,
   getSentSecrets,
@@ -157,26 +156,7 @@ describe('getSentFields', () => {
 })
 
 describe('getSentSecrets', () => {
-  it('sends the typed keys and the cleared ones as empty texts', () => {
-    expect(getSentSecrets({ apiKey: 'k', other: '' }, [])).toStrictEqual({ apiKey: 'k' })
-    expect(getSentSecrets({ apiKey: '' }, ['apiKey'])).toStrictEqual({ apiKey: '' })
-  })
-})
-
-describe('getFieldHint', () => {
-  const hints = { cleared: 'C', stored: 'S', requiredKey: 'R', optionalKey: 'O', address: 'A' }
-  const none = { isStored: false, isCleared: false }
-
-  it('hints the state of a secret field', () => {
-    const key = field({ key: 'apiKey', type: 'secret', isRequired: true })
-    expect(getFieldHint(key, none, hints)).toBe('R')
-    expect(getFieldHint(field({ key: 'k', type: 'secret' }), none, hints)).toBe('O')
-    expect(getFieldHint(key, { isStored: true, isCleared: false }, hints)).toBe('S')
-    expect(getFieldHint(key, { isStored: true, isCleared: true }, hints)).toBe('C')
-  })
-
-  it('hints the address, and states the description of any other field', () => {
-    expect(getFieldHint(field({ key: 'baseUrl', isAddress: true }), none, hints)).toBe('A')
-    expect(getFieldHint(field({ key: 'x', description: 'about' }), none, hints)).toBe('about')
+  it('sends the typed keys only', () => {
+    expect(getSentSecrets({ apiKey: 'k', other: '' })).toStrictEqual({ apiKey: 'k' })
   })
 })

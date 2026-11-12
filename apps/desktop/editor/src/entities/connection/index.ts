@@ -17,7 +17,6 @@ export {
   createFieldValues,
   createInitialValues,
   getEditableFields,
-  getFieldHint,
   getMissingFields,
   getSentFields,
   getSentSecrets,
