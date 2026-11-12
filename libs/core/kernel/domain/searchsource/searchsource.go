@@ -24,6 +24,12 @@ type Description struct {
 	Concurrency   int
 }
 
+// IsDescribed reports whether the source described itself. A source that could not, as while its settings
+// name no connection, has the zero description: it keeps no vectors, so it indexes and answers nothing.
+func (d Description) IsDescribed() bool {
+	return d.Width > 0
+}
+
 // String is the name and the width as one value, for a column that holds it.
 func (d Description) String() string {
 	return d.Name + "@" + strconv.Itoa(d.Width)

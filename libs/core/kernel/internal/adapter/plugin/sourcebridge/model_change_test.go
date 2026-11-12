@@ -44,6 +44,23 @@ func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *sourcebrid
 	t.Helper()
 	mock := &mockSourceServer{}
 	mock.chunkTokens.Store(256)
+	host := startConfigurableSource(t, mock)
+
+	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { testsupport.Close(t, bridge) })
+
+	var announced atomic.Int32
+	bridge.OnDescriptionChange(func() { announced.Add(1) })
+	return host, bridge, mock, &announced
+}
+
+// startConfigurableSource runs the mock as the plugin that declares the search source capability and takes its
+// configuration, beside another plugin.
+func startConfigurableSource(t *testing.T, mock *mockSourceServer) *container.PluginRoles {
+	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(configurable{}))
 	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(mock))
@@ -71,16 +88,7 @@ func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *sourcebrid
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
-
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { testsupport.Close(t, bridge) })
-
-	var announced atomic.Int32
-	bridge.OnDescriptionChange(func() { announced.Add(1) })
-	return host, bridge, mock, &announced
+	return host
 }
 
 func settle(t *testing.T, bridge *sourcebridge.Source, mock *mockSourceServer, readsBefore int32) {

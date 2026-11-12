@@ -93,6 +93,9 @@ func (u Embed) run(
 	defer func() { err = errors.Join(err, release()) }()
 
 	model := u.Source.Describe()
+	if !model.IsDescribed() {
+		return res, nil
+	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err

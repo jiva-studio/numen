@@ -62,8 +62,8 @@ func (h *downEmbeddingHost) lend() *container.PluginHost {
 	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding()}}
 }
 
-// A plugin that does not answer names no model, and a vault read without a
-// model leaves the vectors of the index where they are.
+// A plugin that does not answer names no model: the window opens its source undescribed, and a vault read
+// without a model leaves the vectors of the index where they are.
 func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
@@ -73,15 +73,12 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 		Paths:              container.Paths{ServiceDir: ".numen"},
 	})
 
-	indexed, asking, _, err := target.Embedders(t.Context(), nil)
-	if err == nil {
-		t.Fatal("an embedding plugin that is down was opened")
+	indexed, _, closeSource, err := target.Embedders(t.Context(), nil)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if indexed != nil || asking != nil {
-		t.Fatalf("an embedder was made without a model: %v, %v", indexed, asking)
-	}
-	if host.acquired.Load() != host.released.Load() {
-		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
+	if indexed == nil || indexed.Describe().IsDescribed() {
+		t.Fatalf("the source of a plugin that is down is %v, want one with no description", indexed)
 	}
 
 	whole, err := container.ReadWholeVault(target, t.Context(), db, indexed, v)
@@ -93,6 +90,12 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	}
 	if got := unembeddedTo(t, db, v, unit{"first"}); got != 0 {
 		t.Errorf("%d chunks lost the vector of the first model", got)
+	}
+	if err := closeSource(); err != nil {
+		t.Fatal(err)
+	}
+	if host.acquired.Load() != host.released.Load() {
+		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 	}
 }
 

@@ -1,10 +1,14 @@
 package sourcebridge_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 )
 
 func failureReports(bridge *sourcebridge.Source) chan error {
@@ -170,5 +174,65 @@ func TestAReadThatTheSettingsDoNotAllowIsReportedWithThePlainSentence(t *testing
 		}
 	case <-time.After(time.Second):
 		t.Fatal("the read was not reported")
+	}
+}
+
+// A source opened for a window while its settings do not allow it is opened with no description, and the
+// sentence of the plugin is reported.
+func TestASourceTheSettingsDoNotAllowOpensWatchingWithNoDescription(t *testing.T) {
+	mock := &mockSourceServer{}
+	mock.failPrecondition.Store(true)
+	reports := make(chan error, 8)
+
+	bridge, err := sourcebridge.OpenWatching(t.Context(), pluginhost.Join(startConfigurableSource(t, mock)), func(err error) { reports <- err })
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { testsupport.Close(t, bridge) })
+
+	if err := <-reports; err == nil || err.Error() != noConnection {
+		t.Errorf("the first read was reported as %v, want %q", err, noConnection)
+	}
+	if described := bridge.Describe(); described.IsDescribed() {
+		t.Errorf("a source the settings do not allow is described as %+v", described)
+	}
+}
+
+// The setting that lets a source opened with no description describe itself announces the change once, and
+// clears the reported failure.
+func TestASettingThatAllowsTheSourceAnnouncesItsDescription(t *testing.T) {
+	mock := &mockSourceServer{}
+	mock.failPrecondition.Store(true)
+	host := startConfigurableSource(t, mock)
+	reports := make(chan error, 8)
+	bridge, err := sourcebridge.OpenWatching(t.Context(), pluginhost.Join(host), func(err error) { reports <- err })
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { testsupport.Close(t, bridge) })
+	<-reports
+	var announced atomic.Int32
+	bridge.OnDescriptionChange(func() { announced.Add(1) })
+
+	reads := mock.describeCalls.Load()
+	mock.failPrecondition.Store(false)
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "connection", "garden-row"); err != nil {
+		t.Fatal(err)
+	}
+	settle(t, bridge, mock, reads)
+
+	if got := announced.Load(); got != 1 {
+		t.Errorf("the description was announced %d times, want once", got)
+	}
+	if got := bridge.Describe(); !got.IsDescribed() || got.Name != "test-model" {
+		t.Errorf("the source is described as %+v, want test-model", got)
+	}
+	select {
+	case err := <-reports:
+		if err != nil {
+			t.Errorf("the read that succeeded was reported with %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("the read that succeeded was not reported")
 	}
 }

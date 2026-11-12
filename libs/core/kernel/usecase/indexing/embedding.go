@@ -35,12 +35,16 @@ func (e *Embedding) GetSource() searchsourceport.Source {
 	return e.source
 }
 
-// Describe returns the display name and the recipe of the source, and nothing without a source.
+// Describe returns the display name and the recipe of the source, and nothing without a source or for a
+// source that has not described itself.
 func (e *Embedding) Describe() (name, recipe string) {
 	if e == nil || e.source == nil {
 		return "", ""
 	}
 	described := e.source.Describe()
+	if !described.IsDescribed() {
+		return "", ""
+	}
 	return described.String(), described.Recipe()
 }
 
@@ -57,13 +61,16 @@ func (e *Embedding) CountProgress(ctx context.Context, vaultID domain.VaultID, r
 func (e *Embedding) HasProgress() bool { return e != nil && e.progress != nil }
 
 // DescribeCoverage returns what the search source tells a person about how far it has indexed the vault,
-// and nothing for a window without a source. A source that does not answer, as while its plugin starts again,
-// says nothing: the state of the vault does not fail with it.
+// and nothing for a window without a source or for a source that has not described itself. A source that does
+// not answer, as while its plugin starts again, says nothing: the state of the vault does not fail with it.
 func (e *Embedding) DescribeCoverage(ctx context.Context, vaultID domain.VaultID) (string, error) {
 	if e == nil || e.source == nil || vaultID == "" {
 		return "", nil
 	}
 	_, recipe := e.Describe()
+	if recipe == "" {
+		return "", nil
+	}
 	var counts searchsource.Counts
 	if e.HasProgress() {
 		chunks, indexed, err := e.CountProgress(ctx, vaultID, recipe)
