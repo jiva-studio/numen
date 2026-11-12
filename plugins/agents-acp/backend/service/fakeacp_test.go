@@ -22,7 +22,7 @@ import (
 // otherwise.
 func TestMain(m *testing.M) {
 	if len(os.Args) > 1 && os.Args[1] == "fake-acp" {
-		time.AfterFunc(4*time.Second, func() { os.Exit(0) })
+		time.AfterFunc(20*time.Second, func() { os.Exit(0) })
 		os.Exit(runFakeACPAgent(os.Args[2:], os.Stdin, os.Stdout))
 	}
 	if os.Getenv("NUMEN_ACP_TEST_CHILD") == "1" {
