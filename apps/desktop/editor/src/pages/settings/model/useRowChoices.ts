@@ -5,7 +5,6 @@ import { formatError } from '@/shared/api/errors'
 import type { Result } from '@/shared/lib/result'
 import { WORDS as words } from '../words'
 import type { ListRowOptions, SelectChoice } from '../types'
-import { INDEXING_OPERATION } from './useIndexQuestion'
 
 /**
  * What a row reads from the provider of its connection and how it answers. getRowFields returns none while
@@ -16,7 +15,6 @@ export interface RowChoicesSource {
   readonly getRowFields: () => readonly ConnectionFieldInfo[]
   readonly getOperations: () => readonly string[]
   readonly getListRowOptions: () => ListRowOptions | undefined
-  readonly update: (options: Readonly<Record<string, string>>) => void
 }
 
 /** One row field as the row draws it: its choices, why they could not be listed, and whether it is open. */
@@ -54,9 +52,8 @@ const readChoice = (one: RowOption): SelectChoice => ({
  * The choices of the row fields of the connection a row names. A field that names optionsFrom is asked
  * from the provider whenever the connection or a field before it changes, with the values the row holds
  * so far; a field after an empty required field waits. A field that is not required offers the default
- * of the provider first. Choosing a connection fills its first required field with the first of its
- * options, except for a setting that indexes the vault: there the person chooses, because a choice
- * indexes the vault again. An answer that comes after the row changed again is dropped.
+ * of the provider first. No value is chosen for the person: a required field that is open and empty
+ * asks for its value. An answer that comes after the row changed again is dropped.
  */
 export function useRowChoices(source: RowChoicesSource) {
   const listed = ref<Readonly<Record<string, Listed>>>({})
@@ -70,6 +67,16 @@ export function useRowChoices(source: RowChoicesSource) {
       .getRowFields()
       .slice(0, index)
       .some((one) => one.isRequired && getValue(one) === '')
+
+  const readProblem = (
+    field: ConnectionFieldInfo,
+    index: number,
+    listing: Listed | undefined,
+  ): string => {
+    if (listing && listing.problem !== '') return listing.problem
+    if (!field.isRequired || getValue(field) !== '' || isWaiting(index)) return ''
+    return words.connectionRowsChooseValue(field.title)
+  }
 
   const fields = computed<readonly RowFieldChoices[]>(() =>
     source.getRowFields().map((field, index) => {
@@ -85,7 +92,7 @@ export function useRowChoices(source: RowChoicesSource) {
         field,
         value: getValue(field),
         choices,
-        problem: asked?.problem ?? '',
+        problem: readProblem(field, index, asked),
         isDisabled:
           isWaiting(index) || (!field.isRequired && field.type !== 'string' && choices.length <= 1),
       }
@@ -110,16 +117,6 @@ export function useRowChoices(source: RowChoicesSource) {
       [field.key]: answer.ok
         ? { options: answer.value, problem: '' }
         : { options: [], problem: words.connectionRowsOptionsFailed(field.title, answer.error) },
-    }
-    const first = answer.ok ? answer.value[0] : undefined
-    const isFirstRequired = source.getRowFields().findIndex((one) => one.isRequired) === index
-    if (
-      first &&
-      isFirstRequired &&
-      getValue(field) === '' &&
-      !source.getOperations().includes(INDEXING_OPERATION)
-    ) {
-      source.update({ ...source.getRow().options, [field.key]: first.value })
     }
   }
 
