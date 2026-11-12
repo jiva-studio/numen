@@ -52,7 +52,7 @@ test('backend registrations are read from string literals, constants, shared com
         'import "github.com/jiva-studio/numen/libs/plugin/sdk-go/command"',
         'const (',
         '\tcommandOpen = "item.open"',
-        '\tcommandImport = command.ImportLink',
+        '\tcommandText = command.CreateText',
         ')',
         'func newCommands() *command.Registry {',
         '\tcommands := command.New()',
@@ -60,7 +60,7 @@ test('backend registrations are read from string literals, constants, shared com
         '\t_ = commands.Add(commandOpen, nil)',
         '\t_ = commands.Add(command.CreateText, nil)',
         '\tfor id, run := range map[string]command.Run{',
-        '\t\tcommandImport: nil,',
+        '\t\tcommandText: nil,',
         '\t\t"mapped.run": nil,',
         '\t} {',
         '\t\t_ = commands.Add(id, run)',
@@ -71,7 +71,7 @@ test('backend registrations are read from string literals, constants, shared com
     )
     assert.deepEqual(
       listBackendRegistrations(root).map((one) => one.id),
-      ['direct.run', 'item.open', 'app:file.createText', 'app:link.import', 'mapped.run'],
+      ['direct.run', 'item.open', 'app:file.createText', 'app:file.createText', 'mapped.run'],
     )
   } finally {
     rmSync(root, { recursive: true, force: true })

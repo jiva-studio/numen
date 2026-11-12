@@ -14,7 +14,7 @@ export type CreateLinks = (
   urls: readonly string[],
 ) => Promise<Outcome<DroppedLinks>>
 
-/** The items of app:link.downloadMedia: the video of a link, or its sound alone. */
+/** The items of link.downloadMedia: the video of a link, or its sound alone. */
 const MEDIA = ['video', 'audio'] as const
 
 const isMedia = (id: string | undefined): id is (typeof MEDIA)[number] =>
@@ -42,7 +42,7 @@ export const activate = (
     },
   })
   context.register.command({
-    id: 'app:link.downloadMedia',
+    id: 'link.downloadMedia',
     listItems: async (target) => {
       const facts = await links.getLink(target.path)
       return facts.ok && facts.value.isCopyable ? MEDIA.map((id) => ({ id, title: words[id] })) : []

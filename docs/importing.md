@@ -4,7 +4,7 @@ A person pastes an address into the palette and gets a link: a note of type `lin
 
 ## The gesture
 
-**Import link** in the palette is the shared command `app:link.import`, which the plugin handles. The command declares its argument `address` in `libs/core/protocol/commands.json`; the palette asks for it, and the plugin creates a note for it, named after the address:
+**Import link** in the palette is the command `link.import` of the plugin. Its manifest declares the argument `address`; the palette asks for it, and the plugin creates a note for it, named after the address:
 
 ```markdown
 ---
@@ -16,7 +16,7 @@ url: https://www.youtube.com/watch?v=A4OZ4L9TCpM
 
 The plugin does not manage what a person writes below the frontmatter; the viewer shows the copy, or the site's player, and the text.
 
-At the command line the same run is `numen-cli app:link.import <vault> --address <url>`. Over a link note, `numen-cli app:file.createText <vault> <note>` fetches the text, `app:link.downloadMedia` downloads the video and `app:link.deleteMedia` removes it; the plugin handles these shared commands over notes of type `link`.
+At the command line the same run is `numen-cli link.import <vault> --address <url>`. Over a link note, `numen-cli app:file.createText <vault> <note>` fetches the text, which the plugin handles as a shared command over notes of type `link`; its own commands `link.downloadMedia` and `link.deleteMedia` download the video and remove it.
 
 An address dragged out of a browser onto the files tree is the same gesture: the plugin registers a drop handler for `text/uri-list`, and the tree passes it the drop and the selected folder, without knowing the plugin.
 
@@ -46,7 +46,7 @@ The text version is the link's text, split into passages as any source's text is
 
 ## A copy
 
-Importing an address (`app:link.import`) makes the link note and nothing else; an address that already has a link note anywhere in the vault opens that note, and `url_import` returns it. **Download media** (`app:link.downloadMedia`) offers Video and Audio (the sound alone) for a link whose address publishes a video, and downloads the one picked, up to the size `copyMaxSizeMb` sets, into the plugin's folder of the vault's store, through the core's queue and shown as a task; nothing downloaded goes into the vault. The plugin writes the address of the download into the note as `media: plugin://md.numen.tools.media.importer/<key>.video.mp4` (`<key>.audio.m4a` for the sound alone), and of the page that frames the player as `page:`, which `resolveAddress` turns into the address the window plays or frames it from. The link notes of one address share its download. **Delete media** (`app:link.deleteMedia`), or a switch between video and audio, takes `media` out of that note alone; the download is deleted once no link note refers to it, and a delete during a running download waits for it to end. **Download captions** (`app:file.createText`) fetches the text of a link note; with the setting `downloadCaptionsAutomatically` on, it runs when a link note is added.
+Importing an address (`link.import`) makes the link note and nothing else; an address that already has a link note anywhere in the vault opens that note, and `url_import` returns it. **Download media** (`link.downloadMedia`) offers Video and Audio (the sound alone) for a link whose address publishes a video, and downloads the one picked, up to the size `copyMaxSizeMb` sets, into the plugin's folder of the vault's store, through the core's queue and shown as a task; nothing downloaded goes into the vault. The plugin writes the address of the download into the note as `media: plugin://md.numen.tools.media.importer/<key>.video.mp4` (`<key>.audio.m4a` for the sound alone), and of the page that frames the player as `page:`, which `resolveAddress` turns into the address the window plays or frames it from. The link notes of one address share its download. **Delete media** (`link.deleteMedia`), or a switch between video and audio, takes `media` out of that note alone; the download is deleted once no link note refers to it, and a delete during a running download waits for it to end. **Download captions** (`app:file.createText`) fetches the text of a link note; with the setting `downloadCaptionsAutomatically` on, it runs when a link note is added.
 
 While no media are downloaded, the Media Viewer frames the site's player. The plugin declares `contributes.frameOrigins: ["https://www.youtube-nocookie.com"]` and writes a page that frames the player into its folder of the vault's store when it makes the link note, at the address the note holds under `page`. The viewer loads that page from the window's loopback socket (`resolveAddress`), not from the window's own scheme: a page of a scheme that is not http sends no Referer, and the site refuses to play for a page that sends none. The loopback page is served with `Referrer-Policy: strict-origin-when-cross-origin`.
 

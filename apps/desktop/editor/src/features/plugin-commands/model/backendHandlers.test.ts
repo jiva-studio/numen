@@ -26,10 +26,10 @@ describe('createBackendHandlers', () => {
     const { deps, handlers } = createWith({ ok: true, value: { message: '', openedPath: '' } })
 
     expect(
-      await handlers.listBackendHandlerItems('md.ears', 'app:link.downloadMedia', TARGET),
+      await handlers.listBackendHandlerItems('md.ears', 'app:file.createText', TARGET),
     ).toStrictEqual([{ id: 'v1', title: 'Transcript' }])
     expect(deps.list).toHaveBeenCalledWith(
-      { pluginId: 'md.ears', id: 'app:link.downloadMedia' },
+      { pluginId: 'md.ears', id: 'app:file.createText' },
       'talks/a.mp3',
     )
   })

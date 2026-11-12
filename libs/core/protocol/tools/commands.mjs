@@ -61,7 +61,7 @@ const go = [
     '\t\treturn []AppCommandArgument{',
     ...one.arguments.map(
       (argument) =>
-        `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}, Options: []string{${argument.options.map((value) => JSON.stringify(value)).join(', ')}}},`,
+        `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}${argument.options ? `, Options: []string{${argument.options.map((value) => JSON.stringify(value)).join(', ')}}` : ''}},`,
     ),
     '\t\t}, true',
   ]),
@@ -134,14 +134,16 @@ const ts = [
   '// APP_COMMANDS are the app commands that take arguments. A slot entry passes values only',
   '// for these arguments and these values.',
   'export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]>> = {',
-  ...appCommands.flatMap((one) => [
-    `  '${one.id}': [`,
-    ...one.arguments.map(
+  ...appCommands.flatMap((one) => {
+    const items = one.arguments.map(
       (argument) =>
-        `    { name: '${argument.name}', title: '${argument.title}', type: '${argument.type}', options: [${argument.options.map((value) => `'${value}'`).join(', ')}] },`,
-    ),
-    '  ],',
-  ]),
+        `{ name: '${argument.name}', title: '${argument.title}', type: '${argument.type}', options: [${(argument.options ?? []).map((value) => `'${value}'`).join(', ')}] }`,
+    )
+    // One line where it fits, as prettier prints it.
+    const line = `  '${one.id}': [${items.join(', ')}],`
+    if (line.length <= 100) return [line]
+    return [`  '${one.id}': [`, ...items.map((item) => `    ${item},`), '  ],']
+  }),
   '}',
   '',
   '/** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */',
