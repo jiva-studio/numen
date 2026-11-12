@@ -16,7 +16,7 @@ await test('a plugin change selects its folder, the specs that name it and the a
 })
 
 await test('a plugin without tests of its own selects the shell alone', () => {
-  assert.equal(getScope(['plugins/agents-codex/backend/main.go']), 'shell/')
+  assert.equal(getScope(['plugins/agents-mcp-server/backend/main.go']), 'shell/')
   assert.deepEqual(getScopePaths('shell/'), ['tests/shell/'])
 })
 

@@ -26,9 +26,6 @@ updates:
       - /apps/mobile
       - /apps/desktop/build/tools
       - /plugins/agents-acp
-      - /plugins/agents-antigravity
-      - /plugins/agents-claude
-      - /plugins/agents-codex
       - /plugins/agents-mcp-server
       - /plugins/agents-numen
       - /plugins/agents-tools-vault

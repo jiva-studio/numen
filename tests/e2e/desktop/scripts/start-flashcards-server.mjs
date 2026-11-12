@@ -70,9 +70,6 @@ fs.writeFileSync(
       'md.numen.agents.numen': {
         connections: [{ connection: STAND_IN_CONNECTION, model: STAND_IN_MODEL }],
       },
-      'md.numen.agents.claude': { enabled: false },
-      'md.numen.agents.codex': { enabled: false },
-      'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
     },
     null,
