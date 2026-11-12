@@ -39,7 +39,7 @@ export function createNoteWriter(writeMessage: MessageWriter) {
     role: ConnectionRole,
   ): Promise<NoteRef | null> {
     try {
-      const made = await relations.createRelatedNote({ from, role, title })
+      const made = await relations.createRelated({ from, role, title })
       if (!made.ok) {
         writeMessage(getRelationErrorWords(made.error), 'error')
         return null
