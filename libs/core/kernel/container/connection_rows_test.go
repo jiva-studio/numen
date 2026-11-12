@@ -113,7 +113,7 @@ func TestAWriteOfRowsThatNameNoConnectionIsRefused(t *testing.T) {
 
 func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
-	setModelCalls(plugins(cfg), noNotices{})
+	setModelCalls(plugins(cfg), noNotices{}.ReportSetAside)
 
 	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Complete(t.Context(), rowsPlugin, modelcall.CompleteRequest{}, modelcall.PriorityBackground)
 
@@ -133,7 +133,7 @@ func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 
 func TestAPluginWithoutRowsGetsNoConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
-	setModelCalls(plugins(cfg), noNotices{})
+	setModelCalls(plugins(cfg), noNotices{}.ReportSetAside)
 
 	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Complete(t.Context(), "md.numen.sample.other", modelcall.CompleteRequest{}, modelcall.PriorityBackground)
 

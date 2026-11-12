@@ -313,6 +313,6 @@ func newQueueSetupFor(t *testing.T, operation string, parallelRequests int) *que
 	}
 	return &queueSetup{
 		world: w, entry: entry,
-		calls: modelcall.NewCalls(w.Resolve, w.ReadSecrets, w.Rows, w.Source, w.Clock, w.Waits.Wait, w.Notices),
+		calls: modelcall.NewCalls(w.Resolve, w.ReadSecrets, w.Rows, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }

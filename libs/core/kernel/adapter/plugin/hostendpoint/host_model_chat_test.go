@@ -205,7 +205,7 @@ func TestAChatConsumerReceivesNoKeyInAnyEvent(t *testing.T) {
 		two := world.AddServer(t, "Two", "https://two.test/v1", keyTwo)
 		world.Rows.Set("md.numen.b", "chat", modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		arrange(world)
-		client, recording := newModelClient(t, modelcalls.NewCalls(world.Resolve, world.ReadSecrets, world.Rows, world.Source, world.Clock, world.Waits.Wait, world.Notices), "token-b")
+		client, recording := newModelClient(t, modelcalls.NewCalls(world.Resolve, world.ReadSecrets, world.Rows, world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
 
 		stream, err := client.Chat(t.Context(), connect.NewRequest(&v1.HostModelServiceChatRequest{}))
 		if err != nil {

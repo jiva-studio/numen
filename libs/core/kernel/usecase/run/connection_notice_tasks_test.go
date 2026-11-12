@@ -13,7 +13,7 @@ func TestAConnectionSetAsideIsAKindOfNoticeInTheListOfTasks(t *testing.T) {
 	tasks := run.NewTasks()
 	notices := run.NewConnectionNoticeTasks(tasks)
 
-	notices.ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
+	notices.Execute("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
 
 	list := tasks.List()
 	if len(list) != 1 || list[0].Kind != work.KindNotice || list[0].Error != "" {
@@ -28,10 +28,10 @@ func TestEachConnectionAndReasonIsOneTask(t *testing.T) {
 	tasks := run.NewTasks()
 	notices := run.NewConnectionNoticeTasks(tasks)
 
-	notices.ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
-	notices.ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
-	notices.ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonRateLimited)
-	notices.ReportSetAside("c0000002", "Ollama", connection.FailureReasonPaymentRequired)
+	notices.Execute("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
+	notices.Execute("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
+	notices.Execute("c0000001", "OpenRouter", connection.FailureReasonRateLimited)
+	notices.Execute("c0000002", "Ollama", connection.FailureReasonPaymentRequired)
 
 	if got := len(tasks.List()); got != 3 {
 		t.Errorf("tasks = %+v, want one for each connection and reason", tasks.List())

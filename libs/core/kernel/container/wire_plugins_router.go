@@ -21,16 +21,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settingsagent"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
 func getSettingsAgent(c pluginsWiring) agentport.Agent {
-	return agentcase.NewSettingsAgent(agentcase.NewPrograms(getToolProvider(c), func() agentcase.AgentSettings { return getAgentSettings(c) }))
+	return settingsagent.NewSettingsAgent(settingsagent.NewPrograms(getToolProvider(c), func() settingsagent.AgentSettings { return getAgentSettings(c) }))
 }
 
 func getToolProvider(c pluginsWiring) agentport.AgentProvider {

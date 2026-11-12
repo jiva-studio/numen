@@ -89,7 +89,7 @@ func bindFlashcards(
 	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log flashcardsLog,
 ) (Flashcards, error) {
 	a := plugins(c)
-	setModelCalls(a, connectionlog.NewLogNotices())
+	setModelCalls(a, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(a.vault, db, log.out, log.label, api.ReportVaultRead)
 	closers := Flashcards{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	SetShellNotes(api, db)

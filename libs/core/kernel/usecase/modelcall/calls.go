@@ -26,7 +26,7 @@ type Calls struct {
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
-	notices     connectionport.Notices
+	notices     connectionport.ReportSetAside
 	cooldown    *cooldown
 }
 
@@ -34,7 +34,7 @@ type Calls struct {
 // opens. wait times the calls that wait for a slot of their connection. notices is called when a connection was set aside and a row after it answered.
 func NewCalls(
 	resolve connectionport.ResolveConnection, readSecrets connectionport.ReadConnectionSecrets, rows connectionport.Rows, source connectionport.ProviderSource,
-	clock machineport.Clock, wait Wait, notices connectionport.Notices,
+	clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
 ) *Calls {
 	return &Calls{
 		resolve: resolve, readSecrets: readSecrets, rows: rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,

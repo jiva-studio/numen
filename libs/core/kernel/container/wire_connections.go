@@ -70,7 +70,7 @@ func openModelCalls(c pluginsWiring) connectionport.ModelCalls {
 	return modelcall.NewForwardedCalls(func() connectionport.ModelCalls { return c.PluginHost.Endpoint.GetModelCalls() })
 }
 
-func setModelCalls(c pluginsWiring, notices connectionport.Notices) {
+func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	deps, ok := openConnectionDeps(c)
 	if !ok {
 		return

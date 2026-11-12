@@ -143,7 +143,7 @@ func buildWindow(
 	reportPluginFailures(a, tasks)
 	reportDependencies(a, tasks)
 	setPluginWork(a, tasks, &run.Lock{})
-	setModelCalls(a, run.NewConnectionNoticeTasks(tasks))
+	setModelCalls(a, run.NewConnectionNoticeTasks(tasks).Execute)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.

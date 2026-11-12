@@ -23,6 +23,7 @@ import (
 	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settingsagent"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -206,6 +207,6 @@ func getAgentPrograms(c pluginsWiring, provider agentport.AgentProvider, target 
 	return list.Execute(target.GetCommands())
 }
 
-func getAgentSettings(c pluginsWiring) agentcase.AgentSettings {
-	return agentcase.NewAgentSettings(settingsGetSettingsOrDefaults(c.settings).Agent)
+func getAgentSettings(c pluginsWiring) settingsagent.AgentSettings {
+	return settingsagent.NewAgentSettings(settingsGetSettingsOrDefaults(c.settings).Agent)
 }

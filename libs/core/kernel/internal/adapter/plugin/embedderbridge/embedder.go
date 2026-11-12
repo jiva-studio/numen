@@ -207,6 +207,8 @@ func (b *Embedder) OnModelReadError(fn func(error)) {
 // readFailure is the failure to report for a read of the model that failed. A plugin whose settings do not allow
 // the read yet, such as a source that is a connection with no row chosen, is not failing: it reports nothing.
 func readFailure(pluginID string, err error) error {
+	// A plugin whose settings do not allow the read yet, such as a source that is a connection with no row
+	// chosen, is not failing: it reports nothing.
 	if connect.CodeOf(err) == connect.CodeFailedPrecondition {
 		return nil
 	}

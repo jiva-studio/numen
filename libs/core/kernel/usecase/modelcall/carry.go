@@ -236,7 +236,7 @@ func (r *rowCall[R, T]) callOnce(ctx context.Context) (T, error) {
 func (c *Calls) reportSetAside(rows []asideRow) {
 	for _, one := range rows {
 		if c.cooldown.claim(notice{version: connectionVersion{id: one.id, revision: one.revision}, reason: one.reason}) {
-			c.notices.ReportSetAside(one.id, one.name, one.reason)
+			c.notices(one.id, one.name, one.reason)
 		}
 	}
 }

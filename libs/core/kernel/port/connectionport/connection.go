@@ -40,11 +40,8 @@ type Rows interface {
 	ListRows(pluginID, operation string) ([]connection.Row, error)
 }
 
-// Notices tells the person what the core did on its own.
-type Notices interface {
-	// ReportSetAside says that a connection was set aside for a reason and a row after it answered.
-	ReportSetAside(connectionID, connectionName string, reason connection.FailureReason)
-}
+// ReportSetAside tells the person that a connection was set aside for a reason and a row after it answered.
+type ReportSetAside func(connectionID, connectionName string, reason connection.FailureReason)
 
 // ResolveConnection reads a connection and its type as a call to the provider needs them. It fails with
 // connection.ErrNotFound and connection.ErrTypeUnavailable.

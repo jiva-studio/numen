@@ -17,8 +17,8 @@ func NewConnectionNoticeTasks(tasks *Tasks) ConnectionNoticeTasks {
 	return ConnectionNoticeTasks{tasks: tasks}
 }
 
-// ReportSetAside adds a notice for the connection and the reason to the list of tasks.
-func (u ConnectionNoticeTasks) ReportSetAside(connectionID, connectionName string, reason connection.FailureReason) {
+// Execute adds a notice for the connection and the reason to the list of tasks.
+func (u ConnectionNoticeTasks) Execute(connectionID, connectionName string, reason connection.FailureReason) {
 	u.tasks.Set(work.Task{
 		ID:    fmt.Sprintf("connection set aside %s %s", connectionID, reason),
 		Title: "Connection set aside",
