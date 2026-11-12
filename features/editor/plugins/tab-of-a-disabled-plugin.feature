@@ -1,6 +1,10 @@
 Feature: Tab of a disabled plugin
   A tab stays in the window when its plugin is disabled.
 
+  As a person who uses plugins
+  I want my tab to stay open when I disable its plugin
+  So that I do not lose my place when I enable the plugin again
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

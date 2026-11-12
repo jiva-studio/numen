@@ -1,6 +1,10 @@
 Feature: Recordings
   A person plays, transcribes and edits a recording, and finds it by its words.
 
+  As a person who keeps recordings
+  I want to play a recording, make its transcript, edit it and search it
+  So that I can find a recording by what is said in it
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

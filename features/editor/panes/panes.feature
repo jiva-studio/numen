@@ -1,6 +1,10 @@
 Feature: Panes
   A person opens a note beside the others.
 
+  As a person who keeps notes
+  I want to open a note in a pane of its own
+  So that I can read two notes side by side
+
   Scenario: A note is opened beside
     Given the empty vault "Test"
     And the vault has the following:

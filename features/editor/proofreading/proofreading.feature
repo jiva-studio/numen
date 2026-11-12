@@ -1,6 +1,10 @@
 Feature: Proofreading
   A person proofreads the text of a scan or of a recording.
 
+  As a person who works with scans and recordings
+  I want to correct the text of a scan or of a recording
+  So that I can find it by the corrected words
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

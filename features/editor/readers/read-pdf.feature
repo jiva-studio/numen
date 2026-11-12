@@ -1,6 +1,10 @@
 Feature: Read a PDF
   A person reads a PDF file in a tab and moves between its pages.
 
+  As a person who reads PDF files
+  I want to open a PDF file and keep my page
+  So that I can come back to the page where I stopped
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

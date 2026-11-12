@@ -1,6 +1,10 @@
 Feature: Search
   A person finds the notes of a vault.
 
+  As a person who keeps notes
+  I want to search my notes by their words or by their meaning
+  So that I can find a note without knowing where it is
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts
