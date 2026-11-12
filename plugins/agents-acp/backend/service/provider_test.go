@@ -290,6 +290,22 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// The plugin reads the models of a program in the background and lists none until they are read.
+	var answer []byte
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
+		answer = callModels(t, web.URL, program)
+		// The done frame is the encoded list of options, which holds the titles as they are.
+		if bytes.Contains(readDone(t, answer), []byte("Model Two")) {
+			return
+		}
+	}
+	t.Errorf("the service answered %q", answer)
+}
+
+// callModels calls llm.models of the program on the provider service at url, as a streaming Connect call
+// with the token of the plugin, and returns the body of the answer.
+func callModels(t *testing.T, url, program string) []byte {
+	t.Helper()
 	body, err := json.Marshal(map[string]any{
 		"operation": llm.OperationModels,
 		"call":      map[string]any{"type": "acp", "fields": map[string]string{"program": program}},
@@ -297,13 +313,13 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.ProviderService/Call", bytes.NewReader(writeEnvelope(0, body)))
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url+"/numen.v1.ProviderService/Call", bytes.NewReader(writeEnvelope(0, body)))
 	if err != nil {
 		t.Fatal(err)
 	}
 	request.Header.Set("Content-Type", "application/connect+json")
 	request.Header.Set("Authorization", "Bearer tok")
-	response, err := web.Client().Do(request)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -312,15 +328,14 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-
 	answer, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The done frame is the encoded list of options, which holds the titles as they are.
-	if done := readDone(t, answer); response.StatusCode != http.StatusOK || !bytes.Contains(done, []byte("Model Two")) {
-		t.Errorf("the service answered %d %q", response.StatusCode, answer)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("the service answered %d %q", response.StatusCode, answer)
 	}
+	return answer
 }
 
 // writeEnvelope frames a message of a streaming Connect call.
